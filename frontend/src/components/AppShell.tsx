@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { VerifyEmailBanner } from "./VerifyEmailBanner";
 
 const ITEMS: { to: string; labelKey: string; icon: ReactNode }[] = [
   { to: "/app", labelKey: "nav.dashboard", icon: <LayoutDashboard size={18} /> },
@@ -50,6 +51,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
+
+      <VerifyEmailBanner />
 
       <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8">
         <aside className="hidden w-56 shrink-0 lg:block">

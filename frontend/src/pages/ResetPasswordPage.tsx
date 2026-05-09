@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
+import { PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -44,21 +45,15 @@ export default function ResetPasswordPage() {
             <p className="mt-4 text-sm text-ink-700">{t("auth.reset_done")}</p>
           ) : (
             <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-              <div>
-                <label htmlFor="password" className="field-label">
-                  {t("auth.new_password_label")}
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  className="input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  autoFocus
-                />
-              </div>
+              <PasswordField
+                id="password"
+                label={t("auth.new_password_label")}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoFocus
+              />
               {error && <p className="field-error">{error}</p>}
               <button type="submit" className="btn-primary w-full" disabled={submitting}>
                 {submitting ? t("common.loading") : t("auth.reset_submit")}

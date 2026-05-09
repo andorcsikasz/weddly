@@ -3,11 +3,14 @@
 import type { AuthSession } from "@shared/types";
 import { hashPassword, verifyPassword } from "../auth/password";
 import { extractToken, issueSession, revokeSession } from "../auth/session";
+import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { bilingualBody, sendEmail } from "../lib/mailer";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../lib/users";
+import { createVerificationToken } from "./email_verify";
 
 interface RegisterBody {
   email?: unknown;
@@ -73,6 +76,31 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     target_id: userId,
     after: { email },
   });
+
+  // Welcome + verification — single email, both purposes. Soft verification:
+  // we never block signup or login on this; the dashboard banner nags until
+  // they click. Fire-and-forget so a mailer outage doesn't fail registration.
+  const verifyToken = createVerificationToken(userId);
+  const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${verifyToken}`;
+  const { html, text } = bilingualBody({
+    hu: {
+      greeting: `Szia ${fullName}!`,
+      body: "Üdv a Weddly-n! Erősítsd meg az e-mail címed, hogy később vissza tudd állítani a jelszót, ha kell. A link 7 napig érvényes.",
+      cta: "E-mail cím megerősítése",
+    },
+    en: {
+      greeting: `Hi ${fullName},`,
+      body: "Welcome to Weddly! Confirm your email so you can recover the account later if you forget your password. The link is valid for seven days.",
+      cta: "Confirm your email",
+    },
+    ctaUrl: verifyUrl,
+  });
+  sendEmail({
+    to: email,
+    subject: "Weddly — üdv / welcome",
+    html,
+    text,
+  }).catch((e) => console.error("[auth] welcome send failed", e));
 
   const token = issueSession(userId);
   const userRow = getUserById(userId);

@@ -30,6 +30,10 @@ export const authApi = {
   forgot: (email: string) => apiFetch<{ ok: true }>("POST", "/api/auth/forgot", { email }),
   reset: (token: string, password: string) =>
     apiFetch<{ ok: true }>("POST", "/api/auth/reset", { token, password }),
+  requestVerify: () =>
+    apiFetch<{ ok: true; already_verified?: boolean }>("POST", "/api/auth/verify/request", {}),
+  verifyEmail: (token: string) =>
+    apiFetch<{ ok: true }>("POST", `/api/auth/verify/${encodeURIComponent(token)}`, {}),
 };
 
 export interface OnboardInput {

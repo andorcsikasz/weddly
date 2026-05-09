@@ -59,6 +59,23 @@ const en: LocaleMessages = {
     reset_submit: "Update password",
     reset_done: "Password updated. Redirecting you to sign in…",
     reset_invalid: "This reset link is invalid or has expired. Request a new one.",
+    show_password: "Show password",
+    hide_password: "Hide password",
+  },
+  verify: {
+    banner_title: "Confirm your email",
+    banner_body:
+      "We sent a link to your inbox. Confirming keeps password recovery working if you ever lose access.",
+    banner_resend: "Resend link",
+    banner_resending: "Sending…",
+    banner_resent: "Sent — check your inbox.",
+    banner_dismiss: "Dismiss",
+    page_title: "Email verification",
+    page_loading: "Confirming…",
+    page_success: "Email confirmed. You're all set.",
+    page_invalid:
+      "This verification link is invalid or has expired. Sign in and request a fresh one from the banner.",
+    page_back_to_app: "Back to the workspace",
   },
   onboarding: {
     welcome: "Welcome to {name}!",

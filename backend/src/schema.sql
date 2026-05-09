@@ -179,3 +179,16 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id);
+
+-- Email verification tokens. Single-use (consumed_at), 7-day TTL — email
+-- verification is "soft" (not required to use the app) so we give users
+-- plenty of time to click the link.
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  expires_at INTEGER NOT NULL,
+  consumed_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_email_verify_user ON email_verification_tokens(user_id);

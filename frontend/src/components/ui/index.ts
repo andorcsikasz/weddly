@@ -5,6 +5,7 @@ export { Dialog } from "./Dialog";
 export { EntryDialogProvider, useEntryPrompt, type EntryOptions } from "./EntryDialogProvider";
 export { FieldError } from "./FieldError";
 export { HelperText } from "./HelperText";
+export { PasswordField } from "./PasswordField";
 export { SegmentedControl, type SegmentedOption } from "./SegmentedControl";
 export { TagChip } from "./TagChip";
 export { TextField } from "./TextField";

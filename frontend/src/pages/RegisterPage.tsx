@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
+import { PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
@@ -66,21 +67,15 @@ export default function RegisterPage() {
                 required
               />
             </div>
-            <div>
-              <label htmlFor="password" className="field-label">
-                {t("auth.password_label")}
-              </label>
-              <input
-                id="password"
-                type="password"
-                className="input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-              />
-              <span className="field-help">{t("auth.short_password")}</span>
-            </div>
+            <PasswordField
+              id="password"
+              label={t("auth.password_label")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              helperText={t("auth.short_password")}
+            />
             {error && <p className="field-error">{error}</p>}
             <button type="submit" className="btn-primary w-full" disabled={submitting}>
               {submitting ? t("common.loading") : t("auth.submit_register")}

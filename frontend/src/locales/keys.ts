@@ -55,6 +55,21 @@ export interface LocaleMessages {
     reset_submit: string;
     reset_done: string;
     reset_invalid: string;
+    show_password: string;
+    hide_password: string;
+  };
+  verify: {
+    banner_title: string;
+    banner_body: string;
+    banner_resend: string;
+    banner_resending: string;
+    banner_resent: string;
+    banner_dismiss: string;
+    page_title: string;
+    page_loading: string;
+    page_success: string;
+    page_invalid: string;
+    page_back_to_app: string;
   };
   onboarding: {
     welcome: string;

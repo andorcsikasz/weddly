@@ -16,6 +16,7 @@ import RsvpPage from "./pages/RsvpPage";
 import SeatingPage from "./pages/SeatingPage";
 import SettingsPage from "./pages/SettingsPage";
 import SuppliersPage from "./pages/SuppliersPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -59,6 +60,7 @@ export default function App() {
       />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+      <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
       <Route path="/invite/:token" element={<InvitePage />} />
       <Route path="/rsvp/:code" element={<RsvpPage />} />
       <Route

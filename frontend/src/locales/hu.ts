@@ -59,6 +59,22 @@ const hu: LocaleMessages = {
     reset_submit: "Jelszó frissítése",
     reset_done: "Jelszó frissítve. Átirányítunk a bejelentkezéshez…",
     reset_invalid: "Ez a link érvénytelen vagy lejárt. Kérj egy újat.",
+    show_password: "Jelszó mutatása",
+    hide_password: "Jelszó elrejtése",
+  },
+  verify: {
+    banner_title: "Erősítsd meg az e-mail címed",
+    banner_body:
+      "Küldtünk egy linket a postafiókodba. A megerősítés kell ahhoz, hogy a jelszó-visszaállítás működjön, ha valaha szükséged lenne rá.",
+    banner_resend: "Link újraküldése",
+    banner_resending: "Küldés…",
+    banner_resent: "Elküldve — nézd meg a postafiókod.",
+    banner_dismiss: "Bezárás",
+    page_title: "E-mail megerősítés",
+    page_loading: "Megerősítés folyamatban…",
+    page_success: "Az e-mail címed megerősítve. Kész.",
+    page_invalid: "Ez a megerősítő link érvénytelen vagy lejárt. Lépj be, és kérj újat a sávból.",
+    page_back_to_app: "Vissza a munkaterületre",
   },
   onboarding: {
     welcome: "Üdv a {name}-en!",

@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
+import { PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
@@ -48,12 +49,11 @@ export default function LoginPage() {
               required
               autoFocus
             />
-            <Field
+            <PasswordField
               id="password"
               label={t("auth.password_label")}
-              type="password"
               value={password}
-              onChange={setPassword}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
             {error && <p className="field-error">{error}</p>}

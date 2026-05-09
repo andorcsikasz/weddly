@@ -55,6 +55,8 @@ function wipeAll() {
     "couple_invites",
     "sessions",
     "rate_limit_buckets",
+    "password_reset_tokens",
+    "email_verification_tokens",
     "users",
     "couples",
   ];
@@ -738,6 +740,140 @@ describe("password reset", () => {
       password: "newpassword123",
     });
     expect(r.status).toBe(400);
+  });
+});
+
+describe("email verification", () => {
+  test("register issues a verification token (welcome email)", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "verify-new@weddly.test",
+      password: "supersafe123",
+      full_name: "Verify New",
+    });
+
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
+      )
+      .get("verify-new@weddly.test") as { token: string } | undefined;
+    expect(tokenRow?.token).toBeDefined();
+    expect(tokenRow!.token.length).toBeGreaterThanOrEqual(32);
+  });
+
+  test("consume token flips verified_email and is single-use", async () => {
+    wipeAll();
+    const reg = await req<{ token: string; user: { id: number; verified_email: boolean } }>(
+      "POST",
+      "/api/auth/register",
+      {
+        email: "verify-flip@weddly.test",
+        password: "supersafe123",
+        full_name: "Verify Flip",
+      },
+    );
+    expect(reg.data.user.verified_email).toBe(false);
+
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
+      )
+      .get("verify-flip@weddly.test") as { token: string };
+
+    const consume = await req<{ ok: true }>("POST", `/api/auth/verify/${tokenRow.token}`, {});
+    expect(consume.status).toBe(200);
+
+    // /me reflects the flip.
+    const me = await req<{ user: { verified_email: boolean } }>("GET", "/api/auth/me", undefined, {
+      token: reg.data.token,
+    });
+    expect(me.data.user.verified_email).toBe(true);
+
+    // Re-using the same token must fail.
+    const reuse = await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+    expect(reuse.status).toBe(400);
+  });
+
+  test("expired tokens are rejected", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "verify-expired@weddly.test",
+      password: "supersafe123",
+      full_name: "Verify Expired",
+    });
+    db.prepare(
+      "UPDATE email_verification_tokens SET expires_at = 1 WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+    ).run("verify-expired@weddly.test");
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .get("verify-expired@weddly.test") as { token: string };
+
+    const r = await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+    expect(r.status).toBe(400);
+  });
+
+  test("resend issues a fresh token for an authenticated unverified user", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "verify-resend@weddly.test",
+      password: "supersafe123",
+      full_name: "Verify Resend",
+    });
+
+    const before = db
+      .prepare(
+        "SELECT id FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .all("verify-resend@weddly.test") as { id: number }[];
+    expect(before.length).toBe(1);
+
+    const resend = await req<{ ok: true; already_verified?: boolean }>(
+      "POST",
+      "/api/auth/verify/request",
+      {},
+      { token: reg.data.token },
+    );
+    expect(resend.status).toBe(200);
+    expect(resend.data.already_verified).toBeFalsy();
+
+    const after = db
+      .prepare(
+        "SELECT id FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .all("verify-resend@weddly.test") as { id: number }[];
+    expect(after.length).toBe(2);
+  });
+
+  test("resend short-circuits for already-verified users", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "verify-already@weddly.test",
+      password: "supersafe123",
+      full_name: "Verify Already",
+    });
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
+      )
+      .get("verify-already@weddly.test") as { token: string };
+    await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+
+    const resend = await req<{ ok: true; already_verified?: boolean }>(
+      "POST",
+      "/api/auth/verify/request",
+      {},
+      { token: reg.data.token },
+    );
+    expect(resend.status).toBe(200);
+    expect(resend.data.already_verified).toBe(true);
+  });
+
+  test("resend rejects unauthenticated callers", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/verify/request", {});
+    expect(r.status).toBe(401);
   });
 });
 
