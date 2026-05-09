@@ -5,8 +5,9 @@ import type { WeddingStyleTag } from "@shared/types";
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
-import { useT } from "../lib/i18n";
+import { TagChip } from "../components/ui";
 import { coupleApi } from "../lib/endpoints";
+import { useT } from "../lib/i18n";
 
 const STYLE_TAGS: WeddingStyleTag[] = [
   "classic",
@@ -192,24 +193,19 @@ export default function OnboardingWizard() {
             <>
               <h1>{t("onboarding.step5_title")}</h1>
               <p className="mt-2 text-sm text-ink-600">{t("onboarding.style_help")}</p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {STYLE_TAGS.map((tag) => {
-                  const active = form.style_tags.includes(tag);
-                  return (
-                    <button
-                      type="button"
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={
-                        active
-                          ? "rounded-full border-2 border-ink-700 bg-ink-700 px-4 py-1.5 text-sm font-medium text-paper-100"
-                          : "rounded-full border border-paper-300 bg-paper-50 px-4 py-1.5 text-sm text-ink-700 hover:border-ink-400"
-                      }
-                    >
-                      {t(`onboarding.style_${tag}`)}
-                    </button>
-                  );
-                })}
+              <div
+                className="mt-6 flex flex-wrap gap-2"
+                role="group"
+                aria-label={t("onboarding.style_help")}
+              >
+                {STYLE_TAGS.map((tag) => (
+                  <TagChip
+                    key={tag}
+                    label={t(`onboarding.style_${tag}`)}
+                    selected={form.style_tags.includes(tag)}
+                    onToggle={() => toggleTag(tag)}
+                  />
+                ))}
               </div>
             </>
           )}

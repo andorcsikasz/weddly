@@ -3,11 +3,11 @@
 import type { CouplePauseRequest, CoupleStatus } from "@shared/types";
 import { useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useConfirm } from "../components/ui";
+import { type SegmentedOption, SegmentedControl, useConfirm } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { exportApi, pauseApi } from "../lib/endpoints";
 import { formatDate } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 
 export default function SettingsPage() {
   const { t, locale, setLocale } = useT();
@@ -83,29 +83,18 @@ export default function SettingsPage() {
 
       <section className="card mt-6">
         <h2 className="text-lg">{t("settings.locale_label")}</h2>
-        <div className="mt-3 inline-flex overflow-hidden rounded-full border border-paper-300">
-          <button
-            type="button"
-            onClick={() => setLocale("hu")}
-            className={
-              locale === "hu"
-                ? "bg-ink-800 px-4 py-1.5 text-sm text-paper-100"
-                : "px-4 py-1.5 text-sm text-ink-700"
+        <div className="mt-3">
+          <SegmentedControl<Locale>
+            ariaLabel={t("settings.locale_label")}
+            value={locale}
+            onChange={setLocale}
+            options={
+              [
+                { value: "hu", label: t("settings.locale_hu") },
+                { value: "en", label: t("settings.locale_en") },
+              ] as const satisfies ReadonlyArray<SegmentedOption<Locale>>
             }
-          >
-            {t("settings.locale_hu")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocale("en")}
-            className={
-              locale === "en"
-                ? "bg-ink-800 px-4 py-1.5 text-sm text-paper-100"
-                : "px-4 py-1.5 text-sm text-ink-700"
-            }
-          >
-            {t("settings.locale_en")}
-          </button>
+          />
         </div>
       </section>
 
