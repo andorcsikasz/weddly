@@ -4,10 +4,12 @@ import { Shell } from "../components/Shell";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const { t } = useT();
+  useDocumentMeta("seo.login_title", "seo.login_description");
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = (location.state as { from?: string } | null)?.from ?? "/app";

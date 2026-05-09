@@ -17,6 +17,18 @@ const hu: LocaleMessages = {
     name: "Weddly",
     tagline: "Szervezd meg az esküvőtöket szakértő nélkül.",
   },
+  seo: {
+    home_title: "Weddly — közösen az esküvőtök tervezése",
+    home_description:
+      "Egy közös munkaterület mindkettőtöknek: költségvetés, vendéglista, RSVP linkek, vizuális ültetés, nyomtatható kártyák. A nyílt béta alatt ingyenes.",
+    login_title: "Bejelentkezés — Weddly",
+    login_description: "Lépj be a páros munkaterületedbe.",
+    register_title: "Hozd létre a páros munkaterületet — Weddly",
+    register_description:
+      "Pár perc alatt indulhattok. Egy munkaterület mindkettőtöknek, a nyílt béta alatt ingyenes.",
+    invite_title: "Csatlakozz a páros munkaterülethez — Weddly",
+    invite_description: "A párod meghívott, hogy közösen tervezzétek az esküvőtöket.",
+  },
   auth: {
     login_title: "Bejelentkezés",
     register_title: "Új fiók",
@@ -92,6 +104,7 @@ const hu: LocaleMessages = {
       "Egy közös munkaterület mindkettőtöknek: ütemezés, költségvetés, vendéglista, ültetési rend, nyomtatható kártyák.",
     cta_signup: "Próbáld ki",
     cta_login: "Bejelentkezés",
+    cta_signup_sub: "A nyílt béta alatt ingyenes. Bankkártya nem kell.",
     feature_planning_title: "Élő költségvetés",
     feature_planning_body:
       "Húzd a vendégszámláló csúszkát, és lásd azonnal a catering, ital, dekor árát.",
@@ -101,6 +114,34 @@ const hu: LocaleMessages = {
     feature_seating_title: "Vizuális ültetés",
     feature_seating_body:
       "Asztalokat helyezel a vászonra, a vendégeket fogd-és-vidd. Konfliktusokat magától jelez.",
+    trust_couple_title: "Kettőtöknek készült",
+    trust_couple_body:
+      "Egyikőtök regisztrál, küld egy linket, és a másik már ugyanabba a munkaterületbe lép be. Nincs duplázódó belépés, nincs szinkronizálás.",
+    trust_free_title: "A béta alatt ingyenes",
+    trust_free_body:
+      "Az alap tervezés ingyen marad. A fizetős csomagok csak extra funkciókhoz jönnek később — soha nem zárunk ki abból, amit már megépítettetek.",
+    trust_data_title: "A ti adataitok, a ti döntésetek",
+    trust_data_body:
+      "Bármikor szüneteltethetitek a munkaterületet. Ha 30 napon belül nem tértek vissza, mindent törlünk. Nincsenek átverős minták.",
+    faq_title: "Gyakori kérdések",
+    faq_q_free: "Tényleg ingyenes a Weddly?",
+    faq_a_free:
+      "Igen — a nyílt béta alatt. A v2-ben jönnek fizetős csomagok, de csak extra funkciókhoz (több tárhely, prémium sablonok). A költségvetés, vendéglista, RSVP és ültetés ingyen marad.",
+    faq_q_partner: "Mindketten tudjuk használni?",
+    faq_a_partner:
+      "Igen. Egyikőtök regisztrál, majd küld egy meghívó linket a másiknak. Ugyanazt a munkaterületet látjátok, külön belépéssel.",
+    faq_q_data: "Mi történik az adatainkkal?",
+    faq_a_data:
+      "A tiétek. Minden változás egy audit naplóban követhető. Bármikor szüneteltethetitek a munkaterületet; ha 30 napon belül nem tértek vissza, mindent törlünk — ehhez nem kell ügyfélszolgálat.",
+    faq_q_planner: "Kell hozzá esküvőszervező?",
+    faq_a_planner:
+      "Nem — a Weddly végigvezet a költségvetésen, vendéglistán és ültetésen. Ha mégis van szervezőtök, harmadik belépéssel ő is csatlakozhat.",
+    faq_q_ready: "Készen áll a mi esküvőnkre?",
+    faq_a_ready:
+      "Az élő költségvetés, RSVP linkek, vizuális ültetés és nyomtatható kártyák (A4 / A6 / A3) ma már működnek. A szolgáltatói lista kurátorált, foglalni v2-ben lehet majd.",
+    closing_title: "Készen álltok az indulásra?",
+    closing_body:
+      "Körülbelül két perc beállítani a munkaterületet. Utána azonnal meghívhatjátok egymást.",
   },
   nav: {
     dashboard: "Áttekintés",

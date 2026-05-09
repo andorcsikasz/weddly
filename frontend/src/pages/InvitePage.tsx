@@ -9,11 +9,13 @@ import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { coupleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
   const { user, refresh } = useAuth();
   const { t } = useT();
+  useDocumentMeta("seo.invite_title", "seo.invite_description");
   const navigate = useNavigate();
   const [invite, setInvite] = useState<{
     invite: CoupleInvite;

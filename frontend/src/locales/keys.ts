@@ -17,6 +17,16 @@ export interface LocaleMessages {
     name: string;
     tagline: string;
   };
+  seo: {
+    home_title: string;
+    home_description: string;
+    login_title: string;
+    login_description: string;
+    register_title: string;
+    register_description: string;
+    invite_title: string;
+    invite_description: string;
+  };
   auth: {
     login_title: string;
     register_title: string;
@@ -90,12 +100,32 @@ export interface LocaleMessages {
     hero_sub: string;
     cta_signup: string;
     cta_login: string;
+    cta_signup_sub: string;
     feature_planning_title: string;
     feature_planning_body: string;
     feature_guests_title: string;
     feature_guests_body: string;
     feature_seating_title: string;
     feature_seating_body: string;
+    trust_couple_title: string;
+    trust_couple_body: string;
+    trust_free_title: string;
+    trust_free_body: string;
+    trust_data_title: string;
+    trust_data_body: string;
+    faq_title: string;
+    faq_q_free: string;
+    faq_a_free: string;
+    faq_q_partner: string;
+    faq_a_partner: string;
+    faq_q_data: string;
+    faq_a_data: string;
+    faq_q_planner: string;
+    faq_a_planner: string;
+    faq_q_ready: string;
+    faq_a_ready: string;
+    closing_title: string;
+    closing_body: string;
   };
   nav: {
     dashboard: string;

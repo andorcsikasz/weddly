@@ -17,6 +17,18 @@ const en: LocaleMessages = {
     name: "Weddly",
     tagline: "Plan your wedding, without a planner.",
   },
+  seo: {
+    home_title: "Weddly — plan your wedding together",
+    home_description:
+      "One shared workspace for both of you: budget, guest list, RSVP links, visual seating, printable cards. Free during the open beta.",
+    login_title: "Sign in — Weddly",
+    login_description: "Sign in to your Weddly couple workspace.",
+    register_title: "Create your couple workspace — Weddly",
+    register_description:
+      "Start planning in minutes. One workspace for both of you, free during the open beta.",
+    invite_title: "Join your couple workspace — Weddly",
+    invite_description: "Your partner invited you to plan the wedding together.",
+  },
   auth: {
     login_title: "Sign in",
     register_title: "Create account",
@@ -92,6 +104,7 @@ const en: LocaleMessages = {
       "One shared workspace for both of you: scheduling, budget, guest list, seating, printable cards.",
     cta_signup: "Get started",
     cta_login: "Sign in",
+    cta_signup_sub: "Free during the open beta. No credit card.",
     feature_planning_title: "Live budget",
     feature_planning_body:
       "Drag the guest-count slider and watch catering, drinks, and decor re-cost in real time.",
@@ -101,6 +114,34 @@ const en: LocaleMessages = {
     feature_seating_title: "Visual seating",
     feature_seating_body:
       "Drop tables on a canvas, drag guests onto seats, conflict warnings show up automatically.",
+    trust_couple_title: "Built for two",
+    trust_couple_body:
+      "One of you signs up, sends a link, and the other lands in the same workspace. No duplicate logins, no syncing.",
+    trust_free_title: "Free during the beta",
+    trust_free_body:
+      "Core planning stays free. Paid tiers (only for advanced features) come later — we'll never lock you out of what you've already built.",
+    trust_data_title: "Your data, your decision",
+    trust_data_body:
+      "Pause the workspace any time. We delete everything 30 days later if you don't come back. No dark patterns.",
+    faq_title: "Questions you'll probably ask",
+    faq_q_free: "Is Weddly really free?",
+    faq_a_free:
+      "Yes — for the open beta. We'll add paid tiers in v2 only for advanced features (extra storage, premium templates). Budgeting, guest list, RSVP, and seating stay free.",
+    faq_q_partner: "Can both of us use it?",
+    faq_a_partner:
+      "Yes. One of you signs up, then sends an invite link to the other. You both share the same workspace, with separate logins.",
+    faq_q_data: "What happens to our data?",
+    faq_a_data:
+      "It's yours. Every change is in an audit log you can read. You can pause the workspace any time; if you don't come back within 30 days, we delete everything — no manual support ticket needed.",
+    faq_q_planner: "Do we need a wedding planner?",
+    faq_a_planner:
+      "No — Weddly walks you through budget, guests, and seating. If you do have a planner, they can join your workspace as a third login.",
+    faq_q_ready: "Is it ready for our wedding?",
+    faq_a_ready:
+      "Live budget, RSVP links, visual seating, and printable cards (A4 / A6 / A3) all work today. The supplier directory is curated, not bookable yet — that ships in v2.",
+    closing_title: "Ready to start?",
+    closing_body:
+      "It takes about two minutes to set up the workspace. You can invite your partner straight after.",
   },
   nav: {
     dashboard: "Overview",

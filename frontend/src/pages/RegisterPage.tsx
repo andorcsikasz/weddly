@@ -4,10 +4,12 @@ import { Shell } from "../components/Shell";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const { t } = useT();
+  useDocumentMeta("seo.register_title", "seo.register_description");
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
