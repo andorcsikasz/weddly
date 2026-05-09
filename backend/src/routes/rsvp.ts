@@ -3,8 +3,13 @@
 
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { getCoupleById } from "../lib/couples";
-import { getGuestByInviteCode, isMealChoice, isRsvpStatus, toPublicRsvpView } from "../lib/guests";
+import { getCoupleById } from "../domain/couples";
+import {
+  getGuestByInviteCode,
+  isMealChoice,
+  isRsvpStatus,
+  toPublicRsvpView,
+} from "../domain/guests";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 

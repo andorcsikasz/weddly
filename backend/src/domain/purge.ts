@@ -7,9 +7,9 @@
 // still reference; instead we DELETE child PII rows (they have ON DELETE CASCADE
 // to handle FKs) and stamp the couple as 'deleting' → fields nulled.
 
-import { db, now } from "./../db";
-import { addAuditLog } from "./audit";
-import { log } from "./logger";
+import { db, now } from "../db";
+import { addAuditLog } from "../lib/audit";
+import { log } from "../lib/logger";
 
 export function purgeOneCouple(coupleId: number): void {
   const ts = now();
@@ -43,6 +43,8 @@ export function purgeOneCouple(coupleId: number): void {
   // Couple row: keep id + timestamps for retention; null out everything else.
   db.prepare(
     `UPDATE couples SET display_name = 'Purged workspace',
+                        bride_name = '',
+                        groom_name = '',
                         wedding_date = NULL,
                         target_guest_count = NULL,
                         budget_ceiling_huf = NULL,

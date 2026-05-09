@@ -1,6 +1,6 @@
 # CLAUDE.md — Engineering conventions for Weddly
 
-This file tells Claude Code how to work in this repo. The product spec is in [BLUEPRINT.md](./BLUEPRINT.md).
+This file tells Claude Code how to work in this repo. The product spec is in [docs/blueprint.md](./docs/blueprint.md).
 
 ## Commands
 
@@ -23,18 +23,19 @@ React (frontend/src)
   → endpoints.ts (single typed API client)
   → fetch JSON
   → Bun + custom router (backend/src)
-  → routes/ (thin) → lib/ (thick)
+  → routes/ (thin) → domain/ (thick) using lib/ (infra)
   → bun:sqlite (data/weddly.db locally, /data/weddly.db in prod)
 ```
 
 - **One file per feature in `backend/src/routes/`.** Each exports `registerXRoutes(router)`. Adding a feature = new file + one register call in `server.ts`.
-- **Cross-cutting in `backend/src/lib/`.** Mappers (`toCouple`, `toGuest`), helpers (`computeBudget`, `addAuditLog`), notifications.
-- **One types contract.** `shared/types.ts` is imported by both sides via `@shared/*`. Backend mappers convert `*Row` → DTO. No runtime validation library — TypeScript is the contract.
+- **Wedding-domain logic in `backend/src/domain/`.** Mappers (`toCouple`, `toGuest`), per-aggregate helpers (`getCoupleForUser`, `purgeOneCouple`, `renderSeatingChartPdf`), invite codes, supplier directory data.
+- **Generic infra in `backend/src/lib/`.** App-agnostic plumbing: `http` (router/Ctx/HttpError), `logger`, `observability` (Sentry), `mailer`, `audit`, `csv`, `rate_limit`. Domain code imports from `lib/`; `lib/` never imports from `domain/`.
+- **Types contract in `shared/`.** `shared/types.ts` is the default; split into a per-domain module (e.g. `shared/suppliers.ts`) only when the cluster is large enough to stand alone. Both sides import via `@shared/*`. Backend mappers convert `*Row` → DTO. No runtime validation library — TypeScript is the contract.
 - **One API client.** `frontend/src/lib/endpoints.ts` wraps every HTTP call (`coupleApi.create()`, `guestApi.list()`). Components never `fetch` directly.
 
 ## Domain model
 
-See [BLUEPRINT.md](./BLUEPRINT.md#domain-primitives-v1) for the full table list. Highlights:
+See [docs/blueprint.md](./docs/blueprint.md#domain-primitives-v1) for the full table list. Highlights:
 
 - **`couples`** is the workspace. Every protected query is scoped by `couple_id` derived from the session.
 - **Money is integer Forint.** No floats. `formatHuf(cents)` for display.

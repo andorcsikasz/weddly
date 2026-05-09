@@ -5,9 +5,9 @@
 
 import { db } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { getCoupleForUser, toCouple } from "../lib/couples";
+import { getCoupleForUser, toCouple } from "../domain/couples";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
-import { toUser, type UserRow } from "../lib/users";
+import { toUser, type UserRow } from "../domain/users";
 
 function rowsByCouple<T>(table: string, coupleId: number): T[] {
   return db

@@ -3,7 +3,7 @@
 import type { SeatAssignment, SeatingConflict, SeatingTable, TableShape } from "@shared/types";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { getCoupleForUser } from "../lib/couples";
+import { getCoupleForUser } from "../domain/couples";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 interface TableRow {

@@ -11,7 +11,7 @@ import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http
 import { bilingualBody, sendEmail } from "../lib/mailer";
 import { reportError } from "../lib/observability";
 import { rateLimit } from "../lib/rate_limit";
-import { getUserById } from "../lib/users";
+import { getUserById } from "../domain/users";
 
 export const VERIFY_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const RESEND_BUCKET = { capacity: 5, refillRate: 1 / 60 }; // 5/min/IP, refills 1/min

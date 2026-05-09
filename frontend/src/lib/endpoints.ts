@@ -37,7 +37,8 @@ export const authApi = {
 };
 
 export interface OnboardInput {
-  display_name: string;
+  bride_name: string;
+  groom_name: string;
   wedding_date: string | null;
   target_guest_count: number | null;
   budget_ceiling_huf: number | null;

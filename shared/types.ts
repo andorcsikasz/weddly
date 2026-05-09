@@ -41,13 +41,66 @@ export type WeddingStyleTag =
   | "vintage"
   | "destination";
 
+/**
+ * Wedding planning starts months or years out, when most things aren't locked
+ * yet. Each "goal" field is paired with a `kind` that says how certain the
+ * couple is — the UI renders accordingly.
+ */
+export type WeddingDateKind = "exact" | "month" | "season" | "year" | "tbd";
+export type WeddingSeason = "spring" | "summer" | "fall" | "winter";
+export type GuestCountKind = "exact" | "range" | "tbd";
+export type BudgetKind = "exact" | "range" | "tbd";
+
+export interface WeddingDateGoal {
+  kind: WeddingDateKind;
+  /** Filled for kind='exact'. ISO YYYY-MM-DD. */
+  exact_date: string | null;
+  /** Filled for kind in {'exact','month','season','year'}. */
+  target_year: number | null;
+  /** 1..12. Filled for kind='month'. */
+  target_month: number | null;
+  /** Filled for kind='season'. */
+  target_season: WeddingSeason | null;
+}
+
+export interface GuestCountGoal {
+  kind: GuestCountKind;
+  /** Filled for kind='exact'. */
+  exact: number | null;
+  /** Filled for kind='range'. */
+  min: number | null;
+  /** Filled for kind='range'. */
+  max: number | null;
+}
+
+export interface BudgetGoal {
+  kind: BudgetKind;
+  /** Filled for kind='exact'. */
+  exact_huf: Huf | null;
+  /** Filled for kind='range'. */
+  min_huf: Huf | null;
+  /** Filled for kind='range'. */
+  max_huf: Huf | null;
+}
+
 export interface Couple {
   id: number;
   partner_a_id: number;
   partner_b_id: number | null;
-  display_name: string; // e.g. "Anna & Bence"
-  wedding_date: string | null; // YYYY-MM-DD
+  display_name: string; // derived "{bride_name} & {groom_name}"
+  bride_name: string;
+  groom_name: string;
+  /** Structured wedding-date goal — handles "Summer 2027" / "TBD" / exact dates. */
+  wedding_date_goal: WeddingDateGoal;
+  /** Back-compat shortcut. Equal to wedding_date_goal.exact_date. */
+  wedding_date: string | null;
+  /** Structured guest-count goal — handles ranges and "don't know yet". */
+  guest_count_goal: GuestCountGoal;
+  /** Back-compat shortcut. Equal to guest_count_goal.exact. */
   target_guest_count: number | null;
+  /** Structured budget goal — handles ranges and "don't know yet". */
+  budget_goal: BudgetGoal;
+  /** Back-compat shortcut. Equal to budget_goal.exact_huf. */
   budget_ceiling_huf: Huf | null;
   location_lat: number | null;
   location_lng: number | null;

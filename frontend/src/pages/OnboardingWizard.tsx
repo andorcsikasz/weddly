@@ -21,7 +21,8 @@ const STYLE_TAGS: WeddingStyleTag[] = [
 ];
 
 interface FormState {
-  display_name: string;
+  bride_name: string;
+  groom_name: string;
   wedding_date: string;
   target_guest_count: string;
   budget_ceiling_huf: string;
@@ -37,7 +38,8 @@ export default function OnboardingWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
-    display_name: "",
+    bride_name: "",
+    groom_name: "",
     wedding_date: "",
     target_guest_count: "",
     budget_ceiling_huf: "",
@@ -63,7 +65,8 @@ export default function OnboardingWizard() {
     setError(null);
     try {
       await coupleApi.onboard({
-        display_name: form.display_name.trim(),
+        bride_name: form.bride_name.trim(),
+        groom_name: form.groom_name.trim(),
         wedding_date: form.wedding_date || null,
         target_guest_count: form.target_guest_count ? Number(form.target_guest_count) : null,
         budget_ceiling_huf: form.budget_ceiling_huf ? Number(form.budget_ceiling_huf) : null,
@@ -81,7 +84,7 @@ export default function OnboardingWizard() {
   const stepValid = (() => {
     switch (step) {
       case 0:
-        return form.display_name.trim().length > 0;
+        return form.bride_name.trim().length > 0 && form.groom_name.trim().length > 0;
       default:
         return true;
     }
@@ -107,18 +110,32 @@ export default function OnboardingWizard() {
             <>
               <h1>{t("onboarding.step1_title")}</h1>
               <p className="mt-2 text-sm text-ink-600">{t("onboarding.step1_help")}</p>
-              <div className="mt-6">
-                <label htmlFor="display_name" className="field-label">
-                  {t("onboarding.display_name_label")}
-                </label>
-                <input
-                  id="display_name"
-                  className="input"
-                  value={form.display_name}
-                  onChange={(e) => update("display_name", e.target.value)}
-                  placeholder="Anna & Bence"
-                  autoFocus
-                />
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="bride_name" className="field-label">
+                    {t("onboarding.bride_name_label")}
+                  </label>
+                  <input
+                    id="bride_name"
+                    className="input"
+                    value={form.bride_name}
+                    onChange={(e) => update("bride_name", e.target.value)}
+                    placeholder="Anna"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label htmlFor="groom_name" className="field-label">
+                    {t("onboarding.groom_name_label")}
+                  </label>
+                  <input
+                    id="groom_name"
+                    className="input"
+                    value={form.groom_name}
+                    onChange={(e) => update("groom_name", e.target.value)}
+                    placeholder="Bence"
+                  />
+                </div>
               </div>
             </>
           )}

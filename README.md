@@ -2,7 +2,7 @@
 
 Self-serve wedding-organising platform for engaged couples. Plan → search → book → guests → aftermath, all in one place.
 
-**Status:** v1 in development. See [BLUEPRINT.md](./BLUEPRINT.md) for the product spec and [CLAUDE.md](./CLAUDE.md) for engineering conventions.
+**Status:** v1 in development. See [docs/blueprint.md](./docs/blueprint.md) for the product spec and [CLAUDE.md](./CLAUDE.md) for engineering conventions.
 
 ## Quick start
 
@@ -35,10 +35,25 @@ bun run dev           # backend on :8787, frontend on :5173
 ## Layout
 
 ```
-backend/    Bun + custom router + SQLite
-frontend/   Vite + React + Tailwind
-shared/     Single types contract (DTOs, enums)
-.githooks/  pre-commit (Biome on staged) + pre-push (full gate)
+backend/
+  src/
+    auth/       session + password helpers
+    routes/     one file per feature; each exports registerXRoutes(router)
+    lib/        infra — http, logger, mailer, observability, audit, csv, rate_limit
+    domain/     wedding-specific — couples, guests, invite_codes, pdf, purge, suppliers_data, users
+    config.ts, db.ts, schema.sql, server.ts
+  tests/        single E2E suite
+frontend/
+  src/
+    pages/      route components
+    components/ shared UI primitives + ErrorBoundary
+    lib/        auth, i18n, single API client (endpoints.ts)
+    locales/    hu.ts (default) + en.ts + keys.ts (type)
+shared/         types contract — types.ts (main) + per-domain modules (suppliers.ts)
+scripts/        backup.sh, restore.sh
+docs/           blueprint.md, launch-checklist.md, uptime.md
+legal/          policy templates
+.githooks/      pre-commit (Biome on staged) + pre-push (full gate)
 ```
 
 ## Conventions
@@ -46,6 +61,6 @@ shared/     Single types contract (DTOs, enums)
 - Money is integer Forint (HUF has no sub-unit). Never floats.
 - Schema is additive-only — `CREATE TABLE IF NOT EXISTS` + `addColumnIfMissing()`. Never drop or rename.
 - One API client (`frontend/src/lib/endpoints.ts`). Components never call `fetch` directly.
-- One types contract (`shared/types.ts`). Both sides import from `@shared/*`.
+- Types live in `shared/`. Default to `shared/types.ts`; split into a per-domain file (e.g. `shared/suppliers.ts`) only when the cluster is large enough to be its own concern. Both sides import via `@shared/*`.
 - HU is the default locale; EN is secondary. Strings live in `frontend/src/locales/{hu,en}.ts`.
 - Pre-commit gates Biome; pre-push runs the full E2E + typecheck on a `git archive` snapshot of HEAD. Never `git stash`. Never `--no-verify`.

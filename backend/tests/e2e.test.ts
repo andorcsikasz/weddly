@@ -2,7 +2,7 @@ import "./setup";
 
 import { describe, expect, test } from "bun:test";
 import { db } from "../src/db";
-import { runPurgeSweep } from "../src/lib/purge";
+import { runPurgeSweep } from "../src/domain/purge";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 

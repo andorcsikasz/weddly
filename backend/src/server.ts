@@ -19,7 +19,7 @@ import {
   Router,
 } from "./lib/http";
 import { log, makeLogger } from "./lib/logger";
-import { startPurgeWorker } from "./lib/purge";
+import { startPurgeWorker } from "./domain/purge";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerBudgetRoutes } from "./routes/budget";
 import { registerCouplePauseRoutes } from "./routes/couple_pause";

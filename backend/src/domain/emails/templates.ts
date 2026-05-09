@@ -1,0 +1,407 @@
+// Per-kind email copy. The dispatcher (`send.ts`) calls one of these to
+// produce the rendered HTML/text + the subject line. Keep the copy here so
+// translators can find every string in one place; long-form content stays
+// out of the dispatcher's plumbing code.
+
+import { CONFIG } from "../../config";
+import { type EmailKind, KIND_CATEGORY } from "./kinds";
+import { type LocaleBlock, type RenderedEmail, renderEmail } from "./template";
+
+export interface BuildContext {
+  /** Recipient's display name for the greeting. Falls back to "" if unknown. */
+  recipientName: string;
+  /** Used by the unsubscribe footer link (only rendered for lifecycle mail). */
+  unsubscribeToken?: string;
+}
+
+export interface BuiltEmail {
+  subject: string;
+  rendered: RenderedEmail;
+}
+
+// ─── Per-kind input shapes — each kind has its own narrow payload. ──────────
+
+export interface WelcomeVerifyPayload {
+  verifyUrl: string;
+}
+export interface VerifyResendPayload {
+  verifyUrl: string;
+}
+export interface PasswordResetPayload {
+  resetUrl: string;
+}
+export interface PartnerInvitePayload {
+  inviterName: string;
+  inviteUrl: string;
+}
+export interface RsvpReceivedForCouplePayload {
+  guestName: string;
+  rsvpStatus: "yes" | "no" | "maybe";
+  guestPageUrl: string;
+}
+export interface RsvpThanksForGuestPayload {
+  coupleDisplayName: string;
+  weddingDate: string | null;
+  rsvpStatus: "yes" | "no" | "maybe";
+  rsvpPageUrl: string;
+}
+export interface OnboardingNudgePayload {
+  onboardingUrl: string;
+}
+export interface MilestonePayload {
+  /** Couple's friendly display name — "Anna & Bence". */
+  coupleDisplayName: string;
+  /** ISO date the wedding is happening. */
+  weddingDate: string;
+  /** Where in the app to land — usually the dashboard. */
+  dashboardUrl: string;
+}
+export interface WeddingTodayPayload {
+  coupleDisplayName: string;
+}
+
+export type KindPayload = {
+  welcome_verify: WelcomeVerifyPayload;
+  verify_resend: VerifyResendPayload;
+  password_reset: PasswordResetPayload;
+  partner_invite: PartnerInvitePayload;
+  rsvp_received_for_couple: RsvpReceivedForCouplePayload;
+  rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
+  onboarding_nudge: OnboardingNudgePayload;
+  milestone_t90: MilestonePayload;
+  milestone_t30: MilestonePayload;
+  milestone_t7: MilestonePayload;
+  wedding_today: WeddingTodayPayload;
+};
+
+// ─── Builder ────────────────────────────────────────────────────────────────
+
+export function buildEmail<K extends EmailKind>(
+  kind: K,
+  payload: KindPayload[K],
+  context: BuildContext,
+): BuiltEmail {
+  const built = BUILDERS[kind](payload as never, context);
+  const category = KIND_CATEGORY[kind];
+  const rendered = renderEmail({
+    hu: built.hu,
+    en: built.en,
+    ctaUrl: built.ctaUrl,
+    category,
+    unsubscribeToken: context.unsubscribeToken,
+  });
+  return { subject: built.subject, rendered };
+}
+
+interface RawTemplate {
+  subject: string;
+  hu: LocaleBlock;
+  en: LocaleBlock;
+  ctaUrl: string;
+}
+
+type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext) => RawTemplate;
+
+const BUILDERS: { [K in EmailKind]: Builder<K> } = {
+  welcome_verify: (p, ctx) => ({
+    subject: "Üdv a Weddly-n / Welcome to Weddly",
+    ctaUrl: p.verifyUrl,
+    hu: {
+      preheader: "Erősítsd meg az e-mail címed, hogy később vissza tudd állítani a fiókod.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "Üdv a Weddly-n — örülünk, hogy itt vagytok.",
+        "A nyugodt esküvőtervezéshez minden eszköz a kezedben van: vendéglista, ülésrend, költségvetés, RSVP, nyomtatható meghívók. Minden egyetlen helyen, magyarul.",
+        "Még egy lépés van hátra: erősítsd meg az e-mail címed. Ez azért fontos, hogy később, ha elfelejtenéd a jelszót, vissza tudd állítani — különben elveszhet a teljes esküvőtervező munkád.",
+      ],
+      cta: "E-mail cím megerősítése",
+      footnote: "A link 7 napig érvényes. Akkor is bejelentkezhetsz, ha most még nem kattintasz.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "Welcome to Weddly — we're glad you're here.",
+        "Everything you need for a calm wedding-planning process is in one place: guest list, seating plan, budget, RSVP, printable stationery.",
+        "One quick thing: please confirm your email so you can recover your account if you ever lose your password.",
+      ],
+      cta: "Confirm your email",
+      footnote: "The link is valid for 7 days. You can keep using Weddly while you wait.",
+    },
+  }),
+
+  verify_resend: (p, ctx) => ({
+    subject: "Új megerősítő link / fresh verification link",
+    ctaUrl: p.verifyUrl,
+    hu: {
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "Itt egy új link az e-mail cím megerősítéséhez.",
+        "Ha nem te kérted, hagyd figyelmen kívül ezt a levelet — a régi linket továbbra is használhatod, amíg le nem jár.",
+      ],
+      cta: "E-mail cím megerősítése",
+      footnote: "A link 7 napig érvényes.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "Here's a fresh email-verification link.",
+        "If you didn't ask for this, you can safely ignore it.",
+      ],
+      cta: "Confirm your email",
+      footnote: "Valid for seven days.",
+    },
+  }),
+
+  password_reset: (p, ctx) => ({
+    subject: "Jelszó visszaállítás / Password reset",
+    ctaUrl: p.resetUrl,
+    hu: {
+      preheader: "Új jelszót kértél a Weddly fiókodhoz. A link 1 órán át érvényes.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "Új jelszót kértél a Weddly fiókodhoz. A link biztonsági okokból 1 órán át érvényes.",
+        "Ha nem te kérted, ne kattints rá és ne add meg senkinek — a fiókod a régi jelszóval továbbra is biztonságban van.",
+      ],
+      cta: "Új jelszó beállítása",
+      footnote:
+        "Egyszer használható link. Ha lejárna, indítsd újra a folyamatot a bejelentkezésnél.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "You asked to reset your Weddly password. For your security this link is valid for 1 hour.",
+        "If you didn't request this, you can ignore the email — your account is still safe.",
+      ],
+      cta: "Set a new password",
+      footnote: "Single-use link. Restart from the login page if it expires.",
+    },
+  }),
+
+  partner_invite: (p) => ({
+    subject: "Esküvőtervezés meghívó / Wedding-planning invite",
+    ctaUrl: p.inviteUrl,
+    hu: {
+      preheader: `${p.inviterName} meghívott, hogy közösen tervezzétek az esküvőt.`,
+      greeting: "Szia!",
+      paragraphs: [
+        `${p.inviterName} meghívott, hogy közösen tervezzétek az esküvőt a Weddly-n.`,
+        "Ha elfogadod, közös vendéglistátok, költségvetésetek, ülésrendetek és RSVP-tök lesz — két fej, egy munkamenet, semmi e-mail-ping-pong.",
+      ],
+      cta: "Csatlakozom",
+      footnote: "A link 7 napig érvényes.",
+    },
+    en: {
+      greeting: "Hello,",
+      paragraphs: [
+        `${p.inviterName} invited you to plan your wedding together on Weddly.`,
+        "Once you accept, you'll share a single workspace — guest list, budget, seating plan, and RSVP — with no more spreadsheet juggling.",
+      ],
+      cta: "Join the workspace",
+      footnote: "This link is valid for 7 days.",
+    },
+  }),
+
+  rsvp_received_for_couple: (p, ctx) => ({
+    subject: rsvpReceivedSubject(p),
+    ctaUrl: p.guestPageUrl,
+    hu: {
+      preheader: `${p.guestName} válaszolt: ${rsvpStatusHu(p.rsvpStatus)}.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `${p.guestName} most válaszolt a meghívóra: ${rsvpStatusHu(p.rsvpStatus)}.`,
+        "Megnézheted a részleteket — ételválasztás, +1, szállásigény, zenekívánság — a vendéglistán.",
+      ],
+      cta: "Vendéglista megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `${p.guestName} just responded: ${rsvpStatusEn(p.rsvpStatus)}.`,
+        "Open the guest list to see meal choice, +1, accommodation, and song requests.",
+      ],
+      cta: "Open guest list",
+    },
+  }),
+
+  rsvp_thanks_for_guest: (p, ctx) => ({
+    subject: `RSVP elküldve / RSVP confirmed — ${p.coupleDisplayName}`,
+    ctaUrl: p.rsvpPageUrl,
+    hu: {
+      preheader: `Elküldtük a válaszodat ${p.coupleDisplayName} esküvőjére.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Köszönjük, megkaptuk a válaszodat ${p.coupleDisplayName} esküvőjére.`,
+        rsvpThanksDetailHu(p),
+      ],
+      cta: "Válasz módosítása",
+      footnote: "A linket bármikor megnyithatod, ha valami változna.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `Thanks — we've recorded your RSVP for ${p.coupleDisplayName}'s wedding.`,
+        rsvpThanksDetailEn(p),
+      ],
+      cta: "Update your response",
+      footnote: "Open the link any time if anything changes.",
+    },
+  }),
+
+  onboarding_nudge: (p, ctx) => ({
+    subject: "Folytasd ott, ahol abbahagytad / Pick up where you left off",
+    ctaUrl: p.onboardingUrl,
+    hu: {
+      preheader: "Pár perc, és kész az alap esküvőterveződ.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "Csak észbe kaptunk: regisztráltál a Weddly-n, de még nem fejezted be az alap beállítást.",
+        "Pár perc az egész — pár adat (nevek, dátum, vendégszám), és máris kapsz egy szabható költségvetést, vendéglistát és ülésrend-vázat.",
+        "Ha most nem alkalmas, leiratkozhatsz az emlékeztetőkről a levél alján.",
+      ],
+      cta: "Befejezem a tervező beállítását",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "Quick reminder: you signed up for Weddly but haven't finished the initial setup yet.",
+        "It only takes a few minutes — a few facts (names, date, guest count) and we'll seed a budget, guest list, and seating skeleton for you.",
+        "If now's not a good time, you can opt out of these reminders from the footer below.",
+      ],
+      cta: "Finish my planner",
+    },
+  }),
+
+  milestone_t90: (p, ctx) => ({
+    subject: "3 hónap az esküvőtökig / 3 months to the wedding",
+    ctaUrl: p.dashboardUrl,
+    hu: {
+      preheader: `${p.coupleDisplayName} — 3 hónap maradt. Mi van még hátra?`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "Pontosan 3 hónap múlva van a nagy nap.",
+        "Most jó alkalom: véglegesítsétek a vendéglistát, küldjétek ki az RSVP linkeket, és nézzétek át a költségvetést, hogy nincs-e elszállás. A Weddly mindenhez egy gombnyira van.",
+      ],
+      cta: "Folytatás a vezérlőpulton",
+      footnote: "Ezt a levelet csak párszor küldjük: 90, 30 és 7 nappal előtte.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "You're exactly 3 months out from the big day.",
+        "Good moment to: lock the guest list, send RSVP links, and double-check the budget. Everything's a click away in your Weddly dashboard.",
+      ],
+      cta: "Open dashboard",
+      footnote: "We only send these at 90, 30, and 7 days out.",
+    },
+  }),
+
+  milestone_t30: (p, ctx) => ({
+    subject: "1 hónap! / 1 month to go",
+    ctaUrl: p.dashboardUrl,
+    hu: {
+      preheader: `${p.coupleDisplayName} — 30 nap. Itt egy pár fontos teendő.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "Egy hónap maradt — innen kezdődik a célegyenes.",
+        "Ezen a héten a legfontosabbak: véglegesítsétek az ülésrendet, döntsetek a menüsorokról és az ételválasztásokról, küldjetek emlékeztetőt a még nem válaszoló vendégeknek. Minden eszköz a kezetekben van.",
+      ],
+      cta: "Vezérlőpult megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "One month left — the home stretch.",
+        "This week's priorities: finalize seating, lock the menu and meal counts, and chase any guests who still haven't RSVP'd.",
+      ],
+      cta: "Open dashboard",
+    },
+  }),
+
+  milestone_t7: (p, ctx) => ({
+    subject: "1 hét! / 1 week to go",
+    ctaUrl: p.dashboardUrl,
+    hu: {
+      preheader: `${p.coupleDisplayName} — utolsó hét. Nyomtatás, ülésrend, részletek.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "Egy hét — most már tényleg közel van.",
+        "Két dolog, amit érdemes most lezárni: nyomtassátok ki a végleges ülésrendet (A4/A3) és a névkártyákat (A6) a Nyomtatás fülön; küldjétek el a végleges fejszámot a helyszínnek és a catering-nek.",
+        "Pihenjetek is. A nehezén túl vagytok.",
+      ],
+      cta: "Nyomtatás megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "One week left.",
+        "Two things worth closing this week: print the final seating chart (A4/A3) and place cards (A6) from the Print tab; share the final headcount with your venue and caterer.",
+        "And rest. You've earned it.",
+      ],
+      cta: "Open print tab",
+    },
+  }),
+
+  wedding_today: (p, ctx) => ({
+    subject: "Ma van a nap / Today's the day 💛",
+    ctaUrl: CONFIG.frontendBaseUrl,
+    hu: {
+      preheader: `${p.coupleDisplayName} — gratulálunk!`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Ma van a nap — ${p.coupleDisplayName}.`,
+        "Köszönjük, hogy velünk terveztetek. Élvezzétek minden percét, mi addig csendben tartjuk a háttérben az adataitokat — bármikor visszanézhetitek később.",
+      ],
+      cta: "Vissza a Weddly-re",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `Today's the day — ${p.coupleDisplayName}.`,
+        "Thanks for planning with us. Enjoy every minute; your data stays here whenever you want to look back.",
+      ],
+      cta: "Back to Weddly",
+    },
+  }),
+};
+
+function rsvpStatusHu(status: "yes" | "no" | "maybe"): string {
+  if (status === "yes") return "ott lesz";
+  if (status === "no") return "nem tud jönni";
+  return "talán";
+}
+
+function rsvpStatusEn(status: "yes" | "no" | "maybe"): string {
+  if (status === "yes") return "attending";
+  if (status === "no") return "can't make it";
+  return "maybe";
+}
+
+function rsvpReceivedSubject(p: RsvpReceivedForCouplePayload): string {
+  if (p.rsvpStatus === "yes") return `${p.guestName} jön / ${p.guestName} is in`;
+  if (p.rsvpStatus === "no") return `${p.guestName} sajnos nem / ${p.guestName} can't make it`;
+  return `${p.guestName} talán / ${p.guestName} responded "maybe"`;
+}
+
+function rsvpThanksDetailHu(p: RsvpThanksForGuestPayload): string {
+  if (p.rsvpStatus === "yes") {
+    return p.weddingDate
+      ? `Találkozunk ${p.weddingDate}-n. Ha valami változna, a lenti gombbal bármikor módosíthatod.`
+      : "Találkozunk! Ha valami változna, a lenti gombbal bármikor módosíthatod.";
+  }
+  if (p.rsvpStatus === "no") {
+    return "Sajnáljuk, hogy nem tudsz jönni — köszönjük, hogy szóltál. Ha mégis változna, a lenti linken bármikor módosíthatod.";
+  }
+  return "Köszönjük a választ. Ha biztos lesz, a lenti linken bármikor módosíthatod a választ.";
+}
+
+function rsvpThanksDetailEn(p: RsvpThanksForGuestPayload): string {
+  if (p.rsvpStatus === "yes") {
+    return p.weddingDate
+      ? `See you on ${p.weddingDate}. Use the link below if anything changes.`
+      : "See you there. Use the link below if anything changes.";
+  }
+  if (p.rsvpStatus === "no") {
+    return "Sorry you can't make it — thanks for letting us know. The link below stays open if plans change.";
+  }
+  return "Thanks for letting us know. You can update your answer any time using the link below.";
+}

@@ -10,7 +10,7 @@ import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from ".
 import { bilingualBody, sendEmail } from "../lib/mailer";
 import { reportError } from "../lib/observability";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
-import { getUserByEmail, getUserById, toUser, type UserRow } from "../lib/users";
+import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { createVerificationToken } from "./email_verify";
 
 interface RegisterBody {

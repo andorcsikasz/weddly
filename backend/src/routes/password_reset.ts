@@ -11,7 +11,7 @@ import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { bilingualBody, sendEmail } from "../lib/mailer";
 import { reportError } from "../lib/observability";
 import { rateLimit } from "../lib/rate_limit";
-import { getUserByEmail } from "../lib/users";
+import { getUserByEmail } from "../domain/users";
 
 const RESET_TTL_MS = 1000 * 60 * 60; // 1 hour
 const FORGOT_BUCKET = { capacity: 5, refillRate: 1 / 60 }; // 5/min/IP, refills 1/min

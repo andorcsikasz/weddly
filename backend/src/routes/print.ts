@@ -2,11 +2,11 @@
 
 import { db } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { getCoupleForUser } from "../lib/couples";
+import { getCoupleForUser } from "../domain/couples";
 import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
-import { renderPlaceCardsPdf, renderSeatingChartPdf } from "../lib/pdf";
-import { listGuestsByCouple, toGuest } from "../lib/guests";
-import type { GuestRow } from "../lib/guests";
+import { renderPlaceCardsPdf, renderSeatingChartPdf } from "../domain/pdf";
+import { listGuestsByCouple, toGuest } from "../domain/guests";
+import type { GuestRow } from "../domain/guests";
 import type { SeatAssignment, SeatingTable, TableShape } from "@shared/types";
 
 interface TableRow {

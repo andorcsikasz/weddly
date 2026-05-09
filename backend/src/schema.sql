@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS couples (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   partner_a_id INTEGER NOT NULL,                               -- FK lazily; users row references couples.id, chicken-and-egg
   partner_b_id INTEGER,
-  display_name TEXT NOT NULL,
+  display_name TEXT NOT NULL,                                  -- derived as "{bride_name} & {groom_name}" on write
+  bride_name TEXT NOT NULL DEFAULT '',
+  groom_name TEXT NOT NULL DEFAULT '',
   wedding_date TEXT,                                           -- YYYY-MM-DD
   target_guest_count INTEGER,
   budget_ceiling_huf INTEGER,
@@ -192,3 +194,49 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_email_verify_user ON email_verification_tokens(user_id);
+
+-- Per-user email preferences. Created lazily on first send. The
+-- `unsubscribe_token` is a stable random hex used for one-click unsubscribe
+-- links in the footer (only `lifecycle` mail honours opt-out — `transactional`
+-- always sends because it carries account-critical info).
+CREATE TABLE IF NOT EXISTS email_preferences (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  unsubscribe_token TEXT NOT NULL UNIQUE,
+  lifecycle_opt_out INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- Append-only log of every transactional email attempt. Used for support
+-- ("did Anna get her verify mail?") and re-send tooling. We keep `payload_json`
+-- so a stuck send can be replayed later. Recipient PII is purged when the
+-- couple is purged (purge.ts deletes via user-id link).
+CREATE TABLE IF NOT EXISTS email_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL, -- nullable for guest-bound mail
+  couple_id INTEGER REFERENCES couples(id) ON DELETE SET NULL,
+  kind TEXT NOT NULL,                                          -- e.g. 'welcome_verify', 'rsvp_thanks'
+  category TEXT NOT NULL,                                      -- 'transactional' | 'lifecycle'
+  to_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  status TEXT NOT NULL,                                        -- 'sent' | 'failed' | 'skipped_opt_out' | 'skipped_no_provider'
+  error TEXT,
+  payload_json TEXT,                                           -- redacted JSON of the template payload
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_email_log_user ON email_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_email_log_couple ON email_log(couple_id);
+CREATE INDEX IF NOT EXISTS idx_email_log_kind ON email_log(kind);
+
+-- Per-couple lifecycle dispatch ledger. Idempotency for cron-driven sends:
+-- one row per (couple_id, kind) so the worker doesn't re-fire the same
+-- milestone reminder if it crashes mid-sweep.
+CREATE TABLE IF NOT EXISTS email_dispatches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER REFERENCES couples(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  dispatched_at INTEGER NOT NULL,
+  UNIQUE(couple_id, user_id, kind)
+);
+CREATE INDEX IF NOT EXISTS idx_email_dispatches_kind ON email_dispatches(kind);

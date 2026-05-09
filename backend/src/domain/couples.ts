@@ -1,6 +1,17 @@
 // Couple row → DTO mapper + the workspace helpers used by every protected route.
 
-import type { Couple, CoupleStatus, WeddingStyleTag } from "@shared/types";
+import type {
+  BudgetGoal,
+  BudgetKind,
+  Couple,
+  CoupleStatus,
+  GuestCountGoal,
+  GuestCountKind,
+  WeddingDateGoal,
+  WeddingDateKind,
+  WeddingSeason,
+  WeddingStyleTag,
+} from "@shared/types";
 import { db } from "../db";
 
 export interface CoupleRow {
@@ -8,9 +19,21 @@ export interface CoupleRow {
   partner_a_id: number;
   partner_b_id: number | null;
   display_name: string;
+  bride_name: string;
+  groom_name: string;
   wedding_date: string | null;
+  wedding_date_kind: string | null;
+  wedding_target_year: number | null;
+  wedding_target_month: number | null;
+  wedding_target_season: string | null;
   target_guest_count: number | null;
+  guest_count_kind: string | null;
+  target_guest_count_min: number | null;
+  target_guest_count_max: number | null;
   budget_ceiling_huf: number | null;
+  budget_kind: string | null;
+  budget_ceiling_min_huf: number | null;
+  budget_ceiling_max_huf: number | null;
   location_lat: number | null;
   location_lng: number | null;
   location_radius_km: number | null;
@@ -19,6 +42,55 @@ export interface CoupleRow {
   created_at: number;
   updated_at: number;
   onboarded_at: number | null;
+}
+
+const DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
+  "exact",
+  "month",
+  "season",
+  "year",
+  "tbd",
+]);
+const SEASONS: ReadonlySet<WeddingSeason> = new Set(["spring", "summer", "fall", "winter"]);
+const COUNT_KINDS: ReadonlySet<GuestCountKind> = new Set(["exact", "range", "tbd"]);
+const BUDGET_KINDS: ReadonlySet<BudgetKind> = new Set(["exact", "range", "tbd"]);
+
+function rowToDateGoal(row: CoupleRow): WeddingDateGoal {
+  const raw = (row.wedding_date_kind ?? "exact") as WeddingDateKind;
+  const kind: WeddingDateKind = DATE_KINDS.has(raw) ? raw : "exact";
+  const season =
+    row.wedding_target_season && SEASONS.has(row.wedding_target_season as WeddingSeason)
+      ? (row.wedding_target_season as WeddingSeason)
+      : null;
+  return {
+    kind,
+    exact_date: kind === "exact" ? row.wedding_date : null,
+    target_year: row.wedding_target_year,
+    target_month: row.wedding_target_month,
+    target_season: season,
+  };
+}
+
+function rowToGuestGoal(row: CoupleRow): GuestCountGoal {
+  const raw = (row.guest_count_kind ?? "exact") as GuestCountKind;
+  const kind: GuestCountKind = COUNT_KINDS.has(raw) ? raw : "exact";
+  return {
+    kind,
+    exact: kind === "exact" ? row.target_guest_count : null,
+    min: row.target_guest_count_min,
+    max: row.target_guest_count_max,
+  };
+}
+
+function rowToBudgetGoal(row: CoupleRow): BudgetGoal {
+  const raw = (row.budget_kind ?? "exact") as BudgetKind;
+  const kind: BudgetKind = BUDGET_KINDS.has(raw) ? raw : "exact";
+  return {
+    kind,
+    exact_huf: kind === "exact" ? row.budget_ceiling_huf : null,
+    min_huf: row.budget_ceiling_min_huf,
+    max_huf: row.budget_ceiling_max_huf,
+  };
 }
 
 export function toCouple(row: CoupleRow): Couple {
@@ -34,8 +106,13 @@ export function toCouple(row: CoupleRow): Couple {
     partner_a_id: row.partner_a_id,
     partner_b_id: row.partner_b_id,
     display_name: row.display_name,
+    bride_name: row.bride_name,
+    groom_name: row.groom_name,
+    wedding_date_goal: rowToDateGoal(row),
     wedding_date: row.wedding_date,
+    guest_count_goal: rowToGuestGoal(row),
     target_guest_count: row.target_guest_count,
+    budget_goal: rowToBudgetGoal(row),
     budget_ceiling_huf: row.budget_ceiling_huf,
     location_lat: row.location_lat,
     location_lng: row.location_lng,

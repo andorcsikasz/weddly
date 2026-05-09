@@ -11,12 +11,12 @@ import {
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../lib/couples";
+import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../domain/couples";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { reportError } from "../lib/observability";
-import { generateInviteToken } from "../lib/invite_codes";
+import { generateInviteToken } from "../domain/invite_codes";
 import { bilingualBody, sendEmail } from "../lib/mailer";
-import { getUserById } from "../lib/users";
+import { getUserById } from "../domain/users";
 
 interface InviteRow {
   id: number;
