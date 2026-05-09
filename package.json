@@ -11,7 +11,7 @@
     "build": "cd frontend && bun run build",
     "build:frontend": "cd frontend && bun run build",
     "typecheck": "cd backend && bun run typecheck && cd ../frontend && bun run typecheck",
-    "test": "cd backend && bun test",
+    "test": "cd backend && bun test && cd ../frontend && bun test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
