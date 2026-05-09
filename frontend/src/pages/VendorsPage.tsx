@@ -1,6 +1,12 @@
-import { ArrowLeft, CheckCircle2, Filter, Globe2, Sparkles } from "lucide-react";
-import { type FormEvent, type JSX, useState } from "react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  PhaseAftermathArt,
+  PhaseGuestsArt,
+  PhaseSuppliersArt,
+  VendorHeroArt,
+} from "../components/illustrations";
 import { PublicShell } from "../components/PublicShell";
 import { TextField } from "../components/ui/TextField";
 import { useT } from "../lib/i18n";
@@ -13,33 +19,38 @@ export default function VendorsPage() {
   return (
     <PublicShell>
       {/* Hero */}
-      <section className="mx-auto max-w-4xl px-4 pt-12 pb-12 text-center sm:px-6 sm:pt-20">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-terracotta-200 bg-terracotta-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-terracotta-700">
-          {t("vendors.pill")}
-        </span>
-        <h1 className="mt-5 font-display text-4xl leading-tight tracking-tight text-ink-900 sm:text-6xl">
-          {t("vendors.hero_title")}
-        </h1>
-        <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg">
-          {t("vendors.hero_sub")}
-        </p>
+      <section className="mx-auto grid max-w-6xl gap-10 px-4 pt-12 pb-12 sm:px-6 sm:pt-20 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16">
+        <div className="text-center lg:text-left">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-terracotta-200 bg-terracotta-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-terracotta-700">
+            {t("vendors.pill")}
+          </span>
+          <h1 className="mt-5 font-display text-4xl leading-tight tracking-tight text-ink-900 sm:text-6xl">
+            {t("vendors.hero_title")}
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0">
+            {t("vendors.hero_sub")}
+          </p>
+        </div>
+        <div className="mx-auto w-full max-w-md lg:max-w-none">
+          <VendorHeroArt className="h-auto w-full" />
+        </div>
       </section>
 
       {/* Benefits */}
       <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 sm:pb-20">
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3">
           <Benefit
-            icon={<Filter size={18} />}
+            art={<PhaseSuppliersArt className="h-12 w-12" />}
             title={t("vendors.benefit_1_title")}
             body={t("vendors.benefit_1_body")}
           />
           <Benefit
-            icon={<Globe2 size={18} />}
+            art={<PhaseGuestsArt className="h-12 w-12" />}
             title={t("vendors.benefit_2_title")}
             body={t("vendors.benefit_2_body")}
           />
           <Benefit
-            icon={<Sparkles size={18} />}
+            art={<PhaseAftermathArt className="h-12 w-12" />}
             title={t("vendors.benefit_3_title")}
             body={t("vendors.benefit_3_body")}
           />
@@ -47,7 +58,7 @@ export default function VendorsPage() {
       </section>
 
       {/* Waitlist form */}
-      <section className="border-y border-chalk-200 bg-white">
+      <section className="bg-white">
         <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-20">
           <WaitlistForm />
         </div>
@@ -67,12 +78,18 @@ export default function VendorsPage() {
   );
 }
 
-function Benefit({ icon, title, body }: { icon: JSX.Element; title: string; body: string }) {
+function Benefit({
+  art,
+  title,
+  body,
+}: {
+  art: ReactNode;
+  title: string;
+  body: string;
+}) {
   return (
-    <article className="rounded-2xl border border-chalk-200 bg-chalk-50 p-6">
-      <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-terracotta-100 text-terracotta-700">
-        {icon}
-      </div>
+    <article className="rounded-3xl bg-chalk-50 p-6">
+      <div className="mb-4">{art}</div>
       <h3 className="font-serif text-xl text-ink-900">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-ink-600">{body}</p>
     </article>
@@ -89,7 +106,7 @@ function WaitlistForm() {
 
   if (submitted) {
     return (
-      <div className="rounded-2xl border border-terracotta-200 bg-terracotta-50 p-8 text-center">
+      <div className="rounded-3xl bg-terracotta-50 p-8 text-center ring-1 ring-terracotta-200">
         <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-terracotta-500 text-white">
           <CheckCircle2 size={22} />
         </div>
@@ -105,7 +122,6 @@ function WaitlistForm() {
     e.preventDefault();
     if (submitting) return;
     setSubmitting(true);
-    // FE-only: simulate a brief network call so the submit state is visible.
     window.setTimeout(() => {
       setSubmitted(true);
       setSubmitting(false);
