@@ -3,6 +3,7 @@
 import type { CouplePauseRequest, CoupleStatus } from "@shared/types";
 import { useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { useConfirm } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { exportApi, pauseApi } from "../lib/endpoints";
 import { formatDate } from "../lib/format";
@@ -10,6 +11,7 @@ import { useT } from "../lib/i18n";
 
 export default function SettingsPage() {
   const { t, locale, setLocale } = useT();
+  const confirm = useConfirm();
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,14 @@ export default function SettingsPage() {
   }, []);
 
   async function startPause() {
-    if (!confirm(t("settings.pause_confirm"))) return;
+    const ok = await confirm({
+      title: t("settings.pause_confirm_title"),
+      body: t("settings.pause_confirm"),
+      confirmLabel: t("settings.pause_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await pauseApi.request();
       refresh();

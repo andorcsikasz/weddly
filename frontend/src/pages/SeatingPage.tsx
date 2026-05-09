@@ -6,6 +6,7 @@ import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/ty
 import { ChefHat, Plus, Printer, Trash2 } from "lucide-react";
 import { type DragEvent, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { useConfirm, useEntryPrompt } from "../components/ui";
 import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
@@ -17,6 +18,8 @@ interface DragData {
 
 export default function SeatingPage() {
   const { t } = useT();
+  const confirm = useConfirm();
+  const promptEntry = useEntryPrompt();
   const [tables, setTables] = useState<SeatingTable[]>([]);
   const [assignments, setAssignments] = useState<SeatAssignment[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -37,13 +40,17 @@ export default function SeatingPage() {
   const unassigned = useMemo(() => guests.filter((g) => !seatedIds.has(g.id)), [guests, seatedIds]);
 
   async function addTable() {
-    const label = prompt(
-      t("seating.table_label_prompt"),
-      `${t("nav.seating")} ${tables.length + 1}`,
-    );
-    if (!label?.trim()) return;
+    const label = await promptEntry({
+      title: t("seating.add_table"),
+      label: t("seating.table_label_prompt"),
+      defaultValue: `${t("nav.seating")} ${tables.length + 1}`,
+      confirmLabel: t("common.save"),
+      cancelLabel: t("common.cancel"),
+      validate: (v) => (v.trim().length === 0 ? t("seating.table_label_prompt") : null),
+    });
+    if (!label) return;
     await seatingApi.createTable({
-      label: label.trim(),
+      label,
       shape: "round",
       seats: 8,
       x_mm: 0,
@@ -52,9 +59,16 @@ export default function SeatingPage() {
     refresh();
   }
 
-  async function deleteTable(t: SeatingTable) {
-    if (!confirm(`${t.label} — ${useT().t("seating.confirm_delete_table")}`)) return;
-    await seatingApi.removeTable(t.id);
+  async function deleteTable(table: SeatingTable) {
+    const ok = await confirm({
+      title: t("seating.confirm_delete_table"),
+      body: table.label,
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    await seatingApi.removeTable(table.id);
     refresh();
   }
 

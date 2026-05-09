@@ -12,6 +12,9 @@ export interface LocaleMessages {
     optional: string;
     error_generic: string;
     sign_out: string;
+    confirm_delete_title: string;
+    confirm_delete_body: string;
+    confirm_delete: string;
   };
   app: {
     name: string;
@@ -203,6 +206,9 @@ export interface LocaleMessages {
     add_line: string;
     save_snapshot: string;
     snapshot_name_prompt: string;
+    snapshot_name_label: string;
+    snapshot_name_help: string;
+    snapshot_save_failed: string;
     snapshots_title: string;
     no_snapshots: string;
     delete: string;
@@ -276,6 +282,8 @@ export interface LocaleMessages {
     pause_body: string;
     pause_button: string;
     pause_confirm: string;
+    pause_confirm_title: string;
+    pause_confirm_yes: string;
     pause_pending: string;
     pause_pending_until: string;
     cancel_pause: string;

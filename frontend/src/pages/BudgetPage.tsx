@@ -4,6 +4,7 @@ import type { BudgetCategory, BudgetLine, BudgetSnapshot } from "@shared/types";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { budgetApi, coupleApi } from "../lib/endpoints";
 import { formatHuf } from "../lib/format";
@@ -29,6 +30,9 @@ const CATEGORIES: BudgetCategory[] = [
 
 export default function BudgetPage() {
   const { t, locale } = useT();
+  const confirm = useConfirm();
+  const promptEntry = useEntryPrompt();
+  const toast = useToast();
   const [lines, setLines] = useState<BudgetLine[]>([]);
   const [snapshots, setSnapshots] = useState<BudgetSnapshot[]>([]);
   const [budgetCap, setBudgetCap] = useState<number | null>(null);
@@ -90,25 +94,47 @@ export default function BudgetPage() {
   }
 
   async function removeLine(id: number) {
-    if (!confirm(t("guests.confirm_delete"))) return;
+    const ok = await confirm({
+      title: t("common.confirm_delete_title"),
+      body: t("common.confirm_delete_body"),
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
     await budgetApi.removeLine(id);
     setLines(lines.filter((l) => l.id !== id));
   }
 
   async function saveSnapshot() {
-    const name = prompt(t("budget.snapshot_name_prompt"));
-    if (!name?.trim()) return;
+    const name = await promptEntry({
+      title: t("budget.save_snapshot"),
+      label: t("budget.snapshot_name_label"),
+      helperText: t("budget.snapshot_name_help"),
+      placeholder: t("budget.snapshot_name_prompt"),
+      confirmLabel: t("common.save"),
+      cancelLabel: t("common.cancel"),
+      validate: (v) => (v.trim().length === 0 ? t("budget.snapshot_name_label") : null),
+    });
+    if (!name) return;
     try {
-      await budgetApi.createSnapshot({ name: name.trim() });
+      await budgetApi.createSnapshot({ name });
       const r = await budgetApi.listSnapshots();
       setSnapshots(r.snapshots);
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : t("common.error_generic"));
+      toast.error(e instanceof ApiError ? e.message : t("budget.snapshot_save_failed"));
     }
   }
 
   async function removeSnapshot(id: number) {
-    if (!confirm(t("guests.confirm_delete"))) return;
+    const ok = await confirm({
+      title: t("common.confirm_delete_title"),
+      body: t("common.confirm_delete_body"),
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
     await budgetApi.removeSnapshot(id);
     setSnapshots(snapshots.filter((s) => s.id !== id));
   }

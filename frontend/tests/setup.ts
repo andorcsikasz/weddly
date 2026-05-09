@@ -10,7 +10,10 @@ GlobalRegistrator.register({ url: "http://localhost:5173" });
 
 expect.extend(jestDomMatchers as Parameters<typeof expect.extend>[0]);
 
-// Keep DOM hermetic across tests so rendered nodes don't leak.
+// Reset the document between tests so portals (toasts, dialogs) don't leak.
+// We deliberately don't use RTL's `cleanup()` here — its unmount path triggers
+// removeChild on portal nodes that happy-dom's tree no longer owns, throwing
+// DOMException. Wiping innerHTML keeps happy-dom and React in sync.
 afterEach(() => {
   document.body.innerHTML = "";
 });

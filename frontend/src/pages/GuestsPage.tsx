@@ -4,6 +4,7 @@ import type { Guest, GuestGroupTag, MealChoice, RsvpStatus } from "@shared/types
 import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { guestApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -23,10 +24,11 @@ const RSVPS: RsvpStatus[] = ["pending", "yes", "no", "maybe"];
 
 export default function GuestsPage() {
   const { t } = useT();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [editing, setEditing] = useState<Guest | "new" | null>(null);
   const [importing, setImporting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   async function refresh() {
     const r = await guestApi.list();
@@ -37,13 +39,15 @@ export default function GuestsPage() {
     refresh();
   }, []);
 
-  function flash(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2000);
-  }
-
   async function onDelete(id: number) {
-    if (!confirm(t("guests.confirm_delete"))) return;
+    const ok = await confirm({
+      title: t("guests.confirm_delete"),
+      body: t("common.confirm_delete_body"),
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
     await guestApi.remove(id);
     refresh();
   }
@@ -51,7 +55,7 @@ export default function GuestsPage() {
   function copyInvite(code: string) {
     const url = `${window.location.origin}/rsvp/${code}`;
     navigator.clipboard?.writeText(url);
-    flash(t("guests.invite_copied"));
+    toast.success(t("guests.invite_copied"));
   }
 
   async function onImport(file: File) {
@@ -59,10 +63,10 @@ export default function GuestsPage() {
     try {
       const text = await file.text();
       const r = await guestApi.importCsv(text);
-      flash(t("guests.import_done", { count: r.created_count }));
+      toast.success(t("guests.import_done", { count: r.created_count }));
       refresh();
     } catch (e) {
-      flash(e instanceof ApiError ? e.message : t("common.error_generic"));
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setImporting(false);
     }
@@ -179,12 +183,6 @@ export default function GuestsPage() {
             refresh();
           }}
         />
-      )}
-
-      {toast && (
-        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-900 px-4 py-2 text-sm text-paper-100 shadow-pop">
-          {toast}
-        </div>
       )}
     </AppShell>
   );
