@@ -97,6 +97,58 @@ export interface LocaleMessages {
     style_destination: string;
     finish: string;
     saving: string;
+    // ── Uncertainty: kind selectors and helper copy ───────────────────
+    date_kind_question: string;
+    date_kind_exact: string;
+    date_kind_month: string;
+    date_kind_season: string;
+    date_kind_year: string;
+    date_kind_tbd: string;
+    date_year_label: string;
+    date_month_label: string;
+    date_season_label: string;
+    date_kind_help_tbd: string;
+    guest_kind_question: string;
+    guest_kind_exact: string;
+    guest_kind_range: string;
+    guest_kind_tbd: string;
+    guest_min_label: string;
+    guest_max_label: string;
+    budget_kind_question: string;
+    budget_kind_exact: string;
+    budget_kind_range: string;
+    budget_kind_tbd: string;
+    budget_min_label: string;
+    budget_max_label: string;
+    budget_preview_label: string;
+  };
+  goal: {
+    date_tbd: string;
+    date_season: string;
+    count_exact: string;
+    count_range: string;
+    count_tbd: string;
+    budget_tbd: string;
+  };
+  season: {
+    spring: string;
+    summer: string;
+    fall: string;
+    winter: string;
+  };
+  month: {
+    "1": string;
+    "2": string;
+    "3": string;
+    "4": string;
+    "5": string;
+    "6": string;
+    "7": string;
+    "8": string;
+    "9": string;
+    "10": string;
+    "11": string;
+    "12": string;
   };
   dashboard: {
     title: string;

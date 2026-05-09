@@ -274,6 +274,134 @@ describe("onboarding + invites", () => {
     expect(r.status).toBe(200);
     expect(r.data.couple).toBeNull();
   });
+
+  test("structured-goal onboarding: season + range + range, with seeded budget at midpoint", async () => {
+    wipeAll();
+    const u = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "fuzzy@weddly.test",
+      password: "supersafe123",
+      full_name: "Fuzzy",
+    });
+
+    const ob = await req<{
+      couple: {
+        id: number;
+        display_name: string;
+        bride_name: string;
+        groom_name: string;
+        wedding_date_goal: {
+          kind: string;
+          target_year: number | null;
+          target_season: string | null;
+        };
+        guest_count_goal: { kind: string; min: number | null; max: number | null };
+        budget_goal: { kind: string; min_huf: number | null; max_huf: number | null };
+      };
+    }>(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: { kind: "season", target_year: 2027, target_season: "summer" },
+        guest_count_goal: { kind: "range", min: 60, max: 100 },
+        budget_goal: { kind: "range", min_huf: 4_000_000, max_huf: 6_000_000 },
+        style_tags: ["modern"],
+      },
+      { token: u.data.token },
+    );
+    expect(ob.status).toBe(201);
+    expect(ob.data.couple.display_name).toBe("Anna & Bence");
+    expect(ob.data.couple.bride_name).toBe("Anna");
+    expect(ob.data.couple.groom_name).toBe("Bence");
+    expect(ob.data.couple.wedding_date_goal.kind).toBe("season");
+    expect(ob.data.couple.wedding_date_goal.target_year).toBe(2027);
+    expect(ob.data.couple.wedding_date_goal.target_season).toBe("summer");
+    expect(ob.data.couple.guest_count_goal.kind).toBe("range");
+    expect(ob.data.couple.guest_count_goal.min).toBe(60);
+    expect(ob.data.couple.guest_count_goal.max).toBe(100);
+    expect(ob.data.couple.budget_goal.kind).toBe("range");
+    expect(ob.data.couple.budget_goal.min_huf).toBe(4_000_000);
+    expect(ob.data.couple.budget_goal.max_huf).toBe(6_000_000);
+
+    // Budget seeding picks the midpoint (5M HUF) so venue (25%) lands at 1.25M.
+    const venueLine = db
+      .prepare("SELECT planned_huf FROM budget_lines WHERE couple_id = ? AND category = 'venue'")
+      .get(ob.data.couple.id) as { planned_huf: number } | undefined;
+    expect(venueLine?.planned_huf).toBe(1_250_000);
+  });
+
+  test("structured-goal onboarding: TBD across the board seeds no budget lines", async () => {
+    wipeAll();
+    const u = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "noidea@weddly.test",
+      password: "supersafe123",
+      full_name: "No Idea",
+    });
+    const ob = await req<{
+      couple: {
+        id: number;
+        wedding_date_goal: { kind: string };
+        guest_count_goal: { kind: string };
+        budget_goal: { kind: string };
+      };
+    }>(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: { kind: "tbd" },
+        guest_count_goal: { kind: "tbd" },
+        budget_goal: { kind: "tbd" },
+        style_tags: [],
+      },
+      { token: u.data.token },
+    );
+    expect(ob.status).toBe(201);
+    expect(ob.data.couple.wedding_date_goal.kind).toBe("tbd");
+    expect(ob.data.couple.guest_count_goal.kind).toBe("tbd");
+    expect(ob.data.couple.budget_goal.kind).toBe("tbd");
+
+    const linesCount = db
+      .prepare("SELECT count(*) as c FROM budget_lines WHERE couple_id = ?")
+      .get(ob.data.couple.id) as { c: number };
+    expect(linesCount.c).toBe(0);
+  });
+
+  test("structured-goal onboarding rejects invalid kind / range inversion", async () => {
+    wipeAll();
+    const u = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "bad@weddly.test",
+      password: "supersafe123",
+      full_name: "Bad",
+    });
+    const bad = await req(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: { kind: "season", target_year: 2027 }, // missing target_season
+        style_tags: [],
+      },
+      { token: u.data.token },
+    );
+    expect(bad.status).toBe(400);
+
+    const inverted = await req(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        guest_count_goal: { kind: "range", min: 200, max: 50 }, // min > max
+        style_tags: [],
+      },
+      { token: u.data.token },
+    );
+    expect(inverted.status).toBe(400);
+  });
 });
 
 describe("health", () => {

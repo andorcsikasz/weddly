@@ -6,7 +6,7 @@ import { type JSX, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { coupleApi } from "../lib/endpoints";
-import { formatDate, formatHuf } from "../lib/format";
+import { formatBudgetGoal, formatGuestCountGoal, formatWeddingDateGoal } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 export default function DashboardPage() {
@@ -36,39 +36,45 @@ export default function DashboardPage() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  const daysUntil = couple.wedding_date
+  // Countdown only renders for kind='exact' — for fuzzier goals we don't
+  // know which day to count down to, so the goal label carries the meaning.
+  const exactDate = couple.wedding_date_goal.kind === "exact" ? couple.wedding_date : null;
+  const daysUntil = exactDate
     ? Math.max(
         0,
         Math.round(
-          (new Date(`${couple.wedding_date}T00:00:00`).getTime() - Date.now()) /
-            (1000 * 60 * 60 * 24),
+          (new Date(`${exactDate}T00:00:00`).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
         ),
       )
     : null;
+
+  const dateText = formatWeddingDateGoal(couple.wedding_date_goal, { t, locale });
+  const guestText = formatGuestCountGoal(couple.guest_count_goal, { t, locale });
+  const budgetText = formatBudgetGoal(couple.budget_goal, { t, locale });
+  const showGuestBadge = couple.guest_count_goal.kind !== "tbd";
+  const showBudgetBadge = couple.budget_goal.kind !== "tbd";
 
   return (
     <AppShell>
       <header className="mb-8">
         <h1 className="font-serif text-4xl">{couple.display_name}</h1>
         <div className="mt-2 flex flex-wrap gap-2 text-sm text-ink-600">
-          {couple.wedding_date && (
-            <span className="badge-paper">
-              <Calendar size={14} /> {formatDate(couple.wedding_date, locale)}
-            </span>
-          )}
+          <span className="badge-paper">
+            <Calendar size={14} /> {dateText}
+          </span>
           {daysUntil !== null && (
             <span className="badge-blush">
               {t("dashboard.wedding_in_days", { days: daysUntil })}
             </span>
           )}
-          {couple.target_guest_count && (
+          {showGuestBadge && (
             <span className="badge-paper">
-              <Users size={14} /> {couple.target_guest_count} {t("dashboard.target_guests")}
+              <Users size={14} /> {guestText}
             </span>
           )}
-          {couple.budget_ceiling_huf && (
+          {showBudgetBadge && (
             <span className="badge-paper">
-              {t("dashboard.budget_ceiling")}: {formatHuf(couple.budget_ceiling_huf, locale)}
+              {t("dashboard.budget_ceiling")}: {budgetText}
             </span>
           )}
         </div>

@@ -2,12 +2,14 @@
 
 import type {
   AuthSession,
+  BudgetGoal,
   BudgetLine,
   BudgetSnapshot,
   Couple,
   CoupleInvite,
   CouplePauseRequest,
   CoupleStatus,
+  GuestCountGoal,
   Guest,
   PublicRsvpView,
   SeatAssignment,
@@ -15,6 +17,7 @@ import type {
   SeatingTable,
   TableShape,
   User,
+  WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
@@ -39,9 +42,14 @@ export const authApi = {
 export interface OnboardInput {
   bride_name: string;
   groom_name: string;
-  wedding_date: string | null;
-  target_guest_count: number | null;
-  budget_ceiling_huf: number | null;
+  /** Structured goal — preferred. If absent, the legacy scalars below are honoured. */
+  wedding_date_goal?: WeddingDateGoal;
+  guest_count_goal?: GuestCountGoal;
+  budget_goal?: BudgetGoal;
+  /** Legacy scalars — kept for one or two clients still on the old shape. */
+  wedding_date?: string | null;
+  target_guest_count?: number | null;
+  budget_ceiling_huf?: number | null;
   location_lat?: number | null;
   location_lng?: number | null;
   location_radius_km?: number | null;
