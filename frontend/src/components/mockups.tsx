@@ -7,7 +7,7 @@
  *
  * All colours come from design tokens: each colour group is wrapped in
  * a `<g className="text-…">` and inner shapes use `currentColor`. SVG
- * text inherits the parent's `font-family`, so we set `font-display` /
+ * text inherits the parent's `font-family`, so we set `font-serif` /
  * `font-sans` on group wrappers to keep typography in step with the
  * surrounding page.
  *
@@ -47,7 +47,7 @@ export function WorkspaceMockup({ className }: Common) {
         <rect x="6" y="14" width="640" height="440" rx="20" fill="currentColor" />
       </g>
       {/* Card frame */}
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect
           x="0"
           y="0"
@@ -61,28 +61,28 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
 
       {/* Sidebar */}
-      <g className="text-chalk-100">
+      <g className="text-paper-100">
         <path
           d="M 0 20 Q 0 0 20 0 L 140 0 L 140 440 L 20 440 Q 0 440 0 420 Z"
           fill="currentColor"
         />
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <line x1="140" y1="0" x2="140" y2="440" stroke="currentColor" strokeWidth="1" />
       </g>
 
       {/* Brand wordmark */}
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="20" y="36" fontSize="20" fill="currentColor">
           Weddly
         </text>
       </g>
 
       {/* Active nav item — Overview */}
-      <g className="text-terracotta-100">
+      <g className="text-blush-100">
         <rect x="12" y="78" width="116" height="32" rx="8" fill="currentColor" />
       </g>
-      <g className="text-terracotta-700 font-sans">
+      <g className="text-blush-700 font-sans">
         <circle cx="26" cy="94" r="3" fill="currentColor" />
         <text x="40" y="98" fontSize="11" fontWeight="600" fill="currentColor">
           {t("nav.dashboard")}
@@ -107,7 +107,7 @@ export function WorkspaceMockup({ className }: Common) {
       })}
 
       {/* Sidebar footer chip */}
-      <g className="text-chalk-300">
+      <g className="text-paper-300">
         <rect
           x="12"
           y="392"
@@ -127,12 +127,12 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
 
       {/* Main header */}
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="168" y="48" fontSize="26" fill="currentColor">
           Anna &amp; Bence
         </text>
       </g>
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         <rect
           x="436"
           y="26"
@@ -144,7 +144,7 @@ export function WorkspaceMockup({ className }: Common) {
           strokeWidth="1"
         />
       </g>
-      <g className="text-terracotta-700 font-sans">
+      <g className="text-blush-700 font-sans">
         <circle cx="450" cy="40" r="3" fill="currentColor" />
         <text x="460" y="44" fontSize="11" fill="currentColor">
           {t("landing.mockup_date")}
@@ -152,7 +152,7 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
 
       {/* Budget card */}
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect
           x="168"
           y="80"
@@ -169,7 +169,7 @@ export function WorkspaceMockup({ className }: Common) {
           {t("nav.budget")}
         </text>
       </g>
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="184" y="140" fontSize="22" fill="currentColor">
           2,8M
         </text>
@@ -179,20 +179,20 @@ export function WorkspaceMockup({ className }: Common) {
           / 3,5M Ft
         </text>
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect x="184" y="156" width="184" height="8" rx="4" fill="currentColor" />
       </g>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <rect x="184" y="156" width="148" height="8" rx="4" fill="currentColor" />
       </g>
-      <g className="text-chalk-300">
+      <g className="text-paper-300">
         <rect x="184" y="178" width="84" height="3" rx="1.5" fill="currentColor" />
         <rect x="184" y="188" width="120" height="3" rx="1.5" fill="currentColor" />
         <rect x="184" y="198" width="60" height="3" rx="1.5" fill="currentColor" />
       </g>
 
       {/* Guests card */}
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect
           x="400"
           y="80"
@@ -209,7 +209,7 @@ export function WorkspaceMockup({ className }: Common) {
           {t("nav.guests")}
         </text>
       </g>
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="416" y="140" fontSize="22" fill="currentColor">
           98
         </text>
@@ -221,7 +221,7 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
       {/* Avatar stack */}
       {STATUS_DOT_OFFSETS.map((dx, i) => (
-        <g key={dx} className={i % 2 === 0 ? "text-terracotta-300" : "text-terracotta-200"}>
+        <g key={dx} className={i % 2 === 0 ? "text-blush-300" : "text-blush-200"}>
           <circle cx={424 + dx} cy="172" r="9" fill="currentColor" stroke="white" strokeWidth="2" />
         </g>
       ))}
@@ -231,15 +231,15 @@ export function WorkspaceMockup({ className }: Common) {
         </text>
       </g>
       {/* RSVP status pills */}
-      <g className="text-terracotta-100">
+      <g className="text-blush-100">
         <rect x="416" y="192" width="64" height="14" rx="7" fill="currentColor" />
       </g>
-      <g className="text-terracotta-700 font-sans">
+      <g className="text-blush-700 font-sans">
         <text x="424" y="202" fontSize="8" fontWeight="600" fill="currentColor">
           {t("landing.mockup_yes_count", { n: 87 })}
         </text>
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect x="486" y="192" width="76" height="14" rx="7" fill="currentColor" />
       </g>
       <g className="text-ink-700 font-sans">
@@ -249,7 +249,7 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
 
       {/* Seating card */}
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect
           x="168"
           y="236"
@@ -266,7 +266,7 @@ export function WorkspaceMockup({ className }: Common) {
           {t("nav.seating")}
         </text>
       </g>
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="184" y="290" fontSize="16" fill="currentColor">
           {t("landing.mockup_seating_summary")}
         </text>
@@ -279,13 +279,13 @@ export function WorkspaceMockup({ className }: Common) {
           { tx: 200, ty: 0 },
         ].map((pos) => (
           <g key={`tbl-${pos.tx}`} transform={`translate(${pos.tx}, ${pos.ty})`}>
-            <g className="text-chalk-200">
+            <g className="text-paper-200">
               <circle cx="0" cy="0" r="20" fill="currentColor" />
             </g>
             <g className="text-ink-700">
               <circle cx="0" cy="0" r="20" fill="none" stroke="currentColor" strokeWidth="1" />
             </g>
-            <g className="text-terracotta-300">
+            <g className="text-blush-300">
               {TABLE_DEGS.map((deg) => {
                 const rad = (deg * Math.PI) / 180;
                 const cx = Math.cos(rad) * 28;
@@ -308,7 +308,7 @@ export function WorkspaceMockup({ className }: Common) {
         ))}
         {/* Head table */}
         <g transform="translate(360, 0)">
-          <g className="text-chalk-200">
+          <g className="text-paper-200">
             <rect x="-30" y="-10" width="60" height="20" rx="4" fill="currentColor" />
           </g>
           <g className="text-ink-700">
@@ -323,7 +323,7 @@ export function WorkspaceMockup({ className }: Common) {
               strokeWidth="1"
             />
           </g>
-          <g className="text-terracotta-300">
+          <g className="text-blush-300">
             {HEAD_TABLE_X.map((x) => (
               <rect
                 key={`top-${x}`}
@@ -351,7 +351,7 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
 
       {/* Confetti */}
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         <circle cx="608" cy="14" r="3" fill="currentColor" />
         <circle cx="620" cy="32" r="2" fill="currentColor" />
       </g>
@@ -390,7 +390,7 @@ export function BudgetMockup({ className }: Common) {
       <g className="text-ink-900" opacity="0.06">
         <rect x="4" y="10" width="480" height="360" rx="16" fill="currentColor" />
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect
           x="0"
           y="0"
@@ -409,14 +409,14 @@ export function BudgetMockup({ className }: Common) {
           {t("nav.budget")}
         </text>
       </g>
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="24" y="60" fontSize="18" fill="currentColor">
           {t("landing.mockup_live_budget_label")}
         </text>
       </g>
 
       {/* Slider */}
-      <g className="text-chalk-300">
+      <g className="text-paper-300">
         <line
           x1="24"
           y1="92"
@@ -427,7 +427,7 @@ export function BudgetMockup({ className }: Common) {
           strokeLinecap="round"
         />
       </g>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <line
           x1="24"
           y1="92"
@@ -460,10 +460,10 @@ export function BudgetMockup({ className }: Common) {
                 {labelFor(cat.key)}
               </text>
             </g>
-            <g className="text-chalk-200">
+            <g className="text-paper-200">
               <rect x="120" y={y - 5} width="280" height="9" rx="4.5" fill="currentColor" />
             </g>
-            <g className={cat.tone === "primary" ? "text-terracotta-500" : "text-terracotta-300"}>
+            <g className={cat.tone === "primary" ? "text-blush-500" : "text-blush-300"}>
               <rect
                 x="120"
                 y={y - 5}
@@ -483,7 +483,7 @@ export function BudgetMockup({ className }: Common) {
       })}
 
       {/* Total */}
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <line x1="24" y1="324" x2="456" y2="324" stroke="currentColor" strokeWidth="1" />
       </g>
       <g className="text-ink-700 font-sans">
@@ -491,7 +491,7 @@ export function BudgetMockup({ className }: Common) {
           {t("landing.mockup_total_spend")}
         </text>
       </g>
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="456" y="348" fontSize="16" fill="currentColor" textAnchor="end">
           2,8M / 3,5M Ft
         </text>
@@ -536,7 +536,7 @@ export function GuestListMockup({ className }: Common) {
       <g className="text-ink-900" opacity="0.06">
         <rect x="4" y="10" width="480" height="360" rx="16" fill="currentColor" />
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect
           x="0"
           y="0"
@@ -549,14 +549,14 @@ export function GuestListMockup({ className }: Common) {
         />
       </g>
 
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="24" y="40" fontSize="18" fill="currentColor">
           {t("nav.guests")} · 98 / 120
         </text>
       </g>
 
       {/* Search bar */}
-      <g className="text-chalk-300">
+      <g className="text-paper-300">
         <rect
           x="24"
           y="58"
@@ -584,15 +584,15 @@ export function GuestListMockup({ className }: Common) {
         </text>
       </g>
       {/* Filter chips */}
-      <g className="text-terracotta-100">
+      <g className="text-blush-100">
         <rect x="296" y="58" width="74" height="28" rx="14" fill="currentColor" />
       </g>
-      <g className="text-terracotta-700 font-sans">
+      <g className="text-blush-700 font-sans">
         <text x="304" y="76" fontSize="10" fontWeight="600" fill="currentColor">
           {t("landing.mockup_filter_all")} · 120
         </text>
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect x="378" y="58" width="78" height="28" rx="14" fill="currentColor" />
       </g>
       <g className="text-ink-700 font-sans">
@@ -618,28 +618,28 @@ export function GuestListMockup({ className }: Common) {
         const y = 132 + i * 40;
         const statusColor =
           row.status === "yes"
-            ? "text-terracotta-500"
+            ? "text-blush-500"
             : row.status === "pending"
-              ? "text-chalk-400"
+              ? "text-paper-500"
               : "text-ink-300";
         const statusBg =
           row.status === "yes"
-            ? "text-terracotta-100"
+            ? "text-blush-100"
             : row.status === "pending"
-              ? "text-chalk-200"
+              ? "text-paper-200"
               : "text-ink-100";
         const statusFg =
           row.status === "yes"
-            ? "text-terracotta-700"
+            ? "text-blush-700"
             : row.status === "pending"
               ? "text-ink-700"
               : "text-ink-500";
         const avatarTones = {
-          1: "text-terracotta-300",
-          2: "text-terracotta-200",
-          3: "text-chalk-300",
+          1: "text-blush-300",
+          2: "text-blush-200",
+          3: "text-paper-300",
           4: "text-ink-200",
-          5: "text-chalk-400",
+          5: "text-paper-500",
         } as const;
         return (
           <g key={row.name}>
@@ -668,7 +668,7 @@ export function GuestListMockup({ className }: Common) {
               </text>
             </g>
             {i < GUEST_ROWS.length - 1 && (
-              <g className="text-chalk-200">
+              <g className="text-paper-200">
                 <line
                   x1="24"
                   y1={y + 18}
@@ -702,7 +702,7 @@ export function SeatingMockup({ className }: Common) {
       <g className="text-ink-900" opacity="0.06">
         <rect x="4" y="10" width="480" height="360" rx="16" fill="currentColor" />
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect
           x="0"
           y="0"
@@ -722,7 +722,7 @@ export function SeatingMockup({ className }: Common) {
         </text>
       </g>
       {/* Add table chip */}
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <rect x="332" y="20" width="124" height="22" rx="11" fill="currentColor" />
       </g>
       <g className="text-white font-sans">
@@ -732,10 +732,10 @@ export function SeatingMockup({ className }: Common) {
       </g>
 
       {/* Floor / grid */}
-      <g className="text-chalk-100">
+      <g className="text-paper-100">
         <rect x="24" y="60" width="432" height="276" rx="8" fill="currentColor" />
       </g>
-      <g className="text-chalk-300">
+      <g className="text-paper-300">
         {[88, 152, 216, 280].map((y) => (
           <line
             key={`h-${y}`}
@@ -764,7 +764,7 @@ export function SeatingMockup({ className }: Common) {
 
       {/* Head table */}
       <g transform="translate(220, 92)">
-        <g className="text-chalk-50">
+        <g className="text-paper-50">
           <rect x="-50" y="-10" width="100" height="22" rx="4" fill="currentColor" />
         </g>
         <g className="text-ink-700">
@@ -779,12 +779,12 @@ export function SeatingMockup({ className }: Common) {
             strokeWidth="1"
           />
         </g>
-        <g className="text-terracotta-500 font-sans">
+        <g className="text-blush-500 font-sans">
           <text x="0" y="6" fontSize="9" fontWeight="600" fill="currentColor" textAnchor="middle">
             {t("landing.mockup_table_head")}
           </text>
         </g>
-        <g className="text-terracotta-300">
+        <g className="text-blush-300">
           {[-32, -16, 0, 16, 32].map((x) => (
             <rect
               key={`htop-${x}`}
@@ -802,18 +802,18 @@ export function SeatingMockup({ className }: Common) {
       {/* Round tables */}
       {tables.map((tbl) => (
         <g key={tbl.key} transform={`translate(${tbl.x}, ${tbl.y})`}>
-          <g className="text-chalk-50">
+          <g className="text-paper-50">
             <circle cx="0" cy="0" r="22" fill="currentColor" />
           </g>
           <g className="text-ink-700">
             <circle cx="0" cy="0" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
           </g>
-          <g className="text-terracotta-500 font-sans">
+          <g className="text-blush-500 font-sans">
             <text x="0" y="3" fontSize="8" fontWeight="600" fill="currentColor" textAnchor="middle">
               {tbl.label}
             </text>
           </g>
-          <g className="text-terracotta-300">
+          <g className="text-blush-300">
             {TABLE_DEGS.map((deg) => {
               const rad = (deg * Math.PI) / 180;
               const cx = Math.cos(rad) * 30;
@@ -840,7 +840,7 @@ export function SeatingMockup({ className }: Common) {
         <g className="text-ink-900" opacity="0.10">
           <rect x="2" y="4" width="80" height="32" rx="6" fill="currentColor" />
         </g>
-        <g className="text-chalk-300">
+        <g className="text-paper-300">
           <rect
             x="0"
             y="0"
@@ -852,7 +852,7 @@ export function SeatingMockup({ className }: Common) {
             strokeWidth="1"
           />
         </g>
-        <g className="text-terracotta-300">
+        <g className="text-blush-300">
           <circle cx="14" cy="16" r="6" fill="currentColor" />
         </g>
         <g className="text-ink-800 font-sans">
@@ -885,7 +885,7 @@ export function VendorListingMockup({ className }: Common) {
       <g className="text-ink-900" opacity="0.06">
         <rect x="4" y="10" width="360" height="220" rx="16" fill="currentColor" />
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect
           x="0"
           y="0"
@@ -899,10 +899,10 @@ export function VendorListingMockup({ className }: Common) {
       </g>
 
       {/* Cover image area */}
-      <g className="text-terracotta-100">
+      <g className="text-blush-100">
         <path d="M 0 0 L 360 0 L 360 92 L 0 92 Z" fill="currentColor" />
       </g>
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         <ellipse cx="80" cy="92" rx="80" ry="36" fill="currentColor" opacity="0.6" />
         <ellipse cx="280" cy="84" rx="60" ry="28" fill="currentColor" opacity="0.5" />
       </g>
@@ -911,10 +911,10 @@ export function VendorListingMockup({ className }: Common) {
       <g className="text-white">
         <circle cx="40" cy="92" r="22" fill="currentColor" />
       </g>
-      <g className="text-chalk-300">
+      <g className="text-paper-300">
         <circle cx="40" cy="92" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
       </g>
-      <g className="font-display text-terracotta-700">
+      <g className="font-serif text-blush-700">
         <text x="40" y="98" fontSize="18" fill="currentColor" textAnchor="middle">
           F
         </text>
@@ -924,7 +924,7 @@ export function VendorListingMockup({ className }: Common) {
       <g className="text-white">
         <circle cx="328" cy="20" r="14" fill="currentColor" />
       </g>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <path
           d="M 322 14 L 334 14 L 334 28 L 328 24 L 322 28 Z"
           fill="none"
@@ -935,7 +935,7 @@ export function VendorListingMockup({ className }: Common) {
       </g>
 
       {/* Name + category */}
-      <g className="font-display text-ink-900">
+      <g className="font-serif text-ink-900">
         <text x="20" y="142" fontSize="18" fill="currentColor">
           Florea Studio
         </text>
@@ -947,7 +947,7 @@ export function VendorListingMockup({ className }: Common) {
       </g>
 
       {/* Stars */}
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         {[0, 1, 2, 3, 4].map((i) => (
           <path
             key={i}
@@ -964,7 +964,7 @@ export function VendorListingMockup({ className }: Common) {
       </g>
 
       {/* CTA */}
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <rect x="220" y="170" width="120" height="28" rx="14" fill="currentColor" />
       </g>
       <g className="text-white font-sans">
@@ -990,35 +990,35 @@ export function CouplePortrait({ variant, className }: Common & { variant: 1 | 2
   const palette =
     variant === 1
       ? {
-          bg: "text-terracotta-100",
-          ring: "text-terracotta-200",
-          skinL: "text-terracotta-200",
-          skinR: "text-chalk-300",
+          bg: "text-blush-100",
+          ring: "text-blush-200",
+          skinL: "text-blush-200",
+          skinR: "text-paper-300",
           hairL: "text-ink-800",
-          hairR: "text-terracotta-700",
-          shoulderL: "text-terracotta-400",
-          shoulderR: "text-chalk-400",
+          hairR: "text-blush-700",
+          shoulderL: "text-blush-400",
+          shoulderR: "text-paper-500",
         }
       : variant === 2
         ? {
-            bg: "text-chalk-200",
-            ring: "text-chalk-300",
-            skinL: "text-chalk-300",
-            skinR: "text-terracotta-200",
-            hairL: "text-terracotta-700",
+            bg: "text-paper-200",
+            ring: "text-paper-300",
+            skinL: "text-paper-300",
+            skinR: "text-blush-200",
+            hairL: "text-blush-700",
             hairR: "text-ink-700",
             shoulderL: "text-ink-600",
-            shoulderR: "text-terracotta-300",
+            shoulderR: "text-blush-300",
           }
         : {
-            bg: "text-terracotta-50",
-            ring: "text-terracotta-200",
-            skinL: "text-chalk-300",
-            skinR: "text-terracotta-200",
+            bg: "text-blush-50",
+            ring: "text-blush-200",
+            skinL: "text-paper-300",
+            skinR: "text-blush-200",
             hairL: "text-ink-800",
-            hairR: "text-terracotta-700",
-            shoulderL: "text-chalk-400",
-            shoulderR: "text-terracotta-400",
+            hairR: "text-blush-700",
+            shoulderL: "text-paper-500",
+            shoulderR: "text-blush-400",
           };
   // Variant-specific hair shapes — same anchor heads but distinct silhouettes.
   const hairLeft =
@@ -1099,7 +1099,7 @@ export function CouplePortrait({ variant, className }: Common & { variant: 1 | 2
       </g>
 
       {/* Tiny ring/heart between them — wedding cue */}
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <circle cx="48" cy="58" r="2.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
       </g>
     </svg>

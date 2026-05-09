@@ -1,10 +1,10 @@
 /**
  * Inline SVG illustrations for the public-facing surface.
  *
- * Style: warm hand-drawn line art with terracotta accents on chalk
- * surfaces. All colours come from the design tokens via `currentColor`
- * inheritance — wrap each colour group in a `<g>` with the matching
- * Tailwind text-* class. No raw hex.
+ * Style: warm hand-drawn line art with blush accents on paper-tone
+ * surfaces, matching the login page aesthetic. All colours come from
+ * the design tokens via `currentColor` inheritance — wrap each colour
+ * group in a `<g>` with the matching Tailwind text-* class. No raw hex.
  */
 
 type Common = { className?: string };
@@ -16,15 +16,15 @@ export function HeroArt({ className }: Common) {
   return (
     <svg viewBox="0 0 480 360" role="img" aria-label="" aria-hidden="true" className={className}>
       {/* Soft background wash */}
-      <g className="text-terracotta-100">
+      <g className="text-blush-100">
         <ellipse cx="300" cy="180" rx="170" ry="150" fill="currentColor" />
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <ellipse cx="160" cy="220" rx="120" ry="90" fill="currentColor" opacity="0.7" />
       </g>
 
       {/* Confetti dots */}
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         <circle cx="60" cy="60" r="4" fill="currentColor" />
         <circle cx="420" cy="80" r="5" fill="currentColor" />
         <circle cx="100" cy="310" r="4" fill="currentColor" />
@@ -50,7 +50,7 @@ export function HeroArt({ className }: Common) {
       </g>
       {/* Front ring (terracotta) — drawn on top, with the back ring's
           intersection partially redrawn over it for a believable weave */}
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <circle
           cx="290"
           cy="180"
@@ -83,7 +83,7 @@ export function HeroArt({ className }: Common) {
           strokeLinecap="round"
         />
       </g>
-      <g className="text-chalk-400">
+      <g className="text-paper-500">
         {[
           [200, 270, -20],
           [225, 263, -25],
@@ -110,10 +110,10 @@ export function HeroArt({ className }: Common) {
 export function PhasePlanArt({ className }: Common) {
   return (
     <svg viewBox="0 0 80 80" aria-hidden="true" className={className}>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect x="14" y="20" width="52" height="46" rx="6" fill="currentColor" />
       </g>
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         <rect x="14" y="20" width="52" height="12" rx="6" fill="currentColor" />
         <rect x="14" y="26" width="52" height="6" fill="currentColor" />
       </g>
@@ -147,7 +147,7 @@ export function PhasePlanArt({ className }: Common) {
           strokeLinecap="round"
         />
       </g>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <path
           d="M 40 55 C 36 50, 30 51, 30 46 C 30 42, 34 40, 37 43 C 38 41, 41 41, 43 43 C 47 39, 51 42, 51 46 C 51 51, 44 50, 40 55 Z"
           fill="currentColor"
@@ -161,7 +161,7 @@ export function PhasePlanArt({ className }: Common) {
 export function PhaseSuppliersArt({ className }: Common) {
   return (
     <svg viewBox="0 0 80 80" aria-hidden="true" className={className}>
-      <g className="text-chalk-300">
+      <g className="text-paper-300">
         <path
           d="M 40 64 Q 32 56 28 50"
           fill="none"
@@ -184,7 +184,7 @@ export function PhaseSuppliersArt({ className }: Common) {
         />
       </g>
       {/* Petals — 5 around the centre */}
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         {[0, 72, 144, 216, 288].map((r) => (
           <ellipse
             key={r}
@@ -197,7 +197,7 @@ export function PhaseSuppliersArt({ className }: Common) {
           />
         ))}
       </g>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <circle cx="40" cy="36" r="6" fill="currentColor" />
       </g>
     </svg>
@@ -208,10 +208,10 @@ export function PhaseSuppliersArt({ className }: Common) {
 export function PhaseGuestsArt({ className }: Common) {
   return (
     <svg viewBox="0 0 80 80" aria-hidden="true" className={className}>
-      <g className="text-chalk-100">
+      <g className="text-paper-100">
         <rect x="12" y="24" width="56" height="38" rx="3" fill="currentColor" />
       </g>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <path
           d="M 40 36 C 36 31, 30 32, 30 27 C 30 22, 35 21, 40 26 C 45 21, 50 22, 50 27 C 50 32, 44 31, 40 36 Z"
           fill="currentColor"
@@ -246,7 +246,7 @@ export function PhaseSeatingArt({ className }: Common) {
   return (
     <svg viewBox="0 0 80 80" aria-hidden="true" className={className}>
       {/* Chairs — small rounded blocks around the table */}
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         {[0, 60, 120, 180, 240, 300].map((deg) => {
           const rad = (deg * Math.PI) / 180;
           const cx = 40 + Math.cos(rad) * 26;
@@ -265,13 +265,13 @@ export function PhaseSeatingArt({ className }: Common) {
           );
         })}
       </g>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <circle cx="40" cy="40" r="18" fill="currentColor" />
       </g>
       <g className="text-ink-700">
         <circle cx="40" cy="40" r="18" fill="none" stroke="currentColor" strokeWidth="2" />
       </g>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <circle cx="40" cy="40" r="3" fill="currentColor" />
       </g>
     </svg>
@@ -282,13 +282,13 @@ export function PhaseSeatingArt({ className }: Common) {
 export function PhaseAftermathArt({ className }: Common) {
   return (
     <svg viewBox="0 0 80 80" aria-hidden="true" className={className}>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <path
           d="M 40 48 C 35 41, 26 43, 26 35 C 26 30, 32 28, 36 32 C 37 30, 43 30, 44 32 C 48 28, 54 30, 54 35 C 54 43, 45 41, 40 48 Z"
           fill="currentColor"
         />
       </g>
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         <rect
           x="12"
           y="14"
@@ -375,7 +375,7 @@ export function WaveDivider({ className, flip = false }: Common & { flip?: boole
 export function SuppliersPreview({ className }: Common) {
   return (
     <svg viewBox="0 0 320 280" aria-hidden="true" className={className}>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <rect x="0" y="0" width="320" height="280" rx="20" fill="currentColor" />
       </g>
       {/* 6 tiles in a 3x2 grid */}
@@ -388,10 +388,10 @@ export function SuppliersPreview({ className }: Common) {
         { x: 224, y: 144, kind: "ring" },
       ].map((tile) => (
         <g key={tile.kind} transform={`translate(${tile.x}, ${tile.y})`}>
-          <g className="text-chalk-50">
+          <g className="text-paper-50">
             <rect width="72" height="112" rx="10" fill="currentColor" />
           </g>
-          <g className="text-chalk-300">
+          <g className="text-paper-300">
             <rect
               width="72"
               height="112"
@@ -401,7 +401,7 @@ export function SuppliersPreview({ className }: Common) {
               strokeWidth="1"
             />
           </g>
-          <g className="text-terracotta-500" transform="translate(36, 44)">
+          <g className="text-blush-500" transform="translate(36, 44)">
             {tile.kind === "venue" && (
               <path
                 d="M -14 8 L -14 -2 L 0 -14 L 14 -2 L 14 8 Z"
@@ -510,7 +510,7 @@ export function SuppliersPreview({ className }: Common) {
               </>
             )}
           </g>
-          <g className="text-chalk-400">
+          <g className="text-paper-500">
             <rect x="14" y="76" width="44" height="4" rx="2" fill="currentColor" />
             <rect x="20" y="86" width="32" height="3" rx="1.5" fill="currentColor" />
           </g>
@@ -525,13 +525,13 @@ export function SuppliersPreview({ className }: Common) {
 export function VendorHeroArt({ className }: Common) {
   return (
     <svg viewBox="0 0 320 220" aria-hidden="true" className={className}>
-      <g className="text-chalk-200">
+      <g className="text-paper-200">
         <ellipse cx="160" cy="180" rx="140" ry="22" fill="currentColor" />
       </g>
-      <g className="text-terracotta-300">
+      <g className="text-blush-300">
         <path d="M 80 80 L 240 80 L 230 96 L 90 96 Z" fill="currentColor" />
       </g>
-      <g className="text-chalk-50">
+      <g className="text-paper-50">
         <rect x="80" y="96" width="160" height="80" fill="currentColor" />
       </g>
       <g className="text-ink-700">
@@ -564,7 +564,7 @@ export function VendorHeroArt({ className }: Common) {
         />
         <line x1="80" y1="96" x2="240" y2="96" stroke="currentColor" strokeWidth="2" />
       </g>
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         <circle cx="160" cy="116" r="4" fill="currentColor" />
         <text
           x="160"
@@ -578,7 +578,7 @@ export function VendorHeroArt({ className }: Common) {
         </text>
       </g>
       {/* Small flower out front */}
-      <g className="text-terracotta-500">
+      <g className="text-blush-500">
         {[0, 72, 144, 216, 288].map((r) => (
           <ellipse
             key={r}
@@ -592,7 +592,7 @@ export function VendorHeroArt({ className }: Common) {
         ))}
         <circle cx="60" cy="166" r="2.5" fill="currentColor" />
       </g>
-      <g className="text-chalk-400">
+      <g className="text-paper-500">
         <line
           x1="60"
           y1="170"

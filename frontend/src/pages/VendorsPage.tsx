@@ -17,18 +17,18 @@ export default function VendorsPage() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-16 sm:px-6 sm:pt-20 sm:pb-20 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-terracotta-200 bg-terracotta-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-terracotta-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-terracotta-500" />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-blush-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-blush-500" />
             {t("vendors.pill")}
           </span>
-          <h1 className="mt-5 font-display text-4xl leading-[1.04] tracking-tight text-ink-900 sm:text-6xl">
+          <h1 className="mt-5 font-serif text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl">
             {t("vendors.hero_title")}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0">
             {t("vendors.hero_sub")}
           </p>
           <div className="mt-9 flex justify-center lg:justify-start">
-            <a href="#waitlist" className="btn-pill">
+            <a href="#waitlist" className="btn-primary btn-lg shadow-sm">
               {t("vendors.form_submit")}
             </a>
           </div>
@@ -39,7 +39,7 @@ export default function VendorsPage() {
       </section>
 
       {/* Benefits */}
-      <section className="bg-chalk-100/60">
+      <section className="bg-paper-100/60">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="grid gap-6 lg:grid-cols-3">
             <Benefit
@@ -62,7 +62,7 @@ export default function VendorsPage() {
       </section>
 
       {/* Waitlist form */}
-      <section id="waitlist" className="bg-white">
+      <section id="waitlist" className="bg-paper-50">
         <div className="mx-auto max-w-2xl px-4 py-20 sm:px-6 sm:py-24">
           <WaitlistForm />
         </div>
@@ -92,7 +92,7 @@ function Benefit({
   body: string;
 }) {
   return (
-    <article className="rounded-3xl bg-white p-7 ring-1 ring-chalk-200">
+    <article className="card">
       <div className="mb-4">{art}</div>
       <h3 className="font-serif text-xl text-ink-900">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-ink-600">{body}</p>
@@ -110,13 +110,11 @@ function WaitlistForm() {
 
   if (submitted) {
     return (
-      <div className="rounded-3xl bg-terracotta-50 p-8 text-center ring-1 ring-terracotta-200">
-        <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-terracotta-500 text-white">
+      <div className="rounded-2xl border border-blush-200 bg-blush-50 p-8 text-center">
+        <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-blush-500 text-white">
           <CheckCircle2 size={22} />
         </div>
-        <h2 className="mt-4 font-display text-3xl text-ink-900">
-          {t("vendors.form_success_title")}
-        </h2>
+        <h2 className="mt-4 font-serif text-3xl text-ink-900">{t("vendors.form_success_title")}</h2>
         <p className="mt-2 text-base text-ink-700">{t("vendors.form_success_body")}</p>
       </div>
     );
@@ -133,11 +131,11 @@ function WaitlistForm() {
   }
 
   return (
-    <div>
-      <h2 className="font-display text-3xl text-ink-900 sm:text-4xl">{t("vendors.form_title")}</h2>
+    <div className="card">
+      <h2 className="font-serif text-3xl text-ink-900 sm:text-4xl">{t("vendors.form_title")}</h2>
       <p className="mt-2 text-sm text-ink-600">{t("vendors.form_sub")}</p>
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-5" noValidate>
+      <form onSubmit={onSubmit} className="mt-8 space-y-4" noValidate>
         <TextField
           id="vendor-business"
           label={t("vendors.form_business_label")}
@@ -166,7 +164,7 @@ function WaitlistForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="btn-pill w-full disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}
         </button>

@@ -5,14 +5,14 @@ import { useT } from "../lib/i18n";
 import { useEntryPrompt } from "./ui";
 
 /**
- * Wrapper for the public-facing surface (landing + vendors). Renders the
- * Soft-Modern header on top, page content in the middle, public footer at
- * the bottom. Distinct from `Shell` (used by auth/legal pages) and
- * `AppShell` (used after login).
+ * Wrapper for the public-facing surface (landing + vendors). Mirrors
+ * the warm paper / ink / blush aesthetic used by the login page —
+ * Cormorant serif headings, soft paper-300 borders, dark ink-800
+ * primary CTAs.
  */
 export function PublicShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-full flex-col bg-chalk-50 text-ink-900">
+    <div className="flex min-h-full flex-col bg-paper-50 text-ink-800">
       <PublicHeader />
       <main className="flex-1">{children}</main>
       <PublicFooter />
@@ -23,9 +23,12 @@ export function PublicShell({ children }: { children: ReactNode }) {
 function PublicHeader() {
   const { t, locale, setLocale } = useT();
   return (
-    <header className="border-b border-chalk-200 bg-chalk-50/85 backdrop-blur">
+    <header className="border-b border-paper-300 bg-paper-50/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
-        <Link to="/" className="font-display text-2xl tracking-tight text-ink-900 sm:text-3xl">
+        <Link
+          to="/"
+          className="font-serif text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl"
+        >
           {t("app.name")}
         </Link>
 
@@ -38,7 +41,7 @@ function PublicHeader() {
           </a>
           <Link
             to="/vendors"
-            className="inline-flex items-center gap-1.5 rounded-full border border-terracotta-300 bg-terracotta-50 px-3 py-1.5 text-xs font-medium text-terracotta-700 hover:border-terracotta-500 hover:bg-terracotta-100"
+            className="inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1.5 text-xs font-medium text-blush-700 hover:border-blush-400 hover:bg-blush-100"
           >
             {t("landing.vendor_pill")}
             <ArrowRight size={12} />
@@ -57,10 +60,7 @@ function PublicHeader() {
           <Link to="/login" className="btn-ghost btn-sm hidden sm:inline-flex">
             {t("landing.cta_login")}
           </Link>
-          <Link
-            to="/signup"
-            className="inline-flex items-center justify-center rounded-full bg-terracotta-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-terracotta-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-500 focus-visible:ring-offset-2"
-          >
+          <Link to="/signup" className="btn-primary btn-sm">
             {t("landing.cta_signup")}
           </Link>
         </div>
@@ -73,16 +73,16 @@ function PublicFooter() {
   const { t } = useT();
   const askGuestCode = useGuestCodePrompt();
   return (
-    <footer className="mt-24 border-t border-chalk-200 bg-chalk-100/60">
+    <footer className="mt-24 border-t border-paper-300 bg-paper-100/60">
       {/* Band: guest CTA */}
-      <div className="border-b border-chalk-200">
+      <div className="border-b border-paper-300">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-6 sm:flex-row sm:items-center sm:px-6">
           <p className="text-sm text-ink-700">
             <span className="font-medium text-ink-900">{t("landing.footer_band_text")}</span>
           </p>
           <button
             type="button"
-            className="btn-square btn-sm"
+            className="btn-outline btn-sm"
             onClick={() => {
               void askGuestCode();
             }}
@@ -94,7 +94,7 @@ function PublicFooter() {
 
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         <div>
-          <p className="font-display text-xl text-ink-900">{t("app.name")}</p>
+          <p className="font-serif text-xl font-semibold text-ink-900">{t("app.name")}</p>
           <p className="mt-2 text-sm text-ink-600">{t("landing.footer_tagline")}</p>
         </div>
         <FooterColumn title={t("landing.footer_couples")}>
@@ -120,7 +120,7 @@ function PublicFooter() {
         </FooterColumn>
       </div>
 
-      <div className="border-t border-chalk-200">
+      <div className="border-t border-paper-300">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-5 text-xs text-ink-500 sm:flex-row sm:items-center sm:px-6">
           <p>
             © {new Date().getFullYear()} {t("app.name")}
