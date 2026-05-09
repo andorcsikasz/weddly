@@ -1,5 +1,6 @@
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuth } from "./lib/auth";
 import BudgetPage from "./pages/BudgetPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -39,89 +40,170 @@ function FullScreenLoader() {
   );
 }
 
+// Per-route boundary so a render error in one page doesn't take down the
+// whole app — the user can navigate to a sibling route via the fallback's
+// "Go to home" link without a full reload.
+function Page({ children }: { children: ReactNode }) {
+  return <ErrorBoundary>{children}</ErrorBoundary>;
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/vendors" element={<VendorsPage />} />
+      <Route
+        path="/"
+        element={
+          <Page>
+            <LandingPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/vendors"
+        element={
+          <Page>
+            <VendorsPage />
+          </Page>
+        }
+      />
       <Route
         path="/login"
         element={
-          <RedirectIfAuthed>
-            <LoginPage />
-          </RedirectIfAuthed>
+          <Page>
+            <RedirectIfAuthed>
+              <LoginPage />
+            </RedirectIfAuthed>
+          </Page>
         }
       />
       <Route
         path="/signup"
         element={
-          <RedirectIfAuthed>
-            <RegisterPage />
-          </RedirectIfAuthed>
+          <Page>
+            <RedirectIfAuthed>
+              <RegisterPage />
+            </RedirectIfAuthed>
+          </Page>
         }
       />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-      <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
-      <Route path="/invite/:token" element={<InvitePage />} />
-      <Route path="/rsvp/:code" element={<RsvpPage />} />
+      <Route
+        path="/forgot-password"
+        element={
+          <Page>
+            <ForgotPasswordPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/reset-password/:token"
+        element={
+          <Page>
+            <ResetPasswordPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/verify-email/:token"
+        element={
+          <Page>
+            <VerifyEmailPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/invite/:token"
+        element={
+          <Page>
+            <InvitePage />
+          </Page>
+        }
+      />
+      <Route
+        path="/rsvp/:code"
+        element={
+          <Page>
+            <RsvpPage />
+          </Page>
+        }
+      />
       <Route
         path="/onboarding"
         element={
-          <RequireAuth>
-            <OnboardingWizard />
-          </RequireAuth>
+          <Page>
+            <RequireAuth>
+              <OnboardingWizard />
+            </RequireAuth>
+          </Page>
         }
       />
       <Route
         path="/app"
         element={
-          <RequireAuth>
-            <DashboardPage />
-          </RequireAuth>
+          <Page>
+            <RequireAuth>
+              <DashboardPage />
+            </RequireAuth>
+          </Page>
         }
       />
       <Route
         path="/app/guests"
         element={
-          <RequireAuth>
-            <GuestsPage />
-          </RequireAuth>
+          <Page>
+            <RequireAuth>
+              <GuestsPage />
+            </RequireAuth>
+          </Page>
         }
       />
       <Route
         path="/app/budget"
         element={
-          <RequireAuth>
-            <BudgetPage />
-          </RequireAuth>
+          <Page>
+            <RequireAuth>
+              <BudgetPage />
+            </RequireAuth>
+          </Page>
         }
       />
       <Route
         path="/app/seating"
         element={
-          <RequireAuth>
-            <SeatingPage />
-          </RequireAuth>
+          <Page>
+            <RequireAuth>
+              <SeatingPage />
+            </RequireAuth>
+          </Page>
         }
       />
       <Route
         path="/app/suppliers"
         element={
-          <RequireAuth>
-            <SuppliersPage />
-          </RequireAuth>
+          <Page>
+            <RequireAuth>
+              <SuppliersPage />
+            </RequireAuth>
+          </Page>
         }
       />
       <Route
         path="/app/settings"
         element={
-          <RequireAuth>
-            <SettingsPage />
-          </RequireAuth>
+          <Page>
+            <RequireAuth>
+              <SettingsPage />
+            </RequireAuth>
+          </Page>
         }
       />
-      <Route path="*" element={<NotFoundPage />} />
+      <Route
+        path="*"
+        element={
+          <Page>
+            <NotFoundPage />
+          </Page>
+        }
+      />
     </Routes>
   );
 }

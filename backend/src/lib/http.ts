@@ -1,6 +1,7 @@
 // Tiny HTTP helpers + custom router. No framework — Bun's native runtime is fast enough.
 
 import { CONFIG } from "../config";
+import type { Logger } from "./logger";
 
 export interface Ctx {
   req: Request;
@@ -10,6 +11,10 @@ export interface Ctx {
   userId: number | null;
   /** Remote IP after XFF / X-Real-IP handling. `null` if unknown. */
   clientIp: string | null;
+  /** Per-request UUID — propagated to logs and Sentry tags. */
+  requestId: string;
+  /** Request-scoped logger; auto-includes requestId / userId / route. */
+  log: Logger;
 }
 
 export type Handler = (ctx: Ctx) => Promise<Response> | Response;

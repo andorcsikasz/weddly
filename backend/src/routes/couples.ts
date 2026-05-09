@@ -13,6 +13,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../lib/couples";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { reportError } from "../lib/observability";
 import { generateInviteToken } from "../lib/invite_codes";
 import { bilingualBody, sendEmail } from "../lib/mailer";
 import { getUserById } from "../lib/users";
@@ -271,7 +272,9 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
       subject: "Weddly — esküvőtervezés meghívó / wedding-planning invite",
       html,
       text,
-    }).catch((e) => console.error("[couples] invite send failed", e));
+    }).catch((e) =>
+      reportError("mailer.send_failed", e, { template: "couple_invite", to: invitedEmail }),
+    );
   }
 
   return json({ invite: toInvite(row) }, { status: 201 });

@@ -8,17 +8,43 @@
 #   DB_PATH                e.g. /data/weddly.db
 #   BACKUP_DIR             local working dir (transient), e.g. /tmp/weddly-backup
 # Optional:
-#   AGE_RECIPIENT          age public key for encryption-at-rest
-#   S3_BUCKET, S3_PREFIX   destination prefix, e.g. s3://weddly-backups/prod/
+#   AGE_RECIPIENT          age public key for encryption-at-rest. If set, `age`
+#                          must be installed — a missing binary is FATAL, not
+#                          a silent skip (we'd rather fail loud than ship
+#                          plaintext backups by accident).
+#   S3_BUCKET, S3_PREFIX   destination prefix, e.g. s3://weddly-backups/prod/.
+#                          If S3_BUCKET is set, `aws` must be installed.
 #   AWS_*                  standard AWS creds — works for Cloudflare R2 too
-#                          when AWS_ENDPOINT_URL is set to the R2 endpoint
-#   RETENTION_DAYS         delete local snapshots older than N days (default 14)
+#                          when AWS_ENDPOINT_URL is set to the R2 endpoint.
+#   RETENTION_DAYS         delete local snapshots older than N days (default 14).
+#                          Remote retention is handled by S3/R2 lifecycle rules.
+#   HEALTHCHECK_URL        optional Healthchecks.io ping URL. If set, the script
+#                          pings .../start at the top, the URL on success, and
+#                          .../fail on any error so a missed run pages someone.
 
 set -euo pipefail
 
 DB_PATH="${DB_PATH:?DB_PATH is required}"
 BACKUP_DIR="${BACKUP_DIR:-/tmp/weddly-backup}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
+
+ping() {
+  local suffix="$1"
+  [ -z "${HEALTHCHECK_URL:-}" ] && return 0
+  curl -fsS -m 10 --retry 3 -o /dev/null "${HEALTHCHECK_URL%/}${suffix}" || true
+}
+
+ping "/start"
+trap 'ping "/fail"' ERR
+
+if [ -n "${AGE_RECIPIENT:-}" ] && ! command -v age >/dev/null 2>&1; then
+  echo "[backup] FATAL: AGE_RECIPIENT is set but \`age\` is not installed" >&2
+  exit 1
+fi
+if [ -n "${S3_BUCKET:-}" ] && ! command -v aws >/dev/null 2>&1; then
+  echo "[backup] FATAL: S3_BUCKET is set but \`aws\` is not installed" >&2
+  exit 1
+fi
 
 mkdir -p "$BACKUP_DIR"
 
@@ -38,14 +64,14 @@ fi
 
 OUT="$SNAPSHOT"
 
-if [ -n "${AGE_RECIPIENT:-}" ] && command -v age >/dev/null 2>&1; then
+if [ -n "${AGE_RECIPIENT:-}" ]; then
   echo "[backup] encrypting with age"
   age -r "$AGE_RECIPIENT" -o "$SNAPSHOT.age" "$SNAPSHOT"
   rm -f "$SNAPSHOT"
   OUT="$SNAPSHOT.age"
 fi
 
-if [ -n "${S3_BUCKET:-}" ] && command -v aws >/dev/null 2>&1; then
+if [ -n "${S3_BUCKET:-}" ]; then
   DEST="s3://$S3_BUCKET/${S3_PREFIX:-}$(basename "$OUT")"
   echo "[backup] uploading to $DEST"
   aws s3 cp "$OUT" "$DEST"
@@ -56,3 +82,4 @@ find "$BACKUP_DIR" -type f \( -name 'weddly-*.db' -o -name 'weddly-*.db.age' \) 
   -mtime +"$RETENTION_DAYS" -print -delete || true
 
 echo "[backup] done: $OUT"
+ping ""

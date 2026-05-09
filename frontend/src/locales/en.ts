@@ -418,6 +418,12 @@ const en: LocaleMessages = {
     export_button: "Download JSON",
     export_downloading: "Preparing…",
   },
+  error_boundary: {
+    title: "Something went wrong",
+    body: "This page hit a snag. Try again, or head back to the start — your data is safe.",
+    try_again: "Try again",
+    go_home: "Go to home",
+  },
 };
 
 export default en;

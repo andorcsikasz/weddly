@@ -419,6 +419,12 @@ const hu: LocaleMessages = {
     export_button: "JSON letöltése",
     export_downloading: "Előkészítés…",
   },
+  error_boundary: {
+    title: "Hoppá, valami félrement",
+    body: "Ez az oldal megakadt. Próbáld újra, vagy menj vissza a kezdőlapra — az adataid biztonságban vannak.",
+    try_again: "Újra próbálom",
+    go_home: "Vissza a kezdőlapra",
+  },
 };
 
 export default hu;

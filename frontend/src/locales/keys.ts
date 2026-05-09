@@ -388,4 +388,10 @@ export interface LocaleMessages {
     export_button: string;
     export_downloading: string;
   };
+  error_boundary: {
+    title: string;
+    body: string;
+    try_again: string;
+    go_home: string;
+  };
 }

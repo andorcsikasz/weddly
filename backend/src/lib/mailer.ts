@@ -2,6 +2,7 @@
 // to stdout (matching the existing dev pattern documented in .env.example).
 
 import { CONFIG } from "../config";
+import { log } from "./logger";
 
 export interface SendEmailInput {
   to: string;
@@ -12,9 +13,7 @@ export interface SendEmailInput {
 
 export async function sendEmail(input: SendEmailInput): Promise<void> {
   if (!CONFIG.resendApiKey) {
-    console.log(
-      `[mailer:dev] To: ${input.to}\n  Subject: ${input.subject}\n  Text:\n${input.text.replace(/^/gm, "    ")}`,
-    );
+    log.info("mailer.dev_print", { to: input.to, subject: input.subject, text: input.text });
     return;
   }
 
@@ -34,7 +33,11 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    console.error(`[mailer] Resend failed status=${res.status} body=${detail.slice(0, 500)}`);
+    log.error("mailer.resend_failed", {
+      status: res.status,
+      body: detail.slice(0, 500),
+      to: input.to,
+    });
     throw new Error(`Email send failed: ${res.status}`);
   }
 }
@@ -84,4 +87,49 @@ function escapeHtml(s: string): string {
 }
 function escapeAttr(s: string): string {
   return escapeHtml(s);
+}
+
+// Resend liveness probe for /api/health/deep. Hits the cheap api-keys list
+// endpoint with a 30s memo so the deep health endpoint can be called every
+// few minutes without burning Resend rate limits. Returns "skipped" when
+// RESEND_API_KEY is unset (matches the dev pattern where mail goes to stdout).
+export interface ResendLiveness {
+  ok: boolean;
+  ms?: number;
+  reason?: string;
+  skipped?: boolean;
+}
+
+const PROBE_TTL_MS = 30_000;
+let lastProbe: { at: number; result: ResendLiveness } | null = null;
+
+export async function checkResendLiveness(): Promise<ResendLiveness> {
+  if (!CONFIG.resendApiKey) {
+    return { ok: true, skipped: true, reason: "RESEND_API_KEY unset" };
+  }
+  const nowMs = Date.now();
+  if (lastProbe && nowMs - lastProbe.at < PROBE_TTL_MS) return lastProbe.result;
+
+  const start = performance.now();
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch("https://api.resend.com/api-keys", {
+      headers: { Authorization: `Bearer ${CONFIG.resendApiKey}` },
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    const ms = Math.round(performance.now() - start);
+    const result: ResendLiveness = res.ok
+      ? { ok: true, ms }
+      : { ok: false, ms, reason: `HTTP ${res.status}` };
+    lastProbe = { at: nowMs, result };
+    return result;
+  } catch (e) {
+    const ms = Math.round(performance.now() - start);
+    const reason = e instanceof Error ? e.message : "unknown";
+    const result: ResendLiveness = { ok: false, ms, reason };
+    lastProbe = { at: nowMs, result };
+    return result;
+  }
 }

@@ -32,13 +32,66 @@ testing, content, and legal sign-off. Group ordering reflects what blocks ship.
 
 ## C. Backups (30 min, blocks GDPR readiness)
 
-- [ ] Decide where snapshots go: Cloudflare R2 (recommended — cheap, S3-compat) or AWS S3.
-- [ ] Generate an `age` keypair: `age-keygen -o weddly-backup.key`. Store the private key in 1Password / similar; put the public key in Railway as `AGE_RECIPIENT`.
-- [ ] Configure `S3_BUCKET`, `S3_PREFIX`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL` (R2) in Railway.
-- [ ] Schedule `scripts/backup.sh` daily. Options:
-  - **Railway Cron service** (separate service in same project, mount the same `/data` volume read-only).
-  - **GitHub Actions** scheduled workflow that SSHes into Railway shell.
-- [ ] Run a test restore: download a snapshot, decrypt with `age`, open with `sqlite3` and check `PRAGMA integrity_check;` returns `ok`.
+Recommended target: **Cloudflare R2** — 10 GB / 10M reads / 1M writes free per month, no egress fees, S3-compatible (works with the same `aws s3 cp` calls). The script supports any S3-compatible bucket via `AWS_ENDPOINT_URL`.
+
+### C.1 Generate the age keypair (5 min, do this on your laptop, not on the server)
+
+```sh
+age-keygen -o weddly-backup.key
+# → "Public key: age1xxxxxxxxxxxxxxxxxxxx..."  (this is the AGE_RECIPIENT)
+# The private half is the recovery secret. Without it, every encrypted snapshot is unrecoverable.
+```
+
+- [ ] Store the private key (`weddly-backup.key`) **outside this machine** — 1Password / Bitwarden / a sealed envelope in a drawer. Losing it = losing every backup.
+- [ ] Set `AGE_RECIPIENT=age1xxxxx...` (the public key) in Railway service variables.
+
+### C.2 Cloudflare R2 setup (10 min)
+
+- [ ] Create a Cloudflare account (free) → R2 dashboard → **Create bucket**, e.g. `weddly-backups`. Pick a region close to Railway (`eu` if Railway runs in EU).
+- [ ] Manage R2 API Tokens → **Create API Token** → permissions "Object Read & Write" scoped to that bucket only. Copy the Access Key ID + Secret Access Key + S3 endpoint URL.
+- [ ] In R2 → bucket → Settings → **Object Lifecycle**: add a rule "delete after 90 days". Local retention sweep handles 14 days; R2 lifecycle handles long-term sweep.
+
+### C.3 Railway env vars on the **backup** service (not the app)
+
+- [ ] `DB_PATH=/data/weddly.db`
+- [ ] `BACKUP_DIR=/tmp/weddly-backup`
+- [ ] `AGE_RECIPIENT=age1xxxxx...` (from C.1)
+- [ ] `S3_BUCKET=weddly-backups`
+- [ ] `S3_PREFIX=prod/`
+- [ ] `AWS_ACCESS_KEY_ID=...` (from C.2)
+- [ ] `AWS_SECRET_ACCESS_KEY=...` (from C.2)
+- [ ] `AWS_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com` (from C.2)
+- [ ] `HEALTHCHECK_URL=https://hc-ping.com/<uuid>` (from `docs/uptime.md` step 2)
+
+### C.4 Schedule the cron
+
+Recommended: **Railway Cron service**.
+
+- [ ] In your Railway project → **+ New** → Cron. Point it at the same repo/Dockerfile.
+- [ ] Override the start command: `bash scripts/backup.sh`
+- [ ] Schedule: `0 3 * * *` (03:00 UTC daily; tweak to off-peak for your couples).
+- [ ] **Mount the same `/data` volume** that the app service uses, ideally read-only. The cron container needs to read the live DB.
+- [ ] The base image (`oven/bun:1.3.10`) is Debian-based. Add `sqlite3`, `age`, and the AWS CLI to the cron service. Easiest path: add an ad-hoc `apt-get install` step in a wrapper shell, or use a small custom Dockerfile for the cron service. (TODO: ship a `Dockerfile.backup` if Railway's "Cron" feature doesn't accept inline install steps.)
+
+Alternative: GitHub Actions scheduled workflow that SSHes into Railway and triggers the script. Slower to set up; only do this if Railway Cron isn't available on your plan.
+
+### C.5 First-restore drill (mandatory — the only thing that proves backups work)
+
+- [ ] Wait for the first nightly run, then check the R2 bucket → confirm a `weddly-<timestamp>.db.age` object appeared.
+- [ ] On your laptop, with the private key from C.1:
+
+  ```sh
+  export AGE_IDENTITY=/path/to/weddly-backup.key
+  export AWS_ACCESS_KEY_ID=...   # same R2 creds
+  export AWS_SECRET_ACCESS_KEY=...
+  export AWS_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
+  bash scripts/restore.sh \
+      s3://weddly-backups/prod/weddly-20260509T030000Z.db.age \
+      /tmp/restored.db
+  sqlite3 /tmp/restored.db 'SELECT count(*) FROM users;'
+  ```
+
+- [ ] Confirm row counts roughly match production. If they don't, the chain is broken — fix it before launch.
 
 ## D. Legal review (1–2 weeks calendar time, blocks public launch)
 
@@ -69,7 +122,7 @@ testing, content, and legal sign-off. Group ordering reflects what blocks ship.
 - [ ] Sentry account → create project for "weddly-backend" + "weddly-frontend".
 - [ ] Set `SENTRY_DSN` (backend) and `VITE_SENTRY_DSN` (rebuild required) in Railway. **VITE_** vars are baked at build time; you need a redeploy after setting them.
 - [ ] Plausible account → add domain → set `VITE_PLAUSIBLE_DOMAIN` and rebuild.
-- [ ] External uptime monitor pinging `/api/health` every 5 min — free options: BetterStack, Healthchecks.io, UptimeRobot.
+- [ ] External uptime monitor pinging `/api/health` every 5 min. Step-by-step runbook in [`docs/uptime.md`](docs/uptime.md) — UptimeRobot for endpoint pings + Healthchecks.io for the backup cron heartbeat, both free tier.
 
 ## H. Soft launch (recommended before going public)
 

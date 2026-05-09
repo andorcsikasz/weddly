@@ -9,6 +9,7 @@
 
 import { db, now } from "./../db";
 import { addAuditLog } from "./audit";
+import { log } from "./logger";
 
 export function purgeOneCouple(coupleId: number): void {
   const ts = now();
@@ -81,7 +82,7 @@ export function runPurgeSweep(): { purged: number } {
     try {
       purgeOneCouple(couple_id);
     } catch (e) {
-      console.error(`[purge] failed for couple_id=${couple_id}`, e);
+      log.error("purge.couple_failed", e, { couple_id });
     }
   }
   return { purged: due.length };
@@ -95,17 +96,17 @@ export function startPurgeWorker(): void {
   // Run once at boot so a long downtime catches up immediately.
   try {
     const r = runPurgeSweep();
-    if (r.purged > 0) console.log(`[purge] boot sweep purged ${r.purged} couple(s)`);
+    if (r.purged > 0) log.info("purge.boot_sweep", { purged: r.purged });
   } catch (e) {
-    console.error("[purge] boot sweep error", e);
+    log.error("purge.boot_sweep_failed", e);
   }
   timer = setInterval(
     () => {
       try {
         const r = runPurgeSweep();
-        if (r.purged > 0) console.log(`[purge] hourly sweep purged ${r.purged} couple(s)`);
+        if (r.purged > 0) log.info("purge.hourly_sweep", { purged: r.purged });
       } catch (e) {
-        console.error("[purge] sweep error", e);
+        log.error("purge.hourly_sweep_failed", e);
       }
     },
     1000 * 60 * 60,

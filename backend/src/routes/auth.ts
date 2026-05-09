@@ -8,6 +8,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { bilingualBody, sendEmail } from "../lib/mailer";
+import { reportError } from "../lib/observability";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../lib/users";
 import { createVerificationToken } from "./email_verify";
@@ -100,7 +101,7 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     subject: "Weddly — üdv / welcome",
     html,
     text,
-  }).catch((e) => console.error("[auth] welcome send failed", e));
+  }).catch((e) => reportError("mailer.send_failed", e, { template: "welcome", to: email }));
 
   const token = issueSession(userId);
   const userRow = getUserById(userId);

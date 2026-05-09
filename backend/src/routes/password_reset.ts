@@ -9,6 +9,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { bilingualBody, sendEmail } from "../lib/mailer";
+import { reportError } from "../lib/observability";
 import { rateLimit } from "../lib/rate_limit";
 import { getUserByEmail } from "../lib/users";
 
@@ -65,7 +66,9 @@ async function handleForgot(ctx: Ctx): Promise<Response> {
     subject: "Weddly — jelszó visszaállítás / password reset",
     html,
     text,
-  }).catch((e) => console.error("[auth] forgot send failed", e));
+  }).catch((e) =>
+    reportError("mailer.send_failed", e, { template: "password_reset", to: user.email }),
+  );
 
   return json({ ok: true });
 }

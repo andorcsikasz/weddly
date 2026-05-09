@@ -6,6 +6,9 @@ import { join } from "node:path";
 import { extractToken, verifySessionToken } from "./auth/session";
 import { CONFIG } from "./config";
 import "./db"; // open DB + apply schema
+import { initObservability, captureException } from "./lib/observability";
+
+initObservability();
 
 import {
   corsHeaders,
@@ -15,6 +18,7 @@ import {
   HttpError,
   Router,
 } from "./lib/http";
+import { log, makeLogger } from "./lib/logger";
 import { startPurgeWorker } from "./lib/purge";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerBudgetRoutes } from "./routes/budget";
@@ -108,6 +112,8 @@ const server = Bun.serve({
   port: CONFIG.port,
   async fetch(req) {
     const url = new URL(req.url);
+    const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+    const start = performance.now();
 
     if (req.method === "OPTIONS") return corsPreflight(req);
 
@@ -120,11 +126,13 @@ const server = Bun.serve({
         const headers = new Headers(fallback.headers);
         for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
         for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+        headers.set("x-request-id", requestId);
         return new Response(fallback.body, { status: fallback.status, headers });
       }
       const r = httpErr(404, "Not found");
       const headers = new Headers(r.headers);
       for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      headers.set("x-request-id", requestId);
       return new Response(r.body, { status: r.status, headers });
     }
 
@@ -137,8 +145,16 @@ const server = Bun.serve({
       const r = httpErr(401, "Not authenticated");
       const headers = new Headers(r.headers);
       for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      headers.set("x-request-id", requestId);
       return new Response(r.body, { status: r.status, headers });
     }
+
+    const reqLog = makeLogger({
+      requestId,
+      method: req.method,
+      route: url.pathname,
+      ...(userId != null ? { userId } : {}),
+    });
 
     const ctx: Ctx = {
       req,
@@ -146,6 +162,8 @@ const server = Bun.serve({
       params: matched.params,
       userId,
       clientIp: clientIpFrom(req),
+      requestId,
+      log: reqLog,
     };
 
     try {
@@ -153,14 +171,32 @@ const server = Bun.serve({
       const headers = new Headers(res.headers);
       for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
       for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      headers.set("x-request-id", requestId);
+      reqLog.info("http.request", {
+        status: res.status,
+        latency_ms: Math.round(performance.now() - start),
+      });
       return new Response(res.body, { status: res.status, headers });
     } catch (e) {
-      const r =
-        e instanceof HttpError
-          ? httpErr(e.status, e.message, e.extra)
-          : (console.error("[server] unhandled error", e), httpErr(500, "Internal server error"));
+      const isHttpErr = e instanceof HttpError;
+      const r = isHttpErr
+        ? httpErr(e.status, e.message, e.extra)
+        : httpErr(500, "Internal server error");
       const headers = new Headers(r.headers);
       for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      headers.set("x-request-id", requestId);
+      const latency_ms = Math.round(performance.now() - start);
+      if (isHttpErr) {
+        reqLog.warn("http.handled_error", { status: e.status, message: e.message, latency_ms });
+      } else {
+        reqLog.error("http.unhandled", e, { latency_ms });
+        captureException(e, {
+          requestId,
+          userId,
+          route: url.pathname,
+          method: req.method,
+        });
+      }
       return new Response(r.body, { status: r.status, headers });
     }
   },
@@ -169,8 +205,8 @@ const server = Bun.serve({
 // Pause-to-delete sweep — only in real environments. Tests drive it directly.
 if (process.env.NODE_ENV !== "test") startPurgeWorker();
 
-console.log(
-  `[server] weddly api listening on :${server.port} ` +
-    `(serveFrontend=${CONFIG.serveFrontend ? "on" : "off"}, ` +
-    `email=${CONFIG.resendApiKey ? "on" : "off"})`,
-);
+log.info("server.listening", {
+  port: server.port,
+  serveFrontend: CONFIG.serveFrontend,
+  email: !!CONFIG.resendApiKey,
+});

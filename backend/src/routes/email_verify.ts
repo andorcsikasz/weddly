@@ -9,6 +9,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 import { bilingualBody, sendEmail } from "../lib/mailer";
+import { reportError } from "../lib/observability";
 import { rateLimit } from "../lib/rate_limit";
 import { getUserById } from "../lib/users";
 
@@ -71,7 +72,9 @@ async function handleResend(ctx: Ctx): Promise<Response> {
     subject: "Weddly — e-mail megerősítés / verify your email",
     html,
     text,
-  }).catch((e) => console.error("[auth] verify resend send failed", e));
+  }).catch((e) =>
+    reportError("mailer.send_failed", e, { template: "email_verify_resend", to: user.email }),
+  );
 
   return json({ ok: true });
 }
