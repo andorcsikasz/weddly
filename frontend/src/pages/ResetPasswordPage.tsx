@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
-import { PasswordField } from "../components/ui";
+import { Button, PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -11,14 +11,19 @@ export default function ResetPasswordPage() {
   const { t } = useT();
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     setError(null);
+    if (password !== passwordConfirm) {
+      setError(t("auth.password_mismatch"));
+      return;
+    }
+    setSubmitting(true);
     try {
       await authApi.reset(token, password);
       setDone(true);
@@ -52,12 +57,30 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                autoFocus
+              />
+              <PasswordField
+                id="password_confirm"
+                label={t("auth.password_confirm_label")}
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                required
+                minLength={8}
+                errorText={
+                  passwordConfirm.length > 0 && passwordConfirm !== password
+                    ? t("auth.password_mismatch")
+                    : undefined
+                }
               />
               {error && <p className="field-error">{error}</p>}
-              <button type="submit" className="btn-primary w-full" disabled={submitting}>
-                {submitting ? t("common.loading") : t("auth.reset_submit")}
-              </button>
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                loading={submitting}
+                loadingLabel={t("common.loading")}
+              >
+                {t("auth.reset_submit")}
+              </Button>
             </form>
           )}
           <p className="mt-4 text-sm text-ink-600">

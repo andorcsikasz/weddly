@@ -79,14 +79,12 @@ export default function DashboardPage() {
 
   // ── Days countdown — only meaningful when an exact date is locked. ─────
   const exactDate = couple.wedding_date_goal.kind === "exact" ? couple.wedding_date : null;
-  const daysUntil = exactDate
-    ? Math.max(
-        0,
-        Math.round(
-          (new Date(`${exactDate}T00:00:00`).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-        ),
-      )
+  const rawDelta = exactDate
+    ? Math.round((new Date(`${exactDate}T00:00:00`).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : null;
+  const daysUntil = rawDelta !== null ? Math.max(0, rawDelta) : null;
+  // True if we have an exact date AND it's already passed.
+  const weddingPast = rawDelta !== null && rawDelta < 0;
 
   // ── RSVP breakdown ────────────────────────────────────────────────────
   const rsvp = { yes: 0, no: 0, maybe: 0, pending: 0 };
@@ -111,23 +109,39 @@ export default function DashboardPage() {
   const seatedConfirmed = confirmedGuests.filter((g) => seatedGuestIds.has(g.id)).length;
 
   // ── Setup checklist (derived — no `tasks` table in v1). ───────────────
-  const tasks = [
-    { key: "task_lock_guests", done: couple.guest_count_goal.kind !== "tbd" },
-    { key: "task_lock_budget", done: couple.budget_goal.kind !== "tbd" },
-    { key: "task_set_date", done: couple.wedding_date_goal.kind === "exact" },
+  // `to` lets the "Next step" CTA jump straight to the relevant page.
+  const tasks: { key: string; done: boolean; to?: string }[] = [
+    {
+      key: "task_lock_guests",
+      done: couple.guest_count_goal.kind !== "tbd",
+      to: "/onboarding",
+    },
+    { key: "task_lock_budget", done: couple.budget_goal.kind !== "tbd", to: "/onboarding" },
+    { key: "task_set_date", done: couple.wedding_date_goal.kind === "exact", to: "/onboarding" },
+    // Partner invite happens inline on this page — no `to`.
     { key: "task_invite_partner", done: couple.partner_b_id !== null },
-    { key: "task_add_guests", done: totalGuests > 0 },
-    { key: "task_plan_budget", done: lines.length > 0 },
-    { key: "task_under_cap", done: cap === null ? false : !overCap && lines.length > 0 },
-    { key: "task_get_rsvps", done: rsvp.yes + rsvp.no + rsvp.maybe > 0 },
-    { key: "task_add_tables", done: tableCount > 0 },
+    { key: "task_add_guests", done: totalGuests > 0, to: "/app/guests" },
+    { key: "task_plan_budget", done: lines.length > 0, to: "/app/budget" },
+    {
+      key: "task_under_cap",
+      done: cap === null ? false : !overCap && lines.length > 0,
+      to: "/app/budget",
+    },
+    {
+      key: "task_get_rsvps",
+      done: rsvp.yes + rsvp.no + rsvp.maybe > 0,
+      to: "/app/guests",
+    },
+    { key: "task_add_tables", done: tableCount > 0, to: "/app/seating" },
     {
       key: "task_seat_guests",
       done: confirmedGuests.length > 0 && seatedConfirmed === confirmedGuests.length,
+      to: "/app/seating",
     },
   ];
   const tasksDone = tasks.filter((t) => t.done).length;
   const tasksTotal = tasks.length;
+  const nextTask = tasks.find((task) => !task.done);
 
   // ── Invite-partner inline card ────────────────────────────────────────
   const inviteUrl = invite ? `${window.location.origin}/invite/${invite.token}` : null;
@@ -154,18 +168,41 @@ export default function DashboardPage() {
         <div className="text-xs uppercase tracking-wide text-ink-500">{t("dashboard.title")}</div>
       </header>
 
+      {/* ── Next-action CTA — surfaces the first incomplete checklist item. ── */}
+      {nextTask &&
+        (nextTask.to ? (
+          <Link to={nextTask.to} className="btn-primary mb-6 inline-flex">
+            {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
+          </Link>
+        ) : (
+          <div className="mb-6 inline-flex rounded-xl bg-blush-50 px-4 py-2 text-sm font-medium text-blush-800">
+            {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
+          </div>
+        ))}
+
       {/* ── KPI tiles ─────────────────────────────────────────────── */}
       <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiTile
-          label={t("dashboard.kpi_days_label")}
-          icon={<CalendarHeart size={16} />}
-          value={daysUntil !== null ? formatNumber(daysUntil, locale) : "—"}
-          unit={daysUntil !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
-          accent="blush"
-        />
+        {weddingPast ? (
+          <PastWeddingTile
+            label={t("dashboard.kpi_days_past")}
+            sub={t("dashboard.kpi_days_past_sub")}
+            seatingHref="/app/seating"
+            seatingLabel={t("dashboard.kpi_days_past_seating_pdf")}
+            guestsHref="/app/guests"
+            guestsLabel={t("dashboard.kpi_days_past_guest_csv")}
+          />
+        ) : (
+          <KpiTile
+            label={t("dashboard.kpi_days_label")}
+            icon={<CalendarHeart size={16} aria-hidden="true" />}
+            value={daysUntil !== null ? formatNumber(daysUntil, locale) : "—"}
+            unit={daysUntil !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
+            accent="blush"
+          />
+        )}
         <KpiTile
           label={t("dashboard.kpi_guests_label")}
-          icon={<Users size={16} />}
+          icon={<Users size={16} aria-hidden="true" />}
           value={formatNumber(rsvp.yes, locale)}
           unit={
             guestDenominator > 0
@@ -180,7 +217,7 @@ export default function DashboardPage() {
         />
         <KpiTile
           label={t("dashboard.kpi_budget_label")}
-          icon={<Wallet size={16} />}
+          icon={<Wallet size={16} aria-hidden="true" />}
           value={formatHuf(totalActual, locale)}
           unit={
             cap !== null
@@ -192,7 +229,7 @@ export default function DashboardPage() {
         />
         <KpiTile
           label={t("dashboard.kpi_seated_label")}
-          icon={<ChefHat size={16} />}
+          icon={<ChefHat size={16} aria-hidden="true" />}
           value={formatNumber(seatedConfirmed, locale)}
           unit={
             confirmedGuests.length > 0
@@ -219,7 +256,14 @@ export default function DashboardPage() {
               {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
             </span>
           </div>
-          <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-paper-200">
+          <div
+            className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-paper-200"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={tasksTotal}
+            aria-valuenow={tasksDone}
+            aria-label={t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
+          >
             <div
               className="h-full rounded-full bg-blush-500 transition-all"
               style={{ width: `${(tasksDone / tasksTotal) * 100}%` }}
@@ -421,6 +465,42 @@ function KpiTile({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function PastWeddingTile({
+  label,
+  sub,
+  seatingHref,
+  seatingLabel,
+  guestsHref,
+  guestsLabel,
+}: {
+  label: string;
+  sub: string;
+  seatingHref: string;
+  seatingLabel: string;
+  guestsHref: string;
+  guestsLabel: string;
+}) {
+  return (
+    <div className="card bg-blush-50">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-blush-700">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blush-100 text-blush-700">
+          <Heart size={14} aria-hidden="true" />
+        </span>
+        {label}
+      </div>
+      <div className="mt-3 font-serif text-xl leading-tight text-ink-900">{sub}</div>
+      <div className="mt-3 flex flex-col gap-1.5 text-sm">
+        <Link to={seatingHref} className="text-blush-800 underline-offset-2 hover:underline">
+          {seatingLabel}
+        </Link>
+        <Link to={guestsHref} className="text-blush-800 underline-offset-2 hover:underline">
+          {guestsLabel}
+        </Link>
+      </div>
     </div>
   );
 }

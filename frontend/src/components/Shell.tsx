@@ -24,11 +24,14 @@ function Header() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="btn-ghost btn-sm"
+            className="btn-ghost btn-sm inline-flex items-center gap-1.5"
             onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
-            aria-label="Switch language"
+            aria-label={t("nav.switch_language")}
           >
-            {locale === "hu" ? "EN" : "HU"}
+            <GlobeIcon />
+            <span className="hidden sm:inline">
+              {locale === "hu" ? t("nav.switch_to_en") : t("nav.switch_to_hu")}
+            </span>
           </button>
           {user ? (
             <button type="button" className="btn-ghost btn-sm" onClick={() => logout()}>
@@ -47,5 +50,28 @@ function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+/** Tiny hand-rolled globe icon (no new deps). aria-hidden — the button's
+ *  aria-label carries the meaning. */
+function GlobeIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6.5" />
+      <path d="M1.5 8h13" />
+      <path d="M8 1.5c2 2 2 11 0 13" />
+      <path d="M8 1.5c-2 2-2 11 0 13" />
+    </svg>
   );
 }

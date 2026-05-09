@@ -40,6 +40,7 @@ export function ProfileMenu() {
   if (!user) return null;
 
   const initials = getInitials(user.full_name, user.email);
+  const firstName = (user.full_name || user.email).trim().split(/\s+/)[0] ?? "";
 
   return (
     <div ref={wrapRef} className="relative">
@@ -49,9 +50,15 @@ export function ProfileMenu() {
         aria-expanded={open}
         aria-label={t("profile.menu_label")}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors hover:bg-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2"
+        className="group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-1 text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2"
       >
-        {initials}
+        {firstName && (
+          <span className="hidden text-sm font-medium text-ink-800 lg:inline">{firstName}</span>
+        )}
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900">
+          {initials}
+        </span>
+        <ChevronDownIcon />
       </button>
 
       {open && (
@@ -89,6 +96,25 @@ export function ProfileMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="text-ink-500"
+    >
+      <path d="M3 4.5L6 7.5L9 4.5" />
+    </svg>
   );
 }
 

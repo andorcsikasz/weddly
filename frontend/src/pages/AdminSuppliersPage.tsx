@@ -1,6 +1,6 @@
 import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
-import { ExternalLink, EyeOff, Eye, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ExternalLink, Eye, EyeOff, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -17,6 +17,18 @@ function formatDate(unixSeconds: number, locale: string): string {
   }).format(d);
 }
 
+/** UI filter buckets. The backend only stores "active" | "hidden", but we
+ *  surface a "pending" bucket = freshly active rows the admin hasn't reviewed
+ *  yet (last 24 h). Crude but useful for triage. */
+type StatusFilter = "all" | "pending" | "active" | "hidden";
+
+/** Pending = active and submitted in the last 24h. Same heuristic the spec
+ *  asks for ("Függőben"). */
+function isPending(s: CommunitySupplierAdminView, nowSec: number): boolean {
+  if (s.status !== "active") return false;
+  return nowSec - s.created_at < 24 * 60 * 60;
+}
+
 export default function AdminSuppliersPage() {
   const { t, locale } = useT();
   const confirm = useConfirm();
@@ -24,11 +36,17 @@ export default function AdminSuppliersPage() {
   const toast = useToast();
   const [suppliers, setSuppliers] = useState<CommunitySupplierAdminView[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<StatusFilter>("all");
+  const [selected, setSelected] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     adminSupplierApi
       .list()
-      .then((r) => setSuppliers(r.suppliers))
+      .then((r) => {
+        // Newest first by created_at — matches the spec's default sort.
+        const sorted = [...r.suppliers].sort((a, b) => b.created_at - a.created_at);
+        setSuppliers(sorted);
+      })
       .catch((e) => {
         toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
       })
@@ -39,12 +57,46 @@ export default function AdminSuppliersPage() {
     setSuppliers((cur) => cur.map((s) => (s.id === next.id ? next : s)));
   }
 
+  // Apply the status filter. We re-derive once per render — list stays small.
+  const visibleSuppliers = useMemo(() => {
+    const now = Math.floor(Date.now() / 1000);
+    if (filter === "all") return suppliers;
+    if (filter === "active")
+      return suppliers.filter((s) => s.status === "active" && !isPending(s, now));
+    if (filter === "hidden") return suppliers.filter((s) => s.status === "hidden");
+    if (filter === "pending") return suppliers.filter((s) => isPending(s, now));
+    return suppliers;
+  }, [suppliers, filter]);
+
+  // Reset selection when filter changes — selected ids might no longer be visible.
+  useEffect(() => {
+    setSelected(new Set());
+  }, [filter]);
+
+  function toggleRow(id: number) {
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((cur) => {
+      const visibleIds = visibleSuppliers.map((s) => s.id);
+      const allSelected = visibleIds.every((id) => cur.has(id)) && visibleIds.length > 0;
+      if (allSelected) return new Set();
+      return new Set(visibleIds);
+    });
+  }
+
   async function onHide(supplier: CommunitySupplierAdminView) {
     const reason = await promptEntry({
       title: t("admin.confirm_hide_title"),
-      label: t("admin.hide_reason_label"),
+      label: `${t("admin.hide_reason_label")} ${t("admin.hide_reason_optional")}`,
       placeholder: t("admin.hide_reason_placeholder"),
-      helperText: t("admin.confirm_hide_body"),
+      helperText: t("admin.hide_reason_help"),
       confirmLabel: t("admin.hide"),
       cancelLabel: t("common.cancel"),
     });
@@ -87,6 +139,61 @@ export default function AdminSuppliersPage() {
     }
   }
 
+  async function onBulkHide() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: t("admin.bulk_hide_confirm_title"),
+      body: t("admin.bulk_hide_confirm_body", { n: ids.length }),
+      confirmLabel: t("admin.bulk_hide"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    // Best-effort sequential — small N, audit log keeps order tidy.
+    let failed = 0;
+    for (const id of ids) {
+      try {
+        const r = await adminSupplierApi.hide(id);
+        replaceSupplier(r.supplier);
+      } catch {
+        failed++;
+      }
+    }
+    if (failed > 0) toast.error(t("common.error_generic"));
+    else toast.success(t("admin.bulk_hide"));
+    setSelected(new Set());
+  }
+
+  async function onBulkDelete() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: t("admin.bulk_delete_confirm_title"),
+      body: t("admin.bulk_delete_confirm_body", { n: ids.length }),
+      confirmLabel: t("admin.bulk_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    let failed = 0;
+    const removed = new Set<number>();
+    for (const id of ids) {
+      try {
+        await adminSupplierApi.remove(id);
+        removed.add(id);
+      } catch {
+        failed++;
+      }
+    }
+    setSuppliers((cur) => cur.filter((s) => !removed.has(s.id)));
+    if (failed > 0) toast.error(t("common.error_generic"));
+    else toast.success(t("admin.bulk_delete"));
+    setSelected(new Set());
+  }
+
+  const visibleIds = visibleSuppliers.map((s) => s.id);
+  const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
+
   return (
     <AppShell>
       <header className="mb-6">
@@ -94,96 +201,194 @@ export default function AdminSuppliersPage() {
         <p className="mt-1 text-sm text-ink-500">{t("admin.suppliers_sub")}</p>
       </header>
 
+      {/* Status filter chips. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs uppercase tracking-wide text-ink-500">
+          {t("admin.filter_status_label")}
+        </span>
+        <FilterChip
+          label={t("admin.filter_status_all")}
+          active={filter === "all"}
+          onClick={() => setFilter("all")}
+        />
+        <FilterChip
+          label={t("admin.filter_status_pending")}
+          active={filter === "pending"}
+          onClick={() => setFilter("pending")}
+        />
+        <FilterChip
+          label={t("admin.filter_status_active")}
+          active={filter === "active"}
+          onClick={() => setFilter("active")}
+        />
+        <FilterChip
+          label={t("admin.filter_status_hidden")}
+          active={filter === "hidden"}
+          onClick={() => setFilter("hidden")}
+        />
+      </div>
+
+      {/* Bulk-action toolbar. Stays mounted for layout stability. */}
+      {selected.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 px-3 py-2 text-sm">
+          <span className="font-medium text-ink-700">
+            {t("admin.bulk_selected", { n: selected.size })}
+          </span>
+          <button type="button" className="btn-ghost btn-sm" onClick={() => setSelected(new Set())}>
+            {t("admin.bulk_clear")}
+          </button>
+          <span className="ml-auto flex gap-1">
+            <button type="button" className="btn-outline btn-sm" onClick={onBulkHide}>
+              <EyeOff size={14} /> {t("admin.bulk_hide")}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost btn-sm text-blush-700"
+              onClick={onBulkDelete}
+            >
+              <Trash2 size={14} /> {t("admin.bulk_delete")}
+            </button>
+          </span>
+        </div>
+      )}
+
       {loading ? (
         <div className="text-sm text-ink-500">{t("common.loading")}</div>
       ) : suppliers.length === 0 ? (
         <div className="card text-sm text-ink-500">{t("admin.empty")}</div>
+      ) : visibleSuppliers.length === 0 ? (
+        <div className="card text-sm text-ink-500">{t("admin.empty_filtered")}</div>
       ) : (
         <div className="card overflow-x-auto p-0">
           <table className="min-w-full text-sm">
             <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
               <tr>
+                <th className="w-10 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    aria-label={t("admin.select_all_aria")}
+                  />
+                </th>
                 <th className="px-4 py-3">{t("admin.table_supplier")}</th>
                 <th className="px-4 py-3 hidden md:table-cell">{t("admin.table_category")}</th>
                 <th className="px-4 py-3 hidden lg:table-cell">{t("admin.table_submitter")}</th>
+                <th className="px-4 py-3">{t("admin.table_submitted_at")}</th>
                 <th className="px-4 py-3">{t("admin.table_status")}</th>
                 <th className="px-4 py-3 text-right">{t("admin.table_actions")}</th>
               </tr>
             </thead>
             <tbody>
-              {suppliers.map((s) => (
-                <tr key={s.id} className="border-t border-paper-200 align-top">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-ink-900">{s.name}</div>
-                    <div className="mt-0.5 text-xs text-ink-500">{s.city}</div>
-                    {s.website && (
-                      <a
-                        href={s.website}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-ink-700 underline-offset-2 hover:underline"
-                      >
-                        <ExternalLink size={12} aria-hidden />
-                        <span className="truncate max-w-[16rem]">{s.website}</span>
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell text-ink-700">
-                    {t(`suppliers.cat.${s.category}`)}
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <div className="text-ink-700 break-all">{s.submitter_email}</div>
-                    <div className="mt-0.5 text-xs uppercase tracking-wide text-ink-500">
+              {visibleSuppliers.map((s) => {
+                const isSel = selected.has(s.id);
+                return (
+                  <tr key={s.id} className="border-t border-paper-200 align-top">
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        checked={isSel}
+                        onChange={() => toggleRow(s.id)}
+                        aria-label={t("admin.select_row_aria")}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-ink-900">{s.name}</div>
+                      <div className="mt-0.5 text-xs text-ink-500">{s.city}</div>
+                      {s.website && (
+                        <a
+                          href={s.website}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="mt-1 inline-flex items-center gap-1 text-xs text-ink-700 underline-offset-2 hover:underline"
+                        >
+                          <ExternalLink size={12} aria-hidden />
+                          <span className="truncate max-w-[16rem]">{s.website}</span>
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell text-ink-700">
+                      {t(`suppliers.cat.${s.category}`)}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <div className="text-ink-700 break-all">{s.submitter_email}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs uppercase tracking-wide text-ink-500 whitespace-nowrap">
                       {formatDate(s.created_at, locale)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
-                    {s.status === "hidden" && s.hide_reason && (
-                      <div className="mt-1 text-xs text-ink-500 italic max-w-[14rem]">
-                        {s.hide_reason}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {s.status === "active" ? (
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
+                      {s.status === "hidden" && s.hide_reason && (
+                        <div className="mt-1 text-xs text-ink-500 italic max-w-[14rem]">
+                          {s.hide_reason}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {s.status === "active" ? (
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm"
+                          onClick={() => onHide(s)}
+                          aria-label={t("admin.hide")}
+                        >
+                          <EyeOff size={14} />
+                          <span className="hidden sm:inline">{t("admin.hide")}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm"
+                          onClick={() => onUnhide(s)}
+                          aria-label={t("admin.unhide")}
+                        >
+                          <Eye size={14} />
+                          <span className="hidden sm:inline">{t("admin.unhide")}</span>
+                        </button>
+                      )}
                       <button
                         type="button"
-                        className="btn-ghost btn-sm"
-                        onClick={() => onHide(s)}
-                        aria-label={t("admin.hide")}
+                        className="btn-ghost btn-sm text-blush-700"
+                        onClick={() => onDelete(s)}
+                        aria-label={t("admin.delete")}
                       >
-                        <EyeOff size={14} />
-                        <span className="hidden sm:inline">{t("admin.hide")}</span>
+                        <Trash2 size={14} />
+                        <span className="hidden sm:inline">{t("admin.delete")}</span>
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm"
-                        onClick={() => onUnhide(s)}
-                        aria-label={t("admin.unhide")}
-                      >
-                        <Eye size={14} />
-                        <span className="hidden sm:inline">{t("admin.unhide")}</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm text-blush-700"
-                      onClick={() => onDelete(s)}
-                      aria-label={t("admin.delete")}
-                    >
-                      <Trash2 size={14} />
-                      <span className="hidden sm:inline">{t("admin.delete")}</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
     </AppShell>
+  );
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={
+        active
+          ? "rounded-full border border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100"
+          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 hover:border-ink-300"
+      }
+    >
+      {label}
+    </button>
   );
 }
 

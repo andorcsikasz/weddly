@@ -9,6 +9,9 @@ import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
+/** Which input the lookup error highlights. `null` = generic banner. */
+type LookupErrorField = "couple" | "code" | "both" | null;
+
 export default function RsvpCheckinPage() {
   const { t, locale, setLocale } = useT();
   const [params, setParams] = useSearchParams();
@@ -20,7 +23,10 @@ export default function RsvpCheckinPage() {
   const [codeInput, setCodeInput] = useState(initialCode);
   const [view, setView] = useState<PublicCheckinView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<LookupErrorField>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const coupleInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-submit when the URL was hand-fed both values (e.g. couple shared
   // a pre-filled link). Run once.
@@ -34,18 +40,50 @@ export default function RsvpCheckinPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function focusCoupleInput() {
+    // Refocus the slug input next-frame so the toast/animation has time
+    // to start fading before we steal focus.
+    requestAnimationFrame(() => coupleInputRef.current?.focus());
+  }
+
+  function resetForNextGuest() {
+    setView(null);
+    setError(null);
+    setErrorField(null);
+    setCoupleInput("");
+    setCodeInput("");
+    setParams({}, { replace: true });
+    focusCoupleInput();
+  }
+
   async function doLookup(couple: string, code: string) {
     setSubmitting(true);
     setError(null);
+    setErrorField(null);
     try {
       const r = await rsvpApi.lookup(couple, code);
       setView(r.rsvp);
       setParams({ couple, code }, { replace: true });
     } catch (err) {
+      // Map the server's text response onto field-level errors. Backend
+      // returns "Couple not found" (404) when the slug is wrong, and
+      // "Code not found" (404) when the slug is fine but the code isn't.
+      // 400 means malformed input — usually one or both fields invalid.
       if (err instanceof ApiError && (err.status === 404 || err.status === 400)) {
-        setError(t("rsvp.checkin_lookup_failed"));
+        const msg = err.message ?? "";
+        if (/couple/i.test(msg)) {
+          setError(t("rsvp.checkin_lookup_couple_unknown"));
+          setErrorField("couple");
+        } else if (/code/i.test(msg)) {
+          setError(t("rsvp.checkin_lookup_code_unknown"));
+          setErrorField("code");
+        } else {
+          setError(t("rsvp.checkin_lookup_failed"));
+          setErrorField("both");
+        }
       } else {
         setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+        setErrorField(null);
       }
     } finally {
       setSubmitting(false);
@@ -56,7 +94,11 @@ export default function RsvpCheckinPage() {
     e.preventDefault();
     const couple = coupleInput.trim().toUpperCase();
     const code = codeInput.trim();
-    if (!couple || !code) return;
+    if (!couple || !code) {
+      setError(t("rsvp.checkin_lookup_missing"));
+      setErrorField(!couple && !code ? "both" : !couple ? "couple" : "code");
+      return;
+    }
     void doLookup(couple, code);
   }
 
@@ -79,7 +121,9 @@ export default function RsvpCheckinPage() {
           onBack={() => {
             setView(null);
             setError(null);
+            setErrorField(null);
           }}
+          onNextGuest={resetForNextGuest}
         />
       ) : (
         <form className="card stationery animate-fade-in-up" onSubmit={onSubmitLookup}>
@@ -93,16 +137,28 @@ export default function RsvpCheckinPage() {
               </label>
               <input
                 id="rsvp-couple"
-                className="input font-mono uppercase tracking-[0.3em] text-center text-lg"
+                ref={coupleInputRef}
+                className={
+                  errorField === "couple" || errorField === "both"
+                    ? "input font-mono uppercase tracking-[0.3em] text-center text-lg min-h-14 border-blush-400 focus:border-blush-500"
+                    : "input font-mono uppercase tracking-[0.3em] text-center text-lg min-h-14"
+                }
                 value={coupleInput}
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
                 placeholder="ANDORSARI"
                 onChange={(e) => setCoupleInput(e.target.value.toUpperCase())}
+                onFocus={(e) =>
+                  e.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" })
+                }
                 maxLength={24}
+                aria-invalid={errorField === "couple" || errorField === "both"}
+                aria-describedby="rsvp-couple-help"
               />
-              <p className="mt-1 text-xs text-ink-500">{t("rsvp.checkin_couple_help")}</p>
+              <p id="rsvp-couple-help" className="mt-1 text-xs text-ink-500">
+                {t("rsvp.checkin_couple_help")}
+              </p>
             </div>
             <div>
               <label className="field-label" htmlFor="rsvp-code">
@@ -110,19 +166,44 @@ export default function RsvpCheckinPage() {
               </label>
               <input
                 id="rsvp-code"
-                className="input font-mono tracking-[0.5em] text-center text-2xl"
+                className={
+                  errorField === "code" || errorField === "both"
+                    ? "input font-mono tracking-[0.5em] text-center text-2xl min-h-14 border-blush-400 focus:border-blush-500"
+                    : "input font-mono tracking-[0.5em] text-center text-2xl min-h-14"
+                }
                 value={codeInput}
                 inputMode="numeric"
                 pattern="[0-9]*"
+                autoComplete="one-time-code"
+                enterKeyHint="go"
                 placeholder="0000"
                 onChange={(e) => setCodeInput(e.target.value.replace(/[^0-9]/g, ""))}
+                onFocus={(e) =>
+                  e.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" })
+                }
                 maxLength={4}
+                aria-invalid={errorField === "code" || errorField === "both"}
+                aria-describedby="rsvp-code-help"
               />
-              <p className="mt-1 text-xs text-ink-500">{t("rsvp.checkin_code_help")}</p>
+              <p id="rsvp-code-help" className="mt-1 text-xs text-ink-500">
+                {t("rsvp.checkin_code_help")}
+              </p>
             </div>
           </div>
 
-          {error && <p className="field-error mt-4">{error}</p>}
+          {error && (
+            <div className="mt-4 space-y-2">
+              <p className="field-error" role="alert">
+                {error}
+              </p>
+              <a
+                className="inline-block text-sm text-ink-600 underline underline-offset-2 hover:text-ink-900"
+                href={t("rsvp.checkin_contact_hosts_email")}
+              >
+                {t("rsvp.checkin_contact_hosts")}
+              </a>
+            </div>
+          )}
 
           <button type="submit" className="btn-accent btn-lg mt-6 w-full" disabled={submitting}>
             {submitting ? t("common.loading") : t("rsvp.checkin_submit")}

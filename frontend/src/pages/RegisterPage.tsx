@@ -1,37 +1,126 @@
-import { type FormEvent, useState } from "react";
+import type { AuthSession } from "@shared/types";
+import { Mail } from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
-import { PasswordField } from "../components/ui";
-import { ApiError } from "../lib/api";
+import { Button, PasswordField, useToast } from "../components/ui";
+import { ApiError, setToken } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { setSession } = useAuth();
   const { t } = useT();
+  const toast = useToast();
   useDocumentMeta("seo.register_title", "seo.register_description");
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [fullName, setFullName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Holds the freshly-minted session until the user clicks past the
+  // "check your inbox" interstitial. We don't call setSession() until then,
+  // otherwise <RedirectIfAuthed> bounces them straight to /onboarding.
+  const [pendingSession, setPendingSession] = useState<AuthSession | null>(null);
+  const [resending, setResending] = useState(false);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(min-width: 640px)").matches) {
+      nameRef.current?.focus();
+    }
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     setError(null);
+    if (password !== passwordConfirm) {
+      setError(t("auth.password_mismatch"));
+      return;
+    }
+    setSubmitting(true);
     try {
-      await register(email.trim(), password, fullName.trim());
-      // First-time signup: route into onboarding so they pick a wedding date etc.
-      navigate("/onboarding", { replace: true });
+      const session = await authApi.register({
+        email: email.trim(),
+        password,
+        full_name: fullName.trim(),
+      });
+      // Persist the token so the resend call authenticates and a hard
+      // refresh on the interstitial still has a valid session. We hold
+      // off on setSession() (i.e. setUser) until the user clicks past
+      // the interstitial — otherwise <RedirectIfAuthed> would bounce
+      // them straight to /onboarding.
+      setToken(session.token);
+      setPendingSession(session);
     } catch (err) {
       setError(messageFor(err, t));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function onResend() {
+    if (!pendingSession) return;
+    setResending(true);
+    try {
+      await authApi.requestVerify();
+      toast.success(t("verify.banner_resent"));
+    } catch (err) {
+      const msg =
+        err instanceof ApiError && err.status === 429
+          ? t("auth.rate_limited")
+          : t("common.error_generic");
+      toast.error(msg);
+    } finally {
+      setResending(false);
+    }
+  }
+
+  function continueToApp() {
+    if (!pendingSession) return;
+    setSession(pendingSession.token, pendingSession.user);
+    navigate("/onboarding", { replace: true });
+  }
+
+  if (pendingSession) {
+    return (
+      <Shell>
+        <div className="mx-auto max-w-md">
+          <div className="card text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blush-100 text-blush-700">
+              <Mail size={22} />
+            </div>
+            <h1 className="mt-5 text-2xl">{t("verify.check_inbox_title")}</h1>
+            <p className="mt-3 text-sm text-ink-700">{t("verify.check_inbox_body")}</p>
+            <p className="mt-4 break-all rounded-lg bg-paper-100 px-3 py-2 text-sm font-medium text-ink-900">
+              {pendingSession.user.email}
+            </p>
+            <p className="mt-4 text-xs text-ink-500">{t("verify.check_inbox_spam_hint")}</p>
+            <div className="mt-6 flex flex-col gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                fullWidth
+                loading={resending}
+                loadingLabel={t("verify.banner_resending")}
+                onClick={onResend}
+              >
+                {t("verify.banner_resend")}
+              </Button>
+              <Button type="button" variant="primary" fullWidth onClick={continueToApp}>
+                {t("verify.check_inbox_skip")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Shell>
+    );
   }
 
   return (
@@ -45,13 +134,13 @@ export default function RegisterPage() {
                 {t("auth.full_name_label")}
               </label>
               <input
+                ref={nameRef}
                 id="full_name"
                 type="text"
                 className="input"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                autoFocus
               />
             </div>
             <div>
@@ -76,10 +165,29 @@ export default function RegisterPage() {
               minLength={8}
               helperText={t("auth.short_password")}
             />
+            <PasswordField
+              id="password_confirm"
+              label={t("auth.password_confirm_label")}
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
+              required
+              minLength={8}
+              errorText={
+                passwordConfirm.length > 0 && passwordConfirm !== password
+                  ? t("auth.password_mismatch")
+                  : undefined
+              }
+            />
             {error && <p className="field-error">{error}</p>}
-            <button type="submit" className="btn-primary w-full" disabled={submitting}>
-              {submitting ? t("common.loading") : t("auth.submit_register")}
-            </button>
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              loading={submitting}
+              loadingLabel={t("common.loading")}
+            >
+              {t("auth.submit_register")}
+            </Button>
           </form>
           <p className="mt-4 text-sm text-ink-600">
             {t("auth.have_account")}{" "}

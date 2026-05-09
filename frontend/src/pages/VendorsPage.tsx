@@ -1,10 +1,9 @@
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { ArrowLeft, Mail } from "lucide-react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PhaseAftermathArt, PhaseGuestsArt, PhaseSuppliersArt } from "../components/illustrations";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
-import { TextField } from "../components/ui/TextField";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -29,7 +28,7 @@ export default function VendorsPage() {
           </p>
           <div className="mt-9 flex justify-center lg:justify-start">
             <a href="#waitlist" className="btn-primary btn-lg shadow-sm">
-              {t("vendors.form_submit")}
+              {t("vendors.contact_cta")}
             </a>
           </div>
         </div>
@@ -61,10 +60,11 @@ export default function VendorsPage() {
         </div>
       </section>
 
-      {/* Waitlist form */}
+      {/* Waitlist contact — mailto rather than a fake form so we don't promise
+       *  storage we don't have. Wire to a real endpoint when one exists. */}
       <section id="waitlist" className="bg-paper-50">
         <div className="mx-auto max-w-2xl px-4 py-20 sm:px-6 sm:py-24">
-          <WaitlistForm />
+          <WaitlistContact />
         </div>
       </section>
 
@@ -100,75 +100,22 @@ function Benefit({
   );
 }
 
-function WaitlistForm() {
+function WaitlistContact() {
   const { t } = useT();
-  const [business, setBusiness] = useState("");
-  const [email, setEmail] = useState("");
-  const [category, setCategory] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  if (submitted) {
-    return (
-      <div className="rounded-2xl border border-blush-200 bg-blush-50 p-8 text-center">
-        <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-blush-500 text-white">
-          <CheckCircle2 size={22} />
-        </div>
-        <h2 className="mt-4 font-serif text-3xl text-ink-900">{t("vendors.form_success_title")}</h2>
-        <p className="mt-2 text-base text-ink-700">{t("vendors.form_success_body")}</p>
-      </div>
-    );
-  }
-
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (submitting) return;
-    setSubmitting(true);
-    window.setTimeout(() => {
-      setSubmitted(true);
-      setSubmitting(false);
-    }, 400);
-  }
+  const subject = encodeURIComponent(t("vendors.contact_subject"));
+  const href = `mailto:hello@weddly.hu?subject=${subject}`;
 
   return (
     <div className="card">
-      <h2 className="font-serif text-3xl text-ink-900 sm:text-4xl">{t("vendors.form_title")}</h2>
-      <p className="mt-2 text-sm text-ink-600">{t("vendors.form_sub")}</p>
-
-      <form onSubmit={onSubmit} className="mt-8 space-y-4" noValidate>
-        <TextField
-          id="vendor-business"
-          label={t("vendors.form_business_label")}
-          value={business}
-          onChange={(e) => setBusiness(e.target.value)}
-          required
-          autoComplete="organization"
-        />
-        <TextField
-          id="vendor-email"
-          label={t("vendors.form_email_label")}
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="email"
-        />
-        <TextField
-          id="vendor-category"
-          label={t("vendors.form_category_label")}
-          placeholder={t("vendors.form_category_placeholder")}
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}
-        </button>
-      </form>
+      <h2 className="font-serif text-3xl text-ink-900 sm:text-4xl">{t("vendors.contact_title")}</h2>
+      <p className="mt-2 text-sm text-ink-600">{t("vendors.contact_body")}</p>
+      <a
+        href={href}
+        className="btn-primary btn-lg mt-8 inline-flex w-full justify-center sm:w-auto"
+      >
+        <Mail size={16} />
+        {t("vendors.contact_cta")}
+      </a>
     </div>
   );
 }

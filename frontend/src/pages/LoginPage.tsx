@@ -1,7 +1,7 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type Ref, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
-import { PasswordField } from "../components/ui";
+import { Button, PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
@@ -19,6 +19,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
+
+  // Only autofocus on screens wide enough for a hardware keyboard — on phones
+  // the autofocus shoves the soft keyboard up and shifts the layout.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(min-width: 640px)").matches) {
+      emailRef.current?.focus();
+    }
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -47,7 +57,7 @@ export default function LoginPage() {
               value={email}
               onChange={setEmail}
               required
-              autoFocus
+              inputRef={emailRef}
             />
             <PasswordField
               id="password"
@@ -57,9 +67,15 @@ export default function LoginPage() {
               required
             />
             {error && <p className="field-error">{error}</p>}
-            <button type="submit" className="btn-primary w-full" disabled={submitting}>
-              {submitting ? t("common.loading") : t("auth.submit_login")}
-            </button>
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              loading={submitting}
+              loadingLabel={t("common.loading")}
+            >
+              {t("auth.submit_login")}
+            </Button>
           </form>
           <p className="mt-4 text-sm text-ink-600">
             {t("auth.no_account")}{" "}
@@ -85,7 +101,7 @@ function Field({
   value,
   onChange,
   required,
-  autoFocus,
+  inputRef,
 }: {
   id: string;
   label: string;
@@ -93,7 +109,7 @@ function Field({
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
-  autoFocus?: boolean;
+  inputRef?: Ref<HTMLInputElement>;
 }) {
   return (
     <div>
@@ -101,13 +117,13 @@ function Field({
         {label}
       </label>
       <input
+        ref={inputRef}
         id={id}
         type={type}
         className="input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        autoFocus={autoFocus}
       />
     </div>
   );

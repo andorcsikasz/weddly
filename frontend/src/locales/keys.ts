@@ -35,6 +35,8 @@ export interface LocaleMessages {
     register_title: string;
     email_label: string;
     password_label: string;
+    password_confirm_label: string;
+    password_mismatch: string;
     full_name_label: string;
     submit_login: string;
     submit_register: string;
@@ -49,6 +51,9 @@ export interface LocaleMessages {
     forgot_help: string;
     forgot_submit: string;
     forgot_sent: string;
+    forgot_sent_with_email: string;
+    forgot_spam_hint: string;
+    forgot_wrong_address: string;
     back_to_login: string;
     reset_title: string;
     new_password_label: string;
@@ -70,14 +75,25 @@ export interface LocaleMessages {
     page_success: string;
     page_invalid: string;
     page_back_to_app: string;
+    check_inbox_title: string;
+    check_inbox_body: string;
+    check_inbox_spam_hint: string;
+    check_inbox_skip: string;
   };
   onboarding: {
     welcome: string;
     intro: string;
     step1_title: string;
     step1_help: string;
+    step1_short: string;
+    step2_short: string;
+    step3_short: string;
+    step4_short: string;
+    step5_short: string;
     bride_name_label: string;
     groom_name_label: string;
+    partner_one_label: string;
+    partner_two_label: string;
     step2_title: string;
     wedding_date_label: string;
     step3_title: string;
@@ -204,6 +220,13 @@ export interface LocaleMessages {
     task_add_tables: string;
     task_seat_guests: string;
     quick_links_title: string;
+    /** "Next action" hero CTA above the KPIs. */
+    next_action_label: string;
+    /** When the wedding date is in the past, the days-to-go tile flips to a celebration. */
+    kpi_days_past: string;
+    kpi_days_past_sub: string;
+    kpi_days_past_seating_pdf: string;
+    kpi_days_past_guest_csv: string;
   };
   invite: {
     title: string;
@@ -393,7 +416,16 @@ export interface LocaleMessages {
     form_submitting: string;
     form_success_title: string;
     form_success_body: string;
+    /** Mailto-based interest CTA (replaces fake waitlist form). */
+    contact_title: string;
+    contact_body: string;
+    contact_cta: string;
+    contact_subject: string;
     back_to_landing: string;
+  };
+  public: {
+    menu_open: string;
+    menu_close: string;
   };
   nav: {
     dashboard: string;
@@ -402,6 +434,17 @@ export interface LocaleMessages {
     seating: string;
     suppliers: string;
     print: string;
+    /** Accessible label for the locale toggle. */
+    switch_language: string;
+    /** Word for the *target* language shown next to the globe. */
+    switch_to_en: string;
+    switch_to_hu: string;
+    /** Short variants for the bottom nav, in case full labels truncate. */
+    tab_dashboard: string;
+    tab_guests: string;
+    tab_budget: string;
+    tab_seating: string;
+    tab_suppliers: string;
   };
   guests: {
     title: string;
@@ -448,9 +491,38 @@ export interface LocaleMessages {
     couple_slug_invalid: string;
     couple_slug_taken: string;
     dietary: string;
+    /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
+    allergies: string;
+    allergies_placeholder: string;
+    /** Re-uses the meal picker label — kept distinct from `dietary`. */
+    meal: string;
     notes: string;
     accommodation: string;
     song_request: string;
+    // ── Orphan-guests rescue card ────────────────────────────────────
+    orphans_title: string;
+    orphans_body: string;
+    orphans_assign_button: string;
+    orphans_assigning: string;
+    orphans_support_link: string;
+    orphans_support_url: string;
+    // ── Import errors modal ──────────────────────────────────────────
+    import_imported_label: string;
+    import_skipped_label: string;
+    import_errors_label: string;
+    import_errors_title: string;
+    import_errors_body: string;
+    import_errors_close: string;
+    import_row_label: string;
+    // ── RSVP badge accessible labels (per status) ────────────────────
+    rsvp_badge_pending: string;
+    rsvp_badge_yes: string;
+    rsvp_badge_no: string;
+    rsvp_badge_maybe: string;
+    // ── Copy-link manual fallback ────────────────────────────────────
+    copy_failed_title: string;
+    copy_failed_body: string;
+    copy_failed_close: string;
     meal_meat: string;
     meal_fish: string;
     meal_vegetarian: string;
@@ -478,6 +550,8 @@ export interface LocaleMessages {
     planned: string;
     actual: string;
     delta: string;
+    note: string;
+    note_placeholder: string;
     add_line: string;
     save_snapshot: string;
     snapshot_name_prompt: string;
@@ -491,7 +565,9 @@ export interface LocaleMessages {
     total_actual: string;
     cap: string;
     over_budget: string;
+    over_budget_strip: string;
     cost_per_guest: string;
+    slider_scope_note: string;
     // ── Cost-planning panel ─────────────────────────────────────────
     cost_planning_title: string;
     cost_planning_with_count: string;
@@ -502,6 +578,9 @@ export interface LocaleMessages {
     lines_empty: string;
     snapshots_sub: string;
     snapshot_default_name: string;
+    snapshot_planned_label: string;
+    snapshot_actual_label: string;
+    snapshot_diff_label: string;
     cat: {
       venue: string;
       catering: string;
@@ -559,6 +638,46 @@ export interface LocaleMessages {
     confirm_download: string;
     drop_to_unassign: string;
     drop_to_unassign_active: string;
+    /** Position readout: "Pozíció: {x} m balról, {y} m fentről". */
+    position_label_full: string;
+    /** Section divider above the seat-grid. */
+    assignments_section_title: string;
+    assignments_section_hint: string;
+    /** Tap-to-place mode toggle + helper banners. */
+    tap_mode_on: string;
+    tap_mode_off: string;
+    tap_select_help: string;
+    /** Hint shown after a guest is tap-selected — uses {guest} placeholder. */
+    tap_place_hint: string;
+    /** Undo system — toast hints + button labels. */
+    undo_action: string;
+    undo_label: string;
+    undo_failed: string;
+    undo_hint_mac: string;
+    undo_hint_pc: string;
+    /** Toast bodies — use {guest}/{table}/{seat}/{a}/{b}/{old}. */
+    toast_assigned: string;
+    toast_unassigned: string;
+    toast_swapped: string;
+    toast_replaced: string;
+    toast_moved: string;
+    toast_resized: string;
+    /** Conflict (already-occupied seat) prompt. */
+    swap_seats_title: string;
+    swap_seats_body: string;
+    swap_button: string;
+    replace_button: string;
+    /** Keyboard cheatsheet. */
+    shortcuts_button_label: string;
+    shortcuts_title: string;
+    shortcut_arrows: string;
+    shortcut_arrows_shift: string;
+    shortcut_brackets: string;
+    shortcut_delete: string;
+    shortcut_n: string;
+    shortcut_undo: string;
+    /** aria-label template for SVG table groups. {name}/{seats}. */
+    table_aria_label: string;
   };
   suppliers: {
     title: string;
@@ -569,9 +688,28 @@ export interface LocaleMessages {
     chain_help: string;
     community_pill: string;
     drop_your_own: string;
+    /** Free-text search input above the chain. */
+    search_label: string;
+    search_placeholder: string;
+    /** City select / filter. */
+    city_label: string;
+    city_all: string;
+    /** Empty result state when search/city filters out everything. */
+    empty_filtered: string;
+    /** Price-band scale tooltip / legend. */
+    price_legend: string;
+    /** Saved-supplier star + filter chip. */
+    save_aria: string;
+    unsave_aria: string;
+    saved_filter: string;
     submit: {
       title: string;
       intro: string;
+      trust_review: string;
+      trust_email_private: string;
+      trust_no_fees: string;
+      next_steps_title: string;
+      next_steps_body: string;
       category_label: string;
       category_placeholder: string;
       name_label: string;
@@ -625,18 +763,39 @@ export interface LocaleMessages {
     suppliers_title: string;
     suppliers_sub: string;
     empty: string;
+    empty_filtered: string;
     table_supplier: string;
     table_category: string;
     table_submitter: string;
+    table_submitted_at: string;
     table_status: string;
     table_actions: string;
     status_active: string;
     status_hidden: string;
+    /** Status filter chips. */
+    filter_status_label: string;
+    filter_status_all: string;
+    filter_status_pending: string;
+    filter_status_active: string;
+    filter_status_hidden: string;
+    /** Bulk-action toolbar. */
+    bulk_selected: string;
+    bulk_clear: string;
+    bulk_hide: string;
+    bulk_delete: string;
+    bulk_hide_confirm_title: string;
+    bulk_hide_confirm_body: string;
+    bulk_delete_confirm_title: string;
+    bulk_delete_confirm_body: string;
+    select_row_aria: string;
+    select_all_aria: string;
     hide: string;
     unhide: string;
     delete: string;
     hide_reason_label: string;
+    hide_reason_optional: string;
     hide_reason_placeholder: string;
+    hide_reason_help: string;
     confirm_hide_title: string;
     confirm_hide_body: string;
     confirm_delete_title: string;
@@ -671,6 +830,12 @@ export interface LocaleMessages {
     checkin_code_help: string;
     checkin_submit: string;
     checkin_lookup_failed: string;
+    /** Field-level error variants for the lookup form. */
+    checkin_lookup_couple_unknown: string;
+    checkin_lookup_code_unknown: string;
+    checkin_lookup_missing: string;
+    checkin_contact_hosts: string;
+    checkin_contact_hosts_email: string;
     checkin_household_for: string;
     checkin_for_member: string;
     checkin_member_dietary: string;
@@ -679,6 +844,15 @@ export interface LocaleMessages {
     checkin_save_for_all: string;
     checkin_back_to_lookup: string;
     checkin_household_label: string;
+    /** Day-of greeter — "next guest" controls. */
+    checkin_next_guest: string;
+    checkin_done_title: string;
+    /** Pending status pill on the household form. */
+    pick_pending: string;
+    /** Confirm dialog when toggling away from "yes" with pre-filled data. */
+    decline_keep_data_title: string;
+    decline_keep_data_body: string;
+    decline_keep_data_confirm: string;
   };
   notfound: {
     title: string;
@@ -694,6 +868,8 @@ export interface LocaleMessages {
     personal_info_body: string;
     field_name: string;
     field_email: string;
+    /** Help text under the read-only email field. */
+    email_change_help: string;
     payments_title: string;
     payments_body: string;
     export_title: string;
@@ -709,6 +885,15 @@ export interface LocaleMessages {
     pause_pending: string;
     pause_pending_until: string;
     cancel_pause: string;
+    /** Preferences card. */
+    preferences_title: string;
+    preferences_body: string;
+    preferences_locale_label: string;
+    preferences_locale_hu: string;
+    preferences_locale_en: string;
+    preferences_password_label: string;
+    preferences_password_help: string;
+    preferences_password_link: string;
   };
   error_boundary: {
     title: string;

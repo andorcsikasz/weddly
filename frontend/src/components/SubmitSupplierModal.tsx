@@ -137,7 +137,11 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     setSubmitting(true);
     try {
       const res = await supplierApi.submitCommunity(payload);
-      toast.success(`${t("suppliers.submit.success_title")} ${t("suppliers.submit.success_body")}`);
+      // Tell the user *what happens next*, not just "thanks". The next-steps
+      // copy reuses the trust-signal review window so expectations match.
+      toast.success(
+        `${t("suppliers.submit.next_steps_title")} ${t("suppliers.submit.next_steps_body")}`,
+      );
       onSubmitted(res.supplier);
       onClose();
     } catch (err) {
@@ -162,7 +166,9 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       open={open}
       role="dialog"
       title={t("suppliers.submit.title")}
-      onClose={onClose}
+      onClose={() => {
+        if (!submitting) onClose();
+      }}
       footer={
         <>
           <Button variant="outline" type="button" onClick={onClose} disabled={submitting}>
@@ -180,7 +186,32 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
         </>
       }
     >
-      <p className="mb-4 text-sm text-ink-600">{t("suppliers.submit.intro")}</p>
+      <p className="text-sm text-ink-600">{t("suppliers.submit.intro")}</p>
+      {/* Trust signals — short bullets so the user knows what they're signing up
+       *  for before they hit submit. */}
+      <ul className="mb-4 mt-3 space-y-1 text-xs text-ink-600">
+        <li className="flex items-start gap-2">
+          <span
+            aria-hidden
+            className="mt-0.5 inline-block h-1 w-1 shrink-0 rounded-full bg-blush-500"
+          />
+          <span>{t("suppliers.submit.trust_review")}</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span
+            aria-hidden
+            className="mt-0.5 inline-block h-1 w-1 shrink-0 rounded-full bg-blush-500"
+          />
+          <span>{t("suppliers.submit.trust_email_private")}</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span
+            aria-hidden
+            className="mt-0.5 inline-block h-1 w-1 shrink-0 rounded-full bg-blush-500"
+          />
+          <span>{t("suppliers.submit.trust_no_fees")}</span>
+        </li>
+      </ul>
       <form id="submit-supplier-form" onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="submit-supplier-category" className="field-label">
@@ -316,17 +347,22 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
                   role="radio"
                   aria-checked={selected}
                   onClick={() => setField("price_band", band)}
+                  title={t("suppliers.price_legend")}
                   className={
                     selected
-                      ? "min-h-tap flex-1 rounded-xl border border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
-                      : "min-h-tap flex-1 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-300"
+                      ? "min-h-tap flex-1 rounded-xl border border-ink-700 bg-ink-700 px-3 py-2 font-mono text-sm font-medium text-paper-100"
+                      : "min-h-tap flex-1 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 font-mono text-sm text-ink-700 hover:border-ink-300"
                   }
                 >
-                  {"$".repeat(band)}
+                  {"●".repeat(band)}
+                  {"○".repeat(4 - band)}
                 </button>
               );
             })}
           </div>
+          <p className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-ink-400">
+            <span>{t("suppliers.price_legend")}</span>
+          </p>
           {errors.price_band ? (
             <FieldError id="submit-supplier-price-error">{errors.price_band}</FieldError>
           ) : (

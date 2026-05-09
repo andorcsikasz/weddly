@@ -26,6 +26,21 @@ export function formatHuf(amount: number, locale: Locale = "hu"): string {
   return (locale === "en" ? hufFmtEn : hufFmt).format(Math.round(amount));
 }
 
+const HUF_COMPACT = (locale: Locale) =>
+  new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  });
+
+const hufCompactHu = HUF_COMPACT("hu");
+const hufCompactEn = HUF_COMPACT("en");
+
+/** Compact, currency-symbol-less HUF for tight UI spots: "132k", "2,8M". */
+export function formatHufCompact(amount: number, locale: Locale = "hu"): string {
+  const fmt = locale === "en" ? hufCompactEn : hufCompactHu;
+  return fmt.format(Math.round(amount));
+}
+
 /** Plain integer with locale grouping (e.g. "1 234" in HU, "1,234" in EN). */
 export function formatNumber(n: number, locale: Locale = "hu"): string {
   return (locale === "en" ? numFmtEn : numFmt).format(Math.round(n));

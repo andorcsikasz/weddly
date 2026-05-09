@@ -7,10 +7,10 @@
 // and that's what the PDF export consumes.
 
 import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
-import { ChefHat, Plus, Printer, Trash2 } from "lucide-react";
-import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChefHat, HelpCircle, Plus, Printer, Trash2, Undo2 } from "lucide-react";
+import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Button, Dialog, useConfirm } from "../components/ui";
+import { Button, Dialog, useConfirm, useToast } from "../components/ui";
 import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
@@ -27,9 +27,20 @@ interface PdfPreview {
   label: string;
 }
 
+// In-memory undo entry. Each action stores enough state to reverse itself.
+// Keeping `undo` as a closure over the API call keeps the stack itself
+// agnostic of the action type — the reducer never inspects it.
+interface UndoAction {
+  label: string;
+  undo: () => Promise<void>;
+}
+
+const UNDO_STACK_LIMIT = 20;
+
 export default function SeatingPage() {
   const { t } = useT();
   const confirm = useConfirm();
+  const toast = useToast();
   const [tables, setTables] = useState<SeatingTable[]>([]);
   const [assignments, setAssignments] = useState<SeatAssignment[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -43,6 +54,24 @@ export default function SeatingPage() {
   const [draggingSeatedId, setDraggingSeatedId] = useState<number | null>(null);
   const draggingSeatedRef = useRef<number | null>(null);
   const [unassignedHover, setUnassignedHover] = useState(false);
+  // Tap-to-place mode (forced on for coarse pointers, optional for fine ones).
+  const [coarsePointer, setCoarsePointer] = useState(false);
+  const [tapModeUser, setTapModeUser] = useState(false);
+  const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
+  const tapMode = coarsePointer || tapModeUser;
+  // Undo stack. Bounded by UNDO_STACK_LIMIT — we drop the oldest action when
+  // it overflows so the stack stays small and predictable.
+  const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  // Pending swap/replace prompt when the target seat is already occupied.
+  const [conflictPrompt, setConflictPrompt] = useState<{
+    incoming: Guest;
+    occupant: Guest;
+    targetTableId: number;
+    targetSeatIndex: number;
+    sourceTableId: number | null;
+    sourceSeatIndex: number | null;
+  } | null>(null);
 
   async function refresh() {
     const [plan, gs] = await Promise.all([seatingApi.plan(), guestApi.list()]);
@@ -55,12 +84,282 @@ export default function SeatingPage() {
     refresh();
   }, []);
 
+  // Detect coarse pointer (touch). We listen for changes so a hybrid device
+  // (laptop with touch input) flips correctly when the user reaches for the
+  // touchscreen.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(pointer: coarse)");
+    const apply = () => setCoarsePointer(mq.matches);
+    apply();
+    if (mq.addEventListener) {
+      mq.addEventListener("change", apply);
+      return () => mq.removeEventListener("change", apply);
+    }
+    // Older Safari fallback.
+    mq.addListener(apply);
+    return () => mq.removeListener(apply);
+  }, []);
+
   const guestById = useMemo(() => new Map(guests.map((g) => [g.id, g])), [guests]);
   const seatedIds = useMemo(() => new Set(assignments.map((a) => a.guest_id)), [assignments]);
   const unassigned = useMemo(() => guests.filter((g) => !seatedIds.has(g.id)), [guests, seatedIds]);
   const selected = useMemo(
     () => tables.find((tb) => tb.id === selectedId) ?? null,
     [tables, selectedId],
+  );
+
+  // Look up where a guest currently sits (if anywhere). Useful for both
+  // crafting reverse actions and detecting source-seat for swap flows.
+  const findAssignmentForGuest = useCallback(
+    (guestId: number): SeatAssignment | null =>
+      assignments.find((a) => a.guest_id === guestId) ?? null,
+    [assignments],
+  );
+
+  const findAssignmentAtSeat = useCallback(
+    (tableId: number, seatIndex: number): SeatAssignment | null =>
+      assignments.find((a) => a.table_id === tableId && a.seat_index === seatIndex) ?? null,
+    [assignments],
+  );
+
+  // Stack lives in a ref so concurrent events (drop while a toast is fading)
+  // can't drop entries via stale state. The visible state mirrors length so
+  // the inline "Undo" button can show/hide without race risk.
+  const undoStackRef = useRef<UndoAction[]>([]);
+  const pushUndo = useCallback((action: UndoAction) => {
+    const arr = undoStackRef.current;
+    arr.push(action);
+    if (arr.length > UNDO_STACK_LIMIT) arr.shift();
+    setUndoStack([...arr]);
+  }, []);
+
+  const popAndUndo = useCallback(async () => {
+    const action = undoStackRef.current.pop();
+    setUndoStack([...undoStackRef.current]);
+    if (!action) return;
+    try {
+      await action.undo();
+      await refresh();
+    } catch {
+      toast.error(t("seating.undo_failed"));
+    }
+  }, [toast, t]);
+
+  // Toast helper that primes the user that Cmd/Ctrl+Z (or the inline button)
+  // will reverse the last action.
+  const announceUndoable = useCallback(
+    (message: string) => {
+      const isMac =
+        typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+      const hint = isMac ? t("seating.undo_hint_mac") : t("seating.undo_hint_pc");
+      toast.success(`${message} · ${hint}`);
+    },
+    [toast, t],
+  );
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
+  // Each user action is wrapped so it can register its reverse with the undo
+  // stack. We snapshot the *previous* assignment for the affected guest
+  // before any change so undo can return them exactly where they were.
+
+  const assignGuest = useCallback(
+    async (
+      tableId: number,
+      seatIndex: number,
+      guestId: number,
+      opts?: { silentUndo?: boolean },
+    ) => {
+      const previous = findAssignmentForGuest(guestId);
+      await seatingApi.assign({ table_id: tableId, seat_index: seatIndex, guest_id: guestId });
+      pushUndo({
+        label: t("seating.undo_label"),
+        undo: async () => {
+          if (previous) {
+            await seatingApi.assign({
+              table_id: previous.table_id,
+              seat_index: previous.seat_index,
+              guest_id: guestId,
+            });
+          } else {
+            await seatingApi.unassign(guestId);
+          }
+        },
+      });
+      const guest = guestById.get(guestId);
+      const table = tables.find((tb) => tb.id === tableId);
+      if (!opts?.silentUndo && guest && table) {
+        announceUndoable(
+          t("seating.toast_assigned")
+            .replace("{guest}", guest.full_name)
+            .replace("{table}", table.label)
+            .replace("{seat}", String(seatIndex + 1)),
+        );
+      }
+      await refresh();
+    },
+    [findAssignmentForGuest, guestById, tables, pushUndo, announceUndoable, t],
+  );
+
+  const unassignGuest = useCallback(
+    async (guestId: number, opts?: { silentUndo?: boolean }) => {
+      const previous = findAssignmentForGuest(guestId);
+      if (!previous) return;
+      await seatingApi.unassign(guestId);
+      pushUndo({
+        label: t("seating.undo_label"),
+        undo: async () => {
+          await seatingApi.assign({
+            table_id: previous.table_id,
+            seat_index: previous.seat_index,
+            guest_id: guestId,
+          });
+        },
+      });
+      const guest = guestById.get(guestId);
+      if (!opts?.silentUndo && guest) {
+        announceUndoable(t("seating.toast_unassigned").replace("{guest}", guest.full_name));
+      }
+      await refresh();
+    },
+    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t],
+  );
+
+  // Compose: swap two guests between seats. The "before" snapshot has the
+  // incoming guest possibly sitting elsewhere (or unseated) and the occupant
+  // sitting at the target seat. After: incoming sits at target, occupant sits
+  // at incoming's old seat (or becomes unassigned if incoming was unseated).
+  const swapGuests = useCallback(
+    async (
+      incomingGuestId: number,
+      occupantGuestId: number,
+      targetTableId: number,
+      targetSeatIndex: number,
+    ) => {
+      const incomingPrev = findAssignmentForGuest(incomingGuestId);
+      // Unassign the occupant first to free the target seat.
+      await seatingApi.unassign(occupantGuestId);
+      await seatingApi.assign({
+        table_id: targetTableId,
+        seat_index: targetSeatIndex,
+        guest_id: incomingGuestId,
+      });
+      if (incomingPrev) {
+        await seatingApi.assign({
+          table_id: incomingPrev.table_id,
+          seat_index: incomingPrev.seat_index,
+          guest_id: occupantGuestId,
+        });
+      }
+      pushUndo({
+        label: t("seating.undo_label"),
+        undo: async () => {
+          // Reverse: unassign incoming, then put occupant back at target,
+          // and (if applicable) put incoming back at its old seat.
+          await seatingApi.unassign(incomingGuestId);
+          if (incomingPrev) await seatingApi.unassign(occupantGuestId);
+          await seatingApi.assign({
+            table_id: targetTableId,
+            seat_index: targetSeatIndex,
+            guest_id: occupantGuestId,
+          });
+          if (incomingPrev) {
+            await seatingApi.assign({
+              table_id: incomingPrev.table_id,
+              seat_index: incomingPrev.seat_index,
+              guest_id: incomingGuestId,
+            });
+          }
+        },
+      });
+      const incoming = guestById.get(incomingGuestId);
+      const occupant = guestById.get(occupantGuestId);
+      if (incoming && occupant) {
+        announceUndoable(
+          t("seating.toast_swapped")
+            .replace("{a}", incoming.full_name)
+            .replace("{b}", occupant.full_name),
+        );
+      }
+      await refresh();
+    },
+    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t],
+  );
+
+  const replaceAtSeat = useCallback(
+    async (
+      tableId: number,
+      seatIndex: number,
+      incomingGuestId: number,
+      occupantGuestId: number,
+    ) => {
+      const incomingPrev = findAssignmentForGuest(incomingGuestId);
+      await seatingApi.unassign(occupantGuestId);
+      await seatingApi.assign({
+        table_id: tableId,
+        seat_index: seatIndex,
+        guest_id: incomingGuestId,
+      });
+      pushUndo({
+        label: t("seating.undo_label"),
+        undo: async () => {
+          await seatingApi.unassign(incomingGuestId);
+          if (incomingPrev) {
+            await seatingApi.assign({
+              table_id: incomingPrev.table_id,
+              seat_index: incomingPrev.seat_index,
+              guest_id: incomingGuestId,
+            });
+          }
+          await seatingApi.assign({
+            table_id: tableId,
+            seat_index: seatIndex,
+            guest_id: occupantGuestId,
+          });
+        },
+      });
+      const incoming = guestById.get(incomingGuestId);
+      const occupant = guestById.get(occupantGuestId);
+      if (incoming && occupant) {
+        announceUndoable(
+          t("seating.toast_replaced")
+            .replace("{guest}", incoming.full_name)
+            .replace("{old}", occupant.full_name),
+        );
+      }
+      await refresh();
+    },
+    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t],
+  );
+
+  // Top-level entry point: assign with conflict-detection. If the seat is
+  // already occupied we open the swap/replace prompt and abort the direct
+  // path — the prompt's actions then call assignGuest/swapGuests/replaceAtSeat.
+  const requestAssign = useCallback(
+    async (tableId: number, seatIndex: number, guestId: number) => {
+      const occupant = findAssignmentAtSeat(tableId, seatIndex);
+      if (!occupant || occupant.guest_id === guestId) {
+        await assignGuest(tableId, seatIndex, guestId);
+        return;
+      }
+      const incomingGuest = guestById.get(guestId);
+      const occupantGuest = guestById.get(occupant.guest_id);
+      if (!incomingGuest || !occupantGuest) {
+        // Fall back to plain assign — server will reject if invalid.
+        await assignGuest(tableId, seatIndex, guestId);
+        return;
+      }
+      const incomingPrev = findAssignmentForGuest(guestId);
+      setConflictPrompt({
+        incoming: incomingGuest,
+        occupant: occupantGuest,
+        targetTableId: tableId,
+        targetSeatIndex: seatIndex,
+        sourceTableId: incomingPrev?.table_id ?? null,
+        sourceSeatIndex: incomingPrev?.seat_index ?? null,
+      });
+    },
+    [findAssignmentAtSeat, findAssignmentForGuest, guestById, assignGuest],
   );
 
   async function addTable() {
@@ -109,23 +408,37 @@ export default function SeatingPage() {
   }
 
   async function patchTable(table: SeatingTable, patch: Partial<SeatingTable>) {
-    // Server PATCH expects all the editable fields, so always send a merged
-    // payload. Defaults to existing values for anything the caller omitted.
+    // Snapshot the previous values for any field being patched, so undo can
+    // restore them.
+    const before: Partial<SeatingTable> = {};
+    for (const key of Object.keys(patch) as (keyof SeatingTable)[]) {
+      (before as Record<string, unknown>)[key] = (table as unknown as Record<string, unknown>)[key];
+    }
     await seatingApi.updateTable(table.id, { ...table, ...patch });
+    pushUndo({
+      label: t("seating.undo_label"),
+      undo: async () => {
+        await seatingApi.updateTable(table.id, { ...table, ...before });
+      },
+    });
     refresh();
   }
 
   async function moveTable(id: number, x_mm: number, y_mm: number) {
     const table = tables.find((tb) => tb.id === id);
     if (!table) return;
+    if (table.x_mm === x_mm && table.y_mm === y_mm) return;
     await patchTable(table, { x_mm, y_mm });
+    announceUndoable(t("seating.toast_moved").replace("{table}", table.label));
   }
 
   async function resizeTable(id: number, width_mm: number, length_mm: number) {
     const table = tables.find((tb) => tb.id === id);
     if (!table) return;
+    if (table.width_mm === width_mm && table.length_mm === length_mm) return;
     // Server normalizes round/square to width == length, so just forward.
     await patchTable(table, { width_mm, length_mm });
+    announceUndoable(t("seating.toast_resized").replace("{table}", table.label));
   }
 
   async function changeSeats(id: number, delta: number) {
@@ -140,16 +453,14 @@ export default function SeatingPage() {
     e.preventDefault();
     const data = readDragData(e);
     if (!data) return;
-    await seatingApi.assign({ table_id: tableId, seat_index: seatIndex, guest_id: data.guestId });
-    refresh();
+    await requestAssign(tableId, seatIndex, data.guestId);
   }
 
   async function dropToUnassigned(e: DragEvent) {
     e.preventDefault();
     const data = readDragData(e);
     if (!data) return;
-    await seatingApi.unassign(data.guestId);
-    refresh();
+    await unassignGuest(data.guestId);
   }
 
   // Two-step download: fetch the PDF, show it in an in-page preview dialog,
@@ -186,8 +497,8 @@ export default function SeatingPage() {
 
   // Drag tracking for seated guests. We expose start/end so DraggableGuest
   // doesn't need to know about page-level state. dropEffect === "none" means
-  // the drop landed in empty space — treat that as an unassign so the user
-  // doesn't have to aim for the unassigned panel.
+  // the drop landed in empty space — we now treat that as an unassign with
+  // an undo toast (per UX: silent unassign would lose work).
   function startSeatedDrag(guestId: number) {
     draggingSeatedRef.current = guestId;
     setDraggingSeatedId(guestId);
@@ -200,10 +511,58 @@ export default function SeatingPage() {
     setUnassignedHover(false);
     if (!guestId) return;
     if (e.dataTransfer.dropEffect === "none") {
-      await seatingApi.unassign(guestId);
-      refresh();
+      await unassignGuest(guestId);
     }
   }
+
+  // Tap-to-place handlers ────────────────────────────────────────────────────
+  const handleTapGuest = useCallback((guest: Guest) => {
+    setSelectedGuestId((cur) => (cur === guest.id ? null : guest.id));
+  }, []);
+
+  const handleTapSeat = useCallback(
+    async (tableId: number, seatIndex: number) => {
+      if (selectedGuestId === null) {
+        // No guest selected — second-tap on an occupied seat selects that
+        // guest so the user can move them with a single follow-up tap.
+        const occ = findAssignmentAtSeat(tableId, seatIndex);
+        if (occ) setSelectedGuestId(occ.guest_id);
+        return;
+      }
+      const guestId = selectedGuestId;
+      setSelectedGuestId(null);
+      await requestAssign(tableId, seatIndex, guestId);
+    },
+    [selectedGuestId, findAssignmentAtSeat, requestAssign],
+  );
+
+  // Global keyboard handlers: Cmd/Ctrl+Z undo, Shift+Cmd/Ctrl+Z reserved for
+  // redo (unimplemented — see Cancel; we just no-op to swallow the chord).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // Don't interfere with text input.
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+      ) {
+        return;
+      }
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        popAndUndo();
+        return;
+      }
+      // Shortcuts cheatsheet quick-open with "?".
+      if (e.key === "?" && !mod) {
+        e.preventDefault();
+        setShortcutsOpen(true);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [popAndUndo]);
 
   return (
     <AppShell>
@@ -213,6 +572,15 @@ export default function SeatingPage() {
           <p className="mt-1 text-sm text-ink-500">{t("seating.sub")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={() => setShortcutsOpen(true)}
+            aria-label={t("seating.shortcuts_button_label")}
+            title={t("seating.shortcuts_button_label")}
+          >
+            <HelpCircle size={16} /> ?
+          </button>
           <button
             type="button"
             className="btn-outline"
@@ -277,12 +645,61 @@ export default function SeatingPage() {
             onMove={moveTable}
             onResize={resizeTable}
             onSeatsChange={changeSeats}
+            onDeleteTable={(id) => {
+              const tbl = tables.find((tb) => tb.id === id);
+              if (tbl) deleteTable(tbl);
+            }}
+            onAddTable={addTable}
+            unassignedHighlight={draggingSeatedId !== null && unassignedHover}
           />
           <TableEditor
             table={selected}
             onPatch={(patch) => selected && patchTable(selected, patch)}
             onDelete={() => selected && deleteTable(selected)}
+            t={t}
           />
+        </div>
+      )}
+
+      {tables.length > 0 && (
+        <div className="mb-4 mt-2 border-t border-paper-300 pt-4">
+          <h2 className="text-base">{t("seating.assignments_section_title")}</h2>
+          <p className="mt-1 text-xs text-ink-500">{t("seating.assignments_section_hint")}</p>
+          {tapMode && (
+            <div className="mt-3 rounded-lg border border-blush-200 bg-blush-50 px-3 py-2 text-xs text-blush-900">
+              {selectedGuestId !== null
+                ? t("seating.tap_place_hint").replace(
+                    "{guest}",
+                    guestById.get(selectedGuestId)?.full_name ?? "",
+                  )
+                : t("seating.tap_select_help")}
+            </div>
+          )}
+          <div className="mt-2 flex items-center gap-3">
+            {!coarsePointer && (
+              <button
+                type="button"
+                className="btn-outline btn-sm"
+                onClick={() => {
+                  setTapModeUser((v) => !v);
+                  setSelectedGuestId(null);
+                }}
+                aria-pressed={tapModeUser}
+              >
+                {tapModeUser ? t("seating.tap_mode_off") : t("seating.tap_mode_on")}
+              </button>
+            )}
+            {undoStack.length > 0 && (
+              <button
+                type="button"
+                className="btn-outline btn-sm"
+                onClick={popAndUndo}
+                aria-label={t("seating.undo_action")}
+              >
+                <Undo2 size={14} /> {t("seating.undo_action")}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -301,6 +718,11 @@ export default function SeatingPage() {
                   isSelected={selectedId === table.id}
                   onSeatedDragStart={startSeatedDrag}
                   onSeatedDragEnd={endSeatedDrag}
+                  tapMode={tapMode}
+                  selectedGuestId={selectedGuestId}
+                  onTapGuest={handleTapGuest}
+                  onTapSeat={handleTapSeat}
+                  t={t}
                 />
               ))}
             </div>
@@ -336,7 +758,9 @@ export default function SeatingPage() {
               ? unassignedHover
                 ? t("seating.drop_to_unassign_active")
                 : t("seating.drop_to_unassign")
-              : t("seating.drag_help")}
+              : tapMode
+                ? t("seating.tap_select_help")
+                : t("seating.drag_help")}
           </p>
           {unassigned.length === 0 ? (
             <p className="mt-4 text-sm text-ink-600">{t("seating.no_unassigned")}</p>
@@ -344,7 +768,12 @@ export default function SeatingPage() {
             <ul className="mt-3 max-h-[60vh] space-y-1 overflow-y-auto">
               {unassigned.map((g) => (
                 <li key={g.id}>
-                  <DraggableGuest guest={g} />
+                  <DraggableGuest
+                    guest={g}
+                    tapMode={tapMode}
+                    selected={selectedGuestId === g.id}
+                    onTap={handleTapGuest}
+                  />
                 </li>
               ))}
             </ul>
@@ -378,7 +807,102 @@ export default function SeatingPage() {
           />
         </Dialog>
       )}
+
+      {shortcutsOpen && (
+        <Dialog
+          open={true}
+          title={t("seating.shortcuts_title")}
+          onClose={() => setShortcutsOpen(false)}
+          closeOnBackdrop
+          footer={
+            <Button variant="primary" onClick={() => setShortcutsOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+          }
+        >
+          <ul className="space-y-2 text-sm">
+            <ShortcutRow keys={["←", "→", "↑", "↓"]} label={t("seating.shortcut_arrows")} />
+            <ShortcutRow
+              keys={["Shift", "+", "Arrow"]}
+              label={t("seating.shortcut_arrows_shift")}
+            />
+            <ShortcutRow keys={["[", "]"]} label={t("seating.shortcut_brackets")} />
+            <ShortcutRow keys={["Delete"]} label={t("seating.shortcut_delete")} />
+            <ShortcutRow keys={["N"]} label={t("seating.shortcut_n")} />
+            <ShortcutRow keys={["Cmd/Ctrl", "Z"]} label={t("seating.shortcut_undo")} />
+          </ul>
+        </Dialog>
+      )}
+
+      {conflictPrompt && (
+        <Dialog
+          open={true}
+          title={t("seating.swap_seats_title")}
+          onClose={() => setConflictPrompt(null)}
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setConflictPrompt(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const p = conflictPrompt;
+                  setConflictPrompt(null);
+                  await replaceAtSeat(
+                    p.targetTableId,
+                    p.targetSeatIndex,
+                    p.incoming.id,
+                    p.occupant.id,
+                  );
+                }}
+              >
+                {t("seating.replace_button")}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  const p = conflictPrompt;
+                  setConflictPrompt(null);
+                  await swapGuests(
+                    p.incoming.id,
+                    p.occupant.id,
+                    p.targetTableId,
+                    p.targetSeatIndex,
+                  );
+                }}
+              >
+                {t("seating.swap_button")}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-ink-700">
+            {t("seating.swap_seats_body")
+              .replace("{occupant}", conflictPrompt.occupant.full_name)
+              .replace("{guest}", conflictPrompt.incoming.full_name)}
+          </p>
+        </Dialog>
+      )}
     </AppShell>
+  );
+}
+
+function ShortcutRow({ keys, label }: { keys: string[]; label: string }) {
+  return (
+    <li className="flex items-center justify-between gap-3">
+      <span className="text-ink-700">{label}</span>
+      <span className="flex flex-wrap gap-1">
+        {keys.map((k) => (
+          <kbd
+            key={k}
+            className="rounded border border-paper-300 bg-paper-100 px-1.5 py-0.5 text-xs font-mono text-ink-700"
+          >
+            {k}
+          </kbd>
+        ))}
+      </span>
+    </li>
   );
 }
 
@@ -386,13 +910,13 @@ function TableEditor({
   table,
   onPatch,
   onDelete,
+  t,
 }: {
   table: SeatingTable | null;
   onPatch: (patch: Partial<SeatingTable>) => void;
   onDelete: () => void;
+  t: ReturnType<typeof useT>["t"];
 }) {
-  const { t } = useT();
-
   if (!table) {
     return (
       <div className="card text-sm text-ink-500">
@@ -404,6 +928,11 @@ function TableEditor({
   // For round and square the two dimensions are kept in lockstep server-side,
   // so the UI hides the length input and shows a single "size" control.
   const isLong = table.shape === "long";
+
+  // m + cm split for the "Position" readout. Mm → "X.Y m" with one decimal
+  // is more readable than raw cm at room scale.
+  const xMeters = (table.x_mm / 1000).toFixed(1);
+  const yMeters = (table.y_mm / 1000).toFixed(1);
 
   return (
     <div className="card space-y-3">
@@ -464,18 +993,15 @@ function TableEditor({
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label={isLong ? t("seating.length_mm_label") : t("seating.size_mm_label")} hint="cm">
-          <input
-            type="number"
+        <Field label={isLong ? t("seating.length_mm_label") : t("seating.size_mm_label")}>
+          <SuffixedInput
+            suffix="cm"
             min={10}
             max={1000}
             step={5}
-            className="input py-1.5 text-sm"
             defaultValue={Math.round((isLong ? table.length_mm : table.width_mm) / 10)}
-            key={`${table.id}-primary`}
-            onBlur={(e) => {
-              const cm = Number(e.target.value);
-              if (!Number.isFinite(cm) || cm < 10 || cm > 1000) return;
+            inputKey={`${table.id}-primary`}
+            onCommit={(cm) => {
               const mm = Math.round(cm) * 10;
               if (isLong) {
                 if (mm !== table.length_mm) onPatch({ length_mm: mm });
@@ -490,18 +1016,15 @@ function TableEditor({
         </Field>
 
         {isLong && (
-          <Field label={t("seating.width_mm_label")} hint="cm">
-            <input
-              type="number"
+          <Field label={t("seating.width_mm_label")}>
+            <SuffixedInput
+              suffix="cm"
               min={10}
               max={1000}
               step={5}
-              className="input py-1.5 text-sm"
               defaultValue={Math.round(table.width_mm / 10)}
-              key={`${table.id}-secondary`}
-              onBlur={(e) => {
-                const cm = Number(e.target.value);
-                if (!Number.isFinite(cm) || cm < 10 || cm > 1000) return;
+              inputKey={`${table.id}-secondary`}
+              onCommit={(cm) => {
                 const mm = Math.round(cm) * 10;
                 if (mm !== table.width_mm) onPatch({ width_mm: mm });
               }}
@@ -511,9 +1034,54 @@ function TableEditor({
       </div>
 
       <p className="text-xs text-ink-400">
-        {t("seating.position_label")}: {Math.round(table.x_mm / 10)} cm ·{" "}
-        {Math.round(table.y_mm / 10)} cm
+        {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
       </p>
+    </div>
+  );
+}
+
+// Number input with a static unit suffix rendered inside the field. We use a
+// relative wrapper + absolutely-positioned span so the suffix doesn't fight
+// for layout space and lines up vertically with the value.
+function SuffixedInput({
+  suffix,
+  min,
+  max,
+  step,
+  defaultValue,
+  inputKey,
+  onCommit,
+}: {
+  suffix: string;
+  min: number;
+  max: number;
+  step: number;
+  defaultValue: number;
+  inputKey: string;
+  onCommit: (value: number) => void;
+}) {
+  return (
+    <div className="relative">
+      <input
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        className="input py-1.5 pr-9 text-sm"
+        defaultValue={defaultValue}
+        key={inputKey}
+        onBlur={(e) => {
+          const n = Number(e.target.value);
+          if (!Number.isFinite(n) || n < min || n > max) return;
+          onCommit(n);
+        }}
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-ink-400"
+      >
+        {suffix}
+      </span>
     </div>
   );
 }
@@ -547,6 +1115,11 @@ function TableCard({
   isSelected,
   onSeatedDragStart,
   onSeatedDragEnd,
+  tapMode,
+  selectedGuestId,
+  onTapGuest,
+  onTapSeat,
+  t,
 }: {
   table: SeatingTable;
   assignments: SeatAssignment[];
@@ -556,8 +1129,12 @@ function TableCard({
   isSelected: boolean;
   onSeatedDragStart: (guestId: number) => void;
   onSeatedDragEnd: (e: DragEvent) => void;
+  tapMode: boolean;
+  selectedGuestId: number | null;
+  onTapGuest: (guest: Guest) => void;
+  onTapSeat: (tableId: number, seatIndex: number) => void;
+  t: ReturnType<typeof useT>["t"];
 }) {
-  const { t } = useT();
   const seatToAssign = new Map(assignments.map((a) => [a.seat_index, a]));
 
   return (
@@ -588,15 +1165,21 @@ function TableCard({
         {Array.from({ length: table.seats }).map((_, idx) => {
           const a = seatToAssign.get(idx);
           const guest = a ? guestById.get(a.guest_id) : undefined;
+          const tappable = tapMode && (selectedGuestId !== null || guest);
           return (
             <li
               key={idx}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => onDropSeat(table.id, idx, e)}
+              onClick={(e) => {
+                if (!tapMode) return;
+                e.stopPropagation();
+                onTapSeat(table.id, idx);
+              }}
               className={
                 guest
-                  ? "rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm"
-                  : "rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400"
+                  ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm ${tappable ? "cursor-pointer" : ""}`
+                  : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 ${tappable ? "cursor-pointer ring-1 ring-blush-200" : ""}`
               }
             >
               <span className="text-[10px] uppercase tracking-wider text-ink-400">#{idx + 1}</span>
@@ -607,6 +1190,9 @@ function TableCard({
                     compact
                     onDragStart={() => onSeatedDragStart(guest.id)}
                     onDragEnd={onSeatedDragEnd}
+                    tapMode={tapMode}
+                    selected={selectedGuestId === guest.id}
+                    onTap={onTapGuest}
                   />
                 ) : (
                   <span>—</span>
@@ -625,11 +1211,17 @@ function DraggableGuest({
   compact,
   onDragStart: onDragStartCb,
   onDragEnd: onDragEndCb,
+  tapMode,
+  selected,
+  onTap,
 }: {
   guest: Guest;
   compact?: boolean;
   onDragStart?: () => void;
   onDragEnd?: (e: DragEvent) => void;
+  tapMode?: boolean;
+  selected?: boolean;
+  onTap?: (guest: Guest) => void;
 }) {
   function onDragStart(e: DragEvent) {
     const data: DragData = { guestId: guest.id };
@@ -642,15 +1234,22 @@ function DraggableGuest({
   }
   return (
     <div
-      draggable
+      draggable={!tapMode}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      onClick={(e) => e.stopPropagation()}
-      className={
+      onClick={(e) => {
+        e.stopPropagation();
+        if (tapMode && onTap) onTap(guest);
+      }}
+      className={[
         compact
-          ? "cursor-grab text-sm font-medium text-ink-900 active:cursor-grabbing"
-          : "cursor-grab rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400 active:cursor-grabbing"
-      }
+          ? "text-sm font-medium text-ink-900"
+          : "rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400",
+        tapMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
+        selected ? "ring-2 ring-blush-500" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       {guest.full_name}
     </div>

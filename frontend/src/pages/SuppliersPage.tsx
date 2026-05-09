@@ -2,7 +2,9 @@
 //
 // Layout: a step-by-step "chain" of supplier groups along the top — selecting
 // a step reveals its sub-categories. The chain mirrors the real-world booking
-// order (venue first, details last).
+// order (venue first, details last). Above the chain: free-text search + city
+// filter (persisted in URL params so back-button works) plus a "saved" star on
+// each card backed by localStorage.
 
 import type { DirectorySupplier, SupplierCategory, SupplierGroup } from "@shared/suppliers";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
@@ -23,14 +25,17 @@ import {
   PartyPopper,
   Phone,
   Scissors,
+  Search,
   Shirt,
   Sparkles,
+  Star,
   StickyNote,
   UtensilsCrossed,
   Wine,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button } from "../components/ui";
@@ -65,26 +70,122 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
   transport: Bus,
 };
 
+/** Diacritic-folded lower-case for case- and accent-insensitive matching. */
+function normalize(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+const SAVED_LS_KEY = "weddly.suppliers.saved";
+
+function readSaved(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SAVED_LS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed))
+      return new Set(parsed.filter((v): v is string => typeof v === "string"));
+  } catch {
+    // ignore
+  }
+  return new Set();
+}
+
+function writeSaved(set: Set<string>) {
+  try {
+    localStorage.setItem(SAVED_LS_KEY, JSON.stringify(Array.from(set)));
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
 export default function SuppliersPage() {
   const { t, locale } = useT();
+  const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<DirectorySupplier[]>([]);
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [saved, setSaved] = useState<Set<string>>(() => readSaved());
+
+  // Filter state lives in URL params so back-button restores it.
+  const query = params.get("q") ?? "";
+  const cityFilter = params.get("city") ?? "";
+  const showSavedOnly = params.get("saved") === "1";
+
+  function setQuery(next: string) {
+    const p = new URLSearchParams(params);
+    if (next.trim()) p.set("q", next);
+    else p.delete("q");
+    setParams(p, { replace: true });
+  }
+  function setCityFilter(next: string) {
+    const p = new URLSearchParams(params);
+    if (next) p.set("city", next);
+    else p.delete("city");
+    setParams(p, { replace: true });
+  }
+  function toggleSavedFilter() {
+    const p = new URLSearchParams(params);
+    if (showSavedOnly) p.delete("saved");
+    else p.set("saved", "1");
+    setParams(p, { replace: true });
+  }
 
   useEffect(() => {
     supplierApi.list().then((r) => setItems(r.suppliers));
   }, []);
 
+  // Scroll the freshly-submitted card into view + drop the highlight after a
+  // beat. Without this, a submitter sees the modal close and may not notice
+  // their entry landed at the top of the list.
+  useEffect(() => {
+    if (!highlightId) return;
+    const el = document.querySelector<HTMLElement>(`[data-supplier-id="${highlightId}"]`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const tid = window.setTimeout(() => setHighlightId(null), 2500);
+    return () => window.clearTimeout(tid);
+  }, [highlightId]);
+
+  const toggleSaved = useCallback((id: string) => {
+    setSaved((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      writeSaved(next);
+      return next;
+    });
+  }, []);
+
+  // Cities derived from the loaded list. Sorted alphabetically by locale rules.
+  const cities = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of items) if (s.city) set.add(s.city);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
+  }, [items, locale]);
+
   const filtered = useMemo(() => {
-    if (activeCat) return items.filter((s) => s.category === activeCat);
-    if (activeGroup) {
+    let out = items;
+    if (activeCat) out = out.filter((s) => s.category === activeCat);
+    else if (activeGroup) {
       const group = SUPPLIER_GROUPS.find((g) => g.id === activeGroup);
       const cats = new Set(group?.categories ?? []);
-      return items.filter((s) => cats.has(s.category));
+      out = out.filter((s) => cats.has(s.category));
     }
-    return items;
-  }, [items, activeGroup, activeCat]);
+    if (cityFilter) out = out.filter((s) => s.city === cityFilter);
+    if (showSavedOnly) out = out.filter((s) => saved.has(s.id));
+    const q = normalize(query.trim());
+    if (q) {
+      out = out.filter((s) => {
+        const hay = normalize(`${s.name} ${s.city} ${s.blurb_hu} ${s.blurb_en}`);
+        return hay.includes(q);
+      });
+    }
+    return out;
+  }, [items, activeGroup, activeCat, cityFilter, showSavedOnly, saved, query]);
 
   const subCategories = activeGroup
     ? (SUPPLIER_GROUPS.find((g) => g.id === activeGroup)?.categories ?? [])
@@ -107,32 +208,88 @@ export default function SuppliersPage() {
         </Button>
       </header>
 
-      {/* Step chain */}
-      <div className="mb-3 overflow-x-auto pb-1">
-        <div className="flex min-w-max items-stretch gap-2">
-          <ChainStep
-            active={activeGroup === null}
-            onClick={() => pickGroup(null)}
-            label={t("suppliers.filter_all")}
-            index={0}
-            isAll
+      {/* Search + city filter + saved chip */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <label className="relative flex-1 min-w-[14rem]">
+          <span className="sr-only">{t("suppliers.search_label")}</span>
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400"
+            aria-hidden
           />
-          {SUPPLIER_GROUPS.map((g, i) => {
-            const Icon = GROUP_ICON[g.id];
-            return (
-              <div key={g.id} className="flex items-stretch gap-2">
-                <ChevronRight size={16} className="self-center text-paper-400" aria-hidden />
-                <ChainStep
-                  active={activeGroup === g.id}
-                  onClick={() => pickGroup(g.id)}
-                  label={t(`suppliers.group.${g.id}`)}
-                  icon={<Icon size={16} />}
-                  index={i + 1}
-                />
-              </div>
-            );
-          })}
+          <input
+            type="search"
+            className="input h-10 pl-9"
+            placeholder={t("suppliers.search_placeholder")}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label={t("suppliers.search_label")}
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="sr-only">{t("suppliers.city_label")}</span>
+          <select
+            className="input h-10 min-w-[10rem]"
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+            aria-label={t("suppliers.city_label")}
+          >
+            <option value="">{t("suppliers.city_all")}</option>
+            {cities.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={toggleSavedFilter}
+          aria-pressed={showSavedOnly}
+          className={
+            showSavedOnly
+              ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 px-3 py-1.5 text-xs font-medium text-paper-100"
+              : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-xs text-ink-700 hover:border-ink-300"
+          }
+        >
+          <Star size={13} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
+          {t("suppliers.saved_filter", { n: saved.size })}
+        </button>
+      </div>
+
+      {/* Step chain */}
+      <div className="relative mb-3">
+        <div className="overflow-x-auto pb-1">
+          <div className="flex min-w-max items-stretch gap-2">
+            <ChainStep
+              active={activeGroup === null}
+              onClick={() => pickGroup(null)}
+              label={t("suppliers.filter_all")}
+              index={0}
+              isAll
+            />
+            {SUPPLIER_GROUPS.map((g, i) => {
+              const Icon = GROUP_ICON[g.id];
+              return (
+                <div key={g.id} className="flex items-stretch gap-2">
+                  <ChevronRight size={16} className="self-center text-paper-400" aria-hidden />
+                  <ChainStep
+                    active={activeGroup === g.id}
+                    onClick={() => pickGroup(g.id)}
+                    label={t(`suppliers.group.${g.id}`)}
+                    icon={<Icon size={16} />}
+                    index={i + 1}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
+        {/* Right-edge fade hints there's more to scroll. */}
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 to-transparent"
+          aria-hidden
+        />
       </div>
       <p className="mb-5 text-xs text-ink-500">{t("suppliers.chain_help")}</p>
 
@@ -175,17 +332,44 @@ export default function SuppliersPage() {
       <div className="grid gap-3 md:grid-cols-2">
         {filtered.map((s) => {
           const Icon = CATEGORY_ICON[s.category];
+          const isHighlighted = s.id === highlightId;
+          const isSaved = saved.has(s.id);
           return (
-            <article key={s.id} className="card-hover relative">
-              {s.price_band !== null && (
-                <span className="absolute right-4 top-4 text-xs text-ink-500">
-                  {"$".repeat(s.price_band)}
-                </span>
-              )}
+            <article
+              key={s.id}
+              data-supplier-id={s.id}
+              className={`card-hover relative transition-shadow ${
+                isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+              }`}
+            >
+              <div className="absolute right-4 top-4 flex items-center gap-2">
+                {s.price_band !== null && (
+                  <span
+                    className="text-xs tracking-wider text-ink-500"
+                    title={t("suppliers.price_legend")}
+                    aria-label={t("suppliers.price_legend")}
+                  >
+                    <PriceBandDots band={s.price_band} />
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggleSaved(s.id)}
+                  aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
+                  aria-pressed={isSaved}
+                  className="text-ink-400 transition hover:text-blush-700"
+                >
+                  <Star
+                    size={16}
+                    className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+                    aria-hidden
+                  />
+                </button>
+              </div>
               <div className="flex items-center gap-3">
                 <Avatar name={s.name} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                  <h3 className="truncate pr-16 text-base font-semibold">{s.name}</h3>
                   <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs uppercase tracking-wide text-ink-500">
                     <Icon size={12} />
                     <span>
@@ -225,12 +409,20 @@ export default function SuppliersPage() {
             </article>
           );
         })}
+        {filtered.length === 0 && items.length > 0 && (
+          <p className="col-span-full py-8 text-center text-sm text-ink-500">
+            {t("suppliers.empty_filtered")}
+          </p>
+        )}
       </div>
 
       <SubmitSupplierModal
         open={submitOpen}
         onClose={() => setSubmitOpen(false)}
-        onSubmitted={(s) => setItems((prev) => [s, ...prev])}
+        onSubmitted={(s) => {
+          setItems((prev) => [s, ...prev]);
+          setHighlightId(s.id);
+        }}
       />
     </AppShell>
   );
@@ -281,5 +473,17 @@ function Avatar({ name }: { name: string }) {
     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700">
       {initial}
     </div>
+  );
+}
+
+/** Four-dot price-band scale: ●○○○ / ●●○○ / ●●●○ / ●●●●. Cleaner than $$$ for HU. */
+function PriceBandDots({ band }: { band: number }) {
+  const total = 4;
+  const filled = Math.max(0, Math.min(total, band));
+  return (
+    <span className="font-mono">
+      {"●".repeat(filled)}
+      {"○".repeat(total - filled)}
+    </span>
   );
 }

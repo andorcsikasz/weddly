@@ -1,5 +1,5 @@
-import { ArrowRight } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowRight, Menu, X } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
 
@@ -30,6 +30,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
 
 function PublicHeader() {
   const { t, locale, setLocale } = useT();
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <header className="border-b border-paper-300 bg-paper-50/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
@@ -74,8 +75,56 @@ function PublicHeader() {
           <Link to="/signup" className="btn-primary btn-sm">
             {t("landing.cta_signup")}
           </Link>
+          <button
+            type="button"
+            className="btn-ghost btn-sm md:hidden"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-controls="public-mobile-nav"
+            aria-label={menuOpen ? t("public.menu_close") : t("public.menu_open")}
+          >
+            {menuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
       </div>
+      {menuOpen && (
+        <nav
+          id="public-mobile-nav"
+          aria-label="Primary mobile"
+          className="border-t border-paper-300 bg-paper-50 md:hidden"
+        >
+          <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 text-sm text-ink-700 sm:px-6">
+            <a
+              href="#phases"
+              className="rounded-md px-2 py-2 hover:bg-paper-100 hover:text-ink-900"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t("landing.nav_how")}
+            </a>
+            <a
+              href="#suppliers"
+              className="rounded-md px-2 py-2 hover:bg-paper-100 hover:text-ink-900"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t("landing.nav_suppliers")}
+            </a>
+            <Link
+              to="/vendors"
+              className="rounded-md px-2 py-2 hover:bg-paper-100 hover:text-ink-900"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t("landing.nav_vendors")}
+            </Link>
+            <Link
+              to="/login"
+              className="rounded-md px-2 py-2 hover:bg-paper-100 hover:text-ink-900"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t("landing.cta_login")}
+            </Link>
+          </div>
+        </nav>
+      )}
     </header>
   );
 }

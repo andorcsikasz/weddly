@@ -23,6 +23,11 @@ const MAX_DIM_MM = 10_000;
 const MIN_SEATS = 1;
 const MAX_SEATS = 40;
 
+// Keyboard nudge granularity. 100mm matches the chair-placement grain;
+// shift drops to a precise 10mm for fine alignment.
+const NUDGE_COARSE_MM = 100;
+const NUDGE_FINE_MM = 10;
+
 type HandleDir = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
 interface Props {
@@ -36,6 +41,12 @@ interface Props {
   onResize: (id: number, width_mm: number, length_mm: number) => void;
   /** Called when the user clicks the +/- seat buttons. delta is +1 or -1. */
   onSeatsChange: (id: number, delta: number) => void;
+  /** Optional: invoked when the user presses Delete on the selected table. */
+  onDeleteTable?: (id: number) => void;
+  /** Optional: invoked when the user presses N (no modifier) on the canvas. */
+  onAddTable?: () => void;
+  /** When true, the in-canvas drop hint switches to the highlight stripe. */
+  unassignedHighlight?: boolean;
 }
 
 type DragState =
@@ -66,6 +77,9 @@ export function SeatingMap({
   onMove,
   onResize,
   onSeatsChange,
+  onDeleteTable,
+  onAddTable,
+  unassignedHighlight,
 }: Props) {
   const { t } = useT();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -214,6 +228,82 @@ export function SeatingMap({
     }
   }
 
+  // Keyboard shortcuts when a table is focused/selected. Only fire when the
+  // event target is one of our SVG nodes (table group or canvas) so typing in
+  // unrelated inputs elsewhere on the page never triggers nudges.
+  const handleKey = useCallback(
+    (e: React.KeyboardEvent<SVGSVGElement>) => {
+      const target = e.target as Element | null;
+      const insideTable = target?.closest?.("[data-seating-table]") != null;
+      const onCanvas = target === svgRef.current;
+      if (!insideTable && !onCanvas) return;
+
+      // "N" with no modifier on the canvas (or any focused table) adds a new
+      // table. Spec: triggers when canvas focused — we accept either.
+      if ((e.key === "n" || e.key === "N") && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (onAddTable) {
+          e.preventDefault();
+          onAddTable();
+          return;
+        }
+      }
+
+      // From here on we need a selected table.
+      if (selectedId === null) return;
+      const table = tables.find((tb) => tb.id === selectedId);
+      if (!table) return;
+
+      const step = e.shiftKey ? NUDGE_FINE_MM : NUDGE_COARSE_MM;
+      const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
+
+      let dx = 0;
+      let dy = 0;
+      switch (e.key) {
+        case "ArrowLeft":
+          dx = -step;
+          break;
+        case "ArrowRight":
+          dx = step;
+          break;
+        case "ArrowUp":
+          dy = -step;
+          break;
+        case "ArrowDown":
+          dy = step;
+          break;
+        case "[":
+          e.preventDefault();
+          onSeatsChange(table.id, -1);
+          return;
+        case "]":
+          e.preventDefault();
+          onSeatsChange(table.id, 1);
+          return;
+        case "Delete":
+        case "Backspace":
+          if (onDeleteTable) {
+            e.preventDefault();
+            onDeleteTable(table.id);
+          }
+          return;
+        default:
+          return;
+      }
+      if (dx === 0 && dy === 0) return;
+      e.preventDefault();
+      const newX = clamp(pos.x + dx, 0, ROOM_W_MM);
+      const newY = clamp(pos.y + dy, 0, ROOM_H_MM);
+      // Mirror locally for instant feedback, then persist.
+      setLocalPos((prev) => {
+        const next = new Map(prev);
+        next.set(table.id, { x: newX, y: newY });
+        return next;
+      });
+      onMove(table.id, newX, newY);
+    },
+    [selectedId, tables, localPos, onMove, onSeatsChange, onDeleteTable, onAddTable],
+  );
+
   return (
     <div className="card overflow-hidden p-0">
       <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-4 py-2.5">
@@ -230,18 +320,46 @@ export function SeatingMap({
           ref={svgRef}
           viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
           // 4:3 aspect; height is set via CSS so the SVG stays responsive.
-          className="block h-[60vh] max-h-[640px] w-full select-none touch-none"
+          className="block h-[60vh] max-h-[640px] w-full select-none touch-none focus:outline-none"
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           onPointerLeave={endDrag}
+          onKeyDown={handleKey}
           // Click on empty area to deselect.
           onClick={(e) => {
             if (e.target === svgRef.current) onSelect(null);
           }}
           aria-label={t("seating.map_title")}
           role="img"
+          tabIndex={0}
         >
+          <defs>
+            {/* Diagonal stripe used to highlight a table when the unassigned
+                panel is the active drop target. Defined once at the SVG root
+                so any fill="url(#seat-drop-stripe)" can reference it. */}
+            <pattern
+              id="seat-drop-stripe"
+              patternUnits="userSpaceOnUse"
+              width={120}
+              height={120}
+              patternTransform="rotate(45)"
+            >
+              <rect width={120} height={120} className="fill-blush-50" />
+              <line x1={0} y1={0} x2={0} y2={120} className="stroke-blush-200" strokeWidth={40} />
+            </pattern>
+          </defs>
           <Grid />
+          {unassignedHighlight && (
+            <rect
+              x={0}
+              y={0}
+              width={ROOM_W_MM}
+              height={ROOM_H_MM}
+              fill="url(#seat-drop-stripe)"
+              opacity={0.4}
+              style={{ pointerEvents: "none" }}
+            />
+          )}
           {tables.map((table) => {
             const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
             const dims = localDims.get(table.id) ?? {
@@ -327,7 +445,16 @@ interface TableShapeProps {
   onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
   onHandlePointerDown: (e: React.PointerEvent<SVGCircleElement>, handle: HandleDir) => void;
   onSeatsDelta: (delta: number) => void;
-  t: (key: "seating.add_seat" | "seating.remove_seat") => string;
+  t: (
+    key:
+      | "seating.add_seat"
+      | "seating.remove_seat"
+      | "seating.seats_label"
+      | "seating.shape_round"
+      | "seating.shape_long"
+      | "seating.shape_square"
+      | "seating.table_aria_label",
+  ) => string;
 }
 
 function TableShape({
@@ -370,14 +497,23 @@ function TableShape({
   const canDecrement = table.seats > MIN_SEATS;
   const canIncrement = table.seats < MAX_SEATS;
 
+  // a11y label combines name + shape + seat count for screen readers.
+  const ariaLabel = t("seating.table_aria_label")
+    .replace("{name}", table.label)
+    .replace("{seats}", String(table.seats));
+
   return (
     <g
       transform={`translate(${cx} ${cy})`}
+      data-seating-table={table.id}
       onPointerDown={onPointerDown}
       style={{ cursor: "grab" }}
-      // Keyboard a11y: focusable and Enter/Space mimics a click-to-select.
-      // (Drag is mouse-only; keyboard nudge isn't in v1 scope.)
+      // Keyboard a11y: focusable, Enter/Space mimics a click-to-select, and
+      // arrow/[/]/Delete shortcuts are handled by the parent SeatingMap so a
+      // single keydown listener can govern the whole canvas.
       tabIndex={0}
+      role="group"
+      aria-label={ariaLabel}
     >
       {table.shape === "round" ? (
         <>
@@ -417,17 +553,31 @@ function TableShape({
         </>
       )}
 
-      {/* Chairs */}
-      {chairs.map((c, i) => (
-        <circle
-          key={i}
-          cx={c.dx}
-          cy={c.dy}
-          r={90}
-          className={`stroke-ink-500 ${i < filledSeats ? "fill-ink-600" : "fill-paper-50"}`}
-          strokeWidth={6}
-        />
-      ))}
+      {/* Chairs. Filled chairs get a small inner dot so the "filled" state
+          reads at a glance, even when zoomed out / printed in greyscale. */}
+      {chairs.map((c, i) => {
+        const isFilled = i < filledSeats;
+        return (
+          <g key={i}>
+            <circle
+              cx={c.dx}
+              cy={c.dy}
+              r={90}
+              className={`stroke-ink-500 ${isFilled ? "fill-ink-600" : "fill-paper-50"}`}
+              strokeWidth={6}
+            />
+            {isFilled && (
+              <circle
+                cx={c.dx}
+                cy={c.dy}
+                r={28}
+                className="fill-paper-100"
+                style={{ pointerEvents: "none" }}
+              />
+            )}
+          </g>
+        );
+      })}
 
       {/* Label */}
       <text

@@ -13,13 +13,15 @@ import type {
   WeddingSeason,
   WeddingStyleTag,
 } from "@shared/types";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { TagChip } from "../components/ui";
 import { coupleApi } from "../lib/endpoints";
 import { formatHufRange, formatNumber, formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
+
+const DRAFT_KEY = "weddly.onboarding_draft";
 
 const STYLE_TAGS: WeddingStyleTag[] = [
   "classic",
@@ -196,13 +198,50 @@ function isStepValid(step: number, f: FormState): boolean {
   return true;
 }
 
+function loadDraft(): FormState | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<FormState> | null;
+    if (!parsed || typeof parsed !== "object") return null;
+    // Merge over defaults so stale drafts that miss newer fields still load.
+    return { ...DEFAULT_FORM, ...parsed };
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(form: FormState) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+  } catch {
+    // ignore
+  }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export default function OnboardingWizard() {
   const { t, locale } = useT();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+  const [form, setForm] = useState<FormState>(() => loadDraft() ?? DEFAULT_FORM);
+  // Once we've completed onboarding we strip the draft; this guards a
+  // late autosave from re-creating it after a successful submit.
+  const completedRef = useRef(false);
+
+  useEffect(() => {
+    if (completedRef.current) return;
+    saveDraft(form);
+  }, [form]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -230,6 +269,8 @@ export default function OnboardingWizard() {
         budget_goal: buildBudgetGoal(form),
         style_tags: form.style_tags,
       });
+      completedRef.current = true;
+      clearDraft();
       navigate("/app", { replace: true });
     } catch (err) {
       setError(t("common.error_generic"));
@@ -246,7 +287,7 @@ export default function OnboardingWizard() {
       <form className="mx-auto max-w-xl" onSubmit={onSubmit}>
         <div className="mb-6">
           <p className="text-xs uppercase tracking-wider text-ink-500">
-            {step + 1} / {TOTAL_STEPS}
+            {step + 1} / {TOTAL_STEPS} — {t(`onboarding.step${step + 1}_short`)}
           </p>
           <div className="mt-2 h-1 w-full rounded-full bg-paper-300">
             <div
@@ -264,27 +305,24 @@ export default function OnboardingWizard() {
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="bride_name" className="field-label">
-                    {t("onboarding.bride_name_label")}
+                    {t("onboarding.partner_one_label")}
                   </label>
                   <input
                     id="bride_name"
                     className="input"
                     value={form.bride_name}
                     onChange={(e) => update("bride_name", e.target.value)}
-                    placeholder="Anna"
-                    autoFocus
                   />
                 </div>
                 <div>
                   <label htmlFor="groom_name" className="field-label">
-                    {t("onboarding.groom_name_label")}
+                    {t("onboarding.partner_two_label")}
                   </label>
                   <input
                     id="groom_name"
                     className="input"
                     value={form.groom_name}
                     onChange={(e) => update("groom_name", e.target.value)}
-                    placeholder="Bence"
                   />
                 </div>
               </div>

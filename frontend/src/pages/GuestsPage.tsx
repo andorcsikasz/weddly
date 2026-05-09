@@ -14,10 +14,15 @@ import type {
 import { Pencil, Plus, RefreshCw, Trash2, Upload, UserPlus, X } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useConfirm, useToast } from "../components/ui";
+import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, guestApi, householdApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+interface ImportResult {
+  created_count: number;
+  errors: { row: number; reason: string }[];
+}
 
 const GROUPS: GuestGroupTag[] = [
   "his_family",
@@ -47,6 +52,9 @@ export default function GuestsPage() {
   const [households, setHouseholds] = useState<Household[]>([]);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [orphanFixing, setOrphanFixing] = useState(false);
+  const [copyFallback, setCopyFallback] = useState<string | null>(null);
 
   async function refresh() {
     const [c, g, h] = await Promise.all([
@@ -105,11 +113,18 @@ export default function GuestsPage() {
     refresh();
   }
 
-  function copyShare(slug: string | null, code: string) {
+  async function copyShare(slug: string | null, code: string) {
     if (!slug) return;
     const url = `${window.location.origin}/rsvp?couple=${slug}&code=${code}`;
-    navigator.clipboard?.writeText(url);
-    toast.success(t("guests.household_share_copied"));
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("no_clipboard");
+      await navigator.clipboard.writeText(url);
+      toast.success(t("guests.household_share_copied"));
+    } catch {
+      // Some browsers (especially in iframes / insecure contexts) refuse
+      // clipboard writes — surface the URL so the user can copy by hand.
+      setCopyFallback(url);
+    }
   }
 
   async function onImport(file: File) {
@@ -117,12 +132,42 @@ export default function GuestsPage() {
     try {
       const text = await file.text();
       const r = await guestApi.importCsv(text);
-      toast.success(t("guests.import_done", { count: r.created_count }));
+      const errors = Array.isArray(r.errors) ? r.errors : [];
+      if (errors.length > 0) {
+        // Surface per-row errors in a modal so users can fix and re-import.
+        setImportResult({ created_count: r.created_count, errors });
+      } else {
+        toast.success(t("guests.import_done", { count: r.created_count }));
+      }
       refresh();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setImporting(false);
+    }
+  }
+
+  async function onAssignOrphans(orphans: Guest[]) {
+    if (orphans.length === 0) return;
+    setOrphanFixing(true);
+    try {
+      // Create one household per orphan (label = guest name) and parent the
+      // guest into it. Done sequentially so a single mid-loop failure leaves
+      // the rest intact and surfaces a clean error.
+      for (const g of orphans) {
+        const r = await householdApi.create({ label: g.full_name });
+        await guestApi.update(g.id, { household_id: r.household.id });
+      }
+      // Re-uses the import_done copy ("Imported N guests" / "Importálva: N
+      // vendég") because the action surfaces the same outcome — N guests
+      // are now placed and ready for check-in. Worth a dedicated key once
+      // the orphan flow gets its own UX.
+      toast.success(t("guests.import_done", { count: orphans.length }));
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setOrphanFixing(false);
     }
   }
 
@@ -199,7 +244,9 @@ export default function GuestsPage() {
               household={hh}
               members={guestsByHousehold.get(hh.id) ?? []}
               coupleSlug={couple?.slug ?? null}
-              onCopyShare={() => copyShare(couple?.slug ?? null, hh.code)}
+              onCopyShare={() => {
+                void copyShare(couple?.slug ?? null, hh.code);
+              }}
               onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
               onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
               onDeleteGuest={onDeleteGuest}
@@ -210,11 +257,9 @@ export default function GuestsPage() {
 
           {orphanGuests.length > 0 && (
             <div className="card border-blush-200 bg-blush-50/40">
-              <p className="text-sm text-blush-900">
-                {orphanGuests.length} guest(s) have no household yet — restart the server to run the
-                backfill, or assign each via Edit.
-              </p>
-              <ul className="mt-2 text-sm text-ink-700">
+              <h3 className="font-serif text-lg text-ink-900">{t("guests.orphans_title")}</h3>
+              <p className="mt-1 text-sm text-ink-700">{t("guests.orphans_body")}</p>
+              <ul className="mt-3 text-sm text-ink-700">
                 {orphanGuests.map((g) => (
                   <li key={g.id} className="flex items-center justify-between py-1">
                     <span>{g.full_name}</span>
@@ -228,9 +273,33 @@ export default function GuestsPage() {
                   </li>
                 ))}
               </ul>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => onAssignOrphans(orphanGuests)}
+                  disabled={orphanFixing}
+                >
+                  {orphanFixing ? t("guests.orphans_assigning") : t("guests.orphans_assign_button")}
+                </button>
+                <a
+                  className="text-sm text-ink-600 underline underline-offset-2 hover:text-ink-900"
+                  href={t("guests.orphans_support_url")}
+                >
+                  {t("guests.orphans_support_link")}
+                </a>
+              </div>
             </div>
           )}
         </div>
+      )}
+
+      {importResult && (
+        <ImportResultDialog result={importResult} onClose={() => setImportResult(null)} />
+      )}
+
+      {copyFallback && (
+        <CopyFallbackDialog url={copyFallback} onClose={() => setCopyFallback(null)} />
       )}
 
       {editing && (
@@ -439,6 +508,11 @@ function CoupleSlugCard({
 
 function RsvpBadge({ status }: { status: RsvpStatus }) {
   const { t } = useT();
+  // Glyph + colour together — colour-only badges fail accessibility checks
+  // and read as identical to anyone with red/green deficiency. The dashed
+  // border distinguishes "pending" (no answer yet) from "maybe" (declared
+  // tentative).
+  const glyph = status === "yes" ? "✓" : status === "no" ? "✗" : status === "maybe" ? "?" : "⌛";
   const cls =
     status === "yes"
       ? "badge-blush"
@@ -446,8 +520,23 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
         ? "badge-ink"
         : status === "maybe"
           ? "badge-paper"
-          : "badge-paper";
-  return <span className={cls}>{t(`guests.rsvp_${status}`)}</span>;
+          : "badge-paper border border-dashed border-paper-300";
+  const label =
+    status === "yes"
+      ? t("guests.rsvp_badge_yes")
+      : status === "no"
+        ? t("guests.rsvp_badge_no")
+        : status === "maybe"
+          ? t("guests.rsvp_badge_maybe")
+          : t("guests.rsvp_badge_pending");
+  return (
+    <span className={cls} aria-label={label} title={label}>
+      <span aria-hidden="true" className="mr-1">
+        {glyph}
+      </span>
+      {t(`guests.rsvp_${status}`)}
+    </span>
+  );
 }
 
 function GuestDrawer({
@@ -624,7 +713,7 @@ function GuestDrawer({
           </select>
         </div>
         <div className="mb-3">
-          <label className="field-label">{t("guests.dietary")}</label>
+          <label className="field-label">{t("guests.meal")}</label>
           <select
             className="input"
             value={form.meal_choice ?? ""}
@@ -641,9 +730,10 @@ function GuestDrawer({
           </select>
         </div>
         <Field
-          label={t("guests.dietary")}
+          label={t("guests.allergies")}
           value={form.dietary ?? ""}
           onChange={(v) => setForm({ ...form, dietary: v || null })}
+          placeholder={t("guests.allergies_placeholder")}
         />
         <label className="mb-3 flex items-center gap-2 text-sm text-ink-700">
           <input
@@ -685,12 +775,14 @@ function Field({
   onChange,
   type = "text",
   textarea,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   textarea?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div className="mb-3">
@@ -701,6 +793,7 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
+          placeholder={placeholder}
         />
       ) : (
         <input
@@ -708,9 +801,83 @@ function Field({
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
         />
       )}
     </div>
+  );
+}
+
+function ImportResultDialog({
+  result,
+  onClose,
+}: {
+  result: ImportResult;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  return (
+    <Dialog
+      open
+      title={t("guests.import_errors_title")}
+      role="dialog"
+      onClose={onClose}
+      footer={
+        <button type="button" className="btn-primary" onClick={onClose}>
+          {t("guests.import_errors_close")}
+        </button>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-ink-700">
+          <strong>{t("guests.import_imported_label")}:</strong> {result.created_count}
+          {" · "}
+          <strong>{t("guests.import_errors_label")}:</strong> {result.errors.length}
+        </p>
+        {result.errors.length > 0 && (
+          <>
+            <p className="text-ink-700">{t("guests.import_errors_body")}</p>
+            <ul className="max-h-64 space-y-1 overflow-y-auto rounded-xl border border-paper-200 bg-paper-100/40 p-3 text-sm">
+              {result.errors.map((err) => (
+                <li key={`${err.row}-${err.reason}`} className="text-ink-700">
+                  <span className="font-mono text-ink-500">
+                    {t("guests.import_row_label")} {err.row}:
+                  </span>{" "}
+                  {err.reason}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </Dialog>
+  );
+}
+
+function CopyFallbackDialog({ url, onClose }: { url: string; onClose: () => void }) {
+  const { t } = useT();
+  return (
+    <Dialog
+      open
+      title={t("guests.copy_failed_title")}
+      role="dialog"
+      onClose={onClose}
+      footer={
+        <button type="button" className="btn-primary" onClick={onClose}>
+          {t("guests.copy_failed_close")}
+        </button>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-ink-700">{t("guests.copy_failed_body")}</p>
+        <input
+          readOnly
+          value={url}
+          className="input font-mono text-sm"
+          onFocus={(e) => e.currentTarget.select()}
+        />
+      </div>
+    </Dialog>
   );
 }
 

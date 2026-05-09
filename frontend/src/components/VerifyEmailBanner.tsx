@@ -1,6 +1,6 @@
-// Soft email-verification nag. Shows once per browser session (until dismissed
-// or until the user clicks the link). Never blocks anything — the only
-// consequence of ignoring it is that password recovery won't work.
+// Soft email-verification nag. Shows once per browser, then snoozes for
+// 7 days. Never blocks anything — the only consequence of ignoring it is
+// that password recovery won't work.
 
 import { Mail, X } from "lucide-react";
 import { useState } from "react";
@@ -10,22 +10,29 @@ import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useToast } from "./ui";
 
-const DISMISS_KEY = "weddly.verify_banner_dismissed";
+const DISMISS_KEY = "weddly.verify_email_dismissed_until";
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function readDismissedUntil(): number {
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY);
+    if (!raw) return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export function VerifyEmailBanner() {
   const { user, refresh } = useAuth();
   const { t } = useT();
   const toast = useToast();
-  const [dismissed, setDismissed] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem(DISMISS_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
+  const [dismissedUntil, setDismissedUntil] = useState<number>(() => readDismissedUntil());
   const [sending, setSending] = useState(false);
 
-  if (!user || user.verified_email || dismissed) return null;
+  const isDismissed = dismissedUntil > Date.now();
+  if (!user || user.verified_email || isDismissed) return null;
 
   async function onResend() {
     setSending(true);
@@ -48,12 +55,13 @@ export function VerifyEmailBanner() {
   }
 
   function onDismiss() {
+    const until = Date.now() + SEVEN_DAYS_MS;
     try {
-      sessionStorage.setItem(DISMISS_KEY, "1");
+      localStorage.setItem(DISMISS_KEY, String(until));
     } catch {
       // ignore
     }
-    setDismissed(true);
+    setDismissedUntil(until);
   }
 
   return (

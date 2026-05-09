@@ -7,15 +7,42 @@ import { useT } from "../lib/i18n";
 import { ProfileMenu } from "./ProfileMenu";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
 
-const ITEMS: { to: string; labelKey: string; icon: ReactNode }[] = [
-  { to: "/app", labelKey: "nav.dashboard", icon: <LayoutDashboard size={18} /> },
-  { to: "/app/guests", labelKey: "nav.guests", icon: <Users size={18} /> },
-  { to: "/app/budget", labelKey: "nav.budget", icon: <UtensilsCrossed size={18} /> },
-  { to: "/app/seating", labelKey: "nav.seating", icon: <ChefHat size={18} /> },
-  { to: "/app/suppliers", labelKey: "nav.suppliers", icon: <Heart size={18} /> },
+type NavItem = { to: string; labelKey: string; tabKey?: string; icon: ReactNode };
+
+const ITEMS: NavItem[] = [
+  {
+    to: "/app",
+    labelKey: "nav.dashboard",
+    tabKey: "nav.tab_dashboard",
+    icon: <LayoutDashboard size={18} />,
+  },
+  {
+    to: "/app/guests",
+    labelKey: "nav.guests",
+    tabKey: "nav.tab_guests",
+    icon: <Users size={18} />,
+  },
+  {
+    to: "/app/budget",
+    labelKey: "nav.budget",
+    tabKey: "nav.tab_budget",
+    icon: <UtensilsCrossed size={18} />,
+  },
+  {
+    to: "/app/seating",
+    labelKey: "nav.seating",
+    tabKey: "nav.tab_seating",
+    icon: <ChefHat size={18} />,
+  },
+  {
+    to: "/app/suppliers",
+    labelKey: "nav.suppliers",
+    tabKey: "nav.tab_suppliers",
+    icon: <Heart size={18} />,
+  },
 ];
 
-const ADMIN_ITEM = {
+const ADMIN_ITEM: NavItem = {
   to: "/app/admin/suppliers",
   labelKey: "admin.nav_label",
   icon: <ShieldCheck size={18} />,
@@ -36,10 +63,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="btn-ghost btn-sm"
+              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
               onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+              aria-label={t("nav.switch_language")}
             >
-              {locale === "hu" ? "EN" : "HU"}
+              <GlobeIcon />
+              <span className="hidden sm:inline">
+                {locale === "hu" ? t("nav.switch_to_en") : t("nav.switch_to_hu")}
+              </span>
             </button>
             <ProfileMenu />
           </div>
@@ -66,12 +97,35 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
           {displayItems.slice(0, 5).map((item) => (
             <BottomLink key={item.to} to={item.to} icon={item.icon}>
-              {t(item.labelKey)}
+              {t(item.tabKey ?? item.labelKey)}
             </BottomLink>
           ))}
         </div>
       </nav>
     </div>
+  );
+}
+
+/** Tiny hand-rolled globe icon (no new deps). aria-hidden — the button's
+ *  aria-label carries the meaning. */
+function GlobeIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6.5" />
+      <path d="M1.5 8h13" />
+      <path d="M8 1.5c2 2 2 11 0 13" />
+      <path d="M8 1.5c-2 2-2 11 0 13" />
+    </svg>
   );
 }
 
@@ -114,7 +168,7 @@ function BottomLink({
       to={to}
       end={to === "/app"}
       className={({ isActive }) =>
-        `flex flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[10px] ${
+        `flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] ${
           isActive ? "text-ink-900" : "text-ink-500"
         }`
       }
