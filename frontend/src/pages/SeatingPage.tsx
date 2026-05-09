@@ -8,9 +8,9 @@
 
 import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
 import { ChefHat, Plus, Printer, Trash2 } from "lucide-react";
-import { type DragEvent, useEffect, useMemo, useState } from "react";
+import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useConfirm, useEntryPrompt } from "../components/ui";
+import { Button, Dialog, useConfirm } from "../components/ui";
 import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
@@ -21,14 +21,28 @@ interface DragData {
   guestId: number;
 }
 
+interface PdfPreview {
+  url: string;
+  filename: string;
+  label: string;
+}
+
 export default function SeatingPage() {
   const { t } = useT();
   const confirm = useConfirm();
-  const promptEntry = useEntryPrompt();
   const [tables, setTables] = useState<SeatingTable[]>([]);
   const [assignments, setAssignments] = useState<SeatAssignment[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  // PDF preview shown before download. Holds an object URL we revoke on close.
+  const [preview, setPreview] = useState<PdfPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  // True while the user is dragging a *seated* guest, so the unassigned panel
+  // can highlight itself as a drop target. Mirrored in a ref so dragend reads
+  // the latest value without races.
+  const [draggingSeatedId, setDraggingSeatedId] = useState<number | null>(null);
+  const draggingSeatedRef = useRef<number | null>(null);
+  const [unassignedHover, setUnassignedHover] = useState(false);
 
   async function refresh() {
     const [plan, gs] = await Promise.all([seatingApi.plan(), guestApi.list()]);
@@ -50,15 +64,20 @@ export default function SeatingPage() {
   );
 
   async function addTable() {
-    const label = await promptEntry({
-      title: t("seating.add_table"),
-      label: t("seating.table_label_prompt"),
-      defaultValue: `${t("nav.seating")} ${tables.length + 1}`,
-      confirmLabel: t("common.save"),
-      cancelLabel: t("common.cancel"),
-      validate: (v) => (v.trim().length === 0 ? t("seating.table_label_prompt") : null),
-    });
-    if (!label) return;
+    // Auto-name: scan existing labels for "<prefix> <n>" matches and pick
+    // max(n)+1. Falls back to tables.length+1 if no numbered labels exist.
+    const prefix = t("seating.table_default_label");
+    const re = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} (\\d+)$`);
+    let maxN = 0;
+    for (const tb of tables) {
+      const m = tb.label.match(re);
+      if (m?.[1]) {
+        const n = Number(m[1]);
+        if (Number.isFinite(n) && n > maxN) maxN = n;
+      }
+    }
+    const next = maxN > 0 ? maxN + 1 : tables.length + 1;
+    const label = `${prefix} ${next}`;
     // Drop new tables near the centre of the room with a small per-table
     // offset so consecutive adds don't stack on top of each other.
     const offset = (tables.length % 5) * 800;
@@ -102,6 +121,21 @@ export default function SeatingPage() {
     await patchTable(table, { x_mm, y_mm });
   }
 
+  async function resizeTable(id: number, width_mm: number, length_mm: number) {
+    const table = tables.find((tb) => tb.id === id);
+    if (!table) return;
+    // Server normalizes round/square to width == length, so just forward.
+    await patchTable(table, { width_mm, length_mm });
+  }
+
+  async function changeSeats(id: number, delta: number) {
+    const table = tables.find((tb) => tb.id === id);
+    if (!table) return;
+    const next = Math.max(1, Math.min(40, table.seats + delta));
+    if (next === table.seats) return;
+    await patchTable(table, { seats: next });
+  }
+
   async function dropToSeat(tableId: number, seatIndex: number, e: DragEvent) {
     e.preventDefault();
     const data = readDragData(e);
@@ -118,14 +152,57 @@ export default function SeatingPage() {
     refresh();
   }
 
-  async function downloadPdf(path: string, name: string) {
-    const blob = await fetchPdfBlob(path);
-    const url = URL.createObjectURL(blob);
+  // Two-step download: fetch the PDF, show it in an in-page preview dialog,
+  // and only persist to disk when the user explicitly confirms. The blob URL
+  // is reused for both the iframe preview and the final download so we don't
+  // round-trip the server twice.
+  async function requestDownload(path: string, filename: string, label: string) {
+    if (previewLoading) return;
+    setPreviewLoading(path);
+    try {
+      const blob = await fetchPdfBlob(path);
+      const url = URL.createObjectURL(blob);
+      setPreview({ url, filename, label });
+    } finally {
+      setPreviewLoading(null);
+    }
+  }
+
+  function closePreview() {
+    setPreview((cur) => {
+      if (cur) URL.revokeObjectURL(cur.url);
+      return null;
+    });
+  }
+
+  function confirmDownload() {
+    if (!preview) return;
     const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
+    a.href = preview.url;
+    a.download = preview.filename;
     a.click();
-    URL.revokeObjectURL(url);
+    closePreview();
+  }
+
+  // Drag tracking for seated guests. We expose start/end so DraggableGuest
+  // doesn't need to know about page-level state. dropEffect === "none" means
+  // the drop landed in empty space — treat that as an unassign so the user
+  // doesn't have to aim for the unassigned panel.
+  function startSeatedDrag(guestId: number) {
+    draggingSeatedRef.current = guestId;
+    setDraggingSeatedId(guestId);
+  }
+
+  async function endSeatedDrag(e: DragEvent) {
+    const guestId = draggingSeatedRef.current;
+    draggingSeatedRef.current = null;
+    setDraggingSeatedId(null);
+    setUnassignedHover(false);
+    if (!guestId) return;
+    if (e.dataTransfer.dropEffect === "none") {
+      await seatingApi.unassign(guestId);
+      refresh();
+    }
   }
 
   return (
@@ -139,21 +216,42 @@ export default function SeatingPage() {
           <button
             type="button"
             className="btn-outline"
-            onClick={() => downloadPdf("/api/print/seating/a4", "weddly-seating-a4.pdf")}
+            disabled={previewLoading !== null}
+            onClick={() =>
+              requestDownload(
+                "/api/print/seating/a4",
+                "weddly-seating-a4.pdf",
+                t("seating.print_a4"),
+              )
+            }
           >
             <Printer size={16} /> {t("seating.print_a4")}
           </button>
           <button
             type="button"
             className="btn-outline"
-            onClick={() => downloadPdf("/api/print/seating/a3", "weddly-seating-a3.pdf")}
+            disabled={previewLoading !== null}
+            onClick={() =>
+              requestDownload(
+                "/api/print/seating/a3",
+                "weddly-seating-a3.pdf",
+                t("seating.print_a3"),
+              )
+            }
           >
             <Printer size={16} /> {t("seating.print_a3")}
           </button>
           <button
             type="button"
             className="btn-outline"
-            onClick={() => downloadPdf("/api/print/place-cards", "weddly-place-cards.pdf")}
+            disabled={previewLoading !== null}
+            onClick={() =>
+              requestDownload(
+                "/api/print/place-cards",
+                "weddly-place-cards.pdf",
+                t("seating.print_place_cards"),
+              )
+            }
           >
             <Printer size={16} /> {t("seating.print_place_cards")}
           </button>
@@ -177,6 +275,8 @@ export default function SeatingPage() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             onMove={moveTable}
+            onResize={resizeTable}
+            onSeatsChange={changeSeats}
           />
           <TableEditor
             table={selected}
@@ -199,6 +299,8 @@ export default function SeatingPage() {
                   onDropSeat={dropToSeat}
                   onSelect={() => setSelectedId(table.id)}
                   isSelected={selectedId === table.id}
+                  onSeatedDragStart={startSeatedDrag}
+                  onSeatedDragEnd={endSeatedDrag}
                 />
               ))}
             </div>
@@ -206,12 +308,36 @@ export default function SeatingPage() {
         </div>
 
         <aside
-          className="card sticky top-20 self-start"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={dropToUnassigned}
+          className={`card sticky top-20 self-start transition-colors ${
+            draggingSeatedId !== null
+              ? unassignedHover
+                ? "ring-2 ring-blush-500 bg-blush-50"
+                : "ring-2 ring-blush-300 ring-dashed"
+              : ""
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (draggingSeatedId !== null && !unassignedHover) setUnassignedHover(true);
+          }}
+          onDragLeave={(e) => {
+            // Only clear when the cursor actually left the panel, not when it
+            // moves between children inside.
+            if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+            setUnassignedHover(false);
+          }}
+          onDrop={(e) => {
+            setUnassignedHover(false);
+            dropToUnassigned(e);
+          }}
         >
           <h2 className="text-lg">{t("seating.unassigned_guests")}</h2>
-          <p className="mt-1 text-xs text-ink-500">{t("seating.drag_help")}</p>
+          <p className="mt-1 text-xs text-ink-500">
+            {draggingSeatedId !== null
+              ? unassignedHover
+                ? t("seating.drop_to_unassign_active")
+                : t("seating.drop_to_unassign")
+              : t("seating.drag_help")}
+          </p>
           {unassigned.length === 0 ? (
             <p className="mt-4 text-sm text-ink-600">{t("seating.no_unassigned")}</p>
           ) : (
@@ -225,6 +351,33 @@ export default function SeatingPage() {
           )}
         </aside>
       </div>
+
+      {preview && (
+        <Dialog
+          open={true}
+          title={`${t("seating.preview_title")} — ${preview.label}`}
+          onClose={closePreview}
+          size="lg"
+          closeOnBackdrop
+          footer={
+            <>
+              <Button variant="outline" onClick={closePreview}>
+                {t("common.cancel")}
+              </Button>
+              <Button variant="primary" onClick={confirmDownload}>
+                {t("seating.confirm_download")}
+              </Button>
+            </>
+          }
+        >
+          <p className="mb-3 text-sm text-ink-600">{t("seating.preview_help")}</p>
+          <iframe
+            src={preview.url}
+            title={preview.label}
+            className="h-[60vh] w-full rounded-xl border border-paper-300 bg-paper-50"
+          />
+        </Dialog>
+      )}
     </AppShell>
   );
 }
@@ -311,25 +464,25 @@ function TableEditor({
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label={isLong ? t("seating.length_mm_label") : t("seating.size_mm_label")} hint="mm">
+        <Field label={isLong ? t("seating.length_mm_label") : t("seating.size_mm_label")} hint="cm">
           <input
             type="number"
-            min={100}
-            max={10000}
-            step={50}
+            min={10}
+            max={1000}
+            step={5}
             className="input py-1.5 text-sm"
-            defaultValue={isLong ? table.length_mm : table.width_mm}
+            defaultValue={Math.round((isLong ? table.length_mm : table.width_mm) / 10)}
             key={`${table.id}-primary`}
             onBlur={(e) => {
-              const n = Number(e.target.value);
-              if (!Number.isFinite(n) || n < 100 || n > 10000) return;
-              const rounded = Math.round(n);
+              const cm = Number(e.target.value);
+              if (!Number.isFinite(cm) || cm < 10 || cm > 1000) return;
+              const mm = Math.round(cm) * 10;
               if (isLong) {
-                if (rounded !== table.length_mm) onPatch({ length_mm: rounded });
+                if (mm !== table.length_mm) onPatch({ length_mm: mm });
               } else {
                 // Round/square keep both dimensions equal.
-                if (rounded !== table.width_mm) {
-                  onPatch({ width_mm: rounded, length_mm: rounded });
+                if (mm !== table.width_mm) {
+                  onPatch({ width_mm: mm, length_mm: mm });
                 }
               }
             }}
@@ -337,20 +490,20 @@ function TableEditor({
         </Field>
 
         {isLong && (
-          <Field label={t("seating.width_mm_label")} hint="mm">
+          <Field label={t("seating.width_mm_label")} hint="cm">
             <input
               type="number"
-              min={100}
-              max={10000}
-              step={50}
+              min={10}
+              max={1000}
+              step={5}
               className="input py-1.5 text-sm"
-              defaultValue={table.width_mm}
+              defaultValue={Math.round(table.width_mm / 10)}
               key={`${table.id}-secondary`}
               onBlur={(e) => {
-                const n = Number(e.target.value);
-                if (!Number.isFinite(n) || n < 100 || n > 10000) return;
-                const rounded = Math.round(n);
-                if (rounded !== table.width_mm) onPatch({ width_mm: rounded });
+                const cm = Number(e.target.value);
+                if (!Number.isFinite(cm) || cm < 10 || cm > 1000) return;
+                const mm = Math.round(cm) * 10;
+                if (mm !== table.width_mm) onPatch({ width_mm: mm });
               }}
             />
           </Field>
@@ -358,7 +511,8 @@ function TableEditor({
       </div>
 
       <p className="text-xs text-ink-400">
-        {t("seating.position_label")}: {table.x_mm} mm · {table.y_mm} mm
+        {t("seating.position_label")}: {Math.round(table.x_mm / 10)} cm ·{" "}
+        {Math.round(table.y_mm / 10)} cm
       </p>
     </div>
   );
@@ -391,6 +545,8 @@ function TableCard({
   onDropSeat,
   onSelect,
   isSelected,
+  onSeatedDragStart,
+  onSeatedDragEnd,
 }: {
   table: SeatingTable;
   assignments: SeatAssignment[];
@@ -398,6 +554,8 @@ function TableCard({
   onDropSeat: (tableId: number, seatIndex: number, e: DragEvent) => void;
   onSelect: () => void;
   isSelected: boolean;
+  onSeatedDragStart: (guestId: number) => void;
+  onSeatedDragEnd: (e: DragEvent) => void;
 }) {
   const { t } = useT();
   const seatToAssign = new Map(assignments.map((a) => [a.seat_index, a]));
@@ -443,7 +601,16 @@ function TableCard({
             >
               <span className="text-[10px] uppercase tracking-wider text-ink-400">#{idx + 1}</span>
               <div className="mt-0.5">
-                {guest ? <DraggableGuest guest={guest} compact /> : <span>—</span>}
+                {guest ? (
+                  <DraggableGuest
+                    guest={guest}
+                    compact
+                    onDragStart={() => onSeatedDragStart(guest.id)}
+                    onDragEnd={onSeatedDragEnd}
+                  />
+                ) : (
+                  <span>—</span>
+                )}
               </div>
             </li>
           );
@@ -453,16 +620,31 @@ function TableCard({
   );
 }
 
-function DraggableGuest({ guest, compact }: { guest: Guest; compact?: boolean }) {
+function DraggableGuest({
+  guest,
+  compact,
+  onDragStart: onDragStartCb,
+  onDragEnd: onDragEndCb,
+}: {
+  guest: Guest;
+  compact?: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: (e: DragEvent) => void;
+}) {
   function onDragStart(e: DragEvent) {
     const data: DragData = { guestId: guest.id };
     e.dataTransfer.setData("application/x-weddly-guest", JSON.stringify(data));
     e.dataTransfer.effectAllowed = "move";
+    onDragStartCb?.();
+  }
+  function onDragEnd(e: DragEvent) {
+    onDragEndCb?.(e);
   }
   return (
     <div
       draggable
       onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onClick={(e) => e.stopPropagation()}
       className={
         compact

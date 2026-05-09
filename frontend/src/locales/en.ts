@@ -594,6 +594,11 @@ const en: LocaleMessages = {
     table_default_label: "Table",
     add_seat: "Add seat",
     remove_seat: "Remove seat",
+    preview_title: "Preview & download",
+    preview_help: "Take a look before saving — large prints are easy to send to the wrong tray.",
+    confirm_download: "Download",
+    drop_to_unassign: "Drop a guest here to unassign them.",
+    drop_to_unassign_active: "Release to remove from seat",
   },
   suppliers: {
     title: "Suppliers",

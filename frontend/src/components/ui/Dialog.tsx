@@ -14,6 +14,9 @@ type DialogProps = {
   /** When true, clicking the backdrop closes the dialog. Off for destructive
    * confirm flows where accidental dismiss could lose context. */
   closeOnBackdrop?: boolean;
+  /** Width preset. Defaults to "sm" (max-w-md) — use "lg" for embedded
+   * previews like PDFs. */
+  size?: "sm" | "lg";
 };
 
 /** Portal-mounted accessible dialog. Manages ESC, focus restore, and scroll
@@ -27,6 +30,7 @@ export function Dialog({
   onClose,
   role = "alertdialog",
   closeOnBackdrop = false,
+  size = "sm",
 }: DialogProps) {
   const titleId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -107,7 +111,7 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={describedById}
-        className="card relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-b-none rounded-t-2xl shadow-pop sm:rounded-2xl"
+        className={`card relative max-h-[90vh] w-full ${size === "lg" ? "max-w-3xl" : "max-w-md"} overflow-y-auto rounded-b-none rounded-t-2xl shadow-pop sm:rounded-2xl`}
       >
         <div className="flex items-start gap-4">
           <h2 id={titleId} className="flex-1 text-xl">

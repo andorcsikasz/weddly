@@ -596,6 +596,12 @@ const hu: LocaleMessages = {
     table_default_label: "Asztal",
     add_seat: "Hely hozzáadása",
     remove_seat: "Hely eltávolítása",
+    preview_title: "Előnézet és letöltés",
+    preview_help:
+      "Nézd meg, mielőtt mentenéd — a nagy formátumú nyomatok könnyen rossz tálcára kerülnek.",
+    confirm_download: "Letöltés",
+    drop_to_unassign: "Húzz ide egy vendéget az ülőhely felszabadításához.",
+    drop_to_unassign_active: "Engedd el a leültetés visszavonásához",
   },
   suppliers: {
     title: "Szolgáltatók",

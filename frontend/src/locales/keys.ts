@@ -554,6 +554,11 @@ export interface LocaleMessages {
     table_default_label: string;
     add_seat: string;
     remove_seat: string;
+    preview_title: string;
+    preview_help: string;
+    confirm_download: string;
+    drop_to_unassign: string;
+    drop_to_unassign_active: string;
   };
   suppliers: {
     title: string;
