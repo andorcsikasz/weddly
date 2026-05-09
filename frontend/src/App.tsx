@@ -16,6 +16,7 @@ import RsvpPage from "./pages/RsvpPage";
 import SeatingPage from "./pages/SeatingPage";
 import SettingsPage from "./pages/SettingsPage";
 import SuppliersPage from "./pages/SuppliersPage";
+import VendorsPage from "./pages/VendorsPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -42,6 +43,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/vendors" element={<VendorsPage />} />
       <Route
         path="/login"
         element={
