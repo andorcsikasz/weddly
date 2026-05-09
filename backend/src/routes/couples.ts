@@ -2,21 +2,27 @@
 // current couple, generate a partner-B invite, accept an invite.
 
 import {
+  type BudgetGoal,
+  type BudgetKind,
   type Couple,
   type CoupleInvite,
   DEFAULT_BUDGET_SPLIT,
+  type GuestCountGoal,
+  type GuestCountKind,
   INVITE_TTL_MS,
+  type WeddingDateGoal,
+  type WeddingDateKind,
+  type WeddingSeason,
   type WeddingStyleTag,
 } from "@shared/types";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../domain/couples";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
-import { reportError } from "../lib/observability";
+import { sendKind } from "../domain/emails";
 import { generateInviteToken } from "../domain/invite_codes";
-import { bilingualBody, sendEmail } from "../lib/mailer";
 import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 interface InviteRow {
   id: number;
@@ -43,9 +49,19 @@ function toInvite(row: InviteRow): CoupleInvite {
 }
 
 interface OnboardBody {
+  /** Preferred: split partner names. The backend derives `display_name` from these. */
+  bride_name?: unknown;
+  groom_name?: unknown;
+  /** Legacy shape: a single display name. Honoured if bride/groom are absent. */
   display_name?: unknown;
+  /** Preferred: structured goal. Falls back to legacy `wedding_date` scalar. */
+  wedding_date_goal?: unknown;
   wedding_date?: unknown;
+  /** Preferred: structured goal. Falls back to legacy scalar. */
+  guest_count_goal?: unknown;
   target_guest_count?: unknown;
+  /** Preferred: structured goal. Falls back to legacy scalar. */
+  budget_goal?: unknown;
   budget_ceiling_huf?: unknown;
   location_lat?: unknown;
   location_lng?: unknown;
@@ -81,12 +97,192 @@ function parseDisplayName(raw: unknown): string {
   return trimmed;
 }
 
+function parsePartnerName(raw: unknown, field: "bride_name" | "groom_name"): string {
+  if (typeof raw !== "string") throw new HttpError(400, `${field} required`);
+  const trimmed = raw.trim();
+  if (trimmed.length < 1 || trimmed.length > 100) {
+    throw new HttpError(400, `${field} must be 1–100 chars`);
+  }
+  return trimmed;
+}
+
+/**
+ * Names + derived display_name. Prefer split bride/groom (the wizard sends
+ * these); fall back to legacy `display_name` so older clients/tests keep
+ * working.
+ */
+function parseNames(body: OnboardBody): {
+  brideName: string;
+  groomName: string;
+  displayName: string;
+} {
+  const hasSplit = body.bride_name !== undefined || body.groom_name !== undefined;
+  if (hasSplit) {
+    const brideName = parsePartnerName(body.bride_name, "bride_name");
+    const groomName = parsePartnerName(body.groom_name, "groom_name");
+    return { brideName, groomName, displayName: `${brideName} & ${groomName}` };
+  }
+  const displayName = parseDisplayName(body.display_name);
+  return { brideName: "", groomName: "", displayName };
+}
+
 function parseWeddingDate(raw: unknown): string | null {
   if (raw === null || raw === undefined || raw === "") return null;
   if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
     throw new HttpError(400, "wedding_date must be YYYY-MM-DD");
   }
   return raw;
+}
+
+const VALID_DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
+  "exact",
+  "month",
+  "season",
+  "year",
+  "tbd",
+]);
+const VALID_SEASONS: ReadonlySet<WeddingSeason> = new Set(["spring", "summer", "fall", "winter"]);
+const VALID_COUNT_KINDS: ReadonlySet<GuestCountKind> = new Set(["exact", "range", "tbd"]);
+const VALID_BUDGET_KINDS: ReadonlySet<BudgetKind> = new Set(["exact", "range", "tbd"]);
+const MIN_YEAR = 2024;
+const MAX_YEAR = 2100;
+
+function asObject(raw: unknown, field: string): Record<string, unknown> | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "object" || Array.isArray(raw)) {
+    throw new HttpError(400, `${field} must be an object`);
+  }
+  return raw as Record<string, unknown>;
+}
+
+function parseWeddingDateGoal(body: OnboardBody): WeddingDateGoal {
+  const obj = asObject(body.wedding_date_goal, "wedding_date_goal");
+  if (!obj) {
+    const exact = parseWeddingDate(body.wedding_date);
+    return {
+      kind: exact ? "exact" : "tbd",
+      exact_date: exact,
+      target_year: exact ? Number(exact.slice(0, 4)) : null,
+      target_month: exact ? Number(exact.slice(5, 7)) : null,
+      target_season: null,
+    };
+  }
+  const kindRaw = obj.kind;
+  if (typeof kindRaw !== "string" || !VALID_DATE_KINDS.has(kindRaw as WeddingDateKind)) {
+    throw new HttpError(400, "wedding_date_goal.kind invalid");
+  }
+  const kind = kindRaw as WeddingDateKind;
+  if (kind === "tbd") {
+    return { kind, exact_date: null, target_year: null, target_month: null, target_season: null };
+  }
+  if (kind === "exact") {
+    const exact = parseWeddingDate(obj.exact_date);
+    if (!exact) throw new HttpError(400, "wedding_date_goal.exact_date required when kind='exact'");
+    return {
+      kind,
+      exact_date: exact,
+      target_year: Number(exact.slice(0, 4)),
+      target_month: Number(exact.slice(5, 7)),
+      target_season: null,
+    };
+  }
+  const year = parseOptionalInt(
+    obj.target_year,
+    "wedding_date_goal.target_year",
+    MIN_YEAR,
+    MAX_YEAR,
+  );
+  if (year === null) {
+    throw new HttpError(400, "wedding_date_goal.target_year required for this kind");
+  }
+  if (kind === "month") {
+    const month = parseOptionalInt(obj.target_month, "wedding_date_goal.target_month", 1, 12);
+    if (month === null) throw new HttpError(400, "wedding_date_goal.target_month required");
+    return { kind, exact_date: null, target_year: year, target_month: month, target_season: null };
+  }
+  if (kind === "season") {
+    const seasonRaw = obj.target_season;
+    if (typeof seasonRaw !== "string" || !VALID_SEASONS.has(seasonRaw as WeddingSeason)) {
+      throw new HttpError(400, "wedding_date_goal.target_season invalid");
+    }
+    return {
+      kind,
+      exact_date: null,
+      target_year: year,
+      target_month: null,
+      target_season: seasonRaw as WeddingSeason,
+    };
+  }
+  // kind === 'year'
+  return { kind, exact_date: null, target_year: year, target_month: null, target_season: null };
+}
+
+function parseGuestCountGoal(body: OnboardBody): GuestCountGoal {
+  const obj = asObject(body.guest_count_goal, "guest_count_goal");
+  if (!obj) {
+    const exact = parseOptionalInt(body.target_guest_count, "target_guest_count", 1, 10000);
+    return { kind: exact === null ? "tbd" : "exact", exact, min: null, max: null };
+  }
+  const kindRaw = obj.kind;
+  if (typeof kindRaw !== "string" || !VALID_COUNT_KINDS.has(kindRaw as GuestCountKind)) {
+    throw new HttpError(400, "guest_count_goal.kind invalid");
+  }
+  const kind = kindRaw as GuestCountKind;
+  if (kind === "tbd") return { kind, exact: null, min: null, max: null };
+  if (kind === "exact") {
+    const exact = parseOptionalInt(obj.exact, "guest_count_goal.exact", 1, 10000);
+    if (exact === null)
+      throw new HttpError(400, "guest_count_goal.exact required when kind='exact'");
+    return { kind, exact, min: null, max: null };
+  }
+  const min = parseOptionalInt(obj.min, "guest_count_goal.min", 1, 10000);
+  const max = parseOptionalInt(obj.max, "guest_count_goal.max", 1, 10000);
+  if (min === null || max === null) {
+    throw new HttpError(400, "guest_count_goal range needs min and max");
+  }
+  if (min > max) throw new HttpError(400, "guest_count_goal.min must be <= max");
+  return { kind, exact: null, min, max };
+}
+
+function parseBudgetGoal(body: OnboardBody): BudgetGoal {
+  const obj = asObject(body.budget_goal, "budget_goal");
+  if (!obj) {
+    const exact = parseOptionalInt(body.budget_ceiling_huf, "budget_ceiling_huf", 0);
+    return {
+      kind: exact === null ? "tbd" : "exact",
+      exact_huf: exact,
+      min_huf: null,
+      max_huf: null,
+    };
+  }
+  const kindRaw = obj.kind;
+  if (typeof kindRaw !== "string" || !VALID_BUDGET_KINDS.has(kindRaw as BudgetKind)) {
+    throw new HttpError(400, "budget_goal.kind invalid");
+  }
+  const kind = kindRaw as BudgetKind;
+  if (kind === "tbd") return { kind, exact_huf: null, min_huf: null, max_huf: null };
+  if (kind === "exact") {
+    const exact = parseOptionalInt(obj.exact_huf, "budget_goal.exact_huf", 0);
+    if (exact === null)
+      throw new HttpError(400, "budget_goal.exact_huf required when kind='exact'");
+    return { kind, exact_huf: exact, min_huf: null, max_huf: null };
+  }
+  const min = parseOptionalInt(obj.min_huf, "budget_goal.min_huf", 0);
+  const max = parseOptionalInt(obj.max_huf, "budget_goal.max_huf", 0);
+  if (min === null || max === null) {
+    throw new HttpError(400, "budget_goal range needs min_huf and max_huf");
+  }
+  if (min > max) throw new HttpError(400, "budget_goal.min_huf must be <= max_huf");
+  return { kind, exact_huf: null, min_huf: min, max_huf: max };
+}
+
+/** Pick a representative HUF amount from a goal — used to seed budget lines. */
+function representativeBudgetHuf(goal: BudgetGoal): number {
+  if (goal.kind === "exact") return goal.exact_huf ?? 0;
+  if (goal.kind === "range" && goal.min_huf !== null && goal.max_huf !== null) {
+    return Math.round((goal.min_huf + goal.max_huf) / 2);
+  }
+  return 0;
 }
 
 function parseOptionalInt(
@@ -133,15 +329,10 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const body = await readJson<OnboardBody>(ctx.req);
 
-  const displayName = parseDisplayName(body.display_name);
-  const weddingDate = parseWeddingDate(body.wedding_date);
-  const targetGuestCount = parseOptionalInt(
-    body.target_guest_count,
-    "target_guest_count",
-    1,
-    10000,
-  );
-  const budgetCeiling = parseOptionalInt(body.budget_ceiling_huf, "budget_ceiling_huf", 0);
+  const { brideName, groomName, displayName } = parseNames(body);
+  const dateGoal = parseWeddingDateGoal(body);
+  const guestGoal = parseGuestCountGoal(body);
+  const budgetGoal = parseBudgetGoal(body);
   const locLat = parseOptionalFloat(body.location_lat, "location_lat", -90, 90);
   const locLng = parseOptionalFloat(body.location_lng, "location_lng", -180, 180);
   const locRadius = parseOptionalInt(body.location_radius_km, "location_radius_km", 0, 5000);
@@ -154,17 +345,37 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const result = db
     .prepare(
       `INSERT INTO couples
-        (partner_a_id, partner_b_id, display_name, wedding_date, target_guest_count,
-         budget_ceiling_huf, location_lat, location_lng, location_radius_km,
+        (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
+         wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season,
+         target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
+         budget_ceiling_huf, budget_kind, budget_ceiling_min_huf, budget_ceiling_max_huf,
+         location_lat, location_lng, location_radius_km,
          style_tags_json, status, created_at, updated_at, onboarded_at)
-       VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+       VALUES (?, NULL, ?, ?, ?,
+               ?, ?, ?, ?, ?,
+               ?, ?, ?, ?,
+               ?, ?, ?, ?,
+               ?, ?, ?,
+               ?, 'active', ?, ?, ?)`,
     )
     .run(
       userId,
       displayName,
-      weddingDate,
-      targetGuestCount,
-      budgetCeiling,
+      brideName,
+      groomName,
+      dateGoal.exact_date,
+      dateGoal.kind,
+      dateGoal.target_year,
+      dateGoal.target_month,
+      dateGoal.target_season,
+      guestGoal.exact,
+      guestGoal.kind,
+      guestGoal.min,
+      guestGoal.max,
+      budgetGoal.exact_huf,
+      budgetGoal.kind,
+      budgetGoal.min_huf,
+      budgetGoal.max_huf,
       locLat,
       locLng,
       locRadius,
@@ -181,9 +392,9 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
     userId,
   );
 
-  if (budgetCeiling && budgetCeiling > 0) {
-    seedBudgetLines(coupleId, budgetCeiling);
-  }
+  // Range budgets seed lines off the midpoint; TBD seeds nothing.
+  const seedHuf = representativeBudgetHuf(budgetGoal);
+  if (seedHuf > 0) seedBudgetLines(coupleId, seedHuf);
 
   addAuditLog({
     actor_user_id: userId,
@@ -191,7 +402,14 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
     action: "couple.onboard",
     target_kind: "couple",
     target_id: coupleId,
-    after: { display_name: displayName, wedding_date: weddingDate },
+    after: {
+      display_name: displayName,
+      bride_name: brideName,
+      groom_name: groomName,
+      wedding_date_goal: dateGoal,
+      guest_count_goal: guestGoal,
+      budget_goal: budgetGoal,
+    },
   });
 
   const row = getCoupleById(coupleId);
@@ -253,27 +471,16 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
   if (invitedEmail) {
     const inviter = getUserById(userId);
     const inviteUrl = `${CONFIG.frontendBaseUrl}/invite/${token}`;
-    const inviterName = inviter?.full_name ?? "your partner";
-    const { html, text } = bilingualBody({
-      hu: {
-        greeting: "Szia!",
-        body: `${inviterName} meghívott, hogy közösen tervezzétek az esküvőt a Weddly-n. A link 7 napig érvényes.`,
-        cta: "Csatlakozom",
+    const inviterName = inviter?.full_name ?? "Your partner";
+    void sendKind(
+      "partner_invite",
+      { inviterName, inviteUrl },
+      {
+        // Partner B has no Weddly account yet — treat as a guest recipient.
+        user: null,
+        guest: { email: invitedEmail, full_name: "" },
+        couple_id: couple.id,
       },
-      en: {
-        greeting: "Hello,",
-        body: `${inviterName} invited you to plan your wedding together on Weddly. This link is valid for 7 days.`,
-        cta: "Join the workspace",
-      },
-      ctaUrl: inviteUrl,
-    });
-    sendEmail({
-      to: invitedEmail,
-      subject: "Weddly — esküvőtervezés meghívó / wedding-planning invite",
-      html,
-      text,
-    }).catch((e) =>
-      reportError("mailer.send_failed", e, { template: "couple_invite", to: invitedEmail }),
     );
   }
 

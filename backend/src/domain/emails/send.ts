@@ -91,18 +91,10 @@ export async function sendKind<K extends EmailKind>(
   });
 
   if (!CONFIG.resendApiKey) {
-    // Dev mode: mailer.ts logs to stdout. Persist the same in our log table
-    // so the same code paths run in tests as in prod.
-    try {
-      await sendEmail({
-        to: recipient.email,
-        subject: built.subject,
-        html: built.rendered.html,
-        text: built.rendered.text,
-      });
-    } catch {
-      // Won't actually throw in dev — sendEmail short-circuits.
-    }
+    // Dev/test: mailer.ts just logs to stdout, never throws. Record the
+    // attempt SYNCHRONOUSLY (before any await) so callers using fire-and-forget
+    // `void sendKind(...)` can still observe the log row right after — tests
+    // assume this. The actual stdout log is purely cosmetic.
     recordEmailAttempt({
       user_id: target.user?.id ?? null,
       couple_id: target.couple_id ?? null,
@@ -111,6 +103,12 @@ export async function sendKind<K extends EmailKind>(
       to_email: recipient.email,
       subject: built.subject,
       status: "skipped_no_provider",
+    });
+    void sendEmail({
+      to: recipient.email,
+      subject: built.subject,
+      html: built.rendered.html,
+      text: built.rendered.text,
     });
     return { status: "skipped_no_provider" };
   }

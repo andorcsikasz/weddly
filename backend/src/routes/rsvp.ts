@@ -1,15 +1,18 @@
 // Public RSVP endpoints. The invite code is the credential — no auth header.
 // Heavy rate-limit per IP to slow code-guessing.
 
+import { CONFIG } from "../config";
 import { db, now } from "../db";
-import { addAuditLog } from "../lib/audit";
 import { getCoupleById } from "../domain/couples";
+import { sendKind } from "../domain/emails";
 import {
   getGuestByInviteCode,
   isMealChoice,
   isRsvpStatus,
   toPublicRsvpView,
 } from "../domain/guests";
+import { getUserById } from "../domain/users";
+import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -94,7 +97,54 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   if (!refreshed) throw new HttpError(500, "Guest vanished");
   const couple = getCoupleById(refreshed.couple_id);
   if (!couple) throw new HttpError(404, "Couple gone");
+
+  // Email side-effects. We only fire on real responses (not status='pending').
+  if (status !== "pending") {
+    notifyCoupleOnRsvp(couple.partner_a_id, couple.partner_b_id, {
+      guestName: refreshed.full_name,
+      rsvpStatus: status,
+      coupleId: couple.id,
+    });
+    if (refreshed.email) {
+      void sendKind(
+        "rsvp_thanks_for_guest",
+        {
+          coupleDisplayName: couple.display_name,
+          weddingDate: couple.wedding_date,
+          rsvpStatus: status,
+          rsvpPageUrl: `${CONFIG.frontendBaseUrl}/rsvp/${refreshed.invite_code}`,
+        },
+        {
+          user: null,
+          guest: { email: refreshed.email, full_name: refreshed.full_name },
+          couple_id: couple.id,
+        },
+      );
+    }
+  }
+
   return json({ rsvp: toPublicRsvpView(refreshed, couple.display_name, couple.wedding_date) });
+}
+
+function notifyCoupleOnRsvp(
+  partnerAId: number,
+  partnerBId: number | null,
+  payload: { guestName: string; rsvpStatus: "yes" | "no" | "maybe"; coupleId: number },
+): void {
+  const guestPageUrl = `${CONFIG.frontendBaseUrl}/guests`;
+  for (const id of [partnerAId, partnerBId]) {
+    if (!id) continue;
+    const partner = getUserById(id);
+    if (!partner) continue;
+    void sendKind(
+      "rsvp_received_for_couple",
+      { guestName: payload.guestName, rsvpStatus: payload.rsvpStatus, guestPageUrl },
+      {
+        user: { id: partner.id, email: partner.email, full_name: partner.full_name },
+        couple_id: payload.coupleId,
+      },
+    );
+  }
 }
 
 export function registerRsvpRoutes(router: Router) {

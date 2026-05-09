@@ -23,6 +23,19 @@ export function purgeOneCouple(coupleId: number): void {
   db.prepare("DELETE FROM budget_lines WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM budget_snapshots WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM couple_invites WHERE couple_id = ?").run(coupleId);
+  // Email log + dispatch ledger: drop direct mentions of this couple. The
+  // `to_email` column may also contain PII; scrub via the user-id link below.
+  db.prepare("DELETE FROM email_log WHERE couple_id = ?").run(coupleId);
+  db.prepare(
+    "DELETE FROM email_log WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+  ).run(coupleId);
+  db.prepare("DELETE FROM email_dispatches WHERE couple_id = ?").run(coupleId);
+  db.prepare(
+    "DELETE FROM email_dispatches WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+  ).run(coupleId);
+  db.prepare(
+    "DELETE FROM email_preferences WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+  ).run(coupleId);
 
   // Sessions for users belonging to this couple — kill them so a returning
   // user can't keep using a stale token.

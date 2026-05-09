@@ -1,7 +1,8 @@
 import "./setup";
 
 import { describe, expect, test } from "bun:test";
-import { db } from "../src/db";
+import { db, now } from "../src/db";
+import { runEmailSweep } from "../src/domain/emails/worker";
 import { runPurgeSweep } from "../src/domain/purge";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
@@ -57,6 +58,9 @@ function wipeAll() {
     "rate_limit_buckets",
     "password_reset_tokens",
     "email_verification_tokens",
+    "email_log",
+    "email_dispatches",
+    "email_preferences",
     "users",
     "couples",
   ];
@@ -942,3 +946,207 @@ describe("suppliers + print", () => {
     expect(head).toBe("%PDF-");
   });
 });
+
+describe("email pipeline", () => {
+  test("register persists welcome_verify in email_log", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "elog@weddly.test",
+      password: "supersafe123",
+      full_name: "Email Log",
+    });
+    const rows = db
+      .prepare(
+        "SELECT kind, category, status, to_email FROM email_log WHERE to_email = ? ORDER BY id",
+      )
+      .all("elog@weddly.test") as {
+      kind: string;
+      category: string;
+      status: string;
+      to_email: string;
+    }[];
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.kind).toBe("welcome_verify");
+    expect(rows[0]!.category).toBe("transactional");
+    // Tests run without a real Resend key, so the dispatcher records "skipped_no_provider".
+    expect(rows[0]!.status).toBe("skipped_no_provider");
+  });
+
+  test("register seeds email_preferences with a stable unsubscribe token", async () => {
+    wipeAll();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "prefs@weddly.test",
+      password: "supersafe123",
+      full_name: "Prefs",
+    });
+    const prefs = db
+      .prepare(
+        "SELECT unsubscribe_token, lifecycle_opt_out FROM email_preferences WHERE user_id = ?",
+      )
+      .get(reg.data.user.id) as { unsubscribe_token: string; lifecycle_opt_out: number };
+    expect(prefs.unsubscribe_token.length).toBeGreaterThanOrEqual(32);
+    expect(prefs.lifecycle_opt_out).toBe(0);
+  });
+
+  test("one-click unsubscribe flips the lifecycle flag", async () => {
+    wipeAll();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "unsub@weddly.test",
+      password: "supersafe123",
+      full_name: "Unsub",
+    });
+    const prefs = db
+      .prepare("SELECT unsubscribe_token FROM email_preferences WHERE user_id = ?")
+      .get(reg.data.user.id) as { unsubscribe_token: string };
+
+    const res = await fetch(`${BASE}/api/unsubscribe/${prefs.unsubscribe_token}`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")?.startsWith("text/html")).toBe(true);
+
+    const after = db
+      .prepare("SELECT lifecycle_opt_out FROM email_preferences WHERE user_id = ?")
+      .get(reg.data.user.id) as { lifecycle_opt_out: number };
+    expect(after.lifecycle_opt_out).toBe(1);
+  });
+
+  test("opted-out users get lifecycle skipped, transactional still sent", async () => {
+    wipeAll();
+    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+      email: "optout@weddly.test",
+      password: "supersafe123",
+      full_name: "Opt Out",
+    });
+    // Flip lifecycle off via the dashboard endpoint.
+    const flip = await req<{ ok: boolean; lifecycle_opt_out: boolean }>(
+      "POST",
+      "/api/account/email-preferences",
+      { lifecycle_opt_out: true },
+      { token: reg.data.token },
+    );
+    expect(flip.status).toBe(200);
+    expect(flip.data.lifecycle_opt_out).toBe(true);
+
+    // Force this user to look 25h old so the nudge sweep picks them up.
+    db.prepare("UPDATE users SET created_at = ? WHERE id = ?").run(
+      now() - 1000 * 60 * 60 * 25,
+      reg.data.user.id,
+    );
+
+    const sweep = runEmailSweep();
+    expect(sweep.nudges).toBe(1);
+
+    const logRow = db
+      .prepare("SELECT status, kind FROM email_log WHERE user_id = ? AND kind = 'onboarding_nudge'")
+      .get(reg.data.user.id) as { status: string; kind: string } | undefined;
+    expect(logRow?.status).toBe("skipped_opt_out");
+  });
+
+  test("onboarding nudge fires once per user (idempotent)", async () => {
+    wipeAll();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "nudge@weddly.test",
+      password: "supersafe123",
+      full_name: "Nudge",
+    });
+    db.prepare("UPDATE users SET created_at = ? WHERE id = ?").run(
+      now() - 1000 * 60 * 60 * 30,
+      reg.data.user.id,
+    );
+
+    const first = runEmailSweep();
+    expect(first.nudges).toBe(1);
+    const second = runEmailSweep();
+    expect(second.nudges).toBe(0);
+
+    const logs = db
+      .prepare("SELECT id FROM email_log WHERE user_id = ? AND kind = 'onboarding_nudge'")
+      .all(reg.data.user.id) as { id: number }[];
+    expect(logs.length).toBe(1);
+  });
+
+  test("milestone reminders fire for couples whose wedding is in 7/30/90 days", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("milestones@weddly.test");
+    // Force wedding date to be exactly 30 days from today (UTC midnight).
+    const target = isoUtcDate(now() + 30 * 86_400_000);
+    db.prepare("UPDATE couples SET wedding_date = ? WHERE id = ?").run(target, coupleId);
+
+    const sweep = runEmailSweep();
+    expect(sweep.milestones).toBe(1);
+    const log = db
+      .prepare("SELECT kind, status FROM email_log WHERE couple_id = ? AND kind = 'milestone_t30'")
+      .get(coupleId) as { kind: string; status: string } | undefined;
+    expect(log?.kind).toBe("milestone_t30");
+  });
+
+  test("RSVP submission triggers couple notification + guest thank-you", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("rsvpmail@weddly.test");
+    const created = await req<{ guest: { invite_code: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Mail Guest", email: "guest-mail@example.com" },
+      { token },
+    );
+    const code = created.data.guest.invite_code;
+
+    const sub = await req("POST", `/api/rsvp/${code}`, { rsvp_status: "yes", meal_choice: "meat" });
+    expect(sub.status).toBe(200);
+
+    const couplesNotice = db
+      .prepare(
+        "SELECT to_email FROM email_log WHERE couple_id = ? AND kind = 'rsvp_received_for_couple'",
+      )
+      .all(coupleId) as { to_email: string }[];
+    expect(couplesNotice.length).toBe(1);
+    expect(couplesNotice[0]!.to_email).toBe("rsvpmail@weddly.test");
+
+    const guestThanks = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'rsvp_thanks_for_guest'")
+      .all() as { to_email: string }[];
+    expect(guestThanks.length).toBe(1);
+    expect(guestThanks[0]!.to_email).toBe("guest-mail@example.com");
+  });
+
+  test("partner invite email logs against the couple", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("invite-mail@weddly.test");
+    const inv = await req("POST", "/api/couples/invites", { invited_email: "b@x.test" }, { token });
+    expect(inv.status).toBe(201);
+    const log = db
+      .prepare(
+        "SELECT to_email, kind FROM email_log WHERE couple_id = ? AND kind = 'partner_invite'",
+      )
+      .get(coupleId) as { to_email: string; kind: string } | undefined;
+    expect(log?.to_email).toBe("b@x.test");
+  });
+
+  test("purge clears email_log + preferences for the deleted couple", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("purge-mail@weddly.test");
+    await req("POST", "/api/couples/invites", { invited_email: "c@x.test" }, { token });
+
+    await req("POST", "/api/couples/pause", {}, { token });
+    db.prepare("UPDATE couple_pause_requests SET scheduled_delete_at = 1 WHERE couple_id = ?").run(
+      coupleId,
+    );
+    runPurgeSweep();
+
+    const logCount = db
+      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE couple_id = ?")
+      .get(coupleId) as { n: number };
+    expect(logCount.n).toBe(0);
+    const prefsCount = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_preferences WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+      )
+      .get(coupleId) as { n: number };
+    expect(prefsCount.n).toBe(0);
+  });
+});
+
+function isoUtcDate(ts: number): string {
+  const d = new Date(ts);
+  d.setUTCHours(0, 0, 0, 0);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}

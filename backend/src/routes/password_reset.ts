@@ -7,11 +7,10 @@ import { hashPassword } from "../auth/password";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
-import { bilingualBody, sendEmail } from "../lib/mailer";
-import { reportError } from "../lib/observability";
-import { rateLimit } from "../lib/rate_limit";
+import { sendKind } from "../domain/emails";
 import { getUserByEmail } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { rateLimit } from "../lib/rate_limit";
 
 const RESET_TTL_MS = 1000 * 60 * 60; // 1 hour
 const FORGOT_BUCKET = { capacity: 5, refillRate: 1 / 60 }; // 5/min/IP, refills 1/min
@@ -47,27 +46,11 @@ async function handleForgot(ctx: Ctx): Promise<Response> {
   });
 
   const resetUrl = `${CONFIG.frontendBaseUrl}/reset-password/${token}`;
-  const { html, text } = bilingualBody({
-    hu: {
-      greeting: `Szia ${user.full_name}!`,
-      body: "Új jelszót kértél a Weddly fiókodhoz. A link 1 órán át érvényes. Ha nem te kérted, hagyd figyelmen kívül ezt a levelet.",
-      cta: "Új jelszó beállítása",
-    },
-    en: {
-      greeting: `Hi ${user.full_name},`,
-      body: "You requested a password reset for your Weddly account. This link is valid for 1 hour. If you didn't request it, you can ignore this email.",
-      cta: "Set a new password",
-    },
-    ctaUrl: resetUrl,
-  });
   // Fire and forget — don't block on email failures (still 200 to caller).
-  sendEmail({
-    to: user.email,
-    subject: "Weddly — jelszó visszaállítás / password reset",
-    html,
-    text,
-  }).catch((e) =>
-    reportError("mailer.send_failed", e, { template: "password_reset", to: user.email }),
+  void sendKind(
+    "password_reset",
+    { resetUrl },
+    { user: { id: user.id, email: user.email, full_name: user.full_name } },
   );
 
   return json({ ok: true });

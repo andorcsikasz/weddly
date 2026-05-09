@@ -6,9 +6,8 @@ import { extractToken, issueSession, revokeSession } from "../auth/session";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
+import { sendKind } from "../domain/emails";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
-import { bilingualBody, sendEmail } from "../lib/mailer";
-import { reportError } from "../lib/observability";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { createVerificationToken } from "./email_verify";
@@ -83,25 +82,11 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   // they click. Fire-and-forget so a mailer outage doesn't fail registration.
   const verifyToken = createVerificationToken(userId);
   const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${verifyToken}`;
-  const { html, text } = bilingualBody({
-    hu: {
-      greeting: `Szia ${fullName}!`,
-      body: "Üdv a Weddly-n! Erősítsd meg az e-mail címed, hogy később vissza tudd állítani a jelszót, ha kell. A link 7 napig érvényes.",
-      cta: "E-mail cím megerősítése",
-    },
-    en: {
-      greeting: `Hi ${fullName},`,
-      body: "Welcome to Weddly! Confirm your email so you can recover the account later if you forget your password. The link is valid for seven days.",
-      cta: "Confirm your email",
-    },
-    ctaUrl: verifyUrl,
-  });
-  sendEmail({
-    to: email,
-    subject: "Weddly — üdv / welcome",
-    html,
-    text,
-  }).catch((e) => reportError("mailer.send_failed", e, { template: "welcome", to: email }));
+  void sendKind(
+    "welcome_verify",
+    { verifyUrl },
+    { user: { id: userId, email, full_name: fullName } },
+  );
 
   const token = issueSession(userId);
   const userRow = getUserById(userId);

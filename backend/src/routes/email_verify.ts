@@ -7,11 +7,10 @@ import { randomBytes } from "node:crypto";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
-import { bilingualBody, sendEmail } from "../lib/mailer";
-import { reportError } from "../lib/observability";
-import { rateLimit } from "../lib/rate_limit";
+import { sendKind } from "../domain/emails";
 import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
+import { rateLimit } from "../lib/rate_limit";
 
 export const VERIFY_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const RESEND_BUCKET = { capacity: 5, refillRate: 1 / 60 }; // 5/min/IP, refills 1/min
@@ -54,26 +53,10 @@ async function handleResend(ctx: Ctx): Promise<Response> {
   });
 
   const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${token}`;
-  const { html, text } = bilingualBody({
-    hu: {
-      greeting: `Szia ${user.full_name}!`,
-      body: "Küldtünk neked egy új megerősítő linket. Hét napig érvényes. Ha nem te kérted, hagyd figyelmen kívül ezt a levelet.",
-      cta: "E-mail cím megerősítése",
-    },
-    en: {
-      greeting: `Hi ${user.full_name},`,
-      body: "Here's a fresh verification link. It's valid for seven days. If you didn't request this, you can ignore it.",
-      cta: "Confirm your email",
-    },
-    ctaUrl: verifyUrl,
-  });
-  sendEmail({
-    to: user.email,
-    subject: "Weddly — e-mail megerősítés / verify your email",
-    html,
-    text,
-  }).catch((e) =>
-    reportError("mailer.send_failed", e, { template: "email_verify_resend", to: user.email }),
+  void sendKind(
+    "verify_resend",
+    { verifyUrl },
+    { user: { id: user.id, email: user.email, full_name: user.full_name } },
   );
 
   return json({ ok: true });

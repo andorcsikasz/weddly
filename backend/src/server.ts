@@ -19,11 +19,13 @@ import {
   Router,
 } from "./lib/http";
 import { log, makeLogger } from "./lib/logger";
+import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerBudgetRoutes } from "./routes/budget";
 import { registerCouplePauseRoutes } from "./routes/couple_pause";
 import { registerCoupleRoutes } from "./routes/couples";
+import { registerEmailPrefsRoutes } from "./routes/email_prefs";
 import { registerEmailVerifyRoutes } from "./routes/email_verify";
 import { registerExportRoutes } from "./routes/export";
 import { registerGuestRoutes } from "./routes/guests";
@@ -39,6 +41,7 @@ registerHealthRoutes(router);
 registerAuthRoutes(router);
 registerPasswordResetRoutes(router);
 registerEmailVerifyRoutes(router);
+registerEmailPrefsRoutes(router);
 registerCoupleRoutes(router);
 registerCouplePauseRoutes(router);
 registerExportRoutes(router);
@@ -203,7 +206,10 @@ const server = Bun.serve({
 });
 
 // Pause-to-delete sweep — only in real environments. Tests drive it directly.
-if (process.env.NODE_ENV !== "test") startPurgeWorker();
+if (process.env.NODE_ENV !== "test") {
+  startPurgeWorker();
+  startEmailWorker();
+}
 
 log.info("server.listening", {
   port: server.port,
