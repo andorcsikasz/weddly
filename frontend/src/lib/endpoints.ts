@@ -27,6 +27,9 @@ export const authApi = {
     apiFetch<AuthSession>("POST", "/api/auth/login", body),
   logout: () => apiFetch<{ ok: true }>("POST", "/api/auth/logout"),
   me: () => apiFetch<{ user: User }>("GET", "/api/auth/me"),
+  forgot: (email: string) => apiFetch<{ ok: true }>("POST", "/api/auth/forgot", { email }),
+  reset: (token: string, password: string) =>
+    apiFetch<{ ok: true }>("POST", "/api/auth/reset", { token, password }),
 };
 
 export interface OnboardInput {
@@ -129,6 +132,11 @@ export const pauseApi = {
   request: (reason?: string) =>
     apiFetch<{ pause_request: CouplePauseRequest }>("POST", "/api/couples/pause", { reason }),
   cancel: () => apiFetch<{ ok: true }>("POST", "/api/couples/pause/cancel"),
+};
+
+export const exportApi = {
+  /** GDPR Article 20: returns a JSON blob with everything the couple owns. */
+  download: () => apiFetch<Record<string, unknown>>("GET", "/api/couples/export"),
 };
 
 export const supplierApi = {

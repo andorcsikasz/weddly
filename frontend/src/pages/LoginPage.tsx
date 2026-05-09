@@ -67,6 +67,11 @@ export default function LoginPage() {
               {t("auth.submit_register")}
             </Link>
           </p>
+          <p className="mt-2 text-sm text-ink-600">
+            <Link to="/forgot-password" className="font-medium text-ink-900 underline">
+              {t("auth.forgot_link")}
+            </Link>
+          </p>
         </div>
       </div>
     </Shell>

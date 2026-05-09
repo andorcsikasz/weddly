@@ -7,13 +7,23 @@ import { extractToken, verifySessionToken } from "./auth/session";
 import { CONFIG } from "./config";
 import "./db"; // open DB + apply schema
 
-import { corsPreflight, type Ctx, err as httpErr, HttpError, Router } from "./lib/http";
+import {
+  corsHeaders,
+  corsPreflight,
+  type Ctx,
+  err as httpErr,
+  HttpError,
+  Router,
+} from "./lib/http";
+import { startPurgeWorker } from "./lib/purge";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerBudgetRoutes } from "./routes/budget";
 import { registerCouplePauseRoutes } from "./routes/couple_pause";
 import { registerCoupleRoutes } from "./routes/couples";
+import { registerExportRoutes } from "./routes/export";
 import { registerGuestRoutes } from "./routes/guests";
 import { registerHealthRoutes } from "./routes/health";
+import { registerPasswordResetRoutes } from "./routes/password_reset";
 import { registerPrintRoutes } from "./routes/print";
 import { registerRsvpRoutes } from "./routes/rsvp";
 import { registerSeatingRoutes } from "./routes/seating";
@@ -22,8 +32,10 @@ import { registerSupplierRoutes } from "./routes/suppliers";
 const router = new Router();
 registerHealthRoutes(router);
 registerAuthRoutes(router);
+registerPasswordResetRoutes(router);
 registerCoupleRoutes(router);
 registerCouplePauseRoutes(router);
+registerExportRoutes(router);
 registerGuestRoutes(router);
 registerBudgetRoutes(router);
 registerRsvpRoutes(router);
@@ -31,11 +43,31 @@ registerSeatingRoutes(router);
 registerPrintRoutes(router);
 registerSupplierRoutes(router);
 
-const SECURITY_HEADERS = {
+const IS_PROD = process.env.NODE_ENV === "production";
+
+// CSP: Vite emits hashed assets so `'self'` covers our JS/CSS. Plausible script
+// is loaded from plausible.io; Sentry browser SDK posts to *.sentry.io. The
+// landing pulls Inter from rsms.me + Cormorant Garamond from fonts.googleapis.com,
+// so those origins are whitelisted for fonts and stylesheets.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' https://plausible.io",
+  "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
+const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "geolocation=(self), microphone=(), camera=()",
+  "Content-Security-Policy": CSP,
+  ...(IS_PROD ? { "Strict-Transport-Security": "max-age=31536000; includeSubDomains" } : {}),
 };
 
 const FRONTEND_DIST = join(import.meta.dir, "..", "..", "frontend", "dist");
@@ -75,18 +107,23 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
 
-    if (req.method === "OPTIONS") return corsPreflight();
+    if (req.method === "OPTIONS") return corsPreflight(req);
+
+    const cors = corsHeaders(req.headers.get("origin"));
 
     const matched = router.match(req.method, url.pathname);
     if (!matched) {
       const fallback = await tryServeStatic(url.pathname);
       if (fallback) {
-        // Apply security headers to static responses too.
         const headers = new Headers(fallback.headers);
         for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
+        for (const [k, v] of Object.entries(cors)) headers.set(k, v);
         return new Response(fallback.body, { status: fallback.status, headers });
       }
-      return httpErr(404, "Not found");
+      const r = httpErr(404, "Not found");
+      const headers = new Headers(r.headers);
+      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      return new Response(r.body, { status: r.status, headers });
     }
 
     // Auth middleware: verify the bearer token if present, leave userId null otherwise.
@@ -95,7 +132,10 @@ const server = Bun.serve({
     if (token) userId = verifySessionToken(token);
 
     if (matched.route.requireAuth && userId === null) {
-      return httpErr(401, "Not authenticated");
+      const r = httpErr(401, "Not authenticated");
+      const headers = new Headers(r.headers);
+      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      return new Response(r.body, { status: r.status, headers });
     }
 
     const ctx: Ctx = {
@@ -110,14 +150,22 @@ const server = Bun.serve({
       const res = await matched.route.handler(ctx);
       const headers = new Headers(res.headers);
       for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
+      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
       return new Response(res.body, { status: res.status, headers });
     } catch (e) {
-      if (e instanceof HttpError) return httpErr(e.status, e.message, e.extra);
-      console.error("[server] unhandled error", e);
-      return httpErr(500, "Internal server error");
+      const r =
+        e instanceof HttpError
+          ? httpErr(e.status, e.message, e.extra)
+          : (console.error("[server] unhandled error", e), httpErr(500, "Internal server error"));
+      const headers = new Headers(r.headers);
+      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      return new Response(r.body, { status: r.status, headers });
     }
   },
 });
+
+// Pause-to-delete sweep — only in real environments. Tests drive it directly.
+if (process.env.NODE_ENV !== "test") startPurgeWorker();
 
 console.log(
   `[server] weddly api listening on :${server.port} ` +

@@ -43,6 +43,19 @@ const hu: LocaleMessages = {
     duplicate_email: "Ez az e-mail már regisztrálva van.",
     short_password: "A jelszó legalább 8 karakter legyen.",
     rate_limited: "Túl sok próbálkozás. Próbáld néhány perc múlva.",
+    forgot_link: "Elfelejtetted a jelszót?",
+    forgot_title: "Jelszó visszaállítása",
+    forgot_help:
+      "Add meg az e-mail címet, amivel regisztráltál. Ha van fiókunk hozzá, 1 óráig érvényes visszaállító linket küldünk.",
+    forgot_submit: "Link küldése",
+    forgot_sent:
+      "Ha a cím regisztrálva van, hamarosan kapsz egy visszaállító linket. Nézd meg a spam mappát is, ha pár perc alatt nem érkezik meg.",
+    back_to_login: "Vissza a bejelentkezéshez",
+    reset_title: "Új jelszó megadása",
+    new_password_label: "Új jelszó",
+    reset_submit: "Jelszó frissítése",
+    reset_done: "Jelszó frissítve. Átirányítunk a bejelentkezéshez…",
+    reset_invalid: "Ez a link érvénytelen vagy lejárt. Kérj egy újat.",
   },
   onboarding: {
     welcome: "Üdv a {name}-en!",
@@ -271,6 +284,11 @@ const hu: LocaleMessages = {
     thanks_body: "A pár látja a választást — bármikor visszajöhetsz módosítani.",
     update_response: "Frissítés",
   },
+  notfound: {
+    title: "Nincs ilyen oldal",
+    body: "A link talán hibás, vagy az oldalt áthelyeztük.",
+    go_home: "Vissza a főoldalra",
+  },
   settings: {
     title: "Beállítások",
     pause_title: "Munkaterület szüneteltetése",
@@ -284,6 +302,11 @@ const hu: LocaleMessages = {
     locale_label: "Nyelv",
     locale_hu: "Magyar",
     locale_en: "English",
+    export_title: "Adataid exportálása",
+    export_body:
+      "Egyetlen JSON fájlban töltheted le a teljes workspace tartalmát — pár, vendégek, költségvetés, ültetés, auditnapló. A PDF-eket (ültetési rend, ültetőkártyák) az Ültetés oldalról töltheted le.",
+    export_button: "JSON letöltése",
+    export_downloading: "Előkészítés…",
   },
 };
 

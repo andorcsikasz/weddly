@@ -41,6 +41,17 @@ export interface LocaleMessages {
     duplicate_email: string;
     short_password: string;
     rate_limited: string;
+    forgot_link: string;
+    forgot_title: string;
+    forgot_help: string;
+    forgot_submit: string;
+    forgot_sent: string;
+    back_to_login: string;
+    reset_title: string;
+    new_password_label: string;
+    reset_submit: string;
+    reset_done: string;
+    reset_invalid: string;
   };
   onboarding: {
     welcome: string;
@@ -254,6 +265,11 @@ export interface LocaleMessages {
     thanks_body: string;
     update_response: string;
   };
+  notfound: {
+    title: string;
+    body: string;
+    go_home: string;
+  };
   settings: {
     title: string;
     pause_title: string;
@@ -266,5 +282,9 @@ export interface LocaleMessages {
     locale_label: string;
     locale_hu: string;
     locale_en: string;
+    export_title: string;
+    export_body: string;
+    export_button: string;
+    export_downloading: string;
   };
 }

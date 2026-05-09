@@ -1,5 +1,7 @@
 // Tiny HTTP helpers + custom router. No framework — Bun's native runtime is fast enough.
 
+import { CONFIG } from "../config";
+
 export interface Ctx {
   req: Request;
   url: URL;
@@ -20,18 +22,37 @@ interface Route {
   requireAuth: boolean;
 }
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type, x-test-client-ip",
-};
+// CORS allowlist: prod locks to FRONTEND_BASE_URL; dev permits localhost on
+// any port so Vite (5173) → API (8787) keeps working. Tests run same-origin.
+const CORS_ALLOWED_ORIGINS = new Set<string>([
+  CONFIG.frontendBaseUrl,
+  // Common dev ports, only honoured when NODE_ENV !== production.
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+const IS_PROD = process.env.NODE_ENV === "production";
+
+function corsHeaders(origin: string | null): Record<string, string> {
+  const allow =
+    origin &&
+    (CORS_ALLOWED_ORIGINS.has(origin) || (!IS_PROD && origin.startsWith("http://localhost")))
+      ? origin
+      : CONFIG.frontendBaseUrl;
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type, x-test-client-ip",
+    Vary: "Origin",
+  };
+}
 
 export function json(data: unknown, init: ResponseInit = {}): Response {
+  // Origin is unknown at json() call time (it's the request header). The server
+  // wrapper applies CORS based on the actual request — json() just emits the body.
   return new Response(JSON.stringify(data), {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...CORS,
       ...(init.headers ?? {}),
     },
   });
@@ -112,6 +133,9 @@ export function requireAuth(ctx: Ctx): number {
   return ctx.userId;
 }
 
-export function corsPreflight(): Response {
-  return new Response(null, { status: 204, headers: CORS });
+export function corsPreflight(req: Request): Response {
+  const origin = req.headers.get("origin");
+  return new Response(null, { status: 204, headers: corsHeaders(origin) });
 }
+
+export { corsHeaders };

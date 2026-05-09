@@ -8,11 +8,14 @@ import {
   INVITE_TTL_MS,
   type WeddingStyleTag,
 } from "@shared/types";
+import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../lib/couples";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { generateInviteToken } from "../lib/invite_codes";
+import { bilingualBody, sendEmail } from "../lib/mailer";
+import { getUserById } from "../lib/users";
 
 interface InviteRow {
   id: number;
@@ -243,6 +246,34 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
     | InviteRow
     | undefined;
   if (!row) throw new HttpError(500, "Invite vanished after insert");
+
+  // Fire-and-forget invite email. If invited_email is missing, the inviter
+  // shares the link manually (the dashboard already shows a copy-link button).
+  if (invitedEmail) {
+    const inviter = getUserById(userId);
+    const inviteUrl = `${CONFIG.frontendBaseUrl}/invite/${token}`;
+    const inviterName = inviter?.full_name ?? "your partner";
+    const { html, text } = bilingualBody({
+      hu: {
+        greeting: "Szia!",
+        body: `${inviterName} meghívott, hogy közösen tervezzétek az esküvőt a Weddly-n. A link 7 napig érvényes.`,
+        cta: "Csatlakozom",
+      },
+      en: {
+        greeting: "Hello,",
+        body: `${inviterName} invited you to plan your wedding together on Weddly. This link is valid for 7 days.`,
+        cta: "Join the workspace",
+      },
+      ctaUrl: inviteUrl,
+    });
+    sendEmail({
+      to: invitedEmail,
+      subject: "Weddly — esküvőtervezés meghívó / wedding-planning invite",
+      html,
+      text,
+    }).catch((e) => console.error("[couples] invite send failed", e));
+  }
+
   return json({ invite: toInvite(row) }, { status: 201 });
 }
 

@@ -3,12 +3,15 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import BudgetPage from "./pages/BudgetPage";
 import DashboardPage from "./pages/DashboardPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import GuestsPage from "./pages/GuestsPage";
 import InvitePage from "./pages/InvitePage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import RegisterPage from "./pages/RegisterPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RsvpPage from "./pages/RsvpPage";
 import SeatingPage from "./pages/SeatingPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -54,6 +57,8 @@ export default function App() {
           </RedirectIfAuthed>
         }
       />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/invite/:token" element={<InvitePage />} />
       <Route path="/rsvp/:code" element={<RsvpPage />} />
       <Route
@@ -112,7 +117,7 @@ export default function App() {
           </RequireAuth>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

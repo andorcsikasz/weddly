@@ -168,3 +168,14 @@ CREATE TABLE IF NOT EXISTS rate_limit_buckets (
   tokens REAL NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+-- Password reset tokens. Single-use (consumed_at), 1h TTL.
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  expires_at INTEGER NOT NULL,
+  consumed_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id);

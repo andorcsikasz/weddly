@@ -4,7 +4,7 @@ import type { CouplePauseRequest, CoupleStatus } from "@shared/types";
 import { useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { ApiError } from "../lib/api";
-import { pauseApi } from "../lib/endpoints";
+import { exportApi, pauseApi } from "../lib/endpoints";
 import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 
@@ -13,6 +13,7 @@ export default function SettingsPage() {
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   async function refresh() {
     const r = await pauseApi.status();
@@ -39,6 +40,27 @@ export default function SettingsPage() {
       refresh();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  async function downloadExport() {
+    setExporting(true);
+    try {
+      const data = await exportApi.download();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download = `weddly-export-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -76,6 +98,19 @@ export default function SettingsPage() {
             {t("settings.locale_en")}
           </button>
         </div>
+      </section>
+
+      <section className="card mt-6">
+        <h2 className="text-lg">{t("settings.export_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600">{t("settings.export_body")}</p>
+        <button
+          type="button"
+          className="btn-outline mt-4"
+          onClick={downloadExport}
+          disabled={exporting}
+        >
+          {exporting ? t("settings.export_downloading") : t("settings.export_button")}
+        </button>
       </section>
 
       <section className="card mt-6 border-blush-200">

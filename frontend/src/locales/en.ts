@@ -43,6 +43,19 @@ const en: LocaleMessages = {
     duplicate_email: "That email is already registered.",
     short_password: "Password must be at least 8 characters.",
     rate_limited: "Too many attempts — wait a few minutes.",
+    forgot_link: "Forgot your password?",
+    forgot_title: "Reset your password",
+    forgot_help:
+      "Enter the email you signed up with. If we have an account for it, we'll send a reset link valid for 1 hour.",
+    forgot_submit: "Send reset link",
+    forgot_sent:
+      "If the email is registered, you'll get a reset link shortly. Check your spam folder if it doesn't arrive within a few minutes.",
+    back_to_login: "Back to sign in",
+    reset_title: "Choose a new password",
+    new_password_label: "New password",
+    reset_submit: "Update password",
+    reset_done: "Password updated. Redirecting you to sign in…",
+    reset_invalid: "This reset link is invalid or has expired. Request a new one.",
   },
   onboarding: {
     welcome: "Welcome to {name}!",
@@ -271,6 +284,11 @@ const en: LocaleMessages = {
     thanks_body: "The couple sees your response — come back any time to update.",
     update_response: "Update",
   },
+  notfound: {
+    title: "Page not found",
+    body: "The link you followed might be broken, or the page may have been moved.",
+    go_home: "Back to home",
+  },
   settings: {
     title: "Settings",
     pause_title: "Pause workspace",
@@ -284,6 +302,11 @@ const en: LocaleMessages = {
     locale_label: "Language",
     locale_hu: "Magyar",
     locale_en: "English",
+    export_title: "Export your data",
+    export_body:
+      "Download everything in your workspace — couple, guests, budget, seating, audit log — as a single JSON file. PDFs (seating chart, place cards) are downloadable from the Seating page.",
+    export_button: "Download JSON",
+    export_downloading: "Preparing…",
   },
 };
 

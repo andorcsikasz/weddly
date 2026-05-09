@@ -2,6 +2,7 @@ import "./setup";
 
 import { describe, expect, test } from "bun:test";
 import { db } from "../src/db";
+import { runPurgeSweep } from "../src/lib/purge";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -586,6 +587,189 @@ describe("pause / breakup", () => {
       token,
     });
     expect(s2.data.couple_status).toBe("active");
+  });
+});
+
+describe("pause-to-delete purge job", () => {
+  test("purges PII and stamps couple as deleting once the window expires", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("purge@weddly.test");
+    await req("POST", "/api/guests", { full_name: "Will Be Purged" }, { token });
+
+    const pause = await req<{ pause_request: { id: number } }>(
+      "POST",
+      "/api/couples/pause",
+      {},
+      { token },
+    );
+    expect(pause.status).toBe(201);
+    // Force the deadline into the past so the sweep finds it.
+    db.prepare("UPDATE couple_pause_requests SET scheduled_delete_at = 1 WHERE couple_id = ?").run(
+      coupleId,
+    );
+
+    const result = runPurgeSweep();
+    expect(result.purged).toBe(1);
+
+    // Guest PII gone.
+    const guests = db
+      .prepare("SELECT COUNT(*) AS n FROM guests WHERE couple_id = ?")
+      .get(coupleId) as { n: number };
+    expect(guests.n).toBe(0);
+
+    // Couple shell still exists, status = deleting, name scrubbed.
+    const couple = db
+      .prepare("SELECT status, display_name FROM couples WHERE id = ?")
+      .get(coupleId) as { status: string; display_name: string };
+    expect(couple.status).toBe("deleting");
+    expect(couple.display_name).toBe("Purged workspace");
+
+    // User email scrubbed; sessions revoked.
+    const user = db
+      .prepare("SELECT email, status FROM users WHERE couple_id = ?")
+      .get(coupleId) as { email: string; status: string };
+    expect(user.email).toMatch(/^deleted-\d+@purged\.local$/);
+    expect(user.status).toBe("suspended");
+
+    const sessions = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM sessions WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+      )
+      .get(coupleId) as { n: number };
+    expect(sessions.n).toBe(0);
+
+    // Audit log entry written.
+    const audit = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'couple.purge'",
+      )
+      .get(coupleId) as { n: number };
+    expect(audit.n).toBe(1);
+  });
+
+  test("does not purge couples whose deadline is still in the future", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("notyet@weddly.test");
+    await req("POST", "/api/couples/pause", {}, { token });
+    // Default scheduled_delete_at is now + 30d — should not be picked up.
+    const result = runPurgeSweep();
+    expect(result.purged).toBe(0);
+    const couple = db.prepare("SELECT status FROM couples WHERE id = ?").get(coupleId) as {
+      status: string;
+    };
+    expect(couple.status).toBe("paused");
+  });
+});
+
+describe("password reset", () => {
+  test("forgot returns 200 even for unknown emails (no enumeration)", async () => {
+    wipeAll();
+    const r = await req<{ ok: true }>("POST", "/api/auth/forgot", { email: "ghost@nowhere.test" });
+    expect(r.status).toBe(200);
+    expect(r.data.ok).toBe(true);
+  });
+
+  test("end-to-end: request → use token → log in with new password", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "reset@weddly.test",
+      password: "originalpw123",
+      full_name: "Reset User",
+    });
+
+    const r = await req<{ ok: true }>("POST", "/api/auth/forgot", { email: "reset@weddly.test" });
+    expect(r.status).toBe(200);
+
+    // Pull the token straight from the DB (the email is stubbed in tests).
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM password_reset_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
+      )
+      .get("reset@weddly.test") as { token: string } | undefined;
+    expect(tokenRow?.token).toBeDefined();
+
+    const reset = await req<{ ok: true }>("POST", "/api/auth/reset", {
+      token: tokenRow!.token,
+      password: "brandnewpw456",
+    });
+    expect(reset.status).toBe(200);
+
+    // Old password should fail.
+    const oldLogin = await req("POST", "/api/auth/login", {
+      email: "reset@weddly.test",
+      password: "originalpw123",
+    });
+    expect(oldLogin.status).toBe(401);
+
+    // New password should succeed.
+    const newLogin = await req<{ token: string }>("POST", "/api/auth/login", {
+      email: "reset@weddly.test",
+      password: "brandnewpw456",
+    });
+    expect(newLogin.status).toBe(200);
+    expect(newLogin.data.token).toContain(".");
+
+    // Re-using the same token must fail.
+    const reuse = await req("POST", "/api/auth/reset", {
+      token: tokenRow!.token,
+      password: "anotherpw789",
+    });
+    expect(reuse.status).toBe(400);
+  });
+
+  test("reset rejects expired tokens", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "expired@weddly.test",
+      password: "supersafe123",
+      full_name: "Expired",
+    });
+    await req("POST", "/api/auth/forgot", { email: "expired@weddly.test" });
+    db.prepare(
+      "UPDATE password_reset_tokens SET expires_at = 1 WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+    ).run("expired@weddly.test");
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM password_reset_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .get("expired@weddly.test") as { token: string };
+    const r = await req("POST", "/api/auth/reset", {
+      token: tokenRow.token,
+      password: "newpassword123",
+    });
+    expect(r.status).toBe(400);
+  });
+});
+
+describe("data export (GDPR Article 20)", () => {
+  test("returns full workspace JSON without password hashes", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("export@weddly.test");
+    await req("POST", "/api/guests", { full_name: "Export Guest" }, { token });
+
+    const r = await req<{
+      schema_version: number;
+      couple: { id: number };
+      partners: { partner_a: { email: string; password_hash?: unknown }; partner_b: unknown };
+      guests: { full_name: string }[];
+      budget: { lines: unknown[]; snapshots: unknown[] };
+      seating: { tables: unknown[]; assignments: unknown[]; conflicts: unknown[] };
+    }>("GET", "/api/couples/export", undefined, { token });
+
+    expect(r.status).toBe(200);
+    expect(r.data.schema_version).toBe(1);
+    expect(r.data.couple.id).toBe(coupleId);
+    expect(r.data.partners.partner_a.email).toBe("export@weddly.test");
+    // Critical: password hashes must not leak.
+    expect(r.data.partners.partner_a.password_hash).toBeUndefined();
+    expect(r.data.guests.length).toBe(1);
+    expect(r.data.guests[0]?.full_name).toBe("Export Guest");
+    expect(r.data.budget.lines.length).toBeGreaterThan(0); // seeded by onboarding
+  });
+
+  test("rejects unauthenticated request", async () => {
+    const r = await req("GET", "/api/couples/export");
+    expect(r.status).toBe(401);
   });
 });
 
