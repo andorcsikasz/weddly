@@ -81,9 +81,10 @@ const en: LocaleMessages = {
     welcome: "Welcome to {name}!",
     intro:
       "A few quick questions and you're set. You can change anything later — these are just starting points.",
-    step1_title: "What's the couple called?",
-    step1_help: 'e.g. "Anna & Bence". This shows up across the workspace.',
-    display_name_label: "Couple name",
+    step1_title: "Who's getting married?",
+    step1_help: 'Your names show up across the workspace as e.g. "Anna & Bence".',
+    bride_name_label: "Bride",
+    groom_name_label: "Groom",
     step2_title: "When's the wedding?",
     wedding_date_label: "Wedding date",
     step3_title: "How many guests are you planning for?",
@@ -141,11 +142,6 @@ const en: LocaleMessages = {
     feature_planning_title: "Live budget",
     feature_planning_body:
       "Move the guest-count slider and watch catering, decor, and venue costs shift in real time.",
-    feature_guests_title: "RSVP from one link",
-    feature_guests_body:
-      "Each guest gets their own link; meals, plus-ones, accommodation, and song requests collect in one place.",
-    feature_seating_title: "Seating, ready to print",
-    feature_seating_body: "Lay tables out on the canvas, then export them at A4, A6, or A3 size.",
     trust_couple_title: "Built for two",
     trust_couple_body:
       "One of you signs up, sends a link, and the other lands in the same workspace. No duplicate logins, no syncing.",
@@ -231,6 +227,53 @@ const en: LocaleMessages = {
     footer_legal_privacy: "Privacy",
     footer_band_text: "A guest?",
     footer_band_cta: "Enter your invite code",
+    // ── Round 2: stats strip + product features + testimonials ────────
+    stats_eyebrow: "Open beta",
+    stats_a_value: "200+",
+    stats_a_label: "couples on the waitlist",
+    stats_b_value: "≈5 min",
+    stats_b_label: "to set the workspace up",
+    stats_c_value: "HU + EN",
+    stats_c_label: "Hungarian-first, English supported",
+    stats_footnote: "Numbers reflect the open beta and update as it grows.",
+    product_eyebrow: "What's inside",
+    product_title: "The pieces you'll actually use",
+    block_budget_eyebrow: "Live budget",
+    block_budget_title: "Move the headcount slider, watch every category re-cost itself.",
+    block_budget_body:
+      'Catering, drinks, decor and venue are recalculated against your guest count and ceiling. No spreadsheet rituals, no "who edited cell B14" arguments.',
+    block_budget_bullet_1: "One ceiling, six categories, live remaining-spend.",
+    block_budget_bullet_2: "Hungarian forint, no currency conversion drift.",
+    block_budget_bullet_3: "Audit log of every change so nothing disappears.",
+    block_guests_eyebrow: "Guest list & RSVP",
+    block_guests_title:
+      "One link per guest. Replies, meals, plus-ones, dietary — all in one place.",
+    block_guests_body:
+      "Each guest gets a personal RSVP page with their name pre-filled. They reply on their phone in under a minute; you see status, meal choice and song requests in the same list.",
+    block_guests_bullet_1: "No app install, no account — just the link.",
+    block_guests_bullet_2: "Filter by status, meal, table or plus-one.",
+    block_guests_bullet_3: "Export to CSV for the venue at any time.",
+    block_seating_eyebrow: "Seating",
+    block_seating_title: "Real seating canvas. Real print sizes.",
+    block_seating_body:
+      "Drop tables on the canvas, drag guests onto seats, and the layout exports at A4, A6 (place cards) and A3 (the big chart for the entrance). The PDF renders at exact mm — no guesswork at the printer.",
+    block_seating_bullet_1: "Round, rectangular and head tables.",
+    block_seating_bullet_2: "Conflict warnings when two guests collide.",
+    block_seating_bullet_3: "Print-ready PDFs in three sizes.",
+    testimonials_eyebrow: "From the beta",
+    testimonials_title: "Couples who've used Weddly to plan",
+    t1_quote:
+      "We finally stopped emailing each other PDFs at midnight. The shared workspace meant Bence and I could plan in 15-minute pockets, side by side.",
+    t1_name: "Anna & Bence",
+    t1_meta: "May 2026 · Budapest · beta tester",
+    t2_quote:
+      "The RSVP links saved us. Eighty-seven guests replied without needing to install anything, and the meal-choice column came out clean.",
+    t2_name: "Eszter & Dani",
+    t2_meta: "August 2026 · Lake Balaton · beta tester",
+    t3_quote:
+      "Printing the seating chart at A3 the night before — no fiddling in Photoshop, no calling the print shop. It just printed.",
+    t3_name: "Kata & Marci",
+    t3_meta: "September 2026 · Pécs · beta tester",
   },
   vendors: {
     seo_title: "For vendors — Weddly",

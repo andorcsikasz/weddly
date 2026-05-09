@@ -80,9 +80,10 @@ const hu: LocaleMessages = {
     welcome: "Üdv a {name}-en!",
     intro:
       "Pár kérdés, és máris tervezhettek. Bármit megváltoztathatsz később, ezek csak kiindulópontok.",
-    step1_title: "Hogy hívjuk a párost?",
-    step1_help: 'Pl. "Anna & Bence". Ezt látod a kezelőfelületen.',
-    display_name_label: "Páros neve",
+    step1_title: "Kik házasodnak?",
+    step1_help: 'A neveitek "Anna & Bence" formában jelennek meg a kezelőfelületen.',
+    bride_name_label: "Menyasszony",
+    groom_name_label: "Vőlegény",
     step2_title: "Mikor lesz az esküvő?",
     wedding_date_label: "Esküvő dátuma",
     step3_title: "Hány vendéget hívnátok?",
@@ -140,12 +141,6 @@ const hu: LocaleMessages = {
     feature_planning_title: "Élő költségvetés",
     feature_planning_body:
       "Húzzátok a vendégszámot, és lássátok azonnal, hogyan mozdul a catering, dekor és helyszín ára.",
-    feature_guests_title: "RSVP egy linkről",
-    feature_guests_body:
-      "Minden vendég saját linket kap; étrend, kísérő, szállás és dalkérés egy helyen gyűlik.",
-    feature_seating_title: "Ültetés és nyomtatás",
-    feature_seating_body:
-      "Rakjátok ki az asztalokat a vásznon, és töltsétek le A4, A6 vagy A3 méretben.",
     trust_couple_title: "Kettőtöknek készült",
     trust_couple_body:
       "Egyikőtök regisztrál, küld egy linket, és a másik ugyanabba a munkaterületbe lép be. Nincs duplázódó belépés.",
@@ -232,6 +227,54 @@ const hu: LocaleMessages = {
     footer_legal_privacy: "Adatvédelem",
     footer_band_text: "Vendég vagy?",
     footer_band_cta: "Add meg a meghívó kódod",
+    // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
+    stats_eyebrow: "Nyílt béta",
+    stats_a_value: "200+",
+    stats_a_label: "pár a várólistán",
+    stats_b_value: "kb. 5 perc",
+    stats_b_label: "a munkaterület beállítása",
+    stats_c_value: "HU + EN",
+    stats_c_label: "magyar elsőként, angollal kiegészítve",
+    stats_footnote:
+      "A számok a nyílt béta aktuális állapotát mutatják, és a fejlődéssel frissülnek.",
+    product_eyebrow: "Mit tartalmaz",
+    product_title: "Azok az elemek, amiket valóban használni fogtok",
+    block_budget_eyebrow: "Élő költségvetés",
+    block_budget_title: "Húzd a vendégszámot, és minden kategória újraszámolódik.",
+    block_budget_body:
+      'A catering, italok, dekor és helyszín a vendégszámhoz és a plafonhoz igazodva számolódik újra. Nincs táblázatos rituálé, nincs „ki módosította a B14-es cellát" vita.',
+    block_budget_bullet_1: "Egy plafon, hat kategória, élő maradványösszeg.",
+    block_budget_bullet_2: "Magyar forint, valutaváltás-elcsúszás nélkül.",
+    block_budget_bullet_3: "Auditnapló minden változtatásról, semmi nem vész el.",
+    block_guests_eyebrow: "Vendéglista és RSVP",
+    block_guests_title:
+      "Vendégenként egy link. Válaszok, étrend, kísérők, allergiák — mind egy helyen.",
+    block_guests_body:
+      "Minden vendég saját RSVP oldalt kap, a nevével előre kitöltve. Telefonon válaszolnak egy perc alatt; ti pedig egy listában látjátok az állapotot, étrendet és dalkéréseket.",
+    block_guests_bullet_1: "Nincs appletöltés, nincs regisztráció — csak a link.",
+    block_guests_bullet_2: "Szűrés állapot, étrend, asztal vagy kísérő szerint.",
+    block_guests_bullet_3: "CSV exportálás bármikor a helyszínnek.",
+    block_seating_eyebrow: "Ültetés",
+    block_seating_title: "Igazi ültetési vászon. Igazi nyomtatási méretek.",
+    block_seating_body:
+      "Helyezd el az asztalokat a vásznon, fogd-és-vidd a vendégeket, az elrendezés pedig A4, A6 (ültetőkártya) és A3 (a nagy tábla a bejárathoz) méretben exportálódik. A PDF pontos mm-en renderelődik — nincs találgatás a nyomdában.",
+    block_seating_bullet_1: "Kerek, szögletes és főasztalok.",
+    block_seating_bullet_2: "Konfliktus jelzés, ha két vendég ütközne.",
+    block_seating_bullet_3: "Nyomtatásra kész PDF három méretben.",
+    testimonials_eyebrow: "A bétából",
+    testimonials_title: "Párok, akik már Weddly-vel terveztek",
+    t1_quote:
+      "Végre abbahagytuk az éjféli PDF-küldözgetést. A közös munkaterületen Bencével 15 perces blokkokban tudtunk haladni, együtt.",
+    t1_name: "Anna & Bence",
+    t1_meta: "2026. május · Budapest · béta tesztelő",
+    t2_quote:
+      "Az RSVP linkek megmentettek. Nyolcvanhét vendég válaszolt anélkül, hogy bármit telepítenie kellett volna, és az étrend oszlop tisztán jött ki.",
+    t2_name: "Eszter & Dani",
+    t2_meta: "2026. augusztus · Balaton · béta tesztelő",
+    t3_quote:
+      "Az ültetési rendet a nagyság előtti este nyomtattuk A3-ban — nem kellett Photoshopozni, nem kellett a nyomdát hívni. Egyszerűen kijött.",
+    t3_name: "Kata & Marci",
+    t3_meta: "2026. szeptember · Pécs · béta tesztelő",
   },
   vendors: {
     seo_title: "Szolgáltatóknak — Weddly",

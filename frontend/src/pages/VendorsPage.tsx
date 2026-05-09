@@ -1,12 +1,8 @@
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  PhaseAftermathArt,
-  PhaseGuestsArt,
-  PhaseSuppliersArt,
-  VendorHeroArt,
-} from "../components/illustrations";
+import { PhaseAftermathArt, PhaseGuestsArt, PhaseSuppliersArt } from "../components/illustrations";
+import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { TextField } from "../components/ui/TextField";
 import { useT } from "../lib/i18n";
@@ -19,47 +15,55 @@ export default function VendorsPage() {
   return (
     <PublicShell>
       {/* Hero */}
-      <section className="mx-auto grid max-w-6xl gap-10 px-4 pt-12 pb-12 sm:px-6 sm:pt-20 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16">
+      <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-16 sm:px-6 sm:pt-20 sm:pb-20 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-terracotta-200 bg-terracotta-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-terracotta-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-terracotta-200 bg-terracotta-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-terracotta-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-terracotta-500" />
             {t("vendors.pill")}
           </span>
-          <h1 className="mt-5 font-display text-4xl leading-tight tracking-tight text-ink-900 sm:text-6xl">
+          <h1 className="mt-5 font-display text-4xl leading-[1.04] tracking-tight text-ink-900 sm:text-6xl">
             {t("vendors.hero_title")}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0">
             {t("vendors.hero_sub")}
           </p>
+          <div className="mt-9 flex justify-center lg:justify-start">
+            <a href="#waitlist" className="btn-pill">
+              {t("vendors.form_submit")}
+            </a>
+          </div>
         </div>
         <div className="mx-auto w-full max-w-md lg:max-w-none">
-          <VendorHeroArt className="h-auto w-full" />
+          <VendorListingMockup className="h-auto w-full" />
         </div>
       </section>
 
       {/* Benefits */}
-      <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 sm:pb-20">
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Benefit
-            art={<PhaseSuppliersArt className="h-12 w-12" />}
-            title={t("vendors.benefit_1_title")}
-            body={t("vendors.benefit_1_body")}
-          />
-          <Benefit
-            art={<PhaseGuestsArt className="h-12 w-12" />}
-            title={t("vendors.benefit_2_title")}
-            body={t("vendors.benefit_2_body")}
-          />
-          <Benefit
-            art={<PhaseAftermathArt className="h-12 w-12" />}
-            title={t("vendors.benefit_3_title")}
-            body={t("vendors.benefit_3_body")}
-          />
+      <section className="bg-chalk-100/60">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Benefit
+              art={<PhaseSuppliersArt className="h-12 w-12" />}
+              title={t("vendors.benefit_1_title")}
+              body={t("vendors.benefit_1_body")}
+            />
+            <Benefit
+              art={<PhaseGuestsArt className="h-12 w-12" />}
+              title={t("vendors.benefit_2_title")}
+              body={t("vendors.benefit_2_body")}
+            />
+            <Benefit
+              art={<PhaseAftermathArt className="h-12 w-12" />}
+              title={t("vendors.benefit_3_title")}
+              body={t("vendors.benefit_3_body")}
+            />
+          </div>
         </div>
       </section>
 
       {/* Waitlist form */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-20">
+      <section id="waitlist" className="bg-white">
+        <div className="mx-auto max-w-2xl px-4 py-20 sm:px-6 sm:py-24">
           <WaitlistForm />
         </div>
       </section>
@@ -88,7 +92,7 @@ function Benefit({
   body: string;
 }) {
   return (
-    <article className="rounded-3xl bg-chalk-50 p-6">
+    <article className="rounded-3xl bg-white p-7 ring-1 ring-chalk-200">
       <div className="mb-4">{art}</div>
       <h3 className="font-serif text-xl text-ink-900">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-ink-600">{body}</p>
