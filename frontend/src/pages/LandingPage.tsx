@@ -163,6 +163,24 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ───────────────────── Why Weddly ───────────────────── */}
+      <section className="bg-chalk-50">
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <div className="max-w-2xl">
+            <Eyebrow>{t("landing.why_eyebrow")}</Eyebrow>
+            <h2 className="mt-3 font-display text-3xl leading-tight text-ink-900 sm:text-5xl">
+              {t("landing.why_title")}
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-10 sm:grid-cols-2">
+            <WhyItem title={t("landing.why_a_title")} body={t("landing.why_a_body")} />
+            <WhyItem title={t("landing.why_b_title")} body={t("landing.why_b_body")} />
+            <WhyItem title={t("landing.why_c_title")} body={t("landing.why_c_body")} />
+            <WhyItem title={t("landing.why_d_title")} body={t("landing.why_d_body")} />
+          </div>
+        </div>
+      </section>
+
       {/* ───────────────────── Suppliers section ───────────────────── */}
       <SectionWave color="text-chalk-100" />
       <section id="suppliers" className="bg-chalk-100/70">
@@ -254,16 +272,48 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───────────────────── Trust ───────────────────── */}
+      {/* ───────────────────── Pricing ───────────────────── */}
       <section className="bg-chalk-100/60">
-        <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-24">
-          <div className="grid gap-10 sm:grid-cols-3">
-            <TrustItem
-              title={t("landing.trust_couple_title")}
-              body={t("landing.trust_couple_body")}
-            />
-            <TrustItem title={t("landing.trust_free_title")} body={t("landing.trust_free_body")} />
-            <TrustItem title={t("landing.trust_data_title")} body={t("landing.trust_data_body")} />
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
+            <div>
+              <Eyebrow>{t("landing.pricing_eyebrow")}</Eyebrow>
+              <h2 className="mt-3 font-display text-3xl leading-tight text-ink-900 sm:text-5xl">
+                {t("landing.pricing_title")}
+              </h2>
+              <p className="mt-5 max-w-xl text-base text-ink-600 sm:text-lg">
+                {t("landing.pricing_body")}
+              </p>
+            </div>
+            <div className="rounded-3xl bg-white p-8 ring-1 ring-chalk-200 shadow-soft">
+              <div className="flex items-baseline gap-2">
+                <span className="font-display text-5xl text-ink-900 sm:text-6xl">0 Ft</span>
+                <span className="text-sm text-ink-500">/ {t("landing.stats_eyebrow")}</span>
+              </div>
+              <ul className="mt-7 space-y-3">
+                {[
+                  t("landing.pricing_bullet_1"),
+                  t("landing.pricing_bullet_2"),
+                  t("landing.pricing_bullet_3"),
+                ].map((b) => (
+                  <li key={b} className="flex items-start gap-3 text-sm text-ink-700">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-terracotta-100 text-terracotta-700">
+                      <Check size={12} strokeWidth={3} />
+                    </span>
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/signup"
+                className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-terracotta-500 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-terracotta-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-500 focus-visible:ring-offset-2 sm:w-auto"
+              >
+                {t("landing.cta_signup")}
+              </Link>
+              <p className="mt-4 border-t border-chalk-200 pt-4 text-xs leading-relaxed text-ink-500">
+                {t("landing.pricing_v2_note")}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -388,7 +438,7 @@ function FeatureBlock({
           ))}
         </ul>
       </div>
-      <div>{mockup}</div>
+      <div className="mx-auto w-full max-w-lg lg:max-w-none">{mockup}</div>
     </div>
   );
 }
@@ -467,11 +517,11 @@ function Testimonial({
   );
 }
 
-function TrustItem({ title, body }: { title: string; body: string }) {
+function WhyItem({ title, body }: { title: string; body: string }) {
   return (
     <div className="flex flex-col gap-2">
       <span className="h-px w-10 bg-terracotta-400" aria-hidden="true" />
-      <h3 className="font-serif text-lg text-ink-900">{title}</h3>
+      <h3 className="font-serif text-xl text-ink-900">{title}</h3>
       <p className="text-sm leading-relaxed text-ink-600">{body}</p>
     </div>
   );

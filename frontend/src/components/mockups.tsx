@@ -10,11 +10,16 @@
  * text inherits the parent's `font-family`, so we set `font-display` /
  * `font-sans` on group wrappers to keep typography in step with the
  * surrounding page.
+ *
+ * Visible text is localised via `useT()` so HU users see HU labels.
+ * Sample names ("Anna & Bence", supplier name) are intentionally kept
+ * static — they read naturally in both locales.
  */
+
+import { useT } from "../lib/i18n";
 
 type Common = { className?: string };
 
-const NAV_ITEMS = ["Guests", "Budget", "Seating", "Suppliers"] as const;
 const TABLE_DEGS = [0, 60, 120, 180, 240, 300] as const;
 const HEAD_TABLE_X = [-22, -10, 2, 14] as const;
 const STATUS_DOT_OFFSETS = [0, 16, 32, 48, 64] as const;
@@ -23,6 +28,13 @@ const STATUS_DOT_OFFSETS = [0, 16, 32, 48, 64] as const;
  *  main area with three live-looking cards (Budget, Guests, Seating).
  *  ~640×440 viewBox, scales to fit the column. */
 export function WorkspaceMockup({ className }: Common) {
+  const { t } = useT();
+  const navItems: { key: string; label: string }[] = [
+    { key: "guests", label: t("nav.guests") },
+    { key: "budget", label: t("nav.budget") },
+    { key: "seating", label: t("nav.seating") },
+    { key: "suppliers", label: t("nav.suppliers") },
+  ];
   return (
     <svg
       viewBox="0 0 640 440"
@@ -66,28 +78,28 @@ export function WorkspaceMockup({ className }: Common) {
         </text>
       </g>
 
-      {/* Active nav item */}
+      {/* Active nav item — Overview */}
       <g className="text-terracotta-100">
         <rect x="12" y="78" width="116" height="32" rx="8" fill="currentColor" />
       </g>
       <g className="text-terracotta-700 font-sans">
         <circle cx="26" cy="94" r="3" fill="currentColor" />
         <text x="40" y="98" fontSize="11" fontWeight="600" fill="currentColor">
-          Overview
+          {t("nav.dashboard")}
         </text>
       </g>
 
       {/* Inactive nav items */}
-      {NAV_ITEMS.map((label, i) => {
+      {navItems.map((item, i) => {
         const y = 124 + i * 32;
         return (
-          <g key={label}>
+          <g key={item.key}>
             <g className="text-ink-300">
               <circle cx="26" cy={y + 16} r="3" fill="currentColor" />
             </g>
             <g className="text-ink-600 font-sans">
               <text x="40" y={y + 20} fontSize="11" fill="currentColor">
-                {label}
+                {item.label}
               </text>
             </g>
           </g>
@@ -122,9 +134,9 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
       <g className="text-terracotta-300">
         <rect
-          x="476"
+          x="436"
           y="26"
-          width="140"
+          width="180"
           height="28"
           rx="14"
           fill="none"
@@ -133,9 +145,9 @@ export function WorkspaceMockup({ className }: Common) {
         />
       </g>
       <g className="text-terracotta-700 font-sans">
-        <circle cx="490" cy="40" r="3" fill="currentColor" />
-        <text x="500" y="44" fontSize="11" fill="currentColor">
-          June 14, 2026 · 142 days
+        <circle cx="450" cy="40" r="3" fill="currentColor" />
+        <text x="460" y="44" fontSize="11" fill="currentColor">
+          {t("landing.mockup_date")}
         </text>
       </g>
 
@@ -152,9 +164,9 @@ export function WorkspaceMockup({ className }: Common) {
           strokeWidth="1"
         />
       </g>
-      <g className="text-ink-500 font-sans">
+      <g className="text-ink-500 font-sans uppercase">
         <text x="184" y="104" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
-          BUDGET
+          {t("nav.budget")}
         </text>
       </g>
       <g className="font-display text-ink-900">
@@ -192,9 +204,9 @@ export function WorkspaceMockup({ className }: Common) {
           strokeWidth="1"
         />
       </g>
-      <g className="text-ink-500 font-sans">
+      <g className="text-ink-500 font-sans uppercase">
         <text x="416" y="104" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
-          GUESTS
+          {t("nav.guests")}
         </text>
       </g>
       <g className="font-display text-ink-900">
@@ -224,15 +236,15 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
       <g className="text-terracotta-700 font-sans">
         <text x="424" y="202" fontSize="8" fontWeight="600" fill="currentColor">
-          87 yes
+          {t("landing.mockup_yes_count", { n: 87 })}
         </text>
       </g>
       <g className="text-chalk-200">
-        <rect x="486" y="192" width="68" height="14" rx="7" fill="currentColor" />
+        <rect x="486" y="192" width="76" height="14" rx="7" fill="currentColor" />
       </g>
       <g className="text-ink-700 font-sans">
         <text x="494" y="202" fontSize="8" fontWeight="600" fill="currentColor">
-          11 pending
+          {t("landing.mockup_pending_count", { n: 11 })}
         </text>
       </g>
 
@@ -249,14 +261,14 @@ export function WorkspaceMockup({ className }: Common) {
           strokeWidth="1"
         />
       </g>
-      <g className="text-ink-500 font-sans">
+      <g className="text-ink-500 font-sans uppercase">
         <text x="184" y="260" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
-          SEATING
+          {t("nav.seating")}
         </text>
       </g>
       <g className="font-display text-ink-900">
         <text x="184" y="290" fontSize="16" fill="currentColor">
-          16 tables · 98 seats
+          {t("landing.mockup_seating_summary")}
         </text>
       </g>
       {/* Mini tables (3 round + 1 head) */}
@@ -265,8 +277,8 @@ export function WorkspaceMockup({ className }: Common) {
           { tx: 0, ty: 0 },
           { tx: 100, ty: 0 },
           { tx: 200, ty: 0 },
-        ].map((t) => (
-          <g key={`tbl-${t.tx}`} transform={`translate(${t.tx}, ${t.ty})`}>
+        ].map((pos) => (
+          <g key={`tbl-${pos.tx}`} transform={`translate(${pos.tx}, ${pos.ty})`}>
             <g className="text-chalk-200">
               <circle cx="0" cy="0" r="20" fill="currentColor" />
             </g>
@@ -350,18 +362,29 @@ export function WorkspaceMockup({ className }: Common) {
   );
 }
 
-const BUDGET_CATS: { label: string; spent: number; total: number; tone: "primary" | "muted" }[] = [
-  { label: "Catering", spent: 132, total: 168, tone: "primary" },
-  { label: "Venue", spent: 96, total: 96, tone: "primary" },
-  { label: "Photo", spent: 22, total: 36, tone: "primary" },
-  { label: "Music", spent: 14, total: 24, tone: "muted" },
-  { label: "Decor", spent: 18, total: 32, tone: "muted" },
-  { label: "Other", spent: 8, total: 24, tone: "muted" },
+const BUDGET_CATS: { key: string; spent: number; total: number; tone: "primary" | "muted" }[] = [
+  { key: "Catering", spent: 132, total: 168, tone: "primary" },
+  { key: "Venue", spent: 96, total: 96, tone: "primary" },
+  { key: "Photo", spent: 22, total: 36, tone: "primary" },
+  { key: "Music", spent: 14, total: 24, tone: "muted" },
+  { key: "Decor", spent: 18, total: 32, tone: "muted" },
+  { key: "Other", spent: 8, total: 24, tone: "muted" },
 ];
+
+const BUDGET_LABELS_HU: Record<string, string> = {
+  Catering: "Catering",
+  Venue: "Helyszín",
+  Photo: "Fotó",
+  Music: "Zene",
+  Decor: "Dekor",
+  Other: "Egyéb",
+};
 
 /** Budget feature mockup — a focused panel with headcount slider,
  *  six category bars, and a total summary line. */
 export function BudgetMockup({ className }: Common) {
+  const { t, locale } = useT();
+  const labelFor = (key: string) => (locale === "hu" ? (BUDGET_LABELS_HU[key] ?? key) : key);
   return (
     <svg viewBox="0 0 480 360" role="img" aria-label="Live budget mockup" className={className}>
       <g className="text-ink-900" opacity="0.06">
@@ -381,14 +404,14 @@ export function BudgetMockup({ className }: Common) {
       </g>
 
       {/* Header */}
-      <g className="text-ink-500 font-sans">
+      <g className="text-ink-500 font-sans uppercase">
         <text x="24" y="34" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
-          BUDGET
+          {t("nav.budget")}
         </text>
       </g>
       <g className="font-display text-ink-900">
         <text x="24" y="60" fontSize="18" fill="currentColor">
-          Live budget · 120 guests
+          {t("landing.mockup_live_budget_label")}
         </text>
       </g>
 
@@ -431,10 +454,10 @@ export function BudgetMockup({ className }: Common) {
         const y = 144 + i * 28;
         const pct = (cat.spent / cat.total) * 100;
         return (
-          <g key={cat.label}>
+          <g key={cat.key}>
             <g className="text-ink-700 font-sans">
               <text x="24" y={y + 4} fontSize="11" fill="currentColor">
-                {cat.label}
+                {labelFor(cat.key)}
               </text>
             </g>
             <g className="text-chalk-200">
@@ -465,7 +488,7 @@ export function BudgetMockup({ className }: Common) {
       </g>
       <g className="text-ink-700 font-sans">
         <text x="24" y="346" fontSize="11" fill="currentColor">
-          Total spend
+          {t("landing.mockup_total_spend")}
         </text>
       </g>
       <g className="font-display text-ink-900">
@@ -490,9 +513,19 @@ const GUEST_ROWS: {
   { name: "Réka Horváth", status: "no", meal: "—", tone: 5 },
 ];
 
+const MEAL_LABELS_HU: Record<string, string> = { Beef: "Marha", Veg: "Veg" };
+
 /** Guest list mockup — search + 5 guest rows with status pills and
  *  meal-choice column. */
 export function GuestListMockup({ className }: Common) {
+  const { t, locale } = useT();
+  const mealLabel = (m: string) => (locale === "hu" ? (MEAL_LABELS_HU[m] ?? m) : m);
+  const statusLabel = (s: "yes" | "pending" | "no") =>
+    s === "yes"
+      ? t("common.yes")
+      : s === "no"
+        ? t("common.no")
+        : t("landing.mockup_status_pending");
   return (
     <svg
       viewBox="0 0 480 360"
@@ -518,7 +551,7 @@ export function GuestListMockup({ className }: Common) {
 
       <g className="font-display text-ink-900">
         <text x="24" y="40" fontSize="18" fill="currentColor">
-          Guests · 98 of 120
+          {t("nav.guests")} · 98 / 120
         </text>
       </g>
 
@@ -527,7 +560,7 @@ export function GuestListMockup({ className }: Common) {
         <rect
           x="24"
           y="58"
-          width="280"
+          width="260"
           height="28"
           rx="14"
           fill="white"
@@ -547,37 +580,37 @@ export function GuestListMockup({ className }: Common) {
           strokeLinecap="round"
         />
         <text x="56" y="76" fontSize="10" fill="currentColor">
-          Search guests…
+          {t("landing.mockup_search_placeholder")}
         </text>
       </g>
       {/* Filter chips */}
       <g className="text-terracotta-100">
-        <rect x="316" y="58" width="56" height="28" rx="14" fill="currentColor" />
+        <rect x="296" y="58" width="74" height="28" rx="14" fill="currentColor" />
       </g>
       <g className="text-terracotta-700 font-sans">
-        <text x="324" y="76" fontSize="10" fontWeight="600" fill="currentColor">
-          All · 120
+        <text x="304" y="76" fontSize="10" fontWeight="600" fill="currentColor">
+          {t("landing.mockup_filter_all")} · 120
         </text>
       </g>
       <g className="text-chalk-200">
-        <rect x="380" y="58" width="76" height="28" rx="14" fill="currentColor" />
+        <rect x="378" y="58" width="78" height="28" rx="14" fill="currentColor" />
       </g>
       <g className="text-ink-700 font-sans">
-        <text x="388" y="76" fontSize="10" fill="currentColor">
-          Pending · 11
+        <text x="386" y="76" fontSize="10" fill="currentColor">
+          {t("landing.mockup_filter_pending")} · 11
         </text>
       </g>
 
       {/* Header row */}
       <g className="text-ink-400 font-sans">
         <text x="24" y="112" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
-          NAME
+          {t("landing.mockup_col_name")}
         </text>
         <text x="240" y="112" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
-          STATUS
+          {t("landing.mockup_col_status")}
         </text>
         <text x="370" y="112" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
-          MEAL
+          {t("landing.mockup_col_meal")}
         </text>
       </g>
 
@@ -595,8 +628,6 @@ export function GuestListMockup({ className }: Common) {
             : row.status === "pending"
               ? "text-chalk-200"
               : "text-ink-100";
-        const statusText =
-          row.status === "yes" ? "Yes" : row.status === "pending" ? "Pending" : "No";
         const statusFg =
           row.status === "yes"
             ? "text-terracotta-700"
@@ -621,19 +652,19 @@ export function GuestListMockup({ className }: Common) {
               </text>
             </g>
             <g className={statusBg}>
-              <rect x="240" y={y - 9} width="78" height="18" rx="9" fill="currentColor" />
+              <rect x="240" y={y - 9} width="86" height="18" rx="9" fill="currentColor" />
             </g>
             <g className={statusColor}>
               <circle cx="252" cy={y} r="3" fill="currentColor" />
             </g>
             <g className={`${statusFg} font-sans`}>
               <text x="262" y={y + 3} fontSize="10" fontWeight="600" fill="currentColor">
-                {statusText}
+                {statusLabel(row.status)}
               </text>
             </g>
             <g className="text-ink-700 font-sans">
               <text x="370" y={y + 4} fontSize="10" fill="currentColor">
-                {row.meal}
+                {mealLabel(row.meal)}
               </text>
             </g>
             {i < GUEST_ROWS.length - 1 && (
@@ -655,17 +686,17 @@ export function GuestListMockup({ className }: Common) {
   );
 }
 
-const SEATING_TABLES: { x: number; y: number; label: string }[] = [
-  { x: 110, y: 200, label: "Family" },
-  { x: 220, y: 180, label: "Friends" },
-  { x: 330, y: 200, label: "Plus ones" },
-  { x: 160, y: 290, label: "Work" },
-  { x: 280, y: 290, label: "Uni" },
-];
-
 /** Seating canvas mockup — top-down venue with five round tables, a
  *  head table, and a guest card being dragged. */
 export function SeatingMockup({ className }: Common) {
+  const { t } = useT();
+  const tables: { x: number; y: number; key: string; label: string }[] = [
+    { x: 110, y: 200, key: "family", label: t("landing.mockup_table_family") },
+    { x: 220, y: 180, key: "friends", label: t("landing.mockup_table_friends") },
+    { x: 330, y: 200, key: "plusOnes", label: t("landing.mockup_table_plus_ones") },
+    { x: 160, y: 290, key: "work", label: t("landing.mockup_table_work") },
+    { x: 280, y: 290, key: "uni", label: t("landing.mockup_table_uni") },
+  ];
   return (
     <svg viewBox="0 0 480 360" role="img" aria-label="Seating canvas mockup" className={className}>
       <g className="text-ink-900" opacity="0.06">
@@ -687,16 +718,16 @@ export function SeatingMockup({ className }: Common) {
       {/* Toolbar */}
       <g className="text-ink-500 font-sans">
         <text x="24" y="32" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
-          SEATING CANVAS · A4 · A6 · A3
+          {t("landing.mockup_canvas_label")}
         </text>
       </g>
       {/* Add table chip */}
       <g className="text-terracotta-500">
-        <rect x="368" y="20" width="88" height="22" rx="11" fill="currentColor" />
+        <rect x="332" y="20" width="124" height="22" rx="11" fill="currentColor" />
       </g>
       <g className="text-white font-sans">
-        <text x="412" y="35" fontSize="10" fontWeight="600" fill="currentColor" textAnchor="middle">
-          + Add table
+        <text x="394" y="35" fontSize="10" fontWeight="600" fill="currentColor" textAnchor="middle">
+          {t("landing.mockup_add_table")}
         </text>
       </g>
 
@@ -748,9 +779,9 @@ export function SeatingMockup({ className }: Common) {
             strokeWidth="1"
           />
         </g>
-        <g className="text-terracotta-500">
+        <g className="text-terracotta-500 font-sans">
           <text x="0" y="6" fontSize="9" fontWeight="600" fill="currentColor" textAnchor="middle">
-            Head table
+            {t("landing.mockup_table_head")}
           </text>
         </g>
         <g className="text-terracotta-300">
@@ -769,8 +800,8 @@ export function SeatingMockup({ className }: Common) {
       </g>
 
       {/* Round tables */}
-      {SEATING_TABLES.map((tbl) => (
-        <g key={tbl.label} transform={`translate(${tbl.x}, ${tbl.y})`}>
+      {tables.map((tbl) => (
+        <g key={tbl.key} transform={`translate(${tbl.x}, ${tbl.y})`}>
           <g className="text-chalk-50">
             <circle cx="0" cy="0" r="22" fill="currentColor" />
           </g>
@@ -831,7 +862,7 @@ export function SeatingMockup({ className }: Common) {
         </g>
         <g className="text-ink-500 font-sans">
           <text x="24" y="24" fontSize="8" fill="currentColor">
-            Veg · Plus 1
+            {t("landing.mockup_drag_subtitle")}
           </text>
         </g>
       </g>
@@ -843,6 +874,7 @@ export function SeatingMockup({ className }: Common) {
  *  the directory, used on VendorsPage to show vendors what their
  *  listing will look like. */
 export function VendorListingMockup({ className }: Common) {
+  const { t } = useT();
   return (
     <svg
       viewBox="0 0 360 220"
@@ -910,7 +942,7 @@ export function VendorListingMockup({ className }: Common) {
       </g>
       <g className="text-ink-500 font-sans">
         <text x="20" y="160" fontSize="10" fill="currentColor">
-          Floral design · Budapest, HU
+          {t("landing.mockup_vendor_category")}
         </text>
       </g>
 
@@ -927,72 +959,148 @@ export function VendorListingMockup({ className }: Common) {
       </g>
       <g className="text-ink-500 font-sans">
         <text x="98" y="187" fontSize="10" fill="currentColor">
-          4.9 · 23 reviews
+          {t("landing.mockup_vendor_reviews")}
         </text>
       </g>
 
       {/* CTA */}
       <g className="text-terracotta-500">
-        <rect x="240" y="170" width="100" height="28" rx="14" fill="currentColor" />
+        <rect x="220" y="170" width="120" height="28" rx="14" fill="currentColor" />
       </g>
       <g className="text-white font-sans">
         <text
-          x="290"
+          x="280"
           y="188"
           fontSize="11"
           fontWeight="600"
           fill="currentColor"
           textAnchor="middle"
         >
-          View profile
+          {t("landing.mockup_vendor_cta")}
         </text>
       </g>
     </svg>
   );
 }
 
-/** Reusable couple-portrait avatar used in testimonials. Two stylised
- *  heads in a circular frame; each instance picks a colour palette so
- *  the three testimonials feel like distinct people. */
+/** Refined couple-portrait avatar used in testimonials. Each variant
+ *  has its own palette plus distinct hair shapes so the three
+ *  testimonials read as different people. */
 export function CouplePortrait({ variant, className }: Common & { variant: 1 | 2 | 3 }) {
   const palette =
     variant === 1
-      ? { left: "text-terracotta-400", right: "text-ink-700", bg: "text-terracotta-100" }
+      ? {
+          bg: "text-terracotta-100",
+          ring: "text-terracotta-200",
+          skinL: "text-terracotta-200",
+          skinR: "text-chalk-300",
+          hairL: "text-ink-800",
+          hairR: "text-terracotta-700",
+          shoulderL: "text-terracotta-400",
+          shoulderR: "text-chalk-400",
+        }
       : variant === 2
-        ? { left: "text-ink-600", right: "text-terracotta-300", bg: "text-chalk-200" }
-        : { left: "text-terracotta-700", right: "text-chalk-400", bg: "text-terracotta-50" };
+        ? {
+            bg: "text-chalk-200",
+            ring: "text-chalk-300",
+            skinL: "text-chalk-300",
+            skinR: "text-terracotta-200",
+            hairL: "text-terracotta-700",
+            hairR: "text-ink-700",
+            shoulderL: "text-ink-600",
+            shoulderR: "text-terracotta-300",
+          }
+        : {
+            bg: "text-terracotta-50",
+            ring: "text-terracotta-200",
+            skinL: "text-chalk-300",
+            skinR: "text-terracotta-200",
+            hairL: "text-ink-800",
+            hairR: "text-terracotta-700",
+            shoulderL: "text-chalk-400",
+            shoulderR: "text-terracotta-400",
+          };
+  // Variant-specific hair shapes — same anchor heads but distinct silhouettes.
+  const hairLeft =
+    variant === 1
+      ? "M 22 38 C 22 26, 36 22, 42 26 C 46 24, 50 30, 48 38 C 46 34, 42 32, 38 32 C 34 32, 28 34, 22 38 Z"
+      : variant === 2
+        ? "M 24 36 C 24 24, 38 22, 44 28 L 46 38 C 42 33, 36 32, 32 33 C 28 34, 25 35, 24 36 Z"
+        : "M 22 42 C 20 30, 36 20, 46 28 C 48 32, 48 36, 46 40 C 44 36, 36 34, 30 36 C 26 38, 23 40, 22 42 Z";
+  const hairRight =
+    variant === 1
+      ? "M 50 36 C 50 28, 64 26, 68 32 C 72 32, 72 38, 70 42 C 66 38, 60 36, 56 36 C 53 36, 51 36, 50 36 Z"
+      : variant === 2
+        ? "M 48 38 C 50 28, 66 26, 70 34 C 71 38, 70 42, 68 44 C 64 40, 58 38, 54 39 C 51 40, 49 40, 48 38 Z"
+        : "M 50 36 C 52 28, 66 28, 70 34 C 72 38, 70 42, 68 42 C 64 38, 58 36, 54 37 C 52 38, 50 38, 50 36 Z";
   return (
     <svg viewBox="0 0 96 96" aria-hidden="true" className={className}>
+      {/* Frame */}
       <g className={palette.bg}>
         <circle cx="48" cy="48" r="46" fill="currentColor" />
       </g>
-      <g className="text-chalk-300">
-        <circle cx="48" cy="48" r="46" fill="none" stroke="currentColor" strokeWidth="1" />
+      <g className={palette.ring}>
+        <circle cx="48" cy="48" r="46" fill="none" stroke="currentColor" strokeWidth="1.5" />
       </g>
-      {/* Left figure */}
-      <g className={palette.left}>
-        {/* Hair */}
-        <path d="M 26 40 C 26 30, 36 26, 40 30 C 44 28, 48 32, 46 38" fill="currentColor" />
-        {/* Head */}
-        <circle cx="36" cy="40" r="10" fill="currentColor" />
-        {/* Body / shoulder */}
-        <path d="M 20 80 C 22 64, 32 58, 36 58 C 40 58, 50 64, 52 80 Z" fill="currentColor" />
+
+      {/* Left figure — back layer */}
+      <g className={palette.shoulderL}>
+        <path
+          d="M 14 90 C 16 70, 28 62, 36 62 C 44 62, 52 68, 54 82 L 54 96 L 14 96 Z"
+          fill="currentColor"
+        />
       </g>
-      {/* Right figure */}
-      <g className={palette.right}>
-        {/* Hair (shorter) */}
-        <path d="M 52 36 C 52 28, 64 26, 66 32 C 68 30, 72 34, 70 40" fill="currentColor" />
-        {/* Head */}
-        <circle cx="60" cy="42" r="10" fill="currentColor" />
-        {/* Body / shoulder */}
-        <path d="M 44 80 C 46 66, 56 60, 60 60 C 64 60, 74 66, 76 80 Z" fill="currentColor" />
+      <g className={palette.skinL}>
+        <ellipse cx="36" cy="40" rx="11" ry="12" fill="currentColor" />
+        {/* Neck */}
+        <path d="M 32 50 L 32 58 L 40 58 L 40 50 Z" fill="currentColor" />
       </g>
-      {/* Subtle facial hint — eyes */}
-      <g className="text-ink-900" opacity="0.7">
-        <circle cx="33" cy="40" r="1" fill="currentColor" />
-        <circle cx="38" cy="40" r="1" fill="currentColor" />
-        <circle cx="57" cy="42" r="1" fill="currentColor" />
-        <circle cx="62" cy="42" r="1" fill="currentColor" />
+      <g className={palette.hairL}>
+        <path d={hairLeft} fill="currentColor" />
+      </g>
+
+      {/* Right figure — front layer */}
+      <g className={palette.shoulderR}>
+        <path
+          d="M 42 90 C 44 70, 56 62, 60 62 C 68 62, 80 68, 82 96 L 42 96 Z"
+          fill="currentColor"
+        />
+      </g>
+      <g className={palette.skinR}>
+        <ellipse cx="60" cy="42" rx="11" ry="12" fill="currentColor" />
+        <path d="M 56 52 L 56 60 L 64 60 L 64 52 Z" fill="currentColor" />
+      </g>
+      <g className={palette.hairR}>
+        <path d={hairRight} fill="currentColor" />
+      </g>
+
+      {/* Subtle face hints — eyes and small smile arcs */}
+      <g className="text-ink-900" opacity="0.78">
+        <ellipse cx="33" cy="40" rx="0.9" ry="1.2" fill="currentColor" />
+        <ellipse cx="39" cy="40" rx="0.9" ry="1.2" fill="currentColor" />
+        <ellipse cx="57" cy="42" rx="0.9" ry="1.2" fill="currentColor" />
+        <ellipse cx="63" cy="42" rx="0.9" ry="1.2" fill="currentColor" />
+      </g>
+      <g className="text-ink-700" opacity="0.55">
+        <path
+          d="M 33 46 Q 36 48, 39 46"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="0.8"
+          strokeLinecap="round"
+        />
+        <path
+          d="M 57 48 Q 60 50, 63 48"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="0.8"
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Tiny ring/heart between them — wedding cue */}
+      <g className="text-terracotta-500">
+        <circle cx="48" cy="58" r="2.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
       </g>
     </svg>
   );
