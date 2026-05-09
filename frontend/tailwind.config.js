@@ -45,34 +45,11 @@ export default {
           800: "#7d3122",
           900: "#612821",
         },
-        // Chalk — near-white surface used by the public-facing landing/vendors surface.
-        chalk: {
-          50: "#fafaf7",
-          100: "#f1f0ea",
-          200: "#e7e5dc",
-          300: "#d9d6cc",
-          400: "#b6b1a3",
-          500: "#8a857a",
-        },
-        // Terracotta — single confident accent for the public surface (CTAs, accent marks).
-        terracotta: {
-          50: "#fbf2ed",
-          100: "#f4ddd0",
-          200: "#e8b89f",
-          300: "#dc916d",
-          400: "#d27754",
-          500: "#c76a4a",
-          600: "#a85530",
-          700: "#854127",
-          800: "#5f3220",
-        },
       },
       fontFamily: {
-        // h1 / h2 in the in-app workspace use the warm display serif. Body is the clean sans.
+        // h1 / h2 across the app and public surface use the warm display serif. Body is the clean sans.
         serif: ['"Cormorant Garamond"', "Georgia", "serif"],
         sans: ['"Inter Variable"', "Inter", "system-ui", "sans-serif"],
-        // High-contrast display serif used by the public-facing landing/vendors surface.
-        display: ['"Instrument Serif"', "Cormorant Garamond", "Georgia", "serif"],
       },
       boxShadow: {
         soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",

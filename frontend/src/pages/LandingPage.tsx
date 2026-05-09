@@ -9,6 +9,7 @@ import {
   PhaseSuppliersArt,
   SuppliersPreview,
 } from "../components/illustrations";
+import { LazyMount } from "../components/LazyMount";
 import {
   BudgetMockup,
   CouplePortrait,
@@ -19,6 +20,12 @@ import {
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+// Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
+// these to reserve layout space, so the page doesn't jump as below-fold
+// SVGs mount when scrolled into view.
+const MOCKUP_AR_FEATURE = "480 / 360";
+const MOCKUP_AR_SUPPLIERS = "320 / 280";
 
 export default function LandingPage() {
   const { t } = useT();
@@ -132,7 +139,11 @@ export default function LandingPage() {
               t("landing.block_budget_bullet_2"),
               t("landing.block_budget_bullet_3"),
             ]}
-            mockup={<BudgetMockup className="h-auto w-full" />}
+            mockup={
+              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
+                <BudgetMockup className="h-auto w-full" />
+              </LazyMount>
+            }
             reverse={false}
           />
           <FeatureBlock
@@ -144,7 +155,11 @@ export default function LandingPage() {
               t("landing.block_guests_bullet_2"),
               t("landing.block_guests_bullet_3"),
             ]}
-            mockup={<GuestListMockup className="h-auto w-full" />}
+            mockup={
+              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
+                <GuestListMockup className="h-auto w-full" />
+              </LazyMount>
+            }
             reverse={true}
           />
           <FeatureBlock
@@ -156,7 +171,11 @@ export default function LandingPage() {
               t("landing.block_seating_bullet_2"),
               t("landing.block_seating_bullet_3"),
             ]}
-            mockup={<SeatingMockup className="h-auto w-full" />}
+            mockup={
+              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
+                <SeatingMockup className="h-auto w-full" />
+              </LazyMount>
+            }
             reverse={false}
           />
         </div>
@@ -200,7 +219,9 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
-          <SuppliersPreview className="h-auto w-full" />
+          <LazyMount aspectRatio={MOCKUP_AR_SUPPLIERS} className="w-full">
+            <SuppliersPreview className="h-auto w-full" />
+          </LazyMount>
         </div>
       </section>
 

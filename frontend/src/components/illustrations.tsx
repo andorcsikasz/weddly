@@ -14,7 +14,7 @@ type Common = { className?: string };
  *  to scale down to ~280px on mobile. */
 export function HeroArt({ className }: Common) {
   return (
-    <svg viewBox="0 0 480 360" role="img" aria-label="" aria-hidden="true" className={className}>
+    <svg viewBox="0 0 480 360" aria-hidden="true" className={className}>
       {/* Soft background wash */}
       <g className="text-blush-100">
         <ellipse cx="300" cy="180" rx="170" ry="150" fill="currentColor" />
