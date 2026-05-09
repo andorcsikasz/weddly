@@ -3,15 +3,44 @@
 
 export type SupplierCategory =
   | "venue"
+  | "accommodation"
   | "catering"
-  | "photo_video"
-  | "music_dj"
-  | "decor_floral"
   | "cake_dessert"
+  | "bar_drinks"
+  | "decor_floral"
+  | "lighting"
+  | "music_dj"
+  | "photo_video"
+  | "entertainment"
   | "attire"
   | "hair_makeup"
-  | "transport"
-  | "stationery";
+  | "stationery"
+  | "transport";
+
+export type SupplierGroup =
+  | "venue_stay"
+  | "food_drink"
+  | "atmosphere"
+  | "experience"
+  | "style"
+  | "details";
+
+export interface SupplierGroupDef {
+  id: SupplierGroup;
+  categories: SupplierCategory[];
+}
+
+// Ordered chain — mirrors the recommended booking sequence: lock the venue
+// first, then food, then look & feel, then experience, then personal style,
+// then the remaining details.
+export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
+  { id: "venue_stay", categories: ["venue", "accommodation"] },
+  { id: "food_drink", categories: ["catering", "cake_dessert", "bar_drinks"] },
+  { id: "atmosphere", categories: ["decor_floral", "lighting"] },
+  { id: "experience", categories: ["music_dj", "photo_video", "entertainment"] },
+  { id: "style", categories: ["attire", "hair_makeup"] },
+  { id: "details", categories: ["stationery", "transport"] },
+];
 
 export interface DirectorySupplier {
   id: string;
