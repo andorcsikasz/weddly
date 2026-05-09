@@ -277,3 +277,348 @@ describe("health", () => {
     expect(r.data.db).toBe(true);
   });
 });
+
+// ─── helpers for the v1-feature suites below ─────────────────────────────────
+
+async function bootstrapCouple(
+  email = "couple@weddly.test",
+): Promise<{ token: string; coupleId: number }> {
+  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+    email,
+    password: "supersafe123",
+    full_name: "Owner",
+  });
+  expect(reg.status).toBe(201);
+  const ob = await req<{ couple: { id: number } }>(
+    "POST",
+    "/api/couples/onboard",
+    {
+      display_name: "Anna & Bence",
+      wedding_date: "2026-09-12",
+      target_guest_count: 80,
+      budget_ceiling_huf: 5_000_000,
+      style_tags: [],
+    },
+    { token: reg.data.token },
+  );
+  expect(ob.status).toBe(201);
+  return { token: reg.data.token, coupleId: ob.data.couple.id };
+}
+
+describe("guests", () => {
+  test("CRUD + invite code uniqueness", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple();
+
+    const c = await req<{ guest: { id: number; invite_code: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Eszter", group_tag: "her_family" },
+      { token },
+    );
+    expect(c.status).toBe(201);
+    expect(c.data.guest.invite_code.length).toBeGreaterThan(0);
+
+    const list = await req<{ guests: { id: number }[] }>("GET", "/api/guests", undefined, {
+      token,
+    });
+    expect(list.data.guests.length).toBe(1);
+
+    const u = await req<{ guest: { full_name: string } }>(
+      "PATCH",
+      `/api/guests/${c.data.guest.id}`,
+      { full_name: "Eszter K.", rsvp_status: "yes", meal_choice: "vegetarian" },
+      { token },
+    );
+    expect(u.data.guest.full_name).toBe("Eszter K.");
+
+    const d = await req("DELETE", `/api/guests/${c.data.guest.id}`, undefined, { token });
+    expect(d.status).toBe(200);
+    const list2 = await req<{ guests: unknown[] }>("GET", "/api/guests", undefined, { token });
+    expect(list2.data.guests.length).toBe(0);
+  });
+
+  test("CSV import creates rows + reports errors", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("csv@weddly.test");
+    const csv =
+      "full_name,email,group_tag\nAnna,a@x.com,her_family\nBence,b@x.com,his_family\n,no_name@x.com,other\n";
+    const r = await req<{ created_count: number; errors: { row: number }[] }>(
+      "POST",
+      "/api/guests/import",
+      { csv },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.created_count).toBe(2);
+    expect(r.data.errors.length).toBe(1);
+  });
+
+  test("guest endpoints require auth", async () => {
+    wipeAll();
+    const r = await req("GET", "/api/guests");
+    expect(r.status).toBe(401);
+  });
+});
+
+describe("budget", () => {
+  test("seeded lines + add/update/snapshot", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("budget@weddly.test");
+
+    const list = await req<{ lines: { id: number; category: string; planned_huf: number }[] }>(
+      "GET",
+      "/api/budget/lines",
+      undefined,
+      { token },
+    );
+    expect(list.data.lines.length).toBeGreaterThan(0);
+    const venue = list.data.lines.find((l) => l.category === "venue");
+    expect(venue?.planned_huf).toBe(1_250_000);
+
+    const add = await req<{ line: { id: number } }>(
+      "POST",
+      "/api/budget/lines",
+      { category: "other", label: "DJ extra", planned_huf: 100_000, actual_huf: 0 },
+      { token },
+    );
+    expect(add.status).toBe(201);
+
+    const upd = await req<{ line: { actual_huf: number } }>(
+      "PATCH",
+      `/api/budget/lines/${add.data.line.id}`,
+      { category: "other", label: "DJ extra", planned_huf: 100_000, actual_huf: 95_000 },
+      { token },
+    );
+    expect(upd.data.line.actual_huf).toBe(95_000);
+
+    const snap = await req<{ snapshot: { id: number; payload_json: string } }>(
+      "POST",
+      "/api/budget/snapshots",
+      { name: "120-fő variáció" },
+      { token },
+    );
+    expect(snap.status).toBe(201);
+    const arr = JSON.parse(snap.data.snapshot.payload_json) as { label: string }[];
+    expect(arr.length).toBeGreaterThan(0);
+  });
+});
+
+describe("rsvp", () => {
+  test("public lookup + submit updates the guest", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rsvp@weddly.test");
+    const created = await req<{ guest: { invite_code: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Public Guest" },
+      { token },
+    );
+    const code = created.data.guest.invite_code;
+
+    const get = await req<{ rsvp: { full_name: string; couple_display_name: string } }>(
+      "GET",
+      `/api/rsvp/${code}`,
+    );
+    expect(get.status).toBe(200);
+    expect(get.data.rsvp.full_name).toBe("Public Guest");
+    expect(get.data.rsvp.couple_display_name).toBe("Anna & Bence");
+
+    const sub = await req<{ rsvp: { rsvp_status: string; meal_choice: string | null } }>(
+      "POST",
+      `/api/rsvp/${code}`,
+      {
+        rsvp_status: "yes",
+        meal_choice: "vegetarian",
+        plus_one_name: "Bence",
+        plus_one_meal: "meat",
+        accommodation_needed: true,
+        song_request: "ABBA",
+      },
+    );
+    expect(sub.status).toBe(200);
+    expect(sub.data.rsvp.rsvp_status).toBe("yes");
+    expect(sub.data.rsvp.meal_choice).toBe("vegetarian");
+
+    // Couple-side list confirms the response landed.
+    const list = await req<{ guests: { rsvp_status: string }[] }>("GET", "/api/guests", undefined, {
+      token,
+    });
+    expect(list.data.guests[0]!.rsvp_status).toBe("yes");
+  });
+
+  test("unknown code returns 404", async () => {
+    wipeAll();
+    const r = await req("GET", "/api/rsvp/NOPECODE");
+    expect(r.status).toBe(404);
+  });
+});
+
+describe("seating", () => {
+  test("table CRUD + seat assignment + conflict + couple isolation", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("seat@weddly.test");
+
+    const g1 = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna", group_tag: "her_family" },
+      { token },
+    );
+    const g2 = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Bence", group_tag: "his_family" },
+      { token },
+    );
+
+    const table = await req<{ table: { id: number } }>(
+      "POST",
+      "/api/seating/tables",
+      { label: "Asztal 1", shape: "round", seats: 8, x_mm: 50, y_mm: 50 },
+      { token },
+    );
+    expect(table.status).toBe(201);
+
+    const a1 = await req(
+      "POST",
+      "/api/seating/assign",
+      { table_id: table.data.table.id, seat_index: 0, guest_id: g1.data.guest.id },
+      { token },
+    );
+    expect(a1.status).toBe(200);
+
+    // Re-assigning the same guest to a different seat moves them.
+    const a2 = await req(
+      "POST",
+      "/api/seating/assign",
+      { table_id: table.data.table.id, seat_index: 3, guest_id: g1.data.guest.id },
+      { token },
+    );
+    expect(a2.status).toBe(200);
+
+    const plan = await req<{ assignments: { seat_index: number }[] }>(
+      "GET",
+      "/api/seating/plan",
+      undefined,
+      { token },
+    );
+    expect(plan.data.assignments.length).toBe(1);
+    expect(plan.data.assignments[0]!.seat_index).toBe(3);
+
+    // Conflict between the two guests.
+    const conf = await req<{ conflict: { id: number } }>(
+      "POST",
+      "/api/seating/conflicts",
+      { guest_a_id: g1.data.guest.id, guest_b_id: g2.data.guest.id, kind: "split" },
+      { token },
+    );
+    expect(conf.status).toBe(201);
+
+    // Out-of-range seat rejected.
+    const bad = await req(
+      "POST",
+      "/api/seating/assign",
+      { table_id: table.data.table.id, seat_index: 99, guest_id: g2.data.guest.id },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+
+    // Cross-couple isolation: a different couple can't access this table.
+    const other = await bootstrapCouple("other@weddly.test");
+    const otherG = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Outsider" },
+      { token: other.token },
+    );
+    const cross = await req(
+      "POST",
+      "/api/seating/assign",
+      {
+        table_id: table.data.table.id,
+        seat_index: 0,
+        guest_id: otherG.data.guest.id,
+      },
+      { token: other.token },
+    );
+    expect(cross.status).toBe(404);
+  });
+});
+
+describe("pause / breakup", () => {
+  test("status → request → cancel flow", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("pause@weddly.test");
+
+    const s0 = await req<{ couple_status: string; pause_request: unknown }>(
+      "GET",
+      "/api/couples/pause",
+      undefined,
+      { token },
+    );
+    expect(s0.data.couple_status).toBe("active");
+    expect(s0.data.pause_request).toBeNull();
+
+    const p = await req<{ pause_request: { status: string; scheduled_delete_at: number } }>(
+      "POST",
+      "/api/couples/pause",
+      { reason: "thinking it over" },
+      { token },
+    );
+    expect(p.status).toBe(201);
+    expect(p.data.pause_request.status).toBe("pending");
+    expect(p.data.pause_request.scheduled_delete_at).toBeGreaterThan(Date.now());
+
+    const s1 = await req<{ couple_status: string }>("GET", "/api/couples/pause", undefined, {
+      token,
+    });
+    expect(s1.data.couple_status).toBe("paused");
+
+    // Double-pause rejected.
+    const dup = await req("POST", "/api/couples/pause", {}, { token });
+    expect(dup.status).toBe(409);
+
+    // Cancel restores active.
+    const cancel = await req("POST", "/api/couples/pause/cancel", {}, { token });
+    expect(cancel.status).toBe(200);
+    const s2 = await req<{ couple_status: string }>("GET", "/api/couples/pause", undefined, {
+      token,
+    });
+    expect(s2.data.couple_status).toBe("active");
+  });
+});
+
+describe("suppliers + print", () => {
+  test("suppliers directory is public", async () => {
+    const r = await req<{ suppliers: { id: string; category: string }[] }>("GET", "/api/suppliers");
+    expect(r.status).toBe(200);
+    expect(r.data.suppliers.length).toBeGreaterThan(0);
+  });
+
+  test("suppliers filter by category", async () => {
+    const r = await req<{ suppliers: { category: string }[] }>(
+      "GET",
+      "/api/suppliers?category=venue",
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.suppliers.every((s) => s.category === "venue")).toBe(true);
+  });
+
+  test("PDF print endpoints return application/pdf", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("pdf@weddly.test");
+    await req("POST", "/api/guests", { full_name: "PDF Guest" }, { token });
+
+    const res = await fetch(`${BASE}/api/print/seating/a4`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/pdf");
+    const buf = await res.arrayBuffer();
+    expect(buf.byteLength).toBeGreaterThan(500);
+    // pdf-lib output begins with %PDF-
+    const head = new TextDecoder().decode(buf.slice(0, 5));
+    expect(head).toBe("%PDF-");
+  });
+});

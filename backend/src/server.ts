@@ -9,13 +9,27 @@ import "./db"; // open DB + apply schema
 
 import { corsPreflight, type Ctx, err as httpErr, HttpError, Router } from "./lib/http";
 import { registerAuthRoutes } from "./routes/auth";
+import { registerBudgetRoutes } from "./routes/budget";
+import { registerCouplePauseRoutes } from "./routes/couple_pause";
 import { registerCoupleRoutes } from "./routes/couples";
+import { registerGuestRoutes } from "./routes/guests";
 import { registerHealthRoutes } from "./routes/health";
+import { registerPrintRoutes } from "./routes/print";
+import { registerRsvpRoutes } from "./routes/rsvp";
+import { registerSeatingRoutes } from "./routes/seating";
+import { registerSupplierRoutes } from "./routes/suppliers";
 
 const router = new Router();
 registerHealthRoutes(router);
 registerAuthRoutes(router);
 registerCoupleRoutes(router);
+registerCouplePauseRoutes(router);
+registerGuestRoutes(router);
+registerBudgetRoutes(router);
+registerRsvpRoutes(router);
+registerSeatingRoutes(router);
+registerPrintRoutes(router);
+registerSupplierRoutes(router);
 
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",

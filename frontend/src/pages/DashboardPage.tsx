@@ -1,18 +1,15 @@
-// Couple workspace dashboard. v1 just hosts the cards that link out to the
-// other phases; each phase ships its own page later.
+// Workspace landing page: invite-partner CTA when missing, plus quick links.
 
 import type { Couple, CoupleInvite } from "@shared/types";
-import { Calendar, ChefHat, Mail, Printer, Users, UtensilsCrossed } from "lucide-react";
+import { Calendar, ChefHat, Heart, Mail, Printer, Users, UtensilsCrossed } from "lucide-react";
 import { type JSX, useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
-import { Shell } from "../components/Shell";
-import { useAuth } from "../lib/auth";
+import { Link, Navigate } from "react-router-dom";
+import { AppShell } from "../components/AppShell";
 import { coupleApi } from "../lib/endpoints";
 import { formatDate, formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
   const { t, locale } = useT();
   const [couple, setCouple] = useState<Couple | null | "loading">("loading");
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
@@ -23,7 +20,6 @@ export default function DashboardPage() {
   }, []);
 
   if (couple === "loading") return null;
-  // Brand-new account that hasn't onboarded yet → bounce them through the wizard.
   if (couple === null) return <Navigate to="/onboarding" replace />;
 
   const inviteUrl = invite ? `${window.location.origin}/invite/${invite.token}` : null;
@@ -51,7 +47,7 @@ export default function DashboardPage() {
     : null;
 
   return (
-    <Shell>
+    <AppShell>
       <header className="mb-8">
         <h1 className="font-serif text-4xl">{couple.display_name}</h1>
         <div className="mt-2 flex flex-wrap gap-2 text-sm text-ink-600">
@@ -76,12 +72,9 @@ export default function DashboardPage() {
             </span>
           )}
         </div>
-        {user && <p className="mt-1 text-xs text-ink-500">{user.email}</p>}
       </header>
 
-      {couple.partner_b_id ? (
-        <p className="mb-8 text-sm text-ink-600">✓ {t("dashboard.partner_linked")}</p>
-      ) : (
+      {!couple.partner_b_id && (
         <section className="card stationery mb-8">
           <h2>{t("dashboard.invite_partner")}</h2>
           <p className="mt-2 text-sm text-ink-700">{t("dashboard.invite_partner_help")}</p>
@@ -101,30 +94,43 @@ export default function DashboardPage() {
       )}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <ComingSoonCard
+        <FeatureLink
+          to="/app/guests"
+          icon={<Users size={20} />}
+          title={t("dashboard.feature_guests")}
+        />
+        <FeatureLink
+          to="/app/budget"
           icon={<UtensilsCrossed size={20} />}
           title={t("dashboard.feature_budget")}
         />
-        <ComingSoonCard icon={<Users size={20} />} title={t("dashboard.feature_guests")} />
-        <ComingSoonCard icon={<ChefHat size={20} />} title={t("dashboard.feature_seating")} />
-        <ComingSoonCard icon={<Printer size={20} />} title={t("dashboard.feature_print")} />
-        <ComingSoonCard icon={<Calendar size={20} />} title={t("dashboard.feature_suppliers")} />
+        <FeatureLink
+          to="/app/seating"
+          icon={<ChefHat size={20} />}
+          title={t("dashboard.feature_seating")}
+        />
+        <FeatureLink
+          to="/app/seating"
+          icon={<Printer size={20} />}
+          title={t("dashboard.feature_print")}
+        />
+        <FeatureLink
+          to="/app/suppliers"
+          icon={<Heart size={20} />}
+          title={t("dashboard.feature_suppliers")}
+        />
       </section>
-    </Shell>
+    </AppShell>
   );
 }
 
-function ComingSoonCard({ icon, title }: { icon: JSX.Element; title: string }) {
-  const { t } = useT();
+function FeatureLink({ to, icon, title }: { to: string; icon: JSX.Element; title: string }) {
   return (
-    <div className="card flex items-start gap-3 opacity-70">
-      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-200 text-ink-700">
+    <Link to={to} className="card-hover flex items-center gap-3">
+      <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700">
         {icon}
       </div>
-      <div>
-        <h3 className="text-base font-semibold">{title}</h3>
-        <p className="mt-0.5 text-xs text-ink-500">{t("dashboard.coming_soon")}</p>
-      </div>
-    </div>
+      <h3 className="text-base font-semibold text-ink-900">{title}</h3>
+    </Link>
   );
 }

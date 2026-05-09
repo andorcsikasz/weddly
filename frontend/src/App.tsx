@@ -1,12 +1,18 @@
 import type { JSX } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/auth";
+import BudgetPage from "./pages/BudgetPage";
 import DashboardPage from "./pages/DashboardPage";
+import GuestsPage from "./pages/GuestsPage";
 import InvitePage from "./pages/InvitePage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import RegisterPage from "./pages/RegisterPage";
+import RsvpPage from "./pages/RsvpPage";
+import SeatingPage from "./pages/SeatingPage";
+import SettingsPage from "./pages/SettingsPage";
+import SuppliersPage from "./pages/SuppliersPage";
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -49,6 +55,7 @@ export default function App() {
         }
       />
       <Route path="/invite/:token" element={<InvitePage />} />
+      <Route path="/rsvp/:code" element={<RsvpPage />} />
       <Route
         path="/onboarding"
         element={
@@ -62,6 +69,46 @@ export default function App() {
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/app/guests"
+        element={
+          <RequireAuth>
+            <GuestsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/app/budget"
+        element={
+          <RequireAuth>
+            <BudgetPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/app/seating"
+        element={
+          <RequireAuth>
+            <SeatingPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/app/suppliers"
+        element={
+          <RequireAuth>
+            <SuppliersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/app/settings"
+        element={
+          <RequireAuth>
+            <SettingsPage />
           </RequireAuth>
         }
       />
