@@ -1,0 +1,23 @@
+{
+  "name": "weddly",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "start": "cd backend && bun src/server.ts",
+    "dev": "bun run dev:backend & bun run dev:frontend",
+    "dev:backend": "cd backend && bun run dev",
+    "dev:frontend": "cd frontend && bun run dev",
+    "build": "cd frontend && bun run build",
+    "build:frontend": "cd frontend && bun run build",
+    "typecheck": "cd backend && bun run typecheck && cd ../frontend && bun run typecheck",
+    "test": "cd backend && bun test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "setup:hooks": "git config core.hooksPath .githooks && chmod +x .githooks/pre-commit .githooks/pre-push"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4"
+  }
+}

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Pre-commit: Biome on staged files only. Fast feedback. The full gate
+# (typecheck + E2E + frontend build) runs on `git push`.
+#
+# Exception: if a Tailwind/CSS-affecting file is staged, also run `vite build`
+# — tsc alone can't catch broken `@apply` references.
+#
+# Enable once per clone with:  bun run setup:hooks
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+ALL_STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+
+STAGED=()
+while IFS= read -r f; do
+  [[ -n "$f" ]] && STAGED+=("$f")
+done < <(printf '%s\n' "$ALL_STAGED" | grep -E '\.(ts|tsx|js|jsx|json)$' || true)
+
+if (( ${#STAGED[@]} > 0 )); then
+  printf "\033[1;34m▶ biome check (%d staged file)\033[0m\n" "${#STAGED[@]}"
+  if ! bunx --bun biome check "${STAGED[@]}"; then
+    printf "\033[1;31m✗ biome check failed — run 'bun run lint:fix' and re-add\033[0m\n" >&2
+    exit 1
+  fi
+fi
+
+if printf '%s\n' "$ALL_STAGED" | grep -qE '^(frontend/.*\.(css|tsx?|jsx?|html)|frontend/tailwind\.config\.|frontend/postcss\.config\.)'; then
+  printf "\033[1;34m▶ vite build (frontend/tailwind changes staged)\033[0m\n"
+  if ! ( cd frontend && bun run build >/dev/null ); then
+    printf "\033[1;31m✗ frontend build failed — run 'bun run build:frontend' for details\033[0m\n" >&2
+    exit 1
+  fi
+fi
+
+printf "\033[1;32m✓ staged files clean — committing\033[0m\n"

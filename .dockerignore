@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+data
+**/data
+dist
+**/dist
+.git
+.env
+.env.local
+*.log
+.vite
+.claude
+.superset

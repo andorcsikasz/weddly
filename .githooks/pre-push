@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Pre-push: full gate against HEAD — exactly what git is about to ship.
+#
+# We extract HEAD into a tempdir via `git archive | tar -x` and run the checks
+# there. NEVER `git stash` — stash rewrites the working tree, racing with any
+# other agent / editor that may be touching files.
+#
+# Enable once per clone with:  bun run setup:hooks
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+step() { printf "\033[1;34m▶ %s\033[0m\n" "$1"; }
+ok()   { printf "\033[1;32m✓ %s\033[0m\n" "$1"; }
+die()  { printf "\033[1;31m✗ %s\033[0m\n" "$1" >&2; exit 1; }
+
+ROOT="$PWD"
+TMP="$(mktemp -d -t weddly-prepush-XXXXXXXX)"
+cleanup() { rm -rf "$TMP" 2>/dev/null || true; }
+trap cleanup EXIT INT TERM
+
+step "Extracting HEAD snapshot to $TMP"
+git archive --format=tar HEAD | tar -x -C "$TMP"
+
+# Symlink node_modules to skip the install. Source files come from HEAD; deps
+# only matter for resolution.
+link_modules() {
+  local sub="$1"
+  local src dst
+  if [[ -z "$sub" ]]; then src="$ROOT/node_modules";       dst="$TMP/node_modules"
+  else                     src="$ROOT/$sub/node_modules";  dst="$TMP/$sub/node_modules"
+  fi
+  [[ -d "$src" && ! -e "$dst" ]] && ln -s "$src" "$dst" 2>/dev/null || true
+}
+link_modules ""
+link_modules "backend"
+link_modules "frontend"
+
+# Random high port so parallel pushes / dev servers don't clash.
+TEST_PORT=$(( 18000 + RANDOM % 10000 ))
+export PORT="$TEST_PORT"
+
+cd "$TMP"
+
+step "Biome"
+bunx --bun biome check . || die "biome failed"
+ok "biome"
+
+step "Typecheck (backend)"
+( cd backend  && bun tsc --noEmit ) || die "backend typecheck failed"
+ok "backend typecheck"
+
+step "Typecheck (frontend)"
+( cd frontend && bun tsc -b --noEmit ) || die "frontend typecheck failed"
+ok "frontend typecheck"
+
+# Vite build catches PostCSS/Tailwind @apply errors that tsc can't see.
+step "Frontend build (Vite + Tailwind @apply resolution)"
+( cd frontend && bun run build ) || die "frontend build failed"
+ok "frontend build"
+
+step "E2E tests (port $TEST_PORT)"
+( cd backend && bun test tests/e2e.test.ts ) || die "E2E failed"
+ok "all green — pushing"
