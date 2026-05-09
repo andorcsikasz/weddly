@@ -1,16 +1,18 @@
-// Settings: language toggle + workspace pause/cancel.
+// Profile: personal info (name, email) + workspace ops (export, pause/cancel).
 
 import type { CouplePauseRequest, CoupleStatus } from "@shared/types";
 import { useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { type SegmentedOption, SegmentedControl, useConfirm } from "../components/ui";
+import { useConfirm } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import { exportApi, pauseApi } from "../lib/endpoints";
 import { formatDate } from "../lib/format";
-import { type Locale, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 
-export default function SettingsPage() {
-  const { t, locale, setLocale } = useT();
+export default function ProfilePage() {
+  const { t, locale } = useT();
+  const { user } = useAuth();
   const confirm = useConfirm();
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
@@ -28,9 +30,9 @@ export default function SettingsPage() {
 
   async function startPause() {
     const ok = await confirm({
-      title: t("settings.pause_confirm_title"),
-      body: t("settings.pause_confirm"),
-      confirmLabel: t("settings.pause_confirm_yes"),
+      title: t("profile.pause_confirm_title"),
+      body: t("profile.pause_confirm"),
+      confirmLabel: t("profile.pause_confirm_yes"),
       cancelLabel: t("common.cancel"),
       destructive: true,
     });
@@ -79,60 +81,66 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <h1>{t("settings.title")}</h1>
+      <h1>{t("profile.title")}</h1>
 
       <section className="card mt-6">
-        <h2 className="text-lg">{t("settings.locale_label")}</h2>
-        <div className="mt-3">
-          <SegmentedControl<Locale>
-            ariaLabel={t("settings.locale_label")}
-            value={locale}
-            onChange={setLocale}
-            options={
-              [
-                { value: "hu", label: t("settings.locale_hu") },
-                { value: "en", label: t("settings.locale_en") },
-              ] as const satisfies ReadonlyArray<SegmentedOption<Locale>>
-            }
-          />
-        </div>
+        <h2 className="text-lg">{t("profile.personal_info_title")}</h2>
+        <p className="mt-1 text-sm text-ink-500">{t("profile.personal_info_body")}</p>
+        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+          <Field label={t("profile.field_name")} value={user?.full_name || "—"} />
+          <Field label={t("profile.field_email")} value={user?.email || "—"} />
+        </dl>
       </section>
 
       <section className="card mt-6">
-        <h2 className="text-lg">{t("settings.export_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("settings.export_body")}</p>
+        <h2 className="text-lg">{t("profile.payments_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600">{t("profile.payments_body")}</p>
+      </section>
+
+      <section className="card mt-6">
+        <h2 className="text-lg">{t("profile.export_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600">{t("profile.export_body")}</p>
         <button
           type="button"
           className="btn-outline mt-4"
           onClick={downloadExport}
           disabled={exporting}
         >
-          {exporting ? t("settings.export_downloading") : t("settings.export_button")}
+          {exporting ? t("profile.export_downloading") : t("profile.export_button")}
         </button>
       </section>
 
       <section className="card mt-6 border-blush-200">
-        <h2 className="text-lg">{t("settings.pause_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("settings.pause_body")}</p>
+        <h2 className="text-lg">{t("profile.pause_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600">{t("profile.pause_body")}</p>
         {coupleStatus === "paused" && pauseReq ? (
           <div className="mt-4 rounded-xl bg-blush-50 p-4">
-            <p className="text-sm font-medium text-blush-800">{t("settings.pause_pending")}</p>
+            <p className="text-sm font-medium text-blush-800">{t("profile.pause_pending")}</p>
             {scheduledYmd && (
               <p className="mt-1 text-xs text-blush-700">
-                {t("settings.pause_pending_until", { date: formatDate(scheduledYmd, locale) })}
+                {t("profile.pause_pending_until", { date: formatDate(scheduledYmd, locale) })}
               </p>
             )}
             <button type="button" className="btn-outline mt-4" onClick={cancelPause}>
-              {t("settings.cancel_pause")}
+              {t("profile.cancel_pause")}
             </button>
           </div>
         ) : (
           <button type="button" className="btn-accent mt-4" onClick={startPause}>
-            {t("settings.pause_button")}
+            {t("profile.pause_button")}
           </button>
         )}
         {error && <p className="field-error mt-3">{error}</p>}
       </section>
     </AppShell>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="field-label">{label}</dt>
+      <dd className="text-sm text-ink-800">{value}</dd>
+    </div>
   );
 }

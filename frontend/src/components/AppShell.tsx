@@ -1,17 +1,9 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
-import {
-  Calendar,
-  ChefHat,
-  Heart,
-  LayoutDashboard,
-  Settings,
-  Users,
-  UtensilsCrossed,
-} from "lucide-react";
+import { ChefHat, Heart, LayoutDashboard, Users, UtensilsCrossed } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { ProfileMenu } from "./ProfileMenu";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
 
 const ITEMS: { to: string; labelKey: string; icon: ReactNode }[] = [
@@ -20,11 +12,9 @@ const ITEMS: { to: string; labelKey: string; icon: ReactNode }[] = [
   { to: "/app/budget", labelKey: "nav.budget", icon: <UtensilsCrossed size={18} /> },
   { to: "/app/seating", labelKey: "nav.seating", icon: <ChefHat size={18} /> },
   { to: "/app/suppliers", labelKey: "nav.suppliers", icon: <Heart size={18} /> },
-  { to: "/app/settings", labelKey: "nav.settings", icon: <Settings size={18} /> },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
   const { t, locale, setLocale } = useT();
 
   return (
@@ -35,9 +25,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             {t("app.name")}
           </Link>
           <div className="flex items-center gap-2">
-            {user && (
-              <span className="hidden text-xs text-ink-500 sm:inline-block">{user.email}</span>
-            )}
             <button
               type="button"
               className="btn-ghost btn-sm"
@@ -45,9 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               {locale === "hu" ? "EN" : "HU"}
             </button>
-            <button type="button" className="btn-ghost btn-sm" onClick={() => logout()}>
-              {t("common.sign_out")}
-            </button>
+            <ProfileMenu />
           </div>
         </div>
       </header>

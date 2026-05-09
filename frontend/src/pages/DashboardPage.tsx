@@ -1,43 +1,83 @@
-// Workspace landing page: invite-partner CTA when missing, plus quick links.
+// Workspace overview: KPI tiles (countdown, RSVPs, spend, seated), an RSVP
+// breakdown bar, a derived setup-checklist, and quick links to the deep tools.
 
-import type { Couple, CoupleInvite } from "@shared/types";
-import { Calendar, ChefHat, Heart, Mail, Printer, Users, UtensilsCrossed } from "lucide-react";
-import { type JSX, useEffect, useState } from "react";
+import type { BudgetGoal, BudgetLine, Couple, CoupleInvite, Guest } from "@shared/types";
+import {
+  CalendarHeart,
+  ChefHat,
+  Heart,
+  Mail,
+  Printer,
+  TrendingUp,
+  Users,
+  UtensilsCrossed,
+  Wallet,
+} from "lucide-react";
+import { type JSX, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { coupleApi } from "../lib/endpoints";
-import { formatBudgetGoal, formatGuestCountGoal, formatWeddingDateGoal } from "../lib/format";
+import { budgetApi, coupleApi, guestApi, seatingApi } from "../lib/endpoints";
+import { formatHuf, formatNumber, formatWeddingDateGoal } from "../lib/format";
 import { useT } from "../lib/i18n";
+
+type Loaded = {
+  couple: Couple;
+  guests: Guest[];
+  lines: BudgetLine[];
+  tableCount: number;
+  seatedGuestIds: Set<number>;
+};
+
+function budgetCapHuf(goal: BudgetGoal): number | null {
+  if (goal.kind === "exact") return goal.exact_huf;
+  // For ranges, the upper bound is the cap users care about on a dashboard.
+  if (goal.kind === "range") return goal.max_huf;
+  return null;
+}
+
+function targetGuestCount(couple: Couple): number | null {
+  const g = couple.guest_count_goal;
+  if (g.kind === "exact") return g.exact;
+  if (g.kind === "range" && g.min !== null && g.max !== null) {
+    return Math.round((g.min + g.max) / 2);
+  }
+  return null;
+}
 
 export default function DashboardPage() {
   const { t, locale } = useT();
-  const [couple, setCouple] = useState<Couple | null | "loading">("loading");
+  const [data, setData] = useState<Loaded | null | "loading">("loading");
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    coupleApi.current().then((r) => setCouple(r.couple));
+    (async () => {
+      const couple = (await coupleApi.current()).couple;
+      if (!couple) {
+        setData(null);
+        return;
+      }
+      const [guestsR, linesR, planR] = await Promise.all([
+        guestApi.list(),
+        budgetApi.listLines(),
+        seatingApi.plan(),
+      ]);
+      setData({
+        couple,
+        guests: guestsR.guests,
+        lines: linesR.lines,
+        tableCount: planR.tables.length,
+        seatedGuestIds: new Set(planR.assignments.map((a) => a.guest_id)),
+      });
+    })();
   }, []);
 
-  if (couple === "loading") return null;
-  if (couple === null) return <Navigate to="/onboarding" replace />;
+  if (data === "loading") return null;
+  if (data === null) return <Navigate to="/onboarding" replace />;
 
-  const inviteUrl = invite ? `${window.location.origin}/invite/${invite.token}` : null;
+  const { couple, guests, lines, tableCount, seatedGuestIds } = data;
 
-  async function onInvitePartner() {
-    const r = await coupleApi.createInvite({});
-    setInvite(r.invite);
-  }
-
-  function onCopy() {
-    if (!inviteUrl) return;
-    navigator.clipboard?.writeText(inviteUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
-  // Countdown only renders for kind='exact' — for fuzzier goals we don't
-  // know which day to count down to, so the goal label carries the meaning.
+  // ── Days countdown — only meaningful when an exact date is locked. ─────
   const exactDate = couple.wedding_date_goal.kind === "exact" ? couple.wedding_date : null;
   const daysUntil = exactDate
     ? Math.max(
@@ -48,38 +88,242 @@ export default function DashboardPage() {
       )
     : null;
 
+  // ── RSVP breakdown ────────────────────────────────────────────────────
+  const rsvp = { yes: 0, no: 0, maybe: 0, pending: 0 };
+  for (const g of guests) rsvp[g.rsvp_status] += 1;
+  const totalGuests = guests.length;
+  const targetCount = targetGuestCount(couple);
+  // Denominator for "X of Y confirmed": if the couple set a target, use that;
+  // otherwise fall back to the actual list size so the % stays meaningful.
+  const guestDenominator = targetCount ?? totalGuests;
+
+  // ── Budget ────────────────────────────────────────────────────────────
+  const totalPlanned = lines.reduce((s, l) => s + l.planned_huf, 0);
+  const totalActual = lines.reduce((s, l) => s + l.actual_huf, 0);
+  const cap = budgetCapHuf(couple.budget_goal);
+  const spentPct = cap && cap > 0 ? Math.min(100, Math.round((totalActual / cap) * 100)) : null;
+  const overCap = cap !== null && totalPlanned > cap;
+  const costPerConfirmedGuest =
+    rsvp.yes > 0 && totalActual > 0 ? Math.round(totalActual / rsvp.yes) : null;
+
+  // ── Seating ───────────────────────────────────────────────────────────
+  const confirmedGuests = guests.filter((g) => g.rsvp_status === "yes");
+  const seatedConfirmed = confirmedGuests.filter((g) => seatedGuestIds.has(g.id)).length;
+
+  // ── Setup checklist (derived — no `tasks` table in v1). ───────────────
+  const tasks = [
+    { key: "task_lock_guests", done: couple.guest_count_goal.kind !== "tbd" },
+    { key: "task_lock_budget", done: couple.budget_goal.kind !== "tbd" },
+    { key: "task_set_date", done: couple.wedding_date_goal.kind === "exact" },
+    { key: "task_invite_partner", done: couple.partner_b_id !== null },
+    { key: "task_add_guests", done: totalGuests > 0 },
+    { key: "task_plan_budget", done: lines.length > 0 },
+    { key: "task_under_cap", done: cap === null ? false : !overCap && lines.length > 0 },
+    { key: "task_get_rsvps", done: rsvp.yes + rsvp.no + rsvp.maybe > 0 },
+    { key: "task_add_tables", done: tableCount > 0 },
+    {
+      key: "task_seat_guests",
+      done: confirmedGuests.length > 0 && seatedConfirmed === confirmedGuests.length,
+    },
+  ];
+  const tasksDone = tasks.filter((t) => t.done).length;
+  const tasksTotal = tasks.length;
+
+  // ── Invite-partner inline card ────────────────────────────────────────
+  const inviteUrl = invite ? `${window.location.origin}/invite/${invite.token}` : null;
+  async function onInvitePartner() {
+    const r = await coupleApi.createInvite({});
+    setInvite(r.invite);
+  }
+  function onCopy() {
+    if (!inviteUrl) return;
+    navigator.clipboard?.writeText(inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   const dateText = formatWeddingDateGoal(couple.wedding_date_goal, { t, locale });
-  const guestText = formatGuestCountGoal(couple.guest_count_goal, { t, locale });
-  const budgetText = formatBudgetGoal(couple.budget_goal, { t, locale });
-  const showGuestBadge = couple.guest_count_goal.kind !== "tbd";
-  const showBudgetBadge = couple.budget_goal.kind !== "tbd";
 
   return (
     <AppShell>
-      <header className="mb-8">
-        <h1 className="font-serif text-4xl">{couple.display_name}</h1>
-        <div className="mt-2 flex flex-wrap gap-2 text-sm text-ink-600">
-          <span className="badge-paper">
-            <Calendar size={14} /> {dateText}
-          </span>
-          {daysUntil !== null && (
-            <span className="badge-blush">
-              {t("dashboard.wedding_in_days", { days: daysUntil })}
-            </span>
-          )}
-          {showGuestBadge && (
-            <span className="badge-paper">
-              <Users size={14} /> {guestText}
-            </span>
-          )}
-          {showBudgetBadge && (
-            <span className="badge-paper">
-              {t("dashboard.budget_ceiling")}: {budgetText}
-            </span>
-          )}
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-4xl">{couple.display_name}</h1>
+          <p className="mt-1 text-sm text-ink-600">{dateText}</p>
         </div>
+        <div className="text-xs uppercase tracking-wide text-ink-500">{t("dashboard.title")}</div>
       </header>
 
+      {/* ── KPI tiles ─────────────────────────────────────────────── */}
+      <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiTile
+          label={t("dashboard.kpi_days_label")}
+          icon={<CalendarHeart size={16} />}
+          value={daysUntil !== null ? formatNumber(daysUntil, locale) : "—"}
+          unit={daysUntil !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
+          accent="blush"
+        />
+        <KpiTile
+          label={t("dashboard.kpi_guests_label")}
+          icon={<Users size={16} />}
+          value={formatNumber(rsvp.yes, locale)}
+          unit={
+            guestDenominator > 0
+              ? t("dashboard.kpi_guests_unit", { total: formatNumber(guestDenominator, locale) })
+              : t("dashboard.kpi_guests_no_data")
+          }
+          progress={
+            guestDenominator > 0
+              ? Math.min(100, Math.round((rsvp.yes / guestDenominator) * 100))
+              : null
+          }
+        />
+        <KpiTile
+          label={t("dashboard.kpi_budget_label")}
+          icon={<Wallet size={16} />}
+          value={formatHuf(totalActual, locale)}
+          unit={
+            cap !== null
+              ? t("dashboard.kpi_budget_unit", { cap: formatHuf(cap, locale) })
+              : t("dashboard.kpi_budget_no_cap")
+          }
+          progress={spentPct}
+          progressOver={cap !== null && totalActual > cap}
+        />
+        <KpiTile
+          label={t("dashboard.kpi_seated_label")}
+          icon={<ChefHat size={16} />}
+          value={formatNumber(seatedConfirmed, locale)}
+          unit={
+            confirmedGuests.length > 0
+              ? t("dashboard.kpi_seated_unit", {
+                  total: formatNumber(confirmedGuests.length, locale),
+                })
+              : t("dashboard.kpi_seated_no_data")
+          }
+          progress={
+            confirmedGuests.length > 0
+              ? Math.round((seatedConfirmed / confirmedGuests.length) * 100)
+              : null
+          }
+        />
+      </section>
+
+      {/* ── Two-column body: tasks + breakdowns ────────────────────── */}
+      <section className="mb-8 grid gap-4 lg:grid-cols-3">
+        {/* Tasks (spans 2/3 on lg). */}
+        <div className="card lg:col-span-2">
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2>{t("dashboard.tasks_title")}</h2>
+            <span className="text-xs text-ink-500">
+              {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
+            </span>
+          </div>
+          <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-paper-200">
+            <div
+              className="h-full rounded-full bg-blush-500 transition-all"
+              style={{ width: `${(tasksDone / tasksTotal) * 100}%` }}
+            />
+          </div>
+          <ul className="grid gap-1.5 sm:grid-cols-2">
+            {tasks.map((task) => (
+              <li
+                key={task.key}
+                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
+                  task.done ? "text-ink-500" : "text-ink-800"
+                }`}
+              >
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                    task.done
+                      ? "border-blush-500 bg-blush-500 text-white"
+                      : "border-paper-400 bg-white"
+                  }`}
+                >
+                  {task.done && (
+                    <svg
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-3 w-3"
+                      aria-hidden="true"
+                    >
+                      <path d="M2.5 6.5L5 9l4.5-5" />
+                    </svg>
+                  )}
+                </span>
+                <span className={task.done ? "line-through decoration-ink-300" : ""}>
+                  {t(`dashboard.${task.key}`)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* RSVP breakdown + cost-per-guest. */}
+        <div className="grid gap-4">
+          <div className="card">
+            <h3 className="text-sm font-semibold text-ink-700">
+              {t("dashboard.rsvp_breakdown_title")}
+            </h3>
+            <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper-200">
+              <Segment count={rsvp.yes} total={Math.max(totalGuests, 1)} className="bg-blush-500" />
+              <Segment
+                count={rsvp.maybe}
+                total={Math.max(totalGuests, 1)}
+                className="bg-blush-300"
+              />
+              <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-ink-300" />
+              <Segment
+                count={rsvp.pending}
+                total={Math.max(totalGuests, 1)}
+                className="bg-paper-400"
+              />
+            </div>
+            <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+              <RsvpRow swatch="bg-blush-500" label={t("dashboard.rsvp_yes")} value={rsvp.yes} />
+              <RsvpRow swatch="bg-blush-300" label={t("dashboard.rsvp_maybe")} value={rsvp.maybe} />
+              <RsvpRow swatch="bg-ink-300" label={t("dashboard.rsvp_no")} value={rsvp.no} />
+              <RsvpRow
+                swatch="bg-paper-400"
+                label={t("dashboard.rsvp_pending")}
+                value={rsvp.pending}
+              />
+            </dl>
+          </div>
+
+          <div className="card">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-700">
+              <TrendingUp size={14} /> {t("dashboard.spend_title")}
+            </h3>
+            <dl className="mt-3 space-y-1.5 text-sm">
+              <SpendRow
+                label={t("dashboard.spend_planned")}
+                value={formatHuf(totalPlanned, locale)}
+              />
+              <SpendRow
+                label={t("dashboard.spend_actual")}
+                value={formatHuf(totalActual, locale)}
+              />
+              {cap !== null && (
+                <SpendRow label={t("dashboard.spend_cap")} value={formatHuf(cap, locale)} muted />
+              )}
+              {costPerConfirmedGuest !== null && (
+                <SpendRow
+                  label={t("dashboard.cost_per_guest")}
+                  value={formatHuf(costPerConfirmedGuest, locale)}
+                  muted
+                />
+              )}
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Invite partner — only if not yet linked. ───────────────── */}
       {!couple.partner_b_id && (
         <section className="card stationery mb-8">
           <h2>{t("dashboard.invite_partner")}</h2>
@@ -99,34 +343,120 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <FeatureLink
-          to="/app/guests"
-          icon={<Users size={20} />}
-          title={t("dashboard.feature_guests")}
-        />
-        <FeatureLink
-          to="/app/budget"
-          icon={<UtensilsCrossed size={20} />}
-          title={t("dashboard.feature_budget")}
-        />
-        <FeatureLink
-          to="/app/seating"
-          icon={<ChefHat size={20} />}
-          title={t("dashboard.feature_seating")}
-        />
-        <FeatureLink
-          to="/app/seating"
-          icon={<Printer size={20} />}
-          title={t("dashboard.feature_print")}
-        />
-        <FeatureLink
-          to="/app/suppliers"
-          icon={<Heart size={20} />}
-          title={t("dashboard.feature_suppliers")}
-        />
+      {/* ── Quick links ───────────────────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
+          {t("dashboard.quick_links_title")}
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <FeatureLink
+            to="/app/guests"
+            icon={<Users size={20} />}
+            title={t("dashboard.feature_guests")}
+          />
+          <FeatureLink
+            to="/app/budget"
+            icon={<UtensilsCrossed size={20} />}
+            title={t("dashboard.feature_budget")}
+          />
+          <FeatureLink
+            to="/app/seating"
+            icon={<ChefHat size={20} />}
+            title={t("dashboard.feature_seating")}
+          />
+          <FeatureLink
+            to="/app/seating"
+            icon={<Printer size={20} />}
+            title={t("dashboard.feature_print")}
+          />
+          <FeatureLink
+            to="/app/suppliers"
+            icon={<Heart size={20} />}
+            title={t("dashboard.feature_suppliers")}
+          />
+        </div>
       </section>
     </AppShell>
+  );
+}
+
+function KpiTile({
+  label,
+  icon,
+  value,
+  unit,
+  progress,
+  progressOver,
+  accent,
+}: {
+  label: string;
+  icon: ReactNode;
+  value: string;
+  unit: string;
+  progress?: number | null;
+  progressOver?: boolean;
+  accent?: "blush";
+}) {
+  const accentBg = accent === "blush" ? "bg-blush-50" : "bg-paper-50";
+  const accentRing = accent === "blush" ? "text-blush-700" : "text-ink-700";
+  return (
+    <div className="card">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-ink-500">
+        <span
+          className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
+        >
+          {icon}
+        </span>
+        {label}
+      </div>
+      <div className="mt-3 font-serif text-3xl leading-none text-ink-900">{value}</div>
+      <div className="mt-1 text-xs text-ink-500">{unit}</div>
+      {progress !== undefined && progress !== null && (
+        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-paper-200">
+          <div
+            className={`h-full rounded-full transition-all ${
+              progressOver ? "bg-blush-700" : "bg-ink-700"
+            }`}
+            style={{ width: `${Math.max(2, progress)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Segment({
+  count,
+  total,
+  className,
+}: {
+  count: number;
+  total: number;
+  className: string;
+}) {
+  if (count <= 0) return null;
+  const pct = (count / total) * 100;
+  return <div className={className} style={{ width: `${pct}%` }} aria-hidden="true" />;
+}
+
+function RsvpRow({ swatch, label, value }: { swatch: string; label: string; value: number }) {
+  return (
+    <>
+      <dt className="flex items-center gap-2 text-ink-700">
+        <span className={`inline-block h-2 w-2 rounded-full ${swatch}`} />
+        {label}
+      </dt>
+      <dd className="text-right tabular-nums text-ink-900">{value}</dd>
+    </>
+  );
+}
+
+function SpendRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className={muted ? "text-xs text-ink-500" : "text-ink-700"}>{label}</dt>
+      <dd className={`tabular-nums ${muted ? "text-xs text-ink-500" : "text-ink-900"}`}>{value}</dd>
+    </div>
   );
 }
 

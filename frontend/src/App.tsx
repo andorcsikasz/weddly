@@ -13,9 +13,9 @@ import NotFoundPage from "./pages/NotFoundPage";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ProfilePage from "./pages/ProfilePage";
 import RsvpPage from "./pages/RsvpPage";
 import SeatingPage from "./pages/SeatingPage";
-import SettingsPage from "./pages/SettingsPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import VendorsPage from "./pages/VendorsPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
@@ -187,15 +187,16 @@ export default function App() {
         }
       />
       <Route
-        path="/app/settings"
+        path="/app/profile"
         element={
           <Page>
             <RequireAuth>
-              <SettingsPage />
+              <ProfilePage />
             </RequireAuth>
           </Page>
         }
       />
+      <Route path="/app/settings" element={<Navigate to="/app/profile" replace />} />
       <Route
         path="*"
         element={
