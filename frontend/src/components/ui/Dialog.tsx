@@ -51,6 +51,31 @@ export function Dialog({
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
+        return;
+      }
+      // Trap Tab within the dialog so focus can't escape to the
+      // background page while the modal is open. Without this, screen
+      // reader + keyboard users can lose context.
+      if (e.key === "Tab") {
+        const node = containerRef.current;
+        if (!node) return;
+        const focusables = Array.from(
+          node.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((el) => !el.hasAttribute("disabled"));
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (!first || !last) return;
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey && active === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener("keydown", onKey);

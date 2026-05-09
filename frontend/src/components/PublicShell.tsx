@@ -11,10 +11,19 @@ import { useEntryPrompt } from "./ui";
  * primary CTAs.
  */
 export function PublicShell({ children }: { children: ReactNode }) {
+  const { t } = useT();
   return (
     <div className="flex min-h-full flex-col bg-paper-50 text-ink-800">
+      <a
+        href="#main-content"
+        className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2"
+      >
+        {t("landing.skip_to_main")}
+      </a>
       <PublicHeader />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">
+        {children}
+      </main>
       <PublicFooter />
     </div>
   );
@@ -32,7 +41,10 @@ function PublicHeader() {
           {t("app.name")}
         </Link>
 
-        <nav className="hidden items-center gap-7 text-sm text-ink-700 md:flex">
+        <nav
+          aria-label="Primary"
+          className="hidden items-center gap-7 text-sm text-ink-700 md:flex"
+        >
           <a href="#phases" className="hover:text-ink-900">
             {t("landing.nav_how")}
           </a>

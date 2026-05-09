@@ -225,18 +225,6 @@ const hu: LocaleMessages = {
     cta_signup: "Indítsuk együtt",
     cta_login: "Bejelentkezés",
     cta_signup_sub: "A nyílt béta alatt ingyenes. Bankkártya nem kell.",
-    feature_planning_title: "Élő költségvetés",
-    feature_planning_body:
-      "Húzzátok a vendégszámot, és lássátok azonnal, hogyan mozdul a catering, dekor és helyszín ára.",
-    trust_couple_title: "Kettőtöknek készült",
-    trust_couple_body:
-      "Egyikőtök regisztrál, küld egy linket, és a másik ugyanabba a munkaterületbe lép be. Nincs duplázódó belépés.",
-    trust_free_title: "A béta alatt ingyenes",
-    trust_free_body:
-      "Az alap tervezés ingyen marad. A fizetős csomagok csak extra funkciókhoz jönnek később — soha nem zárunk ki abból, amit már megépítettetek.",
-    trust_data_title: "A ti adataitok",
-    trust_data_body:
-      "Bármikor szüneteltethetitek a munkaterületet. Ha 30 napon belül nem tértek vissza, mindent törlünk. Nincsenek átverős minták.",
     faq_title: "Gyakori kérdések",
     faq_q_free: "Tényleg ingyenes a Weddly?",
     faq_a_free:
@@ -314,6 +302,7 @@ const hu: LocaleMessages = {
     footer_legal_privacy: "Adatvédelem",
     footer_band_text: "Vendég vagy?",
     footer_band_cta: "Add meg a meghívó kódod",
+    skip_to_main: "Ugrás a tartalomra",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
     stats_eyebrow: "Nyílt béta",
     stats_a_value: "200+",
@@ -448,7 +437,6 @@ const hu: LocaleMessages = {
     budget: "Költségvetés",
     seating: "Ültetés",
     suppliers: "Szolgáltatók",
-    settings: "Beállítások",
     print: "Nyomtatás",
   },
   guests: {
@@ -610,8 +598,22 @@ const hu: LocaleMessages = {
     body: "A link talán hibás, vagy az oldalt áthelyeztük.",
     go_home: "Vissza a főoldalra",
   },
-  settings: {
-    title: "Beállítások",
+  profile: {
+    title: "Profil",
+    menu_label: "Profil menü",
+    menu_profile: "Profil",
+    no_name: "Névtelen",
+    personal_info_title: "Személyes adatok",
+    personal_info_body: "Az alábbi adatokat látjuk rólad. A szerkesztés hamarosan elérhető lesz.",
+    field_name: "Név",
+    field_email: "E-mail",
+    payments_title: "Fizetések",
+    payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
+    export_title: "Adataid exportálása",
+    export_body:
+      "Egyetlen JSON fájlban töltheted le a teljes workspace tartalmát — pár, vendégek, költségvetés, ültetés, auditnapló. A PDF-eket (ültetési rend, ültetőkártyák) az Ültetés oldalról töltheted le.",
+    export_button: "JSON letöltése",
+    export_downloading: "Előkészítés…",
     pause_title: "Munkaterület szüneteltetése",
     pause_body:
       "30 napos szüneteltetést indít. Ez idő alatt nem szerkeszthető a workspace; a 30 nap leteltével az adminunk törli az adatokat. Bármelyik partner visszavonhatja a határidő előtt.",
@@ -622,14 +624,6 @@ const hu: LocaleMessages = {
     pause_pending: "Szünetelve — várakozás törlésre",
     pause_pending_until: "Törlés ekkor: {date}",
     cancel_pause: "Szüneteltetés visszavonása",
-    locale_label: "Nyelv",
-    locale_hu: "Magyar",
-    locale_en: "English",
-    export_title: "Adataid exportálása",
-    export_body:
-      "Egyetlen JSON fájlban töltheted le a teljes workspace tartalmát — pár, vendégek, költségvetés, ültetés, auditnapló. A PDF-eket (ültetési rend, ültetőkártyák) az Ültetés oldalról töltheted le.",
-    export_button: "JSON letöltése",
-    export_downloading: "Előkészítés…",
   },
   error_boundary: {
     title: "Hoppá, valami félrement",

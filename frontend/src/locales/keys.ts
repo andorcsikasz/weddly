@@ -219,14 +219,6 @@ export interface LocaleMessages {
     cta_signup: string;
     cta_login: string;
     cta_signup_sub: string;
-    feature_planning_title: string;
-    feature_planning_body: string;
-    trust_couple_title: string;
-    trust_couple_body: string;
-    trust_free_title: string;
-    trust_free_body: string;
-    trust_data_title: string;
-    trust_data_body: string;
     faq_title: string;
     faq_q_free: string;
     faq_a_free: string;
@@ -294,6 +286,7 @@ export interface LocaleMessages {
     footer_legal_privacy: string;
     footer_band_text: string;
     footer_band_cta: string;
+    skip_to_main: string;
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: string;
     stats_a_value: string;
@@ -408,7 +401,6 @@ export interface LocaleMessages {
     budget: string;
     seating: string;
     suppliers: string;
-    settings: string;
     print: string;
   };
   guests: {
@@ -569,8 +561,21 @@ export interface LocaleMessages {
     body: string;
     go_home: string;
   };
-  settings: {
+  profile: {
     title: string;
+    menu_label: string;
+    menu_profile: string;
+    no_name: string;
+    personal_info_title: string;
+    personal_info_body: string;
+    field_name: string;
+    field_email: string;
+    payments_title: string;
+    payments_body: string;
+    export_title: string;
+    export_body: string;
+    export_button: string;
+    export_downloading: string;
     pause_title: string;
     pause_body: string;
     pause_button: string;
@@ -580,13 +585,6 @@ export interface LocaleMessages {
     pause_pending: string;
     pause_pending_until: string;
     cancel_pause: string;
-    locale_label: string;
-    locale_hu: string;
-    locale_en: string;
-    export_title: string;
-    export_body: string;
-    export_button: string;
-    export_downloading: string;
   };
   error_boundary: {
     title: string;

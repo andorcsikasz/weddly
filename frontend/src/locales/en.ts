@@ -226,18 +226,6 @@ const en: LocaleMessages = {
     cta_signup: "Start planning",
     cta_login: "Sign in",
     cta_signup_sub: "Free during the open beta. No credit card.",
-    feature_planning_title: "Live budget",
-    feature_planning_body:
-      "Move the guest-count slider and watch catering, decor, and venue costs shift in real time.",
-    trust_couple_title: "Built for two",
-    trust_couple_body:
-      "One of you signs up, sends a link, and the other lands in the same workspace. No duplicate logins, no syncing.",
-    trust_free_title: "Free during the beta",
-    trust_free_body:
-      "Core planning stays free. Paid tiers (only for advanced features) come later — we'll never lock you out of what you've already built.",
-    trust_data_title: "Your data, your decision",
-    trust_data_body:
-      "Pause the workspace any time. We delete everything 30 days later if you don't come back. No dark patterns.",
     faq_title: "Questions you'll probably ask",
     faq_q_free: "Is Weddly really free?",
     faq_a_free:
@@ -314,6 +302,7 @@ const en: LocaleMessages = {
     footer_legal_privacy: "Privacy",
     footer_band_text: "A guest?",
     footer_band_cta: "Enter your invite code",
+    skip_to_main: "Skip to main content",
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: "Open beta",
     stats_a_value: "200+",
@@ -447,7 +436,6 @@ const en: LocaleMessages = {
     budget: "Budget",
     seating: "Seating",
     suppliers: "Suppliers",
-    settings: "Settings",
     print: "Print",
   },
   guests: {
@@ -609,8 +597,22 @@ const en: LocaleMessages = {
     body: "The link you followed might be broken, or the page may have been moved.",
     go_home: "Back to home",
   },
-  settings: {
-    title: "Settings",
+  profile: {
+    title: "Profile",
+    menu_label: "Profile menu",
+    menu_profile: "Profile",
+    no_name: "Unnamed",
+    personal_info_title: "Personal info",
+    personal_info_body: "What we know about you. Editing is coming soon.",
+    field_name: "Name",
+    field_email: "Email",
+    payments_title: "Payments",
+    payments_body: "Payment history and billing settings will appear here soon.",
+    export_title: "Export your data",
+    export_body:
+      "Download everything in your workspace — couple, guests, budget, seating, audit log — as a single JSON file. PDFs (seating chart, place cards) are downloadable from the Seating page.",
+    export_button: "Download JSON",
+    export_downloading: "Preparing…",
     pause_title: "Pause workspace",
     pause_body:
       "Starts a 30-day pause. The workspace is read-only during the window; after 30 days our admin deletes it. Either partner can cancel before the deadline.",
@@ -621,14 +623,6 @@ const en: LocaleMessages = {
     pause_pending: "Paused — pending deletion",
     pause_pending_until: "Will be deleted on {date}",
     cancel_pause: "Cancel pause",
-    locale_label: "Language",
-    locale_hu: "Magyar",
-    locale_en: "English",
-    export_title: "Export your data",
-    export_body:
-      "Download everything in your workspace — couple, guests, budget, seating, audit log — as a single JSON file. PDFs (seating chart, place cards) are downloadable from the Seating page.",
-    export_button: "Download JSON",
-    export_downloading: "Preparing…",
   },
   error_boundary: {
     title: "Something went wrong",
