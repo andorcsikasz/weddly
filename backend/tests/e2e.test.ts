@@ -607,13 +607,58 @@ describe("seating", () => {
       { token },
     );
 
-    const table = await req<{ table: { id: number } }>(
+    const table = await req<{
+      table: { id: number; width_mm: number; length_mm: number };
+    }>(
       "POST",
       "/api/seating/tables",
       { label: "Asztal 1", shape: "round", seats: 8, x_mm: 50, y_mm: 50 },
       { token },
     );
     expect(table.status).toBe(201);
+    // Defaults: round → square 1500×1500. Without sending dimensions the
+    // server should still produce a usable, identical width/length.
+    expect(table.data.table.width_mm).toBe(1500);
+    expect(table.data.table.length_mm).toBe(1500);
+
+    // Resizing to a long table preserves both dimensions independently.
+    const longUpd = await req<{
+      table: { width_mm: number; length_mm: number; shape: string };
+    }>(
+      "PATCH",
+      `/api/seating/tables/${table.data.table.id}`,
+      {
+        label: "Asztal 1",
+        shape: "long",
+        seats: 8,
+        x_mm: 50,
+        y_mm: 50,
+        width_mm: 900,
+        length_mm: 2400,
+      },
+      { token },
+    );
+    expect(longUpd.status).toBe(200);
+    expect(longUpd.data.table.shape).toBe("long");
+    expect(longUpd.data.table.width_mm).toBe(900);
+    expect(longUpd.data.table.length_mm).toBe(2400);
+
+    // Out-of-range dimensions rejected.
+    const badDim = await req(
+      "PATCH",
+      `/api/seating/tables/${table.data.table.id}`,
+      {
+        label: "Asztal 1",
+        shape: "long",
+        seats: 8,
+        x_mm: 50,
+        y_mm: 50,
+        width_mm: 50, // below 100mm minimum
+        length_mm: 2400,
+      },
+      { token },
+    );
+    expect(badDim.status).toBe(400);
 
     const a1 = await req(
       "POST",

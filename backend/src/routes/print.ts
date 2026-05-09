@@ -17,6 +17,8 @@ interface TableRow {
   seats: number;
   x_mm: number;
   y_mm: number;
+  width_mm: number;
+  length_mm: number;
   created_at: number;
   updated_at: number;
 }
@@ -40,6 +42,8 @@ function loadTables(coupleId: number): SeatingTable[] {
     seats: r.seats,
     x_mm: r.x_mm,
     y_mm: r.y_mm,
+    width_mm: r.width_mm,
+    length_mm: r.length_mm,
     created_at: r.created_at,
   }));
 }

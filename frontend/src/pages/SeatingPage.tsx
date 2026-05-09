@@ -1,6 +1,10 @@
-// Seating canvas. Tables as cards on a wrapped grid; drag guests onto seats.
-// We trade pixel-perfect canvas placement for an approachable column layout —
-// the PDF export still uses the underlying x_mm/y_mm if the user moves things.
+// Seating page. Two surfaces stacked vertically:
+//   1. Floor-plan map at the top — drag tables to position, click to select,
+//      edit shape/seats/dimensions in the inline editor panel.
+//   2. The seat-assignment grid below — drag guests onto specific seats.
+// We trade pixel-perfect placement on the assignment grid for an approachable
+// column layout; the map is where pixel-perfect (millimetre) layout lives,
+// and that's what the PDF export consumes.
 
 import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
 import { ChefHat, Plus, Printer, Trash2 } from "lucide-react";
@@ -9,6 +13,7 @@ import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt } from "../components/ui";
 import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 
 const SHAPES: TableShape[] = ["round", "long", "square"];
 
@@ -23,6 +28,7 @@ export default function SeatingPage() {
   const [tables, setTables] = useState<SeatingTable[]>([]);
   const [assignments, setAssignments] = useState<SeatAssignment[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   async function refresh() {
     const [plan, gs] = await Promise.all([seatingApi.plan(), guestApi.list()]);
@@ -38,6 +44,10 @@ export default function SeatingPage() {
   const guestById = useMemo(() => new Map(guests.map((g) => [g.id, g])), [guests]);
   const seatedIds = useMemo(() => new Set(assignments.map((a) => a.guest_id)), [assignments]);
   const unassigned = useMemo(() => guests.filter((g) => !seatedIds.has(g.id)), [guests, seatedIds]);
+  const selected = useMemo(
+    () => tables.find((tb) => tb.id === selectedId) ?? null,
+    [tables, selectedId],
+  );
 
   async function addTable() {
     const label = await promptEntry({
@@ -49,13 +59,19 @@ export default function SeatingPage() {
       validate: (v) => (v.trim().length === 0 ? t("seating.table_label_prompt") : null),
     });
     if (!label) return;
-    await seatingApi.createTable({
+    // Drop new tables near the centre of the room with a small per-table
+    // offset so consecutive adds don't stack on top of each other.
+    const offset = (tables.length % 5) * 800;
+    const res = await seatingApi.createTable({
       label,
       shape: "round",
       seats: 8,
-      x_mm: 0,
-      y_mm: 0,
+      x_mm: ROOM_DIMS.W_MM / 2 + offset - 1600,
+      y_mm: ROOM_DIMS.H_MM / 2,
+      width_mm: 1500,
+      length_mm: 1500,
     });
+    setSelectedId(res.table.id);
     refresh();
   }
 
@@ -69,18 +85,21 @@ export default function SeatingPage() {
     });
     if (!ok) return;
     await seatingApi.removeTable(table.id);
+    if (selectedId === table.id) setSelectedId(null);
     refresh();
   }
 
-  async function changeShape(table: SeatingTable, shape: TableShape) {
-    await seatingApi.updateTable(table.id, { ...table, shape });
+  async function patchTable(table: SeatingTable, patch: Partial<SeatingTable>) {
+    // Server PATCH expects all the editable fields, so always send a merged
+    // payload. Defaults to existing values for anything the caller omitted.
+    await seatingApi.updateTable(table.id, { ...table, ...patch });
     refresh();
   }
 
-  async function changeSeats(table: SeatingTable, seats: number) {
-    if (!Number.isFinite(seats) || seats < 1 || seats > 40) return;
-    await seatingApi.updateTable(table.id, { ...table, seats });
-    refresh();
+  async function moveTable(id: number, x_mm: number, y_mm: number) {
+    const table = tables.find((tb) => tb.id === id);
+    if (!table) return;
+    await patchTable(table, { x_mm, y_mm });
   }
 
   async function dropToSeat(tableId: number, seatIndex: number, e: DragEvent) {
@@ -144,15 +163,32 @@ export default function SeatingPage() {
         </div>
       </header>
 
+      {tables.length === 0 ? (
+        <div className="card stationery text-center">
+          <ChefHat size={28} className="mx-auto text-ink-500" />
+          <h3 className="mt-3 text-base font-semibold">{t("seating.no_tables")}</h3>
+          <p className="mt-1 text-sm text-ink-600">{t("seating.add_first_table")}</p>
+        </div>
+      ) : (
+        <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_320px]">
+          <SeatingMap
+            tables={tables}
+            assignments={assignments}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onMove={moveTable}
+          />
+          <TableEditor
+            table={selected}
+            onPatch={(patch) => selected && patchTable(selected, patch)}
+            onDelete={() => selected && deleteTable(selected)}
+          />
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <div>
-          {tables.length === 0 ? (
-            <div className="card stationery text-center">
-              <ChefHat size={28} className="mx-auto text-ink-500" />
-              <h3 className="mt-3 text-base font-semibold">{t("seating.no_tables")}</h3>
-              <p className="mt-1 text-sm text-ink-600">{t("seating.add_first_table")}</p>
-            </div>
-          ) : (
+          {tables.length > 0 && (
             <div className="grid gap-4 sm:grid-cols-2">
               {tables.map((table) => (
                 <TableCard
@@ -161,9 +197,8 @@ export default function SeatingPage() {
                   assignments={assignments.filter((a) => a.table_id === table.id)}
                   guestById={guestById}
                   onDropSeat={dropToSeat}
-                  onDelete={() => deleteTable(table)}
-                  onChangeShape={(s) => changeShape(table, s)}
-                  onChangeSeats={(n) => changeSeats(table, n)}
+                  onSelect={() => setSelectedId(table.id)}
+                  isSelected={selectedId === table.id}
                 />
               ))}
             </div>
@@ -194,35 +229,33 @@ export default function SeatingPage() {
   );
 }
 
-function TableCard({
+function TableEditor({
   table,
-  assignments,
-  guestById,
-  onDropSeat,
+  onPatch,
   onDelete,
-  onChangeShape,
-  onChangeSeats,
 }: {
-  table: SeatingTable;
-  assignments: SeatAssignment[];
-  guestById: Map<number, Guest>;
-  onDropSeat: (tableId: number, seatIndex: number, e: DragEvent) => void;
+  table: SeatingTable | null;
+  onPatch: (patch: Partial<SeatingTable>) => void;
   onDelete: () => void;
-  onChangeShape: (s: TableShape) => void;
-  onChangeSeats: (n: number) => void;
 }) {
   const { t } = useT();
-  const seatToAssign = new Map(assignments.map((a) => [a.seat_index, a]));
+
+  if (!table) {
+    return (
+      <div className="card text-sm text-ink-500">
+        <p>{t("seating.editor_empty")}</p>
+      </div>
+    );
+  }
+
+  // For round and square the two dimensions are kept in lockstep server-side,
+  // so the UI hides the length input and shows a single "size" control.
+  const isLong = table.shape === "long";
 
   return (
-    <div className="card">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="font-serif text-xl">{table.label}</h3>
-          <p className="mt-0.5 text-xs text-ink-500">
-            {t(`seating.shape_${table.shape}`)} · {table.seats} {t("seating.seats_label")}
-          </p>
-        </div>
+    <div className="card space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-serif text-xl">{table.label}</h3>
         <button
           type="button"
           className="btn-ghost btn-sm text-blush-700"
@@ -233,12 +266,24 @@ function TableCard({
         </button>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+      <Field label={t("seating.table_label_prompt")}>
+        <input
+          type="text"
+          className="input py-1.5 text-sm"
+          defaultValue={table.label}
+          key={`${table.id}-label`}
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            if (v && v !== table.label) onPatch({ label: v });
+          }}
+        />
+      </Field>
+
+      <Field label={t("seating.shape_label")}>
         <select
-          className="input input-sm py-1 text-xs"
+          className="input py-1.5 text-sm"
           value={table.shape}
-          onChange={(e) => onChangeShape(e.target.value as TableShape)}
-          aria-label={t("seating.shape_label")}
+          onChange={(e) => onPatch({ shape: e.target.value as TableShape })}
         >
           {SHAPES.map((s) => (
             <option key={s} value={s}>
@@ -246,15 +291,139 @@ function TableCard({
             </option>
           ))}
         </select>
+      </Field>
+
+      <Field label={t("seating.seats_label")}>
         <input
           type="number"
           min={1}
           max={40}
-          className="input py-1 text-xs w-20"
+          className="input py-1.5 text-sm"
           defaultValue={table.seats}
-          onBlur={(e) => onChangeSeats(Number(e.target.value))}
-          aria-label={t("seating.seats_label")}
+          key={`${table.id}-seats`}
+          onBlur={(e) => {
+            const n = Number(e.target.value);
+            if (Number.isFinite(n) && n >= 1 && n <= 40 && n !== table.seats) {
+              onPatch({ seats: Math.round(n) });
+            }
+          }}
         />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={isLong ? t("seating.length_mm_label") : t("seating.size_mm_label")} hint="mm">
+          <input
+            type="number"
+            min={100}
+            max={10000}
+            step={50}
+            className="input py-1.5 text-sm"
+            defaultValue={isLong ? table.length_mm : table.width_mm}
+            key={`${table.id}-primary`}
+            onBlur={(e) => {
+              const n = Number(e.target.value);
+              if (!Number.isFinite(n) || n < 100 || n > 10000) return;
+              const rounded = Math.round(n);
+              if (isLong) {
+                if (rounded !== table.length_mm) onPatch({ length_mm: rounded });
+              } else {
+                // Round/square keep both dimensions equal.
+                if (rounded !== table.width_mm) {
+                  onPatch({ width_mm: rounded, length_mm: rounded });
+                }
+              }
+            }}
+          />
+        </Field>
+
+        {isLong && (
+          <Field label={t("seating.width_mm_label")} hint="mm">
+            <input
+              type="number"
+              min={100}
+              max={10000}
+              step={50}
+              className="input py-1.5 text-sm"
+              defaultValue={table.width_mm}
+              key={`${table.id}-secondary`}
+              onBlur={(e) => {
+                const n = Number(e.target.value);
+                if (!Number.isFinite(n) || n < 100 || n > 10000) return;
+                const rounded = Math.round(n);
+                if (rounded !== table.width_mm) onPatch({ width_mm: rounded });
+              }}
+            />
+          </Field>
+        )}
+      </div>
+
+      <p className="text-xs text-ink-400">
+        {t("seating.position_label")}: {table.x_mm} mm · {table.y_mm} mm
+      </p>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block text-xs">
+      <span className="mb-1 flex items-center justify-between text-ink-500">
+        <span>{label}</span>
+        {hint && <span className="text-ink-300">{hint}</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function TableCard({
+  table,
+  assignments,
+  guestById,
+  onDropSeat,
+  onSelect,
+  isSelected,
+}: {
+  table: SeatingTable;
+  assignments: SeatAssignment[];
+  guestById: Map<number, Guest>;
+  onDropSeat: (tableId: number, seatIndex: number, e: DragEvent) => void;
+  onSelect: () => void;
+  isSelected: boolean;
+}) {
+  const { t } = useT();
+  const seatToAssign = new Map(assignments.map((a) => [a.seat_index, a]));
+
+  return (
+    <div
+      className={`card cursor-pointer transition-shadow ${
+        isSelected ? "ring-2 ring-blush-400" : "hover:shadow-pop"
+      }`}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h3 className="font-serif text-xl">{table.label}</h3>
+          <p className="mt-0.5 text-xs text-ink-500">
+            {t(`seating.shape_${table.shape}`)} · {table.seats} {t("seating.seats_label")}
+          </p>
+        </div>
       </div>
 
       <ol className="mt-4 grid grid-cols-2 gap-2">
@@ -294,6 +463,7 @@ function DraggableGuest({ guest, compact }: { guest: Guest; compact?: boolean })
     <div
       draggable
       onDragStart={onDragStart}
+      onClick={(e) => e.stopPropagation()}
       className={
         compact
           ? "cursor-grab text-sm font-medium text-ink-900 active:cursor-grabbing"

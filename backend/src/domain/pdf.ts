@@ -7,6 +7,7 @@
 //   - A3 large seating chart (297×420mm)
 
 import { type PDFFont, PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { chairOffsets } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
 
 const MM_TO_PT = 2.83465;
@@ -49,39 +50,93 @@ function fitText(font: PDFFont, text: string, sizePt: number, maxWidthPt: number
   return `${s.slice(0, -1)}…`;
 }
 
-/** Lay tables out on the page. We respect the user-set x_mm/y_mm if both are
- *  positive; otherwise we auto-flow into a grid so a fresh seating plan is still
- *  printable. */
+interface TableLayout {
+  x_mm: number;
+  y_mm: number;
+  /** Half-width on the page (x-axis radius after any down-scaling). */
+  rx_mm: number;
+  /** Half-length on the page (y-axis radius after any down-scaling). */
+  ry_mm: number;
+}
+
+function tableHalfDims(t: SeatingTable): { rx: number; ry: number } {
+  if (t.shape === "round") {
+    const r = t.width_mm / 2;
+    return { rx: r, ry: r };
+  }
+  if (t.shape === "square") {
+    const s = Math.max(t.width_mm, t.length_mm) / 2;
+    return { rx: s, ry: s };
+  }
+  // long: width is the shorter side, length is the longer side. We orient
+  // long tables horizontally on the page so the shape reads "long" at a glance.
+  return { rx: t.length_mm / 2, ry: t.width_mm / 2 };
+}
+
+/** Lay tables out on the page. If any table has a positive position, we use
+ *  the user-set coordinates and render every table at its real-world size. If
+ *  no positions are set, we auto-flow into a grid scaled to fit. */
 function layoutTables(
   tables: SeatingTable[],
   pageW_mm: number,
   pageH_mm: number,
-): Map<number, { x_mm: number; y_mm: number; r_mm: number }> {
-  const margin = 20; // mm
+): Map<number, TableLayout> {
+  const margin = 20;
+  const headerH = 30;
   const useUserPos = tables.some((t) => t.x_mm > 0 || t.y_mm > 0);
-  const out = new Map<number, { x_mm: number; y_mm: number; r_mm: number }>();
+  const out = new Map<number, TableLayout>();
+
   if (useUserPos) {
+    // Find the bounding box of the user-placed tables and scale it to fit
+    // the page if necessary, preserving aspect ratio.
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
     for (const t of tables) {
+      const { rx, ry } = tableHalfDims(t);
+      minX = Math.min(minX, t.x_mm - rx);
+      minY = Math.min(minY, t.y_mm - ry);
+      maxX = Math.max(maxX, t.x_mm + rx);
+      maxY = Math.max(maxY, t.y_mm + ry);
+    }
+    const planW = Math.max(1, maxX - minX);
+    const planH = Math.max(1, maxY - minY);
+    const availW = pageW_mm - 2 * margin;
+    const availH = pageH_mm - 2 * margin - headerH;
+    const scale = Math.min(1, availW / planW, availH / planH);
+    const offsetX = margin + (availW - planW * scale) / 2 - minX * scale;
+    const offsetY = margin + headerH + (availH - planH * scale) / 2 - minY * scale;
+    for (const t of tables) {
+      const { rx, ry } = tableHalfDims(t);
       out.set(t.id, {
-        x_mm: Math.max(margin, Math.min(pageW_mm - margin, t.x_mm)),
-        y_mm: Math.max(margin, Math.min(pageH_mm - margin, t.y_mm)),
-        r_mm: 22,
+        x_mm: t.x_mm * scale + offsetX,
+        y_mm: t.y_mm * scale + offsetY,
+        rx_mm: rx * scale,
+        ry_mm: ry * scale,
       });
     }
     return out;
   }
-  // Auto grid.
+
+  // Auto grid — fit a circle of radius cell*0.35 into each cell.
   const cols = Math.max(1, Math.ceil(Math.sqrt(tables.length)));
   const rows = Math.max(1, Math.ceil(tables.length / cols));
   const cellW = (pageW_mm - 2 * margin) / cols;
-  const cellH = (pageH_mm - 2 * margin - 30) / rows;
+  const cellH = (pageH_mm - 2 * margin - headerH) / rows;
   for (let i = 0; i < tables.length; i++) {
     const c = i % cols;
     const r = Math.floor(i / cols);
-    out.set(tables[i]!.id, {
+    const t = tables[i]!;
+    const { rx, ry } = tableHalfDims(t);
+    const cellRadius = Math.min(cellW, cellH) * 0.35;
+    const aspect = rx / ry;
+    const fit = Math.min(cellRadius, cellRadius * aspect) / Math.max(rx, ry);
+    out.set(t.id, {
       x_mm: margin + cellW * (c + 0.5),
-      y_mm: margin + 30 + cellH * (r + 0.5),
-      r_mm: Math.min(cellW, cellH) * 0.35,
+      y_mm: margin + headerH + cellH * (r + 0.5),
+      rx_mm: rx * fit,
+      ry_mm: ry * fit,
     });
   }
   return out;
@@ -133,41 +188,32 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     if (!pos) continue;
     const cx = mm(pos.x_mm);
     const cy = mm(pos.y_mm);
-    const r = mm(pos.r_mm);
+    const rx = mm(pos.rx_mm);
+    const ry = mm(pos.ry_mm);
 
     if (t.shape === "round") {
       page.drawCircle({
         x: cx,
         y: cy,
-        size: r,
-        borderWidth: 1,
-        borderColor: rgb(0.06, 0.09, 0.19),
-        color: rgb(0.97, 0.96, 0.92),
-      });
-    } else if (t.shape === "square") {
-      page.drawRectangle({
-        x: cx - r,
-        y: cy - r,
-        width: r * 2,
-        height: r * 2,
+        size: rx,
         borderWidth: 1,
         borderColor: rgb(0.06, 0.09, 0.19),
         color: rgb(0.97, 0.96, 0.92),
       });
     } else {
-      // long table: 3:1 width:height
+      // square or long — draw an axis-aligned rectangle at the layout dims.
       page.drawRectangle({
-        x: cx - r * 1.5,
-        y: cy - r * 0.5,
-        width: r * 3,
-        height: r,
+        x: cx - rx,
+        y: cy - ry,
+        width: rx * 2,
+        height: ry * 2,
         borderWidth: 1,
         borderColor: rgb(0.06, 0.09, 0.19),
         color: rgb(0.97, 0.96, 0.92),
       });
     }
 
-    const labelText = fitText(helvBold, t.label, 10, r * 1.8);
+    const labelText = fitText(helvBold, t.label, 10, Math.min(rx, ry) * 1.8);
     const labelW = helvBold.widthOfTextAtSize(labelText, 10);
     page.drawText(labelText, {
       x: cx - labelW / 2,
@@ -177,16 +223,23 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       color: rgb(0.06, 0.09, 0.19),
     });
 
-    // Render guest names beside the table.
+    // Render guest names around the table perimeter using the same chair
+    // layout as the on-screen map (round = even angles; rectangular = chairs
+    // distributed along the long sides first, with end-caps if needed).
     const seats = (seatsByTable.get(t.id) ?? []).sort((a, b) => a.seat_index - b.seat_index);
-    for (let i = 0; i < seats.length; i++) {
-      const guest = guestById.get(seats[i]!.guest_id);
-      if (!guest) continue;
-      const ang = (i / Math.max(seats.length, t.seats)) * Math.PI * 2;
-      const lx = cx + Math.cos(ang) * (r + 6);
-      const ly = cy + Math.sin(ang) * (r + 6);
+    const chairs = chairOffsets(t.shape, t.seats, rx, ry);
+    for (const a of seats) {
+      const offset = chairs[a.seat_index];
+      const guest = guestById.get(a.guest_id);
+      if (!offset || !guest) continue;
       const text = fitText(helv, guest.full_name, 7, mm(35));
-      page.drawText(text, { x: lx, y: ly, size: 7, font: helv, color: rgb(0.1, 0.14, 0.25) });
+      // Push the label a bit further out than the chair itself to avoid
+      // colliding with the table border.
+      const padPt = 3;
+      const norm = Math.hypot(offset.dx, offset.dy) || 1;
+      const px = cx + offset.dx + (offset.dx / norm) * padPt;
+      const py = cy + offset.dy + (offset.dy / norm) * padPt;
+      page.drawText(text, { x: px, y: py, size: 7, font: helv, color: rgb(0.1, 0.14, 0.25) });
     }
   }
 

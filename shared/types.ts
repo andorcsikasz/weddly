@@ -228,6 +228,10 @@ export interface SeatingTable {
   /** Position on the canvas, in millimetres (ties into the PDF print pipeline). */
   x_mm: number;
   y_mm: number;
+  /** Diameter for round, side for square, shorter side for long. Millimetres. */
+  width_mm: number;
+  /** Equal to width_mm for round/square; longer side for long. Millimetres. */
+  length_mm: number;
   created_at: UnixMs;
 }
 

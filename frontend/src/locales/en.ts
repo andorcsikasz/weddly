@@ -521,7 +521,7 @@ const en: LocaleMessages = {
   },
   seating: {
     title: "Seating",
-    sub: "Add tables, then drag guests from the right onto seats.",
+    sub: "Add tables, arrange them on the map, then drag guests onto seats.",
     add_table: "Add table",
     table_label_prompt: "Table name",
     seats_label: "Seats",
@@ -543,6 +543,13 @@ const en: LocaleMessages = {
     print_a4: "A4 seating chart",
     print_a3: "A3 seating chart",
     print_place_cards: "A6 place cards",
+    map_title: "Floor plan",
+    map_help: "Drag tables to position them. Click a table to edit its details.",
+    editor_empty: "Pick a table on the map to edit its details.",
+    size_mm_label: "Size",
+    width_mm_label: "Width",
+    length_mm_label: "Length",
+    position_label: "Position",
   },
   suppliers: {
     title: "Suppliers",

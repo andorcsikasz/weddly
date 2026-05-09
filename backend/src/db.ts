@@ -69,6 +69,11 @@ addColumnIfMissing("couples", "budget_kind", "budget_kind TEXT NOT NULL DEFAULT 
 addColumnIfMissing("couples", "budget_ceiling_min_huf", "budget_ceiling_min_huf INTEGER");
 addColumnIfMissing("couples", "budget_ceiling_max_huf", "budget_ceiling_max_huf INTEGER");
 
+// Real-world table dimensions in millimetres so the floor-plan map and PDF
+// can render at exact size when the user knows their venue's table sizes.
+addColumnIfMissing("seating_tables", "width_mm", "width_mm INTEGER NOT NULL DEFAULT 1500");
+addColumnIfMissing("seating_tables", "length_mm", "length_mm INTEGER NOT NULL DEFAULT 1500");
+
 export function now(): number {
   return Date.now();
 }

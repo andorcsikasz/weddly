@@ -503,6 +503,13 @@ export interface LocaleMessages {
     print_a4: string;
     print_a3: string;
     print_place_cards: string;
+    map_title: string;
+    map_help: string;
+    editor_empty: string;
+    size_mm_label: string;
+    width_mm_label: string;
+    length_mm_label: string;
+    position_label: string;
   };
   suppliers: {
     title: string;

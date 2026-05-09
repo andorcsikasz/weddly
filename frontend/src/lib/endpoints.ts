@@ -119,6 +119,8 @@ export const seatingApi = {
     seats: number;
     x_mm: number;
     y_mm: number;
+    width_mm?: number;
+    length_mm?: number;
   }) => apiFetch<{ table: SeatingTable }>("POST", "/api/seating/tables", body),
   updateTable: (id: number, body: Partial<SeatingTable>) =>
     apiFetch<{ table: SeatingTable }>("PATCH", `/api/seating/tables/${id}`, body),

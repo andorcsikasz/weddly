@@ -522,7 +522,7 @@ const hu: LocaleMessages = {
   },
   seating: {
     title: "Ültetési rend",
-    sub: "Asztalt adsz hozzá, majd a jobb oldali listából húzol vendéget egy ülőhelyre.",
+    sub: "Add hozzá az asztalokat, helyezd el őket a térképen, majd ültesd le a vendégeket.",
     add_table: "Új asztal",
     table_label_prompt: "Asztal neve",
     seats_label: "Helyek",
@@ -544,6 +544,13 @@ const hu: LocaleMessages = {
     print_a4: "A4 ültetési rend",
     print_a3: "A3 ültetési rend",
     print_place_cards: "A6 névkártyák",
+    map_title: "Terem térkép",
+    map_help: "Húzd az asztalokat a helyükre. Kattints rájuk a részletekért.",
+    editor_empty: "Válassz egy asztalt a térképen a részletek szerkesztéséhez.",
+    size_mm_label: "Méret",
+    width_mm_label: "Szélesség",
+    length_mm_label: "Hosszúság",
+    position_label: "Pozíció",
   },
   suppliers: {
     title: "Szolgáltatók",

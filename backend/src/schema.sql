@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS seating_tables (
   seats INTEGER NOT NULL DEFAULT 8,
   x_mm INTEGER NOT NULL DEFAULT 0,
   y_mm INTEGER NOT NULL DEFAULT 0,
+  width_mm INTEGER NOT NULL DEFAULT 1500,                      -- diameter (round) or shorter side
+  length_mm INTEGER NOT NULL DEFAULT 1500,                     -- only differs from width for 'long'
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );

@@ -14,6 +14,8 @@ interface TableRow {
   seats: number;
   x_mm: number;
   y_mm: number;
+  width_mm: number;
+  length_mm: number;
   created_at: number;
   updated_at: number;
 }
@@ -46,6 +48,8 @@ function toTable(r: TableRow): SeatingTable {
     seats: r.seats,
     x_mm: r.x_mm,
     y_mm: r.y_mm,
+    width_mm: r.width_mm,
+    length_mm: r.length_mm,
     created_at: r.created_at,
   };
 }
@@ -112,7 +116,14 @@ interface UpsertTableBody {
   seats?: unknown;
   x_mm?: unknown;
   y_mm?: unknown;
+  width_mm?: unknown;
+  length_mm?: unknown;
 }
+
+// Hard caps on dimensions: a single table over 10m is almost certainly a typo
+// and would blow the canvas/PDF layout. 100mm is below any real banquet table.
+const MIN_DIM_MM = 100;
+const MAX_DIM_MM = 10_000;
 
 function parseTableBody(body: UpsertTableBody) {
   const label = typeof body.label === "string" ? body.label.trim() : "";
@@ -131,7 +142,36 @@ function parseTableBody(body: UpsertTableBody) {
   if (!Number.isFinite(xRaw) || !Number.isFinite(yRaw)) {
     throw new HttpError(400, "x_mm/y_mm must be finite");
   }
-  return { label, shape, seats, x_mm: Math.round(xRaw), y_mm: Math.round(yRaw) };
+
+  // Defaults if the client didn't send dimensions: 1500mm round/square is a
+  // typical 8-seat banquet; 2400×900 is a typical long table.
+  const defaultWidth = shape === "long" ? 900 : 1500;
+  const defaultLength = shape === "long" ? 2400 : 1500;
+  let width = Math.round(Number(body.width_mm ?? defaultWidth));
+  let length = Math.round(Number(body.length_mm ?? defaultLength));
+  if (!Number.isFinite(width) || !Number.isFinite(length)) {
+    throw new HttpError(400, "width_mm/length_mm must be finite");
+  }
+  if (width < MIN_DIM_MM || width > MAX_DIM_MM || length < MIN_DIM_MM || length > MAX_DIM_MM) {
+    throw new HttpError(400, `dimensions must be ${MIN_DIM_MM}–${MAX_DIM_MM} mm`);
+  }
+  // Round and square always have equal sides; collapse to the larger dim so
+  // resizing one updates both regardless of which the UI sends.
+  if (shape !== "long") {
+    const side = Math.max(width, length);
+    width = side;
+    length = side;
+  }
+
+  return {
+    label,
+    shape,
+    seats,
+    x_mm: Math.round(xRaw),
+    y_mm: Math.round(yRaw),
+    width_mm: width,
+    length_mm: length,
+  };
 }
 
 async function handleCreateTable(ctx: Ctx): Promise<Response> {
@@ -141,10 +181,21 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(coupleId, parsed.label, parsed.shape, parsed.seats, parsed.x_mm, parsed.y_mm, ts, ts);
+    .run(
+      coupleId,
+      parsed.label,
+      parsed.shape,
+      parsed.seats,
+      parsed.x_mm,
+      parsed.y_mm,
+      parsed.width_mm,
+      parsed.length_mm,
+      ts,
+      ts,
+    );
   const id = Number(result.lastInsertRowid);
 
   addAuditLog({
@@ -172,9 +223,21 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
   const parsed = parseTableBody(body);
   const ts = now();
   db.prepare(
-    `UPDATE seating_tables SET label = ?, shape = ?, seats = ?, x_mm = ?, y_mm = ?, updated_at = ?
+    `UPDATE seating_tables SET label = ?, shape = ?, seats = ?, x_mm = ?, y_mm = ?,
+       width_mm = ?, length_mm = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
-  ).run(parsed.label, parsed.shape, parsed.seats, parsed.x_mm, parsed.y_mm, ts, id, coupleId);
+  ).run(
+    parsed.label,
+    parsed.shape,
+    parsed.seats,
+    parsed.x_mm,
+    parsed.y_mm,
+    parsed.width_mm,
+    parsed.length_mm,
+    ts,
+    id,
+    coupleId,
+  );
 
   addAuditLog({
     actor_user_id: userId,
