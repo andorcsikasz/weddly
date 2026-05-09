@@ -101,6 +101,22 @@ CREATE TABLE IF NOT EXISTS guests (
 CREATE INDEX IF NOT EXISTS idx_guests_couple ON guests(couple_id);
 CREATE INDEX IF NOT EXISTS idx_guests_invite ON guests(invite_code);
 
+-- Airport-style "check-in": one household = one party that RSVPs together.
+-- Solo guests still get a household-of-one. The 4-digit `code` is unique per
+-- couple (UNIQUE(couple_id, code)); paired with `couples.slug` it's the public
+-- credential a guest types into /rsvp.
+CREATE TABLE IF NOT EXISTS households (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  code TEXT NOT NULL,
+  label TEXT NOT NULL,
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(couple_id, code)
+);
+CREATE INDEX IF NOT EXISTS idx_households_couple ON households(couple_id);
+
 CREATE TABLE IF NOT EXISTS seating_tables (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
@@ -229,6 +245,32 @@ CREATE TABLE IF NOT EXISTS email_log (
 CREATE INDEX IF NOT EXISTS idx_email_log_user ON email_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_email_log_couple ON email_log(couple_id);
 CREATE INDEX IF NOT EXISTS idx_email_log_kind ON email_log(kind);
+
+-- User-submitted ("Drop your own") suppliers. Auto-active on submit; admins
+-- can hide (status='hidden') or hard-delete. The static curated list lives in
+-- code (domain/suppliers_data.ts) — the public list endpoint merges both.
+CREATE TABLE IF NOT EXISTS community_suppliers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  submitter_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,                                      -- one of SupplierCategory
+  name TEXT NOT NULL,
+  city TEXT NOT NULL,
+  website TEXT NOT NULL,
+  contact_email TEXT,
+  contact_phone TEXT,
+  blurb TEXT NOT NULL,
+  price_band INTEGER NOT NULL,                                 -- 1..4 ($ to $$$$)
+  status TEXT NOT NULL DEFAULT 'active',                       -- 'active' | 'hidden'
+  hide_reason TEXT,
+  hidden_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  hidden_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_community_suppliers_status_category
+  ON community_suppliers(status, category);
+CREATE INDEX IF NOT EXISTS idx_community_suppliers_submitter
+  ON community_suppliers(submitter_user_id);
 
 -- Per-couple lifecycle dispatch ledger. Idempotency for cron-driven sends:
 -- one row per (couple_id, kind) so the worker doesn't re-fire the same

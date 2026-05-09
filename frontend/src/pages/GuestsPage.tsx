@@ -1,12 +1,22 @@
-// Guest list manager. Inline-edit drawer + CSV import.
+// Guest list manager, grouped by household. Each household carries the
+// 4-digit RSVP check-in code and a copy-link button for the airport-style
+// "couple slug + code" credential. The guest drawer assigns or creates
+// households so couples can pre-link plus-ones, families, etc.
 
-import type { Guest, GuestGroupTag, MealChoice, RsvpStatus } from "@shared/types";
-import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import type {
+  Couple,
+  Guest,
+  GuestGroupTag,
+  Household,
+  MealChoice,
+  RsvpStatus,
+} from "@shared/types";
+import { Pencil, Plus, RefreshCw, Trash2, Upload, UserPlus, X } from "lucide-react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { guestApi } from "../lib/endpoints";
+import { coupleApi, guestApi, householdApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 const GROUPS: GuestGroupTag[] = [
@@ -22,24 +32,38 @@ const GROUPS: GuestGroupTag[] = [
 const MEALS: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
 const RSVPS: RsvpStatus[] = ["pending", "yes", "no", "maybe"];
 
+interface DrawerInit {
+  guest: Guest | null;
+  /** When opening "add another to existing household", we pre-select it. */
+  defaultHouseholdId: number | null;
+}
+
 export default function GuestsPage() {
   const { t } = useT();
   const confirm = useConfirm();
   const toast = useToast();
+  const [couple, setCouple] = useState<Couple | null>(null);
   const [guests, setGuests] = useState<Guest[]>([]);
-  const [editing, setEditing] = useState<Guest | "new" | null>(null);
+  const [households, setHouseholds] = useState<Household[]>([]);
+  const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [importing, setImporting] = useState(false);
 
   async function refresh() {
-    const r = await guestApi.list();
-    setGuests(r.guests);
+    const [c, g, h] = await Promise.all([
+      coupleApi.current(),
+      guestApi.list(),
+      householdApi.list(),
+    ]);
+    setCouple(c.couple);
+    setGuests(g.guests);
+    setHouseholds(h.households);
   }
 
   useEffect(() => {
     refresh();
   }, []);
 
-  async function onDelete(id: number) {
+  async function onDeleteGuest(id: number) {
     const ok = await confirm({
       title: t("guests.confirm_delete"),
       body: t("common.confirm_delete_body"),
@@ -52,10 +76,40 @@ export default function GuestsPage() {
     refresh();
   }
 
-  function copyInvite(code: string) {
-    const url = `${window.location.origin}/rsvp/${code}`;
+  async function onDeleteHousehold(hh: Household) {
+    if (hh.member_ids.length > 0) {
+      toast.error(t("guests.household_remove_confirm_body"));
+      return;
+    }
+    const ok = await confirm({
+      title: t("guests.household_remove_confirm_title"),
+      body: t("guests.household_remove_confirm_body"),
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    await householdApi.remove(hh.id);
+    refresh();
+  }
+
+  async function onRegenCode(hh: Household) {
+    const ok = await confirm({
+      title: t("guests.household_regenerate_confirm_title"),
+      body: t("guests.household_regenerate_confirm_body"),
+      confirmLabel: t("guests.household_regenerate_code"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    await householdApi.regenerateCode(hh.id);
+    refresh();
+  }
+
+  function copyShare(slug: string | null, code: string) {
+    if (!slug) return;
+    const url = `${window.location.origin}/rsvp?couple=${slug}&code=${code}`;
     navigator.clipboard?.writeText(url);
-    toast.success(t("guests.invite_copied"));
+    toast.success(t("guests.household_share_copied"));
   }
 
   async function onImport(file: File) {
@@ -71,6 +125,19 @@ export default function GuestsPage() {
       setImporting(false);
     }
   }
+
+  const guestsByHousehold = useMemo(() => {
+    const m = new Map<number, Guest[]>();
+    for (const g of guests) {
+      if (g.household_id == null) continue;
+      const arr = m.get(g.household_id) ?? [];
+      arr.push(g);
+      m.set(g.household_id, arr);
+    }
+    return m;
+  }, [guests]);
+
+  const orphanGuests = useMemo(() => guests.filter((g) => g.household_id == null), [guests]);
 
   return (
     <AppShell>
@@ -102,81 +169,74 @@ export default function GuestsPage() {
               disabled={importing}
             />
           </label>
-          <button type="button" className="btn-primary" onClick={() => setEditing("new")}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setEditing({ guest: null, defaultHouseholdId: null })}
+          >
             <Plus size={16} /> {t("guests.add")}
           </button>
         </div>
       </div>
 
-      {guests.length === 0 ? (
+      {couple && <CoupleSlugCard couple={couple} onSaved={(c) => setCouple(c)} />}
+
+      {households.length === 0 && guests.length === 0 ? (
         <div className="card stationery text-center">
           <h3 className="text-base font-semibold">{t("guests.empty_title")}</h3>
           <p className="mt-1 text-sm text-ink-600">{t("guests.empty_body")}</p>
         </div>
       ) : (
-        <div className="card overflow-x-auto p-0">
-          <table className="min-w-full text-sm">
-            <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
-              <tr>
-                <th className="px-4 py-3">{t("guests.full_name")}</th>
-                <th className="px-4 py-3 hidden sm:table-cell">{t("guests.group")}</th>
-                <th className="px-4 py-3">{t("guests.rsvp")}</th>
-                <th className="px-4 py-3 hidden md:table-cell">{t("guests.invite_link")}</th>
-                <th className="px-4 py-3 text-right">{t("guests.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {guests.map((g) => (
-                <tr key={g.id} className="border-t border-paper-200">
-                  <td className="px-4 py-2.5 font-medium text-ink-900">
-                    {g.full_name}
-                    {g.plus_one_name && (
-                      <span className="ml-2 text-xs text-ink-500">+ {g.plus_one_name}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 hidden sm:table-cell text-ink-600">
-                    {t(`guests.group_${g.group_tag}`)}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <RsvpBadge status={g.rsvp_status} />
-                  </td>
-                  <td className="px-4 py-2.5 hidden md:table-cell">
-                    <button
-                      type="button"
-                      className="font-mono text-xs text-ink-700 underline-offset-2 hover:underline"
-                      onClick={() => copyInvite(g.invite_code)}
-                    >
-                      {g.invite_code}
-                    </button>
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
+        <div className="space-y-4">
+          <div className="card stationery">
+            <h2 className="font-serif text-xl">{t("guests.household_section_title")}</h2>
+            <p className="mt-1 text-sm text-ink-600">{t("guests.household_section_help")}</p>
+          </div>
+
+          {households.map((hh) => (
+            <HouseholdCard
+              key={hh.id}
+              household={hh}
+              members={guestsByHousehold.get(hh.id) ?? []}
+              coupleSlug={couple?.slug ?? null}
+              onCopyShare={() => copyShare(couple?.slug ?? null, hh.code)}
+              onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
+              onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+              onDeleteGuest={onDeleteGuest}
+              onRegenCode={() => onRegenCode(hh)}
+              onDeleteHousehold={() => onDeleteHousehold(hh)}
+            />
+          ))}
+
+          {orphanGuests.length > 0 && (
+            <div className="card border-blush-200 bg-blush-50/40">
+              <p className="text-sm text-blush-900">
+                {orphanGuests.length} guest(s) have no household yet — restart the server to run the
+                backfill, or assign each via Edit.
+              </p>
+              <ul className="mt-2 text-sm text-ink-700">
+                {orphanGuests.map((g) => (
+                  <li key={g.id} className="flex items-center justify-between py-1">
+                    <span>{g.full_name}</span>
                     <button
                       type="button"
                       className="btn-ghost btn-sm"
-                      onClick={() => setEditing(g)}
-                      aria-label={t("guests.edit")}
+                      onClick={() => setEditing({ guest: g, defaultHouseholdId: null })}
                     >
-                      <Pencil size={14} />
+                      {t("guests.edit")}
                     </button>
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm text-blush-700"
-                      onClick={() => onDelete(g.id)}
-                      aria-label={t("guests.delete")}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
       {editing && (
         <GuestDrawer
-          guest={editing === "new" ? null : editing}
+          init={editing}
+          households={households}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -185,6 +245,195 @@ export default function GuestsPage() {
         />
       )}
     </AppShell>
+  );
+}
+
+function HouseholdCard({
+  household,
+  members,
+  coupleSlug,
+  onCopyShare,
+  onAddMember,
+  onEditGuest,
+  onDeleteGuest,
+  onRegenCode,
+  onDeleteHousehold,
+}: {
+  household: Household;
+  members: Guest[];
+  coupleSlug: string | null;
+  onCopyShare: () => void;
+  onAddMember: () => void;
+  onEditGuest: (g: Guest) => void;
+  onDeleteGuest: (id: number) => void;
+  onRegenCode: () => void;
+  onDeleteHousehold: () => void;
+}) {
+  const { t } = useT();
+  return (
+    <div className="card overflow-hidden p-0">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3">
+        <div className="min-w-0">
+          <h3 className="font-serif text-lg text-ink-900 truncate">{household.label}</h3>
+          <div className="mt-1 flex items-center gap-3 text-xs text-ink-600">
+            {coupleSlug && <span className="font-mono uppercase">{coupleSlug}</span>}
+            <span aria-hidden>·</span>
+            <span className="font-mono text-base text-ink-900 tracking-[0.3em]">
+              {household.code}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={onCopyShare}
+            disabled={!coupleSlug}
+            title={t("guests.household_share_link")}
+          >
+            {t("guests.household_share_link")}
+          </button>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={onRegenCode}
+            title={t("guests.household_regenerate_code")}
+          >
+            <RefreshCw size={14} />
+          </button>
+          {members.length === 0 && (
+            <button
+              type="button"
+              className="btn-ghost btn-sm text-blush-700"
+              onClick={onDeleteHousehold}
+              title={t("guests.household_remove")}
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      </header>
+
+      <ul className="divide-y divide-paper-200">
+        {members.map((g) => (
+          <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+            <div className="min-w-0">
+              <p className="font-medium text-ink-900 truncate">{g.full_name}</p>
+              <p className="text-xs text-ink-500">{t(`guests.group_${g.group_tag}`)}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <RsvpBadge status={g.rsvp_status} />
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={() => onEditGuest(g)}
+                aria-label={t("guests.edit")}
+              >
+                <Pencil size={14} />
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-sm text-blush-700"
+                onClick={() => onDeleteGuest(g.id)}
+                aria-label={t("guests.delete")}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </li>
+        ))}
+        <li className="px-4 py-2.5">
+          <button
+            type="button"
+            className="btn-ghost btn-sm w-full justify-start"
+            onClick={onAddMember}
+          >
+            <UserPlus size={14} /> {t("guests.household_add_member")}
+          </button>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function CoupleSlugCard({
+  couple,
+  onSaved,
+}: {
+  couple: Couple;
+  onSaved: (next: Couple) => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(couple.slug ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSave() {
+    const cleaned = draft
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 24);
+    if (cleaned.length < 3) {
+      setError(t("guests.couple_slug_invalid"));
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const r = await coupleApi.updateSlug(cleaned);
+      onSaved(r.couple);
+      setEditing(false);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) setError(t("guests.couple_slug_taken"));
+      else setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setSubmitting(false);
+    }
+    void toast;
+  }
+
+  return (
+    <div className="card stationery mb-4">
+      <h2 className="font-serif text-xl">{t("guests.couple_slug_title")}</h2>
+      <p className="mt-1 text-sm text-ink-600">{t("guests.couple_slug_help")}</p>
+      {editing ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            className="input font-mono uppercase tracking-[0.3em]"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.toUpperCase())}
+            maxLength={24}
+            autoFocus
+          />
+          <button type="button" className="btn-primary" onClick={onSave} disabled={submitting}>
+            {t("guests.couple_slug_save")}
+          </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => {
+              setEditing(false);
+              setDraft(couple.slug ?? "");
+              setError(null);
+            }}
+          >
+            {t("common.cancel")}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3 flex items-center gap-3">
+          <span className="font-mono text-2xl uppercase tracking-[0.3em] text-ink-900">
+            {couple.slug ?? "—"}
+          </span>
+          <button type="button" className="btn-ghost btn-sm" onClick={() => setEditing(true)}>
+            <Pencil size={14} />
+          </button>
+        </div>
+      )}
+      {error && <p className="field-error mt-2">{error}</p>}
+    </div>
   );
 }
 
@@ -202,15 +451,19 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
 }
 
 function GuestDrawer({
-  guest,
+  init,
+  households,
   onClose,
   onSaved,
 }: {
-  guest: Guest | null;
+  init: DrawerInit;
+  households: Household[];
   onClose: () => void;
   onSaved: () => void;
 }) {
   const { t } = useT();
+  const guest = init.guest;
+
   const [form, setForm] = useState<Partial<Guest>>(
     guest ?? {
       full_name: "",
@@ -220,13 +473,18 @@ function GuestDrawer({
       rsvp_status: "pending",
       meal_choice: null,
       dietary: null,
-      plus_one_name: null,
-      plus_one_meal: null,
       accommodation_needed: false,
       song_request: null,
       notes: null,
     },
   );
+  const [householdMode, setHouseholdMode] = useState<"existing" | "new">(
+    init.defaultHouseholdId !== null || guest?.household_id ? "existing" : "new",
+  );
+  const [householdId, setHouseholdId] = useState<number | null>(
+    guest?.household_id ?? init.defaultHouseholdId ?? households[0]?.id ?? null,
+  );
+  const [newHouseholdLabel, setNewHouseholdLabel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -239,8 +497,16 @@ function GuestDrawer({
     setSubmitting(true);
     setError(null);
     try {
-      if (guest) await guestApi.update(guest.id, form);
-      else await guestApi.create(form);
+      const body: Record<string, unknown> = { ...form };
+      if (householdMode === "existing" && householdId) {
+        body.household_id = householdId;
+      } else if (householdMode === "new") {
+        body.household_id = null;
+        const label = newHouseholdLabel.trim();
+        if (label) body.new_household_label = label;
+      }
+      if (guest) await guestApi.update(guest.id, body);
+      else await guestApi.create(body);
       onSaved();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("common.error_generic"));
@@ -292,6 +558,57 @@ function GuestDrawer({
             ))}
           </select>
         </div>
+
+        <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3">
+          <label className="field-label">{t("guests.household_label")}</label>
+          <p className="mb-2 text-xs text-ink-500">{t("guests.household_assign_help")}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setHouseholdMode("existing")}
+              disabled={households.length === 0}
+              className={
+                householdMode === "existing"
+                  ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
+                  : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+              }
+            >
+              {t("guests.household_existing")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setHouseholdMode("new")}
+              className={
+                householdMode === "new"
+                  ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
+                  : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+              }
+            >
+              {t("guests.household_new")}
+            </button>
+          </div>
+          {householdMode === "existing" ? (
+            <select
+              className="input mt-2"
+              value={householdId ?? ""}
+              onChange={(e) => setHouseholdId(Number(e.target.value) || null)}
+            >
+              {households.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.label} · {h.code}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              className="input mt-2"
+              placeholder={t("guests.household_new_label")}
+              value={newHouseholdLabel}
+              onChange={(e) => setNewHouseholdLabel(e.target.value)}
+            />
+          )}
+        </div>
+
         <div className="mb-3">
           <label className="field-label">{t("guests.rsvp")}</label>
           <select
@@ -327,11 +644,6 @@ function GuestDrawer({
           label={t("guests.dietary")}
           value={form.dietary ?? ""}
           onChange={(v) => setForm({ ...form, dietary: v || null })}
-        />
-        <Field
-          label={t("guests.plus_one")}
-          value={form.plus_one_name ?? ""}
-          onChange={(v) => setForm({ ...form, plus_one_name: v || null })}
         />
         <label className="mb-3 flex items-center gap-2 text-sm text-ink-700">
           <input
@@ -404,7 +716,7 @@ function Field({
 
 function downloadCsvTemplate() {
   const csv =
-    "full_name,email,phone,group_tag,plus_one_name,dietary,notes\nAnna Kis,anna@example.com,+36301234567,his_family,Bence Nagy,vegetarian,VIP\n";
+    "full_name,email,phone,group_tag,household,plus_one_name,dietary,notes\nAnna Kis,anna@example.com,+36301234567,his_family,Kis család,Bence Nagy,vegetarian,VIP\nBence Nagy,bence@example.com,+36309998888,his_family,Kis család,,,Bence is the +1 of Anna\n";
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

@@ -21,6 +21,7 @@ import { addAuditLog } from "../lib/audit";
 import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails";
 import { generateInviteToken } from "../domain/invite_codes";
+import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
 import { getUserById } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
@@ -386,6 +387,11 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
     );
   const coupleId = Number(result.lastInsertRowid);
 
+  // Derive the public couple slug ("ANDORSARI") right at onboarding so the
+  // RSVP check-in URL is shareable from minute zero.
+  const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), coupleId);
+  db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(slug, ts, coupleId);
+
   db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
     coupleId,
     ts,
@@ -549,9 +555,50 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   return json({ couple: toCouple(refreshed) });
 }
 
+async function handleUpdateSlug(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const body = await readJson<{ slug?: unknown }>(ctx.req);
+  if (typeof body.slug !== "string") throw new HttpError(400, "slug required");
+  let cleaned: string;
+  try {
+    cleaned = validateSlug(body.slug);
+  } catch (e) {
+    throw new HttpError(400, e instanceof Error ? e.message : "Invalid slug");
+  }
+  // Reject if another couple already owns this exact slug.
+  const taken = db
+    .prepare("SELECT id FROM couples WHERE slug = ? AND id <> ?")
+    .get(cleaned, couple.id) as { id: number } | undefined;
+  if (taken) throw new HttpError(409, "Slug already taken");
+
+  const ts = now();
+  db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(
+    cleaned,
+    ts,
+    couple.id,
+  );
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.slug_update",
+    target_kind: "couple",
+    target_id: couple.id,
+    before: { slug: couple.slug },
+    after: { slug: cleaned },
+  });
+
+  const refreshed = getCoupleById(couple.id) as CoupleRow;
+  return json({ couple: toCouple(refreshed) });
+}
+
 export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/onboard", handleOnboard, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
+  router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.post("/api/couples/invites", handleCreateInvite, true);
   router.get("/api/invites/:token", handleGetInvite); // public — pre-signup
   router.post("/api/invites/:token/accept", handleAcceptInvite, true);

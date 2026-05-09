@@ -15,6 +15,7 @@ import {
   toGuest,
   uniqueInviteCode,
 } from "../domain/guests";
+import { createHousehold, getHouseholdById } from "../domain/households";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 interface UpsertBody {
@@ -30,6 +31,12 @@ interface UpsertBody {
   accommodation_needed?: unknown;
   song_request?: unknown;
   notes?: unknown;
+  /** Household this guest belongs to. If omitted on create, the server
+   *  spawns a household-of-one with the guest's name as its label. */
+  household_id?: unknown;
+  /** Used together with `household_id === null` to create a brand-new
+   *  household and put this guest in it (e.g. "Kovács family"). */
+  new_household_label?: unknown;
 }
 
 interface ParsedGuest {
@@ -98,6 +105,21 @@ function handleList(ctx: Ctx): Response {
   return json({ guests: listGuestsByCouple(couple.id) });
 }
 
+function resolveHouseholdForCreate(body: UpsertBody, coupleId: number, guestName: string): number {
+  if (typeof body.household_id === "number" && Number.isFinite(body.household_id)) {
+    const hh = getHouseholdById(body.household_id, coupleId);
+    if (!hh) throw new HttpError(400, "household_id not found in this couple");
+    return hh.id;
+  }
+  // Either an explicit "new household with label X" intent, or implicit
+  // household-of-one named after the guest.
+  const labelRaw =
+    typeof body.new_household_label === "string" ? body.new_household_label.trim() : "";
+  const label = labelRaw || guestName;
+  const created = createHousehold({ couple_id: coupleId, label });
+  return created.id;
+}
+
 async function handleCreate(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -107,14 +129,15 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const parsed = parseUpsert(body);
   const ts = now();
   const code = uniqueInviteCode();
+  const householdId = resolveHouseholdForCreate(body, couple.id, parsed.full_name);
 
   const result = db
     .prepare(
       `INSERT INTO guests
         (couple_id, full_name, email, phone, group_tag, invite_code, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
-         song_request, notes, rsvp_responded_at, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
+         song_request, notes, rsvp_responded_at, created_at, updated_at, household_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -133,6 +156,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       parsed.notes,
       ts,
       ts,
+      householdId,
     );
 
   const guestId = Number(result.lastInsertRowid);
@@ -142,7 +166,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     action: "guest.create",
     target_kind: "guest",
     target_id: guestId,
-    after: { full_name: parsed.full_name, group_tag: parsed.group_tag },
+    after: { full_name: parsed.full_name, group_tag: parsed.group_tag, household_id: householdId },
   });
 
   const row = getGuestByIdScoped(guestId, couple.id) as GuestRow;
@@ -163,11 +187,31 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   const parsed = parseUpsert(body);
   const ts = now();
 
+  // Optional household reassignment. `household_id` may be: omitted (no change),
+  // a number (move to that household), or paired with `new_household_label` to
+  // spawn a new household for this guest.
+  let nextHouseholdId = existing.household_id;
+  if (typeof body.household_id === "number" && Number.isFinite(body.household_id)) {
+    const target = getHouseholdById(body.household_id, couple.id);
+    if (!target) throw new HttpError(400, "household_id not found in this couple");
+    nextHouseholdId = target.id;
+  } else if (
+    body.household_id === null &&
+    typeof body.new_household_label === "string" &&
+    body.new_household_label.trim()
+  ) {
+    const created = createHousehold({
+      couple_id: couple.id,
+      label: body.new_household_label.trim(),
+    });
+    nextHouseholdId = created.id;
+  }
+
   db.prepare(
     `UPDATE guests SET
         full_name = ?, email = ?, phone = ?, group_tag = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
-        accommodation_needed = ?, song_request = ?, notes = ?, updated_at = ?
+        accommodation_needed = ?, song_request = ?, notes = ?, household_id = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.full_name,
@@ -182,6 +226,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     parsed.accommodation_needed,
     parsed.song_request,
     parsed.notes,
+    nextHouseholdId,
     ts,
     id,
     couple.id,
@@ -193,8 +238,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     action: "guest.update",
     target_kind: "guest",
     target_id: id,
-    before: { full_name: existing.full_name },
-    after: { full_name: parsed.full_name },
+    before: { full_name: existing.full_name, household_id: existing.household_id },
+    after: { full_name: parsed.full_name, household_id: nextHouseholdId },
   });
 
   const row = getGuestByIdScoped(id, couple.id) as GuestRow;
@@ -232,6 +277,7 @@ const CSV_FIELDS = [
   "email",
   "phone",
   "group_tag",
+  "household",
   "plus_one_name",
   "dietary",
   "notes",
@@ -259,14 +305,25 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
     `INSERT INTO guests
       (couple_id, full_name, email, phone, group_tag, invite_code, rsvp_status,
        meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
-       song_request, notes, rsvp_responded_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, ?, ?, NULL, 0, NULL, ?, NULL, ?, ?)`,
+       song_request, notes, rsvp_responded_at, created_at, updated_at, household_id)
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, ?, ?, NULL, 0, NULL, ?, NULL, ?, ?, ?)`,
   );
 
   const created: Guest[] = [];
   const errors: { row: number; reason: string }[] = [];
   // Wrap in a transaction so a single bad row doesn't leave a partial import.
+  // Same-named `household` values get folded into the same household so an
+  // import can express "Anna + Mark + Lilla all RSVP together" with one column.
   const tx = db.transaction(() => {
+    const householdByLabel = new Map<string, number>();
+    const ensureHousehold = (label: string): number => {
+      const cached = householdByLabel.get(label);
+      if (cached) return cached;
+      const created = createHousehold({ couple_id: couple.id, label });
+      householdByLabel.set(label, created.id);
+      return created.id;
+    };
+
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i]!;
       const name = r[idx.full_name!]?.trim() ?? "";
@@ -277,6 +334,8 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
       const groupRaw = idx.group_tag !== undefined ? (r[idx.group_tag]?.trim() ?? "") : "";
       const group: GuestGroupTag = isGuestGroupTag(groupRaw) ? groupRaw : "other";
       const code = uniqueInviteCode();
+      const householdLabel = idx.household !== undefined ? (r[idx.household]?.trim() ?? "") : "";
+      const householdId = ensureHousehold(householdLabel || name);
       const result = insert.run(
         couple.id,
         name,
@@ -289,6 +348,7 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
         idx.notes !== undefined ? r[idx.notes]?.trim() || null : null,
         ts,
         ts,
+        householdId,
       );
       const guestId = Number(result.lastInsertRowid);
       const row = getGuestByIdScoped(guestId, couple.id);

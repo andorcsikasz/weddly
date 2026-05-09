@@ -74,6 +74,12 @@ addColumnIfMissing("couples", "budget_ceiling_max_huf", "budget_ceiling_max_huf 
 addColumnIfMissing("seating_tables", "width_mm", "width_mm INTEGER NOT NULL DEFAULT 1500");
 addColumnIfMissing("seating_tables", "length_mm", "length_mm INTEGER NOT NULL DEFAULT 1500");
 
+// Airport-style RSVP credentials. `couples.slug` is the public couple
+// identifier ("ANDORSARI"); `guests.household_id` links each guest to its
+// party. Backfill happens on first boot via init_households.ts.
+addColumnIfMissing("couples", "slug", "slug TEXT");
+addColumnIfMissing("guests", "household_id", "household_id INTEGER REFERENCES households(id)");
+
 export function now(): number {
   return Date.now();
 }

@@ -2,7 +2,6 @@ import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
-import { useEntryPrompt } from "./ui";
 
 /**
  * Wrapper for the public-facing surface (landing + vendors). Mirrors
@@ -177,25 +176,13 @@ function FooterAnchor({ href, children }: { href: string; children: ReactNode })
 }
 
 /**
- * Asks for an invite code via the existing entry-dialog primitive and
- * navigates to the corresponding RSVP page. Exported so LandingPage and
- * the footer can share one trigger.
+ * Sends the user to the airport-style /rsvp check-in page. Old invites that
+ * shipped a `/rsvp/<6char>` URL still resolve via that route; this trigger
+ * funnels everyone through the new flow.
  */
 export function useGuestCodePrompt() {
-  const { t } = useT();
-  const promptEntry = useEntryPrompt();
   const navigate = useNavigate();
   return async () => {
-    const code = await promptEntry({
-      title: t("landing.guest_sheet_title"),
-      label: t("landing.guest_sheet_label"),
-      placeholder: t("landing.guest_sheet_placeholder"),
-      helperText: t("landing.guest_sheet_body"),
-      confirmLabel: t("landing.guest_sheet_cta"),
-      cancelLabel: t("landing.guest_sheet_cancel"),
-      validate: (v) => (v.trim().length === 0 ? t("landing.guest_sheet_invalid") : null),
-    });
-    if (!code) return;
-    navigate(`/rsvp/${encodeURIComponent(code.trim())}`);
+    navigate("/rsvp");
   };
 }

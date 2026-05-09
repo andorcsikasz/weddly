@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { extractToken, verifySessionToken } from "./auth/session";
 import { CONFIG } from "./config";
 import "./db"; // open DB + apply schema
+import "./init_households"; // idempotent backfill: couple slugs + households
 import { initObservability, captureException } from "./lib/observability";
 
 initObservability();
@@ -21,8 +22,10 @@ import {
 import { log, makeLogger } from "./lib/logger";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
+import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerBudgetRoutes } from "./routes/budget";
+import { registerCommunitySupplierRoutes } from "./routes/community_suppliers";
 import { registerCouplePauseRoutes } from "./routes/couple_pause";
 import { registerCoupleRoutes } from "./routes/couples";
 import { registerEmailPrefsRoutes } from "./routes/email_prefs";
@@ -30,6 +33,7 @@ import { registerEmailVerifyRoutes } from "./routes/email_verify";
 import { registerExportRoutes } from "./routes/export";
 import { registerGuestRoutes } from "./routes/guests";
 import { registerHealthRoutes } from "./routes/health";
+import { registerHouseholdRoutes } from "./routes/households";
 import { registerPasswordResetRoutes } from "./routes/password_reset";
 import { registerPrintRoutes } from "./routes/print";
 import { registerRsvpRoutes } from "./routes/rsvp";
@@ -46,11 +50,14 @@ registerCoupleRoutes(router);
 registerCouplePauseRoutes(router);
 registerExportRoutes(router);
 registerGuestRoutes(router);
+registerHouseholdRoutes(router);
 registerBudgetRoutes(router);
 registerRsvpRoutes(router);
 registerSeatingRoutes(router);
 registerPrintRoutes(router);
 registerSupplierRoutes(router);
+registerCommunitySupplierRoutes(router);
+registerAdminSupplierRoutes(router);
 
 const IS_PROD = process.env.NODE_ENV === "production";
 

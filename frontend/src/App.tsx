@@ -2,6 +2,7 @@ import type { JSX, ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuth } from "./lib/auth";
+import AdminSuppliersPage from "./pages/AdminSuppliersPage";
 import BudgetPage from "./pages/BudgetPage";
 import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -14,6 +15,7 @@ import OnboardingWizard from "./pages/OnboardingWizard";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
+import RsvpCheckinPage from "./pages/RsvpCheckinPage";
 import RsvpPage from "./pages/RsvpPage";
 import SeatingPage from "./pages/SeatingPage";
 import SuppliersPage from "./pages/SuppliersPage";
@@ -24,6 +26,13 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
   if (loading) return <FullScreenLoader />;
   if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function RequireAdmin({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user && !user.is_admin) return <Navigate to="/app" replace />;
   return children;
 }
 
@@ -119,6 +128,14 @@ export default function App() {
         }
       />
       <Route
+        path="/rsvp"
+        element={
+          <Page>
+            <RsvpCheckinPage />
+          </Page>
+        }
+      />
+      <Route
         path="/rsvp/:code"
         element={
           <Page>
@@ -197,6 +214,18 @@ export default function App() {
         }
       />
       <Route path="/app/settings" element={<Navigate to="/app/profile" replace />} />
+      <Route
+        path="/app/admin/suppliers"
+        element={
+          <Page>
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminSuppliersPage />
+              </RequireAdmin>
+            </RequireAuth>
+          </Page>
+        }
+      />
       <Route
         path="*"
         element={

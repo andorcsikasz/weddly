@@ -5,12 +5,15 @@ import type {
   BudgetGoal,
   BudgetLine,
   BudgetSnapshot,
+  CheckinSubmitBody,
   Couple,
   CoupleInvite,
   CouplePauseRequest,
   CoupleStatus,
   GuestCountGoal,
   Guest,
+  Household,
+  PublicCheckinView,
   PublicRsvpView,
   SeatAssignment,
   SeatingConflict,
@@ -20,6 +23,10 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
+import type {
+  CommunitySupplierAdminView,
+  SubmitCommunitySupplierInput,
+} from "@shared/community_suppliers";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
 import { apiFetch, getToken } from "./api";
 
@@ -60,6 +67,8 @@ export const coupleApi = {
   current: () => apiFetch<{ couple: Couple | null }>("GET", "/api/couples/current"),
   onboard: (body: OnboardInput) =>
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
+  updateSlug: (slug: string) =>
+    apiFetch<{ couple: Couple }>("PATCH", "/api/couples/slug", { slug }),
   createInvite: (body: { invited_email?: string }) =>
     apiFetch<{ invite: CoupleInvite }>("POST", "/api/couples/invites", body),
   getInvite: (token: string) =>
@@ -71,10 +80,16 @@ export const coupleApi = {
     apiFetch<{ couple: Couple }>("POST", `/api/invites/${encodeURIComponent(token)}/accept`, {}),
 };
 
+export interface GuestUpsert extends Partial<Guest> {
+  /** Optional new household — paired with `household_id: null`, creates a
+   *  household with this label and puts the guest in it. */
+  new_household_label?: string;
+}
+
 export const guestApi = {
   list: () => apiFetch<{ guests: Guest[] }>("GET", "/api/guests"),
-  create: (body: Partial<Guest>) => apiFetch<{ guest: Guest }>("POST", "/api/guests", body),
-  update: (id: number, body: Partial<Guest>) =>
+  create: (body: GuestUpsert) => apiFetch<{ guest: Guest }>("POST", "/api/guests", body),
+  update: (id: number, body: GuestUpsert) =>
     apiFetch<{ guest: Guest }>("PATCH", `/api/guests/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/guests/${id}`),
   importCsv: (csv: string) =>
@@ -83,6 +98,17 @@ export const guestApi = {
       "/api/guests/import",
       { csv },
     ),
+};
+
+export const householdApi = {
+  list: () => apiFetch<{ households: Household[] }>("GET", "/api/households"),
+  create: (body: { label: string; notes?: string | null }) =>
+    apiFetch<{ household: Household }>("POST", "/api/households", body),
+  update: (id: number, body: { label?: string; notes?: string | null }) =>
+    apiFetch<{ household: Household }>("PATCH", `/api/households/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/households/${id}`),
+  regenerateCode: (id: number) =>
+    apiFetch<{ household: Household }>("POST", `/api/households/${id}/regenerate-code`, {}),
 };
 
 export const budgetApi = {
@@ -99,9 +125,22 @@ export const budgetApi = {
 };
 
 export const rsvpApi = {
-  get: (code: string) =>
-    apiFetch<{ rsvp: PublicRsvpView }>("GET", `/api/rsvp/${encodeURIComponent(code)}`),
-  submit: (code: string, body: Partial<PublicRsvpView>) =>
+  /** New airport-style check-in: couple slug + 4-digit household code. */
+  lookup: (couple: string, code: string) =>
+    apiFetch<{ rsvp: PublicCheckinView }>(
+      "GET",
+      `/api/rsvp/lookup?couple=${encodeURIComponent(couple)}&code=${encodeURIComponent(code)}`,
+    ),
+  /** Submit RSVPs for every member of the household in one shot. */
+  checkin: (body: CheckinSubmitBody) =>
+    apiFetch<{ rsvp: PublicCheckinView }>("POST", "/api/rsvp/checkin", body),
+  /** Legacy per-guest invite_code path. Kept so old `/rsvp/<6char>` URLs
+   *  printed on older invite cards keep resolving — server now returns the
+   *  same household view. */
+  legacyGet: (code: string) =>
+    apiFetch<{ rsvp: PublicCheckinView }>("GET", `/api/rsvp/${encodeURIComponent(code)}`),
+  /** @deprecated — single-guest legacy submit. New UI uses `checkin`. */
+  legacySubmit: (code: string, body: Partial<PublicRsvpView>) =>
     apiFetch<{ rsvp: PublicRsvpView }>("POST", `/api/rsvp/${encodeURIComponent(code)}`, body),
 };
 
@@ -160,6 +199,23 @@ export const supplierApi = {
       "GET",
       category ? `/api/suppliers?category=${category}` : "/api/suppliers",
     ),
+  submitCommunity: (body: SubmitCommunitySupplierInput) =>
+    apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
+};
+
+export const adminSupplierApi = {
+  list: () => apiFetch<{ suppliers: CommunitySupplierAdminView[] }>("GET", "/api/admin/suppliers"),
+  hide: (id: number, reason?: string) =>
+    apiFetch<{ supplier: CommunitySupplierAdminView }>("POST", `/api/admin/suppliers/${id}/hide`, {
+      reason: reason ?? null,
+    }),
+  unhide: (id: number) =>
+    apiFetch<{ supplier: CommunitySupplierAdminView }>(
+      "POST",
+      `/api/admin/suppliers/${id}/unhide`,
+      {},
+    ),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/suppliers/${id}`),
 };
 
 /** Auth-protected PDF download as a Blob (so the caller can save with any filename). */

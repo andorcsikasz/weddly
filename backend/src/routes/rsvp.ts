@@ -1,45 +1,95 @@
-// Public RSVP endpoints. The invite code is the credential — no auth header.
-// Heavy rate-limit per IP to slow code-guessing.
+// Public RSVP endpoints. Two credentials are accepted:
+//   1. Couple slug + 4-digit household code (the airport-style check-in flow).
+//   2. The legacy 6-char per-guest invite_code (kept so old `/rsvp/<code>`
+//      links shipped in older invites continue to work; resolves to the
+//      guest's household and renders the same household RSVP view).
+//
+// Heavy rate-limit per IP to slow code enumeration.
 
+import type {
+  CheckinMemberSubmit,
+  CheckinSubmitBody,
+  PublicCheckinView,
+  RsvpStatus,
+} from "@shared/types";
 import { CONFIG } from "../config";
-import { db, now } from "../db";
-import { getCoupleById } from "../domain/couples";
+import { db } from "../db";
+import { type CoupleRow, getCoupleById } from "../domain/couples";
 import { sendKind } from "../domain/emails";
 import {
+  applyMemberCheckin,
+  getHouseholdById,
+  getHouseholdByCoupleAndCode,
+  type HouseholdRow,
+  listMembers,
+  toHouseholdMember,
+} from "../domain/households";
+import {
+  type GuestRow,
   getGuestByInviteCode,
   isMealChoice,
   isRsvpStatus,
-  toPublicRsvpView,
+  uniqueInviteCode,
 } from "../domain/guests";
+import { normalizeSlugInput } from "../domain/slug";
 import { getUserById } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
-// More forgiving than auth, but still slows enumeration.
+// More forgiving than auth, but still slows enumeration of slug+code combos.
 const RSVP_BUCKET = { capacity: 30, refillRate: 1 / 5 };
 
-function loadGuest(code: string) {
-  if (!code || code.length > 32) throw new HttpError(400, "Invalid code");
-  const row = getGuestByInviteCode(code.toUpperCase());
-  if (!row) throw new HttpError(404, "Invite not found");
+// ─── Resolvers ──────────────────────────────────────────────────────────────
+
+function resolveCoupleBySlug(slug: string): CoupleRow {
+  if (!slug || slug.length > 64) throw new HttpError(400, "Invalid couple identifier");
+  const cleaned = normalizeSlugInput(slug);
+  if (!cleaned) throw new HttpError(404, "Couple not found");
+  const row = db.prepare("SELECT * FROM couples WHERE slug = ?").get(cleaned) as
+    | CoupleRow
+    | undefined;
+  if (!row) throw new HttpError(404, "Couple not found");
   return row;
 }
 
-function handleGet(ctx: Ctx): Response {
-  rateLimit(ctx.clientIp, "rsvp:get", RSVP_BUCKET);
-  const guest = loadGuest(ctx.params.code ?? "");
-  const couple = getCoupleById(guest.couple_id);
-  if (!couple) throw new HttpError(404, "Couple gone");
-  return json({ rsvp: toPublicRsvpView(guest, couple.display_name, couple.wedding_date) });
+function resolveHousehold(coupleId: number, codeRaw: string): HouseholdRow {
+  if (!codeRaw || codeRaw.length > 16) throw new HttpError(400, "Invalid code");
+  // The check-in code is digits-only, but accept the raw form gracefully.
+  const code = codeRaw.trim();
+  const hh = getHouseholdByCoupleAndCode(coupleId, code);
+  if (!hh) throw new HttpError(404, "Code not found");
+  return hh;
 }
 
-interface RsvpBody {
+function buildView(couple: CoupleRow, household: HouseholdRow): PublicCheckinView {
+  const members = listMembers(household.id).map(toHouseholdMember);
+  return {
+    couple_slug: couple.slug ?? "",
+    couple_display_name: couple.display_name,
+    wedding_date: couple.wedding_date,
+    household_code: household.code,
+    household_label: household.label,
+    members,
+  };
+}
+
+// ─── Handlers ───────────────────────────────────────────────────────────────
+
+function handleLookup(ctx: Ctx): Response {
+  rateLimit(ctx.clientIp, "rsvp:lookup", RSVP_BUCKET);
+  const slug = ctx.url.searchParams.get("couple") ?? "";
+  const code = ctx.url.searchParams.get("code") ?? "";
+  const couple = resolveCoupleBySlug(slug);
+  const hh = resolveHousehold(couple.id, code);
+  return json({ rsvp: buildView(couple, hh) });
+}
+
+interface SubmitMemberRaw {
+  guest_id?: unknown;
   rsvp_status?: unknown;
   meal_choice?: unknown;
   dietary?: unknown;
-  plus_one_name?: unknown;
-  plus_one_meal?: unknown;
   accommodation_needed?: unknown;
   song_request?: unknown;
 }
@@ -52,102 +102,274 @@ function strOrNull(raw: unknown, max: number): string | null {
   return trimmed;
 }
 
-async function handleSubmit(ctx: Ctx): Promise<Response> {
-  rateLimit(ctx.clientIp, "rsvp:submit", RSVP_BUCKET);
-  const guest = loadGuest(ctx.params.code ?? "");
+function parseMember(raw: SubmitMemberRaw): CheckinMemberSubmit {
+  if (typeof raw.guest_id !== "number" || !Number.isFinite(raw.guest_id)) {
+    throw new HttpError(400, "members[].guest_id required");
+  }
+  const status = typeof raw.rsvp_status === "string" ? raw.rsvp_status : "";
+  if (!isRsvpStatus(status)) throw new HttpError(400, "members[].rsvp_status invalid");
 
-  const body = await readJson<RsvpBody>(ctx.req);
-  const status = typeof body.rsvp_status === "string" ? body.rsvp_status : "";
-  if (!isRsvpStatus(status)) throw new HttpError(400, "Invalid rsvp_status");
-
-  const mealRaw = typeof body.meal_choice === "string" ? body.meal_choice : null;
+  const mealRaw = typeof raw.meal_choice === "string" ? raw.meal_choice : null;
   const meal = mealRaw && isMealChoice(mealRaw) ? mealRaw : null;
-  const plusMealRaw = typeof body.plus_one_meal === "string" ? body.plus_one_meal : null;
-  const plusMeal = plusMealRaw && isMealChoice(plusMealRaw) ? plusMealRaw : null;
 
-  const ts = now();
-  db.prepare(
-    `UPDATE guests SET
-        rsvp_status = ?, meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
-        accommodation_needed = ?, song_request = ?, rsvp_responded_at = ?, updated_at = ?
-       WHERE id = ?`,
-  ).run(
-    status,
-    meal,
-    strOrNull(body.dietary, 500),
-    strOrNull(body.plus_one_name, 200),
-    plusMeal,
-    body.accommodation_needed ? 1 : 0,
-    strOrNull(body.song_request, 500),
-    ts,
-    ts,
-    guest.id,
-  );
+  return {
+    guest_id: raw.guest_id,
+    rsvp_status: status,
+    meal_choice: meal,
+    dietary: strOrNull(raw.dietary, 500),
+    accommodation_needed: Boolean(raw.accommodation_needed),
+    song_request: strOrNull(raw.song_request, 500),
+  };
+}
 
-  addAuditLog({
-    actor_user_id: null,
-    couple_id: guest.couple_id,
-    action: "rsvp.submit",
-    target_kind: "guest",
-    target_id: guest.id,
-    after: { status, meal, plus_one: Boolean(strOrNull(body.plus_one_name, 200)) },
+function persistCheckin(
+  couple: CoupleRow,
+  household: HouseholdRow,
+  members: CheckinMemberSubmit[],
+): { previous: GuestRow[]; updated: GuestRow[] } {
+  const existing = listMembers(household.id);
+  const byId = new Map(existing.map((g) => [g.id, g]));
+
+  // Reject any guest_id that doesn't belong to this household.
+  for (const m of members) {
+    if (!byId.has(m.guest_id)) {
+      throw new HttpError(400, `Guest ${m.guest_id} not in this household`);
+    }
+  }
+
+  const tx = db.transaction(() => {
+    for (const m of members) {
+      applyMemberCheckin(m.guest_id, household.id, {
+        rsvp_status: m.rsvp_status,
+        meal_choice: m.meal_choice,
+        dietary: m.dietary,
+        accommodation_needed: m.accommodation_needed,
+        song_request: m.song_request,
+      });
+    }
   });
+  tx();
 
-  const refreshed = getGuestByInviteCode(guest.invite_code);
-  if (!refreshed) throw new HttpError(500, "Guest vanished");
-  const couple = getCoupleById(refreshed.couple_id);
-  if (!couple) throw new HttpError(404, "Couple gone");
-
-  // Email side-effects. We only fire on real responses (not status='pending').
-  if (status !== "pending") {
-    notifyCoupleOnRsvp(couple.partner_a_id, couple.partner_b_id, {
-      guestName: refreshed.full_name,
-      rsvpStatus: status,
-      coupleId: couple.id,
+  const refreshed = listMembers(household.id);
+  for (const m of members) {
+    const before = byId.get(m.guest_id);
+    const after = refreshed.find((r) => r.id === m.guest_id);
+    addAuditLog({
+      actor_user_id: null,
+      couple_id: couple.id,
+      action: "rsvp.submit",
+      target_kind: "guest",
+      target_id: m.guest_id,
+      after: {
+        status: m.rsvp_status,
+        meal: m.meal_choice,
+        household_id: household.id,
+      },
+      note: before && after && before.rsvp_status !== after.rsvp_status ? "status changed" : null,
     });
-    if (refreshed.email) {
+  }
+
+  return { previous: existing, updated: refreshed };
+}
+
+function notifyCouple(couple: CoupleRow, members: GuestRow[], previous: GuestRow[]) {
+  const guestPageUrl = `${CONFIG.frontendBaseUrl}/app/guests`;
+  const prevById = new Map(previous.map((p) => [p.id, p]));
+  for (const m of members) {
+    const before = prevById.get(m.id);
+    if (m.rsvp_status === "pending") continue;
+    if (before && before.rsvp_status === m.rsvp_status) continue;
+    const status = m.rsvp_status as RsvpStatus;
+    if (status === "pending") continue;
+    for (const partnerId of [couple.partner_a_id, couple.partner_b_id]) {
+      if (!partnerId) continue;
+      const partner = getUserById(partnerId);
+      if (!partner) continue;
       void sendKind(
-        "rsvp_thanks_for_guest",
+        "rsvp_received_for_couple",
+        { guestName: m.full_name, rsvpStatus: status as "yes" | "no" | "maybe", guestPageUrl },
         {
-          coupleDisplayName: couple.display_name,
-          weddingDate: couple.wedding_date,
-          rsvpStatus: status,
-          rsvpPageUrl: `${CONFIG.frontendBaseUrl}/rsvp/${refreshed.invite_code}`,
-        },
-        {
-          user: null,
-          guest: { email: refreshed.email, full_name: refreshed.full_name },
+          user: { id: partner.id, email: partner.email, full_name: partner.full_name },
           couple_id: couple.id,
         },
       );
     }
   }
-
-  return json({ rsvp: toPublicRsvpView(refreshed, couple.display_name, couple.wedding_date) });
 }
 
-function notifyCoupleOnRsvp(
-  partnerAId: number,
-  partnerBId: number | null,
-  payload: { guestName: string; rsvpStatus: "yes" | "no" | "maybe"; coupleId: number },
-): void {
-  const guestPageUrl = `${CONFIG.frontendBaseUrl}/guests`;
-  for (const id of [partnerAId, partnerBId]) {
-    if (!id) continue;
-    const partner = getUserById(id);
-    if (!partner) continue;
+function notifyGuests(couple: CoupleRow, members: GuestRow[]) {
+  const rsvpPageUrl = `${CONFIG.frontendBaseUrl}/rsvp`;
+  // Dedup by email — one thank-you per unique inbox so a family sharing a
+  // single Gmail doesn't get N copies.
+  const emailed = new Set<string>();
+  for (const m of members) {
+    if (!m.email) continue;
+    if (emailed.has(m.email)) continue;
+    emailed.add(m.email);
+    const status = isRsvpStatus(m.rsvp_status) ? m.rsvp_status : "pending";
+    if (status === "pending") continue;
     void sendKind(
-      "rsvp_received_for_couple",
-      { guestName: payload.guestName, rsvpStatus: payload.rsvpStatus, guestPageUrl },
+      "rsvp_thanks_for_guest",
       {
-        user: { id: partner.id, email: partner.email, full_name: partner.full_name },
-        couple_id: payload.coupleId,
+        coupleDisplayName: couple.display_name,
+        weddingDate: couple.wedding_date,
+        rsvpStatus: status as "yes" | "no" | "maybe",
+        rsvpPageUrl,
+      },
+      {
+        user: null,
+        guest: { email: m.email, full_name: m.full_name },
+        couple_id: couple.id,
       },
     );
   }
 }
 
+async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "rsvp:submit", RSVP_BUCKET);
+  const body = await readJson<Partial<CheckinSubmitBody>>(ctx.req);
+  if (typeof body.couple_slug !== "string") throw new HttpError(400, "couple_slug required");
+  if (typeof body.household_code !== "string") throw new HttpError(400, "household_code required");
+  if (!Array.isArray(body.members) || body.members.length === 0) {
+    throw new HttpError(400, "members array required");
+  }
+  if (body.members.length > 50) throw new HttpError(400, "Too many members");
+
+  const couple = resolveCoupleBySlug(body.couple_slug);
+  const hh = resolveHousehold(couple.id, body.household_code);
+
+  const parsed = body.members.map((m) => parseMember(m as SubmitMemberRaw));
+  const { previous, updated } = persistCheckin(couple, hh, parsed);
+
+  notifyCouple(couple, updated, previous);
+  notifyGuests(couple, updated);
+
+  return json({ rsvp: buildView(couple, hh) });
+}
+
+// ─── Legacy single-guest endpoints ──────────────────────────────────────────
+
+function legacyHouseholdFor(code: string): { couple: CoupleRow; household: HouseholdRow } {
+  if (!code || code.length > 32) throw new HttpError(400, "Invalid code");
+  const guest = getGuestByInviteCode(code.toUpperCase());
+  if (!guest) throw new HttpError(404, "Invite not found");
+  const couple = getCoupleById(guest.couple_id);
+  if (!couple) throw new HttpError(404, "Couple gone");
+  if (!guest.household_id) throw new HttpError(404, "Guest has no household");
+  const hh = getHouseholdById(guest.household_id, couple.id);
+  if (!hh) throw new HttpError(404, "Household gone");
+  return { couple, household: hh };
+}
+
+function handleLegacyGet(ctx: Ctx): Response {
+  rateLimit(ctx.clientIp, "rsvp:get", RSVP_BUCKET);
+  const { couple, household } = legacyHouseholdFor(ctx.params.code ?? "");
+  return json({ rsvp: buildView(couple, household) });
+}
+
+interface LegacySingleSubmit {
+  rsvp_status?: unknown;
+  meal_choice?: unknown;
+  dietary?: unknown;
+  plus_one_name?: unknown;
+  plus_one_meal?: unknown;
+  accommodation_needed?: unknown;
+  song_request?: unknown;
+}
+
+/** The legacy POST shape addresses a single guest and may include a plus-one
+ *  string. We map it onto the same household's first member (the row that
+ *  owns the invite_code) — if a plus_one_name is present, we forward it to
+ *  the second household member if one exists, else create a sibling guest.
+ *  This keeps old e2e tests + email links functional.
+ */
+async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "rsvp:submit", RSVP_BUCKET);
+  const code = ctx.params.code ?? "";
+  if (!code || code.length > 32) throw new HttpError(400, "Invalid code");
+  const guest = getGuestByInviteCode(code.toUpperCase());
+  if (!guest) throw new HttpError(404, "Invite not found");
+  const couple = getCoupleById(guest.couple_id);
+  if (!couple) throw new HttpError(404, "Couple gone");
+  if (!guest.household_id) throw new HttpError(404, "Guest has no household");
+  const hh = getHouseholdById(guest.household_id, couple.id);
+  if (!hh) throw new HttpError(404, "Household gone");
+
+  const body = await readJson<LegacySingleSubmit>(ctx.req);
+  const status = typeof body.rsvp_status === "string" ? body.rsvp_status : "";
+  if (!isRsvpStatus(status)) throw new HttpError(400, "Invalid rsvp_status");
+
+  const mealRaw = typeof body.meal_choice === "string" ? body.meal_choice : null;
+  const meal = mealRaw && isMealChoice(mealRaw) ? mealRaw : null;
+
+  const member: CheckinMemberSubmit = {
+    guest_id: guest.id,
+    rsvp_status: status,
+    meal_choice: meal,
+    dietary: strOrNull(body.dietary, 500),
+    accommodation_needed: Boolean(body.accommodation_needed),
+    song_request: strOrNull(body.song_request, 500),
+  };
+  const members: CheckinMemberSubmit[] = [member];
+
+  // Map plus-one onto a sibling household member if one exists; else
+  // materialize one so the legacy invite still records the +1.
+  const plusName = strOrNull(body.plus_one_name, 200);
+  if (plusName) {
+    const all = listMembers(hh.id);
+    let sibling = all.find((m) => m.id !== guest.id);
+    const ts = Date.now();
+    if (!sibling) {
+      const code = uniqueInviteCode();
+      const result = db
+        .prepare(
+          `INSERT INTO guests
+             (couple_id, full_name, email, phone, group_tag, invite_code, rsvp_status,
+              meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
+              song_request, notes, rsvp_responded_at, created_at, updated_at, household_id)
+           VALUES (?, ?, NULL, NULL, 'other', ?, 'pending', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, ?, ?, ?)`,
+        )
+        .run(couple.id, plusName, code, ts, ts, hh.id);
+      const newId = Number(result.lastInsertRowid);
+      sibling =
+        (db.prepare("SELECT * FROM guests WHERE id = ?").get(newId) as GuestRow) ?? undefined;
+    } else {
+      // Update the sibling's name in case the legacy caller renamed the +1.
+      db.prepare("UPDATE guests SET full_name = ?, updated_at = ? WHERE id = ?").run(
+        plusName,
+        ts,
+        sibling.id,
+      );
+    }
+    if (sibling) {
+      const plusMealRaw = typeof body.plus_one_meal === "string" ? body.plus_one_meal : null;
+      const plusMeal = plusMealRaw && isMealChoice(plusMealRaw) ? plusMealRaw : null;
+      members.push({
+        guest_id: sibling.id,
+        rsvp_status: status,
+        meal_choice: plusMeal,
+        dietary: null,
+        accommodation_needed: false,
+        song_request: null,
+      });
+    }
+  }
+
+  const { previous, updated } = persistCheckin(couple, hh, members);
+  notifyCouple(couple, updated, previous);
+  notifyGuests(couple, updated);
+
+  // Both the legacy GET and the new check-in flow now return PublicCheckinView
+  // — the household is the unit of truth. Old frontends that still POST here
+  // get a richer payload (extra fields are ignored by their parsers).
+  return json({ rsvp: buildView(couple, hh) });
+}
+
 export function registerRsvpRoutes(router: Router) {
-  router.get("/api/rsvp/:code", handleGet);
-  router.post("/api/rsvp/:code", handleSubmit);
+  router.get("/api/rsvp/lookup", handleLookup);
+  router.post("/api/rsvp/checkin", handleCheckinSubmit);
+  // Legacy per-guest invite_code paths — keep last so they don't shadow
+  // `/api/rsvp/lookup` or `/api/rsvp/checkin`.
+  router.get("/api/rsvp/:code", handleLegacyGet);
+  router.post("/api/rsvp/:code", handleLegacySubmit);
 }

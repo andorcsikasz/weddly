@@ -425,6 +425,28 @@ export interface LocaleMessages {
     copy_invite: string;
     invite_copied: string;
     plus_one: string;
+    household_label: string;
+    household_assign_help: string;
+    household_new: string;
+    household_new_label: string;
+    household_existing: string;
+    household_code: string;
+    household_share_link: string;
+    household_share_copied: string;
+    household_regenerate_code: string;
+    household_regenerate_confirm_title: string;
+    household_regenerate_confirm_body: string;
+    household_add_member: string;
+    household_remove_confirm_title: string;
+    household_remove_confirm_body: string;
+    household_remove: string;
+    household_section_title: string;
+    household_section_help: string;
+    couple_slug_title: string;
+    couple_slug_help: string;
+    couple_slug_save: string;
+    couple_slug_invalid: string;
+    couple_slug_taken: string;
     dietary: string;
     notes: string;
     accommodation: string;
@@ -470,6 +492,33 @@ export interface LocaleMessages {
     cap: string;
     over_budget: string;
     cost_per_guest: string;
+    // ── Cost-planning panel ─────────────────────────────────────────
+    cost_planning_title: string;
+    cost_planning_with_count: string;
+    cost_planning_help: string;
+    cost_planning_baseline_note: string;
+    lines_title: string;
+    lines_sub: string;
+    lines_empty: string;
+    snapshots_sub: string;
+    snapshot_default_name: string;
+    cat: {
+      venue: string;
+      catering: string;
+      drinks: string;
+      attire: string;
+      decor_floral: string;
+      photo_video: string;
+      music_dj: string;
+      cake_dessert: string;
+      hair_makeup: string;
+      transport: string;
+      honeymoon: string;
+      stationery: string;
+      favours: string;
+      rings: string;
+      other: string;
+    };
   };
   seating: {
     title: string;
@@ -502,6 +551,9 @@ export interface LocaleMessages {
     width_mm_label: string;
     length_mm_label: string;
     position_label: string;
+    table_default_label: string;
+    add_seat: string;
+    remove_seat: string;
   };
   suppliers: {
     title: string;
@@ -510,6 +562,34 @@ export interface LocaleMessages {
     visit_website: string;
     filter_all: string;
     chain_help: string;
+    community_pill: string;
+    drop_your_own: string;
+    submit: {
+      title: string;
+      intro: string;
+      category_label: string;
+      category_placeholder: string;
+      name_label: string;
+      city_label: string;
+      website_label: string;
+      email_label: string;
+      phone_label: string;
+      phone_optional: string;
+      blurb_label: string;
+      blurb_help: string;
+      price_label: string;
+      price_help: string;
+      submit_button: string;
+      submitting: string;
+      success_title: string;
+      success_body: string;
+      cancel: string;
+      err_required: string;
+      err_invalid_url: string;
+      err_invalid_email: string;
+      err_too_long: string;
+      err_rate_limited: string;
+    };
     group: {
       venue_stay: string;
       food_drink: string;
@@ -535,6 +615,28 @@ export interface LocaleMessages {
       transport: string;
     };
   };
+  admin: {
+    nav_label: string;
+    suppliers_title: string;
+    suppliers_sub: string;
+    empty: string;
+    table_supplier: string;
+    table_category: string;
+    table_submitter: string;
+    table_status: string;
+    table_actions: string;
+    status_active: string;
+    status_hidden: string;
+    hide: string;
+    unhide: string;
+    delete: string;
+    hide_reason_label: string;
+    hide_reason_placeholder: string;
+    confirm_hide_title: string;
+    confirm_hide_body: string;
+    confirm_delete_title: string;
+    confirm_delete_body: string;
+  };
   rsvp: {
     title: string;
     sub: string;
@@ -555,6 +657,23 @@ export interface LocaleMessages {
     thanks_title: string;
     thanks_body: string;
     update_response: string;
+    /** Airport check-in lookup screen. */
+    checkin_title: string;
+    checkin_intro: string;
+    checkin_couple_label: string;
+    checkin_couple_help: string;
+    checkin_code_label: string;
+    checkin_code_help: string;
+    checkin_submit: string;
+    checkin_lookup_failed: string;
+    checkin_household_for: string;
+    checkin_for_member: string;
+    checkin_member_dietary: string;
+    checkin_member_accommodation: string;
+    checkin_member_song: string;
+    checkin_save_for_all: string;
+    checkin_back_to_lookup: string;
+    checkin_household_label: string;
   };
   notfound: {
     title: string;

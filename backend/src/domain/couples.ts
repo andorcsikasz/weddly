@@ -21,6 +21,7 @@ export interface CoupleRow {
   display_name: string;
   bride_name: string;
   groom_name: string;
+  slug: string | null;
   wedding_date: string | null;
   wedding_date_kind: string | null;
   wedding_target_year: number | null;
@@ -108,6 +109,7 @@ export function toCouple(row: CoupleRow): Couple {
     display_name: row.display_name,
     bride_name: row.bride_name,
     groom_name: row.groom_name,
+    slug: row.slug,
     wedding_date_goal: rowToDateGoal(row),
     wedding_date: row.wedding_date,
     guest_count_goal: rowToGuestGoal(row),

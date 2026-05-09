@@ -16,6 +16,9 @@ export interface User {
   full_name: string;
   status: UserStatus;
   role: UserRole;
+  /** Derived from ADMIN_EMAILS env match — orthogonal to `role`. Drives the
+   *  /app/admin/* routes (community-supplier moderation today; more later). */
+  is_admin: boolean;
   /** Couple this user belongs to. `null` only on signup before onboarding. */
   couple_id: number | null;
   verified_email: boolean;
@@ -90,6 +93,10 @@ export interface Couple {
   display_name: string; // derived "{bride_name} & {groom_name}"
   bride_name: string;
   groom_name: string;
+  /** Public, uppercase couple identifier — `ANDORSARI`. Pairs with
+   *  `households.code` to form the airport-style RSVP credential. May be
+   *  null briefly between onboarding and the slug backfill. */
+  slug: string | null;
   /** Structured wedding-date goal — handles "Summer 2027" / "TBD" / exact dates. */
   wedding_date_goal: WeddingDateGoal;
   /** Back-compat shortcut. Equal to wedding_date_goal.exact_date. */
@@ -183,15 +190,24 @@ export type MealChoice = "meat" | "fish" | "vegetarian" | "vegan" | "child" | "n
 export interface Guest {
   id: number;
   couple_id: number;
+  /** Every guest belongs to a household; solo guests get a household-of-one.
+   *  May be null briefly during a backfill — the public RSVP flow ignores
+   *  unparented rows. */
+  household_id: number | null;
   full_name: string;
   email: string | null;
   phone: string | null;
   group_tag: GuestGroupTag;
-  invite_code: string; // short, public, used in /rsvp/<code>
+  /** Legacy per-guest 6-char code. Still resolvable for old `/rsvp/<code>`
+   *  links — the new check-in flow uses `couples.slug + households.code`. */
+  invite_code: string;
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary: string | null;
+  /** @deprecated since the household refactor — kept for back-compat. New
+   *  flows materialize the plus-one as a sibling guest in the same household. */
   plus_one_name: string | null;
+  /** @deprecated — see `plus_one_name`. */
   plus_one_meal: MealChoice | null;
   accommodation_needed: boolean;
   song_request: string | null;
@@ -201,7 +217,58 @@ export interface Guest {
   updated_at: UnixMs;
 }
 
-/** Public-facing — what the RSVP page sees. No couple PII or admin notes. */
+/** A party that RSVPs together. Couple-scoped 4-digit `code`. */
+export interface Household {
+  id: number;
+  couple_id: number;
+  code: string;
+  label: string;
+  notes: string | null;
+  member_ids: number[];
+  created_at: UnixMs;
+  updated_at: UnixMs;
+}
+
+/** Per-member subset shown on the public check-in page (no notes / no group_tag). */
+export interface HouseholdMember {
+  id: number;
+  full_name: string;
+  rsvp_status: RsvpStatus;
+  meal_choice: MealChoice | null;
+  dietary: string | null;
+  accommodation_needed: boolean;
+  song_request: string | null;
+}
+
+/** Public-facing — what the /rsvp check-in page sees. No couple PII / admin notes. */
+export interface PublicCheckinView {
+  couple_slug: string;
+  couple_display_name: string;
+  wedding_date: string | null;
+  household_code: string;
+  household_label: string;
+  members: HouseholdMember[];
+}
+
+/** Submit shape for the household check-in. The credential pair (slug+code)
+ *  is re-validated server-side; member ids must all belong to the household. */
+export interface CheckinSubmitBody {
+  couple_slug: string;
+  household_code: string;
+  members: CheckinMemberSubmit[];
+}
+
+export interface CheckinMemberSubmit {
+  guest_id: number;
+  rsvp_status: RsvpStatus;
+  meal_choice: MealChoice | null;
+  dietary: string | null;
+  accommodation_needed: boolean;
+  song_request: string | null;
+}
+
+/** @deprecated — single-guest view kept for legacy `/rsvp/<6char>` URLs.
+ *  New code uses `PublicCheckinView`. */
 export interface PublicRsvpView {
   full_name: string;
   couple_display_name: string;
@@ -294,6 +361,13 @@ export const PAUSE_DELETE_WINDOW_MS = 1000 * 60 * 60 * 24 * 30;
 
 /** Length of guest invite codes (e.g. "A4F2K9"). */
 export const INVITE_CODE_LENGTH = 6;
+
+/** Length of household check-in codes (always 4 digits, no leading zero). */
+export const HOUSEHOLD_CODE_LENGTH = 4;
+
+/** Slug constraints. Couple-level identifier, uppercase A-Z + digits. */
+export const COUPLE_SLUG_MIN_LENGTH = 3;
+export const COUPLE_SLUG_MAX_LENGTH = 24;
 
 /** v2 marketplace fee (deferred). Lives here so v1 budget UI can hint at "what suppliers cost". */
 export const PLATFORM_FEE_RATE = 0.1;

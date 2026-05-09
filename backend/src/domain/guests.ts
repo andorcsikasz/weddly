@@ -7,6 +7,7 @@ import { generateInviteCode } from "./invite_codes";
 export interface GuestRow {
   id: number;
   couple_id: number;
+  household_id: number | null;
   full_name: string;
   email: string | null;
   phone: string | null;
@@ -61,6 +62,7 @@ export function toGuest(row: GuestRow): Guest {
   return {
     id: row.id,
     couple_id: row.couple_id,
+    household_id: row.household_id,
     full_name: row.full_name,
     email: row.email,
     phone: row.phone,

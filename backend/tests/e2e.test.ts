@@ -51,6 +51,7 @@ function wipeAll() {
     "seating_conflicts",
     "seating_tables",
     "guests",
+    "households",
     "budget_snapshots",
     "budget_lines",
     "couple_invites",
@@ -540,7 +541,7 @@ describe("budget", () => {
 });
 
 describe("rsvp", () => {
-  test("public lookup + submit updates the guest", async () => {
+  test("legacy /rsvp/<code> get + post still works (returns the household view)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("rsvp@weddly.test");
     const created = await req<{ guest: { invite_code: string } }>(
@@ -551,41 +552,325 @@ describe("rsvp", () => {
     );
     const code = created.data.guest.invite_code;
 
-    const get = await req<{ rsvp: { full_name: string; couple_display_name: string } }>(
-      "GET",
-      `/api/rsvp/${code}`,
-    );
+    const get = await req<{
+      rsvp: {
+        household_label: string;
+        couple_display_name: string;
+        members: { full_name: string }[];
+      };
+    }>("GET", `/api/rsvp/${code}`);
     expect(get.status).toBe(200);
-    expect(get.data.rsvp.full_name).toBe("Public Guest");
     expect(get.data.rsvp.couple_display_name).toBe("Anna & Bence");
+    expect(get.data.rsvp.members[0]!.full_name).toBe("Public Guest");
 
-    const sub = await req<{ rsvp: { rsvp_status: string; meal_choice: string | null } }>(
-      "POST",
-      `/api/rsvp/${code}`,
-      {
-        rsvp_status: "yes",
-        meal_choice: "vegetarian",
-        plus_one_name: "Bence",
-        plus_one_meal: "meat",
-        accommodation_needed: true,
-        song_request: "ABBA",
-      },
-    );
-    expect(sub.status).toBe(200);
-    expect(sub.data.rsvp.rsvp_status).toBe("yes");
-    expect(sub.data.rsvp.meal_choice).toBe("vegetarian");
-
-    // Couple-side list confirms the response landed.
-    const list = await req<{ guests: { rsvp_status: string }[] }>("GET", "/api/guests", undefined, {
-      token,
+    // Legacy POST still accepts the old single-guest shape; the +1 gets
+    // materialized as a sibling guest in the same household.
+    const sub = await req<{
+      rsvp: { members: { full_name: string; rsvp_status: string; meal_choice: string | null }[] };
+    }>("POST", `/api/rsvp/${code}`, {
+      rsvp_status: "yes",
+      meal_choice: "vegetarian",
+      plus_one_name: "Bence",
+      plus_one_meal: "meat",
+      accommodation_needed: true,
+      song_request: "ABBA",
     });
-    expect(list.data.guests[0]!.rsvp_status).toBe("yes");
+    expect(sub.status).toBe(200);
+    const primary = sub.data.rsvp.members.find((m) => m.full_name === "Public Guest");
+    const plus = sub.data.rsvp.members.find((m) => m.full_name === "Bence");
+    expect(primary?.rsvp_status).toBe("yes");
+    expect(primary?.meal_choice).toBe("vegetarian");
+    expect(plus?.meal_choice).toBe("meat");
+
+    // Couple-side list confirms both rows landed.
+    const list = await req<{ guests: { full_name: string; rsvp_status: string }[] }>(
+      "GET",
+      "/api/guests",
+      undefined,
+      { token },
+    );
+    expect(list.data.guests.length).toBe(2);
+    expect(list.data.guests.every((g) => g.rsvp_status === "yes")).toBe(true);
   });
 
   test("unknown code returns 404", async () => {
     wipeAll();
     const r = await req("GET", "/api/rsvp/NOPECODE");
     expect(r.status).toBe(404);
+  });
+});
+
+describe("households + airport check-in", () => {
+  test("couple gets a slug at onboarding + household auto-spawned per guest", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("hh@weddly.test");
+
+    const me = await req<{ couple: { slug: string | null } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(me.status).toBe(200);
+    expect(me.data.couple.slug).toBeTruthy();
+    expect(me.data.couple.slug).toMatch(/^[A-Z0-9]{3,24}$/);
+
+    // Adding a guest with no household_id auto-creates a household-of-one.
+    const g = await req<{ guest: { id: number; household_id: number | null } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna Solo" },
+      { token },
+    );
+    expect(g.status).toBe(201);
+    expect(g.data.guest.household_id).toBeTruthy();
+
+    const list = await req<{ households: { id: number; code: string; member_ids: number[] }[] }>(
+      "GET",
+      "/api/households",
+      undefined,
+      { token },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.households.length).toBe(1);
+    expect(list.data.households[0]!.code).toMatch(/^\d{4}$/);
+    expect(list.data.households[0]!.member_ids.length).toBe(1);
+  });
+
+  test("multi-member household: lookup + checkin updates everyone in one shot", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("checkin@weddly.test");
+
+    // Create a brand-new household, then put two guests into it.
+    const hh = await req<{ household: { id: number; code: string } }>(
+      "POST",
+      "/api/households",
+      { label: "Anna + Mark" },
+      { token },
+    );
+    expect(hh.status).toBe(201);
+    expect(hh.data.household.code).toMatch(/^\d{4}$/);
+
+    const a = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna Kovács", household_id: hh.data.household.id },
+      { token },
+    );
+    const b = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Mark Nagy", household_id: hh.data.household.id },
+      { token },
+    );
+
+    const couple = await req<{ couple: { slug: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const slug = couple.data.couple.slug;
+    const code = hh.data.household.code;
+
+    // Public lookup returns both members.
+    const look = await req<{
+      rsvp: { household_label: string; members: { id: number; full_name: string }[] };
+    }>("GET", `/api/rsvp/lookup?couple=${slug}&code=${code}`);
+    expect(look.status).toBe(200);
+    expect(look.data.rsvp.household_label).toBe("Anna + Mark");
+    expect(look.data.rsvp.members.length).toBe(2);
+
+    // Submit RSVPs for both members in one request.
+    const sub = await req<{
+      rsvp: { members: { id: number; rsvp_status: string; meal_choice: string | null }[] };
+    }>("POST", "/api/rsvp/checkin", {
+      couple_slug: slug,
+      household_code: code,
+      members: [
+        { guest_id: a.data.guest.id, rsvp_status: "yes", meal_choice: "meat" },
+        { guest_id: b.data.guest.id, rsvp_status: "yes", meal_choice: "fish" },
+      ],
+    });
+    expect(sub.status).toBe(200);
+    const byId = new Map(sub.data.rsvp.members.map((m) => [m.id, m]));
+    expect(byId.get(a.data.guest.id)?.rsvp_status).toBe("yes");
+    expect(byId.get(a.data.guest.id)?.meal_choice).toBe("meat");
+    expect(byId.get(b.data.guest.id)?.meal_choice).toBe("fish");
+  });
+
+  test("wrong slug or wrong code returns 404", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("wrong@weddly.test");
+    await req("POST", "/api/guests", { full_name: "Solo Sue" }, { token });
+    const couple = await req<{ couple: { slug: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const list = await req<{ households: { code: string }[] }>(
+      "GET",
+      "/api/households",
+      undefined,
+      { token },
+    );
+    const code = list.data.households[0]!.code;
+
+    const badSlug = await req("GET", `/api/rsvp/lookup?couple=NOPECOUPLE&code=${code}`);
+    expect(badSlug.status).toBe(404);
+
+    const badCode = await req(
+      "GET",
+      `/api/rsvp/lookup?couple=${couple.data.couple.slug}&code=0000`,
+    );
+    expect(badCode.status).toBe(404);
+  });
+
+  test("regenerating a code invalidates the old one", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("regen@weddly.test");
+    const hh = await req<{ household: { id: number; code: string } }>(
+      "POST",
+      "/api/households",
+      { label: "Smith family" },
+      { token },
+    );
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Smith Sr.", household_id: hh.data.household.id },
+      { token },
+    );
+
+    const couple = await req<{ couple: { slug: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const oldCode = hh.data.household.code;
+
+    const regen = await req<{ household: { code: string } }>(
+      "POST",
+      `/api/households/${hh.data.household.id}/regenerate-code`,
+      {},
+      { token },
+    );
+    expect(regen.status).toBe(200);
+    expect(regen.data.household.code).not.toBe(oldCode);
+
+    // Old code no longer resolves.
+    const stale = await req(
+      "GET",
+      `/api/rsvp/lookup?couple=${couple.data.couple.slug}&code=${oldCode}`,
+    );
+    expect(stale.status).toBe(404);
+
+    // New code does.
+    const fresh = await req(
+      "GET",
+      `/api/rsvp/lookup?couple=${couple.data.couple.slug}&code=${regen.data.household.code}`,
+    );
+    expect(fresh.status).toBe(200);
+  });
+
+  test("legacy /rsvp/<6char> URL still resolves and returns the household", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("legacy@weddly.test");
+    const g = await req<{ guest: { invite_code: string; full_name: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Old Linker" },
+      { token },
+    );
+    const r = await req<{
+      rsvp: { household_label: string; members: { full_name: string }[] };
+    }>("GET", `/api/rsvp/${g.data.guest.invite_code}`);
+    expect(r.status).toBe(200);
+    expect(r.data.rsvp.household_label).toBe("Old Linker");
+    expect(r.data.rsvp.members.length).toBe(1);
+  });
+
+  test("couple slug rename + uniqueness collision", async () => {
+    wipeAll();
+    const { token: tA } = await bootstrapCouple("slugA@weddly.test");
+    // Take whatever slug got auto-derived and rename to a known value.
+    const renameA = await req<{ couple: { slug: string } }>(
+      "PATCH",
+      "/api/couples/slug",
+      { slug: "TESTCOUPLE" },
+      { token: tA },
+    );
+    expect(renameA.status).toBe(200);
+    expect(renameA.data.couple.slug).toBe("TESTCOUPLE");
+
+    // A second couple cannot grab the same slug.
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "slugB@weddly.test",
+      password: "supersafe123",
+      full_name: "Beth",
+    });
+    await req(
+      "POST",
+      "/api/couples/onboard",
+      {
+        display_name: "Beth & Carl",
+        wedding_date: "2027-05-01",
+        target_guest_count: 50,
+        budget_ceiling_huf: 3_000_000,
+        style_tags: [],
+      },
+      { token: reg.data.token },
+    );
+    const collision = await req(
+      "PATCH",
+      "/api/couples/slug",
+      { slug: "TESTCOUPLE" },
+      { token: reg.data.token },
+    );
+    expect(collision.status).toBe(409);
+  });
+
+  test("household admin auth + couple isolation", async () => {
+    wipeAll();
+    // Couple A and couple B are separate workspaces; A cannot peek at B.
+    const a = await bootstrapCouple("isoA@weddly.test");
+    const hhA = await req<{ household: { id: number } }>(
+      "POST",
+      "/api/households",
+      { label: "A's family" },
+      { token: a.token },
+    );
+
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "isoB@weddly.test",
+      password: "supersafe123",
+      full_name: "B",
+    });
+    await req(
+      "POST",
+      "/api/couples/onboard",
+      {
+        display_name: "Bob & Cara",
+        wedding_date: "2027-08-08",
+        target_guest_count: 40,
+        budget_ceiling_huf: 2_000_000,
+        style_tags: [],
+      },
+      { token: reg.data.token },
+    );
+
+    const peek = await req(
+      "PATCH",
+      `/api/households/${hhA.data.household.id}`,
+      { label: "Sneaky" },
+      { token: reg.data.token },
+    );
+    expect(peek.status).toBe(404);
+
+    const noAuth = await req("GET", "/api/households");
+    expect(noAuth.status).toBe(401);
   });
 });
 
