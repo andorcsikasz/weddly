@@ -222,4 +222,10 @@ log.info("server.listening", {
   port: server.port,
   serveFrontend: CONFIG.serveFrontend,
   email: !!CONFIG.resendApiKey,
+  adminEmailsCount: CONFIG.adminEmails.length,
 });
+if (CONFIG.adminEmails.length === 0) {
+  log.warn("config.no_admin_emails", {
+    note: "ADMIN_EMAILS env var is empty — /app/admin/* will be unreachable.",
+  });
+}

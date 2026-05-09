@@ -101,6 +101,19 @@ export function listAllForAdmin(): CommunitySupplierRowWithEmail[] {
     .all() as CommunitySupplierRowWithEmail[];
 }
 
+/** Case-insensitive lookup for an *active* community supplier with the same
+ *  website. Used to reject duplicate submissions before they land in the
+ *  public list. Hidden duplicates don't block — admin already removed them. */
+export function findActiveByWebsite(website: string): CommunitySupplierRow | null {
+  return (
+    (db
+      .prepare(
+        "SELECT * FROM community_suppliers WHERE LOWER(website) = LOWER(?) AND status = 'active' LIMIT 1",
+      )
+      .get(website) as CommunitySupplierRow | undefined) ?? null
+  );
+}
+
 export function getCommunitySupplierById(id: number): CommunitySupplierRow | null {
   return (
     (db.prepare("SELECT * FROM community_suppliers WHERE id = ?").get(id) as

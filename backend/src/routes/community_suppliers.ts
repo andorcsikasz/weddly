@@ -4,6 +4,7 @@
 import type { PriceBand, SubmitCommunitySupplierInput } from "@shared/community_suppliers";
 import type { SupplierCategory } from "@shared/suppliers";
 import {
+  findActiveByWebsite,
   getCommunitySupplierById,
   insertCommunitySupplier,
   toDirectorySupplier,
@@ -68,11 +69,18 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
   if (!website.startsWith("http://") && !website.startsWith("https://")) {
     throw new HttpError(400, "website must start with http:// or https://");
   }
+  let parsedUrl: URL;
   try {
-    new URL(website);
+    parsedUrl = new URL(website);
   } catch {
     throw new HttpError(400, "website is not a valid URL");
   }
+  // Defence in depth: reject anything that parses as a non-http(s) scheme even
+  // after the prefix check (e.g. "https://x@javascript:..." craft attempts).
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    throw new HttpError(400, "website protocol must be http or https");
+  }
+  if (!parsedUrl.hostname) throw new HttpError(400, "website hostname required");
 
   let contact_email: string | null = null;
   if (body.contact_email != null && body.contact_email !== "") {
@@ -117,10 +125,20 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
 
 async function handleSubmit(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
+  // Per-IP guard runs before validation to throttle floods of garbage. Per-user
+  // limit runs after validation so a submitter fixing typos doesn't burn their
+  // hourly quota on validation errors.
   rateLimit(ctx.clientIp, "supplier_submit", { capacity: 5, refillRate: 1 / 600 });
 
   const body = await readJson<SubmitBody>(ctx.req);
   const input = parseSubmitBody(body);
+
+  rateLimit(`user:${userId}`, "supplier_submit_user", { capacity: 5, refillRate: 1 / 3600 });
+
+  const dup = findActiveByWebsite(input.website);
+  if (dup) {
+    throw new HttpError(409, `Duplicate website — already in the directory: ${dup.name}`);
+  }
 
   const id = insertCommunitySupplier(userId, input);
   const row = getCommunitySupplierById(id);

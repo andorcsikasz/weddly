@@ -8,6 +8,9 @@ process.env.PORT = "8791";
 process.env.JWT_SECRET = "test-jwt-secret-0123456789abcdef0123456789abcdef0123456789abcdef";
 process.env.FRONTEND_BASE_URL = "http://localhost:5173";
 process.env.RESEND_API_KEY = ""; // ensure email is no-op
+// Admin allowlist for tests — must be set BEFORE the server boots so config.ts
+// picks it up. Tests register `admin@test.test` to exercise admin-only routes.
+process.env.ADMIN_EMAILS = "admin@test.test";
 
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {
