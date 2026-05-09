@@ -6,4 +6,4 @@ Disallow: /invite/
 Disallow: /rsvp/
 Disallow: /reset-password/
 
-Sitemap: /sitemap.xml
+Sitemap: https://weddly.xyz/sitemap.xml
