@@ -65,6 +65,16 @@ See [BLUEPRINT.md](./BLUEPRINT.md#domain-primitives-v1) for the full table list.
 - No raw hex colors in components — every value comes from `tailwind.config.js` tokens.
 - No `window.confirm` / `alert()` — use the portal-mounted `<ConfirmDialog>` and `useToast()`.
 
+## Milestone workflow (auto-commit rule)
+
+When a self-contained feature, bug fix, or logical change is complete, follow this sequence before moving on — do not wait for the user to ask:
+
+1. **Run E2E tests** for the affected flow (`bun run test`, or exercise the feature end-to-end if no test covers it).
+2. **Fix any issues** the E2E surfaces, then re-run until it passes.
+3. **Auto-commit** the milestone with a descriptive message. Push only when the user asks.
+
+A "milestone" is a logical unit of work (Claude's judgment call), not every edited file or every TodoWrite item. Group related changes into one commit. Skip the auto-commit if the change is purely exploratory/WIP and the user has signalled they're still iterating.
+
 ## i18n
 
 - HU is default; EN is secondary. Detection: `localStorage["weddly.locale"]` → `navigator.language` → `"hu"`.
