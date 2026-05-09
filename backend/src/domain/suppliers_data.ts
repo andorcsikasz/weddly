@@ -17,6 +17,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/barokk-villa",
     contact_email: "info@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "savory-events",
@@ -28,6 +30,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/savory-events",
     contact_email: "hello@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "luma-photo",
@@ -39,6 +43,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/luma-photo",
     contact_email: "studio@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "violet-floral",
@@ -50,6 +56,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/violet-floral",
     contact_email: "violet@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "dj-eclectic",
@@ -61,6 +69,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/dj-eclectic",
     contact_email: "book@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "fondant-bakery",
@@ -72,6 +82,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/fondant-bakery",
     contact_email: "orders@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "danube-rooms",
@@ -83,6 +95,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/danube-rooms",
     contact_email: "stay@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "cellar-bar",
@@ -94,6 +108,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/cellar-bar",
     contact_email: "pours@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "glow-lighting",
@@ -105,6 +121,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/glow-lighting",
     contact_email: "set@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "circus-act",
@@ -116,6 +134,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/circus-act",
     contact_email: "shows@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "atelier-attire",
@@ -127,6 +147,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/atelier-fehér",
     contact_email: "fit@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "rouge-beauty",
@@ -138,6 +160,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/rouge-beauty",
     contact_email: "look@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "press-stationery",
@@ -149,6 +173,8 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/press-letter",
     contact_email: "print@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
   {
     id: "shuttle-co",
@@ -160,5 +186,7 @@ export const DIRECTORY: DirectorySupplier[] = [
     website: "https://example.com/shuttle-co",
     contact_email: "ride@example.com",
     contact_phone: null,
+    source: "curated",
+    price_band: null,
   },
 ];

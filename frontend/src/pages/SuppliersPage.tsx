@@ -32,6 +32,8 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
+import { Button } from "../components/ui";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
@@ -68,6 +70,7 @@ export default function SuppliersPage() {
   const [items, setItems] = useState<DirectorySupplier[]>([]);
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
+  const [submitOpen, setSubmitOpen] = useState(false);
 
   useEffect(() => {
     supplierApi.list().then((r) => setItems(r.suppliers));
@@ -94,9 +97,14 @@ export default function SuppliersPage() {
 
   return (
     <AppShell>
-      <header className="mb-6">
-        <h1>{t("suppliers.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500">{t("suppliers.sub")}</p>
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1>{t("suppliers.title")}</h1>
+          <p className="mt-1 text-sm text-ink-500">{t("suppliers.sub")}</p>
+        </div>
+        <Button variant="primary" size="sm" onClick={() => setSubmitOpen(true)}>
+          {t("suppliers.drop_your_own")}
+        </Button>
       </header>
 
       {/* Step chain */}
@@ -168,14 +176,26 @@ export default function SuppliersPage() {
         {filtered.map((s) => {
           const Icon = CATEGORY_ICON[s.category];
           return (
-            <article key={s.id} className="card-hover">
+            <article key={s.id} className="card-hover relative">
+              {s.price_band !== null && (
+                <span className="absolute right-4 top-4 text-xs text-ink-500">
+                  {"$".repeat(s.price_band)}
+                </span>
+              )}
               <div className="flex items-center gap-3">
                 <Avatar name={s.name} />
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                  <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-ink-500">
+                  <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs uppercase tracking-wide text-ink-500">
                     <Icon size={12} />
-                    {t(`suppliers.cat.${s.category}`)} · {s.city}
+                    <span>
+                      {t(`suppliers.cat.${s.category}`)} · {s.city}
+                    </span>
+                    {s.source === "community" && (
+                      <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600">
+                        {t("suppliers.community_pill")}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -206,6 +226,12 @@ export default function SuppliersPage() {
           );
         })}
       </div>
+
+      <SubmitSupplierModal
+        open={submitOpen}
+        onClose={() => setSubmitOpen(false)}
+        onSubmitted={(s) => setItems((prev) => [s, ...prev])}
+      />
     </AppShell>
   );
 }

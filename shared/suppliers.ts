@@ -52,4 +52,8 @@ export interface DirectorySupplier {
   website: string;
   contact_email: string | null;
   contact_phone: string | null;
+  /** "curated" = vetted entries from suppliers_data.ts; "community" = user-submitted. */
+  source: "curated" | "community";
+  /** 1 = $, 4 = $$$$. Null for legacy curated entries that haven't been priced yet. */
+  price_band: 1 | 2 | 3 | 4 | null;
 }

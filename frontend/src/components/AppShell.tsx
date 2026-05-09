@@ -1,7 +1,8 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
-import { ChefHat, Heart, LayoutDashboard, Users, UtensilsCrossed } from "lucide-react";
+import { ChefHat, Heart, LayoutDashboard, ShieldCheck, Users, UtensilsCrossed } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { ProfileMenu } from "./ProfileMenu";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
@@ -14,8 +15,16 @@ const ITEMS: { to: string; labelKey: string; icon: ReactNode }[] = [
   { to: "/app/suppliers", labelKey: "nav.suppliers", icon: <Heart size={18} /> },
 ];
 
+const ADMIN_ITEM = {
+  to: "/app/admin/suppliers",
+  labelKey: "admin.nav_label",
+  icon: <ShieldCheck size={18} />,
+};
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, locale, setLocale } = useT();
+  const { user } = useAuth();
+  const displayItems = user?.is_admin ? [...ITEMS, ADMIN_ITEM] : ITEMS;
 
   return (
     <div className="min-h-full">
@@ -42,7 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8">
         <aside className="hidden w-56 shrink-0 lg:block">
           <nav className="sticky top-20 flex flex-col gap-1">
-            {ITEMS.map((item) => (
+            {displayItems.map((item) => (
               <SideLink key={item.to} to={item.to} icon={item.icon}>
                 {t(item.labelKey)}
               </SideLink>
@@ -55,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile bottom nav. */}
       <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t border-paper-300 bg-paper-50/95 backdrop-blur lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
-          {ITEMS.slice(0, 5).map((item) => (
+          {displayItems.slice(0, 5).map((item) => (
             <BottomLink key={item.to} to={item.to} icon={item.icon}>
               {t(item.labelKey)}
             </BottomLink>
