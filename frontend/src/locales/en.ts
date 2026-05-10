@@ -18,17 +18,17 @@ const en: LocaleMessages = {
   },
   app: {
     name: "Weddly",
-    tagline: "Plan your wedding, without a planner.",
+    tagline: "Plan your wedding together, in one calm place.",
   },
   seo: {
-    home_title: "Weddly — plan your wedding together",
+    home_title: "Weddly — your whole wedding in one shared workspace",
     home_description:
-      "One shared workspace for both of you: budget, guest list, RSVP links, visual seating, printable cards. Free during the open beta.",
+      "Budget, guest list, RSVP links, visual seating and printable cards live together in one shared workspace. Set up in minutes and spend the time you save on each other. Free throughout the open beta.",
     login_title: "Sign in — Weddly",
     login_description: "Sign in to your Weddly couple workspace.",
     register_title: "Create your couple workspace — Weddly",
     register_description:
-      "Start planning in minutes. One workspace for both of you, free during the open beta.",
+      "Open one shared workspace for both of you and start planning in minutes. Free throughout the open beta.",
     invite_title: "Join your couple workspace — Weddly",
     invite_description: "Your partner invited you to plan the wedding together.",
   },
@@ -92,7 +92,7 @@ const en: LocaleMessages = {
   onboarding: {
     welcome: "Welcome to {name}!",
     intro:
-      "A few quick questions and you're set. You can change anything later — these are just starting points.",
+      "A few quick questions and your workspace is ready. Everything stays editable — these are just gentle starting points so you can focus on the wedding itself.",
     step1_title: "Who's getting married?",
     step1_help: 'Your names show up across the workspace, e.g. "Partner 1 & Partner 2".',
     step1_short: "Couple",
@@ -187,7 +187,7 @@ const en: LocaleMessages = {
     link_copied: "Link copied!",
     target_guests: "Target guests",
     budget_ceiling: "Budget ceiling",
-    pick_up_where: "Pick up here:",
+    pick_up_where: "Pick up where you left off:",
     coming_soon: "Coming soon",
     feature_budget: "Budget",
     feature_guests: "Guest list",
@@ -244,12 +244,12 @@ const en: LocaleMessages = {
     need_account: "Sign up first — we'll bring you straight back.",
   },
   landing: {
-    hero_title: "Wedding planning, without the spreadsheet pile.",
+    hero_title: "Your whole wedding, in one shared workspace.",
     hero_sub:
-      "Budget, guest list, RSVP links, and seating in one shared workspace. Nothing slips through, nothing gets entered twice.",
+      "Budget, guest list, RSVPs, seating and printables live together. Both of you see the same picture, change something once, and spend the time you save on each other.",
     cta_signup: "Start planning",
     cta_login: "Sign in",
-    cta_signup_sub: "Free during the open beta. No credit card.",
+    cta_signup_sub: "Free to use throughout the open beta.",
     faq_title: "Questions you'll probably ask",
     faq_q_free: "Is Weddly really free?",
     faq_a_free:
@@ -259,16 +259,16 @@ const en: LocaleMessages = {
       "Yes. One of you signs up, then sends an invite link to the other. You both share the same workspace, with separate logins.",
     faq_q_data: "What happens to our data?",
     faq_a_data:
-      "It's yours. Every change is in an audit log you can read. You can pause the workspace any time; if you don't come back within 30 days, we delete everything — no manual support ticket needed.",
+      "It's yours. Every change lands in an audit log you can read. Pause the workspace any time; if it stays paused for 30 days, we delete everything automatically.",
     faq_q_planner: "Do we need a wedding planner?",
     faq_a_planner:
-      "No — Weddly walks you through budget, guests, and seating. If you do have a planner, they can join your workspace as a third login.",
+      "Weddly walks you through budget, guests and seating at your own pace, so plenty of couples plan it together this way. If you have a planner already, they can join your workspace as a third login.",
     faq_q_ready: "Is it ready for our wedding?",
     faq_a_ready:
-      "Live budget, RSVP links, visual seating, and printable cards (A4 / A6 / A3) all work today. The supplier directory is curated, not bookable yet — that ships in v2.",
+      "Live budget, RSVP links, visual seating and printable cards (A4 / A6 / A3) all work today. The supplier directory is curated for browsing now, with bookings landing in v2.",
     closing_title: "Two minutes to set up.",
     closing_body:
-      "Free during the open beta. No card needed, and you can pause the workspace whenever.",
+      "Free throughout the open beta, with the freedom to pause the workspace whenever life gets busy.",
     // ── Soft-Modern redesign additions ───────────────────────────────
     nav_how: "How it works",
     nav_suppliers: "Suppliers",
@@ -341,22 +341,22 @@ const en: LocaleMessages = {
     block_budget_eyebrow: "Live budget",
     block_budget_title: "Move the headcount slider, watch every category re-cost itself.",
     block_budget_body:
-      'Catering, drinks, decor and venue are recalculated against your guest count and ceiling. No spreadsheet rituals, no "who edited cell B14" arguments.',
+      "Catering, drinks, decor and venue recalculate live against your guest count and ceiling. The two of you share one live overview, so every decision is made on the same picture.",
     block_budget_bullet_1: "One ceiling, six categories, live remaining-spend.",
-    block_budget_bullet_2: "Hungarian forint, no currency conversion drift.",
-    block_budget_bullet_3: "Audit log of every change so nothing disappears.",
+    block_budget_bullet_2: "You both see the same number, in real time.",
+    block_budget_bullet_3: "Audit log of every change so each move is traceable.",
     block_guests_eyebrow: "Guest list & RSVP",
     block_guests_title:
       "One link per guest. Replies, meals, plus-ones, dietary — all in one place.",
     block_guests_body:
       "Each guest gets a personal RSVP page with their name pre-filled. They reply on their phone in under a minute; you see status, meal choice and song requests in the same list.",
-    block_guests_bullet_1: "No app install, no account — just the link.",
+    block_guests_bullet_1: "One link, one minute — guests reply on their phone.",
     block_guests_bullet_2: "Filter by status, meal, table or plus-one.",
     block_guests_bullet_3: "Export to CSV for the venue at any time.",
     block_seating_eyebrow: "Seating",
     block_seating_title: "Real seating canvas. Real print sizes.",
     block_seating_body:
-      "Drop tables on the canvas, drag guests onto seats, and the layout exports at A4, A6 (place cards) and A3 (the big chart for the entrance). The PDF renders at exact mm — no guesswork at the printer.",
+      "Drop tables on the canvas, drag guests onto seats, and the layout exports at A4, A6 (place cards) and A3 (the big chart for the entrance). The PDF renders at exact mm, ready for the printer.",
     block_seating_bullet_1: "Round, rectangular and head tables.",
     block_seating_bullet_2: "Conflict warnings when two guests collide.",
     block_seating_bullet_3: "Print-ready PDFs in three sizes.",
@@ -367,38 +367,38 @@ const en: LocaleMessages = {
     t1_name: "Anna & Bence",
     t1_meta: "May 2026 · Budapest · beta tester",
     t2_quote:
-      "The RSVP links saved us. Eighty-seven guests replied without needing to install anything, and the meal-choice column came out clean.",
+      "The RSVP links saved us. Eighty-seven guests tapped, replied and went on with their day — and the meal-choice column came out clean.",
     t2_name: "Eszter & Dani",
     t2_meta: "August 2026 · Lake Balaton · beta tester",
     t3_quote:
-      "Printing the seating chart at A3 the night before — no fiddling in Photoshop, no calling the print shop. It just printed.",
+      "Printing the seating chart at A3 the night before was as simple as it gets. The PDF came out at exact size and went straight onto the entrance easel.",
     t3_name: "Kata & Marci",
     t3_meta: "September 2026 · Pécs · beta tester",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_eyebrow: "Pricing",
     pricing_title: "Free for everything you need to plan a wedding.",
     pricing_body:
-      "Budget, guest list, RSVP links, seating canvas and printable cards stay free during and after the open beta. We'll add paid tiers in v2 only for advanced extras — never for the planning core.",
-    pricing_bullet_1: "No credit card to sign up. No card to keep using it.",
+      "Budget, guest list, RSVP links, seating canvas and printable cards stay free during and after the open beta. Paid tiers in v2 will add advanced extras on top, while the planning core stays free.",
+    pricing_bullet_1: "Free for couples throughout the open beta and beyond.",
     pricing_bullet_2:
       "Pause the workspace any time. Restart whenever — your data is kept for 30 days.",
-    pricing_bullet_3: "Export everything to CSV / PDF, anytime, no extra cost.",
+    pricing_bullet_3: "Export everything to CSV / PDF, any time, included.",
     pricing_v2_note:
       "v2 paid extras (later): premium templates, additional storage, white-label vendor profiles.",
     why_eyebrow: "Why Weddly",
-    why_title: "Built for Hungarian weddings — not translated from somewhere else.",
-    why_a_title: "Forint, not converted dollars",
+    why_title: "Built for Hungarian weddings, from the first line.",
+    why_a_title: "Everything in one place, in your hands",
     why_a_body:
-      "Every number is in HUF, formatted the way Hungarians read it. No exchange-rate drift on your venue deposit.",
-    why_b_title: "One workspace, two logins",
+      "Budget, guests, RSVPs, seating and printables share one home. Both of you open the same page and see the same picture, in real time.",
+    why_b_title: "Evenings turn into minutes",
     why_b_body:
-      "Plan together without sharing a password. Each of you gets your own email + sign-in; the workspace stays in sync.",
-    why_c_title: "Real A4 / A6 / A3 print sizes",
+      "Setup takes minutes, every change updates in one place, and guests reply through a single link. The work that used to fill your evenings finishes inside a coffee break.",
+    why_c_title: "Inspiration for the next step",
     why_c_body:
-      'Place cards print at exact mm — no "resize me" in Photoshop. The seating chart fits on one A3 sheet for the entrance.',
-    why_d_title: "Curated Hungarian directory",
+      "Curated Hungarian suppliers, seating templates and ready-made starting points by category. Weddly always shows you the next small step that moves the wedding forward.",
+    why_d_title: "Your attention stays on the day itself",
     why_d_body:
-      "Suppliers from Budapest, the Balaton, and the regions — not 200 global photographers irrelevant to your wedding.",
+      "Weddly carries the organising, so your attention stays on the wedding, on each other and on your guests. Let the day be about the day.",
     mockup_date: "June 14, 2026 · 142 days",
     mockup_live_budget_label: "Live budget · 120 guests",
     mockup_total_spend: "Total spend",
@@ -433,17 +433,17 @@ const en: LocaleMessages = {
     hero_title: "Reach the couples planning right now.",
     hero_sub:
       "Weddly's curated directory is the first place couples look. Join the waitlist and we'll let you know when we open to suppliers.",
-    benefit_1_title: "Curated, not crowded",
+    benefit_1_title: "A handpicked shortlist",
     benefit_1_body:
-      "We cap listings per category. Couples don't browse 200 suppliers — they see the ones that fit.",
+      "We cap listings per category, so couples meet a focused shortlist of suppliers who genuinely fit their plans.",
     benefit_2_title: "Hungarian market, Hungarian data",
     benefit_2_body:
-      "Forint, Hungarian language, Hungarian regions. Not a translated global platform.",
+      "Hungarian language, Hungarian regions, Hungarian rhythms — built around the way weddings actually run here.",
     benefit_3_title: "Bookings and reviews in v2",
     benefit_3_body:
-      "v1 is a static directory with direct contact. Bookings, messaging, and reviews land in v2.",
+      "v1 is a static directory with direct contact. Bookings, messaging and reviews join the platform in v2.",
     form_title: "Join the waitlist",
-    form_sub: "A few details and we'll be in touch. No newsletter.",
+    form_sub: "Share a few details and we'll only ping you when we open to suppliers.",
     form_business_label: "Business name",
     form_email_label: "Email",
     form_category_label: "Category",
@@ -615,6 +615,8 @@ const en: LocaleMessages = {
     snapshot_planned_label: "Planned",
     snapshot_actual_label: "Actual",
     snapshot_diff_label: "Diff vs current",
+    add_template_help: "Pick a category to add",
+    edit_planned_aria: "Edit planned amount for {category}",
     cat: {
       venue: "Venue",
       catering: "Catering",

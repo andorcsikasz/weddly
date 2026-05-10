@@ -126,14 +126,15 @@
     text-anchor="middle"
   >weddly.xyz  →</text>
 
-  <!-- Bottom-right wordmark -->
+  <!-- Bottom-right wordmark — wide-tracked serif caps with macron Ē -->
   <text
     x="1120"
     y="595"
     font-family="'Cormorant Garamond', Georgia, serif"
-    font-size="32"
-    font-weight="600"
+    font-size="28"
+    font-weight="400"
+    letter-spacing="11"
     fill="#101830"
     text-anchor="end"
-  >Weddly</text>
+  >WĒDDLY</text>
 </svg>

@@ -5,6 +5,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { ProfileMenu } from "./ProfileMenu";
+import { Wordmark } from "./Wordmark";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
 
 type NavItem = { to: string; labelKey: string; tabKey?: string; icon: ReactNode };
@@ -57,8 +58,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-full">
       <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <Link to="/app" className="font-serif text-xl font-semibold tracking-tight text-ink-900">
-            {t("app.name")}
+          <Link to="/app" className="text-ink-900 transition-colors hover:text-ink-700">
+            <Wordmark size="sm" />
           </Link>
           <div className="flex items-center gap-2">
             <button

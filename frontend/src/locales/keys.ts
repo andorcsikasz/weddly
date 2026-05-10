@@ -581,6 +581,8 @@ export interface LocaleMessages {
     snapshot_planned_label: string;
     snapshot_actual_label: string;
     snapshot_diff_label: string;
+    add_template_help: string;
+    edit_planned_aria: string;
     cat: {
       venue: string;
       catering: string;

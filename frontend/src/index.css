@@ -123,6 +123,16 @@
     @apply badge border-paper-300 bg-paper-100 text-ink-700;
   }
 
+  /* Financial-dashboard number treatment: tabular figures, lining digits,
+     slightly tightened tracking. Compose with size/weight/colour utilities. */
+  .stat-num {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings:
+      "tnum" 1,
+      "lnum" 1;
+    letter-spacing: -0.01em;
+  }
+
   /* Subtle diagonal hairline texture for "stationery" surfaces. */
   .stationery {
     background-color: theme("colors.paper.200");

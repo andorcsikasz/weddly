@@ -1,14 +1,20 @@
 // Workspace overview: KPI tiles (countdown, RSVPs, spend, seated), an RSVP
 // breakdown bar, a derived setup-checklist, and quick links to the deep tools.
 
-import type { BudgetGoal, BudgetLine, Couple, CoupleInvite, Guest } from "@shared/types";
+import type {
+  BudgetCategory,
+  BudgetGoal,
+  BudgetLine,
+  Couple,
+  CoupleInvite,
+  Guest,
+} from "@shared/types";
 import {
   CalendarHeart,
   ChefHat,
   Heart,
   Mail,
   Printer,
-  TrendingUp,
   Users,
   UtensilsCrossed,
   Wallet,
@@ -16,6 +22,8 @@ import {
 import { type JSX, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { CostPlanningCard } from "../components/CostPlanningCard";
+import { applyCategoryPlanned } from "../lib/budget";
 import { budgetApi, coupleApi, guestApi, seatingApi } from "../lib/endpoints";
 import { formatHuf, formatNumber, formatWeddingDateGoal } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -49,6 +57,8 @@ export default function DashboardPage() {
   const [data, setData] = useState<Loaded | null | "loading">("loading");
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
+  // Cost-planning slider — defaults to baseline once couple loads.
+  const [planningCount, setPlanningCount] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -103,6 +113,28 @@ export default function DashboardPage() {
   const overCap = cap !== null && totalPlanned > cap;
   const costPerConfirmedGuest =
     rsvp.yes > 0 && totalActual > 0 ? Math.round(totalActual / rsvp.yes) : null;
+
+  // ── Cost-planning baseline & inline-edit handler ──────────────────────
+  // Same baseline rules as BudgetPage so the slider stays consistent across
+  // pages (target headcount → range midpoint → 100 fallback).
+  const baselineCount = targetCount ?? (totalGuests > 0 ? totalGuests : 100);
+  const effectivePlanningCount = planningCount ?? baselineCount;
+  async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
+    if (data === "loading" || data === null) return;
+    try {
+      const next = await applyCategoryPlanned(
+        category,
+        newTotal,
+        lines,
+        t(`budget.cat.${category}`),
+      );
+      setData({ ...data, lines: next });
+    } catch {
+      // Refetch lines on failure.
+      const r = await budgetApi.listLines();
+      setData({ ...data, lines: r.lines });
+    }
+  }
 
   // ── Seating ───────────────────────────────────────────────────────────
   const confirmedGuests = guests.filter((g) => g.rsvp_status === "yes");
@@ -338,33 +370,27 @@ export default function DashboardPage() {
               />
             </dl>
           </div>
-
-          <div className="card">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-700">
-              <TrendingUp size={14} /> {t("dashboard.spend_title")}
-            </h3>
-            <dl className="mt-3 space-y-1.5 text-sm">
-              <SpendRow
-                label={t("dashboard.spend_planned")}
-                value={formatHuf(totalPlanned, locale)}
-              />
-              <SpendRow
-                label={t("dashboard.spend_actual")}
-                value={formatHuf(totalActual, locale)}
-              />
-              {cap !== null && (
-                <SpendRow label={t("dashboard.spend_cap")} value={formatHuf(cap, locale)} muted />
-              )}
-              {costPerConfirmedGuest !== null && (
-                <SpendRow
-                  label={t("dashboard.cost_per_guest")}
-                  value={formatHuf(costPerConfirmedGuest, locale)}
-                  muted
-                />
-              )}
-            </dl>
-          </div>
         </div>
+      </section>
+
+      {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
+      <section className="mb-8">
+        <CostPlanningCard
+          lines={lines}
+          baseline={baselineCount}
+          cap={cap}
+          count={effectivePlanningCount}
+          onCountChange={setPlanningCount}
+          onEditPlanned={setCategoryPlanned}
+        />
+        {costPerConfirmedGuest !== null && (
+          <p className="mt-2 text-right text-xs text-ink-500">
+            {t("dashboard.cost_per_guest")}:{" "}
+            <span className="stat-num font-medium text-ink-700">
+              {formatHuf(costPerConfirmedGuest, locale)}
+            </span>
+          </p>
+        )}
       </section>
 
       {/* ── Invite partner — only if not yet linked. ───────────────── */}
@@ -453,7 +479,7 @@ function KpiTile({
         </span>
         {label}
       </div>
-      <div className="mt-3 font-serif text-3xl leading-none text-ink-900">{value}</div>
+      <div className="stat-num mt-3 text-3xl font-semibold leading-none text-ink-900">{value}</div>
       <div className="mt-1 text-xs text-ink-500">{unit}</div>
       {progress !== undefined && progress !== null && (
         <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-paper-200">
@@ -492,7 +518,7 @@ function PastWeddingTile({
         </span>
         {label}
       </div>
-      <div className="mt-3 font-serif text-xl leading-tight text-ink-900">{sub}</div>
+      <div className="stat-num mt-3 text-xl font-semibold leading-tight text-ink-900">{sub}</div>
       <div className="mt-3 flex flex-col gap-1.5 text-sm">
         <Link to={seatingHref} className="text-blush-800 underline-offset-2 hover:underline">
           {seatingLabel}
@@ -526,17 +552,8 @@ function RsvpRow({ swatch, label, value }: { swatch: string; label: string; valu
         <span className={`inline-block h-2 w-2 rounded-full ${swatch}`} />
         {label}
       </dt>
-      <dd className="text-right tabular-nums text-ink-900">{value}</dd>
+      <dd className="stat-num text-right font-medium text-ink-900">{value}</dd>
     </>
-  );
-}
-
-function SpendRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className={muted ? "text-xs text-ink-500" : "text-ink-700"}>{label}</dt>
-      <dd className={`tabular-nums ${muted ? "text-xs text-ink-500" : "text-ink-900"}`}>{value}</dd>
-    </div>
   );
 }
 

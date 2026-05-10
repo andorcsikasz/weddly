@@ -2,6 +2,7 @@ import { ArrowRight, Menu, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
+import { Wordmark } from "./Wordmark";
 
 /**
  * Wrapper for the public-facing surface (landing + vendors). Mirrors
@@ -19,6 +20,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
       >
         {t("landing.skip_to_main")}
       </a>
+      <GuestCheckinBand />
       <PublicHeader />
       <main id="main-content" className="flex-1">
         {children}
@@ -28,48 +30,73 @@ export function PublicShell({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Persistent "Vendég vagy? → /rsvp" strip pinned above the header on every
+ * public page. Airport-style: the first thing a visitor sees is the check-in
+ * sign. Whole band is one big clickable target to maximize tappability.
+ */
+function GuestCheckinBand() {
+  const { t } = useT();
+  return (
+    <Link
+      to="/rsvp"
+      className="group block border-b border-blush-200 bg-blush-50 text-ink-900 transition-colors hover:bg-blush-100 focus-visible:bg-blush-100 focus-visible:outline-none"
+    >
+      <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-2.5 text-sm sm:px-6">
+        <span className="font-medium">{t("landing.footer_band_text")}</span>
+        <span aria-hidden className="text-ink-400">
+          ·
+        </span>
+        <span className="text-ink-700 group-hover:text-ink-900">
+          {t("landing.footer_band_cta")}
+        </span>
+        <ArrowRight
+          aria-hidden
+          size={14}
+          className="text-ink-700 transition-transform group-hover:translate-x-0.5 group-hover:text-ink-900"
+        />
+      </div>
+    </Link>
+  );
+}
+
 function PublicHeader() {
   const { t, locale, setLocale } = useT();
   const [menuOpen, setMenuOpen] = useState(false);
+  const otherLocale = locale === "hu" ? "en" : "hu";
+
   return (
-    <header className="border-b border-paper-300 bg-paper-50/85 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
-        <Link
-          to="/"
-          className="font-serif text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl"
-        >
-          {t("app.name")}
+    <header className="border-b border-paper-300 bg-paper-50">
+      <div className="mx-auto flex max-w-6xl items-center gap-8 px-4 py-5 sm:px-6">
+        <Link to="/" className="shrink-0 text-ink-900 transition-colors hover:text-ink-700">
+          <Wordmark size="md" />
         </Link>
 
+        {/* Centred nav, desktop only. Plain text links — no chips, no
+            ornaments — to keep the chrome quiet. */}
         <nav
           aria-label="Primary"
-          className="hidden items-center gap-7 text-sm text-ink-700 md:flex"
+          className="hidden flex-1 items-center justify-center gap-9 text-sm text-ink-700 md:flex"
         >
-          <a href="#phases" className="hover:text-ink-900">
+          <a href="#phases" className="transition-colors hover:text-ink-900">
             {t("landing.nav_how")}
           </a>
-          <a href="#suppliers" className="hover:text-ink-900">
+          <a href="#suppliers" className="transition-colors hover:text-ink-900">
             {t("landing.nav_suppliers")}
           </a>
-          <Link
-            to="/vendors"
-            className="inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1.5 text-xs font-medium text-blush-700 hover:border-blush-400 hover:bg-blush-100"
-          >
-            {t("landing.vendor_pill")}
-            <ArrowRight size={12} />
+          <Link to="/vendors" className="transition-colors hover:text-ink-900">
+            {t("landing.nav_vendors")}
           </Link>
         </nav>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
-            aria-label="Switch language"
+        {/* Right cluster: sign-in (text) + sign-up (primary) + tiny lang
+            toggle. On mobile only sign-up + hamburger remain — sign-in
+            and the lang toggle live inside the panel. */}
+        <div className="ml-auto flex items-center gap-3 md:ml-0">
+          <Link
+            to="/login"
+            className="hidden text-sm text-ink-700 transition-colors hover:text-ink-900 sm:inline-flex"
           >
-            {locale === "hu" ? "EN" : "HU"}
-          </button>
-          <Link to="/login" className="btn-ghost btn-sm hidden sm:inline-flex">
             {t("landing.cta_login")}
           </Link>
           <Link to="/signup" className="btn-primary btn-sm">
@@ -77,51 +104,73 @@ function PublicHeader() {
           </Link>
           <button
             type="button"
-            className="btn-ghost btn-sm md:hidden"
+            onClick={() => setLocale(otherLocale)}
+            className="hidden text-xs font-medium uppercase tracking-wider text-ink-500 transition-colors hover:text-ink-900 md:inline-flex"
+            aria-label="Switch language"
+          >
+            {otherLocale}
+          </button>
+          <button
+            type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-controls="public-mobile-nav"
             aria-label={menuOpen ? t("public.menu_close") : t("public.menu_open")}
+            className="-mr-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 md:hidden"
           >
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
       </div>
+
       {menuOpen && (
         <nav
           id="public-mobile-nav"
           aria-label="Primary mobile"
           className="border-t border-paper-300 bg-paper-50 md:hidden"
         >
-          <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 text-sm text-ink-700 sm:px-6">
+          <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-4 text-sm text-ink-700 sm:px-6">
             <a
               href="#phases"
-              className="rounded-md px-2 py-2 hover:bg-paper-100 hover:text-ink-900"
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
               onClick={() => setMenuOpen(false)}
             >
               {t("landing.nav_how")}
             </a>
             <a
               href="#suppliers"
-              className="rounded-md px-2 py-2 hover:bg-paper-100 hover:text-ink-900"
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
               onClick={() => setMenuOpen(false)}
             >
               {t("landing.nav_suppliers")}
             </a>
             <Link
               to="/vendors"
-              className="rounded-md px-2 py-2 hover:bg-paper-100 hover:text-ink-900"
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
               onClick={() => setMenuOpen(false)}
             >
               {t("landing.nav_vendors")}
             </Link>
             <Link
               to="/login"
-              className="rounded-md px-2 py-2 hover:bg-paper-100 hover:text-ink-900"
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
               onClick={() => setMenuOpen(false)}
             >
               {t("landing.cta_login")}
             </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setLocale(otherLocale);
+                setMenuOpen(false);
+              }}
+              className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900"
+            >
+              <span>Language</span>
+              <span className="text-xs font-medium uppercase tracking-wider text-ink-500">
+                {locale} → {otherLocale}
+              </span>
+            </button>
           </div>
         </nav>
       )}
@@ -154,8 +203,8 @@ function PublicFooter() {
 
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         <div>
-          <p className="font-serif text-xl font-semibold text-ink-900">{t("app.name")}</p>
-          <p className="mt-2 text-sm text-ink-600">{t("landing.footer_tagline")}</p>
+          <Wordmark size="md" className="text-ink-900" />
+          <p className="mt-3 text-sm text-ink-600">{t("landing.footer_tagline")}</p>
         </div>
         <FooterColumn title={t("landing.footer_couples")}>
           <FooterLink to="/signup">{t("landing.footer_couples_signup")}</FooterLink>

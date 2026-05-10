@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { Wordmark } from "./Wordmark";
 
 export function Shell({ children, hideHeader }: { children: ReactNode; hideHeader?: boolean }) {
   return (
@@ -18,8 +19,8 @@ function Header() {
   return (
     <header className="border-b border-paper-300 bg-paper-50/80 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link to="/" className="font-serif text-2xl font-semibold tracking-tight text-ink-900">
-          {t("app.name")}
+        <Link to="/" className="text-ink-900 transition-colors hover:text-ink-700">
+          <Wordmark size="md" />
         </Link>
         <div className="flex items-center gap-2">
           <button
