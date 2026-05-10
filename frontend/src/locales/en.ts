@@ -896,6 +896,13 @@ const en: LocaleMessages = {
     decline_keep_data_body:
       "Your meal and song picks are kept either way — if plans change again, just toggle the answer back.",
     decline_keep_data_confirm: "Yes, change my answer",
+    checkin_kicker: "Boarding pass",
+    checkin_ref_label: "Ref",
+    checkin_party_of: "Party of {n}",
+    checkin_summary_ready: "{n} ready",
+    checkin_summary_pending_one: "1 still pending",
+    checkin_summary_pending_n: "{n} still pending",
+    checkin_complete: "Complete check-in",
   },
   notfound: {
     title: "Page not found",

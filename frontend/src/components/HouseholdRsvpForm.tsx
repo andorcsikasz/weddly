@@ -162,13 +162,31 @@ export function HouseholdRsvpForm({
     }
   }
 
+  // Pre-submit summary so guests don't accidentally fire off a partial RSVP
+  // ("3 ready · 1 still pending"). Skipped entirely when everyone has picked.
+  const readyCount = drafts.filter((d) => d.rsvp_status !== "pending").length;
+  const pendingCount = drafts.length - readyCount;
+
   return (
     <form className="card stationery animate-fade-in-up" onSubmit={onSubmit}>
       <p className="text-xs uppercase tracking-widest text-ink-500">{view.couple_display_name}</p>
       {view.wedding_date && (
         <p className="text-sm text-ink-600">{formatDate(view.wedding_date, locale)}</p>
       )}
-      <h1 className="mt-4 font-serif text-3xl">{t("rsvp.checkin_household_for")}</h1>
+
+      {/* Boarding-pass anchor: monospace REF · slug · code so the credential
+          on the page matches what was on the invite the guest just typed. */}
+      <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-xs uppercase tracking-[0.25em] text-ink-700">
+        <span className="text-ink-500">{t("rsvp.checkin_ref_label")}</span>
+        <span aria-hidden>·</span>
+        <span>{view.couple_slug}</span>
+        <span aria-hidden>·</span>
+        <span className="tracking-[0.4em] text-ink-900">{view.household_code}</span>
+      </div>
+
+      <h1 className="mt-4 font-serif text-3xl">
+        {t("rsvp.checkin_party_of", { n: drafts.length })}
+      </h1>
       <p className="mt-1 text-sm text-ink-700">{view.household_label}</p>
 
       <div className="mt-6 space-y-6">
@@ -198,11 +216,17 @@ export function HouseholdRsvpForm({
               </div>
             )}
 
-            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+            <div
+              role="radiogroup"
+              aria-label={d.full_name}
+              className="grid gap-2 sm:grid-cols-2 md:grid-cols-4"
+            >
               {STATUSES.map((s) => (
                 <button
                   key={s}
                   type="button"
+                  role="radio"
+                  aria-checked={d.rsvp_status === s}
                   onClick={() => void pickStatus(d, s)}
                   className={
                     d.rsvp_status === s
@@ -268,9 +292,35 @@ export function HouseholdRsvpForm({
         ))}
       </div>
 
-      {error && <p className="field-error mt-4">{error}</p>}
-      <button type="submit" className="btn-accent btn-lg mt-6 w-full" disabled={submitting}>
-        {submitting ? t("common.loading") : t("rsvp.checkin_save_for_all")}
+      {/* Pre-submit summary so guests notice when they've only answered for
+          part of the party. Hidden once everyone has picked something. */}
+      {drafts.length > 1 && (
+        <p className="mt-6 text-center text-xs text-ink-600">
+          <span className="font-medium text-ink-900">
+            {t("rsvp.checkin_summary_ready", { n: readyCount })}
+          </span>
+          {pendingCount > 0 && (
+            <>
+              <span aria-hidden className="mx-2 text-ink-400">
+                ·
+              </span>
+              <span className="text-blush-700">
+                {pendingCount === 1
+                  ? t("rsvp.checkin_summary_pending_one")
+                  : t("rsvp.checkin_summary_pending_n", { n: pendingCount })}
+              </span>
+            </>
+          )}
+        </p>
+      )}
+
+      {error && (
+        <p className="field-error mt-4" role="alert" aria-live="polite">
+          {error}
+        </p>
+      )}
+      <button type="submit" className="btn-accent btn-lg mt-4 w-full" disabled={submitting}>
+        {submitting ? t("common.loading") : t("rsvp.checkin_complete")}
       </button>
       {done && (
         <p className="mt-2 text-center text-sm text-ink-700">

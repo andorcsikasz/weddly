@@ -252,7 +252,7 @@ export default function GuestsPage() {
 
           {orphanGuests.length > 0 && (
             <div className="card border-blush-200 bg-blush-50/40">
-              <h3 className="font-serif text-lg text-ink-900">{t("guests.orphans_title")}</h3>
+              <h3 className="text-base font-semibold text-ink-900">{t("guests.orphans_title")}</h3>
               <p className="mt-1 text-sm text-ink-700">{t("guests.orphans_body")}</p>
               <ul className="mt-3 text-sm text-ink-700">
                 {orphanGuests.map((g) => (
@@ -338,7 +338,10 @@ function HouseholdCard({
     <div className="card overflow-hidden p-0">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3">
         <div className="min-w-0">
-          <h3 className="font-serif text-lg text-ink-900 truncate">{household.label}</h3>
+          <h3 className="flex items-baseline gap-2 truncate text-base font-semibold text-ink-900">
+            <span className="truncate">{household.label}</span>
+            <span className="text-sm font-normal text-ink-500">({members.length})</span>
+          </h3>
           <div className="mt-1 flex items-center gap-3 text-xs text-ink-600">
             {coupleSlug && <span className="font-mono uppercase">{coupleSlug}</span>}
             <span aria-hidden>·</span>
@@ -501,7 +504,6 @@ function CheckinPill({ couple, onSaved }: { couple: Couple; onSaved: (next: Coup
             {editing ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <input
-                  // biome-ignore lint/a11y/noAutofocus: focus is intentional when entering edit mode
                   autoFocus
                   className="input font-mono uppercase tracking-[0.3em]"
                   value={draft}

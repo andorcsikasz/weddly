@@ -880,6 +880,19 @@ export interface LocaleMessages {
     decline_keep_data_title: string;
     decline_keep_data_body: string;
     decline_keep_data_confirm: string;
+    /** Kicker tag above the airport-style lookup form. */
+    checkin_kicker: string;
+    /** "REF" badge labelling the household code on the household form. */
+    checkin_ref_label: string;
+    /** "Party of {n}" header — replaces the cold "Checking in for" copy. */
+    checkin_party_of: string;
+    /** Pre-submit summary line so guests don't fire off a partial RSVP by
+     *  accident. {n} = ready count, {p} = still-pending count. */
+    checkin_summary_ready: string;
+    checkin_summary_pending_one: string;
+    checkin_summary_pending_n: string;
+    /** Stronger submit CTA than "Save responses". */
+    checkin_complete: string;
   };
   notfound: {
     title: string;

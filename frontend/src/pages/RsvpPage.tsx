@@ -51,8 +51,9 @@ export default function RsvpPage() {
 }
 
 function FullPage({ children }: { children: React.ReactNode }) {
+  // pb-32 keeps the submit CTA visible above the iOS soft keyboard.
   return (
-    <div className="min-h-full bg-paper-100 px-4 py-8 sm:py-16">
+    <div className="min-h-full bg-paper-100 px-4 pb-32 pt-8 sm:pt-16">
       <div className="mx-auto max-w-md">{children}</div>
     </div>
   );

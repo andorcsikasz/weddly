@@ -902,6 +902,13 @@ const hu: LocaleMessages = {
     decline_keep_data_body:
       "Az étrend és a dal-kérés adatok megmaradnak — ha mégis jönni tudtok, csak váltsd vissza a választ.",
     decline_keep_data_confirm: "Igen, módosítom",
+    checkin_kicker: "Boarding pass",
+    checkin_ref_label: "Az.",
+    checkin_party_of: "Csoport · {n} fő",
+    checkin_summary_ready: "{n} kész",
+    checkin_summary_pending_one: "1 fő még nem válaszolt",
+    checkin_summary_pending_n: "{n} fő még nem válaszolt",
+    checkin_complete: "Check-in befejezése",
   },
   notfound: {
     title: "Nincs ilyen oldal",

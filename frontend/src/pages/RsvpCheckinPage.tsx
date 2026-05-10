@@ -127,7 +127,12 @@ export default function RsvpCheckinPage() {
         />
       ) : (
         <form className="card stationery animate-fade-in-up" onSubmit={onSubmitLookup}>
-          <h1 className="font-serif text-3xl">{t("rsvp.checkin_title")}</h1>
+          {/* Quiet airport-style kicker — anchors the metaphor before the
+              guest types anything. Mono uppercase, low contrast. */}
+          <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-ink-500">
+            {t("rsvp.checkin_kicker")}
+          </p>
+          <h1 className="mt-1 font-serif text-3xl">{t("rsvp.checkin_title")}</h1>
           <p className="mt-2 text-sm text-ink-600">{t("rsvp.checkin_intro")}</p>
 
           <div className="mt-6 space-y-4">
@@ -146,6 +151,7 @@ export default function RsvpCheckinPage() {
                 value={coupleInput}
                 autoCapitalize="characters"
                 autoCorrect="off"
+                autoComplete="off"
                 spellCheck={false}
                 placeholder="BRIDEGROOM"
                 onChange={(e) => setCoupleInput(e.target.value.toUpperCase())}
@@ -192,7 +198,7 @@ export default function RsvpCheckinPage() {
           </div>
 
           {error && (
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2" aria-live="polite" aria-atomic="true">
               <p className="field-error" role="alert">
                 {error}
               </p>
@@ -215,8 +221,11 @@ export default function RsvpCheckinPage() {
 }
 
 function FullPage({ children }: { children: React.ReactNode }) {
+  // pb-32 reserves space at the bottom so the iOS soft keyboard doesn't park
+  // itself directly over the submit button when a guest taps a meal/dietary
+  // input — they can scroll past the form and still see the CTA.
   return (
-    <div className="min-h-full bg-paper-100 px-4 py-8 sm:py-16">
+    <div className="min-h-full bg-paper-100 px-4 pb-32 pt-8 sm:pt-16">
       <div className="mx-auto max-w-md">{children}</div>
     </div>
   );
