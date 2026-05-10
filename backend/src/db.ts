@@ -80,6 +80,10 @@ addColumnIfMissing("seating_tables", "length_mm", "length_mm INTEGER NOT NULL DE
 addColumnIfMissing("couples", "slug", "slug TEXT");
 addColumnIfMissing("guests", "household_id", "household_id INTEGER REFERENCES households(id)");
 
+// Optional street address on community-submitted suppliers, surfaced on the
+// directory card. Curated entries set it inline in suppliers_data.ts.
+addColumnIfMissing("community_suppliers", "address", "address TEXT");
+
 export function now(): number {
   return Date.now();
 }

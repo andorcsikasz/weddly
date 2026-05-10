@@ -52,8 +52,10 @@ export interface DirectorySupplier {
   website: string;
   contact_email: string | null;
   contact_phone: string | null;
+  /** Optional street address. Surfaces on the card under the city/category line. */
+  address: string | null;
   /** "curated" = vetted entries from suppliers_data.ts; "community" = user-submitted. */
   source: "curated" | "community";
-  /** 1 = $, 4 = $$$$. Null for legacy curated entries that haven't been priced yet. */
-  price_band: 1 | 2 | 3 | 4 | null;
+  /** 1 = $, 5 = $$$$$. Null for entries that haven't been priced yet. */
+  price_band: 1 | 2 | 3 | 4 | 5 | null;
 }

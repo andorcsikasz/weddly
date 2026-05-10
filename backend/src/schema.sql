@@ -255,11 +255,12 @@ CREATE TABLE IF NOT EXISTS community_suppliers (
   category TEXT NOT NULL,                                      -- one of SupplierCategory
   name TEXT NOT NULL,
   city TEXT NOT NULL,
+  address TEXT,                                                -- optional street address
   website TEXT NOT NULL,
   contact_email TEXT,
   contact_phone TEXT,
   blurb TEXT NOT NULL,
-  price_band INTEGER NOT NULL,                                 -- 1..4 ($ to $$$$)
+  price_band INTEGER NOT NULL,                                 -- 1..5 ($ to $$$$$)
   status TEXT NOT NULL DEFAULT 'active',                       -- 'active' | 'hidden'
   hide_reason TEXT,
   hidden_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,

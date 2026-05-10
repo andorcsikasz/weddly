@@ -730,6 +730,7 @@ export interface LocaleMessages {
       category_placeholder: string;
       name_label: string;
       city_label: string;
+      address_label: string;
       website_label: string;
       email_label: string;
       phone_label: string;

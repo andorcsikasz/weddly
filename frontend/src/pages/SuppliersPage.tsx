@@ -383,6 +383,7 @@ export default function SuppliersPage() {
                   </p>
                 </div>
               </div>
+              {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
               <p className="mt-3 text-sm text-ink-700">
                 {locale === "hu" ? s.blurb_hu : s.blurb_en}
               </p>

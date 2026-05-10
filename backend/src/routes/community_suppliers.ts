@@ -34,6 +34,7 @@ interface SubmitBody {
   category?: unknown;
   name?: unknown;
   city?: unknown;
+  address?: unknown;
   website?: unknown;
   contact_email?: unknown;
   contact_phone?: unknown;
@@ -58,6 +59,15 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
   const city = trimStr(body.city);
   if (!city) throw new HttpError(400, "city required");
   if (city.length > 80) throw new HttpError(400, "city too long (max 80)");
+
+  let address: string | null = null;
+  if (body.address != null && body.address !== "") {
+    const a = trimStr(body.address);
+    if (a) {
+      if (a.length > 200) throw new HttpError(400, "address too long (max 200)");
+      address = a;
+    }
+  }
 
   const blurb = trimStr(body.blurb);
   if (!blurb) throw new HttpError(400, "blurb required");
@@ -106,8 +116,8 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
 
   const pbRaw = body.price_band;
   const pbNum = typeof pbRaw === "number" ? pbRaw : Number(pbRaw);
-  if (!Number.isInteger(pbNum) || pbNum < 1 || pbNum > 4) {
-    throw new HttpError(400, "price_band must be an integer 1..4");
+  if (!Number.isInteger(pbNum) || pbNum < 1 || pbNum > 5) {
+    throw new HttpError(400, "price_band must be an integer 1..5");
   }
   const price_band = pbNum as PriceBand;
 
@@ -115,6 +125,7 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
     category: category as SupplierCategory,
     name,
     city,
+    address,
     website,
     contact_email,
     contact_phone,

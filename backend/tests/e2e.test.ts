@@ -1781,7 +1781,7 @@ describe("community suppliers", () => {
         body: validPayload({ contact_email: "not-an-email" }),
       },
       { label: "price_band 0", body: validPayload({ price_band: 0 }) },
-      { label: "price_band 5", body: validPayload({ price_band: 5 }) },
+      { label: "price_band 6", body: validPayload({ price_band: 6 }) },
       { label: "price_band 2.5", body: validPayload({ price_band: 2.5 }) },
     ];
 

@@ -16,6 +16,7 @@ export interface CommunitySupplierRow {
   category: string;
   name: string;
   city: string;
+  address: string | null;
   website: string;
   contact_email: string | null;
   contact_phone: string | null;
@@ -34,7 +35,7 @@ export interface CommunitySupplierRowWithEmail extends CommunitySupplierRow {
 }
 
 function clampPriceBand(v: number): PriceBand {
-  if (v === 1 || v === 2 || v === 3 || v === 4) return v;
+  if (v === 1 || v === 2 || v === 3 || v === 4 || v === 5) return v;
   return 1;
 }
 
@@ -45,6 +46,7 @@ export function toDirectorySupplier(row: CommunitySupplierRow): DirectorySupplie
     name: row.name,
     category: row.category as SupplierCategory,
     city: row.city,
+    address: row.address,
     blurb_hu: row.blurb,
     blurb_en: row.blurb,
     website: row.website,
@@ -61,6 +63,7 @@ export function toAdminView(row: CommunitySupplierRowWithEmail): CommunitySuppli
     category: row.category as SupplierCategory,
     name: row.name,
     city: row.city,
+    address: row.address,
     website: row.website,
     contact_email: row.contact_email,
     contact_phone: row.contact_phone,
@@ -143,15 +146,16 @@ export function insertCommunitySupplier(
   const result = db
     .prepare(
       `INSERT INTO community_suppliers
-        (submitter_user_id, category, name, city, website, contact_email, contact_phone,
+        (submitter_user_id, category, name, city, address, website, contact_email, contact_phone,
          blurb, price_band, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
     )
     .run(
       submitterUserId,
       input.category,
       input.name,
       input.city,
+      input.address,
       input.website,
       input.contact_email,
       input.contact_phone,

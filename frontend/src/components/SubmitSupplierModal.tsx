@@ -17,6 +17,7 @@ type FieldKey =
   | "category"
   | "name"
   | "city"
+  | "address"
   | "website"
   | "contact_email"
   | "contact_phone"
@@ -25,13 +26,14 @@ type FieldKey =
 
 type Errors = Partial<Record<FieldKey, string>>;
 
-const PRICE_BANDS: PriceBand[] = [1, 2, 3, 4];
+const PRICE_BANDS: PriceBand[] = [1, 2, 3, 4, 5];
 
 function emptyForm() {
   return {
     category: "" as SupplierCategory | "",
     name: "",
     city: "",
+    address: "",
     website: "",
     contact_email: "",
     contact_phone: "",
@@ -96,6 +98,9 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     if (!city) next.city = required;
     else if (city.length > 80) next.city = tooLong;
 
+    const address = form.address.trim();
+    if (address && address.length > 200) next.address = tooLong;
+
     const website = form.website.trim();
     if (!website) next.website = required;
     else if (!isValidUrl(website)) next.website = t("suppliers.submit.err_invalid_url");
@@ -127,6 +132,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       category: form.category,
       name: form.name.trim(),
       city: form.city.trim(),
+      address: form.address.trim() ? form.address.trim() : null,
       website: form.website.trim(),
       contact_email: form.contact_email.trim() ? form.contact_email.trim() : null,
       contact_phone: form.contact_phone.trim() ? form.contact_phone.trim() : null,
@@ -264,6 +270,15 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
           value={form.city}
           onChange={(e) => setField("city", e.target.value)}
           errorText={errors.city}
+        />
+
+        <TextField
+          id="submit-supplier-address"
+          label={`${t("suppliers.submit.address_label")} ${t("suppliers.submit.phone_optional")}`}
+          maxLength={200}
+          value={form.address}
+          onChange={(e) => setField("address", e.target.value)}
+          errorText={errors.address}
         />
 
         <TextField
