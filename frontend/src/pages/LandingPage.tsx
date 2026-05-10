@@ -77,7 +77,7 @@ export default function LandingPage() {
               </button>
             </div>
             <div className="hidden self-end font-serif text-sm italic text-ink-500 lg:block">
-              {t("landing.stats_eyebrow")} · {t("landing.stats_c_value")}
+              {t("landing.stats_eyebrow")}
             </div>
           </div>
         </div>
@@ -128,9 +128,8 @@ export default function LandingPage() {
           <p className="mt-6 font-serif text-2xl text-paper-300 sm:text-3xl">
             {t("landing.stats_a_label")}
           </p>
-          <div className="mt-8 grid gap-x-8 gap-y-3 border-t border-paper-700/30 pt-8 text-sm sm:grid-cols-2">
+          <div className="mt-8 grid gap-x-8 gap-y-3 border-t border-paper-700/30 pt-8 text-sm">
             <LedgerLine value={t("landing.stats_b_value")} label={t("landing.stats_b_label")} />
-            <LedgerLine value={t("landing.stats_c_value")} label={t("landing.stats_c_label")} />
           </div>
           <p className="mt-12 max-w-3xl text-xs leading-relaxed text-paper-400 sm:text-sm">
             {t("landing.stats_footnote")}
