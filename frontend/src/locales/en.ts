@@ -88,6 +88,16 @@ const en: LocaleMessages = {
       "We sent a verification link to this email. Click it so password recovery still works later if you need it.",
     check_inbox_spam_hint: "Can't find it? Check your spam or promotions folder too.",
     check_inbox_skip: "Continue to planning",
+    gate_title: "Confirm your email to start planning",
+    gate_body:
+      "Before you build your wedding workspace, click the link we sent so we know you'll be able to recover the account later. It only takes a second.",
+    gate_email_intro: "We sent a link to:",
+    gate_resend: "Resend the link",
+    gate_resending: "Sending…",
+    gate_resent: "Sent — check your inbox.",
+    gate_already_verified: "You're verified — continue.",
+    gate_refresh: "I've confirmed — continue",
+    gate_logout: "Sign out",
   },
   onboarding: {
     welcome: "Welcome to {name}!",
@@ -617,6 +627,8 @@ const en: LocaleMessages = {
     snapshot_diff_label: "Diff vs current",
     add_template_help: "Pick a category to add",
     edit_planned_aria: "Edit planned amount for {category}",
+    per_guest_unit: "{n} Ft / guest",
+    category_locked_hint: "Category is set when the line is created.",
     cat: {
       venue: "Venue",
       catering: "Catering",
@@ -674,6 +686,9 @@ const en: LocaleMessages = {
     confirm_download: "Download",
     drop_to_unassign: "Drop a guest here to unassign them.",
     drop_to_unassign_active: "Release to remove from seat",
+    room_width_aria: "Room width in metres",
+    room_height_aria: "Room height in metres",
+    preview_open_in_new_tab: "Open the PDF in a new tab",
     position_label_full: "Position: {x} m from the left, {y} m from the top",
     assignments_section_title: "Seat your guests",
     assignments_section_hint:

@@ -87,6 +87,16 @@ const hu: LocaleMessages = {
       "Küldtünk egy megerősítő linket erre a címre. Kattints rá, hogy a jelszó-visszaállítás később is biztosan működjön.",
     check_inbox_spam_hint: "Nem találod? Nézd át a spam vagy reklámok mappát is.",
     check_inbox_skip: "Tovább a tervezéshez",
+    gate_title: "Erősítsd meg az e-mail címed a tervezés indításához",
+    gate_body:
+      "Mielőtt felépítenéd az esküvői munkaterületed, kattints az általunk küldött linkre — így biztos, hogy később vissza tudod állítani a fiókod, ha kell. Egy pillanat az egész.",
+    gate_email_intro: "A linket erre a címre küldtük:",
+    gate_resend: "Link újraküldése",
+    gate_resending: "Küldés…",
+    gate_resent: "Elküldve — nézd meg a postafiókod.",
+    gate_already_verified: "Már meg van erősítve — folytasd.",
+    gate_refresh: "Megerősítettem — tovább",
+    gate_logout: "Kijelentkezés",
   },
   onboarding: {
     welcome: "Üdv a {name}-en!",
@@ -619,6 +629,8 @@ const hu: LocaleMessages = {
     snapshot_diff_label: "Eltérés most",
     add_template_help: "Válassz kategóriát",
     edit_planned_aria: "{category} tervezett összegének módosítása",
+    per_guest_unit: "{n} Ft / fő",
+    category_locked_hint: "A kategória a létrehozáskor rögzül.",
     cat: {
       venue: "Helyszín",
       catering: "Vendéglátás",
@@ -678,6 +690,9 @@ const hu: LocaleMessages = {
     confirm_download: "Letöltés",
     drop_to_unassign: "Húzz ide egy vendéget az ülőhely felszabadításához.",
     drop_to_unassign_active: "Engedd el a leültetés visszavonásához",
+    room_width_aria: "Terem szélessége méterben",
+    room_height_aria: "Terem hosszúsága méterben",
+    preview_open_in_new_tab: "PDF megnyitása új lapon",
     position_label_full: "Pozíció: {x} m balról, {y} m fentről",
     assignments_section_title: "Vendégek elhelyezése",
     assignments_section_hint:

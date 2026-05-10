@@ -153,6 +153,7 @@ describe("onboarding + invites", () => {
       full_name: "Anna",
     });
     expect(a.status).toBe(201);
+    await verifyUserEmail("anna@weddly.test");
 
     const onboard = await req<{ couple: { id: number; display_name: string } }>(
       "POST",
@@ -210,7 +211,9 @@ describe("onboarding + invites", () => {
     expect(lookup.status).toBe(200);
     expect(lookup.data.couple_display_name).toBe("Anna & Bence");
 
-    // Partner B registers + accepts.
+    // Partner B registers + accepts. Accepting an invite is NOT gated on
+    // verify (the invite link itself is the email-confirmation signal),
+    // so partner B doesn't need verifyUserEmail here.
     const b = await req<{ token: string }>("POST", "/api/auth/register", {
       email: "bence@weddly.test",
       password: "supersafe123",
@@ -259,6 +262,7 @@ describe("onboarding + invites", () => {
       password: "supersafe123",
       full_name: "Solo",
     });
+    await verifyUserEmail("solo@weddly.test");
     const r = await req("POST", "/api/couples/invites", {}, { token: u.data.token });
     expect(r.status).toBe(400);
   });
@@ -284,6 +288,7 @@ describe("onboarding + invites", () => {
       password: "supersafe123",
       full_name: "Fuzzy",
     });
+    await verifyUserEmail("fuzzy@weddly.test");
 
     const ob = await req<{
       couple: {
@@ -340,6 +345,7 @@ describe("onboarding + invites", () => {
       password: "supersafe123",
       full_name: "No Idea",
     });
+    await verifyUserEmail("noidea@weddly.test");
     const ob = await req<{
       couple: {
         id: number;
@@ -378,6 +384,7 @@ describe("onboarding + invites", () => {
       password: "supersafe123",
       full_name: "Bad",
     });
+    await verifyUserEmail("bad@weddly.test");
     const bad = await req(
       "POST",
       "/api/couples/onboard",
@@ -417,6 +424,23 @@ describe("health", () => {
 
 // ─── helpers for the v1-feature suites below ─────────────────────────────────
 
+/** Mark the user as email-verified by consuming the most recent verification
+ *  token through the public API. Does what a real user would do (click the
+ *  link in the welcome mail) so the same code path runs in tests as in prod. */
+async function verifyUserEmail(email: string): Promise<void> {
+  // The auth route lower-cases on register; match it here so mixed-case
+  // emails passed in by tests still find the user row.
+  const normalized = email.trim().toLowerCase();
+  const tokenRow = db
+    .prepare(
+      "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
+    )
+    .get(normalized) as { token: string } | undefined;
+  if (!tokenRow) throw new Error(`no verification token for ${email}`);
+  const r = await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+  expect(r.status).toBe(200);
+}
+
 async function bootstrapCouple(
   email = "couple@weddly.test",
 ): Promise<{ token: string; coupleId: number }> {
@@ -426,6 +450,9 @@ async function bootstrapCouple(
     full_name: "Owner",
   });
   expect(reg.status).toBe(201);
+  // Onboarding is gated on verified_email — consume the welcome-mail's
+  // verification token before creating the couple.
+  await verifyUserEmail(email);
   const ob = await req<{ couple: { id: number } }>(
     "POST",
     "/api/couples/onboard",
@@ -812,6 +839,7 @@ describe("households + airport check-in", () => {
       password: "supersafe123",
       full_name: "Beth",
     });
+    await verifyUserEmail("slugB@weddly.test");
     await req(
       "POST",
       "/api/couples/onboard",
@@ -849,6 +877,7 @@ describe("households + airport check-in", () => {
       password: "supersafe123",
       full_name: "B",
     });
+    await verifyUserEmail("isoB@weddly.test");
     await req(
       "POST",
       "/api/couples/onboard",
@@ -1337,6 +1366,48 @@ describe("email verification", () => {
     wipeAll();
     const r = await req("POST", "/api/auth/verify/request", {});
     expect(r.status).toBe(401);
+  });
+
+  test("onboarding is blocked until email is verified (403 + email_unverified)", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "gated@weddly.test",
+      password: "supersafe123",
+      full_name: "Gated",
+    });
+    expect(reg.status).toBe(201);
+
+    // First attempt: blocked by the verify gate. Frontend reads the
+    // `detail.code` to decide whether to show the verify-mail screen vs a
+    // generic error toast.
+    const blocked = await req<{ error: string; detail?: { code?: string } }>(
+      "POST",
+      "/api/couples/onboard",
+      { display_name: "Anna & Bence", style_tags: [] },
+      { token: reg.data.token },
+    );
+    expect(blocked.status).toBe(403);
+    expect(blocked.data.detail?.code).toBe("email_unverified");
+
+    // Same gate on the partner-invite endpoint.
+    const inviteBlocked = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "x@x.test" },
+      { token: reg.data.token },
+    );
+    expect(inviteBlocked.status).toBe(403);
+    expect(inviteBlocked.data.detail?.code).toBe("email_unverified");
+
+    // After consuming the verification token, onboarding works.
+    await verifyUserEmail("gated@weddly.test");
+    const ok = await req<{ couple: { id: number } }>(
+      "POST",
+      "/api/couples/onboard",
+      { display_name: "Anna & Bence", style_tags: [] },
+      { token: reg.data.token },
+    );
+    expect(ok.status).toBe(201);
   });
 });
 

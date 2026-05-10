@@ -17,7 +17,8 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { TagChip } from "../components/ui";
-import { coupleApi } from "../lib/endpoints";
+import { useAuth } from "../lib/auth";
+import { authApi, coupleApi } from "../lib/endpoints";
 import { formatHufRange, formatNumber, formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 
@@ -230,10 +231,21 @@ function clearDraft() {
 export default function OnboardingWizard() {
   const { t, locale } = useT();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(() => loadDraft() ?? DEFAULT_FORM);
+
+  // Email confirmation gate. Users can sign up and look around, but the
+  // workspace itself is locked until they click the verify link — keeps
+  // typo / throwaway emails from polluting the couples table and ensures
+  // password recovery works the moment they need it. The gate is a full
+  // takeover (not a banner) because the wizard is the next step they expect
+  // to see; pretending it's available would just produce a 403 on submit.
+  if (user && !user.verified_email) {
+    return <VerifyEmailGate email={user.email} />;
+  }
   // Once we've completed onboarding we strip the draft; this guards a
   // late autosave from re-creating it after a successful submit.
   const completedRef = useRef(false);
@@ -721,5 +733,84 @@ function MonthSelect({
         ))}
       </select>
     </div>
+  );
+}
+
+// Full-screen takeover shown when an unverified user lands on the wizard.
+// Three actions: resend the link, "I've confirmed — refresh" (re-fetches
+// /api/auth/me so the gate dismisses), and sign out.
+function VerifyEmailGate({ email }: { email: string }) {
+  const { t } = useT();
+  const { refresh, logout } = useAuth();
+  type Status = "idle" | "sending" | "sent" | "already";
+  const [status, setStatus] = useState<Status>("idle");
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function onResend() {
+    setStatus("sending");
+    try {
+      const r = await authApi.requestVerify();
+      setStatus(r.already_verified ? "already" : "sent");
+    } catch {
+      // Network flake — let the user try again rather than dead-end them.
+      setStatus("idle");
+    }
+  }
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  return (
+    <Shell>
+      <div className="mx-auto max-w-md">
+        <div className="card">
+          <h1 className="text-2xl">{t("verify.gate_title")}</h1>
+          <p className="mt-4 text-sm text-ink-700">{t("verify.gate_body")}</p>
+          <p className="mt-4 text-xs uppercase tracking-wider text-ink-500">
+            {t("verify.gate_email_intro")}
+          </p>
+          <p className="mt-1 break-all text-sm font-medium text-ink-900">{email}</p>
+
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+            <button type="button" className="btn-primary" onClick={onRefresh} disabled={refreshing}>
+              {refreshing ? t("verify.gate_resending") : t("verify.gate_refresh")}
+            </button>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={onResend}
+              disabled={status === "sending"}
+            >
+              {status === "sending" ? t("verify.gate_resending") : t("verify.gate_resend")}
+            </button>
+          </div>
+
+          {status === "sent" && (
+            <p className="mt-3 text-sm text-ink-600">{t("verify.gate_resent")}</p>
+          )}
+          {status === "already" && (
+            <p className="mt-3 text-sm text-ink-600">{t("verify.gate_already_verified")}</p>
+          )}
+
+          <p className="mt-6 text-xs text-ink-500">{t("verify.check_inbox_spam_hint")}</p>
+
+          <div className="mt-6 border-t border-paper-300 pt-4">
+            <button
+              type="button"
+              className="btn-ghost btn-sm text-ink-500"
+              onClick={() => void logout()}
+            >
+              {t("verify.gate_logout")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Shell>
   );
 }

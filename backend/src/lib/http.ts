@@ -138,6 +138,25 @@ export function requireAuth(ctx: Ctx): number {
   return ctx.userId;
 }
 
+/** requireAuth + a `verified_email = 1` gate. Throws 403 with `extra.code =
+ *  "email_unverified"` so the frontend can detect and show the verify-gate
+ *  screen instead of a generic error. Use on any endpoint that should be
+ *  unreachable until the user has clicked the verify link — currently
+ *  onboarding + partner-invite creation. The user-id lookup is one extra row
+ *  read per request, which is fine at our volume. */
+export function requireVerifiedAuth(
+  ctx: Ctx,
+  lookupUser: (id: number) => { verified_email: number } | null,
+): number {
+  const userId = requireAuth(ctx);
+  const row = lookupUser(userId);
+  if (!row) throw new HttpError(404, "User not found");
+  if (!row.verified_email) {
+    throw new HttpError(403, "Email not verified", { code: "email_unverified" });
+  }
+  return userId;
+}
+
 export function corsPreflight(req: Request): Response {
   const origin = req.headers.get("origin");
   return new Response(null, { status: 204, headers: corsHeaders(origin) });

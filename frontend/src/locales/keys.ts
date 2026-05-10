@@ -79,6 +79,15 @@ export interface LocaleMessages {
     check_inbox_body: string;
     check_inbox_spam_hint: string;
     check_inbox_skip: string;
+    gate_title: string;
+    gate_body: string;
+    gate_email_intro: string;
+    gate_resend: string;
+    gate_resending: string;
+    gate_resent: string;
+    gate_already_verified: string;
+    gate_refresh: string;
+    gate_logout: string;
   };
   onboarding: {
     welcome: string;
@@ -583,6 +592,8 @@ export interface LocaleMessages {
     snapshot_diff_label: string;
     add_template_help: string;
     edit_planned_aria: string;
+    per_guest_unit: string;
+    category_locked_hint: string;
     cat: {
       venue: string;
       catering: string;
@@ -640,6 +651,9 @@ export interface LocaleMessages {
     confirm_download: string;
     drop_to_unassign: string;
     drop_to_unassign_active: string;
+    room_width_aria: string;
+    room_height_aria: string;
+    preview_open_in_new_tab: string;
     /** Position readout: "Pozíció: {x} m balról, {y} m fentről". */
     position_label_full: string;
     /** Section divider above the seat-grid. */

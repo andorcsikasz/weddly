@@ -23,7 +23,15 @@ import { sendKind } from "../domain/emails";
 import { generateInviteToken } from "../domain/invite_codes";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
 import { getUserById } from "../domain/users";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import {
+  type Ctx,
+  HttpError,
+  json,
+  readJson,
+  requireAuth,
+  requireVerifiedAuth,
+  type Router,
+} from "../lib/http";
 
 interface InviteRow {
   id: number;
@@ -327,7 +335,11 @@ function prettyCategoryLabel(category: string): string {
 }
 
 async function handleOnboard(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  // Onboarding is the gate: a user can sign up and look around, but they
+  // can't create their workspace until they've confirmed their email. Keeps
+  // throwaway / typo-email accounts from polluting the couples table and
+  // makes sure the password-reset path works the moment something goes wrong.
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const body = await readJson<OnboardBody>(ctx.req);
 
   const { brideName, groomName, displayName } = parseNames(body);
@@ -436,7 +448,10 @@ interface InviteCreateBody {
 }
 
 async function handleCreateInvite(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  // Same gate: only verified users can email an invite to their partner.
+  // (Reading / accepting an invite stays public — partner B comes through
+  // their own verify flow when they register.)
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "Onboard a couple before inviting a partner");
   if (couple.partner_b_id) throw new HttpError(409, "Partner B already linked");
