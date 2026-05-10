@@ -67,16 +67,19 @@ function PublicHeader() {
 
   return (
     <header className="border-b border-paper-300 bg-paper-50">
-      <div className="mx-auto flex max-w-6xl items-center gap-8 px-4 py-5 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center gap-5 px-4 py-3 sm:px-6">
         <Link to="/" className="shrink-0 text-ink-900 transition-colors hover:text-ink-700">
-          <Wordmark size="md" />
+          {/* Header wordmark sits between Wordmark's md and lg presets:
+              bigger than the body brand mark, but tracked tightly so the
+              full WĒDDLY + nav + right cluster fit at lg viewports. */}
+          <Wordmark size="md" className="text-lg tracking-[0.32em] sm:text-xl" />
         </Link>
 
         {/* Centred nav, desktop only. Plain text links — no chips, no
             ornaments — to keep the chrome quiet. */}
         <nav
           aria-label="Primary"
-          className="hidden flex-1 items-center justify-center gap-9 text-sm text-ink-700 md:flex"
+          className="hidden flex-1 items-center justify-center gap-6 text-sm text-ink-700 md:flex"
         >
           <a href="#phases" className="transition-colors hover:text-ink-900">
             {t("landing.nav_how")}
@@ -89,9 +92,8 @@ function PublicHeader() {
           </Link>
         </nav>
 
-        {/* Right cluster: sign-in (text) + sign-up (primary) + tiny lang
-            toggle. On mobile only sign-up + hamburger remain — sign-in
-            and the lang toggle live inside the panel. */}
+        {/* Right cluster: every interactive item at text-sm so the
+            wordmark logo is the only thing that visually leads. */}
         <div className="ml-auto flex items-center gap-3 md:ml-0">
           <Link
             to="/login"
@@ -99,13 +101,13 @@ function PublicHeader() {
           >
             {t("landing.cta_login")}
           </Link>
-          <Link to="/signup" className="btn-primary btn-sm">
+          <Link to="/signup" className="btn-primary px-3.5 py-1.5 text-sm">
             {t("landing.cta_signup")}
           </Link>
           <button
             type="button"
             onClick={() => setLocale(otherLocale)}
-            className="hidden text-xs font-medium uppercase tracking-wider text-ink-500 transition-colors hover:text-ink-900 md:inline-flex"
+            className="hidden text-sm font-medium uppercase tracking-wider text-ink-500 transition-colors hover:text-ink-900 md:inline-flex"
             aria-label="Switch language"
           >
             {otherLocale}
@@ -116,7 +118,7 @@ function PublicHeader() {
             aria-expanded={menuOpen}
             aria-controls="public-mobile-nav"
             aria-label={menuOpen ? t("public.menu_close") : t("public.menu_open")}
-            className="-mr-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 md:hidden"
+            className="-mr-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 md:hidden"
           >
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
