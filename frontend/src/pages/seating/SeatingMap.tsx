@@ -14,8 +14,13 @@ import { useT } from "../../lib/i18n";
 
 // Default room: 12m × 9m. Wide enough for a 200-person wedding without feeling
 // cramped; the SVG scales to its container so absolute pixels don't matter.
-const ROOM_W_MM = 12_000;
-const ROOM_H_MM = 9_000;
+// These are *defaults* — the actual canvas size is per-couple state owned by
+// SeatingPage and passed as a prop, with localStorage persistence today.
+const DEFAULT_ROOM_W_MM = 12_000;
+const DEFAULT_ROOM_H_MM = 9_000;
+// Sensible bounds for the editable input: 3m (intimate) to 50m (ballroom).
+const MIN_ROOM_MM = 3_000;
+const MAX_ROOM_MM = 50_000;
 const GRID_STEP_MM = 1_000; // 1-metre grid lines
 
 const MIN_DIM_MM = 100;
@@ -47,6 +52,11 @@ interface Props {
   onAddTable?: () => void;
   /** When true, the in-canvas drop hint switches to the highlight stripe. */
   unassignedHighlight?: boolean;
+  /** Room canvas dimensions in millimetres. Optional — defaults to 12×9 m. */
+  roomWidthMm?: number;
+  roomHeightMm?: number;
+  /** Called when the user commits a new room size in the inline inputs. */
+  onRoomChange?: (widthMm: number, heightMm: number) => void;
 }
 
 type DragState =
@@ -80,8 +90,15 @@ export function SeatingMap({
   onDeleteTable,
   onAddTable,
   unassignedHighlight,
+  roomWidthMm = DEFAULT_ROOM_W_MM,
+  roomHeightMm = DEFAULT_ROOM_H_MM,
+  onRoomChange,
 }: Props) {
   const { t } = useT();
+  // Local aliases keep the rest of the component readable; the rendering
+  // and clamp logic still references these in mm.
+  const ROOM_W_MM = roomWidthMm;
+  const ROOM_H_MM = roomHeightMm;
   const svgRef = useRef<SVGSVGElement | null>(null);
   // We mirror table positions / dimensions locally so dragging is smooth
   // without round-tripping to the server. Keyed by table id; falls back to
@@ -136,11 +153,7 @@ export function SeatingMap({
     e.stopPropagation();
   }
 
-  function startResize(
-    e: React.PointerEvent<SVGCircleElement>,
-    table: SeatingTable,
-    handle: HandleDir,
-  ) {
+  function startResize(e: React.PointerEvent<SVGElement>, table: SeatingTable, handle: HandleDir) {
     if (e.button !== 0) return;
     const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
     const dims = localDims.get(table.id) ?? {
@@ -311,9 +324,13 @@ export function SeatingMap({
           <h2 className="text-base">{t("seating.map_title")}</h2>
           <p className="text-xs text-ink-500">{t("seating.map_help")}</p>
         </div>
-        <span className="text-xs text-ink-400">
-          {(ROOM_W_MM / 1000).toFixed(0)} × {(ROOM_H_MM / 1000).toFixed(0)} m
-        </span>
+        <RoomDimsInput
+          widthMm={ROOM_W_MM}
+          heightMm={ROOM_H_MM}
+          onChange={onRoomChange}
+          widthAriaLabel={t("seating.room_width_aria")}
+          heightAriaLabel={t("seating.room_height_aria")}
+        />
       </header>
       <div className="relative bg-paper-50">
         <svg
@@ -348,7 +365,7 @@ export function SeatingMap({
               <line x1={0} y1={0} x2={0} y2={120} className="stroke-blush-200" strokeWidth={40} />
             </pattern>
           </defs>
-          <Grid />
+          <Grid widthMm={ROOM_W_MM} heightMm={ROOM_H_MM} />
           {unassignedHighlight && (
             <rect
               x={0}
@@ -391,30 +408,94 @@ export function SeatingMap({
   );
 }
 
-function Grid() {
+function RoomDimsInput({
+  widthMm,
+  heightMm,
+  onChange,
+  widthAriaLabel,
+  heightAriaLabel,
+}: {
+  widthMm: number;
+  heightMm: number;
+  onChange?: (widthMm: number, heightMm: number) => void;
+  widthAriaLabel: string;
+  heightAriaLabel: string;
+}) {
+  // Keep input as raw text while focused so the user can clear-and-retype
+  // without the field re-rounding mid-edit. Commit on blur.
+  function commit(nextW: number | null, nextH: number | null) {
+    if (!onChange) return;
+    const w = nextW != null ? clampRoom(Math.round(nextW * 1000)) : widthMm;
+    const h = nextH != null ? clampRoom(Math.round(nextH * 1000)) : heightMm;
+    if (w === widthMm && h === heightMm) return;
+    onChange(w, h);
+  }
+  const cls =
+    "w-12 rounded-md border border-paper-300 bg-paper-50 px-1.5 py-0.5 text-right text-xs text-ink-700 focus:border-ink-700 focus:outline-none";
+  return (
+    <span className="flex items-center gap-1 text-xs text-ink-400">
+      <input
+        type="number"
+        min={MIN_ROOM_MM / 1000}
+        max={MAX_ROOM_MM / 1000}
+        step={0.5}
+        defaultValue={Math.round(widthMm / 100) / 10}
+        key={`w-${widthMm}`}
+        aria-label={widthAriaLabel}
+        className={cls}
+        onBlur={(e) => {
+          const v = Number(e.target.value);
+          commit(Number.isFinite(v) ? v : null, null);
+        }}
+      />
+      <span aria-hidden>×</span>
+      <input
+        type="number"
+        min={MIN_ROOM_MM / 1000}
+        max={MAX_ROOM_MM / 1000}
+        step={0.5}
+        defaultValue={Math.round(heightMm / 100) / 10}
+        key={`h-${heightMm}`}
+        aria-label={heightAriaLabel}
+        className={cls}
+        onBlur={(e) => {
+          const v = Number(e.target.value);
+          commit(null, Number.isFinite(v) ? v : null);
+        }}
+      />
+      <span>m</span>
+    </span>
+  );
+}
+
+function clampRoom(mm: number): number {
+  return Math.max(MIN_ROOM_MM, Math.min(MAX_ROOM_MM, mm));
+}
+
+function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
   // Faint 1m grid plus a stronger room border. We draw the lines inline
   // rather than via <pattern> so screenshots / a11y trees stay simple.
   const lines: React.ReactElement[] = [];
-  for (let x = GRID_STEP_MM; x < ROOM_W_MM; x += GRID_STEP_MM) {
+  for (let x = GRID_STEP_MM; x < widthMm; x += GRID_STEP_MM) {
     lines.push(
       <line
         key={`vx-${x}`}
         x1={x}
         y1={0}
         x2={x}
-        y2={ROOM_H_MM}
+        y2={heightMm}
         className="stroke-paper-300"
         strokeWidth={4}
       />,
     );
   }
-  for (let y = GRID_STEP_MM; y < ROOM_H_MM; y += GRID_STEP_MM) {
+  for (let y = GRID_STEP_MM; y < heightMm; y += GRID_STEP_MM) {
     lines.push(
       <line
         key={`hy-${y}`}
         x1={0}
         y1={y}
-        x2={ROOM_W_MM}
+        x2={widthMm}
         y2={y}
         className="stroke-paper-300"
         strokeWidth={4}
@@ -426,8 +507,8 @@ function Grid() {
       <rect
         x={0}
         y={0}
-        width={ROOM_W_MM}
-        height={ROOM_H_MM}
+        width={widthMm}
+        height={heightMm}
         className="fill-paper-50 stroke-paper-500"
         strokeWidth={12}
       />
@@ -443,7 +524,7 @@ interface TableShapeProps {
   filledSeats: number;
   isSelected: boolean;
   onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
-  onHandlePointerDown: (e: React.PointerEvent<SVGCircleElement>, handle: HandleDir) => void;
+  onHandlePointerDown: (e: React.PointerEvent<SVGElement>, handle: HandleDir) => void;
   onSeatsDelta: (delta: number) => void;
   t: (
     key:
@@ -650,20 +731,32 @@ function ResizeHandle({
   rx: number;
   ry: number;
   shape: SeatingTable["shape"];
-  onPointerDown: (e: React.PointerEvent<SVGCircleElement>, dir: HandleDir) => void;
+  onPointerDown: (e: React.PointerEvent<SVGElement>, dir: HandleDir) => void;
 }) {
   // Round tables only render cardinal handles. For round, project the handle
   // onto the circle perimeter so it sits ON the shape, not at a phantom
   // corner. Rectangles use a true bounding-box position.
   const pos = handlePosition(dir, rx, ry, shape);
   const cursor = handleCursor(dir);
+  // Handles are SOLID blush-filled rectangles — deliberately a different
+  // shape AND fill from the hollow chair circles, so the user can never
+  // confuse "I'm grabbing a chair" with "I'm grabbing a resize knob".
+  // Side handles stretch along the edge they control (a bar that points
+  // in the drag direction); corners are tidy squares.
+  const isCorner = dir.length === 2;
+  const isVerticalEdge = dir === "e" || dir === "w";
+  const isHorizontalEdge = dir === "n" || dir === "s";
+  const w = isCorner ? 130 : isVerticalEdge ? 90 : 240;
+  const h = isCorner ? 130 : isHorizontalEdge ? 90 : 240;
   return (
-    <circle
-      cx={pos.x}
-      cy={pos.y}
-      r={70}
-      className="fill-paper-50 stroke-blush-600"
-      strokeWidth={6}
+    <rect
+      x={pos.x - w / 2}
+      y={pos.y - h / 2}
+      width={w}
+      height={h}
+      rx={20}
+      className="fill-blush-600 stroke-paper-50"
+      strokeWidth={8}
       style={{ cursor }}
       onPointerDown={(e) => {
         // Don't bubble — the table body would otherwise start a move drag.
@@ -809,4 +902,4 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
-export const ROOM_DIMS = { W_MM: ROOM_W_MM, H_MM: ROOM_H_MM };
+export const ROOM_DIMS = { W_MM: DEFAULT_ROOM_W_MM, H_MM: DEFAULT_ROOM_H_MM };

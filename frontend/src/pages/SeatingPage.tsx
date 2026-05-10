@@ -10,7 +10,7 @@ import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/ty
 import { ChefHat, HelpCircle, Plus, Printer, Trash2, Undo2 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Button, Dialog, useConfirm, useToast } from "../components/ui";
+import { Button, Dialog, SegmentedControl, useConfirm, useToast } from "../components/ui";
 import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
@@ -54,6 +54,11 @@ export default function SeatingPage() {
   const [draggingSeatedId, setDraggingSeatedId] = useState<number | null>(null);
   const draggingSeatedRef = useRef<number | null>(null);
   const [unassignedHover, setUnassignedHover] = useState(false);
+  // Editable canvas dimensions. Defaults to 12×9 m and persists to
+  // localStorage so a refresh keeps the user's room. v2 will move this onto
+  // the couples table so partners share it across devices.
+  const [roomWidthMm, setRoomWidthMm] = useState<number>(ROOM_DIMS.W_MM);
+  const [roomHeightMm, setRoomHeightMm] = useState<number>(ROOM_DIMS.H_MM);
   // Tap-to-place mode (forced on for coarse pointers, optional for fine ones).
   const [coarsePointer, setCoarsePointer] = useState(false);
   const [tapModeUser, setTapModeUser] = useState(false);
@@ -82,6 +87,37 @@ export default function SeatingPage() {
 
   useEffect(() => {
     refresh();
+  }, []);
+
+  // Hydrate room dimensions from localStorage on mount. We only persist if the
+  // saved values pass a sanity check — old/bad data should fall back to
+  // defaults rather than blow up the canvas.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("weddly.seating.room_dims");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { w?: unknown; h?: unknown };
+      const w = Number(parsed.w);
+      const h = Number(parsed.h);
+      if (Number.isFinite(w) && w >= 3000 && w <= 50000) setRoomWidthMm(Math.round(w));
+      if (Number.isFinite(h) && h >= 3000 && h <= 50000) setRoomHeightMm(Math.round(h));
+    } catch {
+      /* noop — corrupt entry, keep defaults */
+    }
+  }, []);
+
+  const updateRoom = useCallback((widthMm: number, heightMm: number) => {
+    setRoomWidthMm(widthMm);
+    setRoomHeightMm(heightMm);
+    try {
+      window.localStorage.setItem(
+        "weddly.seating.room_dims",
+        JSON.stringify({ w: widthMm, h: heightMm }),
+      );
+    } catch {
+      /* localStorage may throw in private mode — non-fatal */
+    }
   }, []);
 
   // Detect coarse pointer (touch). We listen for changes so a hybrid device
@@ -384,8 +420,8 @@ export default function SeatingPage() {
       label,
       shape: "round",
       seats: 8,
-      x_mm: ROOM_DIMS.W_MM / 2 + offset - 1600,
-      y_mm: ROOM_DIMS.H_MM / 2,
+      x_mm: roomWidthMm / 2 + offset - 1600,
+      y_mm: roomHeightMm / 2,
       width_mm: 1500,
       length_mm: 1500,
     });
@@ -471,8 +507,13 @@ export default function SeatingPage() {
     if (previewLoading) return;
     setPreviewLoading(path);
     try {
-      const blob = await fetchPdfBlob(path);
-      const url = URL.createObjectURL(blob);
+      const raw = await fetchPdfBlob(path);
+      // Explicitly type the blob so the in-browser PDF viewer always picks
+      // it up — `res.blob()` should preserve Content-Type but some servers /
+      // proxies strip it, and a typeless blob renders as "download" only.
+      const typed =
+        raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
+      const url = URL.createObjectURL(typed);
       setPreview({ url, filename, label });
     } finally {
       setPreviewLoading(null);
@@ -651,6 +692,9 @@ export default function SeatingPage() {
             }}
             onAddTable={addTable}
             unassignedHighlight={draggingSeatedId !== null && unassignedHover}
+            roomWidthMm={roomWidthMm}
+            roomHeightMm={roomHeightMm}
+            onRoomChange={updateRoom}
           />
           <TableEditor
             table={selected}
@@ -800,11 +844,24 @@ export default function SeatingPage() {
           }
         >
           <p className="mb-3 text-sm text-ink-600">{t("seating.preview_help")}</p>
-          <iframe
-            src={preview.url}
-            title={preview.label}
-            className="h-[60vh] w-full rounded-xl border border-paper-300 bg-paper-50"
-          />
+          {/* <object> is the most reliable cross-browser embed for PDFs from
+              blob URLs — Chrome, Firefox and Safari all hand it to their
+              built-in PDF viewer. <embed> renders inside <object> on
+              browsers that prefer it; if neither works the user gets a
+              direct "Open in new tab" fallback. */}
+          <object
+            data={preview.url}
+            type="application/pdf"
+            aria-label={preview.label}
+            className="block h-[70vh] w-full rounded-xl border border-paper-300 bg-paper-50"
+          >
+            <embed src={preview.url} type="application/pdf" className="block h-full w-full" />
+            <div className="p-4 text-sm text-ink-600">
+              <a href={preview.url} target="_blank" rel="noopener noreferrer" className="underline">
+                {t("seating.preview_open_in_new_tab")}
+              </a>
+            </div>
+          </object>
         </Dialog>
       )}
 
@@ -962,17 +1019,12 @@ function TableEditor({
       </Field>
 
       <Field label={t("seating.shape_label")}>
-        <select
-          className="input py-1.5 text-sm"
+        <SegmentedControl<TableShape>
+          ariaLabel={t("seating.shape_label")}
           value={table.shape}
-          onChange={(e) => onPatch({ shape: e.target.value as TableShape })}
-        >
-          {SHAPES.map((s) => (
-            <option key={s} value={s}>
-              {t(`seating.shape_${s}`)}
-            </option>
-          ))}
-        </select>
+          options={SHAPES.map((s) => ({ value: s, label: t(`seating.shape_${s}`) }))}
+          onChange={(v) => onPatch({ shape: v })}
+        />
       </Field>
 
       <Field label={t("seating.seats_label")}>
