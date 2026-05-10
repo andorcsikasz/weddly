@@ -1,4 +1,4 @@
-import { ArrowRight, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
@@ -20,43 +20,12 @@ export function PublicShell({ children }: { children: ReactNode }) {
       >
         {t("landing.skip_to_main")}
       </a>
-      <GuestCheckinBand />
       <PublicHeader />
       <main id="main-content" className="flex-1">
         {children}
       </main>
       <PublicFooter />
     </div>
-  );
-}
-
-/**
- * Persistent "Vendég vagy? → /rsvp" strip pinned above the header on every
- * public page. Airport-style: the first thing a visitor sees is the check-in
- * sign. Whole band is one big clickable target to maximize tappability.
- */
-function GuestCheckinBand() {
-  const { t } = useT();
-  return (
-    <Link
-      to="/rsvp"
-      className="group block border-b border-blush-200 bg-blush-50 text-ink-900 transition-colors hover:bg-blush-100 focus-visible:bg-blush-100 focus-visible:outline-none"
-    >
-      <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-2.5 text-sm sm:px-6">
-        <span className="font-medium">{t("landing.footer_band_text")}</span>
-        <span aria-hidden className="text-ink-400">
-          ·
-        </span>
-        <span className="text-ink-700 group-hover:text-ink-900">
-          {t("landing.footer_band_cta")}
-        </span>
-        <ArrowRight
-          aria-hidden
-          size={14}
-          className="text-ink-700 transition-transform group-hover:translate-x-0.5 group-hover:text-ink-900"
-        />
-      </div>
-    </Link>
   );
 }
 
@@ -75,20 +44,19 @@ function PublicHeader() {
           <Wordmark size="md" className="text-lg tracking-[0.32em] sm:text-xl" />
         </Link>
 
-        {/* Centred nav, desktop only. Plain text links — no chips, no
-            ornaments — to keep the chrome quiet. */}
+        {/* Centred nav, desktop only. Two audience entry points — every
+            visitor is either a couple (signing up), a vendor (waitlist),
+            or a guest (RSVP check-in). Couples land via the right-side
+            sign-up; vendors and guests get their own header link. */}
         <nav
           aria-label="Primary"
-          className="hidden flex-1 items-center justify-center gap-6 text-sm text-ink-700 md:flex"
+          className="hidden flex-1 items-center justify-center gap-7 text-sm text-ink-700 md:flex"
         >
-          <a href="#phases" className="transition-colors hover:text-ink-900">
-            {t("landing.nav_how")}
-          </a>
-          <a href="#suppliers" className="transition-colors hover:text-ink-900">
-            {t("landing.nav_suppliers")}
-          </a>
           <Link to="/vendors" className="transition-colors hover:text-ink-900">
             {t("landing.nav_vendors")}
+          </Link>
+          <Link to="/rsvp" className="transition-colors hover:text-ink-900">
+            {t("landing.footer_guests")}
           </Link>
         </nav>
 
@@ -132,26 +100,19 @@ function PublicHeader() {
           className="border-t border-paper-300 bg-paper-50 md:hidden"
         >
           <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-4 text-sm text-ink-700 sm:px-6">
-            <a
-              href="#phases"
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
-              onClick={() => setMenuOpen(false)}
-            >
-              {t("landing.nav_how")}
-            </a>
-            <a
-              href="#suppliers"
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
-              onClick={() => setMenuOpen(false)}
-            >
-              {t("landing.nav_suppliers")}
-            </a>
             <Link
               to="/vendors"
               className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
               onClick={() => setMenuOpen(false)}
             >
               {t("landing.nav_vendors")}
+            </Link>
+            <Link
+              to="/rsvp"
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t("landing.footer_guests")}
             </Link>
             <Link
               to="/login"

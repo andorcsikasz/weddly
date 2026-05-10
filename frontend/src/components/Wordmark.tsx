@@ -28,7 +28,7 @@ const sizeClasses: Record<NonNullable<Props["size"]>, string> = {
 export function Wordmark({ size = "md", className = "" }: Props) {
   return (
     <span
-      className={`inline-block whitespace-nowrap font-serif font-normal ${sizeClasses[size]} ${className}`}
+      className={`inline-block whitespace-nowrap font-serif font-semibold ${sizeClasses[size]} ${className}`}
       aria-label="Weddly"
     >
       WĒDDLY
