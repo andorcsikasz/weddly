@@ -229,7 +229,7 @@ export default function LandingPage() {
           <h2 className="mt-5 max-w-3xl font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
             {t("landing.block_guests_title")}
           </h2>
-          <div className="mt-12">
+          <div className="mx-auto mt-10 max-w-2xl">
             <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
               <GuestListMockup className="h-auto w-full" />
             </LazyMount>
