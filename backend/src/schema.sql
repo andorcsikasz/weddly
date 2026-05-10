@@ -273,6 +273,25 @@ CREATE INDEX IF NOT EXISTS idx_community_suppliers_status_category
 CREATE INDEX IF NOT EXISTS idx_community_suppliers_submitter
   ON community_suppliers(submitter_user_id);
 
+-- Saved download archive. Every JSON / PDF / CSV export the user generates is
+-- snapshotted here so they can re-download past versions from the Profile
+-- page. Capped at the most recent 10 per couple (older rows auto-purged on
+-- new insert by domain/exports.ts). Body is the raw bytes; for JSON it's the
+-- UTF-8 encoded text the user downloaded.
+CREATE TABLE IF NOT EXISTS data_exports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  kind TEXT NOT NULL,                                          -- 'json' | 'seating_pdf' | 'place_cards_pdf' | 'guest_csv'
+  format TEXT,                                                 -- 'a4' | 'a3' for seating; null otherwise
+  filename TEXT NOT NULL,
+  content_type TEXT NOT NULL,
+  byte_size INTEGER NOT NULL,
+  body BLOB NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_data_exports_couple ON data_exports(couple_id, created_at DESC);
+
 -- Per-couple lifecycle dispatch ledger. Idempotency for cron-driven sends:
 -- one row per (couple_id, kind) so the worker doesn't re-fire the same
 -- milestone reminder if it crashes mid-sweep.
