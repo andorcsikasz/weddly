@@ -513,7 +513,7 @@ const GUEST_ROWS: {
   { name: "Réka Horváth", status: "no", meal: "—", tone: 5 },
 ];
 
-const MEAL_LABELS_HU: Record<string, string> = { Beef: "Marha", Veg: "Veg" };
+const MEAL_LABELS_HU: Record<string, string> = { Beef: "Marha", Veg: "Vegetáriánus" };
 
 /** Guest list mockup — search + 5 guest rows with status pills and
  *  meal-choice column. */

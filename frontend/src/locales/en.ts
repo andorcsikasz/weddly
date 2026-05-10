@@ -284,7 +284,7 @@ const en: LocaleMessages = {
     nav_suppliers: "Suppliers",
     nav_vendors: "For vendors",
     vendor_pill: "Vendor? Get listed",
-    guest_link: "Have an invite code? Enter it",
+    guest_link: "Guest? Enter your invite code",
     phases_title: "Five phases, one place",
     phase_plan_title: "Plan",
     phase_plan_body: "Date, style, headcount, budget — together, with live numbers.",
