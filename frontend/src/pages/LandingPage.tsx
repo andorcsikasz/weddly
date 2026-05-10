@@ -1,6 +1,8 @@
 import { Check, ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { BotanicalCorner, EucalyptusStem, WatercolorBlob } from "../components/botanical";
+import { PullQuote, SectionLabel, WatermarkNumeral } from "../components/editorial";
 import {
   PhaseAftermathArt,
   PhaseGuestsArt,
@@ -20,12 +22,14 @@ import {
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+import { Wordmark } from "../components/Wordmark";
 
 // Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
 // these to reserve layout space, so the page doesn't jump as below-fold
 // SVGs mount when scrolled into view.
 const MOCKUP_AR_FEATURE = "480 / 360";
 const MOCKUP_AR_SUPPLIERS = "320 / 280";
+const MOCKUP_AR_WORKSPACE = "640 / 440";
 
 export default function LandingPage() {
   const { t } = useT();
@@ -34,70 +38,118 @@ export default function LandingPage() {
 
   return (
     <PublicShell>
-      {/* ───────────────────── 01 · Hero ─────────────────────
-          Bg: paper-50. Eyebrow chip + huge serif headline (italic on
-          the closing word) + dual CTA + workspace mockup on the right. */}
-      <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-10 pb-16 sm:px-6 sm:pt-16 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-16 lg:pt-24 lg:pb-24">
-        <div className="text-center lg:text-left">
-          <span className="inline-flex items-center gap-2 rounded-full border border-blush-200 bg-blush-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-blush-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-blush-500" />
-            {t("landing.stats_eyebrow")} · {t("landing.stats_c_value")}
-          </span>
-          <h1 className="mt-5 font-serif text-5xl leading-[1.02] tracking-tight text-ink-900 sm:text-6xl lg:text-[5.5rem]">
+      {/* ════════════════════════ 01 · HERO ════════════════════════
+          Oversized italic serif title hanging into the left margin, sub
+          + CTAs underneath. Mockup follows below as a full-bleed slab,
+          tilted slightly so it reads as "the product, peeking up". */}
+      <section className="relative overflow-hidden">
+        <MarginNumeral value="01" />
+        {/* Soft watercolour wash bleeding from the right behind the
+            headline — adds depth without breaking the paper aesthetic. */}
+        <WatercolorBlob
+          variant={2}
+          className="pointer-events-none absolute -top-10 right-[-14rem] h-[36rem] w-[36rem] text-blush-100 sm:right-[-10rem]"
+        />
+        <div className="relative mx-auto max-w-7xl px-4 pt-14 pb-12 sm:px-6 sm:pt-24 lg:pt-32 lg:pb-16">
+          <h1 className="max-w-[14ch] font-serif text-[3.75rem] italic leading-[0.96] tracking-[-0.02em] text-ink-900 sm:text-[6rem] lg:text-[8.5rem]">
             {t("landing.hero_title")}
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-ink-600 sm:text-xl lg:mx-0">
-            {t("landing.hero_sub")}
-          </p>
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
-            <Link to="/signup" className="btn-primary btn-lg w-full shadow-sm sm:w-auto">
-              {t("landing.cta_signup")}
-            </Link>
-            <Link to="/login" className="btn-outline btn-lg w-full sm:w-auto">
-              {t("landing.cta_login")}
-            </Link>
+          <div className="mt-10 flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-md">
+              <p className="text-lg text-ink-600 sm:text-xl">{t("landing.hero_sub")}</p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link to="/signup" className="btn-primary btn-lg shadow-sm">
+                  {t("landing.cta_signup")}
+                </Link>
+                <Link to="/login" className="btn-outline btn-lg">
+                  {t("landing.cta_login")}
+                </Link>
+              </div>
+              <p className="mt-3 text-xs text-ink-500">{t("landing.cta_signup_sub")}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  void askGuestCode();
+                }}
+                className="mt-6 inline-flex items-center gap-1.5 text-sm text-ink-600 underline decoration-paper-400 underline-offset-4 hover:text-ink-900 hover:decoration-blush-500"
+              >
+                {t("landing.guest_link")}
+              </button>
+            </div>
+            <div className="hidden self-end font-serif text-sm italic text-ink-500 lg:block">
+              {t("landing.stats_eyebrow")} · {t("landing.stats_c_value")}
+            </div>
           </div>
-          <p className="mt-3 text-xs text-ink-500">{t("landing.cta_signup_sub")}</p>
-          <button
-            type="button"
-            onClick={() => {
-              void askGuestCode();
-            }}
-            className="mt-6 inline-flex items-center gap-1.5 text-sm text-ink-600 underline decoration-paper-400 underline-offset-4 hover:text-ink-900 hover:decoration-blush-500"
-          >
-            {t("landing.guest_link")}
-          </button>
         </div>
-        <div className="mx-auto w-full max-w-xl lg:max-w-none">
-          <WorkspaceMockup className="h-auto w-full" />
+
+        {/* Full-bleed mockup band — paper-100 background, mockup tilted
+            so its bottom is cropped by the section. Reads as "the product
+            peeking up." */}
+        <div className="relative mt-4 overflow-hidden bg-paper-100 pt-12 sm:pt-16 lg:pt-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="origin-bottom -mb-20 sm:-mb-28 lg:-mb-32">
+              <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
+                <div className="rotate-[-1.5deg] drop-shadow-[0_30px_50px_rgba(16,24,48,0.18)]">
+                  <WorkspaceMockup className="h-auto w-full" />
+                </div>
+              </LazyMount>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ───────────────────── Stats — DARK BAND ─────────────────────
-          The page's first attention break: dark ink-900 surface, paper-100
-          numbers, blush-300 accents. Deliberate visual interruption. */}
+      {/* ════════════════════════ Wordmark spine ════════════════════════
+          Stationery letterhead beat: faded WĒDDLY centred on a thin
+          band, flanked by italic serif tags. Gives the eye a horizontal
+          rest between the loud hero and the dark stats below. */}
+      <section className="border-y border-paper-300 bg-paper-50">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-7 sm:px-6">
+          <span className="hidden flex-1 font-serif text-sm italic text-blush-600 sm:block">
+            Est. MMXXVI
+          </span>
+          <Wordmark size="lg" className="text-paper-400" />
+          <span className="hidden flex-1 text-right font-serif text-sm italic text-blush-600 sm:block">
+            Budapest · Paper letters
+          </span>
+        </div>
+      </section>
+
+      {/* ════════════════════════ Stats — DARK BAND ════════════════════════
+          One huge number does the talking; the other two stats run as
+          ledger entries underneath. */}
       <section className="bg-ink-900 text-paper-100">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
-          <div className="grid gap-y-10 sm:grid-cols-3 sm:gap-x-12">
-            <DarkStat value={t("landing.stats_a_value")} label={t("landing.stats_a_label")} />
-            <DarkStat value={t("landing.stats_b_value")} label={t("landing.stats_b_label")} />
-            <DarkStat value={t("landing.stats_c_value")} label={t("landing.stats_c_label")} />
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <p className="mb-8 text-xs font-semibold uppercase tracking-[0.32em] text-paper-300">
+            {t("landing.stats_eyebrow")}
+          </p>
+          <p className="font-serif text-[8rem] leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-[12rem] lg:text-[15rem]">
+            {t("landing.stats_a_value")}
+          </p>
+          <p className="mt-6 font-serif text-2xl text-paper-300 sm:text-3xl">
+            {t("landing.stats_a_label")}
+          </p>
+          <div className="mt-14 grid gap-x-8 gap-y-3 border-t border-paper-700/30 pt-8 text-sm sm:grid-cols-2">
+            <LedgerLine value={t("landing.stats_b_value")} label={t("landing.stats_b_label")} />
+            <LedgerLine value={t("landing.stats_c_value")} label={t("landing.stats_c_label")} />
           </div>
-          <p className="mt-10 max-w-3xl text-xs leading-relaxed text-paper-400 sm:text-sm">
+          <p className="mt-12 max-w-3xl text-xs leading-relaxed text-paper-400 sm:text-sm">
             {t("landing.stats_footnote")}
           </p>
         </div>
       </section>
 
-      {/* ───────────────────── 01 · Phases ─────────────────────
-          White surface, big serif numerals as the visual anchor. */}
-      <section id="phases" className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 pt-20 pb-16 sm:px-6 sm:pt-28 sm:pb-20">
-          <SectionEyebrow num="01" label={t("landing.product_eyebrow")} />
-          <h2 className="mt-4 max-w-2xl font-serif text-4xl leading-tight text-ink-900 sm:text-5xl">
+      {/* ════════════════════════ 02 · Phases ════════════════════════
+          Numbered timeline. Each phase has a giant italic numeral
+          bleeding behind its title; one continuous rule line at the
+          numeral baseline serves as the literal timeline. */}
+      <section id="phases" className="relative bg-paper-50">
+        <MarginNumeral value="02" />
+        <div className="mx-auto max-w-7xl px-4 pt-24 pb-20 sm:px-6 sm:pt-32 sm:pb-28">
+          <SectionLabel num="—" label={t("landing.product_eyebrow")} />
+          <h2 className="mt-6 max-w-3xl font-serif text-4xl leading-[1.05] text-ink-900 sm:text-5xl lg:text-[3.75rem]">
             {t("landing.phases_title")}
           </h2>
-          <ol className="mt-14 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-5">
+          <ol className="mt-20 grid gap-x-6 gap-y-16 sm:grid-cols-2 lg:grid-cols-5 lg:gap-x-4">
             <PhaseStep
               n={1}
               art={<PhasePlanArt className="h-12 w-12" />}
@@ -132,103 +184,136 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───────────────────── 02 · Product feature blocks ─────────────────────
-          Three blocks, each on a different surface tone so they don't
-          blur together: paper-50 → white → paper-100/40. Each carries
-          its own sub-numeral. */}
-      <section className="bg-paper-50">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <FeatureBlock
-            num="02.1"
-            eyebrow={t("landing.block_budget_eyebrow")}
-            title={t("landing.block_budget_title")}
-            body={t("landing.block_budget_body")}
-            bullets={[
-              t("landing.block_budget_bullet_1"),
-              t("landing.block_budget_bullet_2"),
-              t("landing.block_budget_bullet_3"),
-            ]}
-            mockup={
-              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
-                <BudgetMockup className="h-auto w-full" />
-              </LazyMount>
-            }
-            reverse={false}
-          />
-        </div>
-      </section>
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <FeatureBlock
-            num="02.2"
-            eyebrow={t("landing.block_guests_eyebrow")}
-            title={t("landing.block_guests_title")}
-            body={t("landing.block_guests_body")}
-            bullets={[
-              t("landing.block_guests_bullet_1"),
-              t("landing.block_guests_bullet_2"),
-              t("landing.block_guests_bullet_3"),
-            ]}
-            mockup={
-              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
-                <GuestListMockup className="h-auto w-full" />
-              </LazyMount>
-            }
-            reverse={true}
-          />
-        </div>
-      </section>
-      <section className="bg-paper-100/40">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <FeatureBlock
-            num="02.3"
-            eyebrow={t("landing.block_seating_eyebrow")}
-            title={t("landing.block_seating_title")}
-            body={t("landing.block_seating_body")}
-            bullets={[
-              t("landing.block_seating_bullet_1"),
-              t("landing.block_seating_bullet_2"),
-              t("landing.block_seating_bullet_3"),
-            ]}
-            mockup={
-              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
-                <SeatingMockup className="h-auto w-full" />
-              </LazyMount>
-            }
-            reverse={false}
-          />
-        </div>
-      </section>
-
-      {/* ───────────────────── 03 · Why Weddly ─────────────────────
-          Centered editorial moment — the only section with a centred
-          title. Italic accent on the differentiation. */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-20 text-center sm:px-6 sm:py-28">
-          <SectionEyebrow num="03" label={t("landing.why_eyebrow")} center />
-          <h2 className="mx-auto mt-4 max-w-3xl font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3.5rem]">
-            {t("landing.why_title")}
-          </h2>
-          <div className="mx-auto mt-14 grid max-w-5xl gap-10 text-left sm:grid-cols-2">
-            <WhyItem title={t("landing.why_a_title")} body={t("landing.why_a_body")} />
-            <WhyItem title={t("landing.why_b_title")} body={t("landing.why_b_body")} />
-            <WhyItem title={t("landing.why_c_title")} body={t("landing.why_c_body")} />
-            <WhyItem title={t("landing.why_d_title")} body={t("landing.why_d_body")} />
+      {/* ════════════════════════ 03 · Budget — POLAROID ════════════════════════
+          Mockup framed as a tilted polaroid with a watermark "02.1" sitting
+          behind it. Copy on the left in a narrow column. */}
+      <section className="relative bg-white">
+        <MarginNumeral value="03" />
+        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
+          <div className="grid gap-16 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
+            <div>
+              <SectionLabel num="02.1" label={t("landing.block_budget_eyebrow")} />
+              <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3.5rem]">
+                {t("landing.block_budget_title")}
+              </h2>
+              <p className="mt-5 max-w-xl text-base text-ink-600 sm:text-lg">
+                {t("landing.block_budget_body")}
+              </p>
+              <ul className="mt-7 space-y-3">
+                <BulletItem>{t("landing.block_budget_bullet_1")}</BulletItem>
+                <BulletItem>{t("landing.block_budget_bullet_2")}</BulletItem>
+                <BulletItem>{t("landing.block_budget_bullet_3")}</BulletItem>
+              </ul>
+            </div>
+            <div className="relative">
+              <WatermarkNumeral value="02.1" position="br" className="hidden lg:block" />
+              <div className="relative rotate-[-2deg] bg-white p-5 ring-1 ring-paper-300 shadow-pop sm:p-6">
+                <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
+                  <BudgetMockup className="h-auto w-full" />
+                </LazyMount>
+                <p className="mt-4 text-center font-serif text-sm italic text-ink-500">
+                  {t("landing.block_budget_eyebrow")}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ───────────────────── 04 · Suppliers ─────────────────────
-          Asymmetric: copy + CTA stack on the left, illustrative
-          directory snapshot on the right. */}
-      <section id="suppliers" className="bg-paper-50">
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+      {/* ════════════════════════ 04 · Guests — MAGAZINE SPREAD ════════════════════════
+          Full-bleed paper-100 surface, mockup centred above, copy below
+          in two columns — the layout of a feature spread. */}
+      <section className="relative bg-paper-100/70">
+        <MarginNumeral value="04" />
+        <div className="mx-auto max-w-5xl px-4 py-24 sm:px-6 sm:py-32">
+          <SectionLabel num="02.2" label={t("landing.block_guests_eyebrow")} className="" />
+          <h2 className="mt-5 max-w-3xl font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3.5rem]">
+            {t("landing.block_guests_title")}
+          </h2>
+          <div className="mt-12">
+            <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
+              <GuestListMockup className="h-auto w-full" />
+            </LazyMount>
+          </div>
+          <div className="mt-12 grid gap-8 sm:grid-cols-2">
+            <p className="text-base text-ink-700 sm:text-lg">{t("landing.block_guests_body")}</p>
+            <ul className="space-y-3">
+              <BulletItem>{t("landing.block_guests_bullet_1")}</BulletItem>
+              <BulletItem>{t("landing.block_guests_bullet_2")}</BulletItem>
+              <BulletItem>{t("landing.block_guests_bullet_3")}</BulletItem>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════ 05 · Seating — EDGE BLEED ════════════════════════
+          Narrow copy column on the left, mockup blown up to bleed off
+          the right edge of the viewport. */}
+      <section className="relative overflow-hidden bg-white">
+        <MarginNumeral value="05" />
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32">
+          <div className="grid gap-12 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-12">
+            <div className="max-w-sm">
+              <SectionLabel num="02.3" label={t("landing.block_seating_eyebrow")} />
+              <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3rem]">
+                {t("landing.block_seating_title")}
+              </h2>
+              <p className="mt-5 text-base text-ink-600 sm:text-lg">
+                {t("landing.block_seating_body")}
+              </p>
+              <ul className="mt-7 space-y-3">
+                <BulletItem>{t("landing.block_seating_bullet_1")}</BulletItem>
+                <BulletItem>{t("landing.block_seating_bullet_2")}</BulletItem>
+                <BulletItem>{t("landing.block_seating_bullet_3")}</BulletItem>
+              </ul>
+            </div>
+            <div className="lg:-mr-32 xl:-mr-48">
+              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
+                <SeatingMockup className="h-auto w-full drop-shadow-[0_30px_50px_rgba(16,24,48,0.15)]" />
+              </LazyMount>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════ 06 · Why — PULL-QUOTE ════════════════════════
+          The page's editorial peak. One italic statement does the work;
+          the four differentiation points reduce to a single keyword
+          row underneath. */}
+      <section className="relative bg-paper-50">
+        <MarginNumeral value="06" />
+        <BotanicalCorner
+          corner="tl"
+          className="pointer-events-none absolute left-4 top-12 h-32 w-32 text-paper-300 sm:h-40 sm:w-40 lg:left-12"
+        />
+        <BotanicalCorner
+          corner="br"
+          className="pointer-events-none absolute bottom-12 right-4 h-32 w-32 text-paper-300 sm:h-40 sm:w-40 lg:right-12"
+        />
+        <div className="mx-auto max-w-5xl px-4 py-28 sm:px-6 sm:py-40">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
+            {t("landing.why_eyebrow")}
+          </p>
+          <PullQuote quote={t("landing.why_title")} className="mt-8" />
+          <div className="mt-16 grid gap-3 text-center text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-3">
+            <WhyKeyword>{t("landing.why_a_title")}</WhyKeyword>
+            <WhyKeyword>{t("landing.why_b_title")}</WhyKeyword>
+            <WhyKeyword>{t("landing.why_c_title")}</WhyKeyword>
+            <WhyKeyword>{t("landing.why_d_title")}</WhyKeyword>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
+      <section id="suppliers" className="relative bg-white">
+        <MarginNumeral value="07" />
+        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-24 sm:px-6 sm:py-32 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
-            <SectionEyebrow num="04" label={t("landing.phase_suppliers_title")} />
-            <h2 className="mt-4 font-serif text-4xl leading-tight text-ink-900 sm:text-5xl">
+            <SectionLabel num="—" label={t("landing.phase_suppliers_title")} />
+            <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl">
               {t("landing.suppliers_section_title")}
             </h2>
-            <p className="mt-4 max-w-xl text-base text-ink-600 sm:text-lg">
+            <p className="mt-5 max-w-xl text-base text-ink-600 sm:text-lg">
               {t("landing.suppliers_section_body")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -246,68 +331,62 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───────────────────── 05 · Testimonials ─────────────────────
-          Featured layout — one large card spans 2 cols, two smaller
-          cards stack in column 3. Asymmetric on lg+; equal on mobile. */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 pt-20 pb-16 sm:px-6 sm:pt-28 sm:pb-20">
-          <SectionEyebrow num="05" label={t("landing.testimonials_eyebrow")} />
-          <h2 className="mt-4 max-w-3xl font-serif text-4xl leading-tight text-ink-900 sm:text-5xl">
-            {t("landing.testimonials_title")}
-          </h2>
-          <div className="mt-14 grid gap-6 lg:grid-cols-3">
-            <FeaturedTestimonial
-              variant={1}
-              quote={t("landing.t1_quote")}
-              name={t("landing.t1_name")}
-              meta={t("landing.t1_meta")}
+      {/* ════════════════════════ 08 · Testimonials ════════════════════════
+          One pull-quote dominates; two whispers underneath. */}
+      <section className="relative bg-paper-100/60">
+        <MarginNumeral value="08" />
+        <div className="mx-auto max-w-5xl px-4 py-24 sm:px-6 sm:py-32">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
+            {t("landing.testimonials_eyebrow")}
+          </p>
+          <FeaturedTestimonial
+            quote={t("landing.t1_quote")}
+            name={t("landing.t1_name")}
+            meta={t("landing.t1_meta")}
+            variant={1}
+          />
+          <div className="mt-14 grid gap-x-12 gap-y-10 border-t border-paper-300 pt-12 sm:grid-cols-2">
+            <WhisperTestimonial
+              quote={t("landing.t2_quote")}
+              name={t("landing.t2_name")}
+              meta={t("landing.t2_meta")}
+              variant={2}
             />
-            <div className="grid gap-6">
-              <Testimonial
-                variant={2}
-                quote={t("landing.t2_quote")}
-                name={t("landing.t2_name")}
-                meta={t("landing.t2_meta")}
-              />
-              <Testimonial
-                variant={3}
-                quote={t("landing.t3_quote")}
-                name={t("landing.t3_name")}
-                meta={t("landing.t3_meta")}
-              />
-            </div>
+            <WhisperTestimonial
+              quote={t("landing.t3_quote")}
+              name={t("landing.t3_name")}
+              meta={t("landing.t3_meta")}
+              variant={3}
+            />
           </div>
         </div>
       </section>
 
-      {/* ───────────────────── 06 · Audience ─────────────────────
-          3 cards. Primary card lifted with a pop shadow and a slight
-          scale to lead the eye. */}
-      <section className="bg-paper-50">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <SectionEyebrow num="06" label={t("landing.audience_title")} />
-          <p className="mt-4 max-w-2xl text-lg text-ink-700 sm:text-xl">
+      {/* ════════════════════════ 09 · Audience — LEDGER ════════════════════════
+          Replaced 3 cards with a 3-row ledger: row label, body, → link.
+          Reads like a directory page in a printed program. */}
+      <section className="relative bg-white">
+        <MarginNumeral value="09" />
+        <div className="mx-auto max-w-4xl px-4 py-24 sm:px-6 sm:py-32">
+          <SectionLabel num="—" label={t("landing.audience_title")} />
+          <p className="mt-6 max-w-2xl text-lg text-ink-700 sm:text-xl">
             {t("landing.audience_sub")}
           </p>
-          <div className="mt-12 grid gap-6 lg:grid-cols-3 lg:items-stretch">
-            <AudienceCard
-              art={<PhasePlanArt className="h-12 w-12" />}
-              title={t("landing.card_couples_title")}
+          <div className="mt-12 divide-y divide-paper-300 border-y border-paper-300">
+            <AudienceRow
+              row={t("landing.card_couples_title")}
               body={t("landing.card_couples_body")}
               ctaLabel={t("landing.card_couples_cta")}
               to="/signup"
-              tone="primary"
             />
-            <AudienceCard
-              art={<PhaseSuppliersArt className="h-12 w-12" />}
-              title={t("landing.card_vendors_title")}
+            <AudienceRow
+              row={t("landing.card_vendors_title")}
               body={t("landing.card_vendors_body")}
               ctaLabel={t("landing.card_vendors_cta")}
               to="/vendors"
             />
-            <AudienceCard
-              art={<PhaseGuestsArt className="h-12 w-12" />}
-              title={t("landing.card_guests_title")}
+            <AudienceRow
+              row={t("landing.card_guests_title")}
               body={t("landing.card_guests_body")}
               ctaLabel={t("landing.card_guests_cta")}
               onClick={() => {
@@ -318,43 +397,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───────────────────── 07 · Pricing ─────────────────────
-          Headline-led: copy on the left, an elevated price card on the
-          right. The price card uses pop shadow + ring so it reads as a
-          distinct artefact rather than blending in. */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
-            <div>
-              <SectionEyebrow num="07" label={t("landing.pricing_eyebrow")} />
-              <h2 className="mt-4 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3.5rem]">
-                {t("landing.pricing_title")}
-              </h2>
-              <p className="mt-5 max-w-xl text-base text-ink-600 sm:text-lg">
-                {t("landing.pricing_body")}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-paper-50 p-8 shadow-pop ring-1 ring-paper-300 sm:p-10">
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-blush-700">
+      {/* ════════════════════════ 10 · Pricing — STATIONERY ANCHOR ════════════════════════
+          Stationery-textured background; price card floats with deep
+          shadow. 0 Ft does the talking. */}
+      <section className="relative stationery">
+        <MarginNumeral value="10" />
+        <div className="mx-auto max-w-5xl px-4 py-28 sm:px-6 sm:py-40">
+          <div className="mx-auto max-w-3xl text-center">
+            <SectionLabel num="—" label={t("landing.pricing_eyebrow")} className="justify-center" />
+            <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3.5rem]">
+              {t("landing.pricing_title")}
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-base text-ink-700 sm:text-lg">
+              {t("landing.pricing_body")}
+            </p>
+          </div>
+          <div className="relative mx-auto mt-14 max-w-lg">
+            <div className="rounded-2xl bg-paper-50 p-8 ring-1 ring-paper-300 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-10">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700">
                 {t("landing.stats_eyebrow")}
-              </span>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="font-serif text-6xl text-ink-900 sm:text-7xl">0 Ft</span>
-                <span className="text-sm text-ink-500">/ couple</span>
+              </p>
+              <div className="mt-3 flex items-end gap-3">
+                <span className="font-serif text-[6rem] leading-[0.9] text-ink-900 sm:text-[8rem]">
+                  0
+                </span>
+                <span className="mb-3 font-serif text-3xl text-ink-700 sm:text-4xl">Ft</span>
               </div>
+              <p className="mt-1 font-serif text-sm italic text-ink-500">/ {t("app.name")}</p>
               <ul className="mt-8 space-y-3">
-                {[
-                  t("landing.pricing_bullet_1"),
-                  t("landing.pricing_bullet_2"),
-                  t("landing.pricing_bullet_3"),
-                ].map((b) => (
-                  <li key={b} className="flex items-start gap-3 text-sm text-ink-700">
-                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700">
-                      <Check size={12} strokeWidth={3} />
-                    </span>
-                    <span>{b}</span>
-                  </li>
-                ))}
+                <BulletItem>{t("landing.pricing_bullet_1")}</BulletItem>
+                <BulletItem>{t("landing.pricing_bullet_2")}</BulletItem>
+                <BulletItem>{t("landing.pricing_bullet_3")}</BulletItem>
               </ul>
               <Link to="/signup" className="btn-primary btn-lg mt-8 w-full shadow-sm">
                 {t("landing.cta_signup")}
@@ -367,31 +440,40 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───────────────────── 08 · FAQ ─────────────────────
-          Compact utility section — smaller heading, more rows per
-          screen. Clearly separated from the marketing rhythm above. */}
-      <section className="bg-paper-50">
-        <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-24">
-          <SectionEyebrow num="08" label={t("landing.faq_title")} />
-          <div className="mt-8 divide-y divide-paper-300 border-y border-paper-300">
-            <FaqItem question={t("landing.faq_q_free")} answer={t("landing.faq_a_free")} />
-            <FaqItem question={t("landing.faq_q_partner")} answer={t("landing.faq_a_partner")} />
-            <FaqItem question={t("landing.faq_q_data")} answer={t("landing.faq_a_data")} />
-            <FaqItem question={t("landing.faq_q_planner")} answer={t("landing.faq_a_planner")} />
-            <FaqItem question={t("landing.faq_q_ready")} answer={t("landing.faq_a_ready")} />
+      {/* ════════════════════════ 11 · FAQ ════════════════════════
+          Tight max-w-2xl, italic question-mark headline, rows as
+          inflatable cards instead of dividers. */}
+      <section className="relative bg-paper-50">
+        <MarginNumeral value="11" />
+        <div className="mx-auto max-w-2xl px-4 py-24 sm:px-6 sm:py-32">
+          <h2 className="font-serif text-4xl italic text-ink-900 sm:text-5xl">
+            {t("landing.faq_title")}
+          </h2>
+          <div className="mt-10 space-y-3">
+            <FaqCard q={t("landing.faq_q_free")} a={t("landing.faq_a_free")} />
+            <FaqCard q={t("landing.faq_q_partner")} a={t("landing.faq_a_partner")} />
+            <FaqCard q={t("landing.faq_q_data")} a={t("landing.faq_a_data")} />
+            <FaqCard q={t("landing.faq_q_planner")} a={t("landing.faq_a_planner")} />
+            <FaqCard q={t("landing.faq_q_ready")} a={t("landing.faq_a_ready")} />
           </div>
         </div>
       </section>
 
-      {/* ───────────────────── Closing ─────────────────────
-          Stationery-textured paper-200, the page's emotional peak.
-          One italic display headline, one CTA, no other distractions. */}
-      <section className="stationery">
-        <div className="mx-auto max-w-3xl px-4 py-24 text-center sm:px-6 sm:py-32">
-          <h2 className="font-serif text-5xl italic leading-[1.05] tracking-tight text-ink-900 sm:text-7xl">
+      {/* ════════════════════════ Closing ════════════════════════
+          Stationery texture, faded WĒDDLY watermark, huge italic
+          headline, signature, eucalyptus stem ornament. */}
+      <section className="stationery relative flex min-h-[70vh] items-center sm:min-h-[80vh]">
+        <EucalyptusStem
+          className="pointer-events-none absolute left-4 top-12 h-24 w-auto text-paper-400 opacity-70 sm:left-12 sm:top-20 sm:h-32"
+          flip
+        />
+        <EucalyptusStem className="pointer-events-none absolute bottom-12 right-4 h-24 w-auto text-paper-400 opacity-70 sm:bottom-20 sm:right-12 sm:h-32" />
+        <div className="mx-auto w-full max-w-3xl px-4 py-24 text-center sm:px-6 sm:py-32">
+          <Wordmark size="md" className="text-paper-400" />
+          <h2 className="mt-8 font-serif text-5xl italic leading-[1.02] tracking-tight text-ink-900 sm:text-7xl lg:text-[6.5rem]">
             {t("landing.closing_title")}
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base text-ink-700 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-xl text-base text-ink-700 sm:text-lg">
             {t("landing.closing_body")}
           </p>
           <div className="mt-10 flex justify-center">
@@ -399,6 +481,9 @@ export default function LandingPage() {
               {t("landing.cta_signup")}
             </Link>
           </div>
+          <p className="mt-10 font-serif text-sm italic text-ink-500">
+            — {t("app.name")}, Budapest
+          </p>
         </div>
       </section>
     </PublicShell>
@@ -407,42 +492,40 @@ export default function LandingPage() {
 
 // ─────────────────────────── Building blocks ───────────────────────────
 
-/** Section landmark: small italic numeral + uppercase eyebrow on one
- *  line, separated by a hairline. Gives the eye a scan anchor that the
- *  bare uppercase eyebrow couldn't on its own. */
-function SectionEyebrow({
-  num,
-  label,
-  center = false,
-}: {
-  num: string;
-  label: string;
-  center?: boolean;
-}) {
+/** Editorial spine: italic numeral floated absolutely in the left
+ *  gutter of each major section. Visible from `lg:` up — on smaller
+ *  screens the section eyebrows already carry numbering. */
+function MarginNumeral({ value }: { value: string }) {
   return (
-    <div className={`flex items-center gap-3 ${center ? "justify-center" : ""}`}>
-      <span className="font-serif text-base italic text-blush-700">{num}</span>
-      <span className="h-px w-8 bg-paper-400" aria-hidden="true" />
-      <span className="text-xs font-semibold uppercase tracking-[0.25em] text-ink-700">
-        {label}
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute left-6 top-10 hidden font-serif text-sm italic text-paper-500 lg:block xl:left-10 xl:top-14"
+    >
+      {value}
+    </span>
+  );
+}
+
+function BulletItem({ children }: { children: ReactNode }) {
+  return (
+    <li className="flex items-start gap-3 text-sm text-ink-700">
+      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700">
+        <Check size={12} strokeWidth={3} />
       </span>
-    </div>
+      <span>{children}</span>
+    </li>
   );
 }
 
-/** Stat row inside the dark band. Uses paper tokens so the ratio
- *  paper-100 number / paper-400 label keeps contrast on ink-900. */
-function DarkStat({ value, label }: { value: string; label: string }) {
+function LedgerLine({ value, label }: { value: string; label: string }) {
   return (
-    <div>
-      <p className="font-serif text-5xl tracking-tight text-paper-100 sm:text-6xl">{value}</p>
-      <p className="mt-2 text-sm text-paper-300">{label}</p>
+    <div className="flex items-baseline gap-3 border-b border-paper-700/30 py-2 sm:border-b-0">
+      <span className="font-serif text-2xl text-paper-100 sm:text-3xl">{value}</span>
+      <span className="text-xs uppercase tracking-[0.18em] text-paper-400 sm:text-sm">{label}</span>
     </div>
   );
 }
 
-/** Phase step in the numbered timeline. Big serif numeral leads, art
- *  is small, copy supports. */
 function PhaseStep({
   n,
   art,
@@ -455,193 +538,132 @@ function PhaseStep({
   body: string;
 }) {
   return (
-    <li className="flex flex-col">
-      <span className="font-serif text-5xl italic text-blush-300 sm:text-6xl">0{n}</span>
-      <div className="mt-2">{art}</div>
-      <h3 className="mt-3 font-serif text-xl text-ink-900">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-600">{body}</p>
+    <li className="relative flex flex-col">
+      {/* Big italic numeral floated behind the title — the visual
+          anchor for each phase. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-2 -top-10 select-none font-serif text-[5rem] italic leading-none text-blush-200 sm:-top-12 sm:text-[6rem] lg:-top-14 lg:text-[7rem]"
+      >
+        0{n}
+      </span>
+      <div className="relative">{art}</div>
+      <h3 className="relative mt-3 font-serif text-xl text-ink-900">{title}</h3>
+      <p className="relative mt-2 text-sm leading-relaxed text-ink-600">{body}</p>
     </li>
   );
 }
 
-/** Product feature block. Carries its own section sub-numeral so the
- *  three blocks read as three distinct moments. */
-function FeatureBlock({
-  num,
-  eyebrow,
-  title,
-  body,
-  bullets,
-  mockup,
-  reverse,
-}: {
-  num: string;
-  eyebrow: string;
-  title: string;
-  body: string;
-  bullets: string[];
-  mockup: ReactNode;
-  reverse: boolean;
-}) {
+function WhyKeyword({ children }: { children: ReactNode }) {
   return (
-    <div
-      className={`grid gap-12 py-20 sm:py-24 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-28 ${
-        reverse ? "lg:[&>*:first-child]:order-last" : ""
-      }`}
-    >
-      <div>
-        <SectionEyebrow num={num} label={eyebrow} />
-        <h2 className="mt-4 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl">{title}</h2>
-        <p className="mt-5 max-w-xl text-base text-ink-600 sm:text-lg">{body}</p>
-        <ul className="mt-7 space-y-3">
-          {bullets.map((b) => (
-            <li key={b} className="flex items-start gap-3 text-sm text-ink-700">
-              <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700">
-                <Check size={12} strokeWidth={3} />
-              </span>
-              <span>{b}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="mx-auto w-full max-w-lg lg:max-w-none">{mockup}</div>
-    </div>
+    <span className="inline-flex items-center gap-3">
+      <span className="hidden h-px w-6 bg-paper-400 sm:inline-block" aria-hidden="true" />
+      {children}
+    </span>
   );
 }
 
-function AudienceCard({
-  art,
-  title,
+function FeaturedTestimonial({
+  quote,
+  name,
+  meta,
+  variant,
+}: {
+  quote: string;
+  name: string;
+  meta: string;
+  variant: 1 | 2 | 3;
+}) {
+  return (
+    <figure className="mt-8">
+      <blockquote className="font-serif text-3xl italic leading-[1.2] text-ink-900 sm:text-4xl lg:text-5xl">
+        &ldquo;{quote}&rdquo;
+      </blockquote>
+      <figcaption className="mt-8 flex items-center gap-4">
+        <CouplePortrait variant={variant} className="h-14 w-14 shrink-0" />
+        <div>
+          <p className="font-serif text-base font-semibold text-ink-900 sm:text-lg">{name}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-ink-500">{meta}</p>
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
+function WhisperTestimonial({
+  quote,
+  name,
+  meta,
+  variant,
+}: {
+  quote: string;
+  name: string;
+  meta: string;
+  variant: 1 | 2 | 3;
+}) {
+  return (
+    <figure>
+      <blockquote className="font-serif text-base italic leading-relaxed text-ink-800">
+        &ldquo;{quote}&rdquo;
+      </blockquote>
+      <figcaption className="mt-4 flex items-center gap-3">
+        <CouplePortrait variant={variant} className="h-9 w-9 shrink-0" />
+        <div>
+          <p className="font-serif text-sm font-semibold text-ink-900">{name}</p>
+          <p className="text-xs text-ink-500">{meta}</p>
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
+function AudienceRow({
+  row,
   body,
   ctaLabel,
   to,
   onClick,
-  tone,
 }: {
-  art: ReactNode;
-  title: string;
+  row: string;
   body: string;
   ctaLabel: string;
   to?: string;
   onClick?: () => void;
-  tone?: "primary";
 }) {
-  const isPrimary = tone === "primary";
-  // Primary card uses a denser, lifted treatment so it reads as the
-  // recommended choice without needing a "Best" badge.
-  const cardClass = isPrimary ? "rounded-2xl bg-ink-900 text-paper-100 p-8 shadow-pop" : "card";
-  const ctaClass = isPrimary
-    ? "mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-blush-300 hover:text-blush-200"
-    : "mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-ink-900 hover:text-blush-700";
   const cta = (
-    <span className={ctaClass}>
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink-900 transition-colors hover:text-blush-700">
       {ctaLabel}
       <span aria-hidden>→</span>
     </span>
   );
   return (
-    <article className={cardClass}>
-      <div className={`mb-4 ${isPrimary ? "[&_svg]:opacity-90" : ""}`}>{art}</div>
-      <h3
-        className={`font-serif text-2xl sm:text-3xl ${isPrimary ? "text-paper-100" : "text-ink-900"}`}
-      >
-        {title}
-      </h3>
-      <p
-        className={`mt-3 text-sm leading-relaxed ${isPrimary ? "text-paper-300" : "text-ink-700"}`}
-      >
-        {body}
-      </p>
-      {to ? (
-        <Link to={to}>{cta}</Link>
-      ) : (
-        <button type="button" onClick={onClick} className="text-left">
-          {cta}
-        </button>
-      )}
-    </article>
-  );
-}
-
-/** Featured testimonial — taller card with a larger pull-quote. Used
- *  once per testimonials section. */
-function FeaturedTestimonial({
-  variant,
-  quote,
-  name,
-  meta,
-}: {
-  variant: 1 | 2 | 3;
-  quote: string;
-  name: string;
-  meta: string;
-}) {
-  return (
-    <article className="card flex flex-col bg-paper-50 p-8 lg:col-span-2 lg:p-10">
-      <span className="font-serif text-7xl leading-none text-blush-300" aria-hidden>
-        &ldquo;
-      </span>
-      <p className="mt-2 font-serif text-2xl leading-snug text-ink-900 sm:text-3xl">{quote}</p>
-      <div className="mt-auto flex items-center gap-4 pt-8">
-        <CouplePortrait variant={variant} className="h-14 w-14 shrink-0" />
-        <div>
-          <p className="font-serif text-lg font-semibold text-ink-900">{name}</p>
-          <p className="text-xs text-ink-500">{meta}</p>
-        </div>
+    <div className="grid gap-4 py-7 sm:grid-cols-[10rem_1fr_auto] sm:items-baseline sm:gap-8">
+      <p className="font-serif text-2xl text-ink-900 sm:text-3xl">{row}</p>
+      <p className="text-sm leading-relaxed text-ink-600 sm:text-base">{body}</p>
+      <div>
+        {to ? (
+          <Link to={to}>{cta}</Link>
+        ) : (
+          <button type="button" onClick={onClick} className="text-left">
+            {cta}
+          </button>
+        )}
       </div>
-    </article>
-  );
-}
-
-function Testimonial({
-  variant,
-  quote,
-  name,
-  meta,
-}: {
-  variant: 1 | 2 | 3;
-  quote: string;
-  name: string;
-  meta: string;
-}) {
-  return (
-    <article className="card flex flex-col">
-      <span className="font-serif text-4xl leading-none text-blush-300" aria-hidden>
-        &ldquo;
-      </span>
-      <p className="mt-1 font-serif text-base leading-relaxed text-ink-800">{quote}</p>
-      <div className="mt-auto flex items-center gap-3 pt-5">
-        <CouplePortrait variant={variant} className="h-10 w-10 shrink-0" />
-        <div>
-          <p className="font-serif text-sm font-semibold text-ink-900">{name}</p>
-          <p className="text-xs text-ink-500">{meta}</p>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function WhyItem({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="h-px w-10 bg-blush-400" aria-hidden="true" />
-      <h3 className="font-serif text-xl text-ink-900">{title}</h3>
-      <p className="text-sm leading-relaxed text-ink-600">{body}</p>
     </div>
   );
 }
 
-function FaqItem({ question, answer }: { question: string; answer: ReactNode }) {
+function FaqCard({ q, a }: { q: string; a: ReactNode }) {
   return (
-    <details className="group py-4">
+    <details className="group rounded-2xl border border-paper-300 bg-paper-50 px-5 py-4 transition-colors open:bg-white sm:px-6 sm:py-5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
-        <span className="font-serif text-lg text-ink-900">{question}</span>
+        <span className="font-serif text-lg text-ink-900 sm:text-xl">{q}</span>
         <ChevronDown
           size={18}
           className="shrink-0 text-ink-500 transition-transform group-open:rotate-180"
         />
       </summary>
-      <p className="mt-3 text-sm leading-relaxed text-ink-600">{answer}</p>
+      <p className="mt-3 text-sm leading-relaxed text-ink-600">{a}</p>
     </details>
   );
 }
