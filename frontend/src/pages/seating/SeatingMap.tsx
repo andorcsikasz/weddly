@@ -473,8 +473,9 @@ function clampRoom(mm: number): number {
 }
 
 function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
-  // Faint 1m grid plus a stronger room border. We draw the lines inline
-  // rather than via <pattern> so screenshots / a11y trees stay simple.
+  // Faint dashed 1m grid plus a soft room border. The dashes match the
+  // landing-page mockup aesthetic — feels like graph paper rather than a
+  // technical CAD grid.
   const lines: React.ReactElement[] = [];
   for (let x = GRID_STEP_MM; x < widthMm; x += GRID_STEP_MM) {
     lines.push(
@@ -486,6 +487,7 @@ function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
         y2={heightMm}
         className="stroke-paper-300"
         strokeWidth={4}
+        strokeDasharray="40 80"
       />,
     );
   }
@@ -499,19 +501,13 @@ function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
         y2={y}
         className="stroke-paper-300"
         strokeWidth={4}
+        strokeDasharray="40 80"
       />,
     );
   }
   return (
     <g>
-      <rect
-        x={0}
-        y={0}
-        width={widthMm}
-        height={heightMm}
-        className="fill-paper-50 stroke-paper-500"
-        strokeWidth={12}
-      />
+      <rect x={0} y={0} width={widthMm} height={heightMm} className="fill-paper-50" />
       {lines}
     </g>
   );
@@ -553,24 +549,31 @@ function TableShape({
   const { rx, ry } = halfDims(table);
   const chairs = chairOffsets(table.shape, table.seats, rx, ry);
 
+  // Stationery aesthetic from the landing-page mockup: clean white-ish
+  // table body, dark navy single stroke, blush rounded-rect chairs spaced
+  // just outside the perimeter. Selection lifts the stroke without changing
+  // the warmth of the fill.
   const strokeClass = isSelected ? "stroke-blush-600" : "stroke-ink-800";
   const strokeWidth = isSelected ? 22 : 14;
-  const fillClass = isSelected ? "fill-blush-50" : "fill-paper-50";
+  const fillClass = "fill-paper-50";
 
-  // Inner accent rect/circle inset for a "double border" stationery feel.
-  const innerInset = 60;
-  const innerRx = Math.max(0, rx - innerInset);
-  const innerRy = Math.max(0, ry - innerInset);
-
-  // Long tables get more pronounced banquet-bench rounding; square keeps a
-  // subtle 40mm corner.
+  // Long and head get a softer banquet-bench corner; square stays tighter.
   const rectCorner =
     table.shape === "long" || table.shape === "head"
       ? Math.min(80, ry * 0.4)
       : table.shape === "square"
         ? 40
         : 0;
-  const innerRectCorner = Math.max(0, rectCorner - innerInset * 0.4);
+
+  // Chair geometry — proportional to the smaller half-dim so chairs read
+  // sensibly on tiny round tables AND on wide head tables. Width is the
+  // long axis (tangent to the table edge); height is the depth.
+  const minHalf = Math.min(rx, ry);
+  const chairWidthMm = Math.max(180, Math.min(320, minHalf * 0.36));
+  const chairHeightMm = Math.max(130, Math.min(220, minHalf * 0.27));
+  const chairCorner = chairHeightMm * 0.3;
+  // Centre of chair sits just outside the table edge.
+  const chairPushMm = chairHeightMm / 2 + 40;
 
   // Handle set per shape. Round → 4 cardinal handles. Square/long → 8 handles.
   const handles: HandleDir[] =
@@ -600,108 +603,59 @@ function TableShape({
       role="group"
       aria-label={ariaLabel}
     >
+      {/* Table body — single clean stroke + warm fill. */}
       {table.shape === "round" ? (
-        <>
-          <circle r={rx} className={`${fillClass} ${strokeClass}`} strokeWidth={strokeWidth} />
-          {innerRx > 0 && (
-            <circle
-              r={innerRx}
-              className="fill-none stroke-paper-300"
-              strokeWidth={4}
-              style={{ pointerEvents: "none" }}
-            />
-          )}
-        </>
+        <circle r={rx} className={`${fillClass} ${strokeClass}`} strokeWidth={strokeWidth} />
       ) : (
-        <>
-          <rect
-            x={-rx}
-            y={-ry}
-            width={rx * 2}
-            height={ry * 2}
-            className={`${fillClass} ${strokeClass}`}
-            strokeWidth={strokeWidth}
-            rx={rectCorner}
-          />
-          {innerRx > 0 && innerRy > 0 && (
-            <rect
-              x={-innerRx}
-              y={-innerRy}
-              width={innerRx * 2}
-              height={innerRy * 2}
-              className="fill-none stroke-paper-300"
-              strokeWidth={4}
-              rx={innerRectCorner}
-              style={{ pointerEvents: "none" }}
-            />
-          )}
-        </>
-      )}
-
-      {/* Head-table back-wall hint: a chunky bar drawn just outside the back
-          edge so the user sees at a glance that this side is "against the
-          wall" and reads the chair-row direction without needing the legend. */}
-      {table.shape === "head" && (
         <rect
           x={-rx}
-          y={-ry - 90}
+          y={-ry}
           width={rx * 2}
-          height={70}
-          rx={20}
-          className="fill-ink-700"
-          style={{ pointerEvents: "none" }}
+          height={ry * 2}
+          className={`${fillClass} ${strokeClass}`}
+          strokeWidth={strokeWidth}
+          rx={rectCorner}
         />
       )}
 
-      {/* Chairs. Filled chairs get a small inner dot so the "filled" state
-          reads at a glance, even when zoomed out / printed in greyscale. */}
+      {/* Chairs. Each chair is a rounded rect tangent to the perimeter, in
+          blush — empty seats read soft, filled seats read warmer. The
+          chair's long axis runs along the table edge (perpendicular to the
+          radial direction), so it visually "faces" the table like a real
+          chair from above. */}
       {chairs.map((c, i) => {
         const isFilled = i < filledSeats;
+        const cosA = Math.cos(c.angle);
+        const sinA = Math.sin(c.angle);
+        const px = c.dx + cosA * chairPushMm;
+        const py = c.dy + sinA * chairPushMm;
+        const rotDeg = (c.angle * 180) / Math.PI + 90;
         return (
-          <g key={i}>
-            <circle
-              cx={c.dx}
-              cy={c.dy}
-              r={90}
-              className={`stroke-ink-500 ${isFilled ? "fill-ink-600" : "fill-paper-50"}`}
-              strokeWidth={6}
-            />
-            {isFilled && (
-              <circle
-                cx={c.dx}
-                cy={c.dy}
-                r={28}
-                className="fill-paper-100"
-                style={{ pointerEvents: "none" }}
-              />
-            )}
-          </g>
+          <rect
+            key={i}
+            x={px - chairWidthMm / 2}
+            y={py - chairHeightMm / 2}
+            width={chairWidthMm}
+            height={chairHeightMm}
+            rx={chairCorner}
+            transform={`rotate(${rotDeg} ${px} ${py})`}
+            className={isFilled ? "fill-blush-600" : "fill-blush-300"}
+          />
         );
       })}
 
-      {/* Label */}
+      {/* Label — serif, in the warm blush from the brand palette. */}
       <text
         x={0}
-        y={-10}
+        y={Math.min(rx, ry) * 0.15}
         textAnchor="middle"
-        fontSize={Math.min(rx, ry) * 0.45}
-        fontFamily="Inter, system-ui, sans-serif"
+        fontSize={Math.min(rx, ry) * 0.42}
+        fontFamily='"Cormorant Garamond", Georgia, serif'
         fontWeight={600}
-        className="fill-ink-800"
+        className="fill-blush-700"
         style={{ pointerEvents: "none" }}
       >
         {table.label}
-      </text>
-      <text
-        x={0}
-        y={Math.min(rx, ry) * 0.45 + 30}
-        textAnchor="middle"
-        fontSize={Math.min(rx, ry) * 0.3}
-        fontFamily="Inter, system-ui, sans-serif"
-        className="fill-ink-500"
-        style={{ pointerEvents: "none" }}
-      >
-        {filledSeats} / {table.seats}
       </text>
 
       {/* Selection-only affordances: resize handles + seat buttons. */}

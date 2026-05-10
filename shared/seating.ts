@@ -45,14 +45,15 @@ export function chairOffsets(
   }
 
   if (shape === "head") {
-    // Head table — guests of honour sit along ONE long side facing the room,
-    // with the back edge against a wall / backdrop. Chairs are placed only on
-    // the front (bottom) long edge, evenly distributed across the full width.
+    // Head table — guests of honour sit along ONE long side facing the room.
+    // Chairs are placed only on the front (top, north) long edge, evenly
+    // distributed across the full width. The back of the table sits against
+    // a wall / backdrop with no chairs.
     const out: ChairOffset[] = [];
     const longSide = rx * 2;
     for (let i = 0; i < seats; i++) {
       const t = (i + 0.5) / seats;
-      out.push({ dx: -rx + longSide * t, dy: ry, angle: Math.PI / 2 });
+      out.push({ dx: -rx + longSide * t, dy: -ry, angle: -Math.PI / 2 });
     }
     return out;
   }
