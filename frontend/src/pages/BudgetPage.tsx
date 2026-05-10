@@ -275,22 +275,22 @@ export default function BudgetPage() {
                     key={line.id}
                     className="border-t border-paper-200 transition hover:bg-paper-50"
                   >
-                    <td className="px-4 py-2 align-top">
+                    <td className="px-4 py-2 align-middle">
                       <CategoryCell category={line.category} />
                     </td>
-                    <td className="px-4 py-2 align-top">
+                    <td className="px-4 py-2 align-middle">
                       <HufInput
                         value={line.planned_huf}
                         onCommit={(v) => save(line, "planned_huf", v)}
                       />
                     </td>
-                    <td className="px-4 py-2 align-top">
+                    <td className="px-4 py-2 align-middle">
                       <HufInput
                         value={line.actual_huf}
                         onCommit={(v) => save(line, "actual_huf", v)}
                       />
                     </td>
-                    <td className="hidden px-4 py-2 text-right align-top tabular-nums sm:table-cell">
+                    <td className="hidden px-4 py-2 text-right align-middle tabular-nums sm:table-cell">
                       <span
                         className={
                           delta > 0 ? "text-blush-700" : delta < 0 ? "text-ink-500" : "text-ink-400"
@@ -299,7 +299,7 @@ export default function BudgetPage() {
                         {delta === 0 ? "—" : formatHuf(delta, locale)}
                       </span>
                     </td>
-                    <td className="hidden px-4 py-2 align-top md:table-cell">
+                    <td className="hidden px-4 py-2 align-middle md:table-cell">
                       <input
                         className="input h-9 min-h-0 py-1 text-sm"
                         defaultValue={line.notes ?? ""}
@@ -309,7 +309,7 @@ export default function BudgetPage() {
                         onBlur={(e) => saveNotes(line, e.target.value)}
                       />
                     </td>
-                    <td className="px-2 py-2 text-right align-top">
+                    <td className="px-2 py-2 text-right align-middle">
                       <button
                         type="button"
                         className="btn-ghost btn-sm text-ink-500 hover:text-blush-700"

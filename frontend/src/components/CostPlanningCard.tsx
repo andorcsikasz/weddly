@@ -4,6 +4,8 @@
 
 import type { BudgetCategory, BudgetLine } from "@shared/types";
 import {
+  ArrowDown,
+  ArrowUp,
   Cake,
   Camera,
   Car,
@@ -11,7 +13,6 @@ import {
   Flower2,
   Gift,
   Home,
-  Info,
   Mail,
   MoreHorizontal,
   Music,
@@ -174,24 +175,28 @@ export function CostPlanningCard({
     else if (count > maxCount) onCountChange(maxCount);
   }, [count, minCount, maxCount, onCountChange]);
 
+  // Single-line status: under/over budget by HUF amount. Coloured red when
+  // over so the cap state is readable at a glance from the headline alone.
+  const underAmount = cap !== null && !overCap ? cap - totalPlanned : 0;
+
   return (
     <section className="card">
-      {overCap && (
-        <div className="mb-3 flex items-center gap-2 rounded-lg border border-blush-300 bg-blush-50 px-3 py-1.5 text-xs font-medium text-blush-700">
-          <Info size={12} aria-hidden />
-          {t("budget.over_budget_strip", { amount: formatHuf(overage, locale) })}
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-ink-500">
-            {t("budget.cost_planning_title")}
-          </p>
-          <h2 className="mt-0.5 font-serif text-xl">
-            {t("budget.cost_planning_with_count", { n: formatNumber(count, locale) })}
-          </h2>
-        </div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h2 className="font-serif text-xl">
+          {t("budget.cost_planning_with_count", { n: formatNumber(count, locale) })}
+        </h2>
+        {cap !== null &&
+          (overCap ? (
+            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700">
+              <ArrowUp size={12} className="self-center" aria-hidden />
+              {t("budget.over_by", { amount: formatHuf(overage, locale) })}
+            </span>
+          ) : (
+            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
+              <ArrowDown size={12} className="self-center" aria-hidden />
+              {t("budget.under_by", { amount: formatHuf(underAmount, locale) })}
+            </span>
+          ))}
       </div>
 
       {/* Headcount slider — compact single block. */}

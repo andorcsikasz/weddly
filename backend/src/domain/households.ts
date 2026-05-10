@@ -103,6 +103,7 @@ export function toHouseholdMember(row: GuestRow): HouseholdMember {
   return {
     id: g.id,
     full_name: g.full_name,
+    kind: g.kind,
     rsvp_status: g.rsvp_status,
     meal_choice: g.meal_choice,
     dietary: g.dietary,

@@ -1,14 +1,16 @@
 // Guest list CRUD + CSV import. All endpoints couple-scoped.
 
-import type { Guest, GuestGroupTag, MealChoice, RsvpStatus } from "@shared/types";
+import type { Guest, GuestGroupTag, GuestKind, MealChoice, RsvpStatus } from "@shared/types";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
+import { recordExport } from "../domain/exports";
 import { indexHeaders, parseCsv } from "../lib/csv";
 import {
   type GuestRow,
   getGuestByIdScoped,
   isGuestGroupTag,
+  isGuestKind,
   isMealChoice,
   isRsvpStatus,
   listGuestsByCouple,
@@ -23,6 +25,7 @@ interface UpsertBody {
   email?: unknown;
   phone?: unknown;
   group_tag?: unknown;
+  kind?: unknown;
   rsvp_status?: unknown;
   meal_choice?: unknown;
   dietary?: unknown;
@@ -44,6 +47,7 @@ interface ParsedGuest {
   email: string | null;
   phone: string | null;
   group_tag: GuestGroupTag;
+  kind: GuestKind;
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary: string | null;
@@ -68,6 +72,11 @@ function parseGroupTag(raw: unknown): GuestGroupTag {
   return "other";
 }
 
+function parseKind(raw: unknown): GuestKind {
+  if (typeof raw === "string" && isGuestKind(raw)) return raw;
+  return "adult";
+}
+
 function parseRsvp(raw: unknown): RsvpStatus {
   if (typeof raw === "string" && isRsvpStatus(raw)) return raw;
   return "pending";
@@ -87,6 +96,7 @@ function parseUpsert(body: UpsertBody, requireName = true): ParsedGuest {
     email: parseStr(body.email, 320),
     phone: parseStr(body.phone, 64),
     group_tag: parseGroupTag(body.group_tag),
+    kind: parseKind(body.kind),
     rsvp_status: parseRsvp(body.rsvp_status),
     meal_choice: parseMeal(body.meal_choice),
     dietary: parseStr(body.dietary, 500),
@@ -134,10 +144,10 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const result = db
     .prepare(
       `INSERT INTO guests
-        (couple_id, full_name, email, phone, group_tag, invite_code, rsvp_status,
+        (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
          song_request, notes, rsvp_responded_at, created_at, updated_at, household_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -146,6 +156,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       parsed.phone,
       parsed.group_tag,
       code,
+      parsed.kind,
       parsed.rsvp_status,
       parsed.meal_choice,
       parsed.dietary,
@@ -209,7 +220,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   db.prepare(
     `UPDATE guests SET
-        full_name = ?, email = ?, phone = ?, group_tag = ?, rsvp_status = ?,
+        full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
         accommodation_needed = ?, song_request = ?, notes = ?, household_id = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
@@ -218,6 +229,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     parsed.email,
     parsed.phone,
     parsed.group_tag,
+    parsed.kind,
     parsed.rsvp_status,
     parsed.meal_choice,
     parsed.dietary,
@@ -369,10 +381,105 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
   return json({ created_count: created.length, errors }, { status: 201 });
 }
 
+function csvField(v: string | null | undefined): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+interface CsvGuestRow extends GuestRow {
+  household_label: string | null;
+}
+
+function handleExportCsv(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const rows = db
+    .prepare(
+      `SELECT g.*, h.label AS household_label
+         FROM guests g
+         LEFT JOIN households h ON h.id = g.household_id
+         WHERE g.couple_id = ?
+         ORDER BY g.full_name COLLATE NOCASE ASC`,
+    )
+    .all(couple.id) as CsvGuestRow[];
+
+  const headers = [
+    "full_name",
+    "email",
+    "phone",
+    "group_tag",
+    "kind",
+    "household",
+    "rsvp_status",
+    "meal_choice",
+    "dietary",
+    "plus_one_name",
+    "plus_one_meal",
+    "accommodation_needed",
+    "song_request",
+    "notes",
+  ];
+  const lines = [headers.join(",")];
+  for (const r of rows) {
+    lines.push(
+      [
+        csvField(r.full_name),
+        csvField(r.email),
+        csvField(r.phone),
+        csvField(r.group_tag),
+        csvField(r.kind),
+        csvField(r.household_label),
+        csvField(r.rsvp_status),
+        csvField(r.meal_choice),
+        csvField(r.dietary),
+        csvField(r.plus_one_name),
+        csvField(r.plus_one_meal),
+        r.accommodation_needed ? "1" : "0",
+        csvField(r.song_request),
+        csvField(r.notes),
+      ].join(","),
+    );
+  }
+  const csv = `${lines.join("\r\n")}\r\n`;
+  const body = new TextEncoder().encode(csv);
+  const stamp = new Date().toISOString().slice(0, 10);
+  const filename = `weddly-guests-${stamp}.csv`;
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "guest.csv_export",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: { count: rows.length },
+  });
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "guest_csv",
+    format: null,
+    filename,
+    contentType: "text/csv; charset=utf-8",
+    body,
+  });
+
+  return new Response(body, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
 export function registerGuestRoutes(router: Router) {
   router.get("/api/guests", handleList, true);
   router.post("/api/guests", handleCreate, true);
   router.patch("/api/guests/:id", handleUpdate, true);
   router.delete("/api/guests/:id", handleDelete, true);
   router.post("/api/guests/import", handleImportCsv, true);
+  router.get("/api/guests/csv", handleExportCsv, true);
 }

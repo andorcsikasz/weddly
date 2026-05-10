@@ -7,11 +7,26 @@ import type {
   Couple,
   Guest,
   GuestGroupTag,
+  GuestKind,
   Household,
   MealChoice,
   RsvpStatus,
 } from "@shared/types";
-import { ChevronDown, Pencil, Plus, RefreshCw, Trash2, Upload, UserPlus, X } from "lucide-react";
+import {
+  Baby,
+  ChevronDown,
+  Cookie,
+  Fish,
+  Leaf,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Upload,
+  UserPlus,
+  Wheat,
+  X,
+} from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Dialog, useConfirm, useToast } from "../components/ui";
@@ -111,6 +126,17 @@ export default function GuestsPage() {
     if (!ok) return;
     await householdApi.regenerateCode(hh.id);
     refresh();
+  }
+
+  async function onRenameHousehold(id: number, label: string) {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    try {
+      await householdApi.update(id, { label: trimmed });
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
   }
 
   async function copyShare(slug: string | null, code: string) {
@@ -247,6 +273,7 @@ export default function GuestsPage() {
               onDeleteGuest={onDeleteGuest}
               onRegenCode={() => onRegenCode(hh)}
               onDeleteHousehold={() => onDeleteHousehold(hh)}
+              onRenameHousehold={onRenameHousehold}
             />
           ))}
 
@@ -322,6 +349,7 @@ function HouseholdCard({
   onDeleteGuest,
   onRegenCode,
   onDeleteHousehold,
+  onRenameHousehold,
 }: {
   household: Household;
   members: Guest[];
@@ -332,16 +360,18 @@ function HouseholdCard({
   onDeleteGuest: (id: number) => void;
   onRegenCode: () => void;
   onDeleteHousehold: () => void;
+  onRenameHousehold: (id: number, label: string) => Promise<void>;
 }) {
   const { t } = useT();
   return (
     <div className="card overflow-hidden p-0">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3">
         <div className="min-w-0">
-          <h3 className="flex items-baseline gap-2 truncate text-base font-semibold text-ink-900">
-            <span className="truncate">{household.label}</span>
-            <span className="text-sm font-normal text-ink-500">({members.length})</span>
-          </h3>
+          <HouseholdLabelEditor
+            household={household}
+            count={members.length}
+            onSave={(label) => onRenameHousehold(household.id, label)}
+          />
           <div className="mt-1 flex items-center gap-3 text-xs text-ink-600">
             {coupleSlug && <span className="font-mono uppercase">{coupleSlug}</span>}
             <span aria-hidden>·</span>
@@ -385,7 +415,11 @@ function HouseholdCard({
         {members.map((g) => (
           <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
             <div className="min-w-0">
-              <p className="font-medium text-ink-900 truncate">{g.full_name}</p>
+              <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
+                <KindIcon kind={g.kind} />
+                <span className="truncate">{g.full_name}</span>
+                <MealIcons meal={g.meal_choice} dietary={g.dietary} />
+              </p>
               <p className="text-xs text-ink-500">{t(`guests.group_${g.group_tag}`)}</p>
             </div>
             <div className="flex items-center gap-2">
@@ -588,6 +622,119 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
   );
 }
 
+/**
+ * Inline-editable household label. Click to enter edit mode; blur or Enter
+ * commits via the parent-supplied save callback. Escape reverts. The (N)
+ * member count stays visible across modes so the row reads consistently.
+ */
+function HouseholdLabelEditor({
+  household,
+  count,
+  onSave,
+}: {
+  household: Household;
+  count: number;
+  onSave: (label: string) => Promise<void>;
+}) {
+  const { t } = useT();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(household.label);
+
+  function commit() {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === household.label) {
+      setDraft(household.label);
+      return;
+    }
+    void onSave(trimmed);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-baseline gap-2">
+        <input
+          autoFocus
+          className="input flex-1 text-sm font-medium"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            } else if (e.key === "Escape") {
+              setDraft(household.label);
+              setEditing(false);
+            }
+          }}
+          maxLength={200}
+        />
+        <span className="text-sm font-normal text-ink-500">({count})</span>
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setDraft(household.label);
+        setEditing(true);
+      }}
+      aria-label={t("guests.household_label")}
+      className="flex w-full items-baseline gap-2 truncate rounded text-left text-base font-semibold text-ink-900 hover:text-ink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400"
+    >
+      <span className="truncate">{household.label}</span>
+      <span className="text-sm font-normal text-ink-500">({count})</span>
+    </button>
+  );
+}
+
+/**
+ * Tiny inline icon next to a member's name in the household card. Adults get
+ * nothing (default), babies get the swaddled-baby icon, children get a
+ * cookie — recognizable kid affordance and the only lucide icon that reads
+ * unambiguously as "child" without crossing into condescending territory.
+ */
+function KindIcon({ kind }: { kind: GuestKind }) {
+  const { t } = useT();
+  if (kind === "adult") return null;
+  const Icon = kind === "baby" ? Baby : Cookie;
+  const label = t(`guests.kind_${kind}`);
+  return <Icon size={14} aria-label={label} className="shrink-0 text-blush-700" />;
+}
+
+/**
+ * Inline icons summarising dietary attributes next to the guest's name:
+ * Leaf for vegetarian / vegan, Fish for the fish meal, Wheat when the
+ * guest left free-text dietary notes (allergies). The tooltip shows the
+ * full free-text so couples can scan a row at a glance.
+ */
+function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string | null }) {
+  const { t } = useT();
+  const veg = meal === "vegetarian" || meal === "vegan";
+  const fish = meal === "fish";
+  const hasDietary = Boolean(dietary && dietary.trim());
+  if (!veg && !fish && !hasDietary) return null;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 text-blush-700">
+      {veg && (
+        <Leaf
+          size={14}
+          aria-label={t(meal === "vegan" ? "guests.meal_vegan" : "guests.meal_vegetarian")}
+        />
+      )}
+      {fish && <Fish size={14} aria-label={t("guests.meal_fish")} />}
+      {hasDietary && (
+        // Wrap so the native title tooltip works — lucide icons don't accept `title`.
+        <span title={dietary ?? undefined} className="inline-flex">
+          <Wheat size={14} aria-label={t("guests.allergies")} />
+        </span>
+      )}
+    </span>
+  );
+}
+
 function GuestDrawer({
   init,
   households,
@@ -608,6 +755,7 @@ function GuestDrawer({
       email: null,
       phone: null,
       group_tag: "other",
+      kind: "adult",
       rsvp_status: "pending",
       meal_choice: null,
       dietary: null,
@@ -625,6 +773,19 @@ function GuestDrawer({
   const [newHouseholdLabel, setNewHouseholdLabel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
+
+  function buildBody(): Record<string, unknown> {
+    const body: Record<string, unknown> = { ...form };
+    if (householdMode === "existing" && householdId) {
+      body.household_id = householdId;
+    } else if (householdMode === "new") {
+      body.household_id = null;
+      const label = newHouseholdLabel.trim();
+      if (label) body.new_household_label = label;
+    }
+    return body;
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -635,14 +796,7 @@ function GuestDrawer({
     setSubmitting(true);
     setError(null);
     try {
-      const body: Record<string, unknown> = { ...form };
-      if (householdMode === "existing" && householdId) {
-        body.household_id = householdId;
-      } else if (householdMode === "new") {
-        body.household_id = null;
-        const label = newHouseholdLabel.trim();
-        if (label) body.new_household_label = label;
-      }
+      const body = buildBody();
       if (guest) await guestApi.update(guest.id, body);
       else await guestApi.create(body);
       onSaved();
@@ -652,161 +806,230 @@ function GuestDrawer({
     }
   }
 
+  /**
+   * Auto-save on close — clicking the X or the backdrop persists whatever the
+   * user typed instead of dropping it on the floor. For new guests we still
+   * need a non-empty name (server requires it); if it's missing we just
+   * close. Errors are surfaced via toast since the modal will already be gone.
+   */
+  async function autoSaveAndClose() {
+    if (submitting) return;
+    const name = (form.full_name ?? "").trim();
+    // Existing guest with name cleared → don't save (would fail validation),
+    // but still close. New guest with no name → just close.
+    if (!name) {
+      onClose();
+      return;
+    }
+    try {
+      const body = buildBody();
+      if (guest) await guestApi.update(guest.id, body);
+      else await guestApi.create(body);
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : t("common.error_generic"));
+      onClose();
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-end bg-black/40 sm:items-stretch">
+    <div
+      className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4"
+      onClick={(e) => {
+        // Backdrop click only — let clicks inside the form bubble normally.
+        if (e.target === e.currentTarget) void autoSaveAndClose();
+      }}
+    >
       <form
-        className="w-full max-w-md overflow-y-auto bg-paper-50 p-6 shadow-pop sm:h-full"
+        className="flex w-full max-w-2xl max-h-[85vh] flex-col overflow-hidden rounded-2xl bg-paper-50 shadow-pop"
         onSubmit={onSubmit}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2>{guest ? t("guests.edit") : t("guests.add")}</h2>
-          <button type="button" className="btn-ghost btn-sm" onClick={onClose}>
+        <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4">
+          <h2 className="text-base font-semibold text-ink-900">
+            {guest ? t("guests.edit") : t("guests.add")}
+          </h2>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => void autoSaveAndClose()}
+            aria-label={t("common.cancel")}
+          >
             <X size={18} />
           </button>
         </div>
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <Field
+            label={t("guests.full_name")}
+            value={form.full_name ?? ""}
+            onChange={(v) => setForm({ ...form, full_name: v })}
+          />
+          <Field
+            label={t("guests.email")}
+            value={form.email ?? ""}
+            onChange={(v) => setForm({ ...form, email: v || null })}
+            type="email"
+          />
+          <Field
+            label={t("guests.phone")}
+            value={form.phone ?? ""}
+            onChange={(v) => setForm({ ...form, phone: v || null })}
+          />
 
-        <Field
-          label={t("guests.full_name")}
-          value={form.full_name ?? ""}
-          onChange={(v) => setForm({ ...form, full_name: v })}
-        />
-        <Field
-          label={t("guests.email")}
-          value={form.email ?? ""}
-          onChange={(v) => setForm({ ...form, email: v || null })}
-          type="email"
-        />
-        <Field
-          label={t("guests.phone")}
-          value={form.phone ?? ""}
-          onChange={(v) => setForm({ ...form, phone: v || null })}
-        />
-
-        <div className="mb-3">
-          <label className="field-label">{t("guests.group")}</label>
-          <select
-            className="input"
-            value={form.group_tag ?? "other"}
-            onChange={(e) => setForm({ ...form, group_tag: e.target.value as GuestGroupTag })}
-          >
-            {GROUPS.map((g) => (
-              <option key={g} value={g}>
-                {t(`guests.group_${g}`)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3">
-          <label className="field-label">{t("guests.household_label")}</label>
-          <p className="mb-2 text-xs text-ink-500">{t("guests.household_assign_help")}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setHouseholdMode("existing")}
-              disabled={households.length === 0}
-              className={
-                householdMode === "existing"
-                  ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
-                  : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
-              }
-            >
-              {t("guests.household_existing")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setHouseholdMode("new")}
-              className={
-                householdMode === "new"
-                  ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
-                  : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
-              }
-            >
-              {t("guests.household_new")}
-            </button>
-          </div>
-          {householdMode === "existing" ? (
+          <div className="mb-3">
+            <label className="field-label">{t("guests.group")}</label>
             <select
-              className="input mt-2"
-              value={householdId ?? ""}
-              onChange={(e) => setHouseholdId(Number(e.target.value) || null)}
+              className="input"
+              value={form.group_tag ?? "other"}
+              onChange={(e) => setForm({ ...form, group_tag: e.target.value as GuestGroupTag })}
             >
-              {households.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.label} · {h.code}
+              {GROUPS.map((g) => (
+                <option key={g} value={g}>
+                  {t(`guests.group_${g}`)}
                 </option>
               ))}
             </select>
-          ) : (
-            <input
-              className="input mt-2"
-              placeholder={t("guests.household_new_label")}
-              value={newHouseholdLabel}
-              onChange={(e) => setNewHouseholdLabel(e.target.value)}
-            />
-          )}
-        </div>
+          </div>
 
-        <div className="mb-3">
-          <label className="field-label">{t("guests.rsvp")}</label>
-          <select
-            className="input"
-            value={form.rsvp_status ?? "pending"}
-            onChange={(e) => setForm({ ...form, rsvp_status: e.target.value as RsvpStatus })}
-          >
-            {RSVPS.map((s) => (
-              <option key={s} value={s}>
-                {t(`guests.rsvp_${s}`)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-3">
-          <label className="field-label">{t("guests.meal")}</label>
-          <select
-            className="input"
-            value={form.meal_choice ?? ""}
-            onChange={(e) =>
-              setForm({ ...form, meal_choice: (e.target.value as MealChoice) || null })
-            }
-          >
-            <option value="">—</option>
-            {MEALS.map((m) => (
-              <option key={m} value={m}>
-                {t(`guests.meal_${m}`)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Field
-          label={t("guests.allergies")}
-          value={form.dietary ?? ""}
-          onChange={(v) => setForm({ ...form, dietary: v || null })}
-          placeholder={t("guests.allergies_placeholder")}
-        />
-        <label className="mb-3 flex items-center gap-2 text-sm text-ink-700">
-          <input
-            type="checkbox"
-            checked={Boolean(form.accommodation_needed)}
-            onChange={(e) => setForm({ ...form, accommodation_needed: e.target.checked })}
+          <div className="mb-3">
+            <label className="field-label">{t("guests.kind_label")}</label>
+            <p className="mb-2 text-xs text-ink-500">{t("guests.kind_help")}</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(["adult", "child", "baby"] as GuestKind[]).map((k) => {
+                const active = (form.kind ?? "adult") === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setForm({ ...form, kind: k })}
+                    className={
+                      active
+                        ? "flex items-center justify-center gap-1.5 rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
+                        : "flex items-center justify-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+                    }
+                  >
+                    <KindIcon kind={k} />
+                    {t(`guests.kind_${k}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3">
+            <label className="field-label">{t("guests.household_label")}</label>
+            <p className="mb-2 text-xs text-ink-500">{t("guests.household_assign_help")}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setHouseholdMode("existing")}
+                disabled={households.length === 0}
+                className={
+                  householdMode === "existing"
+                    ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
+                    : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+                }
+              >
+                {t("guests.household_existing")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setHouseholdMode("new")}
+                className={
+                  householdMode === "new"
+                    ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
+                    : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+                }
+              >
+                {t("guests.household_new")}
+              </button>
+            </div>
+            {householdMode === "existing" ? (
+              <select
+                className="input mt-2"
+                value={householdId ?? ""}
+                onChange={(e) => setHouseholdId(Number(e.target.value) || null)}
+              >
+                {households.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.label} · {h.code}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="input mt-2"
+                placeholder={t("guests.household_new_label")}
+                value={newHouseholdLabel}
+                onChange={(e) => setNewHouseholdLabel(e.target.value)}
+              />
+            )}
+          </div>
+
+          <div className="mb-3">
+            <label className="field-label">{t("guests.rsvp")}</label>
+            <select
+              className="input"
+              value={form.rsvp_status ?? "pending"}
+              onChange={(e) => setForm({ ...form, rsvp_status: e.target.value as RsvpStatus })}
+            >
+              {RSVPS.map((s) => (
+                <option key={s} value={s}>
+                  {t(`guests.rsvp_${s}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="field-label">{t("guests.meal")}</label>
+            <select
+              className="input"
+              value={form.meal_choice ?? ""}
+              onChange={(e) =>
+                setForm({ ...form, meal_choice: (e.target.value as MealChoice) || null })
+              }
+            >
+              <option value="">—</option>
+              {MEALS.map((m) => (
+                <option key={m} value={m}>
+                  {t(`guests.meal_${m}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Field
+            label={t("guests.allergies")}
+            value={form.dietary ?? ""}
+            onChange={(v) => setForm({ ...form, dietary: v || null })}
+            placeholder={t("guests.allergies_placeholder")}
           />
-          {t("guests.accommodation")}
-        </label>
-        <Field
-          label={t("guests.song_request")}
-          value={form.song_request ?? ""}
-          onChange={(v) => setForm({ ...form, song_request: v || null })}
-        />
-        <Field
-          label={t("guests.notes")}
-          value={form.notes ?? ""}
-          onChange={(v) => setForm({ ...form, notes: v || null })}
-          textarea
-        />
+          <label className="mb-3 flex items-center gap-2 text-sm text-ink-700">
+            <input
+              type="checkbox"
+              checked={Boolean(form.accommodation_needed)}
+              onChange={(e) => setForm({ ...form, accommodation_needed: e.target.checked })}
+            />
+            {t("guests.accommodation")}
+          </label>
+          <Field
+            label={t("guests.song_request")}
+            value={form.song_request ?? ""}
+            onChange={(v) => setForm({ ...form, song_request: v || null })}
+          />
+          <Field
+            label={t("guests.notes")}
+            value={form.notes ?? ""}
+            onChange={(v) => setForm({ ...form, notes: v || null })}
+            textarea
+          />
 
-        {error && <p className="field-error">{error}</p>}
-        <div className="mt-4 flex gap-2">
-          <button type="button" className="btn-ghost flex-1" onClick={onClose}>
+          {error && <p className="field-error">{error}</p>}
+        </div>
+        <div className="flex gap-2 border-t border-paper-200 px-6 py-4">
+          <button
+            type="button"
+            className="btn-ghost flex-1"
+            onClick={() => void autoSaveAndClose()}
+          >
             {t("common.cancel")}
           </button>
           <button type="submit" className="btn-primary flex-1" disabled={submitting}>

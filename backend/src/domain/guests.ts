@@ -1,6 +1,13 @@
 // Guest row → DTO mapper + helpers.
 
-import type { Guest, GuestGroupTag, MealChoice, PublicRsvpView, RsvpStatus } from "@shared/types";
+import type {
+  Guest,
+  GuestGroupTag,
+  GuestKind,
+  MealChoice,
+  PublicRsvpView,
+  RsvpStatus,
+} from "@shared/types";
 import { db, now } from "../db";
 import { generateInviteCode } from "./invite_codes";
 
@@ -13,6 +20,7 @@ export interface GuestRow {
   phone: string | null;
   group_tag: string;
   invite_code: string;
+  kind: string;
   rsvp_status: string;
   meal_choice: string | null;
   dietary: string | null;
@@ -45,6 +53,11 @@ const VALID_MEAL: ReadonlySet<MealChoice> = new Set([
   "child",
   "none",
 ]);
+const VALID_KIND: ReadonlySet<GuestKind> = new Set(["adult", "child", "baby"]);
+
+export function isGuestKind(s: string): s is GuestKind {
+  return VALID_KIND.has(s as GuestKind);
+}
 
 export function isGuestGroupTag(s: string): s is GuestGroupTag {
   return VALID_GROUPS.has(s as GuestGroupTag);
@@ -68,6 +81,7 @@ export function toGuest(row: GuestRow): Guest {
     phone: row.phone,
     group_tag: (isGuestGroupTag(row.group_tag) ? row.group_tag : "other") as GuestGroupTag,
     invite_code: row.invite_code,
+    kind: (isGuestKind(row.kind) ? row.kind : "adult") as GuestKind,
     rsvp_status: (isRsvpStatus(row.rsvp_status) ? row.rsvp_status : "pending") as RsvpStatus,
     meal_choice: row.meal_choice && isMealChoice(row.meal_choice) ? row.meal_choice : null,
     dietary: row.dietary,

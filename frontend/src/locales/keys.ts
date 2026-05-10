@@ -506,6 +506,12 @@ export interface LocaleMessages {
     checkin_pill_show: string;
     checkin_pill_hide: string;
     checkin_pill_url_hint: string;
+    /** Adult / child / baby kind selector. */
+    kind_label: string;
+    kind_help: string;
+    kind_adult: string;
+    kind_child: string;
+    kind_baby: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;
@@ -603,6 +609,8 @@ export interface LocaleMessages {
     category_locked_hint: string;
     slider_min_aria: string;
     slider_max_aria: string;
+    over_by: string;
+    under_by: string;
     cat: {
       venue: string;
       catering: string;
@@ -893,6 +901,31 @@ export interface LocaleMessages {
     checkin_summary_pending_n: string;
     /** Stronger submit CTA than "Save responses". */
     checkin_complete: string;
+    /** Public-form "add a guest" affordance — partner / child / baby. */
+    checkin_add_member: string;
+    checkin_add_member_help: string;
+    checkin_add_member_name: string;
+    checkin_add_member_kind: string;
+    checkin_add_member_save: string;
+    checkin_add_member_remove: string;
+    /** Per-member dietary / family chips (vega + 3 allergies + baby + plus-one). */
+    tag_vegan: string;
+    tag_lactose: string;
+    tag_gluten: string;
+    tag_nut: string;
+    tag_plus_one: string;
+    tag_baby: string;
+    /** Inline name inputs that appear when "+1" or "Baby" chip is toggled on. */
+    added_name_plus_one: string;
+    added_name_baby: string;
+    added_name_placeholder: string;
+    /** Validation errors raised on the public RSVP form. */
+    error_status_required: string;
+    error_added_name_required: string;
+    /** Pre-submit double-confirmation dialog. */
+    confirm_submit_title: string;
+    confirm_submit_body: string;
+    confirm_submit_yes: string;
   };
   notfound: {
     title: string;
@@ -909,7 +942,17 @@ export interface LocaleMessages {
     export_title: string;
     export_body: string;
     export_button: string;
+    export_guest_csv_button: string;
     export_downloading: string;
+    /** Saved download archive — last N versions, listed below the export buttons. */
+    archive_title: string;
+    archive_body: string;
+    archive_empty: string;
+    archive_redownload: string;
+    archive_kind_json: string;
+    archive_kind_seating_pdf: string;
+    archive_kind_place_cards_pdf: string;
+    archive_kind_guest_csv: string;
     /** Delete-account flow (30-day grace before admin purge). */
     delete_account_title: string;
     delete_account_body: string;
@@ -924,15 +967,6 @@ export interface LocaleMessages {
     delete_account_pending: string;
     delete_account_pending_until: string;
     cancel_delete_account: string;
-    /** Preferences card. */
-    preferences_title: string;
-    preferences_body: string;
-    preferences_locale_label: string;
-    preferences_locale_hu: string;
-    preferences_locale_en: string;
-    preferences_password_label: string;
-    preferences_password_help: string;
-    preferences_password_link: string;
   };
   error_boundary: {
     title: string;

@@ -7,8 +7,10 @@
 // Heavy rate-limit per IP to slow code enumeration.
 
 import type {
+  CheckinAddedMember,
   CheckinMemberSubmit,
   CheckinSubmitBody,
+  GuestKind,
   PublicCheckinView,
   RsvpStatus,
 } from "@shared/types";
@@ -27,6 +29,7 @@ import {
 import {
   type GuestRow,
   getGuestByInviteCode,
+  isGuestKind,
   isMealChoice,
   isRsvpStatus,
   uniqueInviteCode,
@@ -225,24 +228,117 @@ function notifyGuests(couple: CoupleRow, members: GuestRow[]) {
   }
 }
 
+interface AddedMemberRaw {
+  full_name?: unknown;
+  kind?: unknown;
+  rsvp_status?: unknown;
+  meal_choice?: unknown;
+  dietary?: unknown;
+}
+
+function parseAddedMember(raw: AddedMemberRaw): CheckinAddedMember {
+  const fullNameRaw = typeof raw.full_name === "string" ? raw.full_name.trim() : "";
+  if (!fullNameRaw) throw new HttpError(400, "added_members[].full_name required");
+  if (fullNameRaw.length > 200) throw new HttpError(400, "added_members[].full_name too long");
+
+  const kind: GuestKind =
+    typeof raw.kind === "string" && isGuestKind(raw.kind) ? raw.kind : "adult";
+
+  const status = typeof raw.rsvp_status === "string" ? raw.rsvp_status : "yes";
+  const rsvpStatus = isRsvpStatus(status) ? status : "yes";
+
+  const mealRaw = typeof raw.meal_choice === "string" ? raw.meal_choice : null;
+  const meal = mealRaw && isMealChoice(mealRaw) ? mealRaw : null;
+
+  return {
+    full_name: fullNameRaw,
+    kind,
+    rsvp_status: rsvpStatus,
+    meal_choice: meal,
+    dietary: strOrNull(raw.dietary, 500),
+  };
+}
+
+/** Materialize new members the guest is bringing (a +1 / child / baby) as
+ *  fresh guest rows in the same household. Returns the inserted rows so the
+ *  caller can fold them into notifications + audit. */
+function persistAddedMembers(
+  couple: CoupleRow,
+  household: HouseholdRow,
+  added: CheckinAddedMember[],
+): GuestRow[] {
+  if (added.length === 0) return [];
+  const ts = Date.now();
+  const insert = db.prepare(
+    `INSERT INTO guests
+       (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
+        meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
+        song_request, notes, rsvp_responded_at, created_at, updated_at, household_id)
+     VALUES (?, ?, NULL, NULL, 'other', ?, ?, ?, ?, ?, NULL, NULL, 0, NULL, NULL, ?, ?, ?, ?)`,
+  );
+  const inserted: GuestRow[] = [];
+  const tx = db.transaction(() => {
+    for (const m of added) {
+      const code = uniqueInviteCode();
+      const result = insert.run(
+        couple.id,
+        m.full_name,
+        code,
+        m.kind,
+        m.rsvp_status,
+        m.meal_choice,
+        m.dietary,
+        m.rsvp_status === "pending" ? null : ts,
+        ts,
+        ts,
+        household.id,
+      );
+      const newId = Number(result.lastInsertRowid);
+      const row = db.prepare("SELECT * FROM guests WHERE id = ?").get(newId) as
+        | GuestRow
+        | undefined;
+      if (row) inserted.push(row);
+      addAuditLog({
+        actor_user_id: null,
+        couple_id: couple.id,
+        action: "rsvp.add_member",
+        target_kind: "guest",
+        target_id: newId,
+        after: { full_name: m.full_name, kind: m.kind, rsvp_status: m.rsvp_status },
+        note: `added during check-in to household ${household.id}`,
+      });
+    }
+  });
+  tx();
+  return inserted;
+}
+
 async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "rsvp:submit", RSVP_BUCKET);
   const body = await readJson<Partial<CheckinSubmitBody>>(ctx.req);
   if (typeof body.couple_slug !== "string") throw new HttpError(400, "couple_slug required");
   if (typeof body.household_code !== "string") throw new HttpError(400, "household_code required");
-  if (!Array.isArray(body.members) || body.members.length === 0) {
+  if (!Array.isArray(body.members)) {
     throw new HttpError(400, "members array required");
   }
   if (body.members.length > 50) throw new HttpError(400, "Too many members");
+  const addedRaw = Array.isArray(body.added_members) ? body.added_members : [];
+  if (addedRaw.length > 10) throw new HttpError(400, "Too many added members");
+  if (body.members.length === 0 && addedRaw.length === 0) {
+    throw new HttpError(400, "Nothing to submit");
+  }
 
   const couple = resolveCoupleBySlug(body.couple_slug);
   const hh = resolveHousehold(couple.id, body.household_code);
 
   const parsed = body.members.map((m) => parseMember(m as SubmitMemberRaw));
-  const { previous, updated } = persistCheckin(couple, hh, parsed);
+  const parsedAdded = addedRaw.map((m) => parseAddedMember(m as AddedMemberRaw));
 
-  notifyCouple(couple, updated, previous);
-  notifyGuests(couple, updated);
+  const { previous, updated } = persistCheckin(couple, hh, parsed);
+  const addedRows = persistAddedMembers(couple, hh, parsedAdded);
+
+  notifyCouple(couple, [...updated, ...addedRows], previous);
+  notifyGuests(couple, [...updated, ...addedRows]);
 
   return json({ rsvp: buildView(couple, hh) });
 }

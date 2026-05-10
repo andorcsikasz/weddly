@@ -10,6 +10,7 @@ import type {
   CoupleInvite,
   CouplePauseRequest,
   CoupleStatus,
+  DataExportSummary,
   GuestCountGoal,
   Guest,
   Household,
@@ -192,9 +193,39 @@ export const pauseApi = {
 };
 
 export const exportApi = {
-  /** GDPR Article 20: returns a JSON blob with everything the couple owns. */
+  /** GDPR Article 20: returns a JSON blob with everything the couple owns.
+   *  Server-side this also snapshots the result into the saved download
+   *  archive (see `documentsApi.list`). */
   download: () => apiFetch<Record<string, unknown>>("GET", "/api/couples/export"),
 };
+
+/** Saved download archive — every JSON / PDF / CSV the user has downloaded
+ *  is stored server-side and listed back on the Profile page. */
+export const documentsApi = {
+  list: () => apiFetch<{ exports: DataExportSummary[] }>("GET", "/api/exports"),
+};
+
+/** Auth-protected blob download for any saved export. The caller saves the
+ *  blob with the server-provided filename. */
+export async function fetchSavedExportBlob(id: number): Promise<Blob> {
+  const token = getToken();
+  const res = await fetch(`/api/exports/${id}/download`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!res.ok) throw new Error(`Export fetch failed: ${res.status}`);
+  return res.blob();
+}
+
+/** Trigger the live guest-list CSV export. The server snapshots a copy into
+ *  the saved download archive on the way out. */
+export async function fetchGuestCsvBlob(): Promise<Blob> {
+  const token = getToken();
+  const res = await fetch("/api/guests/csv", {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!res.ok) throw new Error(`CSV fetch failed: ${res.status}`);
+  return res.blob();
+}
 
 export const supplierApi = {
   list: (category?: SupplierCategory) =>

@@ -54,6 +54,7 @@ function wipeAll() {
     "households",
     "budget_snapshots",
     "budget_lines",
+    "data_exports",
     "couple_invites",
     "sessions",
     "rate_limit_buckets",
@@ -902,6 +903,105 @@ describe("households + airport check-in", () => {
     const noAuth = await req("GET", "/api/households");
     expect(noAuth.status).toBe(401);
   });
+
+  test("guest kind round-trips on create + update", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("kind@weddly.test");
+
+    // Create defaults to adult.
+    const a = await req<{ guest: { id: number; kind: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna" },
+      { token },
+    );
+    expect(a.data.guest.kind).toBe("adult");
+
+    // Create with explicit kind.
+    const baby = await req<{ guest: { id: number; kind: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Baby Lilla", kind: "baby" },
+      { token },
+    );
+    expect(baby.data.guest.kind).toBe("baby");
+
+    // PATCH flips kind.
+    const flipped = await req<{ guest: { kind: string } }>(
+      "PATCH",
+      `/api/guests/${a.data.guest.id}`,
+      { full_name: "Anna", kind: "child" },
+      { token },
+    );
+    expect(flipped.data.guest.kind).toBe("child");
+
+    // Garbage kind falls back to adult instead of erroring.
+    const garbage = await req<{ guest: { kind: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Whatever", kind: "alien" },
+      { token },
+    );
+    expect(garbage.data.guest.kind).toBe("adult");
+  });
+
+  test("checkin add_members materializes new household members", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("addmember@weddly.test");
+
+    // Solo host household, then a guest brings a +1 + a baby on check-in.
+    const host = await req<{ guest: { id: number; household_id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna Host" },
+      { token },
+    );
+    const couple = await req<{ couple: { slug: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const list = await req<{ households: { id: number; code: string }[] }>(
+      "GET",
+      "/api/households",
+      undefined,
+      { token },
+    );
+    const hh = list.data.households[0]!;
+
+    const checkin = await req<{ rsvp: { members: { full_name: string; kind: string }[] } }>(
+      "POST",
+      "/api/rsvp/checkin",
+      {
+        couple_slug: couple.data.couple.slug,
+        household_code: hh.code,
+        members: [{ guest_id: host.data.guest.id, rsvp_status: "yes", meal_choice: "meat" }],
+        added_members: [
+          { full_name: "Mark Plus-One", kind: "adult", rsvp_status: "yes", meal_choice: "fish" },
+          { full_name: "Lilla Baby", kind: "baby", rsvp_status: "yes" },
+        ],
+      },
+    );
+    expect(checkin.status).toBe(200);
+    expect(checkin.data.rsvp.members.length).toBe(3);
+    const byName = new Map(checkin.data.rsvp.members.map((m) => [m.full_name, m]));
+    expect(byName.get("Mark Plus-One")?.kind).toBe("adult");
+    expect(byName.get("Lilla Baby")?.kind).toBe("baby");
+
+    // Couple-side guest list now sees the materialized rows + audit entries.
+    const guestsList = await req<{ guests: { full_name: string; kind: string }[] }>(
+      "GET",
+      "/api/guests",
+      undefined,
+      { token },
+    );
+    expect(guestsList.data.guests.length).toBe(3);
+    const audit = db
+      .prepare("SELECT action FROM audit_log WHERE action = 'rsvp.add_member'")
+      .all() as { action: string }[];
+    expect(audit.length).toBe(2);
+  });
 });
 
 describe("seating", () => {
@@ -1064,6 +1164,15 @@ describe("pause / breakup", () => {
     expect(p.status).toBe(201);
     expect(p.data.pause_request.status).toBe("pending");
     expect(p.data.pause_request.scheduled_delete_at).toBeGreaterThan(Date.now());
+
+    // The pause notification fires to every partner in the couple. With a
+    // single-owner bootstrap that's exactly one email_log row keyed on the
+    // pause kind.
+    const pausedMail = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'couple_paused'")
+      .all() as Array<{ to_email: string }>;
+    expect(pausedMail.length).toBe(1);
+    expect(pausedMail[0]!.to_email).toBe("pause@weddly.test");
 
     const s1 = await req<{ couple_status: string }>("GET", "/api/couples/pause", undefined, {
       token,
@@ -1440,6 +1549,65 @@ describe("data export (GDPR Article 20)", () => {
   test("rejects unauthenticated request", async () => {
     const r = await req("GET", "/api/couples/export");
     expect(r.status).toBe(401);
+  });
+
+  test("every download is snapshotted into the archive (cap = 10)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("archive@weddly.test");
+
+    // First a JSON export and a CSV export — should land 2 rows.
+    await req("GET", "/api/couples/export", undefined, { token });
+    const csv1 = await fetch(`${BASE}/api/guests/csv`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(csv1.status).toBe(200);
+    expect(csv1.headers.get("content-type")).toContain("text/csv");
+
+    const list1 = await req<{ exports: { id: number; kind: string; filename: string }[] }>(
+      "GET",
+      "/api/exports",
+      undefined,
+      { token },
+    );
+    expect(list1.status).toBe(200);
+    expect(list1.data.exports.length).toBe(2);
+    const kinds1 = list1.data.exports.map((e) => e.kind).sort();
+    expect(kinds1).toEqual(["guest_csv", "json"]);
+
+    // Re-download the most recent JSON export and confirm bytes match.
+    const jsonRow = list1.data.exports.find((e) => e.kind === "json");
+    expect(jsonRow).toBeDefined();
+    const dl = await fetch(`${BASE}/api/exports/${jsonRow!.id}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(dl.status).toBe(200);
+    expect(dl.headers.get("content-type")).toBe("application/json");
+    const txt = await dl.text();
+    expect(txt).toContain('"schema_version": 1');
+
+    // Generate 11 more JSON exports — older entries should be auto-purged.
+    for (let i = 0; i < 11; i++) {
+      await req("GET", "/api/couples/export", undefined, { token });
+    }
+    const list2 = await req<{ exports: { id: number }[] }>("GET", "/api/exports", undefined, {
+      token,
+    });
+    expect(list2.data.exports.length).toBe(10);
+
+    // Sanity: the underlying table is also bounded to 10 for this couple.
+    const dbCount = (
+      db.prepare("SELECT COUNT(*) AS c FROM data_exports WHERE couple_id = ?").get(coupleId) as {
+        c: number;
+      }
+    ).c;
+    expect(dbCount).toBe(10);
+  });
+
+  test("archive download requires auth", async () => {
+    const r = await req("GET", "/api/exports");
+    expect(r.status).toBe(401);
+    const r2 = await req("GET", "/api/exports/1/download");
+    expect(r2.status).toBe(401);
   });
 });
 

@@ -187,6 +187,11 @@ export type GuestGroupTag =
 
 export type MealChoice = "meat" | "fish" | "vegetarian" | "vegan" | "child" | "none";
 
+/** Guest "kind" — orthogonal to `meal_choice`. Drives high-chair / kid-meal
+ *  affordances on the seating + catering side and lets the public check-in
+ *  form show the right icon/copy for babies vs. children vs. adults. */
+export type GuestKind = "adult" | "child" | "baby";
+
 export interface Guest {
   id: number;
   couple_id: number;
@@ -201,6 +206,8 @@ export interface Guest {
   /** Legacy per-guest 6-char code. Still resolvable for old `/rsvp/<code>`
    *  links — the new check-in flow uses `couples.slug + households.code`. */
   invite_code: string;
+  /** Adult / child / baby. Defaults to "adult". */
+  kind: GuestKind;
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary: string | null;
@@ -233,6 +240,7 @@ export interface Household {
 export interface HouseholdMember {
   id: number;
   full_name: string;
+  kind: GuestKind;
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary: string | null;
@@ -251,11 +259,16 @@ export interface PublicCheckinView {
 }
 
 /** Submit shape for the household check-in. The credential pair (slug+code)
- *  is re-validated server-side; member ids must all belong to the household. */
+ *  is re-validated server-side; existing member ids must all belong to the
+ *  household, and `added_members` (a +1, a baby, etc.) get materialized as
+ *  fresh guest rows parented into the same household. */
 export interface CheckinSubmitBody {
   couple_slug: string;
   household_code: string;
   members: CheckinMemberSubmit[];
+  /** Optional new members the guest is bringing — partner, child, baby.
+   *  Server creates them in the household with the supplied kind + RSVP. */
+  added_members?: CheckinAddedMember[];
 }
 
 export interface CheckinMemberSubmit {
@@ -265,6 +278,14 @@ export interface CheckinMemberSubmit {
   dietary: string | null;
   accommodation_needed: boolean;
   song_request: string | null;
+}
+
+export interface CheckinAddedMember {
+  full_name: string;
+  kind: GuestKind;
+  rsvp_status: RsvpStatus;
+  meal_choice: MealChoice | null;
+  dietary: string | null;
 }
 
 /** @deprecated — single-guest view kept for legacy `/rsvp/<6char>` URLs.
@@ -350,6 +371,26 @@ export interface CouplePauseRequest {
   created_at: UnixMs;
   completed_at: UnixMs | null;
 }
+
+// ─── Saved download archive ─────────────────────────────────────────────────
+
+export type ExportKind = "json" | "seating_pdf" | "place_cards_pdf" | "guest_csv";
+
+/** Listed on the Profile page. The `body` is fetched separately via the
+ *  download endpoint to keep the list response small. */
+export interface DataExportSummary {
+  id: number;
+  kind: ExportKind;
+  /** "a4" | "a3" for `seating_pdf`, null for the rest. */
+  format: string | null;
+  filename: string;
+  content_type: string;
+  byte_size: number;
+  created_at: UnixMs;
+}
+
+/** Cap per couple — older rows auto-purged on every new insert. */
+export const DATA_EXPORT_CAP_PER_COUPLE = 10;
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
