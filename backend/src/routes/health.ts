@@ -63,10 +63,38 @@ function checkDisk(): ComponentResult {
   }
 }
 
+/** Cheap, sync mailer config state — surfaces when the dispatcher will silently
+ *  no-op (RESEND_API_KEY missing) or fall back to Resend's testing sender
+ *  (which only delivers to the Resend account owner, not arbitrary recipients).
+ *  Real liveness lives in `/api/health/deep` via `checkResendLiveness`. */
+function mailerConfigState(): {
+  configured: boolean;
+  from_default: boolean;
+  reason?: string;
+} {
+  const configured = !!CONFIG.resendApiKey;
+  const from_default = CONFIG.emailFrom === "Weddly <onboarding@resend.dev>";
+  if (!configured) {
+    return { configured, from_default, reason: "RESEND_API_KEY unset — emails are stdout-only" };
+  }
+  if (from_default) {
+    return {
+      configured,
+      from_default,
+      reason: "EMAIL_FROM uses resend.dev — only delivers to the Resend account owner",
+    };
+  }
+  return { configured, from_default };
+}
+
 export function registerHealthRoutes(router: Router) {
   router.get("/api/health", () => {
     const dbCheck = checkDb();
-    return json({ ok: dbCheck.ok, db: dbCheck.ok, ts: now() }, { status: dbCheck.ok ? 200 : 503 });
+    const mailer = mailerConfigState();
+    return json(
+      { ok: dbCheck.ok, db: dbCheck.ok, mailer, ts: now() },
+      { status: dbCheck.ok ? 200 : 503 },
+    );
   });
 
   router.get("/api/health/deep", async () => {

@@ -229,3 +229,13 @@ if (CONFIG.adminEmails.length === 0) {
     note: "ADMIN_EMAILS env var is empty — /app/admin/* will be unreachable.",
   });
 }
+if (!CONFIG.resendApiKey) {
+  log.warn("config.no_resend_key", {
+    note: "RESEND_API_KEY is unset — every email is logged to stdout instead of delivered. Verify-email, password reset, RSVP notifications, and lifecycle reminders all silently no-op.",
+  });
+} else if (CONFIG.emailFrom === "Weddly <onboarding@resend.dev>") {
+  log.warn("config.default_email_from", {
+    emailFrom: CONFIG.emailFrom,
+    note: "EMAIL_FROM is the resend.dev fallback — Resend will only deliver to the inbox that owns the API key. Verify a domain in Resend and set EMAIL_FROM to a sender on that domain.",
+  });
+}
