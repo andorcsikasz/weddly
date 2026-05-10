@@ -6,9 +6,11 @@ import {
   PAUSE_DELETE_WINDOW_MS,
   type PauseRequestStatus,
 } from "@shared/types";
+import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
+import { sendKind } from "../domain/emails";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 interface PauseRow {
@@ -97,6 +99,32 @@ async function handlePause(ctx: Ctx): Promise<Response> {
     target_id: couple.id,
     after: { scheduled_delete_at: scheduled, reason },
   });
+
+  // Notify both partners. Either of them can cancel the pause from Profile,
+  // so both deserve to know. Fire-and-forget — pause must succeed even if
+  // the mailer is misconfigured.
+  const partners = db
+    .prepare("SELECT id, email, full_name FROM users WHERE couple_id = ?")
+    .all(couple.id) as Array<{ id: number; email: string; full_name: string }>;
+  const requester = partners.find((p) => p.id === userId);
+  const requestedByName = requester?.full_name?.trim() || "Your partner";
+  const scheduledDeleteDate = new Date(scheduled).toLocaleDateString("hu-HU", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const cancelUrl = `${CONFIG.frontendBaseUrl}/app/profile`;
+  for (const p of partners) {
+    if (!p.email || p.email.endsWith("@purged.local")) continue;
+    void sendKind(
+      "couple_paused",
+      { requestedByName, scheduledDeleteDate, cancelUrl },
+      {
+        user: { id: p.id, email: p.email, full_name: p.full_name },
+        couple_id: couple.id,
+      },
+    );
+  }
 
   const row = db.prepare("SELECT * FROM couple_pause_requests WHERE id = ?").get(id) as PauseRow;
   return json({ pause_request: toPause(row) }, { status: 201 });

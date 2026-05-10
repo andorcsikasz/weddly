@@ -7,6 +7,8 @@ export type EmailKind =
   | "verify_resend" // user clicked "resend verification" in dashboard
   | "password_reset"
   | "partner_invite" // partner-B co-pilot invite link
+  | "couple_paused" // workspace paused → 30-day delete countdown started
+  | "account_purged" // 30-day window elapsed, all couple data deleted
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
   | "onboarding_nudge" // 24h after signup if they haven't onboarded a couple
@@ -29,6 +31,8 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   verify_resend: "transactional",
   password_reset: "transactional",
   partner_invite: "transactional",
+  couple_paused: "transactional",
+  account_purged: "transactional",
   rsvp_received_for_couple: "transactional",
   rsvp_thanks_for_guest: "transactional",
   onboarding_nudge: "lifecycle",

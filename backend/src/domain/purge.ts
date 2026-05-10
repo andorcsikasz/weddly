@@ -10,9 +10,35 @@
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { log } from "../lib/logger";
+import { sendKind } from "./emails";
 
 export function purgeOneCouple(coupleId: number): void {
   const ts = now();
+
+  // Send the "your data is gone" notice BEFORE we scrub the user table —
+  // afterwards the email column is rewritten to `deleted-…@purged.local`
+  // and the addresses are unrecoverable. Fire-and-forget: failure to mail
+  // must not abort the destructive sweep.
+  const couple = db.prepare("SELECT display_name FROM couples WHERE id = ?").get(coupleId) as
+    | { display_name: string }
+    | undefined;
+  const coupleDisplayName = couple?.display_name?.trim() || "your wedding";
+  const usersToNotify = (
+    db
+      .prepare("SELECT id, email, full_name FROM users WHERE couple_id = ?")
+      .all(coupleId) as Array<{ id: number; email: string; full_name: string }>
+  ).filter((u) => u.email && !u.email.endsWith("@purged.local"));
+  for (const u of usersToNotify) {
+    void sendKind(
+      "account_purged",
+      { coupleDisplayName },
+      {
+        user: { id: u.id, email: u.email, full_name: u.full_name },
+        couple_id: coupleId,
+      },
+    );
+  }
+
   // Children with PII — delete entirely.
   db.prepare(
     "DELETE FROM seat_assignments WHERE table_id IN (SELECT id FROM seating_tables WHERE couple_id = ?)",
@@ -22,6 +48,7 @@ export function purgeOneCouple(coupleId: number): void {
   db.prepare("DELETE FROM guests WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM budget_lines WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM budget_snapshots WHERE couple_id = ?").run(coupleId);
+  db.prepare("DELETE FROM data_exports WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM couple_invites WHERE couple_id = ?").run(coupleId);
   // Email log + dispatch ledger: drop direct mentions of this couple. The
   // `to_email` column may also contain PII; scrub via the user-id link below.

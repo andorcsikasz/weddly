@@ -34,6 +34,18 @@ export interface PartnerInvitePayload {
   inviterName: string;
   inviteUrl: string;
 }
+export interface CouplePausedPayload {
+  /** Display name of the partner who clicked Pause. */
+  requestedByName: string;
+  /** Pre-formatted, locale-friendly date when the workspace will purge. */
+  scheduledDeleteDate: string;
+  /** Page where either partner can cancel the pause. */
+  cancelUrl: string;
+}
+export interface AccountPurgedPayload {
+  /** Display name the workspace had at purge time ("Anna & Bence"). */
+  coupleDisplayName: string;
+}
 export interface RsvpReceivedForCouplePayload {
   guestName: string;
   rsvpStatus: "yes" | "no" | "maybe";
@@ -65,6 +77,8 @@ export type KindPayload = {
   verify_resend: VerifyResendPayload;
   password_reset: PasswordResetPayload;
   partner_invite: PartnerInvitePayload;
+  couple_paused: CouplePausedPayload;
+  account_purged: AccountPurgedPayload;
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
   onboarding_nudge: OnboardingNudgePayload;
@@ -198,6 +212,56 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Join the workspace",
       footnote: "This link is valid for 7 days.",
+    },
+  }),
+
+  couple_paused: (p, ctx) => ({
+    subject: "Esküvőtervező szüneteltetve / Workspace paused",
+    ctaUrl: p.cancelUrl,
+    hu: {
+      preheader: `30 nap múlva (${p.scheduledDeleteDate}) véglegesen törlődik, hacsak nem mondjátok le.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `${p.requestedByName} szüneteltette a közös esküvőtervezőtöket.`,
+        `30 nap múlva (${p.scheduledDeleteDate}) az adatok véglegesen törlődnek — vendéglista, ülésrend, költségvetés, minden. Ezt utólag nem tudjuk visszaállítani.`,
+        "Ha mégsem akartátok, vagy meggondoltátok magatokat, bármelyikőtök visszavonhatja a Profil oldalon.",
+      ],
+      cta: "Szüneteltetés visszavonása",
+      footnote: "Ezt az értesítést mindketten megkapjátok, hogy bármelyikőtök tudjon dönteni.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `${p.requestedByName} paused your shared wedding workspace.`,
+        `In 30 days (${p.scheduledDeleteDate}) all of your data — guests, seating, budget — will be permanently deleted. We can't restore it after that.`,
+        "If this wasn't intentional, either of you can cancel the pause from your Profile page.",
+      ],
+      cta: "Cancel the pause",
+      footnote: "Both partners get this notification so either of you can act.",
+    },
+  }),
+
+  account_purged: (p, ctx) => ({
+    subject: "Adataitok véglegesen törölve / Your data has been deleted",
+    ctaUrl: CONFIG.frontendBaseUrl,
+    hu: {
+      preheader: "A 30 napos szüneteltetési határidő letelt.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `A 30 napos szüneteltetési időszak letelt, és ${p.coupleDisplayName} esküvőtervezőjének minden adata törlődött a Weddly-ből.`,
+        "Vendéglista, ülésrend, költségvetés, RSVP-k — mind eltávolítva. A bejelentkezésetek innentől nem működik.",
+        "Köszönjük, hogy egy ideig velünk voltatok. Ha valaha újra szükségetek lenne rá, bármikor új fiókkal indulhattok.",
+      ],
+      cta: "Vissza a Weddly-re",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `The 30-day pause window has now expired, and all of ${p.coupleDisplayName}'s wedding-planning data has been deleted from Weddly.`,
+        "Guest list, seating chart, budget, RSVPs — all removed. Your sign-in no longer works from this point on.",
+        "Thanks for trying us. You're welcome to start fresh any time with a new account if you need it again.",
+      ],
+      cta: "Back to Weddly",
     },
   }),
 
