@@ -396,7 +396,7 @@ const en: LocaleMessages = {
     pricing_v2_note:
       "v2 paid extras (later): premium templates, additional storage, white-label vendor profiles.",
     why_eyebrow: "Why Weddly",
-    why_title: "Built for Hungarian weddings, from the first line.",
+    why_title: "Meaning first, planning simplified.",
     why_a_title: "Everything in one place, in your hands",
     why_a_body:
       "Budget, guests, RSVPs, seating and printables share one home. Both of you open the same page and see the same picture, in real time.",

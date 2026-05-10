@@ -397,7 +397,7 @@ const hu: LocaleMessages = {
     pricing_v2_note:
       "A v2 fizetős extrái (később): prémium sablonok, plusz tárhely, white-label szolgáltató profilok.",
     why_eyebrow: "Miért Weddly",
-    why_title: "Magyar esküvőkre szabva, az első sortól.",
+    why_title: "Először a lényeg, aztán a tervezés.",
     why_a_title: "Minden egy helyen, kézben tartva",
     why_a_body:
       "Költségvetés, vendégek, RSVP, ültetés, szolgáltatók — mind egy közös felületen. A teljes esküvő ott van kéznél, mindketten ugyanazt látjátok valós időben.",
@@ -580,7 +580,7 @@ const hu: LocaleMessages = {
     household_section_title: "Háztartások",
     household_section_help:
       "Csoportosítsd egy háztartásba azokat, akik együtt válaszolnak (pár, család). A check-in oldalon egymást is látják.",
-    couple_slug_title: "Páros azonosító",
+    couple_slug_title: "Jegyes pár azonosítója",
     couple_slug_help:
       "A vendégek ezt írják be a /rsvp oldalon a 4 jegyű kódjuk mellé. Csak betűk és számok.",
     couple_slug_save: "Mentés",
@@ -591,7 +591,7 @@ const hu: LocaleMessages = {
     checkin_pill_show: "Részletek",
     checkin_pill_hide: "Bezárás",
     checkin_pill_url_hint:
-      "A vendégek a weddly.xyz/rsvp oldalon írják be a páros azonosítót és a 4 jegyű kódjukat.",
+      "A vendégek a weddly.xyz/rsvp oldalon írják be a jegyes pár azonosítóját és a 4 jegyű kódjukat.",
   },
   budget: {
     title: "Költségvetés",
@@ -875,16 +875,17 @@ const hu: LocaleMessages = {
     thanks_body: "A pár látja a választást — bármikor visszajöhetsz módosítani.",
     update_response: "Frissítés",
     checkin_title: "RSVP check-in",
-    checkin_intro: "Írd be a páros nevét és a 4 jegyű kódot a meghívóról.",
-    checkin_couple_label: "Páros",
+    checkin_intro: "Írd be a jegyes pár nevét és a 4 jegyű kódot a meghívóról.",
+    checkin_couple_label: "Jegyes pár",
     checkin_couple_help: "pl. BRIDEGROOM",
     checkin_code_label: "Kód",
     checkin_code_help: "4 számjegy a meghívódról",
     checkin_submit: "Check-in",
-    checkin_lookup_failed: "Ezt a kombinációt nem találjuk. Ellenőrizd a páros nevét és a kódot.",
-    checkin_lookup_couple_unknown: "Ezt a páros nevet nem találjuk. Ellenőrizd a meghívódat.",
-    checkin_lookup_code_unknown: "A 4 jegyű kód nem stimmel ehhez a pároshoz.",
-    checkin_lookup_missing: "Mindkét mezőt töltsd ki — páros név és 4 jegyű kód.",
+    checkin_lookup_failed:
+      "Ezt a kombinációt nem találjuk. Ellenőrizd a jegyes pár nevét és a kódot.",
+    checkin_lookup_couple_unknown: "Ezt a jegyes párt nem találjuk. Ellenőrizd a meghívódat.",
+    checkin_lookup_code_unknown: "A 4 jegyű kód nem stimmel ehhez a jegyes párhoz.",
+    checkin_lookup_missing: "Mindkét mezőt töltsd ki — jegyes pár neve és 4 jegyű kód.",
     checkin_contact_hosts: "Vedd fel a kapcsolatot a házigazdákkal",
     checkin_contact_hosts_email: "mailto:support@weddly.hu",
     checkin_household_for: "Visszajelzés ide:",
