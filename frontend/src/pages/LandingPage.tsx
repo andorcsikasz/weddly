@@ -50,11 +50,11 @@ export default function LandingPage() {
           variant={2}
           className="pointer-events-none absolute -top-10 right-[-14rem] h-[36rem] w-[36rem] text-blush-100 sm:right-[-10rem]"
         />
-        <div className="relative mx-auto max-w-7xl px-4 pt-14 pb-12 sm:px-6 sm:pt-24 lg:pt-32 lg:pb-16">
-          <h1 className="max-w-[14ch] font-serif text-[3.75rem] italic leading-[0.96] tracking-[-0.02em] text-ink-900 sm:text-[6rem] lg:text-[8.5rem]">
+        <div className="relative mx-auto max-w-7xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
+          <h1 className="max-w-[14ch] font-serif text-[2.75rem] italic leading-[0.96] tracking-[-0.02em] text-ink-900 sm:text-[4.25rem] lg:text-[6rem]">
             {t("landing.hero_title")}
           </h1>
-          <div className="mt-10 flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-md">
               <p className="text-lg text-ink-600 sm:text-xl">{t("landing.hero_sub")}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -85,9 +85,9 @@ export default function LandingPage() {
         {/* Full-bleed mockup band — paper-100 background, mockup tilted
             so its bottom is cropped by the section. Reads as "the product
             peeking up." */}
-        <div className="relative mt-4 overflow-hidden bg-paper-100 pt-12 sm:pt-16 lg:pt-20">
+        <div className="relative mt-2 overflow-hidden bg-paper-100 pt-6 sm:pt-8 lg:pt-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="origin-bottom -mb-20 sm:-mb-28 lg:-mb-32">
+            <div className="origin-bottom -mb-10 sm:-mb-14 lg:-mb-20">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
                 <div className="rotate-[-1.5deg] drop-shadow-[0_30px_50px_rgba(16,24,48,0.18)]">
                   <WorkspaceMockup className="h-auto w-full" />
@@ -103,7 +103,7 @@ export default function LandingPage() {
           band, flanked by italic serif tags. Gives the eye a horizontal
           rest between the loud hero and the dark stats below. */}
       <section className="border-y border-paper-300 bg-paper-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-7 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4 sm:px-6">
           <span className="hidden flex-1 font-serif text-sm italic text-blush-600 sm:block">
             Est. MMXXVI
           </span>
@@ -118,17 +118,17 @@ export default function LandingPage() {
           One huge number does the talking; the other two stats run as
           ledger entries underneath. */}
       <section className="bg-ink-900 text-paper-100">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <p className="mb-8 text-xs font-semibold uppercase tracking-[0.32em] text-paper-300">
             {t("landing.stats_eyebrow")}
           </p>
-          <p className="font-serif text-[8rem] leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-[12rem] lg:text-[15rem]">
+          <p className="font-serif text-[5rem] leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-[7.5rem] lg:text-[10rem]">
             {t("landing.stats_a_value")}
           </p>
           <p className="mt-6 font-serif text-2xl text-paper-300 sm:text-3xl">
             {t("landing.stats_a_label")}
           </p>
-          <div className="mt-14 grid gap-x-8 gap-y-3 border-t border-paper-700/30 pt-8 text-sm sm:grid-cols-2">
+          <div className="mt-8 grid gap-x-8 gap-y-3 border-t border-paper-700/30 pt-8 text-sm sm:grid-cols-2">
             <LedgerLine value={t("landing.stats_b_value")} label={t("landing.stats_b_label")} />
             <LedgerLine value={t("landing.stats_c_value")} label={t("landing.stats_c_label")} />
           </div>
@@ -144,12 +144,12 @@ export default function LandingPage() {
           numeral baseline serves as the literal timeline. */}
       <section id="phases" className="relative bg-paper-50">
         <MarginNumeral value="02" />
-        <div className="mx-auto max-w-7xl px-4 pt-24 pb-20 sm:px-6 sm:pt-32 sm:pb-28">
+        <div className="mx-auto max-w-7xl px-4 pt-14 pb-12 sm:px-6 sm:pt-20 sm:pb-16">
           <SectionLabel num="—" label={t("landing.product_eyebrow")} />
-          <h2 className="mt-6 max-w-3xl font-serif text-4xl leading-[1.05] text-ink-900 sm:text-5xl lg:text-[3.75rem]">
+          <h2 className="mt-6 max-w-3xl font-serif text-3xl leading-[1.05] text-ink-900 sm:text-4xl lg:text-5xl">
             {t("landing.phases_title")}
           </h2>
-          <ol className="mt-20 grid gap-x-6 gap-y-16 sm:grid-cols-2 lg:grid-cols-5 lg:gap-x-4">
+          <ol className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-5 lg:gap-x-4">
             <PhaseStep
               n={1}
               art={<PhasePlanArt className="h-12 w-12" />}
@@ -189,11 +189,11 @@ export default function LandingPage() {
           behind it. Copy on the left in a narrow column. */}
       <section className="relative bg-white">
         <MarginNumeral value="03" />
-        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
-          <div className="grid gap-16 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
               <SectionLabel num="02.1" label={t("landing.block_budget_eyebrow")} />
-              <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3.5rem]">
+              <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
               <p className="mt-5 max-w-xl text-base text-ink-600 sm:text-lg">
@@ -225,9 +225,9 @@ export default function LandingPage() {
           in two columns — the layout of a feature spread. */}
       <section className="relative bg-paper-100/70">
         <MarginNumeral value="04" />
-        <div className="mx-auto max-w-5xl px-4 py-24 sm:px-6 sm:py-32">
+        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
           <SectionLabel num="02.2" label={t("landing.block_guests_eyebrow")} className="" />
-          <h2 className="mt-5 max-w-3xl font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3.5rem]">
+          <h2 className="mt-5 max-w-3xl font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
             {t("landing.block_guests_title")}
           </h2>
           <div className="mt-12">
@@ -251,11 +251,11 @@ export default function LandingPage() {
           the right edge of the viewport. */}
       <section className="relative overflow-hidden bg-white">
         <MarginNumeral value="05" />
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32">
-          <div className="grid gap-12 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-12">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
+          <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
               <SectionLabel num="02.3" label={t("landing.block_seating_eyebrow")} />
-              <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3rem]">
+              <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-[2.75rem]">
                 {t("landing.block_seating_title")}
               </h2>
               <p className="mt-5 text-base text-ink-600 sm:text-lg">
@@ -290,12 +290,12 @@ export default function LandingPage() {
           corner="br"
           className="pointer-events-none absolute bottom-12 right-4 h-32 w-32 text-paper-300 sm:h-40 sm:w-40 lg:right-12"
         />
-        <div className="mx-auto max-w-5xl px-4 py-28 sm:px-6 sm:py-40">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
             {t("landing.why_eyebrow")}
           </p>
           <PullQuote quote={t("landing.why_title")} className="mt-8" />
-          <div className="mt-16 grid gap-3 text-center text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-3">
+          <div className="mt-10 grid gap-3 text-center text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-3">
             <WhyKeyword>{t("landing.why_a_title")}</WhyKeyword>
             <WhyKeyword>{t("landing.why_b_title")}</WhyKeyword>
             <WhyKeyword>{t("landing.why_c_title")}</WhyKeyword>
@@ -307,7 +307,7 @@ export default function LandingPage() {
       {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
       <section id="suppliers" className="relative bg-white">
         <MarginNumeral value="07" />
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-24 sm:px-6 sm:py-32 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <SectionLabel num="—" label={t("landing.phase_suppliers_title")} />
             <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl">
@@ -335,7 +335,7 @@ export default function LandingPage() {
           One pull-quote dominates; two whispers underneath. */}
       <section className="relative bg-paper-100/60">
         <MarginNumeral value="08" />
-        <div className="mx-auto max-w-5xl px-4 py-24 sm:px-6 sm:py-32">
+        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
             {t("landing.testimonials_eyebrow")}
           </p>
@@ -345,7 +345,7 @@ export default function LandingPage() {
             meta={t("landing.t1_meta")}
             variant={1}
           />
-          <div className="mt-14 grid gap-x-12 gap-y-10 border-t border-paper-300 pt-12 sm:grid-cols-2">
+          <div className="mt-10 grid gap-x-12 gap-y-10 border-t border-paper-300 pt-8 sm:grid-cols-2">
             <WhisperTestimonial
               quote={t("landing.t2_quote")}
               name={t("landing.t2_name")}
@@ -367,7 +367,7 @@ export default function LandingPage() {
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white">
         <MarginNumeral value="09" />
-        <div className="mx-auto max-w-4xl px-4 py-24 sm:px-6 sm:py-32">
+        <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
           <SectionLabel num="—" label={t("landing.audience_title")} />
           <p className="mt-6 max-w-2xl text-lg text-ink-700 sm:text-xl">
             {t("landing.audience_sub")}
@@ -402,23 +402,23 @@ export default function LandingPage() {
           shadow. 0 Ft does the talking. */}
       <section className="relative stationery">
         <MarginNumeral value="10" />
-        <div className="mx-auto max-w-5xl px-4 py-28 sm:px-6 sm:py-40">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <SectionLabel num="—" label={t("landing.pricing_eyebrow")} className="justify-center" />
-            <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-[3.5rem]">
+            <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
               {t("landing.pricing_title")}
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-base text-ink-700 sm:text-lg">
               {t("landing.pricing_body")}
             </p>
           </div>
-          <div className="relative mx-auto mt-14 max-w-lg">
+          <div className="relative mx-auto mt-10 max-w-lg">
             <div className="rounded-2xl bg-paper-50 p-8 ring-1 ring-paper-300 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-10">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700">
                 {t("landing.stats_eyebrow")}
               </p>
               <div className="mt-3 flex items-end gap-3">
-                <span className="font-serif text-[6rem] leading-[0.9] text-ink-900 sm:text-[8rem]">
+                <span className="font-serif text-[4.5rem] leading-[0.9] text-ink-900 sm:text-[6rem]">
                   0
                 </span>
                 <span className="mb-3 font-serif text-3xl text-ink-700 sm:text-4xl">Ft</span>
@@ -445,7 +445,7 @@ export default function LandingPage() {
           inflatable cards instead of dividers. */}
       <section className="relative bg-paper-50">
         <MarginNumeral value="11" />
-        <div className="mx-auto max-w-2xl px-4 py-24 sm:px-6 sm:py-32">
+        <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
           <h2 className="font-serif text-4xl italic text-ink-900 sm:text-5xl">
             {t("landing.faq_title")}
           </h2>
@@ -462,7 +462,7 @@ export default function LandingPage() {
       {/* ════════════════════════ Closing ════════════════════════
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
-      <section className="stationery relative flex min-h-[70vh] items-center sm:min-h-[80vh]">
+      <section className="stationery relative flex min-h-[50vh] items-center sm:min-h-[60vh]">
         <EucalyptusStem
           className="pointer-events-none absolute left-4 top-12 h-24 w-auto text-paper-400 opacity-70 sm:left-12 sm:top-20 sm:h-32"
           flip
@@ -470,7 +470,7 @@ export default function LandingPage() {
         <EucalyptusStem className="pointer-events-none absolute bottom-12 right-4 h-24 w-auto text-paper-400 opacity-70 sm:bottom-20 sm:right-12 sm:h-32" />
         <div className="mx-auto w-full max-w-3xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <Wordmark size="md" className="text-paper-400" />
-          <h2 className="mt-8 font-serif text-5xl italic leading-[1.02] tracking-tight text-ink-900 sm:text-7xl lg:text-[6.5rem]">
+          <h2 className="mt-8 font-serif text-4xl italic leading-[1.02] tracking-tight text-ink-900 sm:text-5xl lg:text-[4.5rem]">
             {t("landing.closing_title")}
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-base text-ink-700 sm:text-lg">
@@ -543,7 +543,7 @@ function PhaseStep({
           anchor for each phase. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-2 -top-10 select-none font-serif text-[5rem] italic leading-none text-blush-200 sm:-top-12 sm:text-[6rem] lg:-top-14 lg:text-[7rem]"
+        className="pointer-events-none absolute -left-2 -top-10 select-none font-serif text-[3.5rem] italic leading-none text-blush-200 sm:-top-10 sm:text-[4.5rem] lg:-top-12 lg:text-[5.5rem]"
       >
         0{n}
       </span>
