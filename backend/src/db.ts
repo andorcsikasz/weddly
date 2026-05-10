@@ -73,6 +73,10 @@ addColumnIfMissing("couples", "budget_ceiling_max_huf", "budget_ceiling_max_huf 
 // can render at exact size when the user knows their venue's table sizes.
 addColumnIfMissing("seating_tables", "width_mm", "width_mm INTEGER NOT NULL DEFAULT 1500");
 addColumnIfMissing("seating_tables", "length_mm", "length_mm INTEGER NOT NULL DEFAULT 1500");
+// Rotation around the table centre, in degrees (0 = axis-aligned). Stored as
+// 0..359; the editor cycles in 45° steps but any integer is accepted so the
+// PDF layer can render at exact angle.
+addColumnIfMissing("seating_tables", "rotation_deg", "rotation_deg INTEGER NOT NULL DEFAULT 0");
 
 // Airport-style RSVP credentials. `couples.slug` is the public couple
 // identifier ("ANDORSARI"); `guests.household_id` links each guest to its

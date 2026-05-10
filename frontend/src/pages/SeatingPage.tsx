@@ -8,14 +8,17 @@
 
 import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
 import {
+  Baby,
   ChefHat,
   Circle,
+  Copy,
   HelpCircle,
   Minus,
   Pencil,
   Plus,
   Printer,
   RectangleHorizontal,
+  RotateCw,
   Square,
   Trash2,
   Undo2,
@@ -441,6 +444,44 @@ export default function SeatingPage() {
     refresh();
   }
 
+  async function duplicateTable(source: SeatingTable) {
+    // Reuse the auto-naming logic so the copy slots into the existing
+    // numbered run (Asztal 5, Asztal 6, …) rather than ending up as
+    // "Asztal 2 (másolat)" sitting next to the original.
+    const prefix = t("seating.table_default_label");
+    const re = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} (\\d+)$`);
+    let maxN = 0;
+    for (const tb of tables) {
+      const m = tb.label.match(re);
+      if (m?.[1]) {
+        const n = Number(m[1]);
+        if (Number.isFinite(n) && n > maxN) maxN = n;
+      }
+    }
+    const next = maxN > 0 ? maxN + 1 : tables.length + 1;
+    // Drop the duplicate offset to the right and below so it doesn't sit
+    // exactly on top of the original table.
+    const dx = 800;
+    const dy = 800;
+    const res = await seatingApi.createTable({
+      label: `${prefix} ${next}`,
+      shape: source.shape,
+      seats: source.seats,
+      x_mm: clampToRoom(source.x_mm + dx, roomWidthMm),
+      y_mm: clampToRoom(source.y_mm + dy, roomHeightMm),
+      width_mm: source.width_mm,
+      length_mm: source.length_mm,
+      rotation_deg: source.rotation_deg,
+    });
+    setSelectedId(res.table.id);
+    refresh();
+  }
+
+  async function rotateTable(table: SeatingTable) {
+    const next = (((table.rotation_deg + 45) % 360) + 360) % 360;
+    await patchTable(table, { rotation_deg: next });
+  }
+
   async function deleteTable(table: SeatingTable) {
     const ok = await confirm({
       title: t("seating.confirm_delete_table"),
@@ -712,6 +753,8 @@ export default function SeatingPage() {
             table={selected}
             onPatch={(patch) => selected && patchTable(selected, patch)}
             onDelete={() => selected && deleteTable(selected)}
+            onDuplicate={() => selected && duplicateTable(selected)}
+            onRotate={() => selected && rotateTable(selected)}
             t={t}
           />
         </div>
@@ -979,11 +1022,15 @@ function TableEditor({
   table,
   onPatch,
   onDelete,
+  onDuplicate,
+  onRotate,
   t,
 }: {
   table: SeatingTable | null;
   onPatch: (patch: Partial<SeatingTable>) => void;
   onDelete: () => void;
+  onDuplicate: () => void;
+  onRotate: () => void;
   t: ReturnType<typeof useT>["t"];
 }) {
   if (!table) {
@@ -1082,13 +1129,30 @@ function TableEditor({
         </div>
       </Section>
 
-      <div className="flex items-center justify-between gap-2 border-t border-paper-200 pt-3 text-xs text-ink-500">
-        <span>
-          {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
-        </span>
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-paper-200 pt-3">
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-blush-700 transition-colors hover:bg-blush-50"
+          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100"
+          onClick={onRotate}
+          aria-label={t("seating.rotate_table")}
+          title={t("seating.rotate_table")}
+        >
+          <RotateCw size={14} aria-hidden />
+          <span>{table.rotation_deg}°</span>
+        </button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100"
+          onClick={onDuplicate}
+          aria-label={t("seating.duplicate_table")}
+          title={t("seating.duplicate_table")}
+        >
+          <Copy size={14} aria-hidden />
+          <span>{t("seating.duplicate_table")}</span>
+        </button>
+        <button
+          type="button"
+          className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-blush-700 transition-colors hover:bg-blush-50"
           onClick={onDelete}
           aria-label={t("seating.delete_table")}
         >
@@ -1096,6 +1160,9 @@ function TableEditor({
           <span>{t("seating.delete_table")}</span>
         </button>
       </div>
+      <p className="text-xs text-ink-400">
+        {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
+      </p>
     </div>
   );
 }
@@ -1344,7 +1411,7 @@ function ShapePicker({
   labels: Record<TableShape, string>;
 }) {
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="grid grid-cols-2 gap-1.5">
+    <div role="radiogroup" aria-label={ariaLabel} className="grid grid-cols-4 gap-1.5">
       {SHAPES.map((s) => {
         const Icon = SHAPE_ICONS[s];
         const active = s === value;
@@ -1355,15 +1422,19 @@ function ShapePicker({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(s)}
+            // Icon-only tile — the localised label is exposed via aria-label
+            // and the per-tile title attribute (so it shows on hover) but not
+            // rendered as text. Keeps the row compact across HU and EN.
+            aria-label={labels[s]}
+            title={labels[s]}
             className={[
-              "flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700",
+              "flex items-center justify-center rounded-xl border py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700",
               active
-                ? "border-blush-300 bg-blush-50 text-ink-900"
-                : "border-paper-200 bg-paper-50 text-ink-600 hover:bg-paper-100",
+                ? "border-blush-300 bg-blush-50"
+                : "border-paper-200 bg-paper-50 hover:bg-paper-100",
             ].join(" ")}
           >
-            <Icon size={18} className={active ? "text-blush-700" : "text-ink-500"} />
-            <span>{labels[s]}</span>
+            <Icon size={22} className={active ? "text-blush-700" : "text-ink-500"} />
           </button>
         );
       })}
@@ -1516,9 +1587,24 @@ function DraggableGuest({
         .filter(Boolean)
         .join(" ")}
     >
+      {/* Baby icon for guests where kind === "baby" so couples can see at a
+          glance which seats are taken by infants — they typically sit on a
+          parent's lap or in a high-chair, so they don't consume a real seat
+          for the venue head-count. */}
+      {guest.kind === "baby" && (
+        <Baby
+          size={compact ? 14 : 16}
+          aria-hidden
+          className="mr-1 inline-block align-text-bottom text-blush-500"
+        />
+      )}
       {guest.full_name}
     </div>
   );
+}
+
+function clampToRoom(v: number, ceiling: number): number {
+  return Math.max(0, Math.min(ceiling, v));
 }
 
 function readDragData(e: DragEvent): DragData | null {

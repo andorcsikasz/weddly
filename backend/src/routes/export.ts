@@ -6,6 +6,7 @@
 import { db } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser, toCouple } from "../domain/couples";
+import { recordExport } from "../domain/exports";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 import { toUser, type UserRow } from "../domain/users";
 
@@ -57,7 +58,7 @@ function handleExport(ctx: Ctx): Response {
     target_id: couple.id,
   });
 
-  return json({
+  const payload = {
     schema_version: 1,
     exported_at: new Date().toISOString(),
     couple: toCouple(couple),
@@ -69,7 +70,21 @@ function handleExport(ctx: Ctx): Response {
     budget: { lines: budgetLines, snapshots: budgetSnapshots },
     seating: { tables: seatingTables, assignments: seatAssignments, conflicts: seatingConflicts },
     audit_log_recent: auditEntries,
+  };
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  const body = new TextEncoder().encode(JSON.stringify(payload, null, 2));
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "json",
+    format: null,
+    filename: `weddly-export-${stamp}.json`,
+    contentType: "application/json",
+    body,
   });
+
+  return json(payload);
 }
 
 export function registerExportRoutes(router: Router) {

@@ -674,6 +674,8 @@ const en: LocaleMessages = {
     shape_square: "Square",
     shape_head: "Head",
     delete_table: "Delete table",
+    duplicate_table: "Duplicate",
+    rotate_table: "Rotate 45°",
     confirm_delete_table: "Delete this table?",
     unassigned_guests: "Unassigned guests",
     no_unassigned: "Everyone is seated!",

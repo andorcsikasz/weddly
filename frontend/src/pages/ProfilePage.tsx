@@ -1,12 +1,25 @@
-// Profile: preferences + workspace ops (export, delete account).
+// Profile: workspace ops only — payments placeholder, export, saved
+// download archive, delete account.
 
-import type { Couple, CouplePauseRequest, CoupleStatus } from "@shared/types";
+import type {
+  Couple,
+  CouplePauseRequest,
+  CoupleStatus,
+  DataExportSummary,
+  ExportKind,
+} from "@shared/types";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useEntryPrompt } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { coupleApi, exportApi, pauseApi } from "../lib/endpoints";
+import {
+  coupleApi,
+  documentsApi,
+  exportApi,
+  fetchGuestCsvBlob,
+  fetchSavedExportBlob,
+  pauseApi,
+} from "../lib/endpoints";
 import { formatDate } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 
@@ -15,20 +28,61 @@ function deleteVerifyPhrase(couple: Couple | null): string {
   return `${couple.bride_name}${couple.groom_name}`.replace(/\s+/g, "").toUpperCase();
 }
 
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatTimestamp(ms: number, locale: Locale): string {
+  const d = new Date(ms);
+  const dateStr = formatDate(d.toISOString().slice(0, 10), locale);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${dateStr} ${hh}:${mm}`;
+}
+
+function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function ProfilePage() {
-  const { t, locale, setLocale } = useT();
+  const { t, locale } = useT();
   const promptEntry = useEntryPrompt();
   const [couple, setCouple] = useState<Couple | null>(null);
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [csvExporting, setCsvExporting] = useState(false);
+  const [documents, setDocuments] = useState<DataExportSummary[]>([]);
+  const [redownloading, setRedownloading] = useState<number | null>(null);
 
   async function refresh() {
-    const [pause, current] = await Promise.all([pauseApi.status(), coupleApi.current()]);
+    const [pause, current, docs] = await Promise.all([
+      pauseApi.status(),
+      coupleApi.current(),
+      documentsApi.list(),
+    ]);
     setCoupleStatus(pause.couple_status);
     setPauseReq(pause.pause_request);
     setCouple(current.couple);
+    setDocuments(docs.exports);
+  }
+  async function refreshDocuments() {
+    try {
+      const docs = await documentsApi.list();
+      setDocuments(docs.exports);
+    } catch {
+      /* non-fatal — will retry on next mount */
+    }
   }
   useEffect(() => {
     refresh();
@@ -72,19 +126,39 @@ export default function ProfilePage() {
     try {
       const data = await exportApi.download();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
       const stamp = new Date().toISOString().slice(0, 10);
-      a.download = `weddly-export-${stamp}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      saveBlob(blob, `weddly-export-${stamp}.json`);
+      refreshDocuments();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function downloadGuestCsv() {
+    setCsvExporting(true);
+    try {
+      const blob = await fetchGuestCsvBlob();
+      const stamp = new Date().toISOString().slice(0, 10);
+      saveBlob(blob, `weddly-guests-${stamp}.csv`);
+      refreshDocuments();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setCsvExporting(false);
+    }
+  }
+
+  async function redownloadSaved(doc: DataExportSummary) {
+    setRedownloading(doc.id);
+    try {
+      const blob = await fetchSavedExportBlob(doc.id);
+      saveBlob(blob, doc.filename);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setRedownloading(null);
     }
   }
 
@@ -97,49 +171,6 @@ export default function ProfilePage() {
       <h1>{t("profile.title")}</h1>
 
       <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.preferences_title")}</h2>
-        <p className="mt-1 text-sm text-ink-500">{t("profile.preferences_body")}</p>
-
-        <fieldset className="mt-4">
-          <legend className="field-label">{t("profile.preferences_locale_label")}</legend>
-          <div className="mt-2 flex flex-wrap gap-3">
-            {(["hu", "en"] as const).map((opt) => (
-              <label
-                key={opt}
-                className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors ${
-                  locale === opt
-                    ? "border-ink-700 bg-paper-100 text-ink-900"
-                    : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="locale"
-                  value={opt}
-                  checked={locale === opt}
-                  onChange={() => setLocale(opt as Locale)}
-                  className="h-4 w-4 accent-ink-700"
-                />
-                <span>
-                  {opt === "hu"
-                    ? t("profile.preferences_locale_hu")
-                    : t("profile.preferences_locale_en")}
-                </span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <div className="mt-6">
-          <p className="field-label">{t("profile.preferences_password_label")}</p>
-          <p className="mt-1 text-xs text-ink-500">{t("profile.preferences_password_help")}</p>
-          <Link to="/forgot-password" className="btn-outline mt-3 inline-flex">
-            {t("profile.preferences_password_link")}
-          </Link>
-        </div>
-      </section>
-
-      <section className="card mt-6">
         <h2 className="text-lg">{t("profile.payments_title")}</h2>
         <p className="mt-2 text-sm text-ink-600">{t("profile.payments_body")}</p>
       </section>
@@ -147,14 +178,57 @@ export default function ProfilePage() {
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.export_title")}</h2>
         <p className="mt-2 text-sm text-ink-600">{t("profile.export_body")}</p>
-        <button
-          type="button"
-          className="btn-outline mt-4"
-          onClick={downloadExport}
-          disabled={exporting}
-        >
-          {exporting ? t("profile.export_downloading") : t("profile.export_button")}
-        </button>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={downloadExport}
+            disabled={exporting}
+          >
+            {exporting ? t("profile.export_downloading") : t("profile.export_button")}
+          </button>
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={downloadGuestCsv}
+            disabled={csvExporting}
+          >
+            {csvExporting ? t("profile.export_downloading") : t("profile.export_guest_csv_button")}
+          </button>
+        </div>
+      </section>
+
+      <section className="card mt-6">
+        <h2 className="text-lg">{t("profile.archive_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600">{t("profile.archive_body")}</p>
+        {documents.length === 0 ? (
+          <p className="mt-4 text-sm text-ink-500">{t("profile.archive_empty")}</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-paper-200">
+            {documents.map((doc) => (
+              <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
+                <span className="rounded bg-paper-100 px-2 py-0.5 text-xs uppercase text-ink-600">
+                  {t(`profile.archive_kind_${doc.kind}` as `profile.archive_kind_${ExportKind}`)}
+                  {doc.format ? ` · ${doc.format.toUpperCase()}` : ""}
+                </span>
+                <span className="font-medium text-ink-800">{doc.filename}</span>
+                <span className="text-xs text-ink-500">
+                  {formatTimestamp(doc.created_at, locale)} · {formatBytes(doc.byte_size)}
+                </span>
+                <button
+                  type="button"
+                  className="btn-outline ml-auto h-8 px-3 text-xs"
+                  onClick={() => redownloadSaved(doc)}
+                  disabled={redownloading === doc.id}
+                >
+                  {redownloading === doc.id
+                    ? t("profile.export_downloading")
+                    : t("profile.archive_redownload")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40">

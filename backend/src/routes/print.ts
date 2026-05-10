@@ -3,6 +3,7 @@
 import { db } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
+import { recordExport } from "../domain/exports";
 import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
 import { renderPlaceCardsPdf, renderSeatingChartPdf } from "../domain/pdf";
 import { listGuestsByCouple, toGuest } from "../domain/guests";
@@ -19,6 +20,7 @@ interface TableRow {
   y_mm: number;
   width_mm: number;
   length_mm: number;
+  rotation_deg: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -44,6 +46,7 @@ function loadTables(coupleId: number): SeatingTable[] {
     y_mm: r.y_mm,
     width_mm: r.width_mm,
     length_mm: r.length_mm,
+    rotation_deg: ((((r.rotation_deg ?? 0) % 360) + 360) % 360) | 0,
     created_at: r.created_at,
   }));
 }
@@ -97,7 +100,17 @@ async function handleSeatingChart(ctx: Ctx, fmt: "a4" | "a3"): Promise<Response>
     target_id: couple.id,
     after: { format: fmt, table_count: tables.length, guest_count: guests.length },
   });
-  return pdfResponse(`seating-${fmt}.pdf`, pdf);
+  const filename = `seating-${fmt}.pdf`;
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "seating_pdf",
+    format: fmt,
+    filename,
+    contentType: "application/pdf",
+    body: pdf,
+  });
+  return pdfResponse(filename, pdf);
 }
 
 async function handlePlaceCards(ctx: Ctx): Promise<Response> {
@@ -134,7 +147,17 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
     target_id: couple.id,
     after: { guest_count: guests.length },
   });
-  return pdfResponse("place-cards-a6.pdf", pdf);
+  const filename = "place-cards-a6.pdf";
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "place_cards_pdf",
+    format: null,
+    filename,
+    contentType: "application/pdf",
+    body: pdf,
+  });
+  return pdfResponse(filename, pdf);
 }
 
 export function registerPrintRoutes(router: Router) {

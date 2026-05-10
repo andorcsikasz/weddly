@@ -320,6 +320,10 @@ export interface SeatingTable {
   width_mm: number;
   /** Equal to width_mm for round/square; longer side for long. Millimetres. */
   length_mm: number;
+  /** Rotation around the table centre, in degrees clockwise. 0 = axis-aligned;
+   *  editor cycles in 45° steps. The canvas + PDF apply this rotation to the
+   *  whole table (body, chairs, label) about (x_mm, y_mm). */
+  rotation_deg: number;
   created_at: UnixMs;
 }
 

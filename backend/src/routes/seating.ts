@@ -16,6 +16,7 @@ interface TableRow {
   y_mm: number;
   width_mm: number;
   length_mm: number;
+  rotation_deg: number;
   created_at: number;
   updated_at: number;
 }
@@ -50,6 +51,7 @@ function toTable(r: TableRow): SeatingTable {
     y_mm: r.y_mm,
     width_mm: r.width_mm,
     length_mm: r.length_mm,
+    rotation_deg: ((r.rotation_deg % 360) + 360) % 360,
     created_at: r.created_at,
   };
 }
@@ -118,6 +120,7 @@ interface UpsertTableBody {
   y_mm?: unknown;
   width_mm?: unknown;
   length_mm?: unknown;
+  rotation_deg?: unknown;
 }
 
 // Hard caps on dimensions: a single table over 10m is almost certainly a typo
@@ -167,6 +170,14 @@ function parseTableBody(body: UpsertTableBody) {
     length = side;
   }
 
+  // Rotation is optional and stored normalised to 0–359 degrees. Any integer
+  // is accepted so a future "free rotate" UI can land without a schema bump.
+  const rotRaw = Number(body.rotation_deg ?? 0);
+  if (!Number.isFinite(rotRaw)) {
+    throw new HttpError(400, "rotation_deg must be finite");
+  }
+  const rotation_deg = ((Math.round(rotRaw) % 360) + 360) % 360;
+
   return {
     label,
     shape,
@@ -175,6 +186,7 @@ function parseTableBody(body: UpsertTableBody) {
     y_mm: Math.round(yRaw),
     width_mm: width,
     length_mm: length,
+    rotation_deg,
   };
 }
 
@@ -185,8 +197,8 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, rotation_deg, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -197,6 +209,7 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
       parsed.y_mm,
       parsed.width_mm,
       parsed.length_mm,
+      parsed.rotation_deg,
       ts,
       ts,
     );
@@ -228,7 +241,7 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
   const ts = now();
   db.prepare(
     `UPDATE seating_tables SET label = ?, shape = ?, seats = ?, x_mm = ?, y_mm = ?,
-       width_mm = ?, length_mm = ?, updated_at = ?
+       width_mm = ?, length_mm = ?, rotation_deg = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.label,
@@ -238,6 +251,7 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     parsed.y_mm,
     parsed.width_mm,
     parsed.length_mm,
+    parsed.rotation_deg,
     ts,
     id,
     coupleId,

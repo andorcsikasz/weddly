@@ -641,6 +641,8 @@ export interface LocaleMessages {
     shape_square: string;
     shape_head: string;
     delete_table: string;
+    duplicate_table: string;
+    rotate_table: string;
     confirm_delete_table: string;
     unassigned_guests: string;
     no_unassigned: string;

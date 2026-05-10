@@ -1,8 +1,38 @@
 import { Menu, X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
 import { Wordmark } from "./Wordmark";
+
+/** Track scroll direction so the public header can hide on scroll-down
+ *  and reveal on scroll-up. Returns `true` while the header should be
+ *  hidden. Stays visible whenever the page is near the top (< 80 px),
+ *  so the user never lands on a blank chrome zone. */
+function useHeaderHidden(): boolean {
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    lastY.current = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const dy = y - lastY.current;
+      if (y < 80) {
+        setHidden(false);
+      } else if (dy > 4) {
+        // Scrolling down past the threshold — slide the header out.
+        setHidden(true);
+      } else if (dy < -4) {
+        // Scrolling up — bring it back regardless of position.
+        setHidden(false);
+      }
+      lastY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return hidden;
+}
 
 /**
  * Wrapper for the public-facing surface (landing + vendors). Mirrors
@@ -33,36 +63,45 @@ function PublicHeader() {
   const { t, locale, setLocale } = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const otherLocale = locale === "hu" ? "en" : "hu";
+  const hidden = useHeaderHidden();
 
   return (
-    <header className="border-b border-paper-300 bg-paper-50">
-      <div className="mx-auto flex max-w-6xl items-center gap-5 px-4 py-3 sm:px-6">
+    <header
+      className={`sticky top-0 z-40 border-b border-paper-300 bg-paper-50/85 backdrop-blur transition-transform duration-200 ${
+        hidden ? "-translate-y-full" : "translate-y-0"
+      }`}
+    >
+      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="shrink-0 text-ink-900 transition-colors hover:text-ink-700">
           {/* Header wordmark sits between Wordmark's md and lg presets:
               bigger than the body brand mark, but tracked tightly so the
-              full WĒDDLY + nav + right cluster fit at lg viewports. */}
+              full WĒDDLY + audience cluster + right cluster fit at lg
+              viewports. */}
           <Wordmark size="md" className="text-lg tracking-[0.32em] sm:text-xl" />
         </Link>
 
-        {/* Centred nav, desktop only. Two audience entry points — every
-            visitor is either a couple (signing up), a vendor (waitlist),
-            or a guest (RSVP check-in). Couples land via the right-side
-            sign-up; vendors and guests get their own header link. */}
-        <nav
-          aria-label="Primary"
-          className="hidden flex-1 items-center justify-center gap-7 text-sm text-ink-700 md:flex"
-        >
-          <Link to="/vendors" className="transition-colors hover:text-ink-900">
+        {/* Audience entry points pulled left, immediately after the
+            wordmark, as solid paper-toned chips. Vendor + Guest are
+            the two non-couple paths — couples land via the right-side
+            sign-up. */}
+        <nav aria-label="Audience" className="ml-2 hidden items-center gap-2 md:flex">
+          <Link
+            to="/vendors"
+            className="rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200"
+          >
             {t("landing.nav_vendors")}
           </Link>
-          <Link to="/rsvp" className="transition-colors hover:text-ink-900">
+          <Link
+            to="/rsvp"
+            className="rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200"
+          >
             {t("landing.footer_guests")}
           </Link>
         </nav>
 
         {/* Right cluster: every interactive item at text-sm so the
             wordmark logo is the only thing that visually leads. */}
-        <div className="ml-auto flex items-center gap-3 md:ml-0">
+        <div className="ml-auto flex items-center gap-3">
           <Link
             to="/login"
             className="hidden text-sm text-ink-700 transition-colors hover:text-ink-900 sm:inline-flex"

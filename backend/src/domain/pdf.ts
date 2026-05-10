@@ -191,6 +191,9 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     const rx = mm(pos.rx_mm);
     const ry = mm(pos.ry_mm);
 
+    // NOTE: t.rotation_deg is honoured on the on-screen canvas but renders
+    // as 0° here. pdf-lib rotation is around the bottom-left corner — the
+    // off-axis math (rotate, then re-center) is tracked for a follow-up.
     if (t.shape === "round") {
       page.drawCircle({
         x: cx,

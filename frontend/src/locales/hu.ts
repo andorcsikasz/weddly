@@ -676,6 +676,8 @@ const hu: LocaleMessages = {
     shape_square: "Szögletes",
     shape_head: "Főasztal",
     delete_table: "Asztal törlése",
+    duplicate_table: "Duplikálás",
+    rotate_table: "Forgatás 45°",
     confirm_delete_table: "Biztos törölhető ez az asztal?",
     unassigned_guests: "Nem leültetett vendégek",
     no_unassigned: "Mindenki le van ültetve!",

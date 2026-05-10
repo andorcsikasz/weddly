@@ -192,10 +192,22 @@ export function SeatingMap({
     // Resize. Symmetric around the table centre: new side = 2 × |pointer - centre|
     // along the relevant axis. For uniform-scale shapes (round/square) we use
     // the larger of |dx|/|dy|.
+    //
+    // The pointer comes in canvas coordinates. If the table is rotated, we
+    // un-rotate the pointer delta into the table's local frame so that
+    // dragging an "east" handle still grows the length (length is always the
+    // table's local x-axis, no matter how the table is visually oriented).
     const table = tables.find((tb) => tb.id === drag.tableId);
     if (!table) return;
-    const dx = Math.abs(p.x - drag.cx);
-    const dy = Math.abs(p.y - drag.cy);
+    const rotRad = ((table.rotation_deg ?? 0) * Math.PI) / 180;
+    const px = p.x - drag.cx;
+    const py = p.y - drag.cy;
+    const cosR = Math.cos(-rotRad);
+    const sinR = Math.sin(-rotRad);
+    const lx = px * cosR - py * sinR;
+    const ly = px * sinR + py * cosR;
+    const dx = Math.abs(lx);
+    const dy = Math.abs(ly);
     const uniform = table.shape === "round" || table.shape === "square";
 
     let newWidth = drag.startWidthMm;
@@ -590,9 +602,15 @@ function TableShape({
     .replace("{name}", table.label)
     .replace("{seats}", String(table.seats));
 
+  // Rotation is applied to the whole table group around (cx, cy). Defaults
+  // to 0 for legacy rows (the field was added later, but the API mapper
+  // normalises). The resize math reverses this rotation when interpreting
+  // pointer deltas.
+  const rotation = (((table.rotation_deg ?? 0) % 360) + 360) % 360;
+
   return (
     <g
-      transform={`translate(${cx} ${cy})`}
+      transform={`translate(${cx} ${cy}) rotate(${rotation})`}
       data-seating-table={table.id}
       onPointerDown={onPointerDown}
       style={{ cursor: "grab" }}
@@ -639,24 +657,27 @@ function TableShape({
             height={chairHeightMm}
             rx={chairCorner}
             transform={`rotate(${rotDeg} ${px} ${py})`}
-            className={isFilled ? "fill-blush-600" : "fill-blush-300"}
+            className={isFilled ? "fill-ink-800" : "fill-blush-300"}
           />
         );
       })}
 
-      {/* Label — serif, in the warm blush from the brand palette. */}
-      <text
-        x={0}
-        y={Math.min(rx, ry) * 0.15}
-        textAnchor="middle"
-        fontSize={Math.min(rx, ry) * 0.42}
-        fontFamily='"Cormorant Garamond", Georgia, serif'
-        fontWeight={600}
-        className="fill-blush-700"
-        style={{ pointerEvents: "none" }}
-      >
-        {table.label}
-      </text>
+      {/* Label — serif, in the warm blush from the brand palette. We
+          counter-rotate by -rotation so the text always reads upright in
+          screen space, regardless of how the table is rotated. */}
+      <g transform={`rotate(${-rotation})`} style={{ pointerEvents: "none" }}>
+        <text
+          x={0}
+          y={Math.min(rx, ry) * 0.15}
+          textAnchor="middle"
+          fontSize={Math.min(rx, ry) * 0.42}
+          fontFamily='"Cormorant Garamond", Georgia, serif'
+          fontWeight={600}
+          className="fill-blush-700"
+        >
+          {table.label}
+        </text>
+      </g>
 
       {/* Selection-only affordances: resize handles + seat buttons. */}
       {isSelected && (
