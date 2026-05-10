@@ -44,6 +44,19 @@ export function chairOffsets(
     return out;
   }
 
+  if (shape === "head") {
+    // Head table — guests of honour sit along ONE long side facing the room,
+    // with the back edge against a wall / backdrop. Chairs are placed only on
+    // the front (bottom) long edge, evenly distributed across the full width.
+    const out: ChairOffset[] = [];
+    const longSide = rx * 2;
+    for (let i = 0; i < seats; i++) {
+      const t = (i + 0.5) / seats;
+      out.push({ dx: -rx + longSide * t, dy: ry, angle: Math.PI / 2 });
+    }
+    return out;
+  }
+
   // Rectangle (square or long). Allocate seats across the four sides
   // proportionally to side length, with a minimum of 1 per long side when
   // seats >= 2. We treat "long" as oriented horizontally (width along x).

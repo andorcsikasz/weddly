@@ -610,9 +610,68 @@ async function handleUpdateSlug(ctx: Ctx): Promise<Response> {
   return json({ couple: toCouple(refreshed) });
 }
 
+/** Partial-update endpoint for inline edits from the workspace (e.g. clicking
+ *  the wedding date on the dashboard to change it). Reuses onboarding parsers
+ *  so validation stays consistent. Currently supports `wedding_date_goal`;
+ *  other goal fields can be wired in here as inline-edit affordances ship. */
+async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to update");
+
+  const body = await readJson<Partial<OnboardBody>>(ctx.req);
+  const updates: { col: string; val: string | number | null }[] = [];
+  const auditAfter: Record<string, unknown> = {};
+
+  if (body.wedding_date_goal !== undefined || body.wedding_date !== undefined) {
+    const goal = parseWeddingDateGoal(body as OnboardBody);
+    updates.push(
+      { col: "wedding_date", val: goal.exact_date },
+      { col: "wedding_date_kind", val: goal.kind },
+      { col: "wedding_target_year", val: goal.target_year },
+      { col: "wedding_target_month", val: goal.target_month },
+      { col: "wedding_target_season", val: goal.target_season },
+    );
+    auditAfter.wedding_date_goal = goal;
+  }
+
+  if (body.budget_goal !== undefined || body.budget_ceiling_huf !== undefined) {
+    const goal = parseBudgetGoal(body as OnboardBody);
+    updates.push(
+      { col: "budget_ceiling_huf", val: goal.exact_huf },
+      { col: "budget_kind", val: goal.kind },
+      { col: "budget_ceiling_min_huf", val: goal.min_huf },
+      { col: "budget_ceiling_max_huf", val: goal.max_huf },
+    );
+    auditAfter.budget_goal = goal;
+  }
+
+  if (updates.length === 0) throw new HttpError(400, "No fields to update");
+
+  const ts = now();
+  const setClause = `${updates.map((u) => `${u.col} = ?`).join(", ")}, updated_at = ?`;
+  const values = [...updates.map((u) => u.val), ts, couple.id];
+  db.prepare(`UPDATE couples SET ${setClause} WHERE id = ?`).run(...values);
+
+  const refreshed = getCoupleById(couple.id);
+  if (!refreshed) throw new HttpError(500, "Couple vanished after update");
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.update",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: auditAfter,
+  });
+
+  return json({ couple: toCouple(refreshed) });
+}
+
 export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/onboard", handleOnboard, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
+  router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.post("/api/couples/invites", handleCreateInvite, true);
   router.get("/api/invites/:token", handleGetInvite); // public — pre-signup

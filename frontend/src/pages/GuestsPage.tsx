@@ -11,7 +11,7 @@ import type {
   MealChoice,
   RsvpStatus,
 } from "@shared/types";
-import { Pencil, Plus, RefreshCw, Trash2, Upload, UserPlus, X } from "lucide-react";
+import { ChevronDown, Pencil, Plus, RefreshCw, Trash2, Upload, UserPlus, X } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Dialog, useConfirm, useToast } from "../components/ui";
@@ -224,7 +224,7 @@ export default function GuestsPage() {
         </div>
       </div>
 
-      {couple && <CoupleSlugCard couple={couple} onSaved={(c) => setCouple(c)} />}
+      {couple && <CheckinPill couple={couple} onSaved={(c) => setCouple(c)} />}
 
       {households.length === 0 && guests.length === 0 ? (
         <div className="card stationery text-center">
@@ -233,11 +233,6 @@ export default function GuestsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="card stationery">
-            <h2 className="font-serif text-xl">{t("guests.household_section_title")}</h2>
-            <p className="mt-1 text-sm text-ink-600">{t("guests.household_section_help")}</p>
-          </div>
-
           {households.map((hh) => (
             <HouseholdCard
               key={hh.id}
@@ -425,15 +420,15 @@ function HouseholdCard({
   );
 }
 
-function CoupleSlugCard({
-  couple,
-  onSaved,
-}: {
-  couple: Couple;
-  onSaved: (next: Couple) => void;
-}) {
+/**
+ * Compact "Check-in: ANDORSARI · + 4-digit code" pill at the top of
+ * /app/guests. Collapsed by default — first-time visitors get the airport
+ * concept at a glance without the page being top-heavy. Click expands the
+ * panel for slug edit + URL hint + the household-grouping reminder.
+ */
+function CheckinPill({ couple, onSaved }: { couple: Couple; onSaved: (next: Couple) => void }) {
   const { t } = useT();
-  const toast = useToast();
+  const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(couple.slug ?? "");
   const [submitting, setSubmitting] = useState(false);
@@ -460,48 +455,100 @@ function CoupleSlugCard({
     } finally {
       setSubmitting(false);
     }
-    void toast;
   }
 
   return (
-    <div className="card stationery mb-4">
-      <h2 className="font-serif text-xl">{t("guests.couple_slug_title")}</h2>
-      <p className="mt-1 text-sm text-ink-600">{t("guests.couple_slug_help")}</p>
-      {editing ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <input
-            className="input font-mono uppercase tracking-[0.3em]"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value.toUpperCase())}
-            maxLength={24}
-            autoFocus
-          />
-          <button type="button" className="btn-primary" onClick={onSave} disabled={submitting}>
-            {t("guests.couple_slug_save")}
-          </button>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => {
-              setEditing(false);
-              setDraft(couple.slug ?? "");
-              setError(null);
-            }}
-          >
-            {t("common.cancel")}
-          </button>
-        </div>
-      ) : (
-        <div className="mt-3 flex items-center gap-3">
-          <span className="font-mono text-2xl uppercase tracking-[0.3em] text-ink-900">
-            {couple.slug ?? "—"}
-          </span>
-          <button type="button" className="btn-ghost btn-sm" onClick={() => setEditing(true)}>
-            <Pencil size={14} />
-          </button>
+    <div className="mb-4 overflow-hidden rounded-2xl border border-paper-300 bg-paper-100/40">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        aria-label={expanded ? t("guests.checkin_pill_hide") : t("guests.checkin_pill_show")}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100"
+      >
+        <span className="text-xs font-medium uppercase tracking-wider text-ink-500">
+          {t("guests.checkin_pill_lead")}
+        </span>
+        <span className="font-mono text-base uppercase tracking-[0.3em] text-ink-900">
+          {couple.slug ?? "—"}
+        </span>
+        <span className="text-sm text-ink-600 hidden sm:inline">
+          {t("guests.checkin_pill_suffix")}
+        </span>
+        <ChevronDown
+          size={16}
+          aria-hidden
+          className={
+            expanded
+              ? "ml-auto rotate-180 text-ink-700 transition-transform"
+              : "ml-auto text-ink-500 transition-transform"
+          }
+        />
+      </button>
+
+      {expanded && (
+        <div className="space-y-4 border-t border-paper-300 px-4 py-4">
+          <div>
+            <p className="text-sm text-ink-700">{t("guests.checkin_pill_url_hint")}</p>
+            <p className="mt-2 text-xs text-ink-500 sm:hidden">{t("guests.checkin_pill_suffix")}</p>
+          </div>
+
+          <div className="rounded-xl border border-paper-200 bg-paper-50 px-3 py-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+              {t("guests.couple_slug_title")}
+            </p>
+            <p className="mt-1 text-xs text-ink-600">{t("guests.couple_slug_help")}</p>
+            {editing ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <input
+                  // biome-ignore lint/a11y/noAutofocus: focus is intentional when entering edit mode
+                  autoFocus
+                  className="input font-mono uppercase tracking-[0.3em]"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value.toUpperCase())}
+                  maxLength={24}
+                />
+                <button
+                  type="button"
+                  className="btn-primary btn-sm"
+                  onClick={onSave}
+                  disabled={submitting}
+                >
+                  {t("guests.couple_slug_save")}
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => {
+                    setEditing(false);
+                    setDraft(couple.slug ?? "");
+                    setError(null);
+                  }}
+                >
+                  {t("common.cancel")}
+                </button>
+              </div>
+            ) : (
+              <div className="mt-3 flex items-center gap-3">
+                <span className="font-mono text-2xl uppercase tracking-[0.3em] text-ink-900">
+                  {couple.slug ?? "—"}
+                </span>
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => setEditing(true)}
+                  aria-label={t("guests.edit")}
+                >
+                  <Pencil size={14} />
+                </button>
+              </div>
+            )}
+            {error && <p className="field-error mt-2">{error}</p>}
+          </div>
+
+          <p className="text-xs text-ink-500">{t("guests.household_section_help")}</p>
         </div>
       )}
-      {error && <p className="field-error mt-2">{error}</p>}
     </div>
   );
 }

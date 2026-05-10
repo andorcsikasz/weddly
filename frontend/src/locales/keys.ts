@@ -499,6 +499,13 @@ export interface LocaleMessages {
     couple_slug_save: string;
     couple_slug_invalid: string;
     couple_slug_taken: string;
+    /** Compact "Check-in: ANDORSARI · + 4-digit code (?)" pill at the top
+     *  of /app/guests. Expands to slug edit + help text on click. */
+    checkin_pill_lead: string;
+    checkin_pill_suffix: string;
+    checkin_pill_show: string;
+    checkin_pill_hide: string;
+    checkin_pill_url_hint: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;
@@ -594,6 +601,8 @@ export interface LocaleMessages {
     edit_planned_aria: string;
     per_guest_unit: string;
     category_locked_hint: string;
+    slider_min_aria: string;
+    slider_max_aria: string;
     cat: {
       venue: string;
       catering: string;
@@ -622,6 +631,7 @@ export interface LocaleMessages {
     shape_round: string;
     shape_long: string;
     shape_square: string;
+    shape_head: string;
     delete_table: string;
     confirm_delete_table: string;
     unassigned_guests: string;
@@ -881,27 +891,26 @@ export interface LocaleMessages {
     menu_label: string;
     menu_profile: string;
     no_name: string;
-    personal_info_title: string;
-    personal_info_body: string;
-    field_name: string;
-    field_email: string;
-    /** Help text under the read-only email field. */
-    email_change_help: string;
     payments_title: string;
     payments_body: string;
     export_title: string;
     export_body: string;
     export_button: string;
     export_downloading: string;
-    pause_title: string;
-    pause_body: string;
-    pause_button: string;
-    pause_confirm: string;
-    pause_confirm_title: string;
-    pause_confirm_yes: string;
-    pause_pending: string;
-    pause_pending_until: string;
-    cancel_pause: string;
+    /** Delete-account flow (30-day grace before admin purge). */
+    delete_account_title: string;
+    delete_account_body: string;
+    delete_account_button: string;
+    delete_account_confirm_title: string;
+    /** TextField label inside the typed-confirm dialog. Receives `{phrase}`. */
+    delete_account_confirm_label: string;
+    delete_account_confirm_help: string;
+    delete_account_confirm_yes: string;
+    /** Validation error when typed phrase does not match. Receives `{phrase}`. */
+    delete_account_confirm_mismatch: string;
+    delete_account_pending: string;
+    delete_account_pending_until: string;
+    cancel_delete_account: string;
     /** Preferences card. */
     preferences_title: string;
     preferences_body: string;

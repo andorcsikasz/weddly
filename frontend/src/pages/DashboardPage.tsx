@@ -8,6 +8,7 @@ import type {
   Couple,
   CoupleInvite,
   Guest,
+  WeddingDateGoal,
 } from "@shared/types";
 import {
   CalendarHeart,
@@ -188,14 +189,37 @@ export default function DashboardPage() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  const dateText = formatWeddingDateGoal(couple.wedding_date_goal, { t, locale });
+  async function saveWeddingDate(goal: WeddingDateGoal) {
+    if (data === "loading" || data === null) return;
+    try {
+      const r = await coupleApi.update({ wedding_date_goal: goal });
+      setData({ ...data, couple: r.couple });
+    } catch {
+      // Refetch on failure so the displayed date stays in sync with the DB.
+      const r = await coupleApi.current();
+      if (r.couple) setData({ ...data, couple: r.couple });
+    }
+  }
+
+  async function saveCap(newCapHuf: number) {
+    if (data === "loading" || data === null) return;
+    try {
+      const r = await coupleApi.update({
+        budget_goal: { kind: "exact", exact_huf: newCapHuf, min_huf: null, max_huf: null },
+      });
+      setData({ ...data, couple: r.couple });
+    } catch {
+      const r = await coupleApi.current();
+      if (r.couple) setData({ ...data, couple: r.couple });
+    }
+  }
 
   return (
     <AppShell>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-serif text-4xl">{couple.display_name}</h1>
-          <p className="mt-1 text-sm text-ink-600">{dateText}</p>
+          <EditableWeddingDate goal={couple.wedding_date_goal} onSave={saveWeddingDate} />
         </div>
         <div className="text-xs uppercase tracking-wide text-ink-500">{t("dashboard.title")}</div>
       </header>
@@ -382,6 +406,7 @@ export default function DashboardPage() {
           count={effectivePlanningCount}
           onCountChange={setPlanningCount}
           onEditPlanned={setCategoryPlanned}
+          onCapChange={saveCap}
         />
         {costPerConfirmedGuest !== null && (
           <p className="mt-2 text-right text-xs text-ink-500">
@@ -565,5 +590,75 @@ function FeatureLink({ to, icon, title }: { to: string; icon: JSX.Element; title
       </div>
       <h3 className="text-base font-semibold text-ink-900">{title}</h3>
     </Link>
+  );
+}
+
+/** Wedding-date label that swaps to a native date picker on click. Picking a
+ *  date saves it as kind='exact' (so a fuzzy "Summer 2027" goal becomes
+ *  concrete the moment the user commits). Esc cancels; blur exits without
+ *  saving when no change. */
+function EditableWeddingDate({
+  goal,
+  onSave,
+}: {
+  goal: WeddingDateGoal;
+  onSave: (next: WeddingDateGoal) => Promise<void>;
+}) {
+  const { t, locale } = useT();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const dateText = formatWeddingDateGoal(goal, { t, locale });
+
+  async function commit(ymd: string) {
+    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+      setEditing(false);
+      return;
+    }
+    if (ymd === goal.exact_date) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave({
+        kind: "exact",
+        exact_date: ymd,
+        target_year: Number(ymd.slice(0, 4)),
+        target_month: Number(ymd.slice(5, 7)),
+        target_season: null,
+      });
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <input
+        type="date"
+        autoFocus
+        defaultValue={goal.exact_date ?? ""}
+        disabled={saving}
+        onChange={(e) => commit(e.target.value)}
+        onBlur={() => {
+          if (!saving) setEditing(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setEditing(false);
+        }}
+        className="mt-1 rounded border border-blush-500 bg-white px-2 py-0.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="mt-1 rounded text-left text-sm text-ink-600 underline-offset-4 transition hover:text-ink-900 hover:underline hover:decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200"
+    >
+      {dateText}
+    </button>
   );
 }

@@ -565,7 +565,11 @@ function TableShape({
   // Long tables get more pronounced banquet-bench rounding; square keeps a
   // subtle 40mm corner.
   const rectCorner =
-    table.shape === "long" ? Math.min(80, ry * 0.4) : table.shape === "square" ? 40 : 0;
+    table.shape === "long" || table.shape === "head"
+      ? Math.min(80, ry * 0.4)
+      : table.shape === "square"
+        ? 40
+        : 0;
   const innerRectCorner = Math.max(0, rectCorner - innerInset * 0.4);
 
   // Handle set per shape. Round → 4 cardinal handles. Square/long → 8 handles.
@@ -632,6 +636,21 @@ function TableShape({
             />
           )}
         </>
+      )}
+
+      {/* Head-table back-wall hint: a chunky bar drawn just outside the back
+          edge so the user sees at a glance that this side is "against the
+          wall" and reads the chair-row direction without needing the legend. */}
+      {table.shape === "head" && (
+        <rect
+          x={-rx}
+          y={-ry - 90}
+          width={rx * 2}
+          height={70}
+          rx={20}
+          className="fill-ink-700"
+          style={{ pointerEvents: "none" }}
+        />
       )}
 
       {/* Chairs. Filled chairs get a small inner dot so the "filled" state
@@ -893,8 +912,9 @@ function halfDims(t: SeatingTable): { rx: number; ry: number } {
     const s = Math.max(t.width_mm, t.length_mm) / 2;
     return { rx: s, ry: s };
   }
-  // Long table — width is the shorter side, length is the longer side. We
-  // orient long tables horizontally so the shape reads "long" by default.
+  // Long and head tables — width is the shorter side (depth), length is the
+  // longer side. Both orient horizontally so chairs sit naturally below /
+  // along them.
   return { rx: t.length_mm / 2, ry: t.width_mm / 2 };
 }
 

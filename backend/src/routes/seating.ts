@@ -37,7 +37,7 @@ interface ConflictRow {
   created_at: number;
 }
 
-const VALID_SHAPES: ReadonlySet<TableShape> = new Set(["round", "long", "square"]);
+const VALID_SHAPES: ReadonlySet<TableShape> = new Set(["round", "long", "square", "head"]);
 
 function toTable(r: TableRow): SeatingTable {
   return {
@@ -144,9 +144,11 @@ function parseTableBody(body: UpsertTableBody) {
   }
 
   // Defaults if the client didn't send dimensions: 1500mm round/square is a
-  // typical 8-seat banquet; 2400×900 is a typical long table.
-  const defaultWidth = shape === "long" ? 900 : 1500;
-  const defaultLength = shape === "long" ? 2400 : 1500;
+  // typical 8-seat banquet; 2400×900 is a typical long table; 4000×900 is a
+  // typical head table (slightly wider so the whole bridal party fits).
+  const isRectShape = shape === "long" || shape === "head";
+  const defaultWidth = isRectShape ? 900 : 1500;
+  const defaultLength = shape === "head" ? 4000 : shape === "long" ? 2400 : 1500;
   let width = Math.round(Number(body.width_mm ?? defaultWidth));
   let length = Math.round(Number(body.length_mm ?? defaultLength));
   if (!Number.isFinite(width) || !Number.isFinite(length)) {
@@ -156,8 +158,10 @@ function parseTableBody(body: UpsertTableBody) {
     throw new HttpError(400, `dimensions must be ${MIN_DIM_MM}–${MAX_DIM_MM} mm`);
   }
   // Round and square always have equal sides; collapse to the larger dim so
-  // resizing one updates both regardless of which the UI sends.
-  if (shape !== "long") {
+  // resizing one updates both regardless of which the UI sends. Long and
+  // head tables keep length × width independent (head tables are usually
+  // wider than they are deep, with chairs only on one long side).
+  if (shape !== "long" && shape !== "head") {
     const side = Math.max(width, length);
     width = side;
     length = side;

@@ -284,7 +284,7 @@ export interface PublicRsvpView {
 
 // ─── Seating ────────────────────────────────────────────────────────────────
 
-export type TableShape = "round" | "long" | "square";
+export type TableShape = "round" | "long" | "square" | "head";
 
 export interface SeatingTable {
   id: number;

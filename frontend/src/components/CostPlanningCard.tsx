@@ -32,9 +32,9 @@ import { useT } from "../lib/i18n";
 function rangeFillStyle(value: number, min: number, max: number): { background: string } {
   const span = max - min;
   const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
-  // blush-500 → paper-200 hard stop at the thumb position.
+  // ink-700 → paper-200 hard stop at the thumb position.
   return {
-    background: `linear-gradient(to right, #d35d42 0%, #d35d42 ${pct}%, #efe9d9 ${pct}%, #efe9d9 100%)`,
+    background: `linear-gradient(to right, #243150 0%, #243150 ${pct}%, #efe9d9 ${pct}%, #efe9d9 100%)`,
   };
 }
 
@@ -98,6 +98,7 @@ export function CostPlanningCard({
   count,
   onCountChange,
   onEditPlanned,
+  onCapChange,
 }: {
   lines: BudgetLine[];
   baseline: number;
@@ -107,6 +108,9 @@ export function CostPlanningCard({
   /** Called when the user releases a category slider with a new amount.
    *  The parent applies it to the underlying budget lines. */
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
+  /** Called when the user inline-edits the budget cap. The parent persists
+   *  it via `coupleApi.update({ budget_goal: ... })`. */
+  onCapChange?: (newCapHuf: number) => Promise<void>;
 }) {
   const { t, locale } = useT();
   const factor = baseline > 0 ? count / baseline : 1;
@@ -149,9 +153,26 @@ export function CostPlanningCard({
     return Math.max(1_000_000, totalPlanned > 0 ? totalPlanned : 1_000_000);
   }, [cap, totalPlanned]);
 
-  // Slider headcount range: ±50% around baseline, snapped to 5-guest steps.
-  const minCount = Math.max(10, Math.round((baseline * 0.5) / 5) * 5);
-  const maxCount = Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5);
+  // Slider bounds — editable via the small inputs under the slider. Initial
+  // values are ±50% around the parent's baseline (snapped to 5). Local state
+  // only; the parent's `baseline` stays the math anchor for per-guest scaling.
+  const [minCount, setMinCount] = useState(() =>
+    Math.max(10, Math.round((baseline * 0.5) / 5) * 5),
+  );
+  const [maxCount, setMaxCount] = useState(() =>
+    Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5),
+  );
+
+  // Midpoint: simple average of bounds, snapped to nearest 5. The user's
+  // mental model for the centre tick.
+  const midCount = Math.round((minCount + maxCount) / 2 / 5) * 5;
+
+  // If the user narrows the bounds below the current slider value, clamp
+  // it back into range so the thumb doesn't pin off the track.
+  useEffect(() => {
+    if (count < minCount) onCountChange(minCount);
+    else if (count > maxCount) onCountChange(maxCount);
+  }, [count, minCount, maxCount, onCountChange]);
 
   return (
     <section className="card">
@@ -186,12 +207,24 @@ export function CostPlanningCard({
           style={rangeFillStyle(count, minCount, maxCount)}
           aria-label={t("budget.cost_planning_title")}
         />
-        <div className="mt-1 flex justify-between text-[11px] text-ink-400">
-          <span>{formatNumber(minCount, locale)}</span>
+        <div className="mt-1 flex items-center justify-between text-[11px] text-ink-400">
+          <CountInput
+            value={minCount}
+            min={10}
+            max={maxCount - 5}
+            onCommit={setMinCount}
+            ariaLabel={t("budget.slider_min_aria")}
+          />
           <span>
-            {t("budget.cost_planning_baseline_note", { n: formatNumber(baseline, locale) })}
+            {t("budget.cost_planning_baseline_note", { n: formatNumber(midCount, locale) })}
           </span>
-          <span>{formatNumber(maxCount, locale)}</span>
+          <CountInput
+            value={maxCount}
+            min={minCount + 5}
+            max={2000}
+            onCommit={setMaxCount}
+            ariaLabel={t("budget.slider_max_aria")}
+          />
         </div>
       </div>
 
@@ -231,9 +264,18 @@ export function CostPlanningCard({
         {cap !== null && (
           <div className="mt-0.5 flex items-baseline justify-between text-[11px]">
             <span className="text-ink-400">{t("budget.cap")}</span>
-            <span className={`stat-num ${overCap ? "text-blush-700" : "text-ink-400"}`}>
-              {formatHuf(cap, locale)}
-            </span>
+            {onCapChange ? (
+              <EditableHuf
+                value={cap}
+                onSave={onCapChange}
+                ariaLabel={t("budget.cap")}
+                emphasise={overCap}
+              />
+            ) : (
+              <span className={`stat-num ${overCap ? "text-blush-700" : "text-ink-400"}`}>
+                {formatHuf(cap, locale)}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -333,5 +375,139 @@ function CategoryRow({
         )}
       </span>
     </li>
+  );
+}
+
+/** Editable numeric label (used for the slider's min/max). Snaps to nearest 5
+ *  on commit, clamps to the supplied bounds. Underline appears on hover so
+ *  the affordance is discoverable without dominating the layout. */
+function CountInput({
+  value,
+  min,
+  max,
+  onCommit,
+  ariaLabel,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onCommit: (n: number) => void;
+  ariaLabel: string;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+
+  function commit() {
+    const n = Number(draft);
+    if (!Number.isFinite(n)) {
+      setDraft(String(value));
+      return;
+    }
+    const snapped = Math.round(n / 5) * 5;
+    const clamped = Math.max(min, Math.min(max, snapped));
+    if (clamped !== value) onCommit(clamped);
+    setDraft(String(clamped));
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+        else if (e.key === "Escape") {
+          setDraft(String(value));
+          (e.currentTarget as HTMLInputElement).blur();
+        }
+      }}
+      aria-label={ariaLabel}
+      className="stat-num w-10 rounded border border-transparent bg-transparent px-1 text-center text-[11px] text-ink-400 transition hover:border-paper-300 hover:text-ink-700 focus:border-blush-500 focus:text-ink-800 focus:outline-none"
+    />
+  );
+}
+
+/** Inline-editable HUF amount used for the budget cap. Click to edit, type a
+ *  digit-only amount (auto-grouped HU style), Enter or blur commits, Esc
+ *  cancels. `emphasise` flips the colour to the over-cap warning red. */
+function EditableHuf({
+  value,
+  onSave,
+  ariaLabel,
+  emphasise,
+}: {
+  value: number;
+  onSave: (next: number) => Promise<void>;
+  ariaLabel: string;
+  emphasise?: boolean;
+}) {
+  const { locale } = useT();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function startEdit() {
+    setDraft(formatNumber(value, "hu"));
+    setEditing(true);
+  }
+
+  async function commit() {
+    const cleaned = draft.replace(/\D/g, "");
+    if (cleaned === "") {
+      setEditing(false);
+      return;
+    }
+    const n = Number(cleaned);
+    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000 || n === value) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(Math.round(n));
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        autoFocus
+        disabled={saving}
+        value={draft}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, "");
+          setDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+        }}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+          else if (e.key === "Escape") setEditing(false);
+        }}
+        aria-label={ariaLabel}
+        className="stat-num w-28 rounded border border-blush-500 bg-white px-1 py-0.5 text-right text-[11px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={startEdit}
+      aria-label={ariaLabel}
+      className={`stat-num rounded border border-transparent px-1 py-0.5 text-right transition hover:border-paper-300 ${
+        emphasise ? "text-blush-700 hover:text-blush-800" : "text-ink-400 hover:text-ink-700"
+      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200`}
+    >
+      {formatHuf(value, locale)}
+    </button>
   );
 }

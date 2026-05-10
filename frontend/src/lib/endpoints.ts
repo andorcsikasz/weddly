@@ -67,6 +67,9 @@ export const coupleApi = {
   current: () => apiFetch<{ couple: Couple | null }>("GET", "/api/couples/current"),
   onboard: (body: OnboardInput) =>
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
+  /** Partial update — supports `wedding_date_goal` and `budget_goal`. */
+  update: (body: { wedding_date_goal?: WeddingDateGoal; budget_goal?: BudgetGoal }) =>
+    apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   updateSlug: (slug: string) =>
     apiFetch<{ couple: Couple }>("PATCH", "/api/couples/slug", { slug }),
   createInvite: (body: { invited_email?: string }) =>

@@ -11,6 +11,8 @@ import {
   ChefHat,
   Circle,
   HelpCircle,
+  Minus,
+  Pencil,
   Plus,
   Printer,
   RectangleHorizontal,
@@ -25,7 +27,7 @@ import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 
-const SHAPES: TableShape[] = ["round", "long", "square"];
+const SHAPES: TableShape[] = ["round", "long", "square", "head"];
 
 interface DragData {
   guestId: number;
@@ -992,43 +994,25 @@ function TableEditor({
     );
   }
 
-  // For round and square the two dimensions are kept in lockstep server-side,
-  // so the UI hides the length input and shows a single "size" control.
-  const isLong = table.shape === "long";
-
-  // m + cm split for the "Position" readout. Mm → "X.Y m" with one decimal
-  // is more readable than raw cm at room scale.
+  // Round and square keep their two dimensions equal server-side, so we show
+  // a single "size" control. Long and head tables expose length × width
+  // independently.
+  const hasTwoDims = table.shape === "long" || table.shape === "head";
   const xMeters = (table.x_mm / 1000).toFixed(1);
   const yMeters = (table.y_mm / 1000).toFixed(1);
 
   return (
-    <div className="card space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-serif text-xl">{table.label}</h3>
-        <button
-          type="button"
-          className="btn-ghost btn-sm text-blush-700"
-          onClick={onDelete}
-          aria-label={t("seating.delete_table")}
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
+    <div className="card space-y-4 p-4">
+      <EditableHeading
+        value={table.label}
+        onCommit={(label) => onPatch({ label })}
+        subtitle={`${t(`seating.shape_${table.shape}`)} · ${table.seats} ${t(
+          "seating.seats_label",
+        ).toLowerCase()}`}
+        editAriaLabel={t("seating.table_label_prompt")}
+      />
 
-      <Field label={t("seating.table_label_prompt")}>
-        <input
-          type="text"
-          className="input py-1.5 text-sm"
-          defaultValue={table.label}
-          key={`${table.id}-label`}
-          onBlur={(e) => {
-            const v = e.target.value.trim();
-            if (v && v !== table.label) onPatch({ label: v });
-          }}
-        />
-      </Field>
-
-      <Field label={t("seating.shape_label")}>
+      <Section label={t("seating.shape_label")}>
         <ShapePicker
           value={table.shape}
           onChange={(v) => onPatch({ shape: v })}
@@ -1037,71 +1021,199 @@ function TableEditor({
             round: t("seating.shape_round"),
             long: t("seating.shape_long"),
             square: t("seating.shape_square"),
+            head: t("seating.shape_head"),
           }}
         />
-      </Field>
+      </Section>
 
-      <Field label={t("seating.seats_label")}>
-        <input
-          type="number"
-          min={1}
-          max={40}
-          className="input py-1.5 text-sm"
-          defaultValue={table.seats}
-          key={`${table.id}-seats`}
-          onBlur={(e) => {
-            const n = Number(e.target.value);
-            if (Number.isFinite(n) && n >= 1 && n <= 40 && n !== table.seats) {
-              onPatch({ seats: Math.round(n) });
-            }
+      <Section label={t("seating.seats_label")}>
+        <SeatsStepper
+          value={table.seats}
+          onChange={(n) => {
+            if (n !== table.seats) onPatch({ seats: n });
           }}
         />
-      </Field>
+      </Section>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={isLong ? t("seating.length_mm_label") : t("seating.size_mm_label")}>
+      <Section
+        label={
+          hasTwoDims
+            ? `${t("seating.length_mm_label")} × ${t("seating.width_mm_label")}`
+            : t("seating.size_mm_label")
+        }
+      >
+        <div className={hasTwoDims ? "grid grid-cols-2 gap-2" : ""}>
           <SuffixedInput
             suffix="cm"
             min={10}
             max={1000}
             step={5}
-            defaultValue={Math.round((isLong ? table.length_mm : table.width_mm) / 10)}
-            inputKey={`${table.id}-primary`}
+            ariaLabel={hasTwoDims ? t("seating.length_mm_label") : t("seating.size_mm_label")}
+            // The input is uncontrolled (defaultValue) so the user can type
+            // freely. We bake the current dimension into the key so a
+            // drag-resize on the canvas remounts the input with the new value
+            // — without that, typing locally would shadow external changes.
+            defaultValue={Math.round((hasTwoDims ? table.length_mm : table.width_mm) / 10)}
+            inputKey={`${table.id}-${table.length_mm}-${table.width_mm}-primary`}
             onCommit={(cm) => {
               const mm = Math.round(cm) * 10;
-              if (isLong) {
+              if (hasTwoDims) {
                 if (mm !== table.length_mm) onPatch({ length_mm: mm });
-              } else {
-                // Round/square keep both dimensions equal.
-                if (mm !== table.width_mm) {
-                  onPatch({ width_mm: mm, length_mm: mm });
-                }
+              } else if (mm !== table.width_mm) {
+                onPatch({ width_mm: mm, length_mm: mm });
               }
             }}
           />
-        </Field>
-
-        {isLong && (
-          <Field label={t("seating.width_mm_label")}>
+          {hasTwoDims && (
             <SuffixedInput
               suffix="cm"
               min={10}
               max={1000}
               step={5}
+              ariaLabel={t("seating.width_mm_label")}
               defaultValue={Math.round(table.width_mm / 10)}
-              inputKey={`${table.id}-secondary`}
+              inputKey={`${table.id}-${table.width_mm}-secondary`}
               onCommit={(cm) => {
                 const mm = Math.round(cm) * 10;
                 if (mm !== table.width_mm) onPatch({ width_mm: mm });
               }}
             />
-          </Field>
-        )}
-      </div>
+          )}
+        </div>
+      </Section>
 
-      <p className="text-xs text-ink-400">
-        {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
+      <div className="flex items-center justify-between gap-2 border-t border-paper-200 pt-3 text-xs text-ink-500">
+        <span>
+          {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
+        </span>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-blush-700 transition-colors hover:bg-blush-50"
+          onClick={onDelete}
+          aria-label={t("seating.delete_table")}
+        >
+          <Trash2 size={14} aria-hidden />
+          <span>{t("seating.delete_table")}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Inline-editable heading. Click the title (or the pencil) to edit; commit
+// on blur or Enter, cancel on Escape. We avoid a duplicate "name" Field
+// because the heading IS the name — one source of truth.
+function EditableHeading({
+  value,
+  onCommit,
+  subtitle,
+  editAriaLabel,
+}: {
+  value: string;
+  onCommit: (next: string) => void;
+  subtitle: string;
+  editAriaLabel: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  // Reset draft whenever the underlying value changes (e.g. server refresh)
+  // so we never commit a stale string on the next blur.
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  function commit() {
+    const v = draft.trim();
+    setEditing(false);
+    if (v && v !== value) onCommit(v);
+    else setDraft(value);
+  }
+
+  return (
+    <div>
+      {editing ? (
+        <input
+          autoFocus
+          aria-label={editAriaLabel}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setDraft(value);
+              setEditing(false);
+            }
+          }}
+          className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 font-serif text-xl text-ink-900 focus:border-ink-700 focus:outline-none"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="group flex w-full items-center gap-2 rounded-lg text-left transition-colors hover:bg-paper-100"
+          aria-label={editAriaLabel}
+        >
+          <h3 className="flex-1 truncate font-serif text-xl text-ink-900">{value}</h3>
+          <Pencil
+            size={14}
+            aria-hidden
+            className="text-ink-300 opacity-0 transition-opacity group-hover:opacity-100"
+          />
+        </button>
+      )}
+      <p className="mt-1 text-xs text-ink-500">{subtitle}</p>
+    </div>
+  );
+}
+
+// Section header + body. Replaces the verbose <Field label> wrapper inside
+// the table editor with a slightly larger, more "card section" feel — uppercase
+// label, tighter spacing.
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+        {label}
       </p>
+      {children}
+    </div>
+  );
+}
+
+// Numeric stepper with -/+ buttons either side of the value. Mirrors the
+// in-canvas seat buttons so the user has the same affordance both places.
+function SeatsStepper({ value, onChange }: { value: number; onChange: (next: number) => void }) {
+  const dec = () => onChange(Math.max(1, value - 1));
+  const inc = () => onChange(Math.min(40, value + 1));
+  const decDisabled = value <= 1;
+  const incDisabled = value >= 40;
+  return (
+    <div className="inline-flex items-center gap-2 rounded-xl border border-paper-200 bg-paper-50 p-1">
+      <button
+        type="button"
+        onClick={dec}
+        disabled={decDisabled}
+        className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
+        aria-label="−"
+      >
+        <Minus size={16} aria-hidden />
+      </button>
+      <span className="min-w-[2ch] text-center text-base font-semibold tabular-nums text-ink-900">
+        {value}
+      </span>
+      <button
+        type="button"
+        onClick={inc}
+        disabled={incDisabled}
+        className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
+        aria-label="+"
+      >
+        <Plus size={16} aria-hidden />
+      </button>
     </div>
   );
 }
@@ -1117,6 +1229,7 @@ function SuffixedInput({
   defaultValue,
   inputKey,
   onCommit,
+  ariaLabel,
 }: {
   suffix: string;
   min: number;
@@ -1125,6 +1238,7 @@ function SuffixedInput({
   defaultValue: number;
   inputKey: string;
   onCommit: (value: number) => void;
+  ariaLabel?: string;
 }) {
   return (
     <div className="relative">
@@ -1133,6 +1247,7 @@ function SuffixedInput({
         min={min}
         max={max}
         step={step}
+        aria-label={ariaLabel}
         className="input py-1.5 pr-9 text-sm"
         defaultValue={defaultValue}
         key={inputKey}
@@ -1172,13 +1287,49 @@ function Field({
   );
 }
 
-// Shape picker. Three equal-width tiles in a grid (no horizontal scroll), each
-// showing a lucide icon + the localised label. Selected tile gets a soft
-// blush wash; unselected stays neutral on the paper background.
-const SHAPE_ICONS: Record<TableShape, typeof Circle> = {
-  round: Circle,
-  long: RectangleHorizontal,
-  square: Square,
+// Tiny inline icon for the Head table — a slim rectangle (the table) with
+// three filled dots below (chairs only on one side). Lucide doesn't have a
+// good prebuilt match, and a custom SVG keeps the visual semantics literal.
+function HeadTableIcon({
+  size = 18,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="3" y="8" width="18" height="6" rx="1.5" />
+      <circle cx="7" cy="18" r="1.4" fill="currentColor" />
+      <circle cx="12" cy="18" r="1.4" fill="currentColor" />
+      <circle cx="17" cy="18" r="1.4" fill="currentColor" />
+    </svg>
+  );
+}
+
+// Shape picker. Equal-width tiles in a 2×2 grid (no horizontal scroll), each
+// showing an icon + the localised label. Selected tile gets a soft blush
+// wash; unselected stays neutral on the paper background.
+type ShapeIcon = (props: { size?: number; className?: string }) => React.ReactElement;
+
+const SHAPE_ICONS: Record<TableShape, ShapeIcon> = {
+  round: ({ size, className }) => <Circle size={size} className={className} aria-hidden />,
+  long: ({ size, className }) => (
+    <RectangleHorizontal size={size} className={className} aria-hidden />
+  ),
+  square: ({ size, className }) => <Square size={size} className={className} aria-hidden />,
+  head: HeadTableIcon,
 };
 
 function ShapePicker({
@@ -1193,7 +1344,7 @@ function ShapePicker({
   labels: Record<TableShape, string>;
 }) {
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="grid grid-cols-3 gap-1.5">
+    <div role="radiogroup" aria-label={ariaLabel} className="grid grid-cols-2 gap-1.5">
       {SHAPES.map((s) => {
         const Icon = SHAPE_ICONS[s];
         const active = s === value;
@@ -1205,13 +1356,13 @@ function ShapePicker({
             aria-checked={active}
             onClick={() => onChange(s)}
             className={[
-              "flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700",
+              "flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700",
               active
                 ? "border-blush-300 bg-blush-50 text-ink-900"
                 : "border-paper-200 bg-paper-50 text-ink-600 hover:bg-paper-100",
             ].join(" ")}
           >
-            <Icon size={18} aria-hidden className={active ? "text-blush-700" : "text-ink-500"} />
+            <Icon size={18} className={active ? "text-blush-700" : "text-ink-500"} />
             <span>{labels[s]}</span>
           </button>
         );

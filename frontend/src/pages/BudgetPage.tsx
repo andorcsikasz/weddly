@@ -160,6 +160,17 @@ export default function BudgetPage() {
     }
   }
 
+  async function saveCap(newCapHuf: number) {
+    try {
+      const r = await coupleApi.update({
+        budget_goal: { kind: "exact", exact_huf: newCapHuf, min_huf: null, max_huf: null },
+      });
+      setCouple(r.couple);
+    } catch {
+      refresh();
+    }
+  }
+
   async function removeLine(id: number) {
     const ok = await confirm({
       title: t("common.confirm_delete_title"),
@@ -230,6 +241,7 @@ export default function BudgetPage() {
         count={effectiveCount}
         onCountChange={setCount}
         onEditPlanned={setCategoryPlanned}
+        onCapChange={saveCap}
       />
 
       <section className="mt-8">

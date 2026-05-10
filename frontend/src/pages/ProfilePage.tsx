@@ -1,43 +1,55 @@
-// Profile: personal info (name, email) + workspace ops (export, pause/cancel).
+// Profile: preferences + workspace ops (export, delete account).
 
-import type { CouplePauseRequest, CoupleStatus } from "@shared/types";
+import type { Couple, CouplePauseRequest, CoupleStatus } from "@shared/types";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { useConfirm } from "../components/ui";
+import { useEntryPrompt } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { useAuth } from "../lib/auth";
-import { exportApi, pauseApi } from "../lib/endpoints";
+import { coupleApi, exportApi, pauseApi } from "../lib/endpoints";
 import { formatDate } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 
+function deleteVerifyPhrase(couple: Couple | null): string {
+  if (!couple) return "";
+  return `${couple.bride_name}${couple.groom_name}`.replace(/\s+/g, "").toUpperCase();
+}
+
 export default function ProfilePage() {
   const { t, locale, setLocale } = useT();
-  const { user } = useAuth();
-  const confirm = useConfirm();
+  const promptEntry = useEntryPrompt();
+  const [couple, setCouple] = useState<Couple | null>(null);
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
   async function refresh() {
-    const r = await pauseApi.status();
-    setCoupleStatus(r.couple_status);
-    setPauseReq(r.pause_request);
+    const [pause, current] = await Promise.all([pauseApi.status(), coupleApi.current()]);
+    setCoupleStatus(pause.couple_status);
+    setPauseReq(pause.pause_request);
+    setCouple(current.couple);
   }
   useEffect(() => {
     refresh();
   }, []);
 
   async function startPause() {
-    const ok = await confirm({
-      title: t("profile.pause_confirm_title"),
-      body: t("profile.pause_confirm"),
-      confirmLabel: t("profile.pause_confirm_yes"),
+    const phrase = deleteVerifyPhrase(couple);
+    if (!phrase) return;
+    const entered = await promptEntry({
+      title: t("profile.delete_account_confirm_title"),
+      label: t("profile.delete_account_confirm_label", { phrase }),
+      helperText: t("profile.delete_account_confirm_help"),
+      placeholder: phrase,
+      confirmLabel: t("profile.delete_account_confirm_yes"),
       cancelLabel: t("common.cancel"),
-      destructive: true,
+      validate: (v) =>
+        v.toUpperCase() === phrase
+          ? null
+          : t("profile.delete_account_confirm_mismatch", { phrase }),
     });
-    if (!ok) return;
+    if (entered === null) return;
     try {
       await pauseApi.request();
       refresh();
@@ -83,19 +95,6 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <h1>{t("profile.title")}</h1>
-
-      <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.personal_info_title")}</h2>
-        <p className="mt-1 text-sm text-ink-500">{t("profile.personal_info_body")}</p>
-        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-          <Field label={t("profile.field_name")} value={user?.full_name || "—"} />
-          <Field
-            label={t("profile.field_email")}
-            value={user?.email || "—"}
-            help={t("profile.email_change_help")}
-          />
-        </dl>
-      </section>
 
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.preferences_title")}</h2>
@@ -159,37 +158,31 @@ export default function ProfilePage() {
       </section>
 
       <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40">
-        <h2 className="text-lg text-blush-800">{t("profile.pause_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("profile.pause_body")}</p>
+        <h2 className="text-lg text-blush-800">{t("profile.delete_account_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600">{t("profile.delete_account_body")}</p>
         {coupleStatus === "paused" && pauseReq ? (
           <div className="mt-4 rounded-xl bg-blush-50 p-4">
-            <p className="text-sm font-medium text-blush-800">{t("profile.pause_pending")}</p>
+            <p className="text-sm font-medium text-blush-800">
+              {t("profile.delete_account_pending")}
+            </p>
             {scheduledYmd && (
               <p className="mt-1 text-xs text-blush-700">
-                {t("profile.pause_pending_until", { date: formatDate(scheduledYmd, locale) })}
+                {t("profile.delete_account_pending_until", {
+                  date: formatDate(scheduledYmd, locale),
+                })}
               </p>
             )}
             <button type="button" className="btn-outline mt-4" onClick={cancelPause}>
-              {t("profile.cancel_pause")}
+              {t("profile.cancel_delete_account")}
             </button>
           </div>
         ) : (
-          <button type="button" className="btn-accent mt-4" onClick={startPause}>
-            {t("profile.pause_button")}
+          <button type="button" className="btn-accent mt-4" onClick={startPause} disabled={!couple}>
+            {t("profile.delete_account_button")}
           </button>
         )}
         {error && <p className="field-error mt-3">{error}</p>}
       </section>
     </AppShell>
-  );
-}
-
-function Field({ label, value, help }: { label: string; value: string; help?: string }) {
-  return (
-    <div>
-      <dt className="field-label">{label}</dt>
-      <dd className="text-sm text-ink-800">{value}</dd>
-      {help && <p className="mt-1 text-xs text-ink-500">{help}</p>}
-    </div>
   );
 }
