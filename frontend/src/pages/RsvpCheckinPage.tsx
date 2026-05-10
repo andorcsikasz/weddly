@@ -140,14 +140,14 @@ export default function RsvpCheckinPage() {
                 ref={coupleInputRef}
                 className={
                   errorField === "couple" || errorField === "both"
-                    ? "input font-mono uppercase tracking-[0.3em] text-center text-lg min-h-14 border-blush-400 focus:border-blush-500"
-                    : "input font-mono uppercase tracking-[0.3em] text-center text-lg min-h-14"
+                    ? "input font-mono uppercase tracking-[0.3em] text-center text-lg min-h-14 border-blush-400 focus:border-blush-500 placeholder:text-ink-300 placeholder:font-normal"
+                    : "input font-mono uppercase tracking-[0.3em] text-center text-lg min-h-14 placeholder:text-ink-300 placeholder:font-normal"
                 }
                 value={coupleInput}
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
-                placeholder="ANDORSARI"
+                placeholder="BRIDEGROOM"
                 onChange={(e) => setCoupleInput(e.target.value.toUpperCase())}
                 onFocus={(e) =>
                   e.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" })
@@ -168,8 +168,8 @@ export default function RsvpCheckinPage() {
                 id="rsvp-code"
                 className={
                   errorField === "code" || errorField === "both"
-                    ? "input font-mono tracking-[0.5em] text-center text-2xl min-h-14 border-blush-400 focus:border-blush-500"
-                    : "input font-mono tracking-[0.5em] text-center text-2xl min-h-14"
+                    ? "input font-mono tracking-[0.5em] text-center text-2xl min-h-14 border-blush-400 focus:border-blush-500 placeholder:text-ink-300"
+                    : "input font-mono tracking-[0.5em] text-center text-2xl min-h-14 placeholder:text-ink-300"
                 }
                 value={codeInput}
                 inputMode="numeric"
