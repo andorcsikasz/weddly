@@ -17,19 +17,19 @@ const hu: LocaleMessages = {
     confirm_delete: "Igen, töröld",
   },
   app: {
-    name: "Weddly",
+    name: "Wēddly",
     tagline: "Esküvőtervezés közösen, egy nyugodt helyen.",
   },
   seo: {
-    home_title: "Weddly — az egész esküvőtök egy helyen",
+    home_title: "Wēddly — az egész esküvőtök egy helyen",
     home_description:
       "Költségvetés, vendéglista, RSVP, ültetés és nyomtatványok egy közös felületen. Pár perc beállítás, és estékből percek lesznek.",
-    login_title: "Bejelentkezés — Weddly",
+    login_title: "Bejelentkezés — Wēddly",
     login_description: "Lépj be a páros felületetekre, ott folytatjátok, ahol abbahagytátok.",
-    register_title: "Indítsátok el a páros felületeteket — Weddly",
+    register_title: "Indítsátok el a páros felületeteket — Wēddly",
     register_description:
       "Pár perc alatt fent vagytok. Egy közös felület kettőtöknek, magyar esküvőkre szabva.",
-    invite_title: "Csatlakozz a páros felületetekre — Weddly",
+    invite_title: "Csatlakozz a páros felületetekre — Wēddly",
     invite_description: "A párod hívott, hogy közösen tervezzétek végig az esküvőtöket.",
   },
   auth: {
@@ -101,7 +101,7 @@ const hu: LocaleMessages = {
   onboarding: {
     welcome: "Üdv a {name}-en!",
     intro:
-      "Pár kérdés, és kezetekben az egész. Ezek csak kiindulópontok — bármit átírhattok útközben, a Weddly meg követi.",
+      "Pár kérdés, és kezetekben az egész. Ezek csak kiindulópontok — bármit átírhattok útközben, a Wēddly meg követi.",
     step1_title: "Kik házasodnak?",
     step1_help: "A neveitek a kezelőfelületen jelennek meg, pl. „Pár 1 & Pár 2”.",
     step1_short: "Páros",
@@ -260,7 +260,7 @@ const hu: LocaleMessages = {
     cta_login: "Bejelentkezés",
     cta_signup_sub: "A nyílt béta alatt szabadon használhatjátok.",
     faq_title: "Gyakori kérdések",
-    faq_q_free: "Tényleg ingyenes a Weddly?",
+    faq_q_free: "Tényleg ingyenes a Wēddly?",
     faq_a_free:
       "Igen — a nyílt béta alatt mindent ingyen használhattok. A v2-ben jönnek majd fizetős csomagok extra funkciókhoz (plusz tárhely, prémium sablonok), de a költségvetés, vendéglista, RSVP és ültetés ingyenes marad.",
     faq_q_partner: "Mindketten tudjuk használni?",
@@ -271,10 +271,10 @@ const hu: LocaleMessages = {
       "A tiétek. Minden változást auditnaplóban követünk. Bármikor szüneteltethetitek a felületet; ha 30 napon belül visszajöttök, ott folytatjátok, ahol abbahagytátok — ügyfélszolgálatra sincs szükség.",
     faq_q_planner: "Kell hozzá esküvőszervező?",
     faq_a_planner:
-      "Megoldjátok kettesben is — a Weddly végigvezet a költségvetésen, vendéglistán és ültetésen. Ha van szervezőtök, ő is csatlakozhat egy harmadik belépéssel ugyanahhoz a felülethez.",
+      "Megoldjátok kettesben is — a Wēddly végigvezet a költségvetésen, vendéglistán és ültetésen. Ha van szervezőtök, ő is csatlakozhat egy harmadik belépéssel ugyanahhoz a felülethez.",
     faq_q_ready: "Készen áll a mi esküvőnkre?",
     faq_a_ready:
-      "Az élő költségvetés, RSVP linkek, vizuális ültetés és nyomtatható kártyák (A4 / A6 / A3) ma már működnek. A szolgáltatói lista kurátorált; a foglalás a v2-ben jön.",
+      "Az élő költségvetés, RSVP linkek, vizuális ültetés és nyomtatható kártyák (A4 / A6 / A3) ma már működnek. A szolgáltatói lista válogatott; a foglalás a v2-ben jön.",
     closing_title: "Két perc, és kezdhetitek.",
     closing_body:
       "A nyílt béta alatt szabadon használhatjátok, és bármikor szüneteltethetitek a felületeteket — ott folytatjátok, ahol abbahagytátok.",
@@ -288,7 +288,7 @@ const hu: LocaleMessages = {
     phase_plan_title: "Tervezés",
     phase_plan_body: "Dátum, stílus, létszám, keret — egy helyen, élő számokkal.",
     phase_suppliers_title: "Szolgáltatók",
-    phase_suppliers_body: "Kategorizált, kurátorált címjegyzék. Foglalás v2-ben.",
+    phase_suppliers_body: "Kategorizált, válogatott címjegyzék. Foglalás v2-ben.",
     phase_guests_title: "Vendégek",
     phase_guests_body: "Vendéglista, egyedi RSVP linkek, étrend, kísérők.",
     phase_seating_title: "Ültetés",
@@ -296,19 +296,19 @@ const hu: LocaleMessages = {
     phase_aftermath_title: "Utána",
     phase_aftermath_body: "Galéria, köszönőkártyák, értékelések. Hamarosan.",
     audience_title: "Találd meg a saját utad",
-    audience_sub: "Háromféleképpen használható a Weddly. Válaszd ki, melyik vagy te.",
+    audience_sub: "Háromféleképpen használható a Wēddly. Válaszd ki, melyik vagy te.",
     card_couples_title: "Ti ketten",
     card_couples_body:
       "Hozzátok létre a közös felületeteket, és tervezzétek végig az esküvőt a saját tempótokban.",
     card_couples_cta: "Indítsuk együtt",
     card_vendors_title: "Szolgáltatóknak",
     card_vendors_body:
-      "Kerüljetek be a kurátorált címjegyzékünkbe, és érjétek el a most tervező párokat.",
+      "Kerüljetek be a válogatott címjegyzékünkbe, és érjétek el a most tervező párokat.",
     card_vendors_cta: "Iratkozzatok fel",
     card_guests_title: "Vendég vagy?",
     card_guests_body: "Írd be a meghívódon szereplő kódot, és válaszolj pár perc alatt.",
     card_guests_cta: "Kód megadása",
-    suppliers_section_title: "Kurátorált magyar szolgáltatók",
+    suppliers_section_title: "Válogatott magyar szolgáltatók",
     suppliers_section_body:
       "Helyszín, catering, fotó, zene, dekor — egy helyen, magyar adatokkal és régiókkal. Foglalás a v2-ben.",
     suppliers_couple_cta: "Böngészés",
@@ -372,7 +372,7 @@ const hu: LocaleMessages = {
     block_seating_bullet_2: "Konfliktus jelzés, ha két vendég ütközne.",
     block_seating_bullet_3: "Nyomtatásra kész PDF három méretben.",
     testimonials_eyebrow: "A bétából",
-    testimonials_title: "Párok, akik már Weddly-vel terveztek",
+    testimonials_title: "Párok, akik már Wēddly-vel terveztek",
     t1_quote:
       "Végre abbahagytuk az éjféli PDF-küldözgetést. A közös munkaterületen Bencével 15 perces blokkokban tudtunk haladni, együtt.",
     t1_name: "Anna & Bence",
@@ -385,7 +385,7 @@ const hu: LocaleMessages = {
       "Az ültetési rendet a nagyság előtti este nyomtattuk A3-ban — pár kattintás, és kijött készen, pontos méretben.",
     t3_name: "Kata & Marci",
     t3_meta: "2026. szeptember · Pécs · béta tesztelő",
-    // ── Round 3: árak + miért Weddly + mockup feliratok ───────────────
+    // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
     pricing_eyebrow: "Árak",
     pricing_title: "Ingyenes minden, ami az esküvőtervezéshez kell.",
     pricing_body:
@@ -396,7 +396,7 @@ const hu: LocaleMessages = {
     pricing_bullet_3: "CSV és PDF export bármikor, korlátlanul.",
     pricing_v2_note:
       "A v2 fizetős extrái (később): prémium sablonok, plusz tárhely, white-label szolgáltató profilok.",
-    why_eyebrow: "Miért Weddly",
+    why_eyebrow: "Miért Wēddly",
     why_title: "Először a lényeg, aztán a tervezés.",
     why_a_title: "Minden egy helyen, kézben tartva",
     why_a_body:
@@ -406,10 +406,10 @@ const hu: LocaleMessages = {
       "A beállítás pár perc, a változások egy helyen frissülnek, a vendégek pedig egy linkkel válaszolnak. Ami eddig esténként elvitte az időtöket, mostantól perceken belül kész.",
     why_c_title: "Ihletet ad a következő lépéshez",
     why_c_body:
-      "Kurátorált magyar szolgáltatók, ültetési minták és kész kiindulópontok kategóriánként. A Weddly mindig megmutatja, mi az a következő apró lépés, ami most viszi előre az esküvőt.",
-    why_d_title: "Ti a napra figyeltek, a többit hagyjátok ránk",
+      "Válogatott magyar szolgáltatók, ültetési minták és kész kiindulópontok kategóriánként. A Wēddly mindig megmutatja, mi az a következő apró lépés, ami most viszi előre az esküvőt.",
+    why_d_title: "Ti a nagy napra figyeltek, a többire ott van a Wēddly",
     why_d_body:
-      "A szervezés gépezetét a Weddly tartja kézben, hogy a figyelmetek az esküvőre, egymásra és a vendégeitekre maradjon. A nap az esküvőtökről szóljon, ne a szervezésről.",
+      "A szervezés gépezetét a Wēddly tartja kézben, hogy a figyelmetek az esküvőre, egymásra és a vendégeitekre maradjon. A nap az esküvőtökről szóljon, ne a szervezésről.",
     mockup_date: "2026. június 14. · 142 nap",
     mockup_live_budget_label: "Élő költségvetés · 120 vendég",
     mockup_total_spend: "Összes költés",
@@ -437,14 +437,14 @@ const hu: LocaleMessages = {
     mockup_vendor_cta: "Profil megtekintése",
   },
   vendors: {
-    seo_title: "Szolgáltatóknak — Weddly",
+    seo_title: "Szolgáltatóknak — Wēddly",
     seo_description:
-      "Iratkozzatok fel a Weddly kurátorált szolgáltatói listájára, és érjétek el a most tervező párokat.",
+      "Iratkozzatok fel a Wēddly válogatott szolgáltatói listájára, és érjétek el a most tervező párokat.",
     pill: "Korai hozzáférés",
     hero_title: "Érjétek el a most tervező párokat.",
     hero_sub:
-      "A Weddly kurátorált címjegyzéke az első hely, ahol a párok keresnek. Iratkozzatok fel a várólistára, és értesítünk, amint nyitunk a szolgáltatóknak.",
-    benefit_1_title: "Kurátorált válogatás",
+      "A Wēddly válogatott címjegyzéke az első hely, ahol a párok keresnek. Iratkozzatok fel a várólistára, és értesítünk, amint nyitunk a szolgáltatóknak.",
+    benefit_1_title: "Válogatott válogatás",
     benefit_1_body:
       "Kategóriánként korlátozott a hely, így a párok pont azt böngészik, ami passzol hozzájuk — és ti pont azokat éritek el, akik most döntenek.",
     benefit_2_title: "Magyar piac, magyar adatok",
@@ -738,7 +738,7 @@ const hu: LocaleMessages = {
   },
   suppliers: {
     title: "Szolgáltatók",
-    sub: "Kurátorált lista. Lépj kapcsolatba közvetlenül; v2-ben rendelhetsz innen.",
+    sub: "Válogatott lista. Lépj kapcsolatba közvetlenül; v2-ben rendelhetsz innen.",
     contact_email: "E-mail",
     visit_website: "Weboldal",
     filter_all: "Mind",

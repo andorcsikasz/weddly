@@ -5,8 +5,9 @@
 
 import type { PublicCheckinView } from "@shared/types";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
+import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -29,7 +30,14 @@ export default function RsvpPage() {
 
   return (
     <FullPage>
-      <div className="mb-6 flex items-center justify-end">
+      <div className="mb-6 flex items-center justify-between">
+        <Link
+          to="/"
+          aria-label="Weddly — back to home"
+          className="inline-block text-ink-700 transition-colors hover:text-ink-900"
+        >
+          <Wordmark size="sm" />
+        </Link>
         <button
           type="button"
           className="btn-ghost btn-sm"

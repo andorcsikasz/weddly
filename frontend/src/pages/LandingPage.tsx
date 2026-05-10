@@ -368,8 +368,10 @@ export default function LandingPage() {
       <section className="relative bg-white">
         <MarginNumeral value="09" />
         <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
-          <SectionLabel num="—" label={t("landing.audience_title")} />
-          <p className="mt-6 max-w-2xl text-lg text-ink-700 sm:text-xl">
+          <h2 className="font-serif text-3xl leading-[1.1] tracking-tight text-ink-900 sm:text-4xl lg:text-[2.75rem]">
+            {t("landing.audience_title")}
+          </h2>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-600 sm:text-lg">
             {t("landing.audience_sub")}
           </p>
           <div className="mt-12 divide-y divide-paper-300 border-y border-paper-300">
@@ -631,16 +633,22 @@ function AudienceRow({
   onClick?: () => void;
 }) {
   const cta = (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink-900 transition-colors hover:text-blush-700">
+    <span className="inline-flex items-center gap-2 whitespace-nowrap font-serif text-base italic text-ink-900 transition-colors hover:text-blush-700 sm:text-lg">
       {ctaLabel}
-      <span aria-hidden>→</span>
+      <span aria-hidden className="text-base">
+        →
+      </span>
     </span>
   );
   return (
-    <div className="grid gap-4 py-7 sm:grid-cols-[10rem_1fr_auto] sm:items-baseline sm:gap-8">
-      <p className="font-serif text-2xl text-ink-900 sm:text-3xl">{row}</p>
-      <p className="text-sm leading-relaxed text-ink-600 sm:text-base">{body}</p>
-      <div>
+    <div className="grid gap-3 py-8 sm:grid-cols-[14rem_1fr_auto] sm:items-baseline sm:gap-x-10 sm:gap-y-2 sm:py-10">
+      <p className="font-serif text-2xl leading-[1.05] tracking-tight text-ink-900 sm:text-3xl lg:text-[2rem]">
+        {row}
+      </p>
+      <p className="text-base leading-relaxed text-ink-600 sm:text-base lg:text-[1.0625rem]">
+        {body}
+      </p>
+      <div className="pt-1 sm:pt-0">
         {to ? (
           <Link to={to}>{cta}</Link>
         ) : (

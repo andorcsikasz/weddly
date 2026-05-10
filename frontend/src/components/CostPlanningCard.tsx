@@ -415,6 +415,7 @@ function CountInput({
       inputMode="numeric"
       autoComplete="off"
       value={draft}
+      onFocus={(e) => e.currentTarget.select()}
       onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
       onBlur={commit}
       onKeyDown={(e) => {
@@ -483,6 +484,7 @@ function EditableHuf({
         autoFocus
         disabled={saving}
         value={draft}
+        onFocus={(e) => e.currentTarget.select()}
         onChange={(e) => {
           const digits = e.target.value.replace(/\D/g, "");
           setDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
