@@ -7,10 +7,20 @@
 // and that's what the PDF export consumes.
 
 import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
-import { ChefHat, HelpCircle, Plus, Printer, Trash2, Undo2 } from "lucide-react";
+import {
+  ChefHat,
+  Circle,
+  HelpCircle,
+  Plus,
+  Printer,
+  RectangleHorizontal,
+  Square,
+  Trash2,
+  Undo2,
+} from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Button, Dialog, SegmentedControl, useConfirm, useToast } from "../components/ui";
+import { Button, Dialog, useConfirm, useToast } from "../components/ui";
 import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
@@ -1019,11 +1029,15 @@ function TableEditor({
       </Field>
 
       <Field label={t("seating.shape_label")}>
-        <SegmentedControl<TableShape>
-          ariaLabel={t("seating.shape_label")}
+        <ShapePicker
           value={table.shape}
-          options={SHAPES.map((s) => ({ value: s, label: t(`seating.shape_${s}`) }))}
           onChange={(v) => onPatch({ shape: v })}
+          ariaLabel={t("seating.shape_label")}
+          labels={{
+            round: t("seating.shape_round"),
+            long: t("seating.shape_long"),
+            square: t("seating.shape_square"),
+          }}
         />
       </Field>
 
@@ -1155,6 +1169,54 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+
+// Shape picker. Three equal-width tiles in a grid (no horizontal scroll), each
+// showing a lucide icon + the localised label. Selected tile gets a soft
+// blush wash; unselected stays neutral on the paper background.
+const SHAPE_ICONS: Record<TableShape, typeof Circle> = {
+  round: Circle,
+  long: RectangleHorizontal,
+  square: Square,
+};
+
+function ShapePicker({
+  value,
+  onChange,
+  ariaLabel,
+  labels,
+}: {
+  value: TableShape;
+  onChange: (next: TableShape) => void;
+  ariaLabel: string;
+  labels: Record<TableShape, string>;
+}) {
+  return (
+    <div role="radiogroup" aria-label={ariaLabel} className="grid grid-cols-3 gap-1.5">
+      {SHAPES.map((s) => {
+        const Icon = SHAPE_ICONS[s];
+        const active = s === value;
+        return (
+          <button
+            key={s}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(s)}
+            className={[
+              "flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700",
+              active
+                ? "border-blush-300 bg-blush-50 text-ink-900"
+                : "border-paper-200 bg-paper-50 text-ink-600 hover:bg-paper-100",
+            ].join(" ")}
+          >
+            <Icon size={18} aria-hidden className={active ? "text-blush-700" : "text-ink-500"} />
+            <span>{labels[s]}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
