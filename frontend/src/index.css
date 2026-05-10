@@ -133,6 +133,58 @@
     letter-spacing: -0.01em;
   }
 
+  /* Native <input type="range"> with a coloured fill on the left of the
+     thumb. Set the gradient via inline `style.background` (the consumer
+     computes the % from value/min/max); the rest is purely cosmetic. */
+  .range-fill {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 9999px;
+    background: theme("colors.paper.200");
+    cursor: pointer;
+  }
+  .range-fill:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .range-fill::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    background: theme("colors.blush.500");
+    border: 2px solid white;
+    box-shadow: 0 1px 2px rgba(16, 24, 48, 0.18);
+    cursor: pointer;
+  }
+  .range-fill::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    background: theme("colors.blush.500");
+    border: 2px solid white;
+    box-shadow: 0 1px 2px rgba(16, 24, 48, 0.18);
+    cursor: pointer;
+  }
+  .range-fill:focus-visible {
+    outline: 2px solid theme("colors.blush.300");
+    outline-offset: 2px;
+  }
+  /* Slim variant for per-category rows where 15 sliders need to feel light. */
+  .range-fill-thin {
+    height: 4px;
+  }
+  .range-fill-thin::-webkit-slider-thumb {
+    width: 12px;
+    height: 12px;
+  }
+  .range-fill-thin::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+  }
+
   /* Subtle diagonal hairline texture for "stationery" surfaces. */
   .stationery {
     background-color: theme("colors.paper.200");

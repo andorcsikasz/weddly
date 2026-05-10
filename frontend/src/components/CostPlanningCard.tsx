@@ -10,7 +10,6 @@ import {
   Circle,
   Flower2,
   Gift,
-  Heart,
   Home,
   Info,
   Mail,
@@ -25,6 +24,19 @@ import {
 import { type ComponentType, useEffect, useMemo, useState } from "react";
 import { formatHuf, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
+
+/** Build a left-fill gradient for `<input type="range">`. Native ranges only
+ *  paint the thumb via `accent-color` (and patchily fill the track on Firefox
+ *  but not Chrome/Safari), so we paint the filled portion ourselves via an
+ *  inline gradient. Pair with the `.range-fill` component class. */
+function rangeFillStyle(value: number, min: number, max: number): { background: string } {
+  const span = max - min;
+  const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
+  // blush-500 → paper-200 hard stop at the thumb position.
+  return {
+    background: `linear-gradient(to right, #d35d42 0%, #d35d42 ${pct}%, #efe9d9 ${pct}%, #efe9d9 100%)`,
+  };
+}
 
 /** Categories whose planned cost scales with headcount. Everything else is
  *  treated as a fixed cost (venue rental, photographer day rate, rings, …). */
@@ -144,25 +156,25 @@ export function CostPlanningCard({
   return (
     <section className="card">
       {overCap && (
-        <div className="mb-4 rounded-xl border border-blush-300 bg-blush-50 px-4 py-2 text-sm font-medium text-blush-700">
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-blush-300 bg-blush-50 px-3 py-1.5 text-xs font-medium text-blush-700">
+          <Info size={12} aria-hidden />
           {t("budget.over_budget_strip", { amount: formatHuf(overage, locale) })}
         </div>
       )}
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-ink-500">
+          <p className="text-[11px] uppercase tracking-wide text-ink-500">
             {t("budget.cost_planning_title")}
           </p>
-          <h2 className="mt-1 font-serif">
+          <h2 className="mt-0.5 font-serif text-xl">
             {t("budget.cost_planning_with_count", { n: formatNumber(count, locale) })}
           </h2>
         </div>
-        <p className="max-w-sm text-xs text-ink-500">{t("budget.cost_planning_help")}</p>
       </div>
 
-      {/* Headcount slider. */}
-      <div className="mt-5">
+      {/* Headcount slider — compact single block. */}
+      <div className="mt-3">
         <input
           type="range"
           min={minCount}
@@ -170,24 +182,21 @@ export function CostPlanningCard({
           step={1}
           value={count}
           onChange={(e) => onCountChange(Number(e.target.value))}
-          className="block w-full cursor-pointer accent-blush-500"
+          className="range-fill block w-full"
+          style={rangeFillStyle(count, minCount, maxCount)}
           aria-label={t("budget.cost_planning_title")}
         />
-        <div className="mt-1 flex justify-between text-xs text-ink-500">
+        <div className="mt-1 flex justify-between text-[11px] text-ink-400">
           <span>{formatNumber(minCount, locale)}</span>
-          <span className="text-ink-400">
+          <span>
             {t("budget.cost_planning_baseline_note", { n: formatNumber(baseline, locale) })}
           </span>
           <span>{formatNumber(maxCount, locale)}</span>
         </div>
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-400">
-          <Info size={11} aria-hidden />
-          <span>{t("budget.slider_scope_note")}</span>
-        </p>
       </div>
 
-      {/* Per-category sliders. */}
-      <ul className="mt-6 space-y-4">
+      {/* Per-category sliders — single line per category, denser spacing. */}
+      <ul className="mt-4 divide-y divide-paper-100">
         {buckets.map((b) => (
           <CategoryRow
             key={b.category}
@@ -203,26 +212,27 @@ export function CostPlanningCard({
         ))}
       </ul>
 
-      {/* Totals — full digits, not compact, per design feedback. */}
-      <div className="mt-6 border-t border-paper-200 pt-4">
+      <div className="mt-4 border-t border-paper-200 pt-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm font-medium text-ink-700">{t("budget.total_actual")}</span>
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
+            {t("budget.total_actual")}
+          </span>
           <span
-            className={`stat-num text-2xl font-semibold ${overCap ? "text-blush-700" : "text-ink-900"}`}
+            className={`stat-num text-xl font-semibold ${overCap ? "text-blush-700" : "text-ink-900"}`}
           >
-            {formatHuf(totalActual, locale)}
-            <span className={`text-sm ${overCap ? "text-blush-400" : "text-ink-400"}`}>
-              {" / "}
-              {formatHuf(totalPlanned, locale)}
-            </span>
+            {totalActual > 0 && (
+              <span className={`text-sm ${overCap ? "text-blush-400" : "text-ink-500"}`}>
+                {formatHuf(totalActual, locale)} /{" "}
+              </span>
+            )}
+            {formatHuf(totalPlanned, locale)}
           </span>
         </div>
         {cap !== null && (
-          <div className="mt-1 flex items-baseline justify-between text-xs">
-            <span className="text-ink-500">{t("budget.cap")}</span>
-            <span className={`stat-num ${overCap ? "text-blush-700" : "text-ink-500"}`}>
+          <div className="mt-0.5 flex items-baseline justify-between text-[11px]">
+            <span className="text-ink-400">{t("budget.cap")}</span>
+            <span className={`stat-num ${overCap ? "text-blush-700" : "text-ink-400"}`}>
               {formatHuf(cap, locale)}
-              {overCap && ` · ${t("budget.over_budget")}`}
             </span>
           </div>
         )}
@@ -264,9 +274,6 @@ function CategoryRow({
   const Icon = CATEGORY_ICONS[category];
   const editable = !!onEditPlanned;
 
-  // The slider operates on the *baseline* planned amount (unscaled). For
-  // per-guest categories the displayed amount applies the headcount factor on
-  // top so the on-screen value matches what the bar shows in the parent.
   const editValue = localValue ?? plannedBaseline;
   // The parent already pre-scaled plannedDisplay; recover the factor so the
   // on-screen amount keeps tracking the slider while the user drags.
@@ -276,17 +283,8 @@ function CategoryRow({
   // Slider step — fine enough for big budgets, coarse enough not to spam.
   const step = sliderMax >= 5_000_000 ? 25_000 : 10_000;
 
-  // Per-guest unit for cross-coupling hint ("X Ft / fő").
+  // Per-guest unit for cross-coupling hint.
   const perGuest = scales && count > 0 ? Math.round(liveDisplay / count) : null;
-
-  const overFill = actual > liveDisplay && liveDisplay > 0;
-  const fillColor = overFill
-    ? "bg-blush-700"
-    : actual === 0
-      ? "bg-paper-300"
-      : actual >= 100_000
-        ? "bg-blush-500"
-        : "bg-blush-300";
 
   async function commit(next: number) {
     if (!onEditPlanned || next === plannedBaseline) {
@@ -302,53 +300,38 @@ function CategoryRow({
   }
 
   return (
-    <li className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-3 text-sm sm:grid-cols-[1.5rem_minmax(0,1fr)]">
-      <Icon size={16} className="mt-0.5 text-ink-500" aria-hidden />
-      <div className="min-w-0">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="truncate text-ink-700">{t(`budget.cat.${category}`)}</span>
-          <span className="stat-num whitespace-nowrap text-xs font-medium text-ink-700">
-            {formatHuf(actual, locale)}
-            <span className="text-ink-400"> / {formatHuf(liveDisplay, locale)}</span>
-          </span>
-        </div>
-
-        {/* Slider track + actual-fill underneath. The actual-fill is
-            absolute-positioned behind the slider so the user sees how much of
-            their planned budget is already spent. */}
-        <div className="relative mt-2 h-4">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-paper-200">
-            <div
-              className={`h-full rounded-full transition-all ${fillColor}`}
-              style={{
-                width: `${Math.min(100, liveDisplay > 0 ? (actual / Math.max(liveDisplay, 1)) * 100 : 0)}%`,
-              }}
-            />
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={sliderMax}
-            step={step}
-            value={editValue}
-            disabled={!editable || saving}
-            onChange={(e) => setLocalValue(Number(e.target.value))}
-            onMouseUp={(e) => commit(Number(e.currentTarget.value))}
-            onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
-            onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-            className="relative block h-4 w-full cursor-pointer appearance-none bg-transparent accent-blush-500 disabled:cursor-not-allowed"
-            aria-label={t("budget.edit_planned_aria", {
-              category: t(`budget.cat.${category}`),
-            })}
-          />
-        </div>
-
+    <li className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm">
+      <span className="flex items-center gap-2 text-ink-700">
+        <Icon size={14} className="shrink-0 text-ink-500" aria-hidden />
+        <span className="truncate">{t(`budget.cat.${category}`)}</span>
+      </span>
+      <input
+        type="range"
+        min={0}
+        max={sliderMax}
+        step={step}
+        value={editValue}
+        disabled={!editable || saving}
+        onChange={(e) => setLocalValue(Number(e.target.value))}
+        onMouseUp={(e) => commit(Number(e.currentTarget.value))}
+        onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
+        onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+        className="range-fill range-fill-thin block w-full"
+        style={rangeFillStyle(editValue, 0, sliderMax)}
+        aria-label={t("budget.edit_planned_aria", {
+          category: t(`budget.cat.${category}`),
+        })}
+      />
+      <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
+        {actual > 0 && <span className="text-ink-400">{formatHuf(actual, locale)} / </span>}
+        <span className="font-medium">{formatHuf(liveDisplay, locale)}</span>
         {perGuest !== null && (
-          <p className="mt-0.5 text-[11px] text-ink-400">
+          <span className="text-[11px] text-ink-400">
+            {" · "}
             {t("budget.per_guest_unit", { n: formatNumber(perGuest, locale) })}
-          </p>
+          </span>
         )}
-      </div>
+      </span>
     </li>
   );
 }
