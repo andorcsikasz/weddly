@@ -1,11 +1,29 @@
-// Shared cost-planning panel — guest-count slider that re-prices per-guest
-// categories live, plus per-category bars with inline editable planned amounts.
-// Used by the Dashboard and Budget pages.
+// Shared cost-planning panel — guest-count slider plus a slider per category.
+// Used by the Dashboard and Budget pages. Per-guest categories cross-couple
+// with the headcount slider (move headcount → catering/drinks/etc. rescale).
 
 import type { BudgetCategory, BudgetLine } from "@shared/types";
-import { Check, Info, Pencil, X } from "lucide-react";
-import { type KeyboardEvent, useMemo, useState } from "react";
-import { formatHuf, formatHufCompact, formatNumber } from "../lib/format";
+import {
+  Cake,
+  Camera,
+  Car,
+  Circle,
+  Flower2,
+  Gift,
+  Heart,
+  Home,
+  Info,
+  Mail,
+  MoreHorizontal,
+  Music,
+  Plane,
+  Scissors,
+  Shirt,
+  UtensilsCrossed,
+  Wine,
+} from "lucide-react";
+import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { formatHuf, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 /** Categories whose planned cost scales with headcount. Everything else is
@@ -17,6 +35,49 @@ export const PER_GUEST_CATEGORIES = new Set<BudgetCategory>([
   "favours",
   "stationery",
 ]);
+
+/** Lucide icon per category — minimalist 14–16px, ink-600 stroke. */
+export const CATEGORY_ICONS: Record<
+  BudgetCategory,
+  ComponentType<{ size?: number; className?: string }>
+> = {
+  venue: Home,
+  catering: UtensilsCrossed,
+  drinks: Wine,
+  attire: Shirt,
+  decor_floral: Flower2,
+  photo_video: Camera,
+  music_dj: Music,
+  cake_dessert: Cake,
+  hair_makeup: Scissors,
+  transport: Car,
+  honeymoon: Plane,
+  stationery: Mail,
+  favours: Gift,
+  rings: Circle,
+  other: MoreHorizontal,
+};
+
+/** Stable display order for the category list — heuristic: largest typical
+ *  spends first, niceties last. Keeps row order from jumping around as the
+ *  user edits amounts (we no longer sort by current planned). */
+const CATEGORY_ORDER: BudgetCategory[] = [
+  "venue",
+  "catering",
+  "drinks",
+  "photo_video",
+  "music_dj",
+  "decor_floral",
+  "attire",
+  "cake_dessert",
+  "hair_makeup",
+  "stationery",
+  "favours",
+  "transport",
+  "honeymoon",
+  "rings",
+  "other",
+];
 
 export function CostPlanningCard({
   lines,
@@ -31,21 +92,16 @@ export function CostPlanningCard({
   cap: number | null;
   count: number;
   onCountChange: (n: number) => void;
-  /** Called when the user inline-edits a category's planned amount. The
-   *  parent decides how to apply it (create a line, update a single line, or
-   *  proportionally scale multiple lines). */
+  /** Called when the user releases a category slider with a new amount.
+   *  The parent applies it to the underlying budget lines. */
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
 }) {
   const { t, locale } = useT();
+  const factor = baseline > 0 ? count / baseline : 1;
 
-  // Slider range: ±50% around baseline, snapped to 5-guest steps.
-  const minCount = Math.max(10, Math.round((baseline * 0.5) / 5) * 5);
-  const maxCount = Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5);
-
-  // Aggregate lines into category buckets, scaling per-guest categories by
-  // the slider's deviation from baseline.
+  // Aggregate lines into category buckets. Every category in CATEGORY_ORDER
+  // gets a row (even with 0 planned) so the user can slide it up from zero.
   const buckets = useMemo(() => {
-    const factor = baseline > 0 ? count / baseline : 1;
     const map = new Map<BudgetCategory, { planned: number; actual: number }>();
     for (const l of lines) {
       const cur = map.get(l.category) ?? { planned: 0, actual: 0 };
@@ -54,28 +110,39 @@ export function CostPlanningCard({
         actual: cur.actual + l.actual_huf,
       });
     }
-    return Array.from(map.entries())
-      .map(([cat, v]) => ({
+    return CATEGORY_ORDER.map((cat) => {
+      const v = map.get(cat) ?? { planned: 0, actual: 0 };
+      const isPerGuest = PER_GUEST_CATEGORIES.has(cat);
+      return {
         category: cat,
         actual: v.actual,
-        // The bar shows the *projected* planned (slider-scaled); inline edit
-        // operates on the raw baseline value so the math doesn't drift.
-        plannedDisplay: PER_GUEST_CATEGORIES.has(cat) ? Math.round(v.planned * factor) : v.planned,
+        // Display planned = baseline planned scaled for per-guest categories.
+        plannedDisplay: isPerGuest ? Math.round(v.planned * factor) : v.planned,
         plannedBaseline: v.planned,
-        scales: PER_GUEST_CATEGORIES.has(cat),
-      }))
-      .filter((b) => b.plannedDisplay > 0 || b.actual > 0)
-      .sort((a, b) => b.plannedDisplay - a.plannedDisplay);
-  }, [lines, count, baseline]);
+        scales: isPerGuest,
+      };
+    });
+  }, [lines, factor]);
 
   const totalPlanned = buckets.reduce((s, b) => s + b.plannedDisplay, 0);
   const totalActual = buckets.reduce((s, b) => s + b.actual, 0);
   const overCap = cap !== null && totalPlanned > cap;
   const overage = overCap && cap !== null ? totalPlanned - cap : 0;
 
+  // Per-row slider max — derived from cap if set, else a generous default.
+  // 60% of the cap is enough room for any single category to grow without
+  // making small-budget categories look like empty rails.
+  const sliderMax = useMemo(() => {
+    if (cap !== null && cap > 0) return Math.round(cap * 0.6);
+    return Math.max(1_000_000, totalPlanned > 0 ? totalPlanned : 1_000_000);
+  }, [cap, totalPlanned]);
+
+  // Slider headcount range: ±50% around baseline, snapped to 5-guest steps.
+  const minCount = Math.max(10, Math.round((baseline * 0.5) / 5) * 5);
+  const maxCount = Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5);
+
   return (
     <section className="card">
-      {/* Top-of-card warning strip when over cap. */}
       {overCap && (
         <div className="mb-4 rounded-xl border border-blush-300 bg-blush-50 px-4 py-2 text-sm font-medium text-blush-700">
           {t("budget.over_budget_strip", { amount: formatHuf(overage, locale) })}
@@ -94,6 +161,7 @@ export function CostPlanningCard({
         <p className="max-w-sm text-xs text-ink-500">{t("budget.cost_planning_help")}</p>
       </div>
 
+      {/* Headcount slider. */}
       <div className="mt-5">
         <input
           type="range"
@@ -118,40 +186,42 @@ export function CostPlanningCard({
         </p>
       </div>
 
-      <ul className="mt-6 space-y-3">
+      {/* Per-category sliders. */}
+      <ul className="mt-6 space-y-4">
         {buckets.map((b) => (
-          <CategoryBar
+          <CategoryRow
             key={b.category}
             category={b.category}
             plannedDisplay={b.plannedDisplay}
             plannedBaseline={b.plannedBaseline}
             actual={b.actual}
+            scales={b.scales}
+            count={count}
+            sliderMax={sliderMax}
             onEditPlanned={onEditPlanned}
           />
         ))}
-        {buckets.length === 0 && (
-          <li className="py-4 text-center text-sm text-ink-500">{t("budget.lines_empty")}</li>
-        )}
       </ul>
 
+      {/* Totals — full digits, not compact, per design feedback. */}
       <div className="mt-6 border-t border-paper-200 pt-4">
         <div className="flex items-baseline justify-between">
           <span className="text-sm font-medium text-ink-700">{t("budget.total_actual")}</span>
           <span
             className={`stat-num text-2xl font-semibold ${overCap ? "text-blush-700" : "text-ink-900"}`}
           >
-            {formatHufCompact(totalActual, locale)}
-            <span className={overCap ? "text-blush-400" : "text-ink-400"}>
+            {formatHuf(totalActual, locale)}
+            <span className={`text-sm ${overCap ? "text-blush-400" : "text-ink-400"}`}>
               {" / "}
-              {formatHufCompact(totalPlanned, locale)} Ft
+              {formatHuf(totalPlanned, locale)}
             </span>
           </span>
         </div>
         {cap !== null && (
           <div className="mt-1 flex items-baseline justify-between text-xs">
             <span className="text-ink-500">{t("budget.cap")}</span>
-            <span className={overCap ? "text-blush-700" : "text-ink-500"}>
-              {formatHufCompact(cap, locale)} Ft
+            <span className={`stat-num ${overCap ? "text-blush-700" : "text-ink-500"}`}>
+              {formatHuf(cap, locale)}
               {overCap && ` · ${t("budget.over_budget")}`}
             </span>
           </div>
@@ -161,29 +231,55 @@ export function CostPlanningCard({
   );
 }
 
-function CategoryBar({
+function CategoryRow({
   category,
   plannedDisplay,
   plannedBaseline,
   actual,
+  scales,
+  count,
+  sliderMax,
   onEditPlanned,
 }: {
   category: BudgetCategory;
   plannedDisplay: number;
   plannedBaseline: number;
   actual: number;
+  scales: boolean;
+  count: number;
+  sliderMax: number;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
 }) {
   const { t, locale } = useT();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
+  // Local drag state — slider feels instant; commit fires on release only.
+  const [localValue, setLocalValue] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const denom = Math.max(plannedDisplay, 1);
-  const pct = Math.min(100, (actual / denom) * 100);
-  const overFill = actual > plannedDisplay && plannedDisplay > 0;
+  // Whenever the underlying baseline changes (e.g. saved value), drop the
+  // local override so we re-display the canonical value.
+  useEffect(() => {
+    if (!saving) setLocalValue(null);
+  }, [saving]);
 
-  // Bigger spends get the bolder fill, mirroring the mockup's two-tone bars.
+  const Icon = CATEGORY_ICONS[category];
+  const editable = !!onEditPlanned;
+
+  // The slider operates on the *baseline* planned amount (unscaled). For
+  // per-guest categories the displayed amount applies the headcount factor on
+  // top so the on-screen value matches what the bar shows in the parent.
+  const editValue = localValue ?? plannedBaseline;
+  // The parent already pre-scaled plannedDisplay; recover the factor so the
+  // on-screen amount keeps tracking the slider while the user drags.
+  const factor = plannedBaseline > 0 ? plannedDisplay / plannedBaseline : 1;
+  const liveDisplay = scales ? Math.round(editValue * factor) : editValue;
+
+  // Slider step — fine enough for big budgets, coarse enough not to spam.
+  const step = sliderMax >= 5_000_000 ? 25_000 : 10_000;
+
+  // Per-guest unit for cross-coupling hint ("X Ft / fő").
+  const perGuest = scales && count > 0 ? Math.round(liveDisplay / count) : null;
+
+  const overFill = actual > liveDisplay && liveDisplay > 0;
   const fillColor = overFill
     ? "bg-blush-700"
     : actual === 0
@@ -192,118 +288,67 @@ function CategoryBar({
         ? "bg-blush-500"
         : "bg-blush-300";
 
-  function startEdit() {
-    setDraft(formatNumber(plannedBaseline, locale));
-    setEditing(true);
-  }
-
-  async function commit() {
-    if (!onEditPlanned) {
-      setEditing(false);
-      return;
-    }
-    const parsed = parsePlannedDigits(draft);
-    if (parsed === null || parsed === plannedBaseline) {
-      setEditing(false);
+  async function commit(next: number) {
+    if (!onEditPlanned || next === plannedBaseline) {
+      setLocalValue(null);
       return;
     }
     setSaving(true);
     try {
-      await onEditPlanned(category, parsed);
+      await onEditPlanned(category, next);
     } finally {
       setSaving(false);
-      setEditing(false);
     }
   }
 
-  function onKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") commit();
-    else if (e.key === "Escape") setEditing(false);
-  }
-
   return (
-    <li className="grid grid-cols-[7.5rem_minmax(0,1fr)_auto] items-center gap-3 text-sm sm:grid-cols-[9rem_minmax(0,1fr)_auto]">
-      <span className="truncate text-ink-700">{t(`budget.cat.${category}`)}</span>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-paper-200">
-        <div
-          className={`h-full rounded-full transition-all ${fillColor}`}
-          style={{ width: `${Math.max(plannedDisplay > 0 ? 2 : 0, pct)}%` }}
-        />
-      </div>
-      <span className="stat-num flex items-center gap-1 whitespace-nowrap text-xs font-medium text-ink-700">
-        {formatHufCompact(actual, locale)}
-        <span className="text-ink-400">/</span>
-        {editing ? (
-          <span className="inline-flex items-center gap-1">
-            <input
-              type="text"
-              inputMode="numeric"
-              autoFocus
-              disabled={saving}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={onKey}
-              className="stat-num w-20 rounded border border-paper-400 bg-white px-1 py-0.5 text-right text-xs"
-              aria-label={t("budget.edit_planned_aria", {
-                category: t(`budget.cat.${category}`),
-              })}
-            />
-            <button
-              type="button"
-              className="text-blush-700 hover:text-blush-800"
-              onClick={commit}
-              disabled={saving}
-              aria-label={t("common.save")}
-            >
-              <Check size={12} />
-            </button>
-            <button
-              type="button"
-              className="text-ink-400 hover:text-ink-700"
-              onClick={() => setEditing(false)}
-              disabled={saving}
-              aria-label={t("common.cancel")}
-            >
-              <X size={12} />
-            </button>
+    <li className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-3 text-sm sm:grid-cols-[1.5rem_minmax(0,1fr)]">
+      <Icon size={16} className="mt-0.5 text-ink-500" aria-hidden />
+      <div className="min-w-0">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="truncate text-ink-700">{t(`budget.cat.${category}`)}</span>
+          <span className="stat-num whitespace-nowrap text-xs font-medium text-ink-700">
+            {formatHuf(actual, locale)}
+            <span className="text-ink-400"> / {formatHuf(liveDisplay, locale)}</span>
           </span>
-        ) : (
-          <button
-            type="button"
-            className={`group inline-flex items-center gap-1 rounded px-1 py-0.5 text-ink-400 transition ${
-              onEditPlanned ? "hover:bg-paper-100 hover:text-ink-700" : "cursor-default"
-            }`}
-            onClick={onEditPlanned ? startEdit : undefined}
-            disabled={!onEditPlanned}
-            aria-label={
-              onEditPlanned
-                ? t("budget.edit_planned_aria", {
-                    category: t(`budget.cat.${category}`),
-                  })
-                : undefined
-            }
-          >
-            {formatHufCompact(plannedDisplay, locale)}
-            {onEditPlanned && (
-              <Pencil
-                size={10}
-                className="opacity-0 transition group-hover:opacity-100"
-                aria-hidden
-              />
-            )}
-          </button>
+        </div>
+
+        {/* Slider track + actual-fill underneath. The actual-fill is
+            absolute-positioned behind the slider so the user sees how much of
+            their planned budget is already spent. */}
+        <div className="relative mt-2 h-4">
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-paper-200">
+            <div
+              className={`h-full rounded-full transition-all ${fillColor}`}
+              style={{
+                width: `${Math.min(100, liveDisplay > 0 ? (actual / Math.max(liveDisplay, 1)) * 100 : 0)}%`,
+              }}
+            />
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={sliderMax}
+            step={step}
+            value={editValue}
+            disabled={!editable || saving}
+            onChange={(e) => setLocalValue(Number(e.target.value))}
+            onMouseUp={(e) => commit(Number(e.currentTarget.value))}
+            onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
+            onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+            className="relative block h-4 w-full cursor-pointer appearance-none bg-transparent accent-blush-500 disabled:cursor-not-allowed"
+            aria-label={t("budget.edit_planned_aria", {
+              category: t(`budget.cat.${category}`),
+            })}
+          />
+        </div>
+
+        {perGuest !== null && (
+          <p className="mt-0.5 text-[11px] text-ink-400">
+            {t("budget.per_guest_unit", { n: formatNumber(perGuest, locale) })}
+          </p>
         )}
-      </span>
+      </div>
     </li>
   );
-}
-
-/** Strip whitespace + dots so HU-formatted "350 000" / "350.000" both parse. */
-function parsePlannedDigits(raw: string): number | null {
-  const cleaned = raw.replace(/[\s.]/g, "").replace(/,/g, "");
-  if (cleaned === "") return 0;
-  if (!/^\d+$/.test(cleaned)) return null;
-  const n = Number(cleaned);
-  if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) return null;
-  return Math.round(n);
 }

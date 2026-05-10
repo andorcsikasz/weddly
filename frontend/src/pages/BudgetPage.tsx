@@ -2,13 +2,15 @@
 // re-prices per-guest categories live, plus an inline-editable line table.
 
 import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple } from "@shared/types";
-import { Info, Plus, Save, Trash2 } from "lucide-react";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { Plus, Save, Trash2 } from "lucide-react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { CATEGORY_ICONS, CostPlanningCard } from "../components/CostPlanningCard";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { applyCategoryPlanned } from "../lib/budget";
 import { budgetApi, coupleApi } from "../lib/endpoints";
-import { formatHuf, formatHufCompact, formatNumber } from "../lib/format";
+import { formatHuf, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 const CATEGORIES: BudgetCategory[] = [
@@ -28,16 +30,6 @@ const CATEGORIES: BudgetCategory[] = [
   "rings",
   "other",
 ];
-
-/** Categories whose planned cost scales with headcount. Everything else is
- *  treated as a fixed cost (venue rental, photographer day rate, rings, …). */
-const PER_GUEST_CATEGORIES = new Set<BudgetCategory>([
-  "catering",
-  "drinks",
-  "cake_dessert",
-  "favours",
-  "stationery",
-]);
 
 /** Fall-back baseline if the couple hasn't picked a target headcount yet —
  *  the slider needs a denominator to do its scaling math. */
@@ -143,36 +135,29 @@ export default function BudgetPage() {
     }
   }
 
-  async function rename(line: BudgetLine, label: string) {
-    if (!label.trim() || label === line.label) return;
-    const next = lines.map((l) => (l.id === line.id ? { ...l, label } : l));
-    setLines(next);
-    try {
-      await budgetApi.updateLine(line.id, { ...line, label });
-    } catch {
-      refresh();
-    }
-  }
-
-  async function changeCategory(line: BudgetLine, category: BudgetCategory) {
-    if (category === line.category) return;
-    const next = lines.map((l) => (l.id === line.id ? { ...l, category } : l));
-    setLines(next);
-    try {
-      await budgetApi.updateLine(line.id, { ...line, category });
-    } catch {
-      refresh();
-    }
-  }
-
-  async function addLine() {
+  async function addLineForCategory(category: BudgetCategory) {
+    const label = t(`budget.cat.${category}`);
     const r = await budgetApi.createLine({
-      category: "other",
-      label: t("budget.add_line"),
+      category,
+      label,
       planned_huf: 0,
       actual_huf: 0,
     });
-    setLines([...lines, r.line]);
+    setLines((prev) => [...prev, r.line]);
+  }
+
+  async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
+    try {
+      const next = await applyCategoryPlanned(
+        category,
+        newTotal,
+        lines,
+        t(`budget.cat.${category}`),
+      );
+      setLines(next);
+    } catch {
+      refresh();
+    }
   }
 
   async function removeLine(id: number) {
@@ -244,6 +229,7 @@ export default function BudgetPage() {
         cap={cap}
         count={effectiveCount}
         onCountChange={setCount}
+        onEditPlanned={setCategoryPlanned}
       />
 
       <section className="mt-8">
@@ -252,9 +238,7 @@ export default function BudgetPage() {
             <h2>{t("budget.lines_title")}</h2>
             <p className="mt-1 text-sm text-ink-500">{t("budget.lines_sub")}</p>
           </div>
-          <button type="button" className="btn-primary" onClick={addLine}>
-            <Plus size={16} /> {t("budget.add_line")}
-          </button>
+          <AddLinePicker onPick={addLineForCategory} />
         </div>
 
         <div className="card overflow-hidden p-0">
@@ -262,7 +246,6 @@ export default function BudgetPage() {
             <thead className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500">
               <tr>
                 <th className="px-4 py-3 font-medium">{t("budget.category")}</th>
-                <th className="px-4 py-3 font-medium">{t("budget.label")}</th>
                 <th className="px-4 py-3 text-right font-medium">{t("budget.planned")}</th>
                 <th className="px-4 py-3 text-right font-medium">{t("budget.actual")}</th>
                 <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">
@@ -281,24 +264,7 @@ export default function BudgetPage() {
                     className="border-t border-paper-200 transition hover:bg-paper-50"
                   >
                     <td className="px-4 py-2 align-top">
-                      <select
-                        className="input h-9 min-h-0 py-1 text-sm"
-                        value={line.category}
-                        onChange={(e) => changeCategory(line, e.target.value as BudgetCategory)}
-                      >
-                        {CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {t(`budget.cat.${cat}`)}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-2 align-top">
-                      <input
-                        className="input h-9 min-h-0 py-1 text-sm"
-                        defaultValue={line.label}
-                        onBlur={(e) => rename(line, e.target.value)}
-                      />
+                      <CategoryCell category={line.category} />
                     </td>
                     <td className="px-4 py-2 align-top">
                       <HufInput
@@ -346,7 +312,7 @@ export default function BudgetPage() {
               })}
               {lines.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-sm text-ink-500">
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-ink-500">
                     {t("budget.lines_empty")}
                   </td>
                 </tr>
@@ -386,180 +352,78 @@ export default function BudgetPage() {
   );
 }
 
-/* ─── Cost-planning hero ────────────────────────────────────────────── */
+/* ─── "Add line" category template picker ───────────────────────────── */
 
-function CostPlanningCard({
-  lines,
-  baseline,
-  cap,
-  count,
-  onCountChange,
-}: {
-  lines: BudgetLine[];
-  baseline: number;
-  cap: number | null;
-  count: number;
-  onCountChange: (n: number) => void;
-}) {
-  const { t, locale } = useT();
+function AddLinePicker({ onPick }: { onPick: (cat: BudgetCategory) => Promise<void> }) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Slider range: ±50% around baseline, snapped to 5-guest steps. If the couple
-  // set a real range goal, prefer those bounds — they reflect intent.
-  const minCount = Math.max(10, Math.round((baseline * 0.5) / 5) * 5);
-  const maxCount = Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5);
-
-  // Aggregate lines into category buckets, scaling per-guest categories by
-  // the slider's deviation from baseline.
-  const buckets = useMemo(() => {
-    const factor = baseline > 0 ? count / baseline : 1;
-    const map = new Map<BudgetCategory, { planned: number; actual: number }>();
-    for (const l of lines) {
-      const cur = map.get(l.category) ?? { planned: 0, actual: 0 };
-      map.set(l.category, {
-        planned: cur.planned + l.planned_huf,
-        actual: cur.actual + l.actual_huf,
-      });
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
     }
-    return Array.from(map.entries())
-      .map(([cat, v]) => ({
-        category: cat,
-        actual: v.actual,
-        planned: PER_GUEST_CATEGORIES.has(cat) ? Math.round(v.planned * factor) : v.planned,
-        scales: PER_GUEST_CATEGORIES.has(cat),
-      }))
-      .filter((b) => b.planned > 0 || b.actual > 0)
-      .sort((a, b) => b.planned - a.planned);
-  }, [lines, count, baseline]);
-
-  const totalPlanned = buckets.reduce((s, b) => s + b.planned, 0);
-  const totalActual = buckets.reduce((s, b) => s + b.actual, 0);
-  const overCap = cap !== null && totalPlanned > cap;
-  const overage = overCap && cap !== null ? totalPlanned - cap : 0;
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
 
   return (
-    <section className="card">
-      {/* Top-of-card warning strip when over cap. Tints the totals row below. */}
-      {overCap && (
-        <div className="mb-4 rounded-xl border border-blush-300 bg-blush-50 px-4 py-2 text-sm font-medium text-blush-700">
-          {t("budget.over_budget_strip", { amount: formatHuf(overage, locale) })}
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        className="btn-primary"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <Plus size={16} /> {t("budget.add_line")}
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-paper-300 bg-white p-2 shadow-pop"
+        >
+          <p className="px-2 pb-1 pt-0.5 text-xs uppercase tracking-wide text-ink-500">
+            {t("budget.add_template_help")}
+          </p>
+          <ul className="max-h-72 overflow-y-auto">
+            {CATEGORIES.map((cat) => {
+              const Icon = CATEGORY_ICONS[cat];
+              return (
+                <li key={cat}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink-800 transition hover:bg-paper-100"
+                    onClick={async () => {
+                      setOpen(false);
+                      await onPick(cat);
+                    }}
+                  >
+                    <Icon size={14} className="text-ink-500" />
+                    {t(`budget.cat.${cat}`)}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
-
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-ink-500">
-            {t("budget.cost_planning_title")}
-          </p>
-          <h2 className="mt-1 font-serif">
-            {t("budget.cost_planning_with_count", { n: formatNumber(count, locale) })}
-          </h2>
-        </div>
-        <p className="max-w-sm text-xs text-ink-500">{t("budget.cost_planning_help")}</p>
-      </div>
-
-      <div className="mt-5">
-        <input
-          type="range"
-          min={minCount}
-          max={maxCount}
-          step={1}
-          value={count}
-          onChange={(e) => onCountChange(Number(e.target.value))}
-          className="block w-full cursor-pointer accent-blush-500"
-          aria-label={t("budget.cost_planning_title")}
-        />
-        <div className="mt-1 flex justify-between text-xs text-ink-500">
-          <span>{formatNumber(minCount, locale)}</span>
-          <span className="text-ink-400">
-            {t("budget.cost_planning_baseline_note", { n: formatNumber(baseline, locale) })}
-          </span>
-          <span>{formatNumber(maxCount, locale)}</span>
-        </div>
-        {/* Slider scales planned only; actual stays as-recorded. Without this
-         *  note the bar fills look wrong at slider extremes. */}
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-400">
-          <Info size={11} aria-hidden />
-          <span>{t("budget.slider_scope_note")}</span>
-        </p>
-      </div>
-
-      <ul className="mt-6 space-y-3">
-        {buckets.map((b) => (
-          <CategoryBar
-            key={b.category}
-            category={b.category}
-            planned={b.planned}
-            actual={b.actual}
-          />
-        ))}
-        {buckets.length === 0 && (
-          <li className="py-4 text-center text-sm text-ink-500">{t("budget.lines_empty")}</li>
-        )}
-      </ul>
-
-      <div className="mt-6 border-t border-paper-200 pt-4">
-        <div className="flex items-baseline justify-between">
-          <span className="text-sm font-medium text-ink-700">{t("budget.total_actual")}</span>
-          <span className={`font-serif text-2xl ${overCap ? "text-blush-700" : "text-ink-900"}`}>
-            {formatHufCompact(totalActual, locale)}
-            <span className={overCap ? "text-blush-400" : "text-ink-400"}>
-              {" / "}
-              {formatHufCompact(totalPlanned, locale)} Ft
-            </span>
-          </span>
-        </div>
-        {cap !== null && (
-          <div className="mt-1 flex items-baseline justify-between text-xs">
-            <span className="text-ink-500">{t("budget.cap")}</span>
-            <span className={overCap ? "text-blush-700" : "text-ink-500"}>
-              {formatHufCompact(cap, locale)} Ft
-              {overCap && ` · ${t("budget.over_budget")}`}
-            </span>
-          </div>
-        )}
-      </div>
-    </section>
+    </div>
   );
 }
 
-function CategoryBar({
-  category,
-  planned,
-  actual,
-}: {
-  category: BudgetCategory;
-  planned: number;
-  actual: number;
-}) {
-  const { t, locale } = useT();
-  const denom = Math.max(planned, 1);
-  const pct = Math.min(100, (actual / denom) * 100);
-  const overFill = actual > planned && planned > 0;
-
-  // Bigger spends get the bolder fill, mirroring the mockup's two-tone bars.
-  // Crude but readable: above 100k actual = strong, otherwise soft.
-  const fillColor = overFill
-    ? "bg-blush-700"
-    : actual === 0
-      ? "bg-paper-300"
-      : actual >= 100_000
-        ? "bg-blush-500"
-        : "bg-blush-300";
-
+/** Static category badge — icon + localized name. Replaces the old
+ *  <select> dropdown so categories are fixed at line-creation time. */
+function CategoryCell({ category }: { category: BudgetCategory }) {
+  const { t } = useT();
+  const Icon = CATEGORY_ICONS[category];
   return (
-    <li className="grid grid-cols-[7.5rem_minmax(0,1fr)_auto] items-center gap-3 text-sm sm:grid-cols-[9rem_minmax(0,1fr)_auto]">
-      <span className="truncate text-ink-700">{t(`budget.cat.${category}`)}</span>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-paper-200">
-        <div
-          className={`h-full rounded-full transition-all ${fillColor}`}
-          style={{ width: `${Math.max(planned > 0 ? 2 : 0, pct)}%` }}
-        />
-      </div>
-      <span className="whitespace-nowrap text-xs tabular-nums text-ink-700">
-        {formatHufCompact(actual, locale)}
-        <span className="text-ink-400"> / {formatHufCompact(planned, locale)}</span>
-      </span>
-    </li>
+    <span className="inline-flex items-center gap-2 text-sm text-ink-800">
+      <Icon size={14} className="text-ink-500" aria-hidden />
+      {t(`budget.cat.${category}`)}
+    </span>
   );
 }
 
