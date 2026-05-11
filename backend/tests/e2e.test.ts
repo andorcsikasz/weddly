@@ -2404,6 +2404,83 @@ describe("community suppliers", () => {
   });
 });
 
+describe("admin users + couples directory", () => {
+  interface AdminUser {
+    id: number;
+    full_name: string;
+    email: string;
+    role: string;
+    is_admin: boolean;
+    verified_email: boolean;
+    couple_id: number | null;
+  }
+  interface AdminCouple {
+    id: number;
+    display_name: string | null;
+    bride_name: string | null;
+    groom_name: string | null;
+    status: string;
+    partners: { id: number; full_name: string; email: string }[];
+  }
+
+  async function registerAdmin(): Promise<string> {
+    const r = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(r.status).toBe(201);
+    return r.data.token;
+  }
+
+  test("admin gate: non-admin gets 403 on /api/admin/users and /api/admin/couples", async () => {
+    wipeAll();
+    await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("nope@weddly.test");
+
+    const u = await req("GET", "/api/admin/users", undefined, { token: coupleToken });
+    expect(u.status).toBe(403);
+    const c = await req("GET", "/api/admin/couples", undefined, { token: coupleToken });
+    expect(c.status).toBe(403);
+  });
+
+  test("admin sees every registered user with name + email", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    await bootstrapCouple("alice@weddly.test");
+    await bootstrapCouple("bob@weddly.test");
+
+    const r = await req<{ users: AdminUser[] }>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
+    expect(r.status).toBe(200);
+    const emails = r.data.users.map((u) => u.email).sort();
+    expect(emails).toEqual(["admin@test.test", "alice@weddly.test", "bob@weddly.test"]);
+    const admin = r.data.users.find((u) => u.email === "admin@test.test");
+    expect(admin?.is_admin).toBe(true);
+    const owner = r.data.users.find((u) => u.email === "alice@weddly.test");
+    expect(owner?.is_admin).toBe(false);
+    expect(owner?.couple_id).toBeGreaterThan(0);
+  });
+
+  test("admin sees every couple with linked partners", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { coupleId } = await bootstrapCouple("partner@weddly.test");
+
+    const r = await req<{ couples: AdminCouple[] }>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.couples.length).toBe(1);
+    const c = r.data.couples[0];
+    expect(c).toBeDefined();
+    if (!c) throw new Error("no couple");
+    expect(c.id).toBe(coupleId);
+    expect(c.partners.map((p) => p.email)).toContain("partner@weddly.test");
+  });
+});
+
 describe("couple supplier costs", () => {
   interface Cost {
     supplier_id: string;

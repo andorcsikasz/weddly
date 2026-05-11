@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuth } from "./lib/auth";
 import AdminSuppliersPage from "./pages/AdminSuppliersPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import BudgetPage from "./pages/BudgetPage";
 import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -230,6 +231,18 @@ export default function App() {
             <RequireAuth>
               <RequireAdmin>
                 <AdminSuppliersPage />
+              </RequireAdmin>
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/admin/users"
+        element={
+          <Page>
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminUsersPage />
               </RequireAdmin>
             </RequireAuth>
           </Page>

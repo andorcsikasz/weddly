@@ -30,6 +30,30 @@ export interface AuthSession {
   user: User;
 }
 
+// ─── Admin dashboard (users + couples directory) ─────────────────────────────
+
+export interface AdminUserView {
+  id: number;
+  full_name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  is_admin: boolean;
+  verified_email: boolean;
+  couple_id: number | null;
+  created_at: UnixMs;
+}
+
+export interface AdminCoupleView {
+  id: number;
+  display_name: string | null;
+  bride_name: string | null;
+  groom_name: string | null;
+  status: CoupleStatus;
+  partners: { id: number; full_name: string; email: string }[];
+  created_at: UnixMs;
+}
+
 // ─── Couples (the workspace) ─────────────────────────────────────────────────
 
 export type CoupleStatus = "active" | "paused" | "deleting";

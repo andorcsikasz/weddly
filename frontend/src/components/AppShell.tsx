@@ -1,5 +1,13 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
-import { ChefHat, Heart, LayoutDashboard, ShieldCheck, Users, UtensilsCrossed } from "lucide-react";
+import {
+  ChefHat,
+  Heart,
+  LayoutDashboard,
+  ShieldCheck,
+  UserCog,
+  Users,
+  UtensilsCrossed,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -43,16 +51,23 @@ const ITEMS: NavItem[] = [
   },
 ];
 
-const ADMIN_ITEM: NavItem = {
-  to: "/app/admin/suppliers",
-  labelKey: "admin.nav_label",
-  icon: <ShieldCheck size={18} />,
-};
+const ADMIN_ITEMS: NavItem[] = [
+  {
+    to: "/app/admin/suppliers",
+    labelKey: "admin.nav_suppliers",
+    icon: <ShieldCheck size={18} />,
+  },
+  {
+    to: "/app/admin/users",
+    labelKey: "admin.nav_users",
+    icon: <UserCog size={18} />,
+  },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, locale, setLocale } = useT();
   const { user } = useAuth();
-  const displayItems = user?.is_admin ? [...ITEMS, ADMIN_ITEM] : ITEMS;
+  const displayItems = user?.is_admin ? [...ITEMS, ...ADMIN_ITEMS] : ITEMS;
 
   return (
     <div className="min-h-full">

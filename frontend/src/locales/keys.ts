@@ -768,6 +768,16 @@ export interface LocaleMessages {
     cost_saved_indicator: string;
     cost_currency_suffix: string;
     cost_help: string;
+    /** Capacity chip on the card. */
+    capacity_label: string;
+    capacity_range: string;
+    capacity_max_only: string;
+    /** Up/downvote buttons + sort. */
+    vote_up_aria: string;
+    vote_down_aria: string;
+    sort_label: string;
+    sort_top: string;
+    sort_alpha: string;
     submit: {
       title: string;
       intro: string;
@@ -827,6 +837,27 @@ export interface LocaleMessages {
   };
   admin: {
     nav_label: string;
+    /** Sidebar sub-labels for the two admin pages. */
+    nav_suppliers: string;
+    nav_users: string;
+    /** /app/admin/users page — read-only directory of users + couples. */
+    users_title: string;
+    users_sub: string;
+    users_section_users: string;
+    users_section_couples: string;
+    users_count: string;
+    couples_count: string;
+    users_empty: string;
+    couples_empty: string;
+    table_name: string;
+    table_email: string;
+    table_role: string;
+    table_couple: string;
+    table_couple_none: string;
+    table_couple_partners: string;
+    badge_admin: string;
+    badge_suspended: string;
+    badge_unverified: string;
     suppliers_title: string;
     suppliers_sub: string;
     empty: string;

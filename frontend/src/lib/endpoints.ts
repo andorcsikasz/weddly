@@ -1,6 +1,8 @@
 // One typed wrapper per HTTP call. Components import these — never `fetch` directly.
 
 import type {
+  AdminCoupleView,
+  AdminUserView,
   AuthSession,
   BudgetGoal,
   BudgetLine,
@@ -248,6 +250,12 @@ export const supplierApi = {
     ),
   submitCommunity: (body: SubmitCommunitySupplierInput) =>
     apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
+  vote: (supplierId: string, value: -1 | 0 | 1) =>
+    apiFetch<{ supplier_id: string; votes_score: number; user_vote: -1 | 0 | 1 }>(
+      "PUT",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/vote`,
+      { value },
+    ),
 };
 
 export const supplierCostApi = {
@@ -258,6 +266,11 @@ export const supplierCostApi = {
       `/api/couples/supplier-costs/${encodeURIComponent(supplierId)}`,
       body,
     ),
+};
+
+export const adminUserApi = {
+  listUsers: () => apiFetch<{ users: AdminUserView[] }>("GET", "/api/admin/users"),
+  listCouples: () => apiFetch<{ couples: AdminCoupleView[] }>("GET", "/api/admin/couples"),
 };
 
 export const adminSupplierApi = {

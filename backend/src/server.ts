@@ -23,6 +23,7 @@ import { log, makeLogger } from "./lib/logger";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
+import { registerAdminUserRoutes } from "./routes/admin_users";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerBudgetRoutes } from "./routes/budget";
 import { registerCommunitySupplierRoutes } from "./routes/community_suppliers";
@@ -64,6 +65,7 @@ registerSupplierRoutes(router);
 registerSupplierCostRoutes(router);
 registerCommunitySupplierRoutes(router);
 registerAdminSupplierRoutes(router);
+registerAdminUserRoutes(router);
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
