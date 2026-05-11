@@ -173,6 +173,21 @@ function buildBudgetGoal(f: FormState): BudgetGoal {
   };
 }
 
+/** Strip everything that isn't a digit. Used when typing into a grouped
+ *  number input — we store the raw digits, format on display. */
+function digitsOnly(raw: string): string {
+  return raw.replace(/[^\d]/g, "");
+}
+
+/** Display a digit-only string with thousand separators per locale. Empty
+ *  string passes through so the input can be cleared while editing. */
+function formatGroupedDigits(raw: string, locale: "hu" | "en"): string {
+  if (!raw) return "";
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return raw;
+  return formatNumber(n, locale);
+}
+
 function isStepValid(step: number, f: FormState): boolean {
   if (step === 0) return f.bride_name.trim().length > 0 && f.groom_name.trim().length > 0;
   if (step === 1) {
@@ -538,14 +553,13 @@ export default function OnboardingWizard() {
                   </label>
                   <input
                     id="budget_exact"
-                    type="number"
+                    type="text"
                     inputMode="numeric"
-                    min={0}
-                    step={50_000}
+                    autoComplete="off"
                     className="input"
-                    value={form.budget_exact}
-                    onChange={(e) => update("budget_exact", e.target.value)}
-                    placeholder="5000000"
+                    value={formatGroupedDigits(form.budget_exact, locale)}
+                    onChange={(e) => update("budget_exact", digitsOnly(e.target.value))}
+                    placeholder={formatGroupedDigits("5000000", locale)}
                   />
                   {Number(form.budget_exact) > 0 && (
                     <p className="mt-2 text-sm text-ink-500">
@@ -567,13 +581,12 @@ export default function OnboardingWizard() {
                       </label>
                       <input
                         id="budget_min"
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        min={0}
-                        step={50_000}
+                        autoComplete="off"
                         className="input"
-                        value={form.budget_min}
-                        onChange={(e) => update("budget_min", e.target.value)}
+                        value={formatGroupedDigits(form.budget_min, locale)}
+                        onChange={(e) => update("budget_min", digitsOnly(e.target.value))}
                       />
                     </div>
                     <div>
@@ -582,13 +595,12 @@ export default function OnboardingWizard() {
                       </label>
                       <input
                         id="budget_max"
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        min={0}
-                        step={50_000}
+                        autoComplete="off"
                         className="input"
-                        value={form.budget_max}
-                        onChange={(e) => update("budget_max", e.target.value)}
+                        value={formatGroupedDigits(form.budget_max, locale)}
+                        onChange={(e) => update("budget_max", digitsOnly(e.target.value))}
                       />
                     </div>
                   </div>
