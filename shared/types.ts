@@ -150,6 +150,12 @@ export interface Couple {
   location_radius_km: number | null;
   style_tags: WeddingStyleTag[];
   status: CoupleStatus;
+  /** Free-text honeymoon destination — "Bali" / "Toscana, Italy". `null` until
+   *  the couple fills it in on /app/honeymoon. */
+  honeymoon_destination: string | null;
+  /** ISO YYYY-MM-DD. Pair with `honeymoon_end_date` to compute the night count. */
+  honeymoon_start_date: string | null;
+  honeymoon_end_date: string | null;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`

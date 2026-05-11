@@ -607,9 +607,9 @@ export default function DashboardPage() {
           </ul>
         </div>
 
-        {/* RSVP breakdown + cost-per-guest. */}
+        {/* RSVP breakdown — stretches to match the tasks column. */}
         <div className="grid gap-4">
-          <div className="card">
+          <div className="card flex h-full flex-col">
             <h3 className="text-sm font-semibold text-ink-700">
               {t("dashboard.rsvp_breakdown_title")}
             </h3>
@@ -631,16 +631,44 @@ export default function DashboardPage() {
                 className="bg-slate-300"
               />
             </div>
-            <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-              <RsvpRow swatch="bg-emerald-500" label={t("dashboard.rsvp_yes")} value={rsvp.yes} />
-              <RsvpRow swatch="bg-amber-400" label={t("dashboard.rsvp_maybe")} value={rsvp.maybe} />
-              <RsvpRow swatch="bg-red-500" label={t("dashboard.rsvp_no")} value={rsvp.no} />
+            <ul className="mt-4 flex-1 divide-y divide-paper-100">
+              <RsvpRow
+                swatch="bg-emerald-500"
+                label={t("dashboard.rsvp_yes")}
+                value={rsvp.yes}
+                total={totalGuests}
+                locale={locale}
+              />
+              <RsvpRow
+                swatch="bg-amber-400"
+                label={t("dashboard.rsvp_maybe")}
+                value={rsvp.maybe}
+                total={totalGuests}
+                locale={locale}
+              />
+              <RsvpRow
+                swatch="bg-red-500"
+                label={t("dashboard.rsvp_no")}
+                value={rsvp.no}
+                total={totalGuests}
+                locale={locale}
+              />
               <RsvpRow
                 swatch="bg-slate-300"
                 label={t("dashboard.rsvp_pending")}
                 value={rsvp.pending}
+                total={totalGuests}
+                locale={locale}
               />
-            </dl>
+            </ul>
+            {totalGuests > 0 && (
+              <p className="mt-4 border-t border-paper-200 pt-3 text-center text-xs text-ink-500">
+                {t("dashboard.rsvp_responded_of_total", {
+                  responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
+                  total: formatNumber(totalGuests, locale),
+                })}
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -914,15 +942,31 @@ function Segment({
   return <div className={className} style={{ width: `${pct}%` }} aria-hidden="true" />;
 }
 
-function RsvpRow({ swatch, label, value }: { swatch: string; label: string; value: number }) {
+function RsvpRow({
+  swatch,
+  label,
+  value,
+  total,
+  locale,
+}: {
+  swatch: string;
+  label: string;
+  value: number;
+  total: number;
+  locale: "hu" | "en";
+}) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
-    <>
-      <dt className="flex items-center gap-2 text-ink-700">
-        <span className={`inline-block h-2 w-2 rounded-full ${swatch}`} />
+    <li className="flex items-center justify-between gap-3 py-2.5 text-sm">
+      <span className="flex items-center gap-2.5 text-ink-700">
+        <span className={`inline-block h-2.5 w-2.5 rounded-full ${swatch}`} aria-hidden="true" />
         {label}
-      </dt>
-      <dd className="stat-num text-right font-medium text-ink-900">{value}</dd>
-    </>
+      </span>
+      <span className="stat-num inline-flex items-baseline gap-2 text-ink-900">
+        <span className="text-base font-semibold tabular-nums">{formatNumber(value, locale)}</span>
+        <span className="w-10 text-right text-xs tabular-nums text-ink-400">{pct}%</span>
+      </span>
+    </li>
   );
 }
 

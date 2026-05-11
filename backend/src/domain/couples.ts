@@ -47,6 +47,9 @@ export interface CoupleRow {
   previous_wedding_date: string | null;
   ceremony_kind: string | null;
   archived_at: number | null;
+  honeymoon_destination: string | null;
+  honeymoon_start_date: string | null;
+  honeymoon_end_date: string | null;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -135,6 +138,9 @@ export function toCouple(row: CoupleRow): Couple {
     status: VALID_COUPLE_STATUSES.has(row.status as CoupleStatus)
       ? (row.status as CoupleStatus)
       : "active",
+    honeymoon_destination: row.honeymoon_destination,
+    honeymoon_start_date: row.honeymoon_start_date,
+    honeymoon_end_date: row.honeymoon_end_date,
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

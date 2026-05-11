@@ -108,11 +108,15 @@ export const coupleApi = {
   activity: () => apiFetch<{ entries: CoupleActivityEntry[] }>("GET", "/api/couples/activity"),
   onboard: (body: OnboardInput) =>
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
-  /** Partial update — supports `wedding_date_goal`, `budget_goal`, `ceremony_kind`. */
+  /** Partial update — supports `wedding_date_goal`, `budget_goal`, `ceremony_kind`,
+   *  plus the honeymoon trip header fields (destination + start/end dates). */
   update: (body: {
     wedding_date_goal?: WeddingDateGoal;
     budget_goal?: BudgetGoal;
     ceremony_kind?: CeremonyKind | null;
+    honeymoon_destination?: string | null;
+    honeymoon_start_date?: string | null;
+    honeymoon_end_date?: string | null;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */

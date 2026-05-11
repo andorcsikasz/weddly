@@ -296,6 +296,8 @@ export interface LocaleMessages {
     rsvp_no: string;
     rsvp_maybe: string;
     rsvp_pending: string;
+    /** Footer summary line in the RSVP breakdown card — receives `{responded}` and `{total}`. */
+    rsvp_responded_of_total: string;
     spend_title: string;
     spend_planned: string;
     spend_actual: string;
@@ -622,17 +624,43 @@ export interface LocaleMessages {
   honeymoon: {
     title: string;
     sub: string;
-    coming_soon_title: string;
-    coming_soon_body: string;
-    /** Budget allocation tile shown at the top of the honeymoon page. */
-    budget_title: string;
-    budget_planned_label: string;
-    budget_actual_label: string;
-    budget_remaining_label: string;
-    budget_empty_hint: string;
-    budget_open_link: string;
+    /** Header tiles (days / destination / budget). */
+    tile_days: string;
+    tile_destination: string;
+    tile_budget: string;
+    /** Inline editors for the trip tiles. */
+    start_label: string;
+    end_label: string;
+    edit_dates: string;
+    edit_destination: string;
+    set_dates_cta: string;
+    destination_placeholder: string;
+    destination_empty_cta: string;
+    /** Day-count plural — receives `{count}`. */
+    day_one: string;
+    day_other: string;
+    /** Budget tile copy. */
+    budget_actual_inline: string;
+    budget_no_lines: string;
     budget_lines_count_one: string;
     budget_lines_count_other: string;
+    /** Cost breakdown section. */
+    costs_title: string;
+    costs_sub: string;
+    costs_empty_title: string;
+    costs_empty_body: string;
+    /** Per-card "spent so far" inline label. Receives `{actual}` pre-formatted. */
+    cost_actual_inline: string;
+    /** Preset chip labels — used as the seed `label` when creating a budget
+     *  line, and as the chip's display text. */
+    preset: {
+      travel: string;
+      stay: string;
+      food: string;
+      activities: string;
+      insurance: string;
+      other: string;
+    };
   };
   media: {
     title: string;

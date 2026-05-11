@@ -86,6 +86,11 @@ interface OnboardBody {
   style_tags?: unknown;
   /** civil | religious | both | null. */
   ceremony_kind?: unknown;
+  /** Free-text destination. Trimmed; empty string clears the column. */
+  honeymoon_destination?: unknown;
+  /** ISO YYYY-MM-DD. Empty string clears. */
+  honeymoon_start_date?: unknown;
+  honeymoon_end_date?: unknown;
 }
 
 const VALID_CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -95,6 +100,23 @@ function parseCeremonyKind(raw: unknown): CeremonyKind | null {
     throw new HttpError(400, "ceremony_kind invalid");
   }
   return raw as CeremonyKind;
+}
+
+function parseHoneymoonDestination(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "honeymoon_destination must be a string");
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > 200) throw new HttpError(400, "honeymoon_destination too long");
+  return trimmed;
+}
+
+function parseIsoDateOrNull(raw: unknown, field: string): string | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    throw new HttpError(400, `${field} must be YYYY-MM-DD`);
+  }
+  return raw;
 }
 
 const ALLOWED_STYLE_TAGS: ReadonlySet<WeddingStyleTag> = new Set([
@@ -807,6 +829,22 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     const kind = parseCeremonyKind(body.ceremony_kind);
     updates.push({ col: "ceremony_kind", val: kind });
     auditAfter.ceremony_kind = kind;
+  }
+
+  if (body.honeymoon_destination !== undefined) {
+    const val = parseHoneymoonDestination(body.honeymoon_destination);
+    updates.push({ col: "honeymoon_destination", val });
+    auditAfter.honeymoon_destination = val;
+  }
+  if (body.honeymoon_start_date !== undefined) {
+    const val = parseIsoDateOrNull(body.honeymoon_start_date, "honeymoon_start_date");
+    updates.push({ col: "honeymoon_start_date", val });
+    auditAfter.honeymoon_start_date = val;
+  }
+  if (body.honeymoon_end_date !== undefined) {
+    const val = parseIsoDateOrNull(body.honeymoon_end_date, "honeymoon_end_date");
+    updates.push({ col: "honeymoon_end_date", val });
+    auditAfter.honeymoon_end_date = val;
   }
 
   if (body.budget_goal !== undefined || body.budget_ceiling_huf !== undefined) {

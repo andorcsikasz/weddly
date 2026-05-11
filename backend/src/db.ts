@@ -188,6 +188,13 @@ db.exec(
     "ON supplier_votes(couple_id, supplier_id) WHERE couple_id IS NOT NULL",
 );
 
+// Honeymoon trip details — surfaced on /app/honeymoon as the "Days / Where"
+// header. Stored as plain TEXT so we can defer date validation to the route
+// handler; nights are computed client-side from the YYYY-MM-DD pair.
+addColumnIfMissing("couples", "honeymoon_destination", "honeymoon_destination TEXT");
+addColumnIfMissing("couples", "honeymoon_start_date", "honeymoon_start_date TEXT");
+addColumnIfMissing("couples", "honeymoon_end_date", "honeymoon_end_date TEXT");
+
 export function now(): number {
   return Date.now();
 }
