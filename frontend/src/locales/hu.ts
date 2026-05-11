@@ -900,6 +900,8 @@ const hu: LocaleMessages = {
     save_failed: "A módosítás nem mentődött el. Az ültetés frissítve van.",
     save_conflict: "Ezt az asztalt időközben más is módosította. Frissítjük.",
     table_too_small: "Túl kicsi lenne az asztal — szabadíts fel egy ülőhelyet előbb.",
+    seats_at_cap: "Az asztal megtelt — növeld a méretét, hogy elférjen még egy szék.",
+    seats_at_cap_hint: "Növeld az asztal méretét, hogy elférjen még egy szék.",
     pdf_failed: "Nem sikerült elkészíteni a PDF-et. Próbáld újra.",
     pdf_cancel: "Megszakítás",
     pdf_loading: "PDF készül…",

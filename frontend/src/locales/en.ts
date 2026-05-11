@@ -897,6 +897,8 @@ const en: LocaleMessages = {
     save_failed: "Couldn't save that change. The seating chart was refreshed.",
     save_conflict: "Someone else just edited this table — refreshing.",
     table_too_small: "Table would be too small — empty a seat first.",
+    seats_at_cap: "The table is full — make it bigger to add another seat.",
+    seats_at_cap_hint: "Make the table bigger to add another seat.",
     pdf_failed: "Couldn't generate the PDF. Try again.",
     pdf_cancel: "Cancel",
     pdf_loading: "Preparing PDF…",
