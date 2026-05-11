@@ -149,16 +149,21 @@ export default function SuppliersPage() {
     if (v === "line") return "line";
     return "grid";
   })();
-  // Price ceiling: single 1..5 value meaning "show me up to band N". Reads as
-  // a star-rating-style picker. Suppliers without a declared price band pass
-  // through (otherwise the filter would hide community submissions that left
-  // the field blank).
-  const priceMax = (() => {
-    const raw = params.get("price_max");
-    if (!raw) return null;
-    const n = Number(raw);
-    return Number.isInteger(n) && n >= 1 && n <= 5 ? (n as 1 | 2 | 3 | 4 | 5) : null;
-  })();
+  // Price bands: comma-separated set of exact 1..5 matches. Each pill shows
+  // a fixed N-of-5 dot pattern (●○○○○ … ●●●●●) and toggles inclusion of that
+  // specific band — selecting the "●●●●○" pill shows only band-4 suppliers,
+  // not "up to 4". Multi-select is allowed so couples can pick e.g. bands 3
+  // and 4 together. Suppliers without a declared price band pass through.
+  const priceBands = useMemo<Set<number>>(() => {
+    const raw = params.get("price");
+    if (!raw) return new Set();
+    return new Set(
+      raw
+        .split(",")
+        .map((s) => Number(s))
+        .filter((n) => Number.isInteger(n) && n >= 1 && n <= 5),
+    );
+  }, [params]);
   // Guest count: positive integer. Suppliers without a declared capacity
   // pass through (otherwise this filter would hide every photographer).
   const guestsFilter = (() => {
@@ -167,9 +172,6 @@ export default function SuppliersPage() {
     const n = Number(raw);
     return Number.isInteger(n) && n > 0 ? n : null;
   })();
-  // Hover preview state for the price-band dots: when the user moves over dot
-  // N, fill dots 1..N as a preview without persisting until they click.
-  const [priceHover, setPriceHover] = useState<number | null>(null);
 
   function setQuery(next: string) {
     const p = new URLSearchParams(params);
@@ -201,10 +203,28 @@ export default function SuppliersPage() {
     else p.set("view", next);
     setParams(p, { replace: true });
   }
-  function setPriceCeiling(next: number | null) {
+  function togglePriceBand(band: number) {
+    const next = new Set(priceBands);
+    if (next.has(band)) next.delete(band);
+    else next.add(band);
     const p = new URLSearchParams(params);
-    if (next === null) p.delete("price_max");
-    else p.set("price_max", String(next));
+    p.delete("price_max"); // legacy param — keep URL clean if it was set
+    if (next.size === 0) {
+      p.delete("price");
+    } else {
+      p.set(
+        "price",
+        Array.from(next)
+          .sort((a, b) => a - b)
+          .join(","),
+      );
+    }
+    setParams(p, { replace: true });
+  }
+  function clearPriceBands() {
+    const p = new URLSearchParams(params);
+    p.delete("price");
+    p.delete("price_max");
     setParams(p, { replace: true });
   }
   function setGuestsFilter(next: string) {
@@ -311,11 +331,11 @@ export default function SuppliersPage() {
     let dir = items;
     if (cityFilter) dir = dir.filter((s) => s.city === cityFilter);
     if (showSavedOnly) dir = dir.filter((s) => saved.has(s.id));
-    if (priceMax !== null) {
-      // Suppliers without a declared price band pass through — the filter
-      // only narrows among declared ones, so community submissions with a
-      // blank field stay visible.
-      dir = dir.filter((s) => s.price_band === null || s.price_band <= priceMax);
+    if (priceBands.size > 0) {
+      // Each pill represents one exact band. Suppliers without a declared
+      // price band pass through — the filter only narrows among declared
+      // ones, so community submissions with a blank field stay visible.
+      dir = dir.filter((s) => s.price_band === null || priceBands.has(s.price_band));
     }
     if (guestsFilter !== null) {
       dir = dir.filter((s) => {
@@ -339,7 +359,7 @@ export default function SuppliersPage() {
       mine = mine.filter((s) => normalize(`${s.name} ${s.notes ?? ""}`).includes(q));
     }
     return [...mine, ...dir];
-  }, [items, coupleSuppliers, cityFilter, showSavedOnly, saved, priceMax, guestsFilter, query]);
+  }, [items, coupleSuppliers, cityFilter, showSavedOnly, saved, priceBands, guestsFilter, query]);
 
   const filtered = useMemo(() => {
     let out = filteredBeforeCategory;
@@ -518,47 +538,42 @@ export default function SuppliersPage() {
         </label>
       </div>
 
-      {/* Row 2: price ceiling (rating-style 5-dot picker) + guest-count number
-          filter, grouped inside a softened container so they read as one
-          control. Both narrow the list to suppliers whose declared value
-          matches; suppliers with no declared value pass through so non-venue
-          cards are not dropped. */}
-      <div
-        className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-200 bg-paper-100/60 px-4 py-3"
-        onMouseLeave={() => setPriceHover(null)}
-      >
-        <div className="flex items-center gap-3">
+      {/* Row 2: price bands (one toggle pill per exact 1..5) + guest-count
+          number filter, grouped inside a softened container so they read as
+          one control. Each price pill is independent — clicking the ●●●●○
+          pill filters to band-4 suppliers only, not "up to 4". Multi-select
+          lets couples combine bands. Suppliers with no declared value pass
+          through so non-venue cards are not dropped. */}
+      <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-200 bg-paper-100/60 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500">
             {t("suppliers.price_filter_label")}
           </span>
-          <div className="inline-flex items-center gap-1.5" role="radiogroup">
+          <div className="inline-flex flex-wrap items-center gap-1.5">
             {[1, 2, 3, 4, 5].map((band) => {
-              const target = priceHover ?? priceMax;
-              const active = target !== null && target >= band;
+              const active = priceBands.has(band);
               return (
                 <button
                   key={band}
                   type="button"
-                  role="radio"
-                  aria-checked={priceMax === band}
+                  aria-pressed={active}
                   aria-label={t("suppliers.price_filter_band_aria", { n: band })}
-                  onClick={() => setPriceCeiling(priceMax === band ? null : band)}
-                  onMouseEnter={() => setPriceHover(band)}
-                  onFocus={() => setPriceHover(band)}
-                  onBlur={() => setPriceHover(null)}
+                  onClick={() => togglePriceBand(band)}
                   className={
                     active
-                      ? "h-3.5 w-3.5 rounded-full bg-ink-700 ring-1 ring-ink-700 ring-offset-1 ring-offset-paper-100 transition"
-                      : "h-3.5 w-3.5 rounded-full border border-ink-300 bg-paper-50 transition hover:border-ink-500"
+                      ? "inline-flex h-7 items-center rounded-full border border-ink-700 bg-ink-700 px-2.5 font-mono text-[11px] tracking-wider text-paper-100"
+                      : "inline-flex h-7 items-center rounded-full border border-paper-300 bg-paper-50 px-2.5 font-mono text-[11px] tracking-wider text-ink-700 transition hover:border-ink-300"
                   }
-                />
+                >
+                  <PriceBandDots band={band} />
+                </button>
               );
             })}
           </div>
-          {priceMax !== null && (
+          {priceBands.size > 0 && (
             <button
               type="button"
-              onClick={() => setPriceCeiling(null)}
+              onClick={clearPriceBands}
               className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline"
             >
               {t("suppliers.guests_filter_clear")}
