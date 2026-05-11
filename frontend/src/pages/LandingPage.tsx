@@ -51,7 +51,7 @@ export default function LandingPage() {
           className="pointer-events-none absolute -top-10 right-[-14rem] h-[36rem] w-[36rem] text-blush-100 sm:right-[-10rem]"
         />
         <div className="relative mx-auto max-w-7xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
-          <h1 className="max-w-[14ch] font-serif text-[2.75rem] italic leading-[0.96] tracking-[-0.02em] text-ink-900 sm:text-[4.25rem] lg:text-[6rem]">
+          <h1 className="max-w-[14ch] font-serif text-5xl italic leading-[0.96] tracking-[-0.02em] text-ink-900 sm:text-7xl lg:text-8xl">
             {t("landing.hero_title")}
           </h1>
           <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
@@ -123,7 +123,7 @@ export default function LandingPage() {
           <p className="mb-8 text-xs font-semibold uppercase tracking-[0.32em] text-paper-300">
             {t("landing.stats_eyebrow")}
           </p>
-          <p className="font-serif text-[5rem] leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-[7.5rem] lg:text-[10rem]">
+          <p className="font-serif text-7xl leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-8xl lg:text-9xl">
             {t("landing.stats_a_value")}
           </p>
           <p className="mt-6 font-serif text-2xl text-paper-300 sm:text-3xl">
@@ -255,7 +255,7 @@ export default function LandingPage() {
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
               <SectionLabel num="02.3" label={t("landing.block_seating_eyebrow")} />
-              <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-[2.75rem]">
+              <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
               <p className="mt-5 text-base text-ink-600 sm:text-lg">
@@ -368,7 +368,7 @@ export default function LandingPage() {
       <section className="relative bg-white">
         <MarginNumeral value="09" />
         <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-3xl leading-[1.1] tracking-tight text-ink-900 sm:text-4xl lg:text-[2.75rem]">
+          <h2 className="font-serif text-3xl leading-[1.1] tracking-tight text-ink-900 sm:text-4xl lg:text-5xl">
             {t("landing.audience_title")}
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-600 sm:text-lg">
@@ -420,7 +420,7 @@ export default function LandingPage() {
                 {t("landing.stats_eyebrow")}
               </p>
               <div className="mt-3 flex items-end gap-3">
-                <span className="font-serif text-[4.5rem] leading-[0.9] text-ink-900 sm:text-[6rem]">
+                <span className="font-serif text-7xl leading-[0.9] text-ink-900 sm:text-8xl">
                   0
                 </span>
                 <span className="mb-3 font-serif text-3xl text-ink-700 sm:text-4xl">Ft</span>
@@ -448,7 +448,7 @@ export default function LandingPage() {
       <section className="relative bg-paper-50">
         <MarginNumeral value="11" />
         <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-4xl italic text-ink-900 sm:text-5xl">
+          <h2 className="font-serif text-5xl italic leading-[0.96] tracking-[-0.02em] text-ink-900 sm:text-7xl lg:text-8xl">
             {t("landing.faq_title")}
           </h2>
           <div className="mt-10 space-y-3">
@@ -472,7 +472,7 @@ export default function LandingPage() {
         <EucalyptusStem className="pointer-events-none absolute bottom-12 right-4 h-24 w-auto text-paper-400 opacity-70 sm:bottom-20 sm:right-12 sm:h-32" />
         <div className="mx-auto w-full max-w-3xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <Wordmark size="md" className="text-paper-400" />
-          <h2 className="mt-8 font-serif text-4xl italic leading-[1.02] tracking-tight text-ink-900 sm:text-5xl lg:text-[4.5rem]">
+          <h2 className="mt-8 font-serif text-5xl italic leading-[0.96] tracking-tight text-ink-900 sm:text-7xl lg:text-8xl">
             {t("landing.closing_title")}
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-base text-ink-700 sm:text-lg">
@@ -545,7 +545,7 @@ function PhaseStep({
           anchor for each phase. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-2 -top-10 select-none font-serif text-[3.5rem] italic leading-none text-blush-200 sm:-top-10 sm:text-[4.5rem] lg:-top-12 lg:text-[5.5rem]"
+        className="pointer-events-none absolute -left-2 -top-10 select-none font-serif text-6xl italic leading-none text-blush-200 sm:-top-10 sm:text-7xl lg:-top-12 lg:text-8xl"
       >
         0{n}
       </span>
@@ -578,7 +578,7 @@ function FeaturedTestimonial({
 }) {
   return (
     <figure className="mt-8">
-      <blockquote className="font-serif text-3xl italic leading-[1.2] text-ink-900 sm:text-4xl lg:text-5xl">
+      <blockquote className="font-serif text-3xl leading-[1.2] text-ink-900 sm:text-4xl lg:text-5xl">
         &ldquo;{quote}&rdquo;
       </blockquote>
       <figcaption className="mt-8 flex items-center gap-4">
@@ -633,7 +633,7 @@ function AudienceRow({
   onClick?: () => void;
 }) {
   const cta = (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap font-serif text-base italic text-ink-900 transition-colors hover:text-blush-700 sm:text-lg">
+    <span className="inline-flex items-center gap-2 whitespace-nowrap font-serif text-base text-ink-900 transition-colors hover:text-blush-700 sm:text-lg">
       {ctaLabel}
       <span aria-hidden className="text-base">
         →
@@ -642,12 +642,10 @@ function AudienceRow({
   );
   return (
     <div className="grid gap-3 py-8 sm:grid-cols-[14rem_1fr_auto] sm:items-baseline sm:gap-x-10 sm:gap-y-2 sm:py-10">
-      <p className="font-serif text-2xl leading-[1.05] tracking-tight text-ink-900 sm:text-3xl lg:text-[2rem]">
+      <p className="font-serif text-2xl leading-[1.05] tracking-tight text-ink-900 sm:text-3xl">
         {row}
       </p>
-      <p className="text-base leading-relaxed text-ink-600 sm:text-base lg:text-[1.0625rem]">
-        {body}
-      </p>
+      <p className="text-base leading-relaxed text-ink-600 sm:text-lg">{body}</p>
       <div className="pt-1 sm:pt-0">
         {to ? (
           <Link to={to}>{cta}</Link>
@@ -665,7 +663,7 @@ function FaqCard({ q, a }: { q: string; a: ReactNode }) {
   return (
     <details className="group rounded-2xl border border-paper-300 bg-paper-50 px-5 py-4 transition-colors open:bg-white sm:px-6 sm:py-5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
-        <span className="font-serif text-lg text-ink-900 sm:text-xl">{q}</span>
+        <span className="font-serif text-xl text-ink-900">{q}</span>
         <ChevronDown
           size={18}
           className="shrink-0 text-ink-500 transition-transform group-open:rotate-180"
