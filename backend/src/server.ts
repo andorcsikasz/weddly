@@ -43,6 +43,7 @@ import { registerRsvpRoutes } from "./routes/rsvp";
 import { registerSeatingRoutes } from "./routes/seating";
 import { registerSupplierCostRoutes } from "./routes/supplier_costs";
 import { registerSupplierRoutes } from "./routes/suppliers";
+import { registerUserCoupleRoutes } from "./routes/user_couple";
 
 const router = new Router();
 registerHealthRoutes(router);
@@ -66,6 +67,7 @@ registerSupplierCostRoutes(router);
 registerCommunitySupplierRoutes(router);
 registerAdminSupplierRoutes(router);
 registerAdminUserRoutes(router);
+registerUserCoupleRoutes(router);
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -77,7 +79,9 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self' https://plausible.io",
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com",
-  "img-src 'self' data: blob:",
+  // Tile servers for the supplier map (Leaflet on /app/suppliers). The
+  // tile.openstreetmap.org subdomain pool serves the raster tiles.
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me",
   "frame-ancestors 'none'",

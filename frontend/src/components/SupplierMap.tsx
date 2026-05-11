@@ -7,18 +7,21 @@
 
 import type { DirectorySupplier } from "@shared/suppliers";
 import L from "leaflet";
+import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 import "leaflet/dist/leaflet.css";
 import { useMemo } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { useT } from "../lib/i18n";
 
-// Leaflet's default marker icons ship as static assets that webpack/Vite
-// won't resolve unless we point at the CDN copies. CDN-hosted PNGs are fine —
-// they don't change across leaflet versions.
+// Use bundled marker PNGs (Vite emits hashed files under /assets/, which the
+// server CSP `img-src 'self'` covers). Pointing at unpkg.com instead would
+// fail CSP without a wildcard CDN allowlist.
 const DEFAULT_ICON = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconUrl,
+  iconRetinaUrl,
+  shadowUrl,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
