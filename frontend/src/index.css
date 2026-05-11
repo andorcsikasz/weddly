@@ -197,6 +197,34 @@
     );
   }
 
+  /* Slightly lighter stationery — paper-100 base. For surfaces that
+     want the same texture as .stationery but want to read as paper-50's
+     close neighbour instead of the warmer paper-200 letterhead. */
+  .stationery-light {
+    background-color: theme("colors.paper.100");
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(16, 24, 48, 0.025) 0,
+      rgba(16, 24, 48, 0.025) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+
+  /* Dark stationery — ink-900 base with paper-toned hairlines. Used on
+     the Stats band so the dark interruption matches the same hairline
+     texture as the rest of the page. */
+  .stationery-dark {
+    background-color: theme("colors.ink.900");
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(246, 242, 231, 0.04) 0,
+      rgba(246, 242, 231, 0.04) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0);
   }

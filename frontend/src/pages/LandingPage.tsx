@@ -51,7 +51,7 @@ export default function LandingPage() {
           className="pointer-events-none absolute -top-10 right-[-14rem] h-[36rem] w-[36rem] text-blush-100 sm:right-[-10rem]"
         />
         <div className="relative mx-auto max-w-7xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
-          <h1 className="max-w-[14ch] font-serif text-5xl italic leading-[0.96] tracking-[-0.02em] text-ink-900 sm:text-7xl lg:text-8xl">
+          <h1 className="max-w-[14ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 sm:text-7xl sm:leading-[0.96] lg:text-8xl">
             {t("landing.hero_title")}
           </h1>
           <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
@@ -88,7 +88,7 @@ export default function LandingPage() {
             peeking up." */}
         <div className="relative mt-2 overflow-hidden bg-paper-100 pt-6 sm:pt-8 lg:pt-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="origin-bottom -mb-10 sm:-mb-14 lg:-mb-20">
+            <div className="origin-bottom -mb-4 sm:-mb-14 lg:-mb-20">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
                 <div className="rotate-[-1.5deg] drop-shadow-[0_30px_50px_rgba(16,24,48,0.18)]">
                   <WorkspaceMockup className="h-auto w-full" />
@@ -103,12 +103,12 @@ export default function LandingPage() {
           Stationery letterhead beat: faded WĒDDLY centred on a thin
           band, flanked by italic serif tags. Gives the eye a horizontal
           rest between the loud hero and the dark stats below. */}
-      <section className="border-y border-paper-300 bg-paper-50">
+      <section className="stationery-light border-y border-paper-300">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4 sm:px-6">
           <span className="hidden flex-1 font-serif text-sm italic text-blush-600 sm:block">
             Est. MMXXVI
           </span>
-          <Wordmark size="lg" className="text-paper-400" />
+          <Wordmark size="lg" className="mx-auto text-paper-400 sm:mx-0" />
           <span className="hidden flex-1 text-right font-serif text-sm italic text-blush-600 sm:block">
             Budapest · Paper letters
           </span>
@@ -116,23 +116,24 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════ Stats — DARK BAND ════════════════════════
-          One huge number does the talking; the other two stats run as
-          ledger entries underneath. */}
-      <section className="bg-ink-900 text-paper-100">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-          <p className="mb-8 text-xs font-semibold uppercase tracking-[0.32em] text-paper-300">
+          One huge number does the talking; the other stat runs as a
+          ledger entry underneath. Dark-stationery texture matches the
+          paper hairline pattern used elsewhere on the page. */}
+      <section className="stationery-dark text-paper-100">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
+          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.32em] text-paper-300 sm:mb-8">
             {t("landing.stats_eyebrow")}
           </p>
-          <p className="font-serif text-7xl leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-8xl lg:text-9xl">
+          <p className="font-serif text-6xl leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-8xl lg:text-9xl">
             {t("landing.stats_a_value")}
           </p>
-          <p className="mt-6 font-serif text-2xl text-paper-300 sm:text-3xl">
+          <p className="mt-5 font-serif text-xl text-paper-300 sm:mt-6 sm:text-3xl">
             {t("landing.stats_a_label")}
           </p>
-          <div className="mt-8 grid gap-x-8 gap-y-3 border-t border-paper-700/30 pt-8 text-sm">
+          <div className="mt-8 grid gap-x-8 gap-y-3 border-t border-paper-700/30 pt-6 text-sm sm:pt-8">
             <LedgerLine value={t("landing.stats_b_value")} label={t("landing.stats_b_label")} />
           </div>
-          <p className="mt-12 max-w-3xl text-xs leading-relaxed text-paper-400 sm:text-sm">
+          <p className="mt-10 max-w-3xl text-xs leading-relaxed text-paper-400 sm:mt-12 sm:text-sm">
             {t("landing.stats_footnote")}
           </p>
         </div>
@@ -277,17 +278,17 @@ export default function LandingPage() {
           The page's editorial peak. One italic statement does the work;
           the four differentiation points reduce to a single keyword
           row underneath. */}
-      <section className="relative bg-paper-50">
+      <section className="stationery-light relative">
         <MarginNumeral value="06" />
         <BotanicalCorner
           corner="tl"
-          className="pointer-events-none absolute left-4 top-12 h-32 w-32 text-paper-300 sm:h-40 sm:w-40 lg:left-12"
+          className="pointer-events-none absolute left-4 top-12 h-24 w-24 text-paper-300 sm:h-40 sm:w-40 lg:left-12"
         />
         <BotanicalCorner
           corner="br"
-          className="pointer-events-none absolute bottom-12 right-4 h-32 w-32 text-paper-300 sm:h-40 sm:w-40 lg:right-12"
+          className="pointer-events-none absolute bottom-12 right-4 h-24 w-24 text-paper-300 sm:h-40 sm:w-40 lg:right-12"
         />
-        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-24">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
             {t("landing.why_eyebrow")}
           </p>
@@ -542,7 +543,7 @@ function PhaseStep({
           anchor for each phase. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-2 -top-10 select-none font-serif text-6xl italic leading-none text-blush-200 sm:-top-10 sm:text-7xl lg:-top-12 lg:text-8xl"
+        className="pointer-events-none absolute -left-1 -top-8 select-none font-serif text-5xl italic leading-none text-blush-200 sm:-left-2 sm:-top-10 sm:text-7xl lg:-top-12 lg:text-8xl"
       >
         0{n}
       </span>
