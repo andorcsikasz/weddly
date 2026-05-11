@@ -1309,20 +1309,18 @@ function ChainStep({
             total: progress.total,
           })}
         >
-          {Array.from({ length: progress.total }).map((_, i) => {
-            const filled = i < progress.done;
-            return (
-              <span
-                // biome-ignore lint/suspicious/noArrayIndexKey: progress bars
-                // are positional and have no stable identity beyond their index.
-                key={i}
-                className={`h-[3px] w-3 rounded-full transition-colors ${
-                  filled ? "bg-sage-500" : active ? "bg-paper-100/30" : "bg-paper-300"
-                }`}
-                aria-hidden
-              />
-            );
-          })}
+          {Array.from({ length: progress.total }, (_, i) => ({
+            id: `bar-${i}`,
+            filled: i < progress.done,
+          })).map((bar) => (
+            <span
+              key={bar.id}
+              className={`h-[3px] w-3 rounded-full transition-colors ${
+                bar.filled ? "bg-sage-500" : active ? "bg-paper-100/30" : "bg-paper-300"
+              }`}
+              aria-hidden
+            />
+          ))}
         </span>
       )}
     </button>
