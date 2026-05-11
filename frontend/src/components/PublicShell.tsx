@@ -2,6 +2,7 @@ import { Menu, UserCheck, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
+import { FeedbackDialog } from "./FeedbackDialog";
 import { Wordmark } from "./Wordmark";
 
 /** Track scroll direction so the public header can hide on scroll-down
@@ -95,8 +96,14 @@ export function PublicShell({ children }: { children: ReactNode }) {
 function PublicHeader() {
   const { t, locale, setLocale } = useT();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const otherLocale = locale === "hu" ? "en" : "hu";
   const hidden = useHeaderHidden();
+
+  function openFeedback() {
+    setMenuOpen(false);
+    setFeedbackOpen(true);
+  }
 
   return (
     <header
@@ -136,12 +143,13 @@ function PublicHeader() {
         {/* Right cluster: every interactive item at text-sm so the
             wordmark logo is the only thing that visually leads. */}
         <div className="ml-auto flex items-center gap-3">
-          <a
-            href={`mailto:test.andorcsikasz@gmail.com?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
+          <button
+            type="button"
+            onClick={openFeedback}
             className="hidden text-sm text-ink-600 transition-colors hover:text-ink-900 lg:inline-flex"
           >
             {t("landing.nav_feedback")}
-          </a>
+          </button>
           <Link
             to="/login"
             className="hidden text-sm text-ink-700 transition-colors hover:text-ink-900 sm:inline-flex"
@@ -200,13 +208,13 @@ function PublicHeader() {
             >
               {t("landing.cta_login")}
             </Link>
-            <a
-              href={`mailto:test.andorcsikasz@gmail.com?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
-              onClick={() => setMenuOpen(false)}
+            <button
+              type="button"
+              onClick={openFeedback}
+              className="rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900"
             >
               {t("landing.nav_feedback")}
-            </a>
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -223,6 +231,7 @@ function PublicHeader() {
           </div>
         </nav>
       )}
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </header>
   );
 }

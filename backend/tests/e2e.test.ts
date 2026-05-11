@@ -3863,6 +3863,59 @@ describe("vendor waitlist", () => {
   });
 });
 
+describe("public feedback form", () => {
+  test("anon can submit any combination of fields", async () => {
+    wipeAll();
+    // Message only.
+    const r1 = await req("POST", "/api/feedback", {
+      message: "Tetszik a landing.",
+      locale: "hu",
+    });
+    expect(r1.status).toBe(200);
+
+    // Rating only.
+    const r2 = await req("POST", "/api/feedback", { rating: 9 });
+    expect(r2.status).toBe(200);
+
+    // Monthly value only — including 0 (a deliberate "not worth paying").
+    const r3 = await req("POST", "/api/feedback", { monthly_value_ft: 0 });
+    expect(r3.status).toBe(200);
+
+    // Everything together with optional reply email.
+    const r4 = await req("POST", "/api/feedback", {
+      message: "Részletes észrevétel.",
+      rating: 8,
+      monthly_value_ft: 4500,
+      from_email: "couple@example.test",
+      locale: "hu",
+    });
+    expect(r4.status).toBe(200);
+  });
+
+  test("rejects an empty payload", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/feedback", {});
+    expect(r.status).toBe(400);
+  });
+
+  test("validates ranges + email shape", async () => {
+    wipeAll();
+    const r1 = await req("POST", "/api/feedback", { rating: 0 });
+    expect(r1.status).toBe(400);
+    const r2 = await req("POST", "/api/feedback", { rating: 11 });
+    expect(r2.status).toBe(400);
+    const r3 = await req("POST", "/api/feedback", { monthly_value_ft: -1 });
+    expect(r3.status).toBe(400);
+    const r4 = await req("POST", "/api/feedback", { monthly_value_ft: 15001 });
+    expect(r4.status).toBe(400);
+    const r5 = await req("POST", "/api/feedback", {
+      message: "hi",
+      from_email: "not-an-email",
+    });
+    expect(r5.status).toBe(400);
+  });
+});
+
 function isoUtcDate(ts: number): string {
   const d = new Date(ts);
   d.setUTCHours(0, 0, 0, 0);

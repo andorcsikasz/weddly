@@ -75,7 +75,7 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
       footer={
         done ? (
           <Button variant="primary" onClick={resetAndClose}>
-            {t("common.cancel").replace(/.*/, "OK")}
+            OK
           </Button>
         ) : (
           <>
