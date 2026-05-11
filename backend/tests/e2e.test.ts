@@ -786,6 +786,62 @@ describe("onboarding + invites", () => {
     const r = await req("GET", "/api/couples/partner");
     expect(r.status).toBe(401);
   });
+
+  test("GET /api/couples/invites/current surfaces / clears the pending invite", async () => {
+    wipeAll();
+    const a = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "ic1@weddly.test",
+      password: "supersafe123",
+      full_name: "Anna",
+    });
+    expect(a.status).toBe(201);
+    await verifyUserEmail("ic1@weddly.test");
+    await req(
+      "POST",
+      "/api/couples/onboard",
+      { bride_name: "Anna", groom_name: "Bence", style_tags: [] },
+      { token: a.data.token },
+    );
+
+    // Before any invite is created: { invite: null }.
+    const before = await req<{ invite: { token: string } | null }>(
+      "GET",
+      "/api/couples/invites/current",
+      undefined,
+      { token: a.data.token },
+    );
+    expect(before.status).toBe(200);
+    expect(before.data.invite).toBeNull();
+
+    // After creating an invite: the same row comes back.
+    const create = await req<{ invite: { token: string; invited_email: string | null } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "ic2@weddly.test" },
+      { token: a.data.token },
+    );
+    expect(create.status).toBe(201);
+    const after = await req<{
+      invite: { token: string; invited_email: string | null } | null;
+    }>("GET", "/api/couples/invites/current", undefined, { token: a.data.token });
+    expect(after.data.invite?.token).toBe(create.data.invite.token);
+    expect(after.data.invite?.invited_email).toBe("ic2@weddly.test");
+
+    // After cancellation: back to null so the Dashboard widget re-appears.
+    const cancel = await req("POST", "/api/couples/invites/cancel", {}, { token: a.data.token });
+    expect(cancel.status).toBe(200);
+    const afterCancel = await req<{ invite: unknown }>(
+      "GET",
+      "/api/couples/invites/current",
+      undefined,
+      { token: a.data.token },
+    );
+    expect(afterCancel.data.invite).toBeNull();
+
+    // Auth required.
+    const unauth = await req("GET", "/api/couples/invites/current");
+    expect(unauth.status).toBe(401);
+  });
 });
 
 describe("health", () => {

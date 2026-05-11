@@ -92,11 +92,17 @@ export default function DashboardPage() {
         setData(null);
         return;
       }
-      const [guestsR, linesR, planR] = await Promise.all([
+      const [guestsR, linesR, planR, inviteR] = await Promise.all([
         guestApi.list(),
         budgetApi.listLines(),
         seatingApi.plan(),
+        // Hydrate any in-flight partner invite so the dashboard can hide
+        // its "invite your partner" panel across page reloads (the panel
+        // is only useful before an invite is sent — afterwards the user
+        // manages the invite from the Profile partner card).
+        couple.partner_b_id ? Promise.resolve({ invite: null }) : coupleApi.currentInvite(),
       ]);
+      setInvite(inviteR.invite);
       setData({
         couple,
         guests: guestsR.guests,
@@ -632,8 +638,12 @@ export default function DashboardPage() {
         />
       </section>
 
-      {/* ── Invite partner — only if not yet linked. ───────────────── */}
-      {!couple.partner_b_id && (
+      {/* ── Invite partner — only when there's no partner_b yet AND
+          either no invite is in flight or one was just sent in this
+          session (so the confirmation card still gets to render). Once
+          the user reloads after sending, the section disappears and the
+          invite is managed from the Profile partner card. ──────────── */}
+      {!couple.partner_b_id && (!invite || sentToEmail) && (
         <section id="invite-partner" className="card stationery mb-8 scroll-mt-24">
           <h2>{t("dashboard.invite_partner")}</h2>
           <p className="mt-2 text-sm text-ink-700">{t("dashboard.invite_partner_help")}</p>

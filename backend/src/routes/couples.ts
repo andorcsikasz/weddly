@@ -565,6 +565,29 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
  *  is additive-only and we want the audit trail to keep the original row.
  *  Instead we stamp `consumed_at` so the token can't be accepted, then the
  *  caller can create a fresh invite for a different address. */
+/** Read the couple's currently-pending invite, if any. Used by surfaces
+ *  that need to hide their "send invite" widget once one is already out
+ *  in flight (Dashboard) or surface the email a typo went to (Profile).
+ *  Returns `{ invite: null }` rather than 404 so the caller can always
+ *  treat the response the same way. */
+function handleGetCurrentInvite(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const ts = now();
+  const row = db
+    .prepare(
+      `SELECT id, couple_id, token, invited_email, invited_by_user_id, consumed_at, expires_at, created_at
+         FROM couple_invites
+         WHERE couple_id = ? AND consumed_at IS NULL AND expires_at > ?
+         ORDER BY id DESC LIMIT 1`,
+    )
+    .get(couple.id, ts) as InviteRow | undefined;
+
+  return json({ invite: row ? toInvite(row) : null });
+}
+
 function handleCancelInvite(ctx: Ctx): Response {
   const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
@@ -1122,6 +1145,7 @@ export function registerCoupleRoutes(router: Router) {
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.post("/api/couples/invites", handleCreateInvite, true);
+  router.get("/api/couples/invites/current", handleGetCurrentInvite, true);
   router.post("/api/couples/invites/cancel", handleCancelInvite, true);
   router.get("/api/invites/:token", handleGetInvite); // public — pre-signup
   router.post("/api/invites/:token/accept", handleAcceptInvite, true);

@@ -111,6 +111,11 @@ export const coupleApi = {
     apiFetch<{ couple: Couple }>("PATCH", "/api/couples/slug", { slug }),
   createInvite: (body: { invited_email?: string }) =>
     apiFetch<{ invite: CoupleInvite }>("POST", "/api/couples/invites", body),
+  /** Read the couple's pending invite, if any. Used by the Dashboard to
+   *  decide whether to render its "invite your partner" panel and by the
+   *  Profile partner card to surface a typo'd email. */
+  currentInvite: () =>
+    apiFetch<{ invite: CoupleInvite | null }>("GET", "/api/couples/invites/current"),
   /** Revoke whichever invite this couple has open (if any). Idempotent —
    *  returns `cancelled: false` when there was nothing to cancel. */
   cancelInvite: () =>

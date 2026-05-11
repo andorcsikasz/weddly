@@ -84,6 +84,7 @@ export default function ProfilePage() {
   const [armedDeleteId, setArmedDeleteId] = useState<number | null>(null);
   const [removing, setRemoving] = useState<number | null>(null);
   const [partner, setPartner] = useState<CouplePartnerView | null>(null);
+  const [cancellingInvite, setCancellingInvite] = useState(false);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNext, setPwNext] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -140,6 +141,22 @@ export default function ProfilePage() {
       refresh();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  async function cancelPendingInvite() {
+    setCancellingInvite(true);
+    try {
+      await coupleApi.cancelInvite();
+      // Optimistic: clear the partner card so the Dashboard's invite
+      // widget re-appears on next nav. refresh() to also pick up any
+      // server-side state changes.
+      setPartner(null);
+      refresh();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setCancellingInvite(false);
     }
   }
 
@@ -352,17 +369,34 @@ export default function ProfilePage() {
         <h2 className="text-lg">{t("profile.partner_title")}</h2>
         <p className="mt-2 text-sm text-ink-600">{t("profile.partner_body")}</p>
         {partner ? (
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-ink-900">
-                {partner.full_name ?? t("profile.partner_no_name")}
-              </p>
-              <p className="text-sm text-ink-600 break-all">
-                {partner.email ?? t("profile.partner_no_email")}
-              </p>
+          <>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-ink-900">
+                  {partner.full_name ?? t("profile.partner_no_name")}
+                </p>
+                <p className="text-sm text-ink-600 break-all">
+                  {partner.email ?? t("profile.partner_no_email")}
+                </p>
+              </div>
+              <PartnerStatusPill status={partner.status} t={t} />
             </div>
-            <PartnerStatusPill status={partner.status} t={t} />
-          </div>
+            {partner.status === "invited" && (
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-ink-500">
+                <span>{t("profile.partner_invited_hint")}</span>
+                <button
+                  type="button"
+                  className="text-blush-700 underline-offset-2 hover:underline disabled:opacity-50"
+                  onClick={cancelPendingInvite}
+                  disabled={cancellingInvite}
+                >
+                  {cancellingInvite
+                    ? t("profile.partner_invite_cancelling")
+                    : t("profile.partner_invite_cancel")}
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <p className="mt-4 text-sm text-ink-500">{t("profile.partner_none")}</p>
         )}

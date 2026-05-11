@@ -1260,6 +1260,13 @@ export interface LocaleMessages {
     partner_status_invited: string;
     partner_status_joined: string;
     partner_status_active: string;
+    /** Shown below the "invited" pill — small one-liner + a "cancel
+     *  invite" button so the user can revoke a typo'd invite without
+     *  having to hunt for the Dashboard widget (which is hidden once an
+     *  invite is in flight). */
+    partner_invited_hint: string;
+    partner_invite_cancel: string;
+    partner_invite_cancelling: string;
     payments_title: string;
     payments_body: string;
     /** Security section — change-password form lives here. Collapsible:
