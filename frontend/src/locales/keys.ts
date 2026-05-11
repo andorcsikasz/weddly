@@ -991,9 +991,10 @@ export interface LocaleMessages {
     sort_label: string;
     sort_top: string;
     sort_alpha: string;
-    /** List vs map view toggle on the directory header. */
+    /** Grid / line / map view toggle on the directory header. */
     view_label: string;
-    view_list: string;
+    view_grid: string;
+    view_line: string;
     view_map: string;
     /** Footer note on the map view when some entries aren't geocoded. */
     map_missing_count: string;

@@ -992,7 +992,8 @@ const hu: LocaleMessages = {
     sort_top: "Népszerűség",
     sort_alpha: "Név (A–Z)",
     view_label: "Nézet",
-    view_list: "Lista",
+    view_grid: "Rács",
+    view_line: "Lista",
     view_map: "Térkép",
     map_missing_count: "{n} helyszín nincs még a térképre helyezve.",
     submit: {

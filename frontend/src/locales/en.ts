@@ -988,7 +988,8 @@ const en: LocaleMessages = {
     sort_top: "Top voted",
     sort_alpha: "Name (A–Z)",
     view_label: "View",
-    view_list: "List",
+    view_grid: "Grid",
+    view_line: "List",
     view_map: "Map",
     map_missing_count: "{n} entries aren't placed on the map yet.",
     submit: {

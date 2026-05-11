@@ -19,6 +19,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronRight,
+  LayoutGrid,
   List,
   Map as MapIcon,
   Disc3,
@@ -128,7 +129,17 @@ export default function SuppliersPage() {
   const cityFilter = params.get("city") ?? "";
   const showSavedOnly = params.get("saved") === "1";
   const sortMode: "top" | "alpha" = params.get("sort") === "alpha" ? "alpha" : "top";
-  const viewMode: "list" | "map" = params.get("view") === "map" ? "map" : "list";
+  // viewMode controls how the result set is presented:
+  //   "grid" → 2-column cards (default)
+  //   "line" → single-column compact rows
+  //   "map"  → lazy-loaded Leaflet map
+  // Legacy `?view=list` URLs are coerced to "grid" so old bookmarks still work.
+  const viewMode: "grid" | "line" | "map" = (() => {
+    const v = params.get("view");
+    if (v === "map") return "map";
+    if (v === "line") return "line";
+    return "grid";
+  })();
   // Price ceiling: single 1..5 value meaning "show me up to band N". Reads as
   // a star-rating-style picker. Suppliers without a declared price band pass
   // through (otherwise the filter would hide community submissions that left
@@ -175,10 +186,10 @@ export default function SuppliersPage() {
     else p.delete("sort");
     setParams(p, { replace: true });
   }
-  function setViewMode(next: "list" | "map") {
+  function setViewMode(next: "grid" | "line" | "map") {
     const p = new URLSearchParams(params);
-    if (next === "map") p.set("view", "map");
-    else p.delete("view");
+    if (next === "grid") p.delete("view");
+    else p.set("view", next);
     setParams(p, { replace: true });
   }
   function setPriceCeiling(next: number | null) {
@@ -257,20 +268,18 @@ export default function SuppliersPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
   }, [items, locale]);
 
-  const filtered = useMemo(() => {
+  // Items after all the non-category filters (city, saved, price, guests,
+  // free-text). Used twice: as the base for the displayed list AND to compute
+  // counts for the chain steps + sub-category pills — pills show "how many
+  // would appear if I picked this", so they must ignore the active category.
+  const filteredBeforeCategory = useMemo(() => {
     let out = items;
-    if (activeCat) out = out.filter((s) => s.category === activeCat);
-    else if (activeGroup) {
-      const group = SUPPLIER_GROUPS.find((g) => g.id === activeGroup);
-      const cats = new Set(group?.categories ?? []);
-      out = out.filter((s) => cats.has(s.category));
-    }
     if (cityFilter) out = out.filter((s) => s.city === cityFilter);
     if (showSavedOnly) out = out.filter((s) => saved.has(s.id));
     if (priceMax !== null) {
-      // "Show me up to band N". Suppliers without a declared price band pass
-      // through — the filter only narrows among declared ones, so community
-      // submissions with a blank field stay visible.
+      // Suppliers without a declared price band pass through — the filter
+      // only narrows among declared ones, so community submissions with a
+      // blank field stay visible.
       out = out.filter((s) => s.price_band === null || s.price_band <= priceMax);
     }
     if (guestsFilter !== null) {
@@ -288,6 +297,17 @@ export default function SuppliersPage() {
         return hay.includes(q);
       });
     }
+    return out;
+  }, [items, cityFilter, showSavedOnly, saved, priceMax, guestsFilter, query]);
+
+  const filtered = useMemo(() => {
+    let out = filteredBeforeCategory;
+    if (activeCat) out = out.filter((s) => s.category === activeCat);
+    else if (activeGroup) {
+      const group = SUPPLIER_GROUPS.find((g) => g.id === activeGroup);
+      const cats = new Set(group?.categories ?? []);
+      out = out.filter((s) => cats.has(s.category));
+    }
     // Stable sort: top-voted by net score desc, then curated-first tie-break
     // so an unvoted directory looks the same as today. Alpha mode ignores
     // score entirely and goes by locale-aware name.
@@ -302,19 +322,42 @@ export default function SuppliersPage() {
       });
     }
     return sorted;
-  }, [
-    items,
-    activeGroup,
-    activeCat,
-    cityFilter,
-    showSavedOnly,
-    saved,
-    query,
-    sortMode,
-    locale,
-    priceMax,
-    guestsFilter,
-  ]);
+  }, [filteredBeforeCategory, activeGroup, activeCat, sortMode, locale]);
+
+  // Per-group counts for the top chain. "Mind" gets the total across all
+  // groups. Each group step gets its own count.
+  const groupCounts = useMemo(() => {
+    const map = new Map<SupplierGroup, number>();
+    for (const g of SUPPLIER_GROUPS) map.set(g.id, 0);
+    for (const s of filteredBeforeCategory) {
+      for (const g of SUPPLIER_GROUPS) {
+        if (g.categories.includes(s.category)) {
+          map.set(g.id, (map.get(g.id) ?? 0) + 1);
+        }
+      }
+    }
+    return map;
+  }, [filteredBeforeCategory]);
+
+  // Per-category counts for the sub-category pills (only meaningful when a
+  // group is active). "Mind" within the sub-row gets the in-group total.
+  const subCategoryCounts = useMemo(() => {
+    const map = new Map<SupplierCategory, number>();
+    if (!activeGroup) return map;
+    const group = SUPPLIER_GROUPS.find((g) => g.id === activeGroup);
+    if (!group) return map;
+    const allowed = new Set(group.categories);
+    for (const c of group.categories) map.set(c, 0);
+    for (const s of filteredBeforeCategory) {
+      if (allowed.has(s.category)) map.set(s.category, (map.get(s.category) ?? 0) + 1);
+    }
+    return map;
+  }, [filteredBeforeCategory, activeGroup]);
+
+  const inGroupTotal = useMemo(() => {
+    if (!activeGroup) return filteredBeforeCategory.length;
+    return [...subCategoryCounts.values()].reduce((a, b) => a + b, 0);
+  }, [activeGroup, filteredBeforeCategory.length, subCategoryCounts]);
 
   const subCategories = activeGroup
     ? (SUPPLIER_GROUPS.find((g) => g.id === activeGroup)?.categories ?? [])
@@ -338,30 +381,27 @@ export default function SuppliersPage() {
             aria-label={t("suppliers.view_label")}
             className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 p-0.5 text-xs"
           >
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              aria-pressed={viewMode === "list"}
-              className={
-                viewMode === "list"
-                  ? "inline-flex items-center gap-1 rounded-full bg-ink-700 px-2.5 py-1 text-paper-100"
-                  : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 hover:text-ink-900"
-              }
-            >
-              <List size={12} aria-hidden /> {t("suppliers.view_list")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("map")}
-              aria-pressed={viewMode === "map"}
-              className={
-                viewMode === "map"
-                  ? "inline-flex items-center gap-1 rounded-full bg-ink-700 px-2.5 py-1 text-paper-100"
-                  : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 hover:text-ink-900"
-              }
-            >
-              <MapIcon size={12} aria-hidden /> {t("suppliers.view_map")}
-            </button>
+            {(
+              [
+                { mode: "grid", icon: LayoutGrid, label: "view_grid" },
+                { mode: "line", icon: List, label: "view_line" },
+                { mode: "map", icon: MapIcon, label: "view_map" },
+              ] as const
+            ).map(({ mode, icon: VIcon, label }) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setViewMode(mode)}
+                aria-pressed={viewMode === mode}
+                className={
+                  viewMode === mode
+                    ? "inline-flex items-center gap-1 rounded-full bg-ink-700 px-2.5 py-1 text-paper-100"
+                    : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 hover:text-ink-900"
+                }
+              >
+                <VIcon size={12} aria-hidden /> {t(`suppliers.${label}`)}
+              </button>
+            ))}
           </div>
           <Button variant="primary" size="sm" onClick={() => setSubmitOpen(true)}>
             {t("suppliers.drop_your_own")}
@@ -513,6 +553,7 @@ export default function SuppliersPage() {
               active={activeGroup === null}
               onClick={() => pickGroup(null)}
               label={t("suppliers.filter_all")}
+              count={filteredBeforeCategory.length}
               index={0}
               isAll
             />
@@ -525,6 +566,7 @@ export default function SuppliersPage() {
                     active={activeGroup === g.id}
                     onClick={() => pickGroup(g.id)}
                     label={t(`suppliers.group.${g.id}`)}
+                    count={groupCounts.get(g.id) ?? 0}
                     icon={<Icon size={16} />}
                     index={i + 1}
                   />
@@ -541,7 +583,9 @@ export default function SuppliersPage() {
       </div>
       <p className="mb-5 text-xs text-ink-500">{t("suppliers.chain_help")}</p>
 
-      {/* Sub-category pills (only when a group is selected) */}
+      {/* Sub-category pills (only when a group is selected). Each pill shows
+          the count of suppliers in that category after the non-category
+          filters, so couples can pre-scan where the inventory lives. */}
       {activeGroup && subCategories.length > 0 && (
         <div className="mb-5 flex flex-wrap gap-2">
           <button
@@ -549,15 +593,25 @@ export default function SuppliersPage() {
             onClick={() => setActiveCat(null)}
             className={
               activeCat === null
-                ? "rounded-full border border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100"
-                : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700"
+                ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100"
+                : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700"
             }
           >
             {t("suppliers.filter_all")}
+            <span
+              className={
+                activeCat === null
+                  ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
+                  : "text-[10px] font-medium tabular-nums text-ink-400"
+              }
+            >
+              {inGroupTotal}
+            </span>
           </button>
           {subCategories.map((c) => {
             const Icon = CATEGORY_ICON[c];
             const selected = activeCat === c;
+            const count = subCategoryCounts.get(c) ?? 0;
             return (
               <button
                 key={c}
@@ -571,6 +625,15 @@ export default function SuppliersPage() {
               >
                 <Icon size={13} />
                 {t(`suppliers.cat.${c}`)}
+                <span
+                  className={
+                    selected
+                      ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
+                      : "text-[10px] font-medium tabular-nums text-ink-400"
+                  }
+                >
+                  {count}
+                </span>
               </button>
             );
           })}
@@ -588,11 +651,113 @@ export default function SuppliersPage() {
           <SupplierMap suppliers={filtered} />
         </Suspense>
       ) : (
-        <div className="grid auto-rows-fr gap-3 md:grid-cols-2">
+        <div
+          className={
+            viewMode === "line" ? "flex flex-col gap-2" : "grid auto-rows-fr gap-3 md:grid-cols-2"
+          }
+        >
           {filtered.map((s) => {
             const Icon = CATEGORY_ICON[s.category];
             const isHighlighted = s.id === highlightId;
             const isSaved = saved.has(s.id);
+            if (viewMode === "line") {
+              return (
+                <article
+                  key={s.id}
+                  data-supplier-id={s.id}
+                  className={`relative flex items-center gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 py-3 transition hover:border-paper-300 hover:shadow-sm ${
+                    isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+                  }`}
+                >
+                  <Avatar name={s.name} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                      {s.source === "community" && (
+                        <span className="hidden shrink-0 rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600 sm:inline-flex">
+                          {t("suppliers.community_pill")}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500">
+                      <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                        <Icon size={11} aria-hidden />
+                        {t(`suppliers.cat.${s.category}`)}
+                      </span>
+                      <span aria-hidden className="text-paper-400">
+                        ·
+                      </span>
+                      <span className="uppercase tracking-wide">{s.city}</span>
+                      {s.price_band !== null && (
+                        <>
+                          <span aria-hidden className="text-paper-400">
+                            ·
+                          </span>
+                          <span className="text-ink-600" title={t("suppliers.price_legend")}>
+                            <PriceBandDots band={s.price_band} />
+                          </span>
+                        </>
+                      )}
+                      {(s.capacity_max ?? 0) > 0 && (
+                        <>
+                          <span aria-hidden className="text-paper-400">
+                            ·
+                          </span>
+                          <span className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600">
+                            <Users size={11} aria-hidden />
+                            {s.capacity_min && s.capacity_max
+                              ? t("suppliers.capacity_range", {
+                                  min: s.capacity_min,
+                                  max: s.capacity_max,
+                                })
+                              : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  {/* Action cluster: contact CTAs collapse to icons on small
+                      widths so the row never wraps. Star + vote pinned to the
+                      far right. */}
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <a
+                      href={s.website}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="btn-outline btn-sm"
+                      aria-label={t("suppliers.visit_website")}
+                    >
+                      <span className="hidden md:inline">{t("suppliers.visit_website")}</span>
+                      <span className="md:hidden">→</span>
+                    </a>
+                    {s.contact_phone && (
+                      <a
+                        href={`tel:${s.contact_phone}`}
+                        className="btn-outline btn-sm"
+                        aria-label={s.contact_phone}
+                      >
+                        <Phone size={14} aria-hidden />
+                        <span className="hidden lg:inline">{s.contact_phone}</span>
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleSaved(s.id)}
+                      aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
+                      aria-pressed={isSaved}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
+                    >
+                      <Star
+                        size={15}
+                        className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+                        aria-hidden
+                      />
+                    </button>
+                    <VoteRow supplier={s} onVote={onVote} t={t} />
+                  </div>
+                </article>
+              );
+            }
             return (
               <article
                 key={s.id}
@@ -739,6 +904,7 @@ function ChainStep({
   icon,
   index,
   isAll,
+  count,
 }: {
   active: boolean;
   onClick: () => void;
@@ -746,6 +912,7 @@ function ChainStep({
   icon?: React.ReactNode;
   index: number;
   isAll?: boolean;
+  count?: number;
 }) {
   return (
     <button
@@ -767,6 +934,15 @@ function ChainStep({
       </span>
       {icon}
       <span className="font-medium">{label}</span>
+      {count !== undefined && (
+        <span
+          className={`text-[10px] font-medium tabular-nums ${
+            active ? "text-paper-100/80" : "text-ink-400"
+          }`}
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }
