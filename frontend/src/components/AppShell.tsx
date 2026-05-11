@@ -1,5 +1,12 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
-import { ChefHat, Heart, LayoutDashboard, Users, UtensilsCrossed } from "lucide-react";
+import {
+  ChefHat,
+  Heart,
+  LayoutDashboard,
+  MessageCircle,
+  Users,
+  UtensilsCrossed,
+} from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -120,6 +127,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Wordmark size="sm" />
           </Link>
           <div className="flex items-center gap-2">
+            <a
+              href={`mailto:test.andorcsikasz@gmail.com?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
+              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+              aria-label={t("landing.nav_feedback")}
+            >
+              <MessageCircle size={14} aria-hidden="true" />
+              <span className="hidden sm:inline">{t("landing.nav_feedback")}</span>
+            </a>
             <button
               type="button"
               className="btn-ghost btn-sm inline-flex items-center gap-1.5"

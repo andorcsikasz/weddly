@@ -105,7 +105,7 @@ function PublicHeader() {
         hidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="shrink-0 text-ink-900 transition-colors hover:text-ink-700">
           {/* Header wordmark sits between Wordmark's md and lg presets:
               bigger than the body brand mark, but tracked tightly so the
@@ -178,7 +178,7 @@ function PublicHeader() {
           aria-label="Primary mobile"
           className="border-t border-paper-300 bg-paper-50 md:hidden"
         >
-          <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-4 text-sm text-ink-700 sm:px-6">
+          <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 text-sm text-ink-700 sm:px-6">
             <Link
               to="/vendors"
               className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
