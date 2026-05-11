@@ -43,6 +43,14 @@ export const authApi = {
     apiFetch<{ ok: true }>("POST", "/api/auth/reset", { token, password }),
   changePassword: (body: { current_password: string; new_password: string }) =>
     apiFetch<AuthSession>("POST", "/api/auth/change-password", body),
+  changeEmailRequest: (body: { new_email: string; current_password: string }) =>
+    apiFetch<{ ok: true }>("POST", "/api/auth/change-email-request", body),
+  confirmEmailChange: (token: string) =>
+    apiFetch<{ ok: true; email: string }>(
+      "POST",
+      `/api/auth/change-email/${encodeURIComponent(token)}`,
+      {},
+    ),
   requestVerify: () =>
     apiFetch<{ ok: true; already_verified?: boolean }>("POST", "/api/auth/verify/request", {}),
   verifyEmail: (token: string) =>
@@ -167,6 +175,7 @@ export const seatingApi = {
     width_mm?: number;
     length_mm?: number;
     rotation_deg?: number;
+    disabled_seats?: number[];
   }) => apiFetch<{ table: SeatingTable }>("POST", "/api/seating/tables", body),
   updateTable: (id: number, body: Partial<SeatingTable>) =>
     apiFetch<{ table: SeatingTable }>("PATCH", `/api/seating/tables/${id}`, body),

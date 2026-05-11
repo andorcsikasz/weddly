@@ -89,6 +89,14 @@ export interface LocaleMessages {
     gate_refresh: string;
     gate_logout: string;
   };
+  /** Page reached from the email_change_verify confirm link. */
+  change_email: {
+    page_title: string;
+    page_loading: string;
+    /** Success copy — receives `{email}` (the new address). */
+    page_success: string;
+    page_invalid: string;
+  };
   onboarding: {
     welcome: string;
     intro: string;
@@ -643,6 +651,8 @@ export interface LocaleMessages {
     delete_table: string;
     duplicate_table: string;
     rotate_table: string;
+    layout_label: string;
+    toggle_seat: string;
     confirm_delete_table: string;
     unassigned_guests: string;
     no_unassigned: string;
@@ -952,6 +962,15 @@ export interface LocaleMessages {
     security_pw_success: string;
     security_pw_too_short: string;
     security_pw_mismatch: string;
+    /** Change-email subform under Security. */
+    security_email_title: string;
+    security_email_body: string;
+    security_email_new: string;
+    security_email_password: string;
+    security_email_submit: string;
+    security_email_submitting: string;
+    security_email_sent: string;
+    security_email_invalid: string;
     export_title: string;
     export_body: string;
     export_button: string;

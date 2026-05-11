@@ -20,6 +20,7 @@ import RsvpPage from "./pages/RsvpPage";
 import SeatingPage from "./pages/SeatingPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import VendorsPage from "./pages/VendorsPage";
+import ChangeEmailPage from "./pages/ChangeEmailPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -116,6 +117,14 @@ export default function App() {
         element={
           <Page>
             <VerifyEmailPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/change-email/:token"
+        element={
+          <Page>
+            <ChangeEmailPage />
           </Page>
         }
       />

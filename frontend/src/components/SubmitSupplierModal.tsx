@@ -370,7 +370,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
                   }
                 >
                   {"●".repeat(band)}
-                  {"○".repeat(4 - band)}
+                  {"○".repeat(Math.max(0, 5 - band))}
                 </button>
               );
             })}

@@ -98,6 +98,14 @@ const hu: LocaleMessages = {
     gate_refresh: "Megerősítettem — tovább",
     gate_logout: "Kijelentkezés",
   },
+  change_email: {
+    page_title: "Új e-mail cím megerősítése",
+    page_loading: "Megerősítjük…",
+    page_success:
+      "Kész — innentől a(z) {email} cím a bejelentkezésed. Mindenhonnan kiléptettünk, jelentkezz be újra.",
+    page_invalid:
+      "Ez a link nem érvényes vagy lejárt. Próbáld újra a Profil oldalról, vagy lépj kapcsolatba velünk.",
+  },
   onboarding: {
     welcome: "Üdv a {name}-en!",
     intro:
@@ -678,6 +686,8 @@ const hu: LocaleMessages = {
     delete_table: "Asztal törlése",
     duplicate_table: "Duplikálás",
     rotate_table: "Forgatás 45°",
+    layout_label: "Ülésrend",
+    toggle_seat: "Hely ki/be",
     confirm_delete_table: "Biztos törölhető ez az asztal?",
     unassigned_guests: "Nem leültetett vendégek",
     no_unassigned: "Mindenki le van ültetve!",
@@ -965,6 +975,15 @@ const hu: LocaleMessages = {
     security_pw_success: "Új jelszó beállítva. Küldtünk egy megerősítő e-mailt is.",
     security_pw_too_short: "A jelszó legalább 8 karakter hosszú legyen.",
     security_pw_mismatch: "A két új jelszó nem egyezik.",
+    security_email_title: "E-mail cím módosítása",
+    security_email_body:
+      "Adj meg új e-mail címet — küldünk oda egy megerősítő linket, a régi címedre pedig figyelmeztetést. A váltás csak akkor lép életbe, ha az új címen rákattintasz a linkre.",
+    security_email_new: "Új e-mail cím",
+    security_email_password: "Jelenlegi jelszó",
+    security_email_submit: "Megerősítő link küldése",
+    security_email_submitting: "Küldés…",
+    security_email_sent: "Elküldtük a linket az új címedre. Ellenőrizd ott.",
+    security_email_invalid: "Adj meg egy érvényes e-mail címet.",
     export_title: "Adataid exportálása",
     export_body:
       "Egyetlen JSON fájlban töltheted le a teljes workspace tartalmát — pár, vendégek, költségvetés, ültetés, auditnapló. A PDF-eket (ültetési rend, ültetőkártyák) az Ültetés oldalról töltheted le.",

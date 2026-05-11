@@ -73,6 +73,10 @@ export default function ProfilePage() {
   const [pwConfirm, setPwConfirm] = useState("");
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSubmitting, setPwSubmitting] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
 
   async function refresh() {
     const [pause, current, docs] = await Promise.all([
@@ -188,6 +192,30 @@ export default function ProfilePage() {
     }
   }
 
+  async function requestEmailChange(e: FormEvent) {
+    e.preventDefault();
+    setEmailError(null);
+    const trimmed = newEmail.trim().toLowerCase();
+    if (trimmed.length < 3 || !trimmed.includes("@") || trimmed.startsWith("@")) {
+      setEmailError(t("profile.security_email_invalid"));
+      return;
+    }
+    setEmailSubmitting(true);
+    try {
+      await authApi.changeEmailRequest({
+        new_email: trimmed,
+        current_password: emailPassword,
+      });
+      setNewEmail("");
+      setEmailPassword("");
+      toast.success(t("profile.security_email_sent"));
+    } catch (err) {
+      setEmailError(err instanceof ApiError ? err.message : t("common.error_generic"));
+    } finally {
+      setEmailSubmitting(false);
+    }
+  }
+
   async function redownloadSaved(doc: DataExportSummary) {
     setRedownloading(doc.id);
     try {
@@ -266,6 +294,49 @@ export default function ProfilePage() {
             </button>
           </div>
         </form>
+
+        <div className="mt-8 border-t border-paper-200 pt-6">
+          <h3 className="text-base font-medium">{t("profile.security_email_title")}</h3>
+          <p className="mt-2 text-sm text-ink-600">{t("profile.security_email_body")}</p>
+          <form className="mt-4 grid max-w-md gap-3" onSubmit={requestEmailChange} noValidate>
+            <div>
+              <label htmlFor="new-email" className="field-label">
+                {t("profile.security_email_new")}
+              </label>
+              <input
+                id="new-email"
+                type="email"
+                className="input"
+                autoComplete="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="email-pw" className="field-label">
+                {t("profile.security_email_password")}
+              </label>
+              <input
+                id="email-pw"
+                type="password"
+                className="input"
+                autoComplete="current-password"
+                value={emailPassword}
+                onChange={(e) => setEmailPassword(e.target.value)}
+                required
+              />
+            </div>
+            {emailError && <p className="field-error">{emailError}</p>}
+            <div>
+              <button type="submit" className="btn-outline" disabled={emailSubmitting}>
+                {emailSubmitting
+                  ? t("profile.security_email_submitting")
+                  : t("profile.security_email_submit")}
+              </button>
+            </div>
+          </form>
+        </div>
       </section>
 
       <section className="card mt-6">

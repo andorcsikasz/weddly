@@ -477,14 +477,14 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-/** Four-dot price-band scale: ●○○○ / ●●○○ / ●●●○ / ●●●●. Cleaner than $$$ for HU. */
+/** Five-dot price-band scale: ●○○○○ … ●●●●●. Cleaner than $$$ for HU. */
 function PriceBandDots({ band }: { band: number }) {
-  const total = 4;
+  const total = 5;
   const filled = Math.max(0, Math.min(total, band));
   return (
     <span className="font-mono">
       {"●".repeat(filled)}
-      {"○".repeat(total - filled)}
+      {"○".repeat(Math.max(0, total - filled))}
     </span>
   );
 }

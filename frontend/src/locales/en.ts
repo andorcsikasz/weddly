@@ -99,6 +99,14 @@ const en: LocaleMessages = {
     gate_refresh: "I've confirmed — continue",
     gate_logout: "Sign out",
   },
+  change_email: {
+    page_title: "Confirm your new email",
+    page_loading: "Confirming…",
+    page_success:
+      "Done — {email} is now your sign-in address. We signed you out of every session; please log back in.",
+    page_invalid:
+      "This link is invalid or has expired. Try again from your Profile page, or get in touch.",
+  },
   onboarding: {
     welcome: "Welcome to {name}!",
     intro:
@@ -676,6 +684,8 @@ const en: LocaleMessages = {
     delete_table: "Delete table",
     duplicate_table: "Duplicate",
     rotate_table: "Rotate 45°",
+    layout_label: "Seat layout",
+    toggle_seat: "Toggle seat",
     confirm_delete_table: "Delete this table?",
     unassigned_guests: "Unassigned guests",
     no_unassigned: "Everyone is seated!",
@@ -958,6 +968,15 @@ const en: LocaleMessages = {
     security_pw_success: "New password is set. We've also sent you a confirmation email.",
     security_pw_too_short: "Password must be at least 8 characters.",
     security_pw_mismatch: "The two new passwords don't match.",
+    security_email_title: "Change email address",
+    security_email_body:
+      "Enter a new email — we'll send a confirmation link to that inbox and a heads-up to your current one. The change only takes effect when you click the link from the new inbox.",
+    security_email_new: "New email address",
+    security_email_password: "Current password",
+    security_email_submit: "Send confirmation link",
+    security_email_submitting: "Sending…",
+    security_email_sent: "We've sent the link to your new address — check there.",
+    security_email_invalid: "Please enter a valid email address.",
     export_title: "Export your data",
     export_body:
       "Download everything in your workspace — couple, guests, budget, seating, audit log — as a single JSON file. PDFs (seating chart, place cards) are downloadable from the Seating page.",
