@@ -33,6 +33,11 @@ import type {
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
 import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/supplier_costs";
+import type {
+  SubmitVendorWaitlistInput,
+  VendorWaitlistEntry,
+  VendorWaitlistStatus,
+} from "@shared/vendor_waitlist";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
 import { apiFetch, getToken } from "./api";
 
@@ -337,6 +342,19 @@ export const adminUserApi = {
       {},
     ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/users/${id}`),
+};
+
+export const vendorWaitlistApi = {
+  submit: (body: SubmitVendorWaitlistInput) =>
+    apiFetch<{ entry: VendorWaitlistEntry }>("POST", "/api/vendors/waitlist", body),
+};
+
+export const adminVendorWaitlistApi = {
+  list: () => apiFetch<{ entries: VendorWaitlistEntry[] }>("GET", "/api/admin/vendor-waitlist"),
+  setStatus: (id: number, status: VendorWaitlistStatus) =>
+    apiFetch<{ entry: VendorWaitlistEntry }>("PATCH", `/api/admin/vendor-waitlist/${id}/status`, {
+      status,
+    }),
 };
 
 export const adminSupplierApi = {

@@ -67,6 +67,7 @@ function wipeAll() {
     "community_suppliers",
     "couple_supplier_costs",
     "supplier_votes",
+    "vendor_waitlist",
     "users",
     "couples",
   ];
@@ -3731,6 +3732,123 @@ describe("round-2: PDF unicode glyphs", () => {
     });
     const latinBuf = new Uint8Array(await latin.arrayBuffer());
     expect(buf.byteLength).toBeGreaterThan(latinBuf.byteLength + 100_000);
+  });
+});
+
+describe("vendor waitlist", () => {
+  interface Entry {
+    id: number;
+    business_name: string;
+    email: string;
+    category: string;
+    message: string | null;
+    status: "new" | "contacted" | "dismissed";
+  }
+
+  test("anon can submit; admin sees the entry in the list", async () => {
+    wipeAll();
+    // Bootstrap an admin so we can read the queue. ADMIN_EMAILS = admin@test.test
+    // is set in tests/setup.ts.
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(adminReg.status).toBe(201);
+
+    const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "Florea Studio",
+      email: "florea@example.test",
+      category: "decor_floral",
+      message: "Floral, Budapest area.",
+    });
+    expect(submit.status).toBe(201);
+    expect(submit.data.entry.status).toBe("new");
+
+    const list = await req<{ entries: Entry[] }>("GET", "/api/admin/vendor-waitlist", undefined, {
+      token: adminReg.data.token,
+    });
+    expect(list.status).toBe(200);
+    expect(list.data.entries.length).toBe(1);
+    expect(list.data.entries[0]?.business_name).toBe("Florea Studio");
+  });
+
+  test("rejects bad inputs", async () => {
+    wipeAll();
+    const bad1 = await req("POST", "/api/vendors/waitlist", {
+      business_name: "",
+      email: "x@y.z",
+      category: "venue",
+    });
+    expect(bad1.status).toBe(400);
+    const bad2 = await req("POST", "/api/vendors/waitlist", {
+      business_name: "A",
+      email: "not-an-email",
+      category: "venue",
+    });
+    expect(bad2.status).toBe(400);
+    const bad3 = await req("POST", "/api/vendors/waitlist", {
+      business_name: "A",
+      email: "x@y.z",
+      category: "made-up",
+    });
+    expect(bad3.status).toBe(400);
+  });
+
+  test("admin can move status: new → contacted → dismissed → new", async () => {
+    wipeAll();
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "Cake Co",
+      email: "cake@example.test",
+      category: "cake_dessert",
+      message: null,
+    });
+    const id = submit.data.entry.id;
+
+    const to1 = await req<{ entry: Entry }>(
+      "PATCH",
+      `/api/admin/vendor-waitlist/${id}/status`,
+      { status: "contacted" },
+      { token: adminReg.data.token },
+    );
+    expect(to1.data.entry.status).toBe("contacted");
+
+    const to2 = await req<{ entry: Entry }>(
+      "PATCH",
+      `/api/admin/vendor-waitlist/${id}/status`,
+      { status: "dismissed" },
+      { token: adminReg.data.token },
+    );
+    expect(to2.data.entry.status).toBe("dismissed");
+
+    const to3 = await req<{ entry: Entry }>(
+      "PATCH",
+      `/api/admin/vendor-waitlist/${id}/status`,
+      { status: "new" },
+      { token: adminReg.data.token },
+    );
+    expect(to3.data.entry.status).toBe("new");
+  });
+
+  test("admin endpoints reject non-admin + anon", async () => {
+    wipeAll();
+    const list1 = await req("GET", "/api/admin/vendor-waitlist");
+    expect(list1.status).toBe(401);
+
+    const userReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "notadmin@weddly.test",
+      password: "supersafe123",
+      full_name: "User",
+    });
+    const list2 = await req("GET", "/api/admin/vendor-waitlist", undefined, {
+      token: userReg.data.token,
+    });
+    expect(list2.status).toBe(403);
   });
 });
 

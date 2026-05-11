@@ -877,20 +877,20 @@ export function VendorListingMockup({ className }: Common) {
   const { t } = useT();
   return (
     <svg
-      viewBox="0 0 360 220"
+      viewBox="0 0 360 232"
       role="img"
       aria-label="Vendor listing card preview"
       className={className}
     >
       <g className="text-ink-900" opacity="0.06">
-        <rect x="4" y="10" width="360" height="220" rx="16" fill="currentColor" />
+        <rect x="4" y="10" width="360" height="222" rx="16" fill="currentColor" />
       </g>
       <g className="text-paper-200">
         <rect
           x="0"
           y="0"
           width="360"
-          height="220"
+          height="232"
           rx="16"
           fill="white"
           stroke="currentColor"

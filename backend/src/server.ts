@@ -24,6 +24,7 @@ import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
 import { registerAdminUserRoutes } from "./routes/admin_users";
+import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerBudgetRoutes } from "./routes/budget";
 import { registerCommunitySupplierRoutes } from "./routes/community_suppliers";
@@ -67,6 +68,7 @@ registerSupplierCostRoutes(router);
 registerCommunitySupplierRoutes(router);
 registerAdminSupplierRoutes(router);
 registerAdminUserRoutes(router);
+registerVendorWaitlistRoutes(router);
 registerUserCoupleRoutes(router);
 
 const IS_PROD = process.env.NODE_ENV === "production";

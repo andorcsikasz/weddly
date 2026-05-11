@@ -2,7 +2,7 @@
 // button; panel shows name, email, link to /app/profile, and Sign out.
 // Closes on outside click, Escape, route change, or item selection.
 
-import { LogOut, ShieldCheck, UserCog, UserRound } from "lucide-react";
+import { Inbox, LogOut, ShieldCheck, UserCog, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -102,6 +102,14 @@ export function ProfileMenu() {
               >
                 <UserCog size={16} aria-hidden="true" />
                 <span>{t("admin.nav_users")}</span>
+              </Link>
+              <Link
+                to="/app/admin/vendor-waitlist"
+                role="menuitem"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blush-700 hover:bg-blush-50"
+              >
+                <Inbox size={16} aria-hidden="true" />
+                <span>{t("admin.nav_waitlist")}</span>
               </Link>
               <div className="my-1 h-px bg-paper-200" />
             </>

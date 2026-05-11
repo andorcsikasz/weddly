@@ -5,6 +5,7 @@ import { useAuth } from "./lib/auth";
 import AboutPage from "./pages/AboutPage";
 import AdminSuppliersPage from "./pages/AdminSuppliersPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminVendorWaitlistPage from "./pages/AdminVendorWaitlistPage";
 import BudgetPage from "./pages/BudgetPage";
 import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -270,6 +271,18 @@ export default function App() {
             <RequireAuth>
               <RequireAdmin>
                 <AdminUsersPage />
+              </RequireAdmin>
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/admin/vendor-waitlist"
+        element={
+          <Page>
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminVendorWaitlistPage />
               </RequireAdmin>
             </RequireAuth>
           </Page>

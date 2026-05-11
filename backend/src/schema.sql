@@ -353,3 +353,21 @@ CREATE TABLE IF NOT EXISTS email_dispatches (
   UNIQUE(couple_id, user_id, kind)
 );
 CREATE INDEX IF NOT EXISTS idx_email_dispatches_kind ON email_dispatches(kind);
+
+-- Public-form "we want to get listed" submissions from /vendors. Anonymous
+-- (no auth), captured by /api/vendors/waitlist. Admins triage them at
+-- /app/admin/vendor-waitlist — status moves from 'new' → 'contacted' or
+-- 'dismissed' as the admin works through the queue. PII (email) hangs
+-- around until manually deleted; there's no auto-purge yet.
+CREATE TABLE IF NOT EXISTS vendor_waitlist (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  business_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  category TEXT NOT NULL,                                      -- one of SupplierCategory
+  message TEXT,
+  status TEXT NOT NULL DEFAULT 'new',                          -- 'new' | 'contacted' | 'dismissed'
+  reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_waitlist_status ON vendor_waitlist(status, created_at DESC);

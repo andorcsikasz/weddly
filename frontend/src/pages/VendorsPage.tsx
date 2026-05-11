@@ -1,9 +1,12 @@
-import { ArrowLeft, Mail } from "lucide-react";
-import type { ReactNode } from "react";
+import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
+import { ArrowLeft, Check } from "lucide-react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
 import { PhaseAftermathArt, PhaseGuestsArt, PhaseSuppliersArt } from "../components/illustrations";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
+import { ApiError } from "../lib/api";
+import { vendorWaitlistApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -100,22 +103,152 @@ function Benefit({
   );
 }
 
+function isLikelyEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
 function WaitlistContact() {
   const { t } = useT();
-  const subject = encodeURIComponent(t("vendors.contact_subject"));
-  const href = `mailto:hello@weddly.hu?subject=${subject}`;
+  const [businessName, setBusinessName] = useState("");
+  const [email, setEmail] = useState("");
+  const [category, setCategory] = useState<SupplierCategory | "">("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (submitting) return;
+    setErrorMsg(null);
+
+    const name = businessName.trim();
+    const emailTrim = email.trim();
+    const msg = message.trim();
+    if (!name) return setErrorMsg(t("vendors.form_err_required"));
+    if (!emailTrim || !isLikelyEmail(emailTrim)) {
+      return setErrorMsg(t("vendors.form_err_email"));
+    }
+    if (!category) return setErrorMsg(t("vendors.form_err_category"));
+
+    setSubmitting(true);
+    try {
+      await vendorWaitlistApi.submit({
+        business_name: name,
+        email: emailTrim,
+        category,
+        message: msg ? msg : null,
+      });
+      setSubmitted(true);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 429) {
+        setErrorMsg(t("vendors.form_err_rate_limited"));
+      } else if (err instanceof ApiError) {
+        setErrorMsg(err.message);
+      } else {
+        setErrorMsg(t("common.error_generic"));
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="card text-center">
+        <Check size={32} className="mx-auto text-blush-600" aria-hidden />
+        <h2 className="mt-3 font-serif text-3xl text-ink-900 sm:text-4xl">
+          {t("vendors.form_success_title")}
+        </h2>
+        <p className="mt-2 text-sm text-ink-600">{t("vendors.form_success_body")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="card">
       <h2 className="font-serif text-3xl text-ink-900 sm:text-4xl">{t("vendors.contact_title")}</h2>
       <p className="mt-2 text-sm text-ink-600">{t("vendors.contact_body")}</p>
-      <a
-        href={href}
-        className="btn-primary btn-lg mt-8 inline-flex w-full justify-center sm:w-auto"
-      >
-        <Mail size={16} />
-        {t("vendors.contact_cta")}
-      </a>
+      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <div>
+          <label htmlFor="vendor-business" className="field-label">
+            {t("vendors.form_business_label")}
+          </label>
+          <input
+            id="vendor-business"
+            className="input"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+            maxLength={120}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="vendor-email" className="field-label">
+            {t("vendors.form_email_label")}
+          </label>
+          <input
+            id="vendor-email"
+            type="email"
+            className="input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            maxLength={200}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="vendor-category" className="field-label">
+            {t("vendors.form_category_label")}
+          </label>
+          <select
+            id="vendor-category"
+            className="input"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
+            required
+          >
+            <option value="" disabled>
+              {t("vendors.form_category_placeholder")}
+            </option>
+            {SUPPLIER_GROUPS.map((g) => (
+              <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
+                {g.categories.map((c) => (
+                  <option key={c} value={c}>
+                    {t(`suppliers.cat.${c}`)}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="vendor-message" className="field-label">
+            {t("vendors.form_message_label")}
+          </label>
+          <textarea
+            id="vendor-message"
+            className="input"
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            maxLength={1000}
+            placeholder={t("vendors.form_message_placeholder")}
+          />
+        </div>
+        {errorMsg && (
+          <p className="text-sm text-blush-700" role="alert">
+            {errorMsg}
+          </p>
+        )}
+        <button
+          type="submit"
+          className="btn-primary btn-lg inline-flex w-full justify-center sm:w-auto"
+          disabled={submitting}
+        >
+          {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}
+        </button>
+      </form>
     </div>
   );
 }

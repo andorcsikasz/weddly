@@ -10,6 +10,7 @@ import type {
   DataExportSummary,
   ExportKind,
 } from "@shared/types";
+import { ChevronDown } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
@@ -372,102 +373,123 @@ export default function ProfilePage() {
         <p className="mt-2 text-sm text-ink-600">{t("profile.payments_body")}</p>
       </section>
 
-      <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.security_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("profile.security_body")}</p>
-        <form className="mt-4 grid max-w-md gap-3" onSubmit={changePassword} noValidate>
-          <div>
-            <label htmlFor="pw-current" className="field-label">
-              {t("profile.security_pw_current")}
-            </label>
-            <input
-              id="pw-current"
-              type="password"
-              className="input"
-              autoComplete="current-password"
-              value={pwCurrent}
-              onChange={(e) => setPwCurrent(e.target.value)}
-              required
+      <section className="card mt-6 p-0">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5">
+            <div className="min-w-0">
+              <h2 className="text-lg">{t("profile.security_title")}</h2>
+              <p className="mt-1 text-sm text-ink-500">{t("profile.security_summary")}</p>
+            </div>
+            <ChevronDown
+              size={18}
+              className="shrink-0 text-ink-500 transition-transform group-open:rotate-180"
+              aria-hidden
             />
-          </div>
-          <div>
-            <label htmlFor="pw-new" className="field-label">
-              {t("profile.security_pw_new")}
-            </label>
-            <input
-              id="pw-new"
-              type="password"
-              className="input"
-              autoComplete="new-password"
-              value={pwNext}
-              onChange={(e) => setPwNext(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="pw-confirm" className="field-label">
-              {t("profile.security_pw_confirm")}
-            </label>
-            <input
-              id="pw-confirm"
-              type="password"
-              className="input"
-              autoComplete="new-password"
-              value={pwConfirm}
-              onChange={(e) => setPwConfirm(e.target.value)}
-              required
-            />
-          </div>
-          {pwError && <p className="field-error">{pwError}</p>}
-          <div>
-            <button type="submit" className="btn-primary" disabled={pwSubmitting}>
-              {pwSubmitting ? t("profile.security_pw_submitting") : t("profile.security_pw_submit")}
-            </button>
-          </div>
-        </form>
+          </summary>
+          <div className="grid gap-6 border-t border-paper-200 px-6 py-5 md:grid-cols-2">
+            <form className="grid gap-2" onSubmit={changePassword} noValidate>
+              <h3 className="text-sm font-medium text-ink-800">
+                {t("profile.security_pw_heading")}
+              </h3>
+              <div>
+                <label htmlFor="pw-current" className="field-label">
+                  {t("profile.security_pw_current")}
+                </label>
+                <input
+                  id="pw-current"
+                  type="password"
+                  className="input"
+                  autoComplete="current-password"
+                  value={pwCurrent}
+                  onChange={(e) => setPwCurrent(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="pw-new" className="field-label">
+                  {t("profile.security_pw_new")}
+                </label>
+                <input
+                  id="pw-new"
+                  type="password"
+                  className="input"
+                  autoComplete="new-password"
+                  value={pwNext}
+                  onChange={(e) => setPwNext(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="pw-confirm" className="field-label">
+                  {t("profile.security_pw_confirm")}
+                </label>
+                <input
+                  id="pw-confirm"
+                  type="password"
+                  className="input"
+                  autoComplete="new-password"
+                  value={pwConfirm}
+                  onChange={(e) => setPwConfirm(e.target.value)}
+                  required
+                />
+              </div>
+              {pwError && <p className="field-error">{pwError}</p>}
+              <button
+                type="submit"
+                className="btn-primary mt-1 justify-self-start"
+                disabled={pwSubmitting}
+              >
+                {pwSubmitting
+                  ? t("profile.security_pw_submitting")
+                  : t("profile.security_pw_submit")}
+              </button>
+            </form>
 
-        <div className="mt-8 border-t border-paper-200 pt-6">
-          <h3 className="text-base font-medium">{t("profile.security_email_title")}</h3>
-          <p className="mt-2 text-sm text-ink-600">{t("profile.security_email_body")}</p>
-          <form className="mt-4 grid max-w-md gap-3" onSubmit={requestEmailChange} noValidate>
-            <div>
-              <label htmlFor="new-email" className="field-label">
-                {t("profile.security_email_new")}
-              </label>
-              <input
-                id="new-email"
-                type="email"
-                className="input"
-                autoComplete="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="email-pw" className="field-label">
-                {t("profile.security_email_password")}
-              </label>
-              <input
-                id="email-pw"
-                type="password"
-                className="input"
-                autoComplete="current-password"
-                value={emailPassword}
-                onChange={(e) => setEmailPassword(e.target.value)}
-                required
-              />
-            </div>
-            {emailError && <p className="field-error">{emailError}</p>}
-            <div>
-              <button type="submit" className="btn-outline" disabled={emailSubmitting}>
+            <form className="grid gap-2" onSubmit={requestEmailChange} noValidate>
+              <h3 className="text-sm font-medium text-ink-800">
+                {t("profile.security_email_heading")}
+              </h3>
+              <div>
+                <label htmlFor="new-email" className="field-label">
+                  {t("profile.security_email_new")}
+                </label>
+                <input
+                  id="new-email"
+                  type="email"
+                  className="input"
+                  autoComplete="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="email-pw" className="field-label">
+                  {t("profile.security_email_password")}
+                </label>
+                <input
+                  id="email-pw"
+                  type="password"
+                  className="input"
+                  autoComplete="current-password"
+                  value={emailPassword}
+                  onChange={(e) => setEmailPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {emailError && <p className="field-error">{emailError}</p>}
+              <button
+                type="submit"
+                className="btn-outline mt-1 justify-self-start"
+                disabled={emailSubmitting}
+              >
                 {emailSubmitting
                   ? t("profile.security_email_submitting")
                   : t("profile.security_email_submit")}
               </button>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
+        </details>
       </section>
 
       <section className="card mt-6">

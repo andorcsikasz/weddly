@@ -533,7 +533,15 @@ export interface LocaleMessages {
     form_submitting: string;
     form_success_title: string;
     form_success_body: string;
-    /** Mailto-based interest CTA (replaces fake waitlist form). */
+    /** New: real waitlist form fields + validation copy. */
+    form_message_label: string;
+    form_message_placeholder: string;
+    form_err_required: string;
+    form_err_email: string;
+    form_err_category: string;
+    form_err_rate_limited: string;
+    /** Legacy mailto-based interest CTA — kept around in case the form path
+     *  is ever rolled back. */
     contact_title: string;
     contact_body: string;
     contact_cta: string;
@@ -960,9 +968,25 @@ export interface LocaleMessages {
   };
   admin: {
     nav_label: string;
-    /** Sidebar sub-labels for the two admin pages. */
+    /** Sidebar sub-labels for the admin pages. */
     nav_suppliers: string;
     nav_users: string;
+    nav_waitlist: string;
+    /** /app/admin/vendor-waitlist page — triage of /vendors submissions. */
+    waitlist_title: string;
+    waitlist_sub: string;
+    waitlist_empty: string;
+    waitlist_col_business: string;
+    waitlist_col_category: string;
+    waitlist_col_submitted: string;
+    waitlist_col_status: string;
+    waitlist_col_actions: string;
+    waitlist_status_new: string;
+    waitlist_status_contacted: string;
+    waitlist_status_dismissed: string;
+    waitlist_mark_contacted: string;
+    waitlist_dismiss: string;
+    waitlist_reopen: string;
     /** /app/admin/users page — read-only directory of users + couples. */
     users_title: string;
     users_sub: string;
@@ -1170,9 +1194,15 @@ export interface LocaleMessages {
     partner_status_active: string;
     payments_title: string;
     payments_body: string;
-    /** Security section — change-password form lives here. */
+    /** Security section — change-password form lives here. Collapsible:
+     *  `security_summary` is the one-line teaser shown when the section is
+     *  closed; the in-form sub-headings live in `security_pw_heading` and
+     *  `security_email_heading`. The legacy `_body` keys are still wired
+     *  in case some surface needs the longer copy. */
     security_title: string;
+    security_summary: string;
     security_body: string;
+    security_pw_heading: string;
     security_pw_current: string;
     security_pw_new: string;
     security_pw_confirm: string;
@@ -1182,6 +1212,7 @@ export interface LocaleMessages {
     security_pw_too_short: string;
     security_pw_mismatch: string;
     /** Change-email subform under Security. */
+    security_email_heading: string;
     security_email_title: string;
     security_email_body: string;
     security_email_new: string;
