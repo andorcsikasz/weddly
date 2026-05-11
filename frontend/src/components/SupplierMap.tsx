@@ -7,26 +7,29 @@
 
 import type { DirectorySupplier } from "@shared/suppliers";
 import L from "leaflet";
-import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
-import iconUrl from "leaflet/dist/images/marker-icon.png";
-import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 import "leaflet/dist/leaflet.css";
 import { useMemo } from "react";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
 import { useT } from "../lib/i18n";
 
-// Use bundled marker PNGs (Vite emits hashed files under /assets/, which the
-// server CSP `img-src 'self'` covers). Pointing at unpkg.com instead would
-// fail CSP without a wildcard CDN allowlist.
-const DEFAULT_ICON = L.icon({
-  iconUrl,
-  iconRetinaUrl,
-  shadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+// Brand-tinted vector dots instead of Leaflet's default PNG pins. Keeps the
+// map quieter (no shadow, no anchor offset) and matches the rest of the
+// directory's flat / paper-tinted look. Two states:
+// - default:  ink-700 fill, paper-50 outline   (the quiet base look)
+// - hover:    blush-600 fill, paper-50 outline (handled in CSS below)
+const PIN_STYLE = {
+  base: {
+    radius: 7,
+    fillColor: "#243150", // ink-700
+    color: "#fbfaf5", // paper-50
+    weight: 2,
+    opacity: 1,
+    fillOpacity: 0.95,
+  },
+  hover: {
+    fillColor: "#bf4a30", // blush-600
+  },
+} as const;
 
 const HUNGARY_CENTER: [number, number] = [47.16, 19.51];
 
@@ -63,7 +66,16 @@ export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplie
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {pins.map((s) => (
-          <Marker key={s.id} position={[s.lat, s.lng]} icon={DEFAULT_ICON}>
+          <CircleMarker
+            key={s.id}
+            center={[s.lat, s.lng]}
+            pathOptions={PIN_STYLE.base}
+            radius={PIN_STYLE.base.radius}
+            eventHandlers={{
+              mouseover: (e) => e.target.setStyle({ fillColor: PIN_STYLE.hover.fillColor }),
+              mouseout: (e) => e.target.setStyle({ fillColor: PIN_STYLE.base.fillColor }),
+            }}
+          >
             <Popup>
               <div className="space-y-1">
                 <p className="font-semibold text-ink-900">{s.name}</p>
@@ -84,7 +96,7 @@ export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplie
                 </a>
               </div>
             </Popup>
-          </Marker>
+          </CircleMarker>
         ))}
       </MapContainer>
       {suppliers.length > pins.length && (
