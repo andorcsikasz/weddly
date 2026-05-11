@@ -2404,15 +2404,15 @@ describe("community suppliers", () => {
     wipeAll();
     const { token } = await bootstrapCouple("validator@weddly.test");
 
+    // city, blurb, and website are now optional (the modal lets users submit
+    // skeletal entries). Only the truly required + format-sensitive cases
+    // still 400.
     const cases: Array<{ label: string; body: Record<string, unknown> }> = [
       { label: "missing category", body: validPayload({ category: undefined }) },
       { label: "unknown category", body: validPayload({ category: "not_a_real_category" }) },
       { label: "empty name", body: validPayload({ name: "" }) },
       { label: "name too long", body: validPayload({ name: "x".repeat(121) }) },
-      { label: "empty city", body: validPayload({ city: "" }) },
-      { label: "empty blurb", body: validPayload({ blurb: "" }) },
       { label: "blurb too long", body: validPayload({ blurb: "y".repeat(501) }) },
-      { label: "missing website", body: validPayload({ website: "" }) },
       { label: "website without http(s)", body: validPayload({ website: "crystal-hall.test" }) },
       {
         label: "website with javascript: protocol",

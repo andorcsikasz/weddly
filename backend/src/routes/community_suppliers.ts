@@ -9,6 +9,7 @@ import {
   insertCommunitySupplier,
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
+import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "../domain/maps_resolver";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
@@ -47,6 +48,10 @@ function trimStr(v: unknown): string {
 }
 
 function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
+  // Only name + category + price_band are truly required — they're what makes
+  // a card displayable and rankable. Everything else is optional; the form
+  // accepts skeletal entries that the submitter can complete later (or that
+  // an admin can flesh out).
   const category = typeof body.category === "string" ? body.category : "";
   if (!VALID_CATEGORIES.has(category as SupplierCategory)) {
     throw new HttpError(400, "Invalid category");
@@ -57,7 +62,6 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
   if (name.length > 120) throw new HttpError(400, "name too long (max 120)");
 
   const city = trimStr(body.city);
-  if (!city) throw new HttpError(400, "city required");
   if (city.length > 80) throw new HttpError(400, "city too long (max 80)");
 
   let address: string | null = null;
@@ -70,27 +74,27 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
   }
 
   const blurb = trimStr(body.blurb);
-  if (!blurb) throw new HttpError(400, "blurb required");
   if (blurb.length > 500) throw new HttpError(400, "blurb too long (max 500)");
 
+  // Website is optional now. When present, still validate hard so we don't
+  // store malformed or javascript: URLs.
   const website = trimStr(body.website);
-  if (!website) throw new HttpError(400, "website required");
-  if (website.length > 300) throw new HttpError(400, "website too long (max 300)");
-  if (!website.startsWith("http://") && !website.startsWith("https://")) {
-    throw new HttpError(400, "website must start with http:// or https://");
+  if (website) {
+    if (website.length > 300) throw new HttpError(400, "website too long (max 300)");
+    if (!website.startsWith("http://") && !website.startsWith("https://")) {
+      throw new HttpError(400, "website must start with http:// or https://");
+    }
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(website);
+    } catch {
+      throw new HttpError(400, "website is not a valid URL");
+    }
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new HttpError(400, "website protocol must be http or https");
+    }
+    if (!parsedUrl.hostname) throw new HttpError(400, "website hostname required");
   }
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(website);
-  } catch {
-    throw new HttpError(400, "website is not a valid URL");
-  }
-  // Defence in depth: reject anything that parses as a non-http(s) scheme even
-  // after the prefix check (e.g. "https://x@javascript:..." craft attempts).
-  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-    throw new HttpError(400, "website protocol must be http or https");
-  }
-  if (!parsedUrl.hostname) throw new HttpError(400, "website hostname required");
 
   let contact_email: string | null = null;
   if (body.contact_email != null && body.contact_email !== "") {
@@ -134,6 +138,11 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
   };
 }
 
+// Dedupe step runs only when there's a website to dedupe by.
+function shouldCheckDuplicate(website: string): boolean {
+  return website.length > 0;
+}
+
 async function handleSubmit(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   // Per-IP guard runs before validation to throttle floods of garbage. Per-user
@@ -146,9 +155,11 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
 
   rateLimit(`user:${userId}`, "supplier_submit_user", { capacity: 5, refillRate: 1 / 3600 });
 
-  const dup = findActiveByWebsite(input.website);
-  if (dup) {
-    throw new HttpError(409, `Duplicate website — already in the directory: ${dup.name}`);
+  if (shouldCheckDuplicate(input.website)) {
+    const dup = findActiveByWebsite(input.website);
+    if (dup) {
+      throw new HttpError(409, `Duplicate website — already in the directory: ${dup.name}`);
+    }
   }
 
   const id = insertCommunitySupplier(userId, input);
@@ -178,6 +189,29 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   );
 }
 
+interface ResolveBody {
+  url?: unknown;
+}
+
+async function handleResolveMapsUrl(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  // Strict per-user bucket — Nominatim's TOS asks for ≤ 1 req/sec, and even
+  // typing speed shouldn't produce more than one resolve per ~2 seconds.
+  rateLimit(`user:${userId}`, "maps_resolve", { capacity: 5, refillRate: 1 / 2 });
+
+  const body = await readJson<ResolveBody>(ctx.req);
+  const raw = typeof body.url === "string" ? body.url.trim() : "";
+  if (!raw) throw new HttpError(400, "url required");
+  if (raw.length > 600) throw new HttpError(400, "url too long");
+  if (!isGoogleMapsUrl(raw)) {
+    throw new HttpError(400, "not a recognised Google Maps URL");
+  }
+
+  const resolved = await resolveGoogleMapsUrl(raw);
+  return json({ place: resolved });
+}
+
 export function registerCommunitySupplierRoutes(router: Router) {
   router.post("/api/suppliers/community", handleSubmit, true);
+  router.post("/api/suppliers/resolve-maps-url", handleResolveMapsUrl, true);
 }

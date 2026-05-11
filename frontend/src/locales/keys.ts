@@ -962,6 +962,11 @@ export interface LocaleMessages {
       name_label: string;
       city_label: string;
       address_label: string;
+      address_help: string;
+      address_resolving: string;
+      address_resolved: string;
+      address_resolved_partial: string;
+      address_resolve_failed: string;
       website_label: string;
       email_label: string;
       phone_label: string;

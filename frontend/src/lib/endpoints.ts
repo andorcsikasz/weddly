@@ -324,6 +324,19 @@ export const supplierApi = {
     ),
   submitCommunity: (body: SubmitCommunitySupplierInput) =>
     apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
+  /** Best-effort resolver: paste a Google Maps URL, get back any of:
+   *  name, address, lat/lng, website, phone. Each field may be null. */
+  resolveMapsUrl: (url: string) =>
+    apiFetch<{
+      place: {
+        name: string | null;
+        address: string | null;
+        lat: number | null;
+        lng: number | null;
+        website: string | null;
+        phone: string | null;
+      };
+    }>("POST", "/api/suppliers/resolve-maps-url", { url }),
   vote: (supplierId: string, value: -1 | 0 | 1) =>
     apiFetch<{ supplier_id: string; votes_score: number; user_vote: -1 | 0 | 1 }>(
       "PUT",

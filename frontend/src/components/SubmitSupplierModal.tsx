@@ -1,7 +1,7 @@
 import type { SubmitCommunitySupplierInput, PriceBand } from "@shared/community_suppliers";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -55,20 +55,86 @@ function isLikelyEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
+/** Cheap client-side check: only fire the resolver when the address field
+ *  contains something that looks like a Google Maps share link. The server
+ *  re-validates before doing the network call. */
+function looksLikeMapsUrl(s: string): boolean {
+  const v = s.trim().toLowerCase();
+  if (!v.startsWith("http")) return false;
+  return (
+    v.includes("maps.app.goo.gl") ||
+    v.includes("goo.gl/maps") ||
+    v.includes("google.com/maps") ||
+    v.includes("google.hu/maps") ||
+    v.includes("maps.google.")
+  );
+}
+
 export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
   const { t } = useT();
   const toast = useToast();
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  // Maps-URL resolver state — guards against double-fire (resolver is rate-
+  // limited per user) and surfaces progress/result copy in the address helper.
+  const [resolving, setResolving] = useState(false);
+  const [resolveMsg, setResolveMsg] = useState<string | null>(null);
+  const lastResolvedRef = useRef<string>("");
 
   useEffect(() => {
     if (open) {
       setForm(emptyForm());
       setErrors({});
       setSubmitting(false);
+      setResolving(false);
+      setResolveMsg(null);
+      lastResolvedRef.current = "";
     }
   }, [open]);
+
+  async function maybeResolveMapsUrl(raw: string) {
+    const trimmed = raw.trim();
+    if (!looksLikeMapsUrl(trimmed)) return;
+    // Skip if we already resolved this exact URL (blur fires repeatedly).
+    if (lastResolvedRef.current === trimmed) return;
+    lastResolvedRef.current = trimmed;
+
+    setResolving(true);
+    setResolveMsg(null);
+    try {
+      const { place } = await supplierApi.resolveMapsUrl(trimmed);
+      // Replace the URL with the human address — and only fill empty siblings
+      // (don't clobber user-typed values).
+      setForm((cur) => ({
+        ...cur,
+        address: place.address ?? cur.address,
+        name: cur.name.trim() ? cur.name : (place.name ?? cur.name),
+        website: cur.website.trim() ? cur.website : (place.website ?? cur.website),
+        contact_phone: cur.contact_phone.trim()
+          ? cur.contact_phone
+          : (place.phone ?? cur.contact_phone),
+      }));
+      const filled =
+        Number(!!place.address) +
+        Number(!!place.name) +
+        Number(!!place.website) +
+        Number(!!place.phone);
+      setResolveMsg(
+        filled > 0
+          ? t("suppliers.submit.address_resolved")
+          : t("suppliers.submit.address_resolved_partial"),
+      );
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 429) {
+        setResolveMsg(t("suppliers.submit.err_rate_limited"));
+      } else {
+        setResolveMsg(t("suppliers.submit.address_resolve_failed"));
+      }
+    } finally {
+      setResolving(false);
+    }
+  }
 
   function setField<K extends keyof ReturnType<typeof emptyForm>>(
     key: K,
@@ -88,30 +154,30 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     const required = t("suppliers.submit.err_required");
     const tooLong = t("suppliers.submit.err_too_long");
 
+    // Only category + name + price_band stay required. Everything else is
+    // optional — the directory accepts skeletal entries that can be filled in
+    // later or by an admin moderating the submission.
     if (!form.category) next.category = required;
 
     const name = form.name.trim();
     if (!name) next.name = required;
     else if (name.length > 120) next.name = tooLong;
 
-    const city = form.city.trim();
-    if (!city) next.city = required;
-    else if (city.length > 80) next.city = tooLong;
+    if (form.city.trim().length > 80) next.city = tooLong;
 
     const address = form.address.trim();
-    if (address && address.length > 200) next.address = tooLong;
+    // Address holds either a typed address or a Google Maps URL the user
+    // pastes — allow up to 600 chars so long Maps URLs fit.
+    if (address && address.length > 600) next.address = tooLong;
 
     const website = form.website.trim();
-    if (!website) next.website = required;
-    else if (!isValidUrl(website)) next.website = t("suppliers.submit.err_invalid_url");
+    if (website && !isValidUrl(website)) next.website = t("suppliers.submit.err_invalid_url");
 
     const email = form.contact_email.trim();
     if (email && !isLikelyEmail(email))
       next.contact_email = t("suppliers.submit.err_invalid_email");
 
-    const blurb = form.blurb.trim();
-    if (!blurb) next.blurb = required;
-    else if (blurb.length > 500) next.blurb = tooLong;
+    if (form.blurb.trim().length > 500) next.blurb = tooLong;
 
     if (form.price_band === null) next.price_band = required;
 
@@ -265,7 +331,6 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
         <TextField
           id="submit-supplier-city"
           label={t("suppliers.submit.city_label")}
-          required
           maxLength={80}
           value={form.city}
           onChange={(e) => setField("city", e.target.value)}
@@ -274,18 +339,23 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
 
         <TextField
           id="submit-supplier-address"
-          label={`${t("suppliers.submit.address_label")} ${t("suppliers.submit.phone_optional")}`}
-          maxLength={200}
+          label={t("suppliers.submit.address_label")}
+          maxLength={600}
           value={form.address}
           onChange={(e) => setField("address", e.target.value)}
+          onBlur={() => maybeResolveMapsUrl(form.address)}
           errorText={errors.address}
+          helperText={
+            resolving
+              ? t("suppliers.submit.address_resolving")
+              : (resolveMsg ?? t("suppliers.submit.address_help"))
+          }
         />
 
         <TextField
           id="submit-supplier-website"
           label={t("suppliers.submit.website_label")}
           type="url"
-          required
           inputMode="url"
           placeholder="https://"
           value={form.website}
@@ -305,7 +375,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
 
         <TextField
           id="submit-supplier-phone"
-          label={`${t("suppliers.submit.phone_label")} ${t("suppliers.submit.phone_optional")}`}
+          label={t("suppliers.submit.phone_label")}
           type="tel"
           inputMode="tel"
           value={form.contact_phone}
@@ -316,9 +386,6 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
         <div>
           <label htmlFor="submit-supplier-blurb" className="field-label">
             {t("suppliers.submit.blurb_label")}
-            <span aria-hidden="true" className="ml-0.5 text-blush-700">
-              *
-            </span>
           </label>
           <textarea
             id="submit-supplier-blurb"
