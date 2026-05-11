@@ -19,6 +19,7 @@ interface TableRow {
   length_mm: number;
   rotation_deg: number;
   disabled_seats_json: string;
+  baby_seats_json: string;
   is_kids_table: number;
   created_at: number;
   updated_at: number;
@@ -44,19 +45,23 @@ interface ConflictRow {
 const VALID_SHAPES: ReadonlySet<TableShape> = new Set(["round", "long", "square", "head"]);
 
 function toTable(r: TableRow): SeatingTable {
-  // disabled_seats_json may be malformed (manual DB edit, future schema
-  // change) — fall back to [] rather than crash the whole plan response.
-  let disabled: number[] = [];
-  try {
-    const parsed = JSON.parse(r.disabled_seats_json);
-    if (Array.isArray(parsed)) {
-      disabled = parsed
-        .map((n) => Number(n))
-        .filter((n) => Number.isInteger(n) && n >= 0 && n < r.seats);
+  // disabled_seats_json / baby_seats_json may be malformed (manual DB edit,
+  // future schema change) — fall back to [] rather than crash the whole plan
+  // response. After parsing, baby gets filtered to be disjoint with disabled
+  // so a single seat can't be both.
+  const parseSeatList = (raw: string, capN: number): number[] => {
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map((n) => Number(n)).filter((n) => Number.isInteger(n) && n >= 0 && n < capN);
+    } catch {
+      return [];
     }
-  } catch {
-    /* keep [] */
-  }
+  };
+  const disabled = parseSeatList(r.disabled_seats_json, r.seats);
+  const babyRaw = parseSeatList(r.baby_seats_json, r.seats);
+  const disabledSet = new Set(disabled);
+  const baby = babyRaw.filter((n) => !disabledSet.has(n));
   return {
     id: r.id,
     couple_id: r.couple_id,
@@ -70,6 +75,7 @@ function toTable(r: TableRow): SeatingTable {
     rotation_deg: ((r.rotation_deg % 360) + 360) % 360,
     is_kids_table: Boolean(r.is_kids_table),
     disabled_seats: disabled,
+    baby_seats: baby,
     created_at: r.created_at,
     updated_at: r.updated_at,
   };
@@ -141,6 +147,7 @@ interface UpsertTableBody {
   length_mm?: unknown;
   rotation_deg?: unknown;
   disabled_seats?: unknown;
+  baby_seats?: unknown;
   is_kids_table?: unknown;
 }
 
@@ -212,18 +219,24 @@ function parseTableBody(body: UpsertTableBody) {
   // Disabled-seat indices — filter to integers in the valid 0..seats-1 range
   // and dedupe. Anything else is silently dropped so a stale array from a
   // shrunken table never wedges the write.
-  let disabled_seats: number[] = [];
-  if (Array.isArray(body.disabled_seats)) {
+  const normaliseSeatList = (raw: unknown, exclude?: Set<number>): number[] => {
+    if (!Array.isArray(raw)) return [];
     const seen = new Set<number>();
-    for (const v of body.disabled_seats) {
+    const out: number[] = [];
+    for (const v of raw) {
       const n = Number(v);
-      if (Number.isInteger(n) && n >= 0 && n < seats && !seen.has(n)) {
-        seen.add(n);
-        disabled_seats.push(n);
-      }
+      if (!Number.isInteger(n) || n < 0 || n >= seats || seen.has(n)) continue;
+      if (exclude?.has(n)) continue;
+      seen.add(n);
+      out.push(n);
     }
-    disabled_seats.sort((a, b) => a - b);
-  }
+    return out.sort((a, b) => a - b);
+  };
+  const disabled_seats = normaliseSeatList(body.disabled_seats);
+  // Baby seats are independent of disabled seats but the two must be
+  // disjoint — a chair that's been "removed for design" can't also need a
+  // high-chair. Disabled wins.
+  const baby_seats = normaliseSeatList(body.baby_seats, new Set(disabled_seats));
 
   const is_kids_table = body.is_kids_table === true || body.is_kids_table === 1 ? 1 : 0;
 
@@ -237,6 +250,7 @@ function parseTableBody(body: UpsertTableBody) {
     length_mm: length,
     rotation_deg,
     disabled_seats,
+    baby_seats,
     is_kids_table,
   };
 }
@@ -248,8 +262,8 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, rotation_deg, disabled_seats_json, is_kids_table, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, rotation_deg, disabled_seats_json, baby_seats_json, is_kids_table, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -262,6 +276,7 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
       parsed.length_mm,
       parsed.rotation_deg,
       JSON.stringify(parsed.disabled_seats),
+      JSON.stringify(parsed.baby_seats),
       parsed.is_kids_table,
       ts,
       ts,
@@ -311,14 +326,16 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
   // Merge partial fields with the existing row before validating. Anything
   // absent from `body` falls back to the existing value so PATCH semantics
   // stay clean.
-  const existingDisabled = (() => {
+  const parseStoredArray = (raw: string | null | undefined): number[] => {
     try {
-      const v = JSON.parse(existing.disabled_seats_json ?? "[]");
+      const v = JSON.parse(raw ?? "[]");
       return Array.isArray(v) ? v : [];
     } catch {
       return [];
     }
-  })();
+  };
+  const existingDisabled = parseStoredArray(existing.disabled_seats_json);
+  const existingBaby = parseStoredArray(existing.baby_seats_json);
   const merged: UpsertTableBody = {
     label: body.label ?? existing.label,
     shape: body.shape ?? existing.shape,
@@ -329,14 +346,33 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     length_mm: body.length_mm ?? existing.length_mm,
     rotation_deg: body.rotation_deg ?? existing.rotation_deg,
     disabled_seats: body.disabled_seats ?? existingDisabled,
+    baby_seats: body.baby_seats ?? existingBaby,
     is_kids_table: body.is_kids_table ?? Boolean(existing.is_kids_table),
   };
   const parsed = parseTableBody(merged);
+
+  // Orphan-safe shrink: if the new seat count is below an existing
+  // occupied seat_index, refuse the write so we never silently delete a
+  // guest's assignment. The frontend surfaces this as a "table too small"
+  // toast; the couple needs to free a seat (or stand-down the resize)
+  // first.
+  if (parsed.seats < existing.seats) {
+    const orphans = db
+      .prepare("SELECT COUNT(*) AS c FROM seat_assignments WHERE table_id = ? AND seat_index >= ?")
+      .get(id, parsed.seats) as { c: number };
+    if (orphans.c > 0) {
+      throw new HttpError(400, "Table too small — empty a seat first", {
+        code: "table_too_small",
+        occupied_count: orphans.c,
+      });
+    }
+  }
+
   const ts = now();
   db.prepare(
     `UPDATE seating_tables SET label = ?, shape = ?, seats = ?, x_mm = ?, y_mm = ?,
        width_mm = ?, length_mm = ?, rotation_deg = ?, disabled_seats_json = ?,
-       is_kids_table = ?, updated_at = ?
+       baby_seats_json = ?, is_kids_table = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.label,
@@ -348,21 +384,17 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     parsed.length_mm,
     parsed.rotation_deg,
     JSON.stringify(parsed.disabled_seats),
+    JSON.stringify(parsed.baby_seats),
     parsed.is_kids_table,
     ts,
     id,
     coupleId,
   );
 
-  // If the seat count dropped (typically because the table was resized
-  // smaller and the 80 cm perimeter cap clipped the count), purge any
-  // assignment that now points at a seat that no longer exists.
-  if (parsed.seats < existing.seats) {
-    db.prepare("DELETE FROM seat_assignments WHERE table_id = ? AND seat_index >= ?").run(
-      id,
-      parsed.seats,
-    );
-  }
+  // No orphan-purge here — the orphan-safe check above refuses any shrink
+  // that would lose an occupied seat. Empty seats above the new count are
+  // simply not addressable any more; the table_id + seat_index never
+  // referenced them, so there's nothing to clean.
 
   addAuditLog({
     actor_user_id: userId,

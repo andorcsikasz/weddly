@@ -866,6 +866,8 @@ export interface LocaleMessages {
     /** Network/save-failed toasts for mutations on this page. */
     save_failed: string;
     save_conflict: string;
+    /** Toast when a resize / seat-decrement would orphan a seated guest. */
+    table_too_small: string;
     pdf_failed: string;
     pdf_cancel: string;
     pdf_loading: string;

@@ -22,12 +22,13 @@ interface TableRow {
   length_mm: number;
   rotation_deg: number | null;
   disabled_seats_json: string | null;
+  baby_seats_json: string | null;
   is_kids_table: number | null;
   created_at: number;
   updated_at: number;
 }
 
-function parseDisabledSeats(raw: string | null): number[] {
+function parseIntList(raw: string | null): number[] {
   if (!raw) return [];
   try {
     const v = JSON.parse(raw);
@@ -48,22 +49,28 @@ function loadTables(coupleId: number): SeatingTable[] {
   const rows = db
     .prepare("SELECT * FROM seating_tables WHERE couple_id = ? ORDER BY id ASC")
     .all(coupleId) as TableRow[];
-  return rows.map((r) => ({
-    id: r.id,
-    couple_id: r.couple_id,
-    label: r.label,
-    shape: (r.shape === "long" || r.shape === "square" ? r.shape : "round") as TableShape,
-    seats: r.seats,
-    x_mm: r.x_mm,
-    y_mm: r.y_mm,
-    width_mm: r.width_mm,
-    length_mm: r.length_mm,
-    rotation_deg: ((((r.rotation_deg ?? 0) % 360) + 360) % 360) | 0,
-    is_kids_table: Boolean(r.is_kids_table),
-    disabled_seats: parseDisabledSeats(r.disabled_seats_json),
-    created_at: r.created_at,
-    updated_at: r.updated_at,
-  }));
+  return rows.map((r) => {
+    const disabled = parseIntList(r.disabled_seats_json);
+    const disabledSet = new Set(disabled);
+    const baby = parseIntList(r.baby_seats_json).filter((n) => !disabledSet.has(n));
+    return {
+      id: r.id,
+      couple_id: r.couple_id,
+      label: r.label,
+      shape: (r.shape === "long" || r.shape === "square" ? r.shape : "round") as TableShape,
+      seats: r.seats,
+      x_mm: r.x_mm,
+      y_mm: r.y_mm,
+      width_mm: r.width_mm,
+      length_mm: r.length_mm,
+      rotation_deg: ((((r.rotation_deg ?? 0) % 360) + 360) % 360) | 0,
+      is_kids_table: Boolean(r.is_kids_table),
+      disabled_seats: disabled,
+      baby_seats: baby,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    };
+  });
 }
 
 function loadAssignments(coupleId: number): SeatAssignment[] {

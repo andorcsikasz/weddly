@@ -591,6 +591,7 @@ function TableShape({
   const chairHeightMm = CHAIR_HEIGHT_MM;
   const chairCorner = CHAIR_CORNER_MM;
   const disabledSet = new Set(table.disabled_seats ?? []);
+  const babySet = new Set(table.baby_seats ?? []);
   // Centre of chair sits just outside the table edge with a fixed gap.
   const chairPushMm = chairHeightMm / 2 + 40;
 
@@ -674,6 +675,7 @@ function TableShape({
       {chairs.map((c, i) => {
         const isFilled = i < filledSeats;
         const isDisabled = disabledSet.has(i);
+        const isBaby = !isDisabled && babySet.has(i);
         const cosA = Math.cos(c.angle);
         const sinA = Math.sin(c.angle);
         const px = c.dx + cosA * chairPushMm;
@@ -688,6 +690,10 @@ function TableShape({
         // so it sits centred on the chair regardless of where it is on
         // the table.
         const crossLen = chairHeightMm * 0.45;
+        // Baby high-chair badge: a small ring at the chair's centre with a
+        // dot inside, sized so it reads at the same zoom as the chair.
+        const babyR = chairHeightMm * 0.32;
+        const babyDot = babyR * 0.4;
         return (
           <g key={i}>
             <rect
@@ -722,6 +728,15 @@ function TableShape({
                   strokeWidth={24}
                   strokeLinecap="round"
                 />
+              </g>
+            )}
+            {isBaby && (
+              <g
+                transform={`translate(${px} ${py}) rotate(${rotDeg})`}
+                style={{ pointerEvents: "none" }}
+              >
+                <circle r={babyR} className="fill-paper-50 stroke-ink-800" strokeWidth={16} />
+                <circle r={babyDot} className="fill-ink-800" />
               </g>
             )}
           </g>

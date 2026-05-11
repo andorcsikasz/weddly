@@ -228,6 +228,7 @@ export const seatingApi = {
     length_mm?: number;
     rotation_deg?: number;
     disabled_seats?: number[];
+    baby_seats?: number[];
     is_kids_table?: boolean;
   }) => apiFetch<{ table: SeatingTable }>("POST", "/api/seating/tables", body),
   /** Partial PATCH with optional `If-Match` for optimistic concurrency.

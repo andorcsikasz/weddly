@@ -530,6 +530,12 @@ export default function SeatingPage() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
         toast.error(t("seating.save_conflict"));
+      } else if (
+        e instanceof ApiError &&
+        e.status === 400 &&
+        (e.detail as { code?: string } | undefined)?.code === "table_too_small"
+      ) {
+        toast.error(t("seating.table_too_small"));
       } else {
         toast.error(t("seating.save_failed"));
       }
@@ -1260,49 +1266,38 @@ function TableEditor({
         {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
       </p>
 
-      {/* Seat-layout preview — couple X-es out individual seats they don't
-          want anyone at (e.g. the empty head of a long table for
-          centre-piece symmetry). Disabled seats render muted on the canvas
-          and disappear from the assignment grid below. */}
+      {/* Seat-layout preview — click cycles a chair through:
+          normal → baby (icon, still seatable) → disabled (×, blocked) →
+          normal. Two independent sets on the wire (`disabled_seats`,
+          `baby_seats`) keep the model simple. */}
       <Section
         label={`${t("seating.layout_label")} · ${table.seats - (table.disabled_seats?.length ?? 0)}/${table.seats}`}
       >
         <SeatLayoutPreview
           table={table}
-          onToggleSeat={(seatIndex) => {
-            const cur = new Set(table.disabled_seats ?? []);
-            if (cur.has(seatIndex)) cur.delete(seatIndex);
-            else cur.add(seatIndex);
-            onPatch({ disabled_seats: Array.from(cur).sort((a, b) => a - b) });
+          onCycleSeat={(seatIndex) => {
+            const disabled = new Set(table.disabled_seats ?? []);
+            const baby = new Set(table.baby_seats ?? []);
+            if (disabled.has(seatIndex)) {
+              // disabled → normal
+              disabled.delete(seatIndex);
+            } else if (baby.has(seatIndex)) {
+              // baby → disabled
+              baby.delete(seatIndex);
+              disabled.add(seatIndex);
+            } else {
+              // normal → baby
+              baby.add(seatIndex);
+            }
+            onPatch({
+              disabled_seats: Array.from(disabled).sort((a, b) => a - b),
+              baby_seats: Array.from(baby).sort((a, b) => a - b),
+            });
           }}
           ariaLabel={t("seating.layout_label")}
           xButtonLabel={t("seating.toggle_seat")}
         />
       </Section>
-
-      {/* Kids-table flag — drives a small badge on the editor today and may
-          influence auto-seating in a future iteration. Persists through the
-          same If-Match optimistic-concurrency PATCH as other table fields. */}
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-paper-200 bg-paper-50 px-3 py-2.5">
-        <input
-          type="checkbox"
-          className="mt-0.5"
-          checked={Boolean(table.is_kids_table)}
-          onChange={(e) => onPatch({ is_kids_table: e.target.checked })}
-        />
-        <span className="flex-1">
-          <span className="flex items-center gap-1.5 text-sm font-medium text-ink-800">
-            <Baby size={14} aria-hidden className="text-blush-700" />
-            {t("seating.kids_table_label")}
-          </span>
-          <span className="text-xs text-ink-500">{t("seating.kids_table_help")}</span>
-        </span>
-        {table.is_kids_table && (
-          <span className="self-center rounded-full bg-blush-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blush-700">
-            {t("seating.kids_table_badge")}
-          </span>
-        )}
-      </label>
     </div>
   );
 }
@@ -1313,18 +1308,19 @@ function TableEditor({
 // head of a long table, etc.) without bumping the seat count up and down.
 function SeatLayoutPreview({
   table,
-  onToggleSeat,
+  onCycleSeat,
   ariaLabel,
   xButtonLabel,
 }: {
   table: SeatingTable;
-  onToggleSeat: (seatIndex: number) => void;
+  onCycleSeat: (seatIndex: number) => void;
   ariaLabel: string;
   xButtonLabel: string;
 }) {
   const { rx, ry } = previewHalfDims(table);
   const chairs = previewChairOffsets(table.shape, table.seats, rx, ry);
   const disabled = new Set(table.disabled_seats ?? []);
+  const baby = new Set(table.baby_seats ?? []);
   // Auto-fit viewBox with padding for chairs sitting outside the table edge.
   const pad = 28;
   const w = rx * 2 + pad * 2;
@@ -1364,13 +1360,16 @@ function SeatLayoutPreview({
         const py = c.dy + sinA * push;
         const rotDeg = (c.angle * 180) / Math.PI + 90;
         const isDisabled = disabled.has(i);
+        const isBaby = !isDisabled && baby.has(i);
         const crossLen = chairH * 0.5;
+        const babyR = chairH * 0.32;
         return (
           <g
             key={i}
             style={{ cursor: "pointer" }}
             role="button"
             aria-label={`#${i + 1} ${xButtonLabel}`}
+            onClick={() => onCycleSeat(i)}
           >
             <rect
               x={px - chairW / 2}
@@ -1380,7 +1379,6 @@ function SeatLayoutPreview({
               rx={corner}
               transform={`rotate(${rotDeg} ${px} ${py})`}
               className={isDisabled ? "fill-paper-200" : "fill-blush-300"}
-              onClick={() => onToggleSeat(i)}
             />
             {isDisabled && (
               <g
@@ -1405,6 +1403,15 @@ function SeatLayoutPreview({
                   strokeWidth={1.8}
                   strokeLinecap="round"
                 />
+              </g>
+            )}
+            {isBaby && (
+              <g
+                transform={`translate(${px} ${py}) rotate(${rotDeg})`}
+                style={{ pointerEvents: "none" }}
+              >
+                <circle r={babyR} className="fill-paper-50 stroke-ink-800" strokeWidth={1.2} />
+                <circle r={babyR * 0.4} className="fill-ink-800" />
               </g>
             )}
           </g>

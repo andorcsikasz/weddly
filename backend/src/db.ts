@@ -84,6 +84,13 @@ addColumnIfMissing(
   "disabled_seats_json",
   "disabled_seats_json TEXT NOT NULL DEFAULT '[]'",
 );
+// JSON array of seat indices that need a baby high-chair. Same shape /
+// invariants as disabled_seats_json; server enforces disjointness with it.
+addColumnIfMissing(
+  "seating_tables",
+  "baby_seats_json",
+  "baby_seats_json TEXT NOT NULL DEFAULT '[]'",
+);
 
 // Airport-style RSVP credentials. `couples.slug` is the public couple
 // identifier ("ANDORSARI"); `guests.household_id` links each guest to its

@@ -790,6 +790,7 @@ interface ArchiveTableRow {
   length_mm: number;
   rotation_deg: number | null;
   disabled_seats_json: string | null;
+  baby_seats_json: string | null;
   is_kids_table: number | null;
   created_at: number;
   updated_at: number;
@@ -807,13 +808,18 @@ function loadTablesForArchive(coupleId: number): SeatingTable[] {
     .prepare("SELECT * FROM seating_tables WHERE couple_id = ? ORDER BY id ASC")
     .all(coupleId) as ArchiveTableRow[];
   return rows.map((r) => {
-    let disabled: number[] = [];
-    try {
-      const v = JSON.parse(r.disabled_seats_json ?? "[]");
-      if (Array.isArray(v)) disabled = v.filter((n) => Number.isInteger(n));
-    } catch {
-      /* default [] */
-    }
+    const parseList = (raw: string | null | undefined): number[] => {
+      try {
+        const v = JSON.parse(raw ?? "[]");
+        return Array.isArray(v) ? v.filter((n) => Number.isInteger(n)) : [];
+      } catch {
+        return [];
+      }
+    };
+    const disabled = parseList(r.disabled_seats_json);
+    const babyRaw = parseList(r.baby_seats_json);
+    const disabledSet = new Set(disabled);
+    const baby = babyRaw.filter((n) => !disabledSet.has(n));
     return {
       id: r.id,
       couple_id: r.couple_id,
@@ -829,6 +835,7 @@ function loadTablesForArchive(coupleId: number): SeatingTable[] {
       rotation_deg: ((((r.rotation_deg ?? 0) % 360) + 360) % 360) | 0,
       is_kids_table: Boolean(r.is_kids_table),
       disabled_seats: disabled,
+      baby_seats: baby,
       created_at: r.created_at,
       updated_at: r.updated_at,
     };

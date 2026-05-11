@@ -388,6 +388,11 @@ export interface SeatingTable {
    *  grid skips them. seats stays the same — only the *usable* count
    *  drops. Filtered to valid indices server-side. */
   disabled_seats: number[];
+  /** Seat indices (0-based) that need a baby high-chair. Drives a small
+   *  baby icon on the chair in both the canvas preview and the seat-
+   *  assignment grid. Server filters to disjoint with disabled_seats
+   *  (disabled wins). */
+  baby_seats: number[];
   created_at: UnixMs;
   /** Used by the frontend as the `If-Match` value for optimistic-concurrency
    *  guarding on PATCH. Server-set on every write. */
