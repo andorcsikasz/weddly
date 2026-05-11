@@ -32,6 +32,7 @@ interface LineRow {
   planned_huf: number;
   actual_huf: number;
   supplier_id: number | null;
+  couple_supplier_id: string | null;
   notes: string | null;
   created_at: number;
   updated_at: number;
@@ -48,6 +49,7 @@ function toLine(r: LineRow): BudgetLine {
     planned_huf: r.planned_huf,
     actual_huf: r.actual_huf,
     supplier_id: r.supplier_id,
+    couple_supplier_id: r.couple_supplier_id,
     notes: r.notes,
     created_at: r.created_at,
     updated_at: r.updated_at,
@@ -173,6 +175,13 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
     .prepare("SELECT * FROM budget_lines WHERE id = ? AND couple_id = ?")
     .get(id, couple.id) as LineRow | undefined;
   if (!existing) throw new HttpError(404, "Line not found");
+  // DIY-supplier-mirrored lines are owned by the supplier card. Editing
+  // here would race with the next supplier save and confuse the user.
+  if (existing.couple_supplier_id) {
+    throw new HttpError(409, "This line is managed by a DIY supplier entry", {
+      code: "locked",
+    });
+  }
 
   const ifMatchRaw = ctx.req.headers.get("if-match");
   if (ifMatchRaw) {
@@ -248,6 +257,18 @@ function handleDeleteLine(ctx: Ctx): Response {
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
   if (!Number.isFinite(id)) throw new HttpError(400, "Invalid id");
+
+  // Refuse to delete a supplier-mirrored line directly. The supplier's
+  // delete endpoint cleans up both sides; deleting here would orphan the
+  // FK on couple_suppliers.
+  const linked = db
+    .prepare("SELECT couple_supplier_id FROM budget_lines WHERE id = ? AND couple_id = ?")
+    .get(id, couple.id) as { couple_supplier_id: string | null } | undefined;
+  if (linked?.couple_supplier_id) {
+    throw new HttpError(409, "This line is managed by a DIY supplier entry", {
+      code: "locked",
+    });
+  }
 
   const result = db
     .prepare("DELETE FROM budget_lines WHERE id = ? AND couple_id = ?")

@@ -152,6 +152,9 @@ export interface Couple {
   status: CoupleStatus;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
+  /** Server timestamp of the last write — clients use this as the `If-Match`
+   *  value for optimistic concurrency on `PATCH /api/couples/current`. */
+  updated_at: UnixMs;
 }
 
 export interface CoupleInvite {
@@ -239,6 +242,9 @@ export interface BudgetLine {
   actual_huf: Huf;
   /** Future: links to a `suppliers` row when v2 lands. */
   supplier_id: number | null;
+  /** When set, this line was auto-created from a DIY supplier entry on
+   *  /app/suppliers and is locked — editing happens on the supplier card. */
+  couple_supplier_id: string | null;
   notes: string | null;
   created_at: UnixMs;
   updated_at: UnixMs;

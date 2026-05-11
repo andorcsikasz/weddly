@@ -708,6 +708,26 @@ async function handleUpdateSlug(ctx: Ctx): Promise<Response> {
   } catch (e) {
     throw new HttpError(400, e instanceof Error ? e.message : "Invalid slug");
   }
+  // No-op short-circuit — let the caller flip the slug to its current value
+  // without tripping the lock below. Useful for idempotent client retries.
+  if (cleaned === couple.slug) {
+    return json({ couple: toCouple(couple) });
+  }
+  // Slug lock: once any guest has been invited (printed link or email sent),
+  // changing the slug breaks every invitation already in the wild. The
+  // GuestsPage UI presents the slug as locked once a couple exists; this
+  // endpoint enforces that promise instead of trusting the client. Recovery
+  // is a deliberate support touch — no in-product unlock today.
+  const anyInvited = db
+    .prepare("SELECT 1 FROM guests WHERE couple_id = ? AND invited_at IS NOT NULL LIMIT 1")
+    .get(couple.id) as { 1: number } | undefined;
+  if (anyInvited) {
+    throw new HttpError(
+      423,
+      "Slug is locked — invitations have been sent. Contact support to change it.",
+      { code: "slug_locked" },
+    );
+  }
   // Reject if another couple already owns this exact slug.
   const taken = db
     .prepare("SELECT id FROM couples WHERE slug = ? AND id <> ?")
@@ -743,6 +763,22 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple to update");
+
+  // Optimistic concurrency: when both partners hit the budget cap (or wedding
+  // date, ceremony kind, etc.) in the same minute, the headline field can't
+  // afford last-write-wins. Mirror the budget_lines pattern — caller sends
+  // `If-Match: <couple.updated_at>`, server returns 409 + `code: "stale"` on
+  // mismatch. Header is optional for back-compat with older clients.
+  const ifMatchRaw = ctx.req.headers.get("if-match");
+  if (ifMatchRaw) {
+    const cleaned = ifMatchRaw.trim().replace(/^"(.*)"$/, "$1");
+    if (cleaned && cleaned !== String(couple.updated_at)) {
+      throw new HttpError(409, "Stale couple — reload before saving", {
+        code: "stale",
+        current_updated_at: couple.updated_at,
+      });
+    }
+  }
 
   const body = await readJson<Partial<OnboardBody>>(ctx.req);
   const updates: { col: string; val: string | number | null }[] = [];

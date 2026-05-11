@@ -6,6 +6,7 @@
 // filter (persisted in URL params so back-button works) plus a "saved" star on
 // each card backed by localStorage.
 
+import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { DirectorySupplier, SupplierCategory, SupplierGroup } from "@shared/suppliers";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import {
@@ -28,6 +29,7 @@ import {
   Mail,
   MapPin,
   PartyPopper,
+  Pencil,
   Phone,
   Scissors,
   Search,
@@ -37,15 +39,18 @@ import {
   StickyNote,
   Users,
   UtensilsCrossed,
+  Wallet,
   Wine,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { DiyEntryModal } from "../components/DiyEntryModal";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button } from "../components/ui";
-import { supplierApi } from "../lib/endpoints";
+import { coupleApi, coupleSupplierApi, supplierApi } from "../lib/endpoints";
+import { formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -118,9 +123,13 @@ export default function SuppliersPage() {
   useDocumentMeta("seo.suppliers_title", "seo.suppliers_description");
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<DirectorySupplier[]>([]);
+  const [coupleSuppliers, setCoupleSuppliers] = useState<CoupleSupplier[]>([]);
+  const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [diyOpen, setDiyOpen] = useState(false);
+  const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => readSaved());
 
@@ -237,8 +246,30 @@ export default function SuppliersPage() {
   }, []);
 
   useEffect(() => {
-    supplierApi.list().then((r) => setItems(r.suppliers));
+    // Fetch the public directory, the couple's private DIY entries, and the
+    // couple's wedding-day target guest count in parallel. The guest count
+    // pre-fills the Vendégszám filter so it lines up with /app and /app/budget.
+    Promise.all([supplierApi.list(), coupleSupplierApi.list(), coupleApi.current()])
+      .then(([dir, mine, couple]) => {
+        setItems(dir.suppliers);
+        setCoupleSuppliers(mine.suppliers);
+        setTargetGuestCount(couple.couple?.target_guest_count ?? null);
+      })
+      .catch(() => undefined);
   }, []);
+
+  // Once we know the couple's target guest count, default the URL's `guests`
+  // filter to it — but only if the user hasn't already touched the filter on
+  // this navigation. Subsequent edits (including clearing) take precedence.
+  // Intentionally narrow-deps: we want this to fire only when the target
+  // count first arrives, not every time the URL params object changes.
+  useEffect(() => {
+    if (targetGuestCount === null || targetGuestCount <= 0) return;
+    if (params.has("guests")) return;
+    const p = new URLSearchParams(params);
+    p.set("guests", String(targetGuestCount));
+    setParams(p, { replace: true });
+  }, [targetGuestCount, params, setParams]);
 
   // Scroll the freshly-submitted card into view + drop the highlight after a
   // beat. Without this, a submitter sees the modal close and may not notice
@@ -272,18 +303,22 @@ export default function SuppliersPage() {
   // free-text). Used twice: as the base for the displayed list AND to compute
   // counts for the chain steps + sub-category pills — pills show "how many
   // would appear if I picked this", so they must ignore the active category.
-  const filteredBeforeCategory = useMemo(() => {
-    let out = items;
-    if (cityFilter) out = out.filter((s) => s.city === cityFilter);
-    if (showSavedOnly) out = out.filter((s) => saved.has(s.id));
+  //
+  // DIY entries are merged in here so the count badges include them too.
+  // City / saved / price-band / capacity filters do not apply to DIY entries
+  // (they don't have those fields); the free-text search hits name + notes.
+  const filteredBeforeCategory = useMemo<(DirectorySupplier | CoupleSupplier)[]>(() => {
+    let dir = items;
+    if (cityFilter) dir = dir.filter((s) => s.city === cityFilter);
+    if (showSavedOnly) dir = dir.filter((s) => saved.has(s.id));
     if (priceMax !== null) {
       // Suppliers without a declared price band pass through — the filter
       // only narrows among declared ones, so community submissions with a
       // blank field stay visible.
-      out = out.filter((s) => s.price_band === null || s.price_band <= priceMax);
+      dir = dir.filter((s) => s.price_band === null || s.price_band <= priceMax);
     }
     if (guestsFilter !== null) {
-      out = out.filter((s) => {
+      dir = dir.filter((s) => {
         const max = s.capacity_max ?? 0;
         if (max === 0) return true;
         const min = s.capacity_min ?? 0;
@@ -292,13 +327,19 @@ export default function SuppliersPage() {
     }
     const q = normalize(query.trim());
     if (q) {
-      out = out.filter((s) => {
+      dir = dir.filter((s) => {
         const hay = normalize(`${s.name} ${s.city} ${s.blurb_hu} ${s.blurb_en}`);
         return hay.includes(q);
       });
     }
-    return out;
-  }, [items, cityFilter, showSavedOnly, saved, priceMax, guestsFilter, query]);
+    // Saved-only view is a directory feature; DIY entries are always "yours"
+    // so they don't belong in the saved-list summary either way.
+    let mine = showSavedOnly ? [] : coupleSuppliers;
+    if (q) {
+      mine = mine.filter((s) => normalize(`${s.name} ${s.notes ?? ""}`).includes(q));
+    }
+    return [...mine, ...dir];
+  }, [items, coupleSuppliers, cityFilter, showSavedOnly, saved, priceMax, guestsFilter, query]);
 
   const filtered = useMemo(() => {
     let out = filteredBeforeCategory;
@@ -308,16 +349,21 @@ export default function SuppliersPage() {
       const cats = new Set(group?.categories ?? []);
       out = out.filter((s) => cats.has(s.category));
     }
-    // Stable sort: top-voted by net score desc, then curated-first tie-break
-    // so an unvoted directory looks the same as today. Alpha mode ignores
-    // score entirely and goes by locale-aware name.
+    // Stable sort. Top mode: DIY entries first (they're the couple's own
+    // plan), then directory cards ranked by net votes with curated-first
+    // tie-break. Alpha mode ignores everything but the locale-aware name.
     const sorted = [...out];
     if (sortMode === "alpha") {
       sorted.sort((a, b) => a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en"));
     } else {
       sorted.sort((a, b) => {
-        if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
-        if (a.source !== b.source) return a.source === "curated" ? -1 : 1;
+        const aSelf = a.source === "self" ? 1 : 0;
+        const bSelf = b.source === "self" ? 1 : 0;
+        if (aSelf !== bSelf) return bSelf - aSelf;
+        if (a.source !== "self" && b.source !== "self") {
+          if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
+          if (a.source !== b.source) return a.source === "curated" ? -1 : 1;
+        }
         return a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en");
       });
     }
@@ -637,6 +683,20 @@ export default function SuppliersPage() {
               </button>
             );
           })}
+          {/* "Csinálom magam" — pre-fills the modal with the active sub-
+              category. Sits at the end of the pill row so its sage accent
+              reads as the personal twin of the dark category pills. */}
+          <button
+            type="button"
+            onClick={() => {
+              setDiyEditing(null);
+              setDiyOpen(true);
+            }}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition hover:border-sage-600 hover:bg-sage-100"
+          >
+            <Pencil size={13} aria-hidden />
+            {t("suppliers.diy_button_short")}
+          </button>
         </div>
       )}
 
@@ -648,7 +708,9 @@ export default function SuppliersPage() {
             </div>
           }
         >
-          <SupplierMap suppliers={filtered} />
+          <SupplierMap
+            suppliers={filtered.filter((s): s is DirectorySupplier => s.source !== "self")}
+          />
         </Suspense>
       ) : (
         <div
@@ -659,7 +721,117 @@ export default function SuppliersPage() {
           {filtered.map((s) => {
             const Icon = CATEGORY_ICON[s.category];
             const isHighlighted = s.id === highlightId;
-            const isSaved = saved.has(s.id);
+            const isSaved = s.source !== "self" && saved.has(s.id);
+            if (s.source === "self") {
+              const openEdit = () => {
+                setDiyEditing(s);
+                setDiyOpen(true);
+              };
+              if (viewMode === "line") {
+                return (
+                  <article
+                    key={s.id}
+                    data-supplier-id={s.id}
+                    className={`relative flex items-center gap-3 rounded-2xl border border-sage-200 border-l-4 border-l-sage-500 bg-sage-50/60 px-4 py-3 transition hover:border-sage-300 hover:shadow-sm ${
+                      isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+                    }`}
+                  >
+                    <Avatar name={s.name} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                        <span className="hidden shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 sm:inline-flex">
+                          {t("suppliers.diy_pill")}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500">
+                        <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                          <Icon size={11} aria-hidden />
+                          {t(`suppliers.cat.${s.category}`)}
+                        </span>
+                        {s.price_huf !== null && s.price_huf > 0 && (
+                          <>
+                            <span aria-hidden className="text-paper-400">
+                              ·
+                            </span>
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700">
+                              <Wallet size={11} aria-hidden />
+                              {formatHuf(s.price_huf, locale === "hu" ? "hu" : "en")}
+                            </span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={openEdit}
+                      aria-label={t("suppliers.diy_action_edit_aria")}
+                      className="inline-flex h-7 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-3 text-xs font-medium text-sage-700 transition hover:border-sage-500"
+                    >
+                      <Pencil size={12} aria-hidden />
+                      <span className="hidden sm:inline">{t("suppliers.diy_modal_edit")}</span>
+                    </button>
+                  </article>
+                );
+              }
+              return (
+                <article
+                  key={s.id}
+                  data-supplier-id={s.id}
+                  className={`card-hover relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 transition-shadow ${
+                    isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={openEdit}
+                    aria-label={t("suppliers.diy_action_edit_aria")}
+                    className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-600 transition hover:bg-sage-100 hover:text-sage-800"
+                  >
+                    <Pencil size={14} aria-hidden />
+                  </button>
+                  <div className="flex items-start gap-3 pr-8">
+                    <Avatar name={s.name} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                        <span className="shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700">
+                          {t("suppliers.diy_pill")}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500">
+                        <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                          <Icon size={12} aria-hidden />
+                          {t(`suppliers.cat.${s.category}`)}
+                        </span>
+                        {s.price_huf !== null && s.price_huf > 0 && (
+                          <>
+                            <span aria-hidden className="text-paper-400">
+                              ·
+                            </span>
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700">
+                              <Wallet size={12} aria-hidden />
+                              {formatHuf(s.price_huf, locale === "hu" ? "hu" : "en")}
+                            </span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  {s.notes && <p className="mt-3 line-clamp-3 text-sm text-ink-700">{s.notes}</p>}
+                  <div className="mt-auto flex items-center justify-end gap-2 pt-4">
+                    <button
+                      type="button"
+                      onClick={openEdit}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700 transition hover:border-sage-500 hover:bg-sage-100"
+                    >
+                      <Pencil size={13} aria-hidden />
+                      {t("suppliers.diy_modal_edit")}
+                    </button>
+                  </div>
+                </article>
+              );
+            }
             if (viewMode === "line") {
               return (
                 <article
@@ -891,6 +1063,28 @@ export default function SuppliersPage() {
         onSubmitted={(s) => {
           setItems((prev) => [s, ...prev]);
           setHighlightId(s.id);
+        }}
+      />
+      <DiyEntryModal
+        open={diyOpen}
+        editing={diyEditing}
+        defaultCategory={activeCat ?? null}
+        onClose={() => {
+          setDiyOpen(false);
+          setDiyEditing(null);
+        }}
+        onSaved={(s) => {
+          setCoupleSuppliers((prev) => {
+            const idx = prev.findIndex((p) => p.id === s.id);
+            if (idx === -1) return [s, ...prev];
+            const next = [...prev];
+            next[idx] = s;
+            return next;
+          });
+          setHighlightId(s.id);
+        }}
+        onDeleted={(id) => {
+          setCoupleSuppliers((prev) => prev.filter((p) => p.id !== id));
         }}
       />
     </AppShell>

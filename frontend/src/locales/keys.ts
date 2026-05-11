@@ -624,6 +624,15 @@ export interface LocaleMessages {
     sub: string;
     coming_soon_title: string;
     coming_soon_body: string;
+    /** Budget allocation tile shown at the top of the honeymoon page. */
+    budget_title: string;
+    budget_planned_label: string;
+    budget_actual_label: string;
+    budget_remaining_label: string;
+    budget_empty_hint: string;
+    budget_open_link: string;
+    budget_lines_count_one: string;
+    budget_lines_count_other: string;
   };
   media: {
     title: string;
@@ -949,6 +958,30 @@ export interface LocaleMessages {
     chain_help: string;
     community_pill: string;
     drop_your_own: string;
+    /** "Csinálom magam" / DIY flow — couple-private supplier entries. */
+    diy_pill: string;
+    diy_button: string;
+    diy_button_short: string;
+    diy_modal_title: string;
+    diy_modal_intro: string;
+    diy_modal_name_label: string;
+    diy_modal_name_placeholder: string;
+    diy_modal_category_label: string;
+    diy_modal_notes_label: string;
+    diy_modal_notes_placeholder: string;
+    diy_modal_price_label: string;
+    diy_modal_price_help: string;
+    diy_modal_submit: string;
+    diy_modal_submitting: string;
+    diy_modal_delete: string;
+    diy_modal_delete_confirm_title: string;
+    diy_modal_delete_confirm_body: string;
+    diy_modal_cancel: string;
+    diy_modal_privacy: string;
+    diy_modal_edit: string;
+    diy_action_edit_aria: string;
+    diy_action_delete_aria: string;
+    diy_price_display: string;
     /** Free-text search input above the chain. */
     search_label: string;
     search_placeholder: string;

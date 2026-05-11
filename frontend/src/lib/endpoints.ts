@@ -33,6 +33,11 @@ import type {
   CommunitySupplierAdminView,
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
+import type {
+  CoupleSupplier,
+  CreateCoupleSupplierInput,
+  UpdateCoupleSupplierInput,
+} from "@shared/couple_suppliers";
 import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/supplier_costs";
 import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
 import type {
@@ -356,6 +361,20 @@ export const supplierApi = {
       `/api/suppliers/${encodeURIComponent(supplierId)}/vote`,
       { value },
     ),
+};
+
+export const coupleSupplierApi = {
+  list: () => apiFetch<{ suppliers: CoupleSupplier[] }>("GET", "/api/couple-suppliers"),
+  create: (body: CreateCoupleSupplierInput) =>
+    apiFetch<{ supplier: CoupleSupplier }>("POST", "/api/couple-suppliers", body),
+  update: (id: string, body: UpdateCoupleSupplierInput) =>
+    apiFetch<{ supplier: CoupleSupplier }>(
+      "PATCH",
+      `/api/couple-suppliers/${encodeURIComponent(id)}`,
+      body,
+    ),
+  remove: (id: string) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/couple-suppliers/${encodeURIComponent(id)}`),
 };
 
 export const supplierCostApi = {

@@ -288,13 +288,19 @@ CREATE INDEX IF NOT EXISTS idx_community_suppliers_status_category
 CREATE INDEX IF NOT EXISTS idx_community_suppliers_submitter
   ON community_suppliers(submitter_user_id);
 
--- Up/down vote on each directory supplier, one row per (user, supplier_id).
+-- Up/down vote on each directory supplier, one row per (couple, supplier_id).
 -- `supplier_id` is the public string id (curated slug or "c{N}"), same as
 -- couple_supplier_costs — no FK because curated suppliers live in code.
 -- `value` is +1 (up) or -1 (down); to clear a vote we DELETE the row.
+--
+-- Per-couple keying (not per-user) so partners A + B share one vote — without
+-- this, a couple submitting their own venue gets two free upvotes and the
+-- "Top voted" sort becomes trivially brigadeable. `user_id` is kept to record
+-- which partner actually cast the vote (audit only; not part of the unique key).
 CREATE TABLE IF NOT EXISTS supplier_votes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  couple_id INTEGER REFERENCES couples(id) ON DELETE CASCADE,
   supplier_id TEXT NOT NULL,
   value INTEGER NOT NULL,
   created_at INTEGER NOT NULL,
@@ -303,6 +309,10 @@ CREATE TABLE IF NOT EXISTS supplier_votes (
 );
 CREATE INDEX IF NOT EXISTS idx_supplier_votes_supplier ON supplier_votes(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_supplier_votes_user ON supplier_votes(user_id);
+-- Enforce one vote per couple per supplier. Partial index so legacy rows with
+-- NULL couple_id (orphaned: user no longer in a couple) are ignored.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_votes_couple_supplier_unique
+  ON supplier_votes(couple_id, supplier_id) WHERE couple_id IS NOT NULL;
 
 -- Per-couple planned + final cost for each supplier the couple is interested
 -- in. `supplier_id` is the public string id from the directory (curated slug
@@ -427,4 +437,23 @@ CREATE TABLE IF NOT EXISTS supplier_categories (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_supplier_categories_group ON supplier_categories(group_id, sort_order);
+
+-- DIY / "Csinálom magam" supplier entries — private to a couple. Never shown
+-- in the public directory, never seen by other couples or admins. Created
+-- when the couple chooses to handle a category in-house (e.g. mum is doing
+-- the catering, friend's playing the music). When `price_huf` is set the
+-- backend mirrors the value into a locked `budget_lines` row via the
+-- `couple_supplier_id` back-reference so /app/budget stays in sync.
+CREATE TABLE IF NOT EXISTS couple_suppliers (
+  id TEXT PRIMARY KEY,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  notes TEXT,
+  price_huf INTEGER,
+  budget_line_id INTEGER REFERENCES budget_lines(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_couple_suppliers_couple ON couple_suppliers(couple_id);
 

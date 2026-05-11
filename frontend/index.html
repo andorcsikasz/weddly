@@ -5,30 +5,45 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#efe9d9" />
-    <title>Weddly — plan your wedding together</title>
+    <!--
+      Initial meta is Hungarian — that's our canonical locale (the SPA flips
+      to English after hydration when localStorage["weddly.locale"]==="en").
+      Facebook / Twitter / Google scrapers don't run JS, so the share card
+      and search snippet a HU user sees in a HU social feed need to be in HU
+      at this layer. The runtime title gets overridden per-route by
+      `useDocumentMeta`.
+    -->
+    <title>Wēddly — az egész esküvőtök egy helyen</title>
     <meta
       name="description"
-      content="One shared workspace for both of you: budget, guest list, RSVP links, visual seating, printable cards. Free during the open beta."
+      content="Költségvetés, vendéglista, RSVP, ültetés és nyomtatványok egy közös felületen. Pár perc beállítás, és estékből percek lesznek."
     />
+    <link rel="canonical" href="https://weddly.xyz/" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Weddly" />
-    <meta property="og:title" content="Weddly — plan your wedding together" />
+    <meta property="og:site_name" content="Wēddly" />
+    <meta property="og:locale" content="hu_HU" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="https://weddly.xyz/" />
+    <meta property="og:title" content="Wēddly — az egész esküvőtök egy helyen" />
     <meta
       property="og:description"
-      content="One shared workspace for both of you. Budget, guest list, RSVP, seating, printable cards. Free during the open beta."
+      content="Költségvetés, vendéglista, RSVP, ültetés, nyomtatható kártyák — egy közös felületen. A nyílt béta alatt ingyenes."
     />
     <meta property="og:image" content="/og.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Weddly — plan your wedding, calmly. Together." />
+    <meta property="og:image:alt" content="Wēddly — közösen tervezzétek az esküvőtöket, nyugodtan." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Weddly — plan your wedding together" />
+    <meta name="twitter:title" content="Wēddly — az egész esküvőtök egy helyen" />
     <meta
       name="twitter:description"
-      content="One shared workspace for both of you. Free during the open beta."
+      content="Egy közös felület mindkettőtöknek. A nyílt béta alatt ingyenes."
     />
     <meta name="twitter:image" content="/og.png" />
+    <link rel="alternate" hreflang="hu" href="https://weddly.xyz/" />
+    <link rel="alternate" hreflang="en" href="https://weddly.xyz/?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="https://weddly.xyz/" />
     <!--
       Fonts are intentionally NOT loaded from third-party hosts (rsms.me,
       Google Fonts) so that the landing page can render without leaking

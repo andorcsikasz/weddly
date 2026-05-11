@@ -45,6 +45,21 @@ export default {
           800: "#7d3122",
           900: "#612821",
         },
+        // Sage — muted green used sparingly to mark couple-private "DIY"
+        // supplier entries. Kept low-saturation so it sits quietly next to
+        // blush CTAs and doesn't read as a status / success color.
+        sage: {
+          50: "#f5f7f2",
+          100: "#e7ede0",
+          200: "#cedcbf",
+          300: "#aec496",
+          400: "#8aaa6f",
+          500: "#6c8f56",
+          600: "#557141",
+          700: "#445937",
+          800: "#374731",
+          900: "#2c3a28",
+        },
       },
       fontFamily: {
         // Self-hosted/system stack — we used to pull Inter from rsms.me and

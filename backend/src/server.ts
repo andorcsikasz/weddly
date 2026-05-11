@@ -30,6 +30,7 @@ import { registerBudgetRoutes } from "./routes/budget";
 import { registerCommunitySupplierRoutes } from "./routes/community_suppliers";
 import { registerCouplePauseRoutes } from "./routes/couple_pause";
 import { registerCoupleRoutes } from "./routes/couples";
+import { registerCoupleSupplierRoutes } from "./routes/couple_suppliers";
 import { registerDocumentArchiveRoutes } from "./routes/document_archive";
 import { registerEmailChangeRoutes } from "./routes/email_change";
 import { registerEmailPrefsRoutes } from "./routes/email_prefs";
@@ -72,6 +73,7 @@ registerSupplierRoutes(router);
 registerSupplierTaxonomyRoutes(router);
 registerSupplierCostRoutes(router);
 registerCommunitySupplierRoutes(router);
+registerCoupleSupplierRoutes(router);
 registerAdminSupplierRoutes(router);
 registerAdminUserRoutes(router);
 registerVendorWaitlistRoutes(router);
@@ -254,9 +256,7 @@ if (!CONFIG.resendApiKey) {
   log.warn("config.no_resend_key", {
     note: "RESEND_API_KEY is unset — every email is logged to stdout instead of delivered. Verify-email, password reset, RSVP notifications, and lifecycle reminders all silently no-op.",
   });
-} else if (CONFIG.emailFrom === "Weddly <onboarding@resend.dev>") {
-  log.warn("config.default_email_from", {
-    emailFrom: CONFIG.emailFrom,
-    note: "EMAIL_FROM is the resend.dev fallback — Resend will only deliver to the inbox that owns the API key. Verify a domain in Resend and set EMAIL_FROM to a sender on that domain.",
-  });
 }
+// The default-EMAIL_FROM warning is gone — `config.ts` now hard-fails on
+// boot if production is left with the resend.dev fallback. In dev the
+// fallback is fine, and the boot-time log already reports `email:` health.

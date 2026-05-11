@@ -90,6 +90,19 @@ export async function sendKind<K extends EmailKind>(
     unsubscribeToken,
   });
 
+  // RFC 8058 one-click unsubscribe headers. Gmail's bulk-sender requirements
+  // (Feb 2024) require both `List-Unsubscribe` and `List-Unsubscribe-Post`
+  // for any sender > 5k recipients/day. The header URL points at the backend
+  // endpoint (no JS, returns a tiny HTML confirmation on GET, flips the flag
+  // silently on POST) so Gmail's auto-unsubscribe bot can complete in one hit.
+  const extraHeaders: Record<string, string> | undefined =
+    category === "lifecycle" && unsubscribeToken
+      ? {
+          "List-Unsubscribe": `<${CONFIG.frontendBaseUrl}/api/unsubscribe/${unsubscribeToken}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        }
+      : undefined;
+
   if (!CONFIG.resendApiKey) {
     // Dev/test: mailer.ts just logs to stdout, never throws. Record the
     // attempt SYNCHRONOUSLY (before any await) so callers using fire-and-forget
@@ -109,6 +122,7 @@ export async function sendKind<K extends EmailKind>(
       subject: built.subject,
       html: built.rendered.html,
       text: built.rendered.text,
+      headers: extraHeaders,
     });
     return { status: "skipped_no_provider" };
   }
@@ -119,6 +133,7 @@ export async function sendKind<K extends EmailKind>(
       subject: built.subject,
       html: built.rendered.html,
       text: built.rendered.text,
+      headers: extraHeaders,
     });
     recordEmailAttempt({
       user_id: target.user?.id ?? null,

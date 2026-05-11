@@ -137,6 +137,7 @@ export function toCouple(row: CoupleRow): Couple {
       : "active",
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
+    updated_at: row.updated_at,
   };
 }
 

@@ -73,9 +73,27 @@ function unsubscribeHtml(success: boolean): string {
 </head><body><div class="card"><h1>${title}</h1>${body}<p style="margin-top:24px;font-size:13px;color:#6e6863;">— Weddly</p></div></body></html>`;
 }
 
+/** RFC 8058 one-click unsubscribe. Gmail/Outlook bots POST to the
+ *  List-Unsubscribe URL with `List-Unsubscribe=One-Click` in the body;
+ *  they don't render the GET-confirmation HTML. We flip the flag and
+ *  return 204 No Content so the bot doesn't trip on unparsable bodies. */
+function handleUnsubscribePost(ctx: Ctx): Response {
+  const token = ctx.params.token;
+  if (!token) throw new HttpError(400, "Missing token");
+  const prefs = getPreferencesByToken(token);
+  if (!prefs) {
+    // Spec says: invalid tokens should still 2xx — never feed the bot a 4xx.
+    return new Response(null, { status: 204 });
+  }
+  setLifecycleOptOut(prefs.user_id, true);
+  return new Response(null, { status: 204 });
+}
+
 export function registerEmailPrefsRoutes(router: Router) {
   // Public — token-authenticated, one-click.
   router.get("/api/unsubscribe/:token", handleUnsubscribe);
+  // RFC 8058: Gmail/Outlook bot POSTs the same URL when the header is honored.
+  router.post("/api/unsubscribe/:token", handleUnsubscribePost);
   // Logged-in dashboard prefs.
   router.get("/api/account/email-preferences", handleGetPrefs, true);
   router.post("/api/account/email-preferences", handleUpdatePrefs, true);

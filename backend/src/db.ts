@@ -145,6 +145,25 @@ addColumnIfMissing("seating_tables", "is_kids_table", "is_kids_table INTEGER NOT
 // Helps the team triage by region before we open onboarding.
 addColumnIfMissing("vendor_waitlist", "location", "location TEXT");
 
+// `couple_supplier_id` back-reference on auto-synced budget lines. When a
+// DIY supplier entry on /app/suppliers has a price, the backend creates a
+// matching `budget_lines` row stamped with this id. The frontend renders
+// those rows as read-only (price is owned by the supplier card) and the
+// supplier's update / delete flow keeps them in sync.
+addColumnIfMissing("budget_lines", "couple_supplier_id", "couple_supplier_id TEXT");
+
+// Per-couple supplier votes — see schema.sql. The legacy `(user_id, supplier_id)`
+// keying let both partners stack two votes on a self-submitted supplier, which
+// brigaded the directory's default sort. Backfill `couple_id` from the voter's
+// user record so existing votes get correctly scoped before the new partial
+// unique index activates.
+addColumnIfMissing("supplier_votes", "couple_id", "couple_id INTEGER");
+db.exec(`
+  UPDATE supplier_votes
+     SET couple_id = (SELECT couple_id FROM users WHERE users.id = supplier_votes.user_id)
+   WHERE couple_id IS NULL
+`);
+
 export function now(): number {
   return Date.now();
 }

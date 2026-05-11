@@ -9,12 +9,33 @@ export interface SendEmailInput {
   subject: string;
   html: string;
   text: string;
+  /** Extra RFC 5322 headers to attach to the outgoing message. Used to
+   *  carry `List-Unsubscribe` / `List-Unsubscribe-Post` for RFC 8058
+   *  one-click unsubscribe — required by Gmail's 2024 bulk-sender rules
+   *  once volume picks up. */
+  headers?: Record<string, string>;
 }
 
 export async function sendEmail(input: SendEmailInput): Promise<void> {
   if (!CONFIG.resendApiKey) {
-    log.info("mailer.dev_print", { to: input.to, subject: input.subject, text: input.text });
+    log.info("mailer.dev_print", {
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+      headers: input.headers,
+    });
     return;
+  }
+
+  const payload: Record<string, unknown> = {
+    from: CONFIG.emailFrom,
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
+    text: input.text,
+  };
+  if (input.headers && Object.keys(input.headers).length > 0) {
+    payload.headers = input.headers;
   }
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -23,13 +44,7 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
       Authorization: `Bearer ${CONFIG.resendApiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from: CONFIG.emailFrom,
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-    }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => "");

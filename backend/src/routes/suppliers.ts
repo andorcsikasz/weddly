@@ -7,8 +7,10 @@ import {
   listActiveCommunitySuppliers,
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
+import { getCoupleForUser } from "../domain/couples";
 import { DIRECTORY } from "../domain/suppliers_data";
-import { getScoresMap, getUserVotesMap, setVote, type VoteValue } from "../domain/supplier_votes";
+import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
+import { db } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
@@ -31,12 +33,12 @@ const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
 function withVotes(
   base: DirectorySupplierBase,
   scores: Map<string, number>,
-  votes: Map<string, VoteValue> | null,
+  coupleVotes: Map<string, VoteValue> | null,
 ): DirectorySupplier {
   return {
     ...base,
     votes_score: scores.get(base.id) ?? 0,
-    user_vote: (votes?.get(base.id) ?? 0) as -1 | 0 | 1,
+    user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
   };
 }
 
@@ -47,9 +49,13 @@ async function handleList(ctx: Ctx): Promise<Response> {
   const allBase: DirectorySupplierBase[] = [...curated, ...community.map(toDirectorySupplierBase)];
 
   const scores = getScoresMap();
-  const userVotes = ctx.userId ? getUserVotesMap(ctx.userId) : null;
+  // user_vote is now per-couple — both partners see the same "+1" once either
+  // casts it. Anonymous callers and signed-in users without a workspace get
+  // `user_vote: 0` everywhere.
+  const couple = ctx.userId ? getCoupleForUser(ctx.userId) : null;
+  const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
 
-  return json({ suppliers: allBase.map((b) => withVotes(b, scores, userVotes)) });
+  return json({ suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes)) });
 }
 
 interface VoteBody {
@@ -62,6 +68,16 @@ async function handleVote(ctx: Ctx): Promise<Response> {
   if (!supplierId) throw new HttpError(400, "supplier_id required");
   if (supplierId.length > 80) throw new HttpError(400, "supplier_id too long");
 
+  // Votes are per-couple — a user without a workspace has no slot to vote
+  // into. Returning 403 surfaces the constraint instead of letting the row
+  // land with a null couple_id and silently fail the unique index.
+  const couple = getCoupleForUser(userId);
+  if (!couple) {
+    throw new HttpError(403, "Join or create a couple workspace to vote", {
+      code: "no_couple",
+    });
+  }
+
   // The id must reference something in the public list — either a curated slug
   // or an active community entry. Without this guard we'd accept votes for
   // garbage ids that no card ever shows.
@@ -69,8 +85,23 @@ async function handleVote(ctx: Ctx): Promise<Response> {
   if (!isCurated) {
     if (!supplierId.startsWith("c")) throw new HttpError(404, "Unknown supplier");
     const community = listActiveCommunitySuppliers();
-    if (!community.some((c) => `c${c.id}` === supplierId)) {
+    const communityMatch = community.find((c) => `c${c.id}` === supplierId);
+    if (!communityMatch) {
       throw new HttpError(404, "Unknown supplier");
+    }
+    // Self-vote block: refuse votes on a community supplier whose submitter
+    // is a member of the voting couple (either partner). Without this the
+    // submitter's workspace gets a free +1 the moment they finish the form,
+    // and "Top voted" becomes a self-listing leaderboard.
+    if (communityMatch.submitter_user_id) {
+      const submitter = db
+        .prepare("SELECT couple_id FROM users WHERE id = ?")
+        .get(communityMatch.submitter_user_id) as { couple_id: number | null } | undefined;
+      if (submitter && submitter.couple_id === couple.id) {
+        throw new HttpError(403, "Can't vote on your own submission", {
+          code: "self_vote",
+        });
+      }
     }
   }
 
@@ -80,7 +111,7 @@ async function handleVote(ctx: Ctx): Promise<Response> {
   if (n !== -1 && n !== 0 && n !== 1) {
     throw new HttpError(400, "value must be -1, 0, or 1");
   }
-  setVote(userId, supplierId, n as VoteValue);
+  setVote(couple.id, userId, supplierId, n as VoteValue);
 
   // Echo the fresh tally so the frontend can sync optimistically.
   const scores = getScoresMap();

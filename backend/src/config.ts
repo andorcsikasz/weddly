@@ -1,12 +1,35 @@
 // Backend runtime config. Fail-fast: production refuses to boot without a strong JWT_SECRET.
 
 const DEV_JWT_SECRET = "dev-only-secret-change-me-in-production-please-0123456789";
+const DEFAULT_EMAIL_FROM = "Weddly <onboarding@resend.dev>";
 const IS_PROD = process.env.NODE_ENV === "production";
 
 if (IS_PROD && (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEV_JWT_SECRET)) {
   console.error(
     "[config] FATAL: NODE_ENV=production requires a strong JWT_SECRET. " +
       "Generate one with `openssl rand -hex 48` and set it in the Railway dashboard.",
+  );
+  process.exit(1);
+}
+
+// Refuse to boot in production with the resend.dev sandbox From address — that
+// fallback only delivers to the inbox that owns the API key, so any couple who
+// signs up never receives their verification email. Better to fail loudly at
+// deploy than silently strand users in unverified state. Dev/test keeps the
+// fallback so local runs don't need EMAIL_FROM set.
+if (IS_PROD && process.env.RESEND_API_KEY && (process.env.EMAIL_FROM ?? "") === "") {
+  console.error(
+    "[config] FATAL: RESEND_API_KEY is set but EMAIL_FROM is missing. " +
+      "Verify a domain in Resend and set EMAIL_FROM to a sender on that domain " +
+      "(e.g. `Weddly <hello@weddly.xyz>`).",
+  );
+  process.exit(1);
+}
+if (IS_PROD && process.env.EMAIL_FROM === DEFAULT_EMAIL_FROM) {
+  console.error(
+    "[config] FATAL: EMAIL_FROM is still the resend.dev fallback in production. " +
+      "Resend will only deliver to the inbox that owns the API key — every user " +
+      "verification will silently fail. Set EMAIL_FROM to a verified-domain sender.",
   );
   process.exit(1);
 }
@@ -23,7 +46,7 @@ export const CONFIG = {
   serveFrontend: process.env.SERVE_FRONTEND === "1",
   /** Resend API key. When unset, `sendEmail()` logs the link to stdout instead. */
   resendApiKey: process.env.RESEND_API_KEY ?? "",
-  emailFrom: process.env.EMAIL_FROM ?? "Weddly <onboarding@resend.dev>",
+  emailFrom: process.env.EMAIL_FROM ?? DEFAULT_EMAIL_FROM,
   /** Comma-separated email allowlist. Members get `is_admin: true` on the User
    *  DTO and access to /app/admin/* routes. Reversible via env edit. */
   adminEmails: (process.env.ADMIN_EMAILS ?? "andor.csikasz@gmail.com")

@@ -4512,3 +4512,435 @@ function isoUtcDate(ts: number): string {
   d.setUTCHours(0, 0, 0, 0);
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
+
+describe("couple_suppliers (DIY entries + budget mirror)", () => {
+  interface CoupleSupplierDTO {
+    id: string;
+    source: "self";
+    name: string;
+    category: string;
+    notes: string | null;
+    price_huf: number | null;
+    budget_line_id: number | null;
+  }
+  interface CoupleSupplierResp {
+    supplier: CoupleSupplierDTO;
+  }
+  interface BudgetLineDTO {
+    id: number;
+    category: string;
+    label: string;
+    planned_huf: number;
+    actual_huf: number;
+    couple_supplier_id: string | null;
+  }
+  interface BudgetLinesResp {
+    lines: BudgetLineDTO[];
+  }
+
+  async function getLines(token: string): Promise<BudgetLineDTO[]> {
+    const r = await req<BudgetLinesResp>("GET", "/api/budget/lines", undefined, { token });
+    expect(r.status).toBe(200);
+    return r.data.lines;
+  }
+
+  test("create without price: no budget line, supplier listed", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("diy-1@weddly.test");
+
+    const r = await req<CoupleSupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Anyukám főz", category: "catering" },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.supplier.price_huf).toBeNull();
+    expect(r.data.supplier.budget_line_id).toBeNull();
+    expect(r.data.supplier.source).toBe("self");
+
+    const lines = await getLines(token);
+    expect(lines.find((l) => l.couple_supplier_id === r.data.supplier.id)).toBeUndefined();
+
+    const list = await req<{ suppliers: CoupleSupplierDTO[] }>(
+      "GET",
+      "/api/couple-suppliers",
+      undefined,
+      { token },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.suppliers).toHaveLength(1);
+    expect(list.data.suppliers[0]?.name).toBe("Anyukám főz");
+  });
+
+  test("create with price: budget line auto-created and linked", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("diy-2@weddly.test");
+
+    const r = await req<CoupleSupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Béla bácsi zenél", category: "music_dj", price_huf: 120_000 },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.supplier.price_huf).toBe(120_000);
+    expect(r.data.supplier.budget_line_id).not.toBeNull();
+
+    const lines = await getLines(token);
+    const mirrored = lines.find((l) => l.couple_supplier_id === r.data.supplier.id);
+    expect(mirrored).toBeDefined();
+    expect(mirrored?.label).toBe("Béla bácsi zenél");
+    expect(mirrored?.category).toBe("music_dj"); // SUPPLIER_TO_BUDGET map
+    expect(mirrored?.actual_huf).toBe(120_000);
+    expect(mirrored?.planned_huf).toBe(120_000);
+  });
+
+  test("update price: budget line updates in place", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("diy-3@weddly.test");
+
+    const created = await req<CoupleSupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Saját süti", category: "cake_dessert", price_huf: 40_000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const supplierId = created.data.supplier.id;
+    const originalLineId = created.data.supplier.budget_line_id;
+
+    const updated = await req<CoupleSupplierResp>(
+      "PATCH",
+      `/api/couple-suppliers/${supplierId}`,
+      { price_huf: 75_000, name: "Saját nagy torta" },
+      { token },
+    );
+    expect(updated.status).toBe(200);
+    expect(updated.data.supplier.price_huf).toBe(75_000);
+    expect(updated.data.supplier.budget_line_id).toBe(originalLineId);
+
+    const lines = await getLines(token);
+    const line = lines.find((l) => l.id === originalLineId);
+    expect(line?.actual_huf).toBe(75_000);
+    expect(line?.label).toBe("Saját nagy torta");
+  });
+
+  test("clear price: budget line is deleted, supplier kept", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("diy-4@weddly.test");
+
+    const created = await req<CoupleSupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Friend florist", category: "decor_floral", price_huf: 50_000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const supplierId = created.data.supplier.id;
+    const lineId = created.data.supplier.budget_line_id;
+    expect(lineId).not.toBeNull();
+
+    const updated = await req<CoupleSupplierResp>(
+      "PATCH",
+      `/api/couple-suppliers/${supplierId}`,
+      { price_huf: null },
+      { token },
+    );
+    expect(updated.status).toBe(200);
+    expect(updated.data.supplier.price_huf).toBeNull();
+    expect(updated.data.supplier.budget_line_id).toBeNull();
+
+    const lines = await getLines(token);
+    expect(lines.find((l) => l.id === lineId)).toBeUndefined();
+  });
+
+  test("delete supplier: paired budget line cascades away", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("diy-5@weddly.test");
+
+    const created = await req<CoupleSupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Family DJ", category: "music_dj", price_huf: 30_000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const supplierId = created.data.supplier.id;
+    const lineId = created.data.supplier.budget_line_id;
+    expect(lineId).not.toBeNull();
+
+    const del = await req("DELETE", `/api/couple-suppliers/${supplierId}`, undefined, { token });
+    expect(del.status).toBe(200);
+
+    const lines = await getLines(token);
+    expect(lines.find((l) => l.id === lineId)).toBeUndefined();
+    const list = await req<{ suppliers: CoupleSupplierDTO[] }>(
+      "GET",
+      "/api/couple-suppliers",
+      undefined,
+      { token },
+    );
+    expect(list.data.suppliers).toHaveLength(0);
+  });
+
+  test("locked budget line: PATCH + DELETE both 409", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("diy-6@weddly.test");
+
+    const created = await req<CoupleSupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Friend baker", category: "cake_dessert", price_huf: 25_000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const lineId = created.data.supplier.budget_line_id;
+    expect(lineId).not.toBeNull();
+
+    const patch = await req("PATCH", `/api/budget/lines/${lineId}`, { actual_huf: 99 }, { token });
+    expect(patch.status).toBe(409);
+
+    const del = await req("DELETE", `/api/budget/lines/${lineId}`, undefined, { token });
+    expect(del.status).toBe(409);
+  });
+
+  test("auth: another couple can't see or mutate", async () => {
+    wipeAll();
+    const { token: tokA } = await bootstrapCouple("diy-7a@weddly.test");
+    const created = await req<CoupleSupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Private", category: "venue" },
+      { token: tokA },
+    );
+    expect(created.status).toBe(201);
+    const id = created.data.supplier.id;
+
+    const { token: tokB } = await bootstrapCouple("diy-7b@weddly.test");
+    const list = await req<{ suppliers: CoupleSupplierDTO[] }>(
+      "GET",
+      "/api/couple-suppliers",
+      undefined,
+      { token: tokB },
+    );
+    expect(list.data.suppliers).toHaveLength(0);
+
+    const cross = await req(
+      "PATCH",
+      `/api/couple-suppliers/${id}`,
+      { name: "Hacked" },
+      { token: tokB },
+    );
+    expect(cross.status).toBe(404);
+  });
+});
+
+// ─── Loop A: pre-launch stop-bleeding coverage ─────────────────────────────
+
+describe("loop A: couple PATCH If-Match concurrency", () => {
+  test("matching If-Match wins; mismatched returns 409 stale", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("ifmatch@weddly.test");
+
+    const r0 = await req<{ couple: { updated_at: number } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const before = r0.data.couple.updated_at;
+
+    const ok = await fetch(`${BASE}/api/couples/current`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "x-test-client-ip": "10.0.0.1",
+        "If-Match": String(before),
+      },
+      body: JSON.stringify({ budget_ceiling_huf: 5_500_000 }),
+    });
+    expect(ok.status).toBe(200);
+
+    // Re-submitting with the now-stale If-Match must 409 with code=stale.
+    const stale = await fetch(`${BASE}/api/couples/current`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "x-test-client-ip": "10.0.0.1",
+        "If-Match": String(before),
+      },
+      body: JSON.stringify({ budget_ceiling_huf: 4_000_000 }),
+    });
+    expect(stale.status).toBe(409);
+    const body = (await stale.json()) as { detail?: { code?: string } };
+    expect(body.detail?.code).toBe("stale");
+  });
+
+  test("missing If-Match still allowed (back-compat)", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("noheader@weddly.test");
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { budget_ceiling_huf: 6_000_000 },
+      { token },
+    );
+    expect(r.status).toBe(200);
+  });
+});
+
+describe("loop A: slug locked after first invite", () => {
+  test("slug PATCH refused with 423 once a guest has invited_at", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("slug@weddly.test");
+
+    const ok = await req("PATCH", "/api/couples/slug", { slug: "annaandbence" }, { token });
+    expect(ok.status).toBe(200);
+
+    // POST a guest with `invited: true` — create handler stamps invited_at.
+    const g = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Aunt Edit", group_tag: "her_family", invited: true },
+      { token },
+    );
+    expect(g.status).toBe(201);
+
+    const locked = await req("PATCH", "/api/couples/slug", { slug: "differentslug" }, { token });
+    expect(locked.status).toBe(423);
+    expect((locked.data as { detail?: { code?: string } }).detail?.code).toBe("slug_locked");
+  });
+
+  test("no-op slug PATCH (same value) bypasses the lock", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("noop@weddly.test");
+    await req("PATCH", "/api/couples/slug", { slug: "stableslug" }, { token });
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Anyone", group_tag: "her_family", invited: true },
+      { token },
+    );
+
+    const same = await req("PATCH", "/api/couples/slug", { slug: "stableslug" }, { token });
+    expect(same.status).toBe(200);
+  });
+});
+
+describe("loop A: per-couple supplier votes + self-vote block", () => {
+  test("a user without a couple gets 403 on vote", async () => {
+    wipeAll();
+    const r = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "soloer@weddly.test",
+      password: "supersafe123",
+      full_name: "Solo",
+    });
+    expect(r.status).toBe(201);
+    const vote = await req(
+      "PUT",
+      "/api/suppliers/normafa-rendezvenyhaz/vote",
+      { value: 1 },
+      { token: r.data.token },
+    );
+    expect(vote.status).toBe(403);
+    expect((vote.data as { detail?: { code?: string } }).detail?.code).toBe("no_couple");
+  });
+
+  test("two couples each vote → score=2 (one each, not four)", async () => {
+    wipeAll();
+    const a = await bootstrapCouple("couple-a@weddly.test");
+    const b = await bootstrapCouple("couple-b@weddly.test");
+    await req("PUT", "/api/suppliers/etyeki-kuria/vote", { value: 1 }, { token: a.token });
+    await req("PUT", "/api/suppliers/etyeki-kuria/vote", { value: 1 }, { token: b.token });
+    const list = await req<{ suppliers: { id: string; votes_score: number }[] }>(
+      "GET",
+      "/api/suppliers",
+      undefined,
+      { token: a.token },
+    );
+    const etyek = list.data.suppliers.find((s) => s.id === "etyeki-kuria");
+    expect(etyek?.votes_score).toBe(2);
+  });
+
+  test("submitter (and their couple) cannot upvote their own community supplier", async () => {
+    wipeAll();
+    const submitter = await bootstrapCouple("submitter@weddly.test");
+
+    const sub = await req<{ supplier: { id: string } }>(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        name: "Self-vote test venue",
+        city: "Budapest",
+        blurb: "Saját beadvány, ide nem szabad nekünk +1-ezni.",
+        website: "https://example.test/self",
+        contact_email: "contact@example.test",
+        price_band: 2,
+      },
+      { token: submitter.token },
+    );
+    expect(sub.status).toBe(201);
+    const supplierPublicId = sub.data.supplier.id;
+
+    const selfVote = await req(
+      "PUT",
+      `/api/suppliers/${supplierPublicId}/vote`,
+      { value: 1 },
+      { token: submitter.token },
+    );
+    expect(selfVote.status).toBe(403);
+    expect((selfVote.data as { detail?: { code?: string } }).detail?.code).toBe("self_vote");
+
+    // A different couple CAN upvote it.
+    const other = await bootstrapCouple("other-voter@weddly.test");
+    const ok = await req(
+      "PUT",
+      `/api/suppliers/${supplierPublicId}/vote`,
+      { value: 1 },
+      { token: other.token },
+    );
+    expect(ok.status).toBe(200);
+  });
+});
+
+describe("loop A: one-click unsubscribe (RFC 8058)", () => {
+  test("POST /api/unsubscribe/:token returns 204 for valid and invalid tokens", async () => {
+    wipeAll();
+    const r = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "unsub@weddly.test",
+      password: "supersafe123",
+      full_name: "Unsub Test",
+    });
+    expect(r.status).toBe(201);
+
+    const prefs = await req<{ unsubscribe_token: string }>(
+      "GET",
+      "/api/account/email-preferences",
+      undefined,
+      { token: r.data.token },
+    );
+    expect(prefs.status).toBe(200);
+    expect(prefs.data.unsubscribe_token.length).toBeGreaterThan(0);
+
+    // Real one-click flip — should succeed silently (204).
+    const oneClick = await req("POST", `/api/unsubscribe/${prefs.data.unsubscribe_token}`, {});
+    expect(oneClick.status).toBe(204);
+
+    // Invalid token: still 204 (spec says don't 4xx the bot).
+    const ghost = await req("POST", "/api/unsubscribe/clearly-not-a-token", {});
+    expect(ghost.status).toBe(204);
+
+    // The flag is actually flipped — re-reading prefs reflects it.
+    const after = await req<{ lifecycle_opt_out: boolean }>(
+      "GET",
+      "/api/account/email-preferences",
+      undefined,
+      { token: r.data.token },
+    );
+    expect(after.data.lifecycle_opt_out).toBe(true);
+  });
+});

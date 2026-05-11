@@ -46,6 +46,7 @@ export function purgeOneCouple(coupleId: number): void {
   db.prepare("DELETE FROM seating_conflicts WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM seating_tables WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM guests WHERE couple_id = ?").run(coupleId);
+  db.prepare("DELETE FROM couple_suppliers WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM budget_lines WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM budget_snapshots WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM data_exports WHERE couple_id = ?").run(coupleId);
