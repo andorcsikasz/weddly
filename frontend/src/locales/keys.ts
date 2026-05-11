@@ -1041,6 +1041,37 @@ export interface LocaleMessages {
     nav_suppliers: string;
     nav_users: string;
     nav_waitlist: string;
+    nav_taxonomy: string;
+    /** /app/admin/categories page — supplier groups + categories CRUD. */
+    taxonomy_title: string;
+    taxonomy_sub: string;
+    taxonomy_empty: string;
+    taxonomy_add_group: string;
+    taxonomy_add_category: string;
+    taxonomy_group_slug: string;
+    taxonomy_group_label_hu: string;
+    taxonomy_group_label_en: string;
+    taxonomy_category_slug: string;
+    taxonomy_category_label_hu: string;
+    taxonomy_category_label_en: string;
+    taxonomy_category_budget: string;
+    taxonomy_category_budget_help: string;
+    taxonomy_save: string;
+    taxonomy_saving: string;
+    taxonomy_cancel: string;
+    taxonomy_edit: string;
+    taxonomy_delete: string;
+    taxonomy_delete_group_confirm_title: string;
+    taxonomy_delete_group_confirm_body: string;
+    taxonomy_delete_group_blocked: string;
+    taxonomy_delete_category_confirm_title: string;
+    taxonomy_delete_category_confirm_body: string;
+    taxonomy_delete_category_blocked: string;
+    taxonomy_slug_help: string;
+    taxonomy_new_group_title: string;
+    taxonomy_new_category_title: string;
+    taxonomy_edit_group_title: string;
+    taxonomy_edit_category_title: string;
     /** /app/admin/vendor-waitlist page — triage of /vendors submissions. */
     waitlist_title: string;
     waitlist_sub: string;

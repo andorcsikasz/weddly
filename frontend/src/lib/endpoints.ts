@@ -40,6 +40,15 @@ import type {
   VendorWaitlistStatus,
 } from "@shared/vendor_waitlist";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
+import type {
+  AdminSupplierCategory,
+  AdminSupplierGroup,
+  CreateSupplierCategoryInput,
+  CreateSupplierGroupInput,
+  SupplierTaxonomy,
+  UpdateSupplierCategoryInput,
+  UpdateSupplierGroupInput,
+} from "@shared/supplier_taxonomy";
 import { apiFetch, getToken } from "./api";
 
 export const authApi = {
@@ -400,6 +409,28 @@ export const adminVendorWaitlistApi = {
     apiFetch<{ entry: VendorWaitlistEntry }>("PATCH", `/api/admin/vendor-waitlist/${id}/status`, {
       status,
     }),
+};
+
+export const supplierTaxonomyApi = {
+  list: () => apiFetch<SupplierTaxonomy>("GET", "/api/supplier-categories"),
+};
+
+export const adminSupplierTaxonomyApi = {
+  createGroup: (body: CreateSupplierGroupInput) =>
+    apiFetch<{ group: AdminSupplierGroup }>("POST", "/api/admin/supplier-groups", body),
+  updateGroup: (id: number, body: UpdateSupplierGroupInput) =>
+    apiFetch<{ group: AdminSupplierGroup }>("PATCH", `/api/admin/supplier-groups/${id}`, body),
+  removeGroup: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/supplier-groups/${id}`),
+  createCategory: (body: CreateSupplierCategoryInput) =>
+    apiFetch<{ category: AdminSupplierCategory }>("POST", "/api/admin/supplier-categories", body),
+  updateCategory: (id: number, body: UpdateSupplierCategoryInput) =>
+    apiFetch<{ category: AdminSupplierCategory }>(
+      "PATCH",
+      `/api/admin/supplier-categories/${id}`,
+      body,
+    ),
+  removeCategory: (id: number) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/admin/supplier-categories/${id}`),
 };
 
 export const adminSupplierApi = {

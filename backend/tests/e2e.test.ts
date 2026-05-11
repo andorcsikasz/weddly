@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test";
 import { db, now } from "../src/db";
 import { runEmailSweep } from "../src/domain/emails/worker";
 import { runPurgeSweep } from "../src/domain/purge";
+import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -69,6 +70,8 @@ function wipeAll() {
     "supplier_votes",
     "vendor_waitlist",
     "feedback_submissions",
+    "supplier_categories",
+    "supplier_groups",
     "users",
     "couples",
   ];
@@ -79,6 +82,10 @@ function wipeAll() {
       // table may not exist yet
     }
   }
+  // Re-seed the supplier taxonomy after wiping — the public directory and
+  // every admin-taxonomy test expects the 6 default groups / 14 categories
+  // to exist. seedSupplierTaxonomy is idempotent so this is safe.
+  seedSupplierTaxonomy();
 }
 
 describe("auth", () => {
@@ -2957,6 +2964,187 @@ describe("admin users + couples directory", () => {
       token: coupleToken,
     });
     expect(r2.status).toBe(403);
+  });
+});
+
+describe("supplier taxonomy (admin-editable groups + categories)", () => {
+  interface Group {
+    id: number;
+    slug: string;
+    label_hu: string;
+    label_en: string;
+    sort_order: number;
+  }
+  interface Category {
+    id: number;
+    group_id: number;
+    slug: string;
+    label_hu: string;
+    label_en: string;
+    budget_category: string;
+    sort_order: number;
+  }
+  interface TaxonomyResponse {
+    groups: (Group & { categories: Category[] })[];
+  }
+
+  async function registerAdmin(): Promise<string> {
+    const r = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(r.status).toBe(201);
+    return r.data.token;
+  }
+
+  test("public GET /api/supplier-categories returns the seeded 6 groups / 14 categories", async () => {
+    wipeAll();
+    const r = await req<TaxonomyResponse>("GET", "/api/supplier-categories");
+    expect(r.status).toBe(200);
+    expect(r.data.groups.length).toBe(6);
+    const allCats = r.data.groups.flatMap((g) => g.categories);
+    expect(allCats.length).toBe(14);
+    const venueGroup = r.data.groups.find((g) => g.slug === "venue_stay");
+    expect(venueGroup?.label_hu).toBe("Helyszín & szállás");
+    expect(venueGroup?.categories.map((c) => c.slug)).toEqual(["venue", "accommodation"]);
+  });
+
+  test("admin can create + update + delete a new group", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+
+    const create = await req<{ group: Group }>(
+      "POST",
+      "/api/admin/supplier-groups",
+      { slug: "wellness", label_hu: "Wellness", label_en: "Wellness" },
+      { token: adminToken },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.group.slug).toBe("wellness");
+
+    const update = await req<{ group: Group }>(
+      "PATCH",
+      `/api/admin/supplier-groups/${create.data.group.id}`,
+      { label_hu: "Wellness & élmény" },
+      { token: adminToken },
+    );
+    expect(update.status).toBe(200);
+    expect(update.data.group.label_hu).toBe("Wellness & élmény");
+
+    const del = await req(
+      "DELETE",
+      `/api/admin/supplier-groups/${create.data.group.id}`,
+      undefined,
+      { token: adminToken },
+    );
+    expect(del.status).toBe(200);
+
+    const r = await req<TaxonomyResponse>("GET", "/api/supplier-categories");
+    expect(r.data.groups.some((g) => g.slug === "wellness")).toBe(false);
+  });
+
+  test("admin can create + update + delete a category", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const list = await req<TaxonomyResponse>("GET", "/api/supplier-categories");
+    const venueStay = list.data.groups.find((g) => g.slug === "venue_stay");
+    if (!venueStay) throw new Error("missing seed");
+
+    const create = await req<{ category: Category }>(
+      "POST",
+      "/api/admin/supplier-categories",
+      {
+        group_id: venueStay.id,
+        slug: "officiant",
+        label_hu: "Anyakönyvvezető",
+        label_en: "Officiant",
+        budget_category: "other",
+      },
+      { token: adminToken },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.category.slug).toBe("officiant");
+
+    const upd = await req<{ category: Category }>(
+      "PATCH",
+      `/api/admin/supplier-categories/${create.data.category.id}`,
+      { label_en: "Officiant / celebrant" },
+      { token: adminToken },
+    );
+    expect(upd.status).toBe(200);
+    expect(upd.data.category.label_en).toBe("Officiant / celebrant");
+
+    const del = await req(
+      "DELETE",
+      `/api/admin/supplier-categories/${create.data.category.id}`,
+      undefined,
+      { token: adminToken },
+    );
+    expect(del.status).toBe(200);
+  });
+
+  test("duplicate slug returns 409", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const dup = await req(
+      "POST",
+      "/api/admin/supplier-groups",
+      { slug: "venue_stay", label_hu: "Dup", label_en: "Dup" },
+      { token: adminToken },
+    );
+    expect(dup.status).toBe(409);
+  });
+
+  test("delete blocked when group still has categories", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const list = await req<TaxonomyResponse>("GET", "/api/supplier-categories");
+    const seeded = list.data.groups[0];
+    if (!seeded) throw new Error("missing seed");
+    const del = await req("DELETE", `/api/admin/supplier-groups/${seeded.id}`, undefined, {
+      token: adminToken,
+    });
+    expect(del.status).toBe(409);
+  });
+
+  test("invalid slug shape returns 400", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const bad = await req(
+      "POST",
+      "/api/admin/supplier-groups",
+      { slug: "Has Spaces!", label_hu: "x", label_en: "x" },
+      { token: adminToken },
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  test("non-admin gets 403 on every write endpoint", async () => {
+    wipeAll();
+    await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("nopecat@weddly.test");
+
+    const create = await req(
+      "POST",
+      "/api/admin/supplier-groups",
+      { slug: "x", label_hu: "x", label_en: "x" },
+      { token: coupleToken },
+    );
+    expect(create.status).toBe(403);
+
+    const upd = await req(
+      "PATCH",
+      "/api/admin/supplier-groups/1",
+      { label_hu: "x" },
+      { token: coupleToken },
+    );
+    expect(upd.status).toBe(403);
+
+    const del = await req("DELETE", "/api/admin/supplier-groups/1", undefined, {
+      token: coupleToken,
+    });
+    expect(del.status).toBe(403);
   });
 });
 

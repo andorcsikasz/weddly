@@ -45,7 +45,11 @@ import { registerRsvpRoutes } from "./routes/rsvp";
 import { registerSeatingRoutes } from "./routes/seating";
 import { registerSupplierCostRoutes } from "./routes/supplier_costs";
 import { registerSupplierRoutes } from "./routes/suppliers";
+import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
+import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
+
+seedSupplierTaxonomy();
 
 const router = new Router();
 registerHealthRoutes(router);
@@ -65,6 +69,7 @@ registerRsvpRoutes(router);
 registerSeatingRoutes(router);
 registerPrintRoutes(router);
 registerSupplierRoutes(router);
+registerSupplierTaxonomyRoutes(router);
 registerSupplierCostRoutes(router);
 registerCommunitySupplierRoutes(router);
 registerAdminSupplierRoutes(router);

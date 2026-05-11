@@ -4,6 +4,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuth } from "./lib/auth";
 import AboutPage from "./pages/AboutPage";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
+import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminSuppliersPage from "./pages/AdminSuppliersPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminVendorWaitlistPage from "./pages/AdminVendorWaitlistPage";
@@ -272,6 +273,18 @@ export default function App() {
             <RequireAuth>
               <RequireAdmin>
                 <AdminUsersPage />
+              </RequireAdmin>
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/admin/categories"
+        element={
+          <Page>
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminCategoriesPage />
               </RequireAdmin>
             </RequireAuth>
           </Page>

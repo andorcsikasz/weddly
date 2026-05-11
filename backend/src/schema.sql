@@ -396,3 +396,35 @@ CREATE TABLE IF NOT EXISTS feedback_submissions (
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback_submissions(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback_submissions(user_id, created_at DESC);
+
+-- Admin-editable supplier taxonomy. Seeded once from the legacy
+-- SUPPLIER_GROUPS / SupplierCategory TypeScript literals + the matching
+-- `suppliers.group.*` / `suppliers.cat.*` i18n keys (see seed_supplier_taxonomy).
+-- After seed, every label edit / new group / new category lives here.
+-- Slugs are the public-API identifiers — keep them URL-safe and stable.
+CREATE TABLE IF NOT EXISTS supplier_groups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,
+  label_hu TEXT NOT NULL,
+  label_en TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_groups_order ON supplier_groups(sort_order);
+
+CREATE TABLE IF NOT EXISTS supplier_categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  group_id INTEGER NOT NULL REFERENCES supplier_groups(id) ON DELETE RESTRICT,
+  slug TEXT NOT NULL UNIQUE,
+  label_hu TEXT NOT NULL,
+  label_en TEXT NOT NULL,
+  -- Budget-line bucket this category folds into for the cost panel.
+  -- See shared/suppliers.ts SUPPLIER_TO_BUDGET for the v1 mapping.
+  budget_category TEXT NOT NULL DEFAULT 'other',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_categories_group ON supplier_categories(group_id, sort_order);
+
