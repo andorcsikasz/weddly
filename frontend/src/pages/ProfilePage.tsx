@@ -68,6 +68,10 @@ export default function ProfilePage() {
   const [csvExporting, setCsvExporting] = useState(false);
   const [documents, setDocuments] = useState<DataExportSummary[]>([]);
   const [redownloading, setRedownloading] = useState<number | null>(null);
+  /** Two-click delete arming state — the id whose "Delete" button is armed
+   *  and waiting for the second confirming click. Times out after 4s. */
+  const [armedDeleteId, setArmedDeleteId] = useState<number | null>(null);
+  const [removing, setRemoving] = useState<number | null>(null);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNext, setPwNext] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -228,6 +232,31 @@ export default function ProfilePage() {
     }
   }
 
+  // Auto-disarm a pending delete after 4 seconds so the button can't sit in
+  // a one-click-from-delete state indefinitely.
+  useEffect(() => {
+    if (armedDeleteId === null) return;
+    const timer = window.setTimeout(() => setArmedDeleteId(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [armedDeleteId]);
+
+  async function clickDelete(doc: DataExportSummary) {
+    if (armedDeleteId !== doc.id) {
+      setArmedDeleteId(doc.id);
+      return;
+    }
+    setArmedDeleteId(null);
+    setRemoving(doc.id);
+    try {
+      await documentsApi.remove(doc.id);
+      setDocuments((cur) => cur.filter((d) => d.id !== doc.id));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setRemoving(null);
+    }
+  }
+
   const scheduledYmd = pauseReq?.scheduled_delete_at
     ? new Date(pauseReq.scheduled_delete_at).toISOString().slice(0, 10)
     : null;
@@ -379,16 +408,34 @@ export default function ProfilePage() {
                 <span className="text-xs text-ink-500">
                   {formatTimestamp(doc.created_at, locale)} · {formatBytes(doc.byte_size)}
                 </span>
-                <button
-                  type="button"
-                  className="btn-outline ml-auto h-8 px-3 text-xs"
-                  onClick={() => redownloadSaved(doc)}
-                  disabled={redownloading === doc.id}
-                >
-                  {redownloading === doc.id
-                    ? t("profile.export_downloading")
-                    : t("profile.archive_redownload")}
-                </button>
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="btn-outline h-8 px-3 text-xs"
+                    onClick={() => redownloadSaved(doc)}
+                    disabled={redownloading === doc.id}
+                  >
+                    {redownloading === doc.id
+                      ? t("profile.export_downloading")
+                      : t("profile.archive_redownload")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`h-8 rounded-xl border px-3 text-xs transition-colors ${
+                      armedDeleteId === doc.id
+                        ? "border-blush-500 bg-blush-500 text-white hover:bg-blush-600"
+                        : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100"
+                    }`}
+                    onClick={() => clickDelete(doc)}
+                    disabled={removing === doc.id}
+                  >
+                    {removing === doc.id
+                      ? t("profile.archive_deleting")
+                      : armedDeleteId === doc.id
+                        ? t("profile.archive_delete_confirm")
+                        : t("profile.archive_delete")}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

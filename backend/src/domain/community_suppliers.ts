@@ -52,6 +52,8 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
     address: row.address,
     capacity_min: null,
     capacity_max: null,
+    lat: null,
+    lng: null,
     blurb_hu: row.blurb,
     blurb_en: row.blurb,
     website: row.website,

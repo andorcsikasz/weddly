@@ -11,9 +11,64 @@
 export type { DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
 import type { DirectorySupplierBase } from "@shared/suppliers";
 
-const noContact = { contact_email: null, contact_phone: null } as const;
+const noContact = {
+  contact_email: null,
+  contact_phone: null,
+  // Coords are layered on below from VENUE_COORDS; entries without a hit
+  // fall through to null and just don't show up on the map view.
+  lat: null,
+  lng: null,
+} as const;
 
-export const DIRECTORY: DirectorySupplierBase[] = [
+/** Approximate WGS-84 coords keyed by directory id. Sourced from the
+ *  Hungarian postcode of the venue's address (Budapest postcodes are
+ *  4-digit district centroids; rural venues use the town centre). Good
+ *  enough for "here's where it is on a map" — couples click through to
+ *  the venue website for precise navigation. */
+const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
+  "normafa-rendezvenyhaz": { lat: 47.5048, lng: 18.9667 },
+  "etyeki-kuria": { lat: 47.4519, lng: 18.7548 },
+  "nadas-pihenopark": { lat: 47.3543, lng: 19.4675 },
+  obolhaz: { lat: 47.4647, lng: 19.0464 },
+  "lupa-event-hall": { lat: 47.6311, lng: 19.0625 },
+  "godolloi-kiralyi-kastely": { lat: 47.601, lng: 19.359 },
+  "haraszthy-pinceszet": { lat: 47.4519, lng: 18.7548 },
+  tundererdo: { lat: 47.5197, lng: 19.0344 },
+  "dodos-kitchen": { lat: 47.4341, lng: 19.1106 },
+  "botaniq-turai-kastely": { lat: 47.6093, lng: 19.5917 },
+  "palvolgyi-rendezvenysator": { lat: 47.5311, lng: 19.0306 },
+  "tisza-kastely-geszt": { lat: 46.8867, lng: 21.5897 },
+  "festetics-kastely-deg": { lat: 46.8675, lng: 18.4495 },
+  "karolyi-kastely-fuzerradvany": { lat: 48.5108, lng: 21.4564 },
+  "nest-cottage-birtok": { lat: 46.953, lng: 17.877 },
+  "fenyoharaszt-kastelyszallo": { lat: 47.7236, lng: 19.5083 },
+  "gereby-kuria": { lat: 47.0244, lng: 19.5575 },
+  "brunszvik-kastely": { lat: 47.3107, lng: 18.7878 },
+  "pronay-kastely": { lat: 47.8997, lng: 19.2997 },
+  "karolyi-kastely-fehervarcsurgo": { lat: 47.2939, lng: 18.2603 },
+  "puchner-kastelyszallo": { lat: 46.3214, lng: 18.4117 },
+  "fried-kastelyszallo": { lat: 46.7547, lng: 18.5491 },
+  "la-contessa": { lat: 48.1014, lng: 20.3922 },
+  "hertelendy-kastely": { lat: 46.3506, lng: 17.4861 },
+  "graefl-major": { lat: 47.6358, lng: 20.6481 },
+  "dudits-kastely": { lat: 46.4036, lng: 19.1192 },
+  "ottevenyi-foldvary-kastely": { lat: 47.6481, lng: 17.4744 },
+  "nadasdy-kastely-nadasdladany": { lat: 47.1739, lng: 18.2856 },
+  "zichy-park-hotel": { lat: 46.7128, lng: 18.6361 },
+  "alcsuti-arboretum": { lat: 47.4242, lng: 18.6056 },
+  "the-wedding-city": { lat: 47.464, lng: 19.005 },
+  "spoon-the-boat": { lat: 47.494, lng: 19.048 },
+  "aria-hotel-budapest": { lat: 47.5012, lng: 19.0517 },
+  "halaszbastya-etterem": { lat: 47.5018, lng: 19.0357 },
+  "gundel-etterem": { lat: 47.5159, lng: 19.079 },
+  "varkert-bazar": { lat: 47.4983, lng: 19.0411 },
+  larus: { lat: 47.4925, lng: 19.0036 },
+  "symbol-budapest": { lat: 47.5396, lng: 19.0428 },
+  "benczur-haz": { lat: 47.5106, lng: 19.07 },
+  "festetics-palota": { lat: 47.491, lng: 19.067 },
+};
+
+const RAW_DIRECTORY: DirectorySupplierBase[] = [
   {
     id: "normafa-rendezvenyhaz",
     name: "Normafa Rendezvényház",
@@ -615,3 +670,8 @@ export const DIRECTORY: DirectorySupplierBase[] = [
     price_band: 4,
   },
 ];
+
+export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
+  const c = VENUE_COORDS[s.id];
+  return c ? { ...s, lat: c.lat, lng: c.lng } : s;
+});

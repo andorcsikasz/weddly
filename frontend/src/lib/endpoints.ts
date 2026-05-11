@@ -218,6 +218,7 @@ export const exportApi = {
  *  is stored server-side and listed back on the Profile page. */
 export const documentsApi = {
   list: () => apiFetch<{ exports: DataExportSummary[] }>("GET", "/api/exports"),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/exports/${id}`),
 };
 
 /** Auth-protected blob download for any saved export. The caller saves the

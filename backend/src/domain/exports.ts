@@ -105,3 +105,13 @@ export function getExport(id: number, coupleId: number): DataExportRow | null {
     .get(id, coupleId) as DataExportRow | null;
   return row ?? null;
 }
+
+/** Returns true when a row matched and was deleted, false otherwise. The
+ *  couple_id guard prevents one partner from deleting another couple's row
+ *  via a guessed id. */
+export function deleteExport(id: number, coupleId: number): boolean {
+  const result = db
+    .prepare("DELETE FROM data_exports WHERE id = ? AND couple_id = ?")
+    .run(id, coupleId);
+  return result.changes > 0;
+}

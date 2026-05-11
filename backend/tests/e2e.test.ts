@@ -1803,6 +1803,50 @@ describe("data export (GDPR Article 20)", () => {
     const r2 = await req("GET", "/api/exports/1/download");
     expect(r2.status).toBe(401);
   });
+
+  test("archive delete removes the row and rejects cross-couple access", async () => {
+    wipeAll();
+    const { token: tokenA } = await bootstrapCouple("delA@weddly.test");
+    const { token: tokenB } = await bootstrapCouple("delB@weddly.test");
+
+    // Couple A creates one export.
+    await req("GET", "/api/couples/export", undefined, { token: tokenA });
+    const listA = await req<{ exports: { id: number }[] }>("GET", "/api/exports", undefined, {
+      token: tokenA,
+    });
+    expect(listA.data.exports.length).toBe(1);
+    const id = listA.data.exports[0]!.id;
+
+    // Couple B cannot delete couple A's export — 404 (id not in their scope).
+    const crossDelete = await req("DELETE", `/api/exports/${id}`, undefined, { token: tokenB });
+    expect(crossDelete.status).toBe(404);
+    const listAfterCross = await req<{ exports: { id: number }[] }>(
+      "GET",
+      "/api/exports",
+      undefined,
+      { token: tokenA },
+    );
+    expect(listAfterCross.data.exports.length).toBe(1);
+
+    // Couple A deletes their own export — list goes empty.
+    const ownDelete = await req("DELETE", `/api/exports/${id}`, undefined, { token: tokenA });
+    expect(ownDelete.status).toBe(200);
+    const listAfterOwn = await req<{ exports: { id: number }[] }>(
+      "GET",
+      "/api/exports",
+      undefined,
+      { token: tokenA },
+    );
+    expect(listAfterOwn.data.exports.length).toBe(0);
+
+    // A second delete on the same id 404s now that the row is gone.
+    const repeatDelete = await req("DELETE", `/api/exports/${id}`, undefined, { token: tokenA });
+    expect(repeatDelete.status).toBe(404);
+
+    // Unauthenticated delete is rejected as 401.
+    const unauth = await req("DELETE", `/api/exports/${id}`);
+    expect(unauth.status).toBe(401);
+  });
 });
 
 describe("suppliers + print", () => {

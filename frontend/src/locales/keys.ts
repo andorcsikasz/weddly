@@ -1032,6 +1032,12 @@ export interface LocaleMessages {
     archive_body: string;
     archive_empty: string;
     archive_redownload: string;
+    /** Two-click delete on each archived export. First click arms the
+     *  button (label flips to `archive_delete_confirm`); second click
+     *  removes the row. */
+    archive_delete: string;
+    archive_delete_confirm: string;
+    archive_deleting: string;
     archive_kind_json: string;
     archive_kind_seating_pdf: string;
     archive_kind_place_cards_pdf: string;

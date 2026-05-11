@@ -59,6 +59,10 @@ export interface DirectorySupplierBase {
   /** Approximate seated-dinner capacity range. Null = not published. */
   capacity_min: number | null;
   capacity_max: number | null;
+  /** WGS-84 coordinates for the map view. Null on community submissions
+   *  (no geocode pipeline yet) and on curated entries we haven't placed. */
+  lat: number | null;
+  lng: number | null;
   /** "curated" = vetted entries from suppliers_data.ts; "community" = user-submitted. */
   source: "curated" | "community";
   /** 1 = $, 5 = $$$$$. Null for entries that haven't been priced yet. */
