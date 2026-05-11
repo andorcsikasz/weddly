@@ -1,4 +1,4 @@
-import { Menu, UserCheck, X } from "lucide-react";
+import { LogIn, Menu, UserCheck, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
@@ -152,9 +152,11 @@ function PublicHeader() {
           </button>
           <Link
             to="/login"
-            className="hidden text-sm text-ink-700 transition-colors hover:text-ink-900 sm:inline-flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:inline-flex"
+            aria-label={t("landing.cta_login")}
+            title={t("landing.cta_login")}
           >
-            {t("landing.cta_login")}
+            <LogIn size={18} aria-hidden="true" />
           </Link>
           <Link to="/signup" className="btn-primary px-3.5 py-1.5 text-sm">
             {t("landing.cta_signup")}
