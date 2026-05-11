@@ -188,6 +188,16 @@ export default function RegisterPage() {
             >
               {t("auth.submit_register")}
             </Button>
+            {/* Trust microcopy directly under the submit button — reassures
+                "no card needed" and threads the privacy policy through a
+                react-router <Link> so the SPA doesn't reload. */}
+            <p className="field-help mt-3 text-center">
+              {t("register.trust_microcopy_prefix")}{" "}
+              <Link to="/privacy" className="underline hover:text-ink-700">
+                {t("register.trust_microcopy_privacy_link")}
+              </Link>
+              {t("register.trust_microcopy_suffix")}
+            </p>
           </form>
           <p className="mt-4 text-sm text-ink-600">
             {t("auth.have_account")}{" "}

@@ -50,6 +50,38 @@ function handleExport(ctx: Ctx): Response {
     )
     .all(couple.id);
 
+  // Round-2 expansion: pull every couple-scoped sidecar into the bundle so
+  // GDPR Article 20 exports really do contain everything the couple owns.
+  const households = rowsByCouple<Record<string, unknown>>("households", couple.id);
+  const coupleInvites = rowsByCouple<Record<string, unknown>>("couple_invites", couple.id);
+  const emailLog = rowsByCouple<Record<string, unknown>>("email_log", couple.id);
+  const emailDispatches = rowsByCouple<Record<string, unknown>>("email_dispatches", couple.id);
+  const dataExportsSummary = db
+    .prepare(
+      `SELECT id, kind, format, filename, content_type, byte_size, created_at
+         FROM data_exports
+         WHERE couple_id = ?
+         ORDER BY created_at DESC, id DESC`,
+    )
+    .all(couple.id);
+  const pauseRequests = rowsByCouple<Record<string, unknown>>("couple_pause_requests", couple.id);
+  const supplierCosts = rowsByCouple<Record<string, unknown>>("couple_supplier_costs", couple.id);
+  // Community suppliers submitted by either partner — joined via the
+  // submitter_user_id rather than couple_id (the table doesn't have that
+  // column). Only the rows authored by THIS couple's users are exported.
+  const partnerUserIds = [couple.partner_a_id, couple.partner_b_id].filter(
+    (n): n is number => typeof n === "number" && Number.isFinite(n),
+  );
+  const communitySuppliers = partnerUserIds.length
+    ? (db
+        .prepare(
+          `SELECT * FROM community_suppliers WHERE submitter_user_id IN (${partnerUserIds
+            .map(() => "?")
+            .join(",")}) ORDER BY id ASC`,
+        )
+        .all(...partnerUserIds) as Record<string, unknown>[])
+    : [];
+
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -59,7 +91,7 @@ function handleExport(ctx: Ctx): Response {
   });
 
   const payload = {
-    schema_version: 1,
+    schema_version: 2,
     exported_at: new Date().toISOString(),
     couple: toCouple(couple),
     partners: {
@@ -67,8 +99,16 @@ function handleExport(ctx: Ctx): Response {
       partner_b: partnerB ? toUser(partnerB) : null,
     },
     guests,
+    households,
+    couple_invites: coupleInvites,
     budget: { lines: budgetLines, snapshots: budgetSnapshots },
     seating: { tables: seatingTables, assignments: seatAssignments, conflicts: seatingConflicts },
+    supplier_costs: supplierCosts,
+    community_suppliers: communitySuppliers,
+    email_log: emailLog,
+    email_dispatches: emailDispatches,
+    couple_pause_requests: pauseRequests,
+    data_exports: dataExportsSummary,
     audit_log_recent: auditEntries,
   };
 

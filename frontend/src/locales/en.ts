@@ -128,7 +128,7 @@ const en: LocaleMessages = {
     step3_title: "How many guests are you planning for?",
     target_guest_count_label: "Target guest count",
     step4_title: "What's the budget ceiling?",
-    budget_label: "Budget ceiling (HUF)",
+    budget_label: "Budget ceiling (Ft)",
     budget_help: "We'll seed category splits — you can fine-tune each line later.",
     step5_title: "What style fits you?",
     style_help: "Pick as many as you like. Style is just a tag on the profile — nothing locks in.",
@@ -170,7 +170,8 @@ const en: LocaleMessages = {
   goal: {
     date_tbd: "Date TBD",
     date_season: "{season} {year}",
-    count_exact: "~{n} guests",
+    count_exact_one: "~{n} guest",
+    count_exact_other: "~{n} guests",
     count_range: "{min}–{max} guests",
     count_tbd: "Guest count TBD",
     budget_tbd: "Budget TBD",
@@ -294,6 +295,9 @@ const en: LocaleMessages = {
     faq_q_data: "What happens to our data?",
     faq_a_data:
       "It's yours. Every change lands in an audit log you can read. Pause the workspace any time; if it stays paused for 30 days, we delete everything automatically.",
+    faq_q_after_wedding: "What happens to our data after the wedding?",
+    faq_a_after_wedding:
+      "It stays put — active forever, just like a wedding album you keep on the shelf. Pause from your Profile any time. Once paused, we keep everything for 30 days, then permanently delete it. Either of you can cancel before the deadline.",
     faq_q_planner: "Do we need a wedding planner?",
     faq_a_planner:
       "Weddly walks you through budget, guests and seating at your own pace, so plenty of couples plan it together this way. If you have a planner already, they can join your workspace as a third login.",
@@ -360,13 +364,18 @@ const en: LocaleMessages = {
     footer_guests_about: "What is RSVP?",
     footer_legal_terms: "Terms",
     footer_legal_privacy: "Privacy",
+    footer_legal_about: "About",
+    footer_about_link: "About",
     footer_band_text: "A guest?",
     footer_band_cta: "Enter your invite code",
     skip_to_main: "Skip to main content",
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: "Open beta",
-    stats_a_value: "200+",
-    stats_a_label: "couples on the waitlist",
+    // Honest beta label — the previous "200+ couples on the waitlist"
+    // number was fabricated. The marquee stat now reads as a status
+    // statement rather than a fake metric.
+    stats_a_value: "Open beta",
+    stats_a_label: "Be one of the first couples to plan with Weddly.",
     stats_b_value: "≈5 min",
     stats_b_label: "to set the workspace up",
     stats_c_value: "HU + EN",
@@ -401,15 +410,15 @@ const en: LocaleMessages = {
     t1_quote:
       "We finally stopped emailing each other PDFs at midnight. The shared workspace meant Bence and I could plan in 15-minute pockets, side by side.",
     t1_name: "Anna & Bence",
-    t1_meta: "May 2026 · Budapest · beta tester",
+    t1_meta: "May 2026 · Budapest · composite from beta interviews",
     t2_quote:
       "The RSVP links saved us. Eighty-seven guests tapped, replied and went on with their day — and the meal-choice column came out clean.",
     t2_name: "Eszter & Dani",
-    t2_meta: "August 2026 · Lake Balaton · beta tester",
+    t2_meta: "August 2026 · Lake Balaton · composite from beta interviews",
     t3_quote:
       "Printing the seating chart at A3 the night before was as simple as it gets. The PDF came out at exact size and went straight onto the entrance easel.",
     t3_name: "Kata & Marci",
-    t3_meta: "September 2026 · Pécs · beta tester",
+    t3_meta: "September 2026 · Pécs · composite from beta interviews",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_eyebrow: "Pricing",
     pricing_title: "Free for everything you need to plan a wedding.",
@@ -573,17 +582,18 @@ const en: LocaleMessages = {
     meal_vegan: "Vegan",
     meal_child: "Child",
     meal_none: "No meal",
-    group_his_family: "His family",
-    group_her_family: "Her family",
-    group_his_friends: "His friends",
-    group_her_friends: "Her friends",
+    group_his_family: "Partner 1's family",
+    group_her_family: "Partner 2's family",
+    group_his_friends: "Shared friends",
+    group_her_friends: "Shared coworkers",
     group_shared_friends: "Shared friends",
     group_work: "Work",
     group_other: "Other",
     empty_title: "No guests yet",
     empty_body: "Add one by hand or import a CSV.",
     saving: "Saving…",
-    import_done: "Imported {count} guests",
+    import_done_one: "Imported {count} guest",
+    import_done_other: "Imported {count} guests",
     download_template: "Download template",
     household_label: "Household",
     household_assign_help: "People who RSVP together share one 4-digit code.",
@@ -870,8 +880,10 @@ const en: LocaleMessages = {
     users_sub: "Read-only directory of registered users and their workspaces.",
     users_section_users: "Users",
     users_section_couples: "Couples",
-    users_count: "{n} users",
-    couples_count: "{n} couples",
+    users_count_one: "{n} user",
+    users_count_other: "{n} users",
+    couples_count_one: "{n} couple",
+    couples_count_other: "{n} couples",
     users_empty: "No registered users yet.",
     couples_empty: "No couple workspaces yet.",
     table_name: "Name",
@@ -963,7 +975,7 @@ const en: LocaleMessages = {
     checkin_title: "RSVP check-in",
     checkin_intro: "Type the couple's name and the 4-digit code from your invite.",
     checkin_couple_label: "Couple",
-    checkin_couple_help: "e.g. BRIDEGROOM",
+    checkin_couple_help: "e.g. ANNABENCE",
     checkin_code_label: "Code",
     checkin_code_help: "4 digits from your invite",
     checkin_submit: "Check in",
@@ -1095,6 +1107,118 @@ const en: LocaleMessages = {
     body: "This page hit a snag. Try again, or head back to the start — your data is safe.",
     try_again: "Try again",
     go_home: "Go to home",
+  },
+  register: {
+    trust_microcopy_prefix: "Free during the open beta — no card required. Read our ",
+    trust_microcopy_privacy_link: "privacy policy",
+    trust_microcopy_suffix: ".",
+  },
+  privacy: {
+    seo_title: "Privacy policy — Weddly",
+    seo_description:
+      "How Weddly handles your data: categories collected, retention, GDPR rights, cookies and third-party services.",
+    page_title: "Privacy policy",
+    last_updated_label: "Last updated",
+    last_updated_date: "2026-05-11",
+    intro:
+      "This page explains what data Weddly collects, why we collect it, how long we keep it, and what you can ask us to do with it. We're a small open-beta product — so we try to keep the policy short and accurate.",
+    controller_title: "Who controls your data",
+    controller_body:
+      "Weddly is the data controller for everything stored in your couple workspace. You can reach us at hello@weddly.xyz with any data-related question, and we'll respond within seven days.",
+    data_categories_title: "What we collect",
+    data_categories_intro:
+      "We only collect the data we need to run your wedding workspace. Today that's four buckets:",
+    data_categories_auth:
+      "Authentication — your email address and an Argon2id hash of your password. We never see the password itself.",
+    data_categories_profile:
+      "Profile — your full name and (optionally) your partner's name, plus your locale preference if you switch it.",
+    data_categories_workspace:
+      "Wedding workspace — the dates, budget categories, guest list, RSVPs, seating layout and supplier notes you add. Each change is recorded in an append-only audit log so you can see who edited what.",
+    data_categories_analytics:
+      "Analytics — none today. The site's CSP allows Plausible and Sentry domains so we can wire them in later, but no analytics script currently loads. If we ever turn them on, we'll update this page first.",
+    retention_title: "How long we keep your data",
+    retention_body:
+      "Active workspaces are kept for as long as you want them. If you pause your workspace from the Profile page, we keep everything for 30 days in case you change your mind, then permanently delete it. You can cancel the pause any time before the 30 days are up.",
+    rights_title: "Your rights (GDPR)",
+    rights_intro:
+      "If you are in the EU/EEA, you have the following rights under the GDPR. We honour all four for users everywhere, not just Europe.",
+    rights_access:
+      "Access — export everything we store about you from the Profile page (one click, JSON file).",
+    rights_deletion:
+      "Erasure — delete your account from the Profile page. A 30-day grace period gives you a way out; after that, we permanently wipe the workspace.",
+    rights_portability:
+      "Portability — the same JSON export is structured so you can re-import the data elsewhere. Guest lists also export to CSV.",
+    rights_contact:
+      "Objection / restriction — email hello@weddly.xyz and we'll handle it manually within seven days.",
+    cookies_title: "Cookies and local storage",
+    cookies_intro:
+      "Weddly does not set any tracking cookies. The only browser storage we use lives in localStorage on your device, so it never reaches a third party:",
+    cookies_locale: "weddly.locale — remembers whether you prefer the Hungarian or English UI.",
+    cookies_verify_dismiss:
+      "weddly.verify_email_dismissed_until — silences the verify-your-email banner for 24 hours after you dismiss it.",
+    cookies_session:
+      "Session token — a signed random id (no JWT) that keeps you logged in. Stored in localStorage; cleared when you sign out.",
+    cookies_saved_suppliers:
+      "weddly.suppliers.saved — local-only list of suppliers you starred in the directory.",
+    cookies_onboarding_draft:
+      "weddly.onboarding_draft — saves your onboarding answers between steps so a refresh doesn't lose them.",
+    third_parties_title: "Third parties we share data with",
+    third_parties_body:
+      "Two: Resend (transactional email delivery for verification, invites and resets) receives the recipient address and the email body. Railway (our hosting provider) stores the SQLite database that holds your workspace. Both are GDPR-compliant processors and neither is allowed to use your data for anything other than running the service.",
+    changes_title: "Changes to this policy",
+    changes_body:
+      "If we materially change how we handle your data, we'll email you and update the date at the top of this page. Minor wording fixes are made silently.",
+    contact_title: "Questions?",
+    contact_body: "Email hello@weddly.xyz and a human will reply within seven days.",
+    en_section_label: "English",
+  },
+  terms: {
+    seo_title: "Terms of service — Weddly",
+    seo_description:
+      "The short open-beta terms of service for Weddly: free to use, no SLA, hosted in Hungary.",
+    page_title: "Terms of service",
+    last_updated_label: "Last updated",
+    last_updated_date: "2026-05-11",
+    intro:
+      "Weddly is an open beta. These terms are deliberately short — once we leave beta we'll publish a fuller version and email everyone first.",
+    beta_title: "Open beta",
+    beta_body:
+      "Weddly is free to use during the open beta. We don't promise any specific uptime, response time or feature stability — things may change, break, or temporarily disappear while we iterate. We'll do our best to give notice when something material changes.",
+    accuracy_title: "Your data, your responsibility",
+    accuracy_body:
+      "You are responsible for the accuracy of the data you enter — guest names, contact details, budget figures, RSVP responses. We don't review or vet what you write, and we won't be liable for decisions made on the basis of typos or stale information.",
+    directory_title: "Supplier directory",
+    directory_body:
+      "The supplier directory is provided for browsing. You may not scrape, resell or republish it. Community submissions are moderated by our team — please add suppliers you've worked with, not random listings.",
+    law_title: "Governing law",
+    law_body:
+      "These terms are governed by Hungarian law. If we ever disagree about something, we'll try to work it out by email first. Any dispute that needs a court is heard in Budapest.",
+    contact_title: "Questions?",
+    contact_body: "Email hello@weddly.xyz.",
+    en_section_label: "English",
+  },
+  about: {
+    seo_title: "About Weddly",
+    seo_description:
+      "Weddly is a small Budapest-built tool to help couples plan their wedding together — calmly, in one place.",
+    page_title: "About Weddly",
+    last_updated_label: "Last updated",
+    last_updated_date: "2026-05-11",
+    paragraph_made_in:
+      "Built by {founder} in Budapest, Hungary. Hand-rolled — no platform fees, no investors, no growth team.",
+    paragraph_why:
+      "We started Weddly because every existing wedding tool felt loud. We wanted a calm, shared workspace — one where both partners see the same picture, where the budget recalculates as the guest list grows, and where the result prints onto a clean piece of paper. That's the whole product.",
+    paragraph_contact_label: "Get in touch",
+    paragraph_contact_email: "hello@weddly.xyz",
+    paragraph_principles_title: "What we believe",
+    principle_calm:
+      "Calm beats clever. The wedding is the event; the tool should stay out of the way.",
+    principle_no_lock_in:
+      "Your data is yours. Export, pause, or delete on your own terms — no support ticket required.",
+    principle_hungarian:
+      "Hungarian-first, English-supported. Built around the way weddings actually run here.",
+    en_section_label: "English",
+    founder_placeholder: "[founder name TBD]",
   },
 };
 

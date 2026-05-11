@@ -27,7 +27,7 @@ import { AppShell } from "../components/AppShell";
 import { CostPlanningCard } from "../components/CostPlanningCard";
 import { applyCategoryPlanned } from "../lib/budget";
 import { budgetApi, coupleApi, guestApi, seatingApi } from "../lib/endpoints";
-import { formatHuf, formatNumber, formatWeddingDateGoal } from "../lib/format";
+import { formatHuf, formatHufCompact, formatNumber, formatWeddingDateGoal } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 type Loaded = {
@@ -318,7 +318,7 @@ export default function DashboardPage() {
           value={formatHuf(totalActual, locale)}
           unit={
             cap !== null
-              ? t("dashboard.kpi_budget_unit", { cap: formatHuf(cap, locale) })
+              ? t("dashboard.kpi_budget_unit", { cap: `${formatHufCompact(cap, locale)} Ft` })
               : t("dashboard.kpi_budget_no_cap")
           }
           progress={spentPct}

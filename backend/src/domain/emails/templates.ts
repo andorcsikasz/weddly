@@ -93,6 +93,17 @@ export interface MilestonePayload {
 export interface WeddingTodayPayload {
   coupleDisplayName: string;
 }
+export interface WeddingDateChangedPayload {
+  /** "Anna & Bence" — couple's display name. */
+  coupleDisplayName: string;
+  /** Pre-formatted prior date ("2026-09-12") or null if guests had never been
+   *  told a date in the first place. */
+  previousWeddingDate: string | null;
+  /** Pre-formatted new date or null if it's been cleared back to TBD. */
+  newWeddingDate: string | null;
+  /** Where the guest can re-check details / update their RSVP. */
+  rsvpPageUrl: string;
+}
 
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
@@ -111,6 +122,7 @@ export type KindPayload = {
   milestone_t30: MilestonePayload;
   milestone_t7: MilestonePayload;
   wedding_today: WeddingTodayPayload;
+  wedding_date_changed: WeddingDateChangedPayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -518,6 +530,36 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Open print tab",
     },
   }),
+
+  wedding_date_changed: (p, ctx) => {
+    const fromHu = p.previousWeddingDate ? `${p.previousWeddingDate} → ` : "";
+    const toHu = p.newWeddingDate ?? "új időpont egyeztetés alatt";
+    const fromEn = p.previousWeddingDate ? `${p.previousWeddingDate} → ` : "";
+    const toEn = p.newWeddingDate ?? "TBD (a new date will follow)";
+    return {
+      subject: `Új esküvői időpont / Wedding date update — ${p.coupleDisplayName}`,
+      ctaUrl: p.rsvpPageUrl,
+      hu: {
+        preheader: `${p.coupleDisplayName} módosította az esküvő időpontját.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `${p.coupleDisplayName} módosította az esküvő időpontját: ${fromHu}${toHu}.`,
+          "Nyisd meg a lenti linket, hogy frissítsd a válaszodat, vagy hogy lásd a friss részleteket.",
+        ],
+        cta: "Részletek megnyitása",
+        footnote: "Ha kérdésed van, válaszolj erre az e-mailre.",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `${p.coupleDisplayName} has updated the wedding date: ${fromEn}${toEn}.`,
+          "Open the link below to review the latest details or update your RSVP.",
+        ],
+        cta: "Open details",
+        footnote: "Reply to this email if anything's unclear.",
+      },
+    };
+  },
 
   wedding_today: (p, ctx) => ({
     subject: "Ma van a nap / Today's the day 💛",

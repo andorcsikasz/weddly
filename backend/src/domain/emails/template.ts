@@ -97,7 +97,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     lines.push("---");
     if (category === "lifecycle" && unsubscribeToken) {
       lines.push(
-        `Don't want occasional updates? Unsubscribe: ${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`,
+        `Nem kérsz emlékeztetőket? Leiratkozás / Don't want updates? Unsubscribe: ${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`,
       );
     } else {
       lines.push("You're getting this because it's about your Weddly account.");

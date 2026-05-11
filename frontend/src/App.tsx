@@ -2,6 +2,7 @@ import type { JSX, ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuth } from "./lib/auth";
+import AboutPage from "./pages/AboutPage";
 import AdminSuppliersPage from "./pages/AdminSuppliersPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import BudgetPage from "./pages/BudgetPage";
@@ -13,6 +14,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OnboardingWizard from "./pages/OnboardingWizard";
+import PrivacyPage from "./pages/PrivacyPage";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -20,6 +22,7 @@ import RsvpCheckinPage from "./pages/RsvpCheckinPage";
 import RsvpPage from "./pages/RsvpPage";
 import SeatingPage from "./pages/SeatingPage";
 import SuppliersPage from "./pages/SuppliersPage";
+import TermsPage from "./pages/TermsPage";
 import VendorsPage from "./pages/VendorsPage";
 import ChangeEmailPage from "./pages/ChangeEmailPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
@@ -74,6 +77,30 @@ export default function App() {
         element={
           <Page>
             <VendorsPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/privacy"
+        element={
+          <Page>
+            <PrivacyPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/terms"
+        element={
+          <Page>
+            <TermsPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/about"
+        element={
+          <Page>
+            <AboutPage />
           </Page>
         }
       />

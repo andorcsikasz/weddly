@@ -59,7 +59,8 @@ export default function ProfilePage() {
   const { t, locale } = useT();
   const promptEntry = useEntryPrompt();
   const toast = useToast();
-  const { setSession } = useAuth();
+  const { setSession, user: authUser, refresh: refreshAuth } = useAuth();
+  const [verifyResending, setVerifyResending] = useState(false);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
@@ -261,9 +262,51 @@ export default function ProfilePage() {
     ? new Date(pauseReq.scheduled_delete_at).toISOString().slice(0, 10)
     : null;
 
+  async function resendVerifyEmail() {
+    setVerifyResending(true);
+    try {
+      const res = await authApi.requestVerify();
+      if (res.already_verified) {
+        toast.success(t("profile.verify_already_verified"));
+        await refreshAuth();
+      } else {
+        toast.success(t("profile.verify_resent"));
+      }
+    } catch (err) {
+      const msg =
+        err instanceof ApiError && err.status === 429
+          ? t("auth.rate_limited")
+          : t("common.error_generic");
+      toast.error(msg);
+    } finally {
+      setVerifyResending(false);
+    }
+  }
+
   return (
     <AppShell>
       <h1>{t("profile.title")}</h1>
+
+      {authUser && !authUser.verified_email && (
+        <section className="card mt-6 border-2 border-blush-400 bg-blush-50/60">
+          <h2 className="text-lg text-blush-800">{t("profile.verify_title")}</h2>
+          <p className="mt-2 text-sm text-ink-700">{t("profile.verify_body")}</p>
+          <p className="mt-3 text-sm text-ink-600">
+            {t("profile.verify_email_intro")}{" "}
+            <span className="font-medium text-ink-900">{authUser.email}</span>
+          </p>
+          <div className="mt-4">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={resendVerifyEmail}
+              disabled={verifyResending}
+            >
+              {verifyResending ? t("profile.verify_resending") : t("profile.verify_resend")}
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.payments_title")}</h2>

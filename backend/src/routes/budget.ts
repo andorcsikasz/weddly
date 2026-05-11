@@ -158,6 +158,10 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
   return json({ line: toLine(row) }, { status: 201 });
 }
 
+/** PATCH /api/budget/lines/:id — partial updates only + optimistic concurrency.
+ *  Clients can send any subset of {label, planned_huf, actual_huf, notes};
+ *  omitted fields keep their existing values. If the caller sends `If-Match`
+ *  with the row's last `updated_at`, a mid-air collision returns 409. */
 async function handleUpdateLine(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -170,8 +174,19 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
     .get(id, couple.id) as LineRow | undefined;
   if (!existing) throw new HttpError(404, "Line not found");
 
+  const ifMatchRaw = ctx.req.headers.get("if-match");
+  if (ifMatchRaw) {
+    const cleaned = ifMatchRaw.trim().replace(/^"(.*)"$/, "$1");
+    if (cleaned && cleaned !== String(existing.updated_at)) {
+      throw new HttpError(409, "Stale budget line — reload before saving", {
+        code: "stale",
+        current_updated_at: existing.updated_at,
+      });
+    }
+  }
+
   const body = await readJson<UpsertLineBody>(ctx.req);
-  const parsed = parseLineBody(body, false);
+  const parsed = parsePartialLine(body, existing);
   const ts = now();
   db.prepare(
     `UPDATE budget_lines SET label = ?, planned_huf = ?, actual_huf = ?, notes = ?, updated_at = ?
@@ -190,6 +205,41 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
 
   const row = db.prepare("SELECT * FROM budget_lines WHERE id = ?").get(id) as LineRow;
   return json({ line: toLine(row) });
+}
+
+/** Partial-update parser. Each field defaults to the existing row's value
+ *  when the body omits it (so PATCH can change just `actual_huf` without
+ *  forcing the client to also re-send `label`). */
+function parsePartialLine(body: UpsertLineBody, existing: LineRow) {
+  let label = existing.label;
+  if (body.label !== undefined) {
+    if (typeof body.label !== "string") throw new HttpError(400, "label must be a string");
+    const trimmed = body.label.trim();
+    if (!trimmed || trimmed.length > 200) throw new HttpError(400, "label required (≤200 chars)");
+    label = trimmed;
+  }
+  let planned = existing.planned_huf;
+  if (body.planned_huf !== undefined) {
+    const n = Number(body.planned_huf);
+    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) {
+      throw new HttpError(400, "planned_huf out of range");
+    }
+    planned = Math.round(n);
+  }
+  let actual = existing.actual_huf;
+  if (body.actual_huf !== undefined) {
+    const n = Number(body.actual_huf);
+    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) {
+      throw new HttpError(400, "actual_huf out of range");
+    }
+    actual = Math.round(n);
+  }
+  let notes = existing.notes;
+  if (body.notes !== undefined) {
+    notes =
+      typeof body.notes === "string" && body.notes.trim() ? body.notes.trim().slice(0, 1000) : null;
+  }
+  return { label, planned_huf: planned, actual_huf: actual, notes };
 }
 
 function handleDeleteLine(ctx: Ctx): Response {

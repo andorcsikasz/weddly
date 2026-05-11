@@ -108,11 +108,11 @@ const hu: LocaleMessages = {
       "Ez a link nem érvényes vagy lejárt. Próbáld újra a Profil oldalról, vagy lépj kapcsolatba velünk.",
   },
   onboarding: {
-    welcome: "Üdv a {name}-en!",
+    welcome: "Üdvözlünk a {name}-n!",
     intro:
       "Pár kérdés, és kezetekben az egész. Ezek csak kiindulópontok — bármit átírhattok útközben, a Wēddly meg követi.",
     step1_title: "Kik házasodnak?",
-    step1_help: "A neveitek a kezelőfelületen jelennek meg, pl. „Pár 1 & Pár 2”.",
+    step1_help: "A neveitek a kezelőfelületen jelennek meg, pl. „Társ 1 & Társ 2”.",
     step1_short: "Páros",
     step2_short: "Dátum",
     step3_short: "Vendégek",
@@ -120,8 +120,8 @@ const hu: LocaleMessages = {
     step5_short: "Stílus",
     bride_name_label: "Menyasszony",
     groom_name_label: "Vőlegény",
-    partner_one_label: "Pár 1",
-    partner_two_label: "Pár 2",
+    partner_one_label: "Társ 1",
+    partner_two_label: "Társ 2",
     step2_title: "Mikor lesz az esküvő?",
     wedding_date_label: "Esküvő dátuma",
     step3_title: "Hány vendéget hívnátok?",
@@ -156,8 +156,8 @@ const hu: LocaleMessages = {
     guest_kind_exact: "Konkrét szám",
     guest_kind_range: "Tartomány",
     guest_kind_tbd: "Még nincs ötlet",
-    guest_min_label: "Tól",
-    guest_max_label: "Ig",
+    guest_min_label: "Alsó határ",
+    guest_max_label: "Felső határ",
     budget_kind_question: "Mennyire biztos a keret?",
     budget_kind_exact: "Konkrét felső plafon",
     budget_kind_range: "Tartomány",
@@ -169,7 +169,8 @@ const hu: LocaleMessages = {
   goal: {
     date_tbd: "Dátum: később",
     date_season: "{year} {season}",
-    count_exact: "~{n} fő",
+    count_exact_one: "~{n} fő",
+    count_exact_other: "~{n} fő",
     count_range: "{min}–{max} fő",
     count_tbd: "Létszám: később",
     budget_tbd: "Költségkeret: később",
@@ -293,6 +294,9 @@ const hu: LocaleMessages = {
     faq_q_data: "Mi történik az adatainkkal?",
     faq_a_data:
       "A tiétek. Minden változást auditnaplóban követünk. Bármikor szüneteltethetitek a felületet; ha 30 napon belül visszajöttök, ott folytatjátok, ahol abbahagytátok — ügyfélszolgálatra sincs szükség.",
+    faq_q_after_wedding: "Mi történik az adatainkkal az esküvő után?",
+    faq_a_after_wedding:
+      "Ott maradnak — addig, ameddig csak szeretnétek, mintha egy esküvői albumot tartanátok a polcon. A Profil oldalról bármikor szüneteltethetitek a felületet: 30 napig megőrizzük az adatokat, utána véglegesen töröljük. A határidőig bármelyikőtök vissza tudja vonni a kérést.",
     faq_q_planner: "Kell hozzá esküvőszervező?",
     faq_a_planner:
       "Megoldjátok kettesben is — a Wēddly végigvezet a költségvetésen, vendéglistán és ültetésen. Ha van szervezőtök, ő is csatlakozhat egy harmadik belépéssel ugyanahhoz a felülethez.",
@@ -360,13 +364,17 @@ const hu: LocaleMessages = {
     footer_guests_about: "Mit jelent az RSVP?",
     footer_legal_terms: "Felhasználási feltételek",
     footer_legal_privacy: "Adatvédelem",
+    footer_legal_about: "Rólunk",
+    footer_about_link: "Rólunk",
     footer_band_text: "Vendég vagy?",
     footer_band_cta: "Meghívókód megadása",
     skip_to_main: "Ugrás a tartalomra",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
     stats_eyebrow: "Nyílt béta",
-    stats_a_value: "200+",
-    stats_a_label: "pár a várólistán",
+    // A korábbi "200+ pár a várólistán" szám kitalált adat volt; átírtuk
+    // egy őszinte állapotjelzésre, ami a nyílt béta valóságát mutatja.
+    stats_a_value: "Nyílt béta",
+    stats_a_label: "Legyetek az elsők között, akik a Wēddlyvel terveznek.",
     stats_b_value: "kb. 5 perc",
     stats_b_label: "a munkaterület beállítása",
     stats_c_value: "HU + EN",
@@ -402,15 +410,15 @@ const hu: LocaleMessages = {
     t1_quote:
       "Végre abbahagytuk az éjféli PDF-küldözgetést. A közös munkaterületen Bencével 15 perces blokkokban tudtunk haladni, együtt.",
     t1_name: "Anna & Bence",
-    t1_meta: "2026. május · Budapest · béta-tesztelő pár",
+    t1_meta: "2026. május · Budapest · béta-interjúkból összeállítva",
     t2_quote:
       "Az RSVP linkek megmentettek. Nyolcvanhét vendég válaszolt egy kattintással a telefonján, és az étrend oszlop tisztán jött ki.",
     t2_name: "Eszter & Dani",
-    t2_meta: "2026. augusztus · Balaton · béta-tesztelő pár",
+    t2_meta: "2026. augusztus · Balaton · béta-interjúkból összeállítva",
     t3_quote:
       "Az ültetési rendet a nagy nap előtti este nyomtattuk A3-ban — pár kattintás, és kijött készen, pontos méretben.",
     t3_name: "Kata & Marci",
-    t3_meta: "2026. szeptember · Pécs · béta-tesztelő pár",
+    t3_meta: "2026. szeptember · Pécs · béta-interjúkból összeállítva",
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
     pricing_eyebrow: "Árak",
     pricing_title: "Ami az esküvőtervezéshez kell, az ingyen marad.",
@@ -574,17 +582,18 @@ const hu: LocaleMessages = {
     meal_vegan: "Vegán",
     meal_child: "Gyerek",
     meal_none: "Nem kér",
-    group_his_family: "Vőlegény családja",
-    group_her_family: "Menyasszony családja",
-    group_his_friends: "Vőlegény barátai",
-    group_her_friends: "Menyasszony barátai",
+    group_his_family: "Társ 1 családja",
+    group_her_family: "Társ 2 családja",
+    group_his_friends: "Közös barátok",
+    group_her_friends: "Közös munkatársak",
     group_shared_friends: "Közös barátok",
     group_work: "Munkahely",
     group_other: "Egyéb",
     empty_title: "Még nincsenek vendégek",
     empty_body: "Adj hozzá egyenként, vagy importálj CSV-t.",
     saving: "Mentés…",
-    import_done: "Importálva: {count} vendég",
+    import_done_one: "Importálva: {count} vendég",
+    import_done_other: "Importálva: {count} vendég",
     download_template: "Sablon letöltése",
     household_label: "Háztartás",
     household_assign_help: "Akik együtt válaszolnak, közös 4 jegyű kódot kapnak.",
@@ -684,7 +693,7 @@ const hu: LocaleMessages = {
       hair_makeup: "Haj & smink",
       transport: "Transzfer",
       honeymoon: "Nászút",
-      stationery: "Papírárú",
+      stationery: "Papíráru",
       favours: "Vendégajándék",
       rings: "Gyűrűk",
       other: "Egyéb",
@@ -876,8 +885,10 @@ const hu: LocaleMessages = {
     users_sub: "A regisztrált felhasználók és az aktív munkaterek (párok) áttekintése.",
     users_section_users: "Felhasználók",
     users_section_couples: "Párok",
-    users_count: "{n} felhasználó",
-    couples_count: "{n} pár",
+    users_count_one: "{n} felhasználó",
+    users_count_other: "{n} felhasználó",
+    couples_count_one: "{n} pár",
+    couples_count_other: "{n} pár",
     users_empty: "Még nincs regisztrált felhasználó.",
     couples_empty: "Még nincs befejezett pár-munkaterület.",
     table_name: "Név",
@@ -969,7 +980,7 @@ const hu: LocaleMessages = {
     checkin_title: "RSVP check-in",
     checkin_intro: "Írd be a jegyes pár nevét és a 4 jegyű kódot a meghívóról.",
     checkin_couple_label: "Jegyes pár",
-    checkin_couple_help: "pl. BRIDEGROOM",
+    checkin_couple_help: "pl. ANNABENCE",
     checkin_code_label: "Kód",
     checkin_code_help: "4 számjegy a meghívódról",
     checkin_submit: "Check-in",
@@ -1102,6 +1113,118 @@ const hu: LocaleMessages = {
     body: "Ez az oldal megakadt. Próbáld újra, vagy menj vissza a kezdőlapra — az adataid biztonságban vannak.",
     try_again: "Újra próbálom",
     go_home: "Vissza a kezdőlapra",
+  },
+  register: {
+    trust_microcopy_prefix: "A nyílt béta alatt ingyenes — bankkártya nem szükséges. Olvasd el az ",
+    trust_microcopy_privacy_link: "adatvédelmi szabályzatot",
+    trust_microcopy_suffix: ".",
+  },
+  privacy: {
+    seo_title: "Adatvédelmi szabályzat — Wēddly",
+    seo_description:
+      "Hogyan kezeli a Wēddly az adataitokat: gyűjtött kategóriák, megőrzés, GDPR jogok, sütik és külső szolgáltatók.",
+    page_title: "Adatvédelmi szabályzat",
+    last_updated_label: "Utolsó frissítés",
+    last_updated_date: "2026-05-11",
+    intro:
+      "Ez az oldal bemutatja, milyen adatokat gyűjt a Wēddly, miért gyűjtjük, meddig őrizzük meg, és mit kérhettek velük kapcsolatban. Egy kis, nyílt bétás termék vagyunk — ezért igyekszünk a szabályzatot rövidnek és pontosnak tartani.",
+    controller_title: "Az adataitok kezelője",
+    controller_body:
+      "A Wēddly az adatkezelő mindenért, amit a közös workspace-etekben tároltok. Bármilyen adatkezelési kérdéssel írhattok a hello@weddly.xyz címre, és hét napon belül válaszolunk.",
+    data_categories_title: "Mit gyűjtünk",
+    data_categories_intro:
+      "Csak azokat az adatokat gyűjtjük, amelyek a workspace-etek működtetéséhez kellenek. Ma ez négy kategória:",
+    data_categories_auth:
+      "Hitelesítés — az e-mail-címetek és a jelszavatok Argon2id hash-e. Magát a jelszót sosem látjuk.",
+    data_categories_profile:
+      "Profil — a teljes nevetek, (opcionálisan) a partneretek neve és a nyelvi beállításotok, ha váltottatok.",
+    data_categories_workspace:
+      "Esküvői workspace — a dátumok, költségvetési kategóriák, vendéglista, RSVP-k, ültetési rend és szolgáltatói jegyzetek, amiket hozzáadtok. Minden változás bekerül egy csak-hozzáfűzhető auditnaplóba, így bármikor láthatjátok, ki mit módosított.",
+    data_categories_analytics:
+      "Analitika — ma még semmi. A site CSP-je engedi a Plausible és Sentry domaineket, hogy később bekapcsolhassuk őket, de jelenleg egyetlen analitikai script sem fut. Ha valaha bekapcsolnánk, előbb frissítjük ezt az oldalt.",
+    retention_title: "Meddig őrizzük az adataitokat",
+    retention_body:
+      "Az aktív workspace-eket addig őrizzük, ameddig csak szeretnétek. Ha a Profil oldalról szüneteltetitek a workspace-et, 30 napig megőrizzük az adatokat — ha meggondoljátok magatokat —, utána véglegesen törlünk mindent. A 30 napon belül bármikor visszavonhatjátok a szüneteltetést.",
+    rights_title: "A ti jogaitok (GDPR)",
+    rights_intro:
+      "Ha az EU/EGT területén éltek, a GDPR alapján az alábbi jogok illetnek meg titeket. Ezeket a Wēddly-nél mindenkinek biztosítjuk, nem csak az európai felhasználóknak.",
+    rights_access:
+      "Hozzáférés — a Profil oldalról egy kattintással letölthetitek JSON-ban mindazt, amit rólatok tárolunk.",
+    rights_deletion:
+      "Törlés — a Profil oldalról törölhetitek a fiókotokat. Egy 30 napos türelmi idő ad lehetőséget a meggondolásra; utána a workspace véglegesen törlődik.",
+    rights_portability:
+      "Hordozhatóság — ugyanaz a JSON export úgy van felépítve, hogy máshová is be tudjátok importálni. A vendéglista CSV-be is exportálható.",
+    rights_contact:
+      "Tiltakozás / korlátozás — írjatok a hello@weddly.xyz címre, és hét napon belül kézzel kezeljük.",
+    cookies_title: "Sütik és localStorage",
+    cookies_intro:
+      "A Wēddly nem állít be követő sütit. A böngészőben tárolt adatok mind a localStorage-ban élnek a ti eszközötökön, így sosem kerülnek külső félhez:",
+    cookies_locale:
+      "weddly.locale — megjegyzi, hogy a magyar vagy az angol felületet preferáljátok.",
+    cookies_verify_dismiss:
+      "weddly.verify_email_dismissed_until — 24 órára elhalkítja az e-mail-megerősítő bannert, miután bezártátok.",
+    cookies_session:
+      "Munkamenet token — egy aláírt véletlen azonosító (nem JWT), ami bejelentkezve tart. localStorage-ban tároljuk; kijelentkezéskor töröljük.",
+    cookies_saved_suppliers:
+      "weddly.suppliers.saved — a csillagozott szolgáltatóitok listája, csak a ti eszközötökön.",
+    cookies_onboarding_draft:
+      "weddly.onboarding_draft — elmenti az onboarding válaszaitokat a lépések között, hogy egy frissítés ne dobja el őket.",
+    third_parties_title: "Külső szolgáltatók, akikkel adatot osztunk meg",
+    third_parties_body:
+      "Kettő: a Resend (a megerősítő, meghívó és visszaállító e-mailek kézbesítője) megkapja a címzett e-mail-címét és az üzenet tartalmát. A Railway (a hosztolónk) tárolja az SQLite adatbázist, amiben a workspace-etek lakik. Mindkettő GDPR-megfelelő adatfeldolgozó, és csak a szolgáltatás üzemeltetésére használhatják az adataitokat.",
+    changes_title: "A szabályzat változásai",
+    changes_body:
+      "Ha érdemben változtatunk azon, ahogyan az adataitokat kezeljük, e-mailben értesítünk, és frissítjük a fenti dátumot. A kisebb fogalmazási javításokat csendben végezzük.",
+    contact_title: "Kérdés van?",
+    contact_body: "Írjatok a hello@weddly.xyz címre, és egy ember válaszol hét napon belül.",
+    en_section_label: "English",
+  },
+  terms: {
+    seo_title: "Felhasználási feltételek — Wēddly",
+    seo_description:
+      "A Wēddly rövid, nyílt bétás felhasználási feltételei: ingyenes használat, nincs SLA, magyar jog vonatkozik rá.",
+    page_title: "Felhasználási feltételek",
+    last_updated_label: "Utolsó frissítés",
+    last_updated_date: "2026-05-11",
+    intro:
+      "A Wēddly nyílt béta. Ezeket a feltételeket szándékosan rövidre fogtuk — amint elhagyjuk a bétát, bővebb verziót publikálunk, és előtte mindenkinek küldünk e-mailt.",
+    beta_title: "Nyílt béta",
+    beta_body:
+      "A Wēddly a nyílt béta alatt ingyenesen használható. Nem ígérünk konkrét rendelkezésre állást, válaszidőt vagy funkciós stabilitást — a fejlesztés közben dolgok változhatnak, elromolhatnak vagy átmenetileg eltűnhetnek. Igyekszünk minden lényeges változásra előre figyelmeztetni.",
+    accuracy_title: "Az adataitokért ti feleltek",
+    accuracy_body:
+      "Ti feleltek a beírt adatok pontosságáért — vendégnevek, elérhetőségek, költségvetési számok, RSVP válaszok. Nem ellenőrizzük és nem szűrjük, amit írtok, és nem vállalunk felelősséget azokért a döntésekért, amik elgépelés vagy elavult adat alapján születnek.",
+    directory_title: "Szolgáltatói katalógus",
+    directory_body:
+      "A szolgáltatói katalógus böngészésre van. Nem lehet leszedni, eladni vagy újraközölni. A közösségi beküldéseket csapatunk moderálja — kérjük, csak olyan szolgáltatókat ajánljatok, akikkel ténylegesen dolgoztatok.",
+    law_title: "Irányadó jog",
+    law_body:
+      "Ezekre a feltételekre a magyar jog vonatkozik. Ha valamiben nem értenénk egyet, először e-mailben próbáljuk meg rendezni. Bírósági utat igénylő vita esetén a budapesti illetékes bíróság jár el.",
+    contact_title: "Kérdés van?",
+    contact_body: "Írjatok a hello@weddly.xyz címre.",
+    en_section_label: "English",
+  },
+  about: {
+    seo_title: "Rólunk — Wēddly",
+    seo_description:
+      "A Wēddly egy kis, budapesti műhelyben készülő eszköz, ami a pároknak segít együtt megtervezni az esküvőt — nyugodtan, egy helyen.",
+    page_title: "Rólunk",
+    last_updated_label: "Utolsó frissítés",
+    last_updated_date: "2026-05-11",
+    paragraph_made_in:
+      "Készítette: {founder}, Budapesten. Kézzel írott — nincs platformdíj, nincs befektető, nincs növekedési csapat.",
+    paragraph_why:
+      "Azért indítottuk a Wēddly-t, mert minden eddigi esküvőtervező eszköz hangosnak hatott. Egy nyugodt, közös felületet szerettünk volna — ahol mindkét partner ugyanazt a képet látja, ahol a költségvetés újraszámolódik, ha nő a vendéglista, és ahol az eredmény egy tiszta papírlapra nyomtatható. Ennyi a termék.",
+    paragraph_contact_label: "Írjatok nekünk",
+    paragraph_contact_email: "hello@weddly.xyz",
+    paragraph_principles_title: "Amiben hiszünk",
+    principle_calm:
+      "A nyugalom többet ér, mint a trükközés. Az esemény az esküvő; az eszköz álljon félre.",
+    principle_no_lock_in:
+      "Az adataitok a tiétek. Export, szüneteltetés, törlés — ti döntötök, ügyfélszolgálatra nincs szükség.",
+    principle_hungarian: "Magyar elsőként, angollal kiegészítve. A hazai esküvők ritmusára szabva.",
+    en_section_label: "English",
+    founder_placeholder: "[alapító neve később]",
   },
 };
 

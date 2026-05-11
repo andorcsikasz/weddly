@@ -22,6 +22,7 @@ interface TableRow {
   length_mm: number;
   rotation_deg: number | null;
   disabled_seats_json: string | null;
+  is_kids_table: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -58,6 +59,7 @@ function loadTables(coupleId: number): SeatingTable[] {
     width_mm: r.width_mm,
     length_mm: r.length_mm,
     rotation_deg: ((((r.rotation_deg ?? 0) % 360) + 360) % 360) | 0,
+    is_kids_table: Boolean(r.is_kids_table),
     disabled_seats: parseDisabledSeats(r.disabled_seats_json),
     created_at: r.created_at,
   }));
@@ -130,10 +132,15 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
+  // `?only=confirmed` filters to guests who said "yes" — useful for printing
+  // place cards only for guests who'll actually attend. Default behaviour is
+  // unchanged (every guest gets a card).
+  const onlyConfirmed = ctx.url.searchParams.get("only") === "confirmed";
   const guestRows = db
     .prepare("SELECT * FROM guests WHERE couple_id = ? ORDER BY full_name")
     .all(couple.id) as GuestRow[];
-  const guests = guestRows.map(toGuest);
+  const filtered = onlyConfirmed ? guestRows.filter((r) => r.rsvp_status === "yes") : guestRows;
+  const guests = filtered.map(toGuest);
 
   // Build a guestId → table label map for the second line on the place card.
   const tables = loadTables(couple.id);

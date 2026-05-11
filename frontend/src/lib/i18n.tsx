@@ -29,22 +29,34 @@ function detectInitial(): Locale {
   return "en";
 }
 
-function resolve(tree: LocaleMessages, path: string): string {
+function resolve(tree: LocaleMessages, path: string): string | null {
   const parts = path.split(".");
   let cur: unknown = tree;
   for (const p of parts) {
     if (cur && typeof cur === "object" && p in (cur as Record<string, unknown>)) {
       cur = (cur as Record<string, unknown>)[p];
     } else {
-      return path;
+      return null;
     }
   }
-  return typeof cur === "string" ? cur : path;
+  return typeof cur === "string" ? cur : null;
 }
 
 function interpolate(template: string, vars?: Record<string, string | number>): string {
   if (!vars) return template;
   return template.replace(/\{(\w+)\}/g, (m, key) => (key in vars ? String(vars[key]) : m));
+}
+
+/** Pull a numeric count from interpolation vars. Accepts `count` first, then
+ *  falls back to `n` so existing call sites that pass `{ n: 5 }` get plural
+ *  picking for free. Strings are ignored (formatted output, not a raw count). */
+function pickCount(vars?: Record<string, string | number>): number | null {
+  if (!vars) return null;
+  const c = vars.count;
+  if (typeof c === "number") return c;
+  const n = vars.n;
+  if (typeof n === "number") return n;
+  return null;
 }
 
 /** Walks both trees and warns on missing keys. Catches translation drift early. */
@@ -81,8 +93,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLocaleState(l);
   };
 
-  const t = (path: string, vars?: Record<string, string | number>) =>
-    interpolate(resolve(TREES[locale], path), vars);
+  const t = (path: string, vars?: Record<string, string | number>) => {
+    const tree = TREES[locale];
+    const count = pickCount(vars);
+    if (count !== null) {
+      const variant = count === 1 ? `${path}_one` : `${path}_other`;
+      const pluralForm = resolve(tree, variant);
+      if (pluralForm !== null) return interpolate(pluralForm, vars);
+    }
+    const base = resolve(tree, path);
+    return interpolate(base ?? path, vars);
+  };
 
   return <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>;
 }

@@ -7,6 +7,7 @@ import type {
   BudgetGoal,
   BudgetLine,
   BudgetSnapshot,
+  CeremonyKind,
   CheckinSubmitBody,
   Couple,
   CoupleInvite,
@@ -81,9 +82,23 @@ export const coupleApi = {
   current: () => apiFetch<{ couple: Couple | null }>("GET", "/api/couples/current"),
   onboard: (body: OnboardInput) =>
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
-  /** Partial update — supports `wedding_date_goal` and `budget_goal`. */
-  update: (body: { wedding_date_goal?: WeddingDateGoal; budget_goal?: BudgetGoal }) =>
-    apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
+  /** Partial update — supports `wedding_date_goal`, `budget_goal`, `ceremony_kind`. */
+  update: (body: {
+    wedding_date_goal?: WeddingDateGoal;
+    budget_goal?: BudgetGoal;
+    ceremony_kind?: CeremonyKind | null;
+  }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
+  /** Archive the workspace — flips status to `archived` and triggers a
+   *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
+  archive: () => apiFetch<{ couple: Couple }>("POST", "/api/couples/current/archive", {}),
+  /** Fan-out a "wedding date changed" notification to every guest with an
+   *  email address on file. Returns the headcount the server attempted. */
+  notifyDateChange: () =>
+    apiFetch<{ notified_count: number; skipped_count: number }>(
+      "POST",
+      "/api/couples/current/notify-date-change",
+      {},
+    ),
   updateSlug: (slug: string) =>
     apiFetch<{ couple: Couple }>("PATCH", "/api/couples/slug", { slug }),
   createInvite: (body: { invited_email?: string }) =>
@@ -104,7 +119,20 @@ export interface GuestUpsert extends Partial<Guest> {
 }
 
 export const guestApi = {
-  list: () => apiFetch<{ guests: Guest[] }>("GET", "/api/guests"),
+  list: () => apiFetch<{ guests: Guest[]; total?: number }>("GET", "/api/guests"),
+  /** Server-side search + pagination. `total` is only returned when at least
+   *  one of `q` / `limit` / `offset` is provided. */
+  search: (params: { q?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set("q", params.q);
+    if (params.limit !== undefined) qs.set("limit", String(params.limit));
+    if (params.offset !== undefined) qs.set("offset", String(params.offset));
+    const suffix = qs.toString();
+    return apiFetch<{ guests: Guest[]; total: number }>(
+      "GET",
+      suffix ? `/api/guests?${suffix}` : "/api/guests",
+    );
+  },
   create: (body: GuestUpsert) => apiFetch<{ guest: Guest }>("POST", "/api/guests", body),
   update: (id: number, body: GuestUpsert) =>
     apiFetch<{ guest: Guest }>("PATCH", `/api/guests/${id}`, body),
@@ -115,6 +143,11 @@ export const guestApi = {
       "/api/guests/import",
       { csv },
     ),
+};
+
+/** Per-user couple membership — today, just leaving a partner-B seat. */
+export const userApi = {
+  leaveCouple: () => apiFetch<{ ok: true }>("POST", "/api/users/me/leave-couple", {}),
 };
 
 export const householdApi = {
@@ -132,8 +165,13 @@ export const budgetApi = {
   listLines: () => apiFetch<{ lines: BudgetLine[] }>("GET", "/api/budget/lines"),
   createLine: (body: Partial<BudgetLine>) =>
     apiFetch<{ line: BudgetLine }>("POST", "/api/budget/lines", body),
-  updateLine: (id: number, body: Partial<BudgetLine>) =>
-    apiFetch<{ line: BudgetLine }>("PATCH", `/api/budget/lines/${id}`, body),
+  /** Partial PATCH with optional optimistic-concurrency guard. Pass `ifMatch`
+   *  with the row's last `updated_at` to make the server return 409 if a
+   *  concurrent editor has touched the same row in the meantime. */
+  updateLine: (id: number, body: Partial<BudgetLine>, opts: { ifMatch?: number | string } = {}) =>
+    apiFetch<{ line: BudgetLine }>("PATCH", `/api/budget/lines/${id}`, body, {
+      headers: opts.ifMatch !== undefined ? { "If-Match": String(opts.ifMatch) } : undefined,
+    }),
   removeLine: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/budget/lines/${id}`),
   listSnapshots: () => apiFetch<{ snapshots: BudgetSnapshot[] }>("GET", "/api/budget/snapshots"),
   createSnapshot: (body: { name: string }) =>
@@ -179,14 +217,28 @@ export const seatingApi = {
     length_mm?: number;
     rotation_deg?: number;
     disabled_seats?: number[];
+    is_kids_table?: boolean;
   }) => apiFetch<{ table: SeatingTable }>("POST", "/api/seating/tables", body),
-  updateTable: (id: number, body: Partial<SeatingTable>) =>
-    apiFetch<{ table: SeatingTable }>("PATCH", `/api/seating/tables/${id}`, body),
+  /** Partial PATCH with optional `If-Match` for optimistic concurrency.
+   *  Pass the row's `updated_at` (or stringified equivalent) to get a 409
+   *  when a second editor has touched the same table since the last load. */
+  updateTable: (
+    id: number,
+    body: Partial<SeatingTable>,
+    opts: { ifMatch?: number | string } = {},
+  ) =>
+    apiFetch<{ table: SeatingTable }>("PATCH", `/api/seating/tables/${id}`, body, {
+      headers: opts.ifMatch !== undefined ? { "If-Match": String(opts.ifMatch) } : undefined,
+    }),
   removeTable: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/seating/tables/${id}`),
   assign: (body: { table_id: number; seat_index: number; guest_id: number }) =>
     apiFetch<{ ok: true }>("POST", "/api/seating/assign", body),
   unassign: (guest_id: number) =>
     apiFetch<{ ok: true }>("POST", "/api/seating/unassign", { guest_id }),
+  /** Atomic swap of two assigned guests' seats in one server-side
+   *  transaction. Replaces the multi-call dance the old UI did. */
+  swap: (body: { guest_a_id: number; guest_b_id: number }) =>
+    apiFetch<{ ok: true }>("POST", "/api/seating/swap", body),
   createConflict: (body: {
     guest_a_id: number;
     guest_b_id: number;
@@ -272,6 +324,13 @@ export const supplierCostApi = {
 export const adminUserApi = {
   listUsers: () => apiFetch<{ users: AdminUserView[] }>("GET", "/api/admin/users"),
   listCouples: () => apiFetch<{ couples: AdminCoupleView[] }>("GET", "/api/admin/couples"),
+  resendVerify: (id: number) =>
+    apiFetch<{ ok: true; already_verified?: boolean }>(
+      "POST",
+      `/api/admin/users/${id}/resend-verify`,
+      {},
+    ),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/users/${id}`),
 };
 
 export const adminSupplierApi = {
@@ -297,4 +356,9 @@ export async function fetchPdfBlob(path: string): Promise<Blob> {
   });
   if (!res.ok) throw new Error(`PDF fetch failed: ${res.status}`);
   return res.blob();
+}
+
+/** Build the place-cards URL. `onlyConfirmed=true` filters to RSVP=yes. */
+export function placeCardsUrl(opts: { onlyConfirmed?: boolean } = {}): string {
+  return opts.onlyConfirmed ? "/api/print/place-cards?only=confirmed" : "/api/print/place-cards";
 }

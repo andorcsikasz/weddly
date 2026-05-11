@@ -18,7 +18,8 @@ export type EmailKind =
   | "milestone_t90" // 90 days before the wedding
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
-  | "wedding_today"; // morning-of congratulations
+  | "wedding_today" // morning-of congratulations
+  | "wedding_date_changed"; // couple edited the wedding date, notify guests
 
 export type EmailCategory = "transactional" | "lifecycle";
 
@@ -46,4 +47,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   milestone_t30: "lifecycle",
   milestone_t7: "lifecycle",
   wedding_today: "lifecycle",
+  // Transactional: a guest explicitly opted into the wedding by RSVPing, and
+  // the couple changing the date is an account-critical update for them.
+  wedding_date_changed: "transactional",
 };

@@ -231,7 +231,7 @@ function PublicFooter() {
         </FooterColumn>
         <FooterColumn title={t("landing.footer_vendors")}>
           <FooterLink to="/vendors">{t("landing.footer_vendors_waitlist")}</FooterLink>
-          <FooterLink to="/vendors">{t("landing.footer_vendors_about")}</FooterLink>
+          <FooterLink to="/about">{t("landing.footer_about_link")}</FooterLink>
         </FooterColumn>
         <FooterColumn title={t("landing.footer_guests")}>
           <button
@@ -243,7 +243,11 @@ function PublicFooter() {
           >
             {t("landing.footer_guests_enter")}
           </button>
-          <FooterAnchor href="#suppliers">{t("landing.footer_guests_about")}</FooterAnchor>
+          {/* The original "What is RSVP?" link pointed at the landing's
+              #suppliers anchor, which 404'd visually on every public
+              surface other than /. Send guests to the real check-in
+              page instead — that's the destination they actually want. */}
+          <FooterLink to="/rsvp">{t("landing.footer_guests_about")}</FooterLink>
         </FooterColumn>
       </div>
 
@@ -253,12 +257,15 @@ function PublicFooter() {
             © {new Date().getFullYear()} {t("app.name")}
           </p>
           <div className="flex gap-5">
-            <a href="/terms" className="hover:text-ink-700">
+            <Link to="/terms" className="hover:text-ink-700">
               {t("landing.footer_legal_terms")}
-            </a>
-            <a href="/privacy" className="hover:text-ink-700">
+            </Link>
+            <Link to="/privacy" className="hover:text-ink-700">
               {t("landing.footer_legal_privacy")}
-            </a>
+            </Link>
+            <Link to="/about" className="hover:text-ink-700">
+              {t("landing.footer_legal_about")}
+            </Link>
           </div>
         </div>
       </div>

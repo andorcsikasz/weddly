@@ -29,14 +29,16 @@
       content="One shared workspace for both of you. Free during the open beta."
     />
     <meta name="twitter:image" content="/og.png" />
-    <link rel="preconnect" href="https://rsms.me/" />
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <!--
+      Fonts are intentionally NOT loaded from third-party hosts (rsms.me,
+      Google Fonts) so that the landing page can render without leaking
+      visitor IPs to font CDNs. The Tailwind sans + serif stacks fall
+      back to the host OS fonts (Inter / Cormorant if installed locally,
+      otherwise the platform UI sans / Georgia for the display serif).
+      If we ever want pixel-identical typography across platforms, ship
+      WOFF2 files from /public/fonts and re-introduce @font-face rules
+      in src/index.css — but keep them self-hosted.
+    -->
   </head>
   <body class="min-h-screen antialiased">
     <div id="root"></div>

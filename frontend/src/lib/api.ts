@@ -34,11 +34,14 @@ export async function apiFetch<T>(
   method: string,
   path: string,
   body?: unknown,
-  opts: { token?: string | null } = {},
+  opts: { token?: string | null; headers?: Record<string, string> } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = opts.token ?? getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (opts.headers) {
+    for (const [k, v] of Object.entries(opts.headers)) headers[k] = v;
+  }
 
   const res = await fetch(path, {
     method,

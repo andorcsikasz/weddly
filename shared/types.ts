@@ -56,7 +56,11 @@ export interface AdminCoupleView {
 
 // ─── Couples (the workspace) ─────────────────────────────────────────────────
 
-export type CoupleStatus = "active" | "paused" | "deleting";
+export type CoupleStatus = "active" | "paused" | "deleting" | "archived";
+
+/** Optional ceremony kind — drives dashboard copy and future budget
+ *  suggestions. NULL means the couple hasn't decided yet. */
+export type CeremonyKind = "civil" | "religious" | "both";
 
 export type WeddingStyleTag =
   | "classic"
@@ -125,6 +129,14 @@ export interface Couple {
   wedding_date_goal: WeddingDateGoal;
   /** Back-compat shortcut. Equal to wedding_date_goal.exact_date. */
   wedding_date: string | null;
+  /** Prior `wedding_date` value remembered when the couple edited the date.
+   *  Used by the "wedding-date-changed" guest notification so the email can
+   *  show "moved from X → Y". `null` when the date has never changed. */
+  previous_wedding_date: string | null;
+  /** Civil / religious / both — NULL when undecided. */
+  ceremony_kind: CeremonyKind | null;
+  /** Stamped the first time the couple flips the workspace to `archived`. */
+  archived_at: UnixMs | null;
   /** Structured guest-count goal — handles ranges and "don't know yet". */
   guest_count_goal: GuestCountGoal;
   /** Back-compat shortcut. Equal to guest_count_goal.exact. */
@@ -344,6 +356,9 @@ export interface SeatingTable {
   width_mm: number;
   /** Equal to width_mm for round/square; longer side for long. Millimetres. */
   length_mm: number;
+  /** Optional flag for a "kids' table". Surfaces a badge in the editor today;
+   *  later iterations may drive auto-seating of children together. */
+  is_kids_table: boolean;
   /** Rotation around the table centre, in degrees clockwise. 0 = axis-aligned;
    *  editor cycles in 45° steps. The canvas + PDF apply this rotation to the
    *  whole table (body, chairs, label) about (x_mm, y_mm). */

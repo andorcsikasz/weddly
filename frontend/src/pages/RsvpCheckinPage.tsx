@@ -161,7 +161,7 @@ export default function RsvpCheckinPage() {
                 autoCorrect="off"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="BRIDEGROOM"
+                placeholder="ANNABENCE"
                 onChange={(e) => setCoupleInput(e.target.value.toUpperCase())}
                 onFocus={(e) =>
                   e.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" })

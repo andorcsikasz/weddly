@@ -159,7 +159,8 @@ export interface LocaleMessages {
   goal: {
     date_tbd: string;
     date_season: string;
-    count_exact: string;
+    count_exact_one: string;
+    count_exact_other: string;
     count_range: string;
     count_tbd: string;
     budget_tbd: string;
@@ -282,6 +283,11 @@ export interface LocaleMessages {
     faq_a_partner: string;
     faq_q_data: string;
     faq_a_data: string;
+    /** Retention Q&A — surfaces the pause / 30-day-grace policy so the
+     *  question of "what happens to my workspace after the wedding" has
+     *  a real answer on the landing page. */
+    faq_q_after_wedding: string;
+    faq_a_after_wedding: string;
     faq_q_planner: string;
     faq_a_planner: string;
     faq_q_ready: string;
@@ -343,6 +349,11 @@ export interface LocaleMessages {
     footer_guests_about: string;
     footer_legal_terms: string;
     footer_legal_privacy: string;
+    footer_legal_about: string;
+    /** Replaces the second vendor-direction link in the For-vendors footer
+     *  column (the original `footer_vendors_about` also pointed at
+     *  /vendors, creating a duplicate). Now links to /about. */
+    footer_about_link: string;
     footer_band_text: string;
     footer_band_cta: string;
     skip_to_main: string;
@@ -588,7 +599,8 @@ export interface LocaleMessages {
     empty_title: string;
     empty_body: string;
     saving: string;
-    import_done: string;
+    import_done_one: string;
+    import_done_other: string;
     download_template: string;
   };
   budget: {
@@ -858,8 +870,10 @@ export interface LocaleMessages {
     users_sub: string;
     users_section_users: string;
     users_section_couples: string;
-    users_count: string;
-    couples_count: string;
+    users_count_one: string;
+    users_count_other: string;
+    couples_count_one: string;
+    couples_count_other: string;
     users_empty: string;
     couples_empty: string;
     table_name: string;
@@ -1101,5 +1115,97 @@ export interface LocaleMessages {
     body: string;
     try_again: string;
     go_home: string;
+  };
+  /** Trust microcopy under the RegisterPage submit button. Split into
+   *  three pieces so the privacy-policy link can be a real <Link>
+   *  without resorting to dangerouslySetInnerHTML. */
+  register: {
+    trust_microcopy_prefix: string;
+    trust_microcopy_privacy_link: string;
+    trust_microcopy_suffix: string;
+  };
+  /** /privacy — MVP-quality privacy policy. Bilingual (HU primary, EN
+   *  block beneath). Content stays plain JSX in PrivacyPage.tsx; only
+   *  the localised section titles / SEO copy live here. */
+  privacy: {
+    seo_title: string;
+    seo_description: string;
+    page_title: string;
+    last_updated_label: string;
+    last_updated_date: string;
+    intro: string;
+    controller_title: string;
+    controller_body: string;
+    data_categories_title: string;
+    data_categories_intro: string;
+    data_categories_auth: string;
+    data_categories_profile: string;
+    data_categories_workspace: string;
+    data_categories_analytics: string;
+    retention_title: string;
+    retention_body: string;
+    rights_title: string;
+    rights_intro: string;
+    rights_access: string;
+    rights_deletion: string;
+    rights_portability: string;
+    rights_contact: string;
+    cookies_title: string;
+    cookies_intro: string;
+    cookies_locale: string;
+    cookies_verify_dismiss: string;
+    cookies_session: string;
+    cookies_saved_suppliers: string;
+    cookies_onboarding_draft: string;
+    third_parties_title: string;
+    third_parties_body: string;
+    changes_title: string;
+    changes_body: string;
+    contact_title: string;
+    contact_body: string;
+    en_section_label: string;
+  };
+  /** /terms — short Terms of Service. Body kept brief because this is an
+   *  open beta; review legalese will come with v2. */
+  terms: {
+    seo_title: string;
+    seo_description: string;
+    page_title: string;
+    last_updated_label: string;
+    last_updated_date: string;
+    intro: string;
+    beta_title: string;
+    beta_body: string;
+    accuracy_title: string;
+    accuracy_body: string;
+    directory_title: string;
+    directory_body: string;
+    law_title: string;
+    law_body: string;
+    contact_title: string;
+    contact_body: string;
+    en_section_label: string;
+  };
+  /** /about — who built Weddly. Founder name is intentionally a
+   *  placeholder string so a human can fill it in before launch. */
+  about: {
+    seo_title: string;
+    seo_description: string;
+    page_title: string;
+    last_updated_label: string;
+    last_updated_date: string;
+    /** Body paragraphs as a single string each — kept plain so the page
+     *  doesn't need a markdown library. */
+    paragraph_made_in: string;
+    paragraph_why: string;
+    paragraph_contact_label: string;
+    paragraph_contact_email: string;
+    paragraph_principles_title: string;
+    principle_calm: string;
+    principle_no_lock_in: string;
+    principle_hungarian: string;
+    en_section_label: string;
+    /** Placeholder founder name — replace before going public. */
+    founder_placeholder: string;
   };
 }

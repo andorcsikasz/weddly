@@ -19,6 +19,7 @@ interface TableRow {
   length_mm: number;
   rotation_deg: number;
   disabled_seats_json: string;
+  is_kids_table: number;
   created_at: number;
   updated_at: number;
 }
@@ -67,6 +68,7 @@ function toTable(r: TableRow): SeatingTable {
     width_mm: r.width_mm,
     length_mm: r.length_mm,
     rotation_deg: ((r.rotation_deg % 360) + 360) % 360,
+    is_kids_table: Boolean(r.is_kids_table),
     disabled_seats: disabled,
     created_at: r.created_at,
   };
@@ -138,6 +140,7 @@ interface UpsertTableBody {
   length_mm?: unknown;
   rotation_deg?: unknown;
   disabled_seats?: unknown;
+  is_kids_table?: unknown;
 }
 
 // Hard caps on dimensions: a single table over 10m is almost certainly a typo
@@ -221,6 +224,8 @@ function parseTableBody(body: UpsertTableBody) {
     disabled_seats.sort((a, b) => a - b);
   }
 
+  const is_kids_table = body.is_kids_table === true || body.is_kids_table === 1 ? 1 : 0;
+
   return {
     label,
     shape,
@@ -231,6 +236,7 @@ function parseTableBody(body: UpsertTableBody) {
     length_mm: length,
     rotation_deg,
     disabled_seats,
+    is_kids_table,
   };
 }
 
@@ -241,8 +247,8 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, rotation_deg, disabled_seats_json, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, rotation_deg, disabled_seats_json, is_kids_table, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -255,6 +261,7 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
       parsed.length_mm,
       parsed.rotation_deg,
       JSON.stringify(parsed.disabled_seats),
+      parsed.is_kids_table,
       ts,
       ts,
     );
@@ -272,6 +279,11 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
   return json({ table: toTable(row) }, { status: 201 });
 }
 
+/** PATCH /api/seating/tables/:id — partial update with optimistic concurrency.
+ *  Clients may supply only the fields they're changing; any field they omit
+ *  carries through from the existing row. `If-Match` carries the row's last
+ *  `updated_at` — when present and stale, we return 409 and refuse the write
+ *  so a second editor's tab doesn't silently blow away the first's changes. */
 async function handleUpdateTable(ctx: Ctx): Promise<Response> {
   const { userId, coupleId } = requireCouple(ctx);
   const id = Number(ctx.params.id);
@@ -281,12 +293,49 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     .get(id, coupleId) as TableRow | undefined;
   if (!existing) throw new HttpError(404, "Table not found");
 
+  // If-Match guard. We accept the header verbatim and as a quoted ETag so the
+  // frontend can use either form without ceremony.
+  const ifMatchRaw = ctx.req.headers.get("if-match");
+  if (ifMatchRaw) {
+    const cleaned = ifMatchRaw.trim().replace(/^"(.*)"$/, "$1");
+    if (cleaned && cleaned !== String(existing.updated_at)) {
+      throw new HttpError(409, "Stale table — reload before saving", {
+        code: "stale",
+        current_updated_at: existing.updated_at,
+      });
+    }
+  }
+
   const body = await readJson<UpsertTableBody>(ctx.req);
-  const parsed = parseTableBody(body);
+  // Merge partial fields with the existing row before validating. Anything
+  // absent from `body` falls back to the existing value so PATCH semantics
+  // stay clean.
+  const existingDisabled = (() => {
+    try {
+      const v = JSON.parse(existing.disabled_seats_json ?? "[]");
+      return Array.isArray(v) ? v : [];
+    } catch {
+      return [];
+    }
+  })();
+  const merged: UpsertTableBody = {
+    label: body.label ?? existing.label,
+    shape: body.shape ?? existing.shape,
+    seats: body.seats ?? existing.seats,
+    x_mm: body.x_mm ?? existing.x_mm,
+    y_mm: body.y_mm ?? existing.y_mm,
+    width_mm: body.width_mm ?? existing.width_mm,
+    length_mm: body.length_mm ?? existing.length_mm,
+    rotation_deg: body.rotation_deg ?? existing.rotation_deg,
+    disabled_seats: body.disabled_seats ?? existingDisabled,
+    is_kids_table: body.is_kids_table ?? Boolean(existing.is_kids_table),
+  };
+  const parsed = parseTableBody(merged);
   const ts = now();
   db.prepare(
     `UPDATE seating_tables SET label = ?, shape = ?, seats = ?, x_mm = ?, y_mm = ?,
-       width_mm = ?, length_mm = ?, rotation_deg = ?, disabled_seats_json = ?, updated_at = ?
+       width_mm = ?, length_mm = ?, rotation_deg = ?, disabled_seats_json = ?,
+       is_kids_table = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.label,
@@ -298,6 +347,7 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     parsed.length_mm,
     parsed.rotation_deg,
     JSON.stringify(parsed.disabled_seats),
+    parsed.is_kids_table,
     ts,
     id,
     coupleId,
@@ -408,6 +458,77 @@ async function handleAssignSeat(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+interface SwapBody {
+  guest_a_id?: unknown;
+  guest_b_id?: unknown;
+}
+
+/** Atomic seat swap between two assigned guests. Replaces the 3-call
+ *  `unassign → unassign → assign × 2` dance the frontend used to do, which
+ *  could leave the plan in a half-swapped state if one of the writes failed
+ *  or the second editor changed something in between. */
+async function handleSwapSeats(ctx: Ctx): Promise<Response> {
+  const { userId, coupleId } = requireCouple(ctx);
+  const body = await readJson<SwapBody>(ctx.req);
+  const a = Number(body.guest_a_id);
+  const b = Number(body.guest_b_id);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) {
+    throw new HttpError(400, "Two distinct guest ids required");
+  }
+
+  // Both guests must belong to this couple.
+  const guests = db
+    .prepare("SELECT COUNT(*) AS c FROM guests WHERE id IN (?, ?) AND couple_id = ?")
+    .get(a, b, coupleId) as { c: number };
+  if (guests.c !== 2) throw new HttpError(404, "Guests not in this couple");
+
+  // Both guests must currently be seated (otherwise this is a regular assign).
+  const assignA = db
+    .prepare(
+      `SELECT sa.id, sa.table_id, sa.seat_index FROM seat_assignments sa
+       JOIN seating_tables st ON st.id = sa.table_id
+       WHERE sa.guest_id = ? AND st.couple_id = ?`,
+    )
+    .get(a, coupleId) as { id: number; table_id: number; seat_index: number } | undefined;
+  const assignB = db
+    .prepare(
+      `SELECT sa.id, sa.table_id, sa.seat_index FROM seat_assignments sa
+       JOIN seating_tables st ON st.id = sa.table_id
+       WHERE sa.guest_id = ? AND st.couple_id = ?`,
+    )
+    .get(b, coupleId) as { id: number; table_id: number; seat_index: number } | undefined;
+  if (!assignA || !assignB) throw new HttpError(400, "Both guests must already be seated");
+
+  // Swap in a transaction. Drop both rows then re-insert with crossed targets
+  // — the UNIQUE constraints on (guest_id) and (table_id, seat_index) only
+  // care about the final state, but doing it in two steps means the
+  // intermediate doesn't trip them.
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM seat_assignments WHERE id IN (?, ?)").run(assignA.id, assignB.id);
+    const insert = db.prepare(
+      "INSERT INTO seat_assignments (table_id, seat_index, guest_id) VALUES (?, ?, ?)",
+    );
+    insert.run(assignA.table_id, assignA.seat_index, b);
+    insert.run(assignB.table_id, assignB.seat_index, a);
+  });
+  tx();
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "seat.swap",
+    target_kind: "seat_assignment",
+    target_id: a,
+    after: {
+      guest_a_id: a,
+      guest_b_id: b,
+      a_to: { table_id: assignB.table_id, seat_index: assignB.seat_index },
+      b_to: { table_id: assignA.table_id, seat_index: assignA.seat_index },
+    },
+  });
+  return json({ ok: true });
+}
+
 interface UnassignParams {
   guest_id?: unknown;
 }
@@ -504,6 +625,7 @@ export function registerSeatingRoutes(router: Router) {
   router.delete("/api/seating/tables/:id", handleDeleteTable, true);
   router.post("/api/seating/assign", handleAssignSeat, true);
   router.post("/api/seating/unassign", handleUnassignSeat, true);
+  router.post("/api/seating/swap", handleSwapSeats, true);
   router.post("/api/seating/conflicts", handleCreateConflict, true);
   router.delete("/api/seating/conflicts/:id", handleDeleteConflict, true);
 }

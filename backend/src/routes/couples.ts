@@ -4,6 +4,7 @@
 import {
   type BudgetGoal,
   type BudgetKind,
+  type CeremonyKind,
   type Couple,
   type CoupleInvite,
   DEFAULT_BUDGET_SPLIT,
@@ -20,9 +21,12 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails";
+import { recordExport } from "../domain/exports";
 import { generateInviteToken } from "../domain/invite_codes";
+import { listGuestsByCouple } from "../domain/guests";
+import { renderSeatingChartPdf } from "../domain/pdf";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
-import { getUserById } from "../domain/users";
+import { getUserById, toUser, type UserRow } from "../domain/users";
 import {
   type Ctx,
   HttpError,
@@ -32,6 +36,7 @@ import {
   requireVerifiedAuth,
   type Router,
 } from "../lib/http";
+import type { SeatingTable, SeatAssignment, TableShape } from "@shared/types";
 
 interface InviteRow {
   id: number;
@@ -76,6 +81,17 @@ interface OnboardBody {
   location_lng?: unknown;
   location_radius_km?: unknown;
   style_tags?: unknown;
+  /** civil | religious | both | null. */
+  ceremony_kind?: unknown;
+}
+
+const VALID_CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
+function parseCeremonyKind(raw: unknown): CeremonyKind | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string" || !VALID_CEREMONY_KINDS.has(raw as CeremonyKind)) {
+    throw new HttpError(400, "ceremony_kind invalid");
+  }
+  return raw as CeremonyKind;
 }
 
 const ALLOWED_STYLE_TAGS: ReadonlySet<WeddingStyleTag> = new Set([
@@ -631,6 +647,13 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
 
   if (body.wedding_date_goal !== undefined || body.wedding_date !== undefined) {
     const goal = parseWeddingDateGoal(body as OnboardBody);
+    // Stash the prior `wedding_date` if (and only if) the exact date is
+    // actually changing — gives the wedding-date-changed email a clean
+    // before/after pair to render. Cleared dates (going back to TBD) still
+    // record the previous value so the notification can say "was X, now TBD".
+    if (couple.wedding_date && couple.wedding_date !== goal.exact_date) {
+      updates.push({ col: "previous_wedding_date", val: couple.wedding_date });
+    }
     updates.push(
       { col: "wedding_date", val: goal.exact_date },
       { col: "wedding_date_kind", val: goal.kind },
@@ -639,6 +662,12 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       { col: "wedding_target_season", val: goal.target_season },
     );
     auditAfter.wedding_date_goal = goal;
+  }
+
+  if (body.ceremony_kind !== undefined) {
+    const kind = parseCeremonyKind(body.ceremony_kind);
+    updates.push({ col: "ceremony_kind", val: kind });
+    auditAfter.ceremony_kind = kind;
   }
 
   if (body.budget_goal !== undefined || body.budget_ceiling_huf !== undefined) {
@@ -674,6 +703,287 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   return json({ couple: toCouple(refreshed) });
 }
 
+// ─── Archive ───────────────────────────────────────────────────────────────
+//
+// `POST /api/couples/current/archive` flips `couples.status` to `archived`
+// and stamps `archived_at`. We also generate one final-bundle export per
+// archive — seating PDF (A4) + guests CSV + a full GDPR-style JSON snapshot
+// — so the couple has a one-click "send me my data" moment when they say
+// goodbye. The workspace stays readable; pause-to-delete is still the path
+// for actual deletion.
+
+interface ArchiveTableRow {
+  id: number;
+  couple_id: number;
+  label: string;
+  shape: string;
+  seats: number;
+  x_mm: number;
+  y_mm: number;
+  width_mm: number;
+  length_mm: number;
+  rotation_deg: number | null;
+  disabled_seats_json: string | null;
+  is_kids_table: number | null;
+  created_at: number;
+  updated_at: number;
+}
+
+interface ArchiveAssignRow {
+  id: number;
+  table_id: number;
+  seat_index: number;
+  guest_id: number;
+}
+
+function loadTablesForArchive(coupleId: number): SeatingTable[] {
+  const rows = db
+    .prepare("SELECT * FROM seating_tables WHERE couple_id = ? ORDER BY id ASC")
+    .all(coupleId) as ArchiveTableRow[];
+  return rows.map((r) => {
+    let disabled: number[] = [];
+    try {
+      const v = JSON.parse(r.disabled_seats_json ?? "[]");
+      if (Array.isArray(v)) disabled = v.filter((n) => Number.isInteger(n));
+    } catch {
+      /* default [] */
+    }
+    return {
+      id: r.id,
+      couple_id: r.couple_id,
+      label: r.label,
+      shape: (r.shape === "long" || r.shape === "square" || r.shape === "head"
+        ? r.shape
+        : "round") as TableShape,
+      seats: r.seats,
+      x_mm: r.x_mm,
+      y_mm: r.y_mm,
+      width_mm: r.width_mm,
+      length_mm: r.length_mm,
+      rotation_deg: ((((r.rotation_deg ?? 0) % 360) + 360) % 360) | 0,
+      is_kids_table: Boolean(r.is_kids_table),
+      disabled_seats: disabled,
+      created_at: r.created_at,
+    };
+  });
+}
+
+function loadAssignmentsForArchive(coupleId: number): SeatAssignment[] {
+  const rows = db
+    .prepare(
+      `SELECT sa.* FROM seat_assignments sa
+       JOIN seating_tables st ON st.id = sa.table_id
+       WHERE st.couple_id = ?`,
+    )
+    .all(coupleId) as ArchiveAssignRow[];
+  return rows.map((r) => ({
+    id: r.id,
+    table_id: r.table_id,
+    seat_index: r.seat_index,
+    guest_id: r.guest_id,
+  }));
+}
+
+async function handleArchive(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to archive");
+  if (couple.status === "archived") {
+    return json({ couple: toCouple(couple) });
+  }
+  if (couple.status === "deleting") {
+    throw new HttpError(409, "Couple already scheduled for deletion");
+  }
+
+  // Final bundle: seating PDF + guests CSV stub + full JSON snapshot. Each
+  // is persisted via `recordExport()` so it shows up in the user's saved
+  // download archive. Errors here don't block the status flip — archiving
+  // must succeed even if the PDF pipeline hiccups.
+  try {
+    const tables = loadTablesForArchive(couple.id);
+    const assignments = loadAssignmentsForArchive(couple.id);
+    const guests = listGuestsByCouple(couple.id);
+    const pdf = await renderSeatingChartPdf({
+      format: "a4",
+      couple_display_name: couple.display_name,
+      wedding_date: couple.wedding_date,
+      tables,
+      assignments,
+      guests,
+    });
+    recordExport({
+      coupleId: couple.id,
+      userId,
+      kind: "seating_pdf",
+      format: "a4",
+      filename: `archive-seating-a4.pdf`,
+      contentType: "application/pdf",
+      body: pdf,
+    });
+  } catch {
+    // best-effort
+  }
+
+  // JSON snapshot — small re-implementation of /api/couples/export so the
+  // archive bundle stays self-contained. Schema_version follows the
+  // canonical export.
+  try {
+    const guestsRows = db
+      .prepare("SELECT * FROM guests WHERE couple_id = ? ORDER BY id ASC")
+      .all(couple.id) as Record<string, unknown>[];
+    const lines = db
+      .prepare("SELECT * FROM budget_lines WHERE couple_id = ? ORDER BY id ASC")
+      .all(couple.id) as Record<string, unknown>[];
+    const partnerA = db.prepare("SELECT * FROM users WHERE id = ?").get(couple.partner_a_id) as
+      | UserRow
+      | undefined;
+    const partnerB = couple.partner_b_id
+      ? (db.prepare("SELECT * FROM users WHERE id = ?").get(couple.partner_b_id) as
+          | UserRow
+          | undefined)
+      : undefined;
+    const snapshot = {
+      schema_version: 2,
+      exported_at: new Date().toISOString(),
+      reason: "archive",
+      couple: toCouple(couple),
+      partners: {
+        partner_a: partnerA ? toUser(partnerA) : null,
+        partner_b: partnerB ? toUser(partnerB) : null,
+      },
+      guests: guestsRows,
+      budget: { lines },
+    };
+    const body = new TextEncoder().encode(JSON.stringify(snapshot, null, 2));
+    recordExport({
+      coupleId: couple.id,
+      userId,
+      kind: "json",
+      format: null,
+      filename: `archive-${new Date().toISOString().slice(0, 10)}.json`,
+      contentType: "application/json",
+      body,
+    });
+  } catch {
+    /* best-effort */
+  }
+
+  // Guests CSV: the existing live CSV endpoint also does this, but archive
+  // needs its own snapshot so the timestamp lines up with the seating PDF.
+  try {
+    const rowsRaw = db
+      .prepare(
+        `SELECT g.*, h.label AS household_label
+           FROM guests g
+           LEFT JOIN households h ON h.id = g.household_id
+           WHERE g.couple_id = ?`,
+      )
+      .all(couple.id) as Array<{ full_name: string; email: string | null }>;
+    const sorted = [...rowsRaw].sort((a, b) =>
+      a.full_name.localeCompare(b.full_name, "hu", { sensitivity: "base" }),
+    );
+    const lines = ["full_name,email"];
+    for (const g of sorted) {
+      const name = /[",\n\r]/.test(g.full_name)
+        ? `"${g.full_name.replace(/"/g, '""')}"`
+        : g.full_name;
+      const email = g.email ?? "";
+      const safeEmail = /[",\n\r]/.test(email) ? `"${email.replace(/"/g, '""')}"` : email;
+      lines.push(`${name},${safeEmail}`);
+    }
+    const csv = `﻿${lines.join("\r\n")}\r\n`;
+    const body = new TextEncoder().encode(csv);
+    recordExport({
+      coupleId: couple.id,
+      userId,
+      kind: "guest_csv",
+      format: null,
+      filename: `archive-guests-${new Date().toISOString().slice(0, 10)}.csv`,
+      contentType: "text/csv; charset=utf-8",
+      body,
+    });
+  } catch {
+    /* best-effort */
+  }
+
+  const ts = now();
+  db.prepare(
+    "UPDATE couples SET status = 'archived', archived_at = ?, updated_at = ? WHERE id = ?",
+  ).run(ts, ts, couple.id);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.archive",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: { archived_at: ts },
+  });
+
+  const refreshed = getCoupleById(couple.id);
+  if (!refreshed) throw new HttpError(500, "Couple vanished after archive");
+  return json({ couple: toCouple(refreshed) });
+}
+
+// ─── Notify-date-change ─────────────────────────────────────────────────────
+//
+// Fan-out email to every guest with an address explaining that the wedding
+// date moved. We rely on `previous_wedding_date` being kept up to date by
+// `handleUpdateCurrentCouple` — the email shows "from X → Y" when present.
+
+async function handleNotifyDateChange(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to notify");
+
+  const rsvpPageUrl = `${CONFIG.frontendBaseUrl}/rsvp`;
+  const guests = db
+    .prepare("SELECT id, email, full_name FROM guests WHERE couple_id = ?")
+    .all(couple.id) as Array<{ id: number; email: string | null; full_name: string }>;
+
+  let notified = 0;
+  let skipped = 0;
+  const seen = new Set<string>();
+  for (const g of guests) {
+    if (!g.email) {
+      skipped += 1;
+      continue;
+    }
+    const lower = g.email.toLowerCase();
+    if (seen.has(lower)) {
+      skipped += 1;
+      continue;
+    }
+    seen.add(lower);
+    void sendKind(
+      "wedding_date_changed",
+      {
+        coupleDisplayName: couple.display_name,
+        previousWeddingDate: couple.previous_wedding_date,
+        newWeddingDate: couple.wedding_date,
+        rsvpPageUrl,
+      },
+      {
+        user: null,
+        guest: { email: g.email, full_name: g.full_name },
+        couple_id: couple.id,
+      },
+    );
+    notified += 1;
+  }
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.notify_date_change",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: { notified_count: notified, skipped_count: skipped },
+  });
+
+  return json({ notified_count: notified, skipped_count: skipped });
+}
+
 export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/onboard", handleOnboard, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
@@ -682,4 +992,6 @@ export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/invites", handleCreateInvite, true);
   router.get("/api/invites/:token", handleGetInvite); // public — pre-signup
   router.post("/api/invites/:token/accept", handleAcceptInvite, true);
+  router.post("/api/couples/current/archive", handleArchive, true);
+  router.post("/api/couples/current/notify-date-change", handleNotifyDateChange, true);
 }

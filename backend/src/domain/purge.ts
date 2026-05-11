@@ -111,6 +111,52 @@ export function purgeOneCouple(coupleId: number): void {
   });
 }
 
+/**
+ * Admin-initiated immediate deletion of a single user.
+ *
+ * - If the user belongs to a couple, the whole workspace is purged (same
+ *   sweep as the scheduled-delete worker — both partners' PII is scrubbed).
+ * - For orphan users (signed up but never onboarded), just kill the row and
+ *   their sessions / email artefacts. Audit-log entry tracks the action.
+ */
+export function purgeOneUser(userId: number): void {
+  const ts = now();
+  const user = db.prepare("SELECT id, email, couple_id FROM users WHERE id = ?").get(userId) as
+    | { id: number; email: string; couple_id: number | null }
+    | undefined;
+  if (!user) return;
+
+  if (user.couple_id) {
+    purgeOneCouple(user.couple_id);
+    return;
+  }
+
+  db.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM email_log WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM email_dispatches WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM email_preferences WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM email_change_tokens WHERE user_id = ?").run(userId);
+  db.prepare(
+    `UPDATE users SET email = 'deleted-' || id || '@purged.local',
+                      password_hash = '!purged!',
+                      full_name = 'Purged user',
+                      status = 'suspended',
+                      updated_at = ?
+       WHERE id = ?`,
+  ).run(ts, userId);
+
+  addAuditLog({
+    actor_user_id: null,
+    couple_id: null,
+    action: "user.admin_purge",
+    target_kind: "user",
+    target_id: userId,
+    note: "admin-initiated deletion (orphan user)",
+  });
+}
+
 /** Run the purge for any couples whose scheduled_delete_at has passed. */
 export function runPurgeSweep(): { purged: number } {
   const ts = now();

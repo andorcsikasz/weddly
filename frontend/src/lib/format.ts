@@ -125,7 +125,10 @@ export function formatWeddingDateGoal(goal: WeddingDateGoal, ctx: GoalText): str
 export function formatGuestCountGoal(goal: GuestCountGoal, ctx: GoalText): string {
   if (goal.kind === "tbd") return ctx.t("goal.count_tbd");
   if (goal.kind === "exact" && goal.exact !== null) {
-    return ctx.t("goal.count_exact", { n: formatNumber(goal.exact, ctx.locale) });
+    return ctx.t("goal.count_exact", {
+      n: formatNumber(goal.exact, ctx.locale),
+      count: goal.exact,
+    });
   }
   if (goal.kind === "range" && goal.min !== null && goal.max !== null) {
     return ctx.t("goal.count_range", {

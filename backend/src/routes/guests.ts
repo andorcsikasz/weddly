@@ -112,7 +112,35 @@ function handleList(ctx: Ctx): Response {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
-  return json({ guests: listGuestsByCouple(couple.id) });
+
+  // Optional search + pagination. Frontend can opt in incrementally — when
+  // none of these are provided, the response is identical to v1 (full list).
+  const q = (ctx.url.searchParams.get("q") ?? "").trim().toLowerCase();
+  const limitRaw = ctx.url.searchParams.get("limit");
+  const offsetRaw = ctx.url.searchParams.get("offset");
+  const limit =
+    limitRaw === null || limitRaw === "" ? null : Math.max(1, Math.min(1000, Number(limitRaw)));
+  const offset = offsetRaw === null || offsetRaw === "" ? 0 : Math.max(0, Number(offsetRaw));
+  if (limit !== null && !Number.isFinite(limit)) throw new HttpError(400, "limit invalid");
+  if (!Number.isFinite(offset)) throw new HttpError(400, "offset invalid");
+
+  let all = listGuestsByCouple(couple.id);
+  if (q) {
+    all = all.filter((g) => {
+      const name = g.full_name.toLowerCase();
+      const email = (g.email ?? "").toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
+  }
+  const total = all.length;
+  let guests = all;
+  if (limit !== null || offset > 0) {
+    guests = all.slice(offset, limit === null ? undefined : offset + limit);
+  }
+  if (q || limit !== null || offset > 0) {
+    return json({ guests, total });
+  }
+  return json({ guests });
 }
 
 function resolveHouseholdForCreate(body: UpsertBody, coupleId: number, guestName: string): number {
@@ -396,15 +424,21 @@ function handleExportCsv(ctx: Ctx): Response {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
-  const rows = db
+  // Pull rows unsorted and re-order in JS with a Hungarian locale comparator.
+  // SQLite's NOCASE collation handles ASCII case only — it shuffles "Ákos"
+  // ahead of "Bence" and folds "Csikász" / "Csikasz" inconsistently. The HU
+  // collator gets the digraphs (Cs / Sz / Zs) and accented letters right.
+  const rowsRaw = db
     .prepare(
       `SELECT g.*, h.label AS household_label
          FROM guests g
          LEFT JOIN households h ON h.id = g.household_id
-         WHERE g.couple_id = ?
-         ORDER BY g.full_name COLLATE NOCASE ASC`,
+         WHERE g.couple_id = ?`,
     )
     .all(couple.id) as CsvGuestRow[];
+  const rows = [...rowsRaw].sort((a, b) =>
+    a.full_name.localeCompare(b.full_name, "hu", { sensitivity: "base" }),
+  );
 
   const headers = [
     "full_name",
@@ -443,7 +477,9 @@ function handleExportCsv(ctx: Ctx): Response {
       ].join(","),
     );
   }
-  const csv = `${lines.join("\r\n")}\r\n`;
+  // Prepend a UTF-8 BOM so Excel on Windows opens the file as UTF-8 by
+  // default — without it, Hungarian accented characters render as mojibake.
+  const csv = `﻿${lines.join("\r\n")}\r\n`;
   const body = new TextEncoder().encode(csv);
   const stamp = new Date().toISOString().slice(0, 10);
   const filename = `weddly-guests-${stamp}.csv`;

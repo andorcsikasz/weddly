@@ -2524,6 +2524,118 @@ describe("admin users + couples directory", () => {
     expect(c.id).toBe(coupleId);
     expect(c.partners.map((p) => p.email)).toContain("partner@weddly.test");
   });
+
+  test("admin resend-verify: 200 when unverified, ok+already_verified when already done", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "fresh@weddly.test",
+      password: "supersafe123",
+      full_name: "Fresh",
+    });
+    expect(reg.status).toBe(201);
+    const targetId = reg.data.user.id;
+
+    const r1 = await req<{ ok: true; already_verified?: boolean }>(
+      "POST",
+      `/api/admin/users/${targetId}/resend-verify`,
+      {},
+      { token: adminToken },
+    );
+    expect(r1.status).toBe(200);
+    expect(r1.data.already_verified).toBeFalsy();
+
+    const { db: liveDb } = await import("../src/db");
+    liveDb.prepare("UPDATE users SET verified_email = 1 WHERE id = ?").run(targetId);
+
+    const r2 = await req<{ ok: true; already_verified?: boolean }>(
+      "POST",
+      `/api/admin/users/${targetId}/resend-verify`,
+      {},
+      { token: adminToken },
+    );
+    expect(r2.status).toBe(200);
+    expect(r2.data.already_verified).toBe(true);
+  });
+
+  test("admin delete: refuses self, removes orphan user (PII scrubbed)", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "orphan@weddly.test",
+      password: "supersafe123",
+      full_name: "Orphan",
+    });
+    const orphanId = reg.data.user.id;
+
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, {
+      token: adminToken,
+    });
+    const self = await req("DELETE", `/api/admin/users/${me.data.user.id}`, undefined, {
+      token: adminToken,
+    });
+    expect(self.status).toBe(400);
+
+    const del = await req("DELETE", `/api/admin/users/${orphanId}`, undefined, {
+      token: adminToken,
+    });
+    expect(del.status).toBe(200);
+
+    const list = await req<{ users: AdminUser[] }>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
+    expect(list.data.users.some((u) => u.email === "orphan@weddly.test")).toBe(false);
+    const scrubbed = list.data.users.find((u) => u.id === orphanId);
+    expect(scrubbed?.email.endsWith("@purged.local")).toBe(true);
+  });
+
+  test("admin delete: target with couple_id purges the whole workspace", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { coupleId } = await bootstrapCouple("doomed@weddly.test");
+
+    const list1 = await req<{ users: AdminUser[] }>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
+    const owner = list1.data.users.find((u) => u.email === "doomed@weddly.test");
+    if (!owner) throw new Error("missing owner");
+
+    const del = await req("DELETE", `/api/admin/users/${owner.id}`, undefined, {
+      token: adminToken,
+    });
+    expect(del.status).toBe(200);
+
+    const couples = await req<{ couples: AdminCouple[] }>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
+    const c = couples.data.couples.find((c) => c.id === coupleId);
+    expect(c?.status).toBe("deleting");
+  });
+
+  test("admin gate: non-admin gets 403 on resend-verify and delete", async () => {
+    wipeAll();
+    await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("nonadmin2@weddly.test");
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "target@weddly.test",
+      password: "supersafe123",
+      full_name: "Target",
+    });
+    const targetId = reg.data.user.id;
+
+    const r1 = await req(
+      "POST",
+      `/api/admin/users/${targetId}/resend-verify`,
+      {},
+      { token: coupleToken },
+    );
+    expect(r1.status).toBe(403);
+
+    const r2 = await req("DELETE", `/api/admin/users/${targetId}`, undefined, {
+      token: coupleToken,
+    });
+    expect(r2.status).toBe(403);
+  });
 });
 
 describe("couple supplier costs", () => {
@@ -2759,6 +2871,688 @@ describe("supplier votes", () => {
     const normafa = r.data.suppliers.find((s) => s.id === "normafa-rendezvenyhaz");
     expect(normafa?.capacity_min).toBe(120);
     expect(normafa?.capacity_max).toBe(150);
+  });
+});
+
+// ─── Round-2 backend slice coverage ─────────────────────────────────────────
+
+describe("round-2: leave couple", () => {
+  test("partner B can leave; partner A is blocked as owner", async () => {
+    wipeAll();
+    // Bootstrap A + invite + accept B.
+    const a = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "leaveA@weddly.test",
+      password: "supersafe123",
+      full_name: "A",
+    });
+    await verifyUserEmail("leaveA@weddly.test");
+    const ob = await req<{ couple: { id: number } }>(
+      "POST",
+      "/api/couples/onboard",
+      { display_name: "L & B", wedding_date: "2026-11-11", target_guest_count: 50 },
+      { token: a.data.token },
+    );
+    expect(ob.status).toBe(201);
+
+    const inv = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "leaveB@weddly.test" },
+      { token: a.data.token },
+    );
+    const b = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "leaveB@weddly.test",
+      password: "supersafe123",
+      full_name: "B",
+    });
+    await req("POST", `/api/invites/${inv.data.invite.token}/accept`, {}, { token: b.data.token });
+
+    // Owner cannot leave.
+    const ownerLeave = await req("POST", "/api/users/me/leave-couple", {}, { token: a.data.token });
+    expect(ownerLeave.status).toBe(409);
+
+    // Partner B can leave; partner_b_id cleared, B's couple_id null.
+    const partnerLeave = await req(
+      "POST",
+      "/api/users/me/leave-couple",
+      {},
+      { token: b.data.token },
+    );
+    expect(partnerLeave.status).toBe(200);
+
+    const refreshed = db
+      .prepare("SELECT partner_b_id FROM couples WHERE id = ?")
+      .get(ob.data.couple.id) as { partner_b_id: number | null };
+    expect(refreshed.partner_b_id).toBeNull();
+
+    const meB = await req<{ user: { couple_id: number | null } }>(
+      "GET",
+      "/api/auth/me",
+      undefined,
+      { token: b.data.token },
+    );
+    expect(meB.data.user.couple_id).toBeNull();
+
+    // No couple to leave anymore → 404.
+    const noCouple = await req("POST", "/api/users/me/leave-couple", {}, { token: b.data.token });
+    expect(noCouple.status).toBe(404);
+  });
+});
+
+describe("round-2: archive workspace", () => {
+  test("archive flips status, stamps archived_at, snapshots a bundle", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("archive@weddly.test");
+
+    const before = db
+      .prepare("SELECT COUNT(*) AS c FROM data_exports WHERE couple_id = ?")
+      .get(coupleId) as { c: number };
+
+    const r = await req<{ couple: { status: string; archived_at: number | null } }>(
+      "POST",
+      "/api/couples/current/archive",
+      {},
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.status).toBe("archived");
+    expect(r.data.couple.archived_at).toBeGreaterThan(0);
+
+    const after = db
+      .prepare("SELECT COUNT(*) AS c FROM data_exports WHERE couple_id = ?")
+      .get(coupleId) as { c: number };
+    expect(after.c).toBeGreaterThan(before.c);
+
+    // Idempotent — calling archive again returns the same shape, doesn't 500.
+    const again = await req<{ couple: { status: string } }>(
+      "POST",
+      "/api/couples/current/archive",
+      {},
+      { token },
+    );
+    expect(again.status).toBe(200);
+    expect(again.data.couple.status).toBe("archived");
+  });
+});
+
+describe("round-2: previous_wedding_date + notify-date-change", () => {
+  test("PATCH wedding_date_goal copies prior date; notify emails guests with email", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("dateedit@weddly.test");
+
+    // Add two guests — one with email, one without.
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Eszter", email: "eszter@example.com" },
+      { token },
+    );
+    await req("POST", "/api/guests", { full_name: "No-Email" }, { token });
+    // Same address again to verify dedup.
+    await req("POST", "/api/guests", { full_name: "Dup", email: "Eszter@example.com" }, { token });
+
+    // Change the wedding date.
+    const upd = await req<{
+      couple: { wedding_date: string | null; previous_wedding_date: string | null };
+    }>(
+      "PATCH",
+      "/api/couples/current",
+      {
+        wedding_date_goal: {
+          kind: "exact",
+          exact_date: "2027-05-22",
+        },
+      },
+      { token },
+    );
+    expect(upd.status).toBe(200);
+    expect(upd.data.couple.wedding_date).toBe("2027-05-22");
+    expect(upd.data.couple.previous_wedding_date).toBe("2026-09-12");
+
+    // Notify guests.
+    const n = await req<{ notified_count: number; skipped_count: number }>(
+      "POST",
+      "/api/couples/current/notify-date-change",
+      {},
+      { token },
+    );
+    expect(n.status).toBe(200);
+    expect(n.data.notified_count).toBe(1); // dedup + missing-email skipped
+    expect(n.data.skipped_count).toBe(2);
+
+    const log = db
+      .prepare(
+        "SELECT to_email FROM email_log WHERE couple_id = ? AND kind = 'wedding_date_changed'",
+      )
+      .all(coupleId) as Array<{ to_email: string }>;
+    expect(log.length).toBe(1);
+    expect(log[0]!.to_email.toLowerCase()).toBe("eszter@example.com");
+  });
+});
+
+describe("round-2: GDPR export schema v2 expansion", () => {
+  test("export bundle includes households / invites / email_log / pause / exports / community", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("gdpr2@weddly.test");
+
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna", email: "anna@example.com", new_household_label: "Anna household" },
+      { token },
+    );
+    await req(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        name: "Test Place",
+        city: "Budapest",
+        website: "https://test-export.example",
+        blurb: "Hello",
+        price_band: 2,
+      },
+      { token },
+    );
+    await req("POST", "/api/couples/pause", { reason: "test" }, { token });
+    // Cancel it so the workspace isn't paused for the rest of the run.
+    await req("POST", "/api/couples/pause/cancel", undefined, { token });
+
+    const r = await req<{
+      schema_version: number;
+      households: unknown[];
+      couple_invites: unknown[];
+      email_log: unknown[];
+      data_exports: unknown[];
+      couple_pause_requests: unknown[];
+      community_suppliers: unknown[];
+    }>("GET", "/api/couples/export", undefined, { token });
+    expect(r.status).toBe(200);
+    expect(r.data.schema_version).toBe(2);
+    expect(Array.isArray(r.data.households)).toBe(true);
+    expect(r.data.households.length).toBeGreaterThan(0);
+    expect(Array.isArray(r.data.email_log)).toBe(true);
+    expect(r.data.email_log.length).toBeGreaterThan(0);
+    expect(Array.isArray(r.data.couple_pause_requests)).toBe(true);
+    expect(r.data.couple_pause_requests.length).toBeGreaterThan(0);
+    expect(Array.isArray(r.data.community_suppliers)).toBe(true);
+    expect(r.data.community_suppliers.length).toBeGreaterThan(0);
+
+    // Sanity: the couple still owns the rows.
+    const hhCount = db
+      .prepare("SELECT COUNT(*) AS c FROM households WHERE couple_id = ?")
+      .get(coupleId) as { c: number };
+    expect(hhCount.c).toBeGreaterThan(0);
+  });
+});
+
+describe("round-2: guests search + pagination + CSV BOM + HU sort", () => {
+  test("?q= filters by name and email; limit+offset paginates", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("search@weddly.test");
+
+    for (const name of ["Anna", "Csikász", "Ákos", "Zoltán"]) {
+      await req("POST", "/api/guests", { full_name: name }, { token });
+    }
+    const search = await req<{ guests: { full_name: string }[]; total: number }>(
+      "GET",
+      "/api/guests?q=ann",
+      undefined,
+      { token },
+    );
+    expect(search.status).toBe(200);
+    expect(search.data.guests.length).toBe(1);
+    expect(search.data.guests[0]!.full_name).toBe("Anna");
+    expect(search.data.total).toBe(1);
+
+    const page = await req<{ guests: { full_name: string }[]; total: number }>(
+      "GET",
+      "/api/guests?limit=2&offset=0",
+      undefined,
+      { token },
+    );
+    expect(page.data.guests.length).toBe(2);
+    expect(page.data.total).toBe(4);
+  });
+
+  test("CSV export starts with UTF-8 BOM and sorts via HU collator", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("csvbom@weddly.test");
+    for (const name of ["Csikász", "Ákos", "Zoltán"]) {
+      await req("POST", "/api/guests", { full_name: name }, { token });
+    }
+
+    const res = await fetch(`${BASE}/api/guests/csv`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    const buf = new Uint8Array(await res.arrayBuffer());
+    // UTF-8 BOM = EF BB BF.
+    expect(buf[0]).toBe(0xef);
+    expect(buf[1]).toBe(0xbb);
+    expect(buf[2]).toBe(0xbf);
+
+    const text = new TextDecoder().decode(buf).replace(/^﻿/, "");
+    const lines = text.split("\r\n").filter(Boolean);
+    // Header is first; remaining names follow in HU order: Ákos, Csikász, Zoltán.
+    expect(lines.length).toBeGreaterThanOrEqual(4);
+    expect(lines[1]?.startsWith("Ákos,")).toBe(true);
+    expect(lines[2]?.startsWith("Csikász,")).toBe(true);
+    expect(lines[3]?.startsWith("Zoltán,")).toBe(true);
+  });
+});
+
+describe("round-2: budget + seating concurrency", () => {
+  test("budget PATCH 409s when If-Match is stale; clean PATCH updates partial fields", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("budget409@weddly.test");
+
+    const lines = await req<{ lines: { id: number; updated_at: number; planned_huf: number }[] }>(
+      "GET",
+      "/api/budget/lines",
+      undefined,
+      { token },
+    );
+    const target = lines.data.lines[0]!;
+
+    // Partial PATCH on `actual_huf` only — label should stay unchanged.
+    const ok = await req<{ line: { actual_huf: number; planned_huf: number; updated_at: number } }>(
+      "PATCH",
+      `/api/budget/lines/${target.id}`,
+      { actual_huf: 7777 },
+      { token },
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.data.line.actual_huf).toBe(7777);
+    expect(ok.data.line.planned_huf).toBe(target.planned_huf);
+
+    // Stale If-Match → 409.
+    const stale = await fetch(`${BASE}/api/budget/lines/${target.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "If-Match": String(target.updated_at - 1),
+      },
+      body: JSON.stringify({ actual_huf: 1234 }),
+    });
+    expect(stale.status).toBe(409);
+  });
+
+  test("seating table PATCH 409s when If-Match is stale", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("seat409@weddly.test");
+    const t = await req<{ table: { id: number } }>(
+      "POST",
+      "/api/seating/tables",
+      { label: "T1", shape: "round", seats: 8, x_mm: 0, y_mm: 0 },
+      { token },
+    );
+    expect(t.status).toBe(201);
+
+    const stale = await fetch(`${BASE}/api/seating/tables/${t.data.table.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "If-Match": "0",
+      },
+      body: JSON.stringify({ label: "T1 - renamed" }),
+    });
+    expect(stale.status).toBe(409);
+
+    // Without If-Match, partial update goes through.
+    const ok = await req<{ table: { is_kids_table: boolean; label: string } }>(
+      "PATCH",
+      `/api/seating/tables/${t.data.table.id}`,
+      { is_kids_table: true },
+      { token },
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.data.table.is_kids_table).toBe(true);
+    expect(ok.data.table.label).toBe("T1");
+  });
+});
+
+describe("round-2: atomic seating swap", () => {
+  test("POST /api/seating/swap swaps both seats in one transaction", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("swap@weddly.test");
+    const g1 = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna" },
+      { token },
+    );
+    const g2 = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Bence" },
+      { token },
+    );
+    const t = await req<{ table: { id: number } }>(
+      "POST",
+      "/api/seating/tables",
+      // 3 m round = 11-seat cap, so seat_index 4 is in range.
+      {
+        label: "Swap",
+        shape: "round",
+        seats: 8,
+        x_mm: 0,
+        y_mm: 0,
+        width_mm: 3000,
+        length_mm: 3000,
+      },
+      { token },
+    );
+
+    await req(
+      "POST",
+      "/api/seating/assign",
+      { table_id: t.data.table.id, seat_index: 0, guest_id: g1.data.guest.id },
+      { token },
+    );
+    await req(
+      "POST",
+      "/api/seating/assign",
+      { table_id: t.data.table.id, seat_index: 4, guest_id: g2.data.guest.id },
+      { token },
+    );
+
+    const swap = await req(
+      "POST",
+      "/api/seating/swap",
+      { guest_a_id: g1.data.guest.id, guest_b_id: g2.data.guest.id },
+      { token },
+    );
+    expect(swap.status).toBe(200);
+
+    const plan = await req<{ assignments: { guest_id: number; seat_index: number }[] }>(
+      "GET",
+      "/api/seating/plan",
+      undefined,
+      { token },
+    );
+    const a = plan.data.assignments.find((x) => x.guest_id === g1.data.guest.id);
+    const b = plan.data.assignments.find((x) => x.guest_id === g2.data.guest.id);
+    expect(a?.seat_index).toBe(4);
+    expect(b?.seat_index).toBe(0);
+
+    // Re-running with one unassigned guest fails.
+    await req("POST", "/api/seating/unassign", { guest_id: g1.data.guest.id }, { token });
+    const failedSwap = await req(
+      "POST",
+      "/api/seating/swap",
+      { guest_a_id: g1.data.guest.id, guest_b_id: g2.data.guest.id },
+      { token },
+    );
+    expect(failedSwap.status).toBe(400);
+  });
+});
+
+describe("round-2: ceremony_kind + is_kids_table fields", () => {
+  test("ceremony_kind round-trips through PATCH; invalid value rejected", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("ceremony@weddly.test");
+
+    const bad = await req("PATCH", "/api/couples/current", { ceremony_kind: "atheist" }, { token });
+    expect(bad.status).toBe(400);
+
+    const ok = await req<{ couple: { ceremony_kind: string | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { ceremony_kind: "both" },
+      { token },
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.data.couple.ceremony_kind).toBe("both");
+
+    const clear = await req<{ couple: { ceremony_kind: string | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { ceremony_kind: null },
+      { token },
+    );
+    expect(clear.status).toBe(200);
+    expect(clear.data.couple.ceremony_kind).toBeNull();
+  });
+
+  test("is_kids_table flag persists on create + update", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("kids@weddly.test");
+    const create = await req<{ table: { id: number; is_kids_table: boolean } }>(
+      "POST",
+      "/api/seating/tables",
+      { label: "Kids", shape: "round", seats: 6, x_mm: 0, y_mm: 0, is_kids_table: true },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.table.is_kids_table).toBe(true);
+
+    const off = await req<{ table: { is_kids_table: boolean } }>(
+      "PATCH",
+      `/api/seating/tables/${create.data.table.id}`,
+      { is_kids_table: false },
+      { token },
+    );
+    expect(off.data.table.is_kids_table).toBe(false);
+  });
+});
+
+describe("round-2: print only=confirmed", () => {
+  test("?only=confirmed filters place cards to RSVP yes", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("printpcs@weddly.test");
+    const g1 = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Yes-Guest" },
+      { token },
+    );
+    await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Pending-Guest" },
+      { token },
+    );
+    await req(
+      "PATCH",
+      `/api/guests/${g1.data.guest.id}`,
+      { full_name: "Yes-Guest", rsvp_status: "yes" },
+      { token },
+    );
+
+    const full = await fetch(`${BASE}/api/print/place-cards`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(full.status).toBe(200);
+    const fullBuf = new Uint8Array(await full.arrayBuffer());
+    expect(fullBuf[0]).toBe(0x25); // "%"
+    expect(fullBuf[1]).toBe(0x50); // "P" — PDF magic
+    const filtered = await fetch(`${BASE}/api/print/place-cards?only=confirmed`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(filtered.status).toBe(200);
+    const filteredBuf = new Uint8Array(await filtered.arrayBuffer());
+    // The filtered PDF should be strictly smaller (fewer place cards).
+    expect(filteredBuf.byteLength).toBeLessThan(fullBuf.byteLength);
+  });
+});
+
+describe("round-2: RSVP rate-limit + idempotency", () => {
+  test("rsvp rate-limit bucket is per-household, not per-IP", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rsvprate@weddly.test");
+
+    const currentCouple = await req<{ couple: { slug: string | null } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const slug = currentCouple.data.couple.slug ?? "";
+
+    const g = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "RSVP-Guest", new_household_label: "RG-household" },
+      { token },
+    );
+    const hh = db
+      .prepare(
+        "SELECT code FROM households WHERE id = (SELECT household_id FROM guests WHERE id = ?)",
+      )
+      .get(g.data.guest.id) as { code: string };
+
+    // Submit 30 times from the same IP — used to throttle on the IP bucket,
+    // now buckets per (couple, household). Force a unique IP each call
+    // anyway so any leftover IP-keyed counters don't bleed in.
+    let successCount = 0;
+    for (let i = 0; i < 30; i++) {
+      const r = await req(
+        "POST",
+        "/api/rsvp/checkin",
+        {
+          couple_slug: slug,
+          household_code: hh.code,
+          members: [{ guest_id: g.data.guest.id, rsvp_status: "yes" }],
+        },
+        { clientIp: "10.5.5.5" },
+      );
+      if (r.status === 200) successCount += 1;
+    }
+    expect(successCount).toBeGreaterThan(20);
+  });
+
+  test("Idempotency-Key collapses retransmits, dedup added_members", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rsvpidem@weddly.test");
+    const currentCouple = await req<{ couple: { slug: string | null } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const slug = currentCouple.data.couple.slug ?? "";
+
+    const g = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Idem", new_household_label: "Idem household" },
+      { token },
+    );
+    const hh = db
+      .prepare(
+        "SELECT code FROM households WHERE id = (SELECT household_id FROM guests WHERE id = ?)",
+      )
+      .get(g.data.guest.id) as { code: string };
+
+    const body = {
+      couple_slug: slug,
+      household_code: hh.code,
+      members: [{ guest_id: g.data.guest.id, rsvp_status: "yes" }],
+      added_members: [{ full_name: "Plus-One", kind: "adult", rsvp_status: "yes" }],
+    };
+
+    async function submit(idempotencyKey: string) {
+      return fetch(`${BASE}/api/rsvp/checkin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify(body),
+      });
+    }
+    const a = await submit("key-1");
+    const b = await submit("key-1");
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+    expect(b.headers.get("idempotent-replay")).toBe("1");
+
+    const addedRows = db
+      .prepare(
+        "SELECT id FROM guests WHERE couple_id = (SELECT couple_id FROM guests WHERE id = ?) AND full_name = 'Plus-One'",
+      )
+      .all(g.data.guest.id) as { id: number }[];
+    expect(addedRows.length).toBe(1);
+  });
+});
+
+describe("round-2: community supplier email privacy", () => {
+  test("contact_email is suppressed in the public list, present in admin view", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("priv@weddly.test");
+    const submit = await req<{ supplier: { id: string; contact_email: string | null } }>(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        name: "Hidden Email Hall",
+        city: "Budapest",
+        website: "https://hidden-email.example",
+        contact_email: "private@hidden-email.example",
+        blurb: "Should not leak",
+        price_band: 2,
+      },
+      { token },
+    );
+    expect(submit.status).toBe(201);
+    expect(submit.data.supplier.contact_email).toBeNull();
+
+    const publicList = await req<{
+      suppliers: { id: string; contact_email: string | null }[];
+    }>("GET", "/api/suppliers");
+    const found = publicList.data.suppliers.find((s) => s.id === submit.data.supplier.id);
+    expect(found?.contact_email).toBeNull();
+
+    // Admin view still surfaces the address.
+    const admin = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(admin.status).toBe(201);
+    const adminList = await req<{
+      suppliers: { id: number; contact_email: string | null }[];
+    }>("GET", "/api/admin/suppliers", undefined, { token: admin.data.token });
+    expect(adminList.status).toBe(200);
+    const adminRow = adminList.data.suppliers.find(
+      (s) => s.contact_email === "private@hidden-email.example",
+    );
+    expect(adminRow).toBeDefined();
+  });
+});
+
+describe("round-2: PDF unicode glyphs", () => {
+  test("CJK guest name embeds the SC font subset (large PDF, not '?' fallback)", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("pdfunicode@weddly.test");
+    await req("POST", "/api/guests", { full_name: "王芳" }, { token });
+    const res = await fetch(`${BASE}/api/print/place-cards`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    const buf = new Uint8Array(await res.arrayBuffer());
+    // PDF magic.
+    expect(buf[0]).toBe(0x25);
+    expect(buf[1]).toBe(0x50);
+    expect(buf[2]).toBe(0x44);
+    expect(buf[3]).toBe(0x46);
+
+    // A place-cards PDF for a Latin-only guest is ~25 KB after subsetting.
+    // Embedding the full Noto Sans SC font (we can't safely subset CJK in
+    // fontkit 1.1.1 under Bun) pushes the output well above 1 MB, which is
+    // proof we actually shipped the CJK glyph instead of falling back to
+    // '?'. The compare guard below makes the assertion meaningful by
+    // comparing to a Latin-only render.
+    const { token: token2 } = await bootstrapCouple("pdfunicode-latin@weddly.test");
+    await req("POST", "/api/guests", { full_name: "Eszter" }, { token: token2 });
+    const latin = await fetch(`${BASE}/api/print/place-cards`, {
+      headers: { Authorization: `Bearer ${token2}` },
+    });
+    const latinBuf = new Uint8Array(await latin.arrayBuffer());
+    expect(buf.byteLength).toBeGreaterThan(latinBuf.byteLength + 100_000);
   });
 });
 

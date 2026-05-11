@@ -443,6 +443,7 @@ export default function LandingPage() {
             <FaqCard q={t("landing.faq_q_free")} a={t("landing.faq_a_free")} />
             <FaqCard q={t("landing.faq_q_partner")} a={t("landing.faq_a_partner")} />
             <FaqCard q={t("landing.faq_q_data")} a={t("landing.faq_a_data")} />
+            <FaqCard q={t("landing.faq_q_after_wedding")} a={t("landing.faq_a_after_wedding")} />
             <FaqCard q={t("landing.faq_q_planner")} a={t("landing.faq_a_planner")} />
             <FaqCard q={t("landing.faq_q_ready")} a={t("landing.faq_a_ready")} />
           </div>

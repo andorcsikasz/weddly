@@ -47,9 +47,25 @@ export default {
         },
       },
       fontFamily: {
-        // h1 / h2 across the app and public surface use the warm display serif. Body is the clean sans.
-        serif: ['"Cormorant Garamond"', "Georgia", "serif"],
-        sans: ['"Inter Variable"', "Inter", "system-ui", "sans-serif"],
+        // Self-hosted/system stack — we used to pull Inter from rsms.me and
+        // Cormorant Garamond from Google Fonts, but that leaked visitor IPs
+        // to those CDNs. The fallbacks below are deliberately rich so the
+        // page still feels editorial on macOS/iOS, Windows and Android
+        // without a single third-party request. If a user happens to have
+        // Inter or Cormorant installed locally, they win — otherwise we
+        // ride on the OS UI sans and Georgia for the display serif.
+        serif: ['"Cormorant Garamond"', "Georgia", '"Times New Roman"', "Times", "serif"],
+        sans: [
+          '"Inter Variable"',
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"Segoe UI"',
+          '"Helvetica Neue"',
+          "Arial",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       boxShadow: {
         soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",

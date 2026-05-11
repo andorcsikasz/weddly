@@ -43,6 +43,35 @@ import { rateLimit } from "../lib/rate_limit";
 // More forgiving than auth, but still slows enumeration of slug+code combos.
 const RSVP_BUCKET = { capacity: 30, refillRate: 1 / 5 };
 
+// In-process idempotency cache for /api/rsvp/checkin. Keyed by
+// `${household_id}:${idempotency_key}` and held in memory for 5 minutes —
+// short enough that a stale browser tab doesn't replay an unrelated submit,
+// long enough to catch genuine retransmits (mobile network, refresh-button
+// double-click). Crash-safe because the worst case is the second call goes
+// through as a regular submit.
+interface IdempotentEntry {
+  status: number;
+  body: string;
+  expiresAt: number;
+}
+const RSVP_IDEMPOTENCY_TTL_MS = 5 * 60 * 1000;
+const rsvpIdempotencyCache = new Map<string, IdempotentEntry>();
+
+function gcIdempotency(): void {
+  const now = Date.now();
+  for (const [key, entry] of rsvpIdempotencyCache) {
+    if (entry.expiresAt < now) rsvpIdempotencyCache.delete(key);
+  }
+}
+
+async function hashBodyKey(raw: string): Promise<string> {
+  // Cheap-ish content hash; we only need to detect bit-exact retransmits.
+  const buf = new TextEncoder().encode(raw);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  const arr = Array.from(new Uint8Array(digest));
+  return arr.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 // ─── Resolvers ──────────────────────────────────────────────────────────────
 
 function resolveCoupleBySlug(slug: string): CoupleRow {
@@ -314,8 +343,15 @@ function persistAddedMembers(
 }
 
 async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
-  rateLimit(ctx.clientIp, "rsvp:submit", RSVP_BUCKET);
-  const body = await readJson<Partial<CheckinSubmitBody>>(ctx.req);
+  // Read the raw body once so we can hash it for idempotency before parsing.
+  const rawBody = await ctx.req.text();
+  let parsedBody: Partial<CheckinSubmitBody>;
+  try {
+    parsedBody = JSON.parse(rawBody) as Partial<CheckinSubmitBody>;
+  } catch {
+    throw new HttpError(400, "Invalid JSON body");
+  }
+  const body = parsedBody;
   if (typeof body.couple_slug !== "string") throw new HttpError(400, "couple_slug required");
   if (typeof body.household_code !== "string") throw new HttpError(400, "household_code required");
   if (!Array.isArray(body.members)) {
@@ -331,6 +367,27 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   const couple = resolveCoupleBySlug(body.couple_slug);
   const hh = resolveHousehold(couple.id, body.household_code);
 
+  // Per-household rate-limit bucket — replaces the previous per-IP bucket so a
+  // wedding venue WiFi (everyone NAT'd through one address) doesn't get
+  // throttled. We *also* keep a coarse per-IP fallback (used during lookup) to
+  // slow blind enumeration of slug+code pairs.
+  rateLimit(`couple:${couple.id}:hh:${hh.id}`, "rsvp:submit", RSVP_BUCKET);
+
+  // Idempotency. Header is preferred (frontend sends a fresh UUID per submit
+  // attempt); a content-hash key is the fallback so a retransmit without a
+  // header still doesn't duplicate `added_members` rows.
+  const idemHeader = ctx.req.headers.get("idempotency-key")?.trim();
+  const idemKey = idemHeader || (await hashBodyKey(rawBody));
+  const cacheKey = `${hh.id}:${idemKey}`;
+  gcIdempotency();
+  const cached = rsvpIdempotencyCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return new Response(cached.body, {
+      status: cached.status,
+      headers: { "Content-Type": "application/json", "Idempotent-Replay": "1" },
+    });
+  }
+
   const parsed = body.members.map((m) => parseMember(m as SubmitMemberRaw));
   const parsedAdded = addedRaw.map((m) => parseAddedMember(m as AddedMemberRaw));
 
@@ -340,7 +397,17 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   notifyCouple(couple, [...updated, ...addedRows], previous);
   notifyGuests(couple, [...updated, ...addedRows]);
 
-  return json({ rsvp: buildView(couple, hh) });
+  const payload = { rsvp: buildView(couple, hh) };
+  const serialized = JSON.stringify(payload);
+  rsvpIdempotencyCache.set(cacheKey, {
+    status: 200,
+    body: serialized,
+    expiresAt: Date.now() + RSVP_IDEMPOTENCY_TTL_MS,
+  });
+  return new Response(serialized, {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 // ─── Legacy single-guest endpoints ──────────────────────────────────────────

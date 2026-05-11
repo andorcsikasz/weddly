@@ -1,0 +1,14 @@
+Noto Sans (Latin / Greek / Cyrillic), Regular + Bold
+Source: https://github.com/notofonts/latin-greek-cyrillic
+Licensed under the SIL Open Font License v1.1
+https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL
+
+Noto Sans SC (Simplified Chinese), Regular
+Source: https://github.com/notofonts/noto-cjk (Sans/SubsetOTF/SC/NotoSansSC-Regular.otf)
+Licensed under the SIL Open Font License v1.1.
+
+Used by the PDF print pipeline (`backend/src/domain/pdf.ts`) so guest names
+with Hungarian / Cyrillic / Greek / Simplified-Chinese glyphs render
+correctly. Other scripts (Arabic, Devanagari, Hangul, Hiragana/Katakana,
+Traditional Chinese) still fall back to '?' — embedding those subsets is
+tracked as a follow-up so the image stays a manageable size.

@@ -99,6 +99,29 @@ addColumnIfMissing("guests", "kind", "kind TEXT NOT NULL DEFAULT 'adult'");
 // directory card. Curated entries set it inline in suppliers_data.ts.
 addColumnIfMissing("community_suppliers", "address", "address TEXT");
 
+// Round-2 additions ───────────────────────────────────────────────────────
+//
+// Archive history + previous-date trail. `couples.previous_wedding_date`
+// remembers the prior YYYY-MM-DD when the couple edits the wedding date so
+// the date-changed notification has a "from" value. `couples.archived_at`
+// stamps the moment a workspace was put in the read-only `archived` status
+// — orthogonal to `status` so the column ladder stays additive.
+addColumnIfMissing("couples", "previous_wedding_date", "previous_wedding_date TEXT");
+addColumnIfMissing("couples", "archived_at", "archived_at INTEGER");
+// `ceremony_kind`: 'civil' | 'religious' | 'both' | NULL — drives copy on
+// the dashboard and (later) the budget/timeline suggestions. NULL means the
+// couple hasn't decided yet.
+addColumnIfMissing("couples", "ceremony_kind", "ceremony_kind TEXT");
+
+// Optimistic-concurrency timestamps. `budget_lines.updated_at` was always
+// in the create-table DDL, but `seating_tables.updated_at` we add defensively
+// in case an old DB predates the column. Both routes now honour `If-Match`.
+addColumnIfMissing("seating_tables", "updated_at", "updated_at INTEGER NOT NULL DEFAULT 0");
+
+// Kids-table flag. Drives the on-screen badge today; future "auto-place
+// children together" logic will read it. Boolean stored as 0/1.
+addColumnIfMissing("seating_tables", "is_kids_table", "is_kids_table INTEGER NOT NULL DEFAULT 0");
+
 export function now(): number {
   return Date.now();
 }

@@ -3,6 +3,7 @@
 import type {
   BudgetGoal,
   BudgetKind,
+  CeremonyKind,
   Couple,
   CoupleStatus,
   GuestCountGoal,
@@ -43,7 +44,12 @@ export interface CoupleRow {
   created_at: number;
   updated_at: number;
   onboarded_at: number | null;
+  previous_wedding_date: string | null;
+  ceremony_kind: string | null;
+  archived_at: number | null;
 }
+
+const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
 
 const DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
   "exact",
@@ -112,6 +118,12 @@ export function toCouple(row: CoupleRow): Couple {
     slug: row.slug,
     wedding_date_goal: rowToDateGoal(row),
     wedding_date: row.wedding_date,
+    previous_wedding_date: row.previous_wedding_date,
+    ceremony_kind:
+      row.ceremony_kind && CEREMONY_KINDS.has(row.ceremony_kind as CeremonyKind)
+        ? (row.ceremony_kind as CeremonyKind)
+        : null,
+    archived_at: row.archived_at,
     guest_count_goal: rowToGuestGoal(row),
     target_guest_count: row.target_guest_count,
     budget_goal: rowToBudgetGoal(row),
@@ -120,11 +132,20 @@ export function toCouple(row: CoupleRow): Couple {
     location_lng: row.location_lng,
     location_radius_km: row.location_radius_km,
     style_tags: styleTags,
-    status: row.status as CoupleStatus,
+    status: VALID_COUPLE_STATUSES.has(row.status as CoupleStatus)
+      ? (row.status as CoupleStatus)
+      : "active",
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
   };
 }
+
+const VALID_COUPLE_STATUSES: ReadonlySet<CoupleStatus> = new Set([
+  "active",
+  "paused",
+  "deleting",
+  "archived",
+]);
 
 export function getCoupleById(id: number): CoupleRow | null {
   return (
