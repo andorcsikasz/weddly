@@ -701,7 +701,6 @@ export default function SuppliersPage() {
               active={activeGroup === null}
               onClick={() => pickGroup(null)}
               label={t("suppliers.filter_all")}
-              count={filteredBeforeCategory.length}
               progress={groupSelectionProgress.all}
               isAll
               t={t}
