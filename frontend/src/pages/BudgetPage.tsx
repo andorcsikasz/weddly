@@ -9,6 +9,11 @@ import { CATEGORY_ICONS, CostPlanningCard } from "../components/CostPlanningCard
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { applyCategoryPlanned } from "../lib/budget";
+import {
+  readCostPlanningCount,
+  subscribeCostPlanningCount,
+  writeCostPlanningCount,
+} from "../lib/cost_planning";
 import { budgetApi, coupleApi } from "../lib/endpoints";
 import { formatHuf, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -105,6 +110,13 @@ export default function BudgetPage() {
     setLines(linesR.lines);
     setSnapshots(snapsR.snapshots);
     setCouple(coupleR.couple);
+    // Seed the slider with the shared cost-planning count if /app/suppliers
+    // or a prior session has one stored. Otherwise stay at `null` so the
+    // slider defaults to the couple's onboarding target.
+    if (coupleR.couple) {
+      const stored = readCostPlanningCount(coupleR.couple.id);
+      if (stored !== null) setCount(stored);
+    }
   }
 
   useEffect(() => {
@@ -118,6 +130,23 @@ export default function BudgetPage() {
       refresh();
     });
   }, []);
+
+  // Mirror cross-tab cost-planning slider changes — e.g. partner B types a
+  // new headcount on /app/suppliers in another tab, the slider here follows.
+  useEffect(() => {
+    if (!couple) return;
+    return subscribeCostPlanningCount(couple.id, (next) => {
+      if (next !== null) setCount(next);
+    });
+  }, [couple]);
+
+  // Persist every slider commit so /app/suppliers' Vendégszám filter picks
+  // it up on the next mount. Self-tab navigation reads on mount; other tabs
+  // see the change via the `storage` event handled above.
+  useEffect(() => {
+    if (!couple || count === null) return;
+    writeCostPlanningCount(couple.id, count);
+  }, [couple, count]);
 
   const cap = budgetCap(couple);
   const baseline = baselineGuestCount(couple);

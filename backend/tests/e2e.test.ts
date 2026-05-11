@@ -1426,6 +1426,54 @@ describe("households + airport check-in", () => {
     expect(r.data.rsvp.members.length).toBe(1);
   });
 
+  test("honeymoon trip fields — set, clear, validate", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("honeymoon@weddly.test");
+
+    // Set destination + date range.
+    const set = await req<{ couple: Record<string, unknown> }>(
+      "PATCH",
+      "/api/couples/current",
+      {
+        honeymoon_destination: "Bali",
+        honeymoon_start_date: "2027-06-01",
+        honeymoon_end_date: "2027-06-10",
+      },
+      { token },
+    );
+    expect(set.status).toBe(200);
+    expect(set.data.couple.honeymoon_destination).toBe("Bali");
+    expect(set.data.couple.honeymoon_start_date).toBe("2027-06-01");
+    expect(set.data.couple.honeymoon_end_date).toBe("2027-06-10");
+
+    // Empty string clears destination → null.
+    const clear = await req<{ couple: Record<string, unknown> }>(
+      "PATCH",
+      "/api/couples/current",
+      { honeymoon_destination: "" },
+      { token },
+    );
+    expect(clear.status).toBe(200);
+    expect(clear.data.couple.honeymoon_destination).toBeNull();
+
+    // Bad date format is rejected without mutating the row.
+    const bad = await req(
+      "PATCH",
+      "/api/couples/current",
+      { honeymoon_start_date: "june-1" },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+
+    const current = await req<{ couple: Record<string, unknown> }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(current.data.couple.honeymoon_start_date).toBe("2027-06-01");
+  });
+
   test("couple slug rename + uniqueness collision", async () => {
     wipeAll();
     const { token: tA } = await bootstrapCouple("slugA@weddly.test");

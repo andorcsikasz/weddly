@@ -49,6 +49,11 @@ import { AppShell } from "../components/AppShell";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button } from "../components/ui";
+import {
+  readCostPlanningCount,
+  subscribeCostPlanningCount,
+  writeCostPlanningCount,
+} from "../lib/cost_planning";
 import { coupleApi, coupleSupplierApi, supplierApi } from "../lib/endpoints";
 import { formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -124,6 +129,7 @@ export default function SuppliersPage() {
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<DirectorySupplier[]>([]);
   const [coupleSuppliers, setCoupleSuppliers] = useState<CoupleSupplier[]>([]);
+  const [coupleId, setCoupleId] = useState<number | null>(null);
   const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
@@ -208,14 +214,26 @@ export default function SuppliersPage() {
   function setGuestsFilter(next: string) {
     const trimmed = next.trim();
     const p = new URLSearchParams(params);
+    let parsed: number | null = null;
     if (!trimmed) {
       p.delete("guests");
     } else {
       const n = Number(trimmed);
-      if (Number.isInteger(n) && n > 0) p.set("guests", String(n));
-      else p.delete("guests");
+      if (Number.isInteger(n) && n > 0) {
+        p.set("guests", String(n));
+        parsed = n;
+      } else {
+        p.delete("guests");
+      }
     }
     setParams(p, { replace: true });
+    // Mirror the value back to /app/budget's cost-planning slider so the
+    // two surfaces stay in sync. Clearing the filter does NOT clear the
+    // slider — the slider always has a working value, so we only push
+    // positive integers across.
+    if (coupleId !== null && parsed !== null) {
+      writeCostPlanningCount(coupleId, parsed);
+    }
   }
 
   // Optimistic vote: flip the card immediately, roll back if the server says no.
@@ -245,29 +263,46 @@ export default function SuppliersPage() {
 
   useEffect(() => {
     // Fetch the public directory, the couple's private DIY entries, and the
-    // couple's wedding-day target guest count in parallel. The guest count
-    // pre-fills the Vendégszám filter so it lines up with /app and /app/budget.
+    // couple. The Vendégszám default prefers the live cost-planning slider
+    // value from /app/budget (kept in localStorage) over the static
+    // onboarding target, so the two pages stay in sync without round-trips.
     Promise.all([supplierApi.list(), coupleSupplierApi.list(), coupleApi.current()])
       .then(([dir, mine, couple]) => {
         setItems(dir.suppliers);
         setCoupleSuppliers(mine.suppliers);
+        setCoupleId(couple.couple?.id ?? null);
         setTargetGuestCount(couple.couple?.target_guest_count ?? null);
       })
       .catch(() => undefined);
   }, []);
 
-  // Once we know the couple's target guest count, default the URL's `guests`
-  // filter to it — but only if the user hasn't already touched the filter on
-  // this navigation. Subsequent edits (including clearing) take precedence.
-  // Intentionally narrow-deps: we want this to fire only when the target
-  // count first arrives, not every time the URL params object changes.
+  // Once we know the couple, default the URL's `guests` filter — preferring
+  // the live cost-planning slider value over the static onboarding target.
+  // Only fires when the URL doesn't already carry a value; subsequent edits
+  // (including clearing) take precedence.
   useEffect(() => {
-    if (targetGuestCount === null || targetGuestCount <= 0) return;
+    if (coupleId === null) return;
     if (params.has("guests")) return;
+    const stored = readCostPlanningCount(coupleId);
+    const seed = stored ?? targetGuestCount;
+    if (seed === null || seed <= 0) return;
     const p = new URLSearchParams(params);
-    p.set("guests", String(targetGuestCount));
+    p.set("guests", String(seed));
     setParams(p, { replace: true });
-  }, [targetGuestCount, params, setParams]);
+  }, [coupleId, targetGuestCount, params, setParams]);
+
+  // Listen for cross-tab cost-planning slider changes (e.g. partner B
+  // dragged the slider on /app/budget in another tab). Reflect into the URL
+  // so the active filter follows along without a manual refresh.
+  useEffect(() => {
+    if (coupleId === null) return;
+    return subscribeCostPlanningCount(coupleId, (next) => {
+      const p = new URLSearchParams(params);
+      if (next === null || next <= 0) p.delete("guests");
+      else p.set("guests", String(next));
+      setParams(p, { replace: true });
+    });
+  }, [coupleId, params, setParams]);
 
   // Scroll the freshly-submitted card into view + drop the highlight after a
   // beat. Without this, a submitter sees the modal close and may not notice
