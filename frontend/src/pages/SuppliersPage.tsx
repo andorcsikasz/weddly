@@ -455,7 +455,9 @@ export default function SuppliersPage() {
         </div>
       </header>
 
-      {/* Search + city filter + saved chip */}
+      {/* Search + city filter + saved chip. Inputs share the soft pill
+          look of the "Mentett" toggle so the row reads as one quiet
+          control surface rather than competing heavyweight fields. */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <label className="relative flex-1 min-w-[14rem]">
           <span className="sr-only">{t("suppliers.search_label")}</span>
@@ -466,7 +468,7 @@ export default function SuppliersPage() {
           />
           <input
             type="search"
-            className="input h-10 pl-9"
+            className="h-9 w-full rounded-full border border-paper-300 bg-paper-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
             placeholder={t("suppliers.search_placeholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -476,7 +478,7 @@ export default function SuppliersPage() {
         <label className="flex items-center gap-2">
           <span className="sr-only">{t("suppliers.city_label")}</span>
           <select
-            className="input h-10 min-w-[10rem]"
+            className="h-9 min-w-[10rem] rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
             value={cityFilter}
             onChange={(e) => setCityFilter(e.target.value)}
             aria-label={t("suppliers.city_label")}
@@ -495,17 +497,17 @@ export default function SuppliersPage() {
           aria-pressed={showSavedOnly}
           className={
             showSavedOnly
-              ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 px-3 py-1.5 text-xs font-medium text-paper-100"
-              : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-xs text-ink-700 hover:border-ink-300"
+              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 px-3 text-sm font-medium text-paper-100"
+              : "inline-flex h-9 items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-700 hover:border-ink-300"
           }
         >
-          <Star size={13} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
+          <Star size={14} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
           {t("suppliers.saved_filter", { n: saved.size })}
         </button>
         <label className="flex items-center gap-2">
           <span className="sr-only">{t("suppliers.sort_label")}</span>
           <select
-            className="input h-10 min-w-[10rem]"
+            className="h-9 min-w-[10rem] rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as "top" | "alpha")}
             aria-label={t("suppliers.sort_label")}
@@ -573,7 +575,7 @@ export default function SuppliersPage() {
             inputMode="numeric"
             min={1}
             step={1}
-            className="input h-9 w-24"
+            className="h-9 w-28 rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
             placeholder={t("suppliers.guests_filter_placeholder")}
             value={guestsFilter ?? ""}
             onChange={(e) => setGuestsFilter(e.target.value)}
