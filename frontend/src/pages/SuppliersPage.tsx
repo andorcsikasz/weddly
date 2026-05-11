@@ -588,7 +588,7 @@ export default function SuppliersPage() {
           <SupplierMap suppliers={filtered} />
         </Suspense>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid auto-rows-fr gap-3 md:grid-cols-2">
           {filtered.map((s) => {
             const Icon = CATEGORY_ICON[s.category];
             const isHighlighted = s.id === highlightId;
@@ -597,7 +597,7 @@ export default function SuppliersPage() {
               <article
                 key={s.id}
                 data-supplier-id={s.id}
-                className={`card-hover relative transition-shadow ${
+                className={`card-hover relative flex h-full flex-col transition-shadow ${
                   isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                 }`}
               >
@@ -676,11 +676,11 @@ export default function SuppliersPage() {
                     </p>
                   </div>
                 </div>
-                {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
-                <p className="mt-3 text-sm text-ink-700">
+                {s.address && <p className="mt-2 line-clamp-1 text-xs text-ink-500">{s.address}</p>}
+                <p className="mt-3 line-clamp-2 text-sm text-ink-700">
                   {locale === "hu" ? s.blurb_hu : s.blurb_en}
                 </p>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <a
                       href={s.website}
@@ -690,14 +690,18 @@ export default function SuppliersPage() {
                     >
                       {t("suppliers.visit_website")}
                     </a>
-                    {s.contact_email && (
-                      <a href={`mailto:${s.contact_email}`} className="btn-ghost btn-sm">
-                        <Mail size={14} /> {t("suppliers.contact_email")}
+                    {s.contact_phone && (
+                      <a href={`tel:${s.contact_phone}`} className="btn-outline btn-sm">
+                        <Phone size={14} /> {s.contact_phone}
                       </a>
                     )}
-                    {s.contact_phone && (
-                      <a href={`tel:${s.contact_phone}`} className="btn-ghost btn-sm">
-                        <Phone size={14} /> {s.contact_phone}
+                    {s.contact_email && (
+                      <a
+                        href={`mailto:${s.contact_email}`}
+                        className="btn-ghost btn-sm"
+                        aria-label={t("suppliers.contact_email")}
+                      >
+                        <Mail size={14} />
                       </a>
                     )}
                   </div>
