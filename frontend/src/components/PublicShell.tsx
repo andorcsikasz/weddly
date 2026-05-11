@@ -1,4 +1,4 @@
-import { LogIn, Menu, UserCheck, X } from "lucide-react";
+import { LogIn, Menu, MessageSquare, UserCheck, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
@@ -146,9 +146,11 @@ function PublicHeader() {
           <button
             type="button"
             onClick={openFeedback}
-            className="hidden text-sm text-ink-600 transition-colors hover:text-ink-900 lg:inline-flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:inline-flex"
+            aria-label={t("landing.nav_feedback")}
+            title={t("landing.nav_feedback")}
           >
-            {t("landing.nav_feedback")}
+            <MessageSquare size={18} aria-hidden="true" />
           </button>
           <Link
             to="/login"
