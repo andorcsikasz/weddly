@@ -7,16 +7,24 @@ import type {
   BudgetLine,
   Couple,
   CoupleInvite,
+  DietarySummary,
   Guest,
   WeddingDateGoal,
 } from "@shared/types";
+import type { ScheduleEvent } from "@shared/schedule";
 import {
+  CalendarClock,
   CalendarHeart,
   ChefHat,
+  Clipboard,
+  Clock,
   Coins,
+  Download,
   Heart,
   Mail,
+  MapPin,
   Printer,
+  QrCode,
   Users,
   UtensilsCrossed,
   Wallet,
@@ -29,7 +37,16 @@ import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { applyCategoryPlanned } from "../lib/budget";
-import { budgetApi, coupleApi, guestApi, seatingApi } from "../lib/endpoints";
+import {
+  budgetApi,
+  coupleApi,
+  dietaryApi,
+  fetchPdfBlob,
+  guestApi,
+  placeCardsUrl,
+  scheduleApi,
+  seatingApi,
+} from "../lib/endpoints";
 import { formatHuf, formatHufCompact, formatNumber, formatWeddingDateGoal } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -41,6 +58,12 @@ type Loaded = {
   lines: BudgetLine[];
   tableCount: number;
   seatedGuestIds: Set<number>;
+  /** Day-of catering aggregate — null until the lazy hydrate fires below.
+   *  Kept on the loaded blob so the planning-mode "Caterer summary" tile and
+   *  the day-of dashboard share one network round-trip. */
+  dietary: DietarySummary | null;
+  /** Day-of schedule — same lazy-hydrate story as `dietary`. */
+  schedule: ScheduleEvent[] | null;
 };
 
 function budgetCapHuf(goal: BudgetGoal): number | null {
@@ -109,14 +132,42 @@ export default function DashboardPage() {
         lines: linesR.lines,
         tableCount: planR.tables.length,
         seatedGuestIds: new Set(planR.assignments.map((a) => a.guest_id)),
+        dietary: null,
+        schedule: null,
       });
     })();
   }, []);
 
+  // ── Day-of payloads (dietary aggregate + schedule preview) ───────────
+  // Lazy-hydrated AFTER the first paint so the planning-mode dashboard
+  // doesn't pay for two extra fetches up-front. Re-runs when the loaded
+  // blob arrives so we don't fire against a `null` couple.
+  useEffect(() => {
+    if (data === "loading" || data === null) return;
+    if (data.dietary !== null && data.schedule !== null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [dietaryR, scheduleR] = await Promise.all([dietaryApi.summary(), scheduleApi.list()]);
+        if (cancelled) return;
+        setData((cur) => {
+          if (cur === "loading" || cur === null) return cur;
+          return { ...cur, dietary: dietaryR, schedule: scheduleR.events };
+        });
+      } catch {
+        // Day-of payloads are best-effort — a 401 mid-load on the
+        // planning-mode dashboard shouldn't blow up the rest of the page.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
   if (data === "loading") return null;
   if (data === null) return <Navigate to="/onboarding" replace />;
 
-  const { couple, guests, lines, tableCount, seatedGuestIds } = data;
+  const { couple, guests, lines, tableCount, seatedGuestIds, dietary, schedule } = data;
 
   // ── Days countdown — only meaningful when an exact date is locked. ─────
   const exactDate = couple.wedding_date_goal.kind === "exact" ? couple.wedding_date : null;
@@ -126,11 +177,29 @@ export default function DashboardPage() {
   const daysUntil = rawDelta !== null ? Math.max(0, rawDelta) : null;
   // True if we have an exact date AND it's already passed.
   const weddingPast = rawDelta !== null && rawDelta < 0;
+  // ── Day-of mode flag ─────────────────────────────────────────────────
+  // Engaged the morning of (D-day) and the eve (D-1). Drops the planning-
+  // mode KPI / checklist / cost-planning surface in favour of a compact
+  // jumbo check-in panel + day-of-only call-outs. Archived workspaces keep
+  // their planning chrome so the past-wedding tile can still link to PDFs.
+  const dayOfMode = daysUntil !== null && daysUntil <= 1 && daysUntil >= 0 && !couple.archived_at;
 
   // ── RSVP breakdown ────────────────────────────────────────────────────
   const rsvp = { yes: 0, no: 0, maybe: 0, pending: 0 };
   for (const g of guests) rsvp[g.rsvp_status] += 1;
   const totalGuests = guests.length;
+  // ── Day-of: how many guests checked in today? ────────────────────────
+  // "Today" = the user's local start of day. We bucket on `rsvp_responded_at`
+  // so a couple kicking the dashboard between rounds can see the trend.
+  const startOfToday = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  })();
+  const checkedInToday = dayOfMode
+    ? guests.filter((g) => g.rsvp_responded_at !== null && g.rsvp_responded_at >= startOfToday)
+        .length
+    : 0;
   const targetCount = targetGuestCount(couple);
   // Denominator for "X of Y confirmed": if the couple set a target, use that;
   // otherwise fall back to the actual list size so the % stays meaningful.
@@ -397,8 +466,10 @@ export default function DashboardPage() {
       {/* ── Next-action CTA — surfaces the first incomplete checklist item.
           Hash targets use a plain <a> so the browser scrolls to the section
           natively; react-router's <Link> swallows the navigation and never
-          scrolls, which made this CTA appear inert. ── */}
-      {nextTask &&
+          scrolls, which made this CTA appear inert. Hidden in day-of mode
+          where the jumbo check-in panel takes over. ── */}
+      {!dayOfMode &&
+        nextTask &&
         (nextTask.to ? (
           nextTask.to.startsWith("#") ? (
             <a href={nextTask.to} className="btn-primary mb-6 inline-flex">
@@ -446,383 +517,426 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* ── KPI tiles ─────────────────────────────────────────────── */}
-      <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {weddingPast ? (
-          <PastWeddingTile
-            label={t("dashboard.kpi_days_past")}
-            sub={t("dashboard.kpi_days_past_sub")}
-            seatingHref="/app/seating"
-            seatingLabel={t("dashboard.kpi_days_past_seating_pdf")}
-            guestsHref="/app/guests"
-            guestsLabel={t("dashboard.kpi_days_past_guest_csv")}
-            archiveLabel={t("dashboard.archive_workspace_button")}
-            archived={couple.archived_at !== null}
-            archiving={archiving}
-            onArchive={onArchiveWorkspace}
-          />
-        ) : (
-          <KpiTile
-            label={t("dashboard.kpi_days_label")}
-            icon={<CalendarHeart size={16} aria-hidden="true" />}
-            value={daysUntil !== null ? formatNumber(daysUntil, locale) : "—"}
-            unit={daysUntil !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
-            accent="blush"
-          />
-        )}
-        <KpiTile
-          label={t("dashboard.kpi_guests_label")}
-          icon={<Users size={16} aria-hidden="true" />}
-          value={formatNumber(rsvp.yes, locale)}
-          unit={
-            guestDenominator > 0
-              ? t("dashboard.kpi_guests_unit", { total: formatNumber(guestDenominator, locale) })
-              : t("dashboard.kpi_guests_no_data")
-          }
-          progress={
-            guestDenominator > 0
-              ? Math.min(100, Math.round((rsvp.yes / guestDenominator) * 100))
-              : null
-          }
+      {/* ── Day-of mode ─────────────────────────────────────────────
+          Engaged when daysUntil <= 1. Replaces the planning-mode KPI grid,
+          tasks list and cost-planning panel with a compact, big-type
+          jumbo: guest check-in URL, headline counts, dietary one-liner,
+          schedule preview and print actions. */}
+      {dayOfMode && (
+        <DayOfPanel
+          couple={couple}
+          rsvpYes={rsvp.yes}
+          checkedInToday={checkedInToday}
+          dietary={dietary}
+          schedule={schedule}
+          isToday={daysUntil === 0}
         />
-        <KpiTile
-          label={t("dashboard.kpi_budget_label")}
-          icon={<Wallet size={16} aria-hidden="true" />}
-          value={formatHuf(totalActual, locale)}
-          unit={
-            cap !== null
-              ? t("dashboard.kpi_budget_unit", { cap: `${formatHufCompact(cap, locale)} Ft` })
-              : t("dashboard.kpi_budget_no_cap")
-          }
-          progress={spentPct}
-          progressOver={cap !== null && totalActual > cap}
-        />
-        {eloping ? (
-          <KpiTile
-            label={t("dashboard.kpi_total_spend_label")}
-            icon={<Coins size={16} aria-hidden="true" />}
-            value={totalActual > 0 ? formatHuf(totalActual, locale) : "—"}
-            unit={
-              totalActual > 0 ? t("dashboard.kpi_total_spend_unit") : t("dashboard.kpi_roi_no_data")
-            }
-          />
-        ) : (
-          <KpiTile
-            label={t("dashboard.kpi_roi_label")}
-            icon={<Coins size={16} aria-hidden="true" />}
-            value={roiValue !== null ? formatHuf(roiValue, locale) : "—"}
-            unit={
-              roiValue === null
-                ? t("dashboard.kpi_roi_no_data")
-                : roiUseActual
-                  ? t("dashboard.kpi_roi_unit_actual", {
-                      n: formatNumber(roiDenom, locale),
-                    })
-                  : t("dashboard.kpi_roi_unit_planned", {
-                      n: formatNumber(roiDenom, locale),
-                    })
-            }
-          />
-        )}
-      </section>
+      )}
 
-      {/* ── Two-column body: tasks + breakdowns ────────────────────── */}
-      <section className="mb-8 grid gap-4 lg:grid-cols-3">
-        {/* Tasks (spans 2/3 on lg). */}
-        <div className="card lg:col-span-2">
-          <div className="mb-4 flex items-baseline justify-between">
-            <h2>{t("dashboard.tasks_title")}</h2>
-            <span className="text-xs text-ink-500">
-              {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
-            </span>
-          </div>
-          <div
-            className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-paper-200"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={tasksTotal}
-            aria-valuenow={tasksDone}
-            aria-label={t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
-          >
-            <div
-              className="h-full rounded-full bg-blush-500 transition-all"
-              style={{ width: `${(tasksDone / tasksTotal) * 100}%` }}
+      {/* ── Caterer summary tile (planning mode, ≤7 days) ────────────
+          Only useful in the final week — before that it's just noise.
+          Stays hidden in day-of mode (the dietary line lives inside the
+          DayOfPanel) and post-wedding. */}
+      {!dayOfMode &&
+        !weddingPast &&
+        daysUntil !== null &&
+        daysUntil >= 0 &&
+        daysUntil <= 7 &&
+        dietary !== null &&
+        dietary.counted_guests > 0 && <CatererSummaryCard dietary={dietary} />}
+
+      {/* ── KPI tiles — hidden in day-of mode; the DayOfPanel above
+          surfaces a compact stat row instead. ──────────────────────── */}
+      {!dayOfMode && (
+        <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {weddingPast ? (
+            <PastWeddingTile
+              label={t("dashboard.kpi_days_past")}
+              sub={t("dashboard.kpi_days_past_sub")}
+              seatingHref="/app/seating"
+              seatingLabel={t("dashboard.kpi_days_past_seating_pdf")}
+              guestsHref="/app/guests"
+              guestsLabel={t("dashboard.kpi_days_past_guest_csv")}
+              archiveLabel={t("dashboard.archive_workspace_button")}
+              archived={couple.archived_at !== null}
+              archiving={archiving}
+              onArchive={onArchiveWorkspace}
             />
-          </div>
-          <ul className="grid gap-1.5 sm:grid-cols-2">
-            {tasks.map((task) => {
-              const tone = task.done ? "text-ink-500" : "text-ink-800";
-              const body = (
-                <>
-                  <span
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                      task.done
-                        ? "border-blush-500 bg-blush-500 text-white"
-                        : "border-paper-400 bg-white"
-                    }`}
-                  >
-                    {task.done && (
-                      <svg
-                        viewBox="0 0 12 12"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3"
-                        aria-hidden="true"
-                      >
-                        <path d="M2.5 6.5L5 9l4.5-5" />
-                      </svg>
-                    )}
-                  </span>
-                  <span className={task.done ? "line-through decoration-ink-300" : ""}>
-                    {t(`dashboard.${task.key}`)}
-                  </span>
-                </>
-              );
-              const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-paper-100 ${tone}`;
-              return (
-                <li key={task.key}>
-                  {task.to ? (
-                    task.to.startsWith("#") ? (
-                      <a href={task.to} className={rowCls}>
-                        {body}
-                      </a>
-                    ) : (
-                      <Link to={task.to} className={rowCls}>
-                        {body}
-                      </Link>
-                    )
-                  ) : (
-                    <div
-                      className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${tone}`}
-                    >
-                      {body}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        {/* RSVP breakdown — stretches to match the tasks column. */}
-        <div className="grid gap-4">
-          <div className="card flex h-full flex-col">
-            <h3 className="text-sm font-semibold text-ink-700">
-              {t("dashboard.rsvp_breakdown_title")}
-            </h3>
-            <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper-200">
-              <Segment
-                count={rsvp.yes}
-                total={Math.max(totalGuests, 1)}
-                className="bg-emerald-500"
-              />
-              <Segment
-                count={rsvp.maybe}
-                total={Math.max(totalGuests, 1)}
-                className="bg-amber-400"
-              />
-              <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
-              <Segment
-                count={rsvp.pending}
-                total={Math.max(totalGuests, 1)}
-                className="bg-slate-300"
-              />
-            </div>
-            <ul className="mt-4 flex-1 divide-y divide-paper-100">
-              <RsvpRow
-                swatch="bg-emerald-500"
-                label={t("dashboard.rsvp_yes")}
-                value={rsvp.yes}
-                total={totalGuests}
-                locale={locale}
-              />
-              <RsvpRow
-                swatch="bg-amber-400"
-                label={t("dashboard.rsvp_maybe")}
-                value={rsvp.maybe}
-                total={totalGuests}
-                locale={locale}
-              />
-              <RsvpRow
-                swatch="bg-red-500"
-                label={t("dashboard.rsvp_no")}
-                value={rsvp.no}
-                total={totalGuests}
-                locale={locale}
-              />
-              <RsvpRow
-                swatch="bg-slate-300"
-                label={t("dashboard.rsvp_pending")}
-                value={rsvp.pending}
-                total={totalGuests}
-                locale={locale}
-              />
-            </ul>
-            {totalGuests > 0 && (
-              <p className="mt-4 border-t border-paper-200 pt-3 text-center text-xs text-ink-500">
-                {t("dashboard.rsvp_responded_of_total", {
-                  responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
-                  total: formatNumber(totalGuests, locale),
-                })}
-              </p>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
-      <section className="mb-8">
-        <CostPlanningCard
-          lines={lines}
-          baseline={baselineCount}
-          cap={cap}
-          count={effectivePlanningCount}
-          onCountChange={setPlanningCount}
-          onEditPlanned={setCategoryPlanned}
-          onCapChange={saveCap}
-        />
-      </section>
-
-      {/* ── Invite partner — only when there's no partner_b yet AND
-          either no invite is in flight or one was just sent in this
-          session (so the confirmation card still gets to render). Once
-          the user reloads after sending, the section disappears and the
-          invite is managed from the Profile partner card. ──────────── */}
-      {!couple.partner_b_id && (!invite || sentToEmail) && (
-        <section id="invite-partner" className="card stationery mb-8 scroll-mt-24">
-          <h2>{t("dashboard.invite_partner")}</h2>
-          <p className="mt-2 text-sm text-ink-700">{t("dashboard.invite_partner_help")}</p>
-
-          {!inviteUrl ? (
-            <form className="mt-4" onSubmit={onSendInvite}>
-              <label htmlFor="partner-email" className="field-label">
-                {t("dashboard.invite_email_label")}
-              </label>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  id="partner-email"
-                  type="email"
-                  autoComplete="email"
-                  className={`input flex-1 ${inviteEmailError ? "input-invalid" : ""}`}
-                  placeholder={t("dashboard.invite_email_placeholder")}
-                  value={inviteEmail}
-                  disabled={inviteSending}
-                  onChange={(e) => {
-                    setInviteEmail(e.target.value);
-                    if (inviteEmailError) setInviteEmailError(null);
-                  }}
-                  aria-invalid={inviteEmailError ? true : undefined}
-                />
-                <button type="submit" className="btn-primary" disabled={inviteSending}>
-                  <Mail size={16} />
-                  {inviteSending ? t("dashboard.invite_sending") : t("dashboard.invite_send")}
-                </button>
-              </div>
-              {inviteEmailError ? (
-                <p className="field-error">{inviteEmailError}</p>
-              ) : (
-                <p className="field-help">{t("dashboard.invite_email_help")}</p>
-              )}
-            </form>
-          ) : sentToEmail ? (
-            // Email-send path: lead with a clear "we sent it" confirmation
-            // (this is what the user just asked for and is now waiting on).
-            // The shareable link stays available as a backup in case the email
-            // doesn't land, but it's demoted to a secondary block.
-            <div className="mt-4 rounded-2xl border border-paper-300 bg-paper-50 p-5">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-800">
-                  <Mail size={20} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-serif text-lg text-ink-900">
-                    {t("dashboard.invite_sent_title")}
-                  </h3>
-                  <p className="mt-1 text-sm text-ink-700">
-                    {t("dashboard.invite_sent_body", { email: sentToEmail })}
-                  </p>
-                  <p className="mt-2 text-xs text-ink-500">
-                    {t("dashboard.invite_sent_spam_hint")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t border-paper-300 pt-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  {t("dashboard.invite_sent_backup_label")}
-                </p>
-                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                  <input className="input flex-1" readOnly value={inviteUrl} />
-                  <button type="button" className="btn-outline" onClick={onCopy}>
-                    {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-3">
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm text-ink-500"
-                  onClick={onCancelInvite}
-                  disabled={inviteCancelling}
-                >
-                  {inviteCancelling
-                    ? t("dashboard.invite_cancelling")
-                    : t("dashboard.invite_cancel")}
-                </button>
-              </div>
-            </div>
           ) : (
-            // Link-only path: user submitted without an email, so we just show
-            // the shareable URL.
-            <div className="mt-4 space-y-3">
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input className="input flex-1" readOnly value={inviteUrl} />
-                <button type="button" className="btn-outline" onClick={onCopy}>
-                  {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
-                </button>
-              </div>
-            </div>
+            <KpiTile
+              label={t("dashboard.kpi_days_label")}
+              icon={<CalendarHeart size={16} aria-hidden="true" />}
+              value={daysUntil !== null ? formatNumber(daysUntil, locale) : "—"}
+              unit={daysUntil !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
+              accent="blush"
+            />
+          )}
+          <KpiTile
+            label={t("dashboard.kpi_guests_label")}
+            icon={<Users size={16} aria-hidden="true" />}
+            value={formatNumber(rsvp.yes, locale)}
+            unit={
+              guestDenominator > 0
+                ? t("dashboard.kpi_guests_unit", { total: formatNumber(guestDenominator, locale) })
+                : t("dashboard.kpi_guests_no_data")
+            }
+            progress={
+              guestDenominator > 0
+                ? Math.min(100, Math.round((rsvp.yes / guestDenominator) * 100))
+                : null
+            }
+          />
+          <KpiTile
+            label={t("dashboard.kpi_budget_label")}
+            icon={<Wallet size={16} aria-hidden="true" />}
+            value={formatHuf(totalActual, locale)}
+            unit={
+              cap !== null
+                ? t("dashboard.kpi_budget_unit", { cap: `${formatHufCompact(cap, locale)} Ft` })
+                : t("dashboard.kpi_budget_no_cap")
+            }
+            progress={spentPct}
+            progressOver={cap !== null && totalActual > cap}
+          />
+          {eloping ? (
+            <KpiTile
+              label={t("dashboard.kpi_total_spend_label")}
+              icon={<Coins size={16} aria-hidden="true" />}
+              value={totalActual > 0 ? formatHuf(totalActual, locale) : "—"}
+              unit={
+                totalActual > 0
+                  ? t("dashboard.kpi_total_spend_unit")
+                  : t("dashboard.kpi_roi_no_data")
+              }
+            />
+          ) : (
+            <KpiTile
+              label={t("dashboard.kpi_roi_label")}
+              icon={<Coins size={16} aria-hidden="true" />}
+              value={roiValue !== null ? formatHuf(roiValue, locale) : "—"}
+              unit={
+                roiValue === null
+                  ? t("dashboard.kpi_roi_no_data")
+                  : roiUseActual
+                    ? t("dashboard.kpi_roi_unit_actual", {
+                        n: formatNumber(roiDenom, locale),
+                      })
+                    : t("dashboard.kpi_roi_unit_planned", {
+                        n: formatNumber(roiDenom, locale),
+                      })
+              }
+            />
           )}
         </section>
       )}
 
-      {/* ── Quick links ───────────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
-          {t("dashboard.quick_links_title")}
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <FeatureLink
-            to="/app/guests"
-            icon={<Users size={20} />}
-            title={t("dashboard.feature_guests")}
-          />
-          <FeatureLink
-            to="/app/budget"
-            icon={<UtensilsCrossed size={20} />}
-            title={t("dashboard.feature_budget")}
-          />
-          <FeatureLink
-            to="/app/seating"
-            icon={<ChefHat size={20} />}
-            title={t("dashboard.feature_seating")}
-          />
-          <FeatureLink
-            to="/app/seating"
-            icon={<Printer size={20} />}
-            title={t("dashboard.feature_print")}
-          />
-          <FeatureLink
-            to="/app/suppliers"
-            icon={<Heart size={20} />}
-            title={t("dashboard.feature_suppliers")}
-          />
-        </div>
-      </section>
+      {/* ── Planning-mode body — hidden in day-of mode so the screen
+          stays focused on the jumbo check-in panel. ───────────────── */}
+      {!dayOfMode && (
+        <>
+          {/* ── Two-column body: tasks + breakdowns ────────────────────── */}
+          <section className="mb-8 grid gap-4 lg:grid-cols-3">
+            {/* Tasks (spans 2/3 on lg). */}
+            <div className="card lg:col-span-2">
+              <div className="mb-4 flex items-baseline justify-between">
+                <h2>{t("dashboard.tasks_title")}</h2>
+                <span className="text-xs text-ink-500">
+                  {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
+                </span>
+              </div>
+              <div
+                className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-paper-200"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={tasksTotal}
+                aria-valuenow={tasksDone}
+                aria-label={t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
+              >
+                <div
+                  className="h-full rounded-full bg-blush-500 transition-all"
+                  style={{ width: `${(tasksDone / tasksTotal) * 100}%` }}
+                />
+              </div>
+              <ul className="grid gap-1.5 sm:grid-cols-2">
+                {tasks.map((task) => {
+                  const tone = task.done ? "text-ink-500" : "text-ink-800";
+                  const body = (
+                    <>
+                      <span
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                          task.done
+                            ? "border-blush-500 bg-blush-500 text-white"
+                            : "border-paper-400 bg-white"
+                        }`}
+                      >
+                        {task.done && (
+                          <svg
+                            viewBox="0 0 12 12"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-3 w-3"
+                            aria-hidden="true"
+                          >
+                            <path d="M2.5 6.5L5 9l4.5-5" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className={task.done ? "line-through decoration-ink-300" : ""}>
+                        {t(`dashboard.${task.key}`)}
+                      </span>
+                    </>
+                  );
+                  const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-paper-100 ${tone}`;
+                  return (
+                    <li key={task.key}>
+                      {task.to ? (
+                        task.to.startsWith("#") ? (
+                          <a href={task.to} className={rowCls}>
+                            {body}
+                          </a>
+                        ) : (
+                          <Link to={task.to} className={rowCls}>
+                            {body}
+                          </Link>
+                        )
+                      ) : (
+                        <div
+                          className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${tone}`}
+                        >
+                          {body}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {/* RSVP breakdown — stretches to match the tasks column. */}
+            <div className="grid gap-4">
+              <div className="card flex h-full flex-col">
+                <h3 className="text-sm font-semibold text-ink-700">
+                  {t("dashboard.rsvp_breakdown_title")}
+                </h3>
+                <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper-200">
+                  <Segment
+                    count={rsvp.yes}
+                    total={Math.max(totalGuests, 1)}
+                    className="bg-emerald-500"
+                  />
+                  <Segment
+                    count={rsvp.maybe}
+                    total={Math.max(totalGuests, 1)}
+                    className="bg-amber-400"
+                  />
+                  <Segment
+                    count={rsvp.no}
+                    total={Math.max(totalGuests, 1)}
+                    className="bg-red-500"
+                  />
+                  <Segment
+                    count={rsvp.pending}
+                    total={Math.max(totalGuests, 1)}
+                    className="bg-slate-300"
+                  />
+                </div>
+                <ul className="mt-4 flex-1 divide-y divide-paper-100">
+                  <RsvpRow
+                    swatch="bg-emerald-500"
+                    label={t("dashboard.rsvp_yes")}
+                    value={rsvp.yes}
+                    total={totalGuests}
+                    locale={locale}
+                  />
+                  <RsvpRow
+                    swatch="bg-amber-400"
+                    label={t("dashboard.rsvp_maybe")}
+                    value={rsvp.maybe}
+                    total={totalGuests}
+                    locale={locale}
+                  />
+                  <RsvpRow
+                    swatch="bg-red-500"
+                    label={t("dashboard.rsvp_no")}
+                    value={rsvp.no}
+                    total={totalGuests}
+                    locale={locale}
+                  />
+                  <RsvpRow
+                    swatch="bg-slate-300"
+                    label={t("dashboard.rsvp_pending")}
+                    value={rsvp.pending}
+                    total={totalGuests}
+                    locale={locale}
+                  />
+                </ul>
+                {totalGuests > 0 && (
+                  <p className="mt-4 border-t border-paper-200 pt-3 text-center text-xs text-ink-500">
+                    {t("dashboard.rsvp_responded_of_total", {
+                      responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
+                      total: formatNumber(totalGuests, locale),
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
+          <section className="mb-8">
+            <CostPlanningCard
+              lines={lines}
+              baseline={baselineCount}
+              cap={cap}
+              count={effectivePlanningCount}
+              onCountChange={setPlanningCount}
+              onEditPlanned={setCategoryPlanned}
+              onCapChange={saveCap}
+            />
+          </section>
+
+          {/* ── Invite partner — only when there's no partner_b yet AND
+          either no invite is in flight or one was just sent in this
+          session (so the confirmation card still gets to render). Once
+          the user reloads after sending, the section disappears and the
+          invite is managed from the Profile partner card. ──────────── */}
+          {!couple.partner_b_id && (!invite || sentToEmail) && (
+            <section id="invite-partner" className="card stationery mb-8 scroll-mt-24">
+              <h2>{t("dashboard.invite_partner")}</h2>
+              <p className="mt-2 text-sm text-ink-700">{t("dashboard.invite_partner_help")}</p>
+
+              {!inviteUrl ? (
+                <form className="mt-4" onSubmit={onSendInvite}>
+                  <label htmlFor="partner-email" className="field-label">
+                    {t("dashboard.invite_email_label")}
+                  </label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      id="partner-email"
+                      type="email"
+                      autoComplete="email"
+                      className={`input flex-1 ${inviteEmailError ? "input-invalid" : ""}`}
+                      placeholder={t("dashboard.invite_email_placeholder")}
+                      value={inviteEmail}
+                      disabled={inviteSending}
+                      onChange={(e) => {
+                        setInviteEmail(e.target.value);
+                        if (inviteEmailError) setInviteEmailError(null);
+                      }}
+                      aria-invalid={inviteEmailError ? true : undefined}
+                    />
+                    <button type="submit" className="btn-primary" disabled={inviteSending}>
+                      <Mail size={16} />
+                      {inviteSending ? t("dashboard.invite_sending") : t("dashboard.invite_send")}
+                    </button>
+                  </div>
+                  {inviteEmailError ? (
+                    <p className="field-error">{inviteEmailError}</p>
+                  ) : (
+                    <p className="field-help">{t("dashboard.invite_email_help")}</p>
+                  )}
+                </form>
+              ) : sentToEmail ? (
+                // Email-send path: lead with a clear "we sent it" confirmation
+                // (this is what the user just asked for and is now waiting on).
+                // The shareable link stays available as a backup in case the email
+                // doesn't land, but it's demoted to a secondary block.
+                <div className="mt-4 rounded-2xl border border-paper-300 bg-paper-50 p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-800">
+                      <Mail size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-serif text-lg text-ink-900">
+                        {t("dashboard.invite_sent_title")}
+                      </h3>
+                      <p className="mt-1 text-sm text-ink-700">
+                        {t("dashboard.invite_sent_body", { email: sentToEmail })}
+                      </p>
+                      <p className="mt-2 text-xs text-ink-500">
+                        {t("dashboard.invite_sent_spam_hint")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 border-t border-paper-300 pt-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
+                      {t("dashboard.invite_sent_backup_label")}
+                    </p>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <input className="input flex-1" readOnly value={inviteUrl} />
+                      <button type="button" className="btn-outline" onClick={onCopy}>
+                        {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      className="btn-ghost btn-sm text-ink-500"
+                      onClick={onCancelInvite}
+                      disabled={inviteCancelling}
+                    >
+                      {inviteCancelling
+                        ? t("dashboard.invite_cancelling")
+                        : t("dashboard.invite_cancel")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Link-only path: user submitted without an email, so we just show
+                // the shareable URL.
+                <div className="mt-4 space-y-3">
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input className="input flex-1" readOnly value={inviteUrl} />
+                    <button type="button" className="btn-outline" onClick={onCopy}>
+                      {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ── Quick links ───────────────────────────────────────────── */}
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
+              {t("dashboard.quick_links_title")}
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <FeatureLink
+                to="/app/guests"
+                icon={<Users size={20} />}
+                title={t("dashboard.feature_guests")}
+              />
+              <FeatureLink
+                to="/app/budget"
+                icon={<UtensilsCrossed size={20} />}
+                title={t("dashboard.feature_budget")}
+              />
+              <FeatureLink
+                to="/app/seating"
+                icon={<ChefHat size={20} />}
+                title={t("dashboard.feature_seating")}
+              />
+              <FeatureLink
+                to="/app/seating"
+                icon={<Printer size={20} />}
+                title={t("dashboard.feature_print")}
+              />
+              <FeatureLink
+                to="/app/suppliers"
+                icon={<Heart size={20} />}
+                title={t("dashboard.feature_suppliers")}
+              />
+            </div>
+          </section>
+        </>
+      )}
     </AppShell>
   );
 }
@@ -1048,5 +1162,376 @@ function EditableWeddingDate({
     >
       {dateText}
     </button>
+  );
+}
+
+// ── Day-of dashboard panel ───────────────────────────────────────────
+// Engaged on D-day and D-1. Big type, max-width 800px, jumbo URL on top.
+// Keep this lean — the couple is mid-prep and the screen will be glanced
+// at, not read. QR is intentionally deferred to v2 (no in-repo encoder).
+function DayOfPanel({
+  couple,
+  rsvpYes,
+  checkedInToday,
+  dietary,
+  schedule,
+  isToday,
+}: {
+  couple: Couple;
+  rsvpYes: number;
+  checkedInToday: number;
+  dietary: DietarySummary | null;
+  schedule: ScheduleEvent[] | null;
+  isToday: boolean;
+}) {
+  const { t, locale } = useT();
+  const toast = useToast();
+  const [copied, setCopied] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  // Public check-in URL — guests visit this on their phones at the door
+  // and punch in the 4-digit household code from their invite. Built from
+  // window.location.origin so it tracks the deployment domain at runtime.
+  const checkinUrl = typeof window !== "undefined" ? `${window.location.origin}/rsvp` : "/rsvp";
+
+  async function onCopyCheckin() {
+    if (!couple.slug) return;
+    try {
+      await navigator.clipboard?.writeText(checkinUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard blocked — fall back to surfacing the URL inline. The
+      // big-text URL above the button stays readable in that case.
+    }
+  }
+
+  async function onPrintPlaceCards() {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      const blob = await fetchPdfBlob(placeCardsUrl({ onlyConfirmed: true }));
+      const typed =
+        blob.type === "application/pdf" ? blob : blob.slice(0, blob.size, "application/pdf");
+      const url = URL.createObjectURL(typed);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "weddly-place-cards.pdf";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPrinting(false);
+    }
+  }
+
+  // Day-of dietary one-liner — pull only the buckets that have hits so the
+  // strip stays clean. Order mirrors the caterer-summary card so caterers
+  // get a consistent left-to-right read.
+  function dietaryStrip(): string[] {
+    if (!dietary) return [];
+    const pieces: string[] = [];
+    if (dietary.meal.vegetarian > 0) {
+      pieces.push(
+        `${formatNumber(dietary.meal.vegetarian, locale)} ${t("dashboard.caterer_label_vegetarian")}`,
+      );
+    }
+    if (dietary.meal.vegan > 0) {
+      pieces.push(
+        `${formatNumber(dietary.meal.vegan, locale)} ${t("dashboard.caterer_label_vegan")}`,
+      );
+    }
+    if (dietary.allergies.gluten > 0) {
+      pieces.push(
+        `${formatNumber(dietary.allergies.gluten, locale)} ${t("dashboard.caterer_label_gluten")}`,
+      );
+    }
+    if (dietary.allergies.lactose > 0) {
+      pieces.push(
+        `${formatNumber(dietary.allergies.lactose, locale)} ${t("dashboard.caterer_label_lactose")}`,
+      );
+    }
+    if (dietary.allergies.nut > 0) {
+      pieces.push(
+        `${formatNumber(dietary.allergies.nut, locale)} ${t("dashboard.caterer_label_nut")}`,
+      );
+    }
+    return pieces;
+  }
+
+  // Top 3 upcoming events from today. We filter to events at or after the
+  // current wall-clock minute so "Coming up next" reads honestly even
+  // post-ceremony. The schedule is already sorted by `starts_at_minutes`
+  // on the wire.
+  const nowMinutes = (() => {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  })();
+  const upcoming = (schedule ?? []).filter((e) => e.starts_at_minutes >= nowMinutes).slice(0, 3);
+
+  const stripPieces = dietaryStrip();
+
+  return (
+    <div className="mx-auto mb-8 max-w-3xl">
+      {/* Hero — Today / Tomorrow + big check-in URL + (TODO) QR. */}
+      <section
+        className="card mb-6 border-2 border-blush-200 bg-blush-50/40 text-center"
+        aria-label={t("dashboard.day_of_mode_title")}
+      >
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blush-700">
+          {t("dashboard.day_of_mode_title")}
+        </p>
+        <p className="mt-2 text-3xl font-serif text-ink-900">
+          {isToday ? t("dashboard.day_of_today_label") : t("dashboard.day_of_tomorrow_label")}
+        </p>
+        <h2 className="mt-6 flex items-center justify-center gap-2 text-base font-semibold text-ink-900">
+          <QrCode size={18} aria-hidden="true" />
+          {t("dashboard.day_of_checkin_title")}
+        </h2>
+        <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">
+          {t("dashboard.day_of_checkin_intro")}
+        </p>
+        {couple.slug ? (
+          <>
+            <button
+              type="button"
+              onClick={onCopyCheckin}
+              className="mt-4 inline-block w-full max-w-xl rounded-2xl border border-ink-200 bg-white px-4 py-4 text-center font-mono text-xl tabular-nums text-ink-900 transition hover:border-ink-400 sm:text-2xl"
+              aria-label={t("dashboard.day_of_checkin_copy")}
+            >
+              {checkinUrl}
+            </button>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+              <span className="rounded-full bg-ink-900 px-3 py-1 text-xs font-medium uppercase tracking-wider text-paper-50">
+                {couple.slug}
+              </span>
+              <button type="button" className="btn-outline" onClick={onCopyCheckin}>
+                <Clipboard size={14} />
+                {copied ? t("dashboard.day_of_checkin_copied") : t("dashboard.day_of_checkin_copy")}
+              </button>
+            </div>
+            {/* TODO(v2): inline SVG QR encoder. Avoiding a new heavy dep for
+                now — the URL above is the source of truth and most door-
+                staff workflows just need to type it on a kiosk anyway. */}
+            <p className="mt-4 text-xs italic text-ink-500">{t("dashboard.day_of_qr_todo")}</p>
+          </>
+        ) : (
+          <p className="mt-4 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700">
+            {t("dashboard.day_of_checkin_no_slug")}
+          </p>
+        )}
+      </section>
+
+      {/* Live stats — two big numbers. Big type so a glance at arm's
+          length reads cleanly. */}
+      <section className="mb-6 grid gap-3 sm:grid-cols-2">
+        <DayOfStatTile
+          label={t("dashboard.day_of_stats_yes")}
+          value={formatNumber(rsvpYes, locale)}
+          icon={<Users size={18} aria-hidden="true" />}
+        />
+        <DayOfStatTile
+          label={t("dashboard.day_of_stats_checked_in")}
+          value={formatNumber(checkedInToday, locale)}
+          icon={<CalendarHeart size={18} aria-hidden="true" />}
+        />
+      </section>
+
+      {/* Dietary one-liner — only render when there's actually something
+          to say. The 0-counts path was just noise on early-fire dashboards. */}
+      {stripPieces.length > 0 && (
+        <section className="card mb-6">
+          <h3 className="text-sm font-semibold text-ink-700">
+            {t("dashboard.day_of_dietary_title")}
+          </h3>
+          <p className="mt-2 text-base text-ink-900">{stripPieces.join(" · ")}</p>
+        </section>
+      )}
+
+      {/* Schedule preview — top 3 upcoming events. Click goes to the full
+          schedule page so the couple can edit on the way. */}
+      <section className="card mb-6">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h3 className="text-sm font-semibold text-ink-700">
+            {t("dashboard.day_of_schedule_title")}
+          </h3>
+          <Link
+            to="/app/schedule"
+            className="text-xs text-ink-500 underline-offset-2 hover:text-ink-900 hover:underline"
+          >
+            {t("dashboard.day_of_schedule_open")}
+          </Link>
+        </div>
+        {schedule === null ? (
+          <p className="text-sm text-ink-500">{t("common.loading")}</p>
+        ) : upcoming.length === 0 ? (
+          <p className="text-sm text-ink-500">{t("dashboard.day_of_schedule_empty")}</p>
+        ) : (
+          <ul className="divide-y divide-paper-200">
+            {upcoming.map((event) => (
+              <li key={event.id} className="flex items-start gap-4 py-2.5">
+                <span className="stat-num min-w-[3.5rem] shrink-0 text-base font-semibold tabular-nums text-ink-900">
+                  {`${String(Math.floor(event.starts_at_minutes / 60)).padStart(2, "0")}:${String(
+                    event.starts_at_minutes % 60,
+                  ).padStart(2, "0")}`}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-ink-900">{event.label}</p>
+                  {event.location && (
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-500">
+                      <MapPin size={12} aria-hidden="true" />
+                      {event.location}
+                    </p>
+                  )}
+                </div>
+                {event.duration_minutes !== null && (
+                  <span className="inline-flex items-center gap-1 text-xs text-ink-500">
+                    <Clock size={12} aria-hidden="true" />
+                    {event.duration_minutes}m
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Print actions — big buttons because the bridal party is opening
+          this from a stressed phone, not a calm laptop. */}
+      <section className="card">
+        <h3 className="text-sm font-semibold text-ink-700">{t("dashboard.day_of_print_title")}</h3>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            className="btn-primary justify-center"
+            onClick={onPrintPlaceCards}
+            disabled={printing}
+          >
+            <Printer size={16} aria-hidden="true" />
+            {printing ? t("schedule.saving") : t("dashboard.day_of_print_place_cards")}
+          </button>
+          <Link to="/app/seating" className="btn-outline justify-center">
+            <Download size={16} aria-hidden="true" />
+            {t("dashboard.day_of_print_seating")}
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DayOfStatTile({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: ReactNode;
+}) {
+  return (
+    <div className="card text-center">
+      <div className="flex items-center justify-center gap-2 text-xs uppercase tracking-wide text-ink-500">
+        {icon}
+        {label}
+      </div>
+      <div className="stat-num mt-2 text-4xl font-semibold leading-none text-ink-900">{value}</div>
+    </div>
+  );
+}
+
+// ── Caterer summary card ─────────────────────────────────────────────
+// Visible in planning mode during the final week — gives the couple a
+// copy-paste-ready block for the caterer email thread. Hidden in day-of
+// mode (the DayOfPanel surfaces the same data inline).
+function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
+  const { t, locale } = useT();
+  const toast = useToast();
+  const [copied, setCopied] = useState(false);
+
+  // Compose the copy-paste text. We deliberately keep this as a flat list
+  // (one bucket per line) so it pastes cleanly into Gmail / Messenger and
+  // the caterer can scan it without a table renderer.
+  function composeText(): string {
+    const lines: string[] = [];
+    const pushIf = (label: string, value: number) => {
+      if (value > 0) lines.push(`${label}: ${value}`);
+    };
+    pushIf(t("dashboard.caterer_label_meat"), dietary.meal.meat);
+    pushIf(t("dashboard.caterer_label_fish"), dietary.meal.fish);
+    pushIf(t("dashboard.caterer_label_vegetarian"), dietary.meal.vegetarian);
+    pushIf(t("dashboard.caterer_label_vegan"), dietary.meal.vegan);
+    pushIf(t("dashboard.caterer_label_child"), dietary.meal.child);
+    pushIf(t("dashboard.caterer_label_none"), dietary.meal.none);
+    pushIf(t("dashboard.caterer_label_unspecified"), dietary.meal.unspecified);
+    pushIf(t("dashboard.caterer_label_gluten"), dietary.allergies.gluten);
+    pushIf(t("dashboard.caterer_label_lactose"), dietary.allergies.lactose);
+    pushIf(t("dashboard.caterer_label_nut"), dietary.allergies.nut);
+    pushIf(t("dashboard.caterer_label_other"), dietary.allergies.other_text_count);
+    lines.push("");
+    lines.push(`(${t("dashboard.caterer_total", { n: dietary.counted_guests })})`);
+    return lines.join("\n");
+  }
+
+  async function onCopy() {
+    try {
+      await navigator.clipboard?.writeText(composeText());
+      setCopied(true);
+      toast.success(t("dashboard.caterer_copied"));
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error(t("common.error_generic"));
+    }
+  }
+
+  // Inline chips — only render the buckets with hits to keep the row
+  // readable. Allergies sit alongside meals since the caterer needs them
+  // together anyway.
+  type Chip = { label: string; value: number };
+  const chips: Chip[] = [
+    { label: t("dashboard.caterer_label_meat"), value: dietary.meal.meat },
+    { label: t("dashboard.caterer_label_fish"), value: dietary.meal.fish },
+    { label: t("dashboard.caterer_label_vegetarian"), value: dietary.meal.vegetarian },
+    { label: t("dashboard.caterer_label_vegan"), value: dietary.meal.vegan },
+    { label: t("dashboard.caterer_label_child"), value: dietary.meal.child },
+    { label: t("dashboard.caterer_label_gluten"), value: dietary.allergies.gluten },
+    { label: t("dashboard.caterer_label_lactose"), value: dietary.allergies.lactose },
+    { label: t("dashboard.caterer_label_nut"), value: dietary.allergies.nut },
+  ].filter((c) => c.value > 0);
+
+  return (
+    <section className="card mb-6 border border-blush-200 bg-blush-50/30">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 className="text-base font-semibold text-ink-900">{t("dashboard.caterer_title")}</h2>
+          <p className="mt-0.5 text-xs text-ink-500">{t("dashboard.caterer_sub")}</p>
+        </div>
+        <button type="button" className="btn-outline btn-sm" onClick={onCopy}>
+          <Clipboard size={14} aria-hidden="true" />
+          {copied ? t("dashboard.caterer_copied") : t("dashboard.caterer_copy")}
+        </button>
+      </div>
+      {chips.length > 0 ? (
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {chips.map((c) => (
+            <li
+              key={c.label}
+              className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs text-ink-700"
+            >
+              <span className="font-semibold tabular-nums text-ink-900">
+                {formatNumber(c.value, locale)}
+              </span>
+              {c.label}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-sm text-ink-500">{t("dashboard.day_of_dietary_empty")}</p>
+      )}
+      <p className="mt-3 text-xs italic text-ink-500">
+        {t("dashboard.caterer_total", { n: dietary.counted_guests })}
+      </p>
+    </section>
   );
 }

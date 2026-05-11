@@ -1,5 +1,6 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
 import {
+  CalendarClock,
   Camera,
   ChefHat,
   ClipboardList,
@@ -45,6 +46,15 @@ const ITEMS: NavItem[] = [
     labelKey: "nav.seating",
     tabKey: "nav.tab_seating",
     icon: <ChefHat size={18} />,
+  },
+  // Day-of run-of-show — desktop sidebar only so the mobile bottom tabs
+  // stay at the 5 core flows (Dashboard → Guests → Budget → Seating →
+  // Suppliers). The page itself surfaces on the dashboard via the day-of
+  // mode when daysUntil <= 1.
+  {
+    to: "/app/schedule",
+    labelKey: "nav.schedule",
+    icon: <CalendarClock size={18} />,
   },
   {
     to: "/app/suppliers",
@@ -198,14 +208,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      {/* Mobile bottom nav. */}
+      {/* Mobile bottom nav — only items with an explicit `tabKey` get a slot,
+          capped at 5 to keep the row legible on narrow viewports. Sidebar-only
+          items (planning, schedule, honeymoon, media) live in the desktop
+          rail. */}
       <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t border-paper-300 bg-paper-50/95 backdrop-blur lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
-          {displayItems.slice(0, 5).map((item) => (
-            <BottomLink key={item.to} to={item.to} icon={item.icon}>
-              {t(item.tabKey ?? item.labelKey)}
-            </BottomLink>
-          ))}
+          {displayItems
+            .filter((item) => item.tabKey)
+            .slice(0, 5)
+            .map((item) => (
+              <BottomLink key={item.to} to={item.to} icon={item.icon}>
+                {t(item.tabKey ?? item.labelKey)}
+              </BottomLink>
+            ))}
         </div>
       </nav>
 

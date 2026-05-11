@@ -52,6 +52,7 @@ function wipeAll() {
     "seating_conflicts",
     "seating_tables",
     "schedule_events",
+    "planning_items",
     "guests",
     "households",
     "budget_snapshots",

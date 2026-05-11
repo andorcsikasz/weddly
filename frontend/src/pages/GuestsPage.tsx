@@ -24,6 +24,7 @@ import {
   Nut,
   Pencil,
   Plus,
+  Printer,
   RefreshCw,
   Search,
   Trash2,
@@ -36,7 +37,7 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { coupleApi, guestApi, householdApi } from "../lib/endpoints";
+import { coupleApi, fetchPdfBlob, guestApi, householdApi, placeCardsUrl } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -255,6 +256,30 @@ export default function GuestsPage() {
     }
   }
 
+  /**
+   * Per-row "Print place card" action — pulls a one-guest place-cards PDF
+   * via `fetchPdfBlob` (which threads our Bearer auth) and triggers a
+   * disk save through a transient anchor. Doing it as a blob keeps us off
+   * the new-tab path, which strips Authorization headers on the GET.
+   */
+  async function onPrintPlaceCard(guest: Guest) {
+    // Surface the click immediately — the network round-trip can be ~1s.
+    toast.success(t("guests.print_place_card_started"));
+    try {
+      const raw = await fetchPdfBlob(placeCardsUrl({ guestIds: [guest.id] }));
+      const typed =
+        raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
+      const url = URL.createObjectURL(typed);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `weddly-place-card-${guest.id}.pdf`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   async function copyShare(slug: string | null, code: string) {
     if (!slug) return;
     const url = `${window.location.origin}/rsvp?couple=${slug}&code=${code}`;
@@ -434,6 +459,7 @@ export default function GuestsPage() {
           loading={searching}
           guests={searchResults ?? []}
           onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+          onPrintPlaceCard={onPrintPlaceCard}
         />
       ) : (
         <div className="space-y-4">
@@ -453,6 +479,7 @@ export default function GuestsPage() {
               onDeleteHousehold={() => onDeleteHousehold(hh)}
               onRenameHousehold={onRenameHousehold}
               onCycleInviteState={onCycleInviteState}
+              onPrintPlaceCard={onPrintPlaceCard}
             />
           ))}
           {!virtualReveal && households.length > 100 && (
@@ -531,10 +558,12 @@ function SearchResults({
   loading,
   guests,
   onEditGuest,
+  onPrintPlaceCard,
 }: {
   loading: boolean;
   guests: Guest[];
   onEditGuest: (g: Guest) => void;
+  onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
   if (loading && guests.length === 0) {
@@ -568,6 +597,15 @@ function SearchResults({
             >
               <Pencil size={14} />
             </button>
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() => void onPrintPlaceCard(g)}
+              aria-label={t("guests.print_place_card")}
+              title={t("guests.print_place_card")}
+            >
+              <Printer size={14} />
+            </button>
           </div>
         </li>
       ))}
@@ -587,6 +625,7 @@ function HouseholdCard({
   onDeleteHousehold,
   onRenameHousehold,
   onCycleInviteState,
+  onPrintPlaceCard,
 }: {
   household: Household;
   members: Guest[];
@@ -599,6 +638,7 @@ function HouseholdCard({
   onDeleteHousehold: () => void;
   onRenameHousehold: (id: number, label: string) => Promise<void>;
   onCycleInviteState: (g: Guest) => void;
+  onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
   const invitedCount = members.filter((g) => g.invited_at != null).length;
@@ -705,6 +745,15 @@ function HouseholdCard({
                 aria-label={t("guests.edit")}
               >
                 <Pencil size={14} />
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={() => void onPrintPlaceCard(g)}
+                aria-label={t("guests.print_place_card")}
+                title={t("guests.print_place_card")}
+              >
+                <Printer size={14} />
               </button>
               <button
                 type="button"

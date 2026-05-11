@@ -4,14 +4,43 @@
 // row per tab; rows are inline-editable on click.
 
 import type { PlanningItem, PlanningKind } from "@shared/types";
-import { Calendar, CheckCircle2, Circle, Lightbulb, Plus, Trash2 } from "lucide-react";
+import { Calendar, CheckCircle2, Circle, Lightbulb, Plus, Trash2, Wand2 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useConfirm, useToast } from "../components/ui";
+import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { planningApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+/** Wedding-day template entries anchored to ceremony time. Offsets are in
+ *  minutes; events whose computed time falls outside 00:00..23:59 are silently
+ *  skipped (very early ceremonies don't get a 03:00 "preparations", very late
+ *  ones don't get a 26:00 "bride's dance" — the couple adds late events
+ *  manually). Titles are i18n keys resolved at apply time. */
+const WEDDING_TEMPLATE: { offsetMins: number; titleKey: string }[] = [
+  { offsetMins: -240, titleKey: "planning.template_preparations" },
+  { offsetMins: -30, titleKey: "planning.template_guests_arrive" },
+  { offsetMins: 0, titleKey: "planning.template_ceremony" },
+  { offsetMins: 30, titleKey: "planning.template_congrats" },
+  { offsetMins: 60, titleKey: "planning.template_group_photo" },
+  { offsetMins: 120, titleKey: "planning.template_cocktail" },
+  { offsetMins: 240, titleKey: "planning.template_dinner" },
+  { offsetMins: 330, titleKey: "planning.template_cake" },
+  { offsetMins: 360, titleKey: "planning.template_first_dance" },
+  { offsetMins: 400, titleKey: "planning.template_party" },
+  { offsetMins: 480, titleKey: "planning.template_bride_dance" },
+];
+
+function formatHHMM(mins: number): string {
+  return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+}
+
+function parseHHMM(s: string): number | null {
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(s);
+  if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
 
 const TABS: { kind: PlanningKind; labelKey: string }[] = [
   { kind: "task", labelKey: "planning.tab_tasks" },
@@ -27,6 +56,8 @@ export default function PlanningPage() {
   const [items, setItems] = useState<PlanningItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeKind, setActiveKind] = useState<PlanningKind>("task");
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
 
   async function refresh() {
     try {
@@ -97,6 +128,37 @@ export default function PlanningPage() {
     }
   }
 
+  async function onApplyTemplate(ceremonyHHMM: string) {
+    const anchor = parseHHMM(ceremonyHHMM);
+    if (anchor === null) return;
+    setApplyingTemplate(true);
+    try {
+      // POST sequentially so each created item gets a deterministic position
+      // (defaults to 0; render order falls back to created_at). Failures bail
+      // out — the user can re-run with a different time after fixing.
+      const created: PlanningItem[] = [];
+      for (const tmpl of WEDDING_TEMPLATE) {
+        const mins = anchor + tmpl.offsetMins;
+        if (mins < 0 || mins >= 1440) continue;
+        const r = await planningApi.create({
+          kind: "schedule",
+          title: t(tmpl.titleKey),
+          scheduled_time: formatHHMM(mins),
+        });
+        created.push(r.item);
+      }
+      setItems((prev) => [...prev, ...created]);
+      toast.success(t("planning.template_done", { count: created.length }));
+      setTemplateOpen(false);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setApplyingTemplate(false);
+    }
+  }
+
+  const hasScheduleItems = useMemo(() => items.some((i) => i.kind === "schedule"), [items]);
+
   return (
     <AppShell>
       <div className="mx-auto max-w-3xl">
@@ -134,6 +196,20 @@ export default function PlanningPage() {
           })}
         </nav>
 
+        {activeKind === "schedule" && (
+          <div className="mb-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setTemplateOpen(true)}
+              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+              title={t("planning.template_button_hint")}
+            >
+              <Wand2 size={14} aria-hidden="true" />
+              <span>{t("planning.template_button")}</span>
+            </button>
+          </div>
+        )}
+
         <QuickAddForm kind={activeKind} onCreate={onCreate} />
 
         {loading ? (
@@ -154,7 +230,100 @@ export default function PlanningPage() {
           </ul>
         )}
       </div>
+
+      {templateOpen && (
+        <TemplateDialog
+          existing={hasScheduleItems}
+          applying={applyingTemplate}
+          onClose={() => setTemplateOpen(false)}
+          onApply={onApplyTemplate}
+        />
+      )}
     </AppShell>
+  );
+}
+
+function TemplateDialog({
+  existing,
+  applying,
+  onClose,
+  onApply,
+}: {
+  existing: boolean;
+  applying: boolean;
+  onClose: () => void;
+  onApply: (ceremonyHHMM: string) => Promise<void>;
+}) {
+  const { t } = useT();
+  const [ceremonyTime, setCeremonyTime] = useState("15:00");
+  const previewTimes = useMemo(() => {
+    const anchor = parseHHMM(ceremonyTime);
+    if (anchor === null) return [];
+    return WEDDING_TEMPLATE.flatMap((tmpl) => {
+      const mins = anchor + tmpl.offsetMins;
+      if (mins < 0 || mins >= 1440) return [];
+      return [{ time: formatHHMM(mins), titleKey: tmpl.titleKey }];
+    });
+  }, [ceremonyTime]);
+
+  return (
+    <Dialog
+      open
+      title={t("planning.template_dialog_title")}
+      role="dialog"
+      closeOnBackdrop
+      onClose={() => {
+        if (!applying) onClose();
+      }}
+      footer={
+        <>
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={applying}>
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => onApply(ceremonyTime)}
+            disabled={applying || parseHHMM(ceremonyTime) === null}
+          >
+            {applying ? t("common.loading") : t("planning.template_confirm")}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-ink-700">{t("planning.template_dialog_body")}</p>
+        <label className="flex items-center gap-3 text-sm text-ink-700">
+          <span className="font-medium">{t("planning.template_ceremony_label")}</span>
+          <input
+            type="time"
+            value={ceremonyTime}
+            onChange={(e) => setCeremonyTime(e.target.value)}
+            className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 outline-none focus:border-ink-400"
+          />
+        </label>
+        {existing && (
+          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600">
+            {t("planning.template_warning_existing")}
+          </p>
+        )}
+        {previewTimes.length > 0 && (
+          <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-500">
+              {t("planning.template_preview_label")}
+            </p>
+            <ul className="space-y-1 text-xs text-ink-700">
+              {previewTimes.map((p) => (
+                <li key={p.titleKey} className="flex items-center gap-3">
+                  <span className="font-mono text-ink-900">{p.time}</span>
+                  <span>{t(p.titleKey)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </Dialog>
   );
 }
 

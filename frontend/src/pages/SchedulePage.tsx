@@ -206,11 +206,19 @@ export default function SchedulePage() {
       ) : (
         <ul className="card divide-y divide-paper-200 p-0">
           {sortedEvents.map((event) => (
-            <li key={event.id}>
+            <li
+              key={event.id}
+              className="flex items-start gap-4 px-4 py-3 transition-colors hover:bg-paper-100/60"
+            >
+              {/* The big edit hit-area is a `<button>` so keyboard users get
+                  a real Tab stop. We keep the delete action as a sibling
+                  button rather than nesting inside it (nested interactive
+                  controls break a11y trees + violate HTML semantics). */}
               <button
                 type="button"
                 onClick={() => setEditing({ event })}
-                className="flex w-full items-start gap-4 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100"
+                aria-label={t("schedule.edit_event")}
+                className="flex min-w-0 flex-1 items-start gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
               >
                 <span className="stat-num min-w-[4.5rem] shrink-0 text-base font-semibold tabular-nums text-ink-900">
                   {formatHHMM(event.starts_at_minutes)}
@@ -237,34 +245,24 @@ export default function SchedulePage() {
                     )}
                   </span>
                 </span>
-                <span className="ml-auto flex shrink-0 items-center gap-1">
-                  <span
-                    aria-label={t("schedule.edit_event")}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900"
-                  >
-                    <Pencil size={14} />
-                  </span>
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    aria-label={t("schedule.delete_event")}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void onDelete(event);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        void onDelete(event);
-                      }
-                    }}
-                  >
-                    <Trash2 size={14} />
-                  </span>
-                </span>
               </button>
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                <span
+                  aria-hidden="true"
+                  className="hidden h-7 w-7 items-center justify-center rounded-full text-ink-400 sm:inline-flex"
+                >
+                  <Pencil size={14} />
+                </span>
+                <button
+                  type="button"
+                  aria-label={t("schedule.delete_event")}
+                  title={t("schedule.delete_event")}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100"
+                  onClick={() => void onDelete(event)}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </li>
           ))}
         </ul>

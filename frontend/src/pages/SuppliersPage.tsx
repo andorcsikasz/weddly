@@ -19,6 +19,8 @@ import {
   ChefHat,
   ArrowDown,
   ArrowUp,
+  Bookmark,
+  BookmarkCheck,
   ChevronRight,
   LayoutGrid,
   List,
@@ -56,6 +58,13 @@ import {
 } from "../lib/cost_planning";
 import { coupleApi, coupleSupplierApi, supplierApi } from "../lib/endpoints";
 import { formatHuf } from "../lib/format";
+import {
+  readSelection,
+  type SelectionMap,
+  setSelection,
+  subscribeSelection,
+  unselectById,
+} from "../lib/supplier_selection";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -131,6 +140,10 @@ export default function SuppliersPage() {
   const [coupleSuppliers, setCoupleSuppliers] = useState<CoupleSupplier[]>([]);
   const [coupleId, setCoupleId] = useState<number | null>(null);
   const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
+  // Per-category "this is our pick" selection. Keys are SupplierCategory,
+  // values are supplier IDs (curated slug, "c{N}" community id, or DIY hex).
+  // One pick per category — choosing a new card replaces the prior pick.
+  const [selection, setSelectionState] = useState<SelectionMap>({});
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
@@ -270,11 +283,31 @@ export default function SuppliersPage() {
       .then(([dir, mine, couple]) => {
         setItems(dir.suppliers);
         setCoupleSuppliers(mine.suppliers);
-        setCoupleId(couple.couple?.id ?? null);
+        const id = couple.couple?.id ?? null;
+        setCoupleId(id);
         setTargetGuestCount(couple.couple?.target_guest_count ?? null);
+        if (id !== null) setSelectionState(readSelection(id));
       })
       .catch(() => undefined);
   }, []);
+
+  // Cross-tab pick sync — partner B picks a venue in another tab, we
+  // reflect it here without a refresh.
+  useEffect(() => {
+    if (coupleId === null) return;
+    return subscribeSelection(coupleId, (next) => setSelectionState(next));
+  }, [coupleId]);
+
+  const togglePicked = useCallback(
+    (supplier: DirectorySupplier | CoupleSupplier) => {
+      if (coupleId === null) return;
+      const cat = supplier.category;
+      const isPicked = selection[cat] === supplier.id;
+      const next = setSelection(coupleId, cat, isPicked ? null : supplier.id);
+      setSelectionState(next);
+    },
+    [coupleId, selection],
+  );
 
   // Once we know the couple, default the URL's `guests` filter — preferring
   // the live cost-planning slider value over the static onboarding target.
@@ -438,6 +471,25 @@ export default function SuppliersPage() {
     return [...subCategoryCounts.values()].reduce((a, b) => a + b, 0);
   }, [activeGroup, filteredBeforeCategory.length, subCategoryCounts]);
 
+  // Per-group "how many sub-categories are locked in" — drives the discreet
+  // progress bars under each chain step. The "Mind" tile sums across all
+  // groups (denominator = all categories in the directory).
+  const groupSelectionProgress = useMemo(() => {
+    const map = new Map<SupplierGroup, { done: number; total: number }>();
+    let allDone = 0;
+    let allTotal = 0;
+    for (const g of SUPPLIER_GROUPS) {
+      let done = 0;
+      for (const c of g.categories) {
+        if (selection[c]) done++;
+      }
+      map.set(g.id, { done, total: g.categories.length });
+      allDone += done;
+      allTotal += g.categories.length;
+    }
+    return { byGroup: map, all: { done: allDone, total: allTotal } };
+  }, [selection]);
+
   const subCategories = activeGroup
     ? (SUPPLIER_GROUPS.find((g) => g.id === activeGroup)?.categories ?? [])
     : [];
@@ -528,6 +580,8 @@ export default function SuppliersPage() {
           type="button"
           onClick={toggleSavedFilter}
           aria-pressed={showSavedOnly}
+          aria-label={t("suppliers.saved_filter", { n: saved.size })}
+          title={t("suppliers.saved_filter", { n: saved.size })}
           className={
             showSavedOnly
               ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 px-3 text-sm font-medium text-paper-100"
@@ -535,8 +589,24 @@ export default function SuppliersPage() {
           }
         >
           <Star size={14} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
-          {t("suppliers.saved_filter", { n: saved.size })}
+          <span className="tabular-nums">{saved.size}</span>
         </button>
+        <span
+          aria-label={t("suppliers.picked_filter", { n: Object.keys(selection).length })}
+          title={t("suppliers.picked_filter", { n: Object.keys(selection).length })}
+          className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm ${
+            Object.keys(selection).length > 0
+              ? "border-sage-400 bg-sage-50 text-sage-700"
+              : "border-paper-300 bg-paper-50 text-ink-500"
+          }`}
+        >
+          <BookmarkCheck
+            size={14}
+            className={Object.keys(selection).length > 0 ? "fill-sage-200" : ""}
+            aria-hidden
+          />
+          <span className="tabular-nums">{Object.keys(selection).length}</span>
+        </span>
         <label className="flex items-center gap-2">
           <span className="sr-only">{t("suppliers.sort_label")}</span>
           <select
@@ -619,30 +689,42 @@ export default function SuppliersPage() {
         </label>
       </div>
 
-      {/* Step chain */}
+      {/* Step chain. Sequence numbers dropped — the icons carry the meaning.
+          Steps are packed tightly (gap-1) and separated by a thin centred
+          dot so the row reads as one strip, not a sequence of buttons. Each
+          step also carries a row of discreet bars (one per sub-category)
+          that turn sage as the couple locks each pick in. */}
       <div className="relative mb-3">
         <div className="overflow-x-auto pb-1">
-          <div className="flex min-w-max items-stretch gap-2">
+          <div className="flex min-w-max items-stretch gap-1">
             <ChainStep
               active={activeGroup === null}
               onClick={() => pickGroup(null)}
               label={t("suppliers.filter_all")}
               count={filteredBeforeCategory.length}
-              index={0}
+              progress={groupSelectionProgress.all}
               isAll
+              t={t}
             />
-            {SUPPLIER_GROUPS.map((g, i) => {
+            {SUPPLIER_GROUPS.map((g) => {
               const Icon = GROUP_ICON[g.id];
+              const progress = groupSelectionProgress.byGroup.get(g.id) ?? {
+                done: 0,
+                total: g.categories.length,
+              };
               return (
-                <div key={g.id} className="flex items-stretch gap-2">
-                  <ChevronRight size={16} className="self-center text-paper-400" aria-hidden />
+                <div key={g.id} className="flex items-stretch gap-1">
+                  <span className="self-center text-paper-400" aria-hidden>
+                    ·
+                  </span>
                   <ChainStep
                     active={activeGroup === g.id}
                     onClick={() => pickGroup(g.id)}
                     label={t(`suppliers.group.${g.id}`)}
                     count={groupCounts.get(g.id) ?? 0}
                     icon={<Icon size={16} />}
-                    index={i + 1}
+                    progress={progress}
+                    t={t}
                   />
                 </div>
               );
@@ -750,6 +832,7 @@ export default function SuppliersPage() {
             const Icon = CATEGORY_ICON[s.category];
             const isHighlighted = s.id === highlightId;
             const isSaved = s.source !== "self" && saved.has(s.id);
+            const isPicked = selection[s.category] === s.id;
             if (s.source === "self") {
               const openEdit = () => {
                 setDiyEditing(s);
@@ -865,9 +948,11 @@ export default function SuppliersPage() {
                 <article
                   key={s.id}
                   data-supplier-id={s.id}
-                  className={`relative flex items-center gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 py-3 transition hover:border-paper-300 hover:shadow-sm ${
-                    isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
-                  }`}
+                  className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:shadow-sm ${
+                    isPicked
+                      ? "border-sage-400 border-l-4 border-l-sage-500 bg-sage-50/70"
+                      : "border-paper-200 bg-paper-50 hover:border-paper-300"
+                  } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
                   <Avatar name={s.name} />
                   <div className="min-w-0 flex-1">
@@ -942,6 +1027,24 @@ export default function SuppliersPage() {
                     )}
                     <button
                       type="button"
+                      onClick={() => togglePicked(s)}
+                      aria-label={isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")}
+                      aria-pressed={isPicked}
+                      title={t("suppliers.pick_aria")}
+                      className={
+                        isPicked
+                          ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100"
+                          : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700"
+                      }
+                    >
+                      {isPicked ? (
+                        <BookmarkCheck size={15} className="fill-sage-200" aria-hidden />
+                      ) : (
+                        <Bookmark size={15} aria-hidden />
+                      )}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => toggleSaved(s.id)}
                       aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
                       aria-pressed={isSaved}
@@ -963,31 +1066,52 @@ export default function SuppliersPage() {
                 key={s.id}
                 data-supplier-id={s.id}
                 className={`card-hover relative flex h-full flex-col transition-shadow ${
-                  isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
-                }`}
+                  isPicked ? "border-sage-400 border-l-4 border-l-sage-500 !bg-sage-50/60" : ""
+                } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
               >
-                {/* Save star is pinned to the top-right corner so it reads as
-                    a "favorite" affordance independent of the action row. */}
-                <button
-                  type="button"
-                  onClick={() => toggleSaved(s.id)}
-                  aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
-                  aria-pressed={isSaved}
-                  className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
-                >
-                  <Star
-                    size={15}
-                    className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-                    aria-hidden
-                  />
-                </button>
+                {/* Top-right corner: pick (left) + save (right). The pick
+                    button is what marks a card as "our chosen one" for its
+                    sub-category; the star is the lightweight bookmark. */}
+                <div className="absolute right-3 top-3 inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => togglePicked(s)}
+                    aria-label={isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")}
+                    aria-pressed={isPicked}
+                    title={t("suppliers.pick_aria")}
+                    className={
+                      isPicked
+                        ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100"
+                        : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700"
+                    }
+                  >
+                    {isPicked ? (
+                      <BookmarkCheck size={15} className="fill-sage-200" aria-hidden />
+                    ) : (
+                      <Bookmark size={15} aria-hidden />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleSaved(s.id)}
+                    aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
+                    aria-pressed={isSaved}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
+                  >
+                    <Star
+                      size={15}
+                      className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+                      aria-hidden
+                    />
+                  </button>
+                </div>
                 {/* Single-column body: avatar + name + meta line (with price
                     band and capacity inline so the meta strip stays one line),
                     address, blurb, then a bottom action row that places the
                     contact buttons on the left and the vote on the right
                     corner. The right padding on the name reserves space for
-                    the pinned star above. */}
-                <div className="flex items-start gap-3 pr-8">
+                    the pinned-corner controls above. */}
+                <div className="flex items-start gap-3 pr-16">
                   <Avatar name={s.name} />
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-base font-semibold">{s.name}</h3>
@@ -1110,9 +1234,19 @@ export default function SuppliersPage() {
             return next;
           });
           setHighlightId(s.id);
+          // DIY entries auto-claim the selection slot for their category —
+          // recording a "mum is cooking" entry means catering is locked in.
+          if (coupleId !== null) {
+            setSelectionState(setSelection(coupleId, s.category, s.id));
+          }
         }}
         onDeleted={(id) => {
           setCoupleSuppliers((prev) => prev.filter((p) => p.id !== id));
+          // Free up the slot if this DIY entry was the chosen one for its
+          // category — otherwise the chain step would stay green forever.
+          if (coupleId !== null) {
+            setSelectionState(unselectById(coupleId, id));
+          }
         }}
       />
     </AppShell>
@@ -1124,45 +1258,71 @@ function ChainStep({
   onClick,
   label,
   icon,
-  index,
   isAll,
   count,
+  progress,
+  t,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
   icon?: React.ReactNode;
-  index: number;
   isAll?: boolean;
   count?: number;
+  /** "How many sub-categories are locked in" / "out of how many". Drives the
+   *  thin bars under the label — sage once a pick lands, full-tile sage tint
+   *  when every sub-cat is done. */
+  progress?: { done: number; total: number };
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
+  const allDone = progress !== undefined && progress.done > 0 && progress.done >= progress.total;
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+      className={`group flex flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition-colors ${
         active
           ? "border-ink-700 bg-ink-700 text-paper-100"
-          : "border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-300"
+          : allDone
+            ? "border-sage-400 bg-sage-50 text-sage-800 hover:border-sage-500"
+            : "border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-300"
       }`}
     >
-      <span
-        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium ${
-          active ? "bg-paper-100/20 text-paper-100" : "bg-paper-200 text-ink-700"
-        }`}
-        aria-hidden
-      >
-        {isAll ? "·" : index}
+      <span className="flex items-center gap-1.5">
+        {!isAll && icon}
+        <span className="font-medium">{label}</span>
+        {count !== undefined && (
+          <span
+            className={`text-[10px] font-medium tabular-nums ${
+              active ? "text-paper-100/80" : allDone ? "text-sage-700/80" : "text-ink-400"
+            }`}
+          >
+            {count}
+          </span>
+        )}
       </span>
-      {icon}
-      <span className="font-medium">{label}</span>
-      {count !== undefined && (
+      {progress !== undefined && progress.total > 0 && (
         <span
-          className={`text-[10px] font-medium tabular-nums ${
-            active ? "text-paper-100/80" : "text-ink-400"
-          }`}
+          className="flex w-full items-center justify-center gap-[3px]"
+          aria-label={t("suppliers.chain_progress_aria", {
+            done: progress.done,
+            total: progress.total,
+          })}
         >
-          {count}
+          {Array.from({ length: progress.total }).map((_, i) => {
+            const filled = i < progress.done;
+            return (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: progress bars
+                // are positional and have no stable identity beyond their index.
+                key={i}
+                className={`h-[3px] w-3 rounded-full transition-colors ${
+                  filled ? "bg-sage-500" : active ? "bg-paper-100/30" : "bg-paper-300"
+                }`}
+                aria-hidden
+              />
+            );
+          })}
         </span>
       )}
     </button>

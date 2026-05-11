@@ -697,6 +697,30 @@ export interface LocaleMessages {
     empty_task: string;
     empty_idea: string;
     empty_schedule: string;
+    /** Wedding-day template (varázspálca) — generator button on the Schedule tab. */
+    template_button: string;
+    template_button_hint: string;
+    template_dialog_title: string;
+    template_dialog_body: string;
+    template_ceremony_label: string;
+    template_confirm: string;
+    template_warning_existing: string;
+    template_preview_label: string;
+    /** Success toast (plural variants). */
+    template_done_one: string;
+    template_done_other: string;
+    /** Template event titles, in wedding-night order. */
+    template_preparations: string;
+    template_guests_arrive: string;
+    template_ceremony: string;
+    template_congrats: string;
+    template_group_photo: string;
+    template_cocktail: string;
+    template_dinner: string;
+    template_cake: string;
+    template_first_dance: string;
+    template_party: string;
+    template_bride_dance: string;
   };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */
   honeymoon: {
@@ -1156,6 +1180,12 @@ export interface LocaleMessages {
     save_aria: string;
     unsave_aria: string;
     saved_filter: string;
+    /** Per-category "this is our pick" selection — one card per sub-category. */
+    pick_aria: string;
+    unpick_aria: string;
+    picked_filter: string;
+    picked_pill: string;
+    chain_progress_aria: string;
     /** Per-couple planned + final cost row on each supplier card. */
     cost_planned_label: string;
     cost_actual_label: string;
