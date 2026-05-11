@@ -602,6 +602,9 @@ export interface LocaleMessages {
     budget: string;
     seating: string;
     suppliers: string;
+    /** Post-wedding follow-up surfaces — honeymoon planning + photo share. */
+    honeymoon: string;
+    media: string;
     print: string;
     /** Accessible label for the locale toggle. */
     switch_language: string;
@@ -614,6 +617,19 @@ export interface LocaleMessages {
     tab_budget: string;
     tab_seating: string;
     tab_suppliers: string;
+  };
+  /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */
+  honeymoon: {
+    title: string;
+    sub: string;
+    coming_soon_title: string;
+    coming_soon_body: string;
+  };
+  media: {
+    title: string;
+    sub: string;
+    coming_soon_title: string;
+    coming_soon_body: string;
   };
   guests: {
     title: string;
@@ -1335,6 +1351,59 @@ export interface LocaleMessages {
     partner_invited_hint: string;
     partner_invite_cancel: string;
     partner_invite_cancelling: string;
+    /** Activity log — dark "what happened in the workspace" panel. The
+     *  per-action `activity_action_*` keys cover the visible set defined
+     *  in routes/couples.ts (`ACTIVITY_VISIBLE_ACTIONS`). */
+    activity_title: string;
+    activity_body: string;
+    activity_empty: string;
+    activity_actor_you: string;
+    activity_actor_unknown: string;
+    activity_just_now: string;
+    activity_mins_ago: string;
+    activity_hours_ago: string;
+    activity_yesterday: string;
+    activity_days_ago: string;
+    activity_action_couple_update: string;
+    activity_action_couple_slug_update: string;
+    activity_action_couple_archive: string;
+    activity_action_couple_pause: string;
+    activity_action_couple_unpause: string;
+    activity_action_couple_notify_date_change: string;
+    activity_action_couple_onboard: string;
+    activity_action_couple_export: string;
+    activity_action_guest_create: string;
+    activity_action_guest_update: string;
+    activity_action_guest_delete: string;
+    activity_action_guest_csv_import: string;
+    activity_action_guest_csv_export: string;
+    activity_action_household_create: string;
+    activity_action_household_update: string;
+    activity_action_household_delete: string;
+    activity_action_household_regen_code: string;
+    activity_action_budget_line_create: string;
+    activity_action_budget_line_update: string;
+    activity_action_budget_line_delete: string;
+    activity_action_budget_snapshot_create: string;
+    activity_action_budget_snapshot_delete: string;
+    activity_action_table_create: string;
+    activity_action_table_update: string;
+    activity_action_table_delete: string;
+    activity_action_seat_assign: string;
+    activity_action_seat_unassign: string;
+    activity_action_seat_swap: string;
+    activity_action_conflict_create: string;
+    activity_action_conflict_delete: string;
+    activity_action_print_seating_chart: string;
+    activity_action_print_place_cards: string;
+    activity_action_export_delete: string;
+    activity_action_rsvp_submit: string;
+    activity_action_rsvp_add_member: string;
+    activity_action_invite_create: string;
+    activity_action_invite_cancel: string;
+    activity_action_invite_accept: string;
+    activity_action_supplier_cost_upsert: string;
+    activity_action_supplier_community_create: string;
     payments_title: string;
     payments_body: string;
     /** Security section — change-password form lives here. Collapsible:

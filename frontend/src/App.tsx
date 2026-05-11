@@ -24,6 +24,8 @@ import ProfilePage from "./pages/ProfilePage";
 import RsvpCheckinPage from "./pages/RsvpCheckinPage";
 import RsvpPage from "./pages/RsvpPage";
 import SeatingPage from "./pages/SeatingPage";
+import HoneymoonPage from "./pages/HoneymoonPage";
+import MediaPage from "./pages/MediaPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import TermsPage from "./pages/TermsPage";
 import VendorsPage from "./pages/VendorsPage";
@@ -239,6 +241,26 @@ export default function App() {
           <Page>
             <RequireAuth>
               <SuppliersPage />
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/honeymoon"
+        element={
+          <Page>
+            <RequireAuth>
+              <HoneymoonPage />
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/media"
+        element={
+          <Page>
+            <RequireAuth>
+              <MediaPage />
             </RequireAuth>
           </Page>
         }

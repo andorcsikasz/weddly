@@ -1,9 +1,11 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
 import {
+  Camera,
   ChefHat,
   Heart,
   LayoutDashboard,
   MessageCircle,
+  Plane,
   Users,
   UtensilsCrossed,
 } from "lucide-react";
@@ -48,6 +50,18 @@ const ITEMS: NavItem[] = [
     labelKey: "nav.suppliers",
     tabKey: "nav.tab_suppliers",
     icon: <Heart size={18} />,
+  },
+  // Post-wedding "follow-up" entries — desktop sidebar only; bottom mobile
+  // nav stays at 5 items via `slice(0, 5)` further down.
+  {
+    to: "/app/honeymoon",
+    labelKey: "nav.honeymoon",
+    icon: <Plane size={18} />,
+  },
+  {
+    to: "/app/media",
+    labelKey: "nav.media",
+    icon: <Camera size={18} />,
   },
 ];
 
