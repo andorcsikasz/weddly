@@ -212,9 +212,11 @@ export interface LocaleMessages {
     kpi_budget_label: string;
     kpi_budget_unit: string;
     kpi_budget_no_cap: string;
-    kpi_seated_label: string;
-    kpi_seated_unit: string;
-    kpi_seated_no_data: string;
+    /** Cost per guest, falling back from actual/confirmed to planned/target. */
+    kpi_roi_label: string;
+    kpi_roi_unit_actual: string;
+    kpi_roi_unit_planned: string;
+    kpi_roi_no_data: string;
     rsvp_breakdown_title: string;
     rsvp_yes: string;
     rsvp_no: string;

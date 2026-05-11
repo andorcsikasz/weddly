@@ -13,6 +13,7 @@ import type {
 import {
   CalendarHeart,
   ChefHat,
+  Coins,
   Heart,
   Mail,
   Printer,
@@ -114,6 +115,16 @@ export default function DashboardPage() {
   const overCap = cap !== null && totalPlanned > cap;
   const costPerConfirmedGuest =
     rsvp.yes > 0 && totalActual > 0 ? Math.round(totalActual / rsvp.yes) : null;
+
+  // ── ROI / cost-per-guest ─────────────────────────────────────────────
+  // Prefer actual ÷ confirmed; fall back to planned ÷ target so the tile is
+  // still useful before any actuals or RSVPs have come in.
+  const roiPlannedDenom = targetCount ?? totalGuests;
+  const roiPlanned =
+    totalPlanned > 0 && roiPlannedDenom > 0 ? Math.round(totalPlanned / roiPlannedDenom) : null;
+  const roiUseActual = costPerConfirmedGuest !== null;
+  const roiValue = costPerConfirmedGuest ?? roiPlanned;
+  const roiDenom = roiUseActual ? rsvp.yes : roiPlannedDenom;
 
   // ── Cost-planning baseline & inline-edit handler ──────────────────────
   // Same baseline rules as BudgetPage so the slider stays consistent across
@@ -284,20 +295,19 @@ export default function DashboardPage() {
           progressOver={cap !== null && totalActual > cap}
         />
         <KpiTile
-          label={t("dashboard.kpi_seated_label")}
-          icon={<ChefHat size={16} aria-hidden="true" />}
-          value={formatNumber(seatedConfirmed, locale)}
+          label={t("dashboard.kpi_roi_label")}
+          icon={<Coins size={16} aria-hidden="true" />}
+          value={roiValue !== null ? formatHuf(roiValue, locale) : "—"}
           unit={
-            confirmedGuests.length > 0
-              ? t("dashboard.kpi_seated_unit", {
-                  total: formatNumber(confirmedGuests.length, locale),
-                })
-              : t("dashboard.kpi_seated_no_data")
-          }
-          progress={
-            confirmedGuests.length > 0
-              ? Math.round((seatedConfirmed / confirmedGuests.length) * 100)
-              : null
+            roiValue === null
+              ? t("dashboard.kpi_roi_no_data")
+              : roiUseActual
+                ? t("dashboard.kpi_roi_unit_actual", {
+                    n: formatNumber(roiDenom, locale),
+                  })
+                : t("dashboard.kpi_roi_unit_planned", {
+                    n: formatNumber(roiDenom, locale),
+                  })
           }
         />
       </section>
@@ -408,14 +418,6 @@ export default function DashboardPage() {
           onEditPlanned={setCategoryPlanned}
           onCapChange={saveCap}
         />
-        {costPerConfirmedGuest !== null && (
-          <p className="mt-2 text-right text-xs text-ink-500">
-            {t("dashboard.cost_per_guest")}:{" "}
-            <span className="stat-num font-medium text-ink-700">
-              {formatHuf(costPerConfirmedGuest, locale)}
-            </span>
-          </p>
-        )}
       </section>
 
       {/* ── Invite partner — only if not yet linked. ───────────────── */}
