@@ -335,6 +335,15 @@ export default function OnboardingWizard() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    // Guard against a stray submit from steps 0–3. The Next button and the
+    // Finish button share the same on-screen position; if the click that
+    // fired `setStep(s + 1)` arrives just after the re-render, it lands on
+    // the now-submit button and fires this handler from step 4 the moment
+    // step 4 paints — the user sees the last step flash for a single frame
+    // before navigate() to /app. Also defends against an Enter keypress in
+    // an earlier-step input field. Submission only fires on the real final step.
+    if (step !== TOTAL_STEPS - 1) return;
+    if (submitting) return;
     setSubmitting(true);
     setError(null);
     try {
