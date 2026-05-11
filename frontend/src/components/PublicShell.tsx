@@ -103,7 +103,7 @@ function PublicHeader() {
             wordmark logo is the only thing that visually leads. */}
         <div className="ml-auto flex items-center gap-3">
           <a
-            href={`mailto:hello@weddly.hu?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
+            href={`mailto:test.andorcsikasz@gmail.com?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
             className="hidden text-sm text-ink-600 transition-colors hover:text-ink-900 lg:inline-flex"
           >
             {t("landing.nav_feedback")}
@@ -167,7 +167,7 @@ function PublicHeader() {
               {t("landing.cta_login")}
             </Link>
             <a
-              href={`mailto:hello@weddly.hu?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
+              href={`mailto:test.andorcsikasz@gmail.com?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
               className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
               onClick={() => setMenuOpen(false)}
             >
