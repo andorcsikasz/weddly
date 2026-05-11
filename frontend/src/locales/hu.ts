@@ -291,6 +291,8 @@ const hu: LocaleMessages = {
     nav_how: "Hogyan működik",
     nav_suppliers: "Szolgáltatók",
     nav_vendors: "Szolgáltatóknak",
+    nav_feedback: "Visszajelzés",
+    nav_feedback_subject: "Wēddly · visszajelzés",
     vendor_pill: "Szolgáltató vagy? Kerüljetek a listára",
     guest_link: "Vendégként jöttél? Itt a meghívókódod helye",
     phases_title: "Az öt fázis, egy helyen",
@@ -774,6 +776,11 @@ const hu: LocaleMessages = {
     save_aria: "Mentés",
     unsave_aria: "Mentés visszavonása",
     saved_filter: "Mentett ({n})",
+    cost_planned_label: "Tervezett",
+    cost_actual_label: "Tényleges",
+    cost_saved_indicator: "Mentve",
+    cost_currency_suffix: "Ft",
+    cost_help: "Mentés automatikusan, amikor kilépsz a mezőből.",
     submit: {
       title: "Tipp leadása",
       intro:

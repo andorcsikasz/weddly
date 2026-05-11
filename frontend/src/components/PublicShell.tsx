@@ -102,6 +102,12 @@ function PublicHeader() {
         {/* Right cluster: every interactive item at text-sm so the
             wordmark logo is the only thing that visually leads. */}
         <div className="ml-auto flex items-center gap-3">
+          <a
+            href={`mailto:hello@weddly.hu?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
+            className="hidden text-sm text-ink-600 transition-colors hover:text-ink-900 lg:inline-flex"
+          >
+            {t("landing.nav_feedback")}
+          </a>
           <Link
             to="/login"
             className="hidden text-sm text-ink-700 transition-colors hover:text-ink-900 sm:inline-flex"
@@ -160,6 +166,13 @@ function PublicHeader() {
             >
               {t("landing.cta_login")}
             </Link>
+            <a
+              href={`mailto:hello@weddly.hu?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t("landing.nav_feedback")}
+            </a>
             <button
               type="button"
               onClick={() => {

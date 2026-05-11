@@ -277,6 +277,9 @@ export interface LocaleMessages {
     nav_how: string;
     nav_suppliers: string;
     nav_vendors: string;
+    /** Header link opening a mailto: feedback inbox. Quiet text link. */
+    nav_feedback: string;
+    nav_feedback_subject: string;
     vendor_pill: string;
     guest_link: string;
     phases_title: string;
@@ -749,6 +752,12 @@ export interface LocaleMessages {
     save_aria: string;
     unsave_aria: string;
     saved_filter: string;
+    /** Per-couple planned + final cost row on each supplier card. */
+    cost_planned_label: string;
+    cost_actual_label: string;
+    cost_saved_indicator: string;
+    cost_currency_suffix: string;
+    cost_help: string;
     submit: {
       title: string;
       intro: string;
