@@ -70,7 +70,10 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   // closures share `category` / `unsubscribeToken`, so keep them inline below
   function renderText({ hu, en, ctaUrl, category, unsubscribeToken }: RenderInput): string {
     const lines: string[] = [];
-    lines.push("Weddly");
+    // Plain-text counterpart of the brand header. The macron char (U+0112) is
+    // valid UTF-8 and renders fine in every modern text-mode client; the only
+    // place it might fail is a 1990s telnet reader, which we don't target.
+    lines.push("WĒDDLY");
     lines.push("");
     lines.push(hu.greeting);
     lines.push("");
@@ -146,11 +149,13 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <tr>
         <td align="center" style="padding:32px 16px;">
           <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
-            <!-- Brand header -->
+            <!-- Brand header — wide-tracked serif caps with a macron over the
+                 E. The macron is precomposed (U+0112) so it renders consistently
+                 across every email client without needing a stacked diacritic. -->
             <tr>
               <td align="center" style="padding:0 0 24px 0;">
-                <span style="display:inline-block;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-size:28px;font-weight:600;letter-spacing:0.04em;color:${COLOR.ink};">
-                  Weddly
+                <span style="display:inline-block;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;letter-spacing:0.32em;color:${COLOR.ink};text-transform:none;">
+                  WĒDDLY
                 </span>
               </td>
             </tr>
@@ -235,7 +240,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:12px;line-height:1.5;">${why}</p>
       ${unsubLine}
       <p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:11px;line-height:1.5;letter-spacing:0.04em;">
-        Weddly · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">weddly.xyz</a>
+        <span style="font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:0.24em;">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">weddly.xyz</a>
       </p>
     `;
   }
