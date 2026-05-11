@@ -129,17 +129,16 @@ export default function SuppliersPage() {
   const showSavedOnly = params.get("saved") === "1";
   const sortMode: "top" | "alpha" = params.get("sort") === "alpha" ? "alpha" : "top";
   const viewMode: "list" | "map" = params.get("view") === "map" ? "map" : "list";
-  // Price band: comma-separated set of 1..5. Empty set = no filter.
-  const priceBands = useMemo<Set<number>>(() => {
-    const raw = params.get("price");
-    if (!raw) return new Set();
-    return new Set(
-      raw
-        .split(",")
-        .map((s) => Number(s))
-        .filter((n) => Number.isInteger(n) && n >= 1 && n <= 5),
-    );
-  }, [params]);
+  // Price ceiling: single 1..5 value meaning "show me up to band N". Reads as
+  // a star-rating-style picker. Suppliers without a declared price band pass
+  // through (otherwise the filter would hide community submissions that left
+  // the field blank).
+  const priceMax = (() => {
+    const raw = params.get("price_max");
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isInteger(n) && n >= 1 && n <= 5 ? (n as 1 | 2 | 3 | 4 | 5) : null;
+  })();
   // Guest count: positive integer. Suppliers without a declared capacity
   // pass through (otherwise this filter would hide every photographer).
   const guestsFilter = (() => {
@@ -148,6 +147,9 @@ export default function SuppliersPage() {
     const n = Number(raw);
     return Number.isInteger(n) && n > 0 ? n : null;
   })();
+  // Hover preview state for the price-band dots: when the user moves over dot
+  // N, fill dots 1..N as a preview without persisting until they click.
+  const [priceHover, setPriceHover] = useState<number | null>(null);
 
   function setQuery(next: string) {
     const p = new URLSearchParams(params);
@@ -179,19 +181,10 @@ export default function SuppliersPage() {
     else p.delete("view");
     setParams(p, { replace: true });
   }
-  function togglePriceBand(band: number) {
-    const next = new Set(priceBands);
-    if (next.has(band)) next.delete(band);
-    else next.add(band);
+  function setPriceCeiling(next: number | null) {
     const p = new URLSearchParams(params);
-    if (next.size === 0) p.delete("price");
-    else
-      p.set(
-        "price",
-        Array.from(next)
-          .sort((a, b) => a - b)
-          .join(","),
-      );
+    if (next === null) p.delete("price_max");
+    else p.set("price_max", String(next));
     setParams(p, { replace: true });
   }
   function setGuestsFilter(next: string) {
@@ -274,11 +267,11 @@ export default function SuppliersPage() {
     }
     if (cityFilter) out = out.filter((s) => s.city === cityFilter);
     if (showSavedOnly) out = out.filter((s) => saved.has(s.id));
-    if (priceBands.size > 0) {
-      // Suppliers without a declared price band pass through — the filter only
-      // narrows among declared ones. Otherwise selecting a band would hide
-      // every community submission with a missing field.
-      out = out.filter((s) => s.price_band === null || priceBands.has(s.price_band));
+    if (priceMax !== null) {
+      // "Show me up to band N". Suppliers without a declared price band pass
+      // through — the filter only narrows among declared ones, so community
+      // submissions with a blank field stay visible.
+      out = out.filter((s) => s.price_band === null || s.price_band <= priceMax);
     }
     if (guestsFilter !== null) {
       out = out.filter((s) => {
@@ -319,7 +312,7 @@ export default function SuppliersPage() {
     query,
     sortMode,
     locale,
-    priceBands,
+    priceMax,
     guestsFilter,
   ]);
 
@@ -437,38 +430,56 @@ export default function SuppliersPage() {
         </label>
       </div>
 
-      {/* Row 2: price band pills + guest-count number filter. Both narrow the
-          list to suppliers whose declared value matches; suppliers with no
-          declared value pass through so non-venue cards are not dropped. */}
-      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
+      {/* Row 2: price ceiling (rating-style 5-dot picker) + guest-count number
+          filter, grouped inside a softened container so they read as one
+          control. Both narrow the list to suppliers whose declared value
+          matches; suppliers with no declared value pass through so non-venue
+          cards are not dropped. */}
+      <div
+        className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-200 bg-paper-100/60 px-4 py-3"
+        onMouseLeave={() => setPriceHover(null)}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500">
             {t("suppliers.price_filter_label")}
           </span>
-          <div className="inline-flex flex-wrap items-center gap-1">
+          <div className="inline-flex items-center gap-1.5" role="radiogroup">
             {[1, 2, 3, 4, 5].map((band) => {
-              const active = priceBands.has(band);
+              const target = priceHover ?? priceMax;
+              const active = target !== null && target >= band;
               return (
                 <button
                   key={band}
                   type="button"
-                  onClick={() => togglePriceBand(band)}
-                  aria-pressed={active}
+                  role="radio"
+                  aria-checked={priceMax === band}
                   aria-label={t("suppliers.price_filter_band_aria", { n: band })}
+                  onClick={() => setPriceCeiling(priceMax === band ? null : band)}
+                  onMouseEnter={() => setPriceHover(band)}
+                  onFocus={() => setPriceHover(band)}
+                  onBlur={() => setPriceHover(null)}
                   className={
                     active
-                      ? "inline-flex h-7 items-center rounded-full border border-ink-700 bg-ink-700 px-2.5 font-mono text-[11px] text-paper-100"
-                      : "inline-flex h-7 items-center rounded-full border border-paper-300 bg-paper-50 px-2.5 font-mono text-[11px] text-ink-700 hover:border-ink-300"
+                      ? "h-3.5 w-3.5 rounded-full bg-ink-700 ring-1 ring-ink-700 ring-offset-1 ring-offset-paper-100 transition"
+                      : "h-3.5 w-3.5 rounded-full border border-ink-300 bg-paper-50 transition hover:border-ink-500"
                   }
-                >
-                  <PriceBandDots band={band} />
-                </button>
+                />
               );
             })}
           </div>
+          {priceMax !== null && (
+            <button
+              type="button"
+              onClick={() => setPriceCeiling(null)}
+              className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline"
+            >
+              {t("suppliers.guests_filter_clear")}
+            </button>
+          )}
         </div>
-        <label className="flex items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
+        <div className="hidden h-5 w-px self-center bg-paper-300 sm:block" aria-hidden />
+        <label className="flex items-center gap-3">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500">
             {t("suppliers.guests_filter_label")}
           </span>
           <input
@@ -476,7 +487,7 @@ export default function SuppliersPage() {
             inputMode="numeric"
             min={1}
             step={1}
-            className="input h-8 w-24"
+            className="input h-9 w-24"
             placeholder={t("suppliers.guests_filter_placeholder")}
             value={guestsFilter ?? ""}
             onChange={(e) => setGuestsFilter(e.target.value)}
@@ -486,7 +497,7 @@ export default function SuppliersPage() {
             <button
               type="button"
               onClick={() => setGuestsFilter("")}
-              className="text-xs text-ink-500 underline-offset-2 hover:text-ink-800 hover:underline"
+              className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline"
             >
               {t("suppliers.guests_filter_clear")}
             </button>
@@ -590,95 +601,106 @@ export default function SuppliersPage() {
                   isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                 }`}
               >
-                {/* Card body is a flex row: main column (avatar/name/address/blurb/CTA)
-                    on the left, technical sidebar (price · capacity · vote) on the right.
-                    The sidebar is the consistent "at a glance" strip so the eye can
-                    scan multiple cards quickly. */}
-                <div className="flex gap-4">
+                {/* Single-column body: avatar + name + meta line (with price
+                    band and capacity inline so the meta strip stays one line),
+                    address, blurb, then a bottom action row that places the
+                    contact buttons on the left and the save star + vote on the
+                    right corner. */}
+                <div className="flex items-start gap-3">
+                  <Avatar name={s.name} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={s.name} />
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs uppercase tracking-wide text-ink-500">
-                          <Icon size={12} />
-                          <span>
-                            {t(`suppliers.cat.${s.category}`)} · {s.city}
+                    <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500">
+                      <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                        <Icon size={12} aria-hidden />
+                        {t(`suppliers.cat.${s.category}`)}
+                      </span>
+                      <span aria-hidden className="text-paper-400">
+                        ·
+                      </span>
+                      <span className="uppercase tracking-wide">{s.city}</span>
+                      {s.price_band !== null && (
+                        <>
+                          <span aria-hidden className="text-paper-400">
+                            ·
                           </span>
-                          {s.source === "community" && (
-                            <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600">
-                              {t("suppliers.community_pill")}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
-                    <p className="mt-3 text-sm text-ink-700">
-                      {locale === "hu" ? s.blurb_hu : s.blurb_en}
+                          <span
+                            className="text-ink-600"
+                            title={t("suppliers.price_legend")}
+                            aria-label={t("suppliers.price_legend")}
+                          >
+                            <PriceBandDots band={s.price_band} />
+                          </span>
+                        </>
+                      )}
+                      {(s.capacity_max ?? 0) > 0 && (
+                        <>
+                          <span aria-hidden className="text-paper-400">
+                            ·
+                          </span>
+                          <span
+                            className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600"
+                            aria-label={t("suppliers.capacity_label")}
+                          >
+                            <Users size={11} aria-hidden />
+                            {s.capacity_min && s.capacity_max
+                              ? t("suppliers.capacity_range", {
+                                  min: s.capacity_min,
+                                  max: s.capacity_max,
+                                })
+                              : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
+                          </span>
+                        </>
+                      )}
+                      {s.source === "community" && (
+                        <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600">
+                          {t("suppliers.community_pill")}
+                        </span>
+                      )}
                     </p>
                   </div>
-                  <aside className="flex w-20 shrink-0 flex-col items-end gap-3 text-right">
+                </div>
+                {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
+                <p className="mt-3 text-sm text-ink-700">
+                  {locale === "hu" ? s.blurb_hu : s.blurb_en}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      href={s.website}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="btn-outline btn-sm"
+                    >
+                      {t("suppliers.visit_website")}
+                    </a>
+                    {s.contact_email && (
+                      <a href={`mailto:${s.contact_email}`} className="btn-ghost btn-sm">
+                        <Mail size={14} /> {t("suppliers.contact_email")}
+                      </a>
+                    )}
+                    {s.contact_phone && (
+                      <a href={`tel:${s.contact_phone}`} className="btn-ghost btn-sm">
+                        <Phone size={14} /> {s.contact_phone}
+                      </a>
+                    )}
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => toggleSaved(s.id)}
                       aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
                       aria-pressed={isSaved}
-                      className="text-ink-400 transition hover:text-blush-700"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
                     >
                       <Star
-                        size={16}
+                        size={15}
                         className={isSaved ? "fill-blush-500 text-blush-500" : ""}
                         aria-hidden
                       />
                     </button>
-                    {s.price_band !== null && (
-                      <span
-                        className="text-xs tracking-wider text-ink-500"
-                        title={t("suppliers.price_legend")}
-                        aria-label={t("suppliers.price_legend")}
-                      >
-                        <PriceBandDots band={s.price_band} />
-                      </span>
-                    )}
-                    {(s.capacity_max ?? 0) > 0 && (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600"
-                        aria-label={t("suppliers.capacity_label")}
-                      >
-                        <Users size={10} />
-                        {s.capacity_min && s.capacity_max
-                          ? t("suppliers.capacity_range", {
-                              min: s.capacity_min,
-                              max: s.capacity_max,
-                            })
-                          : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
-                      </span>
-                    )}
-                    <div className="mt-auto pt-1">
-                      <VoteRow supplier={s} onVote={onVote} t={t} />
-                    </div>
-                  </aside>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <a
-                    href={s.website}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="btn-outline btn-sm"
-                  >
-                    {t("suppliers.visit_website")}
-                  </a>
-                  {s.contact_email && (
-                    <a href={`mailto:${s.contact_email}`} className="btn-ghost btn-sm">
-                      <Mail size={14} /> {t("suppliers.contact_email")}
-                    </a>
-                  )}
-                  {s.contact_phone && (
-                    <a href={`tel:${s.contact_phone}`} className="btn-ghost btn-sm">
-                      <Phone size={14} /> {s.contact_phone}
-                    </a>
-                  )}
+                    <VoteRow supplier={s} onVote={onVote} t={t} />
+                  </div>
                 </div>
               </article>
             );
