@@ -1,4 +1,4 @@
-import { Check, ChevronDown, UserCheck } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { BotanicalCorner, EucalyptusStem, WatercolorBlob } from "../components/botanical";
@@ -66,16 +66,6 @@ export default function LandingPage() {
                 </Link>
               </div>
               <p className="mt-3 text-xs text-ink-500">{t("landing.cta_signup_sub")}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  void askGuestCode();
-                }}
-                className="stationery mt-7 inline-flex items-center gap-2.5 rounded-lg border border-paper-400/80 px-5 py-2.5 text-sm font-medium text-ink-900 shadow-sm transition-all hover:border-ink-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 focus-visible:ring-offset-2"
-              >
-                <UserCheck size={15} aria-hidden />
-                {t("landing.guest_link")}
-              </button>
             </div>
             <div className="hidden self-end font-serif text-sm italic text-ink-500 lg:block">
               {t("landing.stats_eyebrow")}
