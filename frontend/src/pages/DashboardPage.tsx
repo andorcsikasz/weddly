@@ -560,8 +560,10 @@ function KpiTile({
         </span>
         {label}
       </div>
-      <div className="stat-num mt-3 text-3xl font-semibold leading-none text-ink-900">{value}</div>
-      <div className="mt-1 text-xs text-ink-500">{unit}</div>
+      <div className="stat-num mt-3 text-center text-3xl font-semibold leading-none text-ink-900">
+        {value}
+      </div>
+      <div className="mt-1 text-center text-xs text-ink-500">{unit}</div>
       {progress !== undefined && progress !== null && (
         <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-paper-200">
           <div
