@@ -185,6 +185,32 @@ export interface CouplePartnerView {
   status: CouplePartnerStatus;
 }
 
+/** A single recent-activity entry for the couple's audit-log surface on the
+ *  Profile page. Drives the dark "what happened" panel so each partner can
+ *  see what the other has done. The server hides anything older than
+ *  {@link COUPLE_ACTIVITY_RETENTION_DAYS} at query time — the raw
+ *  `audit_log` rows themselves stay append-only for legal retention. */
+export interface CoupleActivityEntry {
+  id: number;
+  /** `null` for system actions (e.g. scheduled purge). */
+  actor_id: number | null;
+  /** Resolved server-side; `null` when actor_id is null OR the user row was
+   *  purged. Frontend renders `t("profile.activity_actor_unknown")`. */
+  actor_full_name: string | null;
+  /** Raw event key — e.g. "guest.create". The UI looks up a localised label
+   *  via `t(\`profile.activity_action_${action.replace(".", "_")}\`)`. */
+  action: string;
+  target_kind: string;
+  target_id: number | null;
+  /** Optional human note attached at audit time. */
+  note: string | null;
+  created_at: UnixMs;
+}
+
+/** Window the Profile page exposes for activity. Older rows stay in
+ *  `audit_log` (append-only) but are filtered out of the user-facing view. */
+export const COUPLE_ACTIVITY_RETENTION_DAYS = 14;
+
 // ─── Budget ─────────────────────────────────────────────────────────────────
 
 export type BudgetCategory =

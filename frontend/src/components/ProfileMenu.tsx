@@ -2,6 +2,7 @@
 // button; panel shows name, email, link to /app/profile, and Sign out.
 // Closes on outside click, Escape, route change, or item selection.
 
+import type { CouplePartnerView } from "@shared/types";
 import {
   Inbox,
   LayoutList,
@@ -14,6 +15,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { coupleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 export function ProfileMenu() {
@@ -22,6 +24,11 @@ export function ProfileMenu() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // Partner trickle — fetched once the user is signed in so the header
+  // can stack a second monogram circle alongside the current user's once
+  // the partner has actually joined the workspace. Stays null while the
+  // partner is only "invited" (no name yet) or no partner exists.
+  const [partner, setPartner] = useState<CouplePartnerView | null>(null);
 
   // Close on outside click + Escape.
   useEffect(() => {
@@ -45,10 +52,43 @@ export function ProfileMenu() {
     setOpen(false);
   }, [location.pathname]);
 
+  // Hydrate partner once per signed-in session. We don't need realtime
+  // updates here — a refresh picks up "partner joined" when their session
+  // actually goes live, and the absence of the second circle while invited
+  // is itself a useful "they haven't accepted yet" signal.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setPartner(null);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await coupleApi.partner();
+        if (!cancelled) setPartner(res.partner);
+      } catch {
+        if (!cancelled) setPartner(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   if (!user) return null;
 
   const initials = getInitials(user.full_name, user.email);
   const firstName = (user.full_name || user.email).trim().split(/\s+/)[0] ?? "";
+  // Only stack the partner monogram once they've actually joined — while
+  // the partner is "invited" (no name, no account) showing a placeholder
+  // would lie about presence.
+  const showPartner =
+    partner !== null &&
+    (partner.status === "joined" || partner.status === "active") &&
+    !!partner.full_name;
+  const partnerInitials = showPartner
+    ? getInitials(partner.full_name ?? "", partner.email ?? "")
+    : "";
 
   return (
     <div ref={wrapRef} className="relative">
@@ -63,8 +103,23 @@ export function ProfileMenu() {
         {firstName && (
           <span className="hidden text-sm font-medium text-ink-800 lg:inline">{firstName}</span>
         )}
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900">
-          {initials}
+        <span className="flex items-center">
+          {showPartner && (
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-blush-700 text-xs font-semibold uppercase text-paper-100 ring-2 ring-paper-50"
+              title={partner?.full_name ?? ""}
+            >
+              {partnerInitials}
+            </span>
+          )}
+          <span
+            className={`flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 ${
+              showPartner ? "-ml-3 ring-2 ring-paper-50" : ""
+            }`}
+          >
+            {initials}
+          </span>
         </span>
         <ChevronDownIcon />
       </button>

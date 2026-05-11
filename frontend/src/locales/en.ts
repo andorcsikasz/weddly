@@ -155,7 +155,7 @@ const en: LocaleMessages = {
     intro:
       "A few quick questions and your workspace is ready. Everything stays editable — these are just gentle starting points so you can focus on the wedding itself.",
     step1_title: "Who's getting married?",
-    step1_help: 'Your names show up across the workspace, e.g. "Partner 1 & Partner 2".',
+    step1_help: 'Your names show up across the workspace, e.g. "Anna & Ben".',
     step1_short: "Couple",
     step2_short: "Date",
     step3_short: "Guests",

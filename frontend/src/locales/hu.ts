@@ -154,7 +154,7 @@ const hu: LocaleMessages = {
     intro:
       "Pár kérdés, és kezetekben az egész. Ezek csak kiindulópontok — bármit átírhattok útközben, a Wēddly meg követi.",
     step1_title: "Kik házasodnak?",
-    step1_help: "A neveitek a kezelőfelületen jelennek meg, pl. „Társ 1 & Társ 2”.",
+    step1_help: "A neveitek a kezelőfelületen jelennek meg, pl. „Anna & Bence”.",
     step1_short: "Páros",
     step2_short: "Dátum",
     step3_short: "Vendégek",

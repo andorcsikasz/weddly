@@ -6,6 +6,8 @@ import {
   type BudgetKind,
   type CeremonyKind,
   type Couple,
+  type CoupleActivityEntry,
+  COUPLE_ACTIVITY_RETENTION_DAYS,
   type CoupleInvite,
   type CouplePartnerView,
   DEFAULT_BUDGET_SPLIT,
@@ -1150,10 +1152,113 @@ function handleGetPartner(ctx: Ctx): Response {
   return json({ partner });
 }
 
+/** Recent-activity feed for the Profile page. We surface only the events
+ *  worth showing partners — saves / uploads / deletes / exports / RSVPs —
+ *  and drop low-signal admin/auth chatter. The 14-day window is enforced
+ *  here at query time; the underlying `audit_log` rows stay append-only
+ *  per CLAUDE.md's retention rule, so the storage-level effect is "still
+ *  there for forensics, hidden from the user-facing UI". */
+const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
+  // Couple workspace
+  "couple.update",
+  "couple.slug_update",
+  "couple.archive",
+  "couple.pause",
+  "couple.unpause",
+  "couple.notify_date_change",
+  "couple.onboard",
+  "couple.export",
+  // Guests
+  "guest.create",
+  "guest.update",
+  "guest.delete",
+  "guest.csv_import",
+  "guest.csv_export",
+  // Households
+  "household.create",
+  "household.update",
+  "household.delete",
+  "household.regen_code",
+  // Budget
+  "budget.line_create",
+  "budget.line_update",
+  "budget.line_delete",
+  "budget.snapshot_create",
+  "budget.snapshot_delete",
+  // Seating
+  "table.create",
+  "table.update",
+  "table.delete",
+  "seat.assign",
+  "seat.unassign",
+  "seat.swap",
+  "conflict.create",
+  "conflict.delete",
+  // Print + archive
+  "print.seating_chart",
+  "print.place_cards",
+  "export.delete",
+  // RSVP + invite
+  "rsvp.submit",
+  "rsvp.add_member",
+  "invite.create",
+  "invite.cancel",
+  "invite.accept",
+  // Cost rows + suppliers attached to the couple
+  "supplier_cost.upsert",
+  "supplier.community.create",
+]);
+
+interface ActivityRow {
+  id: number;
+  actor_user_id: number | null;
+  action: string;
+  target_kind: string;
+  target_id: number | null;
+  note: string | null;
+  created_at: number;
+  actor_full_name: string | null;
+}
+
+function handleGetActivity(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const cutoff = now() - COUPLE_ACTIVITY_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const placeholders = Array.from(ACTIVITY_VISIBLE_ACTIONS, () => "?").join(",");
+  const rows = db
+    .prepare(
+      `SELECT a.id, a.actor_user_id, a.action, a.target_kind, a.target_id, a.note,
+              a.created_at, u.full_name AS actor_full_name
+         FROM audit_log a
+         LEFT JOIN users u ON u.id = a.actor_user_id
+        WHERE a.couple_id = ?
+          AND a.created_at >= ?
+          AND a.action IN (${placeholders})
+        ORDER BY a.id DESC
+        LIMIT 60`,
+    )
+    .all(couple.id, cutoff, ...ACTIVITY_VISIBLE_ACTIONS) as ActivityRow[];
+
+  const entries: CoupleActivityEntry[] = rows.map((r) => ({
+    id: r.id,
+    actor_id: r.actor_user_id,
+    actor_full_name: r.actor_full_name,
+    action: r.action,
+    target_kind: r.target_kind,
+    target_id: r.target_id,
+    note: r.note,
+    created_at: r.created_at,
+  }));
+  return json({ entries });
+}
+
 export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/onboard", handleOnboard, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
   router.get("/api/couples/partner", handleGetPartner, true);
+  router.get("/api/couples/activity", handleGetActivity, true);
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.post("/api/couples/invites", handleCreateInvite, true);

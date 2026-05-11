@@ -3,6 +3,7 @@
 
 import type {
   Couple,
+  CoupleActivityEntry,
   CouplePartnerStatus,
   CouplePartnerView,
   CouplePauseRequest,
@@ -85,6 +86,11 @@ export default function ProfilePage() {
   const [removing, setRemoving] = useState<number | null>(null);
   const [partner, setPartner] = useState<CouplePartnerView | null>(null);
   const [cancellingInvite, setCancellingInvite] = useState(false);
+  /** Two-click confirmation for cancel-invite — invalidating the partner's
+   *  link is irreversible, so a single accidental tap shouldn't fire it.
+   *  Mirrors the archive-document delete pattern below (4s auto-disarm). */
+  const [armedCancelInvite, setArmedCancelInvite] = useState(false);
+  const [activity, setActivity] = useState<CoupleActivityEntry[]>([]);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNext, setPwNext] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -96,17 +102,19 @@ export default function ProfilePage() {
   const [emailSubmitting, setEmailSubmitting] = useState(false);
 
   async function refresh() {
-    const [pause, current, docs, partnerRes] = await Promise.all([
+    const [pause, current, docs, partnerRes, activityRes] = await Promise.all([
       pauseApi.status(),
       coupleApi.current(),
       documentsApi.list(),
       coupleApi.partner(),
+      coupleApi.activity(),
     ]);
     setCoupleStatus(pause.couple_status);
     setPauseReq(pause.pause_request);
     setCouple(current.couple);
     setDocuments(docs.exports);
     setPartner(partnerRes.partner);
+    setActivity(activityRes.entries);
   }
   async function refreshDocuments() {
     try {
@@ -145,6 +153,13 @@ export default function ProfilePage() {
   }
 
   async function cancelPendingInvite() {
+    // First click arms the button; second click within 4s fires the cancel.
+    // Auto-disarm is handled by the useEffect below.
+    if (!armedCancelInvite) {
+      setArmedCancelInvite(true);
+      return;
+    }
+    setArmedCancelInvite(false);
     setCancellingInvite(true);
     try {
       await coupleApi.cancelInvite();
@@ -271,6 +286,13 @@ export default function ProfilePage() {
     return () => window.clearTimeout(timer);
   }, [armedDeleteId]);
 
+  // Same auto-disarm window for the cancel-invite button.
+  useEffect(() => {
+    if (!armedCancelInvite) return;
+    const timer = window.setTimeout(() => setArmedCancelInvite(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [armedCancelInvite]);
+
   async function clickDelete(doc: DataExportSummary) {
     if (armedDeleteId !== doc.id) {
       setArmedDeleteId(doc.id);
@@ -386,13 +408,19 @@ export default function ProfilePage() {
                 <p className="text-xs text-ink-500">{t("profile.partner_invited_hint")}</p>
                 <button
                   type="button"
-                  className="btn-outline btn-sm"
+                  className={`btn-sm ${
+                    armedCancelInvite
+                      ? "rounded-xl border border-blush-500 bg-blush-500 px-4 text-paper-100 transition-colors hover:bg-blush-600"
+                      : "btn-outline"
+                  }`}
                   onClick={cancelPendingInvite}
                   disabled={cancellingInvite}
                 >
                   {cancellingInvite
                     ? t("profile.partner_invite_cancelling")
-                    : t("profile.partner_invite_cancel")}
+                    : armedCancelInvite
+                      ? t("profile.partner_invite_cancel_confirm")
+                      : t("profile.partner_invite_cancel")}
                 </button>
               </div>
             )}
@@ -600,6 +628,13 @@ export default function ProfilePage() {
         )}
       </section>
 
+      <ActivityPanel
+        entries={activity}
+        currentUserId={authUser?.id ?? null}
+        locale={locale}
+        t={t}
+      />
+
       {authUser && couple && (
         <section className="card mt-6">
           <h2 className="text-lg">{t("profile.leave_couple_title")}</h2>
@@ -675,5 +710,73 @@ function PartnerStatusPill({
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${cls}`}>
       {t(`profile.partner_status_${status}`)}
     </span>
+  );
+}
+
+/** Compact human time — relative for recent events, locale date+time for
+ *  anything older than a week. Helper for the activity panel. */
+function relativeTime(
+  ms: number,
+  locale: Locale,
+  t: (k: string, v?: Record<string, string | number>) => string,
+): string {
+  const diffMs = Date.now() - ms;
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return t("profile.activity_just_now");
+  if (diffMin < 60) return t("profile.activity_mins_ago", { n: diffMin });
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return t("profile.activity_hours_ago", { n: diffHour });
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay === 1) return t("profile.activity_yesterday");
+  if (diffDay < 7) return t("profile.activity_days_ago", { n: diffDay });
+  return formatTimestamp(ms, locale);
+}
+
+/** Dark "what happened" panel — the Profile-page audit log. Reads as a
+ *  console card (ink-900 bg, paper-100 text) so the eye treats it as a
+ *  log, not a content surface. Matches the user's "fekete doboz" ask. */
+function ActivityPanel({
+  entries,
+  currentUserId,
+  locale,
+  t,
+}: {
+  entries: CoupleActivityEntry[];
+  currentUserId: number | null;
+  locale: Locale;
+  t: (k: string, v?: Record<string, string | number>) => string;
+}) {
+  return (
+    <section className="mt-6 overflow-hidden rounded-2xl bg-ink-900 text-paper-100 shadow-pop">
+      <header className="border-b border-ink-800 px-6 py-4">
+        <h2 className="text-lg text-paper-50">{t("profile.activity_title")}</h2>
+        <p className="mt-1 text-xs text-ink-200">{t("profile.activity_body")}</p>
+      </header>
+      {entries.length === 0 ? (
+        <p className="px-6 py-5 text-sm text-ink-300">{t("profile.activity_empty")}</p>
+      ) : (
+        <ul className="divide-y divide-ink-800">
+          {entries.map((e) => {
+            const actorIsSelf = e.actor_id !== null && e.actor_id === currentUserId;
+            const actorName = actorIsSelf
+              ? t("profile.activity_actor_you")
+              : (e.actor_full_name ?? t("profile.activity_actor_unknown"));
+            const actionKey = `profile.activity_action_${e.action.replace(/\./g, "_")}`;
+            return (
+              <li
+                key={e.id}
+                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-6 py-3 text-sm"
+              >
+                <span className="font-medium text-paper-50">{actorName}</span>
+                <span className="text-paper-200">{t(actionKey)}</span>
+                <span className="ml-auto font-mono text-xs text-ink-300">
+                  {relativeTime(e.created_at, locale, t)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

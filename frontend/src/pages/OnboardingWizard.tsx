@@ -392,7 +392,7 @@ export default function OnboardingWizard() {
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="bride_name" className="field-label">
-                    {t("onboarding.partner_one_label")}
+                    {t("onboarding.bride_name_label")}
                   </label>
                   <input
                     id="bride_name"
@@ -403,7 +403,7 @@ export default function OnboardingWizard() {
                 </div>
                 <div>
                   <label htmlFor="groom_name" className="field-label">
-                    {t("onboarding.partner_two_label")}
+                    {t("onboarding.groom_name_label")}
                   </label>
                   <input
                     id="groom_name"

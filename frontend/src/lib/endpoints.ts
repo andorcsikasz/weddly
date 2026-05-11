@@ -10,6 +10,7 @@ import type {
   CeremonyKind,
   CheckinSubmitBody,
   Couple,
+  CoupleActivityEntry,
   CoupleInvite,
   CouplePartnerView,
   CouplePauseRequest,
@@ -97,6 +98,9 @@ export interface OnboardInput {
 export const coupleApi = {
   current: () => apiFetch<{ couple: Couple | null }>("GET", "/api/couples/current"),
   partner: () => apiFetch<{ partner: CouplePartnerView | null }>("GET", "/api/couples/partner"),
+  /** Last 14 days of partner-visible activity (saves, uploads, deletes,
+   *  RSVPs, exports). Used by the Profile "activity" panel. */
+  activity: () => apiFetch<{ entries: CoupleActivityEntry[] }>("GET", "/api/couples/activity"),
   onboard: (body: OnboardInput) =>
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
   /** Partial update — supports `wedding_date_goal`, `budget_goal`, `ceremony_kind`. */

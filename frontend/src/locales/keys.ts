@@ -1350,6 +1350,10 @@ export interface LocaleMessages {
      *  invite is in flight). */
     partner_invited_hint: string;
     partner_invite_cancel: string;
+    /** Armed label shown after the first cancel-invite click. Second click
+     *  within 4s actually fires the request — guards against an accidental
+     *  click that would invalidate the partner's link. */
+    partner_invite_cancel_confirm: string;
     partner_invite_cancelling: string;
     /** Activity log — dark "what happened in the workspace" panel. The
      *  per-action `activity_action_*` keys cover the visible set defined

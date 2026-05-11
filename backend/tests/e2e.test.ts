@@ -880,6 +880,61 @@ describe("onboarding + invites", () => {
     expect(r.status).toBe(401);
   });
 
+  test("GET /api/couples/activity surfaces saves/uploads with actor + filters by window", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("act@weddly.test");
+
+    // Generate a few partner-visible actions.
+    await req("POST", "/api/guests", { full_name: "Activity Guest 1" }, { token });
+    await req(
+      "POST",
+      "/api/guests/import",
+      { csv: "full_name,email\nActivity Guest 2,a2@x.com\n" },
+      { token },
+    );
+    await req("GET", "/api/couples/export", undefined, { token });
+
+    const r = await req<{
+      entries: { id: number; action: string; actor_full_name: string | null }[];
+    }>("GET", "/api/couples/activity", undefined, { token });
+    expect(r.status).toBe(200);
+    const actions = r.data.entries.map((e) => e.action);
+    expect(actions).toContain("guest.create");
+    expect(actions).toContain("guest.csv_import");
+    expect(actions).toContain("couple.export");
+    // Every entry from this user has the actor's name resolved.
+    expect(r.data.entries.every((e) => e.actor_full_name === "Owner")).toBe(true);
+    // Low-signal admin/auth actions are filtered out.
+    expect(actions.some((a) => a.startsWith("auth."))).toBe(false);
+    expect(actions.some((a) => a.startsWith("admin."))).toBe(false);
+
+    // 14-day retention: backdate one row > 14 days and confirm it falls off
+    // the feed. The raw audit_log row stays in place (append-only).
+    const stale = Date.now() - 15 * 24 * 60 * 60 * 1000;
+    const inserted = db
+      .prepare(
+        "INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at) VALUES (NULL, ?, 'guest.create', 'guest', NULL, ?)",
+      )
+      .run(coupleId, stale);
+    const oldId = Number(inserted.lastInsertRowid);
+    const filtered = await req<{ entries: { id: number }[] }>(
+      "GET",
+      "/api/couples/activity",
+      undefined,
+      { token },
+    );
+    expect(filtered.data.entries.some((e) => e.id === oldId)).toBe(false);
+    const rawHit = db.prepare("SELECT id FROM audit_log WHERE id = ?").get(oldId) as
+      | { id: number }
+      | undefined;
+    expect(rawHit?.id).toBe(oldId);
+  });
+
+  test("GET /api/couples/activity requires auth", async () => {
+    const r = await req("GET", "/api/couples/activity");
+    expect(r.status).toBe(401);
+  });
+
   test("GET /api/couples/invites/current surfaces / clears the pending invite", async () => {
     wipeAll();
     const a = await req<{ token: string }>("POST", "/api/auth/register", {
