@@ -585,6 +585,9 @@ const en: LocaleMessages = {
     form_email_label: "Email",
     form_category_label: "Category",
     form_category_placeholder: "e.g. venue, photo, catering",
+    form_location_label: "Address / Google Maps link",
+    form_location_placeholder: "e.g. Budapest, or https://maps.app.goo.gl/…",
+    form_location_help: "Address or map link — helps us place you by region. Optional.",
     form_submit: "Join the waitlist",
     form_submitting: "Sending…",
     form_success_title: "You're on the waitlist.",
@@ -599,7 +602,7 @@ const en: LocaleMessages = {
     contact_title: "We aren't onboarding vendors yet — you'll go on the waitlist",
     contact_body:
       "Fill in the form below and we'll send a confirmation to the email you provide. When we open in your category, you'll be the first to hear from us.",
-    contact_cta: "Send email",
+    contact_cta: "Pre-register",
     contact_subject: "Vendor waitlist",
     back_to_landing: "Back to the landing page",
   },

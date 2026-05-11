@@ -10,6 +10,7 @@ export interface VendorWaitlistRow {
   business_name: string;
   email: string;
   category: string;
+  location: string | null;
   message: string | null;
   status: string;
   reviewed_by_user_id: number | null;
@@ -22,6 +23,7 @@ export interface VendorWaitlistEntry {
   business_name: string;
   email: string;
   category: string;
+  location: string | null;
   message: string | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
@@ -38,6 +40,7 @@ export function toVendorWaitlistEntry(row: VendorWaitlistRow): VendorWaitlistEnt
     business_name: row.business_name,
     email: row.email,
     category: row.category,
+    location: row.location,
     message: row.message,
     status: toStatus(row.status),
     reviewed_at: row.reviewed_at,
@@ -63,15 +66,16 @@ export function insertVendorWaitlist(input: {
   business_name: string;
   email: string;
   category: string;
+  location: string | null;
   message: string | null;
 }): VendorWaitlistRow {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO vendor_waitlist (business_name, email, category, message, status, created_at)
-       VALUES (?, ?, ?, ?, 'new', ?)`,
+      `INSERT INTO vendor_waitlist (business_name, email, category, location, message, status, created_at)
+       VALUES (?, ?, ?, ?, ?, 'new', ?)`,
     )
-    .run(input.business_name, input.email, input.category, input.message, ts);
+    .run(input.business_name, input.email, input.category, input.location, input.message, ts);
   const row = getVendorWaitlistById(Number(result.lastInsertRowid));
   if (!row) throw new Error("Failed to read inserted waitlist row");
   return row;

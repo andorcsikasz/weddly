@@ -3742,6 +3742,7 @@ describe("vendor waitlist", () => {
     business_name: string;
     email: string;
     category: string;
+    location: string | null;
     message: string | null;
     status: "new" | "contacted" | "dismissed";
   }
@@ -3761,10 +3762,12 @@ describe("vendor waitlist", () => {
       business_name: "Florea Studio",
       email: "florea@example.test",
       category: "decor_floral",
+      location: "Budapest, Hungary",
       message: "Floral, Budapest area.",
     });
     expect(submit.status).toBe(201);
     expect(submit.data.entry.status).toBe("new");
+    expect(submit.data.entry.location).toBe("Budapest, Hungary");
 
     const list = await req<{ entries: Entry[] }>("GET", "/api/admin/vendor-waitlist", undefined, {
       token: adminReg.data.token,
@@ -3772,6 +3775,7 @@ describe("vendor waitlist", () => {
     expect(list.status).toBe(200);
     expect(list.data.entries.length).toBe(1);
     expect(list.data.entries[0]?.business_name).toBe("Florea Studio");
+    expect(list.data.entries[0]?.location).toBe("Budapest, Hungary");
 
     // A confirmation email is queued to the submitter's address. With no
     // RESEND_API_KEY in tests, mailer.ts logs to stdout and email_log is
@@ -3805,6 +3809,15 @@ describe("vendor waitlist", () => {
       category: "made-up",
     });
     expect(bad3.status).toBe(400);
+    // Location is optional, but capped at 500 chars to keep the field free-
+    // form rather than a full map dump.
+    const bad4 = await req("POST", "/api/vendors/waitlist", {
+      business_name: "A",
+      email: "x@y.z",
+      category: "venue",
+      location: "x".repeat(501),
+    });
+    expect(bad4.status).toBe(400);
   });
 
   test("admin can move status: new → contacted → dismissed → new", async () => {

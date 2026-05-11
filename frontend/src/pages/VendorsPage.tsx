@@ -112,6 +112,7 @@ function WaitlistContact() {
   const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState<SupplierCategory | "">("");
+  const [location, setLocation] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -124,6 +125,7 @@ function WaitlistContact() {
 
     const name = businessName.trim();
     const emailTrim = email.trim();
+    const loc = location.trim();
     const msg = message.trim();
     if (!name) return setErrorMsg(t("vendors.form_err_required"));
     if (!emailTrim || !isLikelyEmail(emailTrim)) {
@@ -137,6 +139,7 @@ function WaitlistContact() {
         business_name: name,
         email: emailTrim,
         category,
+        location: loc ? loc : null,
         message: msg ? msg : null,
       });
       setSubmitted(true);
@@ -221,6 +224,20 @@ function WaitlistContact() {
               </optgroup>
             ))}
           </select>
+        </div>
+        <div>
+          <label htmlFor="vendor-location" className="field-label">
+            {t("vendors.form_location_label")}
+          </label>
+          <input
+            id="vendor-location"
+            className="input"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            maxLength={500}
+            placeholder={t("vendors.form_location_placeholder")}
+          />
+          <p className="field-help">{t("vendors.form_location_help")}</p>
         </div>
         <div>
           <label htmlFor="vendor-message" className="field-label">

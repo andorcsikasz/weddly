@@ -112,6 +112,8 @@ export interface VendorWaitlistReceivedPayload {
    *  "Decor & floral". The route picks the right side based on the email
    *  language; we'll fall back to the slug if neither was provided. */
   categoryLabel: string;
+  /** Free-text address or Google Maps URL, if the submitter provided one. */
+  location: string | null;
   /** Where they can read more about Weddly while they wait. */
   landingUrl: string;
 }
@@ -580,7 +582,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: "Megkaptuk a jelentkezést — várólistán vagytok.",
       greeting: `Szia ${ctx.recipientName || p.businessName || ""}!`.trim(),
       paragraphs: [
-        `Megkaptuk a(z) ${p.businessName} jelentkezését a Wēddly szolgáltatói várólistájára (${p.categoryLabel}).`,
+        `Megkaptuk a(z) ${p.businessName} jelentkezését a Wēddly szolgáltatói várólistájára (${p.categoryLabel}${p.location ? ` · ${p.location}` : ""}).`,
         "Még nem nyitottunk a szolgáltatóknak — egy szűk kategóriánkénti listát építünk, hogy a párok ne 200 szolgáltatóból válogassanak, hanem azokból, akik tényleg passzolnak hozzájuk. Amint nyitunk, e-mailben jelentkezünk.",
         "Addig is, ha van bármi kérdés vagy szeretnétek többet mesélni magatokról, válaszoljatok erre a levélre — emberek olvassák.",
       ],
@@ -590,7 +592,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || p.businessName || "there"},`,
       paragraphs: [
-        `We've received ${p.businessName}'s submission to the Weddly vendor waitlist (${p.categoryLabel}).`,
+        `We've received ${p.businessName}'s submission to the Weddly vendor waitlist (${p.categoryLabel}${p.location ? ` · ${p.location}` : ""}).`,
         "We aren't onboarding suppliers yet — we're building a tight, per-category list so couples don't wade through 200 vendors but see the ones who actually fit. We'll email you the moment we open to applications in your category.",
         "If you'd like to share more or have any questions in the meantime, just reply to this email — a real person reads it.",
       ],

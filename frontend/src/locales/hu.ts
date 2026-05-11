@@ -584,6 +584,9 @@ const hu: LocaleMessages = {
     form_email_label: "E-mail",
     form_category_label: "Kategória",
     form_category_placeholder: "pl. helyszín, fotó, catering",
+    form_location_label: "Cím / Google Maps link",
+    form_location_placeholder: "pl. Budapest, vagy https://maps.app.goo.gl/…",
+    form_location_help: "Cím vagy térképlink — segít a régió szerinti besoroláshoz. Opcionális.",
     form_submit: "Felvesz a várólistára",
     form_submitting: "Küldés…",
     form_success_title: "Várólistán vagytok.",
@@ -598,7 +601,7 @@ const hu: LocaleMessages = {
     contact_title: "Még nem fogadunk szolgáltatókat — várólistán vagytok",
     contact_body:
       "Egyelőre nem onboardolunk szolgáltatókat. Töltsétek ki a lenti űrlapot, és visszaigazoló e-mailt küldünk a megadott címre. Amikor megnyitunk a kategóriátokban, elsőként ti hallotok rólunk.",
-    contact_cta: "E-mail küldése",
+    contact_cta: "Előregisztráció",
     contact_subject: "Szolgáltatói várólista",
     back_to_landing: "Vissza a főoldalra",
   },

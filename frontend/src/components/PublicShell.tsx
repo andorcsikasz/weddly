@@ -245,11 +245,12 @@ function PublicFooter() {
   const askGuestCode = useGuestCodePrompt();
   return (
     <footer className="mt-24 border-t border-paper-300 bg-paper-100/60">
-      {/* Band: guest CTA — italic serif label on the left, stationery-
-          textured button on the right. Matches the hero's guest CTA so
-          the two surfaces feel like one quiet invitation. */}
+      {/* Band: guest CTA — italic serif label sitting just to the left of
+          the stationery-textured button, centred as a single cluster so
+          the invitation reads as one quiet beat instead of two opposed
+          ends of the band. */}
       <div className="border-b border-paper-300">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-4 py-5 sm:flex-row sm:items-center sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:flex-row sm:gap-5 sm:px-6">
           <p className="font-serif text-lg italic text-ink-900 sm:text-xl">
             {t("landing.footer_band_text")}
           </p>

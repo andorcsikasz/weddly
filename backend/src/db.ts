@@ -141,6 +141,10 @@ addColumnIfMissing("seating_tables", "updated_at", "updated_at INTEGER NOT NULL 
 // children together" logic will read it. Boolean stored as 0/1.
 addColumnIfMissing("seating_tables", "is_kids_table", "is_kids_table INTEGER NOT NULL DEFAULT 0");
 
+// Free-text address / Google Maps URL on the public vendor waitlist form.
+// Helps the team triage by region before we open onboarding.
+addColumnIfMissing("vendor_waitlist", "location", "location TEXT");
+
 export function now(): number {
   return Date.now();
 }

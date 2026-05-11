@@ -364,6 +364,7 @@ CREATE TABLE IF NOT EXISTS vendor_waitlist (
   business_name TEXT NOT NULL,
   email TEXT NOT NULL,
   category TEXT NOT NULL,                                      -- one of SupplierCategory
+  location TEXT,                                               -- address or Google Maps URL — free text
   message TEXT,
   status TEXT NOT NULL DEFAULT 'new',                          -- 'new' | 'contacted' | 'dismissed'
   reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,

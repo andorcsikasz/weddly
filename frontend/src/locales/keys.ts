@@ -551,6 +551,9 @@ export interface LocaleMessages {
     form_email_label: string;
     form_category_label: string;
     form_category_placeholder: string;
+    form_location_label: string;
+    form_location_placeholder: string;
+    form_location_help: string;
     form_submit: string;
     form_submitting: string;
     form_success_title: string;
@@ -880,6 +883,9 @@ export interface LocaleMessages {
     save_conflict: string;
     /** Toast when a resize / seat-decrement would orphan a seated guest. */
     table_too_small: string;
+    /** Toast + inline hint when the user clicks + at the perimeter cap. */
+    seats_at_cap: string;
+    seats_at_cap_hint: string;
     pdf_failed: string;
     pdf_cancel: string;
     pdf_loading: string;

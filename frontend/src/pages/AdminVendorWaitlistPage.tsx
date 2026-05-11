@@ -90,6 +90,7 @@ export default function AdminVendorWaitlistPage() {
                       <Mail size={11} aria-hidden />
                       {e.email}
                     </a>
+                    {e.location && <p className="mt-1 text-xs text-ink-500">{e.location}</p>}
                     {e.message && <p className="mt-2 text-xs italic text-ink-500">{e.message}</p>}
                   </td>
                   <td className="hidden py-3 pr-4 md:table-cell">

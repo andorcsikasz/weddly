@@ -54,6 +54,7 @@ interface SubmitBody {
   business_name?: unknown;
   email?: unknown;
   category?: unknown;
+  location?: unknown;
   message?: unknown;
 }
 
@@ -85,6 +86,15 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Invalid category");
   }
 
+  let location: string | null = null;
+  if (body.location != null && body.location !== "") {
+    const loc = trimStr(body.location);
+    if (loc) {
+      if (loc.length > 500) throw new HttpError(400, "location too long (max 500)");
+      location = loc;
+    }
+  }
+
   let message: string | null = null;
   if (body.message != null && body.message !== "") {
     const m = trimStr(body.message);
@@ -94,7 +104,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     }
   }
 
-  const row = insertVendorWaitlist({ business_name, email, category, message });
+  const row = insertVendorWaitlist({ business_name, email, category, location, message });
   addAuditLog({
     actor_user_id: null,
     couple_id: null,
@@ -111,6 +121,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     {
       businessName: business_name,
       categoryLabel: CATEGORY_LABEL_HU[category as SupplierCategory] ?? category,
+      location,
       landingUrl: CONFIG.frontendBaseUrl,
     },
     { user: null, guest: { email, full_name: business_name } },
