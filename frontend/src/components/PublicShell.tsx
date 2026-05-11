@@ -233,7 +233,7 @@ function PublicHeader() {
           </div>
         </nav>
       )}
-      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="landing" />
     </header>
   );
 }

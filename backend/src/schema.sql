@@ -371,3 +371,27 @@ CREATE TABLE IF NOT EXISTS vendor_waitlist (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_vendor_waitlist_status ON vendor_waitlist(status, created_at DESC);
+
+-- Feedback submissions from the in-product "Visszajelzés" dialog. The
+-- dialog is exposed on both the public landing (source='landing') and
+-- the signed-in app shell (source='app'); when the submitter is
+-- authenticated we capture user_id so admins can triage by user. All
+-- three content fields (message / rating / monthly_value_ft) are
+-- optional but at least one is required. Admins triage at
+-- /app/admin/feedback — status moves new → read → resolved → dismissed.
+CREATE TABLE IF NOT EXISTS feedback_submissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source TEXT NOT NULL DEFAULT 'landing',                      -- 'landing' | 'app'
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  message TEXT,
+  rating INTEGER,                                              -- 1..10
+  monthly_value_ft INTEGER,                                    -- 0..15000
+  from_email TEXT,
+  locale TEXT,                                                 -- 'hu' | 'en'
+  status TEXT NOT NULL DEFAULT 'new',                          -- 'new' | 'read' | 'resolved' | 'dismissed'
+  reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback_submissions(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback_submissions(user_id, created_at DESC);

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuth } from "./lib/auth";
 import AboutPage from "./pages/AboutPage";
+import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 import AdminSuppliersPage from "./pages/AdminSuppliersPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminVendorWaitlistPage from "./pages/AdminVendorWaitlistPage";
@@ -283,6 +284,18 @@ export default function App() {
             <RequireAuth>
               <RequireAdmin>
                 <AdminVendorWaitlistPage />
+              </RequireAdmin>
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/admin/feedback"
+        element={
+          <Page>
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminFeedbackPage />
               </RequireAdmin>
             </RequireAuth>
           </Page>

@@ -7,10 +7,11 @@ import {
   Users,
   UtensilsCrossed,
 } from "lucide-react";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { FeedbackDialog } from "./FeedbackDialog";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
@@ -55,6 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const mainRef = useRef<HTMLElement | null>(null);
   const { user } = useAuth();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   // Track previous auth state so we only fire the localStorage sweep on
   // the user → null transition (sign-out), not on the initial null-loading
   // pass that happens before /api/auth/me resolves.
@@ -127,14 +129,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Wordmark size="sm" />
           </Link>
           <div className="flex items-center gap-2">
-            <a
-              href={`mailto:test.andorcsikasz@gmail.com?subject=${encodeURIComponent(t("landing.nav_feedback_subject"))}`}
+            <button
+              type="button"
               className="btn-ghost btn-sm inline-flex items-center gap-1.5"
               aria-label={t("landing.nav_feedback")}
+              onClick={() => setFeedbackOpen(true)}
             >
               <MessageCircle size={14} aria-hidden="true" />
               <span className="hidden sm:inline">{t("landing.nav_feedback")}</span>
-            </a>
+            </button>
             <button
               type="button"
               className="btn-ghost btn-sm inline-flex items-center gap-1.5"
@@ -183,6 +186,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </div>
       </nav>
+
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="app" />
     </div>
   );
 }

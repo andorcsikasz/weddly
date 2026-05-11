@@ -43,6 +43,8 @@ export interface LocaleMessages {
     seating_description: string;
     admin_suppliers_title: string;
     admin_suppliers_description: string;
+    admin_feedback_title: string;
+    admin_feedback_description: string;
     notfound_title: string;
     notfound_description: string;
     onboarding_title: string;
@@ -1101,6 +1103,34 @@ export interface LocaleMessages {
     confirm_hide_body: string;
     confirm_delete_title: string;
     confirm_delete_body: string;
+    /** /app/admin/feedback page — triage of Visszajelzés submissions. */
+    nav_feedback: string;
+    feedback_title: string;
+    feedback_sub: string;
+    feedback_empty: string;
+    feedback_col_submitter: string;
+    feedback_col_message: string;
+    feedback_col_rating: string;
+    feedback_col_monthly: string;
+    feedback_col_source: string;
+    feedback_col_submitted: string;
+    feedback_col_status: string;
+    feedback_col_actions: string;
+    feedback_source_landing: string;
+    feedback_source_app: string;
+    feedback_status_new: string;
+    feedback_status_read: string;
+    feedback_status_resolved: string;
+    feedback_status_dismissed: string;
+    feedback_mark_read: string;
+    feedback_mark_resolved: string;
+    feedback_dismiss: string;
+    feedback_reopen: string;
+    feedback_delete: string;
+    feedback_delete_confirm_title: string;
+    feedback_delete_confirm_body: string;
+    feedback_anon: string;
+    feedback_no_message: string;
   };
   rsvp: {
     title: string;

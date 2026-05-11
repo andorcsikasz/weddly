@@ -15,12 +15,15 @@ import { Dialog } from "./ui/Dialog";
 type FeedbackDialogProps = {
   open: boolean;
   onClose: () => void;
+  /** Surface the dialog was opened from. The backend persists this so admins
+   *  can triage landing-page vs in-product feedback separately. */
+  source?: "landing" | "app";
 };
 
 const MONTHLY_MAX = 15000;
 const MONTHLY_STEP = 500;
 
-export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
+export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDialogProps) {
   const { t, locale } = useT();
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState<number | null>(null);
@@ -51,6 +54,7 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
     setSubmitting(true);
     try {
       await feedbackApi.submit({
+        source,
         message: msg || undefined,
         rating: rating ?? undefined,
         monthly_value_ft: monthly ?? undefined,
@@ -115,13 +119,15 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
             />
           </div>
 
-          {/* Segment 2 — 1–10 rating */}
+          {/* Segment 2 — 1–10 rating. Buttons sit on a single row at all
+              breakpoints; we shrink the chip size and gap so the full set
+              fits even on a 320 px iPhone SE without wrapping. */}
           <div>
             <p className="field-label">{t("landing.feedback_rating_label")}</p>
             <div
               role="radiogroup"
               aria-label={t("landing.feedback_rating_label")}
-              className="mt-1 flex flex-wrap gap-1.5"
+              className="mt-1 grid grid-cols-10 gap-1 sm:gap-1.5"
             >
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
                 const selected = rating === n;
@@ -134,8 +140,8 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
                     onClick={() => setRating(selected ? null : n)}
                     className={
                       selected
-                        ? "h-9 w-9 rounded-full bg-ink-900 text-sm font-medium text-paper-100 transition-colors"
-                        : "h-9 w-9 rounded-full border border-paper-300 bg-white text-sm text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100"
+                        ? "aspect-square w-full rounded-full bg-ink-900 text-xs font-medium text-paper-100 transition-colors sm:text-sm"
+                        : "aspect-square w-full rounded-full border border-paper-300 bg-white text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 sm:text-sm"
                     }
                   >
                     {n}
@@ -150,7 +156,8 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
             </p>
           </div>
 
-          {/* Segment 3 — monthly value slider */}
+          {/* Segment 3 — monthly value slider. The scale-ends labels make it
+              obvious without dragging that the range is 0 → 15.000 Ft. */}
           <div>
             <p className="field-label">{t("landing.feedback_monthly_label")}</p>
             <div className="mt-1">
@@ -169,8 +176,17 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
                     ((monthly ?? 0) / MONTHLY_MAX) * 100
                   }%, var(--color-paper-200, #efe9d9) 100%)`,
                 }}
+                aria-valuemin={0}
+                aria-valuemax={MONTHLY_MAX}
+                aria-valuenow={monthly ?? 0}
                 aria-label={t("landing.feedback_monthly_label")}
               />
+              {/* Scale endpoints. tabular-nums keeps "0 Ft" and "15 000 Ft"
+                  vertically aligned across HU/EN number formats. */}
+              <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-ink-400">
+                <span>{`0 Ft`}</span>
+                <span>{`${MONTHLY_MAX.toLocaleString(locale === "hu" ? "hu" : "en")} Ft`}</span>
+              </div>
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-ink-500">
                   {monthly === null || monthly === 0
