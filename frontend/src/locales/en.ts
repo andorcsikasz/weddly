@@ -821,6 +821,7 @@ const en: LocaleMessages = {
     slider_scope_note: "The slider only scales planned amounts; actual spend stays as recorded.",
     cost_planning_title: "Cost planning",
     cost_planning_with_count: "Live budget · {n} guests",
+    cost_planning_headline: "Live budget",
     cost_planning_help:
       "Drag the slider to see how planned costs shift with headcount. Per-guest categories scale; fixed costs stay put.",
     cost_planning_baseline_note: "{n} guests",

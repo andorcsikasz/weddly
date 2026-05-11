@@ -822,6 +822,7 @@ const hu: LocaleMessages = {
       "A csúszka csak a tervezett összegeket skálázza; a tényleges kiadások nem változnak.",
     cost_planning_title: "Költségtervezés",
     cost_planning_with_count: "Élő költségvetés · {n} vendég",
+    cost_planning_headline: "Élő költségvetés",
     cost_planning_help:
       "Húzd a csúszkát, hogy lásd, hogyan változnak a tervezett költségek a létszámtól. A vendégenkénti tételek skálázódnak; a fix költségek nem.",
     cost_planning_baseline_note: "{n} vendég",

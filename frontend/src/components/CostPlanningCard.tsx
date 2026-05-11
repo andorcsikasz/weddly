@@ -175,12 +175,17 @@ export function CostPlanningCard({
   // over so the cap state is readable at a glance from the headline alone.
   const underAmount = cap !== null && !overCap ? cap - totalPlanned : 0;
 
+  // Arithmetic midpoint of the editable bounds, rounded to nearest 5 — the
+  // "where 75 vendég sits" tick under the slider, distinct from the live
+  // count shown big and centred above.
+  const midCount = Math.round((minCount + maxCount) / 2 / 5) * 5;
+
   return (
     <section className="card">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="font-serif text-xl">
-          {t("budget.cost_planning_with_count", { n: formatNumber(count, locale) })}
-        </h2>
+        <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">
+          {t("budget.cost_planning_headline")}
+        </p>
         {cap !== null &&
           (overCap ? (
             <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700">
@@ -195,8 +200,13 @@ export function CostPlanningCard({
           ))}
       </div>
 
+      {/* Big centred live count — the user's "set number". */}
+      <h2 className="mt-3 text-center font-serif text-3xl text-ink-900 sm:text-4xl">
+        {t("budget.cost_planning_baseline_note", { n: formatNumber(count, locale) })}
+      </h2>
+
       {/* Headcount slider — compact single block. */}
-      <div className="mt-3">
+      <div className="mt-4">
         <input
           type="range"
           min={minCount}
@@ -216,7 +226,8 @@ export function CostPlanningCard({
             onCommit={setMinCount}
             ariaLabel={t("budget.slider_min_aria")}
           />
-          <span>{t("budget.cost_planning_baseline_note", { n: formatNumber(count, locale) })}</span>
+          {/* Midpoint of bounds, snapped to 5 — the geometric centre of the slider. */}
+          <span className="stat-num">{formatNumber(midCount, locale)}</span>
           <CountInput
             value={maxCount}
             min={minCount + 5}

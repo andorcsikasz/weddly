@@ -799,6 +799,8 @@ export interface LocaleMessages {
     // ── Cost-planning panel ─────────────────────────────────────────
     cost_planning_title: string;
     cost_planning_with_count: string;
+    /** Eyebrow above the big centred guest-count tile. */
+    cost_planning_headline: string;
     cost_planning_help: string;
     cost_planning_baseline_note: string;
     lines_title: string;
