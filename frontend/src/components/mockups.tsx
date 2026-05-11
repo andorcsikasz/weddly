@@ -175,7 +175,7 @@ export function WorkspaceMockup({ className }: Common) {
         </text>
       </g>
       <g className="font-sans text-ink-500">
-        <text x="232" y="140" fontSize="14" fill="currentColor">
+        <text x="252" y="140" fontSize="14" fill="currentColor">
           / 3,5M Ft
         </text>
       </g>
@@ -215,7 +215,7 @@ export function WorkspaceMockup({ className }: Common) {
         </text>
       </g>
       <g className="font-sans text-ink-500">
-        <text x="446" y="140" fontSize="14" fill="currentColor">
+        <text x="452" y="140" fontSize="14" fill="currentColor">
           / 120
         </text>
       </g>
