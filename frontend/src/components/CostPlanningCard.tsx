@@ -253,7 +253,8 @@ export function CostPlanningCard({
       <div className="mt-4 border-t border-paper-200 pt-3">
         <div className="flex items-baseline justify-between">
           <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
-            {t("budget.total_actual")}
+            {/* Label tracks what's actually shown — pure planned vs. actual/planned. */}
+            {totalActual > 0 ? t("budget.total_actual") : t("budget.total_planned")}
           </span>
           <span
             className={`stat-num text-xl font-semibold ${overCap ? "text-blush-700" : "text-ink-900"}`}
@@ -312,11 +313,13 @@ function CategoryRow({
   const [localValue, setLocalValue] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Whenever the underlying baseline changes (e.g. saved value), drop the
-  // local override so we re-display the canonical value.
+  // Drop any local drag state when the upstream baseline changes (e.g. lines
+  // refetched, sibling row saved, headcount slider scaled the value). The
+  // [saving] dep keeps the existing post-save reset working when the new
+  // baseline happens to equal the value we just sent.
   useEffect(() => {
     if (!saving) setLocalValue(null);
-  }, [saving]);
+  }, [plannedBaseline, saving]);
 
   const Icon = CATEGORY_ICONS[category];
   const editable = !!onEditPlanned;
