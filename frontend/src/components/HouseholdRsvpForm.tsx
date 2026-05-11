@@ -403,7 +403,7 @@ export function HouseholdRsvpForm({
 
             <div
               role="radiogroup"
-              aria-label={d.full_name}
+              aria-label={t("rsvp.status_for_name", { name: d.full_name })}
               className="grid gap-2 grid-cols-1 sm:grid-cols-3"
             >
               {STATUSES.map((s) => (
@@ -458,12 +458,16 @@ export function HouseholdRsvpForm({
                     onClick={() => togglePlusOne(d)}
                     icon={<Plus size={14} aria-hidden />}
                     label={t("rsvp.tag_plus_one")}
+                    controlsId={`plus-one-${d.id}`}
+                    expanded={d.plus_one !== null}
                   />
                   <Chip
                     on={d.baby !== null}
                     onClick={() => toggleBaby(d)}
                     icon={<Baby size={14} aria-hidden />}
                     label={t("rsvp.tag_baby")}
+                    controlsId={`baby-${d.id}`}
+                    expanded={d.baby !== null}
                   />
                 </div>
 
@@ -599,17 +603,26 @@ function Chip({
   onClick,
   icon,
   label,
+  controlsId,
+  expanded,
 }: {
   on: boolean;
   onClick: () => void;
   icon: ReactNode;
   label: string;
+  /** Optional — when the chip toggles a disclosure (e.g. "+1" reveals a name
+   *  input below), pass the disclosure's id + current expanded state so screen
+   *  readers can announce the relationship. */
+  controlsId?: string;
+  expanded?: boolean;
 }) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={on}
+      aria-controls={controlsId}
+      aria-expanded={controlsId !== undefined ? expanded === true : undefined}
       onClick={onClick}
       className={
         on
@@ -630,19 +643,23 @@ function AttachedNameField({
   value,
   onChange,
 }: {
+  /** Disclosure id — used as the wrapper's `id` so a chip elsewhere can
+   *  point its `aria-controls` at this whole region. The inner <input> gets
+   *  a derived id so the <label htmlFor> still resolves. */
   id: string;
   label: string;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
 }) {
+  const inputId = `${id}-input`;
   return (
-    <div>
-      <label className="field-label" htmlFor={id}>
+    <div id={id}>
+      <label className="field-label" htmlFor={inputId}>
         {label}
       </label>
       <input
-        id={id}
+        id={inputId}
         className="input"
         value={value}
         placeholder={placeholder}

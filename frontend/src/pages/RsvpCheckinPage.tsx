@@ -9,12 +9,14 @@ import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 /** Which input the lookup error highlights. `null` = generic banner. */
 type LookupErrorField = "couple" | "code" | "both" | null;
 
 export default function RsvpCheckinPage() {
   const { t, locale, setLocale } = useT();
+  useDocumentMeta("seo.rsvp_checkin_title", "seo.rsvp_checkin_description");
   const [params, setParams] = useSearchParams();
 
   const initialCouple = (params.get("couple") ?? "").toUpperCase();

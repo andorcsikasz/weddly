@@ -764,6 +764,7 @@ function loadTablesForArchive(coupleId: number): SeatingTable[] {
       is_kids_table: Boolean(r.is_kids_table),
       disabled_seats: disabled,
       created_at: r.created_at,
+      updated_at: r.updated_at,
     };
   });
 }

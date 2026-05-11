@@ -29,10 +29,12 @@ describe("<ToastProvider> + useToast()", () => {
     await waitFor(() => expect(screen.getByText("Saved!")).toBeInTheDocument());
   });
 
-  it("uses role='alert' for error toasts and 'status' for success", async () => {
+  it("uses role='alert' for error toasts", async () => {
     render(withProvider(<Pusher message="Bad" kind="error" duration={0} />));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Bad"));
+  });
 
+  it("uses role='status' for success toasts", async () => {
     render(withProvider(<Pusher message="Good" kind="success" duration={0} />));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Good"));
   });

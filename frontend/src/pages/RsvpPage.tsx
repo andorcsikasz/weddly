@@ -11,10 +11,12 @@ import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 export default function RsvpPage() {
   const { code = "" } = useParams<{ code: string }>();
   const { t, locale, setLocale } = useT();
+  useDocumentMeta("seo.rsvp_legacy_title", "seo.rsvp_legacy_description");
   const [view, setView] = useState<PublicCheckinView | null>(null);
   const [error, setError] = useState<string | null>(null);
 

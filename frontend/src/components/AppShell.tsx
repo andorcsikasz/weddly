@@ -1,7 +1,8 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
 import { ChefHat, Heart, LayoutDashboard, Users, UtensilsCrossed } from "lucide-react";
-import type { ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { type ReactNode, useEffect, useRef } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
@@ -44,12 +45,75 @@ const ITEMS: NavItem[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, locale, setLocale } = useT();
+  const location = useLocation();
+  const mainRef = useRef<HTMLElement | null>(null);
+  const { user } = useAuth();
+  // Track previous auth state so we only fire the localStorage sweep on
+  // the user → null transition (sign-out), not on the initial null-loading
+  // pass that happens before /api/auth/me resolves.
+  const prevUserId = useRef<number | null>(null);
+
+  // ── Workspace handoff cleanup ────────────────────────────────────────
+  // When the user signs out, wipe every `weddly.*` localStorage key so
+  // the next person on this device doesn't inherit the previous tenant's
+  // local prefs (saved suppliers, onboarding draft, dismissed banners,
+  // locale). The session token itself is cleared by `setSession(null)`
+  // in AuthProvider — this just sweeps the rest.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (prevUserId.current !== null && user === null) {
+      try {
+        const keys: string[] = [];
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("weddly.") && k !== "weddly.token") {
+            keys.push(k);
+          }
+        }
+        keys.forEach((k) => localStorage.removeItem(k));
+      } catch {
+        /* localStorage blocked in some embeds — fail soft */
+      }
+    }
+    prevUserId.current = user?.id ?? null;
+  }, [user]);
+
+  // ── Route-change focus management ────────────────────────────────────
+  // SR users land in the new content rather than reading the chrome again.
+  // We only move focus if no other element has explicitly taken it (e.g.
+  // a deep-link autofocused input). Skipping the very first paint keeps
+  // initial-load behaviour quiet.
+  const firstRoute = useRef(true);
+  useEffect(() => {
+    if (firstRoute.current) {
+      firstRoute.current = false;
+      return;
+    }
+    const el = mainRef.current;
+    if (!el) return;
+    // If an input/button in the new route grabbed focus during mount, leave it.
+    if (
+      document.activeElement &&
+      document.activeElement !== document.body &&
+      el.contains(document.activeElement)
+    ) {
+      return;
+    }
+    el.focus({ preventScroll: true });
+  }, [location.pathname]);
+
   // Admin tools (supplier moderation, user/couple directory) live in the
   // ProfileMenu dropdown — sidebar stays focused on couple-facing pages.
   const displayItems = ITEMS;
 
   return (
     <div className="min-h-full">
+      <a
+        href="#main-content"
+        className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2"
+      >
+        {t("landing.skip_to_main")}
+      </a>
       <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <Link to="/" className="text-ink-900 transition-colors hover:text-ink-700">
@@ -84,7 +148,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         </aside>
-        <main className="flex-1 min-w-0">{children}</main>
+        <main
+          id="main-content"
+          ref={mainRef}
+          tabIndex={-1}
+          className="flex-1 min-w-0 focus:outline-none"
+        >
+          {children}
+        </main>
       </div>
 
       {/* Mobile bottom nav. */}

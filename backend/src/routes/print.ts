@@ -62,6 +62,7 @@ function loadTables(coupleId: number): SeatingTable[] {
     is_kids_table: Boolean(r.is_kids_table),
     disabled_seats: parseDisabledSeats(r.disabled_seats_json),
     created_at: r.created_at,
+    updated_at: r.updated_at,
   }));
 }
 

@@ -1,6 +1,32 @@
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "../../lib/i18n";
+
+/** Selector for elements that should participate in the focus trap.
+ *  Broadened beyond the basics to include role="button" widgets we build by
+ *  hand, native media controls (audio/video[controls]), and <summary> tags. */
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+  '[role="button"][tabindex]:not([tabindex="-1"])',
+  "audio[controls]",
+  "video[controls]",
+  "summary",
+].join(",");
+
+function collectFocusables(node: HTMLElement): HTMLElement[] {
+  return Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((el) => {
+    if (el.hasAttribute("disabled")) return false;
+    if (el.getAttribute("aria-hidden") === "true") return false;
+    // Filter to elements that are actually rendered.
+    return el.getClientRects().length > 0;
+  });
+}
 
 type DialogProps = {
   open: boolean;
@@ -32,6 +58,7 @@ export function Dialog({
   closeOnBackdrop = false,
   size = "sm",
 }: DialogProps) {
+  const { t } = useT();
   const titleId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -40,8 +67,24 @@ export function Dialog({
     if (!open) return;
     triggerRef.current = (document.activeElement as HTMLElement) ?? null;
     document.body.style.overflow = "hidden";
+    // Mark every direct child of <body> as `inert` so VoiceOver's rotor /
+    // tab order can't reach background content while the dialog is open.
+    // The portal node itself (where the dialog mounts) is skipped. We
+    // remember which nodes we actually toggled so we don't accidentally
+    // strip `inert` from siblings that were inert before the dialog opened.
+    const toggled: HTMLElement[] = [];
+    // Snapshot active element so we can find its portal root after render.
+    const container = containerRef.current;
+    for (const child of Array.from(document.body.children)) {
+      if (!(child instanceof HTMLElement)) continue;
+      if (container && child.contains(container)) continue;
+      if (child.hasAttribute("inert")) continue;
+      child.setAttribute("inert", "");
+      toggled.push(child);
+    }
     return () => {
       document.body.style.overflow = "";
+      for (const el of toggled) el.removeAttribute("inert");
       // Restore focus to whatever opened the dialog (asynchronously so React
       // finishes unmounting the portal before we touch the DOM).
       const trigger = triggerRef.current;
@@ -63,11 +106,7 @@ export function Dialog({
       if (e.key === "Tab") {
         const node = containerRef.current;
         if (!node) return;
-        const focusables = Array.from(
-          node.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-          ),
-        ).filter((el) => !el.hasAttribute("disabled"));
+        const focusables = collectFocusables(node);
         if (focusables.length === 0) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
@@ -90,10 +129,8 @@ export function Dialog({
     if (!open) return;
     const node = containerRef.current;
     if (!node) return;
-    const focusable = node.querySelector<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    focusable?.focus();
+    const [first] = collectFocusables(node);
+    first?.focus();
   }, [open]);
 
   if (!open) return null;
@@ -121,7 +158,7 @@ export function Dialog({
             type="button"
             onClick={onClose}
             className="btn-ghost btn-sm -mr-2 -mt-1"
-            aria-label="Close"
+            aria-label={t("a11y.close")}
           >
             <X size={18} aria-hidden="true" />
           </button>

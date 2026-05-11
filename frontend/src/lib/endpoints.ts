@@ -348,11 +348,14 @@ export const adminSupplierApi = {
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/suppliers/${id}`),
 };
 
-/** Auth-protected PDF download as a Blob (so the caller can save with any filename). */
-export async function fetchPdfBlob(path: string): Promise<Blob> {
+/** Auth-protected PDF download as a Blob (so the caller can save with any
+ *  filename). Accepts an optional `AbortSignal` so the caller can cancel a
+ *  long-running render — the seating PDF can take ~10s on a slow box. */
+export async function fetchPdfBlob(path: string, signal?: AbortSignal): Promise<Blob> {
   const token = getToken();
   const res = await fetch(path, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    signal,
   });
   if (!res.ok) throw new Error(`PDF fetch failed: ${res.status}`);
   return res.blob();

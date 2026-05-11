@@ -1,10 +1,10 @@
 import type { AuthSession } from "@shared/types";
 import { Mail } from "lucide-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { Button, PasswordField, useToast } from "../components/ui";
-import { ApiError, setToken } from "../lib/api";
+import { ApiError, apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -29,6 +29,7 @@ export default function RegisterPage() {
   const [pendingSession, setPendingSession] = useState<AuthSession | null>(null);
   const [resending, setResending] = useState(false);
   const nameRef = useRef<HTMLInputElement | null>(null);
+  const errorId = useId();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -51,12 +52,12 @@ export default function RegisterPage() {
         password,
         full_name: fullName.trim(),
       });
-      // Persist the token so the resend call authenticates and a hard
-      // refresh on the interstitial still has a valid session. We hold
-      // off on setSession() (i.e. setUser) until the user clicks past
-      // the interstitial — otherwise <RedirectIfAuthed> would bounce
-      // them straight to /onboarding.
-      setToken(session.token);
+      // Hold the session in transient state ONLY — we do NOT persist the
+      // token to localStorage yet. If we did, hitting BACK from the
+      // "check inbox" interstitial would let <RedirectIfAuthed> bounce
+      // the user past the coaching screen. Token + user only land in
+      // localStorage when `continueToApp()` runs after the user has read
+      // (or skipped) the inbox instructions.
       setPendingSession(session);
     } catch (err) {
       setError(messageFor(err, t));
@@ -69,7 +70,15 @@ export default function RegisterPage() {
     if (!pendingSession) return;
     setResending(true);
     try {
-      await authApi.requestVerify();
+      // Pass the pending token explicitly — it isn't in localStorage yet
+      // (we only persist on continueToApp) so authApi.requestVerify() would
+      // otherwise be unauthenticated.
+      await apiFetch<{ ok: true; already_verified?: boolean }>(
+        "POST",
+        "/api/auth/verify/request",
+        {},
+        { token: pendingSession.token },
+      );
       toast.success(t("verify.banner_resent"));
     } catch (err) {
       const msg =
@@ -128,7 +137,7 @@ export default function RegisterPage() {
       <div className="mx-auto max-w-md">
         <div className="card">
           <h1 className="text-2xl">{t("auth.register_title")}</h1>
-          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+          <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
             <div>
               <label htmlFor="full_name" className="field-label">
                 {t("auth.full_name_label")}
@@ -137,9 +146,11 @@ export default function RegisterPage() {
                 ref={nameRef}
                 id="full_name"
                 type="text"
-                className="input"
+                className={`input ${error ? "input-invalid" : ""}`}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? errorId : undefined}
                 required
               />
             </div>
@@ -150,9 +161,11 @@ export default function RegisterPage() {
               <input
                 id="email"
                 type="email"
-                className="input"
+                className={`input ${error ? "input-invalid" : ""}`}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? errorId : undefined}
                 required
               />
             </div>
@@ -178,7 +191,11 @@ export default function RegisterPage() {
                   : undefined
               }
             />
-            {error && <p className="field-error">{error}</p>}
+            {error && (
+              <p id={errorId} className="field-error" role="alert">
+                {error}
+              </p>
+            )}
             <Button
               type="submit"
               variant="primary"

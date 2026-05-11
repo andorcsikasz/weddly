@@ -190,6 +190,13 @@ export interface LocaleMessages {
     budget_min_label: string;
     budget_max_label: string;
     budget_preview_label: string;
+    // ── Ceremony kind — optional radio group on the Couple step ───────
+    ceremony_kind_question: string;
+    ceremony_kind_civil: string;
+    ceremony_kind_religious: string;
+    ceremony_kind_both: string;
+    ceremony_kind_skip: string;
+    ceremony_kind_help: string;
   };
   goal: {
     date_tbd: string;
@@ -296,6 +303,26 @@ export interface LocaleMessages {
     kpi_days_past_sub: string;
     kpi_days_past_seating_pdf: string;
     kpi_days_past_guest_csv: string;
+    /** "Total spend" tile shown when eloping / no guest target — replaces
+     *  the per-guest cost tile so the dashboard still has 4 KPIs. */
+    kpi_total_spend_label: string;
+    kpi_total_spend_unit: string;
+    /** Date-changed notify CTA — shown when `previous_wedding_date` differs
+     *  from the current `wedding_date`. */
+    date_changed_title: string;
+    date_changed_body: string;
+    date_changed_button: string;
+    date_changed_sending: string;
+    date_changed_confirm_title: string;
+    date_changed_confirm_body: string;
+    date_changed_confirm_yes: string;
+    date_changed_done: string;
+    /** Archive workspace CTA — appears next to the post-wedding download links. */
+    archive_workspace_button: string;
+    archive_workspace_confirm_title: string;
+    archive_workspace_confirm_body: string;
+    archive_workspace_confirm_yes: string;
+    archive_workspace_done: string;
   };
   invite: {
     title: string;
@@ -585,6 +612,12 @@ export interface LocaleMessages {
     kind_adult: string;
     kind_child: string;
     kind_baby: string;
+    /** Free-text search above the household list. */
+    search_label: string;
+    search_placeholder: string;
+    search_empty: string;
+    search_clear: string;
+    search_load_more: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;
@@ -808,6 +841,10 @@ export interface LocaleMessages {
     tap_mode_announce_off: string;
     /** Aria-label for each seat circle in SeatingMap when keyboard-focusable. */
     seat_aria_label: string;
+    /** Kids-table toggle in the table editor + badge text on the table. */
+    kids_table_label: string;
+    kids_table_help: string;
+    kids_table_badge: string;
   };
   suppliers: {
     title: string;
@@ -1169,6 +1206,17 @@ export interface LocaleMessages {
     delete_account_pending: string;
     delete_account_pending_until: string;
     cancel_delete_account: string;
+    /** Leave-workspace card — partner B can leave; partner A is blocked. */
+    leave_couple_title: string;
+    leave_couple_body_partner_b: string;
+    leave_couple_body_owner: string;
+    leave_couple_button: string;
+    leave_couple_leaving: string;
+    leave_couple_confirm_title: string;
+    leave_couple_confirm_body: string;
+    leave_couple_confirm_yes: string;
+    leave_couple_done: string;
+    leave_couple_failed: string;
   };
   error_boundary: {
     title: string;

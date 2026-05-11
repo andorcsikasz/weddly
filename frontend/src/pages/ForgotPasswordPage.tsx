@@ -5,9 +5,11 @@ import { Button } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 export default function ForgotPasswordPage() {
   const { t } = useT();
+  useDocumentMeta("seo.forgot_password_title", "seo.forgot_password_description");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);

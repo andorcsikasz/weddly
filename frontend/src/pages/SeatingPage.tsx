@@ -27,8 +27,11 @@ import {
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Button, Dialog, useConfirm, useToast } from "../components/ui";
+import { ApiError } from "../lib/api";
 import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
+import { publish, subscribe } from "../lib/sync";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 
 const SHAPES: TableShape[] = ["round", "long", "square", "head"];
@@ -55,6 +58,7 @@ const UNDO_STACK_LIMIT = 20;
 
 export default function SeatingPage() {
   const { t } = useT();
+  useDocumentMeta("seo.seating_title", "seo.seating_description");
   const confirm = useConfirm();
   const toast = useToast();
   const [tables, setTables] = useState<SeatingTable[]>([]);
@@ -103,6 +107,14 @@ export default function SeatingPage() {
 
   useEffect(() => {
     refresh();
+  }, []);
+
+  // Cross-tab refresh: partner B's edit in another tab pings us so we
+  // refetch the plan without a hard reload.
+  useEffect(() => {
+    return subscribe("seating:changed", () => {
+      refresh();
+    });
   }, []);
 
   // Hydrate room dimensions from localStorage on mount. We only persist if the
@@ -223,7 +235,13 @@ export default function SeatingPage() {
       opts?: { silentUndo?: boolean },
     ) => {
       const previous = findAssignmentForGuest(guestId);
-      await seatingApi.assign({ table_id: tableId, seat_index: seatIndex, guest_id: guestId });
+      try {
+        await seatingApi.assign({ table_id: tableId, seat_index: seatIndex, guest_id: guestId });
+      } catch {
+        toast.error(t("seating.save_failed"));
+        await refresh();
+        return;
+      }
       pushUndo({
         label: t("seating.undo_label"),
         undo: async () => {
@@ -248,16 +266,23 @@ export default function SeatingPage() {
             .replace("{seat}", String(seatIndex + 1)),
         );
       }
+      publish("seating:changed");
       await refresh();
     },
-    [findAssignmentForGuest, guestById, tables, pushUndo, announceUndoable, t],
+    [findAssignmentForGuest, guestById, tables, pushUndo, announceUndoable, t, toast],
   );
 
   const unassignGuest = useCallback(
     async (guestId: number, opts?: { silentUndo?: boolean }) => {
       const previous = findAssignmentForGuest(guestId);
       if (!previous) return;
-      await seatingApi.unassign(guestId);
+      try {
+        await seatingApi.unassign(guestId);
+      } catch {
+        toast.error(t("seating.save_failed"));
+        await refresh();
+        return;
+      }
       pushUndo({
         label: t("seating.undo_label"),
         undo: async () => {
@@ -272,15 +297,16 @@ export default function SeatingPage() {
       if (!opts?.silentUndo && guest) {
         announceUndoable(t("seating.toast_unassigned").replace("{guest}", guest.full_name));
       }
+      publish("seating:changed");
       await refresh();
     },
-    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t],
+    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t, toast],
   );
 
-  // Compose: swap two guests between seats. The "before" snapshot has the
-  // incoming guest possibly sitting elsewhere (or unseated) and the occupant
-  // sitting at the target seat. After: incoming sits at target, occupant sits
-  // at incoming's old seat (or becomes unassigned if incoming was unseated).
+  // Compose: swap two guests between seats. The new server-side `swap`
+  // endpoint does this atomically — if either half fails the transaction is
+  // rolled back, so we no longer end up with a guest in limbo when the
+  // network drops between the three legacy calls.
   const swapGuests = useCallback(
     async (
       incomingGuestId: number,
@@ -288,40 +314,27 @@ export default function SeatingPage() {
       targetTableId: number,
       targetSeatIndex: number,
     ) => {
-      const incomingPrev = findAssignmentForGuest(incomingGuestId);
-      // Unassign the occupant first to free the target seat.
-      await seatingApi.unassign(occupantGuestId);
-      await seatingApi.assign({
-        table_id: targetTableId,
-        seat_index: targetSeatIndex,
-        guest_id: incomingGuestId,
-      });
-      if (incomingPrev) {
-        await seatingApi.assign({
-          table_id: incomingPrev.table_id,
-          seat_index: incomingPrev.seat_index,
-          guest_id: occupantGuestId,
+      // We don't need to track the previous slot any more — `swap` is
+      // symmetric, so re-issuing it is the perfect undo.
+      void targetTableId;
+      void targetSeatIndex;
+      try {
+        await seatingApi.swap({
+          guest_a_id: incomingGuestId,
+          guest_b_id: occupantGuestId,
         });
+      } catch {
+        toast.error(t("seating.save_failed"));
+        await refresh();
+        return;
       }
       pushUndo({
         label: t("seating.undo_label"),
         undo: async () => {
-          // Reverse: unassign incoming, then put occupant back at target,
-          // and (if applicable) put incoming back at its old seat.
-          await seatingApi.unassign(incomingGuestId);
-          if (incomingPrev) await seatingApi.unassign(occupantGuestId);
-          await seatingApi.assign({
-            table_id: targetTableId,
-            seat_index: targetSeatIndex,
-            guest_id: occupantGuestId,
+          await seatingApi.swap({
+            guest_a_id: incomingGuestId,
+            guest_b_id: occupantGuestId,
           });
-          if (incomingPrev) {
-            await seatingApi.assign({
-              table_id: incomingPrev.table_id,
-              seat_index: incomingPrev.seat_index,
-              guest_id: incomingGuestId,
-            });
-          }
         },
       });
       const incoming = guestById.get(incomingGuestId);
@@ -333,9 +346,10 @@ export default function SeatingPage() {
             .replace("{b}", occupant.full_name),
         );
       }
+      publish("seating:changed");
       await refresh();
     },
-    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t],
+    [guestById, pushUndo, announceUndoable, t, toast],
   );
 
   const replaceAtSeat = useCallback(
@@ -346,12 +360,18 @@ export default function SeatingPage() {
       occupantGuestId: number,
     ) => {
       const incomingPrev = findAssignmentForGuest(incomingGuestId);
-      await seatingApi.unassign(occupantGuestId);
-      await seatingApi.assign({
-        table_id: tableId,
-        seat_index: seatIndex,
-        guest_id: incomingGuestId,
-      });
+      try {
+        await seatingApi.unassign(occupantGuestId);
+        await seatingApi.assign({
+          table_id: tableId,
+          seat_index: seatIndex,
+          guest_id: incomingGuestId,
+        });
+      } catch {
+        toast.error(t("seating.save_failed"));
+        await refresh();
+        return;
+      }
       pushUndo({
         label: t("seating.undo_label"),
         undo: async () => {
@@ -379,9 +399,10 @@ export default function SeatingPage() {
             .replace("{old}", occupant.full_name),
         );
       }
+      publish("seating:changed");
       await refresh();
     },
-    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t],
+    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t, toast],
   );
 
   // Top-level entry point: assign with conflict-detection. If the seat is
@@ -504,13 +525,24 @@ export default function SeatingPage() {
     for (const key of Object.keys(patch) as (keyof SeatingTable)[]) {
       (before as Record<string, unknown>)[key] = (table as unknown as Record<string, unknown>)[key];
     }
-    await seatingApi.updateTable(table.id, { ...table, ...patch });
+    try {
+      await seatingApi.updateTable(table.id, { ...table, ...patch }, { ifMatch: table.updated_at });
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        toast.error(t("seating.save_conflict"));
+      } else {
+        toast.error(t("seating.save_failed"));
+      }
+      await refresh();
+      return;
+    }
     pushUndo({
       label: t("seating.undo_label"),
       undo: async () => {
         await seatingApi.updateTable(table.id, { ...table, ...before });
       },
     });
+    publish("seating:changed");
     refresh();
   }
 
@@ -557,11 +589,19 @@ export default function SeatingPage() {
   // and only persist to disk when the user explicitly confirms. The blob URL
   // is reused for both the iframe preview and the final download so we don't
   // round-trip the server twice.
+  //
+  // We thread an AbortController through so the user can bail out of a slow
+  // render via the in-header "Cancel" button — previously the spinner would
+  // pin the whole toolbar with no way out.
+  const pdfAbortRef = useRef<AbortController | null>(null);
+
   async function requestDownload(path: string, filename: string, label: string) {
     if (previewLoading) return;
     setPreviewLoading(path);
+    const controller = new AbortController();
+    pdfAbortRef.current = controller;
     try {
-      const raw = await fetchPdfBlob(path);
+      const raw = await fetchPdfBlob(path, controller.signal);
       // Explicitly type the blob so the in-browser PDF viewer always picks
       // it up — `res.blob()` should preserve Content-Type but some servers /
       // proxies strip it, and a typeless blob renders as "download" only.
@@ -569,9 +609,25 @@ export default function SeatingPage() {
         raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
       const url = URL.createObjectURL(typed);
       setPreview({ url, filename, label });
+    } catch (e) {
+      // Don't shout when the user explicitly cancelled — the toast is for
+      // unexpected failures (404, 500, dropped network).
+      const isAbort =
+        (e instanceof DOMException && e.name === "AbortError") ||
+        (e instanceof Error && e.name === "AbortError");
+      if (!isAbort) {
+        toast.error(t("seating.pdf_failed"));
+      }
     } finally {
       setPreviewLoading(null);
+      pdfAbortRef.current = null;
     }
+  }
+
+  function cancelDownload() {
+    pdfAbortRef.current?.abort();
+    pdfAbortRef.current = null;
+    setPreviewLoading(null);
   }
 
   function closePreview() {
@@ -659,8 +715,27 @@ export default function SeatingPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [popAndUndo]);
 
+  // Live-region announcement string. Updates whenever the tap-mode toggle
+  // or selected-guest changes so AT users hear the new state. Stored in
+  // state (not derived) so we can clear it after a beat — sr-only live
+  // regions re-announce on identical content in some readers, which is
+  // exactly the user-hostile behaviour we don't want here.
+  const [a11yMessage, setA11yMessage] = useState("");
+  useEffect(() => {
+    if (selectedGuestId === null) {
+      setA11yMessage(t("seating.keyboard_cleared_selection"));
+      return;
+    }
+    const g = guestById.get(selectedGuestId);
+    if (!g) return;
+    setA11yMessage(t("seating.keyboard_selected_guest").replace("{guest}", g.full_name));
+  }, [selectedGuestId, guestById, t]);
+
   return (
     <AppShell>
+      <span aria-live="polite" aria-atomic="true" className="sr-only">
+        {a11yMessage}
+      </span>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>{t("seating.title")}</h1>
@@ -718,6 +793,16 @@ export default function SeatingPage() {
           >
             <Printer size={16} /> {t("seating.print_place_cards")}
           </button>
+          {previewLoading !== null && (
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={cancelDownload}
+              aria-label={t("seating.pdf_cancel")}
+            >
+              {t("seating.pdf_cancel")}
+            </button>
+          )}
           <button type="button" className="btn-primary" onClick={addTable}>
             <Plus size={16} /> {t("seating.add_table")}
           </button>
@@ -781,7 +866,16 @@ export default function SeatingPage() {
                 type="button"
                 className="btn-outline btn-sm"
                 onClick={() => {
-                  setTapModeUser((v) => !v);
+                  setTapModeUser((v) => {
+                    const next = !v;
+                    // Announce the new state for AT users — aria-pressed
+                    // alone doesn't always trigger a re-read in NVDA, so we
+                    // push a fresh live-region message too.
+                    setA11yMessage(
+                      next ? t("seating.tap_mode_announce_on") : t("seating.tap_mode_announce_off"),
+                    );
+                    return next;
+                  });
                   setSelectedGuestId(null);
                 }}
                 aria-pressed={tapModeUser}
@@ -1185,6 +1279,30 @@ function TableEditor({
           xButtonLabel={t("seating.toggle_seat")}
         />
       </Section>
+
+      {/* Kids-table flag — drives a small badge on the editor today and may
+          influence auto-seating in a future iteration. Persists through the
+          same If-Match optimistic-concurrency PATCH as other table fields. */}
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-paper-200 bg-paper-50 px-3 py-2.5">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={Boolean(table.is_kids_table)}
+          onChange={(e) => onPatch({ is_kids_table: e.target.checked })}
+        />
+        <span className="flex-1">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-ink-800">
+            <Baby size={14} aria-hidden className="text-blush-700" />
+            {t("seating.kids_table_label")}
+          </span>
+          <span className="text-xs text-ink-500">{t("seating.kids_table_help")}</span>
+        </span>
+        {table.is_kids_table && (
+          <span className="self-center rounded-full bg-blush-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blush-700">
+            {t("seating.kids_table_badge")}
+          </span>
+        )}
+      </label>
     </div>
   );
 }
@@ -1746,6 +1864,12 @@ function TableCard({
                   const a = seatToAssign.get(idx);
                   const guest = a ? guestById.get(a.guest_id) : undefined;
                   const tappable = tapMode && (selectedGuestId !== null || guest);
+                  // Seat <li> is keyboard-actionable too — Enter/Space drops
+                  // the currently-selected guest into this seat (mirroring
+                  // the tap behaviour). Empty seats are skipped from focus
+                  // unless a guest is queued for placement, to avoid a
+                  // forest of Tab stops for the keyboard-only user.
+                  const seatFocusable = selectedGuestId !== null || guest !== undefined;
                   return (
                     <li
                       key={idx}
@@ -1756,10 +1880,22 @@ function TableCard({
                         e.stopPropagation();
                         onTapSeat(table.id, idx);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        if (selectedGuestId === null && !guest) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onTapSeat(table.id, idx);
+                      }}
+                      tabIndex={seatFocusable ? 0 : -1}
+                      role="button"
+                      aria-label={t("seating.seat_aria_label")
+                        .replace("{table}", table.label)
+                        .replace("{seat}", String(idx + 1))}
                       className={
                         guest
-                          ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm ${tappable ? "cursor-pointer" : ""}`
-                          : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 ${tappable ? "cursor-pointer ring-1 ring-blush-200" : ""}`
+                          ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 ${tappable ? "cursor-pointer" : ""}`
+                          : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 ${tappable ? "cursor-pointer ring-1 ring-blush-200" : ""}`
                       }
                     >
                       <span className="text-[10px] uppercase tracking-wider text-ink-400">
@@ -1824,7 +1960,22 @@ function DraggableGuest({
       onDragEnd={onDragEnd}
       onClick={(e) => {
         e.stopPropagation();
-        if (tapMode && onTap) onTap(guest);
+        if (onTap) onTap(guest);
+      }}
+      // Keyboard a11y: a guest tile is a "button" that selects this person
+      // for placement. Enter/Space activates; Escape clears via the onTap
+      // toggle (same id → second tap clears).
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected || undefined}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (onTap) onTap(guest);
+        } else if (e.key === "Escape" && selected) {
+          e.preventDefault();
+          if (onTap) onTap(guest);
+        }
       }}
       className={[
         compact
@@ -1832,6 +1983,7 @@ function DraggableGuest({
           : "rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400",
         tapMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
         selected ? "ring-2 ring-blush-500" : "",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700",
       ]
         .filter(Boolean)
         .join(" ")}

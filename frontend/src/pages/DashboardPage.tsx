@@ -25,10 +25,14 @@ import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "r
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CostPlanningCard } from "../components/CostPlanningCard";
+import { useConfirm, useToast } from "../components/ui";
+import { ApiError } from "../lib/api";
 import { applyCategoryPlanned } from "../lib/budget";
 import { budgetApi, coupleApi, guestApi, seatingApi } from "../lib/endpoints";
 import { formatHuf, formatHufCompact, formatNumber, formatWeddingDateGoal } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
+import { publish } from "../lib/sync";
 
 type Loaded = {
   couple: Couple;
@@ -56,6 +60,9 @@ function targetGuestCount(couple: Couple): number | null {
 
 export default function DashboardPage() {
   const { t, locale } = useT();
+  useDocumentMeta("seo.dashboard_title", "seo.dashboard_description");
+  const confirm = useConfirm();
+  const toast = useToast();
   const [data, setData] = useState<Loaded | null | "loading">("loading");
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
@@ -66,6 +73,10 @@ export default function DashboardPage() {
   const [sentToEmail, setSentToEmail] = useState<string | null>(null);
   // Cost-planning slider — defaults to baseline once couple loads.
   const [planningCount, setPlanningCount] = useState<number | null>(null);
+  // Date-changed notify + archive — separate spinners so the button labels
+  // can swap to a localised "sending…" / "archiving…" copy on press.
+  const [notifyingDateChange, setNotifyingDateChange] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -130,6 +141,27 @@ export default function DashboardPage() {
   const roiUseActual = costPerConfirmedGuest !== null;
   const roiValue = costPerConfirmedGuest ?? roiPlanned;
   const roiDenom = roiUseActual ? rsvp.yes : roiPlannedDenom;
+
+  // ── Eloping guard ────────────────────────────────────────────────────
+  // When the couple is eloping (10-or-fewer exact guests) or hasn't set a
+  // target at all and the list is empty, the cost-per-guest tile is
+  // misleading — show "Total spend" instead so the dashboard keeps a 4th
+  // KPI without misrepresenting the math.
+  const goal = couple.guest_count_goal;
+  const eloping =
+    (goal.kind === "exact" && goal.exact !== null && goal.exact <= 10) ||
+    (goal.kind === "tbd" && totalGuests === 0);
+
+  // ── Date-changed guard ───────────────────────────────────────────────
+  // The backend snapshots `previous_wedding_date` whenever the date moves;
+  // surface a banner when it differs from the current date so the couple
+  // can fan out a notification to every guest.
+  const dateChanged =
+    couple.previous_wedding_date !== null &&
+    couple.previous_wedding_date !== couple.wedding_date &&
+    !couple.archived_at;
+  // Headcount used in the confirm copy.
+  const notifyableGuests = guests.filter((g) => g.email && g.email.trim() !== "").length;
 
   // ── Cost-planning baseline & inline-edit handler ──────────────────────
   // Same baseline rules as BudgetPage so the slider stays consistent across
@@ -230,6 +262,53 @@ export default function DashboardPage() {
     setCopied(false);
   }
 
+  async function onNotifyDateChange() {
+    if (data === "loading" || data === null) return;
+    const ok = await confirm({
+      title: t("dashboard.date_changed_confirm_title"),
+      body: t("dashboard.date_changed_confirm_body", { n: notifyableGuests }),
+      confirmLabel: t("dashboard.date_changed_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setNotifyingDateChange(true);
+    try {
+      const r = await coupleApi.notifyDateChange();
+      toast.success(t("dashboard.date_changed_done", { count: r.notified_count }));
+      // The backend clears `previous_wedding_date` after a successful
+      // fan-out; refresh the couple so the banner disappears.
+      const cur = await coupleApi.current();
+      if (cur.couple) setData({ ...data, couple: cur.couple });
+      publish("guests:changed");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setNotifyingDateChange(false);
+    }
+  }
+
+  async function onArchiveWorkspace() {
+    if (data === "loading" || data === null) return;
+    const ok = await confirm({
+      title: t("dashboard.archive_workspace_confirm_title"),
+      body: t("dashboard.archive_workspace_confirm_body"),
+      confirmLabel: t("dashboard.archive_workspace_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setArchiving(true);
+    try {
+      const r = await coupleApi.archive();
+      setData({ ...data, couple: r.couple });
+      toast.success(t("dashboard.archive_workspace_done"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setArchiving(false);
+    }
+  }
+
   async function saveWeddingDate(goal: WeddingDateGoal) {
     if (data === "loading" || data === null) return;
     try {
@@ -277,6 +356,37 @@ export default function DashboardPage() {
           </div>
         ))}
 
+      {/* ── Date-changed banner ──────────────────────────────────────
+          Shown when previous_wedding_date is set AND different from the
+          current wedding_date. Backend snapshots the prior date the moment
+          the couple edits it; we fan-out an email and clear the flag. */}
+      {dateChanged && (
+        <section
+          className="mb-6 rounded-2xl border-2 border-blush-400 bg-blush-50/60 px-4 py-3"
+          role="region"
+          aria-label={t("dashboard.date_changed_title")}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-semibold text-blush-800">
+                {t("dashboard.date_changed_title")}
+              </h2>
+              <p className="mt-1 text-sm text-ink-700">{t("dashboard.date_changed_body")}</p>
+            </div>
+            <button
+              type="button"
+              className="btn-accent"
+              onClick={onNotifyDateChange}
+              disabled={notifyingDateChange || notifyableGuests === 0}
+            >
+              {notifyingDateChange
+                ? t("dashboard.date_changed_sending")
+                : t("dashboard.date_changed_button")}
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* ── KPI tiles ─────────────────────────────────────────────── */}
       <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {weddingPast ? (
@@ -287,6 +397,10 @@ export default function DashboardPage() {
             seatingLabel={t("dashboard.kpi_days_past_seating_pdf")}
             guestsHref="/app/guests"
             guestsLabel={t("dashboard.kpi_days_past_guest_csv")}
+            archiveLabel={t("dashboard.archive_workspace_button")}
+            archived={couple.archived_at !== null}
+            archiving={archiving}
+            onArchive={onArchiveWorkspace}
           />
         ) : (
           <KpiTile
@@ -324,22 +438,33 @@ export default function DashboardPage() {
           progress={spentPct}
           progressOver={cap !== null && totalActual > cap}
         />
-        <KpiTile
-          label={t("dashboard.kpi_roi_label")}
-          icon={<Coins size={16} aria-hidden="true" />}
-          value={roiValue !== null ? formatHuf(roiValue, locale) : "—"}
-          unit={
-            roiValue === null
-              ? t("dashboard.kpi_roi_no_data")
-              : roiUseActual
-                ? t("dashboard.kpi_roi_unit_actual", {
-                    n: formatNumber(roiDenom, locale),
-                  })
-                : t("dashboard.kpi_roi_unit_planned", {
-                    n: formatNumber(roiDenom, locale),
-                  })
-          }
-        />
+        {eloping ? (
+          <KpiTile
+            label={t("dashboard.kpi_total_spend_label")}
+            icon={<Coins size={16} aria-hidden="true" />}
+            value={totalActual > 0 ? formatHuf(totalActual, locale) : "—"}
+            unit={
+              totalActual > 0 ? t("dashboard.kpi_total_spend_unit") : t("dashboard.kpi_roi_no_data")
+            }
+          />
+        ) : (
+          <KpiTile
+            label={t("dashboard.kpi_roi_label")}
+            icon={<Coins size={16} aria-hidden="true" />}
+            value={roiValue !== null ? formatHuf(roiValue, locale) : "—"}
+            unit={
+              roiValue === null
+                ? t("dashboard.kpi_roi_no_data")
+                : roiUseActual
+                  ? t("dashboard.kpi_roi_unit_actual", {
+                      n: formatNumber(roiDenom, locale),
+                    })
+                  : t("dashboard.kpi_roi_unit_planned", {
+                      n: formatNumber(roiDenom, locale),
+                    })
+            }
+          />
+        )}
       </section>
 
       {/* ── Two-column body: tasks + breakdowns ────────────────────── */}
@@ -658,6 +783,10 @@ function PastWeddingTile({
   seatingLabel,
   guestsHref,
   guestsLabel,
+  archiveLabel,
+  archived,
+  archiving,
+  onArchive,
 }: {
   label: string;
   sub: string;
@@ -665,6 +794,10 @@ function PastWeddingTile({
   seatingLabel: string;
   guestsHref: string;
   guestsLabel: string;
+  archiveLabel: string;
+  archived: boolean;
+  archiving: boolean;
+  onArchive: () => void;
 }) {
   return (
     <div className="card bg-blush-50">
@@ -682,6 +815,16 @@ function PastWeddingTile({
         <Link to={guestsHref} className="text-blush-800 underline-offset-2 hover:underline">
           {guestsLabel}
         </Link>
+        {!archived && (
+          <button
+            type="button"
+            onClick={onArchive}
+            disabled={archiving}
+            className="mt-1 text-left text-blush-800 underline-offset-2 hover:underline disabled:opacity-60"
+          >
+            {archiving ? "…" : archiveLabel}
+          </button>
+        )}
       </div>
     </div>
   );

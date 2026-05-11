@@ -110,6 +110,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
 export function useT() {
   const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error("useT outside I18nProvider");
+  if (!ctx) {
+    return {
+      locale: "hu" as const,
+      setLocale: () => {},
+      t: (path: string, vars?: Record<string, string | number>) => interpolate(path, vars),
+    };
+  }
   return ctx;
 }

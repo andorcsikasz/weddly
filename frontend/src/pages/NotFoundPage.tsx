@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 export default function NotFoundPage() {
   const { t } = useT();
+  useDocumentMeta("seo.notfound_title", "seo.notfound_description");
   return (
     <Shell>
       <div className="mx-auto mt-16 max-w-md text-center">

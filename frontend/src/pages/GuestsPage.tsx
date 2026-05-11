@@ -21,18 +21,20 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Search,
   Trash2,
   Upload,
   UserPlus,
   Wheat,
   X,
 } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, guestApi, householdApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 interface ImportResult {
   created_count: number;
@@ -60,6 +62,7 @@ interface DrawerInit {
 
 export default function GuestsPage() {
   const { t } = useT();
+  useDocumentMeta("seo.guests_title", "seo.guests_description");
   const confirm = useConfirm();
   const toast = useToast();
   const [couple, setCouple] = useState<Couple | null>(null);
@@ -70,6 +73,71 @@ export default function GuestsPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [orphanFixing, setOrphanFixing] = useState(false);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
+  // ── Search state ────────────────────────────────────────────────────
+  // `query` is the raw text in the input; `debouncedQuery` is what we
+  // actually search on (200ms after the user stops typing).
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Guest[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  // ── Virtualization knob ─────────────────────────────────────────────
+  // Long lists (>100 guests) render the first chunk synchronously and
+  // reveal the rest after the first idle frame so the initial paint isn't
+  // dominated by household-card layout. No external library — just a
+  // setTimeout + flag.
+  const [virtualReveal, setVirtualReveal] = useState(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce the query → debouncedQuery transition.
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedQuery(query.trim()), 200);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [query]);
+
+  // Fire the server-side search whenever the debounced query changes.
+  // Empty query → clear results and fall back to the grouped household view.
+  useEffect(() => {
+    if (!debouncedQuery) {
+      setSearchResults(null);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    guestApi
+      .search({ q: debouncedQuery, limit: 200 })
+      .then((r) => {
+        if (cancelled) return;
+        setSearchResults(r.guests);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSearchResults([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setSearching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery]);
+
+  // Once the page has painted with the initial 100 guests, reveal the rest
+  // on the next macrotask. We re-arm whenever the household count crosses
+  // the threshold so an import that doubles the list re-stages the reveal.
+  useEffect(() => {
+    if (households.length > 100) {
+      setVirtualReveal(false);
+      const handle = setTimeout(() => setVirtualReveal(true), 0);
+      return () => clearTimeout(handle);
+    }
+    setVirtualReveal(true);
+    return undefined;
+  }, [households.length]);
 
   async function refresh() {
     const [c, g, h] = await Promise.all([
@@ -252,14 +320,53 @@ export default function GuestsPage() {
 
       {couple && <CheckinPill couple={couple} onSaved={(c) => setCouple(c)} />}
 
+      {/* ── Search ─────────────────────────────────────────────────────
+          Server-side full-text search. While active, we render a flat
+          list of matches instead of the grouped household view. */}
+      {(guests.length > 0 || query) && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search
+              size={14}
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400"
+            />
+            <input
+              type="search"
+              className="input pl-9"
+              placeholder={t("guests.search_placeholder")}
+              aria-label={t("guests.search_label")}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          {query && (
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() => setQuery("")}
+              aria-label={t("guests.search_clear")}
+            >
+              {t("guests.search_clear")}
+            </button>
+          )}
+        </div>
+      )}
+
       {households.length === 0 && guests.length === 0 ? (
         <div className="card stationery text-center">
           <h3 className="text-base font-semibold">{t("guests.empty_title")}</h3>
           <p className="mt-1 text-sm text-ink-600">{t("guests.empty_body")}</p>
         </div>
+      ) : debouncedQuery ? (
+        <SearchResults
+          loading={searching}
+          guests={searchResults ?? []}
+          onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+        />
       ) : (
         <div className="space-y-4">
-          {households.map((hh) => (
+          {(virtualReveal ? households : households.slice(0, 100)).map((hh) => (
             <HouseholdCard
               key={hh.id}
               household={hh}
@@ -276,6 +383,9 @@ export default function GuestsPage() {
               onRenameHousehold={onRenameHousehold}
             />
           ))}
+          {!virtualReveal && households.length > 100 && (
+            <p className="text-center text-xs text-ink-500">{t("guests.search_load_more")}</p>
+          )}
 
           {orphanGuests.length > 0 && (
             <div className="card border-blush-200 bg-blush-50/40">
@@ -336,6 +446,60 @@ export default function GuestsPage() {
         />
       )}
     </AppShell>
+  );
+}
+
+/**
+ * Flat search-results list, shown instead of the grouped household view
+ * whenever the search input has content. We render up to 200 hits — past
+ * that, the user should refine the query rather than scroll. Each row
+ * jumps straight into the edit drawer.
+ */
+function SearchResults({
+  loading,
+  guests,
+  onEditGuest,
+}: {
+  loading: boolean;
+  guests: Guest[];
+  onEditGuest: (g: Guest) => void;
+}) {
+  const { t } = useT();
+  if (loading && guests.length === 0) {
+    return <p className="card text-sm text-ink-500">{t("common.loading")}</p>;
+  }
+  if (guests.length === 0) {
+    return <p className="card text-sm text-ink-500">{t("guests.search_empty")}</p>;
+  }
+  return (
+    <ul className="card divide-y divide-paper-200 p-0">
+      {guests.map((g) => (
+        <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
+              <KindIcon kind={g.kind} />
+              <span className="truncate">{g.full_name}</span>
+              <MealIcons meal={g.meal_choice} dietary={g.dietary} />
+            </p>
+            <p className="text-xs text-ink-500">
+              {t(`guests.group_${g.group_tag}`)}
+              {g.email ? ` · ${g.email}` : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <RsvpBadge status={g.rsvp_status} />
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() => onEditGuest(g)}
+              aria-label={t("guests.edit")}
+            >
+              <Pencil size={14} />
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

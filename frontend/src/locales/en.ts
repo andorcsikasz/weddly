@@ -207,6 +207,13 @@ const en: LocaleMessages = {
     budget_min_label: "Lower bound",
     budget_max_label: "Upper bound",
     budget_preview_label: "Looks like",
+    ceremony_kind_question: "Ceremony type (optional)",
+    ceremony_kind_civil: "Civil",
+    ceremony_kind_religious: "Religious",
+    ceremony_kind_both: "Both",
+    ceremony_kind_skip: "Skip for now",
+    ceremony_kind_help:
+      "You can set this later in your profile — helps when requesting quotes from suppliers.",
   },
   goal: {
     date_tbd: "Date TBD",
@@ -310,6 +317,24 @@ const en: LocaleMessages = {
     kpi_days_past_sub: "Your wedding has happened.",
     kpi_days_past_seating_pdf: "Seating chart (PDF)",
     kpi_days_past_guest_csv: "Export guest list",
+    kpi_total_spend_label: "Total spend",
+    kpi_total_spend_unit: "actual outlay",
+    date_changed_title: "You rescheduled",
+    date_changed_body:
+      "Your wedding date has changed. Want to email everyone so they know the old date is no longer valid?",
+    date_changed_button: "Notify guests",
+    date_changed_sending: "Sending…",
+    date_changed_confirm_title: "Send date-change notification",
+    date_changed_confirm_body:
+      "This emails every guest with an address on file ({n} guests). Continue?",
+    date_changed_confirm_yes: "Send",
+    date_changed_done: "Notified {count} guests",
+    archive_workspace_button: "Archive workspace",
+    archive_workspace_confirm_title: "Archive this workspace?",
+    archive_workspace_confirm_body:
+      "Your data stays, but the workspace becomes read-only. We'll snapshot a final bundle (PDF + CSV + JSON) into your Saved downloads.",
+    archive_workspace_confirm_yes: "Yes, archive",
+    archive_workspace_done: "Workspace archived.",
   },
   invite: {
     title: "Join the couple workspace",
@@ -673,6 +698,11 @@ const en: LocaleMessages = {
     kind_adult: "Adult",
     kind_child: "Child",
     kind_baby: "Baby",
+    search_label: "Search guests",
+    search_placeholder: "Name, email or notes…",
+    search_empty: "No guests match this search.",
+    search_clear: "Clear search",
+    search_load_more: "Show more guests",
   },
   budget: {
     title: "Budget",
@@ -830,6 +860,10 @@ const en: LocaleMessages = {
     tap_mode_announce_on: "Tap-to-place mode on.",
     tap_mode_announce_off: "Tap-to-place mode off.",
     seat_aria_label: "{table} — seat {seat}",
+    kids_table_label: "Kids table",
+    kids_table_help:
+      "Flags this table — handy on the printed chart and when briefing your venue / caterer.",
+    kids_table_badge: "Kids",
   },
   suppliers: {
     title: "Suppliers",
@@ -1143,10 +1177,10 @@ const en: LocaleMessages = {
     archive_kind_seating_pdf: "Seating",
     archive_kind_place_cards_pdf: "Place cards",
     archive_kind_guest_csv: "Guests",
-    delete_account_title: "Delete account",
+    delete_account_title: "Pause & delete workspace",
     delete_account_body:
       "Starts a 30-day grace period. The workspace becomes read-only and our admin permanently deletes everything after 30 days. Either partner can cancel before the deadline.",
-    delete_account_button: "Delete account",
+    delete_account_button: "Pause + delete in 30 days",
     delete_account_confirm_title: "Delete this workspace?",
     delete_account_confirm_label: "Type {phrase} to confirm",
     delete_account_confirm_help:
@@ -1156,6 +1190,19 @@ const en: LocaleMessages = {
     delete_account_pending: "Scheduled for deletion",
     delete_account_pending_until: "Will be deleted on {date}",
     cancel_delete_account: "Cancel deletion",
+    leave_couple_title: "Leave workspace",
+    leave_couple_body_partner_b:
+      "Leaving removes your access. Your partner keeps the workspace; you can rejoin any time with a new invite.",
+    leave_couple_body_owner:
+      "You created this workspace — owners can't leave. To wind it down, start the pause & 30-day deletion instead.",
+    leave_couple_button: "Leave",
+    leave_couple_leaving: "Leaving…",
+    leave_couple_confirm_title: "Leave this workspace?",
+    leave_couple_confirm_body:
+      "We'll sign you out and send you to login. Your partner's workspace stays untouched.",
+    leave_couple_confirm_yes: "Yes, leave",
+    leave_couple_done: "You've left the workspace.",
+    leave_couple_failed: "Couldn't leave just now. Try again.",
   },
   error_boundary: {
     title: "Something went wrong",

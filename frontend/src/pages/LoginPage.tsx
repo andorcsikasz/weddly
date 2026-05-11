@@ -1,4 +1,4 @@
-import { type FormEvent, type Ref, useEffect, useRef, useState } from "react";
+import { type FormEvent, type Ref, useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { Button, PasswordField } from "../components/ui";
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const emailRef = useRef<HTMLInputElement | null>(null);
+  const errorId = useId();
 
   // Only autofocus on screens wide enough for a hardware keyboard — on phones
   // the autofocus shoves the soft keyboard up and shifts the layout.
@@ -49,7 +50,7 @@ export default function LoginPage() {
       <div className="mx-auto max-w-md">
         <div className="card">
           <h1 className="text-2xl">{t("auth.login_title")}</h1>
-          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+          <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
             <Field
               id="email"
               label={t("auth.email_label")}
@@ -58,6 +59,8 @@ export default function LoginPage() {
               onChange={setEmail}
               required
               inputRef={emailRef}
+              invalid={Boolean(error)}
+              describedById={error ? errorId : undefined}
             />
             <PasswordField
               id="password"
@@ -66,7 +69,11 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            {error && <p className="field-error">{error}</p>}
+            {error && (
+              <p id={errorId} className="field-error" role="alert">
+                {error}
+              </p>
+            )}
             <Button
               type="submit"
               variant="primary"
@@ -102,6 +109,8 @@ function Field({
   onChange,
   required,
   inputRef,
+  invalid,
+  describedById,
 }: {
   id: string;
   label: string;
@@ -110,6 +119,8 @@ function Field({
   onChange: (v: string) => void;
   required?: boolean;
   inputRef?: Ref<HTMLInputElement>;
+  invalid?: boolean;
+  describedById?: string;
 }) {
   return (
     <div>
@@ -120,10 +131,12 @@ function Field({
         ref={inputRef}
         id={id}
         type={type}
-        className="input"
+        className={`input ${invalid ? "input-invalid" : ""}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedById}
       />
     </div>
   );

@@ -52,6 +52,15 @@
       animation-duration: 0.001ms !important;
       transition-duration: 0.001ms !important;
     }
+    /* Force any "scroll-hide on scroll-down" sticky chrome to stay visible.
+       Components opt in by marking the header with `data-scroll-hide` (or by
+       relying on the matchMedia gate in JS), but as a belt-and-braces this
+       overrides the inline -translate-y-full class the public header would
+       otherwise apply when JS hasn't caught the media query yet. */
+    [data-scroll-hide="true"],
+    .scroll-hide-target {
+      transform: none !important;
+    }
   }
 }
 
@@ -67,7 +76,9 @@
     @apply btn bg-ink-800 text-paper-100 hover:bg-ink-900;
   }
   .btn-accent {
-    @apply btn bg-blush-500 text-white hover:bg-blush-600;
+    /* Bumped from blush-500 → blush-600 for AA contrast on the warm paper
+       background. Hover steps one shade deeper to keep the press feedback. */
+    @apply btn bg-blush-600 text-white hover:bg-blush-700;
   }
   .btn-ghost {
     @apply btn bg-transparent text-ink-700 hover:bg-paper-200;

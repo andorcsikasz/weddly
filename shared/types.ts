@@ -370,6 +370,9 @@ export interface SeatingTable {
    *  drops. Filtered to valid indices server-side. */
   disabled_seats: number[];
   created_at: UnixMs;
+  /** Used by the frontend as the `If-Match` value for optimistic-concurrency
+   *  guarding on PATCH. Server-set on every write. */
+  updated_at: UnixMs;
 }
 
 export interface SeatAssignment {

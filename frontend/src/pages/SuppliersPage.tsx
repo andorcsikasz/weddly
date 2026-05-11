@@ -46,6 +46,7 @@ import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button } from "../components/ui";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 // Leaflet + react-leaflet add ~150 KB minified that no other page uses —
 // lazy-loading keeps the initial /app bundle small for couples who never
@@ -113,6 +114,7 @@ function writeSaved(set: Set<string>) {
 
 export default function SuppliersPage() {
   const { t, locale } = useT();
+  useDocumentMeta("seo.suppliers_title", "seo.suppliers_description");
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<DirectorySupplier[]>([]);
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);

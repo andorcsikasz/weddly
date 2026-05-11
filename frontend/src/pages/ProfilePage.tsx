@@ -9,8 +9,9 @@ import type {
   ExportKind,
 } from "@shared/types";
 import { type FormEvent, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { useEntryPrompt, useToast } from "../components/ui";
+import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import {
@@ -21,9 +22,11 @@ import {
   fetchGuestCsvBlob,
   fetchSavedExportBlob,
   pauseApi,
+  userApi,
 } from "../lib/endpoints";
 import { formatDate } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 function deleteVerifyPhrase(couple: Couple | null): string {
   if (!couple) return "";
@@ -57,9 +60,13 @@ function saveBlob(blob: Blob, filename: string) {
 
 export default function ProfilePage() {
   const { t, locale } = useT();
+  useDocumentMeta("seo.profile_title", "seo.profile_description");
   const promptEntry = useEntryPrompt();
+  const confirm = useConfirm();
   const toast = useToast();
-  const { setSession, user: authUser, refresh: refreshAuth } = useAuth();
+  const navigate = useNavigate();
+  const { setSession, user: authUser, refresh: refreshAuth, logout } = useAuth();
+  const [leaving, setLeaving] = useState(false);
   const [verifyResending, setVerifyResending] = useState(false);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
@@ -261,6 +268,33 @@ export default function ProfilePage() {
   const scheduledYmd = pauseReq?.scheduled_delete_at
     ? new Date(pauseReq.scheduled_delete_at).toISOString().slice(0, 10)
     : null;
+
+  async function onLeaveCouple() {
+    if (!authUser || !couple) return;
+    // Only partner B can actually leave — partner A (owner) gets a blocked
+    // explanation card so the path is honest about why it won't work.
+    if (authUser.id === couple.partner_a_id) return;
+    const ok = await confirm({
+      title: t("profile.leave_couple_confirm_title"),
+      body: t("profile.leave_couple_confirm_body"),
+      confirmLabel: t("profile.leave_couple_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setLeaving(true);
+    try {
+      await userApi.leaveCouple();
+      toast.success(t("profile.leave_couple_done"));
+      // Sign out + bounce to login. logout() clears the token; AppShell's
+      // user-transition effect sweeps the rest of localStorage.
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("profile.leave_couple_failed"));
+      setLeaving(false);
+    }
+  }
 
   async function resendVerifyEmail() {
     setVerifyResending(true);
@@ -484,6 +518,29 @@ export default function ProfilePage() {
           </ul>
         )}
       </section>
+
+      {authUser && couple && (
+        <section className="card mt-6">
+          <h2 className="text-lg">{t("profile.leave_couple_title")}</h2>
+          {authUser.id === couple.partner_a_id ? (
+            <p className="mt-2 text-sm text-ink-600">{t("profile.leave_couple_body_owner")}</p>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-ink-600">
+                {t("profile.leave_couple_body_partner_b")}
+              </p>
+              <button
+                type="button"
+                className="btn-outline mt-4"
+                onClick={onLeaveCouple}
+                disabled={leaving}
+              >
+                {leaving ? t("profile.leave_couple_leaving") : t("profile.leave_couple_button")}
+              </button>
+            </>
+          )}
+        </section>
+      )}
 
       <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40">
         <h2 className="text-lg text-blush-800">{t("profile.delete_account_title")}</h2>

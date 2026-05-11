@@ -206,6 +206,13 @@ const hu: LocaleMessages = {
     budget_min_label: "Alsó határ",
     budget_max_label: "Felső határ",
     budget_preview_label: "Vagyis",
+    ceremony_kind_question: "Milyen szertartás lesz? (opcionális)",
+    ceremony_kind_civil: "Polgári",
+    ceremony_kind_religious: "Egyházi",
+    ceremony_kind_both: "Mindkettő",
+    ceremony_kind_skip: "Most kihagyom",
+    ceremony_kind_help:
+      "Ezt később bármikor beállíthatjátok a Profilban — segít a szolgáltatóknál az ajánlatkérésnél.",
   },
   goal: {
     date_tbd: "Dátum: később",
@@ -309,6 +316,24 @@ const hu: LocaleMessages = {
     kpi_days_past_sub: "Az esküvőtök megtörtént.",
     kpi_days_past_seating_pdf: "Ültetési rend (PDF)",
     kpi_days_past_guest_csv: "Vendéglista exportálása",
+    kpi_total_spend_label: "Teljes költés",
+    kpi_total_spend_unit: "összes kiadás",
+    date_changed_title: "Megváltozott a dátum",
+    date_changed_body:
+      "Új dátumot rögzítettetek. Küldjünk értesítést a vendégeknek, hogy a régi időpont már nem érvényes?",
+    date_changed_button: "Vendégek értesítése",
+    date_changed_sending: "Küldés…",
+    date_changed_confirm_title: "Dátumváltozás kiküldése",
+    date_changed_confirm_body:
+      "Ez e-mailt küld a vendéglistán szereplő minden olyan személynek, akinek van e-mail címe ({n} fő). Folytatod?",
+    date_changed_confirm_yes: "Küldés",
+    date_changed_done: "Értesítve: {count} vendég",
+    archive_workspace_button: "Munkaterület archiválása",
+    archive_workspace_confirm_title: "Archiváljuk a munkaterületet?",
+    archive_workspace_confirm_body:
+      "Az adatok megmaradnak, de a munkaterület csak olvashatóvá válik. Készítünk egy zárókészletet (PDF + CSV + JSON) a Profil oldal Letöltött dokumentumai közé.",
+    archive_workspace_confirm_yes: "Igen, archiválom",
+    archive_workspace_done: "A munkaterület archiválva.",
   },
   invite: {
     title: "Csatlakozz a páros munkaterülethez",
@@ -673,6 +698,11 @@ const hu: LocaleMessages = {
     kind_adult: "Felnőtt",
     kind_child: "Gyerek",
     kind_baby: "Baba",
+    search_label: "Keresés a vendégek között",
+    search_placeholder: "Név, e-mail vagy megjegyzés…",
+    search_empty: "Nincs találat erre a keresésre.",
+    search_clear: "Keresés törlése",
+    search_load_more: "További vendégek betöltése",
   },
   budget: {
     title: "Költségvetés",
@@ -834,6 +864,10 @@ const hu: LocaleMessages = {
     tap_mode_announce_on: "Koppintós mód bekapcsolva.",
     tap_mode_announce_off: "Koppintós mód kikapcsolva.",
     seat_aria_label: "{table} — {seat}. szék",
+    kids_table_label: "Gyerekasztal",
+    kids_table_help:
+      "Megjelöli az asztalt — a nyomtatott ültetési rendben és a szolgáltatói egyeztetésnél hasznos.",
+    kids_table_badge: "Gyerek",
   },
   suppliers: {
     title: "Szolgáltatók",
@@ -1149,10 +1183,10 @@ const hu: LocaleMessages = {
     archive_kind_seating_pdf: "Ültetés",
     archive_kind_place_cards_pdf: "Ültetőkártyák",
     archive_kind_guest_csv: "Vendéglista",
-    delete_account_title: "Fiók törlése",
+    delete_account_title: "Munkaterület szüneteltetése és törlése",
     delete_account_body:
       "30 napos türelmi időt indít. A workspace csak olvasható ez idő alatt; 30 nap után az adminunk véglegesen törli az adatokat. Bármelyik partner visszavonhatja a határidő előtt.",
-    delete_account_button: "Fiók törlése",
+    delete_account_button: "Szüneteltetés + 30 nap utáni törlés",
     delete_account_confirm_title: "Töröljük ezt a workspace-t?",
     delete_account_confirm_label: "Erősítsd meg: írd be, hogy {phrase}",
     delete_account_confirm_help:
@@ -1162,6 +1196,19 @@ const hu: LocaleMessages = {
     delete_account_pending: "Törlésre ütemezve",
     delete_account_pending_until: "Törlés ekkor: {date}",
     cancel_delete_account: "Törlés visszavonása",
+    leave_couple_title: "Kilépés a munkaterületről",
+    leave_couple_body_partner_b:
+      "Ha kilépsz, a párod továbbra is használhatja a munkaterületet, de te a saját fiókoddal többé nem fogod látni. Új meghívóval bármikor visszacsatlakozhatsz.",
+    leave_couple_body_owner:
+      "Te hoztad létre a munkaterületet — a tulajdonos nem tud kilépni. Ha véget akarsz vetni a közös munkának, helyette indítsd a Szüneteltetés + 30 nap utáni törlést.",
+    leave_couple_button: "Kilépés",
+    leave_couple_leaving: "Kilépés…",
+    leave_couple_confirm_title: "Biztosan kilépsz?",
+    leave_couple_confirm_body:
+      "Kijelentkeztetünk és visszairányítunk a bejelentkezésre. A párod munkaterülete érintetlen marad.",
+    leave_couple_confirm_yes: "Igen, kilépek",
+    leave_couple_done: "Kiléptünk a munkaterületről.",
+    leave_couple_failed: "Nem sikerült kilépni. Próbáld újra.",
   },
   error_boundary: {
     title: "Hoppá, valami félrement",

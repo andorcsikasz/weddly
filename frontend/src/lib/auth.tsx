@@ -3,7 +3,8 @@
 
 import type { User } from "@shared/types";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
-import { ApiError, getToken, setToken as persistToken } from "./api";
+import { SessionExpiredDialog } from "../components/SessionExpiredDialog";
+import { ApiError, getToken, SESSION_EXPIRED_EVENT, setToken as persistToken } from "./api";
 import { authApi } from "./endpoints";
 
 interface AuthState {
@@ -22,6 +23,9 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // True when an /api/* call returned 401 mid-session — pops the re-login
+  // modal so the user can resume without losing typed state.
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!getToken()) {
@@ -34,7 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(me.user);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
-        // Token already cleared inside apiFetch.
+        // The /me probe was the one that 401'd. There's nothing in flight to
+        // preserve here — just clear the user and let the regular auth
+        // redirect (RequireAuth) move them to /login.
+        persistToken(null);
         setUser(null);
       } else {
         // Keep last known user on a flake; next call will retry.
@@ -47,6 +54,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Listen for fetch-layer 401s. We only open the modal if a user is
+  // currently signed in — otherwise the regular login form is already
+  // sufficient and we'd just stack two prompts.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function onExpired() {
+      // Re-check the latest user via closure trick: setState callback form.
+      setUser((cur) => {
+        if (cur) setSessionExpired(true);
+        return cur;
+      });
+    }
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const session = await authApi.login({ email, password });
@@ -70,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     persistToken(null);
     setUser(null);
+    setSessionExpired(false);
   }, []);
 
   const setSession = useCallback((token: string, u: User) => {
@@ -80,6 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, refresh, setSession }}>
       {children}
+      <SessionExpiredDialog
+        open={sessionExpired}
+        email={user?.email ?? ""}
+        onClose={() => setSessionExpired(false)}
+        onLoggedIn={() => setSessionExpired(false)}
+      />
     </AuthContext.Provider>
   );
 }

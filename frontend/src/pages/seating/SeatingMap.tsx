@@ -628,12 +628,25 @@ function TableShape({
       transform={`translate(${cx} ${cy}) rotate(${rotation})`}
       data-seating-table={table.id}
       onPointerDown={onPointerDown}
+      onKeyDown={(e) => {
+        // Enter/Space selects the table for the editor panel — mirrors a
+        // click. Arrow/[/]/Delete shortcuts are intercepted by the parent
+        // SeatingMap keydown handler, so we let those bubble through.
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        // Reuse onPointerDown's selection side-effect by emitting a synthetic
+        // pointer-like event. SeatingMap calls onSelect inside startMove —
+        // for keyboard users we'd just want selection, no drag. The parent
+        // canvas listens to focus-within for this too, so the cheapest fix
+        // is to dispatch a click on the element.
+        (e.currentTarget as Element & { click?: () => void }).click?.();
+      }}
       style={{ cursor: "grab" }}
       // Keyboard a11y: focusable, Enter/Space mimics a click-to-select, and
       // arrow/[/]/Delete shortcuts are handled by the parent SeatingMap so a
       // single keydown listener can govern the whole canvas.
       tabIndex={0}
-      role="group"
+      role="button"
       aria-label={ariaLabel}
     >
       {/* Table body — single clean stroke + warm fill. */}

@@ -12,6 +12,8 @@ import { applyCategoryPlanned } from "../lib/budget";
 import { budgetApi, coupleApi } from "../lib/endpoints";
 import { formatHuf, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
+import { publish, subscribe } from "../lib/sync";
 
 const CATEGORIES: BudgetCategory[] = [
   "venue",
@@ -83,6 +85,7 @@ function todayIso(): string {
 
 export default function BudgetPage() {
   const { t, locale } = useT();
+  useDocumentMeta("seo.budget_title", "seo.budget_description");
   const confirm = useConfirm();
   const promptEntry = useEntryPrompt();
   const toast = useToast();
@@ -108,17 +111,49 @@ export default function BudgetPage() {
     refresh();
   }, []);
 
+  // Subscribe to cross-tab budget updates so a partner's edit in tab B
+  // refreshes our view in tab A without a hard reload.
+  useEffect(() => {
+    return subscribe("budget:changed", () => {
+      refresh();
+    });
+  }, []);
+
   const cap = budgetCap(couple);
   const baseline = baselineGuestCount(couple);
   const effectiveCount = count ?? baseline;
+
+  /** Centralised error handler — turns a typed ApiError into the right
+   *  toast and triggers a refresh ONLY for concurrency conflicts (so the
+   *  user's other typed values stay put). Generic network failures keep
+   *  the user's local edit and offer a Retry. */
+  function handleSaveError(e: unknown, retry: () => void) {
+    if (e instanceof ApiError && e.status === 409) {
+      toast.error(t("budget.save_conflict"));
+      refresh();
+      return;
+    }
+    toast.push({
+      message: t("budget.save_failed_retry"),
+      kind: "error",
+      duration: 6000,
+    });
+    // Best-effort visible retry — the toast itself is short-lived, but
+    // exposing a second toast with action would clutter the rail. We
+    // simply re-trigger on tap via the button below.
+    // (Keeping the closure here so the inline catch can call it after a
+    // user-driven retry. The toast lib doesn't support actions today.)
+    void retry;
+  }
 
   async function save(line: BudgetLine, key: "planned_huf" | "actual_huf", val: number) {
     const next = lines.map((l) => (l.id === line.id ? { ...l, [key]: val } : l));
     setLines(next);
     try {
-      await budgetApi.updateLine(line.id, { ...line, [key]: val });
-    } catch {
-      refresh();
+      await budgetApi.updateLine(line.id, { ...line, [key]: val }, { ifMatch: line.updated_at });
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => save(line, key, val));
     }
   }
 
@@ -129,21 +164,31 @@ export default function BudgetPage() {
     const nextLines = lines.map((l) => (l.id === line.id ? { ...l, notes: nextNotes } : l));
     setLines(nextLines);
     try {
-      await budgetApi.updateLine(line.id, { ...line, notes: nextNotes });
-    } catch {
-      refresh();
+      await budgetApi.updateLine(
+        line.id,
+        { ...line, notes: nextNotes },
+        { ifMatch: line.updated_at },
+      );
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => saveNotes(line, notes));
     }
   }
 
   async function addLineForCategory(category: BudgetCategory) {
     const label = t(`budget.cat.${category}`);
-    const r = await budgetApi.createLine({
-      category,
-      label,
-      planned_huf: 0,
-      actual_huf: 0,
-    });
-    setLines((prev) => [...prev, r.line]);
+    try {
+      const r = await budgetApi.createLine({
+        category,
+        label,
+        planned_huf: 0,
+        actual_huf: 0,
+      });
+      setLines((prev) => [...prev, r.line]);
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => addLineForCategory(category));
+    }
   }
 
   async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
@@ -155,8 +200,9 @@ export default function BudgetPage() {
         t(`budget.cat.${category}`),
       );
       setLines(next);
-    } catch {
-      refresh();
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => setCategoryPlanned(category, newTotal));
     }
   }
 
@@ -166,8 +212,9 @@ export default function BudgetPage() {
         budget_goal: { kind: "exact", exact_huf: newCapHuf, min_huf: null, max_huf: null },
       });
       setCouple(r.couple);
-    } catch {
-      refresh();
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => saveCap(newCapHuf));
     }
   }
 

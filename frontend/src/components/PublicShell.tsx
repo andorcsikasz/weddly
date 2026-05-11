@@ -7,29 +7,62 @@ import { Wordmark } from "./Wordmark";
 /** Track scroll direction so the public header can hide on scroll-down
  *  and reveal on scroll-up. Returns `true` while the header should be
  *  hidden. Stays visible whenever the page is near the top (< 80 px),
- *  so the user never lands on a blank chrome zone. */
+ *  so the user never lands on a blank chrome zone.
+ *
+ *  Honours `prefers-reduced-motion`: when the user has reduce-motion on,
+ *  we never hide the header (no slide-in/out animation either). The
+ *  matchMedia listener also keeps things correct if the OS preference
+ *  flips while the page is open. */
 function useHeaderHidden(): boolean {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    lastY.current = window.scrollY;
-    const onScroll = () => {
-      const y = window.scrollY;
-      const dy = y - lastY.current;
-      if (y < 80) {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    let cleanupScroll: (() => void) | null = null;
+
+    const attach = () => {
+      if (reduce.matches) {
+        // Reduced motion: scroll-hide is purely cosmetic, so opt out.
         setHidden(false);
-      } else if (dy > 4) {
-        // Scrolling down past the threshold — slide the header out.
-        setHidden(true);
-      } else if (dy < -4) {
-        // Scrolling up — bring it back regardless of position.
-        setHidden(false);
+        return;
       }
-      lastY.current = y;
+      lastY.current = window.scrollY;
+      const onScroll = () => {
+        const y = window.scrollY;
+        const dy = y - lastY.current;
+        if (y < 80) {
+          setHidden(false);
+        } else if (dy > 4) {
+          // Scrolling down past the threshold — slide the header out.
+          setHidden(true);
+        } else if (dy < -4) {
+          // Scrolling up — bring it back regardless of position.
+          setHidden(false);
+        }
+        lastY.current = y;
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      cleanupScroll = () => window.removeEventListener("scroll", onScroll);
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    attach();
+
+    const onPrefChange = () => {
+      // Tear down whichever path we wired up, then re-attach against the
+      // new preference state.
+      cleanupScroll?.();
+      cleanupScroll = null;
+      setHidden(false);
+      attach();
+    };
+    reduce.addEventListener("change", onPrefChange);
+
+    return () => {
+      cleanupScroll?.();
+      reduce.removeEventListener("change", onPrefChange);
+    };
   }, []);
   return hidden;
 }
@@ -67,6 +100,7 @@ function PublicHeader() {
 
   return (
     <header
+      data-scroll-hide="true"
       className={`sticky top-0 z-40 border-b border-paper-300 bg-paper-50/85 backdrop-blur transition-transform duration-200 ${
         hidden ? "-translate-y-full" : "translate-y-0"
       }`}

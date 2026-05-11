@@ -5,10 +5,12 @@ import { Button, PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 export default function ResetPasswordPage() {
   const { token = "" } = useParams<{ token: string }>();
   const { t } = useT();
+  useDocumentMeta("seo.reset_password_title", "seo.reset_password_description");
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");

@@ -6,6 +6,7 @@
 import type {
   BudgetGoal,
   BudgetKind,
+  CeremonyKind,
   GuestCountGoal,
   GuestCountKind,
   WeddingDateGoal,
@@ -21,6 +22,7 @@ import { useAuth } from "../lib/auth";
 import { authApi, coupleApi } from "../lib/endpoints";
 import { formatHufRange, formatNumber, formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 const DRAFT_KEY = "weddly.onboarding_draft";
 
@@ -45,6 +47,8 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 interface FormState {
   bride_name: string;
   groom_name: string;
+  /** Optional civil / religious / both. `null` = user hasn't picked. */
+  ceremony_kind: CeremonyKind | null;
   date_kind: WeddingDateKind;
   date_exact: string;
   date_year: string;
@@ -66,6 +70,7 @@ const TOTAL_STEPS = 5;
 const DEFAULT_FORM: FormState = {
   bride_name: "",
   groom_name: "",
+  ceremony_kind: null,
   date_kind: "season",
   date_exact: "",
   date_year: String(MIN_YEAR + 1),
@@ -245,6 +250,7 @@ function clearDraft() {
 
 export default function OnboardingWizard() {
   const { t, locale } = useT();
+  useDocumentMeta("seo.onboarding_title", "seo.onboarding_description");
   const navigate = useNavigate();
   const { user } = useAuth();
   const [step, setStep] = useState(0);
@@ -298,6 +304,16 @@ export default function OnboardingWizard() {
         budget_goal: buildBudgetGoal(form),
         style_tags: form.style_tags,
       });
+      // Persist optional ceremony_kind via the partial-update endpoint —
+      // onboard() doesn't accept it. We don't surface this as a fatal error;
+      // the user can set it later from Profile if the follow-up fails.
+      if (form.ceremony_kind !== null) {
+        try {
+          await coupleApi.update({ ceremony_kind: form.ceremony_kind });
+        } catch {
+          /* non-fatal — couple is created; ceremony_kind stays null */
+        }
+      }
       completedRef.current = true;
       clearDraft();
       navigate("/app", { replace: true });
@@ -354,6 +370,35 @@ export default function OnboardingWizard() {
                     onChange={(e) => update("groom_name", e.target.value)}
                   />
                 </div>
+              </div>
+
+              {/* Optional ceremony-kind sub-question. `null` = skip — nothing
+                  gets persisted unless the user picks. Persists via a partial
+                  update after onboarding (see onSubmit). */}
+              <div className="mt-6">
+                <p className="text-sm font-medium text-ink-700">
+                  {t("onboarding.ceremony_kind_question")}
+                </p>
+                <div
+                  className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
+                  role="radiogroup"
+                  aria-label={t("onboarding.ceremony_kind_question")}
+                >
+                  {(["civil", "religious", "both"] as CeremonyKind[]).map((k) => (
+                    <KindButton
+                      key={k}
+                      active={form.ceremony_kind === k}
+                      onClick={() => update("ceremony_kind", k)}
+                      label={t(`onboarding.ceremony_kind_${k}`)}
+                    />
+                  ))}
+                  <KindButton
+                    active={form.ceremony_kind === null}
+                    onClick={() => update("ceremony_kind", null)}
+                    label={t("onboarding.ceremony_kind_skip")}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-ink-500">{t("onboarding.ceremony_kind_help")}</p>
               </div>
             </>
           )}
@@ -639,7 +684,17 @@ export default function OnboardingWizard() {
             </>
           )}
 
-          {error && <p className="field-error mt-4">{error}</p>}
+          {error && (
+            <div
+              className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blush-200 bg-blush-50 px-3 py-2 text-sm text-blush-900"
+              role="alert"
+            >
+              <p className="flex-1">{t("onboarding.submit_failed")}</p>
+              <button type="submit" className="btn-outline btn-sm" disabled={submitting}>
+                {submitting ? t("onboarding.saving") : t("onboarding.submit_retry")}
+              </button>
+            </div>
+          )}
 
           <div className="mt-8 flex items-center justify-between">
             <button

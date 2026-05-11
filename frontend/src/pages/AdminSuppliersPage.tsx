@@ -6,6 +6,7 @@ import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 function formatDate(unixSeconds: number, locale: string): string {
   const d = new Date(unixSeconds * 1000);
@@ -31,6 +32,7 @@ function isPending(s: CommunitySupplierAdminView, nowSec: number): boolean {
 
 export default function AdminSuppliersPage() {
   const { t, locale } = useT();
+  useDocumentMeta("seo.admin_suppliers_title", "seo.admin_suppliers_description");
   const confirm = useConfirm();
   const promptEntry = useEntryPrompt();
   const toast = useToast();
