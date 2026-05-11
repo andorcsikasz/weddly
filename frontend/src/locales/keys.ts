@@ -753,6 +753,8 @@ export interface LocaleMessages {
     costs_empty_body: string;
     /** Per-card "spent so far" inline label. Receives `{actual}` pre-formatted. */
     cost_actual_inline: string;
+    /** Aria-label for the per-card range slider. Receives `{label}`. */
+    slider_aria: string;
     /** Preset chip labels — used as the seed `label` when creating a budget
      *  line, and as the chip's display text. */
     preset: {
@@ -982,6 +984,8 @@ export interface LocaleMessages {
     cost_planning_headline: string;
     cost_planning_help: string;
     cost_planning_baseline_note: string;
+    /** Standalone "vendég" / "guests" label rendered under the big count tile. */
+    cost_planning_unit_label: string;
     lines_title: string;
     lines_sub: string;
     lines_empty: string;
@@ -1257,6 +1261,29 @@ export interface LocaleMessages {
       err_invalid_email: string;
       err_too_long: string;
       err_rate_limited: string;
+    };
+    /** Abuse-report flow against community-submitted listings. */
+    report: {
+      aria_label: string;
+      title: string;
+      /** Body intro — interpolated with {name}. */
+      intro: string;
+      reason_label: string;
+      note_label: string;
+      note_placeholder: string;
+      submit: string;
+      submitting: string;
+      thanks_toast: string;
+      duplicate_toast: string;
+      auto_hidden_toast: string;
+      err_rate_limited: string;
+      reason: {
+        spam: { label: string; desc: string };
+        fake: { label: string; desc: string };
+        offensive: { label: string; desc: string };
+        wrong_info: { label: string; desc: string };
+        other: { label: string; desc: string };
+      };
     };
     group: {
       venue_stay: string;

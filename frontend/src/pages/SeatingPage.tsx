@@ -7,7 +7,7 @@
 // and that's what the PDF export consumes.
 
 import type { Couple, Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
-import { maxSeatsForTable } from "@shared/seating";
+import { defaultDimsForShape, maxSeatsForTable } from "@shared/seating";
 import {
   Baby,
   ChefHat,
@@ -1268,7 +1268,14 @@ function TableEditor({
       <Section label={t("seating.shape_label")}>
         <ShapePicker
           value={table.shape}
-          onChange={(v) => onPatch({ shape: v })}
+          // Snap width/length to the new shape's standard defaults too —
+          // a round 1500×1500 doesn't make sense as a long banquet, the
+          // user would just have to immediately resize otherwise.
+          onChange={(v) => {
+            if (v === table.shape) return;
+            const dims = defaultDimsForShape(v);
+            onPatch({ shape: v, width_mm: dims.width_mm, length_mm: dims.length_mm });
+          }}
           ariaLabel={t("seating.shape_label")}
           labels={{
             round: t("seating.shape_round"),

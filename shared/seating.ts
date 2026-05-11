@@ -11,6 +11,21 @@ import type { TableShape } from "./types";
  *  is bumping arms with their neighbour. */
 export const CHAIR_PITCH_MM = 800;
 
+/** Standard banquet defaults for each shape, in millimetres. The editor
+ *  snaps to these whenever the user switches shape; the backend uses them
+ *  to fill in width/length when the client doesn't send any.
+ *
+ *  - Round  → Ø 1500  (8-seat banquet round).
+ *  - Square → 1600 × 1600.
+ *  - Long   → 800 × 1600 (rectangle, "tégla asztal").
+ *  - Head   → 900 × 4000 (wider so the whole bridal party fits). */
+export function defaultDimsForShape(shape: TableShape): { width_mm: number; length_mm: number } {
+  if (shape === "long") return { width_mm: 800, length_mm: 1600 };
+  if (shape === "head") return { width_mm: 900, length_mm: 4000 };
+  if (shape === "square") return { width_mm: 1600, length_mm: 1600 };
+  return { width_mm: 1500, length_mm: 1500 };
+}
+
 /** Soft cap on seats given a table's footprint. Round → circumference /
  *  pitch. Head → one long side / pitch (chairs only on the front edge).
  *  Long / Square → full perimeter / pitch. Always at least 1. */

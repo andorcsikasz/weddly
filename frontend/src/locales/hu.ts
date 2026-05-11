@@ -768,6 +768,7 @@ const hu: LocaleMessages = {
     costs_empty_body:
       "Kezdd egy kategóriával — utazás, szállás, étkezés, programok. A tervezett összeget bármikor szerkesztheted.",
     cost_actual_inline: "Eddig: {actual}",
+    slider_aria: "{label} tervezett összeg",
     preset: {
       travel: "Utazás",
       stay: "Szállás",
@@ -984,6 +985,7 @@ const hu: LocaleMessages = {
     cost_planning_help:
       "Húzd a csúszkát, hogy lásd, hogyan változnak a tervezett költségek a létszámtól. A vendégenkénti tételek skálázódnak; a fix költségek nem.",
     cost_planning_baseline_note: "{n} vendég",
+    cost_planning_unit_label: "vendég",
     lines_title: "Költségsorok",
     lines_sub: "Szerkeszd a sorokat — a fenti összegek és sávok élőben frissülnek.",
     lines_empty: "Még nincs költségsor. Adj hozzá egyet, hogy elindulhass.",
@@ -1232,6 +1234,44 @@ const hu: LocaleMessages = {
       err_invalid_email: "Érvényes e-mail cím szükséges.",
       err_too_long: "Túl hosszú.",
       err_rate_limited: "Sok küldés érkezett — próbáld pár perc múlva.",
+    },
+    report: {
+      aria_label: "Hirdetés jelentése",
+      title: "Hirdetés jelentése",
+      intro:
+        "Ha úgy érzed, hogy a(z) „{name}” bejegyzés spam, hamis vagy nem ide való, jelezd nekünk. Több független jelentés után automatikusan elrejtjük a moderátoroknak.",
+      reason_label: "Miért jelented?",
+      note_label: "Részletek (opcionális)",
+      note_placeholder: "Pl. linket sem találtunk, a cím nem létezik, hamis fotók…",
+      submit: "Jelentés elküldése",
+      submitting: "Küldés…",
+      thanks_toast: "Köszönjük, megkaptuk. A csapat átnézi.",
+      duplicate_toast: "Ezt a hirdetést már jelentetted — még nem kellett kétszer.",
+      auto_hidden_toast:
+        "Köszönjük — a hirdetést a többi jelentéssel együtt automatikusan elrejtettük, amíg moderátor át nem nézi.",
+      err_rate_limited: "Túl sok jelentés rövid idő alatt — próbáld pár perc múlva.",
+      reason: {
+        spam: {
+          label: "Spam vagy reklám",
+          desc: "Nem esküvős vagy ismétlődő, csak hivatkozást szór szét.",
+        },
+        fake: {
+          label: "Hamis vagy megtévesztő",
+          desc: "Olyan vállalkozás, ami nem létezik vagy nem tartozik ide.",
+        },
+        offensive: {
+          label: "Sértő tartalom",
+          desc: "Kirekesztő, vulgáris vagy más felhasználókat bántó szöveg.",
+        },
+        wrong_info: {
+          label: "Hibás adatok",
+          desc: "Rossz cím, telefonszám vagy weboldal — érdemes javítani.",
+        },
+        other: {
+          label: "Egyéb",
+          desc: "Más okból szeretnéd, ha átnéznénk — a részleteket írd alá.",
+        },
+      },
     },
     group: {
       venue_stay: "Helyszín & szállás",

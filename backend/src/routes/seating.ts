@@ -1,7 +1,7 @@
 // Seating tables, seat assignments, conflict tracker. Couple-scoped.
 
 import type { SeatAssignment, SeatingConflict, SeatingTable, TableShape } from "@shared/types";
-import { maxSeatsForTable } from "@shared/seating";
+import { defaultDimsForShape, maxSeatsForTable } from "@shared/seating";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
@@ -176,12 +176,10 @@ function parseTableBody(body: UpsertTableBody) {
     throw new HttpError(400, "x_mm/y_mm must be finite");
   }
 
-  // Defaults if the client didn't send dimensions: 1500mm round/square is a
-  // typical 8-seat banquet; 2400×900 is a typical long table; 4000×900 is a
-  // typical head table (slightly wider so the whole bridal party fits).
-  const isRectShape = shape === "long" || shape === "head";
-  const defaultWidth = isRectShape ? 900 : 1500;
-  const defaultLength = shape === "head" ? 4000 : shape === "long" ? 2400 : 1500;
+  // Defaults if the client didn't send dimensions — shared with the
+  // frontend's shape-picker snap-to behaviour. Round Ø 1500, square
+  // 1600×1600, long 800×1600 ("tégla asztal"), head 900×4000.
+  const { width_mm: defaultWidth, length_mm: defaultLength } = defaultDimsForShape(shape);
   let width = Math.round(Number(body.width_mm ?? defaultWidth));
   let length = Math.round(Number(body.length_mm ?? defaultLength));
   if (!Number.isFinite(width) || !Number.isFinite(length)) {

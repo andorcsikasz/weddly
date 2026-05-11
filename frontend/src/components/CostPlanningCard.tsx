@@ -200,10 +200,15 @@ export function CostPlanningCard({
           ))}
       </div>
 
-      {/* Big centred live count — the user's "set number". */}
-      <h2 className="mt-3 text-center font-serif text-3xl text-ink-900 sm:text-4xl">
-        {t("budget.cost_planning_baseline_note", { n: formatNumber(count, locale) })}
-      </h2>
+      {/* Big centred live count — number large, "vendég" small below. */}
+      <div className="mt-1 text-center">
+        <div className="font-serif text-4xl leading-none text-ink-900 sm:text-5xl">
+          {formatNumber(count, locale)}
+        </div>
+        <div className="mt-1 text-xs uppercase tracking-wide text-ink-500">
+          {t("budget.cost_planning_unit_label")}
+        </div>
+      </div>
 
       {/* Headcount slider — compact single block. */}
       <div className="mt-4">

@@ -766,6 +766,7 @@ const en: LocaleMessages = {
     costs_empty_body:
       "Start with a category — travel, accommodation, food, activities. You can edit the planned amount any time.",
     cost_actual_inline: "Spent: {actual}",
+    slider_aria: "{label} planned amount",
     preset: {
       travel: "Travel",
       stay: "Accommodation",
@@ -981,6 +982,7 @@ const en: LocaleMessages = {
     cost_planning_help:
       "Drag the slider to see how planned costs shift with headcount. Per-guest categories scale; fixed costs stay put.",
     cost_planning_baseline_note: "{n} guests",
+    cost_planning_unit_label: "guests",
     lines_title: "Budget lines",
     lines_sub: "Edit each line — totals above and bars update live.",
     lines_empty: "No budget lines yet. Add one to start planning.",
@@ -1225,6 +1227,44 @@ const en: LocaleMessages = {
       err_invalid_email: "Needs a valid email.",
       err_too_long: "Too long.",
       err_rate_limited: "Too many submissions — try again in a minute.",
+    },
+    report: {
+      aria_label: "Report listing",
+      title: "Report listing",
+      intro:
+        "If “{name}” looks like spam, fake, or doesn’t belong here, tell us. After several independent reports we auto-hide it for a moderator to review.",
+      reason_label: "Why are you reporting?",
+      note_label: "Details (optional)",
+      note_placeholder: "e.g. the website doesn’t exist, fake photos, duplicate of …",
+      submit: "Send report",
+      submitting: "Sending…",
+      thanks_toast: "Thanks — we got it. The team will take a look.",
+      duplicate_toast: "You’ve already reported this one — no need to send twice.",
+      auto_hidden_toast:
+        "Thanks — with the existing reports we’ve auto-hidden this listing until a moderator reviews it.",
+      err_rate_limited: "Too many reports in a short time — try again in a minute.",
+      reason: {
+        spam: {
+          label: "Spam or promo",
+          desc: "Not wedding-related or just spreads links.",
+        },
+        fake: {
+          label: "Fake or misleading",
+          desc: "Business doesn’t exist or doesn’t belong in the directory.",
+        },
+        offensive: {
+          label: "Offensive content",
+          desc: "Discriminatory, vulgar, or otherwise hostile language.",
+        },
+        wrong_info: {
+          label: "Wrong info",
+          desc: "Bad address, phone, or website — worth fixing.",
+        },
+        other: {
+          label: "Other",
+          desc: "Something else — add the detail below.",
+        },
+      },
     },
     group: {
       venue_stay: "Venue & stay",
