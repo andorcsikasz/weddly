@@ -792,6 +792,10 @@ const en: LocaleMessages = {
     sort_label: "Sort",
     sort_top: "Top voted",
     sort_alpha: "Name (A–Z)",
+    view_label: "View",
+    view_list: "List",
+    view_map: "Map",
+    map_missing_count: "{n} entries aren't placed on the map yet.",
     submit: {
       title: "Drop your own",
       intro: "Know someone good? Add a few details — other couples will find them faster.",

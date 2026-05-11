@@ -19,6 +19,8 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  List,
+  Map as MapIcon,
   Disc3,
   Flower2,
   Lightbulb,
@@ -37,7 +39,7 @@ import {
   Wine,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { AppShell } from "../components/AppShell";
@@ -46,6 +48,11 @@ import { SupplierCostRow } from "../components/SupplierCostRow";
 import { Button } from "../components/ui";
 import { supplierApi, supplierCostApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+// Leaflet + react-leaflet add ~150 KB minified that no other page uses —
+// lazy-loading keeps the initial /app bundle small for couples who never
+// open the map tab.
+const SupplierMap = lazy(() => import("../components/SupplierMap"));
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
@@ -124,6 +131,7 @@ export default function SuppliersPage() {
   const cityFilter = params.get("city") ?? "";
   const showSavedOnly = params.get("saved") === "1";
   const sortMode: "top" | "alpha" = params.get("sort") === "alpha" ? "alpha" : "top";
+  const viewMode: "list" | "map" = params.get("view") === "map" ? "map" : "list";
 
   function setQuery(next: string) {
     const p = new URLSearchParams(params);
@@ -147,6 +155,12 @@ export default function SuppliersPage() {
     const p = new URLSearchParams(params);
     if (next === "alpha") p.set("sort", "alpha");
     else p.delete("sort");
+    setParams(p, { replace: true });
+  }
+  function setViewMode(next: "list" | "map") {
+    const p = new URLSearchParams(params);
+    if (next === "map") p.set("view", "map");
+    else p.delete("view");
     setParams(p, { replace: true });
   }
 
@@ -270,9 +284,41 @@ export default function SuppliersPage() {
           <h1>{t("suppliers.title")}</h1>
           <p className="mt-1 text-sm text-ink-500">{t("suppliers.sub")}</p>
         </div>
-        <Button variant="primary" size="sm" onClick={() => setSubmitOpen(true)}>
-          {t("suppliers.drop_your_own")}
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <div
+            role="group"
+            aria-label={t("suppliers.view_label")}
+            className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 p-0.5 text-xs"
+          >
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              aria-pressed={viewMode === "list"}
+              className={
+                viewMode === "list"
+                  ? "inline-flex items-center gap-1 rounded-full bg-ink-700 px-2.5 py-1 text-paper-100"
+                  : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 hover:text-ink-900"
+              }
+            >
+              <List size={12} aria-hidden /> {t("suppliers.view_list")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("map")}
+              aria-pressed={viewMode === "map"}
+              className={
+                viewMode === "map"
+                  ? "inline-flex items-center gap-1 rounded-full bg-ink-700 px-2.5 py-1 text-paper-100"
+                  : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 hover:text-ink-900"
+              }
+            >
+              <MapIcon size={12} aria-hidden /> {t("suppliers.view_map")}
+            </button>
+          </div>
+          <Button variant="primary" size="sm" onClick={() => setSubmitOpen(true)}>
+            {t("suppliers.drop_your_own")}
+          </Button>
+        </div>
       </header>
 
       {/* Search + city filter + saved chip */}
@@ -408,109 +454,121 @@ export default function SuppliersPage() {
         </div>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {filtered.map((s) => {
-          const Icon = CATEGORY_ICON[s.category];
-          const isHighlighted = s.id === highlightId;
-          const isSaved = saved.has(s.id);
-          return (
-            <article
-              key={s.id}
-              data-supplier-id={s.id}
-              className={`card-hover relative transition-shadow ${
-                isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
-              }`}
-            >
-              <div className="absolute right-4 top-4 flex items-center gap-2">
-                {s.price_band !== null && (
-                  <span
-                    className="text-xs tracking-wider text-ink-500"
-                    title={t("suppliers.price_legend")}
-                    aria-label={t("suppliers.price_legend")}
-                  >
-                    <PriceBandDots band={s.price_band} />
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => toggleSaved(s.id)}
-                  aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
-                  aria-pressed={isSaved}
-                  className="text-ink-400 transition hover:text-blush-700"
-                >
-                  <Star
-                    size={16}
-                    className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-                    aria-hidden
-                  />
-                </button>
-              </div>
-              <div className="flex items-center gap-3">
-                <Avatar name={s.name} />
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate pr-16 text-base font-semibold">{s.name}</h3>
-                  <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs uppercase tracking-wide text-ink-500">
-                    <Icon size={12} />
-                    <span>
-                      {t(`suppliers.cat.${s.category}`)} · {s.city}
+      {viewMode === "map" ? (
+        <Suspense
+          fallback={
+            <div className="rounded-2xl border border-paper-300 bg-paper-50 p-8 text-center text-sm text-ink-500">
+              {t("common.loading")}
+            </div>
+          }
+        >
+          <SupplierMap suppliers={filtered} />
+        </Suspense>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {filtered.map((s) => {
+            const Icon = CATEGORY_ICON[s.category];
+            const isHighlighted = s.id === highlightId;
+            const isSaved = saved.has(s.id);
+            return (
+              <article
+                key={s.id}
+                data-supplier-id={s.id}
+                className={`card-hover relative transition-shadow ${
+                  isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+                }`}
+              >
+                <div className="absolute right-4 top-4 flex items-center gap-2">
+                  {s.price_band !== null && (
+                    <span
+                      className="text-xs tracking-wider text-ink-500"
+                      title={t("suppliers.price_legend")}
+                      aria-label={t("suppliers.price_legend")}
+                    >
+                      <PriceBandDots band={s.price_band} />
                     </span>
-                    {s.source === "community" && (
-                      <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600">
-                        {t("suppliers.community_pill")}
-                      </span>
-                    )}
-                    {(s.capacity_max ?? 0) > 0 && (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600"
-                        aria-label={t("suppliers.capacity_label")}
-                      >
-                        <Users size={10} />
-                        {s.capacity_min && s.capacity_max
-                          ? t("suppliers.capacity_range", {
-                              min: s.capacity_min,
-                              max: s.capacity_max,
-                            })
-                          : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
-                      </span>
-                    )}
-                  </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleSaved(s.id)}
+                    aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
+                    aria-pressed={isSaved}
+                    className="text-ink-400 transition hover:text-blush-700"
+                  >
+                    <Star
+                      size={16}
+                      className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+                      aria-hidden
+                    />
+                  </button>
                 </div>
-              </div>
-              {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
-              <VoteRow supplier={s} onVote={onVote} t={t} />
-              <p className="mt-3 text-sm text-ink-700">
-                {locale === "hu" ? s.blurb_hu : s.blurb_en}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <a
-                  href={s.website}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="btn-outline btn-sm"
-                >
-                  {t("suppliers.visit_website")}
-                </a>
-                {s.contact_email && (
-                  <a href={`mailto:${s.contact_email}`} className="btn-ghost btn-sm">
-                    <Mail size={14} /> {t("suppliers.contact_email")}
+                <div className="flex items-center gap-3">
+                  <Avatar name={s.name} />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate pr-16 text-base font-semibold">{s.name}</h3>
+                    <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs uppercase tracking-wide text-ink-500">
+                      <Icon size={12} />
+                      <span>
+                        {t(`suppliers.cat.${s.category}`)} · {s.city}
+                      </span>
+                      {s.source === "community" && (
+                        <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600">
+                          {t("suppliers.community_pill")}
+                        </span>
+                      )}
+                      {(s.capacity_max ?? 0) > 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600"
+                          aria-label={t("suppliers.capacity_label")}
+                        >
+                          <Users size={10} />
+                          {s.capacity_min && s.capacity_max
+                            ? t("suppliers.capacity_range", {
+                                min: s.capacity_min,
+                                max: s.capacity_max,
+                              })
+                            : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
+                <VoteRow supplier={s} onVote={onVote} t={t} />
+                <p className="mt-3 text-sm text-ink-700">
+                  {locale === "hu" ? s.blurb_hu : s.blurb_en}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a
+                    href={s.website}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="btn-outline btn-sm"
+                  >
+                    {t("suppliers.visit_website")}
                   </a>
-                )}
-                {s.contact_phone && (
-                  <a href={`tel:${s.contact_phone}`} className="btn-ghost btn-sm">
-                    <Phone size={14} /> {s.contact_phone}
-                  </a>
-                )}
-              </div>
-              <SupplierCostRow supplierId={s.id} initial={costs[s.id]} onSaved={updateCost} />
-            </article>
-          );
-        })}
-        {filtered.length === 0 && items.length > 0 && (
-          <p className="col-span-full py-8 text-center text-sm text-ink-500">
-            {t("suppliers.empty_filtered")}
-          </p>
-        )}
-      </div>
+                  {s.contact_email && (
+                    <a href={`mailto:${s.contact_email}`} className="btn-ghost btn-sm">
+                      <Mail size={14} /> {t("suppliers.contact_email")}
+                    </a>
+                  )}
+                  {s.contact_phone && (
+                    <a href={`tel:${s.contact_phone}`} className="btn-ghost btn-sm">
+                      <Phone size={14} /> {s.contact_phone}
+                    </a>
+                  )}
+                </div>
+                <SupplierCostRow supplierId={s.id} initial={costs[s.id]} onSaved={updateCost} />
+              </article>
+            );
+          })}
+          {filtered.length === 0 && items.length > 0 && (
+            <p className="col-span-full py-8 text-center text-sm text-ink-500">
+              {t("suppliers.empty_filtered")}
+            </p>
+          )}
+        </div>
+      )}
 
       <SubmitSupplierModal
         open={submitOpen}
