@@ -8,7 +8,7 @@
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
 import { chairOffsets, maxSeatsForTable } from "@shared/seating";
-import { Minus, Plus } from "lucide-react";
+import { Baby, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "../../lib/i18n";
 
@@ -62,6 +62,10 @@ interface Props {
   roomHeightMm?: number;
   /** Called when the user commits a new room size in the inline inputs. */
   onRoomChange?: (widthMm: number, heightMm: number) => void;
+  /** Seat indices per table currently occupied by a baby guest. Drives the
+   *  baby-icon overlay on the chair, independent of the baby_seats "needs
+   *  a high chair" flag on the table itself. */
+  babySeatsByTable?: Map<number, Set<number>>;
 }
 
 type DragState =
@@ -98,6 +102,7 @@ export function SeatingMap({
   roomWidthMm = DEFAULT_ROOM_W_MM,
   roomHeightMm = DEFAULT_ROOM_H_MM,
   onRoomChange,
+  babySeatsByTable,
 }: Props) {
   const { t } = useT();
   // Local aliases keep the rest of the component readable; the rendering
@@ -411,6 +416,7 @@ export function SeatingMap({
                 cx={pos.x}
                 cy={pos.y}
                 filledSeats={filled}
+                babySeatedSet={babySeatsByTable?.get(table.id)}
                 isSelected={selectedId === table.id}
                 onPointerDown={(e) => startMove(e, table)}
                 onHandlePointerDown={(e, h) => startResize(e, table, h)}
@@ -535,6 +541,8 @@ interface TableShapeProps {
   cx: number;
   cy: number;
   filledSeats: number;
+  /** Seat indices currently occupied by a baby guest — overlay a Baby icon. */
+  babySeatedSet?: Set<number>;
   isSelected: boolean;
   onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
   onHandlePointerDown: (e: React.PointerEvent<SVGElement>, handle: HandleDir) => void;
@@ -556,6 +564,7 @@ function TableShape({
   cx,
   cy,
   filledSeats,
+  babySeatedSet,
   isSelected,
   onPointerDown,
   onHandlePointerDown,
@@ -675,7 +684,12 @@ function TableShape({
       {chairs.map((c, i) => {
         const isFilled = i < filledSeats;
         const isDisabled = disabledSet.has(i);
-        const isBaby = !isDisabled && babySet.has(i);
+        // Show the baby icon either when the chair is *flagged* (needs a
+        // high chair) or when an actual baby guest is currently sitting
+        // there. Both states read the same way: a Baby icon overlaying
+        // the chair so the venue knows to bring (or already brought) a
+        // high chair.
+        const isBaby = !isDisabled && (babySet.has(i) || (babySeatedSet?.has(i) ?? false));
         const cosA = Math.cos(c.angle);
         const sinA = Math.sin(c.angle);
         const px = c.dx + cosA * chairPushMm;
@@ -690,10 +704,9 @@ function TableShape({
         // so it sits centred on the chair regardless of where it is on
         // the table.
         const crossLen = chairHeightMm * 0.45;
-        // Baby high-chair badge: a small ring at the chair's centre with a
-        // dot inside, sized so it reads at the same zoom as the chair.
-        const babyR = chairHeightMm * 0.32;
-        const babyDot = babyR * 0.4;
+        // Baby icon — the lucide Baby glyph, sized to fit roughly two
+        // thirds of the chair so it reads at the canvas zoom.
+        const babyIconSize = chairHeightMm * 0.72;
         return (
           <g key={i}>
             <rect
@@ -732,11 +745,15 @@ function TableShape({
             )}
             {isBaby && (
               <g
-                transform={`translate(${px} ${py}) rotate(${rotDeg})`}
+                transform={`translate(${px} ${py}) rotate(${rotDeg}) translate(${-babyIconSize / 2} ${-babyIconSize / 2})`}
                 style={{ pointerEvents: "none" }}
               >
-                <circle r={babyR} className="fill-paper-50 stroke-ink-800" strokeWidth={16} />
-                <circle r={babyDot} className="fill-ink-800" />
+                <Baby
+                  width={babyIconSize}
+                  height={babyIconSize}
+                  className={`fill-none ${isFilled ? "stroke-paper-50" : "stroke-ink-700"}`}
+                  strokeWidth={2}
+                />
               </g>
             )}
           </g>

@@ -6,13 +6,14 @@
 // column layout; the map is where pixel-perfect (millimetre) layout lives,
 // and that's what the PDF export consumes.
 
-import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
+import type { Couple, Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
 import { maxSeatsForTable } from "@shared/seating";
 import {
   Baby,
   ChefHat,
   Circle,
   Copy,
+  Crown,
   HelpCircle,
   Minus,
   Pencil,
@@ -28,7 +29,7 @@ import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } fro
 import { AppShell } from "../components/AppShell";
 import { Button, Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
+import { coupleApi, fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
@@ -64,6 +65,9 @@ export default function SeatingPage() {
   const [tables, setTables] = useState<SeatingTable[]>([]);
   const [assignments, setAssignments] = useState<SeatAssignment[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
+  // The couple — fetched alongside the plan so we can pin the bride / groom
+  // (matched by name) to the top of the unassigned guest list.
+  const [couple, setCouple] = useState<Couple | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   // PDF preview shown before download. Holds an object URL we revoke on close.
   const [preview, setPreview] = useState<PdfPreview | null>(null);
@@ -99,10 +103,15 @@ export default function SeatingPage() {
   } | null>(null);
 
   async function refresh() {
-    const [plan, gs] = await Promise.all([seatingApi.plan(), guestApi.list()]);
+    const [plan, gs, c] = await Promise.all([
+      seatingApi.plan(),
+      guestApi.list(),
+      coupleApi.current(),
+    ]);
     setTables(plan.tables);
     setAssignments(plan.assignments);
     setGuests(gs.guests);
+    setCouple(c.couple);
   }
 
   useEffect(() => {
@@ -167,7 +176,53 @@ export default function SeatingPage() {
 
   const guestById = useMemo(() => new Map(guests.map((g) => [g.id, g])), [guests]);
   const seatedIds = useMemo(() => new Set(assignments.map((a) => a.guest_id)), [assignments]);
-  const unassigned = useMemo(() => guests.filter((g) => !seatedIds.has(g.id)), [guests, seatedIds]);
+  // Look up partner role by name. Case-insensitive, trimmed — gives the
+  // couple a chance to type their own name as a guest without exactly
+  // matching the casing they used in onboarding.
+  const partnerRoleByName = useMemo(() => {
+    const map = new Map<string, "bride" | "groom">();
+    const bride = couple?.bride_name?.trim().toLowerCase();
+    const groom = couple?.groom_name?.trim().toLowerCase();
+    if (bride) map.set(bride, "bride");
+    if (groom) map.set(groom, "groom");
+    return map;
+  }, [couple]);
+  const partnerRole = useCallback(
+    (g: Guest): "bride" | "groom" | null =>
+      partnerRoleByName.get(g.full_name.trim().toLowerCase()) ?? null,
+    [partnerRoleByName],
+  );
+  // Unassigned guests with bride + groom pinned to the top (bride first
+  // when both match). Everyone else keeps the server-side order.
+  const unassigned = useMemo(() => {
+    const all = guests.filter((g) => !seatedIds.has(g.id));
+    if (partnerRoleByName.size === 0) return all;
+    const bride = all.find((g) => partnerRole(g) === "bride") ?? null;
+    const groom = all.find((g) => partnerRole(g) === "groom") ?? null;
+    const rest = all.filter((g) => g !== bride && g !== groom);
+    const head: Guest[] = [];
+    if (bride) head.push(bride);
+    if (groom) head.push(groom);
+    return [...head, ...rest];
+  }, [guests, seatedIds, partnerRoleByName, partnerRole]);
+  // Per-table set of seat indices currently occupied by a baby guest. The
+  // canvas chair render reads this to overlay a Baby icon — different from
+  // the baby_seats flag (which marks a chair as "needs a high-chair"
+  // independently of who's sitting there).
+  const babySeatsByTable = useMemo(() => {
+    const out = new Map<number, Set<number>>();
+    for (const a of assignments) {
+      const g = guestById.get(a.guest_id);
+      if (g?.kind !== "baby") continue;
+      let set = out.get(a.table_id);
+      if (!set) {
+        set = new Set();
+        out.set(a.table_id, set);
+      }
+      set.add(a.seat_index);
+    }
+    return out;
+  }, [assignments, guestById]);
   const selected = useMemo(
     () => tables.find((tb) => tb.id === selectedId) ?? null,
     [tables, selectedId],
@@ -849,6 +904,7 @@ export default function SeatingPage() {
             roomWidthMm={roomWidthMm}
             roomHeightMm={roomHeightMm}
             onRoomChange={updateRoom}
+            babySeatsByTable={babySeatsByTable}
           />
           <TableEditor
             table={selected}
@@ -983,6 +1039,7 @@ export default function SeatingPage() {
                     tapMode={tapMode}
                     selected={selectedGuestId === g.id}
                     onTap={handleTapGuest}
+                    partnerRole={partnerRole(g)}
                   />
                 </li>
               ))}
@@ -1981,6 +2038,7 @@ function DraggableGuest({
   tapMode,
   selected,
   onTap,
+  partnerRole,
 }: {
   guest: Guest;
   compact?: boolean;
@@ -1989,6 +2047,8 @@ function DraggableGuest({
   tapMode?: boolean;
   selected?: boolean;
   onTap?: (guest: Guest) => void;
+  /** Pin a Crown icon next to bride / groom matches in the unassigned list. */
+  partnerRole?: "bride" | "groom" | null;
 }) {
   function onDragStart(e: DragEvent) {
     const data: DragData = { guestId: guest.id };
@@ -2034,11 +2094,21 @@ function DraggableGuest({
         .filter(Boolean)
         .join(" ")}
     >
+      {/* Crown for bride / groom matches at the top of the unassigned list
+          so the couple can see themselves at a glance — they're the only
+          guests their workspace cares about emotionally. */}
+      {partnerRole && (
+        <Crown
+          size={compact ? 14 : 16}
+          aria-hidden
+          className="mr-1 inline-block align-text-bottom text-blush-600"
+        />
+      )}
       {/* Baby icon for guests where kind === "baby" so couples can see at a
           glance which seats are taken by infants — they typically sit on a
           parent's lap or in a high-chair, so they don't consume a real seat
           for the venue head-count. */}
-      {guest.kind === "baby" && (
+      {guest.kind === "baby" && !partnerRole && (
         <Baby
           size={compact ? 14 : 16}
           aria-hidden
