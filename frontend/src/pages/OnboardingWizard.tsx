@@ -7,6 +7,7 @@ import type {
   BudgetGoal,
   BudgetKind,
   CeremonyKind,
+  Couple,
   GuestCountGoal,
   GuestCountKind,
   WeddingDateGoal,
@@ -15,12 +16,19 @@ import type {
   WeddingStyleTag,
 } from "@shared/types";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { TagChip } from "../components/ui";
 import { useAuth } from "../lib/auth";
 import { authApi, coupleApi } from "../lib/endpoints";
-import { formatHufRange, formatNumber, formatHuf } from "../lib/format";
+import {
+  formatBudgetGoal,
+  formatGuestCountGoal,
+  formatHuf,
+  formatHufRange,
+  formatNumber,
+  formatWeddingDateGoal,
+} from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -257,9 +265,32 @@ export default function OnboardingWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(() => loadDraft() ?? DEFAULT_FORM);
+  // `null` = still loading, `false` = no couple (show wizard),
+  // `Couple` = workspace already exists (show welcome card instead).
+  // Partner B lands on /onboarding when they accept an invite but the
+  // dashboard route bounces them here (no couple at first paint); a stale
+  // session can also drop a returning user here. In either case we must
+  // not re-render the wizard — it would offer to overwrite partner A's data.
+  const [existing, setExisting] = useState<Couple | null | false>(null);
   // Once we've completed onboarding we strip the draft; this guards a
   // late autosave from re-creating it after a successful submit.
   const completedRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await coupleApi.current();
+        if (cancelled) return;
+        setExisting(r.couple ?? false);
+      } catch {
+        if (!cancelled) setExisting(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (completedRef.current) return;
@@ -276,6 +307,17 @@ export default function OnboardingWizard() {
   // mismatches across renders when `user` resolves async.
   if (user && !user.verified_email) {
     return <VerifyEmailGate email={user.email} />;
+  }
+
+  // Wait for the couple lookup before rendering anything — flashing the
+  // wizard for a partner-B user who already has a workspace would be
+  // worse than a blank moment.
+  if (existing === null) return null;
+
+  // Couple already set up by the other partner: render a read-only welcome
+  // card instead of the form. Partner B never gets asked to re-enter data.
+  if (existing) {
+    return <ExistingCoupleWelcome couple={existing} />;
   }
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -938,5 +980,60 @@ function VerifyEmailGate({ email }: { email: string }) {
         </div>
       </div>
     </Shell>
+  );
+}
+
+/**
+ * Read-only welcome card shown when the couple workspace is already set up
+ * (partner B accepted an invite, or a returning partner A lands here). The
+ * wizard never overwrites existing data — partner B sees what's in place and
+ * heads straight to the dashboard.
+ */
+function ExistingCoupleWelcome({ couple }: { couple: Couple }) {
+  const { t, locale } = useT();
+  const goalCtx = { t, locale };
+  const dateText = formatWeddingDateGoal(couple.wedding_date_goal, goalCtx);
+  const guestText = formatGuestCountGoal(couple.guest_count_goal, goalCtx);
+  const budgetText = formatBudgetGoal(couple.budget_goal, goalCtx);
+  const styleText =
+    couple.style_tags.length > 0
+      ? couple.style_tags.map((tag) => t(`onboarding.style_${tag}`)).join(", ")
+      : null;
+
+  return (
+    <Shell>
+      <div className="mx-auto max-w-xl">
+        <div className="card animate-fade-in-up">
+          <h1 className="font-serif text-3xl">
+            {t("onboarding.welcome_existing_title", { names: couple.display_name })}
+          </h1>
+          <p className="mt-3 text-ink-600">{t("onboarding.welcome_existing_body")}</p>
+
+          <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
+            <Fact label={t("onboarding.welcome_existing_date_label")} value={dateText} />
+            <Fact label={t("onboarding.welcome_existing_guests_label")} value={guestText} />
+            <Fact label={t("onboarding.welcome_existing_budget_label")} value={budgetText} />
+            {styleText && (
+              <Fact label={t("onboarding.welcome_existing_style_label")} value={styleText} />
+            )}
+          </dl>
+
+          <div className="mt-8 flex justify-end">
+            <Link to="/app" replace className="btn-accent btn-lg">
+              {t("onboarding.welcome_existing_continue")}
+            </Link>
+          </div>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-paper-300 bg-paper-100 px-3 py-2">
+      <dt className="text-xs uppercase tracking-wide text-ink-500">{label}</dt>
+      <dd className="mt-0.5 font-medium text-ink-800">{value}</dd>
+    </div>
   );
 }
