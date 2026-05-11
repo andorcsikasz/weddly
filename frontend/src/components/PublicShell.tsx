@@ -1,4 +1,4 @@
-import { Menu, X } from "lucide-react";
+import { Menu, UserCheck, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
@@ -185,19 +185,22 @@ function PublicFooter() {
   const askGuestCode = useGuestCodePrompt();
   return (
     <footer className="mt-24 border-t border-paper-300 bg-paper-100/60">
-      {/* Band: guest CTA */}
+      {/* Band: guest CTA — italic serif label on the left, stationery-
+          textured button on the right. Matches the hero's guest CTA so
+          the two surfaces feel like one quiet invitation. */}
       <div className="border-b border-paper-300">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-6 sm:flex-row sm:items-center sm:px-6">
-          <p className="text-sm text-ink-700">
-            <span className="font-medium text-ink-900">{t("landing.footer_band_text")}</span>
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-4 py-5 sm:flex-row sm:items-center sm:px-6">
+          <p className="font-serif text-lg italic text-ink-900 sm:text-xl">
+            {t("landing.footer_band_text")}
           </p>
           <button
             type="button"
-            className="btn-outline btn-sm"
+            className="stationery inline-flex items-center gap-2.5 rounded-lg border border-paper-400/80 px-5 py-2.5 text-sm font-medium text-ink-900 shadow-sm transition-all hover:border-ink-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 focus-visible:ring-offset-2"
             onClick={() => {
               void askGuestCode();
             }}
           >
+            <UserCheck size={15} aria-hidden />
             {t("landing.footer_band_cta")}
           </button>
         </div>
