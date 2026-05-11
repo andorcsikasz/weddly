@@ -40,6 +40,7 @@ import { registerPasswordResetRoutes } from "./routes/password_reset";
 import { registerPrintRoutes } from "./routes/print";
 import { registerRsvpRoutes } from "./routes/rsvp";
 import { registerSeatingRoutes } from "./routes/seating";
+import { registerSupplierCostRoutes } from "./routes/supplier_costs";
 import { registerSupplierRoutes } from "./routes/suppliers";
 
 const router = new Router();
@@ -60,6 +61,7 @@ registerRsvpRoutes(router);
 registerSeatingRoutes(router);
 registerPrintRoutes(router);
 registerSupplierRoutes(router);
+registerSupplierCostRoutes(router);
 registerCommunitySupplierRoutes(router);
 registerAdminSupplierRoutes(router);
 

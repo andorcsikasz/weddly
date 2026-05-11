@@ -65,6 +65,7 @@ function wipeAll() {
     "email_dispatches",
     "email_preferences",
     "community_suppliers",
+    "couple_supplier_costs",
     "users",
     "couples",
   ];
@@ -2400,6 +2401,123 @@ describe("community suppliers", () => {
     expect(actions.filter((a) => a === "supplier.community.hide").length).toBe(1);
     expect(actions.filter((a) => a === "supplier.community.unhide").length).toBe(1);
     expect(actions.filter((a) => a === "supplier.community.delete").length).toBe(1);
+  });
+});
+
+describe("couple supplier costs", () => {
+  interface Cost {
+    supplier_id: string;
+    planned_huf: number;
+    actual_huf: number;
+    notes: string | null;
+    updated_at: number;
+  }
+
+  test("upsert then list returns the saved planned + actual", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("costs1@weddly.test");
+
+    const before = await req<{ costs: Cost[] }>("GET", "/api/couples/supplier-costs", undefined, {
+      token,
+    });
+    expect(before.status).toBe(200);
+    expect(before.data.costs).toEqual([]);
+
+    const put = await req<{ cost: Cost }>(
+      "PUT",
+      "/api/couples/supplier-costs/normafa-rendezvenyhaz",
+      { planned_huf: 1_500_000, actual_huf: 0, notes: null },
+      { token },
+    );
+    expect(put.status).toBe(200);
+    expect(put.data.cost.supplier_id).toBe("normafa-rendezvenyhaz");
+    expect(put.data.cost.planned_huf).toBe(1_500_000);
+    expect(put.data.cost.actual_huf).toBe(0);
+
+    const after = await req<{ costs: Cost[] }>("GET", "/api/couples/supplier-costs", undefined, {
+      token,
+    });
+    expect(after.status).toBe(200);
+    expect(after.data.costs.length).toBe(1);
+    expect(after.data.costs[0]?.planned_huf).toBe(1_500_000);
+  });
+
+  test("re-upsert updates the existing row instead of inserting", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("costs2@weddly.test");
+
+    await req(
+      "PUT",
+      "/api/couples/supplier-costs/etyeki-kuria",
+      { planned_huf: 2_000_000, actual_huf: 0, notes: null },
+      { token },
+    );
+    await req(
+      "PUT",
+      "/api/couples/supplier-costs/etyeki-kuria",
+      { planned_huf: 2_200_000, actual_huf: 2_150_000, notes: "Bookolva" },
+      { token },
+    );
+
+    const list = await req<{ costs: Cost[] }>("GET", "/api/couples/supplier-costs", undefined, {
+      token,
+    });
+    expect(list.data.costs.length).toBe(1);
+    expect(list.data.costs[0]?.planned_huf).toBe(2_200_000);
+    expect(list.data.costs[0]?.actual_huf).toBe(2_150_000);
+    expect(list.data.costs[0]?.notes).toBe("Bookolva");
+  });
+
+  test("rejects non-integer or negative HUF amounts", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("costs3@weddly.test");
+
+    const bad1 = await req(
+      "PUT",
+      "/api/couples/supplier-costs/normafa-rendezvenyhaz",
+      { planned_huf: 1.5, actual_huf: 0, notes: null },
+      { token },
+    );
+    expect(bad1.status).toBe(400);
+
+    const bad2 = await req(
+      "PUT",
+      "/api/couples/supplier-costs/normafa-rendezvenyhaz",
+      { planned_huf: -1, actual_huf: 0, notes: null },
+      { token },
+    );
+    expect(bad2.status).toBe(400);
+  });
+
+  test("auth required for both endpoints", async () => {
+    wipeAll();
+    const get = await req("GET", "/api/couples/supplier-costs");
+    expect(get.status).toBe(401);
+    const put = await req("PUT", "/api/couples/supplier-costs/normafa-rendezvenyhaz", {
+      planned_huf: 0,
+      actual_huf: 0,
+      notes: null,
+    });
+    expect(put.status).toBe(401);
+  });
+
+  test("couple isolation: another couple's costs are not visible", async () => {
+    wipeAll();
+    const a = await bootstrapCouple("a@weddly.test");
+    const b = await bootstrapCouple("b@weddly.test");
+
+    await req(
+      "PUT",
+      "/api/couples/supplier-costs/normafa-rendezvenyhaz",
+      { planned_huf: 999_999, actual_huf: 0, notes: null },
+      { token: a.token },
+    );
+
+    const bList = await req<{ costs: Cost[] }>("GET", "/api/couples/supplier-costs", undefined, {
+      token: b.token,
+    });
+    expect(bList.status).toBe(200);
+    expect(bList.data.costs).toEqual([]);
   });
 });
 

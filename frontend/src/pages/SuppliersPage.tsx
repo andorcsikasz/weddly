@@ -36,10 +36,12 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { AppShell } from "../components/AppShell";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
+import { SupplierCostRow } from "../components/SupplierCostRow";
 import { Button } from "../components/ui";
-import { supplierApi } from "../lib/endpoints";
+import { supplierApi, supplierCostApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
@@ -110,6 +112,9 @@ export default function SuppliersPage() {
   const [submitOpen, setSubmitOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => readSaved());
+  // supplier_id → cost row. Loaded once on mount; updates merge in as the user
+  // edits planned/actual on each card.
+  const [costs, setCosts] = useState<Record<string, CoupleSupplierCost>>({});
 
   // Filter state lives in URL params so back-button restores it.
   const query = params.get("q") ?? "";
@@ -137,6 +142,20 @@ export default function SuppliersPage() {
 
   useEffect(() => {
     supplierApi.list().then((r) => setItems(r.suppliers));
+    // Costs load in parallel; failures are non-fatal (cards still render
+    // without any pre-filled values).
+    supplierCostApi
+      .list()
+      .then((r) => {
+        const map: Record<string, CoupleSupplierCost> = {};
+        for (const c of r.costs) map[c.supplier_id] = c;
+        setCosts(map);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const updateCost = useCallback((next: CoupleSupplierCost) => {
+    setCosts((prev) => ({ ...prev, [next.supplier_id]: next }));
   }, []);
 
   // Scroll the freshly-submitted card into view + drop the highlight after a
@@ -407,6 +426,7 @@ export default function SuppliersPage() {
                   </a>
                 )}
               </div>
+              <SupplierCostRow supplierId={s.id} initial={costs[s.id]} onSaved={updateCost} />
             </article>
           );
         })}

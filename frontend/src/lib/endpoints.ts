@@ -28,6 +28,7 @@ import type {
   CommunitySupplierAdminView,
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
+import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/supplier_costs";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
 import { apiFetch, getToken } from "./api";
 
@@ -247,6 +248,16 @@ export const supplierApi = {
     ),
   submitCommunity: (body: SubmitCommunitySupplierInput) =>
     apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
+};
+
+export const supplierCostApi = {
+  list: () => apiFetch<{ costs: CoupleSupplierCost[] }>("GET", "/api/couples/supplier-costs"),
+  upsert: (supplierId: string, body: UpsertCoupleSupplierCostInput) =>
+    apiFetch<{ cost: CoupleSupplierCost }>(
+      "PUT",
+      `/api/couples/supplier-costs/${encodeURIComponent(supplierId)}`,
+      body,
+    ),
 };
 
 export const adminSupplierApi = {

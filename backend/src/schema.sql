@@ -288,6 +288,24 @@ CREATE INDEX IF NOT EXISTS idx_community_suppliers_status_category
 CREATE INDEX IF NOT EXISTS idx_community_suppliers_submitter
   ON community_suppliers(submitter_user_id);
 
+-- Per-couple planned + final cost for each supplier the couple is interested
+-- in. `supplier_id` is the public string id from the directory (curated slug
+-- like "normafa-rendezvenyhaz" or community "c123"). No FK because curated
+-- suppliers live in code, not the DB.
+CREATE TABLE IF NOT EXISTS couple_supplier_costs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  supplier_id TEXT NOT NULL,
+  planned_huf INTEGER NOT NULL DEFAULT 0,
+  actual_huf INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(couple_id, supplier_id)
+);
+CREATE INDEX IF NOT EXISTS idx_couple_supplier_costs_couple
+  ON couple_supplier_costs(couple_id);
+
 -- Saved download archive. Every JSON / PDF / CSV export the user generates is
 -- snapshotted here so they can re-download past versions from the Profile
 -- page. Capped at the most recent 10 per couple (older rows auto-purged on
