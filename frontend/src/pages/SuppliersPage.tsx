@@ -16,9 +16,9 @@ import {
   Cake,
   Camera,
   ChefHat,
-  ChevronDown,
+  ArrowDown,
+  ArrowUp,
   ChevronRight,
-  ChevronUp,
   List,
   Map as MapIcon,
   Disc3,
@@ -461,66 +461,76 @@ export default function SuppliersPage() {
                   isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                 }`}
               >
-                <div className="absolute right-4 top-4 flex items-center gap-2">
-                  {s.price_band !== null && (
-                    <span
-                      className="text-xs tracking-wider text-ink-500"
-                      title={t("suppliers.price_legend")}
-                      aria-label={t("suppliers.price_legend")}
-                    >
-                      <PriceBandDots band={s.price_band} />
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => toggleSaved(s.id)}
-                    aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
-                    aria-pressed={isSaved}
-                    className="text-ink-400 transition hover:text-blush-700"
-                  >
-                    <Star
-                      size={16}
-                      className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-                      aria-hidden
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Avatar name={s.name} />
+                {/* Card body is a flex row: main column (avatar/name/address/blurb/CTA)
+                    on the left, technical sidebar (price · capacity · vote) on the right.
+                    The sidebar is the consistent "at a glance" strip so the eye can
+                    scan multiple cards quickly. */}
+                <div className="flex gap-4">
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate pr-16 text-base font-semibold">{s.name}</h3>
-                    <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs uppercase tracking-wide text-ink-500">
-                      <Icon size={12} />
-                      <span>
-                        {t(`suppliers.cat.${s.category}`)} · {s.city}
-                      </span>
-                      {s.source === "community" && (
-                        <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600">
-                          {t("suppliers.community_pill")}
-                        </span>
-                      )}
-                      {(s.capacity_max ?? 0) > 0 && (
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600"
-                          aria-label={t("suppliers.capacity_label")}
-                        >
-                          <Users size={10} />
-                          {s.capacity_min && s.capacity_max
-                            ? t("suppliers.capacity_range", {
-                                min: s.capacity_min,
-                                max: s.capacity_max,
-                              })
-                            : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <Avatar name={s.name} />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs uppercase tracking-wide text-ink-500">
+                          <Icon size={12} />
+                          <span>
+                            {t(`suppliers.cat.${s.category}`)} · {s.city}
+                          </span>
+                          {s.source === "community" && (
+                            <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600">
+                              {t("suppliers.community_pill")}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
+                    <p className="mt-3 text-sm text-ink-700">
+                      {locale === "hu" ? s.blurb_hu : s.blurb_en}
                     </p>
                   </div>
+                  <aside className="flex w-20 shrink-0 flex-col items-end gap-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => toggleSaved(s.id)}
+                      aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
+                      aria-pressed={isSaved}
+                      className="text-ink-400 transition hover:text-blush-700"
+                    >
+                      <Star
+                        size={16}
+                        className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+                        aria-hidden
+                      />
+                    </button>
+                    {s.price_band !== null && (
+                      <span
+                        className="text-xs tracking-wider text-ink-500"
+                        title={t("suppliers.price_legend")}
+                        aria-label={t("suppliers.price_legend")}
+                      >
+                        <PriceBandDots band={s.price_band} />
+                      </span>
+                    )}
+                    {(s.capacity_max ?? 0) > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600"
+                        aria-label={t("suppliers.capacity_label")}
+                      >
+                        <Users size={10} />
+                        {s.capacity_min && s.capacity_max
+                          ? t("suppliers.capacity_range", {
+                              min: s.capacity_min,
+                              max: s.capacity_max,
+                            })
+                          : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
+                      </span>
+                    )}
+                    <div className="mt-auto pt-1">
+                      <VoteRow supplier={s} onVote={onVote} t={t} />
+                    </div>
+                  </aside>
                 </div>
-                {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
-                <VoteRow supplier={s} onVote={onVote} t={t} />
-                <p className="mt-3 text-sm text-ink-700">
-                  {locale === "hu" ? s.blurb_hu : s.blurb_en}
-                </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <a
                     href={s.website}
@@ -641,7 +651,7 @@ function VoteRow({
     onVote(supplier.id, next);
   };
   return (
-    <div className="mt-3 flex items-center gap-1">
+    <div className="inline-flex items-center gap-1 text-sm">
       <button
         type="button"
         onClick={() => handle(1)}
@@ -649,14 +659,14 @@ function VoteRow({
         aria-label={t("suppliers.vote_up_aria")}
         className={
           my === 1
-            ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush-100 text-blush-700"
-            : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-800"
+            ? "inline-flex h-6 w-6 items-center justify-center rounded text-blush-700"
+            : "inline-flex h-6 w-6 items-center justify-center rounded text-ink-500 hover:text-blush-700"
         }
       >
-        <ChevronUp size={16} aria-hidden />
+        <ArrowUp size={14} aria-hidden />
       </button>
       <span
-        className={`min-w-[1.5rem] text-center text-sm tabular-nums ${
+        className={`min-w-[1.25rem] text-center tabular-nums ${
           supplier.votes_score > 0
             ? "text-blush-700"
             : supplier.votes_score < 0
@@ -664,7 +674,7 @@ function VoteRow({
               : "text-ink-500"
         }`}
       >
-        {supplier.votes_score > 0 ? `+${supplier.votes_score}` : supplier.votes_score}
+        {supplier.votes_score}
       </span>
       <button
         type="button"
@@ -673,11 +683,11 @@ function VoteRow({
         aria-label={t("suppliers.vote_down_aria")}
         className={
           my === -1
-            ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-paper-300 text-ink-700"
-            : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-800"
+            ? "inline-flex h-6 w-6 items-center justify-center rounded text-ink-700"
+            : "inline-flex h-6 w-6 items-center justify-center rounded text-ink-500 hover:text-ink-800"
         }
       >
-        <ChevronDown size={16} aria-hidden />
+        <ArrowDown size={14} aria-hidden />
       </button>
     </div>
   );
