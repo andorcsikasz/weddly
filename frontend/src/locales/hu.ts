@@ -796,6 +796,8 @@ const hu: LocaleMessages = {
     cost_saved_indicator: "Mentve",
     cost_currency_suffix: "Ft",
     cost_help: "Mentés automatikusan, amikor kilépsz a mezőből.",
+    cost_planned_help: "A tervezett összeget a Költségvetésben állítod be.",
+    cost_no_line_hint: "Adj hozzá először egy sort ennél a kategóriánál a Költségvetésben.",
     capacity_label: "Férőhely",
     capacity_range: "{min}–{max} fő",
     capacity_max_only: "max. {max} fő",

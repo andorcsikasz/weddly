@@ -791,6 +791,8 @@ const en: LocaleMessages = {
     cost_saved_indicator: "Saved",
     cost_currency_suffix: "Ft",
     cost_help: "Auto-saves when you leave the field.",
+    cost_planned_help: "Set the planned amount in Budget.",
+    cost_no_line_hint: "Add a line for this category in Budget first.",
     capacity_label: "Capacity",
     capacity_range: "{min}–{max} guests",
     capacity_max_only: "up to {max} guests",

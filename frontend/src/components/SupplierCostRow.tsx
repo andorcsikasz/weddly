@@ -1,21 +1,31 @@
-// Per-card "Tervezett / Tényleges" cost inputs. Both fields are integer Forint;
-// blur triggers an upsert against /api/couples/supplier-costs/:supplier_id.
-// A subtle "Mentve" indicator flashes for ~1.5s after a successful save.
+// Per-card "Tervezett / Tényleges" row. Both numbers are scoped to the
+// supplier's BUDGET CATEGORY — they read from /api/budget/lines and write back
+// to the same lines. Tervezett is read-only here (a deep-link to the budget
+// page); Tényleges is editable and writes through to the first matching line
+// in that category. Two suppliers in the same category share one number — the
+// canonical store is the budget, and this card is just a window onto it.
 
-import type { CoupleSupplierCost } from "@shared/supplier_costs";
-import { Check } from "lucide-react";
+import { Check, ExternalLink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { ApiError } from "../lib/api";
-import { supplierCostApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 type Props = {
   supplierId: string;
-  initial: CoupleSupplierCost | undefined;
-  onSaved: (cost: CoupleSupplierCost) => void;
+  /** Sum of planned_huf across matching budget lines. Source of truth lives
+   *  in /app/budget — the card is read-only for this field. */
+  plannedHuf: number;
+  /** Sum of actual_huf across matching budget lines. */
+  actualHuf: number;
+  /** True when at least one budget line exists in the matching category.
+   *  Disables the actual input + shows a hint when false. */
+  hasLine: boolean;
+  /** Called when the user commits a new actual value (on blur, debounced
+   *  no-op for unchanged values). The parent issues the budgetApi call. */
+  onSetActual: (huf: number) => Promise<void>;
 };
 
-/** Strip everything that isn't a digit, then parse. Empty → 0. */
 function parseHufInput(raw: string): number {
   const digits = raw.replace(/[^0-9]/g, "");
   if (!digits) return 0;
@@ -23,76 +33,53 @@ function parseHufInput(raw: string): number {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-/** Display helper: 1234567 → "1 234 567". Empty string for 0 so the field
- *  doesn't show a confusing "0" placeholder. */
 function formatHuf(n: number): string {
   if (n <= 0) return "";
   return n.toLocaleString("hu-HU");
 }
 
-export function SupplierCostRow({ supplierId, initial, onSaved }: Props) {
+export function SupplierCostRow({
+  supplierId,
+  plannedHuf,
+  actualHuf,
+  hasLine,
+  onSetActual,
+}: Props) {
   const { t } = useT();
-  const [planned, setPlanned] = useState(formatHuf(initial?.planned_huf ?? 0));
-  const [actual, setActual] = useState(formatHuf(initial?.actual_huf ?? 0));
+  const [actual, setActual] = useState(formatHuf(actualHuf));
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(0);
-  // Hold the last server-side values so we can short-circuit no-op saves
-  // (e.g. blur without any edit).
-  const lastSyncedRef = useRef({
-    planned: initial?.planned_huf ?? 0,
-    actual: initial?.actual_huf ?? 0,
-  });
+  const lastSyncedRef = useRef(actualHuf);
 
-  // Reload when the initial value changes (e.g. after async list fetch).
+  // Re-sync when the parent's actualHuf changes (e.g. after another card
+  // in the same category writes, or after the initial budget fetch). Keeps
+  // every card in the category showing the same number.
   useEffect(() => {
-    if (!initial) return;
-    setPlanned(formatHuf(initial.planned_huf));
-    setActual(formatHuf(initial.actual_huf));
-    lastSyncedRef.current = {
-      planned: initial.planned_huf,
-      actual: initial.actual_huf,
-    };
-  }, [initial]);
+    setActual(formatHuf(actualHuf));
+    lastSyncedRef.current = actualHuf;
+  }, [actualHuf]);
 
-  // Tick down the "Saved" indicator after a beat.
   useEffect(() => {
     if (!savedAt) return;
-    const t = window.setTimeout(() => setSavedAt(0), 1500);
-    return () => window.clearTimeout(t);
+    const tid = window.setTimeout(() => setSavedAt(0), 1500);
+    return () => window.clearTimeout(tid);
   }, [savedAt]);
 
   async function commit() {
-    const plannedNum = parseHufInput(planned);
-    const actualNum = parseHufInput(actual);
-    if (
-      plannedNum === lastSyncedRef.current.planned &&
-      actualNum === lastSyncedRef.current.actual
-    ) {
-      // Reformat the field in case the user typed "1234" (no spaces).
-      setPlanned(formatHuf(plannedNum));
-      setActual(formatHuf(actualNum));
+    const next = parseHufInput(actual);
+    if (next === lastSyncedRef.current) {
+      // Reformat in case the user typed without spaces, but don't round-trip.
+      setActual(formatHuf(next));
       return;
     }
     setSaving(true);
     try {
-      const r = await supplierCostApi.upsert(supplierId, {
-        planned_huf: plannedNum,
-        actual_huf: actualNum,
-        notes: initial?.notes ?? null,
-      });
-      lastSyncedRef.current = {
-        planned: r.cost.planned_huf,
-        actual: r.cost.actual_huf,
-      };
-      setPlanned(formatHuf(r.cost.planned_huf));
-      setActual(formatHuf(r.cost.actual_huf));
+      await onSetActual(next);
+      lastSyncedRef.current = next;
+      setActual(formatHuf(next));
       setSavedAt(Date.now());
-      onSaved(r.cost);
     } catch (e) {
-      // Revert to last known good — the input would otherwise stay in a
-      // misleading "looks edited" state.
-      setPlanned(formatHuf(lastSyncedRef.current.planned));
-      setActual(formatHuf(lastSyncedRef.current.actual));
+      setActual(formatHuf(lastSyncedRef.current));
       if (e instanceof ApiError) {
         console.warn("[supplier-cost] save failed", e.status, e.message);
       }
@@ -102,27 +89,51 @@ export function SupplierCostRow({ supplierId, initial, onSaved }: Props) {
   }
 
   const suffix = t("suppliers.cost_currency_suffix");
+  const plannedDisplay = formatHuf(plannedHuf) || "0";
 
   return (
     <div className="mt-4 grid grid-cols-2 gap-2 border-t border-paper-200 pt-3">
-      <CostField
-        id={`cost-planned-${supplierId}`}
-        label={t("suppliers.cost_planned_label")}
-        suffix={suffix}
-        value={planned}
-        onChange={setPlanned}
-        onBlur={commit}
-        disabled={saving}
-      />
-      <CostField
-        id={`cost-actual-${supplierId}`}
-        label={t("suppliers.cost_actual_label")}
-        suffix={suffix}
-        value={actual}
-        onChange={setActual}
-        onBlur={commit}
-        disabled={saving}
-      />
+      <Link
+        to="/app/budget"
+        title={t("suppliers.cost_planned_help")}
+        aria-label={t("suppliers.cost_planned_help")}
+        className="block focus:outline-none"
+      >
+        <span className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wide text-ink-500">
+          <span>{t("suppliers.cost_planned_label")}</span>
+          <ExternalLink size={10} aria-hidden className="text-ink-400" />
+        </span>
+        <span className="relative block">
+          <span className="input flex h-9 items-center justify-end gap-1 bg-paper-100 pr-9 text-sm tabular-nums text-ink-700 cursor-pointer hover:bg-paper-200">
+            {plannedDisplay}
+          </span>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-400">
+            {suffix}
+          </span>
+        </span>
+      </Link>
+      <label htmlFor={`cost-actual-${supplierId}`} className="block">
+        <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-ink-500">
+          {t("suppliers.cost_actual_label")}
+        </span>
+        <span className="relative block">
+          <input
+            id={`cost-actual-${supplierId}`}
+            type="text"
+            inputMode="numeric"
+            className="input h-9 pr-9 text-right text-sm tabular-nums"
+            value={actual}
+            onChange={(e) => setActual(e.target.value)}
+            onBlur={commit}
+            disabled={saving || !hasLine}
+            placeholder="0"
+            title={!hasLine ? t("suppliers.cost_no_line_hint") : undefined}
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-400">
+            {suffix}
+          </span>
+        </span>
+      </label>
       <p
         className="col-span-2 flex h-4 items-center gap-1 text-[10px] uppercase tracking-wide text-ink-400"
         aria-live="polite"
@@ -131,52 +142,12 @@ export function SupplierCostRow({ supplierId, initial, onSaved }: Props) {
           <span className="inline-flex items-center gap-1 text-blush-700">
             <Check size={11} /> {t("suppliers.cost_saved_indicator")}
           </span>
+        ) : !hasLine ? (
+          t("suppliers.cost_no_line_hint")
         ) : (
-          t("suppliers.cost_help")
+          t("suppliers.cost_planned_help")
         )}
       </p>
     </div>
-  );
-}
-
-function CostField({
-  id,
-  label,
-  suffix,
-  value,
-  onChange,
-  onBlur,
-  disabled,
-}: {
-  id: string;
-  label: string;
-  suffix: string;
-  value: string;
-  onChange: (v: string) => void;
-  onBlur: () => void;
-  disabled: boolean;
-}) {
-  return (
-    <label htmlFor={id} className="block">
-      <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-ink-500">
-        {label}
-      </span>
-      <span className="relative block">
-        <input
-          id={id}
-          type="text"
-          inputMode="numeric"
-          className="input h-9 pr-9 text-right text-sm tabular-nums"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={onBlur}
-          disabled={disabled}
-          placeholder="0"
-        />
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-400">
-          {suffix}
-        </span>
-      </span>
-    </label>
   );
 }

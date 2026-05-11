@@ -773,6 +773,8 @@ export interface LocaleMessages {
     cost_saved_indicator: string;
     cost_currency_suffix: string;
     cost_help: string;
+    cost_planned_help: string;
+    cost_no_line_hint: string;
     /** Capacity chip on the card. */
     capacity_label: string;
     capacity_range: string;

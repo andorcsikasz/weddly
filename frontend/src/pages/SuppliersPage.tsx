@@ -7,7 +7,8 @@
 // each card backed by localStorage.
 
 import type { DirectorySupplier, SupplierCategory, SupplierGroup } from "@shared/suppliers";
-import { SUPPLIER_GROUPS } from "@shared/suppliers";
+import { SUPPLIER_GROUPS, SUPPLIER_TO_BUDGET } from "@shared/suppliers";
+import type { BudgetLine } from "@shared/types";
 import {
   BedDouble,
   Brush,
@@ -41,12 +42,11 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { AppShell } from "../components/AppShell";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { SupplierCostRow } from "../components/SupplierCostRow";
 import { Button } from "../components/ui";
-import { supplierApi, supplierCostApi } from "../lib/endpoints";
+import { budgetApi, supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 // Leaflet + react-leaflet add ~150 KB minified that no other page uses —
@@ -122,9 +122,9 @@ export default function SuppliersPage() {
   const [submitOpen, setSubmitOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => readSaved());
-  // supplier_id → cost row. Loaded once on mount; updates merge in as the user
-  // edits planned/actual on each card.
-  const [costs, setCosts] = useState<Record<string, CoupleSupplierCost>>({});
+  // Budget lines drive the per-card Tervezett/Tényleges row. We aggregate
+  // per category on render rather than storing duplicated state.
+  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
 
   // Filter state lives in URL params so back-button restores it.
   const query = params.get("q") ?? "";
@@ -191,20 +191,46 @@ export default function SuppliersPage() {
 
   useEffect(() => {
     supplierApi.list().then((r) => setItems(r.suppliers));
-    // Costs load in parallel; failures are non-fatal (cards still render
-    // without any pre-filled values).
-    supplierCostApi
-      .list()
-      .then((r) => {
-        const map: Record<string, CoupleSupplierCost> = {};
-        for (const c of r.costs) map[c.supplier_id] = c;
-        setCosts(map);
-      })
+    // Budget lines load in parallel — failures are non-fatal (cards show
+    // 0/0 without crashing).
+    budgetApi
+      .listLines()
+      .then((r) => setBudgetLines(r.lines))
       .catch(() => undefined);
   }, []);
 
-  const updateCost = useCallback((next: CoupleSupplierCost) => {
-    setCosts((prev) => ({ ...prev, [next.supplier_id]: next }));
+  /** Per-category aggregates with a pointer to the first line so we know
+   *  where writes go. `firstLineId` is null when the category has no line —
+   *  the actual input is disabled in that case (the card hints "add a line
+   *  in budget first"). */
+  const budgetByCategory = useMemo(() => {
+    const map = new Map<
+      string,
+      { plannedSum: number; actualSum: number; firstLineId: number | null }
+    >();
+    for (const line of budgetLines) {
+      const existing = map.get(line.category);
+      if (existing) {
+        existing.plannedSum += line.planned_huf;
+        existing.actualSum += line.actual_huf;
+      } else {
+        map.set(line.category, {
+          plannedSum: line.planned_huf,
+          actualSum: line.actual_huf,
+          firstLineId: line.id,
+        });
+      }
+    }
+    return map;
+  }, [budgetLines]);
+
+  /** Write the new actual back to the first matching budget line. Re-fetches
+   *  the whole budget afterward so siblings in the same category re-render
+   *  with the new total. */
+  const setActualForCategory = useCallback(async (lineId: number, nextActual: number) => {
+    await budgetApi.updateLine(lineId, { actual_huf: nextActual });
+    const r = await budgetApi.listLines();
+    setBudgetLines(r.lines);
   }, []);
 
   // Scroll the freshly-submitted card into view + drop the highlight after a
@@ -558,7 +584,21 @@ export default function SuppliersPage() {
                     </a>
                   )}
                 </div>
-                <SupplierCostRow supplierId={s.id} initial={costs[s.id]} onSaved={updateCost} />
+                {(() => {
+                  const bucket = budgetByCategory.get(SUPPLIER_TO_BUDGET[s.category]);
+                  return (
+                    <SupplierCostRow
+                      supplierId={s.id}
+                      plannedHuf={bucket?.plannedSum ?? 0}
+                      actualHuf={bucket?.actualSum ?? 0}
+                      hasLine={!!bucket?.firstLineId}
+                      onSetActual={async (huf) => {
+                        if (!bucket?.firstLineId) return;
+                        await setActualForCategory(bucket.firstLineId, huf);
+                      }}
+                    />
+                  );
+                })()}
               </article>
             );
           })}

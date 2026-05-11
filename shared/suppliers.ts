@@ -30,6 +30,29 @@ export interface SupplierGroupDef {
   categories: SupplierCategory[];
 }
 
+/** Maps each supplier category onto a budget category so the supplier card
+ *  can display the matching planned/actual figures from /app/budget. Some
+ *  supplier categories don't have a dedicated budget bucket (lighting,
+ *  entertainment, accommodation) — those fold into the nearest analogue
+ *  rather than scattering them under "other". Keep both sides in sync when
+ *  adding new categories. */
+export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
+  venue: "venue",
+  accommodation: "other",
+  catering: "catering",
+  cake_dessert: "cake_dessert",
+  bar_drinks: "drinks",
+  decor_floral: "decor_floral",
+  lighting: "decor_floral",
+  music_dj: "music_dj",
+  photo_video: "photo_video",
+  entertainment: "music_dj",
+  attire: "attire",
+  hair_makeup: "hair_makeup",
+  stationery: "stationery",
+  transport: "transport",
+};
+
 // Ordered chain — mirrors the recommended booking sequence: lock the venue
 // first, then food, then look & feel, then experience, then personal style,
 // then the remaining details.
