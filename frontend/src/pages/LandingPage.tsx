@@ -71,9 +71,9 @@ export default function LandingPage() {
                 onClick={() => {
                   void askGuestCode();
                 }}
-                className="mt-7 inline-flex items-center gap-2 rounded-lg bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-100 transition-colors hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 focus-visible:ring-offset-2"
+                className="stationery mt-7 inline-flex items-center gap-2.5 rounded-lg border border-paper-400/80 px-5 py-2.5 text-sm font-medium text-ink-900 shadow-sm transition-all hover:border-ink-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 focus-visible:ring-offset-2"
               >
-                <UserCheck size={14} aria-hidden />
+                <UserCheck size={15} aria-hidden />
                 {t("landing.guest_link")}
               </button>
             </div>
