@@ -77,6 +77,13 @@ addColumnIfMissing("seating_tables", "length_mm", "length_mm INTEGER NOT NULL DE
 // 0..359; the editor cycles in 45° steps but any integer is accepted so the
 // PDF layer can render at exact angle.
 addColumnIfMissing("seating_tables", "rotation_deg", "rotation_deg INTEGER NOT NULL DEFAULT 0");
+// JSON array of seat indices the couple X'd out in the editor preview.
+// Stored as TEXT (JSON) so SQLite stays simple; mapper / writer parse + validate.
+addColumnIfMissing(
+  "seating_tables",
+  "disabled_seats_json",
+  "disabled_seats_json TEXT NOT NULL DEFAULT '[]'",
+);
 
 // Airport-style RSVP credentials. `couples.slug` is the public couple
 // identifier ("ANDORSARI"); `guests.household_id` links each guest to its

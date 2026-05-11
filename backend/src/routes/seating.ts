@@ -17,6 +17,7 @@ interface TableRow {
   width_mm: number;
   length_mm: number;
   rotation_deg: number;
+  disabled_seats_json: string;
   created_at: number;
   updated_at: number;
 }
@@ -41,6 +42,19 @@ interface ConflictRow {
 const VALID_SHAPES: ReadonlySet<TableShape> = new Set(["round", "long", "square", "head"]);
 
 function toTable(r: TableRow): SeatingTable {
+  // disabled_seats_json may be malformed (manual DB edit, future schema
+  // change) — fall back to [] rather than crash the whole plan response.
+  let disabled: number[] = [];
+  try {
+    const parsed = JSON.parse(r.disabled_seats_json);
+    if (Array.isArray(parsed)) {
+      disabled = parsed
+        .map((n) => Number(n))
+        .filter((n) => Number.isInteger(n) && n >= 0 && n < r.seats);
+    }
+  } catch {
+    /* keep [] */
+  }
   return {
     id: r.id,
     couple_id: r.couple_id,
@@ -52,6 +66,7 @@ function toTable(r: TableRow): SeatingTable {
     width_mm: r.width_mm,
     length_mm: r.length_mm,
     rotation_deg: ((r.rotation_deg % 360) + 360) % 360,
+    disabled_seats: disabled,
     created_at: r.created_at,
   };
 }
@@ -121,6 +136,7 @@ interface UpsertTableBody {
   width_mm?: unknown;
   length_mm?: unknown;
   rotation_deg?: unknown;
+  disabled_seats?: unknown;
 }
 
 // Hard caps on dimensions: a single table over 10m is almost certainly a typo
@@ -178,6 +194,22 @@ function parseTableBody(body: UpsertTableBody) {
   }
   const rotation_deg = ((Math.round(rotRaw) % 360) + 360) % 360;
 
+  // Disabled-seat indices — filter to integers in the valid 0..seats-1 range
+  // and dedupe. Anything else is silently dropped so a stale array from a
+  // shrunken table never wedges the write.
+  let disabled_seats: number[] = [];
+  if (Array.isArray(body.disabled_seats)) {
+    const seen = new Set<number>();
+    for (const v of body.disabled_seats) {
+      const n = Number(v);
+      if (Number.isInteger(n) && n >= 0 && n < seats && !seen.has(n)) {
+        seen.add(n);
+        disabled_seats.push(n);
+      }
+    }
+    disabled_seats.sort((a, b) => a - b);
+  }
+
   return {
     label,
     shape,
@@ -187,6 +219,7 @@ function parseTableBody(body: UpsertTableBody) {
     width_mm: width,
     length_mm: length,
     rotation_deg,
+    disabled_seats,
   };
 }
 
@@ -197,8 +230,8 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, rotation_deg, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO seating_tables (couple_id, label, shape, seats, x_mm, y_mm, width_mm, length_mm, rotation_deg, disabled_seats_json, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -210,6 +243,7 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
       parsed.width_mm,
       parsed.length_mm,
       parsed.rotation_deg,
+      JSON.stringify(parsed.disabled_seats),
       ts,
       ts,
     );
@@ -241,7 +275,7 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
   const ts = now();
   db.prepare(
     `UPDATE seating_tables SET label = ?, shape = ?, seats = ?, x_mm = ?, y_mm = ?,
-       width_mm = ?, length_mm = ?, rotation_deg = ?, updated_at = ?
+       width_mm = ?, length_mm = ?, rotation_deg = ?, disabled_seats_json = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.label,
@@ -252,6 +286,7 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     parsed.width_mm,
     parsed.length_mm,
     parsed.rotation_deg,
+    JSON.stringify(parsed.disabled_seats),
     ts,
     id,
     coupleId,
@@ -311,6 +346,16 @@ async function handleAssignSeat(ctx: Ctx): Promise<Response> {
   if (!table) throw new HttpError(404, "Table not found");
   if (seatIndex < 0 || seatIndex >= table.seats)
     throw new HttpError(400, "seat_index out of range");
+  // Reject assignments to seats the couple has X'd out in the editor.
+  // Parsed defensively — malformed JSON just means no disabled seats here.
+  try {
+    const disabled = JSON.parse(table.disabled_seats_json ?? "[]");
+    if (Array.isArray(disabled) && disabled.includes(seatIndex)) {
+      throw new HttpError(400, "seat is disabled");
+    }
+  } catch (err) {
+    if (err instanceof HttpError) throw err;
+  }
   const guestOk = db
     .prepare("SELECT 1 FROM guests WHERE id = ? AND couple_id = ?")
     .get(guestId, coupleId);

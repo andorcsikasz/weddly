@@ -324,6 +324,12 @@ export interface SeatingTable {
    *  editor cycles in 45° steps. The canvas + PDF apply this rotation to the
    *  whole table (body, chairs, label) about (x_mm, y_mm). */
   rotation_deg: number;
+  /** Seat indices (0-based) the couple has X'd out — e.g. the empty
+   *  end-cap of a long table when they don't want anyone seated there for
+   *  design reasons. The canvas renders them muted; the seat-assignment
+   *  grid skips them. seats stays the same — only the *usable* count
+   *  drops. Filtered to valid indices server-side. */
+  disabled_seats: number[];
   created_at: UnixMs;
 }
 

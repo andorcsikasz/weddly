@@ -27,6 +27,11 @@ const MIN_DIM_MM = 100;
 const MAX_DIM_MM = 10_000;
 const MIN_SEATS = 1;
 const MAX_SEATS = 40;
+// Standard chair dimensions in mm. Stays constant regardless of table size —
+// real chairs don't shrink when you swap to a smaller table.
+const CHAIR_WIDTH_MM = 440;
+const CHAIR_HEIGHT_MM = 360;
+const CHAIR_CORNER_MM = 90;
 
 // Keyboard nudge granularity. 100mm matches the chair-placement grain;
 // shift drops to a precise 10mm for fine alignment.
@@ -577,14 +582,16 @@ function TableShape({
         ? 40
         : 0;
 
-  // Chair geometry — proportional to the smaller half-dim so chairs read
-  // sensibly on tiny round tables AND on wide head tables. Width is the
-  // long axis (tangent to the table edge); height is the depth.
-  const minHalf = Math.min(rx, ry);
-  const chairWidthMm = Math.max(180, Math.min(320, minHalf * 0.36));
-  const chairHeightMm = Math.max(130, Math.min(220, minHalf * 0.27));
-  const chairCorner = chairHeightMm * 0.3;
-  // Centre of chair sits just outside the table edge.
+  // Chair geometry — FIXED physical dimensions. A real banquet chair is
+  // roughly 50×40 cm seen from above; we use 440×360 mm so the chair stays
+  // a constant size regardless of the table it sits at. User explicitly
+  // asked for this — scaling chairs with the table made small tables look
+  // like they had child furniture.
+  const chairWidthMm = CHAIR_WIDTH_MM;
+  const chairHeightMm = CHAIR_HEIGHT_MM;
+  const chairCorner = CHAIR_CORNER_MM;
+  const disabledSet = new Set(table.disabled_seats ?? []);
+  // Centre of chair sits just outside the table edge with a fixed gap.
   const chairPushMm = chairHeightMm / 2 + 40;
 
   // Handle set per shape. Round → 4 cardinal handles. Square/long → 8 handles.
@@ -640,25 +647,63 @@ function TableShape({
           blush — empty seats read soft, filled seats read warmer. The
           chair's long axis runs along the table edge (perpendicular to the
           radial direction), so it visually "faces" the table like a real
-          chair from above. */}
+          chair from above. Disabled seats render as a muted ghost with a
+          small × so the couple sees the slot exists but is intentionally
+          unused. */}
       {chairs.map((c, i) => {
         const isFilled = i < filledSeats;
+        const isDisabled = disabledSet.has(i);
         const cosA = Math.cos(c.angle);
         const sinA = Math.sin(c.angle);
         const px = c.dx + cosA * chairPushMm;
         const py = c.dy + sinA * chairPushMm;
         const rotDeg = (c.angle * 180) / Math.PI + 90;
+        const fillClassName = isDisabled
+          ? "fill-paper-200"
+          : isFilled
+            ? "fill-ink-800"
+            : "fill-blush-300";
+        // Small × across a disabled chair, drawn in its rotated local frame
+        // so it sits centred on the chair regardless of where it is on
+        // the table.
+        const crossLen = chairHeightMm * 0.45;
         return (
-          <rect
-            key={i}
-            x={px - chairWidthMm / 2}
-            y={py - chairHeightMm / 2}
-            width={chairWidthMm}
-            height={chairHeightMm}
-            rx={chairCorner}
-            transform={`rotate(${rotDeg} ${px} ${py})`}
-            className={isFilled ? "fill-ink-800" : "fill-blush-300"}
-          />
+          <g key={i}>
+            <rect
+              x={px - chairWidthMm / 2}
+              y={py - chairHeightMm / 2}
+              width={chairWidthMm}
+              height={chairHeightMm}
+              rx={chairCorner}
+              transform={`rotate(${rotDeg} ${px} ${py})`}
+              className={fillClassName}
+            />
+            {isDisabled && (
+              <g
+                transform={`translate(${px} ${py}) rotate(${rotDeg})`}
+                style={{ pointerEvents: "none" }}
+              >
+                <line
+                  x1={-crossLen / 2}
+                  y1={-crossLen / 2}
+                  x2={crossLen / 2}
+                  y2={crossLen / 2}
+                  className="stroke-ink-500"
+                  strokeWidth={24}
+                  strokeLinecap="round"
+                />
+                <line
+                  x1={crossLen / 2}
+                  y1={-crossLen / 2}
+                  x2={-crossLen / 2}
+                  y2={crossLen / 2}
+                  className="stroke-ink-500"
+                  strokeWidth={24}
+                  strokeLinecap="round"
+                />
+              </g>
+            )}
+          </g>
         );
       })}
 

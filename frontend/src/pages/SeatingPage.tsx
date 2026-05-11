@@ -1163,8 +1163,228 @@ function TableEditor({
       <p className="text-xs text-ink-400">
         {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
       </p>
+
+      {/* Seat-layout preview — couple X-es out individual seats they don't
+          want anyone at (e.g. the empty head of a long table for
+          centre-piece symmetry). Disabled seats render muted on the canvas
+          and disappear from the assignment grid below. */}
+      <Section
+        label={`${t("seating.layout_label")} · ${table.seats - (table.disabled_seats?.length ?? 0)}/${table.seats}`}
+      >
+        <SeatLayoutPreview
+          table={table}
+          onToggleSeat={(seatIndex) => {
+            const cur = new Set(table.disabled_seats ?? []);
+            if (cur.has(seatIndex)) cur.delete(seatIndex);
+            else cur.add(seatIndex);
+            onPatch({ disabled_seats: Array.from(cur).sort((a, b) => a - b) });
+          }}
+          ariaLabel={t("seating.layout_label")}
+          xButtonLabel={t("seating.toggle_seat")}
+        />
+      </Section>
     </div>
   );
+}
+
+// Small SVG inside the editor showing the selected table with its chairs.
+// Click any chair to toggle whether it's "X-ed out" — disabled seats render
+// muted with a small × so the user can plan an asymmetric layout (empty
+// head of a long table, etc.) without bumping the seat count up and down.
+function SeatLayoutPreview({
+  table,
+  onToggleSeat,
+  ariaLabel,
+  xButtonLabel,
+}: {
+  table: SeatingTable;
+  onToggleSeat: (seatIndex: number) => void;
+  ariaLabel: string;
+  xButtonLabel: string;
+}) {
+  const { rx, ry } = previewHalfDims(table);
+  const chairs = previewChairOffsets(table.shape, table.seats, rx, ry);
+  const disabled = new Set(table.disabled_seats ?? []);
+  // Auto-fit viewBox with padding for chairs sitting outside the table edge.
+  const pad = 28;
+  const w = rx * 2 + pad * 2;
+  const h = ry * 2 + pad * 2;
+  const minX = -rx - pad;
+  const minY = -ry - pad;
+  const chairW = 18;
+  const chairH = 14;
+  const corner = 3;
+  const isLong = table.shape === "long" || table.shape === "head";
+  const rectCorner = isLong ? Math.min(6, ry * 0.4) : table.shape === "square" ? 3 : 0;
+  return (
+    <svg
+      viewBox={`${minX} ${minY} ${w} ${h}`}
+      role="group"
+      aria-label={ariaLabel}
+      className="block h-32 w-full rounded-xl border border-paper-200 bg-paper-50 p-1"
+    >
+      {table.shape === "round" ? (
+        <circle r={rx} className="fill-paper-50 stroke-ink-800" strokeWidth={1.5} />
+      ) : (
+        <rect
+          x={-rx}
+          y={-ry}
+          width={rx * 2}
+          height={ry * 2}
+          rx={rectCorner}
+          className="fill-paper-50 stroke-ink-800"
+          strokeWidth={1.5}
+        />
+      )}
+      {chairs.map((c, i) => {
+        const cosA = Math.cos(c.angle);
+        const sinA = Math.sin(c.angle);
+        const push = chairH / 2 + 3;
+        const px = c.dx + cosA * push;
+        const py = c.dy + sinA * push;
+        const rotDeg = (c.angle * 180) / Math.PI + 90;
+        const isDisabled = disabled.has(i);
+        const crossLen = chairH * 0.5;
+        return (
+          <g
+            key={i}
+            style={{ cursor: "pointer" }}
+            role="button"
+            aria-label={`#${i + 1} ${xButtonLabel}`}
+          >
+            <rect
+              x={px - chairW / 2}
+              y={py - chairH / 2}
+              width={chairW}
+              height={chairH}
+              rx={corner}
+              transform={`rotate(${rotDeg} ${px} ${py})`}
+              className={isDisabled ? "fill-paper-200" : "fill-blush-300"}
+              onClick={() => onToggleSeat(i)}
+            />
+            {isDisabled && (
+              <g
+                transform={`translate(${px} ${py}) rotate(${rotDeg})`}
+                style={{ pointerEvents: "none" }}
+              >
+                <line
+                  x1={-crossLen / 2}
+                  y1={-crossLen / 2}
+                  x2={crossLen / 2}
+                  y2={crossLen / 2}
+                  className="stroke-ink-500"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                />
+                <line
+                  x1={crossLen / 2}
+                  y1={-crossLen / 2}
+                  x2={-crossLen / 2}
+                  y2={crossLen / 2}
+                  className="stroke-ink-500"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                />
+              </g>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Preview-only half-dims and chair offsets. We can't share with SeatingMap
+// because the preview re-normalises long/head tables into a fixed aspect
+// (so the editor card always shows a horizontal banquet, not whatever the
+// user has dragged on the canvas) — keeps the preview consistent shape-to-
+// shape and unaffected by extreme dimensions.
+function previewHalfDims(t: SeatingTable): { rx: number; ry: number } {
+  if (t.shape === "round") return { rx: 40, ry: 40 };
+  if (t.shape === "square") return { rx: 40, ry: 40 };
+  // long / head — fixed 3:1 banquet aspect in the preview.
+  return { rx: 60, ry: 22 };
+}
+
+// Mirrors shared/seating.ts chairOffsets() but operating on the preview
+// coordinate scale (small SVG units rather than mm).
+function previewChairOffsets(
+  shape: TableShape,
+  seats: number,
+  rx: number,
+  ry: number,
+): { dx: number; dy: number; angle: number }[] {
+  if (seats <= 0) return [];
+  if (shape === "round") {
+    const out = [];
+    for (let i = 0; i < seats; i++) {
+      const angle = -Math.PI / 2 + (i / seats) * Math.PI * 2;
+      out.push({ dx: Math.cos(angle) * rx, dy: Math.sin(angle) * rx, angle });
+    }
+    return out;
+  }
+  if (shape === "head") {
+    const out = [];
+    const longSide = rx * 2;
+    for (let i = 0; i < seats; i++) {
+      const t = (i + 0.5) / seats;
+      out.push({ dx: -rx + longSide * t, dy: -ry, angle: -Math.PI / 2 });
+    }
+    return out;
+  }
+  // Rectangle: top / right / bottom / left, proportional to side length.
+  const longSide = rx * 2;
+  const shortSide = ry * 2;
+  const totalPerimeter = (longSide + shortSide) * 2;
+  let top = Math.round((seats * longSide) / totalPerimeter);
+  let bot = top;
+  let left = Math.round((seats * shortSide) / totalPerimeter);
+  let right = left;
+  let total = top + bot + left + right;
+  while (total < seats) {
+    if (longSide >= shortSide) {
+      top++;
+      bot++;
+      total += 2;
+    } else {
+      left++;
+      right++;
+      total += 2;
+    }
+  }
+  while (total > seats) {
+    if (right > 0) {
+      right--;
+      total--;
+    } else if (bot > 0) {
+      bot--;
+      total--;
+    } else if (left > 0) {
+      left--;
+      total--;
+    } else if (top > 0) {
+      top--;
+      total--;
+    } else break;
+  }
+  const out = [];
+  for (let i = 0; i < top; i++) {
+    const t = (i + 0.5) / top;
+    out.push({ dx: -rx + longSide * t, dy: -ry, angle: -Math.PI / 2 });
+  }
+  for (let i = 0; i < right; i++) {
+    const t = (i + 0.5) / right;
+    out.push({ dx: rx, dy: -ry + shortSide * t, angle: 0 });
+  }
+  for (let i = 0; i < bot; i++) {
+    const t = (i + 0.5) / bot;
+    out.push({ dx: rx - longSide * t, dy: ry, angle: Math.PI / 2 });
+  }
+  for (let i = 0; i < left; i++) {
+    const t = (i + 0.5) / left;
+    out.push({ dx: -rx, dy: ry - shortSide * t, angle: Math.PI });
+  }
+  return out;
 }
 
 // Inline-editable heading. Click the title (or the pencil) to edit; commit
@@ -1488,56 +1708,69 @@ function TableCard({
         }
       }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="font-serif text-xl">{table.label}</h3>
-          <p className="mt-0.5 text-xs text-ink-500">
-            {t(`seating.shape_${table.shape}`)} · {table.seats} {t("seating.seats_label")}
-          </p>
-        </div>
-      </div>
-
-      <ol className="mt-4 grid grid-cols-2 gap-2">
-        {Array.from({ length: table.seats }).map((_, idx) => {
-          const a = seatToAssign.get(idx);
-          const guest = a ? guestById.get(a.guest_id) : undefined;
-          const tappable = tapMode && (selectedGuestId !== null || guest);
-          return (
-            <li
-              key={idx}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => onDropSeat(table.id, idx, e)}
-              onClick={(e) => {
-                if (!tapMode) return;
-                e.stopPropagation();
-                onTapSeat(table.id, idx);
-              }}
-              className={
-                guest
-                  ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm ${tappable ? "cursor-pointer" : ""}`
-                  : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 ${tappable ? "cursor-pointer ring-1 ring-blush-200" : ""}`
-              }
-            >
-              <span className="text-[10px] uppercase tracking-wider text-ink-400">#{idx + 1}</span>
-              <div className="mt-0.5">
-                {guest ? (
-                  <DraggableGuest
-                    guest={guest}
-                    compact
-                    onDragStart={() => onSeatedDragStart(guest.id)}
-                    onDragEnd={onSeatedDragEnd}
-                    tapMode={tapMode}
-                    selected={selectedGuestId === guest.id}
-                    onTap={onTapGuest}
-                  />
-                ) : (
-                  <span>—</span>
-                )}
+      {(() => {
+        const disabledTC = new Set(table.disabled_seats ?? []);
+        const usable = table.seats - disabledTC.size;
+        return (
+          <>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="font-serif text-xl">{table.label}</h3>
+                <p className="mt-0.5 text-xs text-ink-500">
+                  {t(`seating.shape_${table.shape}`)} · {usable} {t("seating.seats_label")}
+                </p>
               </div>
-            </li>
-          );
-        })}
-      </ol>
+            </div>
+
+            <ol className="mt-4 grid grid-cols-2 gap-2">
+              {Array.from({ length: table.seats })
+                .map((_, idx) => idx)
+                .filter((idx) => !disabledTC.has(idx))
+                .map((idx) => {
+                  const a = seatToAssign.get(idx);
+                  const guest = a ? guestById.get(a.guest_id) : undefined;
+                  const tappable = tapMode && (selectedGuestId !== null || guest);
+                  return (
+                    <li
+                      key={idx}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => onDropSeat(table.id, idx, e)}
+                      onClick={(e) => {
+                        if (!tapMode) return;
+                        e.stopPropagation();
+                        onTapSeat(table.id, idx);
+                      }}
+                      className={
+                        guest
+                          ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm ${tappable ? "cursor-pointer" : ""}`
+                          : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 ${tappable ? "cursor-pointer ring-1 ring-blush-200" : ""}`
+                      }
+                    >
+                      <span className="text-[10px] uppercase tracking-wider text-ink-400">
+                        #{idx + 1}
+                      </span>
+                      <div className="mt-0.5">
+                        {guest ? (
+                          <DraggableGuest
+                            guest={guest}
+                            compact
+                            onDragStart={() => onSeatedDragStart(guest.id)}
+                            onDragEnd={onSeatedDragEnd}
+                            tapMode={tapMode}
+                            selected={selectedGuestId === guest.id}
+                            onTap={onTapGuest}
+                          />
+                        ) : (
+                          <span>—</span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+            </ol>
+          </>
+        );
+      })()}
     </div>
   );
 }
