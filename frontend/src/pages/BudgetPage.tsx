@@ -305,9 +305,9 @@ export default function BudgetPage() {
             <thead className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500">
               <tr>
                 <th className="px-4 py-3 font-medium">{t("budget.category")}</th>
-                <th className="px-4 py-3 text-right font-medium">{t("budget.planned")}</th>
-                <th className="px-4 py-3 text-right font-medium">{t("budget.actual")}</th>
-                <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">
+                <th className="px-4 py-3 text-center font-medium">{t("budget.planned")}</th>
+                <th className="px-4 py-3 text-center font-medium">{t("budget.actual")}</th>
+                <th className="hidden px-4 py-3 text-center font-medium sm:table-cell">
                   {t("budget.delta")}
                 </th>
                 <th className="hidden px-4 py-3 font-medium md:table-cell">{t("budget.note")}</th>
@@ -337,14 +337,16 @@ export default function BudgetPage() {
                         onCommit={(v) => save(line, "actual_huf", v)}
                       />
                     </td>
-                    <td className="hidden px-4 py-2 text-right align-middle tabular-nums sm:table-cell">
-                      <span
-                        className={
-                          delta > 0 ? "text-blush-700" : delta < 0 ? "text-ink-500" : "text-ink-400"
-                        }
-                      >
-                        {delta === 0 ? "—" : formatHuf(delta, locale)}
-                      </span>
+                    <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
+                      {delta !== 0 && (
+                        <span
+                          className={
+                            delta > 0 ? "font-medium text-red-600" : "font-medium text-emerald-600"
+                          }
+                        >
+                          {formatHuf(delta, locale)}
+                        </span>
+                      )}
                     </td>
                     <td className="hidden px-4 py-2 align-middle md:table-cell">
                       <input
@@ -595,7 +597,7 @@ function HufInput({ value, onCommit }: { value: number; onCommit: (v: number) =>
       type="text"
       inputMode="numeric"
       autoComplete="off"
-      className={`input h-9 min-h-0 py-1 text-right text-sm tabular-nums ${
+      className={`input h-9 min-h-0 py-1 text-center text-sm tabular-nums ${
         error ? "input-invalid" : ""
       }`}
       value={draft}

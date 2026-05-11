@@ -856,6 +856,9 @@ export interface LocaleMessages {
     /** Hint under a bride / groom placeholder card when the partner isn't
      *  yet in the guests list. */
     partner_placeholder_hint: string;
+    /** Fallback labels used when couple.bride_name / groom_name are empty. */
+    bride_label: string;
+    groom_label: string;
     confirm_delete_table: string;
     unassigned_guests: string;
     no_unassigned: string;
@@ -1340,6 +1343,9 @@ export interface LocaleMessages {
     tag_nut: string;
     tag_plus_one: string;
     tag_baby: string;
+    /** Header above the +1/baby chip row so guests don't conflate "bringing
+     *  someone" with a dietary attribute. */
+    additions_section_title: string;
     /** Inline name inputs that appear when "+1" or "Baby" chip is toggled on. */
     added_name_plus_one: string;
     added_name_baby: string;

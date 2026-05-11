@@ -12,7 +12,7 @@ import type {
   PublicCheckinView,
   RsvpStatus,
 } from "@shared/types";
-import { Baby, Leaf, Milk, Nut, Plus, Wheat } from "lucide-react";
+import { Baby, Ban, Beef, Cookie, Fish, Leaf, Milk, Nut, Plus, Sprout, Wheat } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useConfirm } from "./ui";
 import { ApiError } from "../lib/api";
@@ -21,6 +21,17 @@ import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 const MEALS: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
+
+/** Icon per meal choice — used by the icon-button selector that replaced
+ *  the old dropdown so guests pick by glance instead of reading a list. */
+const MEAL_ICONS: Record<MealChoice, typeof Beef> = {
+  meat: Beef,
+  fish: Fish,
+  vegetarian: Leaf,
+  vegan: Sprout,
+  child: Cookie,
+  none: Ban,
+};
 // "pending" is intentionally excluded — submission requires a definite answer.
 // (The default state is still "pending" for un-engaged members; submit
 // validation forces them to commit before the server is called.)
@@ -203,17 +214,6 @@ export function HouseholdRsvpForm({
         return { ...d, dietary_tags: next };
       }),
     );
-  }
-
-  function toggleVegan(d: MemberDraft) {
-    // Vegan chip is a shortcut for meal_choice === "vegan". Toggling off
-    // only clears meal_choice if it was "vegan" — otherwise we'd silently
-    // wipe a meat/fish/etc. selection the guest already made.
-    if (d.meal_choice === "vegan") {
-      updateMember(d.id, { meal_choice: null });
-    } else {
-      updateMember(d.id, { meal_choice: "vegan" });
-    }
   }
 
   function togglePlusOne(d: MemberDraft) {
@@ -426,15 +426,41 @@ export function HouseholdRsvpForm({
 
             {d.rsvp_status === "yes" && (
               <div className="space-y-3">
-                {/* Quick-tap chip set: dietary shortcuts + family additions.
-                    Chips wrap on narrow screens via flex-wrap. */}
+                {/* Meal choice — radio-like icon row. Mutually exclusive;
+                    clicking the active one clears it. Replaces the old
+                    dropdown so guests pick by glance. */}
+                <div
+                  role="radiogroup"
+                  aria-label={t("rsvp.meal")}
+                  className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
+                >
+                  {MEALS.map((m) => {
+                    const Icon = MEAL_ICONS[m];
+                    const active = d.meal_choice === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => updateMember(d.id, { meal_choice: active ? null : m })}
+                        className={
+                          active
+                            ? "flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-ink-700 bg-ink-700 px-2 py-2 text-xs font-medium text-paper-100"
+                            : "flex flex-col items-center justify-center gap-1 rounded-xl border border-paper-300 bg-paper-50 px-2 py-2 text-xs text-ink-700 hover:border-ink-400"
+                        }
+                      >
+                        <Icon size={18} aria-hidden />
+                        {t(`guests.meal_${m}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Allergen chips — multi-select. Icon-only modifiers on
+                    top of the meal choice; replace the old free-text
+                    "Egyéb / allergia" input. */}
                 <div className="flex flex-wrap gap-1.5">
-                  <Chip
-                    on={d.meal_choice === "vegan"}
-                    onClick={() => toggleVegan(d)}
-                    icon={<Leaf size={14} aria-hidden />}
-                    label={t("rsvp.tag_vegan")}
-                  />
                   <Chip
                     on={d.dietary_tags.has("lactose")}
                     onClick={() => toggleDietaryTag(d.id, "lactose")}
@@ -453,70 +479,8 @@ export function HouseholdRsvpForm({
                     icon={<Nut size={14} aria-hidden />}
                     label={t("rsvp.tag_nut")}
                   />
-                  <Chip
-                    on={d.plus_one !== null}
-                    onClick={() => togglePlusOne(d)}
-                    icon={<Plus size={14} aria-hidden />}
-                    label={t("rsvp.tag_plus_one")}
-                    controlsId={`plus-one-${d.id}`}
-                    expanded={d.plus_one !== null}
-                  />
-                  <Chip
-                    on={d.baby !== null}
-                    onClick={() => toggleBaby(d)}
-                    icon={<Baby size={14} aria-hidden />}
-                    label={t("rsvp.tag_baby")}
-                    controlsId={`baby-${d.id}`}
-                    expanded={d.baby !== null}
-                  />
                 </div>
 
-                {d.plus_one && (
-                  <AttachedNameField
-                    id={`plus-one-${d.id}`}
-                    label={t("rsvp.added_name_plus_one")}
-                    placeholder={t("rsvp.added_name_placeholder")}
-                    value={d.plus_one.full_name}
-                    onChange={(v) => updateAttached(d.id, "plus_one", v)}
-                  />
-                )}
-                {d.baby && (
-                  <AttachedNameField
-                    id={`baby-${d.id}`}
-                    label={t("rsvp.added_name_baby")}
-                    placeholder={t("rsvp.added_name_placeholder")}
-                    value={d.baby.full_name}
-                    onChange={(v) => updateAttached(d.id, "baby", v)}
-                  />
-                )}
-
-                <div>
-                  <label className="field-label">{t("rsvp.meal")}</label>
-                  <select
-                    className="input"
-                    value={d.meal_choice ?? ""}
-                    onChange={(e) =>
-                      updateMember(d.id, {
-                        meal_choice: (e.target.value as MealChoice) || null,
-                      })
-                    }
-                  >
-                    <option value="">—</option>
-                    {MEALS.map((m) => (
-                      <option key={m} value={m}>
-                        {t(`guests.meal_${m}`)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="field-label">{t("rsvp.checkin_member_dietary")}</label>
-                  <input
-                    className="input"
-                    value={d.dietary_free}
-                    onChange={(e) => updateMember(d.id, { dietary_free: e.target.value })}
-                  />
-                </div>
                 <label className="flex items-center gap-2 text-sm text-ink-700">
                   <input
                     type="checkbox"
@@ -532,6 +496,55 @@ export function HouseholdRsvpForm({
                     value={d.song_request}
                     onChange={(e) => updateMember(d.id, { song_request: e.target.value })}
                   />
+                </div>
+
+                {/* Family additions — visually separated from the allergen
+                    block above so guests don't conflate "bringing a +1"
+                    with a dietary attribute. */}
+                <div className="mt-6 border-t border-paper-200 pt-4">
+                  <p className="mb-2 text-xs uppercase tracking-wider text-ink-500">
+                    {t("rsvp.additions_section_title")}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Chip
+                      on={d.plus_one !== null}
+                      onClick={() => togglePlusOne(d)}
+                      icon={<Plus size={14} aria-hidden />}
+                      label={t("rsvp.tag_plus_one")}
+                      controlsId={`plus-one-${d.id}`}
+                      expanded={d.plus_one !== null}
+                    />
+                    <Chip
+                      on={d.baby !== null}
+                      onClick={() => toggleBaby(d)}
+                      icon={<Baby size={14} aria-hidden />}
+                      label={t("rsvp.tag_baby")}
+                      controlsId={`baby-${d.id}`}
+                      expanded={d.baby !== null}
+                    />
+                  </div>
+                  {d.plus_one && (
+                    <div className="mt-3">
+                      <AttachedNameField
+                        id={`plus-one-${d.id}`}
+                        label={t("rsvp.added_name_plus_one")}
+                        placeholder={t("rsvp.added_name_placeholder")}
+                        value={d.plus_one.full_name}
+                        onChange={(v) => updateAttached(d.id, "plus_one", v)}
+                      />
+                    </div>
+                  )}
+                  {d.baby && (
+                    <div className="mt-3">
+                      <AttachedNameField
+                        id={`baby-${d.id}`}
+                        label={t("rsvp.added_name_baby")}
+                        placeholder={t("rsvp.added_name_placeholder")}
+                        value={d.baby.full_name}
+                        onChange={(v) => updateAttached(d.id, "baby", v)}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}

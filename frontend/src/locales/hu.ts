@@ -1322,6 +1322,7 @@ const hu: LocaleMessages = {
     tag_nut: "Mogyoró",
     tag_plus_one: "+1",
     tag_baby: "Baba",
+    additions_section_title: "Hozol valakit?",
     added_name_plus_one: "Kísérő neve",
     added_name_baby: "Baba neve",
     added_name_placeholder: "Add meg a nevét",

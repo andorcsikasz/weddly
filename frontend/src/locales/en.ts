@@ -1316,6 +1316,7 @@ const en: LocaleMessages = {
     tag_nut: "Nut",
     tag_plus_one: "+1",
     tag_baby: "Baby",
+    additions_section_title: "Bringing someone with you?",
     added_name_plus_one: "+1's name",
     added_name_baby: "Baby's name",
     added_name_placeholder: "Type their name",
