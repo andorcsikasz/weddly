@@ -192,8 +192,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
-              <SectionLabel num="02.1" label={t("landing.block_budget_eyebrow")} />
-              <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
+              <h2 className="font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
               <p className="mt-5 max-w-xl text-base text-ink-600 sm:text-lg">
@@ -226,8 +225,7 @@ export default function LandingPage() {
       <section className="relative bg-paper-100/70">
         <MarginNumeral value="04" />
         <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
-          <SectionLabel num="02.2" label={t("landing.block_guests_eyebrow")} className="" />
-          <h2 className="mt-5 max-w-3xl font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
+          <h2 className="max-w-3xl font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
             {t("landing.block_guests_title")}
           </h2>
           <div className="mx-auto mt-10 max-w-2xl">
@@ -254,8 +252,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
-              <SectionLabel num="02.3" label={t("landing.block_seating_eyebrow")} />
-              <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
+              <h2 className="font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
               <p className="mt-5 text-base text-ink-600 sm:text-lg">
