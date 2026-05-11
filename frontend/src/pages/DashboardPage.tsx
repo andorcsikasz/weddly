@@ -79,6 +79,11 @@ export default function DashboardPage() {
   // can swap to a localised "sending…" / "archiving…" copy on press.
   const [notifyingDateChange, setNotifyingDateChange] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  // Cancel-invite spinner. Must be declared up here with the other useState
+  // calls — placing it after the early `data === "loading"` return below
+  // would violate the Rules of Hooks (React error #310 on first → loaded
+  // transition).
+  const [inviteCancelling, setInviteCancelling] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -275,8 +280,8 @@ export default function DashboardPage() {
   // Cancel the pending invite so the inviter can send to a different address
   // (e.g. they typo'd). Voids the backend record (we don't DELETE — schema is
   // additive-only, the audit trail keeps the original row) and then the form
-  // re-renders for a fresh send.
-  const [inviteCancelling, setInviteCancelling] = useState(false);
+  // re-renders for a fresh send. `inviteCancelling` state is declared with
+  // the other hooks above the early returns.
   async function onCancelInvite() {
     setInviteCancelling(true);
     try {
