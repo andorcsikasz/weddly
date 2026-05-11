@@ -11,6 +11,7 @@ import type {
   CheckinSubmitBody,
   Couple,
   CoupleInvite,
+  CouplePartnerView,
   CouplePauseRequest,
   CoupleStatus,
   DataExportSummary,
@@ -80,6 +81,7 @@ export interface OnboardInput {
 
 export const coupleApi = {
   current: () => apiFetch<{ couple: Couple | null }>("GET", "/api/couples/current"),
+  partner: () => apiFetch<{ partner: CouplePartnerView | null }>("GET", "/api/couples/partner"),
   onboard: (body: OnboardInput) =>
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
   /** Partial update — supports `wedding_date_goal`, `budget_goal`, `ceremony_kind`. */

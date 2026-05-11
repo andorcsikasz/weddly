@@ -3,7 +3,7 @@
 //
 // Three formats per BLUEPRINT:
 //   - A4 seating chart (210×297mm)
-//   - A6 place cards (105×148mm), 4 per A4 sheet
+//   - 100×50mm place cards, 10 per A4 sheet (2×5)
 //   - A3 large seating chart (297×420mm)
 //
 // Glyph coverage: a Noto Sans subset (Latin / Greek / Cyrillic, Regular +
@@ -48,7 +48,8 @@ const MM_TO_PT = 2.83465;
 const FORMATS = {
   a4: { width_mm: 210, height_mm: 297 },
   a3: { width_mm: 297, height_mm: 420 },
-  a6: { width_mm: 105, height_mm: 148 },
+  // Flat 100×50mm place card. 2 across × 5 down on an A4 sheet = 10 per page.
+  place_card: { width_mm: 100, height_mm: 50 },
 } as const;
 
 export type PrintFormat = keyof typeof FORMATS;
@@ -342,7 +343,9 @@ interface PlaceCardInput {
   tablesByGuestId?: Map<number, string>;
 }
 
-/** A6 place cards, 4 to an A4 sheet (2×2). Guests list is consumed in batches. */
+/** 100×50mm place cards laid out 2×5 on an A4 sheet (10 per page).
+ *  At 50mm tall there's no room for the couple footer the larger A6 card
+ *  carried — name + table label only. */
 export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
@@ -359,13 +362,16 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       return cjkFont;
     },
   };
-  const cardW = FORMATS.a6.width_mm;
-  const cardH = FORMATS.a6.height_mm;
+  const cardW = FORMATS.place_card.width_mm;
+  const cardH = FORMATS.place_card.height_mm;
   const sheetW = FORMATS.a4.width_mm;
   const sheetH = FORMATS.a4.height_mm;
-  // 2 cards across, 2 cards tall.
-  const cellW = sheetW / 2;
-  const cellH = sheetH / 2;
+  // 2 across × 5 down. Cells centre each card with some cut margin.
+  const COLS = 2;
+  const ROWS = 5;
+  const PER_PAGE = COLS * ROWS;
+  const cellW = sheetW / COLS;
+  const cellH = sheetH / ROWS;
 
   const guests = input.guests;
   if (guests.length === 0) {
@@ -381,13 +387,13 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
     return pdf.save();
   }
 
-  for (let i = 0; i < guests.length; i += 4) {
+  for (let i = 0; i < guests.length; i += PER_PAGE) {
     const page = pdf.addPage([mm(sheetW), mm(sheetH)]);
-    for (let slot = 0; slot < 4; slot++) {
+    for (let slot = 0; slot < PER_PAGE; slot++) {
       const g = guests[i + slot];
       if (!g) break;
-      const col = slot % 2;
-      const row = Math.floor(slot / 2);
+      const col = slot % COLS;
+      const row = Math.floor(slot / COLS);
       const x_mm0 = col * cellW + (cellW - cardW) / 2;
       const y_mm0_top = sheetH - (row + 1) * cellH + (cellH - cardH) / 2;
 
@@ -403,42 +409,33 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       });
 
       const name = safe(g.full_name);
-      const nameSize = name.length > 18 ? 18 : 24;
+      const nameSize = name.length > 22 ? 14 : 18;
       const nameFont = await pickFontAsync(fontPair, name, "bold");
       const nameW = nameFont.widthOfTextAtSize(name, nameSize);
+      const tableLabel = input.tablesByGuestId?.get(g.id);
+      // Centre the name vertically when there's no table label; nudge it up
+      // a bit when a label is present so the two lines sit visually centred.
+      const nameY_mm = tableLabel ? y_mm0_top + cardH * 0.55 : y_mm0_top + cardH / 2 - 3;
       page.drawText(name, {
         x: mm(x_mm0 + cardW / 2) - nameW / 2,
-        y: mm(y_mm0_top + cardH / 2 + 4),
+        y: mm(nameY_mm),
         size: nameSize,
         font: nameFont,
         color: rgb(0.06, 0.09, 0.19),
       });
 
-      const tableLabel = input.tablesByGuestId?.get(g.id);
       if (tableLabel) {
         const t = safe(tableLabel);
         const tFont = await pickFontAsync(fontPair, t, "regular");
-        const tw = tFont.widthOfTextAtSize(t, 11);
+        const tw = tFont.widthOfTextAtSize(t, 10);
         page.drawText(t, {
           x: mm(x_mm0 + cardW / 2) - tw / 2,
-          y: mm(y_mm0_top + cardH / 2 - 8),
-          size: 11,
+          y: mm(y_mm0_top + cardH * 0.22),
+          size: 10,
           font: tFont,
           color: rgb(0.27, 0.33, 0.48),
         });
       }
-
-      // Couple footer
-      const footer = safe(input.couple_display_name);
-      const footerFont = await pickFontAsync(fontPair, footer, "regular");
-      const fw = footerFont.widthOfTextAtSize(footer, 8);
-      page.drawText(footer, {
-        x: mm(x_mm0 + cardW / 2) - fw / 2,
-        y: mm(y_mm0_top + 8),
-        size: 8,
-        font: footerFont,
-        color: rgb(0.45, 0.45, 0.45),
-      });
     }
   }
   return pdf.save();

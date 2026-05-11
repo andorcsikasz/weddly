@@ -166,6 +166,25 @@ export interface CoupleInvite {
   created_at: UnixMs;
 }
 
+/** Lifecycle states for the OTHER partner, as seen from the calling user.
+ *  Mapped on the Profile page to a colour-coded pill so each partner can
+ *  see at a glance whether the other has joined / is online. */
+export type CouplePartnerStatus =
+  /** Active, unconsumed invite exists. No partner_b account yet. */
+  | "invited"
+  /** Partner account exists but has no unexpired session right now. */
+  | "joined"
+  /** Partner has an unexpired session — they're signed in somewhere. */
+  | "active";
+
+export interface CouplePartnerView {
+  /** Null when status is "invited" — they don't have a name in our system yet. */
+  full_name: string | null;
+  /** For "invited" we fall back to the invited_email on the pending invite. */
+  email: string | null;
+  status: CouplePartnerStatus;
+}
+
 // ─── Budget ─────────────────────────────────────────────────────────────────
 
 export type BudgetCategory =

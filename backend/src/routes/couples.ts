@@ -7,6 +7,7 @@ import {
   type CeremonyKind,
   type Couple,
   type CoupleInvite,
+  type CouplePartnerView,
   DEFAULT_BUDGET_SPLIT,
   type GuestCountGoal,
   type GuestCountKind,
@@ -1050,9 +1051,67 @@ async function handleNotifyDateChange(ctx: Ctx): Promise<Response> {
   return json({ notified_count: notified, skipped_count: skipped });
 }
 
+/** Returns the OTHER partner's identity + lifecycle state from the calling
+ *  user's perspective. Drives the colour-coded pill on the Profile page so
+ *  each partner can see whether their other half has joined / is online.
+ *
+ *  Status mapping:
+ *    - "invited"  → no partner_b account; an unconsumed unexpired invite
+ *                   exists. We expose its `invited_email` (if any) so the
+ *                   inviter can spot a typo.
+ *    - "joined"   → partner_b account exists, no unexpired session
+ *                   anywhere. Means they've accepted but signed out since.
+ *    - "active"   → partner_b account exists + at least one unexpired
+ *                   session row. Means they have an active token (web /
+ *                   mobile). We don't track presence beyond this. */
+function handleGetPartner(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  // Who is "the other partner"? Either partner_b (when caller is partner_a)
+  // or partner_a (when caller is partner_b).
+  const otherId = userId === couple.partner_a_id ? couple.partner_b_id : couple.partner_a_id;
+
+  if (!otherId) {
+    // No partner_b account yet — surface the pending invite if there is one.
+    const ts = now();
+    const pending = db
+      .prepare(
+        `SELECT invited_email FROM couple_invites
+          WHERE couple_id = ? AND consumed_at IS NULL AND expires_at > ?
+          ORDER BY id DESC LIMIT 1`,
+      )
+      .get(couple.id, ts) as { invited_email: string | null } | undefined;
+    if (!pending) return json({ partner: null });
+    const partner: CouplePartnerView = {
+      full_name: null,
+      email: pending.invited_email,
+      status: "invited",
+    };
+    return json({ partner });
+  }
+
+  const other = getUserById(otherId);
+  if (!other) return json({ partner: null });
+
+  const ts = now();
+  const live = db
+    .prepare("SELECT 1 FROM sessions WHERE user_id = ? AND expires_at > ? LIMIT 1")
+    .get(otherId, ts) as { 1: number } | undefined;
+
+  const partner: CouplePartnerView = {
+    full_name: other.full_name,
+    email: other.email,
+    status: live ? "active" : "joined",
+  };
+  return json({ partner });
+}
+
 export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/onboard", handleOnboard, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
+  router.get("/api/couples/partner", handleGetPartner, true);
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.post("/api/couples/invites", handleCreateInvite, true);

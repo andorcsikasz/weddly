@@ -1158,6 +1158,16 @@ export interface LocaleMessages {
     verify_resending: string;
     verify_resent: string;
     verify_already_verified: string;
+    /** Partner card — surfaces the OTHER partner's name/email + a colour-
+     *  coded status pill (invited / joined / active). */
+    partner_title: string;
+    partner_body: string;
+    partner_none: string;
+    partner_no_name: string;
+    partner_no_email: string;
+    partner_status_invited: string;
+    partner_status_joined: string;
+    partner_status_active: string;
     payments_title: string;
     payments_body: string;
     /** Security section — change-password form lives here. */

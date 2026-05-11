@@ -687,6 +687,103 @@ describe("onboarding + invites", () => {
     );
     expect(inverted.status).toBe(400);
   });
+
+  test("GET /api/couples/partner walks through invited → joined → active", async () => {
+    wipeAll();
+    // Partner A signs up + onboards. With no invite out yet, partner = null.
+    const a = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "ppa@weddly.test",
+      password: "supersafe123",
+      full_name: "Anna",
+    });
+    expect(a.status).toBe(201);
+    await verifyUserEmail("ppa@weddly.test");
+    const ob = await req(
+      "POST",
+      "/api/couples/onboard",
+      { bride_name: "Anna", groom_name: "Bence", style_tags: [] },
+      { token: a.data.token },
+    );
+    expect(ob.status).toBe(201);
+
+    const noPartner = await req<{ partner: null }>("GET", "/api/couples/partner", undefined, {
+      token: a.data.token,
+    });
+    expect(noPartner.status).toBe(200);
+    expect(noPartner.data.partner).toBeNull();
+
+    // After A invites someone, partner = { invited, email: <invited_email>,
+    //  full_name: null }.
+    const inv = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "ppb@weddly.test" },
+      { token: a.data.token },
+    );
+    expect(inv.status).toBe(201);
+    const invited = await req<{
+      partner: { full_name: string | null; email: string | null; status: string };
+    }>("GET", "/api/couples/partner", undefined, { token: a.data.token });
+    expect(invited.status).toBe(200);
+    expect(invited.data.partner?.status).toBe("invited");
+    expect(invited.data.partner?.email).toBe("ppb@weddly.test");
+    expect(invited.data.partner?.full_name).toBeNull();
+
+    // B registers + accepts. Now A's partner view = { active, ... } because
+    // B's registration issued a session.
+    const b = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "ppb@weddly.test",
+      password: "supersafe123",
+      full_name: "Bence",
+    });
+    expect(b.status).toBe(201);
+    const accept = await req(
+      "POST",
+      `/api/invites/${inv.data.invite.token}/accept`,
+      {},
+      { token: b.data.token },
+    );
+    expect(accept.status).toBe(200);
+
+    const active = await req<{
+      partner: { full_name: string | null; email: string | null; status: string };
+    }>("GET", "/api/couples/partner", undefined, { token: a.data.token });
+    expect(active.data.partner?.status).toBe("active");
+    expect(active.data.partner?.full_name).toBe("Bence");
+    expect(active.data.partner?.email).toBe("ppb@weddly.test");
+
+    // B logs out → A now sees status = "joined" because B has no unexpired
+    // session.
+    const out = await req("POST", "/api/auth/logout", undefined, { token: b.data.token });
+    expect(out.status).toBe(200);
+    const joined = await req<{ partner: { status: string; full_name: string | null } }>(
+      "GET",
+      "/api/couples/partner",
+      undefined,
+      { token: a.data.token },
+    );
+    expect(joined.data.partner?.status).toBe("joined");
+    expect(joined.data.partner?.full_name).toBe("Bence");
+
+    // The view is symmetric: B sees A as "active" because A still has a
+    // session.
+    const bAfter = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/login", {
+      email: "ppb@weddly.test",
+      password: "supersafe123",
+    });
+    expect(bAfter.status).toBe(200);
+    const fromB = await req<{
+      partner: { full_name: string | null; email: string | null; status: string };
+    }>("GET", "/api/couples/partner", undefined, { token: bAfter.data.token });
+    expect(fromB.data.partner?.status).toBe("active");
+    expect(fromB.data.partner?.full_name).toBe("Anna");
+    expect(fromB.data.partner?.email).toBe("ppa@weddly.test");
+  });
+
+  test("GET /api/couples/partner requires auth", async () => {
+    const r = await req("GET", "/api/couples/partner");
+    expect(r.status).toBe(401);
+  });
 });
 
 describe("health", () => {

@@ -3,6 +3,8 @@
 
 import type {
   Couple,
+  CouplePartnerStatus,
+  CouplePartnerView,
   CouplePauseRequest,
   CoupleStatus,
   DataExportSummary,
@@ -80,6 +82,7 @@ export default function ProfilePage() {
    *  and waiting for the second confirming click. Times out after 4s. */
   const [armedDeleteId, setArmedDeleteId] = useState<number | null>(null);
   const [removing, setRemoving] = useState<number | null>(null);
+  const [partner, setPartner] = useState<CouplePartnerView | null>(null);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNext, setPwNext] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -91,15 +94,17 @@ export default function ProfilePage() {
   const [emailSubmitting, setEmailSubmitting] = useState(false);
 
   async function refresh() {
-    const [pause, current, docs] = await Promise.all([
+    const [pause, current, docs, partnerRes] = await Promise.all([
       pauseApi.status(),
       coupleApi.current(),
       documentsApi.list(),
+      coupleApi.partner(),
     ]);
     setCoupleStatus(pause.couple_status);
     setPauseReq(pause.pause_request);
     setCouple(current.couple);
     setDocuments(docs.exports);
+    setPartner(partnerRes.partner);
   }
   async function refreshDocuments() {
     try {
@@ -343,6 +348,26 @@ export default function ProfilePage() {
       )}
 
       <section className="card mt-6">
+        <h2 className="text-lg">{t("profile.partner_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600">{t("profile.partner_body")}</p>
+        {partner ? (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-ink-900">
+                {partner.full_name ?? t("profile.partner_no_name")}
+              </p>
+              <p className="text-sm text-ink-600 break-all">
+                {partner.email ?? t("profile.partner_no_email")}
+              </p>
+            </div>
+            <PartnerStatusPill status={partner.status} t={t} />
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-ink-500">{t("profile.partner_none")}</p>
+        )}
+      </section>
+
+      <section className="card mt-6">
         <h2 className="text-lg">{t("profile.payments_title")}</h2>
         <p className="mt-2 text-sm text-ink-600">{t("profile.payments_body")}</p>
       </section>
@@ -569,5 +594,30 @@ export default function ProfilePage() {
         {error && <p className="field-error mt-3">{error}</p>}
       </section>
     </AppShell>
+  );
+}
+
+/** Colour-coded pill for the partner's lifecycle state. Colours pull from
+ *  Weddly's three-token palette (no raw hex per CLAUDE.md):
+ *    - invited → blush (warm orange — pending action)
+ *    - joined  → paper (muted neutral — account exists but offline)
+ *    - active  → ink (deep navy — signed in right now)
+ */
+function PartnerStatusPill({
+  status,
+  t,
+}: {
+  status: CouplePartnerStatus;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+}) {
+  const cls = {
+    invited: "bg-blush-100 text-blush-800 border border-blush-200",
+    joined: "bg-paper-200 text-ink-700 border border-paper-300",
+    active: "bg-ink-700 text-paper-100 border border-ink-800",
+  }[status];
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${cls}`}>
+      {t(`profile.partner_status_${status}`)}
+    </span>
   );
 }
