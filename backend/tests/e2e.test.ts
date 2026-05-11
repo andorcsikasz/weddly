@@ -68,6 +68,7 @@ function wipeAll() {
     "couple_supplier_costs",
     "supplier_votes",
     "vendor_waitlist",
+    "feedback_submissions",
     "users",
     "couples",
   ];
@@ -3913,6 +3914,198 @@ describe("public feedback form", () => {
       from_email: "not-an-email",
     });
     expect(r5.status).toBe(400);
+  });
+});
+
+describe("feedback admin triage", () => {
+  // Stand up an admin in each test — wipeAll clears users between tests.
+  async function newAdmin(): Promise<string> {
+    const r = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(r.status).toBe(201);
+    return r.data.token;
+  }
+
+  test("anonymous landing submission persists with user_id=null", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+
+    const r = await req("POST", "/api/feedback", {
+      source: "landing",
+      message: "Anonymous from the landing page.",
+      rating: 7,
+      locale: "hu",
+    });
+    expect(r.status).toBe(200);
+
+    const list = await req<{ entries: Array<Record<string, unknown>> }>(
+      "GET",
+      "/api/admin/feedback",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.entries.length).toBe(1);
+    const entry = list.data.entries[0]!;
+    expect(entry.source).toBe("landing");
+    expect(entry.user_id).toBe(null);
+    expect(entry.message).toBe("Anonymous from the landing page.");
+    expect(entry.rating).toBe(7);
+    expect(entry.status).toBe("new");
+    expect(entry.user_email).toBe(null);
+  });
+
+  test("authenticated app submission captures user_id + user_email", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+
+    // Register a normal user who will submit feedback from /app.
+    const userReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "user@test.test",
+      password: "supersafe123",
+      full_name: "Test User",
+    });
+    expect(userReg.status).toBe(201);
+
+    const r = await req(
+      "POST",
+      "/api/feedback",
+      {
+        source: "app",
+        message: "From the app.",
+        rating: 9,
+        monthly_value_ft: 4500,
+      },
+      { token: userReg.data.token },
+    );
+    expect(r.status).toBe(200);
+
+    const list = await req<{ entries: Array<Record<string, unknown>> }>(
+      "GET",
+      "/api/admin/feedback",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.entries.length).toBe(1);
+    const entry = list.data.entries[0]!;
+    expect(entry.source).toBe("app");
+    expect(typeof entry.user_id).toBe("number");
+    expect(entry.user_email).toBe("user@test.test");
+    expect(entry.user_full_name).toBe("Test User");
+  });
+
+  test("admin can move status through new → read → resolved → re-open", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    await req("POST", "/api/feedback", { message: "Move me through statuses." });
+
+    const list1 = await req<{ entries: Array<{ id: number; status: string }> }>(
+      "GET",
+      "/api/admin/feedback",
+      undefined,
+      { token: adminToken },
+    );
+    const id = list1.data.entries[0]!.id;
+    expect(list1.data.entries[0]!.status).toBe("new");
+
+    const r1 = await req<{ entry: { status: string } }>(
+      "PATCH",
+      `/api/admin/feedback/${id}/status`,
+      { status: "read" },
+      { token: adminToken },
+    );
+    expect(r1.status).toBe(200);
+    expect(r1.data.entry.status).toBe("read");
+
+    const r2 = await req<{ entry: { status: string } }>(
+      "PATCH",
+      `/api/admin/feedback/${id}/status`,
+      { status: "resolved" },
+      { token: adminToken },
+    );
+    expect(r2.data.entry.status).toBe("resolved");
+
+    const r3 = await req<{ entry: { status: string } }>(
+      "PATCH",
+      `/api/admin/feedback/${id}/status`,
+      { status: "new" },
+      { token: adminToken },
+    );
+    expect(r3.data.entry.status).toBe("new");
+  });
+
+  test("admin can delete a submission", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    await req("POST", "/api/feedback", { message: "Soon to be gone." });
+    const list1 = await req<{ entries: Array<{ id: number }> }>(
+      "GET",
+      "/api/admin/feedback",
+      undefined,
+      { token: adminToken },
+    );
+    const id = list1.data.entries[0]!.id;
+
+    const del = await req("DELETE", `/api/admin/feedback/${id}`, undefined, { token: adminToken });
+    expect(del.status).toBe(200);
+
+    const list2 = await req<{ entries: unknown[] }>("GET", "/api/admin/feedback", undefined, {
+      token: adminToken,
+    });
+    expect(list2.data.entries.length).toBe(0);
+  });
+
+  test("non-admin gets 403 on admin endpoints", async () => {
+    wipeAll();
+    const userReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "user@test.test",
+      password: "supersafe123",
+      full_name: "Test User",
+    });
+    expect(userReg.status).toBe(201);
+
+    const list = await req("GET", "/api/admin/feedback", undefined, {
+      token: userReg.data.token,
+    });
+    expect(list.status).toBe(403);
+
+    const patch = await req(
+      "PATCH",
+      "/api/admin/feedback/1/status",
+      { status: "read" },
+      { token: userReg.data.token },
+    );
+    expect(patch.status).toBe(403);
+
+    const del = await req("DELETE", "/api/admin/feedback/1", undefined, {
+      token: userReg.data.token,
+    });
+    expect(del.status).toBe(403);
+  });
+
+  test("admin set-status rejects unknown statuses", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    await req("POST", "/api/feedback", { message: "Bad status target." });
+    const list = await req<{ entries: Array<{ id: number }> }>(
+      "GET",
+      "/api/admin/feedback",
+      undefined,
+      { token: adminToken },
+    );
+    const id = list.data.entries[0]!.id;
+
+    const r = await req(
+      "PATCH",
+      `/api/admin/feedback/${id}/status`,
+      { status: "wat" },
+      { token: adminToken },
+    );
+    expect(r.status).toBe(400);
   });
 });
 
