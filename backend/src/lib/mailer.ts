@@ -135,9 +135,23 @@ export async function checkResendLiveness(): Promise<ResendLiveness> {
     });
     clearTimeout(timer);
     const ms = Math.round(performance.now() - start);
-    const result: ResendLiveness = res.ok
-      ? { ok: true, ms }
-      : { ok: false, ms, reason: `HTTP ${res.status}` };
+    let result: ResendLiveness;
+    if (res.ok) {
+      result = { ok: true, ms };
+    } else if (res.status === 401) {
+      // Send-only "restricted" keys (the security-correct production posture)
+      // can't list api-keys but ARE valid for /emails. Resend's response body
+      // disambiguates: `name: "restricted_api_key"` = good auth, scope-limited;
+      // anything else = the key is actually bad (revoked / wrong / missing).
+      const body = await res.text().catch(() => "");
+      if (body.includes('"restricted_api_key"')) {
+        result = { ok: true, ms, reason: "send-only key (verified)" };
+      } else {
+        result = { ok: false, ms, reason: `HTTP 401 ${body.slice(0, 120)}` };
+      }
+    } else {
+      result = { ok: false, ms, reason: `HTTP ${res.status}` };
+    }
     lastProbe = { at: nowMs, result };
     return result;
   } catch (e) {
