@@ -41,6 +41,8 @@ export interface LocaleMessages {
     budget_description: string;
     seating_title: string;
     seating_description: string;
+    planning_title: string;
+    planning_description: string;
     admin_suppliers_title: string;
     admin_suppliers_description: string;
     admin_feedback_title: string;
@@ -57,6 +59,8 @@ export interface LocaleMessages {
     reset_password_description: string;
     forgot_password_title: string;
     forgot_password_description: string;
+    schedule_title: string;
+    schedule_description: string;
   };
   a11y: {
     /** Generic close button label (dialogs, sheets). */
@@ -343,6 +347,46 @@ export interface LocaleMessages {
     archive_workspace_confirm_body: string;
     archive_workspace_confirm_yes: string;
     archive_workspace_done: string;
+    // ── Day-of dashboard (daysUntil <= 1) ─────────────────────────────
+    /** Hero copy for the day-of layout — replaces the planning KPI grid. */
+    day_of_mode_title: string;
+    day_of_today_label: string;
+    day_of_tomorrow_label: string;
+    day_of_checkin_title: string;
+    day_of_checkin_intro: string;
+    day_of_checkin_copy: string;
+    day_of_checkin_copied: string;
+    day_of_checkin_no_slug: string;
+    /** Inline TODO line shown where the QR code will eventually live. */
+    day_of_qr_todo: string;
+    day_of_stats_yes: string;
+    day_of_stats_checked_in: string;
+    day_of_dietary_title: string;
+    day_of_dietary_empty: string;
+    day_of_schedule_title: string;
+    day_of_schedule_empty: string;
+    day_of_schedule_open: string;
+    day_of_print_title: string;
+    day_of_print_place_cards: string;
+    day_of_print_seating: string;
+    // ── Caterer summary tile (planning-mode, daysUntil <= 7) ──────────
+    caterer_title: string;
+    caterer_sub: string;
+    caterer_copy: string;
+    caterer_copied: string;
+    /** Receives `{n}` — total counted guests. */
+    caterer_total: string;
+    caterer_label_meat: string;
+    caterer_label_fish: string;
+    caterer_label_vegetarian: string;
+    caterer_label_vegan: string;
+    caterer_label_child: string;
+    caterer_label_none: string;
+    caterer_label_unspecified: string;
+    caterer_label_gluten: string;
+    caterer_label_lactose: string;
+    caterer_label_nut: string;
+    caterer_label_other: string;
   };
   invite: {
     title: string;
@@ -603,7 +647,11 @@ export interface LocaleMessages {
     guests: string;
     budget: string;
     seating: string;
+    /** Day-of run-of-show timeline page — sidebar only. */
+    schedule: string;
     suppliers: string;
+    /** Free-form planning surface (tasks / ideas / wedding-day schedule). */
+    planning: string;
     /** Post-wedding follow-up surfaces — honeymoon planning + photo share. */
     honeymoon: string;
     media: string;
@@ -619,6 +667,36 @@ export interface LocaleMessages {
     tab_budget: string;
     tab_seating: string;
     tab_suppliers: string;
+  };
+  /** Free-form planning surface — three tabs over the planning_items table. */
+  planning: {
+    title: string;
+    sub: string;
+    /** aria-label for the tablist wrapping the three category tabs. */
+    tabs_aria: string;
+    tab_tasks: string;
+    tab_ideas: string;
+    tab_schedule: string;
+    /** Quick-add form CTA. */
+    add: string;
+    /** Per-tab placeholder for the quick-add title input. */
+    task_placeholder: string;
+    idea_placeholder: string;
+    schedule_placeholder: string;
+    /** Inputs surfaced inline next to the quick-add title. */
+    due_date_label: string;
+    time_label: string;
+    /** Expanded-row notes textarea placeholder. */
+    body_placeholder: string;
+    /** Task checkbox a11y labels (one for each toggle direction). */
+    mark_done: string;
+    mark_undone: string;
+    delete_confirm_title: string;
+    delete_confirm_body: string;
+    /** Empty-state copy per tab. */
+    empty_task: string;
+    empty_idea: string;
+    empty_schedule: string;
   };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */
   honeymoon: {
@@ -667,6 +745,42 @@ export interface LocaleMessages {
     sub: string;
     coming_soon_title: string;
     coming_soon_body: string;
+  };
+  /** Day-of run-of-show — CRUD over the schedule_events table. */
+  schedule: {
+    title: string;
+    sub: string;
+    add_event: string;
+    edit_event: string;
+    delete_event: string;
+    download_pdf: string;
+    field_label: string;
+    field_label_placeholder: string;
+    field_time: string;
+    field_duration: string;
+    field_duration_placeholder: string;
+    field_location: string;
+    field_location_placeholder: string;
+    field_notes: string;
+    field_notes_placeholder: string;
+    save: string;
+    saving: string;
+    delete_confirm_title: string;
+    delete_confirm_body: string;
+    label_required: string;
+    time_required: string;
+    save_failed: string;
+    save_conflict: string;
+    empty_title: string;
+    empty_body: string;
+    starter_button: string;
+    starter_arrival: string;
+    starter_ceremony: string;
+    starter_group_photo: string;
+    starter_dinner: string;
+    starter_first_dance: string;
+    /** Receives `{n}`. */
+    duration_unit: string;
   };
   guests: {
     title: string;
@@ -725,6 +839,16 @@ export interface LocaleMessages {
     invited_check_label: string;
     invited_short: string;
     invited_progress_help: string;
+    /** Header pill that surfaces how many invitations have been physically handed over. */
+    delivered_short: string;
+    delivered_progress_help: string;
+    /** 3-state invite chip labels (not-invited / invited / delivered) + next-state hints. */
+    invite_state_not_invited: string;
+    invite_state_invited: string;
+    invite_state_delivered: string;
+    invite_state_cycle_to_invited: string;
+    invite_state_cycle_to_delivered: string;
+    invite_state_cycle_to_clear: string;
     /** Page-level summary chips above the household list. */
     total_summary_unit: string;
     total_summary_households: string;
@@ -741,6 +865,9 @@ export interface LocaleMessages {
     search_empty: string;
     search_clear: string;
     search_load_more: string;
+    /** Per-row "Print place card" icon button + toast on click. */
+    print_place_card: string;
+    print_place_card_started: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;
@@ -1385,6 +1512,22 @@ export interface LocaleMessages {
     confirm_submit_title: string;
     confirm_submit_body: string;
     confirm_submit_yes: string;
+    /** Offline-queue UX — venue WiFi is patchy at the door, so we let the
+     *  RSVP form persist a submit to localStorage and flush it on the next
+     *  "online" event. Plural pair: _one + _other. */
+    offline_pending_one: string;
+    offline_pending_other: string;
+    /** Success toast shown after a submit was queued locally. */
+    offline_saved: string;
+    /** Toast shown once the queue has drained. Plural pair. */
+    offline_drained_one: string;
+    offline_drained_other: string;
+    /** Kiosk-lock copy. The /rsvp surface can be locked into a doorperson
+     *  mode so a borrowed phone is one mis-tap from /app. */
+    kiosk_banner: string;
+    kiosk_enter: string;
+    kiosk_exit_hold: string;
+    kiosk_exit_confirmed: string;
   };
   notfound: {
     title: string;

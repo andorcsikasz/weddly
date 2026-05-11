@@ -2,6 +2,7 @@
 import {
   Camera,
   ChefHat,
+  ClipboardList,
   Heart,
   LayoutDashboard,
   MessageCircle,
@@ -50,6 +51,13 @@ const ITEMS: NavItem[] = [
     labelKey: "nav.suppliers",
     tabKey: "nav.tab_suppliers",
     icon: <Heart size={18} />,
+  },
+  // Free-form planning surface — desktop-only so the mobile bottom nav stays
+  // at the 5 core flows. Three tabs inside: tasks, ideas, wedding-day program.
+  {
+    to: "/app/planning",
+    labelKey: "nav.planning",
+    icon: <ClipboardList size={18} />,
   },
   // Post-wedding "follow-up" entries — desktop sidebar only; bottom mobile
   // nav stays at 5 items via `slice(0, 5)` further down.

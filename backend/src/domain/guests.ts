@@ -31,6 +31,7 @@ export interface GuestRow {
   notes: string | null;
   rsvp_responded_at: number | null;
   invited_at: number | null;
+  invitation_delivered_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -93,6 +94,7 @@ export function toGuest(row: GuestRow): Guest {
     notes: row.notes,
     rsvp_responded_at: row.rsvp_responded_at,
     invited_at: row.invited_at,
+    invitation_delivered_at: row.invitation_delivered_at,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

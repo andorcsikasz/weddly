@@ -204,22 +204,53 @@ function persistCheckin(
   return { previous: existing, updated: refreshed };
 }
 
-function notifyCouple(couple: CoupleRow, members: GuestRow[], previous: GuestRow[]) {
+/**
+ * Notify the couple about an RSVP submission. When a single guest changed,
+ * we send the focused `rsvp_received_for_couple` template; when 2+ guests
+ * in the same household changed in one submit, we collapse them into a
+ * single `rsvp_received_household_for_couple` summary email per partner —
+ * a family that fills the form together shouldn't generate N inbox pings.
+ */
+function notifyCouple(
+  couple: CoupleRow,
+  household: HouseholdRow,
+  members: GuestRow[],
+  previous: GuestRow[],
+) {
   const guestPageUrl = `${CONFIG.frontendBaseUrl}/app/guests`;
   const prevById = new Map(previous.map((p) => [p.id, p]));
+
+  // Collect every member whose status meaningfully changed (skip pending → pending
+  // no-ops and any unchanged rows). These are the rows that warrant a notification.
+  const changed: { name: string; rsvpStatus: "yes" | "no" | "maybe" }[] = [];
   for (const m of members) {
-    const before = prevById.get(m.id);
     if (m.rsvp_status === "pending") continue;
+    const before = prevById.get(m.id);
     if (before && before.rsvp_status === m.rsvp_status) continue;
-    const status = m.rsvp_status as RsvpStatus;
-    if (status === "pending") continue;
-    for (const partnerId of [couple.partner_a_id, couple.partner_b_id]) {
-      if (!partnerId) continue;
-      const partner = getUserById(partnerId);
-      if (!partner) continue;
+    const status = m.rsvp_status;
+    if (!isRsvpStatus(status) || status === "pending") continue;
+    changed.push({ name: m.full_name, rsvpStatus: status as "yes" | "no" | "maybe" });
+  }
+  if (changed.length === 0) return;
+
+  for (const partnerId of [couple.partner_a_id, couple.partner_b_id]) {
+    if (!partnerId) continue;
+    const partner = getUserById(partnerId);
+    if (!partner) continue;
+    if (changed.length === 1) {
+      const only = changed[0]!;
       void sendKind(
         "rsvp_received_for_couple",
-        { guestName: m.full_name, rsvpStatus: status as "yes" | "no" | "maybe", guestPageUrl },
+        { guestName: only.name, rsvpStatus: only.rsvpStatus, guestPageUrl },
+        {
+          user: { id: partner.id, email: partner.email, full_name: partner.full_name },
+          couple_id: couple.id,
+        },
+      );
+    } else {
+      void sendKind(
+        "rsvp_received_household_for_couple",
+        { householdLabel: household.label, guests: changed, guestPageUrl },
         {
           user: { id: partner.id, email: partner.email, full_name: partner.full_name },
           couple_id: couple.id,
@@ -394,7 +425,7 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   const { previous, updated } = persistCheckin(couple, hh, parsed);
   const addedRows = persistAddedMembers(couple, hh, parsedAdded);
 
-  notifyCouple(couple, [...updated, ...addedRows], previous);
+  notifyCouple(couple, hh, [...updated, ...addedRows], previous);
   notifyGuests(couple, [...updated, ...addedRows]);
 
   const payload = { rsvp: buildView(couple, hh) };
@@ -519,7 +550,7 @@ async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
   }
 
   const { previous, updated } = persistCheckin(couple, hh, members);
-  notifyCouple(couple, updated, previous);
+  notifyCouple(couple, hh, updated, previous);
   notifyGuests(couple, updated);
 
   // Both the legacy GET and the new check-in flow now return PublicCheckinView

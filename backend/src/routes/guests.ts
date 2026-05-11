@@ -1,6 +1,13 @@
 // Guest list CRUD + CSV import. All endpoints couple-scoped.
 
-import type { Guest, GuestGroupTag, GuestKind, MealChoice, RsvpStatus } from "@shared/types";
+import type {
+  DietarySummary,
+  Guest,
+  GuestGroupTag,
+  GuestKind,
+  MealChoice,
+  RsvpStatus,
+} from "@shared/types";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
@@ -37,6 +44,10 @@ interface UpsertBody {
   /** Boolean — `true` marks the guest as invited at the current timestamp;
    *  `false` clears it. Omitted = leave invited_at as-is. */
   invited?: unknown;
+  /** Boolean — `true` stamps invitation_delivered_at to now (and ensures
+   *  invited_at is also set, since delivered implies invited); `false` clears
+   *  only the delivered timestamp. Omitted = leave as-is. */
+  delivered?: unknown;
   /** Household this guest belongs to. If omitted on create, the server
    *  spawns a household-of-one with the guest's name as its label. */
   household_id?: unknown;
@@ -172,16 +183,19 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const code = uniqueInviteCode();
   const householdId = resolveHouseholdForCreate(body, couple.id, parsed.full_name);
 
-  // `invited` is optional — when truthy, the create call also marks the
-  // guest as invited at the same timestamp.
-  const invitedAt = body.invited === true ? ts : null;
+  // `invited` / `delivered` are optional — when truthy, the create call stamps
+  // both timestamps at `ts`. `delivered=true` implies `invited=true` (you
+  // can't physically hand over an invitation that was never marked invited).
+  const deliveredAt = body.delivered === true ? ts : null;
+  const invitedAt = body.invited === true || deliveredAt !== null ? ts : null;
   const result = db
     .prepare(
       `INSERT INTO guests
         (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
-         song_request, notes, rsvp_responded_at, invited_at, created_at, updated_at, household_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+         song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
+         created_at, updated_at, household_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -200,6 +214,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       parsed.song_request,
       parsed.notes,
       invitedAt,
+      deliveredAt,
       ts,
       ts,
       householdId,
@@ -253,18 +268,33 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     nextHouseholdId = created.id;
   }
 
-  // Tri-state `invited`: omitted = leave invited_at as-is; true = stamp;
-  // false = clear. The checkbox on /app/guests sends boolean explicitly.
+  // Tri-state `invited` + `delivered`: omitted = leave as-is; true = stamp;
+  // false = clear. The 3-state chip on /app/guests sends explicit pairs that
+  // encode the target state: not-invited (invited:false, delivered:false),
+  // invited (invited:true, delivered:false), delivered (delivered:true, which
+  // also forces invited=true since delivered implies invited).
   let nextInvitedAt = existing.invited_at;
   if (body.invited === true) nextInvitedAt = ts;
   else if (body.invited === false) nextInvitedAt = null;
+
+  let nextDeliveredAt = existing.invitation_delivered_at;
+  if (body.delivered === true) {
+    nextDeliveredAt = ts;
+    // delivered implies invited — backfill if the client somehow omitted it.
+    if (nextInvitedAt === null) nextInvitedAt = ts;
+  } else if (body.delivered === false) {
+    nextDeliveredAt = null;
+  }
+  // Clearing `invited` always clears `delivered` (you can't deliver to
+  // someone you haven't invited).
+  if (nextInvitedAt === null) nextDeliveredAt = null;
 
   db.prepare(
     `UPDATE guests SET
         full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
         accommodation_needed = ?, song_request = ?, notes = ?, household_id = ?,
-        invited_at = ?, updated_at = ?
+        invited_at = ?, invitation_delivered_at = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.full_name,
@@ -282,6 +312,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     parsed.notes,
     nextHouseholdId,
     nextInvitedAt,
+    nextDeliveredAt,
     ts,
     id,
     couple.id,
@@ -526,8 +557,79 @@ function handleExportCsv(ctx: Ctx): Response {
   });
 }
 
+/** Day-of catering aggregate. Counts only guests whose `rsvp_status` is
+ *  `yes` or `maybe` — `no` / `pending` are intentionally excluded so the
+ *  caterer's headcount matches who's actually expected at the table.
+ *
+ *  Allergies are a heuristic scan of the free-text `dietary` field. We
+ *  intentionally undercount in favour of false-negatives (e.g. "Gluten-free"
+ *  is the keyword catch, not "GF") because the caterer reads the raw notes
+ *  too; the buckets are a quick-look summary, not the source of truth. */
+function handleDietarySummary(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  // Scope to attending guests. Pull only the two columns we need.
+  const rows = db
+    .prepare(
+      `SELECT meal_choice, dietary FROM guests
+         WHERE couple_id = ? AND rsvp_status IN ('yes','maybe')`,
+    )
+    .all(couple.id) as { meal_choice: string | null; dietary: string | null }[];
+
+  const summary: DietarySummary = {
+    meal: { meat: 0, fish: 0, vegetarian: 0, vegan: 0, child: 0, none: 0, unspecified: 0 },
+    allergies: { gluten: 0, lactose: 0, nut: 0, other_text_count: 0 },
+    counted_guests: rows.length,
+  };
+
+  // Case-insensitive substring tests. Hungarian keywords first (most common
+  // in this market), English fallbacks listed in the same regex. We test
+  // `g`, `t`, `n` separately so a single note that says "gluten & nut free"
+  // bumps both gluten and nut without double-counting other_text_count.
+  const RE_GLUTEN = /glut[eé]n|gluten/i;
+  const RE_LACTOSE = /tej|laktóz|laktoz|lactose|dairy/i;
+  const RE_NUT = /mogyoró|mogyoro|mandula|nut|peanut|földimogyoró|földimogyoro/i;
+
+  for (const row of rows) {
+    // Meal bucket — defaults to "unspecified" when null or unrecognised.
+    const meal = row.meal_choice;
+    if (meal === "meat") summary.meal.meat += 1;
+    else if (meal === "fish") summary.meal.fish += 1;
+    else if (meal === "vegetarian") summary.meal.vegetarian += 1;
+    else if (meal === "vegan") summary.meal.vegan += 1;
+    else if (meal === "child") summary.meal.child += 1;
+    else if (meal === "none") summary.meal.none += 1;
+    else summary.meal.unspecified += 1;
+
+    // Allergy bucket — keyword scan over `dietary` text.
+    const text = (row.dietary ?? "").trim();
+    if (!text) continue;
+    let matchedKeyword = false;
+    if (RE_GLUTEN.test(text)) {
+      summary.allergies.gluten += 1;
+      matchedKeyword = true;
+    }
+    if (RE_LACTOSE.test(text)) {
+      summary.allergies.lactose += 1;
+      matchedKeyword = true;
+    }
+    if (RE_NUT.test(text)) {
+      summary.allergies.nut += 1;
+      matchedKeyword = true;
+    }
+    if (!matchedKeyword) summary.allergies.other_text_count += 1;
+  }
+
+  return json(summary);
+}
+
 export function registerGuestRoutes(router: Router) {
   router.get("/api/guests", handleList, true);
+  // Aggregate route comes BEFORE the :id-parameterised routes so the
+  // literal path "dietary-summary" doesn't get captured by /api/guests/:id.
+  router.get("/api/guests/dietary-summary", handleDietarySummary, true);
   router.post("/api/guests", handleCreate, true);
   router.patch("/api/guests/:id", handleUpdate, true);
   router.delete("/api/guests/:id", handleDelete, true);

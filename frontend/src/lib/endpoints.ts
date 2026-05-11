@@ -16,6 +16,7 @@ import type {
   CouplePauseRequest,
   CoupleStatus,
   DataExportSummary,
+  DietarySummary,
   GuestCountGoal,
   Guest,
   Household,
@@ -29,6 +30,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
+import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type {
   CommunitySupplierAdminView,
   SubmitCommunitySupplierInput,
@@ -158,6 +160,9 @@ export interface GuestUpsert extends Partial<Guest> {
   /** Tri-state flag for the "invited" checkbox: `true` stamps invited_at to
    *  now, `false` clears it, omitted leaves the field as-is. */
   invited?: boolean;
+  /** Same shape as `invited`, but for the "invitation handed over" stamp.
+   *  `true` implies invited=true server-side. */
+  delivered?: boolean;
 }
 
 export const guestApi = {
@@ -187,9 +192,57 @@ export const guestApi = {
     ),
 };
 
+/** Day-of catering aggregate. Counts only `rsvp_status in (yes,maybe)`
+ *  guests; allergies are a heuristic keyword scan over the free-text
+ *  `dietary` field — see `DietarySummary` docs in shared/types.ts. */
+export const dietaryApi = {
+  summary: () => apiFetch<DietarySummary>("GET", "/api/guests/dietary-summary"),
+};
+
+/** Day-of run-of-show timeline. Times are minutes from midnight in wedding-
+ *  day-local time so a date shift right up to D-1 doesn't rewrite every row. */
+export const scheduleApi = {
+  list: () => apiFetch<{ events: ScheduleEvent[] }>("GET", "/api/schedule"),
+  create: (body: UpsertScheduleEventInput) =>
+    apiFetch<{ event: ScheduleEvent }>("POST", "/api/schedule", body),
+  /** Partial PATCH with optional optimistic-concurrency guard. Pass `ifMatch`
+   *  with the row's last `updated_at` to make the server return 409 if a
+   *  concurrent editor has touched the same event in the meantime. */
+  update: (
+    id: number,
+    body: Partial<UpsertScheduleEventInput>,
+    opts: { ifMatch?: number | string } = {},
+  ) =>
+    apiFetch<{ event: ScheduleEvent }>("PATCH", `/api/schedule/${id}`, body, {
+      headers: opts.ifMatch !== undefined ? { "If-Match": String(opts.ifMatch) } : undefined,
+    }),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/schedule/${id}`),
+};
+
 /** Per-user couple membership — today, just leaving a partner-B seat. */
 export const userApi = {
   leaveCouple: () => apiFetch<{ ok: true }>("POST", "/api/users/me/leave-couple", {}),
+};
+
+export interface PlanningItemCreate {
+  kind: "task" | "idea" | "schedule";
+  title: string;
+  body?: string | null;
+  done?: boolean;
+  due_date?: string | null;
+  scheduled_time?: string | null;
+  position?: number;
+}
+
+export type PlanningItemPatch = Partial<Omit<PlanningItemCreate, "kind">>;
+
+export const planningApi = {
+  list: () => apiFetch<{ items: import("@shared/types").PlanningItem[] }>("GET", "/api/planning"),
+  create: (body: PlanningItemCreate) =>
+    apiFetch<{ item: import("@shared/types").PlanningItem }>("POST", "/api/planning", body),
+  update: (id: number, body: PlanningItemPatch) =>
+    apiFetch<{ item: import("@shared/types").PlanningItem }>("PATCH", `/api/planning/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/planning/${id}`),
 };
 
 export const householdApi = {
@@ -228,9 +281,16 @@ export const rsvpApi = {
       "GET",
       `/api/rsvp/lookup?couple=${encodeURIComponent(couple)}&code=${encodeURIComponent(code)}`,
     ),
-  /** Submit RSVPs for every member of the household in one shot. */
-  checkin: (body: CheckinSubmitBody) =>
-    apiFetch<{ rsvp: PublicCheckinView }>("POST", "/api/rsvp/checkin", body),
+  /** Submit RSVPs for every member of the household in one shot. The optional
+   *  `idempotencyKey` is forwarded as an `Idempotency-Key` header so the server
+   *  can dedupe retries from the offline queue (5 min cache window). */
+  checkin: (body: CheckinSubmitBody, opts?: { idempotencyKey?: string }) =>
+    apiFetch<{ rsvp: PublicCheckinView }>(
+      "POST",
+      "/api/rsvp/checkin",
+      body,
+      opts?.idempotencyKey ? { headers: { "Idempotency-Key": opts.idempotencyKey } } : undefined,
+    ),
   /** Legacy per-guest invite_code path. Kept so old `/rsvp/<6char>` URLs
    *  printed on older invite cards keep resolving — server now returns the
    *  same household view. */
@@ -488,7 +548,18 @@ export async function fetchPdfBlob(path: string, signal?: AbortSignal): Promise<
   return res.blob();
 }
 
-/** Build the place-cards URL. `onlyConfirmed=true` filters to RSVP=yes. */
-export function placeCardsUrl(opts: { onlyConfirmed?: boolean } = {}): string {
-  return opts.onlyConfirmed ? "/api/print/place-cards?only=confirmed" : "/api/print/place-cards";
+/** Build the place-cards URL. Supports the day-of "reprint just these guests"
+ *  workflow — `guestIds` is the subset to render, deduped + capped at 200 by
+ *  the server. When both filters are present the server intersects them. */
+export function placeCardsUrl(opts: { onlyConfirmed?: boolean; guestIds?: number[] } = {}): string {
+  const qs = new URLSearchParams();
+  if (opts.onlyConfirmed) qs.set("only", "confirmed");
+  if (opts.guestIds && opts.guestIds.length > 0) {
+    qs.set("guest_ids", opts.guestIds.join(","));
+  }
+  const s = qs.toString();
+  return s ? `/api/print/place-cards?${s}` : "/api/print/place-cards";
 }
+
+/** A4 portrait day-of run-of-show. Auth-protected; download via `fetchPdfBlob`. */
+export const schedulePdfUrl = "/api/print/schedule";

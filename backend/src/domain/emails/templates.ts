@@ -73,6 +73,17 @@ export interface RsvpReceivedForCouplePayload {
   rsvpStatus: "yes" | "no" | "maybe";
   guestPageUrl: string;
 }
+export interface RsvpReceivedHouseholdForCouplePayload {
+  /** Household label as it sits in /app/guests — "Anna & Mark" etc. */
+  householdLabel: string;
+  /** One row per guest whose status moved in this submission. Order is
+   *  preserved so the email reads naturally. */
+  guests: {
+    name: string;
+    rsvpStatus: "yes" | "no" | "maybe";
+  }[];
+  guestPageUrl: string;
+}
 export interface RsvpThanksForGuestPayload {
   coupleDisplayName: string;
   weddingDate: string | null;
@@ -129,6 +140,7 @@ export type KindPayload = {
   couple_paused: CouplePausedPayload;
   account_purged: AccountPurgedPayload;
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
+  rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
   onboarding_nudge: OnboardingNudgePayload;
   milestone_t90: MilestonePayload;
@@ -427,6 +439,30 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
+  rsvp_received_household_for_couple: (p, ctx) => ({
+    subject: rsvpHouseholdSubject(p),
+    ctaUrl: p.guestPageUrl,
+    hu: {
+      preheader: `${p.householdLabel}: ${p.guests.length} fő válaszolt.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `${p.householdLabel} (${p.guests.length} fő) most töltötte ki a meghívót:`,
+        p.guests.map((g) => `• ${g.name} — ${rsvpStatusHu(g.rsvpStatus)}`).join("\n"),
+        "Megnézheted a részleteket — ételválasztás, +1, szállásigény, zenekívánság — a vendéglistán.",
+      ],
+      cta: "Vendéglista megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `${p.householdLabel} (${p.guests.length} guests) just RSVPd together:`,
+        p.guests.map((g) => `• ${g.name} — ${rsvpStatusEn(g.rsvpStatus)}`).join("\n"),
+        "Open the guest list to see meal choice, +1, accommodation, and song requests.",
+      ],
+      cta: "Open guest list",
+    },
+  }),
+
   rsvp_thanks_for_guest: (p, ctx) => ({
     subject: `RSVP elküldve / RSVP confirmed — ${p.coupleDisplayName}`,
     ctaUrl: p.rsvpPageUrl,
@@ -640,6 +676,22 @@ function rsvpReceivedSubject(p: RsvpReceivedForCouplePayload): string {
   if (p.rsvpStatus === "yes") return `${p.guestName} jön / ${p.guestName} is in`;
   if (p.rsvpStatus === "no") return `${p.guestName} sajnos nem / ${p.guestName} can't make it`;
   return `${p.guestName} talán / ${p.guestName} responded "maybe"`;
+}
+
+function rsvpHouseholdSubject(p: RsvpReceivedHouseholdForCouplePayload): string {
+  // Try to give a tight, scannable preview without leaking the whole list
+  // into the subject line. Up to 2 names, then "+N".
+  const names = p.guests.map((g) => g.name);
+  const headHu =
+    names.length <= 2 ? names.join(" + ") : `${names.slice(0, 2).join(" + ")} +${names.length - 2}`;
+  const yesCount = p.guests.filter((g) => g.rsvpStatus === "yes").length;
+  const tally =
+    yesCount === p.guests.length
+      ? "mind jön / all in"
+      : yesCount > 0
+        ? `${yesCount}/${p.guests.length} jön / ${yesCount}/${p.guests.length} in`
+        : "válasz / response";
+  return `${headHu} — ${tally}`;
 }
 
 function rsvpThanksDetailHu(p: RsvpThanksForGuestPayload): string {

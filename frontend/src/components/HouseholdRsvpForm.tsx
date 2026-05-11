@@ -13,12 +13,13 @@ import type {
   RsvpStatus,
 } from "@shared/types";
 import { Baby, Ban, Beef, Cookie, Fish, Leaf, Milk, Nut, Plus, Sprout, Wheat } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
-import { useConfirm } from "./ui";
-import { ApiError } from "../lib/api";
+import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useConfirm, useToast } from "./ui";
+import { ApiError, isOnline } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
 import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { drain, enqueue, makeKey, peekAll } from "../lib/rsvp_offline";
 
 const MEALS: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
 
@@ -185,10 +186,16 @@ export function HouseholdRsvpForm({
 }) {
   const { t, locale } = useT();
   const confirm = useConfirm();
+  const toast = useToast();
   const [drafts, setDrafts] = useState<MemberDraft[]>(() => view.members.map(fromMember));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  /** Live count of records sitting in localStorage waiting to flush. Refreshed
+   *  on mount, after enqueue, after drain, and on cross-tab `storage` events.
+   *  Disambiguated from the per-member "still pending" `pendingCount` derived
+   *  below — same word, totally different concept (offline queue vs RSVP). */
+  const [offlineQueueCount, setOfflineQueueCount] = useState<number>(() => peekAll().length);
 
   // After a successful submit the toast shows for 3s — when there's a
   // greeter ("onNextGuest" provided) we then auto-clear by handing off to
@@ -199,6 +206,54 @@ export function HouseholdRsvpForm({
       if (autoNextRef.current) clearTimeout(autoNextRef.current);
     };
   }, []);
+
+  const refreshPending = useCallback(() => {
+    setOfflineQueueCount(peekAll().length);
+  }, []);
+
+  /** Attempt to push every queued record. Called on mount (catch up from a
+   *  previous tab), on the browser `online` event, and after every successful
+   *  submit. We toast on success but stay silent on the no-op case (queue
+   *  empty / still offline). */
+  const tryDrain = useCallback(async () => {
+    if (peekAll().length === 0) return;
+    if (!isOnline()) return;
+    try {
+      const r = await drain();
+      refreshPending();
+      if (r.sent > 0) {
+        toast.success(t("rsvp.offline_drained", { n: r.sent }));
+      }
+      if (r.lastView && r.lastView.household_code === view.household_code) {
+        // Server view may have changed (e.g. concurrent edit by greeter on
+        // another device). Surface the latest snapshot so the form mirrors
+        // reality if the user is still on this household.
+        onUpdated(r.lastView);
+      }
+    } catch {
+      // drain() swallows ApiErrors internally — anything bubbling here is
+      // truly unexpected. Skip the toast; we'll try again on the next online.
+    }
+  }, [refreshPending, toast, t, view.household_code, onUpdated]);
+
+  // Drain on mount and listen for the network coming back. The "storage"
+  // listener catches the case where a sibling tab drained the queue — we want
+  // to reflect that here too.
+  useEffect(() => {
+    void tryDrain();
+    const onOnline = () => {
+      void tryDrain();
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "weddly.rsvp.pending") refreshPending();
+    };
+    window.addEventListener("online", onOnline);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [tryDrain, refreshPending]);
 
   function updateMember(id: number, patch: Partial<MemberDraft>) {
     setDrafts((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
@@ -321,26 +376,62 @@ export function HouseholdRsvpForm({
 
     setSubmitting(true);
     setError(null);
-    try {
-      const added = collectAddedMembers(drafts);
-      const r = await rsvpApi.checkin({
-        couple_slug: view.couple_slug,
-        household_code: view.household_code,
-        members: drafts.map(toSubmit),
-        added_members: added.length > 0 ? added : undefined,
-      });
-      onUpdated(r.rsvp);
+    const added = collectAddedMembers(drafts);
+    const payload = {
+      couple_slug: view.couple_slug,
+      household_code: view.household_code,
+      members: drafts.map(toSubmit),
+      added_members: added.length > 0 ? added : undefined,
+    };
+    // Stamp the idempotency key BEFORE the first attempt so any retry from
+    // the offline queue dedupes against the original write. The server
+    // caches the 200 for 5 minutes keyed on (household_code, idempotency_key).
+    const idempotencyKey = makeKey();
+
+    function finishSuccessUi() {
       setDone(true);
-      // Greeter mode: after the toast fades, hand off to the parent so it
-      // can clear the lookup form and refocus the slug input for the next
-      // arriving guest. Without `onNextGuest` we just hide the toast.
       if (autoNextRef.current) clearTimeout(autoNextRef.current);
       autoNextRef.current = setTimeout(() => {
         setDone(false);
         if (onNextGuest) onNextGuest();
       }, 3000);
+    }
+
+    // Fast path: if the browser is already telling us we're offline, skip
+    // the doomed fetch — go straight to the queue. Saves a 20s timeout and
+    // a confused user.
+    if (!isOnline()) {
+      enqueue(view.couple_slug, view.household_code, payload, idempotencyKey);
+      refreshPending();
+      toast.success(t("rsvp.offline_saved"));
+      finishSuccessUi();
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      const r = await rsvpApi.checkin(payload, { idempotencyKey });
+      onUpdated(r.rsvp);
+      finishSuccessUi();
+      // Opportunistic flush: this submit proved we're online, so drain any
+      // stale records the queue accumulated while we were offline.
+      void tryDrain();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+      // Transport failures (offline mid-submit, slow venue WiFi timing out)
+      // get queued. The user sees a "saved offline" toast, the form clears,
+      // and the next greeter can step up while the device drains in the
+      // background.
+      const queueable =
+        err instanceof ApiError &&
+        (err.code === "network_error" || err.code === "timeout" || err.code === "aborted");
+      if (queueable) {
+        enqueue(view.couple_slug, view.household_code, payload, idempotencyKey);
+        refreshPending();
+        toast.success(t("rsvp.offline_saved"));
+        finishSuccessUi();
+      } else {
+        setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -373,6 +464,20 @@ export function HouseholdRsvpForm({
         {t("rsvp.checkin_party_of", { n: drafts.length })}
       </h1>
       <p className="mt-1 break-words text-sm text-ink-700">{view.household_label}</p>
+
+      {/* Offline queue badge — surfaces when at least one record is sitting in
+          localStorage waiting to flush. Small calm chip, not a banner; the
+          guest already got a success toast at submit time. */}
+      {offlineQueueCount > 0 && (
+        <p
+          className="mt-3 inline-flex items-center gap-1.5 self-start rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs text-ink-700"
+          role="status"
+          aria-live="polite"
+        >
+          <span aria-hidden className="inline-block size-1.5 rounded-full bg-blush-500" />
+          {t("rsvp.offline_pending", { n: offlineQueueCount })}
+        </p>
+      )}
 
       <div className="mt-6 space-y-6">
         {drafts.map((d) => (

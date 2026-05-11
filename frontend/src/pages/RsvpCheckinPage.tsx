@@ -2,25 +2,50 @@
 // code) → one resolved household → one RSVP submission for everyone in it.
 
 import type { PublicCheckinView } from "@shared/types";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { Lock } from "lucide-react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
 import { Wordmark } from "../components/Wordmark";
+import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+const KIOSK_STORAGE_KEY = "weddly.rsvp.kiosk";
+/** Long-press threshold for the bottom-right kiosk-exit hotspot. 1 s is long
+ *  enough to prevent accidental child / pocket-touch exits but short enough
+ *  that a deliberate adult tap-and-hold lands quickly. */
+const KIOSK_EXIT_HOLD_MS = 1000;
+/** Cancel the press if the pointer drifts this many pixels — most likely a
+ *  scroll-start rather than a deliberate hold. */
+const KIOSK_PRESS_MOVE_TOLERANCE_PX = 10;
 
 /** Which input the lookup error highlights. `null` = generic banner. */
 type LookupErrorField = "couple" | "code" | "both" | null;
 
 export default function RsvpCheckinPage() {
   const { t, locale, setLocale } = useT();
+  const toast = useToast();
   useDocumentMeta("seo.rsvp_checkin_title", "seo.rsvp_checkin_description");
   const [params, setParams] = useSearchParams();
 
   const initialCouple = (params.get("couple") ?? "").toUpperCase();
   const initialCode = params.get("code") ?? "";
+
+  // Kiosk mode: either a URL flag or a sticky localStorage hint. Once entered
+  // we persist so refreshing the device's browser keeps the lock — greeters
+  // typically tape a phone to a stand and walk away. Exit is via long-press
+  // hotspot (or Shift+K), so reload alone can't bail.
+  const [kiosk, setKiosk] = useState<boolean>(() => {
+    if (params.get("kiosk") === "1") return true;
+    try {
+      return localStorage.getItem(KIOSK_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
 
   const [coupleInput, setCoupleInput] = useState(initialCouple);
   const [codeInput, setCodeInput] = useState(initialCode);
@@ -30,6 +55,62 @@ export default function RsvpCheckinPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const coupleInputRef = useRef<HTMLInputElement>(null);
+
+  const enterKiosk = useCallback(() => {
+    try {
+      localStorage.setItem(KIOSK_STORAGE_KEY, "1");
+    } catch {
+      // ignore — kiosk mode still works for this tab via state
+    }
+    setKiosk(true);
+  }, []);
+
+  const exitKiosk = useCallback(() => {
+    try {
+      localStorage.removeItem(KIOSK_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    setKiosk(false);
+    // Strip ?kiosk=1 from the URL so the next refresh doesn't re-enter.
+    setParams(
+      (cur) => {
+        const next = new URLSearchParams(cur);
+        next.delete("kiosk");
+        return next;
+      },
+      { replace: true },
+    );
+    // Short confirm-toast so a pet/child accidental long-press is at least
+    // visible to the host.
+    toast.info(t("rsvp.kiosk_exit_confirmed"), 2000);
+  }, [setParams, toast, t]);
+
+  // Persist kiosk mode if it was entered via URL flag — sticky from then on.
+  useEffect(() => {
+    if (kiosk) {
+      try {
+        localStorage.setItem(KIOSK_STORAGE_KEY, "1");
+      } catch {
+        // ignore
+      }
+    }
+  }, [kiosk]);
+
+  // Keyboard escape hatch — Shift+K is the documented chord. Used in tandem
+  // with the long-press hotspot so the host can exit even from a Bluetooth
+  // keyboard plugged into the kiosk device.
+  useEffect(() => {
+    if (!kiosk) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.shiftKey && (e.key === "K" || e.key === "k")) {
+        e.preventDefault();
+        exitKiosk();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [kiosk, exitKiosk]);
 
   // Auto-submit when the URL was hand-fed both values (e.g. couple shared
   // a pre-filled link). Run once.
@@ -53,9 +134,21 @@ export default function RsvpCheckinPage() {
     setView(null);
     setError(null);
     setErrorField(null);
+    // Always clear BOTH fields when handing off to the next guest. In kiosk
+    // mode this is critical — leaving the slug pre-filled would leak the
+    // previous guest's couple (and they probably typed it wrong anyway).
     setCoupleInput("");
     setCodeInput("");
-    setParams({}, { replace: true });
+    // Strip the deep-link params so the browser back button can't resurface
+    // a just-submitted form. Preserve `kiosk=1` if we're locked in.
+    setParams(
+      (cur) => {
+        const next = new URLSearchParams();
+        if (cur.get("kiosk") === "1" || kiosk) next.set("kiosk", "1");
+        return next;
+      },
+      { replace: true },
+    );
     focusCoupleInput();
   }
 
@@ -66,7 +159,12 @@ export default function RsvpCheckinPage() {
     try {
       const r = await rsvpApi.lookup(couple, code);
       setView(r.rsvp);
-      setParams({ couple, code }, { replace: true });
+      // In kiosk mode we DON'T mirror the resolved (couple, code) into the
+      // URL — it would leak the previous guest's identity to the next one
+      // (and the browser-back button would resurface a submitted form).
+      if (!kiosk) {
+        setParams({ couple, code }, { replace: true });
+      }
     } catch (err) {
       // Map the server's text response onto field-level errors. Backend
       // returns "Couple not found" (404) when the slug is wrong, and
@@ -108,21 +206,42 @@ export default function RsvpCheckinPage() {
   return (
     <FullPage>
       <div className="mb-6 flex items-center justify-between">
-        <Link
-          to="/"
-          aria-label="Weddly — back to home"
-          className="inline-block text-ink-700 transition-colors hover:text-ink-900"
-        >
-          <Wordmark size="sm" />
-        </Link>
-        <button
-          type="button"
-          className="btn-ghost btn-sm"
-          onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
-        >
-          {locale === "hu" ? "EN" : "HU"}
-        </button>
+        {kiosk ? (
+          // Kiosk: wordmark stays visible for orientation but is no longer a
+          // navigation target — one tap can't escape to the marketing site.
+          <span aria-label="Weddly" className="inline-block text-ink-700">
+            <Wordmark size="sm" />
+          </span>
+        ) : (
+          <Link
+            to="/"
+            aria-label="Weddly — back to home"
+            className="inline-block text-ink-700 transition-colors hover:text-ink-900"
+          >
+            <Wordmark size="sm" />
+          </Link>
+        )}
+        {!kiosk && (
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+          >
+            {locale === "hu" ? "EN" : "HU"}
+          </button>
+        )}
       </div>
+
+      {kiosk && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 flex items-center gap-2 rounded-full border border-paper-300 bg-paper-200 px-3 py-1.5 text-xs text-ink-700"
+        >
+          <Lock size={14} aria-hidden />
+          <span>{t("rsvp.kiosk_banner")}</span>
+        </div>
+      )}
 
       {view ? (
         <HouseholdRsvpForm
@@ -226,7 +345,88 @@ export default function RsvpCheckinPage() {
           </button>
         </form>
       )}
+
+      {/* Kiosk mode controls. Off-state: a faint toggle at the foot of the
+          page lets a greeter lock the device before handing it over. On-state:
+          a 24px exit hotspot in the bottom-right corner. The hotspot is
+          aria-labelled and reachable via Shift+K so keyboard users aren't
+          stranded. */}
+      {kiosk ? (
+        <KioskExitHotspot onExit={exitKiosk} label={t("rsvp.kiosk_exit_hold")} />
+      ) : (
+        <div className="mt-10 text-center">
+          <button
+            type="button"
+            className="btn-ghost btn-sm text-ink-500 hover:text-ink-800"
+            onClick={enterKiosk}
+          >
+            {t("rsvp.kiosk_enter")}
+          </button>
+        </div>
+      )}
     </FullPage>
+  );
+}
+
+/** Bottom-right long-press target for exiting kiosk mode. Renders a tiny
+ *  semi-translucent dot — discoverable to the host who knows where it is,
+ *  invisible enough to ignore for a guest who doesn't. */
+function KioskExitHotspot({ onExit, label }: { onExit: () => void; label: string }) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startRef = useRef<{ x: number; y: number } | null>(null);
+  const [armed, setArmed] = useState(false);
+
+  function cancel() {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    startRef.current = null;
+    setArmed(false);
+  }
+
+  function onPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    startRef.current = { x: e.clientX, y: e.clientY };
+    setArmed(true);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      setArmed(false);
+      onExit();
+    }, KIOSK_EXIT_HOLD_MS);
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    const s = startRef.current;
+    if (!s) return;
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    if (Math.hypot(dx, dy) > KIOSK_PRESS_MOVE_TOLERANCE_PX) cancel();
+  }
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onPointerDown={onPointerDown}
+      onPointerUp={cancel}
+      onPointerLeave={cancel}
+      onPointerCancel={cancel}
+      onPointerMove={onPointerMove}
+      className={
+        armed
+          ? "fixed bottom-3 right-3 inline-flex size-8 items-center justify-center rounded-full border border-ink-400 bg-ink-700 text-paper-100 shadow-md transition-colors"
+          : "fixed bottom-3 right-3 inline-flex size-8 items-center justify-center rounded-full border border-paper-300 bg-paper-50/70 text-ink-500 transition-colors hover:bg-paper-50"
+      }
+    >
+      <Lock size={14} aria-hidden />
+    </button>
   );
 }
 

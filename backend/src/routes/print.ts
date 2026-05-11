@@ -5,7 +5,8 @@ import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
 import { recordExport } from "../domain/exports";
 import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
-import { renderPlaceCardsPdf, renderSeatingChartPdf } from "../domain/pdf";
+import { renderPlaceCardsPdf, renderSchedulePdf, renderSeatingChartPdf } from "../domain/pdf";
+import { listScheduleEvents } from "../domain/schedule";
 import { listGuestsByCouple, toGuest } from "../domain/guests";
 import type { GuestRow } from "../domain/guests";
 import type { SeatAssignment, SeatingTable, TableShape } from "@shared/types";
@@ -144,10 +145,43 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
   // place cards only for guests who'll actually attend. Default behaviour is
   // unchanged (every guest gets a card).
   const onlyConfirmed = ctx.url.searchParams.get("only") === "confirmed";
+
+  // `?guest_ids=12,47,99` — comma-separated explicit guest list. Deduped +
+  // capped at 200 so a runaway URL can't OOM the renderer. Unknown ids are
+  // silently skipped; the request only 404s if NO id resolves to a real
+  // guest. When both filters are present we intersect.
+  const GUEST_IDS_CAP = 200;
+  const rawGuestIds = ctx.url.searchParams.get("guest_ids");
+  let requestedIds: Set<number> | null = null;
+  if (rawGuestIds && rawGuestIds.trim()) {
+    const parsed = new Set<number>();
+    for (const part of rawGuestIds.split(",")) {
+      const n = Number(part.trim());
+      if (Number.isInteger(n) && n > 0) parsed.add(n);
+      if (parsed.size >= GUEST_IDS_CAP) break;
+    }
+    requestedIds = parsed;
+  }
+
   const guestRows = db
     .prepare("SELECT * FROM guests WHERE couple_id = ? ORDER BY full_name")
     .all(couple.id) as GuestRow[];
-  const filtered = onlyConfirmed ? guestRows.filter((r) => r.rsvp_status === "yes") : guestRows;
+
+  // Apply guest_ids first so we can 404 when zero ids resolve to real rows
+  // in this couple. Unknown ids are silently dropped.
+  let filtered = guestRows;
+  if (requestedIds) {
+    const knownRows = filtered.filter((r) => requestedIds!.has(r.id));
+    if (knownRows.length === 0) {
+      throw new HttpError(404, "No matching guests for guest_ids", {
+        code: "no_matching_guests",
+      });
+    }
+    filtered = knownRows;
+  }
+  // Now intersect with the confirmed filter. The empty PDF behind
+  // ?only=confirmed when every guest is rsvp=no is a legitimate result.
+  if (onlyConfirmed) filtered = filtered.filter((r) => r.rsvp_status === "yes");
   const guests = filtered.map(toGuest);
 
   // Build a guestId → table label map for the second line on the place card.
@@ -187,8 +221,41 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
   return pdfResponse(filename, pdf);
 }
 
+async function handleSchedule(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const events = listScheduleEvents(couple.id);
+  const pdf = await renderSchedulePdf({
+    couple_display_name: couple.display_name,
+    wedding_date: couple.wedding_date,
+    events,
+  });
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "print.schedule",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: { event_count: events.length },
+  });
+  const filename = "schedule-a4.pdf";
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "schedule_pdf",
+    format: null,
+    filename,
+    contentType: "application/pdf",
+    body: pdf,
+  });
+  return pdfResponse(filename, pdf);
+}
+
 export function registerPrintRoutes(router: Router) {
   router.get("/api/print/seating/a4", (ctx) => handleSeatingChart(ctx, "a4"), true);
   router.get("/api/print/seating/a3", (ctx) => handleSeatingChart(ctx, "a3"), true);
   router.get("/api/print/place-cards", handlePlaceCards, true);
+  router.get("/api/print/schedule", handleSchedule, true);
 }

@@ -438,6 +438,26 @@ CREATE TABLE IF NOT EXISTS supplier_categories (
 );
 CREATE INDEX IF NOT EXISTS idx_supplier_categories_group ON supplier_categories(group_id, sort_order);
 
+-- Day-of run-of-show. Each event is wedding-day-local time (minutes from
+-- midnight, 0..1439) so the timeline survives a date shift right up to D-1
+-- without rewriting every row. `duration_minutes` is optional (some events
+-- are "open-ended" — first dance / late-night snack). `sort_order` is a
+-- tiebreaker for events that share the same starts_at_minutes; PDF + UI
+-- render strictly by (starts_at_minutes, sort_order, id).
+CREATE TABLE IF NOT EXISTS schedule_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  starts_at_minutes INTEGER NOT NULL,
+  duration_minutes INTEGER,
+  location TEXT,
+  notes TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_schedule_events_couple ON schedule_events(couple_id, starts_at_minutes);
+
 -- DIY / "Csinálom magam" supplier entries — private to a couple. Never shown
 -- in the public directory, never seen by other couples or admins. Created
 -- when the couple chooses to handle a category in-house (e.g. mum is doing
@@ -457,3 +477,26 @@ CREATE TABLE IF NOT EXISTS couple_suppliers (
 );
 CREATE INDEX IF NOT EXISTS idx_couple_suppliers_couple ON couple_suppliers(couple_id);
 
+
+-- Free-form planning surface for the /app/planning page. One table, three
+-- "kinds": tasks (checklist with optional due_date), ideas (note-style free
+-- text), schedule (wedding-day timeline with optional HH:MM slot). Couple-
+-- scoped; nothing is shared across workspaces. `position` lets the couple
+-- manually re-order items within a tab. (The newer `schedule_events` table
+-- above powers /app/day-of with structured minute-precise events + a PDF
+-- export — keep both per the additive-only rule.)
+CREATE TABLE IF NOT EXISTS planning_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,                                          -- 'task' | 'idea' | 'schedule'
+  title TEXT NOT NULL,
+  body TEXT,
+  done INTEGER NOT NULL DEFAULT 0,                             -- 0/1; only meaningful for kind='task'
+  due_date TEXT,                                               -- ISO YYYY-MM-DD; tasks only
+  scheduled_time TEXT,                                         -- HH:MM; schedule entries only
+  position INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_planning_couple ON planning_items(couple_id);
+CREATE INDEX IF NOT EXISTS idx_planning_kind ON planning_items(couple_id, kind, position);

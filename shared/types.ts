@@ -317,6 +317,10 @@ export interface Guest {
    *  Drives the per-guest checkbox + the x/n indicator on the household
    *  header. `null` = not yet invited. */
   invited_at: UnixMs | null;
+  /** Set when the printed invitation has been physically handed over to the
+   *  guest. Strictly stronger than `invited_at` — the 3-state chip cycles
+   *  not-invited → invited → delivered. `null` = not delivered yet. */
+  invitation_delivered_at: UnixMs | null;
   created_at: UnixMs;
   updated_at: UnixMs;
 }
@@ -383,6 +387,37 @@ export interface CheckinAddedMember {
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary: string | null;
+}
+
+/** Catering-side aggregate over the guest list. Surfaced on the day-of
+ *  dashboard so the venue can answer "how many veggies? GF?" minutes before
+ *  the ceremony. Only counts guests whose `rsvp_status` is `yes` or `maybe`
+ *  — `no` / `pending` are excluded.
+ *
+ *  `allergies` is a heuristic scan of the free-text `dietary` field for
+ *  gluten / lactose / nut keywords; any non-empty `dietary` that doesn't
+ *  hit one of those buckets contributes to `other_text_count` so the
+ *  caterer knows there's an unspecified note to read. */
+export interface DietarySummary {
+  meal: {
+    meat: number;
+    fish: number;
+    vegetarian: number;
+    vegan: number;
+    child: number;
+    none: number;
+    /** rsvp=yes/maybe guests with `meal_choice` null. */
+    unspecified: number;
+  };
+  allergies: {
+    gluten: number;
+    lactose: number;
+    nut: number;
+    /** Guests with a non-empty `dietary` field that didn't match any keyword. */
+    other_text_count: number;
+  };
+  /** Total guests folded into the aggregate (rsvp_status in {yes, maybe}). */
+  counted_guests: number;
 }
 
 /** @deprecated — single-guest view kept for legacy `/rsvp/<6char>` URLs.
@@ -492,7 +527,7 @@ export interface CouplePauseRequest {
 
 // ─── Saved download archive ─────────────────────────────────────────────────
 
-export type ExportKind = "json" | "seating_pdf" | "place_cards_pdf" | "guest_csv";
+export type ExportKind = "json" | "seating_pdf" | "place_cards_pdf" | "schedule_pdf" | "guest_csv";
 
 /** Listed on the Profile page. The `body` is fetched separately via the
  *  download endpoint to keep the list response small. */
@@ -551,3 +586,32 @@ export const DEFAULT_BUDGET_SPLIT: Record<BudgetCategory, number> = {
   rings: 0.02,
   other: 0.0,
 };
+
+// ─── Planning items (Tervezés page: Feladatok / Ötletek / Programterv) ──────
+
+/** Sub-kind of a planning_items row. Drives which fields are surfaced in the
+ *  UI and which tab a row lives under on /app/planning. Adding a new kind
+ *  means: extend this union, add `is*Kind` guard + i18n keys + a tab on the
+ *  PlanningPage. */
+export type PlanningKind = "task" | "idea" | "schedule";
+
+export interface PlanningItem {
+  id: number;
+  couple_id: number;
+  kind: PlanningKind;
+  /** Short headline. Required. */
+  title: string;
+  /** Free-form longer text. Used by "ideas" mostly; tasks/schedule entries can
+   *  still attach notes here. Trimmed to `null` when empty. */
+  body: string | null;
+  /** Tasks only — `true` once the couple ticks the checkbox. */
+  done: boolean;
+  /** Tasks only — optional YYYY-MM-DD deadline. */
+  due_date: string | null;
+  /** Schedule entries only — optional HH:MM local-time slot ("14:30"). */
+  scheduled_time: string | null;
+  /** Manual ordering within a tab. Lower = earlier in the list. */
+  position: number;
+  created_at: UnixMs;
+  updated_at: UnixMs;
+}

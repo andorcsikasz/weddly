@@ -17,12 +17,14 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OnboardingWizard from "./pages/OnboardingWizard";
+import PlanningPage from "./pages/PlanningPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 import RsvpCheckinPage from "./pages/RsvpCheckinPage";
 import RsvpPage from "./pages/RsvpPage";
+import SchedulePage from "./pages/SchedulePage";
 import SeatingPage from "./pages/SeatingPage";
 import HoneymoonPage from "./pages/HoneymoonPage";
 import MediaPage from "./pages/MediaPage";
@@ -236,11 +238,31 @@ export default function App() {
         }
       />
       <Route
+        path="/app/schedule"
+        element={
+          <Page>
+            <RequireAuth>
+              <SchedulePage />
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
         path="/app/suppliers"
         element={
           <Page>
             <RequireAuth>
               <SuppliersPage />
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/planning"
+        element={
+          <Page>
+            <RequireAuth>
+              <PlanningPage />
             </RequireAuth>
           </Page>
         }

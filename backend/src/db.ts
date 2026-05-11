@@ -107,6 +107,11 @@ addColumnIfMissing("guests", "kind", "kind TEXT NOT NULL DEFAULT 'adult'");
 // Drives the per-guest checkbox + the x/n indicator on the household header.
 addColumnIfMissing("guests", "invited_at", "invited_at INTEGER");
 
+// "Invitation physically delivered?" — strictly stronger than invited_at.
+// The 3-state chip on /app/guests cycles not-invited → invited → delivered.
+// Nullable timestamp; non-null implies invited_at is also non-null.
+addColumnIfMissing("guests", "invitation_delivered_at", "invitation_delivered_at INTEGER");
+
 // Global slug uniqueness — couples.slug paired with the 4-digit household
 // code is the public RSVP credential, so two weddings must never share a
 // slug. Application code (uniqueCoupleSlug + PATCH /api/couples/slug)

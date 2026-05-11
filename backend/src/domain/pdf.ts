@@ -16,6 +16,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { type PDFFont, PDFDocument, rgb } from "pdf-lib";
+import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
 
@@ -438,5 +439,259 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       }
     }
   }
+  return pdf.save();
+}
+
+interface ScheduleInput {
+  couple_display_name: string;
+  wedding_date: string | null;
+  events: ScheduleEvent[];
+}
+
+/** Format minutes-from-midnight as "HH:MM". Wedding-day-local time only —
+ *  no timezone juggling. */
+function formatHhmm(minutes: number): string {
+  const m = Math.max(0, Math.min(1439, Math.floor(minutes)));
+  const hh = Math.floor(m / 60)
+    .toString()
+    .padStart(2, "0");
+  const mm = (m % 60).toString().padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+/** Word-wrap `text` to `maxWidthPt` at `sizePt` using the given font, with
+ *  the same NFC normalisation as the rest of the PDF. Falls back to greedy
+ *  splitting (no hyphenation). Caps at `maxLines` lines (suffixes the last
+ *  with an ellipsis when truncated) so a runaway notes field can't push the
+ *  next row off the page. */
+async function wrapLines(
+  pair: FontPair,
+  text: string,
+  sizePt: number,
+  maxWidthPt: number,
+  maxLines: number,
+  prefer: "regular" | "bold" = "regular",
+): Promise<{ lines: string[]; font: PDFFont }> {
+  const safeText = safe(text);
+  const font = await pickFontAsync(pair, safeText, prefer);
+  const words = safeText.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return { lines: [], font };
+
+  const out: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, sizePt) <= maxWidthPt) {
+      line = candidate;
+      continue;
+    }
+    if (line) out.push(line);
+    if (out.length >= maxLines) {
+      // We've already hit the cap — fold this word into the last line as an ellipsis.
+      out[out.length - 1] = `${(out[out.length - 1] ?? "").replace(/[…\s]+$/, "")}…`;
+      return { lines: out, font };
+    }
+    // The word itself overflows — truncate it to fit.
+    if (font.widthOfTextAtSize(word, sizePt) > maxWidthPt) {
+      let s = word;
+      while (s.length > 1 && font.widthOfTextAtSize(`${s}…`, sizePt) > maxWidthPt) {
+        s = s.slice(0, -1);
+      }
+      out.push(`${s.slice(0, -1)}…`);
+      line = "";
+    } else {
+      line = word;
+    }
+  }
+  if (line) out.push(line);
+  if (out.length > maxLines) {
+    out.length = maxLines;
+    out[maxLines - 1] = `${(out[maxLines - 1] ?? "").replace(/[…\s]+$/, "")}…`;
+  }
+  return { lines: out, font };
+}
+
+/** A4 portrait run-of-show. Two columns: time + label/notes/location. One
+ *  row per event, sorted by starts_at_minutes (server-side). Adds new pages
+ *  as needed when the timeline overflows. */
+export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Array> {
+  const { width_mm: pageW, height_mm: pageH } = FORMATS.a4;
+  const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
+  const helv = await pdf.embedFont(NOTO_REGULAR, { subset: true });
+  const helvBold = await pdf.embedFont(NOTO_BOLD, { subset: true });
+  // Lazy CJK fallback — only embed the SC face when an input string actually
+  // needs it. Same pattern as the seating + place-card renderers.
+  let cjkFont: PDFFont | null = null;
+  const fontPair: FontPair = {
+    regular: helv,
+    bold: helvBold,
+    getCjk: async () => {
+      if (cjkFont) return cjkFont;
+      cjkFont = await pdf.embedFont(NOTO_SC);
+      return cjkFont;
+    },
+  };
+
+  // Page layout — margins in mm so the print stays predictable across A4
+  // printers. The right column is everything left after the time column.
+  const marginX = 18;
+  const marginTopHeader = 18;
+  const headerHeightMm = 32; // couple name + date + table head
+  const marginBottom = 18;
+  const timeColWidthMm = 28;
+  const colGutterMm = 6;
+  const contentWidthMm = pageW - 2 * marginX;
+  const labelColWidthMm = contentWidthMm - timeColWidthMm - colGutterMm;
+
+  let page = pdf.addPage([mm(pageW), mm(pageH)]);
+
+  async function drawPageHeader(p: typeof page, withTableHead = true): Promise<void> {
+    const title = safe(input.couple_display_name);
+    p.drawText(title, {
+      x: mm(marginX),
+      y: mm(pageH - marginTopHeader),
+      size: 22,
+      font: await pickFontAsync(fontPair, title, "bold"),
+      color: rgb(0.06, 0.09, 0.19),
+    });
+    if (input.wedding_date) {
+      const date = safe(input.wedding_date);
+      p.drawText(date, {
+        x: mm(marginX),
+        y: mm(pageH - marginTopHeader - 7),
+        size: 11,
+        font: await pickFontAsync(fontPair, date, "regular"),
+        color: rgb(0.27, 0.33, 0.48),
+      });
+    }
+    const subhead = "Időbeosztás / Run of show";
+    p.drawText(subhead, {
+      x: mm(pageW - marginX - 60),
+      y: mm(pageH - marginTopHeader),
+      size: 11,
+      font: await pickFontAsync(fontPair, subhead, "regular"),
+      color: rgb(0.27, 0.33, 0.48),
+    });
+
+    if (withTableHead) {
+      // Column headings + separator just above the first row.
+      const headY_mm = pageH - marginTopHeader - 18;
+      const timeHead = "Idő / Time";
+      p.drawText(timeHead, {
+        x: mm(marginX),
+        y: mm(headY_mm),
+        size: 9,
+        font: await pickFontAsync(fontPair, timeHead, "bold"),
+        color: rgb(0.4, 0.45, 0.6),
+      });
+      const labelHead = "Esemény / Event";
+      p.drawText(labelHead, {
+        x: mm(marginX + timeColWidthMm + colGutterMm),
+        y: mm(headY_mm),
+        size: 9,
+        font: await pickFontAsync(fontPair, labelHead, "bold"),
+        color: rgb(0.4, 0.45, 0.6),
+      });
+      p.drawRectangle({
+        x: mm(marginX),
+        y: mm(headY_mm - 2),
+        width: mm(contentWidthMm),
+        height: 0.6,
+        color: rgb(0.7, 0.75, 0.85),
+      });
+    }
+  }
+
+  await drawPageHeader(page);
+
+  if (input.events.length === 0) {
+    const note = "Nincs még esemény / No events yet.";
+    page.drawText(safe(note), {
+      x: mm(marginX),
+      y: mm(pageH - marginTopHeader - 32),
+      size: 12,
+      font: await pickFontAsync(fontPair, note, "regular"),
+      color: rgb(0.4, 0.45, 0.6),
+    });
+    return pdf.save();
+  }
+
+  // First row starts just below the column heads. Each row's "top" is the
+  // y-coord (in mm) of the row's first baseline; we move downward as we
+  // draw and break to a new page when we'd cross marginBottom.
+  let cursorTopMm = pageH - marginTopHeader - headerHeightMm + 8;
+
+  for (let i = 0; i < input.events.length; i++) {
+    const ev = input.events[i]!;
+    // Build the right-column wrapped lines first so we know how tall this
+    // row will be before deciding whether it fits on the current page.
+    const timeText = ev.duration_minutes
+      ? `${formatHhmm(ev.starts_at_minutes)}–${formatHhmm(
+          Math.min(1439, ev.starts_at_minutes + ev.duration_minutes),
+        )}`
+      : formatHhmm(ev.starts_at_minutes);
+    const labelWrap = await wrapLines(fontPair, ev.label, 12, mm(labelColWidthMm), 2, "bold");
+    const subBits: string[] = [];
+    if (ev.location) subBits.push(ev.location);
+    if (ev.notes) subBits.push(ev.notes);
+    const subWrap = await wrapLines(
+      fontPair,
+      subBits.join(" — "),
+      9,
+      mm(labelColWidthMm),
+      3,
+      "regular",
+    );
+
+    const labelLineH = 5.5; // mm per line at 12pt
+    const subLineH = 4.2; // mm per line at 9pt
+    const rowHeightMm =
+      Math.max(labelLineH * Math.max(1, labelWrap.lines.length), 6) +
+      subLineH * subWrap.lines.length +
+      4; // padding between rows
+
+    if (cursorTopMm - rowHeightMm < marginBottom) {
+      page = pdf.addPage([mm(pageW), mm(pageH)]);
+      await drawPageHeader(page);
+      cursorTopMm = pageH - marginTopHeader - headerHeightMm + 8;
+    }
+
+    // Time column — single line.
+    const safeTime = safe(timeText);
+    page.drawText(safeTime, {
+      x: mm(marginX),
+      y: mm(cursorTopMm),
+      size: 12,
+      font: await pickFontAsync(fontPair, safeTime, "bold"),
+      color: rgb(0.06, 0.09, 0.19),
+    });
+
+    // Label column — wrapped, multiple lines if needed.
+    let lineY = cursorTopMm;
+    for (const line of labelWrap.lines) {
+      page.drawText(line, {
+        x: mm(marginX + timeColWidthMm + colGutterMm),
+        y: mm(lineY),
+        size: 12,
+        font: labelWrap.font,
+        color: rgb(0.06, 0.09, 0.19),
+      });
+      lineY -= labelLineH;
+    }
+    for (const line of subWrap.lines) {
+      page.drawText(line, {
+        x: mm(marginX + timeColWidthMm + colGutterMm),
+        y: mm(lineY),
+        size: 9,
+        font: subWrap.font,
+        color: rgb(0.34, 0.4, 0.55),
+      });
+      lineY -= subLineH;
+    }
+
+    cursorTopMm -= rowHeightMm;
+  }
+
   return pdf.save();
 }

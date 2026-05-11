@@ -14,10 +14,14 @@ import type {
 } from "@shared/types";
 import {
   Baby,
+  Check,
+  CheckCheck,
   ChevronDown,
   Cookie,
   Fish,
   Leaf,
+  Milk,
+  Nut,
   Pencil,
   Plus,
   RefreshCw,
@@ -207,24 +211,44 @@ export default function GuestsPage() {
     }
   }
 
-  async function onToggleInvited(g: Guest, invited: boolean) {
-    // Optimistic flip so the checkbox doesn't lag behind the click; we
-    // also patch the searchResults copy so search mode reflects the
-    // change without an extra round-trip.
+  async function onCycleInviteState(g: Guest) {
+    // 3-state cycle: not-invited → invited → delivered → not-invited.
+    // Encode the *target* as a (invited, delivered) pair on the wire so the
+    // server can reason about both timestamps in one round-trip.
+    const currentState = inviteStateOf(g);
+    const next = nextInviteState(currentState);
+    const targetTs = Date.now();
     const optimistic = (list: Guest[]) =>
       list.map((row) =>
-        row.id === g.id ? { ...row, invited_at: invited ? Date.now() : null } : row,
+        row.id === g.id
+          ? {
+              ...row,
+              invited_at: next === "not_invited" ? null : targetTs,
+              invitation_delivered_at: next === "delivered" ? targetTs : null,
+            }
+          : row,
       );
     setGuests((prev) => optimistic(prev));
     setSearchResults((prev) => (prev ? optimistic(prev) : prev));
     try {
-      // The backend's PATCH still requires the existing payload to revalidate
-      // (full_name etc.), so we ship a minimal "{ ...g, invited }" shape.
-      await guestApi.update(g.id, { ...g, invited });
+      // PATCH revalidates the row, so ship the full guest plus the two flags.
+      await guestApi.update(g.id, {
+        ...g,
+        invited: next !== "not_invited",
+        delivered: next === "delivered",
+      });
     } catch (e) {
       // Roll back on failure so the UI doesn't lie.
       const rollback = (list: Guest[]) =>
-        list.map((row) => (row.id === g.id ? { ...row, invited_at: g.invited_at } : row));
+        list.map((row) =>
+          row.id === g.id
+            ? {
+                ...row,
+                invited_at: g.invited_at,
+                invitation_delivered_at: g.invitation_delivered_at,
+              }
+            : row,
+        );
       setGuests((prev) => rollback(prev));
       setSearchResults((prev) => (prev ? rollback(prev) : prev));
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -428,7 +452,7 @@ export default function GuestsPage() {
               onRegenCode={() => onRegenCode(hh)}
               onDeleteHousehold={() => onDeleteHousehold(hh)}
               onRenameHousehold={onRenameHousehold}
-              onToggleInvited={onToggleInvited}
+              onCycleInviteState={onCycleInviteState}
             />
           ))}
           {!virtualReveal && households.length > 100 && (
@@ -562,7 +586,7 @@ function HouseholdCard({
   onRegenCode,
   onDeleteHousehold,
   onRenameHousehold,
-  onToggleInvited,
+  onCycleInviteState,
 }: {
   household: Household;
   members: Guest[];
@@ -574,43 +598,58 @@ function HouseholdCard({
   onRegenCode: () => void;
   onDeleteHousehold: () => void;
   onRenameHousehold: (id: number, label: string) => Promise<void>;
-  onToggleInvited: (g: Guest, invited: boolean) => void;
+  onCycleInviteState: (g: Guest) => void;
 }) {
   const { t } = useT();
   const invitedCount = members.filter((g) => g.invited_at != null).length;
+  const deliveredCount = members.filter((g) => g.invitation_delivered_at != null).length;
   return (
     <div className="card overflow-hidden p-0">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3">
-        <div className="min-w-0">
+        {/* Single-line metadata: label · slug · code · invited · delivered.
+            Keeps the same column positions across cards so the eye scans
+            the same fields in the same place. */}
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600">
           <HouseholdLabelEditor
             household={household}
             count={members.length}
             onSave={(label) => onRenameHousehold(household.id, label)}
           />
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-ink-600">
-            {coupleSlug && <span className="font-mono uppercase">{coupleSlug}</span>}
-            <span aria-hidden>·</span>
-            <span className="font-mono text-base text-ink-900 tracking-[0.3em]">
-              {household.code}
-            </span>
-            {members.length > 0 && (
-              <>
-                <span aria-hidden>·</span>
-                <span
-                  className={
-                    invitedCount === members.length
-                      ? "text-ink-700"
-                      : invitedCount > 0
-                        ? "text-ink-600"
-                        : "text-ink-400"
-                  }
-                  title={t("guests.invited_progress_help")}
-                >
-                  {invitedCount}/{members.length} {t("guests.invited_short")}
-                </span>
-              </>
-            )}
-          </div>
+          {coupleSlug && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="font-mono uppercase">{coupleSlug}</span>
+            </>
+          )}
+          <span aria-hidden>·</span>
+          <span className="font-mono text-base text-ink-900 tracking-[0.3em]">
+            {household.code}
+          </span>
+          {members.length > 0 && (
+            <>
+              <span aria-hidden>·</span>
+              <span
+                className={
+                  invitedCount === members.length
+                    ? "text-ink-700"
+                    : invitedCount > 0
+                      ? "text-ink-600"
+                      : "text-ink-400"
+                }
+                title={t("guests.invited_progress_help")}
+              >
+                {invitedCount}/{members.length} {t("guests.invited_short")}
+              </span>
+              {deliveredCount > 0 && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span className="text-sage-700" title={t("guests.delivered_progress_help")}>
+                    {deliveredCount}/{members.length} {t("guests.delivered_short")}
+                  </span>
+                </>
+              )}
+            </>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-1">
           <button
@@ -647,14 +686,7 @@ function HouseholdCard({
         {members.map((g) => (
           <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
             <div className="flex min-w-0 items-center gap-3">
-              <input
-                type="checkbox"
-                checked={g.invited_at != null}
-                onChange={(e) => onToggleInvited(g, e.target.checked)}
-                aria-label={t("guests.invited_check_label")}
-                title={t("guests.invited_check_label")}
-                className="h-4 w-4 shrink-0 cursor-pointer accent-ink-700"
-              />
+              <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
               <div className="min-w-0">
                 <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
                   <KindIcon kind={g.kind} />
@@ -773,9 +805,11 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
   // border distinguishes "pending" (no answer yet) from "maybe" (declared
   // tentative).
   const glyph = status === "yes" ? "✓" : status === "no" ? "✗" : status === "maybe" ? "?" : "⌛";
+  // "Yes" pops in emerald — couples scan a household and want the attending
+  // guests to be the loudest signal. Other states keep their existing tones.
   const cls =
     status === "yes"
-      ? "badge-blush"
+      ? "inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
       : status === "no"
         ? "badge-ink"
         : status === "maybe"
@@ -796,6 +830,67 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
       </span>
       {t(`guests.rsvp_${status}`)}
     </span>
+  );
+}
+
+type InviteState = "not_invited" | "invited" | "delivered";
+
+function inviteStateOf(g: Guest): InviteState {
+  if (g.invitation_delivered_at != null) return "delivered";
+  if (g.invited_at != null) return "invited";
+  return "not_invited";
+}
+
+function nextInviteState(s: InviteState): InviteState {
+  return s === "not_invited" ? "invited" : s === "invited" ? "delivered" : "not_invited";
+}
+
+/**
+ * Three-state cyclic chip: not-invited → invited → delivered → repeat. Each
+ * state has its own glyph + tone so the row scans at a glance:
+ *   – empty outline (paper) for "not invited yet"
+ *   – ink-filled single check for "invited / link sent"
+ *   – sage-filled double check for "invitation physically handed over"
+ */
+function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
+  const { t } = useT();
+  const state = inviteStateOf(guest);
+  const next = nextInviteState(state);
+  const label =
+    state === "delivered"
+      ? t("guests.invite_state_delivered")
+      : state === "invited"
+        ? t("guests.invite_state_invited")
+        : t("guests.invite_state_not_invited");
+  const nextHint =
+    next === "delivered"
+      ? t("guests.invite_state_cycle_to_delivered")
+      : next === "invited"
+        ? t("guests.invite_state_cycle_to_invited")
+        : t("guests.invite_state_cycle_to_clear");
+  const cls =
+    state === "delivered"
+      ? "border-sage-300 bg-sage-100 text-sage-700 hover:bg-sage-200"
+      : state === "invited"
+        ? "border-ink-800 bg-ink-800 text-paper-50 hover:bg-ink-900"
+        : "border-paper-300 bg-paper-50 text-ink-400 hover:border-ink-300 hover:text-ink-600";
+  return (
+    <button
+      type="button"
+      onClick={onCycle}
+      title={`${label} — ${nextHint}`}
+      aria-label={`${label}. ${nextHint}`}
+      aria-pressed={state !== "not_invited"}
+      className={`inline-flex h-6 w-9 shrink-0 items-center justify-center rounded-full border text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${cls}`}
+    >
+      {state === "delivered" ? (
+        <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" />
+      ) : state === "invited" ? (
+        <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+      ) : (
+        <span aria-hidden="true" className="block h-1.5 w-1.5 rounded-full bg-current opacity-50" />
+      )}
+    </button>
   );
 }
 
@@ -859,7 +954,7 @@ function HouseholdLabelEditor({
         setEditing(true);
       }}
       aria-label={t("guests.household_label")}
-      className="flex w-full items-baseline gap-2 truncate rounded text-left text-base font-semibold text-ink-900 hover:text-ink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400"
+      className="inline-flex max-w-full items-baseline gap-1.5 truncate rounded text-left text-base font-semibold text-ink-900 hover:text-ink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400"
     >
       <span className="truncate">{household.label}</span>
       <span className="text-sm font-normal text-ink-500">({count})</span>
@@ -887,12 +982,45 @@ function KindIcon({ kind }: { kind: GuestKind }) {
  * guest left free-text dietary notes (allergies). The tooltip shows the
  * full free-text so couples can scan a row at a glance.
  */
+/**
+ * Decode the round-tripped dietary tags the RSVP form encodes into the
+ * free-text `dietary` column (e.g. "laktóz-érzékeny, gluténmentes") so the
+ * admin list can show the right icon per allergen — Milk for lactose,
+ * Wheat for gluten, Nut for nut allergies. Any remaining free text is
+ * surfaced via a fallback Wheat icon with the full string as a tooltip.
+ */
+const DIETARY_DETECTORS: { kind: "lactose" | "gluten" | "nut"; re: RegExp }[] = [
+  { kind: "lactose", re: /\b(?:laktóz|lactose)[\w-]*\b/i },
+  { kind: "gluten", re: /\b(?:glutén|gluten)[\w-]*\b/i },
+  { kind: "nut", re: /\b(?:mogyoró|peanut|nut[- ]?aller)[\w-]*\b/i },
+];
+
+function parseDietaryTags(dietary: string | null): {
+  tags: Set<"lactose" | "gluten" | "nut">;
+  remainder: string;
+} {
+  const tags = new Set<"lactose" | "gluten" | "nut">();
+  let rest = (dietary ?? "").trim();
+  if (!rest) return { tags, remainder: "" };
+  for (const det of DIETARY_DETECTORS) {
+    if (det.re.test(rest)) {
+      tags.add(det.kind);
+      rest = rest.replace(det.re, "");
+    }
+  }
+  rest = rest
+    .replace(/\s*[,;]\s*[,;]+/g, ", ")
+    .replace(/^[\s,;]+|[\s,;]+$/g, "")
+    .trim();
+  return { tags, remainder: rest };
+}
+
 function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string | null }) {
   const { t } = useT();
   const veg = meal === "vegetarian" || meal === "vegan";
   const fish = meal === "fish";
-  const hasDietary = Boolean(dietary && dietary.trim());
-  if (!veg && !fish && !hasDietary) return null;
+  const { tags, remainder } = parseDietaryTags(dietary);
+  if (!veg && !fish && tags.size === 0 && !remainder) return null;
   return (
     <span className="inline-flex shrink-0 items-center gap-1 text-blush-700">
       {veg && (
@@ -902,9 +1030,23 @@ function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string
         />
       )}
       {fish && <Fish size={14} aria-label={t("guests.meal_fish")} />}
-      {hasDietary && (
-        // Wrap so the native title tooltip works — lucide icons don't accept `title`.
-        <span title={dietary ?? undefined} className="inline-flex">
+      {tags.has("lactose") && (
+        <span title={t("rsvp.tag_lactose")} className="inline-flex">
+          <Milk size={14} aria-label={t("rsvp.tag_lactose")} />
+        </span>
+      )}
+      {tags.has("gluten") && (
+        <span title={t("rsvp.tag_gluten")} className="inline-flex">
+          <Wheat size={14} aria-label={t("rsvp.tag_gluten")} />
+        </span>
+      )}
+      {tags.has("nut") && (
+        <span title={t("rsvp.tag_nut")} className="inline-flex">
+          <Nut size={14} aria-label={t("rsvp.tag_nut")} />
+        </span>
+      )}
+      {remainder && (
+        <span title={remainder} className="inline-flex">
           <Wheat size={14} aria-label={t("guests.allergies")} />
         </span>
       )}

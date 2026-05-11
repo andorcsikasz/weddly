@@ -51,6 +51,7 @@ function wipeAll() {
     "seat_assignments",
     "seating_conflicts",
     "seating_tables",
+    "schedule_events",
     "guests",
     "households",
     "budget_snapshots",
@@ -5017,5 +5018,556 @@ describe("loop A: one-click unsubscribe (RFC 8058)", () => {
       { token: r.data.token },
     );
     expect(after.data.lifecycle_opt_out).toBe(true);
+  });
+});
+
+// ─── Loop B-A: day-of feature backend ────────────────────────────────────────
+
+describe("loop B-A: schedule CRUD", () => {
+  test("happy-path: create → list → patch → delete + audit", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("schedule@weddly.test");
+
+    // Empty list initially.
+    const empty = await req<{ events: unknown[] }>("GET", "/api/schedule", undefined, { token });
+    expect(empty.status).toBe(200);
+    expect(empty.data.events.length).toBe(0);
+
+    // Create — three events, deliberately out of order so we can assert sort.
+    const e1 = await req<{ event: { id: number; updated_at: number; label: string } }>(
+      "POST",
+      "/api/schedule",
+      {
+        label: "Vacsora",
+        starts_at_minutes: 18 * 60,
+        duration_minutes: 90,
+        location: "Étterem",
+        notes: "Háromfogásos",
+      },
+      { token },
+    );
+    expect(e1.status).toBe(201);
+    expect(e1.data.event.label).toBe("Vacsora");
+
+    const e2 = await req<{ event: { id: number; updated_at: number } }>(
+      "POST",
+      "/api/schedule",
+      { label: "Ceremónia", starts_at_minutes: 16 * 60 },
+      { token },
+    );
+    expect(e2.status).toBe(201);
+
+    const e3 = await req<{ event: { id: number } }>(
+      "POST",
+      "/api/schedule",
+      { label: "Első tánc", starts_at_minutes: 20 * 60 + 30, sort_order: 1 },
+      { token },
+    );
+    expect(e3.status).toBe(201);
+
+    // List comes back ordered by starts_at_minutes.
+    const list = await req<{ events: { id: number; label: string; starts_at_minutes: number }[] }>(
+      "GET",
+      "/api/schedule",
+      undefined,
+      { token },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.events.map((e) => e.label)).toEqual(["Ceremónia", "Vacsora", "Első tánc"]);
+
+    // Patch label only.
+    const patched = await req<{ event: { id: number; label: string; starts_at_minutes: number } }>(
+      "PATCH",
+      `/api/schedule/${e1.data.event.id}`,
+      { label: "Díszvacsora" },
+      { token },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.event.label).toBe("Díszvacsora");
+    // Unchanged fields survive.
+    expect(patched.data.event.starts_at_minutes).toBe(18 * 60);
+
+    // Audit row recorded the change.
+    const auditRows = db
+      .prepare(
+        "SELECT action FROM audit_log WHERE couple_id = ? AND target_kind = 'schedule_event'",
+      )
+      .all(coupleId) as { action: string }[];
+    expect(auditRows.some((r) => r.action === "schedule.event_create")).toBe(true);
+    expect(auditRows.some((r) => r.action === "schedule.event_update")).toBe(true);
+
+    // Delete.
+    const del = await req("DELETE", `/api/schedule/${e3.data.event.id}`, undefined, { token });
+    expect(del.status).toBe(200);
+    const list2 = await req<{ events: unknown[] }>("GET", "/api/schedule", undefined, { token });
+    expect(list2.data.events.length).toBe(2);
+  });
+
+  test("validation: rejects bad label / starts_at / duration", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("schedule-val@weddly.test");
+
+    const noLabel = await req(
+      "POST",
+      "/api/schedule",
+      { label: "", starts_at_minutes: 600 },
+      { token },
+    );
+    expect(noLabel.status).toBe(400);
+
+    const badStart = await req(
+      "POST",
+      "/api/schedule",
+      { label: "Test", starts_at_minutes: 1440 },
+      { token },
+    );
+    expect(badStart.status).toBe(400);
+
+    const negStart = await req(
+      "POST",
+      "/api/schedule",
+      { label: "Test", starts_at_minutes: -5 },
+      { token },
+    );
+    expect(negStart.status).toBe(400);
+
+    const badDur = await req(
+      "POST",
+      "/api/schedule",
+      { label: "Test", starts_at_minutes: 600, duration_minutes: 2000 },
+      { token },
+    );
+    expect(badDur.status).toBe(400);
+  });
+
+  test("If-Match concurrency: 409 when stale", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("schedule-cc@weddly.test");
+
+    const c = await req<{ event: { id: number; updated_at: number } }>(
+      "POST",
+      "/api/schedule",
+      { label: "Ceremónia", starts_at_minutes: 16 * 60 },
+      { token },
+    );
+    const id = c.data.event.id;
+    const seenUpdatedAt = c.data.event.updated_at;
+
+    // Pretend a concurrent editor saved first by bumping updated_at directly.
+    db.prepare("UPDATE schedule_events SET updated_at = ? WHERE id = ?").run(
+      seenUpdatedAt + 1000,
+      id,
+    );
+
+    const res = await fetch(`${BASE}/api/schedule/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "If-Match": String(seenUpdatedAt),
+      },
+      body: JSON.stringify({ label: "Won't land" }),
+    });
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as { detail?: { code?: string } };
+    expect(body.detail?.code).toBe("stale");
+  });
+
+  test("cross-couple isolation: A can't read or mutate B's events", async () => {
+    wipeAll();
+    const a = await bootstrapCouple("schedule-iso-a@weddly.test");
+    const b = await bootstrapCouple("schedule-iso-b@weddly.test");
+
+    const aEv = await req<{ event: { id: number } }>(
+      "POST",
+      "/api/schedule",
+      { label: "A-only", starts_at_minutes: 600 },
+      { token: a.token },
+    );
+    expect(aEv.status).toBe(201);
+
+    // B's list is empty.
+    const bList = await req<{ events: unknown[] }>("GET", "/api/schedule", undefined, {
+      token: b.token,
+    });
+    expect(bList.data.events.length).toBe(0);
+
+    // B can't PATCH or DELETE A's row — both 404 (scoped lookup).
+    const bPatch = await req(
+      "PATCH",
+      `/api/schedule/${aEv.data.event.id}`,
+      { label: "Hijack" },
+      { token: b.token },
+    );
+    expect(bPatch.status).toBe(404);
+
+    const bDel = await req("DELETE", `/api/schedule/${aEv.data.event.id}`, undefined, {
+      token: b.token,
+    });
+    expect(bDel.status).toBe(404);
+
+    // Auth gate.
+    const anon = await req("GET", "/api/schedule");
+    expect(anon.status).toBe(401);
+  });
+
+  test("PDF: /api/print/schedule returns a non-empty application/pdf", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("schedule-pdf@weddly.test");
+
+    await req(
+      "POST",
+      "/api/schedule",
+      { label: "Ceremónia", starts_at_minutes: 16 * 60, location: "Kápolna" },
+      { token },
+    );
+    await req(
+      "POST",
+      "/api/schedule",
+      {
+        label: "Vacsora",
+        starts_at_minutes: 18 * 60 + 30,
+        duration_minutes: 90,
+        notes: "Háromfogásos vacsora, vegetáriánus opcióval",
+      },
+      { token },
+    );
+
+    const res = await fetch(`${BASE}/api/print/schedule`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("application/pdf");
+    const buf = new Uint8Array(await res.arrayBuffer());
+    expect(buf.length).toBeGreaterThan(1000);
+    // PDF magic header.
+    expect(buf[0]).toBe(0x25); // "%"
+    expect(buf[1]).toBe(0x50); // "P"
+    expect(buf[2]).toBe(0x44); // "D"
+    expect(buf[3]).toBe(0x46); // "F"
+  });
+});
+
+describe("loop B-A: guests dietary summary", () => {
+  test("aggregates meals + heuristic allergy scan over rsvp=yes/maybe", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("dietary@weddly.test");
+
+    // 6 guests with mixed shapes:
+    //   1. yes + meat + "gluténmentes" → meal.meat++ allergies.gluten++
+    //   2. yes + vegetarian + "laktóz intolerancia" → meal.vegetarian++ allergies.lactose++
+    //   3. maybe + vegan + "mogyoró-allergia" → meal.vegan++ allergies.nut++
+    //   4. yes + child + "" → meal.child++ (no allergy)
+    //   5. yes + null + "" → meal.unspecified++ (no allergy)
+    //   6. no + meat + "gluten" → EXCLUDED (rsvp=no)
+    //   plus 7. yes + meat + "Special veggie blend please" → other_text_count++
+    async function add(body: Record<string, unknown>) {
+      const r = await req<{ guest: { id: number } }>("POST", "/api/guests", body, { token });
+      expect(r.status).toBe(201);
+      return r.data.guest.id;
+    }
+
+    const g1 = await add({ full_name: "G1" });
+    const g2 = await add({ full_name: "G2" });
+    const g3 = await add({ full_name: "G3" });
+    const g4 = await add({ full_name: "G4" });
+    const g5 = await add({ full_name: "G5" });
+    const g6 = await add({ full_name: "G6" });
+    const g7 = await add({ full_name: "G7" });
+
+    async function patch(id: number, body: Record<string, unknown>) {
+      const r = await req(
+        "PATCH",
+        `/api/guests/${id}`,
+        { full_name: `G${id}`, ...body },
+        {
+          token,
+        },
+      );
+      expect(r.status).toBe(200);
+    }
+
+    await patch(g1, { rsvp_status: "yes", meal_choice: "meat", dietary: "gluténmentes kérem" });
+    await patch(g2, {
+      rsvp_status: "yes",
+      meal_choice: "vegetarian",
+      dietary: "laktóz intolerancia",
+    });
+    await patch(g3, { rsvp_status: "maybe", meal_choice: "vegan", dietary: "Mogyoró-allergia" });
+    await patch(g4, { rsvp_status: "yes", meal_choice: "child" });
+    await patch(g5, { rsvp_status: "yes" });
+    await patch(g6, { rsvp_status: "no", meal_choice: "meat", dietary: "gluten" });
+    await patch(g7, {
+      rsvp_status: "yes",
+      meal_choice: "meat",
+      dietary: "Special veggie blend please",
+    });
+
+    const r = await req<{
+      meal: {
+        meat: number;
+        fish: number;
+        vegetarian: number;
+        vegan: number;
+        child: number;
+        none: number;
+        unspecified: number;
+      };
+      allergies: { gluten: number; lactose: number; nut: number; other_text_count: number };
+      counted_guests: number;
+    }>("GET", "/api/guests/dietary-summary", undefined, { token });
+    expect(r.status).toBe(200);
+
+    expect(r.data.counted_guests).toBe(6); // 5 yes + 1 maybe; g6 excluded
+    expect(r.data.meal.meat).toBe(2); // g1 + g7
+    expect(r.data.meal.vegetarian).toBe(1);
+    expect(r.data.meal.vegan).toBe(1);
+    expect(r.data.meal.child).toBe(1);
+    expect(r.data.meal.fish).toBe(0);
+    expect(r.data.meal.none).toBe(0);
+    expect(r.data.meal.unspecified).toBe(1); // g5
+    expect(r.data.allergies.gluten).toBe(1); // g1
+    expect(r.data.allergies.lactose).toBe(1); // g2
+    expect(r.data.allergies.nut).toBe(1); // g3
+    expect(r.data.allergies.other_text_count).toBe(1); // g7
+  });
+
+  test("dietary summary requires auth", async () => {
+    wipeAll();
+    const r = await req("GET", "/api/guests/dietary-summary");
+    expect(r.status).toBe(401);
+  });
+});
+
+describe("loop B-A: place-cards guest_ids filter", () => {
+  test("?guest_ids= subset prints smaller PDF than ?only=confirmed", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("pcsub@weddly.test");
+
+    // 4 guests, all rsvp=yes.
+    const ids: number[] = [];
+    for (const name of ["Alice", "Bob", "Carol", "Dave"]) {
+      const r = await req<{ guest: { id: number } }>(
+        "POST",
+        "/api/guests",
+        { full_name: name, rsvp_status: "yes" },
+        { token },
+      );
+      ids.push(r.data.guest.id);
+      // Re-PATCH because POST creates with default pending; rsvp_status is
+      // honoured at create-time but make sure.
+      await req(
+        "PATCH",
+        `/api/guests/${r.data.guest.id}`,
+        { full_name: name, rsvp_status: "yes" },
+        { token },
+      );
+    }
+
+    const full = await fetch(`${BASE}/api/print/place-cards?only=confirmed`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(full.status).toBe(200);
+    const fullBuf = new Uint8Array(await full.arrayBuffer());
+
+    // Subset of 2 ids — should produce a smaller PDF.
+    const subsetUrl = `${BASE}/api/print/place-cards?only=confirmed&guest_ids=${ids[0]},${ids[1]}`;
+    const sub = await fetch(subsetUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(sub.status).toBe(200);
+    const subBuf = new Uint8Array(await sub.arrayBuffer());
+    expect(subBuf.byteLength).toBeLessThan(fullBuf.byteLength);
+    // Still a valid PDF.
+    expect(subBuf[0]).toBe(0x25);
+    expect(subBuf[1]).toBe(0x50);
+  });
+
+  test("unknown guest_ids are silently skipped; all-unknown returns 404", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("pcsub-unknown@weddly.test");
+
+    const r = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Real Guest", rsvp_status: "yes" },
+      { token },
+    );
+    const realId = r.data.guest.id;
+
+    // Mix real + bogus → server skips the bogus one and renders just the real guest.
+    const mixed = await fetch(`${BASE}/api/print/place-cards?guest_ids=${realId},9999999`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(mixed.status).toBe(200);
+
+    // Only bogus → 404 with code.
+    const bogus = await fetch(`${BASE}/api/print/place-cards?guest_ids=9999998,9999999`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(bogus.status).toBe(404);
+    const body = (await bogus.json()) as { detail?: { code?: string } };
+    expect(body.detail?.code).toBe("no_matching_guests");
+  });
+});
+
+// ─── invitation_delivered_at + planning_items ──────────────────────────────
+
+describe("guests: invitation_delivered_at tri-state", () => {
+  test("create with delivered=true stamps both invited_at and delivered_at", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("delivered-create@weddly.test");
+    const r = await req<{
+      guest: { invited_at: number | null; invitation_delivered_at: number | null };
+    }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Nagymama", group_tag: "her_family", delivered: true },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.guest.invited_at).not.toBeNull();
+    expect(r.data.guest.invitation_delivered_at).not.toBeNull();
+  });
+
+  test("PATCH cycles not-invited → invited → delivered → not-invited", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("delivered-cycle@weddly.test");
+    const created = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Cousin Lia", group_tag: "his_family" },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const id = created.data.guest.id;
+
+    // Step 1: not-invited → invited.
+    const r1 = await req<{
+      guest: { invited_at: number | null; invitation_delivered_at: number | null };
+    }>(
+      "PATCH",
+      `/api/guests/${id}`,
+      { full_name: "Cousin Lia", group_tag: "his_family", invited: true, delivered: false },
+      { token },
+    );
+    expect(r1.status).toBe(200);
+    expect(r1.data.guest.invited_at).not.toBeNull();
+    expect(r1.data.guest.invitation_delivered_at).toBeNull();
+
+    // Step 2: invited → delivered (server should auto-keep invited=true).
+    const r2 = await req<{
+      guest: { invited_at: number | null; invitation_delivered_at: number | null };
+    }>(
+      "PATCH",
+      `/api/guests/${id}`,
+      { full_name: "Cousin Lia", group_tag: "his_family", delivered: true },
+      { token },
+    );
+    expect(r2.status).toBe(200);
+    expect(r2.data.guest.invited_at).not.toBeNull();
+    expect(r2.data.guest.invitation_delivered_at).not.toBeNull();
+
+    // Step 3: delivered → not-invited (clearing invited also clears delivered).
+    const r3 = await req<{
+      guest: { invited_at: number | null; invitation_delivered_at: number | null };
+    }>(
+      "PATCH",
+      `/api/guests/${id}`,
+      { full_name: "Cousin Lia", group_tag: "his_family", invited: false },
+      { token },
+    );
+    expect(r3.status).toBe(200);
+    expect(r3.data.guest.invited_at).toBeNull();
+    expect(r3.data.guest.invitation_delivered_at).toBeNull();
+  });
+});
+
+describe("planning items CRUD", () => {
+  test("create / list / patch / delete per kind", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("planning@weddly.test");
+
+    // Empty list.
+    const empty = await req<{ items: unknown[] }>("GET", "/api/planning", undefined, { token });
+    expect(empty.status).toBe(200);
+    expect(empty.data.items.length).toBe(0);
+
+    // Create one of each kind.
+    const task = await req<{ item: { id: number; kind: string; done: boolean } }>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Flowers" },
+      { token },
+    );
+    expect(task.status).toBe(201);
+    expect(task.data.item.kind).toBe("task");
+    expect(task.data.item.done).toBe(false);
+
+    const idea = await req<{ item: { id: number; kind: string; body: string | null } }>(
+      "POST",
+      "/api/planning",
+      { kind: "idea", title: "Sparklers", body: "Friend bringing them" },
+      { token },
+    );
+    expect(idea.status).toBe(201);
+    expect(idea.data.item.kind).toBe("idea");
+    expect(idea.data.item.body).toBe("Friend bringing them");
+
+    const sched = await req<{ item: { id: number; kind: string; scheduled_time: string | null } }>(
+      "POST",
+      "/api/planning",
+      { kind: "schedule", title: "Ceremony", scheduled_time: "15:30" },
+      { token },
+    );
+    expect(sched.status).toBe(201);
+    expect(sched.data.item.scheduled_time).toBe("15:30");
+
+    // List returns all three.
+    const list = await req<{ items: { id: number }[] }>("GET", "/api/planning", undefined, {
+      token,
+    });
+    expect(list.data.items.length).toBe(3);
+
+    // Toggle done on the task.
+    const toggled = await req<{ item: { done: boolean } }>(
+      "PATCH",
+      `/api/planning/${task.data.item.id}`,
+      { done: true },
+      { token },
+    );
+    expect(toggled.data.item.done).toBe(true);
+
+    // Bogus HH:MM rejected.
+    const bad = await req(
+      "POST",
+      "/api/planning",
+      { kind: "schedule", title: "Bad", scheduled_time: "25:99" },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+
+    // Delete.
+    const del = await req("DELETE", `/api/planning/${task.data.item.id}`, undefined, { token });
+    expect(del.status).toBe(200);
+    const after = await req<{ items: unknown[] }>("GET", "/api/planning", undefined, { token });
+    expect(after.data.items.length).toBe(2);
+  });
+
+  test("couple-scoping: couple A cannot see couple B's items", async () => {
+    wipeAll();
+    const a = await bootstrapCouple("planA@weddly.test");
+    const b = await bootstrapCouple("planB@weddly.test");
+    await req("POST", "/api/planning", { kind: "idea", title: "Secret theme" }, { token: a.token });
+    const list = await req<{ items: unknown[] }>("GET", "/api/planning", undefined, {
+      token: b.token,
+    });
+    expect(list.data.items.length).toBe(0);
+  });
+
+  test("planning endpoints require auth", async () => {
+    wipeAll();
+    const r = await req("GET", "/api/planning");
+    expect(r.status).toBe(401);
   });
 });

@@ -1206,8 +1206,11 @@ function VoteRow({
     const next: -1 | 0 | 1 = my === dir ? 0 : dir;
     onVote(supplier.id, next);
   };
+  // Wrap the up/score/down trio in a soft pill so it reads as one clickable
+  // widget — important on score = 0 entries where the arrows otherwise
+  // floated as bare icons next to a plain digit.
   return (
-    <div className="inline-flex items-center gap-1 text-sm">
+    <div className="inline-flex items-center gap-0.5 rounded-full border border-paper-300 bg-paper-50 px-1 py-0.5 text-sm">
       <button
         type="button"
         onClick={() => handle(1)}
@@ -1215,8 +1218,8 @@ function VoteRow({
         aria-label={t("suppliers.vote_up_aria")}
         className={
           my === 1
-            ? "inline-flex h-6 w-6 items-center justify-center rounded text-blush-700"
-            : "inline-flex h-6 w-6 items-center justify-center rounded text-ink-500 hover:text-blush-700"
+            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-blush-100 text-blush-700"
+            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-blush-700"
         }
       >
         <ArrowUp size={14} aria-hidden />
@@ -1227,7 +1230,7 @@ function VoteRow({
             ? "text-blush-700"
             : supplier.votes_score < 0
               ? "text-ink-400"
-              : "text-ink-500"
+              : "text-ink-600"
         }`}
       >
         {supplier.votes_score}
@@ -1239,8 +1242,8 @@ function VoteRow({
         aria-label={t("suppliers.vote_down_aria")}
         className={
           my === -1
-            ? "inline-flex h-6 w-6 items-center justify-center rounded text-ink-700"
-            : "inline-flex h-6 w-6 items-center justify-center rounded text-ink-500 hover:text-ink-800"
+            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-paper-300 text-ink-800"
+            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-ink-800"
         }
       >
         <ArrowDown size={14} aria-hidden />
