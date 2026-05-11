@@ -241,6 +241,9 @@ export interface LocaleMessages {
     invite_email_placeholder: string;
     invite_email_help: string;
     invite_email_invalid: string;
+    /** Client-side block when the inviter types their own email — accepting
+     *  would self-link, so we refuse before hitting the API. */
+    invite_email_own: string;
     invite_send: string;
     invite_sending: string;
     invite_sent: string;
@@ -248,7 +251,12 @@ export interface LocaleMessages {
     invite_sent_body: string;
     invite_sent_spam_hint: string;
     invite_sent_backup_label: string;
-    invite_send_again: string;
+    /** Replaces the old "Send to a different email" — the workspace tops out
+     *  at two people, so we void the pending invite before showing the form
+     *  again rather than chaining parallel tokens. */
+    invite_cancel: string;
+    invite_cancelling: string;
+    invite_cancelled: string;
     target_guests: string;
     budget_ceiling: string;
     pick_up_where: string;

@@ -27,6 +27,7 @@ import { AppShell } from "../components/AppShell";
 import { CostPlanningCard } from "../components/CostPlanningCard";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import { applyCategoryPlanned } from "../lib/budget";
 import { budgetApi, coupleApi, guestApi, seatingApi } from "../lib/endpoints";
 import { formatHuf, formatHufCompact, formatNumber, formatWeddingDateGoal } from "../lib/format";
@@ -63,6 +64,7 @@ export default function DashboardPage() {
   useDocumentMeta("seo.dashboard_title", "seo.dashboard_description");
   const confirm = useConfirm();
   const toast = useToast();
+  const { user: currentUser } = useAuth();
   const [data, setData] = useState<Loaded | null | "loading">("loading");
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
@@ -234,12 +236,32 @@ export default function DashboardPage() {
       setInviteEmailError(t("dashboard.invite_email_invalid"));
       return;
     }
+    // Own-email guard — the workspace caps at two people and the inviter is
+    // already one of them, so self-invites would just confuse the flow. We
+    // also reject server-side; this is the friendly first line.
+    if (trimmed && currentUser && trimmed.toLowerCase() === currentUser.email.toLowerCase()) {
+      setInviteEmailError(t("dashboard.invite_email_own"));
+      return;
+    }
     setInviteEmailError(null);
     setInviteSending(true);
     try {
       const r = await coupleApi.createInvite(trimmed ? { invited_email: trimmed } : {});
       setInvite(r.invite);
       if (trimmed) setSentToEmail(trimmed);
+    } catch (err) {
+      // Surface the server's own-email + already-pending codes inline so the
+      // user understands what went wrong without a generic error toast.
+      if (err instanceof ApiError) {
+        const code = (err.detail as { code?: string } | null)?.code;
+        if (code === "invite_own_email") {
+          setInviteEmailError(t("dashboard.invite_email_own"));
+        } else {
+          toast.error(err.message);
+        }
+      } else {
+        toast.error(t("common.error_generic"));
+      }
     } finally {
       setInviteSending(false);
     }
@@ -250,16 +272,26 @@ export default function DashboardPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
-  // "Send to a different email" reset on the post-send success card. We don't
-  // void the backend-side invite (multiple unconsumed tokens are fine — the
-  // first one accepted wins); we just clear the local view so the form
-  // reappears and the user can send another mail.
-  function onSendAgain() {
-    setInvite(null);
-    setSentToEmail(null);
-    setInviteEmail("");
-    setInviteEmailError(null);
-    setCopied(false);
+  // Cancel the pending invite so the inviter can send to a different address
+  // (e.g. they typo'd). Voids the backend record (we don't DELETE — schema is
+  // additive-only, the audit trail keeps the original row) and then the form
+  // re-renders for a fresh send.
+  const [inviteCancelling, setInviteCancelling] = useState(false);
+  async function onCancelInvite() {
+    setInviteCancelling(true);
+    try {
+      await coupleApi.cancelInvite();
+      toast.success(t("dashboard.invite_cancelled"));
+      setInvite(null);
+      setSentToEmail(null);
+      setInviteEmail("");
+      setInviteEmailError(null);
+      setCopied(false);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : t("common.error_generic"));
+    } finally {
+      setInviteCancelling(false);
+    }
   }
 
   async function onNotifyDateChange() {
@@ -671,9 +703,12 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   className="btn-ghost btn-sm text-ink-500"
-                  onClick={onSendAgain}
+                  onClick={onCancelInvite}
+                  disabled={inviteCancelling}
                 >
-                  {t("dashboard.invite_send_again")}
+                  {inviteCancelling
+                    ? t("dashboard.invite_cancelling")
+                    : t("dashboard.invite_cancel")}
                 </button>
               </div>
             </div>

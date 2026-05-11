@@ -256,6 +256,7 @@ const hu: LocaleMessages = {
     invite_email_placeholder: "pl. anna@example.com",
     invite_email_help: "Hagyd üresen, ha csak egy megosztható linket szeretnél.",
     invite_email_invalid: "Adj meg egy érvényes e-mail címet.",
+    invite_email_own: "A saját e-mail címedet nem hívhatod meg — már bent vagy a munkaterületen.",
     invite_send: "Meghívó küldése",
     invite_sending: "Küldés…",
     invite_sent: "Elküldve a(z) {email} címre",
@@ -265,7 +266,9 @@ const hu: LocaleMessages = {
     invite_sent_spam_hint:
       "Pár perc után sem érkezik? Érdemes a spam vagy a reklámok mappát is átnézni.",
     invite_sent_backup_label: "Vagy oszd meg a linket közvetlenül",
-    invite_send_again: "Küldés másik címre",
+    invite_cancel: "Meghívó visszavonása",
+    invite_cancelling: "Visszavonás…",
+    invite_cancelled: "Meghívó visszavonva.",
     target_guests: "Vendégek (cél)",
     budget_ceiling: "Költségkeret",
     pick_up_where: "Vegyük fel a fonalat itt:",

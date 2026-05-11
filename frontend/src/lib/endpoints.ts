@@ -103,6 +103,10 @@ export const coupleApi = {
     apiFetch<{ couple: Couple }>("PATCH", "/api/couples/slug", { slug }),
   createInvite: (body: { invited_email?: string }) =>
     apiFetch<{ invite: CoupleInvite }>("POST", "/api/couples/invites", body),
+  /** Revoke whichever invite this couple has open (if any). Idempotent —
+   *  returns `cancelled: false` when there was nothing to cancel. */
+  cancelInvite: () =>
+    apiFetch<{ ok: true; cancelled: boolean }>("POST", "/api/couples/invites/cancel"),
   getInvite: (token: string) =>
     apiFetch<{ invite: CoupleInvite; couple_display_name: string | null }>(
       "GET",

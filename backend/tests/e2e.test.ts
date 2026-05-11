@@ -462,6 +462,87 @@ describe("onboarding + invites", () => {
     expect(r.status).toBe(400);
   });
 
+  test("invite rejects the inviter's own email + a second pending invite", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("solo-rule@weddly.test");
+
+    // Rule 1: own address blocked, with the structured code so the UI knows
+    // exactly which inline error to render.
+    const own = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "Solo-Rule@Weddly.Test" }, // mixed case to confirm normalization
+      { token },
+    );
+    expect(own.status).toBe(400);
+    expect(own.data.detail?.code).toBe("invite_own_email");
+
+    // First real invite works.
+    const first = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "partner@example.test" },
+      { token },
+    );
+    expect(first.status).toBe(201);
+
+    // Rule 2: while the first one is still pending, a second invite is rejected.
+    const second = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "different@example.test" },
+      { token },
+    );
+    expect(second.status).toBe(409);
+    expect(second.data.detail?.code).toBe("invite_already_pending");
+
+    // Cancel the pending invite — voids it without DELETE so the audit row
+    // sticks around.
+    const cancel = await req<{ ok: true; cancelled: boolean }>(
+      "POST",
+      "/api/couples/invites/cancel",
+      {},
+      { token },
+    );
+    expect(cancel.status).toBe(200);
+    expect(cancel.data.cancelled).toBe(true);
+
+    // Second cancel is a no-op (nothing to void) — keeps the UI flow tidy.
+    const cancelAgain = await req<{ cancelled: boolean }>(
+      "POST",
+      "/api/couples/invites/cancel",
+      {},
+      { token },
+    );
+    expect(cancelAgain.data.cancelled).toBe(false);
+
+    // After cancel, a fresh invite to a different address succeeds.
+    const third = await req(
+      "POST",
+      "/api/couples/invites",
+      {
+        invited_email: "different@example.test",
+      },
+      { token },
+    );
+    expect(third.status).toBe(201);
+
+    // Previous invite (token from `first`) must not be acceptable anymore —
+    // it's been voided.
+    const r2 = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "trying@example.test",
+      password: "supersafe123",
+      full_name: "Trying",
+    });
+    const reuseOld = await req(
+      "POST",
+      `/api/invites/${first.data.invite.token}/accept`,
+      {},
+      { token: r2.data.token },
+    );
+    expect(reuseOld.status).toBe(410); // "Invite already used"
+  });
+
   test("get-current returns null couple before onboarding", async () => {
     wipeAll();
     const u = await req<{ token: string }>("POST", "/api/auth/register", {

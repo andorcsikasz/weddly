@@ -478,6 +478,36 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
     invitedEmail = body.invited_email.trim().toLowerCase();
   }
 
+  // A couple is exactly two people: the owner + one partner. Block inviting
+  // your own address — accepting it would be a self-link, and even just
+  // sending the welcome mail to yourself is confusing UX.
+  if (invitedEmail) {
+    const inviter = getUserById(userId);
+    if (inviter && inviter.email.toLowerCase() === invitedEmail) {
+      throw new HttpError(400, "You can't invite your own email address", {
+        code: "invite_own_email",
+      });
+    }
+  }
+
+  // Max one outstanding invite per couple — the workspace caps at two
+  // people, so chaining "Send to another address" without revoking the
+  // previous one would leak parallel tokens. The UI surfaces a "Cancel
+  // invite" action for typo recovery (see handleCancelInvite below).
+  const ts0 = now();
+  const pending = db
+    .prepare(
+      `SELECT id FROM couple_invites
+        WHERE couple_id = ? AND consumed_at IS NULL AND expires_at > ?
+        LIMIT 1`,
+    )
+    .get(couple.id, ts0) as { id: number } | undefined;
+  if (pending) {
+    throw new HttpError(409, "An invite is already pending — cancel it before sending another", {
+      code: "invite_already_pending",
+    });
+  }
+
   const token = generateInviteToken();
   const ts = now();
   const expiresAt = ts + INVITE_TTL_MS;
@@ -528,6 +558,41 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
   }
 
   return json({ invite: toInvite(row) }, { status: 201 });
+}
+
+/** Revoke any pending invite this couple has open. We don't DELETE — schema
+ *  is additive-only and we want the audit trail to keep the original row.
+ *  Instead we stamp `consumed_at` so the token can't be accepted, then the
+ *  caller can create a fresh invite for a different address. */
+function handleCancelInvite(ctx: Ctx): Response {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const ts = now();
+  const pending = db
+    .prepare(
+      `SELECT id, token FROM couple_invites
+        WHERE couple_id = ? AND consumed_at IS NULL AND expires_at > ?
+        LIMIT 1`,
+    )
+    .get(couple.id, ts) as { id: number; token: string } | undefined;
+
+  if (!pending) {
+    // Nothing to cancel — idempotent success keeps the UI flow simple.
+    return json({ ok: true, cancelled: false });
+  }
+
+  db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, pending.id);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "invite.cancel",
+    target_kind: "couple_invite",
+    target_id: pending.id,
+    note: "voided by inviter before acceptance",
+  });
+  return json({ ok: true, cancelled: true });
 }
 
 function handleGetInvite(ctx: Ctx): Response {
@@ -991,6 +1056,7 @@ export function registerCoupleRoutes(router: Router) {
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.post("/api/couples/invites", handleCreateInvite, true);
+  router.post("/api/couples/invites/cancel", handleCancelInvite, true);
   router.get("/api/invites/:token", handleGetInvite); // public — pre-signup
   router.post("/api/invites/:token/accept", handleAcceptInvite, true);
   router.post("/api/couples/current/archive", handleArchive, true);

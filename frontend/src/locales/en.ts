@@ -257,6 +257,7 @@ const en: LocaleMessages = {
     invite_email_placeholder: "e.g. partner@example.com",
     invite_email_help: "Leave empty to just generate a shareable link.",
     invite_email_invalid: "Enter a valid email address.",
+    invite_email_own: "You can't invite your own email — the workspace already has you in it.",
     invite_send: "Send invite",
     invite_sending: "Sending…",
     invite_sent: "Sent to {email}",
@@ -266,7 +267,9 @@ const en: LocaleMessages = {
     invite_sent_spam_hint:
       "Didn't see it after a few minutes? The spam or promotions folder is worth a look.",
     invite_sent_backup_label: "Or share the link directly",
-    invite_send_again: "Send to a different email",
+    invite_cancel: "Cancel this invite",
+    invite_cancelling: "Cancelling…",
+    invite_cancelled: "Invite cancelled.",
     target_guests: "Target guests",
     budget_ceiling: "Budget ceiling",
     pick_up_where: "Pick up where you left off:",
