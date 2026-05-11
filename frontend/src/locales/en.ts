@@ -349,6 +349,16 @@ const en: LocaleMessages = {
     accept: "Join",
     accepting: "Joining…",
     need_account: "Sign up first — we'll bring you straight back.",
+    own_invite_title: "This is your own invite link",
+    own_invite_body:
+      "You're already in this workspace as the inviter. Send the link below to {email} — once they open it on a different account, they'll join you.",
+    own_invite_share_label: "Share this link",
+    own_invite_copy: "Copy link",
+    own_invite_copied: "Link copied!",
+    already_in_other_couple:
+      "You're already part of another workspace. Sign out and use a different account to accept this invite.",
+    couple_full: "This workspace already has two people. Ask the inviter to cancel and resend.",
+    couple_gone: "This workspace no longer exists.",
   },
   landing: {
     hero_title: "Your whole wedding, in one shared workspace.",

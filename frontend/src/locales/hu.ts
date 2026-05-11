@@ -348,6 +348,17 @@ const hu: LocaleMessages = {
     accept: "Csatlakozás",
     accepting: "Csatlakozás…",
     need_account: "Először regisztrálj — utána automatikusan visszairányítunk.",
+    own_invite_title: "Ez a saját meghívó linked",
+    own_invite_body:
+      "Te magad hoztad létre ezt a munkaterületet — itt már bent vagy. Küldd el az alábbi linket {email} címre, és ha másik fiókkal nyitja meg, csatlakozik hozzád.",
+    own_invite_share_label: "Oszd meg ezt a linket",
+    own_invite_copy: "Link másolása",
+    own_invite_copied: "Link kimásolva!",
+    already_in_other_couple:
+      "Már egy másik munkaterülethez tartozol. Jelentkezz ki, és egy másik fiókkal nyisd meg ezt a meghívót.",
+    couple_full:
+      "Ehhez a munkaterülethez már ketten csatlakoztak. Kérd meg a meghívót, hogy vonja vissza és küldje újra.",
+    couple_gone: "Ez a munkaterület már nem létezik.",
   },
   landing: {
     hero_title: "Az egész esküvőtök, egyetlen közös felületen.",

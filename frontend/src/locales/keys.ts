@@ -341,6 +341,17 @@ export interface LocaleMessages {
     accept: string;
     accepting: string;
     need_account: string;
+    /** Shown when the logged-in viewer IS the inviter (owner of the couple).
+     *  Replaces the accept button with a share-this-with-X panel. */
+    own_invite_title: string;
+    own_invite_body: string;
+    own_invite_share_label: string;
+    own_invite_copy: string;
+    own_invite_copied: string;
+    /** Per-code 409 error copy that beats the generic "valami félrement". */
+    already_in_other_couple: string;
+    couple_full: string;
+    couple_gone: string;
   };
   landing: {
     hero_title: string;

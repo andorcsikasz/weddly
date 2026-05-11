@@ -545,6 +545,92 @@ describe("onboarding + invites", () => {
     expect(reuseOld.status).toBe(410); // "Invite already used"
   });
 
+  test("accept-invite distinguishes own-couple, other-couple, and couple-full 409s", async () => {
+    wipeAll();
+    // Couple A: owner Anna, sends invite intended for Sara.
+    const { token: aToken } = await bootstrapCouple("anna-codes@weddly.test");
+    const inviteA = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "sara@example.test" },
+      { token: aToken },
+    );
+    expect(inviteA.status).toBe(201);
+
+    // Owner clicks their own link → already_in_this_couple (was the source of
+    // the "Valami félrement" the user hit in production).
+    const own = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/invites/${inviteA.data.invite.token}/accept`,
+      {},
+      { token: aToken },
+    );
+    expect(own.status).toBe(409);
+    expect(own.data.detail?.code).toBe("already_in_this_couple");
+
+    // Different couple's owner clicks the same link → already_in_other_couple.
+    const { token: bToken } = await bootstrapCouple("bea-codes@weddly.test");
+    const other = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/invites/${inviteA.data.invite.token}/accept`,
+      {},
+      { token: bToken },
+    );
+    expect(other.status).toBe(409);
+    expect(other.data.detail?.code).toBe("already_in_other_couple");
+
+    // Couple-full: partner B accepts → couple now has two. Refresh the
+    // invite from a *new* invite (the original gets consumed_at-stamped on
+    // acceptance, so it would 410, not 409).
+    const partnerReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "sara@example.test",
+      password: "supersafe123",
+      full_name: "Sara",
+    });
+    await verifyUserEmail("sara@example.test");
+    const accept = await req(
+      "POST",
+      `/api/invites/${inviteA.data.invite.token}/accept`,
+      {},
+      { token: partnerReg.data.token },
+    );
+    expect(accept.status).toBe(200);
+
+    // After partner B is linked, a fresh invite can't even be created (one
+    // pending check) — but if one had been created earlier and someone tries
+    // to accept it, the code is `couple_full`. Simulate this by inserting
+    // a fresh, unconsumed invite row directly.
+    const freshToken = `freshtoken_${Date.now()}`;
+    const ts = Date.now();
+    db.prepare(
+      `INSERT INTO couple_invites (couple_id, token, invited_email, invited_by_user_id, consumed_at, expires_at, created_at)
+       VALUES ((SELECT id FROM couples WHERE partner_a_id = (SELECT id FROM users WHERE email = ?)), ?, ?, (SELECT id FROM users WHERE email = ?), NULL, ?, ?)`,
+    ).run(
+      "anna-codes@weddly.test",
+      freshToken,
+      "other@example.test",
+      "anna-codes@weddly.test",
+      ts + 86_400_000,
+      ts,
+    );
+
+    // Third party tries to accept the fresh-but-undeliverable invite —
+    // workspace is now full.
+    const third = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "third@example.test",
+      password: "supersafe123",
+      full_name: "Third",
+    });
+    const full = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/invites/${freshToken}/accept`,
+      {},
+      { token: third.data.token },
+    );
+    expect(full.status).toBe(409);
+    expect(full.data.detail?.code).toBe("couple_full");
+  });
+
   test("get-current returns null couple before onboarding", async () => {
     wipeAll();
     const u = await req<{ token: string }>("POST", "/api/auth/register", {

@@ -649,11 +649,23 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   if (row.expires_at < now()) throw new HttpError(410, "Invite expired");
 
   const userCouple = getCoupleForUser(userId);
-  if (userCouple) throw new HttpError(409, "User already belongs to a couple");
+  if (userCouple) {
+    // Two distinct sub-cases for the same 409 status:
+    //  - The logged-in user is already in *this* couple (the inviter clicking
+    //    their own link, or partner B re-clicking after acceptance). UI shows
+    //    a "share with X" panel rather than a generic error.
+    //  - The user belongs to a different couple workspace entirely — can't
+    //    join two at once.
+    const code =
+      userCouple.id === row.couple_id ? "already_in_this_couple" : "already_in_other_couple";
+    throw new HttpError(409, "User already belongs to a couple", { code });
+  }
 
   const couple = getCoupleById(row.couple_id);
   if (!couple) throw new HttpError(404, "Couple no longer exists");
-  if (couple.partner_b_id) throw new HttpError(409, "Partner B already linked");
+  if (couple.partner_b_id) {
+    throw new HttpError(409, "Partner B already linked", { code: "couple_full" });
+  }
 
   const ts = now();
   db.prepare("UPDATE couples SET partner_b_id = ?, updated_at = ? WHERE id = ?").run(
