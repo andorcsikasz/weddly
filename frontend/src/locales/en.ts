@@ -876,6 +876,8 @@ const en: LocaleMessages = {
     layout_label: "Seat layout",
     toggle_seat: "Toggle seat",
     partner_placeholder_hint: "Add to the guest list to seat them.",
+    bride_label: "Bride",
+    groom_label: "Groom",
     confirm_delete_table: "Delete this table?",
     unassigned_guests: "Unassigned guests",
     no_unassigned: "Everyone is seated!",

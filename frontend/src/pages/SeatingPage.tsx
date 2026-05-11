@@ -193,10 +193,10 @@ export default function SeatingPage() {
     [partnerRoleByName],
   );
   // Two reserved slots for the couple at the top of the unassigned panel.
-  // The user shouldn't have to manually add themselves as guests — but
-  // until they do, we can't seat them on the canvas (assignments need a
-  // guest_id). The slot stays visible with a muted placeholder so it's
-  // obvious where they'll go once the workflow gets there.
+  // The user shouldn't have to manually add themselves as guests — the
+  // workspace already knows about them through registration + invite. We
+  // always render BOTH slots; the name falls back to a localised "Bride"
+  // / "Groom" label when the couple haven't entered split names yet.
   type PartnerSlot = {
     role: "bride" | "groom";
     name: string;
@@ -204,15 +204,15 @@ export default function SeatingPage() {
   };
   const partnerSlots = useMemo<PartnerSlot[]>(() => {
     if (!couple) return [];
-    const out: PartnerSlot[] = [];
     const findUnassignedByRole = (role: "bride" | "groom"): Guest | null =>
       guests.find((g) => partnerRole(g) === role && !seatedIds.has(g.id)) ?? null;
-    const bride = couple.bride_name?.trim();
-    const groom = couple.groom_name?.trim();
-    if (bride) out.push({ role: "bride", name: bride, guest: findUnassignedByRole("bride") });
-    if (groom) out.push({ role: "groom", name: groom, guest: findUnassignedByRole("groom") });
-    return out;
-  }, [couple, guests, seatedIds, partnerRole]);
+    const brideName = couple.bride_name?.trim() || t("seating.bride_label");
+    const groomName = couple.groom_name?.trim() || t("seating.groom_label");
+    return [
+      { role: "bride", name: brideName, guest: findUnassignedByRole("bride") },
+      { role: "groom", name: groomName, guest: findUnassignedByRole("groom") },
+    ];
+  }, [couple, guests, seatedIds, partnerRole, t]);
   // Unassigned guests *excluding* the partners — those are rendered first
   // via partnerSlots so they don't double up.
   const unassigned = useMemo(
@@ -2121,7 +2121,9 @@ function DraggableGuest({
       className={[
         compact
           ? "text-sm font-medium text-ink-900"
-          : "rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400",
+          : partnerRole
+            ? "rounded-lg border border-blush-300 bg-blush-50 px-2 py-1.5 text-sm font-medium text-ink-900 hover:border-blush-500"
+            : "rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400",
         tapMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
         selected ? "ring-2 ring-blush-500" : "",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700",
@@ -2170,14 +2172,14 @@ function PartnerSlotPlaceholder({
 }) {
   return (
     <div
-      className="flex items-start gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50/60 px-2 py-1.5"
+      className="flex items-start gap-2 rounded-lg border border-dashed border-blush-300 bg-blush-50/70 px-2 py-1.5"
       role="presentation"
       aria-label={`${role}: ${name}`}
     >
-      <Crown size={14} aria-hidden className="mt-0.5 text-blush-400" />
+      <Crown size={14} aria-hidden className="mt-0.5 text-blush-600" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-ink-700">{name}</p>
-        <p className="text-[11px] text-ink-400">{hint}</p>
+        <p className="truncate text-sm font-medium text-ink-900">{name}</p>
+        <p className="text-[11px] text-ink-500">{hint}</p>
       </div>
     </div>
   );

@@ -877,6 +877,8 @@ const hu: LocaleMessages = {
     layout_label: "Ülésrend",
     toggle_seat: "Hely ki/be",
     partner_placeholder_hint: "Add a vendéglistához, hogy le tudd ültetni.",
+    bride_label: "Menyasszony",
+    groom_label: "Vőlegény",
     confirm_delete_table: "Biztos törölhető ez az asztal?",
     unassigned_guests: "Nem leültetett vendégek",
     no_unassigned: "Mindenki le van ültetve!",
