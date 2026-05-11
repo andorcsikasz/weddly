@@ -16,7 +16,9 @@ import {
   Cake,
   Camera,
   ChefHat,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Disc3,
   Flower2,
   Lightbulb,
@@ -30,6 +32,7 @@ import {
   Sparkles,
   Star,
   StickyNote,
+  Users,
   UtensilsCrossed,
   Wine,
 } from "lucide-react";
@@ -120,6 +123,7 @@ export default function SuppliersPage() {
   const query = params.get("q") ?? "";
   const cityFilter = params.get("city") ?? "";
   const showSavedOnly = params.get("saved") === "1";
+  const sortMode: "top" | "alpha" = params.get("sort") === "alpha" ? "alpha" : "top";
 
   function setQuery(next: string) {
     const p = new URLSearchParams(params);
@@ -139,6 +143,37 @@ export default function SuppliersPage() {
     else p.set("saved", "1");
     setParams(p, { replace: true });
   }
+  function setSortMode(next: "top" | "alpha") {
+    const p = new URLSearchParams(params);
+    if (next === "alpha") p.set("sort", "alpha");
+    else p.delete("sort");
+    setParams(p, { replace: true });
+  }
+
+  // Optimistic vote: flip the card immediately, roll back if the server says no.
+  const onVote = useCallback(async (supplierId: string, nextVote: -1 | 0 | 1) => {
+    setItems((prev) =>
+      prev.map((s) => {
+        if (s.id !== supplierId) return s;
+        const delta = nextVote - s.user_vote;
+        return { ...s, user_vote: nextVote, votes_score: s.votes_score + delta };
+      }),
+    );
+    try {
+      const r = await supplierApi.vote(supplierId, nextVote);
+      setItems((prev) =>
+        prev.map((s) =>
+          s.id === supplierId ? { ...s, votes_score: r.votes_score, user_vote: r.user_vote } : s,
+        ),
+      );
+    } catch {
+      // Reload from server on failure so we don't carry stale optimistic state.
+      supplierApi
+        .list()
+        .then((r) => setItems(r.suppliers))
+        .catch(() => undefined);
+    }
+  }, []);
 
   useEffect(() => {
     supplierApi.list().then((r) => setItems(r.suppliers));
@@ -203,8 +238,21 @@ export default function SuppliersPage() {
         return hay.includes(q);
       });
     }
-    return out;
-  }, [items, activeGroup, activeCat, cityFilter, showSavedOnly, saved, query]);
+    // Stable sort: top-voted by net score desc, then curated-first tie-break
+    // so an unvoted directory looks the same as today. Alpha mode ignores
+    // score entirely and goes by locale-aware name.
+    const sorted = [...out];
+    if (sortMode === "alpha") {
+      sorted.sort((a, b) => a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en"));
+    } else {
+      sorted.sort((a, b) => {
+        if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
+        if (a.source !== b.source) return a.source === "curated" ? -1 : 1;
+        return a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en");
+      });
+    }
+    return sorted;
+  }, [items, activeGroup, activeCat, cityFilter, showSavedOnly, saved, query, sortMode, locale]);
 
   const subCategories = activeGroup
     ? (SUPPLIER_GROUPS.find((g) => g.id === activeGroup)?.categories ?? [])
@@ -274,6 +322,18 @@ export default function SuppliersPage() {
           <Star size={13} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
           {t("suppliers.saved_filter", { n: saved.size })}
         </button>
+        <label className="flex items-center gap-2">
+          <span className="sr-only">{t("suppliers.sort_label")}</span>
+          <select
+            className="input h-10 min-w-[10rem]"
+            value={sortMode}
+            onChange={(e) => setSortMode(e.target.value as "top" | "alpha")}
+            aria-label={t("suppliers.sort_label")}
+          >
+            <option value="top">{t("suppliers.sort_top")}</option>
+            <option value="alpha">{t("suppliers.sort_alpha")}</option>
+          </select>
+        </label>
       </div>
 
       {/* Step chain */}
@@ -399,10 +459,25 @@ export default function SuppliersPage() {
                         {t("suppliers.community_pill")}
                       </span>
                     )}
+                    {(s.capacity_max ?? 0) > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600"
+                        aria-label={t("suppliers.capacity_label")}
+                      >
+                        <Users size={10} />
+                        {s.capacity_min && s.capacity_max
+                          ? t("suppliers.capacity_range", {
+                              min: s.capacity_min,
+                              max: s.capacity_max,
+                            })
+                          : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
               {s.address && <p className="mt-2 text-xs text-ink-500">{s.address}</p>}
+              <VoteRow supplier={s} onVote={onVote} t={t} />
               <p className="mt-3 text-sm text-ink-700">
                 {locale === "hu" ? s.blurb_hu : s.blurb_en}
               </p>
@@ -506,5 +581,64 @@ function PriceBandDots({ band }: { band: number }) {
       {"●".repeat(filled)}
       {"○".repeat(Math.max(0, total - filled))}
     </span>
+  );
+}
+
+function VoteRow({
+  supplier,
+  onVote,
+  t,
+}: {
+  supplier: DirectorySupplier;
+  onVote: (id: string, value: -1 | 0 | 1) => void;
+  t: (key: string) => string;
+}) {
+  const my = supplier.user_vote;
+  // Tap-again-to-clear: if the user already cast this vote, the next tap
+  // sends 0 (removes the vote); otherwise the new direction wins.
+  const handle = (dir: 1 | -1) => {
+    const next: -1 | 0 | 1 = my === dir ? 0 : dir;
+    onVote(supplier.id, next);
+  };
+  return (
+    <div className="mt-3 flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => handle(1)}
+        aria-pressed={my === 1}
+        aria-label={t("suppliers.vote_up_aria")}
+        className={
+          my === 1
+            ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush-100 text-blush-700"
+            : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-800"
+        }
+      >
+        <ChevronUp size={16} aria-hidden />
+      </button>
+      <span
+        className={`min-w-[1.5rem] text-center text-sm tabular-nums ${
+          supplier.votes_score > 0
+            ? "text-blush-700"
+            : supplier.votes_score < 0
+              ? "text-ink-400"
+              : "text-ink-500"
+        }`}
+      >
+        {supplier.votes_score > 0 ? `+${supplier.votes_score}` : supplier.votes_score}
+      </span>
+      <button
+        type="button"
+        onClick={() => handle(-1)}
+        aria-pressed={my === -1}
+        aria-label={t("suppliers.vote_down_aria")}
+        className={
+          my === -1
+            ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-paper-300 text-ink-700"
+            : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-800"
+        }
+      >
+        <ChevronDown size={16} aria-hidden />
+      </button>
+    </div>
   );
 }

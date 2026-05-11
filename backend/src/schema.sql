@@ -288,6 +288,22 @@ CREATE INDEX IF NOT EXISTS idx_community_suppliers_status_category
 CREATE INDEX IF NOT EXISTS idx_community_suppliers_submitter
   ON community_suppliers(submitter_user_id);
 
+-- Up/down vote on each directory supplier, one row per (user, supplier_id).
+-- `supplier_id` is the public string id (curated slug or "c{N}"), same as
+-- couple_supplier_costs — no FK because curated suppliers live in code.
+-- `value` is +1 (up) or -1 (down); to clear a vote we DELETE the row.
+CREATE TABLE IF NOT EXISTS supplier_votes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  supplier_id TEXT NOT NULL,
+  value INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(user_id, supplier_id)
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_votes_supplier ON supplier_votes(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_votes_user ON supplier_votes(user_id);
+
 -- Per-couple planned + final cost for each supplier the couple is interested
 -- in. `supplier_id` is the public string id from the directory (curated slug
 -- like "normafa-rendezvenyhaz" or community "c123"). No FK because curated

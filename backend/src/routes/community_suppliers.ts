@@ -7,7 +7,7 @@ import {
   findActiveByWebsite,
   getCommunitySupplierById,
   insertCommunitySupplier,
-  toDirectorySupplier,
+  toDirectorySupplierBase,
 } from "../domain/community_suppliers";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -170,7 +170,12 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     },
   });
 
-  return json({ supplier: toDirectorySupplier(row) }, { status: 201 });
+  // Fresh submission → no votes yet; overlay zeros so the frontend's
+  // `DirectorySupplier` shape is satisfied without a second list fetch.
+  return json(
+    { supplier: { ...toDirectorySupplierBase(row), votes_score: 0, user_vote: 0 } },
+    { status: 201 },
+  );
 }
 
 export function registerCommunitySupplierRoutes(router: Router) {

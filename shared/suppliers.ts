@@ -42,7 +42,9 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
   { id: "details", categories: ["stationery", "transport"] },
 ];
 
-export interface DirectorySupplier {
+/** Shape of a directory entry without the per-request overlay (votes). Used
+ *  by the static curated list in `suppliers_data.ts` and by community mappers. */
+export interface DirectorySupplierBase {
   id: string;
   name: string;
   category: SupplierCategory;
@@ -54,8 +56,21 @@ export interface DirectorySupplier {
   contact_phone: string | null;
   /** Optional street address. Surfaces on the card under the city/category line. */
   address: string | null;
+  /** Approximate seated-dinner capacity range. Null = not published. */
+  capacity_min: number | null;
+  capacity_max: number | null;
   /** "curated" = vetted entries from suppliers_data.ts; "community" = user-submitted. */
   source: "curated" | "community";
   /** 1 = $, 5 = $$$$$. Null for entries that haven't been priced yet. */
   price_band: 1 | 2 | 3 | 4 | 5 | null;
+}
+
+/** Wire shape returned by `/api/suppliers`. Adds per-request vote info on top
+ *  of the static fields, so the frontend can render score + the current
+ *  user's own vote without a second round-trip. */
+export interface DirectorySupplier extends DirectorySupplierBase {
+  /** Net up/down score (sum of +1/-1 across all users). 0 when no one's voted. */
+  votes_score: number;
+  /** The logged-in user's own vote on this entry. 0 if anonymous or no vote yet. */
+  user_vote: -1 | 0 | 1;
 }

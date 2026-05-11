@@ -1,16 +1,7 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
-import {
-  ChefHat,
-  Heart,
-  LayoutDashboard,
-  ShieldCheck,
-  UserCog,
-  Users,
-  UtensilsCrossed,
-} from "lucide-react";
+import { ChefHat, Heart, LayoutDashboard, Users, UtensilsCrossed } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
@@ -51,23 +42,11 @@ const ITEMS: NavItem[] = [
   },
 ];
 
-const ADMIN_ITEMS: NavItem[] = [
-  {
-    to: "/app/admin/suppliers",
-    labelKey: "admin.nav_suppliers",
-    icon: <ShieldCheck size={18} />,
-  },
-  {
-    to: "/app/admin/users",
-    labelKey: "admin.nav_users",
-    icon: <UserCog size={18} />,
-  },
-];
-
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, locale, setLocale } = useT();
-  const { user } = useAuth();
-  const displayItems = user?.is_admin ? [...ITEMS, ...ADMIN_ITEMS] : ITEMS;
+  // Admin tools (supplier moderation, user/couple directory) live in the
+  // ProfileMenu dropdown — sidebar stays focused on couple-facing pages.
+  const displayItems = ITEMS;
 
   return (
     <div className="min-h-full">

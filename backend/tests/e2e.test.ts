@@ -66,6 +66,7 @@ function wipeAll() {
     "email_preferences",
     "community_suppliers",
     "couple_supplier_costs",
+    "supplier_votes",
     "users",
     "couples",
   ];
@@ -2595,6 +2596,125 @@ describe("couple supplier costs", () => {
     });
     expect(bList.status).toBe(200);
     expect(bList.data.costs).toEqual([]);
+  });
+});
+
+describe("supplier votes", () => {
+  interface Supplier {
+    id: string;
+    name: string;
+    votes_score: number;
+    user_vote: -1 | 0 | 1;
+    capacity_min: number | null;
+    capacity_max: number | null;
+  }
+
+  test("anonymous list returns 0 score and user_vote=0", async () => {
+    wipeAll();
+    const r = await req<{ suppliers: Supplier[] }>("GET", "/api/suppliers");
+    expect(r.status).toBe(200);
+    expect(r.data.suppliers.length).toBeGreaterThan(0);
+    for (const s of r.data.suppliers) {
+      expect(s.votes_score).toBe(0);
+      expect(s.user_vote).toBe(0);
+    }
+  });
+
+  test("upvote → score=1 + user_vote=1, then 0 removes it", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("voter1@weddly.test");
+
+    const up = await req<{ votes_score: number; user_vote: number }>(
+      "PUT",
+      "/api/suppliers/normafa-rendezvenyhaz/vote",
+      { value: 1 },
+      { token },
+    );
+    expect(up.status).toBe(200);
+    expect(up.data.votes_score).toBe(1);
+    expect(up.data.user_vote).toBe(1);
+
+    const list = await req<{ suppliers: Supplier[] }>("GET", "/api/suppliers", undefined, {
+      token,
+    });
+    const me = list.data.suppliers.find((s) => s.id === "normafa-rendezvenyhaz");
+    expect(me?.votes_score).toBe(1);
+    expect(me?.user_vote).toBe(1);
+
+    const clear = await req<{ votes_score: number; user_vote: number }>(
+      "PUT",
+      "/api/suppliers/normafa-rendezvenyhaz/vote",
+      { value: 0 },
+      { token },
+    );
+    expect(clear.status).toBe(200);
+    expect(clear.data.votes_score).toBe(0);
+    expect(clear.data.user_vote).toBe(0);
+  });
+
+  test("downvote then upvote replaces, doesn't accumulate", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("voter2@weddly.test");
+
+    const down = await req<{ votes_score: number }>(
+      "PUT",
+      "/api/suppliers/etyeki-kuria/vote",
+      { value: -1 },
+      { token },
+    );
+    expect(down.data.votes_score).toBe(-1);
+
+    const up = await req<{ votes_score: number; user_vote: number }>(
+      "PUT",
+      "/api/suppliers/etyeki-kuria/vote",
+      { value: 1 },
+      { token },
+    );
+    expect(up.data.votes_score).toBe(1);
+    expect(up.data.user_vote).toBe(1);
+  });
+
+  test("two users each vote once → score=2", async () => {
+    wipeAll();
+    const a = await bootstrapCouple("voter-a@weddly.test");
+    const b = await bootstrapCouple("voter-b@weddly.test");
+    await req("PUT", "/api/suppliers/lupa-event-hall/vote", { value: 1 }, { token: a.token });
+    await req("PUT", "/api/suppliers/lupa-event-hall/vote", { value: 1 }, { token: b.token });
+    const list = await req<{ suppliers: Supplier[] }>("GET", "/api/suppliers", undefined, {
+      token: a.token,
+    });
+    const lupa = list.data.suppliers.find((s) => s.id === "lupa-event-hall");
+    expect(lupa?.votes_score).toBe(2);
+    expect(lupa?.user_vote).toBe(1);
+  });
+
+  test("rejects unknown supplier_id and invalid value", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("voter3@weddly.test");
+    const ghost = await req("PUT", "/api/suppliers/does-not-exist/vote", { value: 1 }, { token });
+    expect(ghost.status).toBe(404);
+
+    const bad = await req(
+      "PUT",
+      "/api/suppliers/normafa-rendezvenyhaz/vote",
+      { value: 2 },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  test("auth required", async () => {
+    wipeAll();
+    const r = await req("PUT", "/api/suppliers/normafa-rendezvenyhaz/vote", { value: 1 });
+    expect(r.status).toBe(401);
+  });
+
+  test("curated suppliers expose capacity range", async () => {
+    wipeAll();
+    const r = await req<{ suppliers: Supplier[] }>("GET", "/api/suppliers");
+    const normafa = r.data.suppliers.find((s) => s.id === "normafa-rendezvenyhaz");
+    expect(normafa?.capacity_min).toBe(120);
+    expect(normafa?.capacity_max).toBe(150);
   });
 });
 

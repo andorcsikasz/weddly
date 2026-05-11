@@ -7,7 +7,7 @@ import type {
   PriceBand,
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
-import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
+import type { DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
 import { db, now } from "../db";
 
 export interface CommunitySupplierRow {
@@ -40,13 +40,18 @@ function clampPriceBand(v: number): PriceBand {
 }
 
 // id is `c${row.id}` so community ids cannot collide with curated string slugs.
-export function toDirectorySupplier(row: CommunitySupplierRow): DirectorySupplier {
+// Returns the base (no vote overlay) — the route wraps with vote tallies.
+// Community submissions don't carry capacity yet; the form would need new
+// fields to collect it. Leaving null until the submission UX grows.
+export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySupplierBase {
   return {
     id: `c${row.id}`,
     name: row.name,
     category: row.category as SupplierCategory,
     city: row.city,
     address: row.address,
+    capacity_min: null,
+    capacity_max: null,
     blurb_hu: row.blurb,
     blurb_en: row.blurb,
     website: row.website,
