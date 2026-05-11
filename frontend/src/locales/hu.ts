@@ -97,6 +97,7 @@ const hu: LocaleMessages = {
     gate_already_verified: "Már meg van erősítve — folytasd.",
     gate_refresh: "Megerősítettem — tovább",
     gate_logout: "Kijelentkezés",
+    gate_open_inbox: "{provider} megnyitása",
   },
   change_email: {
     page_title: "Új e-mail cím megerősítése",

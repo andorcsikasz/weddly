@@ -98,6 +98,7 @@ const en: LocaleMessages = {
     gate_already_verified: "You're verified — continue.",
     gate_refresh: "I've confirmed — continue",
     gate_logout: "Sign out",
+    gate_open_inbox: "Open {provider}",
   },
   change_email: {
     page_title: "Confirm your new email",

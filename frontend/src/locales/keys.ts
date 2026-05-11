@@ -88,6 +88,7 @@ export interface LocaleMessages {
     gate_already_verified: string;
     gate_refresh: string;
     gate_logout: string;
+    gate_open_inbox: string;
   };
   /** Page reached from the email_change_verify confirm link. */
   change_email: {

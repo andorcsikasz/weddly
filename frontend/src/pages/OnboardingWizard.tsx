@@ -738,13 +738,54 @@ function MonthSelect({
 
 // Full-screen takeover shown when an unverified user lands on the wizard.
 // Three actions: resend the link, "I've confirmed — refresh" (re-fetches
-// /api/auth/me so the gate dismisses), and sign out.
+// /api/auth/me so the gate dismisses), and sign out. When the email is on a
+// known provider (Gmail, Outlook, Yahoo, iCloud, Proton) we also surface an
+// "Open <provider>" deep-link as the *primary* action — the most likely next
+// move is "go check the inbox," and a one-click shortcut is materially less
+// friction than "switch tabs, find the right tab, find the message."
+function inboxLinkForEmail(email: string): { url: string; provider: string } | null {
+  const at = email.lastIndexOf("@");
+  if (at < 0) return null;
+  const domain = email.slice(at + 1).toLowerCase();
+  // Webmail providers covering ~95% of consumer addresses we'll see in HU/EU.
+  // Order matters when domains overlap (icloud.com vs me.com → both Apple).
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    return { url: "https://mail.google.com", provider: "Gmail" };
+  }
+  if (
+    domain === "outlook.com" ||
+    domain === "hotmail.com" ||
+    domain === "live.com" ||
+    domain === "msn.com" ||
+    domain.endsWith(".outlook.com")
+  ) {
+    return { url: "https://outlook.live.com/mail", provider: "Outlook" };
+  }
+  if (domain === "yahoo.com" || domain.startsWith("yahoo.")) {
+    return { url: "https://mail.yahoo.com", provider: "Yahoo" };
+  }
+  if (domain === "icloud.com" || domain === "me.com" || domain === "mac.com") {
+    return { url: "https://www.icloud.com/mail", provider: "iCloud" };
+  }
+  if (domain === "proton.me" || domain === "protonmail.com" || domain === "pm.me") {
+    return { url: "https://mail.proton.me", provider: "Proton" };
+  }
+  if (domain === "freemail.hu") {
+    return { url: "https://mail.freemail.hu", provider: "Freemail" };
+  }
+  if (domain === "citromail.hu") {
+    return { url: "https://mail.citromail.hu", provider: "Citromail" };
+  }
+  return null;
+}
+
 function VerifyEmailGate({ email }: { email: string }) {
   const { t } = useT();
   const { refresh, logout } = useAuth();
   type Status = "idle" | "sending" | "sent" | "already";
   const [status, setStatus] = useState<Status>("idle");
   const [refreshing, setRefreshing] = useState(false);
+  const inbox = inboxLinkForEmail(email);
 
   async function onResend() {
     setStatus("sending");
@@ -777,8 +818,24 @@ function VerifyEmailGate({ email }: { email: string }) {
           </p>
           <p className="mt-1 break-all text-sm font-medium text-ink-900">{email}</p>
 
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <button type="button" className="btn-primary" onClick={onRefresh} disabled={refreshing}>
+          {inbox && (
+            <a
+              href={inbox.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-6 inline-flex w-full justify-center sm:w-auto"
+            >
+              {t("verify.gate_open_inbox", { provider: inbox.provider })} →
+            </a>
+          )}
+
+          <div className={`flex flex-col gap-2 sm:flex-row ${inbox ? "mt-3" : "mt-6"}`}>
+            <button
+              type="button"
+              className={inbox ? "btn-outline" : "btn-primary"}
+              onClick={onRefresh}
+              disabled={refreshing}
+            >
               {refreshing ? t("verify.gate_resending") : t("verify.gate_refresh")}
             </button>
             <button
