@@ -350,7 +350,6 @@ export default function BudgetPage() {
                       <input
                         className="input h-9 min-h-0 py-1 text-sm"
                         defaultValue={line.notes ?? ""}
-                        placeholder={t("budget.note_placeholder")}
                         maxLength={1000}
                         aria-label={t("budget.note")}
                         onBlur={(e) => saveNotes(line, e.target.value)}
