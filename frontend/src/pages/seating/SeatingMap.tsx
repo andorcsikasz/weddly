@@ -785,7 +785,11 @@ function TableShape({
             cx={seatBtnGap / 2}
             cy={seatBtnY}
             kind="plus"
-            disabled={!canIncrement}
+            // + stays clickable past the perimeter cap so the parent's
+            // onSeatsChange can fire a toast explaining why it didn't work.
+            // We still mark the visual as muted via canIncrement → muted=true.
+            disabled={false}
+            muted={!canIncrement}
             onActivate={() => onSeatsDelta(1)}
             label={t("seating.add_seat")}
           />
@@ -907,13 +911,18 @@ function SeatButton({
   cy,
   kind,
   disabled,
+  muted,
   onActivate,
   label,
 }: {
   cx: number;
   cy: number;
   kind: "plus" | "minus";
+  /** Hard-disabled: swallows the click entirely (used for − at 1 seat). */
   disabled: boolean;
+  /** Visually muted but still firing onActivate — used for + past the cap
+   *  so the parent can surface a toast explaining the block. */
+  muted?: boolean;
   onActivate: () => void;
   label: string;
 }) {
@@ -922,9 +931,10 @@ function SeatButton({
   // The lucide icon is rendered into a 24×24 box; scale it up to roughly
   // 60% of the circle diameter for a clear glyph at canvas zoom.
   const iconSize = radius * 1.2;
-  const fillClass = disabled ? "fill-paper-200" : "fill-paper-50";
-  const strokeClass = disabled ? "stroke-ink-300" : "stroke-blush-600";
-  const iconColor = disabled ? "stroke-ink-300" : "stroke-blush-700";
+  const dim = disabled || muted;
+  const fillClass = dim ? "fill-paper-200" : "fill-paper-50";
+  const strokeClass = dim ? "stroke-ink-300" : "stroke-blush-600";
+  const iconColor = dim ? "stroke-ink-300" : "stroke-blush-700";
 
   return (
     <g
@@ -932,7 +942,7 @@ function SeatButton({
       style={{ cursor: disabled ? "not-allowed" : "pointer" }}
       role="button"
       aria-label={label}
-      aria-disabled={disabled || undefined}
+      aria-disabled={disabled || muted || undefined}
       onPointerDown={(e) => {
         // Don't start a move drag on the table.
         e.stopPropagation();

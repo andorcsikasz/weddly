@@ -572,7 +572,16 @@ export default function SeatingPage() {
   async function changeSeats(id: number, delta: number) {
     const table = tables.find((tb) => tb.id === id);
     if (!table) return;
-    const next = Math.max(1, Math.min(40, table.seats + delta));
+    const cap = Math.min(40, maxSeatsForTable(table.shape, table.width_mm, table.length_mm));
+    const requested = table.seats + delta;
+    // User clicked + but the table is already full at the 80 cm pitch.
+    // Surface the constraint as a toast so they know to widen the table
+    // before adding another seat (instead of guessing why + is greyed out).
+    if (delta > 0 && requested > cap) {
+      toast.error(t("seating.seats_at_cap"));
+      return;
+    }
+    const next = Math.max(1, Math.min(cap, requested));
     if (next === table.seats) return;
     await patchTable(table, { seats: next });
   }
@@ -847,6 +856,7 @@ export default function SeatingPage() {
             onDelete={() => selected && deleteTable(selected)}
             onDuplicate={() => selected && duplicateTable(selected)}
             onRotate={() => selected && rotateTable(selected)}
+            onSeatsAtCap={() => toast.error(t("seating.seats_at_cap"))}
             t={t}
           />
         </div>
@@ -1125,6 +1135,7 @@ function TableEditor({
   onDelete,
   onDuplicate,
   onRotate,
+  onSeatsAtCap,
   t,
 }: {
   table: SeatingTable | null;
@@ -1132,6 +1143,8 @@ function TableEditor({
   onDelete: () => void;
   onDuplicate: () => void;
   onRotate: () => void;
+  /** Fires when the user clicks + on the seats stepper while at the cap. */
+  onSeatsAtCap: () => void;
   t: ReturnType<typeof useT>["t"];
 }) {
   if (!table) {
@@ -1181,6 +1194,8 @@ function TableEditor({
           onChange={(n) => {
             if (n !== table.seats) onPatch({ seats: n });
           }}
+          onIncDenied={onSeatsAtCap}
+          atCapHint={t("seating.seats_at_cap_hint")}
         />
       </Section>
 
@@ -1605,43 +1620,67 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 function SeatsStepper({
   value,
   onChange,
+  onIncDenied,
   max,
+  atCapHint,
 }: {
   value: number;
   onChange: (next: number) => void;
+  /** Fires when the user clicks + at the cap. Parent surfaces a toast. */
+  onIncDenied?: () => void;
   max: number;
+  /** Persistent inline hint shown below the stepper when value === max. */
+  atCapHint?: string;
 }) {
   const upper = Math.max(1, max);
+  const atMax = value >= upper;
   const dec = () => onChange(Math.max(1, value - 1));
-  const inc = () => onChange(Math.min(upper, value + 1));
+  // + stays clickable past the cap so the parent can fire a toast — a
+  // disabled HTML button swallows the click, leaving the user with no
+  // explanation. We mark the button aria-disabled instead.
+  const inc = () => {
+    if (atMax) {
+      onIncDenied?.();
+      return;
+    }
+    onChange(value + 1);
+  };
   const decDisabled = value <= 1;
-  const incDisabled = value >= upper;
   return (
-    <div className="inline-flex items-center gap-2 rounded-xl border border-paper-200 bg-paper-50 p-1">
-      <button
-        type="button"
-        onClick={dec}
-        disabled={decDisabled}
-        className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
-        aria-label="−"
-      >
-        <Minus size={16} aria-hidden />
-      </button>
-      <span className="min-w-[2ch] text-center text-base font-semibold tabular-nums text-ink-900">
-        {value}
-      </span>
-      <button
-        type="button"
-        onClick={inc}
-        disabled={incDisabled}
-        className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
-        aria-label="+"
-      >
-        <Plus size={16} aria-hidden />
-      </button>
-      <span className="px-1 text-xs tabular-nums text-ink-400" aria-hidden>
-        /{upper}
-      </span>
+    <div className="block">
+      <div className="inline-flex items-center gap-2 rounded-xl border border-paper-200 bg-paper-50 p-1">
+        <button
+          type="button"
+          onClick={dec}
+          disabled={decDisabled}
+          className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
+          aria-label="−"
+        >
+          <Minus size={16} aria-hidden />
+        </button>
+        <span className="min-w-[2ch] text-center text-base font-semibold tabular-nums text-ink-900">
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={inc}
+          aria-disabled={atMax || undefined}
+          className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+            atMax ? "text-ink-300 hover:bg-blush-50" : "text-ink-700 hover:bg-paper-100"
+          }`}
+          aria-label="+"
+        >
+          <Plus size={16} aria-hidden />
+        </button>
+        <span className="px-1 text-xs tabular-nums text-ink-400" aria-hidden>
+          /{upper}
+        </span>
+      </div>
+      {atMax && atCapHint && (
+        <p className="mt-1.5 text-[11px] text-blush-700" role="status">
+          {atCapHint}
+        </p>
+      )}
     </div>
   );
 }
