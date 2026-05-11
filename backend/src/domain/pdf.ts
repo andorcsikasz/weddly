@@ -295,7 +295,7 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       });
     }
 
-    const fitted = fitText(fontPair, t.label, 10, Math.min(rx, ry) * 1.8, "bold");
+    const fitted = await fitText(fontPair, t.label, 10, Math.min(rx, ry) * 1.8, "bold");
     const labelW = fitted.font.widthOfTextAtSize(fitted.text, 10);
     page.drawText(fitted.text, {
       x: cx - labelW / 2,
@@ -314,7 +314,7 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       const offset = chairs[a.seat_index];
       const guest = guestById.get(a.guest_id);
       if (!offset || !guest) continue;
-      const guestFit = fitText(fontPair, guest.full_name, 7, mm(35));
+      const guestFit = await fitText(fontPair, guest.full_name, 7, mm(35));
       // Push the label a bit further out than the chair itself to avoid
       // colliding with the table border.
       const padPt = 3;
@@ -348,13 +348,17 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
   pdf.registerFontkit(fontkit);
   const helv = await pdf.embedFont(NOTO_REGULAR, { subset: true });
   const helvBold = await pdf.embedFont(NOTO_BOLD, { subset: true });
-  // NotoSansSC subset embedding hits a writeUInt8-out-of-range bug in
-  // @pdf-lib/fontkit 1.1.1 when subsetting CFF (OTF) fonts in Bun's Buffer
-  // shim. Until we vendor a TTF-flavoured CJK font, embed the full file. The
-  // OTF is ~8 MB and the resulting PDFs are bigger than they could be; the
-  // alternative is no CJK glyphs at all.
-  const cjk = await pdf.embedFont(NOTO_SC);
-  const fontPair: FontPair = { regular: helv, bold: helvBold, cjk };
+  // Lazy CJK fallback — see comment in renderSeatingChartPdf.
+  let cjkFont: PDFFont | null = null;
+  const fontPair: FontPair = {
+    regular: helv,
+    bold: helvBold,
+    getCjk: async () => {
+      if (cjkFont) return cjkFont;
+      cjkFont = await pdf.embedFont(NOTO_SC);
+      return cjkFont;
+    },
+  };
   const cardW = FORMATS.a6.width_mm;
   const cardH = FORMATS.a6.height_mm;
   const sheetW = FORMATS.a4.width_mm;
@@ -400,7 +404,7 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
 
       const name = safe(g.full_name);
       const nameSize = name.length > 18 ? 18 : 24;
-      const nameFont = pickFont(fontPair, name, "bold");
+      const nameFont = await pickFontAsync(fontPair, name, "bold");
       const nameW = nameFont.widthOfTextAtSize(name, nameSize);
       page.drawText(name, {
         x: mm(x_mm0 + cardW / 2) - nameW / 2,
@@ -413,7 +417,7 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       const tableLabel = input.tablesByGuestId?.get(g.id);
       if (tableLabel) {
         const t = safe(tableLabel);
-        const tFont = pickFont(fontPair, t, "regular");
+        const tFont = await pickFontAsync(fontPair, t, "regular");
         const tw = tFont.widthOfTextAtSize(t, 11);
         page.drawText(t, {
           x: mm(x_mm0 + cardW / 2) - tw / 2,
@@ -426,7 +430,7 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
 
       // Couple footer
       const footer = safe(input.couple_display_name);
-      const footerFont = pickFont(fontPair, footer, "regular");
+      const footerFont = await pickFontAsync(fontPair, footer, "regular");
       const fw = footerFont.widthOfTextAtSize(footer, 8);
       page.drawText(footer, {
         x: mm(x_mm0 + cardW / 2) - fw / 2,
