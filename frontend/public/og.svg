@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Open Graph / Twitter share card. 1200×630, the canonical OG size.
-  All colours come from the design tokens (paper-100, ink-900, blush-500
-  etc.) hardcoded as hex here so the image is self-contained — no font
-  files, no external assets. Falls back to Georgia if Cormorant Garamond
-  isn't installed on the rendering platform.
+  Minimalist treatment — solid king-blue field, wide-tracked WĒDDLY
+  wordmark, single tagline. Self-contained: no font files or external
+  assets. Falls back to Georgia if Cormorant Garamond is missing.
 
-  Note: not every social scraper renders SVG og:image reliably (Twitter,
-  Facebook expect PNG/JPG). For best coverage, render this SVG to a PNG
-  at build time (e.g. with `@resvg/resvg-js`) and point og:image at the
-  PNG instead. The SVG below is the source of truth for both.
+  Not every social scraper renders SVG og:image reliably (Twitter,
+  Facebook expect PNG/JPG). The matching PNG is generated with
+  `bun run og` from the frontend workspace — keep both in sync.
 -->
 <svg
   xmlns="http://www.w3.org/2000/svg"
@@ -17,124 +15,60 @@
   height="630"
   viewBox="0 0 1200 630"
 >
-  <!-- Background: warm paper-100 cream -->
-  <rect width="1200" height="630" fill="#f6f2e7" />
+  <!-- Background: king blue, one solid field. -->
+  <rect width="1200" height="630" fill="#1d3a8a" />
 
-  <!-- Soft blush blob behind the right-side composition -->
-  <ellipse cx="900" cy="290" rx="340" ry="280" fill="#fbe9e3" opacity="0.85" />
-  <ellipse cx="1080" cy="500" rx="180" ry="120" fill="#f5cdc1" opacity="0.55" />
-
-  <!-- Tiny confetti dots around the rings -->
-  <g fill="#d35d42">
-    <circle cx="780" cy="120" r="5" />
-    <circle cx="1100" cy="170" r="6" />
-    <circle cx="780" cy="500" r="4" />
-  </g>
-  <g fill="#46577a" opacity="0.6">
-    <circle cx="820" cy="155" r="3.5" />
-    <circle cx="1080" cy="240" r="3" />
-    <circle cx="740" cy="380" r="3.5" />
-  </g>
-
-  <!-- Two interlocking rings, centred on the right half -->
-  <circle cx="850" cy="290" r="78" fill="none" stroke="#1a2440" stroke-width="7" stroke-linecap="round" />
-  <circle cx="950" cy="290" r="78" fill="none" stroke="#d35d42" stroke-width="7" stroke-linecap="round" />
-  <!-- Tiny weave segment so the back ring crosses *over* the front ring
-       on one side — sells the interlock instead of looking like two
-       separate circles. -->
-  <path
-    d="M 920 240 A 78 78 0 0 1 920 340"
+  <!-- Hairline frame inset from the edges to give the card an
+       engraved, stationery-card feel without breaking minimalism. -->
+  <rect
+    x="40"
+    y="40"
+    width="1120"
+    height="550"
     fill="none"
-    stroke="#1a2440"
-    stroke-width="7"
-    stroke-linecap="round"
+    stroke="#f6f2e7"
+    stroke-width="1"
+    stroke-opacity="0.22"
   />
 
-  <!-- Eucalyptus stem curving below the rings -->
-  <path
-    d="M 760 470 Q 900 440 1040 470"
-    fill="none"
-    stroke="#243150"
-    stroke-width="2.5"
-    stroke-linecap="round"
-  />
-  <g fill="#94a0b9">
-    <ellipse cx="800" cy="460" rx="14" ry="7" transform="rotate(-20 800 460)" />
-    <ellipse cx="850" cy="450" rx="14" ry="7" transform="rotate(-15 850 450)" />
-    <ellipse cx="900" cy="445" rx="14" ry="7" />
-    <ellipse cx="950" cy="450" rx="14" ry="7" transform="rotate(15 950 450)" />
-    <ellipse cx="1000" cy="460" rx="14" ry="7" transform="rotate(20 1000 460)" />
-  </g>
-
-  <!-- Eyebrow chip -->
-  <rect x="80" y="170" width="290" height="40" rx="20" fill="#fbe9e3" stroke="#f5cdc1" />
-  <circle cx="103" cy="190" r="4" fill="#d35d42" />
+  <!-- Wordmark — wide-tracked serif caps with macron Ē, centred. -->
   <text
-    x="118"
-    y="197"
-    font-family="'Inter', system-ui, sans-serif"
-    font-size="14"
-    font-weight="600"
-    fill="#9d3b27"
-    letter-spacing="2"
-  >OPEN BETA · HUNGARIAN-FIRST</text>
-
-  <!-- Headline: serif, two lines, italic on the second line for warmth -->
-  <text
-    x="80"
-    y="305"
+    x="600"
+    y="320"
     font-family="'Cormorant Garamond', Georgia, serif"
-    font-size="84"
-    font-weight="500"
-    fill="#101830"
-  >Plan your wedding,</text>
-  <text
-    x="80"
-    y="395"
-    font-family="'Cormorant Garamond', Georgia, serif"
-    font-size="84"
-    font-weight="500"
-    font-style="italic"
-    fill="#101830"
-  >calmly. Together.</text>
-
-  <!-- Subhead -->
-  <text
-    x="80"
-    y="455"
-    font-family="'Inter', system-ui, sans-serif"
-    font-size="22"
-    fill="#314262"
-  >One shared workspace for both of you —</text>
-  <text
-    x="80"
-    y="487"
-    font-family="'Inter', system-ui, sans-serif"
-    font-size="22"
-    fill="#314262"
-  >budget, guest list, RSVP, and seating.</text>
-
-  <!-- URL pill -->
-  <rect x="80" y="540" width="208" height="44" rx="22" fill="#1a2440" />
-  <text
-    x="184"
-    y="569"
-    font-family="'Inter', system-ui, sans-serif"
-    font-size="16"
+    font-size="120"
     font-weight="600"
+    letter-spacing="36"
     fill="#f6f2e7"
     text-anchor="middle"
-  >weddly.xyz  →</text>
-
-  <!-- Bottom-right wordmark — wide-tracked serif caps with macron Ē -->
-  <text
-    x="1120"
-    y="595"
-    font-family="'Cormorant Garamond', Georgia, serif"
-    font-size="28"
-    font-weight="400"
-    letter-spacing="11"
-    fill="#101830"
-    text-anchor="end"
   >WĒDDLY</text>
+
+  <!-- Hairline ornament rules flanking the tagline -->
+  <line x1="380" y1="395" x2="500" y2="395" stroke="#f6f2e7" stroke-width="1" stroke-opacity="0.4" />
+  <line x1="700" y1="395" x2="820" y2="395" stroke="#f6f2e7" stroke-width="1" stroke-opacity="0.4" />
+
+  <!-- One-liner tagline — italic serif, restrained, paper-cream. -->
+  <text
+    x="600"
+    y="408"
+    font-family="'Cormorant Garamond', Georgia, serif"
+    font-size="34"
+    font-style="italic"
+    fill="#f6f2e7"
+    fill-opacity="0.92"
+    text-anchor="middle"
+  >Plan your wedding, calmly. Together.</text>
+
+  <!-- URL footer — small caps, wide-tracked, bottom centre. -->
+  <text
+    x="600"
+    y="555"
+    font-family="'Inter', system-ui, sans-serif"
+    font-size="14"
+    font-weight="500"
+    letter-spacing="6"
+    fill="#f6f2e7"
+    fill-opacity="0.7"
+    text-anchor="middle"
+  >WEDDLY.XYZ</text>
 </svg>
