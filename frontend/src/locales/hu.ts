@@ -954,6 +954,17 @@ const hu: LocaleMessages = {
     no_name: "Névtelen",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
+    security_title: "Biztonság",
+    security_body:
+      "Itt módosíthatod a jelszavad. Sikeres váltás után minden eszközről kiléptetünk, és e-mailben is megerősítjük neked, hogy biztos lehess: tényleg te voltál.",
+    security_pw_current: "Jelenlegi jelszó",
+    security_pw_new: "Új jelszó",
+    security_pw_confirm: "Új jelszó megerősítése",
+    security_pw_submit: "Jelszó módosítása",
+    security_pw_submitting: "Módosítás…",
+    security_pw_success: "Új jelszó beállítva. Küldtünk egy megerősítő e-mailt is.",
+    security_pw_too_short: "A jelszó legalább 8 karakter hosszú legyen.",
+    security_pw_mismatch: "A két új jelszó nem egyezik.",
     export_title: "Adataid exportálása",
     export_body:
       "Egyetlen JSON fájlban töltheted le a teljes workspace tartalmát — pár, vendégek, költségvetés, ültetés, auditnapló. A PDF-eket (ültetési rend, ültetőkártyák) az Ültetés oldalról töltheted le.",

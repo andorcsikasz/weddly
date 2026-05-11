@@ -941,6 +941,17 @@ export interface LocaleMessages {
     no_name: string;
     payments_title: string;
     payments_body: string;
+    /** Security section — change-password form lives here. */
+    security_title: string;
+    security_body: string;
+    security_pw_current: string;
+    security_pw_new: string;
+    security_pw_confirm: string;
+    security_pw_submit: string;
+    security_pw_submitting: string;
+    security_pw_success: string;
+    security_pw_too_short: string;
+    security_pw_mismatch: string;
     export_title: string;
     export_body: string;
     export_button: string;

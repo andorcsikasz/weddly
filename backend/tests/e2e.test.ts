@@ -141,6 +141,98 @@ describe("auth", () => {
     });
     expect(r.status).toBe(401);
   });
+
+  test("change-password: verifies current, revokes old sessions, emails confirmation", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "pwchange@example.com",
+      password: "supersafe123",
+      full_name: "PC",
+    });
+    expect(reg.status).toBe(201);
+    const oldToken = reg.data.token;
+
+    // Wrong current password → 401.
+    const bad = await req(
+      "POST",
+      "/api/auth/change-password",
+      { current_password: "supersafe122", new_password: "evenmoresafer456" },
+      { token: oldToken },
+    );
+    expect(bad.status).toBe(401);
+
+    // Same as current → 400.
+    const dup = await req(
+      "POST",
+      "/api/auth/change-password",
+      { current_password: "supersafe123", new_password: "supersafe123" },
+      { token: oldToken },
+    );
+    expect(dup.status).toBe(400);
+
+    const ok = await req<{ token: string; user: { email: string } }>(
+      "POST",
+      "/api/auth/change-password",
+      { current_password: "supersafe123", new_password: "evenmoresafer456" },
+      { token: oldToken },
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.data.token).toContain(".");
+    expect(ok.data.token).not.toBe(oldToken);
+
+    // Old token now revoked.
+    const meOld = await req("GET", "/api/auth/me", undefined, { token: oldToken });
+    expect(meOld.status).toBe(401);
+
+    // New token works.
+    const meNew = await req("GET", "/api/auth/me", undefined, { token: ok.data.token });
+    expect(meNew.status).toBe(200);
+
+    // Login with new password works; old password rejected.
+    const login = await req("POST", "/api/auth/login", {
+      email: "pwchange@example.com",
+      password: "evenmoresafer456",
+    });
+    expect(login.status).toBe(200);
+    const loginOld = await req("POST", "/api/auth/login", {
+      email: "pwchange@example.com",
+      password: "supersafe123",
+    });
+    expect(loginOld.status).toBe(401);
+
+    // password_changed confirmation email logged.
+    const mail = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'password_changed'")
+      .all() as Array<{ to_email: string }>;
+    expect(mail.length).toBe(1);
+    expect(mail[0]!.to_email).toBe("pwchange@example.com");
+  });
+
+  test("password reset also sends a password_changed confirmation", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "pwreset@example.com",
+      password: "supersafe123",
+      full_name: "PR",
+    });
+    await req("POST", "/api/auth/forgot", { email: "pwreset@example.com" });
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM password_reset_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
+      )
+      .get("pwreset@example.com") as { token: string } | undefined;
+    expect(tokenRow?.token).toBeTruthy();
+    const reset = await req("POST", "/api/auth/reset", {
+      token: tokenRow!.token,
+      password: "evenmoresafer456",
+    });
+    expect(reset.status).toBe(200);
+    const mail = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'password_changed'")
+      .all() as Array<{ to_email: string }>;
+    expect(mail.length).toBe(1);
+    expect(mail[0]!.to_email).toBe("pwreset@example.com");
+  });
 });
 
 describe("onboarding + invites", () => {

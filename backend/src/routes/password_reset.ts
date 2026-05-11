@@ -8,7 +8,7 @@ import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { sendKind } from "../domain/emails";
-import { getUserByEmail } from "../domain/users";
+import { getUserByEmail, getUserById } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -109,6 +109,25 @@ async function handleReset(ctx: Ctx): Promise<Response> {
     target_kind: "user",
     target_id: row.user_id,
   });
+
+  // Security confirmation to the inbox-of-record. If the user didn't trigger
+  // the reset, the email gives them an immediate path back via /forgot-password.
+  const user = getUserById(row.user_id);
+  if (user && !user.email.endsWith("@purged.local")) {
+    const changedAt = new Date(ts).toLocaleString("hu-HU", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const forgotUrl = `${CONFIG.frontendBaseUrl}/forgot-password`;
+    void sendKind(
+      "password_changed",
+      { forgotUrl, changedAt },
+      { user: { id: user.id, email: user.email, full_name: user.full_name } },
+    );
+  }
 
   return json({ ok: true });
 }

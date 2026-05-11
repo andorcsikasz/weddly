@@ -947,6 +947,17 @@ const en: LocaleMessages = {
     no_name: "Unnamed",
     payments_title: "Payments",
     payments_body: "Payment history and billing settings will appear here soon.",
+    security_title: "Security",
+    security_body:
+      "Change your password here. After a successful change we sign you out everywhere else and email you a confirmation so you know it was really you.",
+    security_pw_current: "Current password",
+    security_pw_new: "New password",
+    security_pw_confirm: "Confirm new password",
+    security_pw_submit: "Change password",
+    security_pw_submitting: "Changing…",
+    security_pw_success: "New password is set. We've also sent you a confirmation email.",
+    security_pw_too_short: "Password must be at least 8 characters.",
+    security_pw_mismatch: "The two new passwords don't match.",
     export_title: "Export your data",
     export_body:
       "Download everything in your workspace — couple, guests, budget, seating, audit log — as a single JSON file. PDFs (seating chart, place cards) are downloadable from the Seating page.",

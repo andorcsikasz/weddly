@@ -41,6 +41,8 @@ export const authApi = {
   forgot: (email: string) => apiFetch<{ ok: true }>("POST", "/api/auth/forgot", { email }),
   reset: (token: string, password: string) =>
     apiFetch<{ ok: true }>("POST", "/api/auth/reset", { token, password }),
+  changePassword: (body: { current_password: string; new_password: string }) =>
+    apiFetch<AuthSession>("POST", "/api/auth/change-password", body),
   requestVerify: () =>
     apiFetch<{ ok: true; already_verified?: boolean }>("POST", "/api/auth/verify/request", {}),
   verifyEmail: (token: string) =>

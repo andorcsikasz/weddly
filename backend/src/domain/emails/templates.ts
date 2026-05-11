@@ -30,6 +30,12 @@ export interface VerifyResendPayload {
 export interface PasswordResetPayload {
   resetUrl: string;
 }
+export interface PasswordChangedPayload {
+  /** Where to start a reset if the user didn't authorise this change. */
+  forgotUrl: string;
+  /** Pre-formatted change timestamp, locale-friendly. */
+  changedAt: string;
+}
 export interface PartnerInvitePayload {
   inviterName: string;
   inviteUrl: string;
@@ -76,6 +82,7 @@ export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
   password_reset: PasswordResetPayload;
+  password_changed: PasswordChangedPayload;
   partner_invite: PartnerInvitePayload;
   couple_paused: CouplePausedPayload;
   account_purged: AccountPurgedPayload;
@@ -188,6 +195,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Set a new password",
       footnote: "Single-use link. Restart from the login page if it expires.",
+    },
+  }),
+
+  password_changed: (p, ctx) => ({
+    subject: "Jelszó megváltoztatva / Password changed",
+    ctaUrl: p.forgotUrl,
+    hu: {
+      preheader: "Megerősítjük, hogy sikeresen módosítottad a jelszavad.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `A Weddly fiókod jelszavát az imént (${p.changedAt}) megváltoztattuk.`,
+        "Minden eddigi bejelentkezésedet kiléptettük, így új jelszóval kell újra belépned mindenhol.",
+        "Ha NEM te voltál, azonnal állíts vissza új jelszót a lenti linkkel — ezzel azonnal kizárod azt, aki most lépett be.",
+      ],
+      cta: "Új jelszó kérése",
+      footnote: "Ha te voltál, ezt a levelet figyelmen kívül hagyhatod.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `Your Weddly password was just changed (${p.changedAt}).`,
+        "We've signed out all of your existing sessions, so you'll need to log back in everywhere with the new password.",
+        "If this wasn't you, request a fresh password immediately using the link below — that will lock out whoever just got in.",
+      ],
+      cta: "Reset password now",
+      footnote: "If this was you, you can safely ignore this email.",
     },
   }),
 

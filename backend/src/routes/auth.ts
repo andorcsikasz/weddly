@@ -120,6 +120,65 @@ function handleLogout(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+interface ChangePasswordBody {
+  current_password?: unknown;
+  new_password?: unknown;
+}
+
+async function handleChangePassword(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "auth:change_password", AUTH_BUCKET);
+  const userId = requireAuth(ctx);
+  const body = await readJson<ChangePasswordBody>(ctx.req);
+  const current = parsePassword(body.current_password);
+  const next = parsePassword(body.new_password);
+  if (current === next) throw new HttpError(400, "New password must differ from current");
+
+  const row = getUserById(userId);
+  if (!row) throw new HttpError(404, "User not found");
+  const ok = await verifyPassword(current, row.password_hash);
+  if (!ok) throw new HttpError(401, "Current password is incorrect");
+
+  const ts = now();
+  const newHash = await hashPassword(next);
+  db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(
+    newHash,
+    ts,
+    userId,
+  );
+  // Revoke every active session — including this one — so the change forces
+  // re-auth everywhere. We immediately reissue a fresh token for the caller
+  // below so the device that made the change stays logged in.
+  db.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: "auth.password_change",
+    target_kind: "user",
+    target_id: userId,
+  });
+
+  const changedAt = new Date(ts).toLocaleString("hu-HU", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const forgotUrl = `${CONFIG.frontendBaseUrl}/forgot-password`;
+  void sendKind(
+    "password_changed",
+    { forgotUrl, changedAt },
+    { user: { id: row.id, email: row.email, full_name: row.full_name } },
+  );
+
+  const token = issueSession(userId);
+  const fresh = getUserById(userId);
+  if (!fresh) throw new HttpError(500, "User vanished after password change");
+  const session: AuthSession = { token, user: toUser(fresh) };
+  return json(session);
+}
+
 function handleMe(ctx: Ctx): Response {
   const userId = requireAuth(ctx);
   const row = getUserById(userId);
@@ -131,5 +190,6 @@ export function registerAuthRoutes(router: Router) {
   router.post("/api/auth/register", handleRegister);
   router.post("/api/auth/login", handleLogin);
   router.post("/api/auth/logout", handleLogout, true);
+  router.post("/api/auth/change-password", handleChangePassword, true);
   router.get("/api/auth/me", handleMe, true);
 }

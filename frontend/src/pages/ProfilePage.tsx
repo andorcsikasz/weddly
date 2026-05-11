@@ -1,5 +1,5 @@
-// Profile: workspace ops only — payments placeholder, export, saved
-// download archive, delete account.
+// Profile: workspace ops only — payments placeholder, security, export,
+// saved download archive, delete account.
 
 import type {
   Couple,
@@ -8,11 +8,13 @@ import type {
   DataExportSummary,
   ExportKind,
 } from "@shared/types";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useEntryPrompt } from "../components/ui";
+import { useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import {
+  authApi,
   coupleApi,
   documentsApi,
   exportApi,
@@ -56,6 +58,8 @@ function saveBlob(blob: Blob, filename: string) {
 export default function ProfilePage() {
   const { t, locale } = useT();
   const promptEntry = useEntryPrompt();
+  const toast = useToast();
+  const { setSession } = useAuth();
   const [couple, setCouple] = useState<Couple | null>(null);
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
@@ -64,6 +68,11 @@ export default function ProfilePage() {
   const [csvExporting, setCsvExporting] = useState(false);
   const [documents, setDocuments] = useState<DataExportSummary[]>([]);
   const [redownloading, setRedownloading] = useState<number | null>(null);
+  const [pwCurrent, setPwCurrent] = useState("");
+  const [pwNext, setPwNext] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSubmitting, setPwSubmitting] = useState(false);
 
   async function refresh() {
     const [pause, current, docs] = await Promise.all([
@@ -150,6 +159,35 @@ export default function ProfilePage() {
     }
   }
 
+  async function changePassword(e: FormEvent) {
+    e.preventDefault();
+    setPwError(null);
+    if (pwNext.length < 8) {
+      setPwError(t("profile.security_pw_too_short"));
+      return;
+    }
+    if (pwNext !== pwConfirm) {
+      setPwError(t("profile.security_pw_mismatch"));
+      return;
+    }
+    setPwSubmitting(true);
+    try {
+      const session = await authApi.changePassword({
+        current_password: pwCurrent,
+        new_password: pwNext,
+      });
+      setSession(session.token, session.user);
+      setPwCurrent("");
+      setPwNext("");
+      setPwConfirm("");
+      toast.success(t("profile.security_pw_success"));
+    } catch (err) {
+      setPwError(err instanceof ApiError ? err.message : t("common.error_generic"));
+    } finally {
+      setPwSubmitting(false);
+    }
+  }
+
   async function redownloadSaved(doc: DataExportSummary) {
     setRedownloading(doc.id);
     try {
@@ -173,6 +211,61 @@ export default function ProfilePage() {
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.payments_title")}</h2>
         <p className="mt-2 text-sm text-ink-600">{t("profile.payments_body")}</p>
+      </section>
+
+      <section className="card mt-6">
+        <h2 className="text-lg">{t("profile.security_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600">{t("profile.security_body")}</p>
+        <form className="mt-4 grid max-w-md gap-3" onSubmit={changePassword} noValidate>
+          <div>
+            <label htmlFor="pw-current" className="field-label">
+              {t("profile.security_pw_current")}
+            </label>
+            <input
+              id="pw-current"
+              type="password"
+              className="input"
+              autoComplete="current-password"
+              value={pwCurrent}
+              onChange={(e) => setPwCurrent(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="pw-new" className="field-label">
+              {t("profile.security_pw_new")}
+            </label>
+            <input
+              id="pw-new"
+              type="password"
+              className="input"
+              autoComplete="new-password"
+              value={pwNext}
+              onChange={(e) => setPwNext(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="pw-confirm" className="field-label">
+              {t("profile.security_pw_confirm")}
+            </label>
+            <input
+              id="pw-confirm"
+              type="password"
+              className="input"
+              autoComplete="new-password"
+              value={pwConfirm}
+              onChange={(e) => setPwConfirm(e.target.value)}
+              required
+            />
+          </div>
+          {pwError && <p className="field-error">{pwError}</p>}
+          <div>
+            <button type="submit" className="btn-primary" disabled={pwSubmitting}>
+              {pwSubmitting ? t("profile.security_pw_submitting") : t("profile.security_pw_submit")}
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="card mt-6">
