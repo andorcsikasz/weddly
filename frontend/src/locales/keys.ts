@@ -368,9 +368,29 @@ export interface LocaleMessages {
     nav_how: string;
     nav_suppliers: string;
     nav_vendors: string;
-    /** Header link opening a mailto: feedback inbox. Quiet text link. */
+    /** Header link opening the feedback dialog. */
     nav_feedback: string;
+    /** Subject line preserved on the email the backend forwards. */
     nav_feedback_subject: string;
+    feedback_title: string;
+    feedback_intro: string;
+    feedback_message_label: string;
+    feedback_message_placeholder: string;
+    feedback_rating_label: string;
+    feedback_rating_hint: string;
+    feedback_rating_low: string;
+    feedback_rating_high: string;
+    feedback_monthly_label: string;
+    feedback_monthly_hint: string;
+    feedback_monthly_zero: string;
+    feedback_email_label: string;
+    feedback_email_help: string;
+    feedback_submit: string;
+    feedback_submitting: string;
+    feedback_cancel: string;
+    feedback_empty_error: string;
+    feedback_success_title: string;
+    feedback_success_body: string;
     vendor_pill: string;
     guest_link: string;
     phases_title: string;

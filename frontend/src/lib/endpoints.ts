@@ -349,6 +349,18 @@ export const vendorWaitlistApi = {
     apiFetch<{ entry: VendorWaitlistEntry }>("POST", "/api/vendors/waitlist", body),
 };
 
+export interface FeedbackInput {
+  message?: string;
+  rating?: number;
+  monthly_value_ft?: number;
+  from_email?: string;
+  locale?: string;
+}
+
+export const feedbackApi = {
+  submit: (body: FeedbackInput) => apiFetch<{ ok: true }>("POST", "/api/feedback", body),
+};
+
 export const adminVendorWaitlistApi = {
   list: () => apiFetch<{ entries: VendorWaitlistEntry[] }>("GET", "/api/admin/vendor-waitlist"),
   setStatus: (id: number, status: VendorWaitlistStatus) =>

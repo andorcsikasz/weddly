@@ -1,6 +1,8 @@
 // Public /vendors waitlist form (anon POST) + admin triage endpoints.
 
 import type { SupplierCategory } from "@shared/suppliers";
+import { CONFIG } from "../config";
+import { sendKind } from "../domain/emails/send";
 import { requireAdmin } from "../domain/users";
 import {
   getVendorWaitlistById,
@@ -13,6 +15,23 @@ import {
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
+
+const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
+  venue: "Esküvői helyszín",
+  accommodation: "Szállás",
+  catering: "Catering",
+  cake_dessert: "Torta & desszert",
+  bar_drinks: "Bár & italok",
+  decor_floral: "Dekoráció & virág",
+  lighting: "Világítás",
+  music_dj: "Zene & DJ",
+  photo_video: "Fotó & videó",
+  entertainment: "Animáció & program",
+  attire: "Ruha",
+  hair_makeup: "Smink & haj",
+  stationery: "Papír & nyomtatvány",
+  transport: "Transzfer",
+};
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
   "venue",
@@ -84,6 +103,19 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     target_id: row.id,
     after: { business_name, email, category },
   });
+
+  // Fire-and-forget confirmation to the vendor's email. Failures land in
+  // email_log but never propagate — the form submission still succeeds.
+  void sendKind(
+    "vendor_waitlist_received",
+    {
+      businessName: business_name,
+      categoryLabel: CATEGORY_LABEL_HU[category as SupplierCategory] ?? category,
+      landingUrl: CONFIG.frontendBaseUrl,
+    },
+    { user: null, guest: { email, full_name: business_name } },
+  );
+
   return json({ entry: toVendorWaitlistEntry(row) }, { status: 201 });
 }
 

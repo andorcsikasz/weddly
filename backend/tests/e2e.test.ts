@@ -3771,6 +3771,17 @@ describe("vendor waitlist", () => {
     expect(list.status).toBe(200);
     expect(list.data.entries.length).toBe(1);
     expect(list.data.entries[0]?.business_name).toBe("Florea Studio");
+
+    // A confirmation email is queued to the submitter's address. With no
+    // RESEND_API_KEY in tests, mailer.ts logs to stdout and email_log is
+    // stamped with status='skipped_no_provider' — proves we'd send for real.
+    const mail = db
+      .prepare("SELECT to_email, kind, status FROM email_log WHERE kind = ?")
+      .get("vendor_waitlist_received") as
+      | { to_email: string; kind: string; status: string }
+      | undefined;
+    expect(mail).toBeDefined();
+    expect(mail?.to_email).toBe("florea@example.test");
   });
 
   test("rejects bad inputs", async () => {

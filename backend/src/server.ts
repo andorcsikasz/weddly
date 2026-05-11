@@ -35,6 +35,7 @@ import { registerEmailChangeRoutes } from "./routes/email_change";
 import { registerEmailPrefsRoutes } from "./routes/email_prefs";
 import { registerEmailVerifyRoutes } from "./routes/email_verify";
 import { registerExportRoutes } from "./routes/export";
+import { registerFeedbackRoutes } from "./routes/feedback";
 import { registerGuestRoutes } from "./routes/guests";
 import { registerHealthRoutes } from "./routes/health";
 import { registerHouseholdRoutes } from "./routes/households";
@@ -70,6 +71,7 @@ registerAdminSupplierRoutes(router);
 registerAdminUserRoutes(router);
 registerVendorWaitlistRoutes(router);
 registerUserCoupleRoutes(router);
+registerFeedbackRoutes(router);
 
 const IS_PROD = process.env.NODE_ENV === "production";
 

@@ -19,7 +19,8 @@ export type EmailKind =
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
   | "wedding_today" // morning-of congratulations
-  | "wedding_date_changed"; // couple edited the wedding date, notify guests
+  | "wedding_date_changed" // couple edited the wedding date, notify guests
+  | "vendor_waitlist_received"; // /vendors form submission → confirm we got it
 
 export type EmailCategory = "transactional" | "lifecycle";
 
@@ -50,4 +51,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: a guest explicitly opted into the wedding by RSVPing, and
   // the couple changing the date is an account-critical update for them.
   wedding_date_changed: "transactional",
+  // Transactional: vendor explicitly submitted the /vendors form and is
+  // waiting on a "we got it" reply.
+  vendor_waitlist_received: "transactional",
 };

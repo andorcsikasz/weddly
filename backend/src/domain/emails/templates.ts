@@ -105,6 +105,17 @@ export interface WeddingDateChangedPayload {
   rsvpPageUrl: string;
 }
 
+export interface VendorWaitlistReceivedPayload {
+  /** What the vendor typed for their business — used to humanise the body. */
+  businessName: string;
+  /** Localised category label (already resolved). E.g. "Virágdekoráció" /
+   *  "Decor & floral". The route picks the right side based on the email
+   *  language; we'll fall back to the slug if neither was provided. */
+  categoryLabel: string;
+  /** Where they can read more about Weddly while they wait. */
+  landingUrl: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -123,6 +134,7 @@ export type KindPayload = {
   milestone_t7: MilestonePayload;
   wedding_today: WeddingTodayPayload;
   wedding_date_changed: WeddingDateChangedPayload;
+  vendor_waitlist_received: VendorWaitlistReceivedPayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -560,6 +572,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     };
   },
+
+  vendor_waitlist_received: (p, ctx) => ({
+    subject: "Várólistára kerültél / You're on the Weddly vendor waitlist",
+    ctaUrl: p.landingUrl,
+    hu: {
+      preheader: "Megkaptuk a jelentkezést — várólistán vagytok.",
+      greeting: `Szia ${ctx.recipientName || p.businessName || ""}!`.trim(),
+      paragraphs: [
+        `Megkaptuk a(z) ${p.businessName} jelentkezését a Wēddly szolgáltatói várólistájára (${p.categoryLabel}).`,
+        "Még nem nyitottunk a szolgáltatóknak — egy szűk kategóriánkénti listát építünk, hogy a párok ne 200 szolgáltatóból válogassanak, hanem azokból, akik tényleg passzolnak hozzájuk. Amint nyitunk, e-mailben jelentkezünk.",
+        "Addig is, ha van bármi kérdés vagy szeretnétek többet mesélni magatokról, válaszoljatok erre a levélre — emberek olvassák.",
+      ],
+      cta: "Wēddly megnyitása",
+      footnote: "Csak akkor írunk, amikor van új a várólistáddal.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || p.businessName || "there"},`,
+      paragraphs: [
+        `We've received ${p.businessName}'s submission to the Weddly vendor waitlist (${p.categoryLabel}).`,
+        "We aren't onboarding suppliers yet — we're building a tight, per-category list so couples don't wade through 200 vendors but see the ones who actually fit. We'll email you the moment we open to applications in your category.",
+        "If you'd like to share more or have any questions in the meantime, just reply to this email — a real person reads it.",
+      ],
+      cta: "Open Weddly",
+      footnote: "We'll only email when there's an update for your waitlist entry.",
+    },
+  }),
 
   wedding_today: (p, ctx) => ({
     subject: "Ma van a nap / Today's the day 💛",
