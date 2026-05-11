@@ -163,6 +163,30 @@ db.exec(`
      SET couple_id = (SELECT couple_id FROM users WHERE users.id = supplier_votes.user_id)
    WHERE couple_id IS NULL
 `);
+// Dedupe before the new unique index. Under the old (user_id, supplier_id)
+// keying both partners on one couple could each vote on the same supplier;
+// once couple_id is backfilled those rows collide on (couple_id, supplier_id)
+// and a naive CREATE UNIQUE INDEX would fail with "UNIQUE constraint failed".
+// Keep the latest cast vote (highest id) — it best reflects current intent.
+db.exec(`
+  DELETE FROM supplier_votes
+   WHERE couple_id IS NOT NULL
+     AND id NOT IN (
+       SELECT MAX(id) FROM supplier_votes
+        WHERE couple_id IS NOT NULL
+        GROUP BY couple_id, supplier_id
+     )
+`);
+// Partial unique index on the just-backfilled column. Lives in db.ts (not
+// schema.sql) because schema.sql executes BEFORE addColumnIfMissing, and on
+// existing prod DBs where supplier_votes pre-dates the column,
+// `CREATE TABLE IF NOT EXISTS` is a no-op so the column wouldn't yet exist
+// when the index DDL fires — the resulting `no such column: couple_id` error
+// crashed the container on boot and failed Railway's healthcheck.
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_votes_couple_supplier_unique " +
+    "ON supplier_votes(couple_id, supplier_id) WHERE couple_id IS NOT NULL",
+);
 
 export function now(): number {
   return Date.now();

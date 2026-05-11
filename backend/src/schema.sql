@@ -309,10 +309,10 @@ CREATE TABLE IF NOT EXISTS supplier_votes (
 );
 CREATE INDEX IF NOT EXISTS idx_supplier_votes_supplier ON supplier_votes(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_supplier_votes_user ON supplier_votes(user_id);
--- Enforce one vote per couple per supplier. Partial index so legacy rows with
--- NULL couple_id (orphaned: user no longer in a couple) are ignored.
-CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_votes_couple_supplier_unique
-  ON supplier_votes(couple_id, supplier_id) WHERE couple_id IS NOT NULL;
+-- Unique (couple_id, supplier_id) partial index is created in db.ts AFTER
+-- `addColumnIfMissing("supplier_votes","couple_id",…)` so existing prod DBs
+-- (where supplier_votes pre-dates the column) don't fail with
+-- `no such column: couple_id` when re-applying schema.sql.
 
 -- Per-couple planned + final cost for each supplier the couple is interested
 -- in. `supplier_id` is the public string id from the directory (curated slug
