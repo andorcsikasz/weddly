@@ -999,6 +999,33 @@ describe("health", () => {
     expect(r.data.ok).toBe(true);
     expect(r.data.db).toBe(true);
   });
+
+  test("/api/health/deep surfaces disk_space, memory, and uptime", async () => {
+    const r = await req<{
+      ok: boolean;
+      uptime_s: number;
+      components: {
+        db: { ok: boolean };
+        disk: { ok: boolean };
+        disk_space: { ok: boolean; free_mb?: number; total_mb?: number; percent_used?: number };
+        memory: { ok: boolean; rss_mb?: number; heap_used_mb?: number; heap_total_mb?: number };
+        resend: { ok: boolean; skipped?: boolean };
+      };
+    }>("GET", "/api/health/deep");
+    expect(r.status).toBe(200);
+    expect(r.data.ok).toBe(true);
+    expect(typeof r.data.uptime_s).toBe("number");
+    expect(r.data.uptime_s).toBeGreaterThanOrEqual(0);
+    expect(r.data.components.db.ok).toBe(true);
+    expect(r.data.components.disk.ok).toBe(true);
+    expect(r.data.components.disk_space.ok).toBe(true);
+    expect(typeof r.data.components.disk_space.free_mb).toBe("number");
+    expect(typeof r.data.components.disk_space.total_mb).toBe("number");
+    expect(typeof r.data.components.disk_space.percent_used).toBe("number");
+    expect(r.data.components.memory.ok).toBe(true);
+    expect(typeof r.data.components.memory.rss_mb).toBe("number");
+    expect(typeof r.data.components.memory.heap_used_mb).toBe("number");
+  });
 });
 
 // ─── helpers for the v1-feature suites below ─────────────────────────────────

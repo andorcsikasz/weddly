@@ -5,12 +5,14 @@
 //                    stays fast and doesn't flap on upstream issues.
 //
 //   /api/health/deep Per-component status: DB + Resend liveness + disk write
-//                    on the uploads volume. NOT wired to Railway's healthcheck
-//                    on purpose — a transient Resend blip should not restart
-//                    the container. Hit it from external monitors that you
-//                    want to alert at slower cadence (UptimeRobot, ~15min).
+//                    + free-space + memory + uptime. NOT wired to Railway's
+//                    healthcheck on purpose — a transient Resend blip or a
+//                    full disk should not restart the container (a restart
+//                    can't fix either). Hit it from external monitors that
+//                    you want to alert at slower cadence (UptimeRobot, ~15min).
 
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { statfs } from "node:fs/promises";
 import { join } from "node:path";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
@@ -22,7 +24,13 @@ interface ComponentResult {
   ms?: number;
   reason?: string;
   skipped?: boolean;
+  [k: string]: unknown;
 }
+
+// Page when the persistent volume crosses this — SQLite write failures on a
+// full disk cascade into corrupt state, and Railway volume resizes need a
+// human. 90% gives enough runway to react before writes start failing.
+const DISK_USED_ALERT_PCT = 90;
 
 function checkDb(): ComponentResult {
   const start = performance.now();
@@ -63,6 +71,51 @@ function checkDisk(): ComponentResult {
   }
 }
 
+// Informational. Free-space stats on the persistent volume so external monitors
+// can graph capacity and page on their own thresholds. We never gate the
+// overall /api/health/deep response on this: a 503 wouldn't help (a restart
+// can't shrink data), and dev machines routinely run > the prod threshold,
+// which would make the endpoint look broken locally. `near_full` is included
+// as a substring-friendly flag for UptimeRobot-style keyword checks.
+async function diskSpaceStats(): Promise<ComponentResult & { near_full?: boolean }> {
+  const start = performance.now();
+  try {
+    const s = await statfs(CONFIG.uploadsDir);
+    const totalBytes = s.bsize * s.blocks;
+    const freeBytes = s.bsize * s.bavail;
+    const usedBytes = totalBytes - freeBytes;
+    const percentUsed = totalBytes > 0 ? Math.round((usedBytes / totalBytes) * 100) : 0;
+    return {
+      ok: true,
+      ms: Math.round(performance.now() - start),
+      free_mb: Math.round(freeBytes / (1024 * 1024)),
+      total_mb: Math.round(totalBytes / (1024 * 1024)),
+      percent_used: percentUsed,
+      near_full: percentUsed >= DISK_USED_ALERT_PCT,
+    };
+  } catch (e) {
+    return {
+      ok: true,
+      ms: Math.round(performance.now() - start),
+      reason: e instanceof Error ? e.message : "unknown",
+    };
+  }
+}
+
+// Informational. Surface heap and RSS so external monitors can graph memory
+// growth and alert on leaks before Railway OOM-kills the container. Never
+// marked not-ok — Railway's container limit is the real ceiling, and a 503
+// here would just trigger a useless restart loop.
+function memoryStats(): ComponentResult {
+  const m = process.memoryUsage();
+  return {
+    ok: true,
+    rss_mb: Math.round(m.rss / (1024 * 1024)),
+    heap_used_mb: Math.round(m.heapUsed / (1024 * 1024)),
+    heap_total_mb: Math.round(m.heapTotal / (1024 * 1024)),
+  };
+}
+
 /** Cheap, sync mailer config state — surfaces when the dispatcher will silently
  *  no-op (RESEND_API_KEY missing) or fall back to Resend's testing sender
  *  (which only delivers to the Resend account owner, not arbitrary recipients).
@@ -101,11 +154,22 @@ export function registerHealthRoutes(router: Router) {
     const dbCheck = checkDb();
     const diskCheck = checkDisk();
     const resendCheck = await checkResendLiveness();
+    const diskSpace = await diskSpaceStats();
+    const memory = memoryStats();
 
-    const components = { db: dbCheck, disk: diskCheck, resend: resendCheck };
-    // skipped components don't count against overall health (e.g. Resend in dev).
-    const ok = Object.values(components).every((c) => c.ok || c.skipped);
+    // Critical components gate the overall ok. Informational ones (memory,
+    // disk_space) surface stats but never fail the endpoint.
+    const critical = { db: dbCheck, disk: diskCheck, resend: resendCheck };
+    const ok = Object.values(critical).every((c) => c.ok || c.skipped);
 
-    return json({ ok, ts: now(), components }, { status: ok ? 200 : 503 });
+    return json(
+      {
+        ok,
+        ts: now(),
+        uptime_s: Math.round(process.uptime()),
+        components: { ...critical, disk_space: diskSpace, memory },
+      },
+      { status: ok ? 200 : 503 },
+    );
   });
 }
