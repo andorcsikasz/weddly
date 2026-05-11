@@ -167,8 +167,8 @@ export default function DashboardPage() {
     },
     { key: "task_lock_budget", done: couple.budget_goal.kind !== "tbd", to: "/onboarding" },
     { key: "task_set_date", done: couple.wedding_date_goal.kind === "exact", to: "/onboarding" },
-    // Partner invite happens inline on this page — no `to`.
-    { key: "task_invite_partner", done: couple.partner_b_id !== null },
+    // Partner invite lives on this page — anchor scrolls to the form below.
+    { key: "task_invite_partner", done: couple.partner_b_id !== null, to: "#invite-partner" },
     { key: "task_add_guests", done: totalGuests > 0, to: "/app/guests" },
     { key: "task_plan_budget", done: lines.length > 0, to: "/app/budget" },
     {
@@ -217,6 +217,17 @@ export default function DashboardPage() {
     navigator.clipboard?.writeText(inviteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+  // "Send to a different email" reset on the post-send success card. We don't
+  // void the backend-side invite (multiple unconsumed tokens are fine — the
+  // first one accepted wins); we just clear the local view so the form
+  // reappears and the user can send another mail.
+  function onSendAgain() {
+    setInvite(null);
+    setSentToEmail(null);
+    setInviteEmail("");
+    setInviteEmailError(null);
+    setCopied(false);
   }
 
   async function saveWeddingDate(goal: WeddingDateGoal) {
@@ -355,40 +366,56 @@ export default function DashboardPage() {
             />
           </div>
           <ul className="grid gap-1.5 sm:grid-cols-2">
-            {tasks.map((task) => (
-              <li
-                key={task.key}
-                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
-                  task.done ? "text-ink-500" : "text-ink-800"
-                }`}
-              >
-                <span
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                    task.done
-                      ? "border-blush-500 bg-blush-500 text-white"
-                      : "border-paper-400 bg-white"
-                  }`}
-                >
-                  {task.done && (
-                    <svg
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-3 w-3"
-                      aria-hidden="true"
+            {tasks.map((task) => {
+              const tone = task.done ? "text-ink-500" : "text-ink-800";
+              const body = (
+                <>
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                      task.done
+                        ? "border-blush-500 bg-blush-500 text-white"
+                        : "border-paper-400 bg-white"
+                    }`}
+                  >
+                    {task.done && (
+                      <svg
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-3 w-3"
+                        aria-hidden="true"
+                      >
+                        <path d="M2.5 6.5L5 9l4.5-5" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className={task.done ? "line-through decoration-ink-300" : ""}>
+                    {t(`dashboard.${task.key}`)}
+                  </span>
+                </>
+              );
+              return (
+                <li key={task.key}>
+                  {task.to ? (
+                    <Link
+                      to={task.to}
+                      className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-paper-100 ${tone}`}
                     >
-                      <path d="M2.5 6.5L5 9l4.5-5" />
-                    </svg>
+                      {body}
+                    </Link>
+                  ) : (
+                    <div
+                      className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${tone}`}
+                    >
+                      {body}
+                    </div>
                   )}
-                </span>
-                <span className={task.done ? "line-through decoration-ink-300" : ""}>
-                  {t(`dashboard.${task.key}`)}
-                </span>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -399,25 +426,29 @@ export default function DashboardPage() {
               {t("dashboard.rsvp_breakdown_title")}
             </h3>
             <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper-200">
-              <Segment count={rsvp.yes} total={Math.max(totalGuests, 1)} className="bg-blush-500" />
+              <Segment
+                count={rsvp.yes}
+                total={Math.max(totalGuests, 1)}
+                className="bg-emerald-500"
+              />
               <Segment
                 count={rsvp.maybe}
                 total={Math.max(totalGuests, 1)}
-                className="bg-blush-300"
+                className="bg-amber-400"
               />
-              <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-ink-300" />
+              <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
               <Segment
                 count={rsvp.pending}
                 total={Math.max(totalGuests, 1)}
-                className="bg-paper-400"
+                className="bg-slate-300"
               />
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-              <RsvpRow swatch="bg-blush-500" label={t("dashboard.rsvp_yes")} value={rsvp.yes} />
-              <RsvpRow swatch="bg-blush-300" label={t("dashboard.rsvp_maybe")} value={rsvp.maybe} />
-              <RsvpRow swatch="bg-ink-300" label={t("dashboard.rsvp_no")} value={rsvp.no} />
+              <RsvpRow swatch="bg-emerald-500" label={t("dashboard.rsvp_yes")} value={rsvp.yes} />
+              <RsvpRow swatch="bg-amber-400" label={t("dashboard.rsvp_maybe")} value={rsvp.maybe} />
+              <RsvpRow swatch="bg-red-500" label={t("dashboard.rsvp_no")} value={rsvp.no} />
               <RsvpRow
-                swatch="bg-paper-400"
+                swatch="bg-slate-300"
                 label={t("dashboard.rsvp_pending")}
                 value={rsvp.pending}
               />
@@ -441,7 +472,7 @@ export default function DashboardPage() {
 
       {/* ── Invite partner — only if not yet linked. ───────────────── */}
       {!couple.partner_b_id && (
-        <section className="card stationery mb-8">
+        <section id="invite-partner" className="card stationery mb-8 scroll-mt-24">
           <h2>{t("dashboard.invite_partner")}</h2>
           <p className="mt-2 text-sm text-ink-700">{t("dashboard.invite_partner_help")}</p>
 
@@ -476,13 +507,55 @@ export default function DashboardPage() {
                 <p className="field-help">{t("dashboard.invite_email_help")}</p>
               )}
             </form>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {sentToEmail && (
-                <p className="text-sm text-ink-700">
-                  ✓ {t("dashboard.invite_sent", { email: sentToEmail })}
+          ) : sentToEmail ? (
+            // Email-send path: lead with a clear "we sent it" confirmation
+            // (this is what the user just asked for and is now waiting on).
+            // The shareable link stays available as a backup in case the email
+            // doesn't land, but it's demoted to a secondary block.
+            <div className="mt-4 rounded-2xl border border-paper-300 bg-paper-50 p-5">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-800">
+                  <Mail size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-serif text-lg text-ink-900">
+                    {t("dashboard.invite_sent_title")}
+                  </h3>
+                  <p className="mt-1 text-sm text-ink-700">
+                    {t("dashboard.invite_sent_body", { email: sentToEmail })}
+                  </p>
+                  <p className="mt-2 text-xs text-ink-500">
+                    {t("dashboard.invite_sent_spam_hint")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 border-t border-paper-300 pt-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
+                  {t("dashboard.invite_sent_backup_label")}
                 </p>
-              )}
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <input className="input flex-1" readOnly value={inviteUrl} />
+                  <button type="button" className="btn-outline" onClick={onCopy}>
+                    {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm text-ink-500"
+                  onClick={onSendAgain}
+                >
+                  {t("dashboard.invite_send_again")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Link-only path: user submitted without an email, so we just show
+            // the shareable URL.
+            <div className="mt-4 space-y-3">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input className="input flex-1" readOnly value={inviteUrl} />
                 <button type="button" className="btn-outline" onClick={onCopy}>

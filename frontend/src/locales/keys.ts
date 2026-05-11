@@ -201,6 +201,11 @@ export interface LocaleMessages {
     invite_send: string;
     invite_sending: string;
     invite_sent: string;
+    invite_sent_title: string;
+    invite_sent_body: string;
+    invite_sent_spam_hint: string;
+    invite_sent_backup_label: string;
+    invite_send_again: string;
     target_guests: string;
     budget_ceiling: string;
     pick_up_where: string;
@@ -861,9 +866,27 @@ export interface LocaleMessages {
     table_couple: string;
     table_couple_none: string;
     table_couple_partners: string;
+    /** Inline partner column (replaces the separate Couples table). */
+    table_partner: string;
+    table_partner_none: string;
+    table_partner_orphan: string;
+    table_admin_actions: string;
     badge_admin: string;
     badge_suspended: string;
     badge_unverified: string;
+    /** Per-row admin actions for users. */
+    resend_verify: string;
+    resend_verify_sent: string;
+    resend_verify_already: string;
+    delete_user: string;
+    delete_user_confirm_title: string;
+    delete_user_confirm_label: string;
+    delete_user_confirm_placeholder: string;
+    delete_user_confirm_phrase: string;
+    delete_user_confirm_help: string;
+    delete_user_confirm_mismatch: string;
+    delete_user_success: string;
+    delete_user_cannot_self: string;
     suppliers_title: string;
     suppliers_sub: string;
     empty: string;
@@ -1006,6 +1029,14 @@ export interface LocaleMessages {
     menu_label: string;
     menu_profile: string;
     no_name: string;
+    /** Prominent verify-email section, shown when verified_email = false. */
+    verify_title: string;
+    verify_body: string;
+    verify_email_intro: string;
+    verify_resend: string;
+    verify_resending: string;
+    verify_resent: string;
+    verify_already_verified: string;
     payments_title: string;
     payments_body: string;
     /** Security section — change-password form lives here. */

@@ -493,9 +493,15 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
     const inviter = getUserById(userId);
     const inviteUrl = `${CONFIG.frontendBaseUrl}/invite/${token}`;
     const inviterName = inviter?.full_name ?? "Your partner";
+    // Pass the couple's display name only when it's a real one — empty / the
+    // post-purge "Purged workspace" sentinel would just look weird in the body.
+    const coupleDisplayName =
+      couple.display_name && couple.display_name !== "Purged workspace"
+        ? couple.display_name
+        : undefined;
     void sendKind(
       "partner_invite",
-      { inviterName, inviteUrl },
+      { inviterName, inviteUrl, coupleDisplayName },
       {
         // Partner B has no Weddly account yet — treat as a guest recipient.
         user: null,

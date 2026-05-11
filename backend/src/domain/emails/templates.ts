@@ -51,6 +51,10 @@ export interface EmailChangeWarningPayload {
 export interface PartnerInvitePayload {
   inviterName: string;
   inviteUrl: string;
+  /** Optional couple display name — when present, used to personalize the
+   *  body ("Your shared workspace: Anna & Bence"). Falls back gracefully
+   *  when empty (e.g. a freshly-onboarded couple with no display name set). */
+  coupleDisplayName?: string;
 }
 export interface CouplePausedPayload {
   /** Display name of the partner who clicked Pause. */
@@ -290,29 +294,40 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
-  partner_invite: (p) => ({
-    subject: "Esküvőtervezés meghívó / Wedding-planning invite",
-    ctaUrl: p.inviteUrl,
-    hu: {
-      preheader: `${p.inviterName} meghívott, hogy közösen tervezzétek az esküvőt.`,
-      greeting: "Szia!",
-      paragraphs: [
-        `${p.inviterName} meghívott, hogy közösen tervezzétek az esküvőt a Weddly-n.`,
-        "Ha elfogadod, közös vendéglistátok, költségvetésetek, ülésrendetek és RSVP-tök lesz — két fej, egy munkamenet, semmi e-mail-ping-pong.",
-      ],
-      cta: "Csatlakozom",
-      footnote: "A link 7 napig érvényes.",
-    },
-    en: {
-      greeting: "Hello,",
-      paragraphs: [
-        `${p.inviterName} invited you to plan your wedding together on Weddly.`,
-        "Once you accept, you'll share a single workspace — guest list, budget, seating plan, and RSVP — with no more spreadsheet juggling.",
-      ],
-      cta: "Join the workspace",
-      footnote: "This link is valid for 7 days.",
-    },
-  }),
+  partner_invite: (p) => {
+    const coupleSuffixHu = p.coupleDisplayName
+      ? ` A közös munkaterületetek neve: ${p.coupleDisplayName}.`
+      : "";
+    const coupleSuffixEn = p.coupleDisplayName
+      ? ` Your shared workspace: ${p.coupleDisplayName}.`
+      : "";
+    return {
+      subject: `${p.inviterName} meghívott a Weddly-re / invited you to plan together`,
+      ctaUrl: p.inviteUrl,
+      hu: {
+        preheader: "Közös vendéglista, ülésrend, költségvetés — egy munkamenetben.",
+        greeting: "Szia!",
+        paragraphs: [
+          `${p.inviterName} elkezdte tervezni az esküvőt a Weddly-n, és meghívott, hogy csatlakozz hozzá.${coupleSuffixHu}`,
+          "Egy közös munkamenetben dolgoztok: vendéglista, ülésrend, költségvetés, RSVP linkek, nyomtatható helykártyák és asztalterv. Minden valós időben szinkronban — semmi táblázat-pingpong, semmi „melyik a legfrissebb verzió”.",
+          "Magyar nyelvű, ingyenes a nyilvános béta alatt, és semmilyen szállítóhoz nem köt — az adatok a tiétek maradnak.",
+        ],
+        cta: "Csatlakozom a tervezéshez",
+        footnote:
+          "A link 7 napig érvényes. Ha véletlenül kaptad, hagyd figyelmen kívül — semmi sem fog történni.",
+      },
+      en: {
+        greeting: "Hello,",
+        paragraphs: [
+          `${p.inviterName} started planning your wedding on Weddly and invited you to join.${coupleSuffixEn}`,
+          'One shared workspace covers guest list, seating chart, budget, RSVP links, printable place cards and table plans — in real-time sync. No more spreadsheet ping-pong or "which version was the latest?".',
+          "Free during the open beta, no vendor lock-in — your data stays yours.",
+        ],
+        cta: "Join the workspace",
+        footnote: "Link valid for 7 days. Got this by mistake? Ignore it — nothing happens.",
+      },
+    };
+  },
 
   couple_paused: (p, ctx) => ({
     subject: "Esküvőtervező szüneteltetve / Workspace paused",
