@@ -192,19 +192,33 @@ export default function SeatingPage() {
       partnerRoleByName.get(g.full_name.trim().toLowerCase()) ?? null,
     [partnerRoleByName],
   );
-  // Unassigned guests with bride + groom pinned to the top (bride first
-  // when both match). Everyone else keeps the server-side order.
-  const unassigned = useMemo(() => {
-    const all = guests.filter((g) => !seatedIds.has(g.id));
-    if (partnerRoleByName.size === 0) return all;
-    const bride = all.find((g) => partnerRole(g) === "bride") ?? null;
-    const groom = all.find((g) => partnerRole(g) === "groom") ?? null;
-    const rest = all.filter((g) => g !== bride && g !== groom);
-    const head: Guest[] = [];
-    if (bride) head.push(bride);
-    if (groom) head.push(groom);
-    return [...head, ...rest];
-  }, [guests, seatedIds, partnerRoleByName, partnerRole]);
+  // Two reserved slots for the couple at the top of the unassigned panel.
+  // The user shouldn't have to manually add themselves as guests — but
+  // until they do, we can't seat them on the canvas (assignments need a
+  // guest_id). The slot stays visible with a muted placeholder so it's
+  // obvious where they'll go once the workflow gets there.
+  type PartnerSlot = {
+    role: "bride" | "groom";
+    name: string;
+    guest: Guest | null;
+  };
+  const partnerSlots = useMemo<PartnerSlot[]>(() => {
+    if (!couple) return [];
+    const out: PartnerSlot[] = [];
+    const findUnassignedByRole = (role: "bride" | "groom"): Guest | null =>
+      guests.find((g) => partnerRole(g) === role && !seatedIds.has(g.id)) ?? null;
+    const bride = couple.bride_name?.trim();
+    const groom = couple.groom_name?.trim();
+    if (bride) out.push({ role: "bride", name: bride, guest: findUnassignedByRole("bride") });
+    if (groom) out.push({ role: "groom", name: groom, guest: findUnassignedByRole("groom") });
+    return out;
+  }, [couple, guests, seatedIds, partnerRole]);
+  // Unassigned guests *excluding* the partners — those are rendered first
+  // via partnerSlots so they don't double up.
+  const unassigned = useMemo(
+    () => guests.filter((g) => !seatedIds.has(g.id) && partnerRole(g) === null),
+    [guests, seatedIds, partnerRole],
+  );
   // Per-table set of seat indices currently occupied by a baby guest. The
   // canvas chair render reads this to overlay a Baby icon — different from
   // the baby_seats flag (which marks a chair as "needs a high-chair"
@@ -1028,10 +1042,31 @@ export default function SeatingPage() {
                 ? t("seating.tap_select_help")
                 : t("seating.drag_help")}
           </p>
-          {unassigned.length === 0 ? (
+          {unassigned.length === 0 && partnerSlots.length === 0 ? (
             <p className="mt-4 text-sm text-ink-600">{t("seating.no_unassigned")}</p>
           ) : (
             <ul className="mt-3 max-h-[60vh] space-y-1 overflow-y-auto">
+              {partnerSlots.map((slot) =>
+                slot.guest ? (
+                  <li key={slot.role}>
+                    <DraggableGuest
+                      guest={slot.guest}
+                      tapMode={tapMode}
+                      selected={selectedGuestId === slot.guest.id}
+                      onTap={handleTapGuest}
+                      partnerRole={slot.role}
+                    />
+                  </li>
+                ) : (
+                  <li key={slot.role}>
+                    <PartnerSlotPlaceholder
+                      role={slot.role}
+                      name={slot.name}
+                      hint={t("seating.partner_placeholder_hint")}
+                    />
+                  </li>
+                ),
+              )}
               {unassigned.map((g) => (
                 <li key={g.id}>
                   <DraggableGuest
@@ -2116,6 +2151,34 @@ function DraggableGuest({
         />
       )}
       {guest.full_name}
+    </div>
+  );
+}
+
+// Stub card for a bride / groom slot when no matching guest row exists yet.
+// Not draggable — purely a placeholder that keeps the two reserved spots
+// visible at the top of the panel so the couple sees "this is where I'll
+// go" before they (or their partner) are added to the guest list.
+function PartnerSlotPlaceholder({
+  role,
+  name,
+  hint,
+}: {
+  role: "bride" | "groom";
+  name: string;
+  hint: string;
+}) {
+  return (
+    <div
+      className="flex items-start gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50/60 px-2 py-1.5"
+      role="presentation"
+      aria-label={`${role}: ${name}`}
+    >
+      <Crown size={14} aria-hidden className="mt-0.5 text-blush-400" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-ink-700">{name}</p>
+        <p className="text-[11px] text-ink-400">{hint}</p>
+      </div>
     </div>
   );
 }

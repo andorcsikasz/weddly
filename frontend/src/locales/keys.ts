@@ -818,6 +818,9 @@ export interface LocaleMessages {
     rotate_table: string;
     layout_label: string;
     toggle_seat: string;
+    /** Hint under a bride / groom placeholder card when the partner isn't
+     *  yet in the guests list. */
+    partner_placeholder_hint: string;
     confirm_delete_table: string;
     unassigned_guests: string;
     no_unassigned: string;
@@ -948,6 +951,16 @@ export interface LocaleMessages {
     capacity_label: string;
     capacity_range: string;
     capacity_max_only: string;
+    /** Price-band multi-select pill row above the chain. */
+    price_filter_label: string;
+    price_filter_help: string;
+    price_filter_band_aria: string;
+    /** Guest-count input — filters venues whose capacity range covers the value.
+     *  Suppliers without a declared capacity pass through. */
+    guests_filter_label: string;
+    guests_filter_placeholder: string;
+    guests_filter_help: string;
+    guests_filter_clear: string;
     /** Up/downvote buttons + sort. */
     vote_up_aria: string;
     vote_down_aria: string;
