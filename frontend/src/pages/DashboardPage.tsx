@@ -21,7 +21,7 @@ import {
   UtensilsCrossed,
   Wallet,
 } from "lucide-react";
-import { type JSX, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CostPlanningCard } from "../components/CostPlanningCard";
@@ -59,6 +59,11 @@ export default function DashboardPage() {
   const [data, setData] = useState<Loaded | null | "loading">("loading");
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
+  // Partner-invite form state (email-or-link flow).
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
+  const [inviteSending, setInviteSending] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState<string | null>(null);
   // Cost-planning slider — defaults to baseline once couple loads.
   const [planningCount, setPlanningCount] = useState<number | null>(null);
 
@@ -189,9 +194,23 @@ export default function DashboardPage() {
 
   // ── Invite-partner inline card ────────────────────────────────────────
   const inviteUrl = invite ? `${window.location.origin}/invite/${invite.token}` : null;
-  async function onInvitePartner() {
-    const r = await coupleApi.createInvite({});
-    setInvite(r.invite);
+  async function onSendInvite(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = inviteEmail.trim();
+    // Trivial email shape check — backend revalidates on its side.
+    if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setInviteEmailError(t("dashboard.invite_email_invalid"));
+      return;
+    }
+    setInviteEmailError(null);
+    setInviteSending(true);
+    try {
+      const r = await coupleApi.createInvite(trimmed ? { invited_email: trimmed } : {});
+      setInvite(r.invite);
+      if (trimmed) setSentToEmail(trimmed);
+    } finally {
+      setInviteSending(false);
+    }
   }
   function onCopy() {
     if (!inviteUrl) return;
@@ -425,17 +444,52 @@ export default function DashboardPage() {
         <section className="card stationery mb-8">
           <h2>{t("dashboard.invite_partner")}</h2>
           <p className="mt-2 text-sm text-ink-700">{t("dashboard.invite_partner_help")}</p>
-          {inviteUrl ? (
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <input className="input flex-1" readOnly value={inviteUrl} />
-              <button type="button" className="btn-primary" onClick={onCopy}>
-                {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
-              </button>
-            </div>
+
+          {!inviteUrl ? (
+            <form className="mt-4" onSubmit={onSendInvite}>
+              <label htmlFor="partner-email" className="field-label">
+                {t("dashboard.invite_email_label")}
+              </label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  id="partner-email"
+                  type="email"
+                  autoComplete="email"
+                  className={`input flex-1 ${inviteEmailError ? "input-invalid" : ""}`}
+                  placeholder={t("dashboard.invite_email_placeholder")}
+                  value={inviteEmail}
+                  disabled={inviteSending}
+                  onChange={(e) => {
+                    setInviteEmail(e.target.value);
+                    if (inviteEmailError) setInviteEmailError(null);
+                  }}
+                  aria-invalid={inviteEmailError ? true : undefined}
+                />
+                <button type="submit" className="btn-primary" disabled={inviteSending}>
+                  <Mail size={16} />
+                  {inviteSending ? t("dashboard.invite_sending") : t("dashboard.invite_send")}
+                </button>
+              </div>
+              {inviteEmailError ? (
+                <p className="field-error">{inviteEmailError}</p>
+              ) : (
+                <p className="field-help">{t("dashboard.invite_email_help")}</p>
+              )}
+            </form>
           ) : (
-            <button type="button" className="btn-accent mt-4" onClick={onInvitePartner}>
-              <Mail size={16} /> {t("dashboard.invite_partner")}
-            </button>
+            <div className="mt-4 space-y-3">
+              {sentToEmail && (
+                <p className="text-sm text-ink-700">
+                  ✓ {t("dashboard.invite_sent", { email: sentToEmail })}
+                </p>
+              )}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input className="input flex-1" readOnly value={inviteUrl} />
+                <button type="button" className="btn-outline" onClick={onCopy}>
+                  {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
+                </button>
+              </div>
+            </div>
           )}
         </section>
       )}

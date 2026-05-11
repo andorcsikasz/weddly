@@ -193,6 +193,14 @@ export interface LocaleMessages {
     partner_linked: string;
     copy_link: string;
     link_copied: string;
+    /** Email-or-link invite flow on the dashboard. */
+    invite_email_label: string;
+    invite_email_placeholder: string;
+    invite_email_help: string;
+    invite_email_invalid: string;
+    invite_send: string;
+    invite_sending: string;
+    invite_sent: string;
     target_guests: string;
     budget_ceiling: string;
     pick_up_where: string;
