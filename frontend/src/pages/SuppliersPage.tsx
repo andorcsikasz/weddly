@@ -129,6 +129,25 @@ export default function SuppliersPage() {
   const showSavedOnly = params.get("saved") === "1";
   const sortMode: "top" | "alpha" = params.get("sort") === "alpha" ? "alpha" : "top";
   const viewMode: "list" | "map" = params.get("view") === "map" ? "map" : "list";
+  // Price band: comma-separated set of 1..5. Empty set = no filter.
+  const priceBands = useMemo<Set<number>>(() => {
+    const raw = params.get("price");
+    if (!raw) return new Set();
+    return new Set(
+      raw
+        .split(",")
+        .map((s) => Number(s))
+        .filter((n) => Number.isInteger(n) && n >= 1 && n <= 5),
+    );
+  }, [params]);
+  // Guest count: positive integer. Suppliers without a declared capacity
+  // pass through (otherwise this filter would hide every photographer).
+  const guestsFilter = (() => {
+    const raw = params.get("guests");
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  })();
 
   function setQuery(next: string) {
     const p = new URLSearchParams(params);
@@ -158,6 +177,33 @@ export default function SuppliersPage() {
     const p = new URLSearchParams(params);
     if (next === "map") p.set("view", "map");
     else p.delete("view");
+    setParams(p, { replace: true });
+  }
+  function togglePriceBand(band: number) {
+    const next = new Set(priceBands);
+    if (next.has(band)) next.delete(band);
+    else next.add(band);
+    const p = new URLSearchParams(params);
+    if (next.size === 0) p.delete("price");
+    else
+      p.set(
+        "price",
+        Array.from(next)
+          .sort((a, b) => a - b)
+          .join(","),
+      );
+    setParams(p, { replace: true });
+  }
+  function setGuestsFilter(next: string) {
+    const trimmed = next.trim();
+    const p = new URLSearchParams(params);
+    if (!trimmed) {
+      p.delete("guests");
+    } else {
+      const n = Number(trimmed);
+      if (Number.isInteger(n) && n > 0) p.set("guests", String(n));
+      else p.delete("guests");
+    }
     setParams(p, { replace: true });
   }
 
@@ -228,6 +274,20 @@ export default function SuppliersPage() {
     }
     if (cityFilter) out = out.filter((s) => s.city === cityFilter);
     if (showSavedOnly) out = out.filter((s) => saved.has(s.id));
+    if (priceBands.size > 0) {
+      // Suppliers without a declared price band pass through — the filter only
+      // narrows among declared ones. Otherwise selecting a band would hide
+      // every community submission with a missing field.
+      out = out.filter((s) => s.price_band === null || priceBands.has(s.price_band));
+    }
+    if (guestsFilter !== null) {
+      out = out.filter((s) => {
+        const max = s.capacity_max ?? 0;
+        if (max === 0) return true;
+        const min = s.capacity_min ?? 0;
+        return guestsFilter >= min && guestsFilter <= max;
+      });
+    }
     const q = normalize(query.trim());
     if (q) {
       out = out.filter((s) => {
@@ -249,7 +309,19 @@ export default function SuppliersPage() {
       });
     }
     return sorted;
-  }, [items, activeGroup, activeCat, cityFilter, showSavedOnly, saved, query, sortMode, locale]);
+  }, [
+    items,
+    activeGroup,
+    activeCat,
+    cityFilter,
+    showSavedOnly,
+    saved,
+    query,
+    sortMode,
+    locale,
+    priceBands,
+    guestsFilter,
+  ]);
 
   const subCategories = activeGroup
     ? (SUPPLIER_GROUPS.find((g) => g.id === activeGroup)?.categories ?? [])
@@ -362,6 +434,63 @@ export default function SuppliersPage() {
             <option value="top">{t("suppliers.sort_top")}</option>
             <option value="alpha">{t("suppliers.sort_alpha")}</option>
           </select>
+        </label>
+      </div>
+
+      {/* Row 2: price band pills + guest-count number filter. Both narrow the
+          list to suppliers whose declared value matches; suppliers with no
+          declared value pass through so non-venue cards are not dropped. */}
+      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
+            {t("suppliers.price_filter_label")}
+          </span>
+          <div className="inline-flex flex-wrap items-center gap-1">
+            {[1, 2, 3, 4, 5].map((band) => {
+              const active = priceBands.has(band);
+              return (
+                <button
+                  key={band}
+                  type="button"
+                  onClick={() => togglePriceBand(band)}
+                  aria-pressed={active}
+                  aria-label={t("suppliers.price_filter_band_aria", { n: band })}
+                  className={
+                    active
+                      ? "inline-flex h-7 items-center rounded-full border border-ink-700 bg-ink-700 px-2.5 font-mono text-[11px] text-paper-100"
+                      : "inline-flex h-7 items-center rounded-full border border-paper-300 bg-paper-50 px-2.5 font-mono text-[11px] text-ink-700 hover:border-ink-300"
+                  }
+                >
+                  <PriceBandDots band={band} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <label className="flex items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
+            {t("suppliers.guests_filter_label")}
+          </span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            className="input h-8 w-24"
+            placeholder={t("suppliers.guests_filter_placeholder")}
+            value={guestsFilter ?? ""}
+            onChange={(e) => setGuestsFilter(e.target.value)}
+            aria-label={t("suppliers.guests_filter_label")}
+          />
+          {guestsFilter !== null && (
+            <button
+              type="button"
+              onClick={() => setGuestsFilter("")}
+              className="text-xs text-ink-500 underline-offset-2 hover:text-ink-800 hover:underline"
+            >
+              {t("suppliers.guests_filter_clear")}
+            </button>
+          )}
         </label>
       </div>
 
