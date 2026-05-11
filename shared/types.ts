@@ -275,6 +275,10 @@ export interface Guest {
   song_request: string | null;
   notes: string | null;
   rsvp_responded_at: UnixMs | null;
+  /** Set when the couple marks the guest "invited" (paper/email/etc. sent).
+   *  Drives the per-guest checkbox + the x/n indicator on the household
+   *  header. `null` = not yet invited. */
+  invited_at: UnixMs | null;
   created_at: UnixMs;
   updated_at: UnixMs;
 }

@@ -207,6 +207,30 @@ export default function GuestsPage() {
     }
   }
 
+  async function onToggleInvited(g: Guest, invited: boolean) {
+    // Optimistic flip so the checkbox doesn't lag behind the click; we
+    // also patch the searchResults copy so search mode reflects the
+    // change without an extra round-trip.
+    const optimistic = (list: Guest[]) =>
+      list.map((row) =>
+        row.id === g.id ? { ...row, invited_at: invited ? Date.now() : null } : row,
+      );
+    setGuests((prev) => optimistic(prev));
+    setSearchResults((prev) => (prev ? optimistic(prev) : prev));
+    try {
+      // The backend's PATCH still requires the existing payload to revalidate
+      // (full_name etc.), so we ship a minimal "{ ...g, invited }" shape.
+      await guestApi.update(g.id, { ...g, invited });
+    } catch (e) {
+      // Roll back on failure so the UI doesn't lie.
+      const rollback = (list: Guest[]) =>
+        list.map((row) => (row.id === g.id ? { ...row, invited_at: g.invited_at } : row));
+      setGuests((prev) => rollback(prev));
+      setSearchResults((prev) => (prev ? rollback(prev) : prev));
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   async function copyShare(slug: string | null, code: string) {
     if (!slug) return;
     const url = `${window.location.origin}/rsvp?couple=${slug}&code=${code}`;
@@ -283,7 +307,30 @@ export default function GuestsPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>{t("guests.title")}</h1>
-          <p className="mt-1 text-sm text-ink-500">{guests.length}</p>
+          {guests.length > 0 ? (
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-3xl font-semibold tabular-nums text-ink-900">
+                {guests.length}
+              </span>
+              <span className="text-sm text-ink-500">{t("guests.total_summary_unit")}</span>
+              <span aria-hidden className="text-ink-300">
+                ·
+              </span>
+              <span className="text-sm text-ink-600">
+                {t("guests.total_summary_households", { n: households.length })}
+              </span>
+              <span aria-hidden className="text-ink-300">
+                ·
+              </span>
+              <span className="text-sm text-ink-600">
+                {t("guests.total_summary_invited", {
+                  n: guests.filter((g) => g.invited_at != null).length,
+                })}
+              </span>
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-ink-500">{guests.length}</p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -381,6 +428,7 @@ export default function GuestsPage() {
               onRegenCode={() => onRegenCode(hh)}
               onDeleteHousehold={() => onDeleteHousehold(hh)}
               onRenameHousehold={onRenameHousehold}
+              onToggleInvited={onToggleInvited}
             />
           ))}
           {!virtualReveal && households.length > 100 && (
@@ -514,6 +562,7 @@ function HouseholdCard({
   onRegenCode,
   onDeleteHousehold,
   onRenameHousehold,
+  onToggleInvited,
 }: {
   household: Household;
   members: Guest[];
@@ -525,8 +574,10 @@ function HouseholdCard({
   onRegenCode: () => void;
   onDeleteHousehold: () => void;
   onRenameHousehold: (id: number, label: string) => Promise<void>;
+  onToggleInvited: (g: Guest, invited: boolean) => void;
 }) {
   const { t } = useT();
+  const invitedCount = members.filter((g) => g.invited_at != null).length;
   return (
     <div className="card overflow-hidden p-0">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3">
@@ -536,12 +587,29 @@ function HouseholdCard({
             count={members.length}
             onSave={(label) => onRenameHousehold(household.id, label)}
           />
-          <div className="mt-1 flex items-center gap-3 text-xs text-ink-600">
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-ink-600">
             {coupleSlug && <span className="font-mono uppercase">{coupleSlug}</span>}
             <span aria-hidden>·</span>
             <span className="font-mono text-base text-ink-900 tracking-[0.3em]">
               {household.code}
             </span>
+            {members.length > 0 && (
+              <>
+                <span aria-hidden>·</span>
+                <span
+                  className={
+                    invitedCount === members.length
+                      ? "text-ink-700"
+                      : invitedCount > 0
+                        ? "text-ink-600"
+                        : "text-ink-400"
+                  }
+                  title={t("guests.invited_progress_help")}
+                >
+                  {invitedCount}/{members.length} {t("guests.invited_short")}
+                </span>
+              </>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1">
@@ -578,13 +646,23 @@ function HouseholdCard({
       <ul className="divide-y divide-paper-200">
         {members.map((g) => (
           <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-            <div className="min-w-0">
-              <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
-                <KindIcon kind={g.kind} />
-                <span className="truncate">{g.full_name}</span>
-                <MealIcons meal={g.meal_choice} dietary={g.dietary} />
-              </p>
-              <p className="text-xs text-ink-500">{t(`guests.group_${g.group_tag}`)}</p>
+            <div className="flex min-w-0 items-center gap-3">
+              <input
+                type="checkbox"
+                checked={g.invited_at != null}
+                onChange={(e) => onToggleInvited(g, e.target.checked)}
+                aria-label={t("guests.invited_check_label")}
+                title={t("guests.invited_check_label")}
+                className="h-4 w-4 shrink-0 cursor-pointer accent-ink-700"
+              />
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
+                  <KindIcon kind={g.kind} />
+                  <span className="truncate">{g.full_name}</span>
+                  <MealIcons meal={g.meal_choice} dietary={g.dietary} />
+                </p>
+                <p className="text-xs text-ink-500">{t(`guests.group_${g.group_tag}`)}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <RsvpBadge status={g.rsvp_status} />
@@ -627,36 +705,13 @@ function HouseholdCard({
  * concept at a glance without the page being top-heavy. Click expands the
  * panel for slug edit + URL hint + the household-grouping reminder.
  */
-function CheckinPill({ couple, onSaved }: { couple: Couple; onSaved: (next: Couple) => void }) {
+function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => void }) {
   const { t } = useT();
   const [expanded, setExpanded] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(couple.slug ?? "");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function onSave() {
-    const cleaned = draft
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "")
-      .slice(0, 24);
-    if (cleaned.length < 3) {
-      setError(t("guests.couple_slug_invalid"));
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const r = await coupleApi.updateSlug(cleaned);
-      onSaved(r.couple);
-      setEditing(false);
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 409) setError(t("guests.couple_slug_taken"));
-      else setError(e instanceof ApiError ? e.message : t("common.error_generic"));
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  // The slug is read-only — it's pre-printed on invites + the public RSVP
+  // page, so changing it after the fact would orphan everything in
+  // circulation. The pre-existing PATCH /api/couples/slug endpoint stays
+  // for back-compat / future "rename with full confirm" UI.
 
   return (
     <div className="mb-4 overflow-hidden rounded-2xl border border-paper-300 bg-paper-100/40">
@@ -698,52 +753,10 @@ function CheckinPill({ couple, onSaved }: { couple: Couple; onSaved: (next: Coup
             <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
               {t("guests.couple_slug_title")}
             </p>
-            <p className="mt-1 text-xs text-ink-600">{t("guests.couple_slug_help")}</p>
-            {editing ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <input
-                  autoFocus
-                  className="input font-mono uppercase tracking-[0.3em]"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value.toUpperCase())}
-                  maxLength={24}
-                />
-                <button
-                  type="button"
-                  className="btn-primary btn-sm"
-                  onClick={onSave}
-                  disabled={submitting}
-                >
-                  {t("guests.couple_slug_save")}
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm"
-                  onClick={() => {
-                    setEditing(false);
-                    setDraft(couple.slug ?? "");
-                    setError(null);
-                  }}
-                >
-                  {t("common.cancel")}
-                </button>
-              </div>
-            ) : (
-              <div className="mt-3 flex items-center gap-3">
-                <span className="font-mono text-2xl uppercase tracking-[0.3em] text-ink-900">
-                  {couple.slug ?? "—"}
-                </span>
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm"
-                  onClick={() => setEditing(true)}
-                  aria-label={t("guests.edit")}
-                >
-                  <Pencil size={14} />
-                </button>
-              </div>
-            )}
-            {error && <p className="field-error mt-2">{error}</p>}
+            <p className="mt-1 text-xs text-ink-600">{t("guests.couple_slug_help_locked")}</p>
+            <div className="mt-3 font-mono text-2xl uppercase tracking-[0.3em] text-ink-900">
+              {couple.slug ?? "—"}
+            </div>
           </div>
 
           <p className="text-xs text-ink-500">{t("guests.household_section_help")}</p>

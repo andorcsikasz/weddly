@@ -642,6 +642,16 @@ export interface LocaleMessages {
     checkin_pill_show: string;
     checkin_pill_hide: string;
     checkin_pill_url_hint: string;
+    /** Read-only slug copy — the slug is no longer editable in-app. */
+    couple_slug_help_locked: string;
+    /** "Invited?" checkbox UX on the household card list. */
+    invited_check_label: string;
+    invited_short: string;
+    invited_progress_help: string;
+    /** Page-level summary chips above the household list. */
+    total_summary_unit: string;
+    total_summary_households: string;
+    total_summary_invited: string;
     /** Adult / child / baby kind selector. */
     kind_label: string;
     kind_help: string;

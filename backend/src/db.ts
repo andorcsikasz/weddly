@@ -102,6 +102,18 @@ addColumnIfMissing("guests", "household_id", "household_id INTEGER REFERENCES ho
 // 'adult' (default) | 'child' | 'baby'. Orthogonal to meal_choice.
 addColumnIfMissing("guests", "kind", "kind TEXT NOT NULL DEFAULT 'adult'");
 
+// "Invited?" check on the guest row. Nullable timestamp — null = not yet
+// invited, non-null = ms since epoch when the couple marked them invited.
+// Drives the per-guest checkbox + the x/n indicator on the household header.
+addColumnIfMissing("guests", "invited_at", "invited_at INTEGER");
+
+// Global slug uniqueness — couples.slug paired with the 4-digit household
+// code is the public RSVP credential, so two weddings must never share a
+// slug. Application code (uniqueCoupleSlug + PATCH /api/couples/slug)
+// already enforces this on write, but a unique index is the belt
+// alongside the suspenders.
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_couples_slug_unique ON couples(slug)");
+
 // Optional street address on community-submitted suppliers, surfaced on the
 // directory card. Curated entries set it inline in suppliers_data.ts.
 addColumnIfMissing("community_suppliers", "address", "address TEXT");

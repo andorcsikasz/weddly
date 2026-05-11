@@ -722,6 +722,14 @@ const hu: LocaleMessages = {
     checkin_pill_hide: "Bezárás",
     checkin_pill_url_hint:
       "A vendégek a weddly.xyz/rsvp oldalon írják be a jegyes pár azonosítóját és a 4 jegyű kódjukat.",
+    couple_slug_help_locked:
+      "Az azonosító a meghívókra és a check-in oldalra is rákerül — zárolva, hogy a kiosztott linkek továbbra is működjenek.",
+    invited_check_label: "Megjelölve meghívottnak",
+    invited_short: "meghívva",
+    invited_progress_help: "Meghívottnak jelölt tagok / összes tag.",
+    total_summary_unit: "vendég",
+    total_summary_households: "{n} háztartás",
+    total_summary_invited: "{n} meghívva",
     kind_label: "Típus",
     kind_help: "Babához kisszék kell; gyerek kapja a gyerekmenüt.",
     kind_adult: "Felnőtt",

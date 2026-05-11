@@ -33,6 +33,7 @@ import type {
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
 import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/supplier_costs";
+import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
 import type {
   SubmitVendorWaitlistInput,
   VendorWaitlistEntry,
@@ -127,6 +128,9 @@ export interface GuestUpsert extends Partial<Guest> {
   /** Optional new household — paired with `household_id: null`, creates a
    *  household with this label and puts the guest in it. */
   new_household_label?: string;
+  /** Tri-state flag for the "invited" checkbox: `true` stamps invited_at to
+   *  now, `false` clears it, omitted leaves the field as-is. */
+  invited?: boolean;
 }
 
 export const guestApi = {
@@ -351,6 +355,9 @@ export const vendorWaitlistApi = {
 };
 
 export interface FeedbackInput {
+  /** Where the dialog was opened from. Defaults server-side to "landing"
+   *  when omitted (back-compat). */
+  source?: "landing" | "app";
   message?: string;
   rating?: number;
   monthly_value_ft?: number;
@@ -360,6 +367,13 @@ export interface FeedbackInput {
 
 export const feedbackApi = {
   submit: (body: FeedbackInput) => apiFetch<{ ok: true }>("POST", "/api/feedback", body),
+};
+
+export const adminFeedbackApi = {
+  list: () => apiFetch<{ entries: FeedbackEntry[] }>("GET", "/api/admin/feedback"),
+  setStatus: (id: number, status: FeedbackStatus) =>
+    apiFetch<{ entry: FeedbackEntry }>("PATCH", `/api/admin/feedback/${id}/status`, { status }),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/feedback/${id}`),
 };
 
 export const adminVendorWaitlistApi = {

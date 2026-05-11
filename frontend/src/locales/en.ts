@@ -723,6 +723,14 @@ const en: LocaleMessages = {
     checkin_pill_hide: "Hide check-in details",
     checkin_pill_url_hint:
       "Guests visit weddly.xyz/rsvp and enter your couple identifier + their 4-digit code.",
+    couple_slug_help_locked:
+      "Pre-printed on invites and the public check-in page — locked so links you've already shared keep working.",
+    invited_check_label: "Mark as invited",
+    invited_short: "invited",
+    invited_progress_help: "Members marked as invited / total members.",
+    total_summary_unit: "guests",
+    total_summary_households: "{n} households",
+    total_summary_invited: "{n} invited",
     kind_label: "Type",
     kind_help: "A baby needs a high chair; a child gets the kids' meal.",
     kind_adult: "Adult",

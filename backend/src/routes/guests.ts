@@ -34,6 +34,9 @@ interface UpsertBody {
   accommodation_needed?: unknown;
   song_request?: unknown;
   notes?: unknown;
+  /** Boolean — `true` marks the guest as invited at the current timestamp;
+   *  `false` clears it. Omitted = leave invited_at as-is. */
+  invited?: unknown;
   /** Household this guest belongs to. If omitted on create, the server
    *  spawns a household-of-one with the guest's name as its label. */
   household_id?: unknown;
@@ -169,13 +172,16 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const code = uniqueInviteCode();
   const householdId = resolveHouseholdForCreate(body, couple.id, parsed.full_name);
 
+  // `invited` is optional — when truthy, the create call also marks the
+  // guest as invited at the same timestamp.
+  const invitedAt = body.invited === true ? ts : null;
   const result = db
     .prepare(
       `INSERT INTO guests
         (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
-         song_request, notes, rsvp_responded_at, created_at, updated_at, household_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
+         song_request, notes, rsvp_responded_at, invited_at, created_at, updated_at, household_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -193,6 +199,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       parsed.accommodation_needed,
       parsed.song_request,
       parsed.notes,
+      invitedAt,
       ts,
       ts,
       householdId,
@@ -246,11 +253,18 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     nextHouseholdId = created.id;
   }
 
+  // Tri-state `invited`: omitted = leave invited_at as-is; true = stamp;
+  // false = clear. The checkbox on /app/guests sends boolean explicitly.
+  let nextInvitedAt = existing.invited_at;
+  if (body.invited === true) nextInvitedAt = ts;
+  else if (body.invited === false) nextInvitedAt = null;
+
   db.prepare(
     `UPDATE guests SET
         full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
-        accommodation_needed = ?, song_request = ?, notes = ?, household_id = ?, updated_at = ?
+        accommodation_needed = ?, song_request = ?, notes = ?, household_id = ?,
+        invited_at = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.full_name,
@@ -267,6 +281,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     parsed.song_request,
     parsed.notes,
     nextHouseholdId,
+    nextInvitedAt,
     ts,
     id,
     couple.id,
