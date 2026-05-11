@@ -21,8 +21,19 @@ interface TableRow {
   width_mm: number;
   length_mm: number;
   rotation_deg: number | null;
+  disabled_seats_json: string | null;
   created_at: number;
   updated_at: number;
+}
+
+function parseDisabledSeats(raw: string | null): number[] {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((n) => Number.isInteger(n)) : [];
+  } catch {
+    return [];
+  }
 }
 
 interface AssignRow {
@@ -47,6 +58,7 @@ function loadTables(coupleId: number): SeatingTable[] {
     width_mm: r.width_mm,
     length_mm: r.length_mm,
     rotation_deg: ((((r.rotation_deg ?? 0) % 360) + 360) % 360) | 0,
+    disabled_seats: parseDisabledSeats(r.disabled_seats_json),
     created_at: r.created_at,
   }));
 }
