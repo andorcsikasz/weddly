@@ -212,8 +212,15 @@ export default function DashboardPage() {
     },
     { key: "task_lock_budget", done: couple.budget_goal.kind !== "tbd", to: "/onboarding" },
     { key: "task_set_date", done: couple.wedding_date_goal.kind === "exact", to: "/onboarding" },
-    // Partner invite lives on this page — anchor scrolls to the form below.
-    { key: "task_invite_partner", done: couple.partner_b_id !== null, to: "#invite-partner" },
+    // Counts as done once the invite has been sent — partner B's actual
+    // acceptance is reflected elsewhere (partner card on Profile). This
+    // prevents the "Next step" CTA from pointing at a section that we
+    // hide as soon as an invite is in flight.
+    {
+      key: "task_invite_partner",
+      done: couple.partner_b_id !== null || invite !== null,
+      to: couple.partner_b_id !== null || invite !== null ? "/app/profile" : "#invite-partner",
+    },
     { key: "task_add_guests", done: totalGuests > 0, to: "/app/guests" },
     { key: "task_plan_budget", done: lines.length > 0, to: "/app/budget" },
     {
@@ -387,12 +394,21 @@ export default function DashboardPage() {
         <div className="text-xs uppercase tracking-wide text-ink-500">{t("dashboard.title")}</div>
       </header>
 
-      {/* ── Next-action CTA — surfaces the first incomplete checklist item. ── */}
+      {/* ── Next-action CTA — surfaces the first incomplete checklist item.
+          Hash targets use a plain <a> so the browser scrolls to the section
+          natively; react-router's <Link> swallows the navigation and never
+          scrolls, which made this CTA appear inert. ── */}
       {nextTask &&
         (nextTask.to ? (
-          <Link to={nextTask.to} className="btn-primary mb-6 inline-flex">
-            {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
-          </Link>
+          nextTask.to.startsWith("#") ? (
+            <a href={nextTask.to} className="btn-primary mb-6 inline-flex">
+              {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
+            </a>
+          ) : (
+            <Link to={nextTask.to} className="btn-primary mb-6 inline-flex">
+              {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
+            </Link>
+          )
         ) : (
           <div className="mb-6 inline-flex rounded-xl bg-blush-50 px-4 py-2 text-sm font-medium text-blush-800">
             {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
@@ -565,15 +581,19 @@ export default function DashboardPage() {
                   </span>
                 </>
               );
+              const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-paper-100 ${tone}`;
               return (
                 <li key={task.key}>
                   {task.to ? (
-                    <Link
-                      to={task.to}
-                      className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-paper-100 ${tone}`}
-                    >
-                      {body}
-                    </Link>
+                    task.to.startsWith("#") ? (
+                      <a href={task.to} className={rowCls}>
+                        {body}
+                      </a>
+                    ) : (
+                      <Link to={task.to} className={rowCls}>
+                        {body}
+                      </Link>
+                    )
                   ) : (
                     <div
                       className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${tone}`}

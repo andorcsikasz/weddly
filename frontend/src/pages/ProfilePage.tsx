@@ -382,11 +382,11 @@ export default function ProfilePage() {
               <PartnerStatusPill status={partner.status} t={t} />
             </div>
             {partner.status === "invited" && (
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-ink-500">
-                <span>{t("profile.partner_invited_hint")}</span>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <p className="text-xs text-ink-500">{t("profile.partner_invited_hint")}</p>
                 <button
                   type="button"
-                  className="text-blush-700 underline-offset-2 hover:underline disabled:opacity-50"
+                  className="btn-outline btn-sm"
                   onClick={cancelPendingInvite}
                   disabled={cancellingInvite}
                 >
