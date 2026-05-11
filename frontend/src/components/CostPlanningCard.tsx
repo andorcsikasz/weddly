@@ -164,10 +164,6 @@ export function CostPlanningCard({
     Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5),
   );
 
-  // Midpoint: simple average of bounds, snapped to nearest 5. The user's
-  // mental model for the centre tick.
-  const midCount = Math.round((minCount + maxCount) / 2 / 5) * 5;
-
   // If the user narrows the bounds below the current slider value, clamp
   // it back into range so the thumb doesn't pin off the track.
   useEffect(() => {
@@ -220,9 +216,7 @@ export function CostPlanningCard({
             onCommit={setMinCount}
             ariaLabel={t("budget.slider_min_aria")}
           />
-          <span>
-            {t("budget.cost_planning_baseline_note", { n: formatNumber(midCount, locale) })}
-          </span>
+          <span>{t("budget.cost_planning_baseline_note", { n: formatNumber(count, locale) })}</span>
           <CountInput
             value={maxCount}
             min={minCount + 5}
