@@ -236,16 +236,6 @@ export default function OnboardingWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(() => loadDraft() ?? DEFAULT_FORM);
-
-  // Email confirmation gate. Users can sign up and look around, but the
-  // workspace itself is locked until they click the verify link — keeps
-  // typo / throwaway emails from polluting the couples table and ensures
-  // password recovery works the moment they need it. The gate is a full
-  // takeover (not a banner) because the wizard is the next step they expect
-  // to see; pretending it's available would just produce a 403 on submit.
-  if (user && !user.verified_email) {
-    return <VerifyEmailGate email={user.email} />;
-  }
   // Once we've completed onboarding we strip the draft; this guards a
   // late autosave from re-creating it after a successful submit.
   const completedRef = useRef(false);
@@ -254,6 +244,18 @@ export default function OnboardingWizard() {
     if (completedRef.current) return;
     saveDraft(form);
   }, [form]);
+
+  // Email confirmation gate. Users can sign up and look around, but the
+  // workspace itself is locked until they click the verify link — keeps
+  // typo / throwaway emails from polluting the couples table and ensures
+  // password recovery works the moment they need it. The gate is a full
+  // takeover (not a banner) because the wizard is the next step they expect
+  // to see; pretending it's available would just produce a 403 on submit.
+  // Must sit AFTER every hook in this component or React's hooks counter
+  // mismatches across renders when `user` resolves async.
+  if (user && !user.verified_email) {
+    return <VerifyEmailGate email={user.email} />;
+  }
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
