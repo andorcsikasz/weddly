@@ -766,7 +766,7 @@ const hu: LocaleMessages = {
     cost_planning_with_count: "Élő költségvetés · {n} vendég",
     cost_planning_help:
       "Húzd a csúszkát, hogy lásd, hogyan változnak a tervezett költségek a létszámtól. A vendégenkénti tételek skálázódnak; a fix költségek nem.",
-    cost_planning_baseline_note: "Alap: {n} vendég",
+    cost_planning_baseline_note: "{n} vendég",
     lines_title: "Költségsorok",
     lines_sub: "Szerkeszd a sorokat — a fenti összegek és sávok élőben frissülnek.",
     lines_empty: "Még nincs költségsor. Adj hozzá egyet, hogy elindulhass.",
@@ -885,6 +885,7 @@ const hu: LocaleMessages = {
     table_aria_label: "{name}, {seats} hely",
     save_failed: "A módosítás nem mentődött el. Az ültetés frissítve van.",
     save_conflict: "Ezt az asztalt időközben más is módosította. Frissítjük.",
+    table_too_small: "Túl kicsi lenne az asztal — szabadíts fel egy ülőhelyet előbb.",
     pdf_failed: "Nem sikerült elkészíteni a PDF-et. Próbáld újra.",
     pdf_cancel: "Megszakítás",
     pdf_loading: "PDF készül…",

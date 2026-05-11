@@ -766,7 +766,7 @@ const en: LocaleMessages = {
     cost_planning_with_count: "Live budget · {n} guests",
     cost_planning_help:
       "Drag the slider to see how planned costs shift with headcount. Per-guest categories scale; fixed costs stay put.",
-    cost_planning_baseline_note: "Baseline: {n} guests",
+    cost_planning_baseline_note: "{n} guests",
     lines_title: "Budget lines",
     lines_sub: "Edit each line — totals above and bars update live.",
     lines_empty: "No budget lines yet. Add one to start planning.",
@@ -882,6 +882,7 @@ const en: LocaleMessages = {
     table_aria_label: "{name}, {seats} seats",
     save_failed: "Couldn't save that change. The seating chart was refreshed.",
     save_conflict: "Someone else just edited this table — refreshing.",
+    table_too_small: "Table would be too small — empty a seat first.",
     pdf_failed: "Couldn't generate the PDF. Try again.",
     pdf_cancel: "Cancel",
     pdf_loading: "Preparing PDF…",

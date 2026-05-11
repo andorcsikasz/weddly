@@ -267,7 +267,11 @@ export function CostPlanningCard({
             {formatHuf(totalPlanned, locale)}
           </span>
         </div>
-        {cap !== null && (
+        {/* Always render the cap row — when the couple hasn't set a ceiling
+         *  during onboarding, the value slot stays empty (with a dash
+         *  placeholder) so the layout doesn't shift and the user can click
+         *  to fill it in here. */}
+        {(cap !== null || onCapChange) && (
           <div className="mt-0.5 flex items-baseline justify-between text-[11px]">
             <span className="text-ink-400">{t("budget.cap")}</span>
             {onCapChange ? (
@@ -279,7 +283,7 @@ export function CostPlanningCard({
               />
             ) : (
               <span className={`stat-num ${overCap ? "text-blush-700" : "text-ink-400"}`}>
-                {formatHuf(cap, locale)}
+                {cap !== null ? formatHuf(cap, locale) : "—"}
               </span>
             )}
           </div>
@@ -441,16 +445,21 @@ function CountInput({
 
 /** Inline-editable HUF amount used for the budget cap. Click to edit, type a
  *  digit-only amount (auto-grouped HU style), Enter or blur commits, Esc
- *  cancels. `emphasise` flips the colour to the over-cap warning red. */
+ *  cancels. `emphasise` flips the colour to the over-cap warning red. Accepts
+ *  null so the cap row can render an empty placeholder when no ceiling was
+ *  set during onboarding. */
 function EditableHuf({
   value,
   onSave,
   ariaLabel,
+  placeholder,
   emphasise,
 }: {
-  value: number;
+  value: number | null;
   onSave: (next: number) => Promise<void>;
   ariaLabel: string;
+  /** Shown when value is null and the button is at rest. Plain dash by default. */
+  placeholder?: string;
   emphasise?: boolean;
 }) {
   const { locale } = useT();
@@ -459,7 +468,7 @@ function EditableHuf({
   const [saving, setSaving] = useState(false);
 
   function startEdit() {
-    setDraft(formatNumber(value, "hu"));
+    setDraft(value !== null ? formatNumber(value, "hu") : "");
     setEditing(true);
   }
 
@@ -517,7 +526,7 @@ function EditableHuf({
         emphasise ? "text-blush-700 hover:text-blush-800" : "text-ink-400 hover:text-ink-700"
       } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200`}
     >
-      {formatHuf(value, locale)}
+      {value !== null ? formatHuf(value, locale) : (placeholder ?? "—")}
     </button>
   );
 }
