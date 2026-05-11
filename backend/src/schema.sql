@@ -213,6 +213,21 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_email_verify_user ON email_verification_tokens(user_id);
 
+-- Email-change tokens. Issued when a logged-in user starts a new-email
+-- change; consuming the link in the new inbox flips users.email to
+-- new_email + revokes sessions. Single-use, 1h TTL (short — the user
+-- just authenticated their password to start this flow).
+CREATE TABLE IF NOT EXISTS email_change_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  new_email TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  expires_at INTEGER NOT NULL,
+  consumed_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_email_change_user ON email_change_tokens(user_id);
+
 -- Per-user email preferences. Created lazily on first send. The
 -- `unsubscribe_token` is a stable random hex used for one-click unsubscribe
 -- links in the footer (only `lifecycle` mail honours opt-out — `transactional`

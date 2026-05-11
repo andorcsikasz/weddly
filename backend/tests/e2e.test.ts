@@ -60,6 +60,7 @@ function wipeAll() {
     "rate_limit_buckets",
     "password_reset_tokens",
     "email_verification_tokens",
+    "email_change_tokens",
     "email_log",
     "email_dispatches",
     "email_preferences",
@@ -232,6 +233,105 @@ describe("auth", () => {
       .all() as Array<{ to_email: string }>;
     expect(mail.length).toBe(1);
     expect(mail[0]!.to_email).toBe("pwreset@example.com");
+  });
+
+  test("change-email: request mails both inboxes, confirm flips email + revokes sessions", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "old@example.com",
+      password: "supersafe123",
+      full_name: "EC",
+    });
+    expect(reg.status).toBe(201);
+    const sessionToken = reg.data.token;
+
+    // Wrong password → 401.
+    const badPw = await req(
+      "POST",
+      "/api/auth/change-email-request",
+      { new_email: "new@example.com", current_password: "wrongguess" },
+      { token: sessionToken },
+    );
+    expect(badPw.status).toBe(401);
+
+    // Same as current → 400.
+    const same = await req(
+      "POST",
+      "/api/auth/change-email-request",
+      { new_email: "old@example.com", current_password: "supersafe123" },
+      { token: sessionToken },
+    );
+    expect(same.status).toBe(400);
+
+    // Address already in use → 409.
+    await req("POST", "/api/auth/register", {
+      email: "taken@example.com",
+      password: "supersafe123",
+      full_name: "Taken",
+    });
+    const clash = await req(
+      "POST",
+      "/api/auth/change-email-request",
+      { new_email: "taken@example.com", current_password: "supersafe123" },
+      { token: sessionToken },
+    );
+    expect(clash.status).toBe(409);
+
+    // Happy path: request succeeds, two emails logged.
+    const ok = await req(
+      "POST",
+      "/api/auth/change-email-request",
+      { new_email: "new@example.com", current_password: "supersafe123" },
+      { token: sessionToken },
+    );
+    expect(ok.status).toBe(200);
+
+    const verifyMail = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'email_change_verify'")
+      .all() as Array<{ to_email: string }>;
+    expect(verifyMail.length).toBe(1);
+    expect(verifyMail[0]!.to_email).toBe("new@example.com");
+    const warningMail = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'email_change_warning'")
+      .all() as Array<{ to_email: string }>;
+    expect(warningMail.length).toBe(1);
+    expect(warningMail[0]!.to_email).toBe("old@example.com");
+
+    // Confirm with the token from the DB.
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM email_change_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
+      )
+      .get("old@example.com") as { token: string } | undefined;
+    expect(tokenRow?.token).toBeTruthy();
+
+    const confirm = await req<{ ok: true; email: string }>(
+      "POST",
+      `/api/auth/change-email/${tokenRow!.token}`,
+      {},
+    );
+    expect(confirm.status).toBe(200);
+    expect(confirm.data.email).toBe("new@example.com");
+
+    // Old session revoked.
+    const meOld = await req("GET", "/api/auth/me", undefined, { token: sessionToken });
+    expect(meOld.status).toBe(401);
+
+    // Login with new email works; old email fails.
+    const loginNew = await req("POST", "/api/auth/login", {
+      email: "new@example.com",
+      password: "supersafe123",
+    });
+    expect(loginNew.status).toBe(200);
+    const loginOld = await req("POST", "/api/auth/login", {
+      email: "old@example.com",
+      password: "supersafe123",
+    });
+    expect(loginOld.status).toBe(401);
+
+    // Token is single-use.
+    const reuse = await req("POST", `/api/auth/change-email/${tokenRow!.token}`, {});
+    expect(reuse.status).toBe(400);
   });
 });
 

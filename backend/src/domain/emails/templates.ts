@@ -36,6 +36,18 @@ export interface PasswordChangedPayload {
   /** Pre-formatted change timestamp, locale-friendly. */
   changedAt: string;
 }
+export interface EmailChangeVerifyPayload {
+  /** Click-through link confirming the change, sent to the NEW address. */
+  confirmUrl: string;
+  /** Old address so the recipient can verify they recognise the account. */
+  oldEmail: string;
+}
+export interface EmailChangeWarningPayload {
+  /** The address the change is moving TO — shown so the owner can act if it's wrong. */
+  newEmail: string;
+  /** Where to start a password reset to lock everyone else out. */
+  forgotUrl: string;
+}
 export interface PartnerInvitePayload {
   inviterName: string;
   inviteUrl: string;
@@ -83,6 +95,8 @@ export type KindPayload = {
   verify_resend: VerifyResendPayload;
   password_reset: PasswordResetPayload;
   password_changed: PasswordChangedPayload;
+  email_change_verify: EmailChangeVerifyPayload;
+  email_change_warning: EmailChangeWarningPayload;
   partner_invite: PartnerInvitePayload;
   couple_paused: CouplePausedPayload;
   account_purged: AccountPurgedPayload;
@@ -221,6 +235,58 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Reset password now",
       footnote: "If this was you, you can safely ignore this email.",
+    },
+  }),
+
+  email_change_verify: (p, ctx) => ({
+    subject: "E-mail cím megerősítése / Confirm your new email",
+    ctaUrl: p.confirmUrl,
+    hu: {
+      preheader: "Erősítsd meg, hogy ezt az új e-mail címet szeretnéd használni a Weddly-n.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Új e-mail címet kértél a Weddly fiókodhoz. A jelenlegi címed: ${p.oldEmail}.`,
+        "Kattints a lenti gombra, és onnantól ez az új cím lesz a bejelentkezésed, ide érkeznek a fontos üzeneteink, és innen tudsz majd jelszót is visszaállítani.",
+        "Biztonsági okból minden eddigi bejelentkezésedet ki fogjuk léptetni, amikor megerősíted — bárhol használnál Weddly-t, újra be kell jelentkezned.",
+      ],
+      cta: "Új e-mail cím megerősítése",
+      footnote: "Ha nem te kérted, hagyd figyelmen kívül — a régi cím marad érvényben.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `You asked to change the email on your Weddly account. The current one is ${p.oldEmail}.`,
+        "Click below to make this new address your sign-in. From here on it'll receive every important message we send you and is what you'd use to reset a forgotten password.",
+        "For your security we'll sign you out everywhere when you confirm — you'll need to log back in on each device.",
+      ],
+      cta: "Confirm new email",
+      footnote: "If you didn't request this, ignore the email — your old address stays in place.",
+    },
+  }),
+
+  email_change_warning: (p, ctx) => ({
+    subject: "E-mail cím váltási kérelem / Email-change in flight",
+    ctaUrl: p.forgotUrl,
+    hu: {
+      preheader: `Valaki új e-mail címre szeretné állítani a fiókod: ${p.newEmail}.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Most kértek egy új e-mail címet a Weddly fiókodhoz: ${p.newEmail}.`,
+        "Amíg ezt nem erősítik meg az új címen, a fiókod a jelenlegi címen marad — ezt az értesítést is ezért kapod, hogy figyelmeztessünk.",
+        "Ha NEM te kezdeményezted, ez azt jelenti, hogy valaki be tud lépni a fiókodba. Kérj azonnal új jelszót a lenti linkkel — ezzel azonnal kizárod.",
+      ],
+      cta: "Új jelszó kérése",
+      footnote: "Ha te voltál, ezt nyugodtan figyelmen kívül hagyhatod.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `Someone just asked to change the email on your Weddly account to ${p.newEmail}.`,
+        "Until that new address confirms the change, your account stays tied to this email — and you're seeing this as the heads-up.",
+        "If this wasn't you, it means someone has access to your account. Reset your password now using the link below to immediately lock them out.",
+      ],
+      cta: "Reset password now",
+      footnote: "If this was you, you can safely ignore this message.",
     },
   }),
 
