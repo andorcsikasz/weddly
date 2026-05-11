@@ -833,7 +833,7 @@ export default function SeatingPage() {
             aria-label={t("seating.shortcuts_button_label")}
             title={t("seating.shortcuts_button_label")}
           >
-            <HelpCircle size={16} /> ?
+            <HelpCircle size={16} aria-hidden />
           </button>
           <button
             type="button"
