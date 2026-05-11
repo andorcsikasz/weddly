@@ -2,7 +2,7 @@
 // button; panel shows name, email, link to /app/profile, and Sign out.
 // Closes on outside click, Escape, route change, or item selection.
 
-import { LogOut, UserRound } from "lucide-react";
+import { LogOut, ShieldCheck, UserCog, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -81,6 +81,31 @@ export function ProfileMenu() {
             <UserRound size={16} aria-hidden="true" />
             <span>{t("profile.menu_profile")}</span>
           </Link>
+          {user.is_admin && (
+            <>
+              <div className="mx-3 mt-2 mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-blush-700">
+                <ShieldCheck size={11} aria-hidden="true" />
+                {t("admin.nav_label")}
+              </div>
+              <Link
+                to="/app/admin/suppliers"
+                role="menuitem"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blush-700 hover:bg-blush-50"
+              >
+                <ShieldCheck size={16} aria-hidden="true" />
+                <span>{t("admin.nav_suppliers")}</span>
+              </Link>
+              <Link
+                to="/app/admin/users"
+                role="menuitem"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blush-700 hover:bg-blush-50"
+              >
+                <UserCog size={16} aria-hidden="true" />
+                <span>{t("admin.nav_users")}</span>
+              </Link>
+              <div className="my-1 h-px bg-paper-200" />
+            </>
+          )}
           <button
             type="button"
             role="menuitem"
