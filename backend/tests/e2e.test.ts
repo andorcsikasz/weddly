@@ -67,7 +67,9 @@ function wipeAll() {
     "email_log",
     "email_dispatches",
     "email_preferences",
+    "community_supplier_reports",
     "community_suppliers",
+    "couple_suppliers",
     "couple_supplier_costs",
     "supplier_votes",
     "vendor_waitlist",
@@ -2907,6 +2909,233 @@ describe("community suppliers", () => {
     expect(actions.filter((a) => a === "supplier.community.hide").length).toBe(1);
     expect(actions.filter((a) => a === "supplier.community.unhide").length).toBe(1);
     expect(actions.filter((a) => a === "supplier.community.delete").length).toBe(1);
+  });
+});
+
+describe("community supplier reports", () => {
+  interface SubmitResp {
+    supplier: { id: string };
+  }
+  interface ReportResp {
+    ok: boolean;
+    duplicate: boolean;
+    auto_hidden: boolean;
+    report_count: number;
+  }
+  interface AdminListResp {
+    suppliers: {
+      id: number;
+      status: "active" | "hidden";
+      hide_reason: string | null;
+      open_report_count: number;
+    }[];
+  }
+
+  function payload(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      category: "venue",
+      name: "Spam Hall",
+      city: "Budapest",
+      website: "https://spam-hall.test",
+      contact_email: "hello@spam-hall.test",
+      blurb: "Probably fake.",
+      price_band: 2,
+      ...overrides,
+    };
+  }
+
+  async function submitOne(token: string): Promise<number> {
+    const r = await req<SubmitResp>("POST", "/api/suppliers/community", payload(), { token });
+    expect(r.status).toBe(201);
+    // String id is "c{N}" — strip the prefix for the numeric report endpoint.
+    return Number(r.data.supplier.id.slice(1));
+  }
+
+  test("two reporters don't trigger auto-hide; third one does", async () => {
+    wipeAll();
+    const { token: tokSub } = await bootstrapCouple("rep-submitter@weddly.test");
+    const supId = await submitOne(tokSub);
+
+    const { token: tok1 } = await bootstrapCouple("rep-1@weddly.test");
+    const { token: tok2 } = await bootstrapCouple("rep-2@weddly.test");
+    const { token: tok3 } = await bootstrapCouple("rep-3@weddly.test");
+
+    const r1 = await req<ReportResp>(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "spam" },
+      { token: tok1 },
+    );
+    expect(r1.status).toBe(200);
+    expect(r1.data.auto_hidden).toBe(false);
+    expect(r1.data.report_count).toBe(1);
+
+    const r2 = await req<ReportResp>(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "fake", note: "looked up the address — doesn't exist" },
+      { token: tok2 },
+    );
+    expect(r2.status).toBe(200);
+    expect(r2.data.auto_hidden).toBe(false);
+    expect(r2.data.report_count).toBe(2);
+
+    // Public list still shows the supplier — only 2 reports so far.
+    const list2 = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
+    expect(list2.data.suppliers.find((s) => s.id === `c${supId}`)).toBeDefined();
+
+    const r3 = await req<ReportResp>(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "offensive" },
+      { token: tok3 },
+    );
+    expect(r3.status).toBe(200);
+    expect(r3.data.auto_hidden).toBe(true);
+    expect(r3.data.report_count).toBe(3);
+
+    // Public list no longer surfaces the supplier.
+    const list3 = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
+    expect(list3.data.suppliers.find((s) => s.id === `c${supId}`)).toBeUndefined();
+
+    // Admin view shows status=hidden + count=3 + synthetic hide_reason.
+    const adminEmail = "admin@test.test";
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: adminEmail,
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    const adminList = await req<AdminListResp>("GET", "/api/admin/suppliers", undefined, {
+      token: adminReg.data.token,
+    });
+    expect(adminList.status).toBe(200);
+    const row = adminList.data.suppliers.find((s) => s.id === supId);
+    expect(row?.status).toBe("hidden");
+    expect(row?.open_report_count).toBe(3);
+    expect(row?.hide_reason ?? "").toContain("auto-hidden");
+  });
+
+  test("same user reporting twice is idempotent (no double-count)", async () => {
+    wipeAll();
+    const { token: tokSub } = await bootstrapCouple("rep2-submitter@weddly.test");
+    const supId = await submitOne(tokSub);
+
+    const { token: tok1 } = await bootstrapCouple("rep2-1@weddly.test");
+    const first = await req<ReportResp>(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "spam" },
+      { token: tok1 },
+    );
+    expect(first.status).toBe(200);
+    expect(first.data.duplicate).toBe(false);
+    expect(first.data.report_count).toBe(1);
+
+    const second = await req<ReportResp>(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "fake" },
+      { token: tok1 },
+    );
+    expect(second.status).toBe(200);
+    expect(second.data.duplicate).toBe(true);
+    expect(second.data.report_count).toBe(1);
+  });
+
+  test("self-report rejected (submitter can't report own listing)", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rep3-submitter@weddly.test");
+    const supId = await submitOne(token);
+
+    const r = await req(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "spam" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("admin dismisses reports → count drops, auto-hide threshold resets", async () => {
+    wipeAll();
+    const { token: tokSub } = await bootstrapCouple("rep4-submitter@weddly.test");
+    const supId = await submitOne(tokSub);
+
+    // Two reporters land first.
+    const { token: tA } = await bootstrapCouple("rep4-a@weddly.test");
+    const { token: tB } = await bootstrapCouple("rep4-b@weddly.test");
+    await req(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "spam" },
+      { token: tA },
+    );
+    await req(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "fake" },
+      { token: tB },
+    );
+
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    const adminToken = adminReg.data.token;
+
+    // Admin dismisses both → count returns to 0.
+    const dismiss = await req<{ dismissed: number }>(
+      "POST",
+      `/api/admin/suppliers/${supId}/reports/dismiss`,
+      {},
+      { token: adminToken },
+    );
+    expect(dismiss.status).toBe(200);
+    expect(dismiss.data.dismissed).toBe(2);
+
+    const adminList = await req<AdminListResp>("GET", "/api/admin/suppliers", undefined, {
+      token: adminToken,
+    });
+    const row = adminList.data.suppliers.find((s) => s.id === supId);
+    expect(row?.open_report_count).toBe(0);
+    expect(row?.status).toBe("active");
+
+    // A third user reporting now does NOT auto-hide (dismissed reports don't count).
+    const { token: tC } = await bootstrapCouple("rep4-c@weddly.test");
+    const r3 = await req<ReportResp>(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "offensive" },
+      { token: tC },
+    );
+    expect(r3.status).toBe(200);
+    expect(r3.data.auto_hidden).toBe(false);
+    expect(r3.data.report_count).toBe(1);
+  });
+
+  test("invalid reason returns 400", async () => {
+    wipeAll();
+    const { token: tokSub } = await bootstrapCouple("rep5-submitter@weddly.test");
+    const supId = await submitOne(tokSub);
+    const { token } = await bootstrapCouple("rep5-r@weddly.test");
+
+    const r = await req(
+      "POST",
+      `/api/suppliers/community/${supId}/report`,
+      { reason: "not-a-real-reason" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("unauthenticated report returns 401", async () => {
+    wipeAll();
+    const { token: tokSub } = await bootstrapCouple("rep6-submitter@weddly.test");
+    const supId = await submitOne(tokSub);
+
+    const r = await req("POST", `/api/suppliers/community/${supId}/report`, { reason: "spam" });
+    expect(r.status).toBe(401);
   });
 });
 

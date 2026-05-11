@@ -3,12 +3,19 @@
 
 import type {
   CommunitySupplierAdminView,
+  CommunitySupplierReportReason,
   CommunitySupplierStatus,
   PriceBand,
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
 import type { DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
 import { db, now } from "../db";
+
+/** Distinct-reporter threshold that flips a community listing to status='hidden'
+ *  automatically. Tuned conservatively (3) — at scale we may want to weight by
+ *  reporter trust or recency. Exported so tests and admin tooling can read the
+ *  same constant. */
+export const REPORT_AUTOHIDE_THRESHOLD = 3;
 
 export interface CommunitySupplierRow {
   id: number;
@@ -70,7 +77,10 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
   };
 }
 
-export function toAdminView(row: CommunitySupplierRowWithEmail): CommunitySupplierAdminView {
+export function toAdminView(
+  row: CommunitySupplierRowWithEmail,
+  openReportCount = 0,
+): CommunitySupplierAdminView {
   return {
     id: row.id,
     category: row.category as SupplierCategory,
@@ -88,6 +98,7 @@ export function toAdminView(row: CommunitySupplierRowWithEmail): CommunitySuppli
     created_at: row.created_at,
     hidden_at: row.hidden_at,
     hide_reason: row.hide_reason,
+    open_report_count: openReportCount,
   };
 }
 
@@ -204,4 +215,103 @@ export function setStatus(
 
 export function deleteCommunitySupplier(id: number): void {
   db.prepare("DELETE FROM community_suppliers WHERE id = ?").run(id);
+}
+
+// ── Abuse reports ──────────────────────────────────────────────────────────
+
+export interface CommunitySupplierReportRow {
+  id: number;
+  supplier_id: number;
+  reporter_user_id: number;
+  reason: string;
+  note: string | null;
+  status: string;
+  reviewed_by_user_id: number | null;
+  reviewed_at: number | null;
+  created_at: number;
+}
+
+/** Inserts a report. Returns `{inserted, autoHidden}`. `inserted=false` means
+ *  this user already reported the supplier (UNIQUE constraint). `autoHidden`
+ *  is true iff this report pushed the distinct-reporter count to the
+ *  threshold and the supplier flipped to status='hidden'. */
+export function insertReport(
+  supplierId: number,
+  reporterUserId: number,
+  reason: CommunitySupplierReportReason,
+  note: string | null,
+): { inserted: boolean; autoHidden: boolean; reportCount: number } {
+  const ts = now();
+  try {
+    db.prepare(
+      `INSERT INTO community_supplier_reports
+         (supplier_id, reporter_user_id, reason, note, status, created_at)
+       VALUES (?, ?, ?, ?, 'open', ?)`,
+    ).run(supplierId, reporterUserId, reason, note, ts);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("UNIQUE")) {
+      return { inserted: false, autoHidden: false, reportCount: countOpenReports(supplierId) };
+    }
+    throw e;
+  }
+
+  const reportCount = countOpenReports(supplierId);
+  let autoHidden = false;
+  if (reportCount >= REPORT_AUTOHIDE_THRESHOLD) {
+    const before = getCommunitySupplierById(supplierId);
+    if (before && before.status === "active") {
+      setStatus(supplierId, "hidden", null, `auto-hidden: ${reportCount} user reports`);
+      autoHidden = true;
+    }
+  }
+  return { inserted: true, autoHidden, reportCount };
+}
+
+/** Count of distinct OPEN reports for a supplier. Dismissed reports don't
+ *  count toward the auto-hide threshold so an admin can keep a listing live
+ *  after triaging spurious reports. */
+export function countOpenReports(supplierId: number): number {
+  const row = db
+    .prepare(
+      "SELECT COUNT(*) AS c FROM community_supplier_reports WHERE supplier_id = ? AND status = 'open'",
+    )
+    .get(supplierId) as { c: number };
+  return row.c;
+}
+
+/** Map of supplier_id → open report count for the full admin list. One query
+ *  beats N+1 lookups when the moderation queue has dozens of rows. */
+export function openReportCountsForAll(): Map<number, number> {
+  const rows = db
+    .prepare(
+      `SELECT supplier_id, COUNT(*) AS c
+         FROM community_supplier_reports
+        WHERE status = 'open'
+        GROUP BY supplier_id`,
+    )
+    .all() as { supplier_id: number; c: number }[];
+  return new Map(rows.map((r) => [r.supplier_id, r.c]));
+}
+
+export function listOpenReportsForSupplier(supplierId: number): CommunitySupplierReportRow[] {
+  return db
+    .prepare(
+      `SELECT * FROM community_supplier_reports
+        WHERE supplier_id = ? AND status = 'open'
+        ORDER BY created_at DESC`,
+    )
+    .all(supplierId) as CommunitySupplierReportRow[];
+}
+
+export function dismissReportsForSupplier(supplierId: number, adminUserId: number): number {
+  const ts = now();
+  const r = db
+    .prepare(
+      `UPDATE community_supplier_reports
+          SET status = 'dismissed', reviewed_by_user_id = ?, reviewed_at = ?
+        WHERE supplier_id = ? AND status = 'open'`,
+    )
+    .run(adminUserId, ts, supplierId);
+  return r.changes;
 }

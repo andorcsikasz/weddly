@@ -697,15 +697,7 @@ export default function SuppliersPage() {
       <div className="relative mb-3">
         <div className="overflow-x-auto pb-1">
           <div className="flex min-w-max items-stretch gap-1">
-            <ChainStep
-              active={activeGroup === null}
-              onClick={() => pickGroup(null)}
-              label={t("suppliers.filter_all")}
-              progress={groupSelectionProgress.all}
-              isAll
-              t={t}
-            />
-            {SUPPLIER_GROUPS.map((g) => {
+            {SUPPLIER_GROUPS.map((g, i) => {
               const Icon = GROUP_ICON[g.id];
               const progress = groupSelectionProgress.byGroup.get(g.id) ?? {
                 done: 0,
@@ -713,12 +705,16 @@ export default function SuppliersPage() {
               };
               return (
                 <div key={g.id} className="flex items-stretch gap-1">
-                  <span className="self-center text-paper-400" aria-hidden>
-                    ·
-                  </span>
+                  {i > 0 && (
+                    <span className="self-center text-paper-400" aria-hidden>
+                      ·
+                    </span>
+                  )}
                   <ChainStep
                     active={activeGroup === g.id}
-                    onClick={() => pickGroup(g.id)}
+                    // Re-click on the active group clears the filter — the
+                    // "Mind" tile is gone so this toggle is the only way back.
+                    onClick={() => pickGroup(activeGroup === g.id ? null : g.id)}
                     label={t(`suppliers.group.${g.id}`)}
                     count={groupCounts.get(g.id) ?? 0}
                     icon={<Icon size={16} />}

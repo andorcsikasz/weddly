@@ -288,6 +288,30 @@ CREATE INDEX IF NOT EXISTS idx_community_suppliers_status_category
 CREATE INDEX IF NOT EXISTS idx_community_suppliers_submitter
   ON community_suppliers(submitter_user_id);
 
+-- Couple-side abuse reports against community-submitted suppliers. One row
+-- per (supplier, reporter_user) so a single user can't stack reports to
+-- brigade a hide. When three distinct reporters land, the supplier is
+-- auto-hidden with a synthetic hide_reason and an admin can review the
+-- queue at /app/admin/suppliers (status = 'hidden'). Reports survive an
+-- admin "unhide" so the count stays informative; admins dismiss the report
+-- queue separately.
+CREATE TABLE IF NOT EXISTS community_supplier_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id INTEGER NOT NULL REFERENCES community_suppliers(id) ON DELETE CASCADE,
+  reporter_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL,                                        -- 'spam' | 'fake' | 'offensive' | 'wrong_info' | 'other'
+  note TEXT,                                                   -- optional free-text, max 500 chars
+  status TEXT NOT NULL DEFAULT 'open',                         -- 'open' | 'dismissed'
+  reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at INTEGER,
+  created_at INTEGER NOT NULL,
+  UNIQUE(supplier_id, reporter_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_community_reports_supplier
+  ON community_supplier_reports(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_community_reports_open
+  ON community_supplier_reports(status, created_at DESC);
+
 -- Up/down vote on each directory supplier, one row per (couple, supplier_id).
 -- `supplier_id` is the public string id (curated slug or "c{N}"), same as
 -- couple_supplier_costs — no FK because curated suppliers live in code.

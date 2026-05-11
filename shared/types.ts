@@ -163,6 +163,17 @@ export interface Couple {
   updated_at: UnixMs;
 }
 
+/** One Nominatim hit reshaped into the honeymoon destination autocomplete.
+ *  `primary` is the headline (city / village / landmark name); `secondary` is
+ *  the full address/region used as the dropdown subtitle. */
+export interface PlaceSuggestion {
+  primary: string;
+  secondary: string;
+  lat: number | null;
+  lng: number | null;
+  country_code: string | null;
+}
+
 export interface CoupleInvite {
   id: number;
   couple_id: number;

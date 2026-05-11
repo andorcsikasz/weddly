@@ -33,6 +33,7 @@ import type {
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type {
   CommunitySupplierAdminView,
+  CommunitySupplierReportReason,
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
 import type {

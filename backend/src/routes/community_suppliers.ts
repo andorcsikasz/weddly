@@ -1,18 +1,31 @@
 // "Drop your own" supplier submissions. Auto-published — no moderation queue.
 // Admins can hide or hard-delete via /api/admin/suppliers/*.
 
-import type { PriceBand, SubmitCommunitySupplierInput } from "@shared/community_suppliers";
+import type {
+  CommunitySupplierReportReason,
+  PriceBand,
+  SubmitCommunitySupplierInput,
+} from "@shared/community_suppliers";
 import type { SupplierCategory } from "@shared/suppliers";
 import {
   findActiveByWebsite,
   getCommunitySupplierById,
   insertCommunitySupplier,
+  insertReport,
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
 import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "../domain/maps_resolver";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
+
+const VALID_REPORT_REASONS: ReadonlySet<CommunitySupplierReportReason> = new Set([
+  "spam",
+  "fake",
+  "offensive",
+  "wrong_info",
+  "other",
+]);
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
   "venue",
@@ -211,7 +224,84 @@ async function handleResolveMapsUrl(ctx: Ctx): Promise<Response> {
   return json({ place: resolved });
 }
 
+interface ReportBody {
+  reason?: unknown;
+  note?: unknown;
+}
+
+async function handleReport(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const rawId = ctx.params.id;
+  const supplierId = Number(rawId);
+  if (!Number.isFinite(supplierId) || supplierId <= 0) {
+    throw new HttpError(400, "Invalid supplier id");
+  }
+
+  // Throttle both per-IP and per-user so a hijacked browser can't grief the
+  // queue and so a single user can't blast reports across many suppliers.
+  rateLimit(ctx.clientIp, "supplier_report", { capacity: 5, refillRate: 1 / 600 });
+  rateLimit(`user:${userId}`, "supplier_report_user", { capacity: 10, refillRate: 1 / 600 });
+
+  const supplier = getCommunitySupplierById(supplierId);
+  if (!supplier) throw new HttpError(404, "Supplier not found");
+
+  const body = await readJson<ReportBody>(ctx.req).catch(() => ({}) as ReportBody);
+  const reasonRaw = typeof body.reason === "string" ? body.reason : "";
+  if (!VALID_REPORT_REASONS.has(reasonRaw as CommunitySupplierReportReason)) {
+    throw new HttpError(400, "Invalid reason");
+  }
+  const reason = reasonRaw as CommunitySupplierReportReason;
+
+  let note: string | null = null;
+  if (body.note != null && body.note !== "") {
+    if (typeof body.note !== "string") throw new HttpError(400, "note must be a string");
+    const t = body.note.trim();
+    if (t) {
+      if (t.length > 500) throw new HttpError(400, "note too long (max 500)");
+      note = t;
+    }
+  }
+
+  if (supplier.submitter_user_id === userId) {
+    throw new HttpError(400, "You can't report your own submission — delete it instead");
+  }
+
+  const result = insertReport(supplierId, userId, reason, note);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: result.inserted ? "supplier.community.report" : "supplier.community.report_duplicate",
+    target_kind: "community_supplier",
+    target_id: supplierId,
+    after: {
+      reason,
+      report_count: result.reportCount,
+      auto_hidden: result.autoHidden,
+    },
+  });
+
+  if (result.autoHidden) {
+    addAuditLog({
+      actor_user_id: null,
+      couple_id: null,
+      action: "supplier.community.auto_hide",
+      target_kind: "community_supplier",
+      target_id: supplierId,
+      after: { reason: `auto-hidden: ${result.reportCount} user reports` },
+    });
+  }
+
+  return json({
+    ok: true,
+    duplicate: !result.inserted,
+    auto_hidden: result.autoHidden,
+    report_count: result.reportCount,
+  });
+}
+
 export function registerCommunitySupplierRoutes(router: Router) {
   router.post("/api/suppliers/community", handleSubmit, true);
+  router.post("/api/suppliers/community/:id/report", handleReport, true);
   router.post("/api/suppliers/resolve-maps-url", handleResolveMapsUrl, true);
 }

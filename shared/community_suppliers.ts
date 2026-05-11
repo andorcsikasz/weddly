@@ -45,4 +45,18 @@ export interface CommunitySupplierAdminView {
   created_at: number;
   hidden_at: number | null;
   hide_reason: string | null;
+  /** Count of distinct open user reports against this supplier. >= 3 triggers
+   *  the auto-hide path. Surfaced in the admin list so moderators can sort by
+   *  most-reported and triage from the top. */
+  open_report_count: number;
+}
+
+/** Reasons a couple can pick when reporting a community listing. Kept short
+ *  so the action menu is one tap; free-text detail goes in `note`. */
+export type CommunitySupplierReportReason = "spam" | "fake" | "offensive" | "wrong_info" | "other";
+
+export interface SubmitCommunitySupplierReportInput {
+  reason: CommunitySupplierReportReason;
+  /** Optional free-text detail. Max 500 chars; truncated on the route side. */
+  note?: string | null;
 }
