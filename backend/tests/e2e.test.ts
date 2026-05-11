@@ -1730,7 +1730,7 @@ describe("data export (GDPR Article 20)", () => {
     }>("GET", "/api/couples/export", undefined, { token });
 
     expect(r.status).toBe(200);
-    expect(r.data.schema_version).toBe(1);
+    expect(r.data.schema_version).toBe(2);
     expect(r.data.couple.id).toBe(coupleId);
     expect(r.data.partners.partner_a.email).toBe("export@weddly.test");
     // Critical: password hashes must not leak.
@@ -1777,7 +1777,7 @@ describe("data export (GDPR Article 20)", () => {
     expect(dl.status).toBe(200);
     expect(dl.headers.get("content-type")).toBe("application/json");
     const txt = await dl.text();
-    expect(txt).toContain('"schema_version": 1');
+    expect(txt).toContain('"schema_version": 2');
 
     // Generate 11 more JSON exports — older entries should be auto-purged.
     for (let i = 0; i < 11; i++) {
