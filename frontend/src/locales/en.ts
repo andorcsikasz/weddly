@@ -31,6 +31,45 @@ const en: LocaleMessages = {
       "Open one shared workspace for both of you and start planning in minutes. Free throughout the open beta.",
     invite_title: "Join your couple workspace — Weddly",
     invite_description: "Your partner invited you to plan the wedding together.",
+    dashboard_title: "Dashboard — Weddly",
+    dashboard_description:
+      "Countdown, RSVPs, spend and to-dos in a single view — pick up where you left off.",
+    profile_title: "Profile — Weddly",
+    profile_description: "Account, security, exports and workspace settings in one quiet place.",
+    guests_title: "Guests — Weddly",
+    guests_description:
+      "Households, RSVP codes, meal picks and CSV imports — every guest detail in one tidy list.",
+    suppliers_title: "Suppliers — Weddly",
+    suppliers_description:
+      "Hungarian wedding suppliers filtered by category, city and community feedback.",
+    budget_title: "Budget — Weddly",
+    budget_description:
+      "Planned vs actual spend by category, with snapshots and per-guest breakdowns.",
+    seating_title: "Seating — Weddly",
+    seating_description:
+      "Drag tables and chairs onto a canvas, then export A4/A3 PDFs and place cards in one click.",
+    admin_suppliers_title: "Admin · Suppliers — Weddly",
+    admin_suppliers_description:
+      "Moderate community submissions — approve, hide or delete from the Weddly admin console.",
+    notfound_title: "Page not found — Weddly",
+    notfound_description: "This link no longer exists, or there was a typo.",
+    onboarding_title: "Get started — Weddly",
+    onboarding_description:
+      "A few minutes of setup: names, date, headcount, budget. Enough to start planning together.",
+    rsvp_checkin_title: "RSVP check-in — Weddly",
+    rsvp_checkin_description:
+      "Type the couple code and the 4-digit code from your invite, then review your household RSVP.",
+    rsvp_legacy_title: "RSVP — Weddly",
+    rsvp_legacy_description: "Reply to your wedding invitation using the code on it.",
+    reset_password_title: "Set a new password — Weddly",
+    reset_password_description:
+      "Choose a new password and you'll be back into your couple workspace.",
+    forgot_password_title: "Reset your password — Weddly",
+    forgot_password_description: "We'll send a reset link to the email you used to register.",
+  },
+  a11y: {
+    close: "Close",
+    dismiss: "Dismiss notification",
   },
   auth: {
     login_title: "Sign in",
@@ -142,6 +181,8 @@ const en: LocaleMessages = {
     style_destination: "Destination",
     finish: "Let's go!",
     saving: "Saving…",
+    submit_failed: "Couldn't save just now. Your answers are safe — try again.",
+    submit_retry: "Try again",
     date_kind_question: "How fixed is the date?",
     date_kind_exact: "Exact day",
     date_kind_month: "A specific month",
@@ -649,6 +690,8 @@ const en: LocaleMessages = {
     snapshot_name_label: "Snapshot name",
     snapshot_name_help: 'e.g. "120-guest scenario" — so you recognise it later.',
     snapshot_save_failed: "Couldn't save the snapshot.",
+    save_failed_retry: "Couldn't save that line. Try again.",
+    save_conflict: "Someone else just edited this line. Reload?",
     snapshots_title: "Saved snapshots",
     no_snapshots: "No snapshots yet.",
     delete: "Delete",
@@ -777,6 +820,16 @@ const en: LocaleMessages = {
     shortcut_n: "Add a new table",
     shortcut_undo: "Undo the last change",
     table_aria_label: "{name}, {seats} seats",
+    save_failed: "Couldn't save that change. The seating chart was refreshed.",
+    save_conflict: "Someone else just edited this table — refreshing.",
+    pdf_failed: "Couldn't generate the PDF. Try again.",
+    pdf_cancel: "Cancel",
+    pdf_loading: "Preparing PDF…",
+    keyboard_selected_guest: "Selected {guest}. Move to a seat and press Enter to place.",
+    keyboard_cleared_selection: "Selection cleared.",
+    tap_mode_announce_on: "Tap-to-place mode on.",
+    tap_mode_announce_off: "Tap-to-place mode off.",
+    seat_aria_label: "{table} — seat {seat}",
   },
   suppliers: {
     title: "Suppliers",
@@ -901,6 +954,7 @@ const en: LocaleMessages = {
     badge_unverified: "Unverified",
     resend_verify: "Resend verify",
     resend_verify_sent: "Verification email sent.",
+    resend_verify_sent_label: "Verify sent",
     resend_verify_already: "This account is already verified.",
     delete_user: "Delete",
     delete_user_confirm_title: "Permanently delete account",
@@ -996,6 +1050,7 @@ const en: LocaleMessages = {
     checkin_next_guest: "Next guest",
     checkin_done_title: "Checked in",
     pick_pending: "Still deciding",
+    status_for_name: "RSVP status — {name}",
     decline_keep_data_title: "Cancel attendance?",
     decline_keep_data_body:
       "Your meal and song picks are kept either way — if plans change again, just toggle the answer back.",
@@ -1219,6 +1274,19 @@ const en: LocaleMessages = {
       "Hungarian-first, English-supported. Built around the way weddings actually run here.",
     en_section_label: "English",
     founder_placeholder: "[founder name TBD]",
+  },
+  session: {
+    expired_title: "Session ended",
+    expired_body:
+      "Sign in again to pick up where you left off. Anything you've typed is still here.",
+    sign_in: "Sign in",
+    sign_out: "Sign out",
+  },
+  network: {
+    offline_banner: "You're offline — changes will save once you're back online.",
+    request_failed: "The request didn't go through. Check your connection and try again.",
+    request_timeout: "That took too long. Try again.",
+    retry: "Retry",
   },
 };
 

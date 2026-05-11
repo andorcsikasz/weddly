@@ -1,5 +1,5 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
-import { Mail, Trash2 } from "lucide-react";
+import { Check, Mail, Trash2 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -18,6 +18,11 @@ export default function AdminUsersPage() {
   const [couples, setCouples] = useState<AdminCoupleView[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  // Per-user "verify sent this session" badge. We don't persist this — a page
+  // reload resets it, which is the right behaviour (admin needs to see a fresh
+  // signal each time they decide to nudge someone). Toast covers the
+  // moment-of-click; the badge covers "did I already do this for them?".
+  const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -70,6 +75,11 @@ export default function AdminUsersPage() {
         setUsers((cur) => cur.map((x) => (x.id === u.id ? { ...x, verified_email: true } : x)));
       } else {
         toast.success(t("admin.resend_verify_sent"));
+        setVerifySentIds((prev) => {
+          const next = new Set(prev);
+          next.add(u.id);
+          return next;
+        });
       }
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -203,18 +213,29 @@ export default function AdminUsersPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">
-                          {!u.verified_email && (
-                            <button
-                              type="button"
-                              className="btn-ghost btn-sm"
-                              onClick={() => onResendVerify(u)}
-                              disabled={isPending}
-                              aria-label={t("admin.resend_verify")}
-                            >
-                              <Mail size={14} />
-                              <span className="hidden sm:inline">{t("admin.resend_verify")}</span>
-                            </button>
-                          )}
+                          {!u.verified_email &&
+                            (verifySentIds.has(u.id) ? (
+                              <span
+                                className="inline-flex items-center gap-1.5 rounded-md bg-blush-100 px-2.5 py-1.5 text-xs font-medium text-blush-800"
+                                title={t("admin.resend_verify_sent_label")}
+                              >
+                                <Check size={14} aria-hidden />
+                                <span className="hidden sm:inline">
+                                  {t("admin.resend_verify_sent_label")}
+                                </span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn-ghost btn-sm"
+                                onClick={() => onResendVerify(u)}
+                                disabled={isPending}
+                                aria-label={t("admin.resend_verify")}
+                              >
+                                <Mail size={14} />
+                                <span className="hidden sm:inline">{t("admin.resend_verify")}</span>
+                              </button>
+                            ))}
                           {!isSelf && (
                             <button
                               type="button"

@@ -29,6 +29,38 @@ export interface LocaleMessages {
     register_description: string;
     invite_title: string;
     invite_description: string;
+    dashboard_title: string;
+    dashboard_description: string;
+    profile_title: string;
+    profile_description: string;
+    guests_title: string;
+    guests_description: string;
+    suppliers_title: string;
+    suppliers_description: string;
+    budget_title: string;
+    budget_description: string;
+    seating_title: string;
+    seating_description: string;
+    admin_suppliers_title: string;
+    admin_suppliers_description: string;
+    notfound_title: string;
+    notfound_description: string;
+    onboarding_title: string;
+    onboarding_description: string;
+    rsvp_checkin_title: string;
+    rsvp_checkin_description: string;
+    rsvp_legacy_title: string;
+    rsvp_legacy_description: string;
+    reset_password_title: string;
+    reset_password_description: string;
+    forgot_password_title: string;
+    forgot_password_description: string;
+  };
+  a11y: {
+    /** Generic close button label (dialogs, sheets). */
+    close: string;
+    /** Generic dismiss label (toast, banner, notification). */
+    dismiss: string;
   };
   auth: {
     login_title: string;
@@ -131,6 +163,9 @@ export interface LocaleMessages {
     style_destination: string;
     finish: string;
     saving: string;
+    /** Submit-failed banner + retry button copy. */
+    submit_failed: string;
+    submit_retry: string;
     // ── Uncertainty: kind selectors and helper copy ───────────────────
     date_kind_question: string;
     date_kind_exact: string;
@@ -619,6 +654,10 @@ export interface LocaleMessages {
     snapshot_name_label: string;
     snapshot_name_help: string;
     snapshot_save_failed: string;
+    /** Inline retry toast when a line save fails. */
+    save_failed_retry: string;
+    /** 409 from optimistic concurrency — another editor touched this row. */
+    save_conflict: string;
     snapshots_title: string;
     no_snapshots: string;
     delete: string;
@@ -755,6 +794,20 @@ export interface LocaleMessages {
     shortcut_undo: string;
     /** aria-label template for SVG table groups. {name}/{seats}. */
     table_aria_label: string;
+    /** Network/save-failed toasts for mutations on this page. */
+    save_failed: string;
+    save_conflict: string;
+    pdf_failed: string;
+    pdf_cancel: string;
+    pdf_loading: string;
+    /** Keyboard-driven seat selection announcement for sr-only live region. */
+    keyboard_selected_guest: string;
+    keyboard_cleared_selection: string;
+    /** Aria-label suffix for tap-mode toggle indicating live state. */
+    tap_mode_announce_on: string;
+    tap_mode_announce_off: string;
+    /** Aria-label for each seat circle in SeatingMap when keyboard-focusable. */
+    seat_aria_label: string;
   };
   suppliers: {
     title: string;
@@ -893,6 +946,10 @@ export interface LocaleMessages {
     /** Per-row admin actions for users. */
     resend_verify: string;
     resend_verify_sent: string;
+    /** Inline pill label that replaces the "Resend verify" button after a
+     *  successful send in this session — confirms the action without taking
+     *  the admin to a toast-only signal that fades away. */
+    resend_verify_sent_label: string;
     resend_verify_already: string;
     delete_user: string;
     delete_user_confirm_title: string;
@@ -992,6 +1049,9 @@ export interface LocaleMessages {
     checkin_done_title: string;
     /** Pending status pill on the household form. */
     pick_pending: string;
+    /** Accessible label for the per-member RSVP status radiogroup.
+     *  Receives `{name}` so screen readers announce "RSVP status for Anna". */
+    status_for_name: string;
     /** Confirm dialog when toggling away from "yes" with pre-filled data. */
     decline_keep_data_title: string;
     decline_keep_data_body: string;
@@ -1207,5 +1267,20 @@ export interface LocaleMessages {
     en_section_label: string;
     /** Placeholder founder name — replace before going public. */
     founder_placeholder: string;
+  };
+  /** Re-login modal that pops on 401 mid-session. Copy stays short — the
+   *  user is mid-task and just needs to resume. */
+  session: {
+    expired_title: string;
+    expired_body: string;
+    sign_in: string;
+    sign_out: string;
+  };
+  /** Network resilience surface — toasts when fetch fails, timeouts, etc. */
+  network: {
+    offline_banner: string;
+    request_failed: string;
+    request_timeout: string;
+    retry: string;
   };
 }

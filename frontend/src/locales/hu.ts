@@ -31,6 +31,45 @@ const hu: LocaleMessages = {
       "Pár perc alatt fent vagytok. Egy közös felület kettőtöknek, magyar esküvőkre szabva.",
     invite_title: "Csatlakozz a páros felületetekre — Wēddly",
     invite_description: "A párod hívott, hogy közösen tervezzétek végig az esküvőtöket.",
+    dashboard_title: "Vezérlőpult — Wēddly",
+    dashboard_description:
+      "Visszaszámláló, RSVP, költés és teendők egy nézetben — ott folytatjátok, ahol abbahagytátok.",
+    profile_title: "Profil — Wēddly",
+    profile_description: "Fiók, biztonság, exportok és a páros felület beállításai egy helyen.",
+    guests_title: "Vendégek — Wēddly",
+    guests_description:
+      "Háztartások, RSVP-kódok, ételválasztások és import — minden vendéginformáció rendezett listában.",
+    suppliers_title: "Szolgáltatók — Wēddly",
+    suppliers_description:
+      "Magyar esküvői szolgáltatók — kategória, város és visszajelzések szerint szűrve.",
+    budget_title: "Költségvetés — Wēddly",
+    budget_description:
+      "Tervezett és tényleges költések kategóriánként, pillanatképekkel és vendégenkénti megoszlással.",
+    seating_title: "Ültetés — Wēddly",
+    seating_description:
+      "Asztalok, székek és ültetés egy vászonra húzva — A4/A3 PDF és helykártyák egy kattintásra.",
+    admin_suppliers_title: "Admin · Szolgáltatók — Wēddly",
+    admin_suppliers_description:
+      "Közösségi beküldések moderálása — elfogadás, elrejtés és törlés a Weddly admin felületéről.",
+    notfound_title: "Az oldal nem található — Wēddly",
+    notfound_description: "Ez a link már nem él, vagy elgépelés történt.",
+    onboarding_title: "Indítás — Wēddly",
+    onboarding_description:
+      "Pár perc beállítás: nevek, dátum, létszám, költségvetés. Ennyiből pontosan indul a tervezés.",
+    rsvp_checkin_title: "RSVP check-in — Wēddly",
+    rsvp_checkin_description:
+      "Add meg a páros kódot és a 4 jegyű azonosítót a meghívóról, és nézd meg a háztartásod RSVP-jét.",
+    rsvp_legacy_title: "RSVP — Wēddly",
+    rsvp_legacy_description: "Visszajelzés a meghívóhoz tartozó kóddal.",
+    reset_password_title: "Új jelszó megadása — Wēddly",
+    reset_password_description: "Add meg az új jelszót, és bejelentkezhetsz a páros felületedre.",
+    forgot_password_title: "Jelszó visszaállítása — Wēddly",
+    forgot_password_description:
+      "Megküldjük a visszaállító linket arra az e-mailre, amivel regisztráltatok.",
+  },
+  a11y: {
+    close: "Bezárás",
+    dismiss: "Értesítés bezárása",
   },
   auth: {
     login_title: "Bejelentkezés",
@@ -141,6 +180,8 @@ const hu: LocaleMessages = {
     style_destination: "Külföldi",
     finish: "Indítsuk!",
     saving: "Mentés…",
+    submit_failed: "A mentés most nem sikerült. Az adataid biztonságban vannak — próbáld újra.",
+    submit_retry: "Újra",
     date_kind_question: "Mennyire biztos a dátum?",
     date_kind_exact: "Konkrét nap",
     date_kind_month: "Adott hónap",
@@ -649,6 +690,8 @@ const hu: LocaleMessages = {
     snapshot_name_label: "Pillanatkép neve",
     snapshot_name_help: 'Pl. "120 vendég variáció" — később ezzel ismered fel.',
     snapshot_save_failed: "A pillanatkép mentése nem sikerült.",
+    save_failed_retry: "A sor mentése nem sikerült. Próbáld újra.",
+    save_conflict: "Ezt a sort valaki más is szerkesztette. Töltsd újra.",
     snapshots_title: "Mentett pillanatképek",
     no_snapshots: "Még nincs pillanatkép.",
     delete: "Törlés",
@@ -781,6 +824,16 @@ const hu: LocaleMessages = {
     shortcut_n: "Új asztal hozzáadása",
     shortcut_undo: "Utolsó művelet visszavonása",
     table_aria_label: "{name}, {seats} hely",
+    save_failed: "A módosítás nem mentődött el. Az ültetés frissítve van.",
+    save_conflict: "Ezt az asztalt időközben más is módosította. Frissítjük.",
+    pdf_failed: "Nem sikerült elkészíteni a PDF-et. Próbáld újra.",
+    pdf_cancel: "Megszakítás",
+    pdf_loading: "PDF készül…",
+    keyboard_selected_guest: "Kijelölve: {guest}. Lépj a kívánt székre és nyomj Entert.",
+    keyboard_cleared_selection: "Kijelölés törölve.",
+    tap_mode_announce_on: "Koppintós mód bekapcsolva.",
+    tap_mode_announce_off: "Koppintós mód kikapcsolva.",
+    seat_aria_label: "{table} — {seat}. szék",
   },
   suppliers: {
     title: "Szolgáltatók",
@@ -906,6 +959,7 @@ const hu: LocaleMessages = {
     badge_unverified: "Nem hitelesített",
     resend_verify: "Hitelesítő küldése",
     resend_verify_sent: "Hitelesítő email elküldve.",
+    resend_verify_sent_label: "Hitelesítő elküldve",
     resend_verify_already: "Ez a fiók már hitelesített.",
     delete_user: "Törlés",
     delete_user_confirm_title: "Fiók végleges törlése",
@@ -1002,6 +1056,7 @@ const hu: LocaleMessages = {
     checkin_next_guest: "Következő vendég",
     checkin_done_title: "Sikeres check-in",
     pick_pending: "Még gondolkodik",
+    status_for_name: "RSVP-státusz — {name}",
     decline_keep_data_title: "Visszavonod a részvételt?",
     decline_keep_data_body:
       "Az étrend és a dal-kérés adatok megmaradnak — ha mégis jönni tudtok, csak váltsd vissza a választ.",
@@ -1225,6 +1280,19 @@ const hu: LocaleMessages = {
     principle_hungarian: "Magyar elsőként, angollal kiegészítve. A hazai esküvők ritmusára szabva.",
     en_section_label: "English",
     founder_placeholder: "[alapító neve később]",
+  },
+  session: {
+    expired_title: "A munkamenet lejárt",
+    expired_body:
+      "Jelentkezz be újra, és ott folytatjátok, ahol abbahagytátok. Ami beírtál, megmarad.",
+    sign_in: "Bejelentkezés",
+    sign_out: "Kijelentkezés",
+  },
+  network: {
+    offline_banner: "Nincs internet — a változtatások mentésre várnak.",
+    request_failed: "A kérés nem ment át. Ellenőrizd a kapcsolatot és próbáld újra.",
+    request_timeout: "Túl sokáig tartott. Próbáld újra.",
+    retry: "Újra",
   },
 };
 
