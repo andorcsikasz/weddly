@@ -7,6 +7,7 @@
 // and that's what the PDF export consumes.
 
 import type { Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
+import { maxSeatsForTable } from "@shared/seating";
 import {
   Baby,
   ChefHat,
@@ -1076,6 +1077,7 @@ function TableEditor({
       <Section label={t("seating.seats_label")}>
         <SeatsStepper
           value={table.seats}
+          max={maxSeatsForTable(table.shape, table.width_mm, table.length_mm)}
           onChange={(n) => {
             if (n !== table.seats) onPatch({ seats: n });
           }}
@@ -1473,11 +1475,22 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 // Numeric stepper with -/+ buttons either side of the value. Mirrors the
 // in-canvas seat buttons so the user has the same affordance both places.
-function SeatsStepper({ value, onChange }: { value: number; onChange: (next: number) => void }) {
+// `max` is the perimeter-derived cap — chairs are 80 cm wide and can't be
+// crammed past what physically fits around the table.
+function SeatsStepper({
+  value,
+  onChange,
+  max,
+}: {
+  value: number;
+  onChange: (next: number) => void;
+  max: number;
+}) {
+  const upper = Math.max(1, max);
   const dec = () => onChange(Math.max(1, value - 1));
-  const inc = () => onChange(Math.min(40, value + 1));
+  const inc = () => onChange(Math.min(upper, value + 1));
   const decDisabled = value <= 1;
-  const incDisabled = value >= 40;
+  const incDisabled = value >= upper;
   return (
     <div className="inline-flex items-center gap-2 rounded-xl border border-paper-200 bg-paper-50 p-1">
       <button
@@ -1501,6 +1514,9 @@ function SeatsStepper({ value, onChange }: { value: number; onChange: (next: num
       >
         <Plus size={16} aria-hidden />
       </button>
+      <span className="px-1 text-xs tabular-nums text-ink-400" aria-hidden>
+        /{upper}
+      </span>
     </div>
   );
 }

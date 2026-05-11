@@ -7,7 +7,7 @@
 // but only PATCHes the server on pointer-up — otherwise we'd spam the API.
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
-import { chairOffsets } from "@shared/seating";
+import { chairOffsets, maxSeatsForTable } from "@shared/seating";
 import { Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "../../lib/i18n";
@@ -602,7 +602,15 @@ function TableShape({
   const seatBtnY = -ry - 320;
   const seatBtnGap = 480;
   const canDecrement = table.seats > MIN_SEATS;
-  const canIncrement = table.seats < MAX_SEATS;
+  // Cap the in-canvas + button at whatever the table's perimeter allows
+  // at 80 cm per chair — pressing it past the physical limit is silently
+  // a no-op even when the server would clamp anyway, so the affordance
+  // greys out instead.
+  const maxSeats = Math.min(
+    MAX_SEATS,
+    maxSeatsForTable(table.shape, table.width_mm, table.length_mm),
+  );
+  const canIncrement = table.seats < maxSeats;
 
   // a11y label combines name + shape + seat count for screen readers.
   const ariaLabel = t("seating.table_aria_label")

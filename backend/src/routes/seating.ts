@@ -1,6 +1,7 @@
 // Seating tables, seat assignments, conflict tracker. Couple-scoped.
 
 import type { SeatAssignment, SeatingConflict, SeatingTable, TableShape } from "@shared/types";
+import { maxSeatsForTable } from "@shared/seating";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
@@ -155,7 +156,9 @@ function parseTableBody(body: UpsertTableBody) {
   if (!Number.isFinite(seatsNum) || seatsNum < 1 || seatsNum > 40) {
     throw new HttpError(400, "seats must be 1–40");
   }
-  const seats = Math.round(seatsNum);
+  // Soft cap applied later once we know the dimensions — keep the raw
+  // request here, clamp at the very end after width/length are settled.
+  const seatsRequested = Math.round(seatsNum);
   const xRaw = Number(body.x_mm ?? 0);
   const yRaw = Number(body.y_mm ?? 0);
   if (!Number.isFinite(xRaw) || !Number.isFinite(yRaw)) {
@@ -193,6 +196,14 @@ function parseTableBody(body: UpsertTableBody) {
     throw new HttpError(400, "rotation_deg must be finite");
   }
   const rotation_deg = ((Math.round(rotRaw) % 360) + 360) % 360;
+
+  // Soft cap on seats given the now-final dimensions. We treat the chair
+  // pitch (80 cm) as the binding constraint — anything above is silently
+  // clamped. This also protects against legacy rows that were created
+  // before the cap existed; touching them through this endpoint normalises
+  // the count.
+  const seatsCap = maxSeatsForTable(shape, width, length);
+  const seats = Math.min(seatsRequested, seatsCap);
 
   // Disabled-seat indices — filter to integers in the valid 0..seats-1 range
   // and dedupe. Anything else is silently dropped so a stale array from a
@@ -291,6 +302,16 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     id,
     coupleId,
   );
+
+  // If the seat count dropped (typically because the table was resized
+  // smaller and the 80 cm perimeter cap clipped the count), purge any
+  // assignment that now points at a seat that no longer exists.
+  if (parsed.seats < existing.seats) {
+    db.prepare("DELETE FROM seat_assignments WHERE table_id = ? AND seat_index >= ?").run(
+      id,
+      parsed.seats,
+    );
+  }
 
   addAuditLog({
     actor_user_id: userId,

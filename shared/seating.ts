@@ -5,6 +5,25 @@
 
 import type { TableShape } from "./types";
 
+/** Standard chair width in mm — used as the pitch when computing how many
+ *  seats fit around a given table. Real banquet chairs sit ~50 cm wide,
+ *  but 80 cm of perimeter per chair leaves enough elbow-room that nobody
+ *  is bumping arms with their neighbour. */
+export const CHAIR_PITCH_MM = 800;
+
+/** Soft cap on seats given a table's footprint. Round → circumference /
+ *  pitch. Head → one long side / pitch (chairs only on the front edge).
+ *  Long / Square → full perimeter / pitch. Always at least 1. */
+export function maxSeatsForTable(shape: TableShape, width_mm: number, length_mm: number): number {
+  if (shape === "round") {
+    return Math.max(1, Math.floor((Math.PI * width_mm) / CHAIR_PITCH_MM));
+  }
+  if (shape === "head") {
+    return Math.max(1, Math.floor(length_mm / CHAIR_PITCH_MM));
+  }
+  return Math.max(1, Math.floor((2 * length_mm + 2 * width_mm) / CHAIR_PITCH_MM));
+}
+
 export interface ChairOffset {
   /** Offset from the table centre to the chair centre. */
   dx: number;
