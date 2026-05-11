@@ -601,12 +601,28 @@ export default function SuppliersPage() {
                   isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                 }`}
               >
+                {/* Save star is pinned to the top-right corner so it reads as
+                    a "favorite" affordance independent of the action row. */}
+                <button
+                  type="button"
+                  onClick={() => toggleSaved(s.id)}
+                  aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
+                  aria-pressed={isSaved}
+                  className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
+                >
+                  <Star
+                    size={15}
+                    className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+                    aria-hidden
+                  />
+                </button>
                 {/* Single-column body: avatar + name + meta line (with price
                     band and capacity inline so the meta strip stays one line),
                     address, blurb, then a bottom action row that places the
-                    contact buttons on the left and the save star + vote on the
-                    right corner. */}
-                <div className="flex items-start gap-3">
+                    contact buttons on the left and the vote on the right
+                    corner. The right padding on the name reserves space for
+                    the pinned star above. */}
+                <div className="flex items-start gap-3 pr-8">
                   <Avatar name={s.name} />
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-base font-semibold">{s.name}</h3>
@@ -685,20 +701,7 @@ export default function SuppliersPage() {
                       </a>
                     )}
                   </div>
-                  <div className="ml-auto flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleSaved(s.id)}
-                      aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
-                      aria-pressed={isSaved}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
-                    >
-                      <Star
-                        size={15}
-                        className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-                        aria-hidden
-                      />
-                    </button>
+                  <div className="ml-auto flex items-center">
                     <VoteRow supplier={s} onVote={onVote} t={t} />
                   </div>
                 </div>
