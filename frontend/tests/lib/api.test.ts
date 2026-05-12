@@ -69,7 +69,10 @@ describe("apiFetch retry", () => {
       return jsonResponse(422, { error: "bad input" });
     }) as unknown as typeof fetch;
 
-    await expect(apiFetch("GET", "/x")).rejects.toMatchObject({ status: 422, code: "client_error" });
+    await expect(apiFetch("GET", "/x")).rejects.toMatchObject({
+      status: 422,
+      code: "client_error",
+    });
     expect(calls).toBe(1);
   });
 
@@ -93,7 +96,9 @@ describe("apiFetch retry", () => {
       throw new DOMException("aborted", "AbortError");
     }) as unknown as typeof fetch;
 
-    await expect(apiFetch("GET", "/x", undefined, { signal: controller.signal })).rejects.toMatchObject({
+    await expect(
+      apiFetch("GET", "/x", undefined, { signal: controller.signal }),
+    ).rejects.toMatchObject({
       code: "aborted",
     });
     expect(calls).toBe(1);

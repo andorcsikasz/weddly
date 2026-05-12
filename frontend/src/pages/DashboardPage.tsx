@@ -13,6 +13,7 @@ import type {
 } from "@shared/types";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
+  ArrowRight,
   CalendarClock,
   CalendarHeart,
   Camera,
@@ -57,7 +58,13 @@ import {
   scheduleApi,
   seatingApi,
 } from "../lib/endpoints";
-import { formatHuf, formatHufCompact, formatNumber, formatWeddingDateGoal } from "../lib/format";
+import {
+  formatDate,
+  formatHuf,
+  formatHufCompact,
+  formatNumber,
+  formatWeddingDateGoal,
+} from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish } from "../lib/sync";
@@ -572,34 +579,58 @@ export default function DashboardPage() {
           the couple edits it; we fan-out an email and clear the flag. */}
       {dateChanged && (
         <section
-          className="stationery-blush mb-6 rounded-2xl border-2 border-blush-500 px-4 py-3"
+          className="stationery-blush mb-6 overflow-hidden rounded-2xl border-2 border-blush-500 shadow-soft"
           role="region"
           aria-label={t("dashboard.date_changed_title")}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 px-5 py-4">
+            {/* Identity badge — single-glance signal of *what* changed before
+                the eye lands on the title. Filled blush over the striped
+                ground gives the alert a clear focal point. */}
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blush-600 text-white shadow-soft">
+              <CalendarClock size={22} aria-hidden="true" />
+            </span>
+
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold text-blush-800">
+              <h2 className="font-serif text-xl font-semibold leading-tight text-blush-800">
                 {t("dashboard.date_changed_title")}
               </h2>
-              <p className="mt-1 text-sm text-ink-800">{t("dashboard.date_changed_body")}</p>
+              {/* Old → new chip row. Renders only when both dates are present
+                  (defensive — `dateChanged` already implies they are, but
+                  guards a malformed previous_wedding_date from breaking the
+                  banner). */}
+              {couple.previous_wedding_date && couple.wedding_date && (
+                <p className="mt-1.5 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                  <span className="stat-num text-ink-500 line-through decoration-blush-400 decoration-2">
+                    {formatDate(couple.previous_wedding_date, locale)}
+                  </span>
+                  <ArrowRight size={14} className="text-blush-500" aria-hidden="true" />
+                  <span className="stat-num font-semibold text-ink-900">
+                    {formatDate(couple.wedding_date, locale)}
+                  </span>
+                </p>
+              )}
+              <p className="mt-1 text-sm text-ink-700">{t("dashboard.date_changed_body")}</p>
             </div>
+
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                className="btn bg-blush-600 px-3 text-white hover:bg-blush-700"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blush-300 bg-white/70 text-blush-700 transition hover:border-blush-500 hover:bg-blush-50 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={onDismissDateChange}
                 disabled={dismissingDateChange || notifyingDateChange}
                 aria-label={t("dashboard.date_changed_dismiss_aria")}
                 title={t("dashboard.date_changed_dismiss_aria")}
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <X size={18} aria-hidden="true" />
               </button>
               <button
                 type="button"
-                className="btn bg-sage-700 text-white hover:bg-sage-800"
+                className="btn btn-lg bg-sage-700 text-white shadow-soft hover:bg-sage-800"
                 onClick={onNotifyDateChange}
                 disabled={notifyingDateChange || dismissingDateChange || notifyableGuests === 0}
               >
+                <Mail size={16} aria-hidden="true" />
                 {notifyingDateChange
                   ? t("dashboard.date_changed_sending")
                   : t("dashboard.date_changed_button")}

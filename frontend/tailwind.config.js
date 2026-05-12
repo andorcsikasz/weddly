@@ -45,20 +45,25 @@ export default {
           800: "#7d3122",
           900: "#612821",
         },
-        // Sage — muted green used sparingly to mark couple-private "DIY"
-        // supplier entries. Kept low-saturation so it sits quietly next to
-        // blush CTAs and doesn't read as a status / success color.
+        // Sage — vivid forest green. Marks couple-private "DIY" supplier
+        // entries AND the page's success / notify CTAs (e.g. the date-changed
+        // banner). Earlier this palette was kept olive-muted, but the muted
+        // tones read as gray-brown next to blush + paper; couples explicitly
+        // asked for a markánsabb green, so the palette below is built on a
+        // saturated mid (~#2f9c52) that still feels natural-leaf rather than
+        // neon. The pale tints (50–200) stay quiet enough to use as
+        // background fills without screaming.
         sage: {
-          50: "#f5f7f2",
-          100: "#e7ede0",
-          200: "#cedcbf",
-          300: "#aec496",
-          400: "#8aaa6f",
-          500: "#6c8f56",
-          600: "#557141",
-          700: "#445937",
-          800: "#374731",
-          900: "#2c3a28",
+          50: "#effbf2",
+          100: "#d6f3dd",
+          200: "#b1e6c0",
+          300: "#82d39c",
+          400: "#50b873",
+          500: "#2f9c52",
+          600: "#237f3f",
+          700: "#1c6633",
+          800: "#19512b",
+          900: "#154124",
         },
       },
       fontFamily: {
