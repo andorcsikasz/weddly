@@ -643,73 +643,91 @@ function HouseholdCard({
   const { t } = useT();
   const invitedCount = members.filter((g) => g.invited_at != null).length;
   const deliveredCount = members.filter((g) => g.invitation_delivered_at != null).length;
+  const isHosts = household.is_couple_household;
   return (
     <div className="card overflow-hidden p-0">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3">
         {/* Single-line metadata: label · slug · code · invited · delivered.
             Keeps the same column positions across cards so the eye scans
-            the same fields in the same place. */}
+            the same fields in the same place. The couple's own household
+            (the hosts) skips the slug / code / invited columns — they
+            don't check themselves in, so those fields are noise. */}
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600">
           <HouseholdLabelEditor
             household={household}
             count={members.length}
             onSave={(label) => onRenameHousehold(household.id, label)}
           />
-          {coupleSlug && (
+          {isHosts ? (
+            <span
+              className="inline-flex items-center rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-blush-700"
+              title={t("guests.household_hosts_help")}
+            >
+              {t("guests.household_hosts_badge")}
+            </span>
+          ) : (
             <>
-              <span aria-hidden>·</span>
-              <span className="font-mono uppercase">{coupleSlug}</span>
-            </>
-          )}
-          <span aria-hidden>·</span>
-          <span className="font-mono text-base text-ink-900 tracking-[0.3em]">
-            {household.code}
-          </span>
-          {members.length > 0 && (
-            <>
-              <span aria-hidden>·</span>
-              <span
-                className={
-                  invitedCount === members.length
-                    ? "text-ink-700"
-                    : invitedCount > 0
-                      ? "text-ink-600"
-                      : "text-ink-400"
-                }
-                title={t("guests.invited_progress_help")}
-              >
-                {invitedCount}/{members.length} {t("guests.invited_short")}
-              </span>
-              {deliveredCount > 0 && (
+              {coupleSlug && (
                 <>
                   <span aria-hidden>·</span>
-                  <span className="text-sage-700" title={t("guests.delivered_progress_help")}>
-                    {deliveredCount}/{members.length} {t("guests.delivered_short")}
+                  <span className="font-mono uppercase">{coupleSlug}</span>
+                </>
+              )}
+              <span aria-hidden>·</span>
+              <span className="font-mono text-base text-ink-900 tracking-[0.3em]">
+                {household.code}
+              </span>
+              {members.length > 0 && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span
+                    className={
+                      invitedCount === members.length
+                        ? "text-ink-700"
+                        : invitedCount > 0
+                          ? "text-ink-600"
+                          : "text-ink-400"
+                    }
+                    title={t("guests.invited_progress_help")}
+                  >
+                    {invitedCount}/{members.length} {t("guests.invited_short")}
                   </span>
+                  {deliveredCount > 0 && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span className="text-sage-700" title={t("guests.delivered_progress_help")}>
+                        {deliveredCount}/{members.length} {t("guests.delivered_short")}
+                      </span>
+                    </>
+                  )}
                 </>
               )}
             </>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={onCopyShare}
-            disabled={!coupleSlug}
-            title={t("guests.household_share_link")}
-          >
-            {t("guests.household_share_link")}
-          </button>
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={onRegenCode}
-            title={t("guests.household_regenerate_code")}
-          >
-            <RefreshCw size={14} />
-          </button>
-          {members.length === 0 && (
+          {!isHosts && (
+            <>
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={onCopyShare}
+                disabled={!coupleSlug}
+                title={t("guests.household_share_link")}
+              >
+                {t("guests.household_share_link")}
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={onRegenCode}
+                title={t("guests.household_regenerate_code")}
+              >
+                <RefreshCw size={14} />
+              </button>
+            </>
+          )}
+          {members.length === 0 && !isHosts && (
             <button
               type="button"
               className="btn-ghost btn-sm text-blush-700"

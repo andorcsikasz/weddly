@@ -12,7 +12,6 @@ import {
   Compass,
   Map as MapIcon,
   MapPin,
-  MoreHorizontal,
   Plane,
   ShieldCheck,
   Trash2,
@@ -40,6 +39,34 @@ import { publish, subscribe } from "../lib/sync";
 
 // Lazy — Leaflet (~150KB) only ships when the user opens the map popup.
 const HoneymoonMapModal = lazy(() => import("../components/HoneymoonMapModal"));
+
+/* ─── Honey-jar easter egg ─────────────────────────────────────────────
+ * Lucide ships no honey-pot icon, so here's a small inline SVG drawn to
+ * match Lucide's stroke style (24×24, stroke-width 2, round caps/joins).
+ * Used as the "other" preset on the honeymoon page — thematic flourish. */
+function HoneyJar({ size = 16, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 7V3" />
+      <path d="M11 3h2" />
+      <path d="M5 7h14" />
+      <path d="M6 7c0 8 1 14 6 14s6-6 6-14" />
+      <path d="M9 13c1 0 2 1 3 1s2-1 3-1" />
+    </svg>
+  );
+}
 
 /* ─── Sub-category presets ─────────────────────────────────────────────
  * Fixed list of friendly sub-categories surfaced as one-tap "add cost"
@@ -83,7 +110,7 @@ const PRESETS: readonly Preset[] = [
   },
   {
     id: "other",
-    icon: MoreHorizontal,
+    icon: HoneyJar,
     match: [],
   },
 ];
@@ -508,7 +535,10 @@ function DestinationTile({
           aria-label={t("honeymoon.edit_destination")}
         >
           {value ? (
-            <span className="font-serif text-2xl font-semibold text-ink-900 sm:text-3xl">
+            <span
+              className="line-clamp-3 font-serif text-2xl font-semibold text-ink-900 sm:text-3xl"
+              title={value}
+            >
               {value}
             </span>
           ) : (
@@ -842,12 +872,10 @@ function CostRow({
   }
 
   return (
-    <li className="group grid items-center gap-x-3 gap-y-2 px-4 py-3 sm:grid-cols-[14rem_minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:gap-y-0 grid-cols-[minmax(0,1fr)_auto_auto]">
+    <li className="group grid items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:grid-cols-[14rem_minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:gap-y-0 sm:py-2 grid-cols-[minmax(0,1fr)_auto_auto]">
       {/* Icon + label — col 1 on both layouts. */}
-      <div className="col-start-1 row-start-1 flex items-center gap-3 min-w-0">
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blush-50 text-blush-700">
-          <Icon size={16} aria-hidden="true" />
-        </span>
+      <div className="col-start-1 row-start-1 flex items-center gap-2.5 min-w-0">
+        <Icon size={18} className="shrink-0 text-blush-700" aria-hidden="true" />
         <p className="truncate text-sm font-medium text-ink-900" title={line.label}>
           {line.label}
         </p>

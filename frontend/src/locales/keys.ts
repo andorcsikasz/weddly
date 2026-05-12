@@ -886,6 +886,10 @@ export interface LocaleMessages {
     wand_apply_done: string;
     /** Receives `{n}`. */
     duration_unit: string;
+    /** Receives `{label}` — the existing event that blocks the slot. */
+    time_conflict: string;
+    /** Wand row badge for items whose proposed start falls in a booked slot. */
+    wand_item_conflict: string;
   };
   guests: {
     title: string;
@@ -926,6 +930,11 @@ export interface LocaleMessages {
     household_remove: string;
     household_section_title: string;
     household_section_help: string;
+    /** Small pill on the couple's own household card explaining the row.
+     *  Replaces the slug / code / invited columns since the hosts don't
+     *  check themselves in. */
+    household_hosts_badge: string;
+    household_hosts_help: string;
     couple_slug_title: string;
     couple_slug_help: string;
     couple_slug_save: string;

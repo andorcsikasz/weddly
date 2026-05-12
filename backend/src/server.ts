@@ -103,6 +103,8 @@ const CSP = [
   "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me",
+  // OSM's /export/embed.html is iframed by the honeymoon map modal.
+  "frame-src https://www.openstreetmap.org",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

@@ -892,6 +892,8 @@ const hu: LocaleMessages = {
     wand_apply: "{count} programpont hozzáadása",
     wand_apply_done: "{count} programpont hozzáadva.",
     duration_unit: "{n} perc",
+    time_conflict: "Erre az időre már „{label}” van — válassz másik időpontot.",
+    wand_item_conflict: "Ütközik egy már létező programmal",
   },
   guests: {
     title: "Vendéglista",
@@ -983,6 +985,9 @@ const hu: LocaleMessages = {
     household_section_title: "Háztartások",
     household_section_help:
       "Csoportosítsd egy háztartásba azokat, akik együtt válaszolnak (pár, család). A check-in oldalon egymást is látják.",
+    household_hosts_badge: "Háziak",
+    household_hosts_help:
+      "Ti ott lesztek — nem kell check-in kód. Az étrendi jelölés a vendéglátási összesítésbe így is beleszámít.",
     couple_slug_title: "Jegyes pár azonosítója",
     couple_slug_help:
       "A vendégek ezt írják be a /rsvp oldalon a 4 jegyű kódjuk mellé. Csak betűk és számok.",

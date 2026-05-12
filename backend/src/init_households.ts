@@ -6,6 +6,9 @@
 //   3. Existing `plus_one_name` strings get materialized as a sibling guest
 //      record in the same household, then nulled out so we don't double-count
 //      them on the next boot.
+//   4. Couples that finished onboarding before the bride+groom seed shipped
+//      get their two host guest rows materialized so they appear as the
+//      first household on /app/guests — see backfillCoupleHostGuests().
 //
 // Safe to run on every server start — each step queries for the missing-state
 // before touching anything.
@@ -110,9 +113,133 @@ function backfillHouseholdsForGuests() {
   );
 }
 
+/** Step 4: surface the bride + groom as guests inside their own household.
+ *
+ *  Couples onboarded before commit e277f67 (bride+groom-as-guests seed) have
+ *  the auto-household but no host guest rows, so /app/guests opens with an
+ *  empty card and the catering / seating totals miss two heads. This pass
+ *  fills that gap.
+ *
+ *  Two sub-steps:
+ *    (a) If `bride_name` / `groom_name` are empty but `display_name` cleanly
+ *        splits on " & ", populate the structured columns from the legacy
+ *        display name. Lets the existing onboarding seed logic work on rows
+ *        that came through the display_name-only path.
+ *    (b) For every couple with non-empty bride/groom names: pick the first
+ *        household by created_at (or create one), then insert a guest row
+ *        for each partner that doesn't already exist. Idempotent — re-runs
+ *        skip partners that already match an existing guest's full_name.
+ */
+function backfillCoupleHostGuests() {
+  // Sub-step (a): split display_name into bride/groom when the structured
+  // columns are empty and the display name looks like "X & Y".
+  const splitCandidates = db
+    .prepare(
+      `SELECT id, display_name FROM couples
+        WHERE (bride_name IS NULL OR bride_name = '')
+          AND (groom_name IS NULL OR groom_name = '')
+          AND display_name LIKE '% & %'`,
+    )
+    .all() as { id: number; display_name: string }[];
+  let nameSplits = 0;
+  for (const c of splitCandidates) {
+    const [left, right] = c.display_name.split(" & ");
+    const bride = left?.trim() ?? "";
+    const groom = right?.trim() ?? "";
+    if (!bride || !groom) continue;
+    db.prepare("UPDATE couples SET bride_name = ?, groom_name = ? WHERE id = ?").run(
+      bride,
+      groom,
+      c.id,
+    );
+    nameSplits++;
+  }
+
+  // Sub-step (b): materialize the host guest rows.
+  const couples = db
+    .prepare(
+      `SELECT id, bride_name, groom_name, display_name FROM couples
+        WHERE bride_name != '' AND groom_name != ''`,
+    )
+    .all() as CoupleStub[];
+  if (couples.length === 0) {
+    if (nameSplits > 0) {
+      console.log(
+        `[init_households] split display_name into bride/groom for ${nameSplits} couple(s)`,
+      );
+    }
+    return;
+  }
+
+  const ts = now();
+  const findFirstHh = db.prepare(
+    "SELECT id FROM households WHERE couple_id = ? ORDER BY created_at ASC LIMIT 1",
+  );
+  const insertHh = db.prepare(
+    "INSERT INTO households (couple_id, code, label, notes, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?)",
+  );
+  const countAnyGuests = db.prepare("SELECT COUNT(*) AS n FROM guests WHERE couple_id = ?");
+  const insertGuest = db.prepare(
+    `INSERT INTO guests
+       (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
+        meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
+        song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
+        created_at, updated_at, household_id)
+     VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 'yes',
+             NULL, NULL, NULL, NULL, 0,
+             NULL, NULL, ?, ?, ?,
+             ?, ?, ?)`,
+  );
+
+  let seededHouseholds = 0;
+  let seededGuests = 0;
+  const tx = db.transaction(() => {
+    for (const c of couples) {
+      // Guard: only seed the hosts on a brand-new (zero-guest) workspace.
+      // If the couple already has any guest row — including a manually-
+      // deleted-then-readded host — leave them alone so a server reboot
+      // doesn't resurrect rows the user explicitly removed.
+      const total = countAnyGuests.get(c.id) as { n: number };
+      if (total.n > 0) continue;
+
+      // First household by created_at = the couple's auto-household.
+      let hhId: number;
+      const first = findFirstHh.get(c.id) as { id: number } | undefined;
+      if (first) {
+        hhId = first.id;
+      } else {
+        const label =
+          c.bride_name && c.groom_name
+            ? `${c.bride_name} & ${c.groom_name}`
+            : c.display_name || "Couple";
+        const code = freshHouseholdCode(c.id);
+        const result = insertHh.run(c.id, code, label, ts, ts);
+        hhId = Number(result.lastInsertRowid);
+        seededHouseholds++;
+      }
+
+      for (const [name, groupTag] of [
+        [c.bride_name, "her_family"],
+        [c.groom_name, "his_family"],
+      ] as const) {
+        insertGuest.run(c.id, name, groupTag, freshInviteCode(), ts, ts, ts, ts, ts, hhId);
+        seededGuests++;
+      }
+    }
+  });
+  tx();
+
+  if (nameSplits > 0 || seededHouseholds > 0 || seededGuests > 0) {
+    console.log(
+      `[init_households] host backfill — name splits: ${nameSplits}, new couple households: ${seededHouseholds}, seeded host guests: ${seededGuests}`,
+    );
+  }
+}
+
 export function runHouseholdBackfill() {
   backfillCoupleSlugs();
   backfillHouseholdsForGuests();
+  backfillCoupleHostGuests();
 }
 
 runHouseholdBackfill();

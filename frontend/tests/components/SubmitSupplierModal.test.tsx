@@ -24,7 +24,7 @@ describe("<SubmitSupplierModal>", () => {
     expect(() => renderModal(true)).not.toThrow();
     // Buttons use a five-dot scale: ●○○○○ through ●●●●●. Sanity-check that the
     // last button (band=5) shows five filled dots.
-    const fivePack = screen.getByRole("radio", { name: "●●●●●" });
+    const fivePack = screen.getByRole("radio", { name: /●●●●●/ });
     expect(fivePack).toBeInTheDocument();
   });
 

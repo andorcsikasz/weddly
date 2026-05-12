@@ -4,12 +4,15 @@ import {
   Download,
   FileText,
   Filter,
+  Heart,
   History,
   LayoutGrid,
+  Mail,
   Pause,
   Printer,
   Smartphone,
   Sparkles,
+  Store,
   Users,
   Wallet,
 } from "lucide-react";
@@ -360,20 +363,20 @@ export default function LandingPage() {
           </h2>
           <div className="mt-10 divide-y divide-paper-300 border-y border-paper-300">
             <AudienceRow
+              icon={<Heart size={20} strokeWidth={1.5} />}
               row={t("landing.card_couples_title")}
-              body={t("landing.card_couples_body")}
               ctaLabel={t("landing.card_couples_cta")}
               to="/signup"
             />
             <AudienceRow
+              icon={<Store size={20} strokeWidth={1.5} />}
               row={t("landing.card_vendors_title")}
-              body={t("landing.card_vendors_body")}
               ctaLabel={t("landing.card_vendors_cta")}
               to="/vendors"
             />
             <AudienceRow
+              icon={<Mail size={20} strokeWidth={1.5} />}
               row={t("landing.card_guests_title")}
-              body={t("landing.card_guests_body")}
               ctaLabel={t("landing.card_guests_cta")}
               onClick={() => {
                 void askGuestCode();
@@ -587,33 +590,31 @@ function WhisperTestimonial({
 }
 
 function AudienceRow({
+  icon,
   row,
-  body,
   ctaLabel,
   to,
   onClick,
 }: {
+  icon: ReactNode;
   row: string;
-  body: string;
   ctaLabel: string;
   to?: string;
   onClick?: () => void;
 }) {
   const cta = (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap font-serif text-base text-ink-900 transition-colors hover:text-blush-700 sm:text-lg">
+    <span className="inline-flex items-center gap-2 whitespace-nowrap font-serif text-lg leading-relaxed text-ink-900 transition-colors hover:text-blush-700 sm:text-xl">
       {ctaLabel}
-      <span aria-hidden className="text-base">
-        →
-      </span>
+      <span aria-hidden>→</span>
     </span>
   );
   return (
-    <div className="grid gap-3 py-8 sm:grid-cols-[14rem_1fr_auto] sm:items-center sm:gap-x-10 sm:gap-y-2 sm:py-10">
-      <p className="font-serif text-2xl leading-[1.05] tracking-tight text-ink-900 sm:text-3xl">
-        {row}
-      </p>
-      <p className="font-serif text-lg leading-relaxed text-ink-600 sm:text-xl">{body}</p>
-      <div className="pt-1 sm:pt-0">
+    <div className="flex items-center gap-4 py-6 sm:gap-6 sm:py-8">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 sm:h-11 sm:w-11">
+        {icon}
+      </span>
+      <p className="flex-1 font-serif text-lg leading-relaxed text-ink-900 sm:text-xl">{row}</p>
+      <div>
         {to ? (
           <Link to={to}>{cta}</Link>
         ) : (

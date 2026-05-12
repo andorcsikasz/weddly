@@ -85,7 +85,19 @@ export function regenerateHouseholdCode(householdId: number, coupleId: number): 
   return code;
 }
 
-export function toHousehold(row: HouseholdRow, members: GuestRow[]): Household {
+export function toHousehold(
+  row: HouseholdRow,
+  members: GuestRow[],
+  opts: { brideName?: string | null; groomName?: string | null } = {},
+): Household {
+  const bride = opts.brideName?.trim() ?? "";
+  const groom = opts.groomName?.trim() ?? "";
+  // The couple's own household is the one whose members include both partners.
+  // Matched on full_name so renaming the household label doesn't break the
+  // flag, but renaming a partner's guest row does (and that's intentional —
+  // the new name *is* the new host).
+  const memberNames = new Set(members.map((m) => m.full_name));
+  const isCouple = bride !== "" && groom !== "" && memberNames.has(bride) && memberNames.has(groom);
   return {
     id: row.id,
     couple_id: row.couple_id,
@@ -93,6 +105,7 @@ export function toHousehold(row: HouseholdRow, members: GuestRow[]): Household {
     label: row.label,
     notes: row.notes,
     member_ids: members.map((m) => m.id),
+    is_couple_household: isCouple,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

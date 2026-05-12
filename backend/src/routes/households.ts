@@ -5,7 +5,7 @@
 
 import type { Household } from "@shared/types";
 import { db, now } from "../db";
-import { getCoupleForUser } from "../domain/couples";
+import { type CoupleRow, getCoupleForUser } from "../domain/couples";
 import {
   createHousehold,
   getHouseholdById,
@@ -17,10 +17,16 @@ import {
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
-function viewOf(row: { id: number }, coupleId: number): Household {
-  const hh = getHouseholdById(row.id, coupleId);
+function viewOf(
+  row: { id: number },
+  couple: Pick<CoupleRow, "id" | "bride_name" | "groom_name">,
+): Household {
+  const hh = getHouseholdById(row.id, couple.id);
   if (!hh) throw new HttpError(404, "Household not found");
-  return toHousehold(hh, listMembers(hh.id));
+  return toHousehold(hh, listMembers(hh.id), {
+    brideName: couple.bride_name,
+    groomName: couple.groom_name,
+  });
 }
 
 function handleList(ctx: Ctx): Response {
@@ -28,7 +34,12 @@ function handleList(ctx: Ctx): Response {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const rows = listHouseholdsByCouple(couple.id);
-  const items: Household[] = rows.map((r) => toHousehold(r, listMembers(r.id)));
+  const items: Household[] = rows.map((r) =>
+    toHousehold(r, listMembers(r.id), {
+      brideName: couple.bride_name,
+      groomName: couple.groom_name,
+    }),
+  );
   return json({ households: items });
 }
 
@@ -72,7 +83,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     target_id: row.id,
     after: { label, code: row.code },
   });
-  return json({ household: viewOf(row, couple.id) }, { status: 201 });
+  return json({ household: viewOf(row, couple) }, { status: 201 });
 }
 
 async function handleUpdate(ctx: Ctx): Promise<Response> {
@@ -103,7 +114,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     before: { label: existing.label, notes: existing.notes },
     after: { label, notes },
   });
-  return json({ household: viewOf({ id }, couple.id) });
+  return json({ household: viewOf({ id }, couple) });
 }
 
 function handleDelete(ctx: Ctx): Response {
@@ -153,7 +164,7 @@ function handleRegenCode(ctx: Ctx): Response {
     before: { code: existing.code },
     after: { code: newCode },
   });
-  return json({ household: viewOf({ id }, couple.id) });
+  return json({ household: viewOf({ id }, couple) });
 }
 
 export function registerHouseholdRoutes(router: Router) {

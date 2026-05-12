@@ -889,6 +889,8 @@ const en: LocaleMessages = {
     wand_apply: "Add {count} events",
     wand_apply_done: "Added {count} events.",
     duration_unit: "{n} min",
+    time_conflict: "Already booked by “{label}” — pick a different time.",
+    wand_item_conflict: "Conflicts with existing event",
   },
   guests: {
     title: "Guest list",
@@ -980,6 +982,9 @@ const en: LocaleMessages = {
     household_section_title: "Households",
     household_section_help:
       "Group people who RSVP together (a couple, a family). They'll see each other on the check-in page.",
+    household_hosts_badge: "Hosts",
+    household_hosts_help:
+      "You're attending — no check-in code needed. Dietary notes still count toward catering totals.",
     couple_slug_title: "Your couple identifier",
     couple_slug_help:
       "Guests type this on the /rsvp page along with their 4-digit code. Letters and digits only.",

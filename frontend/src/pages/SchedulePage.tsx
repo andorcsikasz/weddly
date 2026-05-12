@@ -49,6 +49,36 @@ function parseHHMM(text: string): number | null {
   return value;
 }
 
+/** End of an event's booked span. Zero-duration / null events occupy a single
+ *  minute, so two distinct events at the same minute still register as a
+ *  collision via the `===` branch in `findConflictingEvent`. */
+function eventEndMinutes(e: { starts_at_minutes: number; duration_minutes: number | null }) {
+  return e.starts_at_minutes + (e.duration_minutes ?? 0);
+}
+
+/** Returns the first event that already covers `startMinutes`. Used by both
+ *  the create/edit form (to reject saves on a busy slot) and the wand
+ *  proposal (to skip suggesting items that would collide with an existing
+ *  row). Pass the event currently being edited as `excludeId` so a no-op
+ *  resave doesn't flag the row as overlapping with itself. */
+function findConflictingEvent(
+  startMinutes: number,
+  events: ScheduleEvent[],
+  excludeId: number | null,
+): ScheduleEvent | null {
+  for (const ev of events) {
+    if (excludeId !== null && ev.id === excludeId) continue;
+    const start = ev.starts_at_minutes;
+    const end = eventEndMinutes(ev);
+    if (end > start) {
+      if (startMinutes >= start && startMinutes < end) return ev;
+    } else if (startMinutes === start) {
+      return ev;
+    }
+  }
+  return null;
+}
+
 export default function SchedulePage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.schedule_title", "seo.schedule_description");
@@ -228,8 +258,15 @@ export default function SchedulePage() {
                 aria-label={t("schedule.edit_event")}
                 className="flex min-w-0 flex-1 items-start gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
               >
-                <span className="stat-num min-w-[4.5rem] shrink-0 text-base font-semibold tabular-nums text-ink-900">
-                  {formatHHMM(event.starts_at_minutes)}
+                <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start leading-none">
+                  <span className="stat-num text-base font-semibold tabular-nums text-ink-900">
+                    {formatHHMM(event.starts_at_minutes)}
+                  </span>
+                  {event.duration_minutes !== null && event.duration_minutes > 0 && (
+                    <span className="stat-num mt-0.5 text-[11px] tabular-nums text-ink-400">
+                      –{formatHHMM(event.starts_at_minutes + event.duration_minutes)}
+                    </span>
+                  )}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-ink-900">
@@ -284,6 +321,7 @@ export default function SchedulePage() {
       {editing && (
         <ScheduleEventDialog
           init={editing}
+          events={events}
           onClose={() => setEditing(null)}
           onSaved={(saved) => {
             setEditing(null);
@@ -306,7 +344,7 @@ export default function SchedulePage() {
       {wandOpen && (
         <ScheduleWandDialog
           locale={locale}
-          existing={events.length > 0}
+          existingEvents={events}
           applying={wandApplying}
           onClose={() => {
             if (!wandApplying) setWandOpen(false);
@@ -320,16 +358,20 @@ export default function SchedulePage() {
 
 function ScheduleEventDialog({
   init,
+  events,
   onClose,
   onSaved,
   onConflict,
 }: {
   init: DrawerInit;
+  /** All current rows, used to reject a new start time that lands inside
+   *  another event's booked window. Excludes the row being edited via its id. */
+  events: ScheduleEvent[];
   onClose: () => void;
   onSaved: (event: ScheduleEvent) => void;
   onConflict: () => Promise<void>;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const existing = init.event;
   const [label, setLabel] = useState(existing?.label ?? "");
@@ -355,6 +397,13 @@ function ScheduleEventDialog({
     const minutes = parseHHMM(time);
     if (minutes === null) {
       setTimeError(t("schedule.time_required"));
+      return;
+    }
+    const conflict = findConflictingEvent(minutes, events, existing?.id ?? null);
+    if (conflict) {
+      setTimeError(
+        t("schedule.time_conflict", { label: localizeKnownLabel(conflict.label, locale) }),
+      );
       return;
     }
     setLabelError(null);
@@ -522,13 +571,15 @@ function FormRow({
  *  window, let the couple uncheck what they don't want, then bulk-create. */
 function ScheduleWandDialog({
   locale,
-  existing,
+  existingEvents,
   applying,
   onClose,
   onApply,
 }: {
   locale: Locale;
-  existing: boolean;
+  /** Already-saved schedule rows. Proposal entries whose start time falls
+   *  inside one of these are excluded from the suggestion list. */
+  existingEvents: ScheduleEvent[];
   applying: boolean;
   onClose: () => void;
   onApply: (
@@ -548,11 +599,19 @@ function ScheduleWandDialog({
 
   const proposal = useMemo(() => {
     if (!windowValid || startMinutes === null || endMinutes === null) return [];
-    return buildScheduleProposal(startMinutes, endMinutes);
-  }, [windowValid, startMinutes, endMinutes]);
+    return buildScheduleProposal(startMinutes, endMinutes).map((row) => ({
+      ...row,
+      conflictsWith: findConflictingEvent(row.starts_at_minutes, existingEvents, null),
+    }));
+  }, [windowValid, startMinutes, endMinutes, existingEvents]);
 
-  const total = SCHEDULE_TEMPLATE.length;
-  const allSelected = selected.size === total;
+  const availableCount = proposal.filter((row) => row.conflictsWith === null).length;
+  // "All selected" tracks the user-pickable slots only — conflicted items are
+  // out of reach so they shouldn't bias the toggle's "fill / clear" affordance.
+  const selectedAvailable = proposal.filter(
+    (row) => row.conflictsWith === null && selected.has(row.item.key),
+  ).length;
+  const allSelected = availableCount > 0 && selectedAvailable === availableCount;
 
   function toggle(key: string) {
     setSelected((prev) => {
@@ -566,7 +625,7 @@ function ScheduleWandDialog({
   async function onConfirm() {
     if (!windowValid) return;
     const picks = proposal
-      .filter((row) => selected.has(row.item.key))
+      .filter((row) => row.conflictsWith === null && selected.has(row.item.key))
       .map((row) => ({
         label: row.item.title[locale],
         starts_at_minutes: row.starts_at_minutes,
@@ -591,9 +650,11 @@ function ScheduleWandDialog({
             type="button"
             className="btn-primary"
             onClick={onConfirm}
-            disabled={applying || !windowValid || selected.size === 0}
+            disabled={applying || !windowValid || selectedAvailable === 0}
           >
-            {applying ? t("common.loading") : t("schedule.wand_apply", { count: selected.size })}
+            {applying
+              ? t("common.loading")
+              : t("schedule.wand_apply", { count: selectedAvailable })}
           </button>
         </>
       }
@@ -625,7 +686,7 @@ function ScheduleWandDialog({
             {t("schedule.wand_window_error")}
           </p>
         )}
-        {existing && (
+        {existingEvents.length > 0 && (
           <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600">
             {t("schedule.wand_warning_existing")}
           </p>
@@ -633,12 +694,20 @@ function ScheduleWandDialog({
         <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
-              {t("schedule.wand_select_label", { count: selected.size, total })}
+              {t("schedule.wand_select_label", { count: selectedAvailable, total: availableCount })}
             </p>
             <button
               type="button"
               onClick={() =>
-                setSelected(allSelected ? new Set() : new Set(SCHEDULE_TEMPLATE.map((i) => i.key)))
+                setSelected(
+                  allSelected
+                    ? new Set()
+                    : new Set(
+                        proposal
+                          .filter((row) => row.conflictsWith === null)
+                          .map((row) => row.item.key),
+                      ),
+                )
               }
               className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900"
             >
@@ -647,29 +716,43 @@ function ScheduleWandDialog({
           </div>
           <ul className="space-y-0.5">
             {proposal.map((row) => {
-              const on = selected.has(row.item.key);
+              const conflict = row.conflictsWith;
+              const on = conflict === null && selected.has(row.item.key);
               return (
                 <li key={row.item.key}>
                   <button
                     type="button"
                     onClick={() => toggle(row.item.key)}
                     aria-pressed={on}
+                    disabled={conflict !== null}
                     className={`flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                      on
-                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200"
-                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600"
+                      conflict !== null
+                        ? "cursor-not-allowed text-ink-300"
+                        : on
+                          ? "bg-paper-100 text-ink-900 hover:bg-paper-200"
+                          : "text-ink-400 hover:bg-paper-100 hover:text-ink-600"
                     }`}
                   >
                     <span className="min-w-[3.5rem] shrink-0 tabular-nums">
                       {formatHHMM(row.starts_at_minutes)}
                     </span>
-                    <span className={`flex-1 ${on ? "" : "line-through"}`}>
+                    <span className={`flex-1 ${on || conflict !== null ? "" : "line-through"}`}>
                       {row.item.title[locale]}
                     </span>
-                    {row.duration_minutes !== null && on && (
-                      <span className="shrink-0 text-xs text-ink-500">
-                        {t("schedule.duration_unit", { n: row.duration_minutes })}
+                    {conflict !== null ? (
+                      <span
+                        className="shrink-0 rounded-full bg-paper-200 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500"
+                        title={localizeKnownLabel(conflict.label, locale)}
+                      >
+                        {t("schedule.wand_item_conflict")}
                       </span>
+                    ) : (
+                      row.duration_minutes !== null &&
+                      on && (
+                        <span className="shrink-0 text-xs text-ink-500">
+                          {t("schedule.duration_unit", { n: row.duration_minutes })}
+                        </span>
+                      )
                     )}
                   </button>
                 </li>
