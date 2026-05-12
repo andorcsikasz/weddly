@@ -1029,17 +1029,20 @@ export default function SuppliersPage() {
                         <span className="hidden lg:inline">{s.contact_phone}</span>
                       </a>
                     )}
-                    {s.source === "community" && s.id.startsWith("c") && (
-                      <button
-                        type="button"
-                        onClick={() => setReporting({ id: Number(s.id.slice(1)), name: s.name })}
-                        aria-label={t("suppliers.report.aria_label")}
-                        title={t("suppliers.report.aria_label")}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
-                      >
-                        <Flag size={14} aria-hidden />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setReporting({
+                          id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                          name: s.name,
+                        })
+                      }
+                      aria-label={t("suppliers.report.aria_label")}
+                      title={t("suppliers.report.aria_label")}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
+                    >
+                      <Flag size={14} aria-hidden />
+                    </button>
                     <button
                       type="button"
                       onClick={() => togglePicked(s)}
@@ -1208,17 +1211,20 @@ export default function SuppliersPage() {
                         <Mail size={14} />
                       </a>
                     )}
-                    {s.source === "community" && s.id.startsWith("c") && (
-                      <button
-                        type="button"
-                        onClick={() => setReporting({ id: Number(s.id.slice(1)), name: s.name })}
-                        className="btn-ghost btn-sm text-ink-500 hover:text-blush-700"
-                        aria-label={t("suppliers.report.aria_label")}
-                        title={t("suppliers.report.aria_label")}
-                      >
-                        <Flag size={14} aria-hidden />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setReporting({
+                          id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                          name: s.name,
+                        })
+                      }
+                      className="btn-ghost btn-sm text-ink-500 hover:text-blush-700"
+                      aria-label={t("suppliers.report.aria_label")}
+                      title={t("suppliers.report.aria_label")}
+                    >
+                      <Flag size={14} aria-hidden />
+                    </button>
                   </div>
                   <div className="ml-auto flex items-center">
                     <VoteRow supplier={s} onVote={onVote} t={t} />

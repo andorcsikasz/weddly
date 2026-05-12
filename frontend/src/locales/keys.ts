@@ -309,12 +309,6 @@ export interface LocaleMessages {
     kpi_roi_unit_actual: string;
     kpi_roi_unit_planned: string;
     kpi_roi_no_data: string;
-    /** Two-up cost-per-guest tile labels — replaces the silently-switching
-     *  single number with side-by-side planned + actual cells. */
-    kpi_per_guest_planned_label: string;
-    kpi_per_guest_actual_label: string;
-    /** Subtitle under the actual cell — receives `{n}` = confirmed-yes count. */
-    kpi_per_guest_actual_basis: string;
     rsvp_breakdown_title: string;
     rsvp_yes: string;
     rsvp_no: string;

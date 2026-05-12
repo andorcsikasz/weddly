@@ -237,8 +237,6 @@ export default function DashboardPage() {
   const cap = budgetCapHuf(couple.budget_goal);
   const spentPct = cap && cap > 0 ? Math.min(100, Math.round((totalActual / cap) * 100)) : null;
   const overCap = cap !== null && totalPlanned > cap;
-  const costPerConfirmedGuest =
-    rsvp.yes > 0 && totalActual > 0 ? Math.round(totalActual / rsvp.yes) : null;
 
   // ── ROI / cost-per-guest ─────────────────────────────────────────────
   // Prefer actual ÷ confirmed; fall back to *scaled* planned ÷ slider count
@@ -672,30 +670,17 @@ export default function DashboardPage() {
               }
             />
           ) : (
-            // Two-up cost-per-guest tile. Planned (always shown) on the left,
-            // actual (RSVP-based) on the right; the right cell dims to the
-            // empty-state when no yes-RSVPs are in yet. Replaces the
-            // single-number version that used to silently switch math
-            // between actual/confirmed and planned/slider-count.
-            <PerGuestKpiTile
+            // Planned cost-per-guest only. The "actual" half (cost ÷ confirmed
+            // RSVPs) is intentionally absent — early in planning the figure
+            // either dashes or whiplashes as RSVPs trickle in, which read more
+            // as noise than signal.
+            <KpiTile
               label={t("dashboard.kpi_roi_label")}
               icon={<Coins size={16} aria-hidden="true" />}
-              plannedValue={roiPlanned !== null ? formatHufCompact(roiPlanned, locale) : "—"}
-              plannedLabel={t("dashboard.kpi_per_guest_planned_label")}
-              plannedSub={t("dashboard.kpi_roi_unit_planned", {
+              value={roiPlanned !== null ? formatHufCompact(roiPlanned, locale) : "—"}
+              unit={t("dashboard.kpi_roi_unit_planned", {
                 n: formatNumber(effectivePlanningCount, locale),
               })}
-              actualValue={
-                costPerConfirmedGuest !== null
-                  ? formatHufCompact(costPerConfirmedGuest, locale)
-                  : null
-              }
-              actualLabel={t("dashboard.kpi_per_guest_actual_label")}
-              actualSub={
-                rsvp.yes > 0
-                  ? t("dashboard.kpi_per_guest_actual_basis", { n: formatNumber(rsvp.yes, locale) })
-                  : t("dashboard.kpi_roi_no_data")
-              }
             />
           )}
         </section>
@@ -1163,68 +1148,6 @@ function DaysToGoTile({
           </div>
         </button>
       )}
-    </div>
-  );
-}
-
-/** Two-up cost-per-guest tile: planned (always) on the left, actual
- *  (RSVP-based) on the right. Sits in the same card slot as the other KPIs
- *  — `grid-cols-2 gap-2 text-center` keeps both numbers compact via
- *  `formatHufCompact` so they don't overflow the tile width. Right cell
- *  dims to em-dash + empty-state copy when no yes-RSVPs are in. */
-function PerGuestKpiTile({
-  label,
-  icon,
-  plannedLabel,
-  plannedValue,
-  plannedSub,
-  actualLabel,
-  actualValue,
-  actualSub,
-}: {
-  label: string;
-  icon: ReactNode;
-  plannedLabel: string;
-  plannedValue: string;
-  plannedSub: string;
-  actualLabel: string;
-  /** Pre-formatted compact HUF, or `null` when no yes-RSVP yet. */
-  actualValue: string | null;
-  actualSub: string;
-}) {
-  const hasActual = actualValue !== null;
-  return (
-    <div className="card p-4">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50 text-ink-700">
-          {icon}
-        </span>
-        {label}
-      </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 text-center">
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
-            {plannedLabel}
-          </div>
-          <div className="stat-num mt-0.5 text-lg font-bold leading-none text-ink-900">
-            {plannedValue}
-          </div>
-          <div className="mt-1 text-[11px] font-semibold leading-snug text-ink-500">
-            {plannedSub}
-          </div>
-        </div>
-        <div className={hasActual ? "" : "opacity-60"}>
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
-            {actualLabel}
-          </div>
-          <div className="stat-num mt-0.5 text-lg font-bold leading-none text-ink-900">
-            {actualValue ?? "—"}
-          </div>
-          <div className="mt-1 text-[11px] font-semibold leading-snug text-ink-500">
-            {actualSub}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -278,7 +278,16 @@ export default function HoneymoonPage() {
     const next = lines.map((l) => (l.id === line.id ? { ...l, planned_huf } : l));
     setLines(next);
     try {
-      await budgetApi.updateLine(line.id, { ...line, planned_huf }, { ifMatch: line.updated_at });
+      const r = await budgetApi.updateLine(
+        line.id,
+        { ...line, planned_huf },
+        { ifMatch: line.updated_at },
+      );
+      // Adopt the server's fresh row (most importantly updated_at) so a
+      // quick second slider release doesn't PATCH with the now-stale version
+      // and trip the optimistic-concurrency guard with a phantom "someone
+      // else edited this row" toast.
+      setLines((prev) => prev.map((l) => (l.id === r.line.id ? r.line : l)));
       publish("budget:changed");
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -437,7 +446,7 @@ function DaysTile({
   }, [start, end, locale]);
 
   return (
-    <div ref={wrapperRef} className="card-hover relative">
+    <div ref={wrapperRef} className="card-hover relative !p-5">
       <div className="flex items-center gap-2 text-ink-500">
         <Calendar size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
@@ -476,7 +485,7 @@ function DaysTile({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-2 block w-full text-left"
+          className="mt-2 block w-full text-center"
           aria-label={t("honeymoon.edit_dates")}
         >
           <span className="font-serif text-4xl font-semibold tabular-nums text-ink-900">
@@ -510,7 +519,7 @@ function DestinationTile({
   const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="card-hover relative">
+    <div className="card-hover relative !p-5">
       <div className="flex items-center gap-2 text-ink-500">
         <MapPin size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
@@ -536,7 +545,7 @@ function DestinationTile({
         >
           {value ? (
             <span
-              className="line-clamp-3 font-serif text-2xl font-semibold text-ink-900 sm:text-3xl"
+              className="line-clamp-2 font-serif text-xl font-semibold text-ink-900 sm:text-2xl"
               title={value}
             >
               {value}
@@ -758,7 +767,7 @@ function BudgetSummaryTile({
   return (
     <Link
       to="/app/budget"
-      className="card-hover relative overflow-hidden bg-gradient-to-br from-blush-50 via-paper-50 to-paper-50"
+      className="card-hover relative overflow-hidden !p-5 bg-gradient-to-br from-blush-50 via-paper-50 to-paper-50"
     >
       <div className="flex items-center gap-2 text-ink-500">
         <Wallet size={14} aria-hidden="true" />
@@ -766,12 +775,12 @@ function BudgetSummaryTile({
           {t("honeymoon.tile_budget")}
         </span>
       </div>
-      <div className="mt-2 flex items-baseline gap-2">
+      <div className="mt-2 flex items-baseline justify-center gap-2">
         <span className="font-serif text-3xl font-semibold tabular-nums text-ink-900 sm:text-4xl">
           {loaded ? formatHuf(planned, locale) : ""}
         </span>
       </div>
-      <p className="mt-1 text-xs text-ink-400">
+      <p className="mt-1 text-center text-xs text-ink-400">
         {actual > 0
           ? t("honeymoon.budget_actual_inline", {
               actual: formatHuf(actual, locale),

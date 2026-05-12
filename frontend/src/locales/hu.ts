@@ -324,9 +324,6 @@ const hu: LocaleMessages = {
     kpi_roi_unit_actual: "tényleges · {n} visszajelzett",
     kpi_roi_unit_planned: "tervezett · {n} fő",
     kpi_roi_no_data: "Még nincs adat",
-    kpi_per_guest_planned_label: "Tervezett",
-    kpi_per_guest_actual_label: "Tényleges",
-    kpi_per_guest_actual_basis: "{n} igen-RSVP alapján",
     rsvp_breakdown_title: "Visszajelzések",
     rsvp_yes: "Igen",
     rsvp_no: "Nem",
@@ -680,7 +677,7 @@ const hu: LocaleMessages = {
     form_err_email: "Érvényes e-mail cím szükséges.",
     form_err_category: "Válassz egy kategóriát.",
     form_err_rate_limited: "Sok jelentkezés érkezett — próbáld pár perc múlva.",
-    contact_title: "Még nem fogadunk szolgáltatókat — várólistán vagytok",
+    contact_title: "Várólistára fogadunk",
     contact_body:
       "Egyelőre nem onboardolunk szolgáltatókat. Töltsétek ki a lenti űrlapot, és visszaigazoló e-mailt küldünk a megadott címre. Amikor megnyitunk a kategóriátokban, elsőként ti hallotok rólunk.",
     contact_cta: "Előregisztráció",

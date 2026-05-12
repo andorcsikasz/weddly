@@ -325,9 +325,6 @@ const en: LocaleMessages = {
     kpi_roi_unit_actual: "actual · {n} confirmed",
     kpi_roi_unit_planned: "planned · {n} guests",
     kpi_roi_no_data: "No spend yet",
-    kpi_per_guest_planned_label: "Planned",
-    kpi_per_guest_actual_label: "Actual",
-    kpi_per_guest_actual_basis: "based on {n} confirmed RSVPs",
     rsvp_breakdown_title: "RSVP breakdown",
     rsvp_yes: "Yes",
     rsvp_no: "No",
@@ -680,7 +677,7 @@ const en: LocaleMessages = {
     form_err_email: "Please enter a valid email.",
     form_err_category: "Pick a category.",
     form_err_rate_limited: "Too many submissions — try again in a few minutes.",
-    contact_title: "We aren't onboarding vendors yet — you'll go on the waitlist",
+    contact_title: "Join the waitlist",
     contact_body:
       "Fill in the form below and we'll send a confirmation to the email you provide. When we open in your category, you'll be the first to hear from us.",
     contact_cta: "Pre-register",

@@ -171,7 +171,6 @@ function WaitlistContact() {
   return (
     <div className="card">
       <h2 className="font-serif text-3xl text-ink-900 sm:text-4xl">{t("vendors.contact_title")}</h2>
-      <p className="mt-2 text-sm text-ink-600">{t("vendors.contact_body")}</p>
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div>
           <label htmlFor="vendor-business" className="field-label">
