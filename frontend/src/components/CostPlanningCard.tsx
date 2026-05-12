@@ -110,17 +110,31 @@ const CATEGORY_ORDER: BudgetCategory[] = [
 export function CostPlanningCard({
   lines,
   baseline,
+  boundsMin,
+  boundsMax,
   cap,
   count,
   onCountChange,
+  onBoundsChange,
   onEditPlanned,
   onCapChange,
 }: {
   lines: BudgetLine[];
   baseline: number;
+  /** Lower bound of the headcount slider. Comes from couple.guest_count_goal so
+   *  both /app and /app/budget show the same number — see DashboardPage /
+   *  BudgetPage `guestCountBounds()`. */
+  boundsMin: number;
+  /** Upper bound of the headcount slider. Same source as boundsMin. */
+  boundsMax: number;
   cap: number | null;
   count: number;
   onCountChange: (n: number) => void;
+  /** Called when the user commits a new min or max on the bounds inputs.
+   *  The parent persists `guest_count_goal = { kind: "range", min, max }`
+   *  so both pages stay synchronised. Optional — bounds become read-only
+   *  when omitted. */
+  onBoundsChange?: (min: number, max: number) => void | Promise<void>;
   /** Called when the user releases a category slider with a new amount.
    *  The parent applies it to the underlying budget lines. */
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
@@ -161,15 +175,14 @@ export function CostPlanningCard({
   const overCap = cap !== null && totalPlanned > cap;
   const overage = overCap && cap !== null ? totalPlanned - cap : 0;
 
-  // Slider bounds — editable via the small inputs under the slider. Initial
-  // values are ±50% around the parent's baseline (snapped to 5). Local state
-  // only; the parent's `baseline` stays the math anchor for per-guest scaling.
-  const [minCount, setMinCount] = useState(() =>
-    Math.max(10, Math.round((baseline * 0.5) / 5) * 5),
-  );
-  const [maxCount, setMaxCount] = useState(() =>
-    Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5),
-  );
+  // Slider bounds — sourced from the couple's guest_count_goal via parent
+  // props so /app and /app/budget show identical numbers. The two small
+  // inputs under the slider commit changes back through onBoundsChange,
+  // which the parents persist to the backend.
+  const minCount = boundsMin;
+  const maxCount = boundsMax;
+  const commitMin = (v: number) => onBoundsChange?.(v, maxCount);
+  const commitMax = (v: number) => onBoundsChange?.(minCount, v);
 
   // Anchor for the per-row slider WIDTH. Computed from the *peak* possible
   // value each row can reach (baseline value × max-headcount factor for
@@ -252,8 +265,9 @@ export function CostPlanningCard({
             value={minCount}
             min={10}
             max={maxCount - 5}
-            onCommit={setMinCount}
+            onCommit={commitMin}
             ariaLabel={t("budget.slider_min_aria")}
+            readOnly={!onBoundsChange}
           />
           {/* Midpoint of bounds, snapped to 5 — the geometric centre of the slider. */}
           <span className="stat-num">{formatNumber(midCount, locale)}</span>
@@ -261,8 +275,9 @@ export function CostPlanningCard({
             value={maxCount}
             min={minCount + 5}
             max={2000}
-            onCommit={setMaxCount}
+            onCommit={commitMax}
             ariaLabel={t("budget.slider_max_aria")}
+            readOnly={!onBoundsChange}
           />
         </div>
       </div>
@@ -483,17 +498,20 @@ function CountInput({
   max,
   onCommit,
   ariaLabel,
+  readOnly = false,
 }: {
   value: number;
   min: number;
   max: number;
   onCommit: (n: number) => void;
   ariaLabel: string;
+  readOnly?: boolean;
 }) {
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
 
   function commit() {
+    if (readOnly) return;
     const n = Number(draft);
     if (!Number.isFinite(n)) {
       setDraft(String(value));
@@ -510,8 +528,11 @@ function CountInput({
       type="text"
       inputMode="numeric"
       autoComplete="off"
+      readOnly={readOnly}
       value={draft}
-      onFocus={(e) => e.currentTarget.select()}
+      onFocus={(e) => {
+        if (!readOnly) e.currentTarget.select();
+      }}
       onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
       onBlur={commit}
       onKeyDown={(e) => {

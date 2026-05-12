@@ -39,7 +39,7 @@ import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanni
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { applyCategoryPlanned } from "../lib/budget";
+import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
 import {
   budgetApi,
   coupleApi,
@@ -245,10 +245,14 @@ export default function DashboardPage() {
   // Headcount used in the confirm copy.
   const notifyableGuests = guests.filter((g) => g.email && g.email.trim() !== "").length;
 
-  // ── Cost-planning baseline & inline-edit handler ──────────────────────
-  // Same baseline rules as BudgetPage so the slider stays consistent across
-  // pages (target headcount → range midpoint → 100 fallback).
-  const baselineCount = targetCount ?? (totalGuests > 0 ? totalGuests : 100);
+  // ── Cost-planning baseline + slider bounds ─────────────────────────────
+  // Sourced from `lib/budget.ts` so /app and /app/budget compute identical
+  // numbers (the user complained about the dashboard and budget pages
+  // showing different min/max). Bounds come straight from
+  // couple.guest_count_goal when it's a range — editing them on either page
+  // persists back to the goal, keeping the two pages in lockstep.
+  const baselineCount = guestCountBaseline(couple, totalGuests);
+  const { min: boundsMin, max: boundsMax } = guestCountBounds(couple, baselineCount);
   const effectivePlanningCount = planningCount ?? baselineCount;
 
   // ── Scaled ROI ──────────────────────────────────────────────────────
@@ -455,6 +459,22 @@ export default function DashboardPage() {
       setData({ ...data, couple: r.couple });
     } catch {
       // Refetch on failure so the displayed date stays in sync with the DB.
+      const r = await coupleApi.current();
+      if (r.couple) setData({ ...data, couple: r.couple });
+    }
+  }
+
+  async function saveBounds(min: number, max: number) {
+    if (data === "loading" || data === null) return;
+    try {
+      const r = await coupleApi.update({
+        // Editing the bounds promotes guest_count_goal to a range — that's
+        // the model where min/max are first-class. Both pages re-derive
+        // from this on next load, which is the sync the user asked for.
+        guest_count_goal: { kind: "range", min, max, exact: null },
+      });
+      setData({ ...data, couple: r.couple });
+    } catch {
       const r = await coupleApi.current();
       if (r.couple) setData({ ...data, couple: r.couple });
     }
@@ -810,9 +830,12 @@ export default function DashboardPage() {
             <CostPlanningCard
               lines={lines}
               baseline={baselineCount}
+              boundsMin={boundsMin}
+              boundsMax={boundsMax}
               cap={cap}
               count={effectivePlanningCount}
               onCountChange={setPlanningCount}
+              onBoundsChange={saveBounds}
               onEditPlanned={setCategoryPlanned}
               onCapChange={saveCap}
             />

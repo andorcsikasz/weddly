@@ -53,3 +53,44 @@ export async function applyCategoryPlanned(
   const updateMap = new Map(updates.map((l) => [l.id, l]));
   return lines.map((l) => updateMap.get(l.id) ?? l);
 }
+
+import type { Couple } from "@shared/types";
+
+/** Fallback baseline when the couple hasn't picked a target headcount yet —
+ *  the slider needs a non-zero denominator for per-guest scaling. */
+const DEFAULT_BASELINE = 100;
+
+/**
+ * The single headcount the cost-planning math anchors on. Used identically by
+ * DashboardPage and BudgetPage so per-guest categories scale the same way on
+ * both. `totalGuests` is the size of the actual guest list — only honoured
+ * when the goal is `tbd`, so the slider still has something sensible to
+ * centre on.
+ */
+export function guestCountBaseline(couple: Couple, totalGuests: number): number {
+  const g = couple.guest_count_goal;
+  if (g.kind === "exact" && g.exact !== null) return g.exact;
+  if (g.kind === "range" && g.min !== null && g.max !== null) {
+    return Math.round((g.min + g.max) / 2);
+  }
+  if (couple.target_guest_count !== null) return couple.target_guest_count;
+  if (totalGuests > 0) return totalGuests;
+  return DEFAULT_BASELINE;
+}
+
+/**
+ * Slider bounds for the cost-planning headcount slider. When the couple has a
+ * real range (`guest_count_goal.kind === "range"`), we use it verbatim so the
+ * two pages stay in lockstep. For `exact` / `tbd` we synthesise ±50% around
+ * the baseline — same heuristic the slider used before, now centralised so
+ * both pages compute identical numbers.
+ */
+export function guestCountBounds(couple: Couple, baseline: number): { min: number; max: number } {
+  const g = couple.guest_count_goal;
+  if (g.kind === "range" && g.min !== null && g.max !== null) {
+    return { min: g.min, max: g.max };
+  }
+  const min = Math.max(10, Math.round((baseline * 0.5) / 5) * 5);
+  const max = Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5);
+  return { min, max };
+}

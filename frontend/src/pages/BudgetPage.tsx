@@ -9,7 +9,7 @@ import { AppShell } from "../components/AppShell";
 import { CATEGORY_ICONS, CostPlanningCard } from "../components/CostPlanningCard";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { applyCategoryPlanned } from "../lib/budget";
+import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
 import {
   readCostPlanningCount,
   subscribeCostPlanningCount,
@@ -48,14 +48,12 @@ const CATEGORIES: BudgetCategory[] = [
  *  the slider needs a denominator to do its scaling math. */
 const DEFAULT_BASELINE = 100;
 
-function baselineGuestCount(couple: Couple | null): number {
+function baselineGuestCount(couple: Couple | null, totalGuests = 0): number {
   if (!couple) return DEFAULT_BASELINE;
-  const g = couple.guest_count_goal;
-  if (g.kind === "exact" && g.exact !== null) return g.exact;
-  if (g.kind === "range" && g.min !== null && g.max !== null) {
-    return Math.round((g.min + g.max) / 2);
-  }
-  return couple.target_guest_count ?? DEFAULT_BASELINE;
+  // Delegate to the shared helper so /app and /app/budget compute the
+  // identical baseline — the user complained about divergence on the two
+  // pages, and a single source of truth is the fix.
+  return guestCountBaseline(couple, totalGuests);
 }
 
 function budgetCap(couple: Couple | null): number | null {
@@ -157,6 +155,10 @@ export default function BudgetPage() {
   const cap = budgetCap(couple);
   const baseline = baselineGuestCount(couple);
   const effectiveCount = count ?? baseline;
+  // Slider bounds — sourced from couple.guest_count_goal so the dashboard
+  // (/app) and /app/budget show the exact same numbers. Editing the bounds
+  // here persists back to the goal, so the two pages stay in lockstep.
+  const bounds = couple ? guestCountBounds(couple, baseline) : { min: 50, max: 150 };
 
   /** Centralised error handler — turns a typed ApiError into the right
    *  toast and triggers a refresh ONLY for concurrency conflicts (so the
@@ -253,6 +255,20 @@ export default function BudgetPage() {
     }
   }
 
+  async function saveBounds(min: number, max: number) {
+    try {
+      const r = await coupleApi.update({
+        // Editing the bounds promotes guest_count_goal to a range so
+        // /app and /app/budget read identical values next time.
+        guest_count_goal: { kind: "range", min, max, exact: null },
+      });
+      setCouple(r.couple);
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => saveBounds(min, max));
+    }
+  }
+
   async function removeLine(id: number) {
     const ok = await confirm({
       title: t("common.confirm_delete_title"),
@@ -344,9 +360,12 @@ export default function BudgetPage() {
       <CostPlanningCard
         lines={lines}
         baseline={baseline}
+        boundsMin={bounds.min}
+        boundsMax={bounds.max}
         cap={cap}
         count={effectiveCount}
         onCountChange={setCount}
+        onBoundsChange={saveBounds}
         onEditPlanned={setCategoryPlanned}
         onCapChange={saveCap}
       />
