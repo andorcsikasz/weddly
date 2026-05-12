@@ -25,7 +25,8 @@ import {
   uniqueInviteCode,
 } from "../domain/guests";
 import { createHousehold, getHouseholdById } from "../domain/households";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
 
 interface UpsertBody {
   full_name?: unknown;
@@ -123,7 +124,7 @@ function parseUpsert(body: UpsertBody, requireName = true): ParsedGuest {
 }
 
 function handleList(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -173,7 +174,7 @@ function resolveHouseholdForCreate(body: UpsertBody, coupleId: number, guestName
 }
 
 async function handleCreate(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -235,7 +236,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
 }
 
 async function handleUpdate(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -333,7 +334,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 }
 
 function handleDelete(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -370,7 +371,7 @@ const CSV_FIELDS = [
 ];
 
 async function handleImportCsv(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -466,7 +467,7 @@ interface CsvGuestRow extends GuestRow {
 }
 
 function handleExportCsv(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -566,7 +567,7 @@ function handleExportCsv(ctx: Ctx): Response {
  *  is the keyword catch, not "GF") because the caterer reads the raw notes
  *  too; the buckets are a quick-look summary, not the source of truth. */
 function handleDietarySummary(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 

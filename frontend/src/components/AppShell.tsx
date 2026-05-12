@@ -22,7 +22,6 @@ import { useT } from "../lib/i18n";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
-import { VerifyEmailBanner } from "./VerifyEmailBanner";
 
 type NavItem = { to: string; labelKey: string; tabKey?: string; icon: ReactNode };
 
@@ -230,8 +229,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-
-      <VerifyEmailBanner />
 
       <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8">
         <aside className="hidden w-56 shrink-0 lg:block">

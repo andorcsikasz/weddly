@@ -8,7 +8,8 @@ import {
   upsertCoupleSupplierCost,
 } from "../domain/supplier_costs";
 import { addAuditLog } from "../lib/audit";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
 
 interface UpsertBody {
   planned_huf?: unknown;
@@ -28,7 +29,7 @@ function parseHuf(v: unknown, field: string): number {
 }
 
 async function handleList(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "Couple not found");
   const rows = listCoupleSupplierCosts(couple.id);
@@ -36,7 +37,7 @@ async function handleList(ctx: Ctx): Promise<Response> {
 }
 
 async function handleUpsert(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "Couple not found");
 

@@ -12,7 +12,8 @@ import {
   listPlanningItemsByCouple,
   toPlanningItem,
 } from "../domain/planning";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
 
 const MAX_TITLE = 200;
 const MAX_BODY = 5000;
@@ -97,14 +98,14 @@ function parsePosition(raw: unknown, fallback: number): number {
 }
 
 function handleList(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   return json({ items: listPlanningItemsByCouple(couple.id) });
 }
 
 async function handleCreate(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -164,7 +165,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
 }
 
 async function handleUpdate(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -224,7 +225,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 }
 
 function handleDelete(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);

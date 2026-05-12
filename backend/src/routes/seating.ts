@@ -5,7 +5,8 @@ import { defaultDimsForShape, maxSeatsForTable } from "@shared/seating";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
 
 interface TableRow {
   id: number;
@@ -98,7 +99,7 @@ function toConflict(r: ConflictRow): SeatingConflict {
 }
 
 function requireCouple(ctx: Ctx) {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   return { userId, coupleId: couple.id };

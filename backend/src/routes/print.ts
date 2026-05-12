@@ -4,7 +4,8 @@ import { db } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
 import { recordExport } from "../domain/exports";
-import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
+import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, requireVerifiedAuth, type Router } from "../lib/http";
 import { renderPlaceCardsPdf, renderSchedulePdf, renderSeatingChartPdf } from "../domain/pdf";
 import { listScheduleEvents } from "../domain/schedule";
 import { listGuestsByCouple, toGuest } from "../domain/guests";
@@ -101,7 +102,7 @@ function pdfResponse(filename: string, body: Uint8Array): Response {
 }
 
 async function handleSeatingChart(ctx: Ctx, fmt: "a4" | "a3"): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const tables = loadTables(couple.id);
@@ -137,7 +138,7 @@ async function handleSeatingChart(ctx: Ctx, fmt: "a4" | "a3"): Promise<Response>
 }
 
 async function handlePlaceCards(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -222,7 +223,7 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
 }
 
 async function handleSchedule(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 

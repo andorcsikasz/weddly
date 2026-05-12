@@ -5,7 +5,8 @@
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
-import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
+import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, requireVerifiedAuth, type Router } from "../lib/http";
 
 /** POST /api/users/me/leave-couple — partner B disengages from the
  *  workspace. The couple keeps existing (partner A stays in it); partner B's
@@ -17,7 +18,7 @@ import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http
  *  delete flow (pause → 30-day purge).
  */
 async function handleLeaveCouple(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple to leave");
 

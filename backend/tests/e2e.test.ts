@@ -838,6 +838,7 @@ describe("onboarding + invites", () => {
       full_name: "Bence",
     });
     expect(b.status).toBe(201);
+    await verifyUserEmail("ppb@weddly.test");
     const accept = await req(
       "POST",
       `/api/invites/${inv.data.invite.token}/accept`,
@@ -4086,6 +4087,7 @@ describe("round-2: leave couple", () => {
       password: "supersafe123",
       full_name: "B",
     });
+    await verifyUserEmail("leaveB@weddly.test");
     await req("POST", `/api/invites/${inv.data.invite.token}/accept`, {}, { token: b.data.token });
 
     // Owner cannot leave.
@@ -6162,6 +6164,9 @@ describe("loop A: per-couple supplier votes + self-vote block", () => {
       full_name: "Solo",
     });
     expect(r.status).toBe(201);
+    // Verify so the email-gate doesn't fire first — we want to assert the
+    // no_couple path specifically.
+    await verifyUserEmail("soloer@weddly.test");
     const vote = await req(
       "PUT",
       "/api/suppliers/normafa-rendezvenyhaz/vote",

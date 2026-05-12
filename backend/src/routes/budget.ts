@@ -4,7 +4,8 @@ import type { BudgetCategory, BudgetLine, BudgetSnapshot } from "@shared/types";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
 
 const VALID_CATEGORIES: ReadonlySet<BudgetCategory> = new Set([
   "venue",
@@ -82,7 +83,7 @@ function toSnapshot(r: SnapshotRow): BudgetSnapshot {
 }
 
 function handleListLines(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   return json({ lines: listLines(couple.id) });
@@ -123,7 +124,7 @@ function parseLineBody(body: UpsertLineBody, requireCategory = true) {
 }
 
 async function handleCreateLine(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -165,7 +166,7 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
  *  omitted fields keep their existing values. If the caller sends `If-Match`
  *  with the row's last `updated_at`, a mid-air collision returns 409. */
 async function handleUpdateLine(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -252,7 +253,7 @@ function parsePartialLine(body: UpsertLineBody, existing: LineRow) {
 }
 
 function handleDeleteLine(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -290,7 +291,7 @@ interface CreateSnapshotBody {
 }
 
 async function handleCreateSnapshot(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -332,7 +333,7 @@ async function handleCreateSnapshot(ctx: Ctx): Promise<Response> {
 }
 
 function handleListSnapshots(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const rows = db
@@ -400,7 +401,7 @@ function coerceNotes(n: unknown): string | null {
 }
 
 function handleRestoreSnapshot(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -493,7 +494,7 @@ function handleRestoreSnapshot(ctx: Ctx): Response {
 }
 
 function handleDeleteSnapshot(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);

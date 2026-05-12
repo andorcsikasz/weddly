@@ -11,7 +11,8 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
 import { sendKind } from "../domain/emails";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { getUserById } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
 
 interface PauseRow {
   id: number;
@@ -50,7 +51,7 @@ function activeRequest(coupleId: number): PauseRow | null {
 }
 
 function handleStatus(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const active = activeRequest(couple.id);
@@ -65,7 +66,7 @@ interface PauseBody {
 }
 
 async function handlePause(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   if (couple.status !== "active") throw new HttpError(409, "Couple is not active");
@@ -131,7 +132,7 @@ async function handlePause(ctx: Ctx): Promise<Response> {
 }
 
 function handleCancel(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const active = activeRequest(couple.id);

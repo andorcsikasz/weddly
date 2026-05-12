@@ -1,6 +1,7 @@
 import type { JSX, ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
 import AboutPage from "./pages/AboutPage";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
@@ -39,6 +40,7 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
   if (loading) return <FullScreenLoader />;
   if (!user) return <Navigate to="/login" replace />;
+  if (!user.verified_email) return <VerifyEmailGate email={user.email} />;
   return children;
 }
 

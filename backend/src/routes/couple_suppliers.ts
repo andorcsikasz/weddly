@@ -5,8 +5,9 @@
 import type { SupplierCategory } from "@shared/suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import * as domain from "../domain/couple_suppliers";
+import { getUserById } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
-import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
   "venue",
@@ -98,14 +99,14 @@ function parseBody(body: Body, partial: boolean): ParsedFields {
 }
 
 async function handleList(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   return json({ suppliers: domain.listByCoupleId(couple.id) });
 }
 
 async function handleCreate(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -142,7 +143,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
 }
 
 async function handleUpdate(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = ctx.params.id;
@@ -185,7 +186,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 }
 
 function handleDelete(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = ctx.params.id;

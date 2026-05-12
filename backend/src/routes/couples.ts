@@ -643,7 +643,7 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
  *  Returns `{ invite: null }` rather than 404 so the caller can always
  *  treat the response the same way. */
 function handleGetCurrentInvite(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -766,7 +766,7 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
 }
 
 async function handleUpdateSlug(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -1146,7 +1146,7 @@ function loadAssignmentsForArchive(coupleId: number): SeatAssignment[] {
 }
 
 async function handleArchive(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple to archive");
   if (couple.status === "archived") {
@@ -1293,7 +1293,7 @@ async function handleArchive(ctx: Ctx): Promise<Response> {
 // `handleUpdateCurrentCouple` — the email shows "from X → Y" when present.
 
 async function handleNotifyDateChange(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple to notify");
 
@@ -1359,7 +1359,7 @@ async function handleNotifyDateChange(ctx: Ctx): Promise<Response> {
  *                   session row. Means they have an active token (web /
  *                   mobile). We don't track presence beyond this. */
 function handleGetPartner(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -1492,7 +1492,7 @@ interface ActivityRow {
 }
 
 function handleGetActivity(ctx: Ctx): Response {
-  const userId = requireAuth(ctx);
+  const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
