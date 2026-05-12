@@ -1661,6 +1661,38 @@ export interface LocaleMessages {
     confirm_hide_body: string;
     confirm_delete_title: string;
     confirm_delete_body: string;
+    /** CRM-style admin card fields. */
+    suppliers_card_section_contact: string;
+    suppliers_card_section_location: string;
+    suppliers_card_section_listing: string;
+    suppliers_card_section_meta: string;
+    suppliers_card_section_metrics: string;
+    suppliers_card_section_notes: string;
+    suppliers_card_field_website: string;
+    suppliers_card_field_contact_email: string;
+    suppliers_card_field_contact_phone: string;
+    suppliers_card_field_address: string;
+    suppliers_card_field_city: string;
+    suppliers_card_field_category: string;
+    suppliers_card_field_price_band: string;
+    suppliers_card_field_blurb: string;
+    suppliers_card_field_submitter: string;
+    suppliers_card_field_submitter_id: string;
+    suppliers_card_field_submitted_at: string;
+    suppliers_card_field_updated_at: string;
+    suppliers_card_field_hidden_at: string;
+    suppliers_card_field_hide_reason: string;
+    suppliers_card_field_open_reports: string;
+    suppliers_card_field_id: string;
+    suppliers_card_field_admin_notes: string;
+    suppliers_card_field_admin_notes_placeholder: string;
+    suppliers_card_field_admin_notes_help: string;
+    suppliers_card_field_notes_save: string;
+    suppliers_card_field_notes_saving: string;
+    suppliers_card_field_notes_saved: string;
+    suppliers_card_field_notes_dirty: string;
+    suppliers_card_notes_save_success: string;
+    suppliers_card_empty_value: string;
     /** /app/admin/feedback page — triage of Visszajelzés submissions. */
     nav_feedback: string;
     feedback_title: string;

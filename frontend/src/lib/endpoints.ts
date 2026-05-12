@@ -615,6 +615,14 @@ export const adminSupplierApi = {
       `/api/admin/suppliers/${id}/unhide`,
       {},
     ),
+  /** Persist freeform admin-only notes. Empty string clears. The admin
+   *  moderation card edits this in place; the server caps payload length. */
+  updateNotes: (id: number, notes: string) =>
+    apiFetch<{ supplier: CommunitySupplierAdminView }>(
+      "PATCH",
+      `/api/admin/suppliers/${id}/notes`,
+      { notes },
+    ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/suppliers/${id}`),
 };
 

@@ -225,6 +225,13 @@ addColumnIfMissing("couples", "planning_count", "planning_count INTEGER");
 // already paid. Existing rows keep their data — see couple_suppliers.ts.
 addColumnIfMissing("couple_suppliers", "paid", "paid INTEGER NOT NULL DEFAULT 0");
 
+// Admin-only freeform notes on community-submitted suppliers. Turns the
+// admin moderation page into a real CRM — moderators can jot triage notes
+// ("emailed the venue, awaiting reply", "looks like dupe of Crystal Hall")
+// against each row without leaking those notes to the submitter. NULL is
+// the default ("no notes yet"); empty string clears.
+addColumnIfMissing("community_suppliers", "admin_notes", "admin_notes TEXT");
+
 export function now(): number {
   return Date.now();
 }

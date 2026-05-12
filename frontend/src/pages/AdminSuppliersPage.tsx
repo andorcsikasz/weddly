@@ -1,6 +1,18 @@
 import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
-import { Check, ExternalLink, Eye, EyeOff, Sparkles, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  Check,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Flag,
+  Mail,
+  MapPin,
+  Phone,
+  Sparkles,
+  Trash2,
+  User,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -12,13 +24,27 @@ import { useDocumentMeta } from "../lib/seo";
  *  see backend/src/db.ts `now()`). Earlier versions multiplied by 1000 here,
  *  which threw the date 1000× into the future and rendered the column
  *  unreadable — that was the "hozzáadás dátuma" bug. */
-function formatDate(unixMs: number, locale: string): string {
+function formatDate(unixMs: number | null, locale: string): string {
+  if (unixMs == null) return "";
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
+  }).format(d);
+}
+
+function formatDateTime(unixMs: number | null, locale: string): string {
+  if (unixMs == null) return "";
+  const d = new Date(unixMs);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(d);
 }
 
@@ -53,9 +79,9 @@ export default function AdminSuppliersPage() {
       .finally(() => setLoading(false));
   }, [toast, t]);
 
-  function replaceSupplier(next: CommunitySupplierAdminView) {
+  const replaceSupplier = useCallback((next: CommunitySupplierAdminView) => {
     setSuppliers((cur) => cur.map((s) => (s.id === next.id ? next : s)));
-  }
+  }, []);
 
   // Apply the status filter. We re-derive once per render — list stays small.
   const visibleSuppliers = useMemo(() => {
@@ -265,29 +291,43 @@ export default function AdminSuppliersPage() {
         />
       </div>
 
-      {/* Bulk-action toolbar. Stays mounted for layout stability. */}
-      {selected.size > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 px-3 py-2 text-sm">
-          <span className="font-medium text-ink-700">
-            {t("admin.bulk_selected", { n: selected.size })}
-          </span>
+      {/* Bulk-action toolbar. Stays mounted for layout stability when the
+       *  card grid loads. The select-all checkbox lives here so the toolbar
+       *  doubles as the grid header. */}
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 px-3 py-2 text-sm">
+        <label className="inline-flex items-center gap-2 text-xs text-ink-700">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={toggleAll}
+            aria-label={t("admin.select_all_aria")}
+          />
+          {t("admin.bulk_selected", { n: selected.size })}
+        </label>
+        {selected.size > 0 && (
           <button type="button" className="btn-ghost btn-sm" onClick={() => setSelected(new Set())}>
             {t("admin.bulk_clear")}
           </button>
-          <span className="ml-auto flex gap-1">
-            <button type="button" className="btn-outline btn-sm" onClick={onBulkHide}>
-              <EyeOff size={14} /> {t("admin.bulk_hide")}
-            </button>
-            <button
-              type="button"
-              className="btn-ghost btn-sm text-violet-800"
-              onClick={onBulkDelete}
-            >
-              <Trash2 size={14} /> {t("admin.bulk_delete")}
-            </button>
-          </span>
-        </div>
-      )}
+        )}
+        <span className="ml-auto flex gap-1">
+          <button
+            type="button"
+            className="btn-outline btn-sm"
+            onClick={onBulkHide}
+            disabled={selected.size === 0}
+          >
+            <EyeOff size={14} /> {t("admin.bulk_hide")}
+          </button>
+          <button
+            type="button"
+            className="btn-ghost btn-sm text-violet-800"
+            onClick={onBulkDelete}
+            disabled={selected.size === 0}
+          >
+            <Trash2 size={14} /> {t("admin.bulk_delete")}
+          </button>
+        </span>
+      </div>
 
       {loading ? (
         <div className="text-sm text-ink-500">{t("common.loading")}</div>
@@ -296,132 +336,23 @@ export default function AdminSuppliersPage() {
       ) : visibleSuppliers.length === 0 ? (
         <div className="card text-sm text-ink-500">{t("admin.empty_filtered")}</div>
       ) : (
-        <div className="card overflow-x-auto p-0">
-          <table className="min-w-full text-sm">
-            <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
-              <tr>
-                <th className="w-10 px-3 py-3">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleAll}
-                    aria-label={t("admin.select_all_aria")}
-                  />
-                </th>
-                <th className="px-4 py-3">{t("admin.table_supplier")}</th>
-                <th className="px-4 py-3 hidden md:table-cell">{t("admin.table_category")}</th>
-                <th className="px-4 py-3 hidden lg:table-cell">{t("admin.table_submitter")}</th>
-                <th className="px-4 py-3">{t("admin.table_submitted_at")}</th>
-                <th className="px-4 py-3">{t("admin.table_status")}</th>
-                <th className="px-4 py-3 text-right">{t("admin.table_actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleSuppliers.map((s) => {
-                const isSel = selected.has(s.id);
-                return (
-                  <tr key={s.id} className="border-t border-paper-200 align-top">
-                    <td className="px-3 py-3">
-                      <input
-                        type="checkbox"
-                        checked={isSel}
-                        onChange={() => toggleRow(s.id)}
-                        aria-label={t("admin.select_row_aria")}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-ink-900">{s.name}</div>
-                      <div className="mt-0.5 text-xs text-ink-500">{s.city}</div>
-                      {s.website && (
-                        <a
-                          href={s.website}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="mt-1 inline-flex items-center gap-1 text-xs text-ink-700 underline-offset-2 hover:underline"
-                        >
-                          <ExternalLink size={12} aria-hidden />
-                          <span className="truncate max-w-[16rem]">{s.website}</span>
-                        </a>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-ink-700">
-                      {t(`suppliers.cat.${s.category}`)}
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <div className="text-ink-700 break-all">{s.submitter_email}</div>
-                    </td>
-                    <td className="px-4 py-3 text-xs uppercase tracking-wide text-ink-500 whitespace-nowrap">
-                      {formatDate(s.created_at, locale)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
-                      {s.status === "hidden" && s.hide_reason && (
-                        <div className="mt-1 text-xs text-ink-500 italic max-w-[14rem]">
-                          {s.hide_reason}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      {s.status === "awaiting_review" && (
-                        <button
-                          type="button"
-                          className="btn-primary btn-sm"
-                          onClick={() => onApprove(s)}
-                          aria-label={t("admin.approve")}
-                        >
-                          <Check size={14} />
-                          <span className="hidden sm:inline">{t("admin.approve")}</span>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm"
-                        onClick={() => onEnrich(s)}
-                        disabled={enriching === s.id}
-                        aria-label={t("admin.enrich")}
-                        title={t("admin.enrich")}
-                      >
-                        <Sparkles size={14} />
-                        <span className="hidden md:inline">
-                          {enriching === s.id ? t("admin.enrich_running") : t("admin.enrich")}
-                        </span>
-                      </button>
-                      {s.status === "active" ? (
-                        <button
-                          type="button"
-                          className="btn-ghost btn-sm"
-                          onClick={() => onHide(s)}
-                          aria-label={t("admin.hide")}
-                        >
-                          <EyeOff size={14} />
-                          <span className="hidden sm:inline">{t("admin.hide")}</span>
-                        </button>
-                      ) : s.status === "hidden" ? (
-                        <button
-                          type="button"
-                          className="btn-ghost btn-sm"
-                          onClick={() => onUnhide(s)}
-                          aria-label={t("admin.unhide")}
-                        >
-                          <Eye size={14} />
-                          <span className="hidden sm:inline">{t("admin.unhide")}</span>
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm text-violet-800"
-                        onClick={() => onDelete(s)}
-                        aria-label={t("admin.delete")}
-                      >
-                        <Trash2 size={14} />
-                        <span className="hidden sm:inline">{t("admin.delete")}</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="flex flex-col gap-4">
+          {visibleSuppliers.map((s) => (
+            <SupplierCard
+              key={s.id}
+              supplier={s}
+              selected={selected.has(s.id)}
+              onToggleSelect={() => toggleRow(s.id)}
+              onApprove={() => onApprove(s)}
+              onHide={() => onHide(s)}
+              onUnhide={() => onUnhide(s)}
+              onEnrich={() => onEnrich(s)}
+              onDelete={() => onDelete(s)}
+              enriching={enriching === s.id}
+              onSavedNotes={replaceSupplier}
+              locale={locale}
+            />
+          ))}
         </div>
       )}
     </AppShell>
@@ -474,5 +405,351 @@ function StatusPill({
     >
       {label}
     </span>
+  );
+}
+
+/** Renders the price-band as $..$$$$$ in a tabular-num span so widths line up
+ *  across the grid. Curated entries set band on insert; we clamp to 1..5
+ *  defensively on the server. */
+function PriceBandPill({ band }: { band: 1 | 2 | 3 | 4 | 5 }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-xs font-medium text-ink-700 stat-num">
+      {"$".repeat(band)}
+    </span>
+  );
+}
+
+/** Field row inside a card section. `value` may be null/empty — we render a
+ *  locale-specific em-dash so the column stays visually aligned. */
+function CardField({
+  label,
+  value,
+  href,
+  mono = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  href?: string;
+  mono?: boolean;
+}) {
+  const { t } = useT();
+  const isEmpty = value == null || (typeof value === "string" && value.trim().length === 0);
+  return (
+    <div className="flex flex-col">
+      <span className="text-[10px] uppercase tracking-wide text-ink-500">{label}</span>
+      {isEmpty ? (
+        <span className="text-sm text-ink-400">{t("admin.suppliers_card_empty_value")}</span>
+      ) : href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={`mt-0.5 inline-flex items-center gap-1 text-sm text-ink-800 underline-offset-2 hover:underline ${
+            mono ? "stat-num" : ""
+          }`}
+        >
+          <span className="truncate">{value}</span>
+          <ExternalLink size={12} aria-hidden className="shrink-0" />
+        </a>
+      ) : (
+        <span className={`mt-0.5 break-words text-sm text-ink-800 ${mono ? "stat-num" : ""}`}>
+          {value}
+        </span>
+      )}
+    </div>
+  );
+}
+
+interface SupplierCardProps {
+  supplier: CommunitySupplierAdminView;
+  selected: boolean;
+  onToggleSelect: () => void;
+  onApprove: () => void;
+  onHide: () => void;
+  onUnhide: () => void;
+  onEnrich: () => void;
+  onDelete: () => void;
+  enriching: boolean;
+  onSavedNotes: (next: CommunitySupplierAdminView) => void;
+  locale: string;
+}
+
+function SupplierCard({
+  supplier: s,
+  selected,
+  onToggleSelect,
+  onApprove,
+  onHide,
+  onUnhide,
+  onEnrich,
+  onDelete,
+  enriching,
+  onSavedNotes,
+  locale,
+}: SupplierCardProps) {
+  const { t } = useT();
+  const toast = useToast();
+  const [notesDraft, setNotesDraft] = useState<string>(s.admin_notes ?? "");
+  const [notesSaving, setNotesSaving] = useState(false);
+  const persisted = s.admin_notes ?? "";
+  const dirty = notesDraft !== persisted;
+
+  // Re-sync when the supplier prop changes (other actions may have replaced
+  // the row — e.g. hide/unhide/approve/enrich path). Only stomp when we're
+  // not mid-edit so we don't lose the admin's keystrokes.
+  useEffect(() => {
+    setNotesDraft(s.admin_notes ?? "");
+  }, [s.admin_notes]);
+
+  async function onSaveNotes() {
+    setNotesSaving(true);
+    try {
+      const r = await adminSupplierApi.updateNotes(s.id, notesDraft);
+      onSavedNotes(r.supplier);
+      toast.success(t("admin.suppliers_card_notes_save_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setNotesSaving(false);
+    }
+  }
+
+  return (
+    <article
+      className={`card flex flex-col gap-5 p-5 transition ${
+        selected ? "ring-2 ring-violet-500" : ""
+      }`}
+      aria-label={s.name}
+    >
+      {/* Header row: select + name/city + status + price band */}
+      <header className="flex flex-wrap items-start gap-3">
+        <label className="mt-1 inline-flex items-center">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            aria-label={t("admin.select_row_aria")}
+          />
+        </label>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="m-0 text-base font-semibold text-ink-900">{s.name}</h2>
+            <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
+            <PriceBandPill band={s.price_band} />
+            <span className="text-xs text-ink-500">{t(`suppliers.cat.${s.category}`)}</span>
+          </div>
+          {s.city ? (
+            <div className="mt-1 inline-flex items-center gap-1 text-xs text-ink-500">
+              <MapPin size={12} aria-hidden />
+              <span>{s.city}</span>
+              {s.address ? <span className="text-ink-400">· {s.address}</span> : null}
+            </div>
+          ) : null}
+        </div>
+      </header>
+
+      {/* Body: three even columns on lg, stacking on small viewports. The
+       *  card stays vertically centred via items-stretch on the parent — each
+       *  column carries its own gap-3 so internal rhythm is consistent. */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {/* Contact column */}
+        <section className="flex flex-col gap-3">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800">
+            {t("admin.suppliers_card_section_contact")}
+          </h3>
+          <CardField
+            label={t("admin.suppliers_card_field_website")}
+            value={s.website}
+            href={s.website || undefined}
+          />
+          <CardField
+            label={t("admin.suppliers_card_field_contact_email")}
+            value={
+              s.contact_email ? (
+                <span className="inline-flex items-center gap-1">
+                  <Mail size={12} aria-hidden className="text-ink-500" />
+                  <span className="break-all">{s.contact_email}</span>
+                </span>
+              ) : null
+            }
+          />
+          <CardField
+            label={t("admin.suppliers_card_field_contact_phone")}
+            value={
+              s.contact_phone ? (
+                <span className="inline-flex items-center gap-1">
+                  <Phone size={12} aria-hidden className="text-ink-500" />
+                  <span>{s.contact_phone}</span>
+                </span>
+              ) : null
+            }
+          />
+          <CardField
+            label={t("admin.suppliers_card_field_submitter")}
+            value={
+              <span className="inline-flex items-center gap-1">
+                <User size={12} aria-hidden className="text-ink-500" />
+                <span className="break-all">{s.submitter_email}</span>
+              </span>
+            }
+          />
+        </section>
+
+        {/* Listing column */}
+        <section className="flex flex-col gap-3">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800">
+            {t("admin.suppliers_card_section_listing")}
+          </h3>
+          <CardField
+            label={t("admin.suppliers_card_field_blurb")}
+            value={s.blurb ? <span className="whitespace-pre-line">{s.blurb}</span> : null}
+          />
+          {s.status === "hidden" && s.hide_reason ? (
+            <CardField
+              label={t("admin.suppliers_card_field_hide_reason")}
+              value={<span className="italic text-ink-600">{s.hide_reason}</span>}
+            />
+          ) : null}
+        </section>
+
+        {/* Meta + metrics column */}
+        <section className="flex flex-col gap-3">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800">
+            {t("admin.suppliers_card_section_meta")}
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <CardField label={t("admin.suppliers_card_field_id")} value={`#${s.id}`} mono />
+            <CardField
+              label={t("admin.suppliers_card_field_submitter_id")}
+              value={`#${s.submitter_user_id}`}
+              mono
+            />
+            <CardField
+              label={t("admin.suppliers_card_field_submitted_at")}
+              value={formatDate(s.created_at, locale)}
+            />
+            <CardField
+              label={t("admin.suppliers_card_field_updated_at")}
+              value={formatDateTime(s.updated_at, locale)}
+            />
+            {s.hidden_at ? (
+              <CardField
+                label={t("admin.suppliers_card_field_hidden_at")}
+                value={formatDateTime(s.hidden_at, locale)}
+              />
+            ) : null}
+            <CardField
+              label={t("admin.suppliers_card_field_open_reports")}
+              value={
+                <span
+                  className={
+                    s.open_report_count > 0
+                      ? "inline-flex items-center gap-1 font-semibold text-violet-800"
+                      : "inline-flex items-center gap-1 text-ink-500"
+                  }
+                >
+                  <Flag size={12} aria-hidden />
+                  {s.open_report_count}
+                </span>
+              }
+              mono
+            />
+          </div>
+        </section>
+      </div>
+
+      {/* Admin notes — the CRM heart of the page. Editable in place, with a
+       *  dirty indicator and an explicit save action so an accidental tab
+       *  away doesn't silently drop a half-typed thought. */}
+      <section className="flex flex-col gap-2 rounded-xl border border-paper-300 bg-paper-50 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800">
+            {t("admin.suppliers_card_section_notes")}
+          </h3>
+          <span
+            className={`text-[10px] uppercase tracking-wide ${
+              dirty ? "text-blush-700" : "text-ink-500"
+            }`}
+          >
+            {dirty
+              ? t("admin.suppliers_card_field_notes_dirty")
+              : t("admin.suppliers_card_field_notes_saved")}
+          </span>
+        </div>
+        <textarea
+          className="input min-h-[80px] resize-y bg-white"
+          placeholder={t("admin.suppliers_card_field_admin_notes_placeholder")}
+          value={notesDraft}
+          onChange={(e) => setNotesDraft(e.target.value)}
+          aria-label={t("admin.suppliers_card_field_admin_notes")}
+        />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-ink-500">{t("admin.suppliers_card_field_admin_notes_help")}</p>
+          <button
+            type="button"
+            className="btn-outline btn-sm"
+            onClick={onSaveNotes}
+            disabled={!dirty || notesSaving}
+          >
+            {notesSaving
+              ? t("admin.suppliers_card_field_notes_saving")
+              : t("admin.suppliers_card_field_notes_save")}
+          </button>
+        </div>
+      </section>
+
+      {/* Footer: per-row action buttons. Keep the order familiar: Approve
+       *  (when applicable) → Enrich → Hide/Unhide → Delete. */}
+      <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 pt-3">
+        {s.status === "awaiting_review" && (
+          <button
+            type="button"
+            className="btn-primary btn-sm"
+            onClick={onApprove}
+            aria-label={t("admin.approve")}
+          >
+            <Check size={14} /> {t("admin.approve")}
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn-ghost btn-sm"
+          onClick={onEnrich}
+          disabled={enriching}
+          aria-label={t("admin.enrich")}
+          title={t("admin.enrich")}
+        >
+          <Sparkles size={14} />
+          <span>{enriching ? t("admin.enrich_running") : t("admin.enrich")}</span>
+        </button>
+        {s.status === "active" ? (
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={onHide}
+            aria-label={t("admin.hide")}
+          >
+            <EyeOff size={14} /> {t("admin.hide")}
+          </button>
+        ) : s.status === "hidden" ? (
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={onUnhide}
+            aria-label={t("admin.unhide")}
+          >
+            <Eye size={14} /> {t("admin.unhide")}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="btn-ghost btn-sm text-violet-800"
+          onClick={onDelete}
+          aria-label={t("admin.delete")}
+        >
+          <Trash2 size={14} /> {t("admin.delete")}
+        </button>
+      </footer>
+    </article>
   );
 }

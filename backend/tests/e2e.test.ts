@@ -3145,6 +3145,84 @@ describe("community suppliers", () => {
     }
   });
 
+  test("admin notes: non-admin gets 403; admin can PATCH + roundtrip via GET", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("notes@weddly.test");
+
+    const submit = await req<SubmitResponse>(
+      "POST",
+      "/api/suppliers/community",
+      validPayload({ name: "Notes Hall", website: "https://notes.test" }),
+      { token: coupleToken },
+    );
+    expect(submit.status).toBe(201);
+    const numericId = Number(submit.data.supplier.id.slice(1));
+
+    // Non-admin can't update notes.
+    const denied = await req(
+      "PATCH",
+      `/api/admin/suppliers/${numericId}/notes`,
+      { notes: "should be 403" },
+      { token: coupleToken },
+    );
+    expect(denied.status).toBe(403);
+
+    // Admin PATCH — string body required.
+    interface NotesResp {
+      supplier: { id: number; admin_notes: string | null };
+    }
+    const patched = await req<NotesResp>(
+      "PATCH",
+      `/api/admin/suppliers/${numericId}/notes`,
+      { notes: "called the venue, awaiting reply" },
+      { token: adminToken },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.supplier.admin_notes).toBe("called the venue, awaiting reply");
+
+    // The list mapper surfaces admin_notes on subsequent GET.
+    interface ListNotesResp {
+      suppliers: { id: number; admin_notes: string | null }[];
+    }
+    const after = await req<ListNotesResp>("GET", "/api/admin/suppliers", undefined, {
+      token: adminToken,
+    });
+    expect(after.status).toBe(200);
+    const found = after.data.suppliers.find((s) => s.id === numericId);
+    expect(found?.admin_notes).toBe("called the venue, awaiting reply");
+
+    // Empty string is a legit "clear" — admin notes is now empty (not null).
+    const cleared = await req<NotesResp>(
+      "PATCH",
+      `/api/admin/suppliers/${numericId}/notes`,
+      { notes: "" },
+      { token: adminToken },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.supplier.admin_notes).toBe("");
+
+    // Long text (2000 chars) round-trips intact — the server caps at 4000.
+    const long = "x".repeat(2000);
+    const longResp = await req<NotesResp>(
+      "PATCH",
+      `/api/admin/suppliers/${numericId}/notes`,
+      { notes: long },
+      { token: adminToken },
+    );
+    expect(longResp.status).toBe(200);
+    expect(longResp.data.supplier.admin_notes).toBe(long);
+
+    // Non-string payload is rejected.
+    const bad = await req(
+      "PATCH",
+      `/api/admin/suppliers/${numericId}/notes`,
+      { notes: 123 },
+      { token: adminToken },
+    );
+    expect(bad.status).toBe(400);
+  });
+
   test("audit log records hide / unhide / delete actions", async () => {
     wipeAll();
     const adminToken = await registerAdmin();

@@ -12,6 +12,7 @@ import {
   openReportCountsForAll,
   setStatus,
   toAdminView,
+  updateAdminNotes,
 } from "../domain/community_suppliers";
 import { enrichSupplier } from "../domain/supplier_enrich";
 import { requireAdmin } from "../domain/users";
@@ -20,6 +21,10 @@ import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
 interface HideBody {
   reason?: unknown;
+}
+
+interface NotesBody {
+  notes?: unknown;
 }
 
 function parseId(ctx: Ctx): number {
@@ -170,6 +175,36 @@ async function handleUnhide(ctx: Ctx): Promise<Response> {
   return json({ supplier: toAdminView(after, counts.get(id) ?? 0) });
 }
 
+async function handleUpdateNotes(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+
+  const before = getCommunitySupplierById(id);
+  if (!before) throw new HttpError(404, "Supplier not found");
+
+  const body = await readJson<NotesBody>(ctx.req).catch(() => ({}) as NotesBody);
+  if (typeof body.notes !== "string") {
+    throw new HttpError(400, "notes must be a string");
+  }
+
+  updateAdminNotes(id, body.notes);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.community.notes.update",
+    target_kind: "community_supplier",
+    target_id: id,
+    before: { admin_notes_length: before.admin_notes?.length ?? 0 },
+    after: { admin_notes_length: body.notes.length },
+  });
+
+  const after = getCommunitySupplierWithEmail(id);
+  if (!after) throw new HttpError(500, "Failed to read updated supplier");
+  const counts = openReportCountsForAll();
+  return json({ supplier: toAdminView(after, counts.get(id) ?? 0) });
+}
+
 function handleDelete(ctx: Ctx): Response {
   const admin = requireAdmin(ctx);
   const id = parseId(ctx);
@@ -199,5 +234,6 @@ export function registerAdminSupplierRoutes(router: Router) {
   router.post("/api/admin/suppliers/:id/hide", handleHide, true);
   router.post("/api/admin/suppliers/:id/unhide", handleUnhide, true);
   router.post("/api/admin/suppliers/:id/reports/dismiss", handleDismissReports, true);
+  router.patch("/api/admin/suppliers/:id/notes", handleUpdateNotes, true);
   router.delete("/api/admin/suppliers/:id", handleDelete, true);
 }

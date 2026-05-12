@@ -56,12 +56,20 @@ export interface CommunitySupplierAdminView {
   submitter_email: string;
   submitter_user_id: number;
   created_at: number;
+  /** Last-edit timestamp on the supplier row itself. Tracks DB writes
+   *  (admin notes, hide/unhide, enrich) — not the submitter's last edit
+   *  (that path is not exposed yet). */
+  updated_at: number;
   hidden_at: number | null;
   hide_reason: string | null;
   /** Count of distinct open user reports against this supplier. >= 3 triggers
    *  the auto-hide path. Surfaced in the admin list so moderators can sort by
    *  most-reported and triage from the top. */
   open_report_count: number;
+  /** Admin-only freeform notes. NULL on rows that have never been touched.
+   *  Empty string is a legit "cleared" state. The CRM-style supplier card
+   *  on /app/admin/suppliers edits this in place via PATCH. */
+  admin_notes: string | null;
 }
 
 /** Reasons a couple can pick when reporting a community listing. Kept short

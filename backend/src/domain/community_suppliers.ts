@@ -40,6 +40,7 @@ export interface CommunitySupplierRow {
   hide_reason: string | null;
   hidden_by_user_id: number | null;
   hidden_at: number | null;
+  admin_notes: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -103,10 +104,25 @@ export function toAdminView(
     submitter_email: row.submitter_email,
     submitter_user_id: row.submitter_user_id,
     created_at: row.created_at,
+    updated_at: row.updated_at,
     hidden_at: row.hidden_at,
     hide_reason: row.hide_reason,
     open_report_count: openReportCount,
+    admin_notes: row.admin_notes,
   };
+}
+
+/** Persist admin freeform notes for a community-submitted supplier. Empty
+ *  string clears the note; NULL is reserved for "never touched". Caps the
+ *  payload at 4000 chars so a stray paste can't bloat the row. */
+export function updateAdminNotes(id: number, notes: string): void {
+  const ts = now();
+  const trimmed = notes.length > 4000 ? notes.slice(0, 4000) : notes;
+  db.prepare("UPDATE community_suppliers SET admin_notes = ?, updated_at = ? WHERE id = ?").run(
+    trimmed,
+    ts,
+    id,
+  );
 }
 
 export function listActiveCommunitySuppliers(
