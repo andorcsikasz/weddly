@@ -1527,21 +1527,48 @@ export interface LocaleMessages {
     taxonomy_new_category_title: string;
     taxonomy_edit_group_title: string;
     taxonomy_edit_category_title: string;
-    /** /app/admin/vendor-waitlist page — triage of /vendors submissions. */
+    /** /app/admin/vendor-waitlist page — triage of /vendors submissions.
+     *  Three-outcome flow: every entry lands in `new` (the "Beérkezett"
+     *  inbox), one of three outcomes moves it out (accepted / under_review /
+     *  rejected) by sending a template email the admin can edit first. */
     waitlist_title: string;
     waitlist_sub: string;
-    waitlist_empty: string;
-    waitlist_col_business: string;
-    waitlist_col_category: string;
-    waitlist_col_submitted: string;
-    waitlist_col_status: string;
-    waitlist_col_actions: string;
+    waitlist_filter_new: string;
+    waitlist_filter_under_review: string;
+    waitlist_filter_accepted: string;
+    waitlist_filter_rejected: string;
+    waitlist_empty_new: string;
+    waitlist_empty_under_review: string;
+    waitlist_empty_accepted: string;
+    waitlist_empty_rejected: string;
     waitlist_status_new: string;
-    waitlist_status_contacted: string;
-    waitlist_status_dismissed: string;
-    waitlist_mark_contacted: string;
-    waitlist_dismiss: string;
-    waitlist_reopen: string;
+    waitlist_status_under_review: string;
+    waitlist_status_accepted: string;
+    waitlist_status_rejected: string;
+    waitlist_card_submitted: string;
+    waitlist_card_decided: string;
+    waitlist_card_message_label: string;
+    waitlist_card_notes_label: string;
+    waitlist_card_sent_label: string;
+    waitlist_action_respond: string;
+    waitlist_action_reopen: string;
+    waitlist_modal_title: string;
+    waitlist_modal_outcome_label: string;
+    waitlist_modal_outcome_accepted: string;
+    waitlist_modal_outcome_under_review: string;
+    waitlist_modal_outcome_rejected: string;
+    waitlist_modal_subject_label: string;
+    waitlist_modal_body_label: string;
+    waitlist_modal_notes_label: string;
+    waitlist_modal_notes_helper: string;
+    waitlist_modal_send: string;
+    waitlist_modal_sending: string;
+    waitlist_modal_cancel: string;
+    waitlist_modal_overwrite_confirm_title: string;
+    waitlist_modal_overwrite_confirm_body: string;
+    waitlist_modal_overwrite_confirm_ok: string;
+    waitlist_toast_decided: string;
+    waitlist_toast_reopened: string;
     /** /app/admin/users page — read-only directory of users + couples. */
     users_title: string;
     users_sub: string;

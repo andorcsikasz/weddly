@@ -5061,7 +5061,11 @@ describe("vendor waitlist", () => {
     category: string;
     location: string | null;
     message: string | null;
-    status: "new" | "contacted" | "dismissed";
+    status: "new" | "under_review" | "accepted" | "rejected";
+    outcome_at?: number | null;
+    notes?: string | null;
+    sent_subject?: string | null;
+    sent_body?: string | null;
   }
 
   test("anon can submit; admin sees the entry in the list", async () => {
@@ -5137,46 +5141,6 @@ describe("vendor waitlist", () => {
     expect(bad4.status).toBe(400);
   });
 
-  test("admin can move status: new → contacted → dismissed → new", async () => {
-    wipeAll();
-    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
-      email: "admin@test.test",
-      password: "supersafe123",
-      full_name: "Admin",
-    });
-    const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
-      business_name: "Cake Co",
-      email: "cake@example.test",
-      category: "cake_dessert",
-      message: null,
-    });
-    const id = submit.data.entry.id;
-
-    const to1 = await req<{ entry: Entry }>(
-      "PATCH",
-      `/api/admin/vendor-waitlist/${id}/status`,
-      { status: "contacted" },
-      { token: adminReg.data.token },
-    );
-    expect(to1.data.entry.status).toBe("contacted");
-
-    const to2 = await req<{ entry: Entry }>(
-      "PATCH",
-      `/api/admin/vendor-waitlist/${id}/status`,
-      { status: "dismissed" },
-      { token: adminReg.data.token },
-    );
-    expect(to2.data.entry.status).toBe("dismissed");
-
-    const to3 = await req<{ entry: Entry }>(
-      "PATCH",
-      `/api/admin/vendor-waitlist/${id}/status`,
-      { status: "new" },
-      { token: adminReg.data.token },
-    );
-    expect(to3.data.entry.status).toBe("new");
-  });
-
   test("admin endpoints reject non-admin + anon", async () => {
     wipeAll();
     const list1 = await req("GET", "/api/admin/vendor-waitlist");
@@ -5191,6 +5155,282 @@ describe("vendor waitlist", () => {
       token: userReg.data.token,
     });
     expect(list2.status).toBe(403);
+  });
+});
+
+describe("vendor waitlist outcomes", () => {
+  interface Entry {
+    id: number;
+    business_name: string;
+    email: string;
+    category: string;
+    location: string | null;
+    message: string | null;
+    status: "new" | "under_review" | "accepted" | "rejected";
+    outcome_at: number | null;
+    notes: string | null;
+    sent_subject: string | null;
+    sent_body: string | null;
+    reviewed_at: number | null;
+    created_at: number;
+  }
+
+  async function bootstrapAdminAndSubmission(): Promise<{ token: string; id: number }> {
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "Bloom Studio",
+      email: "bloom@example.test",
+      category: "decor_floral",
+      message: "Florist, Budapest.",
+    });
+    expect(submit.status).toBe(201);
+    expect(submit.data.entry.status).toBe("new");
+    return { token: adminReg.data.token, id: submit.data.entry.id };
+  }
+
+  test("admin /decide writes status + outcome_at + notes + sent_subject + sent_body for accepted", async () => {
+    wipeAll();
+    const { token, id } = await bootstrapAdminAndSubmission();
+
+    const r = await req<{ entry: Entry }>(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      {
+        outcome: "accepted",
+        subject: "Test subject",
+        body: "Hi Bloom, you're in.",
+        notes: "Strong portfolio.",
+      },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.entry.status).toBe("accepted");
+    expect(r.data.entry.outcome_at).toBeTruthy();
+    expect(r.data.entry.notes).toBe("Strong portfolio.");
+    expect(r.data.entry.sent_subject).toBe("Test subject");
+    expect(r.data.entry.sent_body).toBe("Hi Bloom, you're in.");
+  });
+
+  test("admin /decide accepts under_review and rejected outcomes", async () => {
+    wipeAll();
+    const { token, id } = await bootstrapAdminAndSubmission();
+
+    const r1 = await req<{ entry: Entry }>(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      {
+        outcome: "under_review",
+        subject: "Reviewing your application",
+        body: "We'll get back to you.",
+        notes: "",
+      },
+      { token },
+    );
+    expect(r1.data.entry.status).toBe("under_review");
+
+    const r2 = await req<{ entry: Entry }>(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      {
+        outcome: "rejected",
+        subject: "Not a fit",
+        body: "Thanks, but no.",
+        notes: "Out of region.",
+      },
+      { token },
+    );
+    expect(r2.data.entry.status).toBe("rejected");
+    expect(r2.data.entry.notes).toBe("Out of region.");
+  });
+
+  test("admin /decide rejects bad inputs", async () => {
+    wipeAll();
+    const { token, id } = await bootstrapAdminAndSubmission();
+
+    // Missing outcome.
+    const r1 = await req(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      { subject: "x", body: "y", notes: "" },
+      { token },
+    );
+    expect(r1.status).toBe(400);
+
+    // Bogus outcome value.
+    const r2 = await req(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      { outcome: "maybe-later", subject: "x", body: "y", notes: "" },
+      { token },
+    );
+    expect(r2.status).toBe(400);
+
+    // Empty subject.
+    const r3 = await req(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      { outcome: "accepted", subject: "  ", body: "y", notes: "" },
+      { token },
+    );
+    expect(r3.status).toBe(400);
+
+    // Empty body.
+    const r4 = await req(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      { outcome: "accepted", subject: "x", body: "   ", notes: "" },
+      { token },
+    );
+    expect(r4.status).toBe(400);
+  });
+
+  test("admin /decide fires a sendEmail attempt once per call", async () => {
+    wipeAll();
+    const { token, id } = await bootstrapAdminAndSubmission();
+
+    // Capture every `mailer.dev_print` log line emitted during the call.
+    // Backend lib/mailer.ts emits this via `log.info("mailer.dev_print", ...)`
+    // when RESEND_API_KEY is unset (the test env). The logger writes a JSON
+    // line to console.log, so we sniff stdout writes for the duration of the
+    // call and parse out our payload.
+    const captured: { subject: string; to: string }[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      const first = args[0];
+      if (typeof first === "string" && first.includes('"mailer.dev_print"')) {
+        try {
+          const parsed = JSON.parse(first) as {
+            msg: string;
+            subject?: string;
+            to?: string;
+          };
+          if (parsed.msg === "mailer.dev_print") {
+            captured.push({ subject: parsed.subject ?? "", to: parsed.to ?? "" });
+          }
+        } catch {
+          // not our JSON
+        }
+      }
+      origLog(...args);
+    };
+    try {
+      const r = await req<{ entry: Entry }>(
+        "POST",
+        `/api/admin/vendor-waitlist/${id}/decide`,
+        {
+          outcome: "accepted",
+          subject: "Mailer fire test",
+          body: "Body content.",
+          notes: "",
+        },
+        { token },
+      );
+      expect(r.status).toBe(200);
+    } finally {
+      console.log = origLog;
+    }
+
+    // Exactly one mailer.dev_print should be addressed to the submitter with
+    // the admin's edited subject. (The vendor_waitlist_received template
+    // would have fired earlier at submission time, but that capture window
+    // only spans the /decide call.)
+    const ours = captured.find((c) => c.subject === "Mailer fire test");
+    expect(ours).toBeDefined();
+    expect(ours?.to).toBe("bloom@example.test");
+  });
+
+  test("admin /reopen sets status back to new and clears outcome_at; notes stay", async () => {
+    wipeAll();
+    const { token, id } = await bootstrapAdminAndSubmission();
+
+    const d = await req<{ entry: Entry }>(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      {
+        outcome: "rejected",
+        subject: "Subject",
+        body: "Body",
+        notes: "Saved note",
+      },
+      { token },
+    );
+    expect(d.data.entry.status).toBe("rejected");
+    expect(d.data.entry.outcome_at).toBeTruthy();
+
+    const r = await req<{ entry: Entry }>(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/reopen`,
+      {},
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.entry.status).toBe("new");
+    expect(r.data.entry.outcome_at).toBeNull();
+    // Notes survive a reopen — the admin's CRM context shouldn't vanish.
+    expect(r.data.entry.notes).toBe("Saved note");
+  });
+
+  test("/decide and /reopen reject non-admin + anon", async () => {
+    wipeAll();
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "Anon Test Co",
+      email: "anon@example.test",
+      category: "venue",
+      message: null,
+    });
+    const id = submit.data.entry.id;
+
+    // Anon — no token at all.
+    const anon1 = await req("POST", `/api/admin/vendor-waitlist/${id}/decide`, {
+      outcome: "accepted",
+      subject: "x",
+      body: "y",
+      notes: "",
+    });
+    expect(anon1.status).toBe(401);
+    const anon2 = await req("POST", `/api/admin/vendor-waitlist/${id}/reopen`, {});
+    expect(anon2.status).toBe(401);
+
+    // Authenticated non-admin user.
+    const userReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "notadmin2@weddly.test",
+      password: "supersafe123",
+      full_name: "User",
+    });
+    const u1 = await req(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      { outcome: "accepted", subject: "x", body: "y", notes: "" },
+      { token: userReg.data.token },
+    );
+    expect(u1.status).toBe(403);
+    const u2 = await req(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/reopen`,
+      {},
+      {
+        token: userReg.data.token,
+      },
+    );
+    expect(u2.status).toBe(403);
+
+    // Admin succeeds — sanity check the bootstrapping isn't broken.
+    const ok = await req<{ entry: Entry }>(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      { outcome: "accepted", subject: "x", body: "y", notes: "" },
+      { token: adminReg.data.token },
+    );
+    expect(ok.status).toBe(200);
   });
 });
 

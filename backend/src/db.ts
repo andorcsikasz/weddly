@@ -161,6 +161,17 @@ addColumnIfMissing("seating_tables", "is_kids_table", "is_kids_table INTEGER NOT
 // Helps the team triage by region before we open onboarding.
 addColumnIfMissing("vendor_waitlist", "location", "location TEXT");
 
+// CRM-style triage detail on the admin vendor-waitlist queue. The `status`
+// column already carries the outcome bucket; these four columns add the
+// "what did we actually do?" context — when the entry left the inbox
+// (`outcome_at`), the admin's private notes, and the exact subject/body of
+// the last template email we sent the supplier. All nullable so existing
+// rows stay valid.
+addColumnIfMissing("vendor_waitlist", "outcome_at", "outcome_at INTEGER");
+addColumnIfMissing("vendor_waitlist", "notes", "notes TEXT");
+addColumnIfMissing("vendor_waitlist", "sent_subject", "sent_subject TEXT");
+addColumnIfMissing("vendor_waitlist", "sent_body", "sent_body TEXT");
+
 // `couple_supplier_id` back-reference on auto-synced budget lines. When a
 // DIY supplier entry on /app/suppliers has a price, the backend creates a
 // matching `budget_lines` row stamped with this id. The frontend renders

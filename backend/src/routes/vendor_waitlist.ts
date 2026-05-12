@@ -1,19 +1,28 @@
 // Public /vendors waitlist form (anon POST) + admin triage endpoints.
+//
+// Admin triage flow: every entry lands in `status='new'` (the "Beérkezett"
+// inbox). One of three outcome buttons moves it out — accepted / under_review
+// / rejected — each sending a template email via /decide. The admin can
+// re-open a decided entry back to the inbox via /reopen.
 
 import type { SupplierCategory } from "@shared/suppliers";
+import type { VendorWaitlistOutcome } from "@shared/vendor_waitlist";
 import { CONFIG } from "../config";
 import { sendKind } from "../domain/emails/send";
 import { requireAdmin } from "../domain/users";
 import {
+  decideVendorWaitlist,
   getVendorWaitlistById,
   insertVendorWaitlist,
   listVendorWaitlist,
-  setVendorWaitlistStatus,
+  reopenVendorWaitlist,
+  toVendorWaitlistAdminView,
   toVendorWaitlistEntry,
-  type VendorWaitlistStatus,
 } from "../domain/vendor_waitlist";
+import { sendDecisionEmail } from "../domain/vendor_waitlist_emails";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { log } from "../lib/logger";
 import { rateLimit } from "../lib/rate_limit";
 
 const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
@@ -48,6 +57,12 @@ const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
   "hair_makeup",
   "stationery",
   "transport",
+]);
+
+const VALID_OUTCOMES: ReadonlySet<VendorWaitlistOutcome> = new Set([
+  "under_review",
+  "accepted",
+  "rejected",
 ]);
 
 interface SubmitBody {
@@ -133,41 +148,119 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
 async function handleAdminList(ctx: Ctx): Promise<Response> {
   requireAdmin(ctx);
   const rows = listVendorWaitlist();
-  return json({ entries: rows.map(toVendorWaitlistEntry) });
+  return json({ entries: rows.map(toVendorWaitlistAdminView) });
 }
 
-interface StatusBody {
-  status?: unknown;
+interface DecideBody {
+  outcome?: unknown;
+  subject?: unknown;
+  body?: unknown;
+  notes?: unknown;
 }
 
-async function handleAdminStatus(ctx: Ctx): Promise<Response> {
+async function handleAdminDecide(ctx: Ctx): Promise<Response> {
   const admin = requireAdmin(ctx);
   const id = Number(ctx.params.id);
   if (!Number.isInteger(id) || id < 1) throw new HttpError(400, "Invalid id");
   const existing = getVendorWaitlistById(id);
   if (!existing) throw new HttpError(404, "Not found");
 
-  const body = await readJson<StatusBody>(ctx.req);
-  const status = trimStr(body.status);
-  if (status !== "new" && status !== "contacted" && status !== "dismissed") {
-    throw new HttpError(400, "status must be 'new', 'contacted', or 'dismissed'");
+  const body = await readJson<DecideBody>(ctx.req);
+
+  const outcome = trimStr(body.outcome);
+  if (!VALID_OUTCOMES.has(outcome as VendorWaitlistOutcome)) {
+    throw new HttpError(400, "outcome must be 'under_review', 'accepted', or 'rejected'");
   }
 
-  const updated = setVendorWaitlistStatus(id, status as VendorWaitlistStatus, admin.id);
+  // Subject + body are required (the admin can edit but can't blank them).
+  // Length caps mirror the field caps on the public form so we don't get
+  // hit with a 1MB blob via the admin path.
+  const subject = trimStr(body.subject);
+  if (!subject) throw new HttpError(400, "subject required");
+  if (subject.length > 200) throw new HttpError(400, "subject too long (max 200)");
+
+  const emailBody = typeof body.body === "string" ? body.body : "";
+  const emailBodyTrimmed = emailBody.trim();
+  if (!emailBodyTrimmed) throw new HttpError(400, "body required");
+  if (emailBody.length > 5000) throw new HttpError(400, "body too long (max 5000)");
+
+  // Notes are free-form and may legitimately be empty.
+  const notes = typeof body.notes === "string" ? body.notes : "";
+  if (notes.length > 2000) throw new HttpError(400, "notes too long (max 2000)");
+
+  // Send first; if delivery fails we still record the attempt by stamping the
+  // row, but propagate the error to the admin so they can re-try. Skipping
+  // the send (no RESEND_API_KEY in dev/test) is a no-op and never throws.
+  let sendError: string | null = null;
+  try {
+    await sendDecisionEmail({
+      to: existing.email,
+      subject,
+      body: emailBody,
+    });
+  } catch (e) {
+    sendError = e instanceof Error ? e.message : String(e);
+    log.error("vendor_waitlist.decide_send_failed", {
+      id,
+      to: existing.email,
+      outcome,
+      reason: sendError,
+    });
+  }
+
+  const updated = decideVendorWaitlist(
+    id,
+    {
+      outcome: outcome as VendorWaitlistOutcome,
+      notes,
+      sent_subject: subject,
+      sent_body: emailBody,
+    },
+    admin.id,
+  );
+
   addAuditLog({
     actor_user_id: admin.id,
     couple_id: null,
-    action: `vendor_waitlist.${status}`,
+    action: `vendor_waitlist.${outcome}`,
     target_kind: "vendor_waitlist",
     target_id: id,
     before: { status: existing.status },
-    after: { status },
+    after: { status: outcome, subject, has_notes: notes.length > 0 },
   });
-  return json({ entry: updated ? toVendorWaitlistEntry(updated) : null });
+
+  if (sendError) {
+    // Row was updated — the admin's notes + decision are persisted — but the
+    // send itself failed. Surface a 502 so the toast tells them to retry.
+    throw new HttpError(502, `Email send failed: ${sendError}`);
+  }
+
+  return json({ entry: updated ? toVendorWaitlistAdminView(updated) : null });
+}
+
+async function handleAdminReopen(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = Number(ctx.params.id);
+  if (!Number.isInteger(id) || id < 1) throw new HttpError(400, "Invalid id");
+  const existing = getVendorWaitlistById(id);
+  if (!existing) throw new HttpError(404, "Not found");
+
+  const updated = reopenVendorWaitlist(id, admin.id);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "vendor_waitlist.reopen",
+    target_kind: "vendor_waitlist",
+    target_id: id,
+    before: { status: existing.status },
+    after: { status: "new" },
+  });
+  return json({ entry: updated ? toVendorWaitlistAdminView(updated) : null });
 }
 
 export function registerVendorWaitlistRoutes(router: Router) {
   router.post("/api/vendors/waitlist", handleSubmit);
   router.get("/api/admin/vendor-waitlist", handleAdminList, true);
-  router.patch("/api/admin/vendor-waitlist/:id/status", handleAdminStatus, true);
+  router.post("/api/admin/vendor-waitlist/:id/decide", handleAdminDecide, true);
+  router.post("/api/admin/vendor-waitlist/:id/reopen", handleAdminReopen, true);
 }

@@ -45,9 +45,10 @@ import type {
 import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/supplier_costs";
 import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
 import type {
+  DecideVendorWaitlistInput,
   SubmitVendorWaitlistInput,
+  VendorWaitlistAdminView,
   VendorWaitlistEntry,
-  VendorWaitlistStatus,
 } from "@shared/vendor_waitlist";
 import type { CouplePick } from "@shared/picks";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
@@ -562,11 +563,24 @@ export const adminFeedbackApi = {
 };
 
 export const adminVendorWaitlistApi = {
-  list: () => apiFetch<{ entries: VendorWaitlistEntry[] }>("GET", "/api/admin/vendor-waitlist"),
-  setStatus: (id: number, status: VendorWaitlistStatus) =>
-    apiFetch<{ entry: VendorWaitlistEntry }>("PATCH", `/api/admin/vendor-waitlist/${id}/status`, {
-      status,
-    }),
+  list: () => apiFetch<{ entries: VendorWaitlistAdminView[] }>("GET", "/api/admin/vendor-waitlist"),
+  /** Atomic decision: stamps the outcome on the row AND sends the template
+   *  email to the supplier. The `subject` / `body` come from the admin's
+   *  edits in the triage modal (pre-filled from `buildEmailDraft`). */
+  decide: (id: number, body: DecideVendorWaitlistInput) =>
+    apiFetch<{ entry: VendorWaitlistAdminView }>(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/decide`,
+      body,
+    ),
+  /** Re-open a decided entry — status → 'new', clears outcome_at. Notes and
+   *  the last-sent subject/body stay on the row. */
+  reopen: (id: number) =>
+    apiFetch<{ entry: VendorWaitlistAdminView }>(
+      "POST",
+      `/api/admin/vendor-waitlist/${id}/reopen`,
+      {},
+    ),
 };
 
 export const supplierTaxonomyApi = {

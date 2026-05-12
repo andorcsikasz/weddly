@@ -1,9 +1,16 @@
 // Vendor waitlist submissions from the public /vendors page. No auth on
 // inserts; admins triage via /app/admin/vendor-waitlist.
 
+import type {
+  VendorWaitlistAdminView,
+  VendorWaitlistEntry,
+  VendorWaitlistOutcome,
+  VendorWaitlistStatus,
+} from "@shared/vendor_waitlist";
 import { db, now } from "../db";
 
-export type VendorWaitlistStatus = "new" | "contacted" | "dismissed";
+// Re-export the shared union so callers in `routes/` keep the existing import.
+export type { VendorWaitlistStatus } from "@shared/vendor_waitlist";
 
 export interface VendorWaitlistRow {
   id: number;
@@ -15,23 +22,22 @@ export interface VendorWaitlistRow {
   status: string;
   reviewed_by_user_id: number | null;
   reviewed_at: number | null;
+  outcome_at: number | null;
+  notes: string | null;
+  sent_subject: string | null;
+  sent_body: string | null;
   created_at: number;
 }
 
-export interface VendorWaitlistEntry {
-  id: number;
-  business_name: string;
-  email: string;
-  category: string;
-  location: string | null;
-  message: string | null;
-  status: VendorWaitlistStatus;
-  reviewed_at: number | null;
-  created_at: number;
-}
-
+/** Legacy `contacted`/`dismissed` rows pre-date the three-outcome triage
+ *  redesign. We map them on read so the admin UI never has to special-case
+ *  them — `contacted → accepted`, `dismissed → rejected`. New writes only
+ *  emit the canonical four-value union. */
 function toStatus(s: string): VendorWaitlistStatus {
-  return s === "contacted" || s === "dismissed" ? s : "new";
+  if (s === "under_review" || s === "accepted" || s === "rejected") return s;
+  if (s === "contacted") return "accepted";
+  if (s === "dismissed") return "rejected";
+  return "new";
 }
 
 export function toVendorWaitlistEntry(row: VendorWaitlistRow): VendorWaitlistEntry {
@@ -44,6 +50,24 @@ export function toVendorWaitlistEntry(row: VendorWaitlistRow): VendorWaitlistEnt
     message: row.message,
     status: toStatus(row.status),
     reviewed_at: row.reviewed_at,
+    created_at: row.created_at,
+  };
+}
+
+export function toVendorWaitlistAdminView(row: VendorWaitlistRow): VendorWaitlistAdminView {
+  return {
+    id: row.id,
+    business_name: row.business_name,
+    email: row.email,
+    category: row.category,
+    location: row.location,
+    message: row.message,
+    status: toStatus(row.status),
+    reviewed_at: row.reviewed_at,
+    outcome_at: row.outcome_at,
+    notes: row.notes,
+    sent_subject: row.sent_subject,
+    sent_body: row.sent_body,
     created_at: row.created_at,
   };
 }
@@ -81,16 +105,55 @@ export function insertVendorWaitlist(input: {
   return row;
 }
 
-export function setVendorWaitlistStatus(
+/** Atomic transition out of the inbox: stamps the outcome, the reviewer,
+ *  `outcome_at`, the admin's private notes, and the last-sent template
+ *  subject/body all in one UPDATE. The email itself fires from the route
+ *  handler — this function only owns the DB write. */
+export function decideVendorWaitlist(
   id: number,
-  status: VendorWaitlistStatus,
+  input: {
+    outcome: VendorWaitlistOutcome;
+    notes: string;
+    sent_subject: string;
+    sent_body: string;
+  },
   reviewerUserId: number,
 ): VendorWaitlistRow | null {
   const ts = now();
   db.prepare(
     `UPDATE vendor_waitlist
-     SET status = ?, reviewed_by_user_id = ?, reviewed_at = ?
+     SET status = ?,
+         reviewed_by_user_id = ?,
+         reviewed_at = ?,
+         outcome_at = ?,
+         notes = ?,
+         sent_subject = ?,
+         sent_body = ?
      WHERE id = ?`,
-  ).run(status, reviewerUserId, ts, id);
+  ).run(
+    input.outcome,
+    reviewerUserId,
+    ts,
+    ts,
+    input.notes,
+    input.sent_subject,
+    input.sent_body,
+    id,
+  );
+  return getVendorWaitlistById(id);
+}
+
+/** Re-open: status → 'new', clear `outcome_at` and `reviewed_at`. Notes +
+ *  last-sent subject/body stay on the row so the admin can see the prior
+ *  outreach if they decide differently the second time around. */
+export function reopenVendorWaitlist(id: number, reviewerUserId: number): VendorWaitlistRow | null {
+  db.prepare(
+    `UPDATE vendor_waitlist
+     SET status = 'new',
+         reviewed_by_user_id = ?,
+         reviewed_at = NULL,
+         outcome_at = NULL
+     WHERE id = ?`,
+  ).run(reviewerUserId, id);
   return getVendorWaitlistById(id);
 }
