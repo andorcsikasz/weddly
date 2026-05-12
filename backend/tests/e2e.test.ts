@@ -1282,7 +1282,67 @@ describe("households + airport check-in", () => {
     const couple = list.data.households.find((h) => h.label !== "Anna Solo");
     expect(couple).toBeTruthy();
     expect(couple!.label).toBe("Anna & Bence");
+    // Legacy onboard with display_name only (no bride/groom split) does not
+    // seed partner guests — the wizard always sends the split form, so
+    // production paths get bride+groom; this is the test-only fallback.
     expect(couple!.member_ids.length).toBe(0);
+  });
+
+  test("onboarding with bride+groom split seeds them as guests in the couple household", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "seed@weddly.test",
+      password: "supersafe123",
+      full_name: "Owner",
+    });
+    await verifyUserEmail("seed@weddly.test");
+    const ob = await req<{ couple: { id: number; display_name: string } }>(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date: "2026-09-12",
+        target_guest_count: 80,
+        budget_ceiling_huf: 5_000_000,
+        style_tags: [],
+      },
+      { token: reg.data.token },
+    );
+    expect(ob.status).toBe(201);
+
+    // The auto-household exists with both partners as members.
+    const list = await req<{
+      households: { id: number; label: string; member_ids: number[] }[];
+    }>("GET", "/api/households", undefined, { token: reg.data.token });
+    expect(list.data.households.length).toBe(1);
+    const hh = list.data.households[0]!;
+    expect(hh.label).toBe("Anna & Bence");
+    expect(hh.member_ids.length).toBe(2);
+
+    // Each partner is a real guest row: rsvp=yes, kind=adult, side-tagged
+    // for the dashboard pie, in their own household.
+    const guests = await req<{
+      guests: {
+        full_name: string;
+        rsvp_status: string;
+        kind: string;
+        group_tag: string;
+        household_id: number;
+      }[];
+    }>("GET", "/api/guests", undefined, { token: reg.data.token });
+    expect(guests.data.guests.length).toBe(2);
+    const bride = guests.data.guests.find((g) => g.full_name === "Anna");
+    const groom = guests.data.guests.find((g) => g.full_name === "Bence");
+    expect(bride).toBeTruthy();
+    expect(groom).toBeTruthy();
+    expect(bride!.rsvp_status).toBe("yes");
+    expect(groom!.rsvp_status).toBe("yes");
+    expect(bride!.kind).toBe("adult");
+    expect(bride!.group_tag).toBe("her_family");
+    expect(groom!.group_tag).toBe("his_family");
+    expect(bride!.household_id).toBe(hh.id);
+    expect(groom!.household_id).toBe(hh.id);
   });
 
   test("multi-member household: lookup + checkin updates everyone in one shot", async () => {

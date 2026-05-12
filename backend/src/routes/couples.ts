@@ -26,7 +26,7 @@ import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../do
 import { sendKind } from "../domain/emails";
 import { recordExport } from "../domain/exports";
 import { generateInviteToken } from "../domain/invite_codes";
-import { listGuestsByCouple } from "../domain/guests";
+import { listGuestsByCouple, uniqueInviteCode } from "../domain/guests";
 import { createHousehold } from "../domain/households";
 import { renderSeatingChartPdf } from "../domain/pdf";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
@@ -454,7 +454,44 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   // Label prefers the joined bride + groom names; falls back to display_name
   // when both parts are present (onboarding currently requires them).
   const householdLabel = brideName && groomName ? `${brideName} & ${groomName}` : displayName;
-  createHousehold({ couple_id: coupleId, label: householdLabel });
+  const coupleHousehold = createHousehold({ couple_id: coupleId, label: householdLabel });
+
+  // The bride and groom are guests at their own wedding — and they need to
+  // count in headcount, catering, and seating. Materialize them as real
+  // guest rows in the couple's auto-household when both names are known.
+  // rsvp_status='yes' since they're definitely attending; kind='adult';
+  // group_tag splits along family side so the dashboard pie chart looks
+  // sensible from minute zero.
+  if (brideName && groomName) {
+    const insertGuest = db.prepare(
+      `INSERT INTO guests
+         (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
+          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
+          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
+          created_at, updated_at, household_id)
+       VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 'yes',
+               NULL, NULL, NULL, NULL, 0,
+               NULL, NULL, ?, ?, ?,
+               ?, ?, ?)`,
+    );
+    for (const [name, groupTag] of [
+      [brideName, "her_family"],
+      [groomName, "his_family"],
+    ] as const) {
+      insertGuest.run(
+        coupleId,
+        name,
+        groupTag,
+        uniqueInviteCode(),
+        ts, // rsvp_responded_at
+        ts, // invited_at (self-invited)
+        ts, // invitation_delivered_at (definitely received)
+        ts, // created_at
+        ts, // updated_at
+        coupleHousehold.id,
+      );
+    }
+  }
 
   db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
     coupleId,
