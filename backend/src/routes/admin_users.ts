@@ -51,6 +51,7 @@ function toAdminCouple(row: CoupleRow): AdminCoupleView {
   const c = toCouple(row);
   return {
     id: c.id,
+    slug: row.slug ?? null,
     display_name: c.display_name,
     bride_name: row.bride_name ?? null,
     groom_name: row.groom_name ?? null,

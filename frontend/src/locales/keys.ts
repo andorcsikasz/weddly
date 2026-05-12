@@ -1460,6 +1460,21 @@ export interface LocaleMessages {
     table_partner_none: string;
     table_partner_orphan: string;
     table_admin_actions: string;
+    /** New v1.2 layout: one row per workspace (couple), with both partners
+     *  collapsed inside it. */
+    workspaces_section: string;
+    workspaces_count_one: string;
+    workspaces_count_other: string;
+    orphans_section: string;
+    orphans_count_one: string;
+    orphans_count_other: string;
+    orphans_empty: string;
+    table_workspace_id: string;
+    table_workspace_name: string;
+    table_workspace_members: string;
+    workspace_solo_member: string;
+    workspace_status_paused: string;
+    workspace_status_deleting: string;
     badge_admin: string;
     badge_suspended: string;
     badge_unverified: string;

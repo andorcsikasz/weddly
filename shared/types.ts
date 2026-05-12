@@ -46,6 +46,10 @@ export interface AdminUserView {
 
 export interface AdminCoupleView {
   id: number;
+  /** Human-readable workspace identifier (e.g. "ANNABENCE"). Falls back to
+   *  null on legacy rows that pre-date the slug column; the admin UI shows
+   *  `#${id}` in that case. */
+  slug: string | null;
   display_name: string | null;
   bride_name: string | null;
   groom_name: string | null;

@@ -1,6 +1,6 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
 import { Check, Mail, Trash2 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -18,10 +18,6 @@ export default function AdminUsersPage() {
   const [couples, setCouples] = useState<AdminCoupleView[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingId, setPendingId] = useState<number | null>(null);
-  // Per-user "verify sent this session" badge. We don't persist this — a page
-  // reload resets it, which is the right behaviour (admin needs to see a fresh
-  // signal each time they decide to nudge someone). Toast covers the
-  // moment-of-click; the badge covers "did I already do this for them?".
   const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -44,26 +40,21 @@ export default function AdminUsersPage() {
     };
   }, [toast, t]);
 
-  // Couple lookup by id — used to render the inline "Partner" column.
-  const coupleById = new Map(couples.map((c) => [c.id, c]));
+  // Split rows into "in a workspace" vs "orphan" so each couple collapses
+  // into a single line (members listed inside) instead of one row per user.
+  const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
+  const orphans = useMemo(() => users.filter((u) => u.couple_id == null), [users]);
 
-  function partnerFor(u: AdminUserView): { full_name: string; email: string } | null {
-    if (u.couple_id == null) return null;
-    const couple = coupleById.get(u.couple_id);
-    if (!couple) return null;
-    const other = couple.partners.find((p) => p.id !== u.id);
-    return other ?? null;
-  }
-
-  function coupleLabel(u: AdminUserView): string | null {
-    if (u.couple_id == null) return null;
-    const c = coupleById.get(u.couple_id);
-    if (!c) return null;
+  function workspaceLabel(c: AdminCoupleView): string {
     if (c.display_name && c.display_name.trim()) return c.display_name;
     const a = c.bride_name?.trim();
     const b = c.groom_name?.trim();
     if (a && b) return `${a} & ${b}`;
     return a || b || `#${c.id}`;
+  }
+
+  function workspaceId(c: AdminCoupleView): string {
+    return c.slug && c.slug.trim() ? c.slug : `#${c.id}`;
   }
 
   async function onResendVerify(u: AdminUserView) {
@@ -107,7 +98,6 @@ export default function AdminUsersPage() {
           : t("admin.delete_user_confirm_mismatch"),
     });
     if (result === null) return;
-    // Extra OK-prompt to break muscle memory on the type-in.
     const ok = await confirm({
       title: t("admin.delete_user_confirm_title"),
       body: u.email,
@@ -119,20 +109,71 @@ export default function AdminUsersPage() {
     setPendingId(u.id);
     try {
       await adminUserApi.remove(u.id);
-      setUsers((cur) => cur.filter((x) => x.id !== u.id));
-      // Drop any couple that no longer has any non-purged partners so the
-      // inline column stays in sync without an extra fetch.
-      setCouples((cur) =>
-        cur
-          .map((c) => ({ ...c, partners: c.partners.filter((p) => p.id !== u.id) }))
-          .filter((c) => c.partners.length > 0 || c.id !== u.couple_id),
-      );
+      // Server `purgeOneUser` either scrubs the user PII (orphan) or purges
+      // the whole couple workspace. Re-fetch to surface the new state — too
+      // many invariants to patch in-place reliably.
+      const [u2, c2] = await Promise.all([adminUserApi.listUsers(), adminUserApi.listCouples()]);
+      setUsers(u2.users);
+      setCouples(c2.couples);
       toast.success(t("admin.delete_user_success"));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setPendingId(null);
     }
+  }
+
+  function renderUserCell(u: AdminUserView) {
+    const isSelf = currentAdmin?.id === u.id;
+    const isPending = pendingId === u.id;
+    return (
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-medium text-ink-900">{u.full_name}</div>
+          <div className="text-xs text-ink-500 break-all">{u.email}</div>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {u.is_admin && <Badge tone="ink">{t("admin.badge_admin")}</Badge>}
+            {u.status === "suspended" && <Badge tone="blush">{t("admin.badge_suspended")}</Badge>}
+            {!u.verified_email && <Badge tone="muted">{t("admin.badge_unverified")}</Badge>}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-1">
+          {!u.verified_email &&
+            (verifySentIds.has(u.id) ? (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-md bg-blush-100 px-2.5 py-1.5 text-xs font-medium text-blush-800"
+                title={t("admin.resend_verify_sent_label")}
+              >
+                <Check size={14} aria-hidden />
+                <span className="hidden sm:inline">{t("admin.resend_verify_sent_label")}</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={() => onResendVerify(u)}
+                disabled={isPending}
+                aria-label={t("admin.resend_verify")}
+              >
+                <Mail size={14} />
+                <span className="hidden sm:inline">{t("admin.resend_verify")}</span>
+              </button>
+            ))}
+          {!isSelf && (
+            <button
+              type="button"
+              className="btn-ghost btn-sm text-blush-700"
+              onClick={() => onDelete(u)}
+              disabled={isPending}
+              aria-label={t("admin.delete_user")}
+            >
+              <Trash2 size={14} />
+              <span className="hidden sm:inline">{t("admin.delete_user")}</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -145,118 +186,130 @@ export default function AdminUsersPage() {
       {loading ? (
         <div className="text-sm text-ink-500">{t("common.loading")}</div>
       ) : (
-        <section>
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-lg font-semibold text-ink-900">{t("admin.users_section_users")}</h2>
-            <span className="text-xs uppercase tracking-wide text-ink-500">
-              {t("admin.users_count", { n: users.length })}
-            </span>
-          </div>
-          {users.length === 0 ? (
-            <div className="card text-sm text-ink-500">{t("admin.users_empty")}</div>
-          ) : (
-            <div className="card overflow-x-auto p-0">
-              <table className="min-w-full text-sm">
-                <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
-                  <tr>
-                    <th className="px-4 py-3">{t("admin.table_name")}</th>
-                    <th className="px-4 py-3">{t("admin.table_email")}</th>
-                    <th className="px-4 py-3 hidden lg:table-cell">{t("admin.table_partner")}</th>
-                    <th className="px-4 py-3 text-right">{t("admin.table_admin_actions")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => {
-                    const partner = partnerFor(u);
-                    const workspace = coupleLabel(u);
-                    const isSelf = currentAdmin?.id === u.id;
-                    const isPending = pendingId === u.id;
-                    return (
-                      <tr key={u.id} className="border-t border-paper-200 align-top">
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-ink-900">{u.full_name}</div>
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {u.is_admin && <Badge tone="ink">{t("admin.badge_admin")}</Badge>}
-                            {u.status === "suspended" && (
-                              <Badge tone="blush">{t("admin.badge_suspended")}</Badge>
-                            )}
-                            {!u.verified_email && (
-                              <Badge tone="muted">{t("admin.badge_unverified")}</Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 break-all text-ink-700">{u.email}</td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          {partner ? (
-                            <div>
-                              <div className="font-medium text-ink-900">{partner.full_name}</div>
-                              <div className="text-xs text-ink-500 break-all">{partner.email}</div>
-                              {workspace && (
-                                <div className="mt-1 text-[10px] uppercase tracking-wide text-ink-500">
-                                  {workspace}
-                                </div>
-                              )}
-                            </div>
-                          ) : workspace ? (
-                            <div>
-                              <div className="text-xs italic text-ink-500">
-                                {t("admin.table_partner_none")}
+        <>
+          {/* ── Workspaces (couples) — one row per couple ─────────────────── */}
+          <section className="mb-10">
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold text-ink-900">
+                {t("admin.workspaces_section")}
+              </h2>
+              <span className="text-xs uppercase tracking-wide text-ink-500">
+                {t(
+                  couples.length === 1
+                    ? "admin.workspaces_count_one"
+                    : "admin.workspaces_count_other",
+                  { n: couples.length },
+                )}
+              </span>
+            </div>
+            {couples.length === 0 ? (
+              <div className="card text-sm text-ink-500">{t("admin.couples_empty")}</div>
+            ) : (
+              <div className="card overflow-x-auto p-0">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
+                    <tr>
+                      <th className="px-4 py-3">{t("admin.table_workspace_id")}</th>
+                      <th className="px-4 py-3">{t("admin.table_workspace_name")}</th>
+                      <th className="px-4 py-3">{t("admin.table_workspace_members")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {couples.map((c) => {
+                      // Server returns partners scrubbed of users we already
+                      // know are missing (rare race); fall back to userById
+                      // for the freshest local state.
+                      const members = c.partners
+                        .map((p) => userById.get(p.id))
+                        .filter((u): u is AdminUserView => u != null);
+                      const statusLabel =
+                        c.status === "paused"
+                          ? t("admin.workspace_status_paused")
+                          : c.status === "deleting"
+                            ? t("admin.workspace_status_deleting")
+                            : null;
+                      return (
+                        <tr key={c.id} className="border-t border-paper-200 align-top">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <code className="rounded bg-paper-100 px-1.5 py-0.5 text-xs font-medium text-ink-700">
+                              {workspaceId(c)}
+                            </code>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-ink-900">{workspaceLabel(c)}</div>
+                            {statusLabel && (
+                              <div className="mt-1">
+                                <Badge tone={c.status === "deleting" ? "blush" : "muted"}>
+                                  {statusLabel}
+                                </Badge>
                               </div>
-                              <div className="mt-1 text-[10px] uppercase tracking-wide text-ink-500">
-                                {workspace}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-xs italic text-ink-500">
-                              {t("admin.table_partner_orphan")}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
-                          {!u.verified_email &&
-                            (verifySentIds.has(u.id) ? (
-                              <span
-                                className="inline-flex items-center gap-1.5 rounded-md bg-blush-100 px-2.5 py-1.5 text-xs font-medium text-blush-800"
-                                title={t("admin.resend_verify_sent_label")}
-                              >
-                                <Check size={14} aria-hidden />
-                                <span className="hidden sm:inline">
-                                  {t("admin.resend_verify_sent_label")}
-                                </span>
-                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {members.length === 0 ? (
+                              <span className="text-xs italic text-ink-500">—</span>
                             ) : (
-                              <button
-                                type="button"
-                                className="btn-ghost btn-sm"
-                                onClick={() => onResendVerify(u)}
-                                disabled={isPending}
-                                aria-label={t("admin.resend_verify")}
-                              >
-                                <Mail size={14} />
-                                <span className="hidden sm:inline">{t("admin.resend_verify")}</span>
-                              </button>
-                            ))}
-                          {!isSelf && (
-                            <button
-                              type="button"
-                              className="btn-ghost btn-sm text-blush-700"
-                              onClick={() => onDelete(u)}
-                              disabled={isPending}
-                              aria-label={t("admin.delete_user")}
-                            >
-                              <Trash2 size={14} />
-                              <span className="hidden sm:inline">{t("admin.delete_user")}</span>
-                            </button>
-                          )}
+                              <ul className="space-y-3">
+                                {members.map((u) => (
+                                  <li
+                                    key={u.id}
+                                    className="border-l-2 border-paper-200 pl-3 first:border-l-0 first:pl-0"
+                                  >
+                                    {renderUserCell(u)}
+                                  </li>
+                                ))}
+                                {members.length === 1 && (
+                                  <li className="pl-3 text-xs italic text-ink-500">
+                                    {t("admin.workspace_solo_member")}
+                                  </li>
+                                )}
+                              </ul>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* ── Orphan users — no workspace yet ───────────────────────────── */}
+          <section>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold text-ink-900">{t("admin.orphans_section")}</h2>
+              <span className="text-xs uppercase tracking-wide text-ink-500">
+                {t(orphans.length === 1 ? "admin.orphans_count_one" : "admin.orphans_count_other", {
+                  n: orphans.length,
+                })}
+              </span>
+            </div>
+            {orphans.length === 0 ? (
+              <div className="card text-sm text-ink-500">{t("admin.orphans_empty")}</div>
+            ) : (
+              <div className="card overflow-x-auto p-0">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
+                    <tr>
+                      <th className="px-4 py-3">{t("admin.table_name")}</th>
+                      <th className="px-4 py-3 text-right">{t("admin.table_admin_actions")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orphans.map((u) => (
+                      <tr key={u.id} className="border-t border-paper-200 align-top">
+                        <td className="px-4 py-3" colSpan={2}>
+                          {renderUserCell(u)}
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
       )}
     </AppShell>
   );

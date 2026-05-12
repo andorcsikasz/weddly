@@ -3457,6 +3457,7 @@ describe("admin users + couples directory", () => {
   }
   interface AdminCouple {
     id: number;
+    slug: string | null;
     display_name: string | null;
     bride_name: string | null;
     groom_name: string | null;
@@ -3519,6 +3520,9 @@ describe("admin users + couples directory", () => {
     if (!c) throw new Error("no couple");
     expect(c.id).toBe(coupleId);
     expect(c.partners.map((p) => p.email)).toContain("partner@weddly.test");
+    // Slug is derived from the bride/groom names by the onboarding flow —
+    // bootstrapCouple uses "Anna & Bence", which slugifies to ANNABENCE.
+    expect(c.slug).toBe("ANNABENCE");
   });
 
   test("admin resend-verify: 200 when unverified, ok+already_verified when already done", async () => {
