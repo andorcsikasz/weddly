@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  RSVP-specific Open Graph card. Same king-blue field as og.svg so the
+  brand reads consistently, but the headline shifts from the marketing
+  tagline to an invitation note so a guest sees "you're invited" in the
+  preview rather than "plan your wedding". 1200×630.
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1200"
+  height="630"
+  viewBox="0 0 1200 630"
+>
+  <rect width="1200" height="630" fill="#1d3a8a" />
+
+  <rect
+    x="40"
+    y="40"
+    width="1120"
+    height="550"
+    fill="none"
+    stroke="#f6f2e7"
+    stroke-width="1"
+    stroke-opacity="0.22"
+  />
+
+  <!-- Eyebrow: wide-tracked, italic invite cue -->
+  <text
+    x="600"
+    y="200"
+    font-family="'Cormorant Garamond', Georgia, serif"
+    font-size="22"
+    font-style="italic"
+    letter-spacing="6"
+    fill="#f6f2e7"
+    fill-opacity="0.7"
+    text-anchor="middle"
+  >ESKÜVŐI MEGHÍVÓ · WEDDING INVITATION</text>
+
+  <!-- Centrepiece: the word RSVP, oversize, wide-tracked -->
+  <text
+    x="600"
+    y="360"
+    font-family="'Cormorant Garamond', Georgia, serif"
+    font-size="170"
+    font-weight="500"
+    letter-spacing="32"
+    fill="#f6f2e7"
+    text-anchor="middle"
+  >RSVP</text>
+
+  <!-- Hairline ornament rules flanking the tagline -->
+  <line x1="360" y1="430" x2="500" y2="430" stroke="#f6f2e7" stroke-width="1" stroke-opacity="0.4" />
+  <line x1="700" y1="430" x2="840" y2="430" stroke="#f6f2e7" stroke-width="1" stroke-opacity="0.4" />
+
+  <!-- Tagline -->
+  <text
+    x="600"
+    y="446"
+    font-family="'Cormorant Garamond', Georgia, serif"
+    font-size="30"
+    font-style="italic"
+    fill="#f6f2e7"
+    fill-opacity="0.92"
+    text-anchor="middle"
+  >Visszajelzés a meghívóra — pár kattintás.</text>
+
+  <!-- Footer: wordmark + URL on one line -->
+  <text
+    x="600"
+    y="555"
+    font-family="'Cormorant Garamond', Georgia, serif"
+    font-size="22"
+    font-weight="600"
+    letter-spacing="14"
+    fill="#f6f2e7"
+    fill-opacity="0.85"
+    text-anchor="middle"
+  >WĒDDLY · WEDDLY.XYZ/RSVP</text>
+</svg>

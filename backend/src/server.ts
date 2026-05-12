@@ -129,6 +129,22 @@ function clientIpFrom(req: Request): string | null {
   return req.headers.get("x-real-ip");
 }
 
+// Memoised RSVP-themed index.html — built once on first request by swapping
+// `/og.png` → `/og-rsvp.png` in the canonical index. We keep the rest of
+// the head identical so the SPA's runtime title/description still take
+// over on hydration; only the social-scraper image differs.
+let rsvpIndexHtml: string | null = null;
+async function loadRsvpIndexHtml(): Promise<string> {
+  if (rsvpIndexHtml !== null) return rsvpIndexHtml;
+  const base = await Bun.file(FRONTEND_INDEX).text();
+  rsvpIndexHtml = base.replaceAll("/og.png", "/og-rsvp.png");
+  return rsvpIndexHtml;
+}
+
+function isRsvpRoute(pathname: string): boolean {
+  return pathname === "/rsvp" || pathname.startsWith("/rsvp/");
+}
+
 async function tryServeStatic(pathname: string): Promise<Response | null> {
   if (!CONFIG.serveFrontend) return null;
   if (pathname.startsWith("/api/")) return null;
@@ -142,6 +158,13 @@ async function tryServeStatic(pathname: string): Promise<Response | null> {
 
   // SPA fallback for unknown routes — let React Router resolve client-side.
   if (existsSync(FRONTEND_INDEX)) {
+    // RSVP-specific share card: scrape-time meta swap so a /rsvp* link
+    // previews as the invitation card instead of the marketing one.
+    if (isRsvpRoute(pathname)) {
+      return new Response(await loadRsvpIndexHtml(), {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
     return new Response(Bun.file(FRONTEND_INDEX), {
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });
