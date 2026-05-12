@@ -359,7 +359,7 @@ export default function LandingPage() {
           <h2 className="font-serif text-3xl leading-[1.1] tracking-tight text-ink-900 sm:text-4xl lg:text-5xl">
             {t("landing.audience_title")}
           </h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-600 sm:text-lg">
+          <p className="mt-4 max-w-2xl font-serif text-lg leading-relaxed text-ink-600 sm:text-xl">
             {t("landing.audience_sub")}
           </p>
           <div className="mt-12 divide-y divide-paper-300 border-y border-paper-300">
@@ -634,7 +634,7 @@ function AudienceRow({
       <p className="font-serif text-2xl leading-[1.05] tracking-tight text-ink-900 sm:text-3xl">
         {row}
       </p>
-      <p className="text-base leading-relaxed text-ink-600 sm:text-lg">{body}</p>
+      <p className="font-serif text-lg leading-relaxed text-ink-600 sm:text-xl">{body}</p>
       <div className="pt-1 sm:pt-0">
         {to ? (
           <Link to={to}>{cta}</Link>
