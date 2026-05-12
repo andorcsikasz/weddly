@@ -261,13 +261,16 @@ function drawPlanGrid(
   const endY = Math.ceil(planMaxY / GRID_STEP_MM) * GRID_STEP_MM;
   const xPt = (xMm: number): number => mm(xMm * scale + offsetX);
   const yPt = (yMm: number): number => mm(yMm * scale + offsetY);
-  const colour = rgb(0.78, 0.74, 0.66);
-  const dash = [mm(1.2), mm(2.4)];
+  // Darker beige + thicker stroke + chunkier dash so the 50-cm grid reads
+  // clearly at print scale. Earlier 0.35 pt / rgb(0.78, …) was almost
+  // invisible on glossy paper.
+  const colour = rgb(0.6, 0.55, 0.46);
+  const dash = [mm(2.5), mm(2.5)];
   for (let x = startX; x <= endX; x += GRID_STEP_MM) {
     page.drawLine({
       start: { x: xPt(x), y: yPt(startY) },
       end: { x: xPt(x), y: yPt(endY) },
-      thickness: 0.35,
+      thickness: 0.7,
       color: colour,
       dashArray: dash,
     });
@@ -276,7 +279,7 @@ function drawPlanGrid(
     page.drawLine({
       start: { x: xPt(startX), y: yPt(y) },
       end: { x: xPt(endX), y: yPt(y) },
-      thickness: 0.35,
+      thickness: 0.7,
       color: colour,
       dashArray: dash,
     });

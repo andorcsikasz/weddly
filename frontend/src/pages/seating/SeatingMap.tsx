@@ -496,9 +496,10 @@ function clampRoom(mm: number): number {
 }
 
 function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
-  // Faint dashed 50cm grid plus a soft room border. The dashes match the
-  // landing-page mockup aesthetic — feels like graph paper rather than a
-  // technical CAD grid.
+  // Dashed 50 cm grid plus a soft room border. The dashes are deliberately
+  // chunky (8 mm stroke, 60 / 60 mm pattern, paper-500) so the planning
+  // grid reads at a glance — earlier versions were lost behind the table
+  // fills at zoom-out.
   const lines: React.ReactElement[] = [];
   for (let x = GRID_STEP_MM; x < widthMm; x += GRID_STEP_MM) {
     lines.push(
@@ -508,9 +509,9 @@ function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
         y1={0}
         x2={x}
         y2={heightMm}
-        className="stroke-paper-300"
-        strokeWidth={4}
-        strokeDasharray="40 80"
+        className="stroke-paper-500"
+        strokeWidth={8}
+        strokeDasharray="60 60"
       />,
     );
   }
@@ -522,9 +523,9 @@ function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
         y1={y}
         x2={widthMm}
         y2={y}
-        className="stroke-paper-300"
-        strokeWidth={4}
-        strokeDasharray="40 80"
+        className="stroke-paper-500"
+        strokeWidth={8}
+        strokeDasharray="60 60"
       />,
     );
   }
