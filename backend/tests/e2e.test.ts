@@ -68,6 +68,7 @@ function wipeAll() {
     "email_dispatches",
     "email_preferences",
     "community_supplier_reports",
+    "community_supplier_verifications",
     "community_suppliers",
     "couple_suppliers",
     "couple_supplier_costs",
@@ -2603,7 +2604,7 @@ describe("community suppliers", () => {
     return r.data.token;
   }
 
-  test("happy path: submit returns 201 and supplier appears in public list", async () => {
+  test("happy path: submit lands as pending → not in public list → verify → in list", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("submitter@weddly.test");
 
@@ -2611,20 +2612,45 @@ describe("community suppliers", () => {
     expect(before.status).toBe(200);
     const beforeLen = before.data.suppliers.length;
 
-    const r = await req<SubmitResponse>("POST", "/api/suppliers/community", validPayload(), {
-      token,
-    });
+    const r = await req<SubmitResponse & { pending: boolean }>(
+      "POST",
+      "/api/suppliers/community",
+      validPayload(),
+      { token },
+    );
     expect(r.status).toBe(201);
+    expect(r.data.pending).toBe(true);
     expect(r.data.supplier.source).toBe("community");
     expect(r.data.supplier.id.startsWith("c")).toBe(true);
     expect(r.data.supplier.name).toBe("Crystal Hall");
 
+    // Pending listings are invisible to the public.
     const after = await req<ListResponse>("GET", "/api/suppliers");
     expect(after.status).toBe(200);
-    expect(after.data.suppliers.length).toBe(beforeLen + 1);
-    const found = after.data.suppliers.find((s) => s.id === r.data.supplier.id);
-    expect(found).toBeDefined();
-    expect(found?.source).toBe("community");
+    expect(after.data.suppliers.length).toBe(beforeLen);
+    expect(after.data.suppliers.find((s) => s.id === r.data.supplier.id)).toBeUndefined();
+
+    // The verification token went to the contact_email's inbox (stdout in
+    // tests). Pull it directly from the DB and consume it.
+    const supplierId = Number(r.data.supplier.id.slice(1));
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(supplierId) as { token: string };
+    expect(tokenRow.token.length).toBe(64);
+
+    const verify = await req<{ ok: boolean }>(
+      "POST",
+      `/api/suppliers/community/verify/${tokenRow.token}`,
+    );
+    expect(verify.status).toBe(200);
+    expect(verify.data.ok).toBe(true);
+
+    // Now it's visible.
+    const afterVerify = await req<ListResponse>("GET", "/api/suppliers");
+    expect(afterVerify.data.suppliers.length).toBe(beforeLen + 1);
+    expect(afterVerify.data.suppliers.find((s) => s.id === r.data.supplier.id)).toBeDefined();
   });
 
   test("validation rejects bad inputs", async () => {
@@ -2645,6 +2671,8 @@ describe("community suppliers", () => {
         label: "website with javascript: protocol",
         body: validPayload({ website: "javascript:alert(1)" }),
       },
+      { label: "missing contact_email", body: validPayload({ contact_email: undefined }) },
+      { label: "empty contact_email", body: validPayload({ contact_email: "" }) },
       {
         label: "invalid contact_email",
         body: validPayload({ contact_email: "not-an-email" }),
@@ -2744,6 +2772,16 @@ describe("community suppliers", () => {
     expect(submit.status).toBe(201);
     const publicId = submit.data.supplier.id; // "c{n}"
     const numericId = Number(publicId.slice(1));
+
+    // Promote past the verification gate so the public-list assertion below
+    // exercises the hide-via-admin flow rather than the pending-invisibility
+    // path (that's covered in its own describe block).
+    const verifyRow = db
+      .prepare(
+        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(numericId) as { token: string };
+    await req("POST", `/api/suppliers/community/verify/${verifyRow.token}`);
 
     // Visible publicly before hide.
     const beforeHide = await req<ListResponse>("GET", "/api/suppliers");
@@ -2948,7 +2986,17 @@ describe("community supplier reports", () => {
     const r = await req<SubmitResp>("POST", "/api/suppliers/community", payload(), { token });
     expect(r.status).toBe(201);
     // String id is "c{N}" — strip the prefix for the numeric report endpoint.
-    return Number(r.data.supplier.id.slice(1));
+    const numericId = Number(r.data.supplier.id.slice(1));
+    // Reports run against verified listings only (pending ones are invisible
+    // to everyone). Consume the token here so the rest of the test exercises
+    // the report flow rather than the gate.
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(numericId) as { token: string };
+    await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
+    return numericId;
   }
 
   test("two reporters don't trigger auto-hide; third one does", async () => {
@@ -3920,11 +3968,15 @@ describe("round-2: GDPR export schema v2 expansion", () => {
         name: "Test Place",
         city: "Budapest",
         website: "https://test-export.example",
+        contact_email: "owner@test-export.example",
         blurb: "Hello",
         price_band: 2,
       },
       { token },
     );
+    // The GDPR export bundle pulls EVERY community supplier the user
+    // submitted, regardless of verification status, so we don't need to
+    // promote it past the gate here.
     await req("POST", "/api/couples/pause", { reason: "test" }, { token });
     // Cancel it so the workspace isn't paused for the rest of the run.
     await req("POST", "/api/couples/pause/cancel", undefined, { token });
@@ -4371,6 +4423,16 @@ describe("round-2: community supplier email privacy", () => {
     expect(submit.status).toBe(201);
     expect(submit.data.supplier.contact_email).toBeNull();
 
+    // New submissions are pending until verified — promote to active for the
+    // privacy assertion (the gate is exercised in its own describe block).
+    const supplierId = Number(submit.data.supplier.id.slice(1));
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(supplierId) as { token: string };
+    await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
+
     const publicList = await req<{
       suppliers: { id: string; contact_email: string | null }[];
     }>("GET", "/api/suppliers");
@@ -4392,6 +4454,130 @@ describe("round-2: community supplier email privacy", () => {
       (s) => s.contact_email === "private@hidden-email.example",
     );
     expect(adminRow).toBeDefined();
+  });
+});
+
+describe("community supplier verification gate", () => {
+  interface SubmitResp {
+    supplier: { id: string };
+    pending: boolean;
+  }
+
+  async function submitPending(token: string, overrides: Record<string, unknown> = {}) {
+    const payload = {
+      category: "venue",
+      name: "Gate Hall",
+      city: "Budapest",
+      website: "https://gate-hall.test",
+      contact_email: "owner@gate-hall.test",
+      blurb: "",
+      price_band: 2,
+      ...overrides,
+    };
+    const r = await req<SubmitResp>("POST", "/api/suppliers/community", payload, { token });
+    expect(r.status).toBe(201);
+    expect(r.data.pending).toBe(true);
+    const supplierId = Number(r.data.supplier.id.slice(1));
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(supplierId) as { token: string };
+    return { supplierId, publicId: r.data.supplier.id, token: tokenRow.token };
+  }
+
+  test("verifying a token flips the supplier from pending to active", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("gate-1@weddly.test");
+    const { publicId, token: verifyToken } = await submitPending(token);
+
+    const beforeList = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
+    expect(beforeList.data.suppliers.find((s) => s.id === publicId)).toBeUndefined();
+
+    const v = await req<{ ok: boolean; already_consumed: boolean }>(
+      "POST",
+      `/api/suppliers/community/verify/${verifyToken}`,
+    );
+    expect(v.status).toBe(200);
+    expect(v.data.already_consumed).toBe(false);
+
+    const afterList = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
+    expect(afterList.data.suppliers.find((s) => s.id === publicId)).toBeDefined();
+  });
+
+  test("re-consuming an already-used token returns ok+already_consumed", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("gate-2@weddly.test");
+    const { token: verifyToken } = await submitPending(token);
+
+    const first = await req("POST", `/api/suppliers/community/verify/${verifyToken}`);
+    expect(first.status).toBe(200);
+
+    const second = await req<{ ok: boolean; already_consumed: boolean }>(
+      "POST",
+      `/api/suppliers/community/verify/${verifyToken}`,
+    );
+    expect(second.status).toBe(200);
+    expect(second.data.already_consumed).toBe(true);
+  });
+
+  test("nonexistent token returns 404", async () => {
+    wipeAll();
+    const bogus = "f".repeat(64);
+    const r = await req("POST", `/api/suppliers/community/verify/${bogus}`);
+    expect(r.status).toBe(404);
+  });
+
+  test("expired token returns 410", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("gate-3@weddly.test");
+    const { supplierId, token: verifyToken } = await submitPending(token);
+
+    // Force-expire the token by rolling the expires_at back past now().
+    db.prepare(
+      "UPDATE community_supplier_verifications SET expires_at = 1 WHERE supplier_id = ?",
+    ).run(supplierId);
+
+    const r = await req("POST", `/api/suppliers/community/verify/${verifyToken}`);
+    expect(r.status).toBe(410);
+  });
+
+  test("dedupe catches a second submission while the first is still pending", async () => {
+    wipeAll();
+    const { token: tA } = await bootstrapCouple("gate-4a@weddly.test");
+    const { token: tB } = await bootstrapCouple("gate-4b@weddly.test");
+
+    const first = await req(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        name: "Pending Dupe",
+        city: "Budapest",
+        website: "https://pending-dupe.test",
+        contact_email: "owner@pending-dupe.test",
+        blurb: "",
+        price_band: 2,
+      },
+      { token: tA },
+    );
+    expect(first.status).toBe(201);
+
+    const second = await req(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        name: "Pending Dupe 2",
+        city: "Budapest",
+        website: "https://pending-dupe.test",
+        contact_email: "someone-else@example.com",
+        blurb: "",
+        price_band: 3,
+      },
+      { token: tB },
+    );
+    expect(second.status).toBe(409);
   });
 });
 
@@ -5192,6 +5378,17 @@ describe("loop A: per-couple supplier votes + self-vote block", () => {
     expect(sub.status).toBe(201);
     const supplierPublicId = sub.data.supplier.id;
 
+    // Promote past the verification gate so the vote endpoint sees an active
+    // listing — voting on pending listings has no UX meaning since they're
+    // invisible publicly.
+    const numericId = Number(supplierPublicId.slice(1));
+    const verifyRow = db
+      .prepare(
+        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(numericId) as { token: string };
+    await req("POST", `/api/suppliers/community/verify/${verifyRow.token}`);
+
     const selfVote = await req(
       "PUT",
       `/api/suppliers/${supplierPublicId}/vote`,
@@ -5798,6 +5995,109 @@ describe("planning items CRUD", () => {
   test("planning endpoints require auth", async () => {
     wipeAll();
     const r = await req("GET", "/api/planning");
+    expect(r.status).toBe(401);
+  });
+});
+
+describe("planning: assignee + suggested_by_name", () => {
+  test("task accepts assignee, idea auto-stamps suggested_by_name", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("plan-meta@weddly.test");
+
+    // Task with assignee.
+    const task = await req<{
+      item: { assignee: string | null; suggested_by_name: string | null };
+    }>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Virágokat egyeztetni", assignee: "Anna" },
+      { token },
+    );
+    expect(task.status).toBe(201);
+    expect(task.data.item.assignee).toBe("Anna");
+    expect(task.data.item.suggested_by_name).toBeNull();
+
+    // Idea auto-stamps suggester (current user's full_name = "Owner" from bootstrap).
+    const idea = await req<{
+      item: { assignee: string | null; suggested_by_name: string | null };
+    }>("POST", "/api/planning", { kind: "idea", title: "Polaroid fal" }, { token });
+    expect(idea.status).toBe(201);
+    expect(idea.data.item.suggested_by_name).toBe("Owner");
+    expect(idea.data.item.assignee).toBeNull();
+  });
+
+  test("assignee survives a PATCH round-trip", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("plan-patch@weddly.test");
+    const created = await req<{ item: { id: number } }>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Tortát megrendelni" },
+      { token },
+    );
+    const id = created.data.item.id;
+
+    const patched = await req<{ item: { assignee: string | null } }>(
+      "PATCH",
+      `/api/planning/${id}`,
+      { assignee: "Apa" },
+      { token },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.item.assignee).toBe("Apa");
+
+    // Cleared via explicit null.
+    const cleared = await req<{ item: { assignee: string | null } }>(
+      "PATCH",
+      `/api/planning/${id}`,
+      { assignee: null },
+      { token },
+    );
+    expect(cleared.data.item.assignee).toBeNull();
+  });
+
+  test("schedule kind ignores assignee + suggested_by stays null", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("plan-sched@weddly.test");
+    const sched = await req<{
+      item: { assignee: string | null; suggested_by_name: string | null };
+    }>(
+      "POST",
+      "/api/planning",
+      { kind: "schedule", title: "Szertartás", scheduled_time: "15:00", assignee: "ignored" },
+      { token },
+    );
+    expect(sched.status).toBe(201);
+    expect(sched.data.item.assignee).toBeNull();
+    expect(sched.data.item.suggested_by_name).toBeNull();
+  });
+});
+
+describe("places search (Nominatim proxy)", () => {
+  test("short / empty queries return []; long queries 400", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("places-search@weddly.test");
+
+    const empty = await req<{ places: unknown[] }>("GET", "/api/places/search?q=", undefined, {
+      token,
+    });
+    expect(empty.status).toBe(200);
+    expect(empty.data.places).toEqual([]);
+
+    const tooShort = await req<{ places: unknown[] }>("GET", "/api/places/search?q=b", undefined, {
+      token,
+    });
+    expect(tooShort.status).toBe(200);
+    expect(tooShort.data.places).toEqual([]);
+
+    const tooLong = await req("GET", `/api/places/search?q=${"x".repeat(101)}`, undefined, {
+      token,
+    });
+    expect(tooLong.status).toBe(400);
+  });
+
+  test("requires auth", async () => {
+    const r = await req("GET", "/api/places/search?q=bali");
     expect(r.status).toBe(401);
   });
 });

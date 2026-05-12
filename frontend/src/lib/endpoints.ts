@@ -20,6 +20,7 @@ import type {
   GuestCountGoal,
   Guest,
   Household,
+  PlaceSuggestion,
   PublicCheckinView,
   PublicRsvpView,
   SeatAssignment,
@@ -200,6 +201,12 @@ export const dietaryApi = {
   summary: () => apiFetch<DietarySummary>("GET", "/api/guests/dietary-summary"),
 };
 
+/** Honeymoon destination autocomplete — proxies OpenStreetMap Nominatim. */
+export const placesApi = {
+  search: (q: string) =>
+    apiFetch<{ places: PlaceSuggestion[] }>("GET", `/api/places/search?q=${encodeURIComponent(q)}`),
+};
+
 /** Day-of run-of-show timeline. Times are minutes from midnight in wedding-
  *  day-local time so a date shift right up to D-1 doesn't rewrite every row. */
 export const scheduleApi = {
@@ -232,6 +239,8 @@ export interface PlanningItemCreate {
   done?: boolean;
   due_date?: string | null;
   scheduled_time?: string | null;
+  /** Tasks only — free-text owner. */
+  assignee?: string | null;
   position?: number;
 }
 
@@ -425,6 +434,29 @@ export const supplierApi = {
       "PUT",
       `/api/suppliers/${encodeURIComponent(supplierId)}/vote`,
       { value },
+    ),
+  /** Report an abusive / fake / spam community listing. `supplierId` is the
+   *  numeric part of a community supplier id (i.e. `5` from `"c5"`). The
+   *  backend de-duplicates per (supplier, reporter) so calling twice from
+   *  the same user is a no-op. Three distinct reporters → auto-hide. */
+  reportCommunity: (supplierId: number, reason: CommunitySupplierReportReason, note?: string) =>
+    apiFetch<{
+      ok: boolean;
+      duplicate: boolean;
+      auto_hidden: boolean;
+      report_count: number;
+    }>("POST", `/api/suppliers/community/${supplierId}/report`, {
+      reason,
+      note: note ?? null,
+    }),
+  /** Consume the verification token from the email sent to the listing's
+   *  contact_email. Flips the supplier from 'pending' to 'active' so it
+   *  shows up in the public directory. Public endpoint — no auth. */
+  verifyCommunity: (token: string) =>
+    apiFetch<{ ok: boolean; already_consumed: boolean }>(
+      "POST",
+      `/api/suppliers/community/verify/${encodeURIComponent(token)}`,
+      {},
     ),
 };
 

@@ -128,6 +128,19 @@ export interface LocaleMessages {
     gate_logout: string;
     gate_open_inbox: string;
   };
+  /** Public "confirm your community-supplier listing" page — reached from the
+   *  email sent to the listing's contact_email after submission. */
+  verify_supplier: {
+    page_title: string;
+    page_body: string;
+    page_loading: string;
+    page_success: string;
+    page_already: string;
+    page_invalid: string;
+    page_expired: string;
+    page_missing: string;
+    page_home: string;
+  };
   /** Page reached from the email_change_verify confirm link. */
   change_email: {
     page_title: string;
@@ -709,6 +722,37 @@ export interface LocaleMessages {
     /** Success toast (plural variants). */
     template_done_one: string;
     template_done_other: string;
+    /** Assignee chip on tasks + idea-suggester byline. */
+    assignee_label: string;
+    assignee_placeholder: string;
+    idea_suggested_by: string;
+    /** Task tab wand button + dialog. */
+    task_template_button: string;
+    task_template_button_hint: string;
+    task_template_dialog_title: string;
+    task_template_dialog_body: string;
+    task_template_default_assignee_label: string;
+    task_template_default_assignee_placeholder: string;
+    template_tasks_done_one: string;
+    template_tasks_done_other: string;
+    /** Idea tab wand button + dialog. */
+    idea_template_button: string;
+    idea_template_button_hint: string;
+    idea_template_dialog_title: string;
+    idea_template_dialog_body: string;
+    template_ideas_done_one: string;
+    template_ideas_done_other: string;
+    /** Dice (🎲) randomiser on the Idea tab. */
+    dice_button: string;
+    dice_button_hint: string;
+    dice_dialog_title: string;
+    dice_dialog_body: string;
+    dice_add: string;
+    dice_added: string;
+    dice_reroll: string;
+    dice_close: string;
+    dice_added_one: string;
+    dice_added_other: string;
     /** Template event titles, in wedding-night order. */
     template_preparations: string;
     template_guests_arrive: string;
@@ -1770,6 +1814,13 @@ export interface LocaleMessages {
   /** /privacy — MVP-quality privacy policy. Bilingual (HU primary, EN
    *  block beneath). Content stays plain JSX in PrivacyPage.tsx; only
    *  the localised section titles / SEO copy live here. */
+  /** Shared "open-beta draft" banner displayed above both Privacy and Terms.
+   *  Sets honest expectation that the copy hasn't been signed off by a lawyer
+   *  while the product is in the pre-1.0 window. */
+  legal: {
+    draft_banner_label: string;
+    draft_banner_body: string;
+  };
   privacy: {
     seo_title: string;
     seo_description: string;

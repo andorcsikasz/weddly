@@ -1,9 +1,10 @@
 // Honeymoon planner — three header tiles (nights / destination / budget) over
-// an inline-editable cost grid. Destination + dates live on `couples`. The
-// cost cards mirror `budget_lines` rows in the `honeymoon` category, so a
-// change here shows up on /app/budget and vice versa.
+// a slider-driven cost grid. Destination + dates live on `couples`; the
+// destination field is autocompleted against /api/places/search (Nominatim
+// proxy). Cost cards mirror `budget_lines` rows in the `honeymoon` category,
+// so a slider drag here shows up on /app/budget and vice versa.
 
-import type { BudgetLine, Couple } from "@shared/types";
+import type { BudgetLine, Couple, PlaceSuggestion } from "@shared/types";
 import {
   BedDouble,
   Calendar,
@@ -28,8 +29,8 @@ import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { budgetApi, coupleApi } from "../lib/endpoints";
-import { formatHuf, formatNumber } from "../lib/format";
+import { budgetApi, coupleApi, placesApi } from "../lib/endpoints";
+import { formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { publish, subscribe } from "../lib/sync";
 
@@ -112,14 +113,34 @@ function formatDateShort(iso: string | null, locale: "hu" | "en"): string {
   }).format(d);
 }
 
-/** Strip whitespace + dots so HU-formatted "350 000" / "350.000" both parse. */
-function parseHuf(raw: string): number | null {
-  const cleaned = raw.replace(/[\s.]/g, "").replace(/,/g, "");
-  if (cleaned === "") return 0;
-  if (!/^\d+$/.test(cleaned)) return null;
-  const n = Number(cleaned);
-  if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) return null;
-  return Math.round(n);
+/* ─── Slider helpers ───────────────────────────────────────────────────── */
+
+/** Mirror of CostPlanningCard's range-fill trick — paint the filled portion
+ *  of a native range input ourselves so the look stays consistent across
+ *  Chromium / Firefox / WebKit. */
+function rangeFillStyle(value: number, min: number, max: number): { background: string } {
+  const span = max - min;
+  const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
+  return {
+    background: `linear-gradient(to right, #243150 0%, #243150 ${pct}%, #efe9d9 ${pct}%, #efe9d9 100%)`,
+  };
+}
+
+/** Shared slider ceiling for every honeymoon cost card. Computed once per
+ *  render from the couple's overall budget cap (if set) so the headroom
+ *  scales with the wedding size. Falls back to a sensible default that
+ *  fits a typical Hungarian honeymoon. */
+function honeymoonSliderMax(couple: Couple | null, totalPlanned: number): number {
+  // Up to 30% of the wedding cap — generous, but keeps the rails feeling
+  // bounded for a small wedding.
+  if (couple?.budget_goal.kind === "exact" && couple.budget_goal.exact_huf) {
+    return Math.max(500_000, Math.round(couple.budget_goal.exact_huf * 0.3));
+  }
+  if (couple?.budget_goal.kind === "range" && couple.budget_goal.max_huf) {
+    return Math.max(500_000, Math.round(couple.budget_goal.max_huf * 0.3));
+  }
+  // No cap → at least 500k, or 2× the biggest current line.
+  return Math.max(500_000, totalPlanned * 2);
 }
 
 /* ─── Page ─────────────────────────────────────────────────────────────── */
@@ -153,16 +174,22 @@ export default function HoneymoonPage() {
   const totals = useMemo(() => {
     let planned = 0;
     let actual = 0;
+    let biggest = 0;
     for (const l of honeymoonLines) {
       planned += l.planned_huf;
       actual += l.actual_huf;
+      if (l.planned_huf > biggest) biggest = l.planned_huf;
     }
-    return { planned, actual };
+    return { planned, actual, biggest };
   }, [honeymoonLines]);
   const nights = nightsBetween(
     couple?.honeymoon_start_date ?? null,
     couple?.honeymoon_end_date ?? null,
   );
+  // Sliders share a max so the rails stay comparable. We feed `biggest`
+  // (not `totalPlanned`) into the fallback so one outsize line doesn't
+  // push the others into a tiny strip of the track.
+  const sliderMax = honeymoonSliderMax(couple, totals.biggest);
 
   /* ─── Trip-detail saves (destination + dates) ─────────────────────── */
 
@@ -292,6 +319,7 @@ export default function HoneymoonPage() {
                 key={line.id}
                 line={line}
                 locale={locale}
+                sliderMax={sliderMax}
                 onPlannedChange={(v) => updateLinePlanned(line, v)}
                 onRemove={() => removeLine(line)}
               />
@@ -429,29 +457,6 @@ function DestinationTile({
 }) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<string>(value ?? "");
-
-  useEffect(() => {
-    setDraft(value ?? "");
-  }, [value]);
-
-  async function commit() {
-    setEditing(false);
-    const trimmed = draft.trim();
-    const next = trimmed.length > 0 ? trimmed : null;
-    if (next === value) return;
-    await onSave(next);
-  }
-
-  function onKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      commit();
-    } else if (e.key === "Escape") {
-      setDraft(value ?? "");
-      setEditing(false);
-    }
-  }
 
   return (
     <div className="card-hover">
@@ -462,17 +467,14 @@ function DestinationTile({
         </span>
       </div>
       {editing ? (
-        <input
-          type="text"
-          className="input mt-3 h-10 min-h-0 text-base"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={onKey}
-          maxLength={200}
-          placeholder={t("honeymoon.destination_placeholder")}
-          aria-label={t("honeymoon.tile_destination")}
-          autoFocus
+        <DestinationAutocomplete
+          initial={value ?? ""}
+          onCancel={() => setEditing(false)}
+          onCommit={async (next) => {
+            setEditing(false);
+            if (next === value) return;
+            await onSave(next);
+          }}
         />
       ) : (
         <button
@@ -491,6 +493,164 @@ function DestinationTile({
             </span>
           )}
         </button>
+      )}
+    </div>
+  );
+}
+
+/** Debounced Nominatim-backed picker. Keystrokes are typed freely; after a
+ *  brief pause we hit /api/places/search and drop a 5-row dropdown. Picking
+ *  a suggestion commits the suggestion's full address. Pressing Enter or
+ *  blurring commits whatever's typed (so users can still enter free text
+ *  if Nominatim has nothing for their destination). */
+function DestinationAutocomplete({
+  initial,
+  onCommit,
+  onCancel,
+}: {
+  initial: string;
+  onCommit: (value: string | null) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const { t } = useT();
+  const [draft, setDraft] = useState(initial);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [highlight, setHighlight] = useState(-1);
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const requestId = useRef(0);
+  // Tracks whether a commit() has already run for this mount so blur-after-
+  // pick doesn't fire a second save with the now-stale draft.
+  const committed = useRef(false);
+
+  // Debounced fetch. Skips network for short / unchanged queries.
+  useEffect(() => {
+    const q = draft.trim();
+    if (q.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    const myId = ++requestId.current;
+    const handle = setTimeout(async () => {
+      try {
+        const r = await placesApi.search(q);
+        // Discard stale responses — only the latest typed query wins.
+        if (myId !== requestId.current) return;
+        setSuggestions(r.places);
+        setHighlight(-1);
+        setOpen(true);
+      } catch {
+        if (myId !== requestId.current) return;
+        setSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [draft]);
+
+  // Click-outside closes the dropdown AND commits whatever's typed — same
+  // pattern as DaysTile so the tile feels uniform.
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) commitDraft();
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
+
+  function commitDraft() {
+    if (committed.current) return;
+    committed.current = true;
+    const trimmed = draft.trim();
+    onCommit(trimmed.length > 0 ? trimmed : null);
+  }
+
+  function pick(s: PlaceSuggestion) {
+    committed.current = true;
+    setOpen(false);
+    // Prefer the full address (secondary) when picking from the dropdown —
+    // it's what users asked for when they said "pontos cím". Fall back to
+    // the primary headline if Nominatim didn't return a display_name.
+    const value = s.secondary || s.primary;
+    onCommit(value);
+  }
+
+  function onKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (suggestions.length === 0) return;
+      setOpen(true);
+      setHighlight((h) => (h + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (suggestions.length === 0) return;
+      setOpen(true);
+      setHighlight((h) => (h <= 0 ? suggestions.length - 1 : h - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (open && highlight >= 0 && suggestions[highlight]) {
+        pick(suggestions[highlight]);
+      } else {
+        commitDraft();
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      committed.current = true;
+      onCancel();
+    }
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative mt-3">
+      <input
+        type="text"
+        className="input h-10 min-h-0 w-full text-base"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={() => suggestions.length > 0 && setOpen(true)}
+        onKeyDown={onKey}
+        maxLength={200}
+        placeholder={t("honeymoon.destination_placeholder")}
+        aria-label={t("honeymoon.tile_destination")}
+        aria-autocomplete="list"
+        aria-expanded={open}
+        autoComplete="off"
+        autoFocus
+      />
+      {open && suggestions.length > 0 && (
+        <ul
+          role="listbox"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-80 overflow-y-auto rounded-xl border border-paper-300 bg-white py-1 shadow-pop"
+        >
+          {suggestions.map((s, i) => (
+            <li key={`${s.primary}-${i}`}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={i === highlight}
+                onMouseDown={(e) => {
+                  // Use mousedown so the click fires BEFORE the input blurs.
+                  e.preventDefault();
+                  pick(s);
+                }}
+                onMouseEnter={() => setHighlight(i)}
+                className={`flex w-full items-start gap-2 px-3 py-2 text-left ${
+                  i === highlight ? "bg-blush-50" : "hover:bg-paper-50"
+                }`}
+              >
+                <MapPin size={14} className="mt-0.5 shrink-0 text-blush-700" aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ink-900">
+                    {s.primary}
+                  </span>
+                  {s.secondary && s.secondary !== s.primary && (
+                    <span className="block truncate text-[11px] text-ink-500">{s.secondary}</span>
+                  )}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
@@ -574,33 +734,44 @@ function PresetChips({
 function CostCard({
   line,
   locale,
+  sliderMax,
   onPlannedChange,
   onRemove,
 }: {
   line: BudgetLine;
   locale: "hu" | "en";
+  sliderMax: number;
   onPlannedChange: (v: number) => Promise<void>;
   onRemove: () => void;
 }) {
   const { t } = useT();
   const preset = presetFor(line.label);
   const Icon = preset.icon;
-  const [draft, setDraft] = useState<string>(formatNumber(line.planned_huf, "hu"));
-  const [error, setError] = useState(false);
+  // Local drag state — slider feels instant; commit fires on release only,
+  // mirroring CostPlanningCard's CategoryRow pattern.
+  const [localValue, setLocalValue] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setDraft(formatNumber(line.planned_huf, "hu"));
-    setError(false);
-  }, [line.planned_huf]);
+    if (!saving) setLocalValue(null);
+  }, [line.planned_huf, saving]);
 
-  function commit() {
-    const parsed = parseHuf(draft);
-    if (parsed === null) {
-      setError(true);
+  const editValue = localValue ?? line.planned_huf;
+  // 5k steps below 1M for fine-grained sub-category control, 10k above.
+  const step = sliderMax >= 2_000_000 ? 10_000 : 5_000;
+
+  async function commit(next: number) {
+    const snapped = Math.round(next / step) * step;
+    if (snapped === line.planned_huf) {
+      setLocalValue(null);
       return;
     }
-    if (parsed !== line.planned_huf) onPlannedChange(parsed);
-    setDraft(formatNumber(parsed, "hu"));
+    setSaving(true);
+    try {
+      await onPlannedChange(snapped);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -621,37 +792,33 @@ function CostCard({
           {line.label}
         </p>
       </div>
-      <div className="mt-3 flex items-baseline gap-2">
-        <input
-          type="text"
-          inputMode="numeric"
-          autoComplete="off"
-          className={`input h-9 min-h-0 flex-1 py-1 text-right text-sm tabular-nums ${
-            error ? "input-invalid" : ""
-          }`}
-          value={draft}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            if (error) setError(false);
-          }}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              (e.target as HTMLInputElement).blur();
-            }
-          }}
-          aria-invalid={error || undefined}
-          aria-label={t("budget.planned")}
-        />
-        <span className="text-xs text-ink-500">Ft</span>
+      <div className="mt-3 flex items-baseline justify-between gap-3">
+        <span className="font-serif text-xl font-semibold tabular-nums text-ink-900">
+          {formatHuf(editValue, locale)}
+        </span>
+        {line.actual_huf > 0 && (
+          <span className="text-[11px] text-ink-500">
+            {t("honeymoon.cost_actual_inline", {
+              actual: formatHuf(line.actual_huf, locale),
+            })}
+          </span>
+        )}
       </div>
-      {line.actual_huf > 0 && (
-        <p className="mt-1 text-[11px] text-ink-500">
-          {t("honeymoon.cost_actual_inline", {
-            actual: formatHuf(line.actual_huf, locale),
-          })}
-        </p>
-      )}
+      <input
+        type="range"
+        min={0}
+        max={sliderMax}
+        step={step}
+        value={editValue}
+        disabled={saving}
+        onChange={(e) => setLocalValue(Number(e.target.value))}
+        onMouseUp={(e) => commit(Number(e.currentTarget.value))}
+        onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
+        onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+        className="range-fill range-fill-thin mt-3 block w-full"
+        style={rangeFillStyle(editValue, 0, sliderMax)}
+        aria-label={t("honeymoon.slider_aria", { label: line.label })}
+      />
     </div>
   );
 }

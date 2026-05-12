@@ -147,6 +147,21 @@ const hu: LocaleMessages = {
     gate_logout: "Kijelentkezés",
     gate_open_inbox: "{provider} megnyitása",
   },
+  verify_supplier: {
+    page_title: "Hirdetés megerősítése",
+    page_body: "Erősítsd meg, hogy a Weddly közösségi katalógusába kerülhetsz.",
+    page_loading: "Megerősítjük…",
+    page_success:
+      "Köszönjük — mostantól a páraknak is megjelenik a hirdetésed a Weddly katalógusban. Ha bármi adatot változtatnál, írj nekünk.",
+    page_already: "Ez a link már fel lett használva — a hirdetésed él. Nem kell újra kattintanod.",
+    page_invalid:
+      "Nem ismerjük fel ezt a linket. Lehet, hogy elgépelődött vagy egy régi e-mailből származik — kérj újat a Weddly csapatától.",
+    page_expired:
+      "A link már lejárt. Írj nekünk és küldünk egy újat — a hirdetés addig nem jelenik meg.",
+    page_missing:
+      "Ez a hirdetés már nem létezik — valószínűleg törölte a csapat vagy lejárt a beküldés.",
+    page_home: "Vissza a Weddly főoldalra",
+  },
   change_email: {
     page_title: "Új e-mail cím megerősítése",
     page_loading: "Megerősítjük…",
@@ -730,6 +745,42 @@ const hu: LocaleMessages = {
     template_preview_label: "Előnézet",
     template_done_one: "{count} programpont hozzáadva",
     template_done_other: "{count} programpont hozzáadva",
+    // Assignee chip + idea suggester display.
+    assignee_label: "Felelős",
+    assignee_placeholder: "Felelős",
+    idea_suggested_by: "— {name} javasolta",
+    // Task tab wand (varázspálca) + dialog.
+    task_template_button: "Sablon feladatok",
+    task_template_button_hint:
+      "12 klasszikus magyar esküvői teendő — opcionálisan közös felelőssel egyszerre.",
+    task_template_dialog_title: "Feladat-sablon",
+    task_template_dialog_body:
+      "Ha mind a 12 feladaton ugyanaz a felelős, add meg itt egyszer. Üresen hagyva későbbi szerkesztéssel jelölitek.",
+    task_template_default_assignee_label: "Alapértelmezett felelős",
+    task_template_default_assignee_placeholder: "pl. Anna",
+    template_tasks_done_one: "{count} feladat hozzáadva",
+    template_tasks_done_other: "{count} feladat hozzáadva",
+    // Idea tab wand + dialog.
+    idea_template_button: "Sablon ötletek",
+    idea_template_button_hint:
+      "9 alap ötlet, amit a magyar esküvőkön szoktak megfontolni. Innen szűrhetitek tovább.",
+    idea_template_dialog_title: "Ötlet-sablon",
+    idea_template_dialog_body:
+      "Hozzáadjuk a listához. Mindegyikhez automatikusan megjelenik, hogy ti melyikőtök vetette fel.",
+    template_ideas_done_one: "{count} ötlet hozzáadva",
+    template_ideas_done_other: "{count} ötlet hozzáadva",
+    // Dice (🎲) randomiser on the Idea tab.
+    dice_button: "Dobj 3 ötletet",
+    dice_button_hint: "Véletlenszerű, kreatív ötletek — válogass és fogadj el amelyiket szereted.",
+    dice_dialog_title: "Kreatív ötlet-dobás",
+    dice_dialog_body:
+      "3 véletlen ötlet a kreatív gyűjteményből. Fogadd el egyenként, vagy dobj újat ha nem szóltak meg.",
+    dice_add: "Hozzáadom",
+    dice_added: "Hozzáadva",
+    dice_reroll: "Másik 3",
+    dice_close: "Bezárás",
+    dice_added_one: "{count} ötlet hozzáadva a listához",
+    dice_added_other: "{count} ötlet hozzáadva a listához",
     template_preparations: "Készülődés",
     template_guests_arrive: "Vendégek érkezése",
     template_ceremony: "Szertartás",
@@ -1201,11 +1252,12 @@ const hu: LocaleMessages = {
       title: "Tipp leadása",
       intro:
         "Ismersz egy jó szolgáltatót? Add hozzá pár adattal — mások is könnyebben megtalálják.",
-      trust_review: "48 órán belül átnézzük",
-      trust_email_private: "Az e-mail címed addig nem nyilvános",
+      trust_review: "Megerősítő linket küldünk a megadott e-mailre",
+      trust_email_private: "A hirdetés csak a megerősítés után jelenik meg",
       trust_no_fees: "Ingyenes — semmilyen jutalékot nem kérünk",
-      next_steps_title: "Köszönjük!",
-      next_steps_body: "Az ajánlatodat hamarosan ellenőrizzük.",
+      next_steps_title: "Megerősítő linket küldtünk!",
+      next_steps_body:
+        "Nézd meg a megadott e-mail fiókot, kattints a linkre, és a hirdetés megjelenik a párok számára.",
       category_label: "Kategória",
       category_placeholder: "Válassz kategóriát",
       name_label: "Név",
@@ -1227,7 +1279,8 @@ const hu: LocaleMessages = {
       submit_button: "Hozzáadás",
       submitting: "Mentés…",
       success_title: "Köszönjük!",
-      success_body: "A tipp megjelent a listán. Az admin bármikor moderálhatja.",
+      success_body:
+        "A tipp akkor jelenik meg a listán, ha a megadott e-mailen megerősítik. Addig a Weddly adminok látják a moderációs sorban.",
       cancel: "Mégse",
       err_required: "Ezt a mezőt töltsd ki.",
       err_invalid_url: "Érvényes weboldal-cím szükséges (https://…).",
@@ -1246,7 +1299,7 @@ const hu: LocaleMessages = {
       submit: "Jelentés elküldése",
       submitting: "Küldés…",
       thanks_toast: "Köszönjük, megkaptuk. A csapat átnézi.",
-      duplicate_toast: "Ezt a hirdetést már jelentetted — még nem kellett kétszer.",
+      duplicate_toast: "Ezt a hirdetést már jelentetted — nincs szükség újabb jelzésre.",
       auto_hidden_toast:
         "Köszönjük — a hirdetést a többi jelentéssel együtt automatikusan elrejtettük, amíg moderátor át nem nézi.",
       err_rate_limited: "Túl sok jelentés rövid idő alatt — próbáld pár perc múlva.",
@@ -1710,6 +1763,11 @@ const hu: LocaleMessages = {
     trust_microcopy_prefix: "A nyílt béta alatt ingyenes — bankkártya nem szükséges. Olvasd el az ",
     trust_microcopy_privacy_link: "adatvédelmi szabályzatot",
     trust_microcopy_suffix: ".",
+  },
+  legal: {
+    draft_banner_label: "Nyílt béta — még nincs jogi átvilágítás",
+    draft_banner_body:
+      "Ez a szöveg őszintén leírja, mit csinál ma a Weddly, de még nem fésülte át ügyvéd. Az 1.0 indulása előtt magyar jogász átnézi és véglegesíti.",
   },
   privacy: {
     seo_title: "Adatvédelmi szabályzat — Wēddly",

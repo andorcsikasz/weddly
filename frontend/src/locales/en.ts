@@ -148,6 +148,21 @@ const en: LocaleMessages = {
     gate_logout: "Sign out",
     gate_open_inbox: "Open {provider}",
   },
+  verify_supplier: {
+    page_title: "Confirm your listing",
+    page_body: "Confirm that you'd like your business listed in the Weddly community directory.",
+    page_loading: "Confirming…",
+    page_success:
+      "Thanks — your listing is now visible to couples in the Weddly directory. If anything in it needs changing, get in touch.",
+    page_already: "This link has already been used — your listing is live. No need to click again.",
+    page_invalid:
+      "We don't recognise this link. It may be mistyped or from an old email — ask the Weddly team for a fresh one.",
+    page_expired:
+      "This link has expired. Reply to the email and we'll send a fresh one — your listing stays hidden until then.",
+    page_missing:
+      "That listing no longer exists — it may have been deleted or the submission has expired.",
+    page_home: "Back to Weddly",
+  },
   change_email: {
     page_title: "Confirm your new email",
     page_loading: "Confirming…",
@@ -729,6 +744,42 @@ const en: LocaleMessages = {
     template_preview_label: "Preview",
     template_done_one: "{count} event added",
     template_done_other: "{count} events added",
+    // Assignee chip + idea suggester display.
+    assignee_label: "Owner",
+    assignee_placeholder: "Owner",
+    idea_suggested_by: "— suggested by {name}",
+    // Task tab wand + dialog.
+    task_template_button: "Task template",
+    task_template_button_hint:
+      "12 classic Hungarian wedding to-dos — optionally assign a single owner to all of them.",
+    task_template_dialog_title: "Task template",
+    task_template_dialog_body:
+      "If one person owns all 12, set them as the default here. Otherwise leave blank and assign individually later.",
+    task_template_default_assignee_label: "Default owner",
+    task_template_default_assignee_placeholder: "e.g. Anna",
+    template_tasks_done_one: "{count} task added",
+    template_tasks_done_other: "{count} tasks added",
+    // Idea tab wand + dialog.
+    idea_template_button: "Idea template",
+    idea_template_button_hint:
+      "Nine common Hungarian-wedding ideas to consider. Edit or remove from there.",
+    idea_template_dialog_title: "Idea template",
+    idea_template_dialog_body:
+      "We'll add them to the list. Each one will auto-tag which of you logged it.",
+    template_ideas_done_one: "{count} idea added",
+    template_ideas_done_other: "{count} ideas added",
+    // Dice (🎲) randomiser on the Idea tab.
+    dice_button: "Roll 3 ideas",
+    dice_button_hint: "Random creative ideas — pick the ones that resonate.",
+    dice_dialog_title: "Creative idea roll",
+    dice_dialog_body:
+      "Three random picks from our creative pool. Add the ones you love, re-roll if none stick.",
+    dice_add: "Add",
+    dice_added: "Added",
+    dice_reroll: "Roll again",
+    dice_close: "Close",
+    dice_added_one: "{count} idea added to your list",
+    dice_added_other: "{count} ideas added to your list",
     template_preparations: "Preparations",
     template_guests_arrive: "Guests arrive",
     template_ceremony: "Ceremony",
@@ -1194,11 +1245,12 @@ const en: LocaleMessages = {
     submit: {
       title: "Drop your own",
       intro: "Know someone good? Add a few details — other couples will find them faster.",
-      trust_review: "We review within 48 hours",
-      trust_email_private: "Your email stays private until then",
+      trust_review: "We send a confirmation link to the email below",
+      trust_email_private: "The listing only goes live after you confirm",
       trust_no_fees: "Free — no commission, ever",
-      next_steps_title: "Thanks!",
-      next_steps_body: "We'll review your tip shortly.",
+      next_steps_title: "Check your inbox!",
+      next_steps_body:
+        "We sent a confirmation link to the email above. Click it and the listing will appear in the directory.",
       category_label: "Category",
       category_placeholder: "Pick a category",
       name_label: "Name",
@@ -1701,6 +1753,11 @@ const en: LocaleMessages = {
     trust_microcopy_prefix: "Free during the open beta — no card required. Read our ",
     trust_microcopy_privacy_link: "privacy policy",
     trust_microcopy_suffix: ".",
+  },
+  legal: {
+    draft_banner_label: "Open beta — pending legal review",
+    draft_banner_body:
+      "This text honestly describes what Weddly does today, but it hasn't been reviewed by a lawyer yet. A Hungarian lawyer will review and finalise it before the 1.0 launch.",
   },
   privacy: {
     seo_title: "Privacy policy — Weddly",
