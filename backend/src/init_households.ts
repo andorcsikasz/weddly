@@ -14,6 +14,7 @@
 // before touching anything.
 
 import { db, now } from "./db";
+import { ensurePartnerGuests } from "./domain/guests";
 import { deriveSlugBase, uniqueCoupleSlug } from "./domain/slug";
 import { generateInviteCode, generateHouseholdCode } from "./domain/invite_codes";
 
@@ -178,56 +179,40 @@ function backfillCoupleHostGuests() {
   const insertHh = db.prepare(
     "INSERT INTO households (couple_id, code, label, notes, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?)",
   );
-  const countAnyGuests = db.prepare("SELECT COUNT(*) AS n FROM guests WHERE couple_id = ?");
-  const insertGuest = db.prepare(
-    `INSERT INTO guests
-       (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
-        meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
-        song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
-        created_at, updated_at, household_id)
-     VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 'yes',
-             NULL, NULL, NULL, NULL, 0,
-             NULL, NULL, ?, ?, ?,
-             ?, ?, ?)`,
-  );
 
   let seededHouseholds = 0;
   let seededGuests = 0;
-  const tx = db.transaction(() => {
-    for (const c of couples) {
-      // Guard: only seed the hosts on a brand-new (zero-guest) workspace.
-      // If the couple already has any guest row — including a manually-
-      // deleted-then-readded host — leave them alone so a server reboot
-      // doesn't resurrect rows the user explicitly removed.
-      const total = countAnyGuests.get(c.id) as { n: number };
-      if (total.n > 0) continue;
-
-      // First household by created_at = the couple's auto-household.
-      let hhId: number;
-      const first = findFirstHh.get(c.id) as { id: number } | undefined;
-      if (first) {
-        hhId = first.id;
-      } else {
-        const label =
-          c.bride_name && c.groom_name
-            ? `${c.bride_name} & ${c.groom_name}`
-            : c.display_name || "Couple";
-        const code = freshHouseholdCode(c.id);
-        const result = insertHh.run(c.id, code, label, ts, ts);
-        hhId = Number(result.lastInsertRowid);
-        seededHouseholds++;
-      }
-
-      for (const [name, groupTag] of [
-        [c.bride_name, "her_family"],
-        [c.groom_name, "his_family"],
-      ] as const) {
-        insertGuest.run(c.id, name, groupTag, freshInviteCode(), ts, ts, ts, ts, ts, hhId);
-        seededGuests++;
-      }
+  // Run each couple's host-seed in its own transaction so a hiccup on one
+  // couple's invite-code collision doesn't roll back the whole batch.
+  for (const c of couples) {
+    // First household by created_at = the couple's auto-household.
+    let hhId: number;
+    const first = findFirstHh.get(c.id) as { id: number } | undefined;
+    if (first) {
+      hhId = first.id;
+    } else {
+      const label =
+        c.bride_name && c.groom_name
+          ? `${c.bride_name} & ${c.groom_name}`
+          : c.display_name || "Couple";
+      const code = freshHouseholdCode(c.id);
+      const result = insertHh.run(c.id, code, label, ts, ts);
+      hhId = Number(result.lastInsertRowid);
+      seededHouseholds++;
     }
-  });
-  tx();
+
+    // The helper is idempotent — `partner_role` keys the SELECT-before-INSERT
+    // so reboots don't duplicate. Same-named existing rows get adopted by
+    // stamping `partner_role` rather than inserting a sibling. That's the
+    // deliberate guarantee of this feature: the couple is always on their
+    // own guest list, fully seatable, with a stable role marker.
+    seededGuests += ensurePartnerGuests({
+      coupleId: c.id,
+      householdId: hhId,
+      brideName: c.bride_name,
+      groomName: c.groom_name,
+    });
+  }
 
   if (nameSplits > 0 || seededHouseholds > 0 || seededGuests > 0) {
     console.log(

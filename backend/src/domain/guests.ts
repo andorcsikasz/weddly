@@ -32,8 +32,18 @@ export interface GuestRow {
   rsvp_responded_at: number | null;
   invited_at: number | null;
   invitation_delivered_at: number | null;
+  /** "bride" | "groom" | null — server-derived; mirrors `couples.bride_name` /
+   *  `couples.groom_name` onto the matching guest rows. */
+  partner_role: string | null;
   created_at: number;
   updated_at: number;
+}
+
+export type PartnerRole = "bride" | "groom";
+const VALID_PARTNER_ROLE: ReadonlySet<PartnerRole> = new Set(["bride", "groom"]);
+function normPartnerRole(raw: string | null | undefined): PartnerRole | null {
+  if (raw && VALID_PARTNER_ROLE.has(raw as PartnerRole)) return raw as PartnerRole;
+  return null;
 }
 
 const VALID_GROUPS: ReadonlySet<GuestGroupTag> = new Set([
@@ -95,9 +105,83 @@ export function toGuest(row: GuestRow): Guest {
     rsvp_responded_at: row.rsvp_responded_at,
     invited_at: row.invited_at,
     invitation_delivered_at: row.invitation_delivered_at,
+    partner_role: normPartnerRole(row.partner_role),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+}
+
+/** Idempotently materialize the bride + groom as real guest rows inside the
+ *  couple's own household. Shared by the onboarding handler (fresh couple)
+ *  and the boot-time backfill (pre-existing couples).
+ *
+ *  Behaviour per role:
+ *   1. If a `partner_role = role` guest already exists for this couple,
+ *      leave it alone. Renames are owned by the live PATCH path.
+ *   2. Otherwise, if a same-named guest already exists (case-insensitive,
+ *      trimmed), adopt it by stamping `partner_role` — no duplicate row.
+ *   3. Otherwise, insert a fresh row in `householdId`. rsvp=yes, kind=adult,
+ *      group_tag splits by family side so the dashboard pie chart looks sane.
+ *
+ *  Returns the number of rows touched (created OR adopted) so callers can
+ *  log "seeded N host guest rows" without re-querying. */
+export function ensurePartnerGuests(input: {
+  coupleId: number;
+  householdId: number;
+  brideName: string;
+  groomName: string;
+}): number {
+  const { coupleId, householdId } = input;
+  const bride = input.brideName.trim();
+  const groom = input.groomName.trim();
+  const targets: { name: string; role: PartnerRole; groupTag: string }[] = [];
+  if (bride) targets.push({ name: bride, role: "bride", groupTag: "her_family" });
+  if (groom) targets.push({ name: groom, role: "groom", groupTag: "his_family" });
+  if (targets.length === 0) return 0;
+
+  const selectByRole = db.prepare(
+    "SELECT id FROM guests WHERE couple_id = ? AND partner_role = ? LIMIT 1",
+  );
+  const selectByName = db.prepare(
+    "SELECT id, household_id FROM guests WHERE couple_id = ? AND lower(trim(full_name)) = lower(trim(?)) AND partner_role IS NULL LIMIT 1",
+  );
+  const adopt = db.prepare("UPDATE guests SET partner_role = ?, updated_at = ? WHERE id = ?");
+  const insert = db.prepare(
+    `INSERT INTO guests
+       (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
+        meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
+        song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
+        created_at, updated_at, household_id, partner_role)
+     VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 'yes',
+             NULL, NULL, NULL, NULL, 0,
+             NULL, NULL, NULL, NULL, NULL,
+             ?, ?, ?, ?)`,
+  );
+
+  let touched = 0;
+  const ts = now();
+  for (const t of targets) {
+    const existing = selectByRole.get(coupleId, t.role) as { id: number } | undefined;
+    if (existing) continue;
+    const match = selectByName.get(coupleId, t.name) as { id: number } | undefined;
+    if (match) {
+      adopt.run(t.role, ts, match.id);
+      touched++;
+      continue;
+    }
+    insert.run(coupleId, t.name, t.groupTag, uniqueInviteCode(), ts, ts, householdId, t.role);
+    touched++;
+  }
+  return touched;
+}
+
+/** Rename the partner-role guest row when bride_name / groom_name changes. */
+export function renamePartnerGuest(coupleId: number, role: PartnerRole, newName: string): void {
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  db.prepare(
+    "UPDATE guests SET full_name = ?, updated_at = ? WHERE couple_id = ? AND partner_role = ?",
+  ).run(trimmed, now(), coupleId, role);
 }
 
 /** Generate a unique invite code, retrying on the (rare) collision. */

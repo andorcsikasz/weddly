@@ -176,22 +176,13 @@ export default function SeatingPage() {
 
   const guestById = useMemo(() => new Map(guests.map((g) => [g.id, g])), [guests]);
   const seatedIds = useMemo(() => new Set(assignments.map((a) => a.guest_id)), [assignments]);
-  // Look up partner role by name. Case-insensitive, trimmed — gives the
-  // couple a chance to type their own name as a guest without exactly
-  // matching the casing they used in onboarding.
-  const partnerRoleByName = useMemo(() => {
-    const map = new Map<string, "bride" | "groom">();
-    const bride = couple?.bride_name?.trim().toLowerCase();
-    const groom = couple?.groom_name?.trim().toLowerCase();
-    if (bride) map.set(bride, "bride");
-    if (groom) map.set(groom, "groom");
-    return map;
-  }, [couple]);
-  const partnerRole = useCallback(
-    (g: Guest): "bride" | "groom" | null =>
-      partnerRoleByName.get(g.full_name.trim().toLowerCase()) ?? null,
-    [partnerRoleByName],
-  );
+  // Partner role comes off the guest row directly now — backend stamps it on
+  // the two host guest rows that mirror `couples.bride_name` /
+  // `couples.groom_name`. Renames stay in sync via the PATCH path so the
+  // marker survives bride/groom name edits. The legacy name-matching fallback
+  // is gone; PartnerSlotPlaceholder still renders when a partner row is
+  // missing (defensive — backfill covers the entire prod DB on next boot).
+  const partnerRole = useCallback((g: Guest): "bride" | "groom" | null => g.partner_role, []);
   // Two reserved slots for the couple at the top of the unassigned panel.
   // The user shouldn't have to manually add themselves as guests — the
   // workspace already knows about them through registration + invite. We

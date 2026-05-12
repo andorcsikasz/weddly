@@ -18,6 +18,7 @@ import {
   CheckCheck,
   ChevronDown,
   Cookie,
+  Crown,
   Fish,
   Leaf,
   Milk,
@@ -578,6 +579,7 @@ function SearchResults({
         <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
+              <PartnerRoleIcon role={g.partner_role} />
               <KindIcon kind={g.kind} />
               <span className="truncate">{g.full_name}</span>
               <MealIcons meal={g.meal_choice} dietary={g.dietary} />
@@ -747,6 +749,7 @@ function HouseholdCard({
               <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
               <div className="min-w-0">
                 <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
+                  <PartnerRoleIcon role={g.partner_role} />
                   <KindIcon kind={g.kind} />
                   <span className="truncate">{g.full_name}</span>
                   <MealIcons meal={g.meal_choice} dietary={g.dietary} />
@@ -1041,6 +1044,20 @@ function KindIcon({ kind }: { kind: GuestKind }) {
   const Icon = kind === "baby" ? Baby : Cookie;
   const label = t(`guests.kind_${kind}`);
   return <Icon size={14} aria-label={label} className="shrink-0 text-blush-700" />;
+}
+
+/** Inline Crown next to the bride / groom rows so the couple can spot
+ *  themselves at a glance. Title doubles as tooltip + a11y label. Renders
+ *  nothing for regular guests. */
+function PartnerRoleIcon({ role }: { role: "bride" | "groom" | null }) {
+  const { t } = useT();
+  if (!role) return null;
+  const label = t(`guests.partner_role_${role}`);
+  return (
+    <span title={label} className="inline-flex shrink-0">
+      <Crown size={14} aria-label={label} className="text-blush-600" />
+    </span>
+  );
 }
 
 /**
