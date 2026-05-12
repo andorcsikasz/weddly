@@ -290,13 +290,13 @@ export default function DashboardPage() {
       scaledPlannedTotal += line.planned_huf;
     }
   }
+  // Planned-per-guest tracks the live slider. `costPerConfirmedGuest`
+  // (above) is the actual-side counterpart; the dashboard tile now shows
+  // both side-by-side instead of silently switching between them.
   const roiPlanned =
     scaledPlannedTotal > 0 && effectivePlanningCount > 0
       ? Math.round(scaledPlannedTotal / effectivePlanningCount)
       : null;
-  const roiUseActual = costPerConfirmedGuest !== null;
-  const roiValue = costPerConfirmedGuest ?? roiPlanned;
-  const roiDenom = roiUseActual ? rsvp.yes : effectivePlanningCount;
   async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
     if (data === "loading" || data === null) return;
     try {
@@ -673,20 +673,29 @@ export default function DashboardPage() {
               }
             />
           ) : (
-            <KpiTile
+            // Two-up cost-per-guest tile. Planned (always shown) on the left,
+            // actual (RSVP-based) on the right; the right cell dims to the
+            // empty-state when no yes-RSVPs are in yet. Replaces the
+            // single-number version that used to silently switch math
+            // between actual/confirmed and planned/slider-count.
+            <PerGuestKpiTile
               label={t("dashboard.kpi_roi_label")}
               icon={<Coins size={16} aria-hidden="true" />}
-              value={roiValue !== null ? formatHuf(roiValue, locale) : "—"}
-              unit={
-                roiValue === null
-                  ? t("dashboard.kpi_roi_no_data")
-                  : roiUseActual
-                    ? t("dashboard.kpi_roi_unit_actual", {
-                        n: formatNumber(roiDenom, locale),
-                      })
-                    : t("dashboard.kpi_roi_unit_planned", {
-                        n: formatNumber(roiDenom, locale),
-                      })
+              plannedValue={roiPlanned !== null ? formatHufCompact(roiPlanned, locale) : "—"}
+              plannedLabel={t("dashboard.kpi_per_guest_planned_label")}
+              plannedSub={t("dashboard.kpi_roi_unit_planned", {
+                n: formatNumber(effectivePlanningCount, locale),
+              })}
+              actualValue={
+                costPerConfirmedGuest !== null
+                  ? formatHufCompact(costPerConfirmedGuest, locale)
+                  : null
+              }
+              actualLabel={t("dashboard.kpi_per_guest_actual_label")}
+              actualSub={
+                rsvp.yes > 0
+                  ? t("dashboard.kpi_per_guest_actual_basis", { n: formatNumber(rsvp.yes, locale) })
+                  : t("dashboard.kpi_roi_no_data")
               }
             />
           )}
@@ -857,6 +866,7 @@ export default function DashboardPage() {
               boundsMax={boundsMax}
               cap={cap}
               count={effectivePlanningCount}
+              rsvpYesCount={rsvp.yes}
               onCountChange={(n) => {
                 // Local optimistic update + debounced server write. The lib
                 // collapses a slider drag into one PATCH and re-publishes
@@ -1069,6 +1079,60 @@ function KpiTile({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+/** Two-up cost-per-guest tile: planned (always) on the left, actual
+ *  (RSVP-based) on the right. Sits in the same card slot as the other KPIs
+ *  — `grid-cols-2 gap-2 text-center` keeps both numbers compact via
+ *  `formatHufCompact` so they don't overflow the tile width. Right cell
+ *  dims to em-dash + empty-state copy when no yes-RSVPs are in. */
+function PerGuestKpiTile({
+  label,
+  icon,
+  plannedLabel,
+  plannedValue,
+  plannedSub,
+  actualLabel,
+  actualValue,
+  actualSub,
+}: {
+  label: string;
+  icon: ReactNode;
+  plannedLabel: string;
+  plannedValue: string;
+  plannedSub: string;
+  actualLabel: string;
+  /** Pre-formatted compact HUF, or `null` when no yes-RSVP yet. */
+  actualValue: string | null;
+  actualSub: string;
+}) {
+  const hasActual = actualValue !== null;
+  return (
+    <div className="card">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-ink-500">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-paper-50 text-ink-700">
+          {icon}
+        </span>
+        {label}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-ink-400">{plannedLabel}</div>
+          <div className="stat-num mt-0.5 text-xl font-semibold leading-none text-ink-900">
+            {plannedValue}
+          </div>
+          <div className="mt-1 text-[11px] leading-snug text-ink-500">{plannedSub}</div>
+        </div>
+        <div className={hasActual ? "" : "opacity-60"}>
+          <div className="text-[10px] uppercase tracking-wide text-ink-400">{actualLabel}</div>
+          <div className="stat-num mt-0.5 text-xl font-semibold leading-none text-ink-900">
+            {actualValue ?? "—"}
+          </div>
+          <div className="mt-1 text-[11px] leading-snug text-ink-500">{actualSub}</div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -222,6 +222,21 @@
     );
   }
 
+  /* Admin stationery — purple-50 base + purple-700 hairlines. Used by
+     the admin sub-nav rail in AppShell so the moderation surfaces read
+     as visually distinct from the couple-facing pages without changing
+     the design system's three-color palette anywhere else. */
+  .stationery-admin {
+    background-color: #f5f3ff; /* tailwind violet-50 */
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(91, 33, 182, 0.05) 0,
+      rgba(91, 33, 182, 0.05) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+
   /* Dark stationery — ink-900 base with paper-toned hairlines. Used on
      the Stats band so the dark interruption matches the same hairline
      texture as the rest of the page. */

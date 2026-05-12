@@ -3,6 +3,15 @@
 // /app/budget reflects DIY costs alongside booked vendors. The supplier
 // row is the source of truth; the budget line is read-only and disappears
 // when the price is cleared or the supplier is deleted.
+//
+// Loop C₂ fix: a DIY price is "planned" by default — actual_huf stays at 0
+// until the couple ticks the `paid` toggle on the supplier card. Before
+// this fix every DIY price was double-mirrored to both planned_huf and
+// actual_huf on insert, which made the dashboard claim the couple had
+// already spent the money on Mom's cooking. Existing rows (created before
+// this column landed) keep their old actual_huf — we don't retroactively
+// zero it out. That'd silently overwrite intentional data. The fix is
+// forward-looking only.
 
 import { randomBytes } from "node:crypto";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
@@ -16,6 +25,7 @@ interface Row {
   category: string;
   notes: string | null;
   price_huf: number | null;
+  paid: number;
   budget_line_id: number | null;
   created_at: number;
   updated_at: number;
@@ -29,6 +39,7 @@ function toDto(r: Row): CoupleSupplier {
     category: r.category as SupplierCategory,
     notes: r.notes,
     price_huf: r.price_huf,
+    paid: r.paid === 1,
     budget_line_id: r.budget_line_id,
     created_at: r.created_at,
     updated_at: r.updated_at,
@@ -50,13 +61,16 @@ export function getById(id: string, coupleId: number): CoupleSupplier | null {
 }
 
 /** Inserts a budget line that mirrors a DIY supplier's price. Returns the
- *  new line id. Idempotent caller — invoked only when `price > 0`. */
+ *  new line id. Idempotent caller — invoked only when `price > 0`.
+ *  `paid` decides whether `actual_huf` matches the price (true) or stays
+ *  at 0 (false, the default — planned-only). */
 function insertBudgetLine(
   coupleId: number,
   supplierId: string,
   category: SupplierCategory,
   label: string,
   priceHuf: number,
+  paid: boolean,
   ts: number,
 ): number {
   const r = db
@@ -71,7 +85,7 @@ function insertBudgetLine(
       SUPPLIER_TO_BUDGET[category],
       label,
       priceHuf,
-      priceHuf,
+      paid ? priceHuf : 0,
       null,
       supplierId,
       ts,
@@ -86,13 +100,14 @@ function updateBudgetLine(
   category: SupplierCategory,
   label: string,
   priceHuf: number,
+  paid: boolean,
   ts: number,
 ): void {
   db.prepare(
     `UPDATE budget_lines
         SET category = ?, label = ?, planned_huf = ?, actual_huf = ?, updated_at = ?
       WHERE id = ? AND couple_id = ?`,
-  ).run(SUPPLIER_TO_BUDGET[category], label, priceHuf, priceHuf, ts, lineId, coupleId);
+  ).run(SUPPLIER_TO_BUDGET[category], label, priceHuf, paid ? priceHuf : 0, ts, lineId, coupleId);
 }
 
 function deleteBudgetLine(lineId: number, coupleId: number): void {
@@ -104,6 +119,7 @@ interface InsertInput {
   category: SupplierCategory;
   notes: string | null;
   price_huf: number | null;
+  paid: boolean;
 }
 
 export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
@@ -112,13 +128,21 @@ export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
 
   let budgetLineId: number | null = null;
   if (input.price_huf !== null && input.price_huf > 0) {
-    budgetLineId = insertBudgetLine(coupleId, id, input.category, input.name, input.price_huf, ts);
+    budgetLineId = insertBudgetLine(
+      coupleId,
+      id,
+      input.category,
+      input.name,
+      input.price_huf,
+      input.paid,
+      ts,
+    );
   }
 
   db.prepare(
     `INSERT INTO couple_suppliers
-       (id, couple_id, name, category, notes, price_huf, budget_line_id, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, couple_id, name, category, notes, price_huf, paid, budget_line_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     coupleId,
@@ -126,6 +150,7 @@ export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
     input.category,
     input.notes,
     input.price_huf,
+    input.paid ? 1 : 0,
     budgetLineId,
     ts,
     ts,
@@ -141,6 +166,7 @@ interface UpdateInput {
   category?: SupplierCategory;
   notes?: string | null;
   price_huf?: number | null;
+  paid?: boolean;
 }
 
 export function update(id: string, coupleId: number, input: UpdateInput): CoupleSupplier | null {
@@ -154,13 +180,14 @@ export function update(id: string, coupleId: number, input: UpdateInput): Couple
   const newCategory = (input.category ?? existing.category) as SupplierCategory;
   const newNotes = input.notes !== undefined ? input.notes : existing.notes;
   const newPrice = input.price_huf !== undefined ? input.price_huf : existing.price_huf;
+  const newPaid = input.paid !== undefined ? input.paid : existing.paid === 1;
 
   let newBudgetLineId: number | null = existing.budget_line_id;
   if (newPrice !== null && newPrice > 0) {
     if (newBudgetLineId !== null) {
-      updateBudgetLine(newBudgetLineId, coupleId, newCategory, newName, newPrice, ts);
+      updateBudgetLine(newBudgetLineId, coupleId, newCategory, newName, newPrice, newPaid, ts);
     } else {
-      newBudgetLineId = insertBudgetLine(coupleId, id, newCategory, newName, newPrice, ts);
+      newBudgetLineId = insertBudgetLine(coupleId, id, newCategory, newName, newPrice, newPaid, ts);
     }
   } else if (newBudgetLineId !== null) {
     // Price cleared — drop the paired line.
@@ -170,9 +197,19 @@ export function update(id: string, coupleId: number, input: UpdateInput): Couple
 
   db.prepare(
     `UPDATE couple_suppliers
-        SET name = ?, category = ?, notes = ?, price_huf = ?, budget_line_id = ?, updated_at = ?
+        SET name = ?, category = ?, notes = ?, price_huf = ?, paid = ?, budget_line_id = ?, updated_at = ?
       WHERE id = ? AND couple_id = ?`,
-  ).run(newName, newCategory, newNotes, newPrice, newBudgetLineId, ts, id, coupleId);
+  ).run(
+    newName,
+    newCategory,
+    newNotes,
+    newPrice,
+    newPaid ? 1 : 0,
+    newBudgetLineId,
+    ts,
+    id,
+    coupleId,
+  );
 
   return getById(id, coupleId);
 }

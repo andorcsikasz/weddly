@@ -305,6 +305,10 @@ async function handleCreateSnapshot(ctx: Ctx): Promise<Response> {
     planned_huf: l.planned_huf,
     actual_huf: l.actual_huf,
     notes: l.notes,
+    // Carried into the payload so `POST /snapshots/:id/restore` can decide
+    // whether to skip a row (the live DIY supplier still owns it) or
+    // re-insert it as a regular orphan.
+    couple_supplier_id: l.couple_supplier_id,
   }));
   const ts = now();
   const result = db
@@ -337,6 +341,157 @@ function handleListSnapshots(ctx: Ctx): Response {
   return json({ snapshots: rows.map(toSnapshot) });
 }
 
+/** POST /api/budget/snapshots/:id/restore — replay a saved budget snapshot
+ *  back over the live `budget_lines`. The supplier-mirrored rows (those
+ *  with a `couple_supplier_id`) are the source of truth on the supplier
+ *  side, so the restore:
+ *    1. deletes all current non-DIY lines for the couple (rows with a
+ *       `couple_supplier_id` survive untouched — those are owned by the
+ *       /app/suppliers DIY card),
+ *    2. inserts every line from the snapshot payload EXCEPT entries whose
+ *       `couple_supplier_id` matches a still-live DIY supplier (live
+ *       supplier wins, regardless of its current price — re-inserting a
+ *       stale frozen price would be confusing), and
+ *    3. bumps the couple's `updated_at` so concurrency-sensitive tabs
+ *       reload.
+ *  Wrapped in `db.transaction()` — a partial restore would be terrible. */
+interface RestoreLinePayload {
+  category?: unknown;
+  label?: unknown;
+  planned_huf?: unknown;
+  actual_huf?: unknown;
+  notes?: unknown;
+  couple_supplier_id?: unknown;
+}
+
+function parseSnapshotPayload(raw: string): RestoreLinePayload[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter((x): x is RestoreLinePayload => typeof x === "object" && x !== null);
+}
+
+function coerceCategory(c: unknown): BudgetCategory {
+  return typeof c === "string" && VALID_CATEGORIES.has(c as BudgetCategory)
+    ? (c as BudgetCategory)
+    : "other";
+}
+
+function coerceMoney(n: unknown): number {
+  const v = Number(n);
+  if (!Number.isFinite(v) || v < 0 || v > 10_000_000_000) return 0;
+  return Math.round(v);
+}
+
+function coerceLabel(l: unknown): string {
+  if (typeof l !== "string") return "";
+  const trimmed = l.trim();
+  return trimmed.length > 200 ? trimmed.slice(0, 200) : trimmed;
+}
+
+function coerceNotes(n: unknown): string | null {
+  if (typeof n !== "string") return null;
+  const trimmed = n.trim();
+  return trimmed ? trimmed.slice(0, 1000) : null;
+}
+
+function handleRestoreSnapshot(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const id = Number(ctx.params.id);
+  if (!Number.isFinite(id)) throw new HttpError(400, "Invalid id");
+
+  // Verify the snapshot exists AND belongs to this couple. Cross-couple
+  // access → 404 (never reveal existence).
+  const snapshotRow = db
+    .prepare("SELECT * FROM budget_snapshots WHERE id = ? AND couple_id = ?")
+    .get(id, couple.id) as SnapshotRow | undefined;
+  if (!snapshotRow) throw new HttpError(404, "Snapshot not found");
+
+  const payload = parseSnapshotPayload(snapshotRow.payload_json);
+  const ts = now();
+
+  // Every DIY supplier still in the couple's workspace is the source of
+  // truth for its mirrored row. We skip any snapshot entry whose
+  // `couple_supplier_id` matches a live supplier — even if its price was
+  // cleared since the snapshot (in which case the mirrored line is
+  // intentionally absent and we mustn't resurrect a stale price). When a
+  // supplier was outright deleted between snapshot + restore, its
+  // couple_supplier_id is *not* in this set and the row gets re-inserted
+  // as an orphan-but-categorized line; that's the safer fallback than
+  // silently dropping the entry.
+  const surviving = db
+    .prepare("SELECT id FROM couple_suppliers WHERE couple_id = ?")
+    .all(couple.id) as { id: string }[];
+  const survivingIds = new Set(surviving.map((r) => r.id));
+
+  let restoredCount = 0;
+
+  const tx = db.transaction(() => {
+    // 1. Wipe non-DIY lines. DIY-mirrored rows survive — the supplier
+    //    auto-recreates them, and nuking them silently would orphan the
+    //    /app/suppliers DIY entry without a path to re-link.
+    db.prepare("DELETE FROM budget_lines WHERE couple_id = ? AND couple_supplier_id IS NULL").run(
+      couple.id,
+    );
+
+    // 2. Insert the snapshot payload. Skip rows whose couple_supplier_id is
+    //    still owned by a live supplier — the supplier card holds the
+    //    truth there.
+    const insertStmt = db.prepare(
+      `INSERT INTO budget_lines
+         (couple_id, category, label, planned_huf, actual_huf, supplier_id,
+          couple_supplier_id, notes, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+    );
+    for (const raw of payload) {
+      const cspId = typeof raw.couple_supplier_id === "string" ? raw.couple_supplier_id : null;
+      if (cspId && survivingIds.has(cspId)) {
+        // Live DIY supplier still owns its mirrored line. Skip — the
+        // snapshot's frozen price would just be overwritten on the next
+        // supplier save anyway.
+        continue;
+      }
+      const label = coerceLabel(raw.label);
+      if (!label) continue;
+      insertStmt.run(
+        couple.id,
+        coerceCategory(raw.category),
+        label,
+        coerceMoney(raw.planned_huf),
+        coerceMoney(raw.actual_huf),
+        cspId,
+        coerceNotes(raw.notes),
+        ts,
+        ts,
+      );
+      restoredCount += 1;
+    }
+
+    // 3. Bump the couple's updated_at so a second tab using If-Match
+    //    realises the world has shifted.
+    db.prepare("UPDATE couples SET updated_at = ? WHERE id = ?").run(ts, couple.id);
+  });
+  tx();
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "budget.snapshot_restore",
+    target_kind: "budget_snapshot",
+    target_id: id,
+    note: `restored ${restoredCount} lines`,
+    after: { name: snapshotRow.name, restored_count: restoredCount },
+  });
+
+  return json({ restored_count: restoredCount, snapshot: toSnapshot(snapshotRow) });
+}
+
 function handleDeleteSnapshot(ctx: Ctx): Response {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -364,5 +519,6 @@ export function registerBudgetRoutes(router: Router) {
   router.delete("/api/budget/lines/:id", handleDeleteLine, true);
   router.get("/api/budget/snapshots", handleListSnapshots, true);
   router.post("/api/budget/snapshots", handleCreateSnapshot, true);
+  router.post("/api/budget/snapshots/:id/restore", handleRestoreSnapshot, true);
   router.delete("/api/budget/snapshots/:id", handleDeleteSnapshot, true);
 }

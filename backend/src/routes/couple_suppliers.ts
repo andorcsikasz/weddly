@@ -30,6 +30,7 @@ interface Body {
   category?: unknown;
   notes?: unknown;
   price_huf?: unknown;
+  paid?: unknown;
 }
 
 interface ParsedFields {
@@ -37,6 +38,7 @@ interface ParsedFields {
   category?: SupplierCategory;
   notes?: string | null;
   price_huf?: number | null;
+  paid?: boolean;
 }
 
 function parseBody(body: Body, partial: boolean): ParsedFields {
@@ -87,6 +89,11 @@ function parseBody(body: Body, partial: boolean): ParsedFields {
     }
   }
 
+  if (body.paid !== undefined) {
+    if (typeof body.paid !== "boolean") throw new HttpError(400, "paid must be a boolean");
+    out.paid = body.paid;
+  }
+
   return out;
 }
 
@@ -113,6 +120,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     category: parsed.category,
     notes: parsed.notes ?? null,
     price_huf: parsed.price_huf ?? null,
+    paid: parsed.paid ?? false,
   });
 
   addAuditLog({
@@ -126,6 +134,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       name: created.name,
       category: created.category,
       price_huf: created.price_huf,
+      paid: created.paid,
     },
   });
 
@@ -142,6 +151,10 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   const body = await readJson<Body>(ctx.req);
   const parsed = parseBody(body, true);
 
+  // Snapshot the previous `paid` value so the audit-log diff can surface the
+  // flip on the activity panel.
+  const previous = domain.getById(id, couple.id);
+
   const updated = domain.update(id, couple.id, parsed);
   if (!updated) throw new HttpError(404, "Supplier not found");
 
@@ -152,10 +165,19 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     target_kind: "couple_supplier",
     target_id: null,
     note: id,
+    before: previous
+      ? {
+          name: previous.name,
+          category: previous.category,
+          price_huf: previous.price_huf,
+          paid: previous.paid,
+        }
+      : undefined,
     after: {
       name: updated.name,
       category: updated.category,
       price_huf: updated.price_huf,
+      paid: updated.paid,
     },
   });
 

@@ -31,6 +31,11 @@ interface FormState {
   /** Stored as the raw string the user typed; coerced to integer Forint on
    *  submit. Empty string means "no price set". */
   price: string;
+  /** "Already paid" toggle. When true and price > 0, the backend mirrors
+   *  the price into both planned_huf and actual_huf of the locked budget
+   *  line — otherwise actual_huf stays 0 so DIY plans don't masquerade
+   *  as realized spend. */
+  paid: boolean;
 }
 
 function emptyForm(defaultCategory: SupplierCategory | null | undefined): FormState {
@@ -39,6 +44,7 @@ function emptyForm(defaultCategory: SupplierCategory | null | undefined): FormSt
     category: defaultCategory ?? "",
     notes: "",
     price: "",
+    paid: false,
   };
 }
 
@@ -48,6 +54,7 @@ function fromSupplier(s: CoupleSupplier): FormState {
     category: s.category,
     notes: s.notes ?? "",
     price: s.price_huf !== null ? String(s.price_huf) : "",
+    paid: s.paid,
   };
 }
 
@@ -111,11 +118,16 @@ export function DiyEntryModal({
     setSaving(true);
     try {
       const priceParsed = form.price.trim() ? Math.round(Number(form.price)) : null;
+      // Guard: a "paid" flag without a positive price is meaningless — the
+      // toggle is disabled in the UI when price is empty/zero, but be
+      // defensive in case state flips between validate and submit.
+      const paidEffective = priceParsed !== null && priceParsed > 0 ? form.paid : false;
       const body = {
         name: form.name.trim(),
         category: form.category as SupplierCategory,
         notes: form.notes.trim() || null,
         price_huf: priceParsed,
+        paid: paidEffective,
       };
       const res = editing
         ? await coupleSupplierApi.update(editing.id, body)
@@ -261,6 +273,34 @@ export function DiyEntryModal({
             <HelperText id="diy-price-help">{t("suppliers.diy_modal_price_help")}</HelperText>
           )}
         </div>
+
+        {(() => {
+          // The "Already paid" toggle is meaningful only when there's a
+          // positive price — otherwise paid=true has nothing to write into
+          // the mirrored budget line's actual_huf. Disable the input and
+          // swap the helper to a nudge in that case.
+          const parsed = Number(form.price);
+          const hasPrice = form.price.trim() !== "" && Number.isFinite(parsed) && parsed > 0;
+          return (
+            <div className="block">
+              <label htmlFor="diy-paid" className="flex items-center gap-2 text-sm text-ink-800">
+                <input
+                  id="diy-paid"
+                  type="checkbox"
+                  className="h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  checked={hasPrice && form.paid}
+                  disabled={!hasPrice}
+                  onChange={(e) => setField("paid", e.target.checked)}
+                  aria-describedby="diy-paid-help"
+                />
+                <span className={hasPrice ? "" : "text-ink-400"}>{t("diy.paid_label")}</span>
+              </label>
+              <HelperText id="diy-paid-help">
+                {hasPrice ? t("diy.paid_help") : t("diy.paid_disabled_hint")}
+              </HelperText>
+            </div>
+          );
+        })()}
 
         <p className="rounded-xl bg-paper-100 px-3 py-2 text-xs text-ink-500">
           {t("suppliers.diy_modal_privacy")}

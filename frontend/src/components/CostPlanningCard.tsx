@@ -2,6 +2,7 @@
 // Used by the Dashboard and Budget pages. Per-guest categories cross-couple
 // with the headcount slider (move headcount → catering/drinks/etc. rescale).
 
+import { getBudgetRange } from "@shared/budget_benchmarks";
 import type { BudgetCategory, BudgetLine } from "@shared/types";
 import {
   ArrowDown,
@@ -24,7 +25,7 @@ import {
 } from "lucide-react";
 import { type ComponentType, type CSSProperties, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatHuf, formatNumber } from "../lib/format";
+import { formatHuf, formatHufCompact, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 /** Build a left-fill gradient for `<input type="range">`. Native ranges only
@@ -75,6 +76,21 @@ export const CATEGORY_ICONS: Record<
   other: MoreHorizontal,
 };
 
+/** Pure escalation classifier for the over-cap warning. `safe` when planned
+ *  ≤ cap; `soft` when 0–5 % over (noise — calm dot, no alarm); `medium` when
+ *  5–20 % over (blush pill); `serious` when >20 % over (pill + action link).
+ *  Lifted to a helper so it's trivially unit-testable later. */
+export function overCapTier(
+  planned: number,
+  cap: number | null,
+): "safe" | "soft" | "medium" | "serious" {
+  if (cap === null || cap <= 0 || planned <= cap) return "safe";
+  const pctOver = ((planned - cap) / cap) * 100;
+  if (pctOver <= 5) return "soft";
+  if (pctOver <= 20) return "medium";
+  return "serious";
+}
+
 /** Stable display order, grouped by what the couple is actually deciding
  *  about together — keeps related rows adjacent so scanning down the list
  *  feels less random than "biggest first". Clusters:
@@ -108,6 +124,7 @@ export function CostPlanningCard({
   boundsMax,
   cap,
   count,
+  rsvpYesCount = 0,
   onCountChange,
   onBoundsChange,
   onEditPlanned,
@@ -123,6 +140,10 @@ export function CostPlanningCard({
   boundsMax: number;
   cap: number | null;
   count: number;
+  /** Confirmed-yes RSVP headcount, used to compute the page-level
+   *  per-guest "actual" row. When 0 (no RSVPs yet, or caller hasn't wired
+   *  it up) the actual row is suppressed — only the planned row renders. */
+  rsvpYesCount?: number;
   onCountChange: (n: number) => void;
   /** Called when the user commits a new min or max on the bounds inputs.
    *  The parent persists `guest_count_goal = { kind: "range", min, max }`
@@ -168,6 +189,20 @@ export function CostPlanningCard({
   const totalActual = buckets.reduce((s, b) => s + b.actual, 0);
   const overCap = cap !== null && totalPlanned > cap;
   const overage = overCap && cap !== null ? totalPlanned - cap : 0;
+  // Escalation tier replaces the binary blush pill. `safe` keeps the
+  // "under by" copy; everything else flips the eyebrow stat to over-cap.
+  const tier = overCapTier(totalPlanned, cap);
+
+  // Page-level cost-per-guest math, disambiguated so the user can tell
+  // "5 800 Ft/fő" apart from "12 500 Ft/fő" (planned vs. actual).
+  const perGuestPlanned = count > 0 ? Math.round(totalPlanned / count) : 0;
+  const perGuestActual = rsvpYesCount > 0 ? Math.round(totalActual / rsvpYesCount) : 0;
+
+  // HU 2026 benchmark range for the current slider count. Suppressed below
+  // for eloping (≤10) — the per-guest fixed-cost amortisation assumption
+  // breaks down at micro-weddings, so the range would mislead.
+  const benchmarkVisible = count > 10;
+  const benchmark = getBudgetRange(count);
 
   // Slider bounds — sourced from the couple's guest_count_goal via parent
   // props so /app and /app/budget show identical numbers. The two small
@@ -216,15 +251,28 @@ export function CostPlanningCard({
           {t("budget.cost_planning_headline")}
         </p>
         {cap !== null &&
-          (overCap ? (
-            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700">
-              <ArrowUp size={12} className="self-center" aria-hidden />
-              {t("budget.over_by", { amount: formatHuf(overage, locale) })}
-            </span>
-          ) : (
+          (tier === "safe" ? (
             <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
               <ArrowDown size={12} className="self-center" aria-hidden />
               {t("budget.under_by", { amount: formatHuf(underAmount, locale) })}
+            </span>
+          ) : tier === "soft" ? (
+            // 0–5 % over: calm amber dot, no blush pill — well within the
+            // noise floor of cap accuracy, so the warning is muted on purpose.
+            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
+              <span
+                className="inline-block h-2 w-2 self-center rounded-full bg-amber-500"
+                aria-hidden="true"
+              />
+              {t("cost_planning.overcap_soft_label")}
+            </span>
+          ) : (
+            // medium (5–20 %) + serious (>20 %): same blush pill; the serious
+            // tier adds an action link below the card total. Keeping the pill
+            // shape stable across tiers preserves the visual anchor.
+            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700">
+              <ArrowUp size={12} className="self-center" aria-hidden />
+              {t("cost_planning.overcap_medium_label", { amount: formatHuf(overage, locale) })}
             </span>
           ))}
       </div>
@@ -318,12 +366,54 @@ export function CostPlanningCard({
             {formatHuf(totalPlanned, locale)}
           </span>
         </div>
+        {/* Per-guest disambiguation rows — replaces the silent
+         *  "12 500 Ft/fő" that used to mean two different things depending
+         *  on RSVP state. Tabular-num keeps the digits aligned across rows
+         *  so the actual/planned comparison reads cleanly at a glance. */}
+        <div className="mt-1 space-y-0.5 text-xs text-ink-500">
+          <div className="stat-num">
+            {t("cost_planning.per_guest_planned", {
+              amount: formatHuf(perGuestPlanned, locale),
+              count: formatNumber(count, locale),
+            })}
+          </div>
+          {rsvpYesCount > 0 && totalActual > 0 && (
+            <div className="stat-num">
+              {t("cost_planning.per_guest_actual", {
+                amount: formatHuf(perGuestActual, locale),
+                confirmed: formatNumber(rsvpYesCount, locale),
+              })}
+            </div>
+          )}
+        </div>
+        {/* HU 2026 benchmark strip — quiet greyscale band that gives a
+         *  reality-check without dragging the eye. Suppressed at ≤10
+         *  guests (elopement) where the per-guest model breaks down. */}
+        {benchmarkVisible && (
+          <div className="mt-2 rounded-md bg-paper-50 px-2 py-1.5 text-[11px] leading-snug text-ink-500">
+            <span>
+              {t("cost_planning.benchmark_strip", {
+                count: formatNumber(count, locale),
+                min: formatHufCompact(benchmark.min_huf, locale),
+                mid: formatHufCompact(benchmark.mid_huf, locale),
+                max: formatHufCompact(benchmark.max_huf, locale),
+                userTotal: formatHuf(totalPlanned, locale),
+              })}
+            </span>{" "}
+            <span
+              className="cursor-help text-ink-400 underline-offset-2 hover:text-ink-600 hover:underline"
+              title={t("cost_planning.benchmark_methodology")}
+            >
+              {t("cost_planning.benchmark_source_hint")}
+            </span>
+          </div>
+        )}
         {/* Always render the cap row — when the couple hasn't set a ceiling
          *  during onboarding, the value slot stays empty (with a dash
          *  placeholder) so the layout doesn't shift and the user can click
          *  to fill it in here. */}
         {(cap !== null || onCapChange) && (
-          <div className="mt-0.5 flex items-baseline justify-between text-[11px]">
+          <div className="mt-1 flex items-baseline justify-between text-[11px]">
             <span className="text-ink-400">{t("budget.cap")}</span>
             {onCapChange ? (
               <EditableHuf
@@ -337,6 +427,21 @@ export function CostPlanningCard({
                 {cap !== null ? formatHuf(cap, locale) : "—"}
               </span>
             )}
+          </div>
+        )}
+        {/* Serious tier (>20 % over): the pill alone is too easy to dismiss,
+         *  so we add a deep link to the category sliders sorted by overage.
+         *  BudgetPage doesn't read the #top-overage hash today — the link
+         *  navigates and trusts the user to scroll; wiring the scroll
+         *  selector lives in BudgetPage and is Agent B's territory. */}
+        {tier === "serious" && (
+          <div className="mt-1.5 text-[11px]">
+            <Link
+              to="/app/budget#top-overage"
+              className="text-blush-700 underline-offset-2 hover:text-blush-800 hover:underline"
+            >
+              {t("cost_planning.overcap_serious_action")}
+            </Link>
           </div>
         )}
       </div>

@@ -1442,6 +1442,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "budget.line_delete",
   "budget.snapshot_create",
   "budget.snapshot_delete",
+  "budget.snapshot_restore",
   // Seating
   "table.create",
   "table.update",

@@ -53,8 +53,14 @@ export default function AdminUsersPage() {
     return a || b || `#${c.id}`;
   }
 
+  /** Admin workspace code: alphanumeric, guaranteed unique even when two
+   *  couples share a name (e.g. two "Peti & Zoé"s collide on slug). The
+   *  numeric suffix is the couple.id, so the code is also stable across
+   *  reloads. Slug stays the human-meaningful prefix; falls back to WEDDLY
+   *  when the couple pre-dates the slug column. */
   function workspaceId(c: AdminCoupleView): string {
-    return c.slug && c.slug.trim() ? c.slug : `#${c.id}`;
+    const prefix = c.slug && c.slug.trim() ? c.slug : "WEDDLY";
+    return `${prefix}-${c.id}`;
   }
 
   async function onResendVerify(u: AdminUserView) {
@@ -127,25 +133,22 @@ export default function AdminUsersPage() {
     const isSelf = currentAdmin?.id === u.id;
     const isPending = pendingId === u.id;
     return (
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="font-medium text-ink-900">{u.full_name}</div>
-          <div className="text-xs text-ink-500 break-all">{u.email}</div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {u.is_admin && <Badge tone="ink">{t("admin.badge_admin")}</Badge>}
-            {u.status === "suspended" && <Badge tone="blush">{t("admin.badge_suspended")}</Badge>}
-            {!u.verified_email && <Badge tone="muted">{t("admin.badge_unverified")}</Badge>}
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="font-medium text-ink-900">{u.full_name}</span>
+          <span className="text-xs text-ink-500 break-all">{u.email}</span>
+          {u.is_admin && <Badge tone="ink">{t("admin.badge_admin")}</Badge>}
+          {u.status === "suspended" && <Badge tone="blush">{t("admin.badge_suspended")}</Badge>}
+          {!u.verified_email && <Badge tone="muted">{t("admin.badge_unverified")}</Badge>}
         </div>
-        <div className="flex shrink-0 flex-wrap gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {!u.verified_email &&
             (verifySentIds.has(u.id) ? (
               <span
-                className="inline-flex items-center gap-1.5 rounded-md bg-blush-100 px-2.5 py-1.5 text-xs font-medium text-blush-800"
+                className="inline-flex items-center gap-1 rounded-md bg-blush-100 px-1.5 py-0.5 text-[11px] font-medium text-blush-800"
                 title={t("admin.resend_verify_sent_label")}
               >
-                <Check size={14} aria-hidden />
-                <span className="hidden sm:inline">{t("admin.resend_verify_sent_label")}</span>
+                <Check size={12} aria-hidden />
               </span>
             ) : (
               <button
@@ -153,10 +156,10 @@ export default function AdminUsersPage() {
                 className="btn-ghost btn-sm"
                 onClick={() => onResendVerify(u)}
                 disabled={isPending}
+                title={t("admin.resend_verify")}
                 aria-label={t("admin.resend_verify")}
               >
                 <Mail size={14} />
-                <span className="hidden sm:inline">{t("admin.resend_verify")}</span>
               </button>
             ))}
           {!isSelf && (
@@ -165,10 +168,10 @@ export default function AdminUsersPage() {
               className="btn-ghost btn-sm text-blush-700"
               onClick={() => onDelete(u)}
               disabled={isPending}
+              title={t("admin.delete_user")}
               aria-label={t("admin.delete_user")}
             >
               <Trash2 size={14} />
-              <span className="hidden sm:inline">{t("admin.delete_user")}</span>
             </button>
           )}
         </div>
@@ -207,11 +210,11 @@ export default function AdminUsersPage() {
             ) : (
               <div className="card overflow-x-auto p-0">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
+                  <thead className="bg-paper-100 text-left text-[11px] uppercase tracking-wide text-ink-500">
                     <tr>
-                      <th className="px-4 py-3">{t("admin.table_workspace_id")}</th>
-                      <th className="px-4 py-3">{t("admin.table_workspace_name")}</th>
-                      <th className="px-4 py-3">{t("admin.table_workspace_members")}</th>
+                      <th className="px-3 py-2">{t("admin.table_workspace_id")}</th>
+                      <th className="px-3 py-2">{t("admin.table_workspace_name")}</th>
+                      <th className="px-3 py-2">{t("admin.table_workspace_members")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -230,39 +233,36 @@ export default function AdminUsersPage() {
                             : null;
                       return (
                         <tr key={c.id} className="border-t border-paper-200 align-top">
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <code className="rounded bg-paper-100 px-1.5 py-0.5 text-xs font-medium text-ink-700">
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <code className="rounded bg-paper-100 px-1.5 py-0.5 text-[11px] font-medium text-ink-700">
                               {workspaceId(c)}
                             </code>
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="font-medium text-ink-900">{workspaceLabel(c)}</div>
-                            {statusLabel && (
-                              <div className="mt-1">
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                              <span className="font-medium text-ink-900">{workspaceLabel(c)}</span>
+                              {statusLabel && (
                                 <Badge tone={c.status === "deleting" ? "blush" : "muted"}>
                                   {statusLabel}
                                 </Badge>
-                              </div>
-                            )}
+                              )}
+                              {members.length === 1 && (
+                                <span className="text-[11px] italic text-ink-500">
+                                  {t("admin.workspace_solo_member")}
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             {members.length === 0 ? (
                               <span className="text-xs italic text-ink-500">—</span>
                             ) : (
-                              <ul className="space-y-3">
+                              <ul className="divide-y divide-paper-200/70">
                                 {members.map((u) => (
-                                  <li
-                                    key={u.id}
-                                    className="border-l-2 border-paper-200 pl-3 first:border-l-0 first:pl-0"
-                                  >
+                                  <li key={u.id} className="py-1.5 first:pt-0 last:pb-0">
                                     {renderUserCell(u)}
                                   </li>
                                 ))}
-                                {members.length === 1 && (
-                                  <li className="pl-3 text-xs italic text-ink-500">
-                                    {t("admin.workspace_solo_member")}
-                                  </li>
-                                )}
                               </ul>
                             )}
                           </td>
@@ -290,16 +290,16 @@ export default function AdminUsersPage() {
             ) : (
               <div className="card overflow-x-auto p-0">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500">
+                  <thead className="bg-paper-100 text-left text-[11px] uppercase tracking-wide text-ink-500">
                     <tr>
-                      <th className="px-4 py-3">{t("admin.table_name")}</th>
-                      <th className="px-4 py-3 text-right">{t("admin.table_admin_actions")}</th>
+                      <th className="px-3 py-2">{t("admin.table_name")}</th>
+                      <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orphans.map((u) => (
-                      <tr key={u.id} className="border-t border-paper-200 align-top">
-                        <td className="px-4 py-3" colSpan={2}>
+                      <tr key={u.id} className="border-t border-paper-200">
+                        <td className="px-3 py-2" colSpan={2}>
                           {renderUserCell(u)}
                         </td>
                       </tr>

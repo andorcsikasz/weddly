@@ -217,6 +217,14 @@ addColumnIfMissing("couples", "honeymoon_end_date", "honeymoon_end_date TEXT");
 // touched the slider; the frontend then falls back to target_guest_count.
 addColumnIfMissing("couples", "planning_count", "planning_count INTEGER");
 
+// "Have we actually paid this yet?" flag on DIY supplier entries. Default 0
+// (planned-only) — the mirrored budget line writes the price to
+// `planned_huf` but leaves `actual_huf` at 0 until the couple flips the
+// toggle. Loop C₂ fix: previously every DIY price double-wrote to both
+// columns and made the dashboard read as if every aunt-cooking-line was
+// already paid. Existing rows keep their data — see couple_suppliers.ts.
+addColumnIfMissing("couple_suppliers", "paid", "paid INTEGER NOT NULL DEFAULT 0");
+
 export function now(): number {
   return Date.now();
 }

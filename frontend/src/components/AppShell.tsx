@@ -5,9 +5,13 @@ import {
   ChefHat,
   ClipboardList,
   Heart,
+  Inbox,
   LayoutDashboard,
+  LayoutList,
   MessageCircle,
   Plane,
+  ShieldCheck,
+  UserCog,
   Users,
   UtensilsCrossed,
 } from "lucide-react";
@@ -81,6 +85,37 @@ const ITEMS: NavItem[] = [
     to: "/app/media",
     labelKey: "nav.media",
     icon: <Camera size={18} />,
+  },
+];
+
+/** Admin sub-nav — appears below the main rail when `user.is_admin`. Distinct
+ *  purple styling + striped texture so the admin surfaces read as visually
+ *  separate from the couple-facing pages without changing the design system. */
+const ADMIN_ITEMS: NavItem[] = [
+  {
+    to: "/app/admin/suppliers",
+    labelKey: "admin.nav_suppliers",
+    icon: <ShieldCheck size={16} />,
+  },
+  {
+    to: "/app/admin/users",
+    labelKey: "admin.nav_users",
+    icon: <UserCog size={16} />,
+  },
+  {
+    to: "/app/admin/categories",
+    labelKey: "admin.nav_taxonomy",
+    icon: <LayoutList size={16} />,
+  },
+  {
+    to: "/app/admin/vendor-waitlist",
+    labelKey: "admin.nav_waitlist",
+    icon: <Inbox size={16} />,
+  },
+  {
+    to: "/app/admin/feedback",
+    labelKey: "admin.nav_feedback",
+    icon: <MessageCircle size={16} />,
   },
 ];
 
@@ -197,6 +232,21 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {t(item.labelKey)}
               </SideLink>
             ))}
+            {user?.is_admin && (
+              <div className="stationery-admin mt-4 rounded-xl border border-violet-200/70 p-2">
+                <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                  <ShieldCheck size={11} aria-hidden="true" />
+                  {t("admin.nav_label")}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  {ADMIN_ITEMS.map((item) => (
+                    <AdminSideLink key={item.to} to={item.to} icon={item.icon}>
+                      {t(item.labelKey)}
+                    </AdminSideLink>
+                  ))}
+                </div>
+              </div>
+            )}
           </nav>
         </aside>
         <main
@@ -270,6 +320,33 @@ function SideLink({
       className={({ isActive }) =>
         `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
           isActive ? "stationery-dark text-paper-100" : "text-ink-700 hover:bg-paper-200"
+        }`
+      }
+    >
+      {icon}
+      <span>{children}</span>
+    </NavLink>
+  );
+}
+
+/** Purple-themed sidebar link for admin sub-pages. Active state inverts to a
+ *  solid violet pill so it pops off the striped purple stationery background;
+ *  inactive rows stay violet-700 text so the whole rail reads as "admin". */
+function AdminSideLink({
+  to,
+  icon,
+  children,
+}: {
+  to: string;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          isActive ? "bg-violet-700 text-white" : "text-violet-800 hover:bg-violet-100"
         }`
       }
     >

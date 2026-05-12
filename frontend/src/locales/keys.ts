@@ -308,6 +308,12 @@ export interface LocaleMessages {
     kpi_roi_unit_actual: string;
     kpi_roi_unit_planned: string;
     kpi_roi_no_data: string;
+    /** Two-up cost-per-guest tile labels — replaces the silently-switching
+     *  single number with side-by-side planned + actual cells. */
+    kpi_per_guest_planned_label: string;
+    kpi_per_guest_actual_label: string;
+    /** Subtitle under the actual cell — receives `{n}` = confirmed-yes count. */
+    kpi_per_guest_actual_basis: string;
     rsvp_breakdown_title: string;
     rsvp_yes: string;
     rsvp_no: string;
@@ -1070,6 +1076,18 @@ export interface LocaleMessages {
     snapshot_planned_label: string;
     snapshot_actual_label: string;
     snapshot_diff_label: string;
+    /** Button label on each snapshot card. */
+    snapshot_restore_label: string;
+    /** Confirm dialog title before overwriting live lines. */
+    snapshot_restore_confirm_title: string;
+    /** Confirm dialog body — must explain that DIY supplier lines survive. */
+    snapshot_restore_confirm_body: string;
+    /** Confirm button label inside the destructive restore dialog. */
+    snapshot_restore_confirm_yes: string;
+    /** Success toast — receives `{n}` (restored line count). */
+    snapshot_restored: string;
+    /** Generic failure toast for a restore round-trip. */
+    snapshot_restore_failed: string;
     add_template_help: string;
     edit_planned_aria: string;
     per_guest_unit: string;
@@ -1095,6 +1113,46 @@ export interface LocaleMessages {
       rings: string;
       other: string;
     };
+  };
+  /** DIY supplier modal surfaces specific to Loop C₂'s "Already paid" flow.
+   *  Kept separate from `suppliers.diy_modal_*` so the snapshot UI loop and
+   *  the suppliers page surface don't fight over the same namespace. */
+  diy: {
+    /** Checkbox label below the price input in DiyEntryModal. */
+    paid_label: string;
+    /** Help line under the toggle when enabled / enabled-able. */
+    paid_help: string;
+    /** Help line shown when the toggle is disabled because price is empty. */
+    paid_disabled_hint: string;
+  };
+  /** Cost-planning panel surfaces that don't belong to the budget *table*:
+   *  HU benchmark strip, tiered over-cap warnings, page-level cost-per-guest
+   *  rows. Kept separate from `budget.*` so the snapshot UI (Agent B) and the
+   *  planning UX (this agent) don't fight over the same namespace. */
+  cost_planning: {
+    /** Quiet HU benchmark line under the planned total. Receives `{count}` =
+     *  current slider count, `{min}`/`{mid}`/`{max}` = compact HUF range, and
+     *  `{userTotal}` = formatted full HUF the couple is currently at. */
+    benchmark_strip: string;
+    /** Tooltip / title attribute for the "where do these numbers come from?"
+     *  affordance — methodology disclaimer in one breath. */
+    benchmark_methodology: string;
+    /** Tiny "(?)" affordance label after the benchmark strip. */
+    benchmark_source_hint: string;
+    /** Soft tier (0–5 % over). Calm "a touch over" copy, no alarm. */
+    overcap_soft_label: string;
+    /** Medium tier (5–20 % over). Replaces the legacy `budget.over_by` pill
+     *  copy with the same magnitude semantics. Receives `{amount}`. */
+    overcap_medium_label: string;
+    /** Serious tier (>20 % over). Action line under the warning pill that
+     *  deep-links to /app/budget#top-overage. */
+    overcap_serious_action: string;
+    /** Always-on planned row under the headline.
+     *  Receives `{amount}` (per-guest planned) and `{count}` (slider count). */
+    per_guest_planned: string;
+    /** Actual row, only when at least one yes-RSVP exists. Receives
+     *  `{amount}` (per-guest actual) and `{confirmed}` (yes-RSVP count). */
+    per_guest_actual: string;
   };
   seating: {
     title: string;

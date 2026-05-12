@@ -324,6 +324,9 @@ const en: LocaleMessages = {
     kpi_roi_unit_actual: "actual · {n} confirmed",
     kpi_roi_unit_planned: "planned · {n} guests",
     kpi_roi_no_data: "No spend yet",
+    kpi_per_guest_planned_label: "Planned",
+    kpi_per_guest_actual_label: "Actual",
+    kpi_per_guest_actual_basis: "based on {n} confirmed RSVPs",
     rsvp_breakdown_title: "RSVP breakdown",
     rsvp_yes: "Yes",
     rsvp_no: "No",
@@ -1064,6 +1067,13 @@ const en: LocaleMessages = {
     snapshot_planned_label: "Planned",
     snapshot_actual_label: "Actual",
     snapshot_diff_label: "Diff vs current",
+    snapshot_restore_label: "Restore",
+    snapshot_restore_confirm_title: "Restore this version?",
+    snapshot_restore_confirm_body:
+      "Your current budget lines will be replaced with this snapshot's. DIY supplier lines stay untouched.",
+    snapshot_restore_confirm_yes: "Yes, restore",
+    snapshot_restored: "Snapshot restored · {n} lines",
+    snapshot_restore_failed: "Couldn't restore the snapshot.",
     add_template_help: "Pick a category to add",
     edit_planned_aria: "Edit planned amount for {category}",
     per_guest_unit: "{n}/guest",
@@ -1089,6 +1099,23 @@ const en: LocaleMessages = {
       rings: "Rings",
       other: "Other",
     },
+  },
+  diy: {
+    paid_label: "Already paid",
+    paid_help: "When on, the price counts as actual spend in the budget.",
+    paid_disabled_hint: "Set a price first.",
+  },
+  cost_planning: {
+    benchmark_strip:
+      "For {count} guests, typical HU budgets run {min} – {max} Ft. You're currently at {userTotal}.",
+    benchmark_methodology:
+      "Illustrative estimate for HU 2026 derived from publicly-visible vendor pricing (tradergroup.hu, eskuvo.com). Not professional advice — your own quotes will be more accurate.",
+    benchmark_source_hint: "Where do these numbers come from?",
+    overcap_soft_label: "A touch over your budget",
+    overcap_medium_label: "Over by {amount}",
+    overcap_serious_action: "What's pushing it up? Show top 3 lines →",
+    per_guest_planned: "Planned · {amount}/guest × {count} guests",
+    per_guest_actual: "Actual · {amount}/guest · based on {confirmed} confirmed RSVPs",
   },
   seating: {
     title: "Seating",

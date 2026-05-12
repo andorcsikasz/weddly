@@ -288,6 +288,16 @@ export const budgetApi = {
   listSnapshots: () => apiFetch<{ snapshots: BudgetSnapshot[] }>("GET", "/api/budget/snapshots"),
   createSnapshot: (body: { name: string }) =>
     apiFetch<{ snapshot: BudgetSnapshot }>("POST", "/api/budget/snapshots", body),
+  /** Replay a saved snapshot over the live budget. Wipes non-DIY lines,
+   *  re-inserts the snapshot's rows, and leaves supplier-mirrored DIY
+   *  lines untouched (the supplier card owns those). Bumps the couple's
+   *  `updated_at` on commit. */
+  restoreSnapshot: (id: number) =>
+    apiFetch<{ restored_count: number; snapshot: BudgetSnapshot }>(
+      "POST",
+      `/api/budget/snapshots/${id}/restore`,
+      {},
+    ),
   removeSnapshot: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/budget/snapshots/${id}`),
 };
 

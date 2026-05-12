@@ -17,6 +17,11 @@ export interface CoupleSupplier {
   /** Integer Forint. Null = no price set yet. Setting a positive value
    *  causes the backend to create / update a paired `budget_lines` row. */
   price_huf: number | null;
+  /** "Already paid?" flag. Defaults to false on create. When false the
+   *  mirrored budget line carries the price in `planned_huf` only — the
+   *  actual_huf stays at 0 so the dashboard doesn't read DIY plans as
+   *  realized spend (Loop C₂ fix). When true, both columns equal price. */
+  paid: boolean;
   /** Auto-managed FK to the locked budget line that mirrors `price_huf`.
    *  Null when there is no price or the line was removed externally. */
   budget_line_id: number | null;
@@ -29,6 +34,8 @@ export interface CreateCoupleSupplierInput {
   category: SupplierCategory;
   notes?: string | null;
   price_huf?: number | null;
+  /** Defaults to false on the server. */
+  paid?: boolean;
 }
 
 export interface UpdateCoupleSupplierInput {
@@ -36,4 +43,5 @@ export interface UpdateCoupleSupplierInput {
   category?: SupplierCategory;
   notes?: string | null;
   price_huf?: number | null;
+  paid?: boolean;
 }

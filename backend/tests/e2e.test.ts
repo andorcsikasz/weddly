@@ -5362,14 +5362,17 @@ describe("couple_suppliers (DIY entries + budget mirror)", () => {
     expect(list.data.suppliers[0]?.name).toBe("Anyukám főz");
   });
 
-  test("create with price: budget line auto-created and linked", async () => {
+  test("create with price (paid:true): budget line auto-created with planned + actual", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("diy-2@weddly.test");
 
+    // Loop C₂: `paid: true` opts into the "mirror price to actual_huf"
+    // behavior. Without it, actual_huf stays at 0 — covered in the
+    // dedicated `couple_suppliers: paid toggle` describe block below.
     const r = await req<CoupleSupplierResp>(
       "POST",
       "/api/couple-suppliers",
-      { name: "Béla bácsi zenél", category: "music_dj", price_huf: 120_000 },
+      { name: "Béla bácsi zenél", category: "music_dj", price_huf: 120_000, paid: true },
       { token },
     );
     expect(r.status).toBe(201);
@@ -5385,14 +5388,14 @@ describe("couple_suppliers (DIY entries + budget mirror)", () => {
     expect(mirrored?.planned_huf).toBe(120_000);
   });
 
-  test("update price: budget line updates in place", async () => {
+  test("update price (paid:true): budget line updates in place", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("diy-3@weddly.test");
 
     const created = await req<CoupleSupplierResp>(
       "POST",
       "/api/couple-suppliers",
-      { name: "Saját süti", category: "cake_dessert", price_huf: 40_000 },
+      { name: "Saját süti", category: "cake_dessert", price_huf: 40_000, paid: true },
       { token },
     );
     expect(created.status).toBe(201);
@@ -5522,6 +5525,537 @@ describe("couple_suppliers (DIY entries + budget mirror)", () => {
       { token: tokB },
     );
     expect(cross.status).toBe(404);
+  });
+});
+
+// ─── Loop C₂: DIY `paid` toggle — stop mirroring price to actual_huf ───────
+
+describe("couple_suppliers: paid toggle controls actual_huf", () => {
+  interface SupplierDTO {
+    id: string;
+    name: string;
+    category: string;
+    price_huf: number | null;
+    paid: boolean;
+    budget_line_id: number | null;
+  }
+  interface SupplierResp {
+    supplier: SupplierDTO;
+  }
+  interface LineDTO {
+    id: number;
+    planned_huf: number;
+    actual_huf: number;
+    couple_supplier_id: string | null;
+  }
+  interface LinesResp {
+    lines: LineDTO[];
+  }
+
+  async function fetchLines(token: string): Promise<LineDTO[]> {
+    const r = await req<LinesResp>("GET", "/api/budget/lines", undefined, { token });
+    expect(r.status).toBe(200);
+    return r.data.lines;
+  }
+
+  test("create without `paid`: planned set, actual stays 0 (planned-only default)", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("paid-default@weddly.test");
+
+    const r = await req<SupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Anya főz", category: "catering", price_huf: 80_000 },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.supplier.paid).toBe(false);
+
+    const mirrored = (await fetchLines(token)).find(
+      (l) => l.couple_supplier_id === r.data.supplier.id,
+    );
+    expect(mirrored).toBeDefined();
+    expect(mirrored?.planned_huf).toBe(80_000);
+    expect(mirrored?.actual_huf).toBe(0);
+  });
+
+  test("create with paid:false explicit: still planned-only", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("paid-false@weddly.test");
+
+    const r = await req<SupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Friend florist", category: "decor_floral", price_huf: 60_000, paid: false },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.supplier.paid).toBe(false);
+
+    const mirrored = (await fetchLines(token)).find(
+      (l) => l.couple_supplier_id === r.data.supplier.id,
+    );
+    expect(mirrored?.planned_huf).toBe(60_000);
+    expect(mirrored?.actual_huf).toBe(0);
+  });
+
+  test("create with paid:true: both planned + actual equal price", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("paid-true@weddly.test");
+
+    const r = await req<SupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Cousin DJ", category: "music_dj", price_huf: 120_000, paid: true },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.supplier.paid).toBe(true);
+
+    const mirrored = (await fetchLines(token)).find(
+      (l) => l.couple_supplier_id === r.data.supplier.id,
+    );
+    expect(mirrored?.planned_huf).toBe(120_000);
+    expect(mirrored?.actual_huf).toBe(120_000);
+  });
+
+  test("toggle paid false → true: actual_huf jumps to price, planned unchanged", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("paid-toggle-on@weddly.test");
+
+    const created = await req<SupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Self cake", category: "cake_dessert", price_huf: 30_000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const id = created.data.supplier.id;
+    const lineId = created.data.supplier.budget_line_id;
+    expect(lineId).not.toBeNull();
+
+    const flipped = await req<SupplierResp>(
+      "PATCH",
+      `/api/couple-suppliers/${id}`,
+      { paid: true },
+      { token },
+    );
+    expect(flipped.status).toBe(200);
+    expect(flipped.data.supplier.paid).toBe(true);
+    expect(flipped.data.supplier.price_huf).toBe(30_000);
+
+    const line = (await fetchLines(token)).find((l) => l.id === lineId);
+    expect(line?.planned_huf).toBe(30_000);
+    expect(line?.actual_huf).toBe(30_000);
+  });
+
+  test("toggle paid true → false: actual_huf goes to 0, planned unchanged", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("paid-toggle-off@weddly.test");
+
+    const created = await req<SupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Self drinks", category: "bar_drinks", price_huf: 50_000, paid: true },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const id = created.data.supplier.id;
+    const lineId = created.data.supplier.budget_line_id;
+    expect(lineId).not.toBeNull();
+    {
+      const line = (await fetchLines(token)).find((l) => l.id === lineId);
+      expect(line?.actual_huf).toBe(50_000);
+    }
+
+    const flipped = await req<SupplierResp>(
+      "PATCH",
+      `/api/couple-suppliers/${id}`,
+      { paid: false },
+      { token },
+    );
+    expect(flipped.status).toBe(200);
+    expect(flipped.data.supplier.paid).toBe(false);
+
+    const line = (await fetchLines(token)).find((l) => l.id === lineId);
+    expect(line?.planned_huf).toBe(50_000);
+    expect(line?.actual_huf).toBe(0);
+  });
+
+  test("audit log: paid change appears in couple_supplier.update payload", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("paid-audit@weddly.test");
+
+    const created = await req<SupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Aunt bakes", category: "cake_dessert", price_huf: 20_000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const id = created.data.supplier.id;
+
+    const flip = await req("PATCH", `/api/couple-suppliers/${id}`, { paid: true }, { token });
+    expect(flip.status).toBe(200);
+
+    interface AuditRow {
+      action: string;
+      before_json: string | null;
+      after_json: string | null;
+      note: string | null;
+    }
+    const rows = db
+      .prepare(
+        "SELECT action, before_json, after_json, note FROM audit_log WHERE couple_id = ? AND action = 'couple_supplier.update' ORDER BY id DESC",
+      )
+      .all(coupleId) as AuditRow[];
+    expect(rows.length).toBeGreaterThan(0);
+    const latest = rows[0]!;
+    const before = JSON.parse(latest.before_json ?? "{}") as { paid?: boolean };
+    const after = JSON.parse(latest.after_json ?? "{}") as { paid?: boolean };
+    expect(before.paid).toBe(false);
+    expect(after.paid).toBe(true);
+  });
+
+  test("paid must be boolean — non-boolean input rejected", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("paid-bool@weddly.test");
+    const r = await req(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Bad", category: "venue", paid: "yes" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+});
+
+// ─── Loop C₂: budget snapshot restore ─────────────────────────────────────
+
+describe("budget snapshot restore", () => {
+  interface LineDTO {
+    id: number;
+    category: string;
+    label: string;
+    planned_huf: number;
+    actual_huf: number;
+    couple_supplier_id: string | null;
+  }
+  interface LinesResp {
+    lines: LineDTO[];
+  }
+  interface SnapshotDTO {
+    id: number;
+    name: string;
+    payload_json: string;
+  }
+  interface SnapshotResp {
+    snapshot: SnapshotDTO;
+  }
+  interface RestoreResp {
+    restored_count: number;
+    snapshot: SnapshotDTO;
+  }
+
+  async function fetchLines(token: string): Promise<LineDTO[]> {
+    const r = await req<LinesResp>("GET", "/api/budget/lines", undefined, { token });
+    expect(r.status).toBe(200);
+    return r.data.lines;
+  }
+
+  async function wipeNonDiyLines(token: string) {
+    const lines = await fetchLines(token);
+    for (const l of lines) {
+      if (l.couple_supplier_id) continue;
+      const d = await req("DELETE", `/api/budget/lines/${l.id}`, undefined, { token });
+      expect(d.status).toBe(200);
+    }
+  }
+
+  test("happy path: snapshot a budget, mutate, restore — original returns", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("snap-restore@weddly.test");
+
+    // Reset onboarding seed → keep exactly 5 named lines so we can assert.
+    await wipeNonDiyLines(token);
+    const labels = ["Helyszín", "Vacsora", "Fotó", "Zene", "Virág"];
+    const cats = ["venue", "catering", "photo_video", "music_dj", "decor_floral"];
+    for (let i = 0; i < labels.length; i++) {
+      const r = await req(
+        "POST",
+        "/api/budget/lines",
+        { category: cats[i], label: labels[i], planned_huf: 100_000 + i * 10_000 },
+        { token },
+      );
+      expect(r.status).toBe(201);
+    }
+
+    // Snapshot
+    const snap = await req<SnapshotResp>(
+      "POST",
+      "/api/budget/snapshots",
+      { name: "Original 5" },
+      { token },
+    );
+    expect(snap.status).toBe(201);
+    const snapId = snap.data.snapshot.id;
+
+    // Mutate — wipe all 5, add 3 different ones.
+    await wipeNonDiyLines(token);
+    for (const lbl of ["X", "Y", "Z"]) {
+      const r = await req(
+        "POST",
+        "/api/budget/lines",
+        { category: "other", label: lbl, planned_huf: 1 },
+        { token },
+      );
+      expect(r.status).toBe(201);
+    }
+
+    const beforeRestore = await fetchLines(token);
+    expect(beforeRestore.map((l) => l.label).sort()).toEqual(["X", "Y", "Z"]);
+
+    // Restore
+    const restored = await req<RestoreResp>(
+      "POST",
+      `/api/budget/snapshots/${snapId}/restore`,
+      {},
+      { token },
+    );
+    expect(restored.status).toBe(200);
+    expect(restored.data.restored_count).toBe(5);
+    expect(restored.data.snapshot.id).toBe(snapId);
+
+    const after = await fetchLines(token);
+    const afterLabels = after.map((l) => l.label).sort();
+    expect(afterLabels).toEqual([...labels].sort());
+    // The mutated rows ("X","Y","Z") are gone.
+    expect(after.find((l) => l.label === "X")).toBeUndefined();
+  });
+
+  test("cross-couple isolation: couple B cannot restore couple A's snapshot (404)", async () => {
+    wipeAll();
+    const { token: tokA } = await bootstrapCouple("snap-iso-a@weddly.test");
+    const snap = await req<SnapshotResp>(
+      "POST",
+      "/api/budget/snapshots",
+      { name: "A only" },
+      { token: tokA },
+    );
+    expect(snap.status).toBe(201);
+    const snapId = snap.data.snapshot.id;
+
+    const { token: tokB } = await bootstrapCouple("snap-iso-b@weddly.test");
+    const r = await req("POST", `/api/budget/snapshots/${snapId}/restore`, {}, { token: tokB });
+    expect(r.status).toBe(404);
+  });
+
+  test("DIY-mirrored survival: live DIY line is NOT resurrected by a stale snapshot row", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("snap-diy@weddly.test");
+
+    // Step 1: create a DIY supplier with a price → spawns a mirrored line.
+    interface SupplierResp {
+      supplier: { id: string; budget_line_id: number | null };
+    }
+    const sup = await req<SupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "DIY catering", category: "catering", price_huf: 70_000 },
+      { token },
+    );
+    expect(sup.status).toBe(201);
+    const supplierId = sup.data.supplier.id;
+    const mirroredLineId = sup.data.supplier.budget_line_id;
+    expect(mirroredLineId).not.toBeNull();
+
+    // Step 2: snapshot — payload now contains the DIY-mirrored row.
+    const snap = await req<SnapshotResp>(
+      "POST",
+      "/api/budget/snapshots",
+      { name: "with-DIY" },
+      { token },
+    );
+    expect(snap.status).toBe(201);
+    const snapPayload = JSON.parse(snap.data.snapshot.payload_json) as {
+      couple_supplier_id: string | null;
+    }[];
+    expect(snapPayload.some((r) => r.couple_supplier_id === supplierId)).toBe(true);
+
+    // Step 3: clear the DIY price (drops the mirrored line). Supplier survives.
+    const clear = await req(
+      "PATCH",
+      `/api/couple-suppliers/${supplierId}`,
+      { price_huf: null },
+      { token },
+    );
+    expect(clear.status).toBe(200);
+    {
+      const lines = await fetchLines(token);
+      expect(lines.find((l) => l.couple_supplier_id === supplierId)).toBeUndefined();
+    }
+
+    // Step 4: restore — the snapshot's frozen DIY row must NOT re-insert.
+    //   The live supplier (now with no price) is the source of truth.
+    const restored = await req<RestoreResp>(
+      "POST",
+      `/api/budget/snapshots/${snap.data.snapshot.id}/restore`,
+      {},
+      { token },
+    );
+    expect(restored.status).toBe(200);
+
+    const after = await fetchLines(token);
+    // No DIY-linked line should re-appear — the supplier doesn't own one.
+    expect(after.find((l) => l.couple_supplier_id === supplierId)).toBeUndefined();
+  });
+
+  test("DIY-mirrored preservation: a still-priced DIY line survives the restore wipe and isn't double-inserted", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("snap-diy-survive@weddly.test");
+
+    interface SupplierResp {
+      supplier: { id: string; budget_line_id: number | null };
+    }
+    const sup = await req<SupplierResp>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Still priced", category: "music_dj", price_huf: 45_000 },
+      { token },
+    );
+    expect(sup.status).toBe(201);
+    const supplierId = sup.data.supplier.id;
+    const lineId = sup.data.supplier.budget_line_id;
+    expect(lineId).not.toBeNull();
+
+    const snap = await req<SnapshotResp>(
+      "POST",
+      "/api/budget/snapshots",
+      { name: "survives" },
+      { token },
+    );
+    expect(snap.status).toBe(201);
+
+    // Restore — DIY line survives untouched (same id), not duplicated.
+    const restored = await req<RestoreResp>(
+      "POST",
+      `/api/budget/snapshots/${snap.data.snapshot.id}/restore`,
+      {},
+      { token },
+    );
+    expect(restored.status).toBe(200);
+
+    const after = await fetchLines(token);
+    const diyMatches = after.filter((l) => l.couple_supplier_id === supplierId);
+    expect(diyMatches).toHaveLength(1);
+    // Same row id — wasn't deleted then re-inserted.
+    expect(diyMatches[0]?.id).toBe(lineId!);
+  });
+
+  test("audit log: restore fires action=budget.snapshot_restore", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("snap-audit@weddly.test");
+
+    const snap = await req<SnapshotResp>(
+      "POST",
+      "/api/budget/snapshots",
+      { name: "before" },
+      { token },
+    );
+    expect(snap.status).toBe(201);
+    const r = await req(
+      "POST",
+      `/api/budget/snapshots/${snap.data.snapshot.id}/restore`,
+      {},
+      { token },
+    );
+    expect(r.status).toBe(200);
+
+    interface AuditRow {
+      action: string;
+      target_id: number | null;
+      note: string | null;
+    }
+    const rows = db
+      .prepare(
+        "SELECT action, target_id, note FROM audit_log WHERE couple_id = ? AND action = 'budget.snapshot_restore' ORDER BY id DESC",
+      )
+      .all(coupleId) as AuditRow[];
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.target_id).toBe(snap.data.snapshot.id);
+    expect(rows[0]!.note).toMatch(/restored \d+ lines/);
+  });
+
+  test("empty snapshot payload still wipes and restores zero lines without crashing", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("snap-empty@weddly.test");
+    await wipeNonDiyLines(token);
+
+    const snap = await req<SnapshotResp>(
+      "POST",
+      "/api/budget/snapshots",
+      { name: "empty" },
+      { token },
+    );
+    expect(snap.status).toBe(201);
+
+    // Add some lines after the snapshot — restore should erase them all.
+    for (const lbl of ["throwaway-1", "throwaway-2"]) {
+      const a = await req(
+        "POST",
+        "/api/budget/lines",
+        { category: "other", label: lbl, planned_huf: 1 },
+        { token },
+      );
+      expect(a.status).toBe(201);
+    }
+
+    const r = await req<RestoreResp>(
+      "POST",
+      `/api/budget/snapshots/${snap.data.snapshot.id}/restore`,
+      {},
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.restored_count).toBe(0);
+
+    const after = await fetchLines(token);
+    expect(after.filter((l) => !l.couple_supplier_id)).toHaveLength(0);
+  });
+
+  test("restore bumps couple updated_at so concurrent tabs see a fresh value", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("snap-bump@weddly.test");
+
+    interface CoupleResp {
+      couple: { updated_at: number };
+    }
+    const before = await req<CoupleResp>("GET", "/api/couples/current", undefined, { token });
+    expect(before.status).toBe(200);
+    const beforeStamp = before.data.couple.updated_at;
+
+    const snap = await req<SnapshotResp>(
+      "POST",
+      "/api/budget/snapshots",
+      { name: "bump" },
+      { token },
+    );
+    expect(snap.status).toBe(201);
+
+    // Sleep so Date.now() actually moves between the read and the restore.
+    await new Promise((r) => setTimeout(r, 20));
+
+    const r = await req<RestoreResp>(
+      "POST",
+      `/api/budget/snapshots/${snap.data.snapshot.id}/restore`,
+      {},
+      { token },
+    );
+    expect(r.status).toBe(200);
+
+    const after = await req<CoupleResp>("GET", "/api/couples/current", undefined, { token });
+    expect(after.status).toBe(200);
+    expect(after.data.couple.updated_at).toBeGreaterThan(beforeStamp);
   });
 });
 

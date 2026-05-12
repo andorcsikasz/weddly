@@ -323,6 +323,9 @@ const hu: LocaleMessages = {
     kpi_roi_unit_actual: "tényleges · {n} visszajelzett",
     kpi_roi_unit_planned: "tervezett · {n} fő",
     kpi_roi_no_data: "Még nincs adat",
+    kpi_per_guest_planned_label: "Tervezett",
+    kpi_per_guest_actual_label: "Tényleges",
+    kpi_per_guest_actual_basis: "{n} igen-RSVP alapján",
     rsvp_breakdown_title: "Visszajelzések",
     rsvp_yes: "Igen",
     rsvp_no: "Nem",
@@ -1068,6 +1071,13 @@ const hu: LocaleMessages = {
     snapshot_planned_label: "Tervezett",
     snapshot_actual_label: "Tényleges",
     snapshot_diff_label: "Eltérés most",
+    snapshot_restore_label: "Visszaállítás",
+    snapshot_restore_confirm_title: "Visszaállítjuk ezt a verziót?",
+    snapshot_restore_confirm_body:
+      "A jelenlegi költségvetési sorok ehhez a pillanatképhez kerülnek vissza. A saját szervezésekhez kötött sorok érintetlenek maradnak.",
+    snapshot_restore_confirm_yes: "Igen, állítsd vissza",
+    snapshot_restored: "Pillanatkép visszaállítva · {n} sor",
+    snapshot_restore_failed: "A pillanatkép visszaállítása nem sikerült.",
     add_template_help: "Válassz kategóriát",
     edit_planned_aria: "{category} tervezett összegének módosítása",
     per_guest_unit: "{n}/fő",
@@ -1093,6 +1103,23 @@ const hu: LocaleMessages = {
       rings: "Gyűrűk",
       other: "Egyéb",
     },
+  },
+  diy: {
+    paid_label: "Már kifizettük",
+    paid_help: "Bekapcsolva tényleges kiadásként is megjelenik a költségvetésben.",
+    paid_disabled_hint: "Először adj meg egy árat.",
+  },
+  cost_planning: {
+    benchmark_strip:
+      "{count} főnél az átlagos HU költségvetés {min} – {max} Ft. Ti most {userTotal}-on álltok.",
+    benchmark_methodology:
+      "Tájékoztató jellegű becslés HU 2026-ra, publikus szállítói árakból (tradergroup.hu, eskuvo.com). Nem szakvélemény — saját ajánlatok mindig pontosabbak.",
+    benchmark_source_hint: "Honnan jönnek ezek a számok?",
+    overcap_soft_label: "Kicsit a kereted fölött",
+    overcap_medium_label: "{amount}-tal a keret fölött",
+    overcap_serious_action: "Mi húzza fel? Mutasd a top 3 tételt →",
+    per_guest_planned: "Tervezett · {amount}/fő × {count} vendég",
+    per_guest_actual: "Tényleges · {amount}/fő · {confirmed} igen-RSVP alapján",
   },
   seating: {
     title: "Ültetési rend",

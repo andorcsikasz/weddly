@@ -256,9 +256,16 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   // the website + maps URL while the submitter goes through email verify.
   // The supplier is still 'pending' and invisible, so a network blip here
   // is harmless — admin can hit "Re-enrich" later from the moderation page.
-  void enrichSupplier(id).catch((e) =>
-    log.warn("supplier.enrich.failed", { supplierId: id, error: String(e) }),
-  );
+  //
+  // Skip in tests: hostnames like `crystal-hall.test` don't resolve but the
+  // pending background fetch still pins down the event loop for 5s per row,
+  // which blew past the test runner's per-test timeout budget once we had a
+  // few dozen supplier-creating tests in a single run.
+  if (process.env.NODE_ENV !== "test") {
+    void enrichSupplier(id).catch((e) =>
+      log.warn("supplier.enrich.failed", { supplierId: id, error: String(e) }),
+    );
+  }
 
   // Issue a fresh verification token + send the email. The supplier stays in
   // 'pending' state until the token is consumed; only then does it move to

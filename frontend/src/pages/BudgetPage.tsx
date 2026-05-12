@@ -2,9 +2,9 @@
 // re-prices per-guest categories live, plus an inline-editable line table.
 
 import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple } from "@shared/types";
-import { ArrowUpRight, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowUpRight, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CATEGORY_ICONS, CostPlanningCard } from "../components/CostPlanningCard";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -99,12 +99,19 @@ export default function BudgetPage() {
   const confirm = useConfirm();
   const promptEntry = useEntryPrompt();
   const toast = useToast();
+  const location = useLocation();
   const [lines, setLines] = useState<BudgetLine[]>([]);
   const [snapshots, setSnapshots] = useState<BudgetSnapshot[]>([]);
   const [couple, setCouple] = useState<Couple | null>(null);
   // Slider state lives here so saveSnapshot() can read the current scenario
   // headcount and seed the snapshot-name suggestion.
   const [count, setCount] = useState<number | null>(null);
+  /** Snapshot id currently being restored — disables both action buttons on
+   *  the affected card and shows an inline spinner. Null when idle. */
+  const [restoringId, setRestoringId] = useState<number | null>(null);
+  /** Line id to flash with a blush ring after a `#top-overage` deep-link.
+   *  Mirrors the highlight pattern used on SuppliersPage post-submit. */
+  const [highlightLineId, setHighlightLineId] = useState<number | null>(null);
 
   async function refresh() {
     const [linesR, snapsR, coupleR] = await Promise.all([
@@ -325,9 +332,85 @@ export default function BudgetPage() {
     setSnapshots(snapshots.filter((s) => s.id !== id));
   }
 
+  /** Replay a saved snapshot over the live budget. DIY-mirrored supplier
+   *  lines survive because the backend preserves them in transaction; we
+   *  still `refresh()` afterwards to pick up the restored rows + bumped
+   *  updated_at values, then publish so other tabs follow. */
+  async function restoreSnapshot(id: number) {
+    const ok = await confirm({
+      title: t("budget.snapshot_restore_confirm_title"),
+      body: t("budget.snapshot_restore_confirm_body"),
+      confirmLabel: t("budget.snapshot_restore_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setRestoringId(id);
+    try {
+      const r = await budgetApi.restoreSnapshot(id);
+      toast.success(t("budget.snapshot_restored", { n: r.restored_count }));
+      await refresh();
+      publish("budget:changed");
+    } catch {
+      // Don't rethrow — the toast is the user-facing signal. Keeping the
+      // snapshot list intact lets the user retry without scrolling.
+      toast.error(t("budget.snapshot_restore_failed"));
+    } finally {
+      setRestoringId(null);
+    }
+  }
+
   // Aggregate the live lines once for snapshot diff comparisons. Cheap; lines
   // count is small.
   const livePlannedTotal = useMemo(() => lines.reduce((s, l) => s + l.planned_huf, 0), [lines]);
+
+  // Deep-link target from CostPlanningCard's serious-tier action. Picks the
+  // single line with the biggest positive (actual − planned) delta, falling
+  // back to the heaviest planned line when nothing is over plan. Excludes the
+  // honeymoon roll-up because it doesn't render a clickable row here — the
+  // dedicated page owns that breakdown.
+  const topOverageLineId = useMemo<number | null>(() => {
+    const candidates = lines.filter((l) => l.category !== "honeymoon");
+    if (candidates.length === 0) return null;
+    let bestDelta = 0;
+    let bestId: number | null = null;
+    for (const l of candidates) {
+      const delta = l.actual_huf - l.planned_huf;
+      if (delta > bestDelta) {
+        bestDelta = delta;
+        bestId = l.id;
+      }
+    }
+    if (bestId !== null) return bestId;
+    // No line is over plan — fall back to the heaviest planned line so the
+    // user still lands somewhere actionable. (Simpler-than-spec branch
+    // documented per the task brief.)
+    let bestPlanned = -1;
+    for (const l of candidates) {
+      if (l.planned_huf > bestPlanned) {
+        bestPlanned = l.planned_huf;
+        bestId = l.id;
+      }
+    }
+    return bestId;
+  }, [lines]);
+
+  // When CostPlanningCard's serious-tier link drops us at /app/budget#top-overage,
+  // scroll the heaviest-overage row into view + flash a 2 s blush ring on it.
+  // Browser-native scroll-to-anchor handles the case where JS can't find a
+  // row (e.g. empty list) via the `id="top-overage"` anchor on the section.
+  useEffect(() => {
+    if (location.hash !== "#top-overage") return;
+    if (lines.length === 0) return;
+    if (topOverageLineId === null) return;
+    const el = document.querySelector<HTMLElement>(`[data-budget-line-id="${topOverageLineId}"]`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightLineId(topOverageLineId);
+    const tid = window.setTimeout(() => setHighlightLineId(null), 2000);
+    return () => window.clearTimeout(tid);
+    // `location.hash` and `lines` together cover: first paint after navigation,
+    // and the post-refresh case where lines arrive after the hash.
+  }, [location.hash, lines, topOverageLineId]);
 
   // Honeymoon rolls up into a single read-only row on the budget table — the
   // sub-category breakdown lives on /app/honeymoon. We still feed all lines
@@ -374,7 +457,7 @@ export default function BudgetPage() {
         onCapChange={saveCap}
       />
 
-      <section className="mt-8">
+      <section id="top-overage" className="mt-8 scroll-mt-24">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2>{t("budget.lines_title")}</h2>
@@ -402,10 +485,14 @@ export default function BudgetPage() {
             <tbody>
               {tableLines.map((line) => {
                 const delta = line.actual_huf - line.planned_huf;
+                const isHighlighted = line.id === highlightLineId;
                 return (
                   <tr
                     key={line.id}
-                    className="border-t border-paper-200 transition hover:bg-paper-50"
+                    data-budget-line-id={line.id}
+                    className={`border-t border-paper-200 transition hover:bg-paper-50 ${
+                      isHighlighted ? "ring-2 ring-blush-300 ring-offset-2" : ""
+                    }`}
                   >
                     <td className="px-4 py-2 align-middle">
                       <CategoryCell category={line.category} />
@@ -494,6 +581,9 @@ export default function BudgetPage() {
                 snapshot={s}
                 livePlannedTotal={livePlannedTotal}
                 locale={locale}
+                restoring={restoringId === s.id}
+                disabled={restoringId !== null && restoringId !== s.id}
+                onRestore={() => restoreSnapshot(s.id)}
                 onRemove={() => removeSnapshot(s.id)}
               />
             ))}
@@ -640,11 +730,20 @@ function SnapshotCard({
   snapshot,
   livePlannedTotal,
   locale,
+  restoring,
+  disabled,
+  onRestore,
   onRemove,
 }: {
   snapshot: BudgetSnapshot;
   livePlannedTotal: number;
   locale: "hu" | "en";
+  /** This card is the one currently being restored — show a spinner. */
+  restoring: boolean;
+  /** Another card is being restored — soft-disable both actions here so the
+   *  user can't pile up parallel restores while one is in-flight. */
+  disabled: boolean;
+  onRestore: () => void;
   onRemove: () => void;
 }) {
   const { t } = useT();
@@ -688,9 +787,30 @@ function SnapshotCard({
           </dd>
         </div>
       </dl>
-      <button type="button" className="btn-ghost btn-sm mt-3 text-blush-700" onClick={onRemove}>
-        <Trash2 size={14} /> {t("budget.delete")}
-      </button>
+      <div className="mt-3 flex items-center gap-1">
+        <button
+          type="button"
+          className="btn-ghost btn-sm"
+          onClick={onRestore}
+          disabled={restoring || disabled}
+          aria-label={t("budget.snapshot_restore_label")}
+        >
+          {restoring ? (
+            <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden="true" />
+          ) : (
+            <RotateCcw size={14} />
+          )}{" "}
+          {t("budget.snapshot_restore_label")}
+        </button>
+        <button
+          type="button"
+          className="btn-ghost btn-sm text-blush-700"
+          onClick={onRemove}
+          disabled={restoring || disabled}
+        >
+          <Trash2 size={14} /> {t("budget.delete")}
+        </button>
+      </div>
     </div>
   );
 }
