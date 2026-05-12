@@ -789,6 +789,7 @@ function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): 
   const before = safeParse(entry.before_json);
   const after = safeParse(entry.after_json);
   const action = entry.action;
+  const empty = t("profile.activity_value_empty");
 
   // Per-field couple updates — these always carry both before and after.
   if (action === "couple.budget_cap_update" && before && after) {
@@ -868,6 +869,121 @@ function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): 
     return tWithFallback(t, `profile.activity_action_${action.replace(/\./g, "_")}`, { name });
   }
 
+  // Guest CRUD — name lives in `before` for delete, `after` for create/update.
+  // Legacy entries without a name fall back to "—" so the phrase still parses.
+  if (action === "guest.create" || action === "guest.update" || action === "guest.delete") {
+    const side = action === "guest.delete" ? before : after;
+    return tWithFallback(t, `profile.activity_action_${action.replace(/\./g, "_")}`, {
+      name: asString(side?.full_name) ?? empty,
+    });
+  }
+
+  // Household CRUD. `update` has a rename variant when the label changed —
+  // otherwise it's the generic "updated: {label}".
+  if (action === "household.update" && (before || after)) {
+    const lb = asString(before?.label);
+    const la = asString(after?.label);
+    if (lb && la && lb !== la) {
+      return tWithFallback(t, "profile.activity_action_household_update_rename", {
+        before: lb,
+        after: la,
+      });
+    }
+    return tWithFallback(t, "profile.activity_action_household_update", {
+      label: la ?? lb ?? empty,
+    });
+  }
+  if (action === "household.create" || action === "household.delete") {
+    const side = action === "household.delete" ? before : after;
+    return tWithFallback(t, `profile.activity_action_${action.replace(/\./g, "_")}`, {
+      label: asString(side?.label) ?? empty,
+    });
+  }
+
+  // Seating-table CRUD — symmetrical to households.
+  if (action === "table.update") {
+    const lb = asString(before?.label);
+    const la = asString(after?.label);
+    if (lb && la && lb !== la) {
+      return tWithFallback(t, "profile.activity_action_table_update_rename", {
+        before: lb,
+        after: la,
+      });
+    }
+    return tWithFallback(t, "profile.activity_action_table_update", {
+      label: la ?? lb ?? empty,
+    });
+  }
+  if (action === "table.create" || action === "table.delete") {
+    const side = action === "table.delete" ? before : after;
+    return tWithFallback(t, `profile.activity_action_${action.replace(/\./g, "_")}`, {
+      label: asString(side?.label) ?? empty,
+    });
+  }
+
+  // Budget lines: rename → before → after of label; value change →
+  // `{label} (tervezett: X → Y, tényleges: A → B)` built from the numeric
+  // diffs; fallback → simple "{label}".
+  if (action === "budget.line_update" && (before || after)) {
+    const labelBefore = asString(before?.label);
+    const labelAfter = asString(after?.label);
+    if (labelBefore && labelAfter && labelBefore !== labelAfter) {
+      return tWithFallback(t, "profile.activity_action_budget_line_update_rename", {
+        before: labelBefore,
+        after: labelAfter,
+      });
+    }
+    const segments: string[] = [];
+    const plannedBefore = asNumber(before?.planned_huf);
+    const plannedAfter = asNumber(after?.planned_huf);
+    const actualBefore = asNumber(before?.actual_huf);
+    const actualAfter = asNumber(after?.actual_huf);
+    if (plannedBefore !== null && plannedAfter !== null && plannedBefore !== plannedAfter) {
+      segments.push(
+        `${t("profile.activity_budget_planned")}: ${formatHuf(plannedBefore, locale)} → ${formatHuf(plannedAfter, locale)}`,
+      );
+    }
+    if (actualBefore !== null && actualAfter !== null && actualBefore !== actualAfter) {
+      segments.push(
+        `${t("profile.activity_budget_actual")}: ${formatHuf(actualBefore, locale)} → ${formatHuf(actualAfter, locale)}`,
+      );
+    }
+    const label = labelAfter ?? labelBefore ?? empty;
+    if (segments.length > 0) {
+      return tWithFallback(t, "profile.activity_action_budget_line_update_diff", {
+        label,
+        changes: segments.join(", "),
+      });
+    }
+    return tWithFallback(t, "profile.activity_action_budget_line_update", { label });
+  }
+  if (action === "budget.line_create" || action === "budget.line_delete") {
+    const side = action === "budget.line_delete" ? before : after;
+    return tWithFallback(t, `profile.activity_action_${action.replace(/\./g, "_")}`, {
+      label: asString(side?.label) ?? empty,
+    });
+  }
+
+  // Seat events — backend now stores resolved guest + table names so the
+  // feed can read "Anna → 3. asztal" instead of "vendéget ültetett le".
+  if (action === "seat.assign") {
+    return tWithFallback(t, "profile.activity_action_seat_assign", {
+      guest: asString(after?.guest_name) ?? empty,
+      table: asString(after?.table_label) ?? empty,
+    });
+  }
+  if (action === "seat.unassign") {
+    return tWithFallback(t, "profile.activity_action_seat_unassign", {
+      guest: asString(before?.guest_name) ?? empty,
+    });
+  }
+  if (action === "seat.swap") {
+    return tWithFallback(t, "profile.activity_action_seat_swap", {
+      a: asString(after?.guest_a_name) ?? empty,
+      b: asString(after?.guest_b_name) ?? empty,
+    });
+  }
+
   // Default: try the static label key for the action. If that's also
   // missing, fall back to the generic phrase so the user never sees a
   // raw `profile.activity_action_*` string.
@@ -879,7 +995,10 @@ function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): 
 
 /** Dark "what happened" panel — the Profile-page audit log. Reads as a
  *  console card (ink-900 bg, paper-100 text) so the eye treats it as a
- *  log, not a content surface. Matches the user's "fekete doboz" ask. */
+ *  log, not a content surface. Matches the user's "fekete doboz" ask.
+ *  The header doubles as a collapse toggle so the long 14-day feed can
+ *  be tucked away. State is component-local — there's no need to survive
+ *  a refresh; users open/close per visit. */
 function ActivityPanel({
   entries,
   currentUserId,
@@ -891,37 +1010,61 @@ function ActivityPanel({
   locale: Locale;
   t: (k: string, v?: Record<string, string | number>) => string;
 }) {
+  const [open, setOpen] = useState(false);
+  const toggleLabel = open
+    ? t("profile.activity_toggle_collapse")
+    : t("profile.activity_toggle_expand");
   return (
     <section className="mt-6 overflow-hidden rounded-2xl bg-ink-900 text-paper-100 shadow-pop">
-      <header className="border-b border-ink-800 px-6 py-4">
-        <h2 className="text-lg text-paper-50">{t("profile.activity_title")}</h2>
-        <p className="mt-1 text-xs text-ink-200">{t("profile.activity_body")}</p>
-      </header>
-      {entries.length === 0 ? (
-        <p className="px-6 py-5 text-sm text-ink-300">{t("profile.activity_empty")}</p>
-      ) : (
-        <ul className="divide-y divide-ink-800">
-          {entries.map((e) => {
-            const actorIsSelf = e.actor_id !== null && e.actor_id === currentUserId;
-            const actorName = actorIsSelf
-              ? t("profile.activity_actor_you")
-              : (e.actor_full_name ?? t("profile.activity_actor_unknown"));
-            const phrase = renderActivityEntry(e, t, locale);
-            return (
-              <li
-                key={e.id}
-                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-6 py-3 text-sm"
-              >
-                <span className="font-medium text-paper-50">{actorName}</span>
-                <span className="text-paper-200">{phrase}</span>
-                <span className="ml-auto font-mono text-xs text-ink-300">
-                  {relativeTime(e.created_at, locale, t)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="activity-panel-body"
+        className="flex w-full items-start gap-4 border-b border-ink-800 px-6 py-4 text-left transition-colors hover:bg-ink-800/40"
+      >
+        <span className="flex-1">
+          <span className="block text-lg text-paper-50">{t("profile.activity_title")}</span>
+          <span className="mt-1 block text-xs text-ink-200">{t("profile.activity_body")}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2 pt-1 text-xs text-ink-200">
+          <span className="sr-only">{toggleLabel}</span>
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={`transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </span>
+      </button>
+      {open ? (
+        entries.length === 0 ? (
+          <p id="activity-panel-body" className="px-6 py-5 text-sm text-ink-300">
+            {t("profile.activity_empty")}
+          </p>
+        ) : (
+          <ul id="activity-panel-body" className="divide-y divide-ink-800">
+            {entries.map((e) => {
+              const actorIsSelf = e.actor_id !== null && e.actor_id === currentUserId;
+              const actorName = actorIsSelf
+                ? t("profile.activity_actor_you")
+                : (e.actor_full_name ?? t("profile.activity_actor_unknown"));
+              const phrase = renderActivityEntry(e, t, locale);
+              return (
+                <li
+                  key={e.id}
+                  className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-6 py-3 text-sm"
+                >
+                  <span className="font-medium text-paper-50">{actorName}</span>
+                  <span className="text-paper-200">{phrase}</span>
+                  <span className="ml-auto font-mono text-xs text-ink-300">
+                    {relativeTime(e.created_at, locale, t)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )
+      ) : null}
     </section>
   );
 }

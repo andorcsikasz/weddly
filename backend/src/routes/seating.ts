@@ -401,6 +401,7 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     action: "table.update",
     target_kind: "seating_table",
     target_id: id,
+    before: { label: existing.label },
     after: parsed,
   });
   const row = db.prepare("SELECT * FROM seating_tables WHERE id = ?").get(id) as TableRow;
@@ -411,10 +412,12 @@ function handleDeleteTable(ctx: Ctx): Response {
   const { userId, coupleId } = requireCouple(ctx);
   const id = Number(ctx.params.id);
   if (!Number.isFinite(id)) throw new HttpError(400, "Invalid id");
-  const result = db
-    .prepare("DELETE FROM seating_tables WHERE id = ? AND couple_id = ?")
-    .run(id, coupleId);
-  if (result.changes === 0) throw new HttpError(404, "Table not found");
+  const existing = db
+    .prepare("SELECT label FROM seating_tables WHERE id = ? AND couple_id = ?")
+    .get(id, coupleId) as { label: string } | undefined;
+  if (!existing) throw new HttpError(404, "Table not found");
+
+  db.prepare("DELETE FROM seating_tables WHERE id = ? AND couple_id = ?").run(id, coupleId);
 
   addAuditLog({
     actor_user_id: userId,
@@ -422,6 +425,7 @@ function handleDeleteTable(ctx: Ctx): Response {
     action: "table.delete",
     target_kind: "seating_table",
     target_id: id,
+    before: { label: existing.label },
   });
   return json({ ok: true });
 }
@@ -459,10 +463,10 @@ async function handleAssignSeat(ctx: Ctx): Promise<Response> {
   } catch (err) {
     if (err instanceof HttpError) throw err;
   }
-  const guestOk = db
-    .prepare("SELECT 1 FROM guests WHERE id = ? AND couple_id = ?")
-    .get(guestId, coupleId);
-  if (!guestOk) throw new HttpError(404, "Guest not in this couple");
+  const guestRow = db
+    .prepare("SELECT full_name FROM guests WHERE id = ? AND couple_id = ?")
+    .get(guestId, coupleId) as { full_name: string } | undefined;
+  if (!guestRow) throw new HttpError(404, "Guest not in this couple");
 
   // UPSERT — guest_id is UNIQUE, so re-assigning a guest moves them to the new seat.
   // We delete any existing assignment for this guest first, plus any existing
@@ -485,7 +489,12 @@ async function handleAssignSeat(ctx: Ctx): Promise<Response> {
     action: "seat.assign",
     target_kind: "seat_assignment",
     target_id: guestId,
-    after: { table_id: tableId, seat_index: seatIndex },
+    after: {
+      table_id: tableId,
+      seat_index: seatIndex,
+      guest_name: guestRow.full_name,
+      table_label: table.label,
+    },
   });
   return json({ ok: true });
 }
@@ -509,10 +518,12 @@ async function handleSwapSeats(ctx: Ctx): Promise<Response> {
   }
 
   // Both guests must belong to this couple.
-  const guests = db
-    .prepare("SELECT COUNT(*) AS c FROM guests WHERE id IN (?, ?) AND couple_id = ?")
-    .get(a, b, coupleId) as { c: number };
-  if (guests.c !== 2) throw new HttpError(404, "Guests not in this couple");
+  const guestRows = db
+    .prepare("SELECT id, full_name FROM guests WHERE id IN (?, ?) AND couple_id = ?")
+    .all(a, b, coupleId) as { id: number; full_name: string }[];
+  if (guestRows.length !== 2) throw new HttpError(404, "Guests not in this couple");
+  const guestAName = guestRows.find((g) => g.id === a)?.full_name ?? null;
+  const guestBName = guestRows.find((g) => g.id === b)?.full_name ?? null;
 
   // Both guests must currently be seated (otherwise this is a regular assign).
   const assignA = db
@@ -554,6 +565,8 @@ async function handleSwapSeats(ctx: Ctx): Promise<Response> {
     after: {
       guest_a_id: a,
       guest_b_id: b,
+      guest_a_name: guestAName,
+      guest_b_name: guestBName,
       a_to: { table_id: assignB.table_id, seat_index: assignB.seat_index },
       b_to: { table_id: assignA.table_id, seat_index: assignA.seat_index },
     },
@@ -570,10 +583,19 @@ async function handleUnassignSeat(ctx: Ctx): Promise<Response> {
   const body = await readJson<UnassignParams>(ctx.req);
   const guestId = Number(body.guest_id);
   if (!Number.isFinite(guestId)) throw new HttpError(400, "guest_id required");
-  const guestOk = db
-    .prepare("SELECT 1 FROM guests WHERE id = ? AND couple_id = ?")
-    .get(guestId, coupleId);
-  if (!guestOk) throw new HttpError(404, "Guest not in this couple");
+  const guestRow = db
+    .prepare("SELECT full_name FROM guests WHERE id = ? AND couple_id = ?")
+    .get(guestId, coupleId) as { full_name: string } | undefined;
+  if (!guestRow) throw new HttpError(404, "Guest not in this couple");
+
+  // Capture the seat we're vacating so the audit feed can name the table.
+  const prevSeat = db
+    .prepare(
+      `SELECT st.label AS table_label FROM seat_assignments sa
+       JOIN seating_tables st ON st.id = sa.table_id
+       WHERE sa.guest_id = ? AND st.couple_id = ?`,
+    )
+    .get(guestId, coupleId) as { table_label: string } | undefined;
 
   db.prepare("DELETE FROM seat_assignments WHERE guest_id = ?").run(guestId);
   addAuditLog({
@@ -582,6 +604,7 @@ async function handleUnassignSeat(ctx: Ctx): Promise<Response> {
     action: "seat.unassign",
     target_kind: "seat_assignment",
     target_id: guestId,
+    before: { guest_name: guestRow.full_name, table_label: prevSeat?.table_label ?? null },
   });
   return json({ ok: true });
 }

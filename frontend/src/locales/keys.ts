@@ -1970,6 +1970,21 @@ export interface LocaleMessages {
     activity_action_couple_supplier_create: string;
     activity_action_couple_supplier_update: string;
     activity_action_couple_supplier_delete: string;
+    /** Rename-detected variants: when the visible label changed, we surface
+     *  the before → after pair instead of just the new label. */
+    activity_action_household_update_rename: string;
+    activity_action_table_update_rename: string;
+    activity_action_budget_line_update_rename: string;
+    /** Budget-line value change. `{label}` names the row, `{changes}` is a
+     *  comma-joined string of `tervezett: 100k → 200k` style segments built
+     *  on the frontend so HUF formatting stays in one place. */
+    activity_action_budget_line_update_diff: string;
+    /** Field labels used inside the budget-line diff segment. */
+    activity_budget_planned: string;
+    activity_budget_actual: string;
+    /** Open / close hints on the collapsible activity panel header. */
+    activity_toggle_expand: string;
+    activity_toggle_collapse: string;
     /** Generic catch-all when an unknown / unwhitelisted action slips through —
      *  rather than show the raw key, fall back to a calm sentence. */
     activity_action_generic: string;

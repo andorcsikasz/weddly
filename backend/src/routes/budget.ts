@@ -209,8 +209,16 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
     action: "budget.line_update",
     target_kind: "budget_line",
     target_id: id,
-    before: { planned_huf: existing.planned_huf, actual_huf: existing.actual_huf },
-    after: { planned_huf: parsed.planned_huf, actual_huf: parsed.actual_huf },
+    before: {
+      label: existing.label,
+      planned_huf: existing.planned_huf,
+      actual_huf: existing.actual_huf,
+    },
+    after: {
+      label: parsed.label,
+      planned_huf: parsed.planned_huf,
+      actual_huf: parsed.actual_huf,
+    },
   });
 
   const row = db.prepare("SELECT * FROM budget_lines WHERE id = ?").get(id) as LineRow;
@@ -262,19 +270,17 @@ function handleDeleteLine(ctx: Ctx): Response {
   // Refuse to delete a supplier-mirrored line directly. The supplier's
   // delete endpoint cleans up both sides; deleting here would orphan the
   // FK on couple_suppliers.
-  const linked = db
-    .prepare("SELECT couple_supplier_id FROM budget_lines WHERE id = ? AND couple_id = ?")
-    .get(id, couple.id) as { couple_supplier_id: string | null } | undefined;
-  if (linked?.couple_supplier_id) {
+  const existing = db
+    .prepare("SELECT * FROM budget_lines WHERE id = ? AND couple_id = ?")
+    .get(id, couple.id) as LineRow | undefined;
+  if (!existing) throw new HttpError(404, "Line not found");
+  if (existing.couple_supplier_id) {
     throw new HttpError(409, "This line is managed by a DIY supplier entry", {
       code: "locked",
     });
   }
 
-  const result = db
-    .prepare("DELETE FROM budget_lines WHERE id = ? AND couple_id = ?")
-    .run(id, couple.id);
-  if (result.changes === 0) throw new HttpError(404, "Line not found");
+  db.prepare("DELETE FROM budget_lines WHERE id = ? AND couple_id = ?").run(id, couple.id);
 
   addAuditLog({
     actor_user_id: userId,
@@ -282,6 +288,7 @@ function handleDeleteLine(ctx: Ctx): Response {
     action: "budget.line_delete",
     target_kind: "budget_line",
     target_id: id,
+    before: { label: existing.label, planned_huf: existing.planned_huf },
   });
   return json({ ok: true });
 }
