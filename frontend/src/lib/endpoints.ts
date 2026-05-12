@@ -112,10 +112,12 @@ export const coupleApi = {
   activity: () => apiFetch<{ entries: CoupleActivityEntry[] }>("GET", "/api/couples/activity"),
   onboard: (body: OnboardInput) =>
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
-  /** Partial update — supports `wedding_date_goal`, `budget_goal`, `ceremony_kind`,
-   *  plus the honeymoon trip header fields (destination + start/end dates). */
+  /** Partial update — supports `wedding_date_goal`, `guest_count_goal`,
+   *  `budget_goal`, `ceremony_kind`, plus the honeymoon trip header fields
+   *  (destination + start/end dates). */
   update: (body: {
     wedding_date_goal?: WeddingDateGoal;
+    guest_count_goal?: GuestCountGoal;
     budget_goal?: BudgetGoal;
     ceremony_kind?: CeremonyKind | null;
     honeymoon_destination?: string | null;

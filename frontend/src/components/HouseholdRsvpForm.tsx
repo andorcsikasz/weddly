@@ -52,11 +52,15 @@ const DIETARY_TOKEN: Record<DietaryTag, string> = {
 };
 
 // Permissive matchers — the server may store any past spelling, so the
-// chip flips on if either HU or EN form is recognised.
+// chip flips on if either HU or EN form is recognised. `[^,;\s]*` after
+// the keyword devours the whole compound word (accented chars aren't in
+// `\w`, so `[\w-]*\b` used to stop at `laktóz` and leave `-érzékeny` as
+// residue — that bled back into `dietary_free` on round-trip and
+// corrupted the stored string).
 const DIETARY_MATCHERS: Record<DietaryTag, RegExp> = {
-  lactose: /\b(?:laktóz|lactose)[\w-]*\b/i,
-  gluten: /\b(?:glutén|gluten)[\w-]*\b/i,
-  nut: /\b(?:mogyoró|peanut|nut[- ]?aller)[\w-]*\b/i,
+  lactose: /(?:laktóz|lactose)[^,;\s]*/i,
+  gluten: /(?:glutén|gluten)[^,;\s]*/i,
+  nut: /(?:mogyoró|peanut|nut[- ]?aller)[^,;\s]*/i,
 };
 
 function parseDietary(s: string | null): { tags: Set<DietaryTag>; free: string } {

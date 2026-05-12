@@ -1038,10 +1038,16 @@ function KindIcon({ kind }: { kind: GuestKind }) {
  * Wheat for gluten, Nut for nut allergies. Any remaining free text is
  * surfaced via a fallback Wheat icon with the full string as a tooltip.
  */
+// `[^,;\s]*` after the keyword so we devour the whole compound word — JS
+// `\w` and `\b` don't include accented chars, so the old `[\w-]*\b/i` only
+// matched the ASCII prefix and left `"-érzékeny"` (or `"mentes"`) behind
+// as residue, which then triggered the fallback Wheat icon as "unknown
+// free-text dietary". Stop only at separators so we never bleed into the
+// next tag.
 const DIETARY_DETECTORS: { kind: "lactose" | "gluten" | "nut"; re: RegExp }[] = [
-  { kind: "lactose", re: /\b(?:laktóz|lactose)[\w-]*\b/i },
-  { kind: "gluten", re: /\b(?:glutén|gluten)[\w-]*\b/i },
-  { kind: "nut", re: /\b(?:mogyoró|peanut|nut[- ]?aller)[\w-]*\b/i },
+  { kind: "lactose", re: /(?:laktóz|lactose)[^,;\s]*/i },
+  { kind: "gluten", re: /(?:glutén|gluten)[^,;\s]*/i },
+  { kind: "nut", re: /(?:mogyoró|peanut|nut[- ]?aller)[^,;\s]*/i },
 ];
 
 function parseDietaryTags(dietary: string | null): {
