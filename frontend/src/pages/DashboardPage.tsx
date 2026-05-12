@@ -32,7 +32,7 @@ import {
 import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { CostPlanningCard } from "../components/CostPlanningCard";
+import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -215,14 +215,11 @@ export default function DashboardPage() {
     rsvp.yes > 0 && totalActual > 0 ? Math.round(totalActual / rsvp.yes) : null;
 
   // ── ROI / cost-per-guest ─────────────────────────────────────────────
-  // Prefer actual ÷ confirmed; fall back to planned ÷ target so the tile is
-  // still useful before any actuals or RSVPs have come in.
-  const roiPlannedDenom = targetCount ?? totalGuests;
-  const roiPlanned =
-    totalPlanned > 0 && roiPlannedDenom > 0 ? Math.round(totalPlanned / roiPlannedDenom) : null;
-  const roiUseActual = costPerConfirmedGuest !== null;
-  const roiValue = costPerConfirmedGuest ?? roiPlanned;
-  const roiDenom = roiUseActual ? rsvp.yes : roiPlannedDenom;
+  // Prefer actual ÷ confirmed; fall back to *scaled* planned ÷ slider count
+  // so the tile follows the cost-planning slider in real time. The scaling
+  // mirrors CostPlanningCard: per-guest categories scale with count/baseline;
+  // fixed categories stay put. Declared further down — it depends on
+  // baselineCount + effectivePlanningCount which are computed below.
 
   // ── Eloping guard ────────────────────────────────────────────────────
   // When the couple is eloping (10-or-fewer exact guests) or hasn't set a
@@ -250,6 +247,26 @@ export default function DashboardPage() {
   // pages (target headcount → range midpoint → 100 fallback).
   const baselineCount = targetCount ?? (totalGuests > 0 ? totalGuests : 100);
   const effectivePlanningCount = planningCount ?? baselineCount;
+
+  // ── Scaled ROI ──────────────────────────────────────────────────────
+  // Mirror CostPlanningCard's scaling so the tile tracks the slider live:
+  // per-guest categories scale with count/baseline; fixed categories don't.
+  const planningFactor = baselineCount > 0 ? effectivePlanningCount / baselineCount : 1;
+  let scaledPlannedTotal = 0;
+  for (const line of lines) {
+    if (PER_GUEST_CATEGORIES.has(line.category)) {
+      scaledPlannedTotal += Math.round(line.planned_huf * planningFactor);
+    } else {
+      scaledPlannedTotal += line.planned_huf;
+    }
+  }
+  const roiPlanned =
+    scaledPlannedTotal > 0 && effectivePlanningCount > 0
+      ? Math.round(scaledPlannedTotal / effectivePlanningCount)
+      : null;
+  const roiUseActual = costPerConfirmedGuest !== null;
+  const roiValue = costPerConfirmedGuest ?? roiPlanned;
+  const roiDenom = roiUseActual ? rsvp.yes : effectivePlanningCount;
   async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
     if (data === "loading" || data === null) return;
     try {

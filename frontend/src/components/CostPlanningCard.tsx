@@ -181,8 +181,8 @@ export function CostPlanningCard({
   const midCount = Math.round((minCount + maxCount) / 2 / 5) * 5;
 
   return (
-    <section className="card">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+    <section className="card pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">
           {t("budget.cost_planning_headline")}
         </p>
@@ -200,8 +200,10 @@ export function CostPlanningCard({
           ))}
       </div>
 
-      {/* Big centred live count — number large, "vendég" small below. */}
-      <div className="mt-1 text-center">
+      {/* Big centred live count — number large, "vendég" small below. The
+       *  negative top margin pulls the number up under the eyebrow row so
+       *  the empty band between them stays minimal. */}
+      <div className="-mt-1 text-center">
         <div className="font-serif text-4xl leading-none text-ink-900 sm:text-5xl">
           {formatNumber(count, locale)}
         </div>
