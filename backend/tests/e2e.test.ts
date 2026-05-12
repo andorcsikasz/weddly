@@ -2957,7 +2957,7 @@ describe("community suppliers", () => {
       .get(numericId) as { token: string };
     await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
 
-    const list = await req<{ suppliers: { id: number }[] }>("GET", "/api/suppliers");
+    const list = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
     expect(list.data.suppliers.some((s) => s.id === submit.data.supplier.id)).toBe(false);
 
     // Now approve works.
