@@ -23,20 +23,24 @@ import { publish, subscribe } from "../lib/sync";
 
 // Honeymoon is intentionally absent — its lines are managed on /app/honeymoon
 // and shown as a single aggregated row in the table below.
+// Same grouping as CostPlanningCard.CATEGORY_ORDER so the two pages stay
+// aligned. Clusters: hosting/food → guest experience → couple appearance →
+// atmosphere → after-wedding.
 const CATEGORIES: BudgetCategory[] = [
   "venue",
   "catering",
   "drinks",
+  "cake_dessert",
+  "favours",
+  "stationery",
+  "transport",
   "attire",
-  "decor_floral",
+  "hair_makeup",
+  "rings",
   "photo_video",
   "music_dj",
-  "cake_dessert",
-  "hair_makeup",
-  "transport",
-  "stationery",
-  "favours",
-  "rings",
+  "decor_floral",
+  "honeymoon",
   "other",
 ];
 

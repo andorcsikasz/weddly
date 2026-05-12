@@ -81,24 +81,29 @@ export const CATEGORY_ICONS: Record<
   other: MoreHorizontal,
 };
 
-/** Stable display order for the category list — heuristic: largest typical
- *  spends first, niceties last. Keeps row order from jumping around as the
- *  user edits amounts (we no longer sort by current planned). */
+/** Stable display order, grouped by what the couple is actually deciding
+ *  about together — keeps related rows adjacent so scanning down the list
+ *  feels less random than "biggest first". Clusters:
+ *    1. hosting & food         (venue → cake)
+ *    2. guest experience       (favours, stationery, transport)
+ *    3. couple's appearance    (attire, hair & makeup, rings)
+ *    4. atmosphere & memories  (photo, music, decor)
+ *    5. after-wedding & misc   (honeymoon, other) */
 const CATEGORY_ORDER: BudgetCategory[] = [
   "venue",
   "catering",
   "drinks",
+  "cake_dessert",
+  "favours",
+  "stationery",
+  "transport",
+  "attire",
+  "hair_makeup",
+  "rings",
   "photo_video",
   "music_dj",
   "decor_floral",
-  "attire",
-  "cake_dessert",
-  "hair_makeup",
-  "stationery",
-  "favours",
-  "transport",
   "honeymoon",
-  "rings",
   "other",
 ];
 
