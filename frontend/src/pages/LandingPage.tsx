@@ -1,4 +1,18 @@
-import { Check, ChevronDown } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  Download,
+  FileText,
+  Filter,
+  History,
+  LayoutGrid,
+  Pause,
+  Printer,
+  Smartphone,
+  Sparkles,
+  Users,
+  Wallet,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { BotanicalCorner, EucalyptusStem, WatercolorBlob } from "../components/botanical";
@@ -54,22 +68,16 @@ export default function LandingPage() {
           <h1 className="max-w-[14ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 sm:text-7xl sm:leading-[0.96] lg:text-8xl">
             {t("landing.hero_title")}
           </h1>
-          <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-md">
-              <p className="text-lg text-ink-600 sm:text-xl">{t("landing.hero_sub")}</p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link to="/signup" className="btn-primary btn-lg shadow-sm">
-                  {t("landing.cta_signup")}
-                </Link>
-                <Link to="/login" className="btn-outline btn-lg">
-                  {t("landing.cta_login")}
-                </Link>
-              </div>
-              <p className="mt-3 text-xs text-ink-500">{t("landing.cta_signup_sub")}</p>
+          <div className="mt-8 max-w-md">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link to="/signup" className="btn-primary btn-lg shadow-sm">
+                {t("landing.cta_signup")}
+              </Link>
+              <Link to="/login" className="btn-outline btn-lg">
+                {t("landing.cta_login")}
+              </Link>
             </div>
-            <div className="hidden self-end font-serif text-sm italic text-ink-500 lg:block">
-              {t("landing.stats_eyebrow")}
-            </div>
+            <p className="mt-3 text-xs text-ink-500">{t("landing.cta_signup_sub")}</p>
           </div>
         </div>
 
@@ -119,12 +127,6 @@ export default function LandingPage() {
           </p>
           <p className="mt-5 font-serif text-xl text-paper-300 sm:mt-6 sm:text-3xl">
             {t("landing.stats_a_label")}
-          </p>
-          <div className="mt-8 grid gap-x-8 gap-y-3 border-t border-paper-700/30 pt-6 text-sm sm:pt-8">
-            <LedgerLine value={t("landing.stats_b_value")} label={t("landing.stats_b_label")} />
-          </div>
-          <p className="mt-10 max-w-3xl text-xs leading-relaxed text-paper-400 sm:mt-12 sm:text-sm">
-            {t("landing.stats_footnote")}
           </p>
         </div>
       </section>
@@ -186,13 +188,10 @@ export default function LandingPage() {
               <h2 className="font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
-              <p className="mt-5 max-w-xl text-base text-ink-600 sm:text-lg">
-                {t("landing.block_budget_body")}
-              </p>
               <ul className="mt-7 space-y-3">
-                <BulletItem>{t("landing.block_budget_bullet_1")}</BulletItem>
-                <BulletItem>{t("landing.block_budget_bullet_2")}</BulletItem>
-                <BulletItem>{t("landing.block_budget_bullet_3")}</BulletItem>
+                <IconRow icon={<Wallet size={16} />}>{t("landing.block_budget_bullet_1")}</IconRow>
+                <IconRow icon={<Users size={16} />}>{t("landing.block_budget_bullet_2")}</IconRow>
+                <IconRow icon={<History size={16} />}>{t("landing.block_budget_bullet_3")}</IconRow>
               </ul>
             </div>
             <div className="relative">
@@ -224,14 +223,11 @@ export default function LandingPage() {
               <GuestListMockup className="h-auto w-full" />
             </LazyMount>
           </div>
-          <div className="mt-12 grid gap-8 sm:grid-cols-2">
-            <p className="text-base text-ink-700 sm:text-lg">{t("landing.block_guests_body")}</p>
-            <ul className="space-y-3">
-              <BulletItem>{t("landing.block_guests_bullet_1")}</BulletItem>
-              <BulletItem>{t("landing.block_guests_bullet_2")}</BulletItem>
-              <BulletItem>{t("landing.block_guests_bullet_3")}</BulletItem>
-            </ul>
-          </div>
+          <ul className="mx-auto mt-12 max-w-md space-y-3">
+            <IconRow icon={<Smartphone size={16} />}>{t("landing.block_guests_bullet_1")}</IconRow>
+            <IconRow icon={<Filter size={16} />}>{t("landing.block_guests_bullet_2")}</IconRow>
+            <IconRow icon={<Download size={16} />}>{t("landing.block_guests_bullet_3")}</IconRow>
+          </ul>
         </div>
       </section>
 
@@ -246,13 +242,16 @@ export default function LandingPage() {
               <h2 className="font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
-              <p className="mt-5 text-base text-ink-600 sm:text-lg">
-                {t("landing.block_seating_body")}
-              </p>
               <ul className="mt-7 space-y-3">
-                <BulletItem>{t("landing.block_seating_bullet_1")}</BulletItem>
-                <BulletItem>{t("landing.block_seating_bullet_2")}</BulletItem>
-                <BulletItem>{t("landing.block_seating_bullet_3")}</BulletItem>
+                <IconRow icon={<LayoutGrid size={16} />}>
+                  {t("landing.block_seating_bullet_1")}
+                </IconRow>
+                <IconRow icon={<AlertTriangle size={16} />}>
+                  {t("landing.block_seating_bullet_2")}
+                </IconRow>
+                <IconRow icon={<Printer size={16} />}>
+                  {t("landing.block_seating_bullet_3")}
+                </IconRow>
               </ul>
             </div>
             <div className="lg:-mr-32 xl:-mr-48">
@@ -359,10 +358,7 @@ export default function LandingPage() {
           <h2 className="font-serif text-3xl leading-[1.1] tracking-tight text-ink-900 sm:text-4xl lg:text-5xl">
             {t("landing.audience_title")}
           </h2>
-          <p className="mt-4 max-w-2xl font-serif text-lg leading-relaxed text-ink-600 sm:text-xl">
-            {t("landing.audience_sub")}
-          </p>
-          <div className="mt-12 divide-y divide-paper-300 border-y border-paper-300">
+          <div className="mt-10 divide-y divide-paper-300 border-y border-paper-300">
             <AudienceRow
               row={t("landing.card_couples_title")}
               body={t("landing.card_couples_body")}
@@ -398,9 +394,6 @@ export default function LandingPage() {
             <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 sm:text-4xl lg:text-5xl">
               {t("landing.pricing_title")}
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-base text-ink-700 sm:text-lg">
-              {t("landing.pricing_body")}
-            </p>
           </div>
           <div className="relative mx-auto mt-10 max-w-lg">
             <div className="rounded-2xl bg-paper-50 p-8 ring-1 ring-paper-300 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-10">
@@ -415,16 +408,13 @@ export default function LandingPage() {
               </div>
               <p className="mt-1 font-serif text-sm italic text-ink-500">/ {t("app.name")}</p>
               <ul className="mt-8 space-y-3">
-                <BulletItem>{t("landing.pricing_bullet_1")}</BulletItem>
-                <BulletItem>{t("landing.pricing_bullet_2")}</BulletItem>
-                <BulletItem>{t("landing.pricing_bullet_3")}</BulletItem>
+                <IconRow icon={<Sparkles size={16} />}>{t("landing.pricing_bullet_1")}</IconRow>
+                <IconRow icon={<Pause size={16} />}>{t("landing.pricing_bullet_2")}</IconRow>
+                <IconRow icon={<FileText size={16} />}>{t("landing.pricing_bullet_3")}</IconRow>
               </ul>
               <Link to="/signup" className="btn-primary btn-lg mt-8 w-full shadow-sm">
                 {t("landing.cta_signup")}
               </Link>
-              <p className="mt-5 border-t border-paper-300 pt-4 text-xs leading-relaxed text-ink-500">
-                {t("landing.pricing_v2_note")}
-              </p>
             </div>
           </div>
         </div>
@@ -464,9 +454,6 @@ export default function LandingPage() {
           <h2 className="mt-8 font-serif text-5xl italic leading-[0.96] tracking-tight text-ink-900 sm:text-7xl lg:text-8xl">
             {t("landing.closing_title")}
           </h2>
-          <p className="mx-auto mt-6 max-w-xl text-base text-ink-700 sm:text-lg">
-            {t("landing.closing_body")}
-          </p>
           <div className="mt-10 flex justify-center">
             <Link to="/signup" className="btn-primary btn-lg shadow-sm">
               {t("landing.cta_signup")}
@@ -497,23 +484,14 @@ function MarginNumeral({ value }: { value: string }) {
   );
 }
 
-function BulletItem({ children }: { children: ReactNode }) {
+function IconRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
-    <li className="flex items-start gap-3 text-sm text-ink-700">
-      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700">
-        <Check size={12} strokeWidth={3} />
+    <li className="flex items-center gap-3">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700">
+        {icon}
       </span>
-      <span>{children}</span>
+      <span className="font-serif text-base text-ink-800">{children}</span>
     </li>
-  );
-}
-
-function LedgerLine({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex items-baseline gap-3 border-b border-paper-700/30 py-2 sm:border-b-0">
-      <span className="font-serif text-2xl text-paper-100 sm:text-3xl">{value}</span>
-      <span className="text-xs uppercase tracking-[0.18em] text-paper-400 sm:text-sm">{label}</span>
-    </div>
   );
 }
 

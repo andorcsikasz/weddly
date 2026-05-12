@@ -88,34 +88,39 @@ const ITEMS: NavItem[] = [
   },
 ];
 
-/** Admin sub-nav — appears below the main rail when `user.is_admin`. Distinct
- *  purple styling + striped texture so the admin surfaces read as visually
- *  separate from the couple-facing pages without changing the design system. */
+/** Admin nav — replaces the couple-facing rail when the user has flipped
+ *  into admin view via the ProfileMenu. Distinct purple styling + striped
+ *  texture so admin surfaces read as visually separate from couple pages. */
 const ADMIN_ITEMS: NavItem[] = [
   {
     to: "/app/admin/suppliers",
     labelKey: "admin.nav_suppliers",
-    icon: <ShieldCheck size={16} />,
+    tabKey: "admin.nav_suppliers",
+    icon: <ShieldCheck size={18} />,
   },
   {
     to: "/app/admin/users",
     labelKey: "admin.nav_users",
-    icon: <UserCog size={16} />,
+    tabKey: "admin.nav_users",
+    icon: <UserCog size={18} />,
   },
   {
     to: "/app/admin/categories",
     labelKey: "admin.nav_taxonomy",
-    icon: <LayoutList size={16} />,
+    tabKey: "admin.nav_taxonomy",
+    icon: <LayoutList size={18} />,
   },
   {
     to: "/app/admin/vendor-waitlist",
     labelKey: "admin.nav_waitlist",
-    icon: <Inbox size={16} />,
+    tabKey: "admin.nav_waitlist",
+    icon: <Inbox size={18} />,
   },
   {
     to: "/app/admin/feedback",
     labelKey: "admin.nav_feedback",
-    icon: <MessageCircle size={16} />,
+    tabKey: "admin.nav_feedback",
+    icon: <MessageCircle size={18} />,
   },
 ];
 
@@ -179,9 +184,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     el.focus({ preventScroll: true });
   }, [location.pathname]);
 
-  // Admin tools (supplier moderation, user/couple directory) live in the
-  // ProfileMenu dropdown — sidebar stays focused on couple-facing pages.
-  const displayItems = ITEMS;
+  // View mode is derived from the URL: `/app/admin/*` paths flip the entire
+  // shell into admin view (purple rail, admin-only nav). The ProfileMenu
+  // exposes a single toggle to enter or exit this view. We only show the
+  // admin rail when the user is actually an admin — otherwise a stray
+  // /app/admin URL would render the admin chrome around a redirect.
+  const inAdminView = user?.is_admin === true && location.pathname.startsWith("/app/admin");
+  const displayItems = inAdminView ? ADMIN_ITEMS : ITEMS;
 
   return (
     <div className="min-h-full">
@@ -226,28 +235,27 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8">
         <aside className="hidden w-56 shrink-0 lg:block">
-          <nav className="sticky top-20 flex flex-col gap-1">
-            {displayItems.map((item) => (
-              <SideLink key={item.to} to={item.to} icon={item.icon}>
-                {t(item.labelKey)}
-              </SideLink>
-            ))}
-            {user?.is_admin && (
-              <div className="stationery-admin mt-4 rounded-xl border border-violet-200/70 p-2">
-                <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
-                  <ShieldCheck size={11} aria-hidden="true" />
-                  {t("admin.nav_label")}
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  {ADMIN_ITEMS.map((item) => (
-                    <AdminSideLink key={item.to} to={item.to} icon={item.icon}>
-                      {t(item.labelKey)}
-                    </AdminSideLink>
-                  ))}
-                </div>
+          {inAdminView ? (
+            <nav className="stationery-admin sticky top-20 flex flex-col gap-0.5 rounded-xl border border-violet-200/70 p-2">
+              <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                <ShieldCheck size={11} aria-hidden="true" />
+                {t("admin.nav_label")}
               </div>
-            )}
-          </nav>
+              {displayItems.map((item) => (
+                <AdminSideLink key={item.to} to={item.to} icon={item.icon}>
+                  {t(item.labelKey)}
+                </AdminSideLink>
+              ))}
+            </nav>
+          ) : (
+            <nav className="sticky top-20 flex flex-col gap-1">
+              {displayItems.map((item) => (
+                <SideLink key={item.to} to={item.to} icon={item.icon}>
+                  {t(item.labelKey)}
+                </SideLink>
+              ))}
+            </nav>
+          )}
         </aside>
         <main
           id="main-content"
@@ -260,16 +268,25 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       {/* Mobile bottom nav — only items with an explicit `tabKey` get a slot,
-          capped at 5 to keep the row legible on narrow viewports. Sidebar-only
-          items (planning, schedule, honeymoon, media) live in the desktop
-          rail. */}
-      <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t border-paper-300 bg-paper-50/95 backdrop-blur lg:hidden">
+          capped at 5 to keep the row legible on narrow viewports. In admin
+          view the bar swaps to the 5 admin pages and inverts to a violet
+          tint to mirror the desktop rail. */}
+      <nav
+        className={`safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur lg:hidden ${
+          inAdminView ? "stationery-admin border-violet-200/70" : "border-paper-300 bg-paper-50/95"
+        }`}
+      >
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
           {displayItems
             .filter((item) => item.tabKey)
             .slice(0, 5)
             .map((item) => (
-              <BottomLink key={item.to} to={item.to} icon={item.icon}>
+              <BottomLink
+                key={item.to}
+                to={item.to}
+                icon={item.icon}
+                variant={inAdminView ? "admin" : "default"}
+              >
                 {t(item.tabKey ?? item.labelKey)}
               </BottomLink>
             ))}
@@ -329,9 +346,9 @@ function SideLink({
   );
 }
 
-/** Purple-themed sidebar link for admin sub-pages. Active state inverts to a
+/** Purple-themed sidebar link for admin pages. Active state inverts to a
  *  solid violet pill so it pops off the striped purple stationery background;
- *  inactive rows stay violet-700 text so the whole rail reads as "admin". */
+ *  inactive rows stay violet-800 text so the whole rail reads as "admin". */
 function AdminSideLink({
   to,
   icon,
@@ -345,7 +362,7 @@ function AdminSideLink({
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+        `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
           isActive ? "bg-violet-700 text-white" : "text-violet-800 hover:bg-violet-100"
         }`
       }
@@ -360,18 +377,22 @@ function BottomLink({
   to,
   icon,
   children,
+  variant = "default",
 }: {
   to: string;
   icon: ReactNode;
   children: ReactNode;
+  variant?: "default" | "admin";
 }) {
+  const active = variant === "admin" ? "text-violet-900" : "text-ink-900";
+  const idle = variant === "admin" ? "text-violet-700/80" : "text-ink-500";
   return (
     <NavLink
       to={to}
       end={to === "/app"}
       className={({ isActive }) =>
         `flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] ${
-          isActive ? "text-ink-900" : "text-ink-500"
+          isActive ? active : idle
         }`
       }
     >

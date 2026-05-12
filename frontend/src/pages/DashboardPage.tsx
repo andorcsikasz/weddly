@@ -626,12 +626,11 @@ export default function DashboardPage() {
               onArchive={onArchiveWorkspace}
             />
           ) : (
-            <KpiTile
+            <DaysToGoTile
               label={t("dashboard.kpi_days_label")}
-              icon={<CalendarHeart size={16} aria-hidden="true" />}
-              value={daysUntil !== null ? formatNumber(daysUntil, locale) : "—"}
-              unit={daysUntil !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
-              accent="blush"
+              days={daysUntil}
+              goal={couple.wedding_date_goal}
+              onSave={saveWeddingDate}
             />
           )}
           <KpiTile
@@ -866,7 +865,6 @@ export default function DashboardPage() {
               boundsMax={boundsMax}
               cap={cap}
               count={effectivePlanningCount}
-              rsvpYesCount={rsvp.yes}
               onCountChange={(n) => {
                 // Local optimistic update + debounced server write. The lib
                 // collapses a slider drag into one PATCH and re-publishes
@@ -1056,21 +1054,21 @@ function KpiTile({
   const accentBg = accent === "blush" ? "bg-blush-50" : "bg-paper-50";
   const accentRing = accent === "blush" ? "text-blush-700" : "text-ink-700";
   return (
-    <div className="card">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-ink-500">
+    <div className="card p-4">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
         <span
-          className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
+          className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
         >
           {icon}
         </span>
         {label}
       </div>
-      <div className="stat-num mt-3 text-center text-3xl font-semibold leading-none text-ink-900">
+      <div className="stat-num mt-2 text-center text-2xl font-bold leading-none text-ink-900">
         {value}
       </div>
-      <div className="mt-1 text-center text-xs text-ink-500">{unit}</div>
+      <div className="mt-1 text-center text-xs font-semibold text-ink-500">{unit}</div>
       {progress !== undefined && progress !== null && (
-        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-paper-200">
+        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200">
           <div
             className={`h-full rounded-full transition-all ${
               progressOver ? "bg-blush-700" : "bg-ink-700"
@@ -1078,6 +1076,92 @@ function KpiTile({
             style={{ width: `${Math.max(2, progress)}%` }}
           />
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Clickable variant of the days-countdown KPI. Tapping the tile swaps the
+ *  big number for an inline `<input type="date">` so couples can shift the
+ *  date without leaving the dashboard. Reuses the same WeddingDateGoal
+ *  shape as the header `<EditableWeddingDate>` widget. */
+function DaysToGoTile({
+  label,
+  days,
+  goal,
+  onSave,
+}: {
+  label: string;
+  days: number | null;
+  goal: WeddingDateGoal;
+  onSave: (next: WeddingDateGoal) => Promise<void>;
+}) {
+  const { t, locale } = useT();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function commit(ymd: string) {
+    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+      setEditing(false);
+      return;
+    }
+    if (ymd === goal.exact_date) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave({
+        kind: "exact",
+        exact_date: ymd,
+        target_year: Number(ymd.slice(0, 4)),
+        target_month: Number(ymd.slice(5, 7)),
+        target_season: null,
+      });
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  }
+
+  return (
+    <div className="card p-4">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-50 text-blush-700">
+          <CalendarHeart size={14} aria-hidden="true" />
+        </span>
+        {label}
+      </div>
+      {editing ? (
+        <input
+          type="date"
+          autoFocus
+          defaultValue={goal.exact_date ?? ""}
+          disabled={saving}
+          onChange={(e) => commit(e.target.value)}
+          onBlur={() => {
+            if (!saving) setEditing(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setEditing(false);
+          }}
+          className="mt-2 w-full rounded border border-blush-500 bg-white px-2 py-1 text-center text-sm font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          title={t("dashboard.kpi_days_edit_hint")}
+          aria-label={t("dashboard.kpi_days_edit_hint")}
+          className="-mx-2 mt-1 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200"
+        >
+          <div className="stat-num text-2xl font-bold leading-none text-ink-900">
+            {days !== null ? formatNumber(days, locale) : "—"}
+          </div>
+          <div className="mt-1 text-xs font-semibold text-ink-500">
+            {days !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
+          </div>
+        </button>
       )}
     </div>
   );
@@ -1110,27 +1194,35 @@ function PerGuestKpiTile({
 }) {
   const hasActual = actualValue !== null;
   return (
-    <div className="card">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-ink-500">
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-paper-50 text-ink-700">
+    <div className="card p-4">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50 text-ink-700">
           {icon}
         </span>
         {label}
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+      <div className="mt-2 grid grid-cols-2 gap-2 text-center">
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-ink-400">{plannedLabel}</div>
-          <div className="stat-num mt-0.5 text-xl font-semibold leading-none text-ink-900">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
+            {plannedLabel}
+          </div>
+          <div className="stat-num mt-0.5 text-lg font-bold leading-none text-ink-900">
             {plannedValue}
           </div>
-          <div className="mt-1 text-[11px] leading-snug text-ink-500">{plannedSub}</div>
+          <div className="mt-1 text-[11px] font-semibold leading-snug text-ink-500">
+            {plannedSub}
+          </div>
         </div>
         <div className={hasActual ? "" : "opacity-60"}>
-          <div className="text-[10px] uppercase tracking-wide text-ink-400">{actualLabel}</div>
-          <div className="stat-num mt-0.5 text-xl font-semibold leading-none text-ink-900">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
+            {actualLabel}
+          </div>
+          <div className="stat-num mt-0.5 text-lg font-bold leading-none text-ink-900">
             {actualValue ?? "—"}
           </div>
-          <div className="mt-1 text-[11px] leading-snug text-ink-500">{actualSub}</div>
+          <div className="mt-1 text-[11px] font-semibold leading-snug text-ink-500">
+            {actualSub}
+          </div>
         </div>
       </div>
     </div>
@@ -1161,14 +1253,14 @@ function PastWeddingTile({
   onArchive: () => void;
 }) {
   return (
-    <div className="card bg-blush-50">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-blush-700">
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blush-100 text-blush-700">
-          <Heart size={14} aria-hidden="true" />
+    <div className="card bg-blush-50 p-4">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blush-700">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-100 text-blush-700">
+          <Heart size={12} aria-hidden="true" />
         </span>
         {label}
       </div>
-      <div className="stat-num mt-3 text-xl font-semibold leading-tight text-ink-900">{sub}</div>
+      <div className="stat-num mt-2 text-lg font-bold leading-tight text-ink-900">{sub}</div>
       <div className="mt-3 flex flex-col gap-1.5 text-sm">
         <Link to={seatingHref} className="text-blush-800 underline-offset-2 hover:underline">
           {seatingLabel}

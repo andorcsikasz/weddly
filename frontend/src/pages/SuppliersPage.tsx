@@ -680,7 +680,7 @@ export default function SuppliersPage() {
             inputMode="numeric"
             min={1}
             step={1}
-            className="h-9 w-28 rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
+            className="h-9 w-16 rounded-full border border-paper-300 bg-paper-50 px-2 text-center text-sm tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
             placeholder={t("suppliers.guests_filter_placeholder")}
             value={guestsFilter ?? ""}
             onChange={(e) => setGuestsFilter(e.target.value)}
@@ -699,10 +699,10 @@ export default function SuppliersPage() {
       </div>
 
       {/* Step chain. Sequence numbers dropped — the icons carry the meaning.
-          Steps are packed tightly (gap-1) and separated by a thin centred
-          dot so the row reads as one strip, not a sequence of buttons. Each
-          step also carries a row of discreet bars (one per sub-category)
-          that turn sage as the couple locks each pick in. */}
+          Steps are packed tightly (gap-1) and separated by a thin forward
+          arrow so the row reads as one process flow, not a sequence of
+          buttons. Each step also carries a row of discreet bars (one per
+          sub-category) that turn sage as the couple locks each pick in. */}
       <div className="relative mb-3">
         <div className="overflow-x-auto pb-1">
           <div className="flex min-w-max items-stretch gap-1">
@@ -716,7 +716,7 @@ export default function SuppliersPage() {
                 <div key={g.id} className="flex items-stretch gap-1">
                   {i > 0 && (
                     <span className="self-center text-paper-400" aria-hidden>
-                      ·
+                      →
                     </span>
                   )}
                   <ChainStep

@@ -1,7 +1,40 @@
+// Community supplier submission. The form is built around a live preview card
+// (right column, sticky on wide viewports) so the user sees the exact listing
+// they're creating as they type. The hero affordance is a one-shot Google Maps
+// link paste — server resolves it and back-fills name/address/website/phone.
+// Categories are picked from a visual chip grid grouped by SUPPLIER_GROUPS
+// rather than a select, so the booking-order vocabulary stays consistent with
+// the directory chain on /app/suppliers.
+
 import type { SubmitCommunitySupplierInput, PriceBand } from "@shared/community_suppliers";
-import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
+import type { DirectorySupplier, SupplierCategory, SupplierGroup } from "@shared/suppliers";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import {
+  BedDouble,
+  Brush,
+  Building2,
+  Bus,
+  Cake,
+  Camera,
+  Check,
+  ChefHat,
+  Disc3,
+  Flower2,
+  Lightbulb,
+  Mail,
+  MapPin,
+  PartyPopper,
+  Phone,
+  Scissors,
+  Shirt,
+  Sparkles,
+  Sparkle,
+  StickyNote,
+  UtensilsCrossed,
+  Wine,
+} from "lucide-react";
+import type { ComponentType, FormEvent, SVGProps } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -27,6 +60,36 @@ type FieldKey =
 type Errors = Partial<Record<FieldKey, string>>;
 
 const PRICE_BANDS: PriceBand[] = [1, 2, 3, 4, 5];
+
+type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
+
+// Mirrors the icon palette in SuppliersPage so the chip grid + preview card
+// stay visually consistent with the directory cards.
+const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
+  venue: Building2,
+  accommodation: BedDouble,
+  catering: ChefHat,
+  cake_dessert: Cake,
+  bar_drinks: Wine,
+  decor_floral: Flower2,
+  lighting: Lightbulb,
+  music_dj: Disc3,
+  photo_video: Camera,
+  entertainment: PartyPopper,
+  attire: Shirt,
+  hair_makeup: Brush,
+  stationery: StickyNote,
+  transport: Bus,
+};
+
+const GROUP_ICON: Record<SupplierGroup, IconCmp> = {
+  venue_stay: MapPin,
+  food_drink: UtensilsCrossed,
+  atmosphere: Sparkle,
+  experience: PartyPopper,
+  style: Scissors,
+  details: Mail,
+};
 
 function emptyForm() {
   return {
@@ -55,9 +118,6 @@ function isLikelyEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
-/** Cheap client-side check: only fire the resolver when the address field
- *  contains something that looks like a Google Maps share link. The server
- *  re-validates before doing the network call. */
 function looksLikeMapsUrl(s: string): boolean {
   const v = s.trim().toLowerCase();
   if (!v.startsWith("http")) return false;
@@ -76,10 +136,21 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
-  // Maps-URL resolver state — guards against double-fire (resolver is rate-
-  // limited per user) and surfaces progress/result copy in the address helper.
+
+  // Hero Maps-link input. Lives in its own state because the value is
+  // ephemeral — once the resolver fires, the parsed fields land in `form` and
+  // the hero shows a celebratory "we filled it in" confirmation. Keeping it
+  // separate also means accidental edits to the parsed address below don't
+  // re-trigger another resolve.
+  const [mapsLink, setMapsLink] = useState("");
   const [resolving, setResolving] = useState(false);
-  const [resolveMsg, setResolveMsg] = useState<string | null>(null);
+  const [resolveState, setResolveState] = useState<
+    | { kind: "idle" }
+    | { kind: "ok"; filled: number }
+    | { kind: "partial" }
+    | { kind: "rate_limited" }
+    | { kind: "failed" }
+  >({ kind: "idle" });
   const lastResolvedRef = useRef<string>("");
 
   useEffect(() => {
@@ -87,25 +158,26 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       setForm(emptyForm());
       setErrors({});
       setSubmitting(false);
+      setMapsLink("");
       setResolving(false);
-      setResolveMsg(null);
+      setResolveState({ kind: "idle" });
       lastResolvedRef.current = "";
     }
   }, [open]);
 
-  async function maybeResolveMapsUrl(raw: string) {
+  async function resolveMapsLink(raw: string) {
     const trimmed = raw.trim();
-    if (!looksLikeMapsUrl(trimmed)) return;
-    // Skip if we already resolved this exact URL (blur fires repeatedly).
+    if (!looksLikeMapsUrl(trimmed)) {
+      setResolveState({ kind: "failed" });
+      return;
+    }
     if (lastResolvedRef.current === trimmed) return;
     lastResolvedRef.current = trimmed;
 
     setResolving(true);
-    setResolveMsg(null);
+    setResolveState({ kind: "idle" });
     try {
       const { place } = await supplierApi.resolveMapsUrl(trimmed);
-      // Replace the URL with the human address — and only fill empty siblings
-      // (don't clobber user-typed values).
       setForm((cur) => ({
         ...cur,
         address: place.address ?? cur.address,
@@ -120,16 +192,12 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
         Number(!!place.name) +
         Number(!!place.website) +
         Number(!!place.phone);
-      setResolveMsg(
-        filled > 0
-          ? t("suppliers.submit.address_resolved")
-          : t("suppliers.submit.address_resolved_partial"),
-      );
+      setResolveState(filled > 0 ? { kind: "ok", filled } : { kind: "partial" });
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
-        setResolveMsg(t("suppliers.submit.err_rate_limited"));
+        setResolveState({ kind: "rate_limited" });
       } else {
-        setResolveMsg(t("suppliers.submit.address_resolve_failed"));
+        setResolveState({ kind: "failed" });
       }
     } finally {
       setResolving(false);
@@ -154,9 +222,6 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     const required = t("suppliers.submit.err_required");
     const tooLong = t("suppliers.submit.err_too_long");
 
-    // Only category + name + price_band stay required. Everything else is
-    // optional — the directory accepts skeletal entries that can be filled in
-    // later or by an admin moderating the submission.
     if (!form.category) next.category = required;
 
     const name = form.name.trim();
@@ -166,15 +231,11 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     if (form.city.trim().length > 80) next.city = tooLong;
 
     const address = form.address.trim();
-    // Address holds either a typed address or a Google Maps URL the user
-    // pastes — allow up to 600 chars so long Maps URLs fit.
     if (address && address.length > 600) next.address = tooLong;
 
     const website = form.website.trim();
     if (website && !isValidUrl(website)) next.website = t("suppliers.submit.err_invalid_url");
 
-    // contact_email is required now — we send a verification link there to
-    // confirm the listing belongs to that business before publishing it.
     const email = form.contact_email.trim();
     if (!email) next.contact_email = required;
     else if (!isLikelyEmail(email)) next.contact_email = t("suppliers.submit.err_invalid_email");
@@ -211,8 +272,6 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     setSubmitting(true);
     try {
       const res = await supplierApi.submitCommunity(payload);
-      // Tell the user *what happens next*, not just "thanks". The next-steps
-      // copy reuses the trust-signal review window so expectations match.
       toast.success(
         `${t("suppliers.submit.next_steps_title")} ${t("suppliers.submit.next_steps_body")}`,
       );
@@ -235,227 +294,615 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     }
   }
 
+  // The 4 required slots are category / name / email / price_band. The progress
+  // counter motivates the user across the finish line without surfacing it as
+  // gamified "complete your profile" noise.
+  const requiredFilled = useMemo(() => {
+    let n = 0;
+    if (form.category) n++;
+    if (form.name.trim()) n++;
+    if (form.contact_email.trim() && isLikelyEmail(form.contact_email.trim())) n++;
+    if (form.price_band !== null) n++;
+    return n;
+  }, [form.category, form.name, form.contact_email, form.price_band]);
+
+  const blurbLen = form.blurb.length;
+
   return (
     <Dialog
       open={open}
       role="dialog"
+      size="lg"
       title={t("suppliers.submit.title")}
       onClose={() => {
         if (!submitting) onClose();
       }}
       footer={
-        <>
-          <Button variant="outline" type="button" onClick={onClose} disabled={submitting}>
-            {t("suppliers.submit.cancel")}
-          </Button>
-          <Button
-            variant="primary"
-            type="submit"
-            form="submit-supplier-form"
-            loading={submitting}
-            loadingLabel={t("suppliers.submit.submitting")}
-          >
-            {t("suppliers.submit.submit_button")}
-          </Button>
-        </>
+        <div className="flex w-full flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-ink-500" aria-live="polite">
+            {t("suppliers.submit.progress_label", { done: requiredFilled, total: 4 })}
+          </p>
+          <div className="flex gap-2 sm:justify-end">
+            <Button variant="outline" type="button" onClick={onClose} disabled={submitting}>
+              {t("suppliers.submit.cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              form="submit-supplier-form"
+              loading={submitting}
+              loadingLabel={t("suppliers.submit.submitting")}
+            >
+              {t("suppliers.submit.submit_button")}
+            </Button>
+          </div>
+        </div>
       }
     >
       <p className="text-sm text-ink-600">{t("suppliers.submit.intro")}</p>
-      {/* Trust signals — short bullets so the user knows what they're signing up
-       *  for before they hit submit. */}
-      <ul className="mb-4 mt-3 space-y-1 text-xs text-ink-600">
-        <li className="flex items-start gap-2">
-          <span
-            aria-hidden
-            className="mt-0.5 inline-block h-1 w-1 shrink-0 rounded-full bg-blush-500"
+
+      <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        {/* LEFT — form */}
+        <form id="submit-supplier-form" onSubmit={onSubmit} className="space-y-6">
+          {/* Hero: Maps-link smart-fill. Blush gradient + sparkle so it reads
+              as "the magic button", not just another input. Collapses to a
+              quiet success row once resolved. */}
+          <MapsLinkHero
+            value={mapsLink}
+            onChange={setMapsLink}
+            onResolve={() => resolveMapsLink(mapsLink)}
+            resolving={resolving}
+            state={resolveState}
+            t={t}
           />
-          <span>{t("suppliers.submit.trust_review")}</span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span
-            aria-hidden
-            className="mt-0.5 inline-block h-1 w-1 shrink-0 rounded-full bg-blush-500"
-          />
-          <span>{t("suppliers.submit.trust_email_private")}</span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span
-            aria-hidden
-            className="mt-0.5 inline-block h-1 w-1 shrink-0 rounded-full bg-blush-500"
-          />
-          <span>{t("suppliers.submit.trust_no_fees")}</span>
-        </li>
-      </ul>
-      <form id="submit-supplier-form" onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="submit-supplier-category" className="field-label">
-            {t("suppliers.submit.category_label")}
-            <span aria-hidden="true" className="ml-0.5 text-blush-700">
-              *
-            </span>
-          </label>
-          <select
-            id="submit-supplier-category"
-            className={["input", errors.category ? "input-invalid" : ""].filter(Boolean).join(" ")}
-            value={form.category}
-            onChange={(e) => setField("category", e.target.value as SupplierCategory | "")}
-            aria-invalid={errors.category ? true : undefined}
-            aria-describedby={errors.category ? "submit-supplier-category-error" : undefined}
-          >
-            <option value="" disabled>
-              {t("suppliers.submit.category_placeholder")}
-            </option>
-            {SUPPLIER_GROUPS.map((g) => (
-              <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
-                {g.categories.map((c) => (
-                  <option key={c} value={c}>
-                    {t(`suppliers.cat.${c}`)}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          {errors.category && (
-            <FieldError id="submit-supplier-category-error">{errors.category}</FieldError>
-          )}
-        </div>
 
-        <TextField
-          id="submit-supplier-name"
-          label={t("suppliers.submit.name_label")}
-          required
-          maxLength={120}
-          value={form.name}
-          onChange={(e) => setField("name", e.target.value)}
-          errorText={errors.name}
-        />
+          {/* WHO — category chips + name */}
+          <section className="space-y-3" aria-labelledby="section-who-heading">
+            <SectionHeading id="section-who-heading">
+              {t("suppliers.submit.section_who")}
+            </SectionHeading>
+            <CategoryChipGrid
+              value={form.category}
+              onPick={(c) => setField("category", c)}
+              invalid={Boolean(errors.category)}
+              t={t}
+            />
+            {errors.category && (
+              <FieldError id="submit-supplier-category-error">{errors.category}</FieldError>
+            )}
+            <TextField
+              id="submit-supplier-name"
+              label={t("suppliers.submit.name_label")}
+              required
+              maxLength={120}
+              value={form.name}
+              onChange={(e) => setField("name", e.target.value)}
+              errorText={errors.name}
+              placeholder="Anna's Photography"
+            />
+          </section>
 
-        <TextField
-          id="submit-supplier-city"
-          label={t("suppliers.submit.city_label")}
-          maxLength={80}
-          value={form.city}
-          onChange={(e) => setField("city", e.target.value)}
-          errorText={errors.city}
-        />
+          {/* WHERE — city + address. Two columns on sm+. */}
+          <section className="space-y-3" aria-labelledby="section-where-heading">
+            <SectionHeading id="section-where-heading">
+              {t("suppliers.submit.section_where")}
+            </SectionHeading>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TextField
+                id="submit-supplier-city"
+                label={t("suppliers.submit.city_label")}
+                maxLength={80}
+                value={form.city}
+                onChange={(e) => setField("city", e.target.value)}
+                errorText={errors.city}
+                placeholder="Budapest"
+              />
+              <TextField
+                id="submit-supplier-address"
+                label={<OptionalLabel base={t("suppliers.submit.address_label")} t={t} optional />}
+                maxLength={600}
+                value={form.address}
+                onChange={(e) => setField("address", e.target.value)}
+                errorText={errors.address}
+                placeholder="Király u. 12"
+              />
+            </div>
+          </section>
 
-        <TextField
-          id="submit-supplier-address"
-          label={t("suppliers.submit.address_label")}
-          maxLength={600}
-          value={form.address}
-          onChange={(e) => setField("address", e.target.value)}
-          onBlur={() => maybeResolveMapsUrl(form.address)}
-          errorText={errors.address}
-          helperText={
-            resolving
-              ? t("suppliers.submit.address_resolving")
-              : (resolveMsg ?? t("suppliers.submit.address_help"))
-          }
-        />
+          {/* CONTACT — email (required), phone (optional), website (optional). */}
+          <section className="space-y-3" aria-labelledby="section-contact-heading">
+            <SectionHeading id="section-contact-heading">
+              {t("suppliers.submit.section_contact")}
+            </SectionHeading>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TextField
+                id="submit-supplier-email"
+                label={t("suppliers.submit.email_label")}
+                type="email"
+                inputMode="email"
+                required
+                value={form.contact_email}
+                onChange={(e) => setField("contact_email", e.target.value)}
+                errorText={errors.contact_email}
+                placeholder="hello@anna.hu"
+              />
+              <TextField
+                id="submit-supplier-phone"
+                label={<OptionalLabel base={t("suppliers.submit.phone_label")} t={t} optional />}
+                type="tel"
+                inputMode="tel"
+                value={form.contact_phone}
+                onChange={(e) => setField("contact_phone", e.target.value)}
+                errorText={errors.contact_phone}
+                placeholder="+36 30 123 4567"
+              />
+            </div>
+            <TextField
+              id="submit-supplier-website"
+              label={<OptionalLabel base={t("suppliers.submit.website_label")} t={t} optional />}
+              type="url"
+              inputMode="url"
+              placeholder="https://"
+              value={form.website}
+              onChange={(e) => setField("website", e.target.value)}
+              errorText={errors.website}
+            />
+          </section>
 
-        <TextField
-          id="submit-supplier-website"
-          label={t("suppliers.submit.website_label")}
-          type="url"
-          inputMode="url"
-          placeholder="https://"
-          value={form.website}
-          onChange={(e) => setField("website", e.target.value)}
-          errorText={errors.website}
-        />
+          {/* PITCH — blurb + price band. */}
+          <section className="space-y-3" aria-labelledby="section-pitch-heading">
+            <SectionHeading id="section-pitch-heading">
+              {t("suppliers.submit.section_pitch")}
+            </SectionHeading>
+            <div>
+              <label
+                htmlFor="submit-supplier-blurb"
+                className="field-label flex items-baseline justify-between"
+              >
+                <span>
+                  {t("suppliers.submit.blurb_label")}{" "}
+                  <span className="text-ink-400 normal-case tracking-normal">
+                    ({t("suppliers.submit.optional")})
+                  </span>
+                </span>
+                <span className="font-mono text-[10px] tabular-nums text-ink-400">
+                  {t("suppliers.submit.blurb_count", { n: blurbLen })}
+                </span>
+              </label>
+              <textarea
+                id="submit-supplier-blurb"
+                className={["input", errors.blurb ? "input-invalid" : ""].filter(Boolean).join(" ")}
+                rows={3}
+                maxLength={500}
+                value={form.blurb}
+                onChange={(e) => setField("blurb", e.target.value)}
+                placeholder={t("suppliers.submit.blurb_help")}
+                aria-invalid={errors.blurb ? true : undefined}
+                aria-describedby={
+                  errors.blurb ? "submit-supplier-blurb-error" : "submit-supplier-blurb-help"
+                }
+              />
+              {errors.blurb ? (
+                <FieldError id="submit-supplier-blurb-error">{errors.blurb}</FieldError>
+              ) : (
+                <HelperText id="submit-supplier-blurb-help">
+                  {t("suppliers.submit.blurb_help")}
+                </HelperText>
+              )}
+            </div>
 
-        <TextField
-          id="submit-supplier-email"
-          label={t("suppliers.submit.email_label")}
-          type="email"
-          inputMode="email"
-          value={form.contact_email}
-          onChange={(e) => setField("contact_email", e.target.value)}
-          errorText={errors.contact_email}
-        />
+            <PriceBandPicker
+              value={form.price_band}
+              onPick={(b) => setField("price_band", b)}
+              invalid={Boolean(errors.price_band)}
+              t={t}
+            />
+            {errors.price_band ? (
+              <FieldError id="submit-supplier-price-error">{errors.price_band}</FieldError>
+            ) : (
+              <HelperText id="submit-supplier-price-help">
+                {t("suppliers.submit.price_help")}
+              </HelperText>
+            )}
+          </section>
 
-        <TextField
-          id="submit-supplier-phone"
-          label={t("suppliers.submit.phone_label")}
-          type="tel"
-          inputMode="tel"
-          value={form.contact_phone}
-          onChange={(e) => setField("contact_phone", e.target.value)}
-          errorText={errors.contact_phone}
-        />
+          {/* Trust signals — moved to the bottom of the form, small and quiet,
+              so they read as guarantees the user discovers AFTER they've
+              committed mentally rather than as a noisy preamble. */}
+          <ul className="space-y-1.5 border-t border-paper-200 pt-4 text-xs text-ink-500">
+            <TrustLine icon={<Mail size={12} aria-hidden />}>
+              {t("suppliers.submit.trust_review")}
+            </TrustLine>
+            <TrustLine icon={<Check size={12} aria-hidden />}>
+              {t("suppliers.submit.trust_email_private")}
+            </TrustLine>
+            <TrustLine icon={<Sparkles size={12} aria-hidden />}>
+              {t("suppliers.submit.trust_no_fees")}
+            </TrustLine>
+          </ul>
+        </form>
 
-        <div>
-          <label htmlFor="submit-supplier-blurb" className="field-label">
-            {t("suppliers.submit.blurb_label")}
-          </label>
-          <textarea
-            id="submit-supplier-blurb"
-            className={["input", errors.blurb ? "input-invalid" : ""].filter(Boolean).join(" ")}
-            rows={4}
-            maxLength={500}
-            value={form.blurb}
-            onChange={(e) => setField("blurb", e.target.value)}
-            aria-invalid={errors.blurb ? true : undefined}
-            aria-describedby={
-              errors.blurb ? "submit-supplier-blurb-error" : "submit-supplier-blurb-help"
-            }
-          />
-          {errors.blurb ? (
-            <FieldError id="submit-supplier-blurb-error">{errors.blurb}</FieldError>
-          ) : (
-            <HelperText id="submit-supplier-blurb-help">
-              {t("suppliers.submit.blurb_help")}
-            </HelperText>
-          )}
-        </div>
-
-        <div>
-          <span className="field-label block">
-            {t("suppliers.submit.price_label")}
-            <span aria-hidden="true" className="ml-0.5 text-blush-700">
-              *
-            </span>
-          </span>
-          <div
-            role="radiogroup"
-            aria-label={t("suppliers.submit.price_label")}
-            className="flex gap-2"
-          >
-            {PRICE_BANDS.map((band) => {
-              const selected = form.price_band === band;
-              return (
-                <button
-                  key={band}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => setField("price_band", band)}
-                  title={t("suppliers.price_legend")}
-                  className={
-                    selected
-                      ? "min-h-tap flex-1 rounded-xl border border-ink-700 bg-ink-700 px-3 py-2 font-mono text-sm font-medium text-paper-100"
-                      : "min-h-tap flex-1 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 font-mono text-sm text-ink-700 hover:border-ink-300"
-                  }
-                >
-                  {"●".repeat(band)}
-                  {"○".repeat(Math.max(0, 5 - band))}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-ink-400">
-            <span>{t("suppliers.price_legend")}</span>
-          </p>
-          {errors.price_band ? (
-            <FieldError id="submit-supplier-price-error">{errors.price_band}</FieldError>
-          ) : (
-            <HelperText id="submit-supplier-price-help">
-              {t("suppliers.submit.price_help")}
-            </HelperText>
-          )}
-        </div>
-      </form>
+        {/* RIGHT — live preview, sticky on wide screens. */}
+        <aside
+          aria-label={t("suppliers.submit.preview_title")}
+          className="lg:sticky lg:top-0 lg:self-start"
+        >
+          <p className="field-label">{t("suppliers.submit.preview_title")}</p>
+          <LivePreviewCard form={form} t={t} />
+          <p className="mt-2 text-[11px] text-ink-500">{t("suppliers.submit.preview_caption")}</p>
+        </aside>
+      </div>
     </Dialog>
+  );
+}
+
+function SectionHeading({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <h3 id={id} className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+      {children}
+    </h3>
+  );
+}
+
+function OptionalLabel({
+  base,
+  t,
+  optional,
+}: {
+  base: string;
+  t: (key: string) => string;
+  optional?: boolean;
+}) {
+  if (!optional) return <>{base}</>;
+  return (
+    <>
+      {base}{" "}
+      <span className="text-ink-400 normal-case tracking-normal">
+        ({t("suppliers.submit.optional")})
+      </span>
+    </>
+  );
+}
+
+function TrustLine({
+  icon,
+  children,
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-start gap-2">
+      <span
+        aria-hidden
+        className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-paper-200 text-ink-600"
+      >
+        {icon}
+      </span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+function MapsLinkHero({
+  value,
+  onChange,
+  onResolve,
+  resolving,
+  state,
+  t,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onResolve: () => void;
+  resolving: boolean;
+  state:
+    | { kind: "idle" }
+    | { kind: "ok"; filled: number }
+    | { kind: "partial" }
+    | { kind: "rate_limited" }
+    | { kind: "failed" };
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const inputId = "submit-supplier-maps-link";
+  const ok = state.kind === "ok";
+  const partial = state.kind === "partial";
+  const error = state.kind === "failed" || state.kind === "rate_limited";
+
+  return (
+    <div
+      className={`rounded-2xl border p-4 transition-colors ${
+        ok
+          ? "border-sage-300 bg-sage-50/60"
+          : error
+            ? "border-blush-300 bg-blush-50/40"
+            : "border-blush-200 bg-gradient-to-br from-blush-50 via-paper-50 to-sage-50"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+            ok ? "bg-sage-500 text-white" : "bg-blush-600 text-white"
+          }`}
+        >
+          {ok ? <Check size={14} /> : <Sparkles size={14} />}
+        </span>
+        <div className="min-w-0 flex-1">
+          <label htmlFor={inputId} className="block text-sm font-semibold text-ink-900">
+            {t("suppliers.submit.magic_title")}
+          </label>
+          <p className="mt-0.5 text-xs text-ink-600">{t("suppliers.submit.magic_help")}</p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              id={inputId}
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              className="input flex-1"
+              placeholder={t("suppliers.submit.magic_placeholder")}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onPaste={() => {
+                // Resolve immediately when the user pastes — the only reason
+                // to use this field is to paste a link, so we don't make them
+                // hit a button afterwards. setTimeout 0 so the paste event
+                // finishes updating the input value first.
+                setTimeout(() => onResolve(), 0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onResolve();
+                }
+              }}
+              disabled={resolving}
+              aria-describedby="submit-supplier-maps-status"
+            />
+            <Button
+              type="button"
+              variant="accent"
+              size="sm"
+              onClick={onResolve}
+              loading={resolving}
+              disabled={!value.trim() || resolving}
+              loadingLabel={t("suppliers.submit.address_resolving")}
+            >
+              {t("suppliers.submit.magic_resolve")}
+            </Button>
+          </div>
+          <p
+            id="submit-supplier-maps-status"
+            aria-live="polite"
+            className={`mt-2 text-[11px] ${
+              ok
+                ? "text-sage-700"
+                : partial
+                  ? "text-ink-500"
+                  : error
+                    ? "text-blush-700"
+                    : "text-ink-400"
+            }`}
+          >
+            {ok && t("suppliers.submit.address_resolved")}
+            {partial && t("suppliers.submit.address_resolved_partial")}
+            {state.kind === "rate_limited" && t("suppliers.submit.err_rate_limited")}
+            {state.kind === "failed" && t("suppliers.submit.address_resolve_failed")}
+            {state.kind === "idle" && !resolving && t("suppliers.submit.magic_or_manual")}
+            {resolving && t("suppliers.submit.address_resolving")}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CategoryChipGrid({
+  value,
+  onPick,
+  invalid,
+  t,
+}: {
+  value: SupplierCategory | "";
+  onPick: (c: SupplierCategory) => void;
+  invalid: boolean;
+  t: (key: string) => string;
+}) {
+  return (
+    <div>
+      <span className="field-label">
+        {t("suppliers.submit.category_label")}
+        <span aria-hidden="true" className="ml-0.5 text-blush-700">
+          *
+        </span>
+      </span>
+      <div
+        role="radiogroup"
+        aria-label={t("suppliers.submit.category_label")}
+        aria-invalid={invalid || undefined}
+        className={`grid gap-1.5 rounded-2xl border bg-paper-50 p-2 ${
+          invalid ? "border-blush-400" : "border-paper-200"
+        }`}
+      >
+        {SUPPLIER_GROUPS.map((g) => {
+          const GroupIcon = GROUP_ICON[g.id];
+          return (
+            <div key={g.id} className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex shrink-0 items-center gap-1 pr-1 text-[10px] font-medium uppercase tracking-wide text-ink-400">
+                <GroupIcon size={11} aria-hidden />
+                {t(`suppliers.group.${g.id}`)}
+              </span>
+              {g.categories.map((c) => {
+                const Icon = CATEGORY_ICON[c];
+                const selected = value === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => onPick(c)}
+                    className={
+                      selected
+                        ? "inline-flex items-center gap-1.5 rounded-full bg-ink-800 px-2.5 py-1 text-xs font-medium text-paper-100 transition"
+                        : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition hover:border-ink-400 hover:text-ink-900"
+                    }
+                  >
+                    <Icon size={12} aria-hidden />
+                    {t(`suppliers.cat.${c}`)}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PriceBandPicker({
+  value,
+  onPick,
+  invalid,
+  t,
+}: {
+  value: PriceBand | null;
+  onPick: (b: PriceBand) => void;
+  invalid: boolean;
+  t: (key: string) => string;
+}) {
+  return (
+    <div>
+      <span className="field-label">
+        {t("suppliers.submit.price_label")}
+        <span aria-hidden="true" className="ml-0.5 text-blush-700">
+          *
+        </span>
+      </span>
+      <div
+        role="radiogroup"
+        aria-label={t("suppliers.submit.price_label")}
+        aria-invalid={invalid || undefined}
+        className="grid grid-cols-5 gap-1.5"
+      >
+        {PRICE_BANDS.map((band) => {
+          const selected = value === band;
+          const label = t(`suppliers.submit.band_name.b${band}`);
+          return (
+            <button
+              key={band}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onPick(band)}
+              title={label}
+              className={
+                selected
+                  ? "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-ink-800 bg-ink-800 px-2 py-2 text-paper-100 transition"
+                  : invalid
+                    ? "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-blush-300 bg-white px-2 py-2 text-ink-700 transition hover:border-blush-500"
+                    : "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-paper-300 bg-white px-2 py-2 text-ink-700 transition hover:border-ink-400"
+              }
+            >
+              <span className="font-mono text-[10px] leading-none">
+                {"●".repeat(band)}
+                <span className={selected ? "opacity-50" : "text-ink-300"}>
+                  {"○".repeat(5 - band)}
+                </span>
+              </span>
+              <span className="text-[10px] font-medium uppercase tracking-wide">{label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function LivePreviewCard({
+  form,
+  t,
+}: {
+  form: ReturnType<typeof emptyForm>;
+  t: (key: string) => string;
+}) {
+  const name = form.name.trim();
+  const displayName = name || t("suppliers.submit.preview_placeholder_name");
+  const initial = (name.charAt(0) || "?").toUpperCase();
+  const Icon: IconCmp | null = form.category ? CATEGORY_ICON[form.category] : null;
+  const blurb = form.blurb.trim();
+  const blurbDisplay = blurb || t("suppliers.submit.preview_placeholder_blurb");
+
+  return (
+    <div className="card relative mt-1 overflow-hidden border-l-4 border-l-blush-400 !p-4 shadow-sm">
+      {/* "Pending" ribbon — sets expectations that this is what the listing
+          will look like AFTER email confirmation. */}
+      <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-blush-700">
+        <Sparkles size={9} aria-hidden />
+        {t("suppliers.submit.preview_pending_pill")}
+      </span>
+      <div className="flex items-start gap-3 pr-16">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700">
+          {initial}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h4
+            className={`truncate text-sm font-semibold ${name ? "text-ink-900" : "text-ink-400"}`}
+          >
+            {displayName}
+          </h4>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-ink-500">
+            {form.category && Icon && (
+              <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                <Icon size={11} aria-hidden />
+                {t(`suppliers.cat.${form.category}`)}
+              </span>
+            )}
+            {form.category && form.city.trim() && (
+              <span aria-hidden className="text-paper-400">
+                ·
+              </span>
+            )}
+            {form.city.trim() && (
+              <span className="uppercase tracking-wide">{form.city.trim()}</span>
+            )}
+            {form.price_band !== null && (
+              <>
+                {(form.category || form.city.trim()) && (
+                  <span aria-hidden className="text-paper-400">
+                    ·
+                  </span>
+                )}
+                <span className="font-mono text-ink-600">
+                  {"●".repeat(form.price_band)}
+                  <span className="text-ink-300">{"○".repeat(5 - form.price_band)}</span>
+                </span>
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+      {form.address.trim() && !looksLikeMapsUrl(form.address) && (
+        <p className="mt-2 line-clamp-1 text-[11px] text-ink-500">{form.address.trim()}</p>
+      )}
+      <p className={`mt-3 line-clamp-3 text-xs ${blurb ? "text-ink-700" : "italic text-ink-400"}`}>
+        {blurbDisplay}
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] text-ink-500">
+        {form.website.trim() && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5">
+            <Mail size={10} aria-hidden />
+            {t("suppliers.visit_website")}
+          </span>
+        )}
+        {form.contact_phone.trim() && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5">
+            <Phone size={10} aria-hidden />
+            {form.contact_phone.trim()}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

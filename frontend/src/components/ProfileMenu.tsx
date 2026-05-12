@@ -3,15 +3,7 @@
 // Closes on outside click, Escape, route change, or item selection.
 
 import type { CouplePartnerView } from "@shared/types";
-import {
-  Inbox,
-  LayoutList,
-  LogOut,
-  MessageCircle,
-  ShieldCheck,
-  UserCog,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeftRight, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -77,6 +69,7 @@ export function ProfileMenu() {
 
   if (!user) return null;
 
+  const inAdminView = location.pathname.startsWith("/app/admin");
   const initials = getInitials(user.full_name, user.email);
   const firstName = (user.full_name || user.email).trim().split(/\s+/)[0] ?? "";
   // Only stack the partner monogram once they've actually joined — while
@@ -146,49 +139,19 @@ export function ProfileMenu() {
           </Link>
           {user.is_admin && (
             <>
-              <div className="mx-3 mt-2 mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-blush-700">
-                <ShieldCheck size={11} aria-hidden="true" />
-                {t("admin.nav_label")}
-              </div>
               <Link
-                to="/app/admin/suppliers"
+                to={inAdminView ? "/app" : "/app/admin/suppliers"}
                 role="menuitem"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blush-700 hover:bg-blush-50"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-violet-800 hover:bg-violet-50"
               >
-                <ShieldCheck size={16} aria-hidden="true" />
-                <span>{t("admin.nav_suppliers")}</span>
-              </Link>
-              <Link
-                to="/app/admin/users"
-                role="menuitem"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blush-700 hover:bg-blush-50"
-              >
-                <UserCog size={16} aria-hidden="true" />
-                <span>{t("admin.nav_users")}</span>
-              </Link>
-              <Link
-                to="/app/admin/categories"
-                role="menuitem"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blush-700 hover:bg-blush-50"
-              >
-                <LayoutList size={16} aria-hidden="true" />
-                <span>{t("admin.nav_taxonomy")}</span>
-              </Link>
-              <Link
-                to="/app/admin/vendor-waitlist"
-                role="menuitem"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blush-700 hover:bg-blush-50"
-              >
-                <Inbox size={16} aria-hidden="true" />
-                <span>{t("admin.nav_waitlist")}</span>
-              </Link>
-              <Link
-                to="/app/admin/feedback"
-                role="menuitem"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-blush-700 hover:bg-blush-50"
-              >
-                <MessageCircle size={16} aria-hidden="true" />
-                <span>{t("admin.nav_feedback")}</span>
+                {inAdminView ? (
+                  <ArrowLeftRight size={16} aria-hidden="true" />
+                ) : (
+                  <ShieldCheck size={16} aria-hidden="true" />
+                )}
+                <span>
+                  {inAdminView ? t("admin.exit_admin_view") : t("admin.enter_admin_view")}
+                </span>
               </Link>
               <div className="my-1 h-px bg-paper-200" />
             </>

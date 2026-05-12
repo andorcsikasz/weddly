@@ -2,7 +2,6 @@
 // Used by the Dashboard and Budget pages. Per-guest categories cross-couple
 // with the headcount slider (move headcount → catering/drinks/etc. rescale).
 
-import { getBudgetRange } from "@shared/budget_benchmarks";
 import type { BudgetCategory, BudgetLine } from "@shared/types";
 import {
   ArrowDown,
@@ -25,7 +24,7 @@ import {
 } from "lucide-react";
 import { type ComponentType, type CSSProperties, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatHuf, formatHufCompact, formatNumber } from "../lib/format";
+import { formatHuf, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 /** Build a left-fill gradient for `<input type="range">`. Native ranges only
@@ -124,7 +123,6 @@ export function CostPlanningCard({
   boundsMax,
   cap,
   count,
-  rsvpYesCount = 0,
   onCountChange,
   onBoundsChange,
   onEditPlanned,
@@ -140,10 +138,6 @@ export function CostPlanningCard({
   boundsMax: number;
   cap: number | null;
   count: number;
-  /** Confirmed-yes RSVP headcount, used to compute the page-level
-   *  per-guest "actual" row. When 0 (no RSVPs yet, or caller hasn't wired
-   *  it up) the actual row is suppressed — only the planned row renders. */
-  rsvpYesCount?: number;
   onCountChange: (n: number) => void;
   /** Called when the user commits a new min or max on the bounds inputs.
    *  The parent persists `guest_count_goal = { kind: "range", min, max }`
@@ -193,17 +187,6 @@ export function CostPlanningCard({
   // "under by" copy; everything else flips the eyebrow stat to over-cap.
   const tier = overCapTier(totalPlanned, cap);
 
-  // Page-level cost-per-guest math, disambiguated so the user can tell
-  // "5 800 Ft/fő" apart from "12 500 Ft/fő" (planned vs. actual).
-  const perGuestPlanned = count > 0 ? Math.round(totalPlanned / count) : 0;
-  const perGuestActual = rsvpYesCount > 0 ? Math.round(totalActual / rsvpYesCount) : 0;
-
-  // HU 2026 benchmark range for the current slider count. Suppressed below
-  // for eloping (≤10) — the per-guest fixed-cost amortisation assumption
-  // breaks down at micro-weddings, so the range would mislead.
-  const benchmarkVisible = count > 10;
-  const benchmark = getBudgetRange(count);
-
   // Slider bounds — sourced from the couple's guest_count_goal via parent
   // props so /app and /app/budget show identical numbers. The two small
   // inputs under the slider commit changes back through onBoundsChange,
@@ -245,7 +228,7 @@ export function CostPlanningCard({
   const midCount = Math.round((minCount + maxCount) / 2 / 5) * 5;
 
   return (
-    <section className="card pt-4">
+    <section className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">
           {t("budget.cost_planning_headline")}
@@ -278,13 +261,13 @@ export function CostPlanningCard({
       </div>
 
       {/* Big centred live count — number large, "vendég" small below. The
-       *  negative top margin pulls the number up under the eyebrow row so
-       *  the empty band between them stays minimal. */}
-      <div className="-mt-1 text-center">
+       *  negative top margin pulls the number up flush under the eyebrow row
+       *  so there's no empty band between them. */}
+      <div className="-mt-3 text-center">
         <div className="font-serif text-4xl leading-none text-ink-900 sm:text-5xl">
           {formatNumber(count, locale)}
         </div>
-        <div className="mt-1 text-xs uppercase tracking-wide text-ink-500">
+        <div className="mt-0.5 text-xs uppercase tracking-wide text-ink-500">
           {t("budget.cost_planning_unit_label")}
         </div>
       </div>
@@ -366,48 +349,6 @@ export function CostPlanningCard({
             {formatHuf(totalPlanned, locale)}
           </span>
         </div>
-        {/* Per-guest disambiguation rows — replaces the silent
-         *  "12 500 Ft/fő" that used to mean two different things depending
-         *  on RSVP state. Tabular-num keeps the digits aligned across rows
-         *  so the actual/planned comparison reads cleanly at a glance. */}
-        <div className="mt-1 space-y-0.5 text-xs text-ink-500">
-          <div className="stat-num">
-            {t("cost_planning.per_guest_planned", {
-              amount: formatHuf(perGuestPlanned, locale),
-              count: formatNumber(count, locale),
-            })}
-          </div>
-          {rsvpYesCount > 0 && totalActual > 0 && (
-            <div className="stat-num">
-              {t("cost_planning.per_guest_actual", {
-                amount: formatHuf(perGuestActual, locale),
-                confirmed: formatNumber(rsvpYesCount, locale),
-              })}
-            </div>
-          )}
-        </div>
-        {/* HU 2026 benchmark strip — quiet greyscale band that gives a
-         *  reality-check without dragging the eye. Suppressed at ≤10
-         *  guests (elopement) where the per-guest model breaks down. */}
-        {benchmarkVisible && (
-          <div className="mt-2 rounded-md bg-paper-50 px-2 py-1.5 text-[11px] leading-snug text-ink-500">
-            <span>
-              {t("cost_planning.benchmark_strip", {
-                count: formatNumber(count, locale),
-                min: formatHufCompact(benchmark.min_huf, locale),
-                mid: formatHufCompact(benchmark.mid_huf, locale),
-                max: formatHufCompact(benchmark.max_huf, locale),
-                userTotal: formatHuf(totalPlanned, locale),
-              })}
-            </span>{" "}
-            <span
-              className="cursor-help text-ink-400 underline-offset-2 hover:text-ink-600 hover:underline"
-              title={t("cost_planning.benchmark_methodology")}
-            >
-              {t("cost_planning.benchmark_source_hint")}
-            </span>
-          </div>
-        )}
         {/* Always render the cap row — when the couple hasn't set a ceiling
          *  during onboarding, the value slot stays empty (with a dash
          *  placeholder) so the layout doesn't shift and the user can click

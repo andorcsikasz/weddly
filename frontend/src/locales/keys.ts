@@ -297,6 +297,7 @@ export interface LocaleMessages {
     kpi_days_label: string;
     kpi_days_unit: string;
     kpi_days_tbd: string;
+    kpi_days_edit_hint: string;
     kpi_guests_label: string;
     kpi_guests_unit: string;
     kpi_guests_no_data: string;
@@ -1395,6 +1396,35 @@ export interface LocaleMessages {
       err_invalid_email: string;
       err_too_long: string;
       err_rate_limited: string;
+      /** Hero "paste a Google Maps link" affordance copy + smart-fill input. */
+      magic_title: string;
+      magic_help: string;
+      magic_placeholder: string;
+      magic_or_manual: string;
+      magic_resolve: string;
+      magic_clear: string;
+      /** Section headings on the form side. */
+      section_who: string;
+      section_where: string;
+      section_contact: string;
+      section_pitch: string;
+      optional: string;
+      /** Live preview pane (right-hand column). */
+      preview_title: string;
+      preview_caption: string;
+      preview_placeholder_name: string;
+      preview_placeholder_blurb: string;
+      preview_pending_pill: string;
+      blurb_count: string;
+      progress_label: string;
+      /** Word labels paired with the dot price-band cards. */
+      band_name: {
+        b1: string;
+        b2: string;
+        b3: string;
+        b4: string;
+        b5: string;
+      };
     };
     /** Abuse-report flow against community-submitted listings. */
     report: {
@@ -1446,6 +1476,10 @@ export interface LocaleMessages {
   };
   admin: {
     nav_label: string;
+    /** ProfileMenu toggle that flips the shell between user-facing and
+     *  admin-only chrome. */
+    enter_admin_view: string;
+    exit_admin_view: string;
     /** Sidebar sub-labels for the admin pages. */
     nav_suppliers: string;
     nav_users: string;

@@ -1,10 +1,10 @@
-import type { InputHTMLAttributes, Ref } from "react";
+import type { InputHTMLAttributes, ReactNode, Ref } from "react";
 import { FieldError } from "./FieldError";
 import { HelperText } from "./HelperText";
 
 type TextFieldProps = {
   id: string;
-  label: string;
+  label: ReactNode;
   helperText?: string;
   errorText?: string;
   required?: boolean;
