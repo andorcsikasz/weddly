@@ -27,6 +27,7 @@ import {
   Map as MapIcon,
   Disc3,
   Flower2,
+  Flag,
   Lightbulb,
   Mail,
   MapPin,
@@ -49,6 +50,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react
 import { useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { DiyEntryModal } from "../components/DiyEntryModal";
+import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button } from "../components/ui";
 import {
@@ -149,6 +151,8 @@ export default function SuppliersPage() {
   const [submitOpen, setSubmitOpen] = useState(false);
   const [diyOpen, setDiyOpen] = useState(false);
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
+  // Report dialog state. `reporting` holds the numeric id + name; null when closed.
+  const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => readSaved());
 
@@ -1020,6 +1024,17 @@ export default function SuppliersPage() {
                         <span className="hidden lg:inline">{s.contact_phone}</span>
                       </a>
                     )}
+                    {s.source === "community" && s.id.startsWith("c") && (
+                      <button
+                        type="button"
+                        onClick={() => setReporting({ id: Number(s.id.slice(1)), name: s.name })}
+                        aria-label={t("suppliers.report.aria_label")}
+                        title={t("suppliers.report.aria_label")}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
+                      >
+                        <Flag size={14} aria-hidden />
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => togglePicked(s)}
@@ -1188,6 +1203,17 @@ export default function SuppliersPage() {
                         <Mail size={14} />
                       </a>
                     )}
+                    {s.source === "community" && s.id.startsWith("c") && (
+                      <button
+                        type="button"
+                        onClick={() => setReporting({ id: Number(s.id.slice(1)), name: s.name })}
+                        className="btn-ghost btn-sm text-ink-500 hover:text-blush-700"
+                        aria-label={t("suppliers.report.aria_label")}
+                        title={t("suppliers.report.aria_label")}
+                      >
+                        <Flag size={14} aria-hidden />
+                      </button>
+                    )}
                   </div>
                   <div className="ml-auto flex items-center">
                     <VoteRow supplier={s} onVote={onVote} t={t} />
@@ -1207,9 +1233,25 @@ export default function SuppliersPage() {
       <SubmitSupplierModal
         open={submitOpen}
         onClose={() => setSubmitOpen(false)}
-        onSubmitted={(s) => {
-          setItems((prev) => [s, ...prev]);
-          setHighlightId(s.id);
+        onSubmitted={() => {
+          // New submissions land as 'pending' and aren't returned by the
+          // public list until the contact_email is verified. Skip the
+          // optimistic insert and let the modal's "check your inbox" toast
+          // do the talking.
+        }}
+      />
+      <ReportSupplierDialog
+        supplierId={reporting?.id ?? null}
+        supplierName={reporting?.name ?? ""}
+        onClose={() => setReporting(null)}
+        onReported={({ autoHidden }) => {
+          // When the report flips the listing to status='hidden', it disappears
+          // from /api/suppliers — drop it from local state so the grid updates
+          // without a refetch.
+          if (autoHidden && reporting) {
+            const targetId = `c${reporting.id}`;
+            setItems((prev) => prev.filter((it) => it.id !== targetId));
+          }
         }}
       />
       <DiyEntryModal

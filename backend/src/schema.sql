@@ -288,6 +288,23 @@ CREATE INDEX IF NOT EXISTS idx_community_suppliers_status_category
 CREATE INDEX IF NOT EXISTS idx_community_suppliers_submitter
   ON community_suppliers(submitter_user_id);
 
+-- Email-ownership verification tokens for community-submitted suppliers.
+-- A submission lands as status='pending'; the row only flips to 'active'
+-- after the contact email is verified via the token in this table. Single-
+-- use (consumed_at), 7-day TTL — vendors often check generic business
+-- inboxes infrequently. Stale (unconsumed + expired) rows are cleaned up
+-- by the same lifecycle worker that purges other one-shot tokens.
+CREATE TABLE IF NOT EXISTS community_supplier_verifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id INTEGER NOT NULL REFERENCES community_suppliers(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  expires_at INTEGER NOT NULL,
+  consumed_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_community_verifications_supplier
+  ON community_supplier_verifications(supplier_id);
+
 -- Couple-side abuse reports against community-submitted suppliers. One row
 -- per (supplier, reporter_user) so a single user can't stack reports to
 -- brigade a hide. When three distinct reporters land, the supplier is

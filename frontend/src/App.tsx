@@ -33,6 +33,7 @@ import TermsPage from "./pages/TermsPage";
 import VendorsPage from "./pages/VendorsPage";
 import ChangeEmailPage from "./pages/ChangeEmailPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import VerifySupplierPage from "./pages/VerifySupplierPage";
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -152,6 +153,14 @@ export default function App() {
         element={
           <Page>
             <VerifyEmailPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/verify-supplier/:token"
+        element={
+          <Page>
+            <VerifySupplierPage />
           </Page>
         }
       />

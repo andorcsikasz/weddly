@@ -28,6 +28,7 @@ export default function PrivacyPage() {
           updatedLabel={t("privacy.last_updated_label")}
           updatedDate={t("privacy.last_updated_date")}
         />
+        <LegalDraftBanner />
         <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" />
         <SecondaryLanguageDivider label="English" />
         <PrivacyBodyForLocale strings={en.privacy} sectionLocale="en" secondary />
@@ -112,6 +113,25 @@ export function LegalSection({
 
 export function H2({ children }: { children: ReactNode }) {
   return <h2 className="mt-10 font-serif text-2xl text-ink-900 sm:text-3xl">{children}</h2>;
+}
+
+/** Visible "this hasn't been reviewed by a lawyer yet" banner. Mounted above
+ *  the body on both Privacy and Terms during the open beta — keeps the honest
+ *  framing from the comments out of the source and in front of the user. */
+export function LegalDraftBanner() {
+  const { t } = useT();
+  return (
+    <aside
+      role="note"
+      lang="hu"
+      className="mt-8 rounded-2xl border border-blush-300 bg-blush-50 px-5 py-4 text-sm text-ink-800"
+    >
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blush-700">
+        {t("legal.draft_banner_label")}
+      </p>
+      <p className="mt-2 leading-relaxed">{t("legal.draft_banner_body")}</p>
+    </aside>
+  );
 }
 
 function PrivacyBodyForLocale({

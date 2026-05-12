@@ -2,6 +2,7 @@
 // with requireAdmin() — that checks auth + ADMIN_EMAILS allowlist.
 
 import {
+  approveSupplier,
   deleteCommunitySupplier,
   dismissReportsForSupplier,
   getCommunitySupplierById,
@@ -12,6 +13,7 @@ import {
   setStatus,
   toAdminView,
 } from "../domain/community_suppliers";
+import { enrichSupplier } from "../domain/supplier_enrich";
 import { requireAdmin } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -88,6 +90,61 @@ async function handleHide(ctx: Ctx): Promise<Response> {
   return json({ supplier: toAdminView(after, counts.get(id) ?? 0) });
 }
 
+async function handleEnrich(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+
+  const before = getCommunitySupplierById(id);
+  if (!before) throw new HttpError(404, "Supplier not found");
+
+  const filled = await enrichSupplier(id);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.community.enrich",
+    target_kind: "community_supplier",
+    target_id: id,
+    after: { fields_filled: filled },
+  });
+
+  const after = getCommunitySupplierWithEmail(id);
+  if (!after) throw new HttpError(500, "Failed to read updated supplier");
+  const counts = openReportCountsForAll();
+  return json({ supplier: toAdminView(after, counts.get(id) ?? 0), fields_filled: filled });
+}
+
+function handleApprove(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+
+  const before = getCommunitySupplierById(id);
+  if (!before) throw new HttpError(404, "Supplier not found");
+  if (before.status !== "awaiting_review") {
+    throw new HttpError(
+      409,
+      `Cannot approve from status="${before.status}" — only "awaiting_review" rows are approvable.`,
+    );
+  }
+
+  approveSupplier(id);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.community.approve",
+    target_kind: "community_supplier",
+    target_id: id,
+    before: { status: before.status },
+    after: { status: "active" },
+  });
+
+  const after = getCommunitySupplierWithEmail(id);
+  if (!after) throw new HttpError(500, "Failed to read updated supplier");
+  const counts = openReportCountsForAll();
+  return json({ supplier: toAdminView(after, counts.get(id) ?? 0) });
+}
+
 async function handleUnhide(ctx: Ctx): Promise<Response> {
   const admin = requireAdmin(ctx);
   const id = parseId(ctx);
@@ -137,6 +194,8 @@ function handleDelete(ctx: Ctx): Response {
 export function registerAdminSupplierRoutes(router: Router) {
   router.get("/api/admin/suppliers", handleList, true);
   router.get("/api/admin/suppliers/:id/reports", handleListReports, true);
+  router.post("/api/admin/suppliers/:id/approve", handleApprove, true);
+  router.post("/api/admin/suppliers/:id/enrich", handleEnrich, true);
   router.post("/api/admin/suppliers/:id/hide", handleHide, true);
   router.post("/api/admin/suppliers/:id/unhide", handleUnhide, true);
   router.post("/api/admin/suppliers/:id/reports/dismiss", handleDismissReports, true);

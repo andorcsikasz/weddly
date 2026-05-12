@@ -3,7 +3,14 @@ import { useT } from "../lib/i18n";
 import en from "../locales/en";
 import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
-import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } from "./PrivacyPage";
+import {
+  BackLink,
+  H2,
+  LegalDraftBanner,
+  LegalHeader,
+  LegalSection,
+  SecondaryLanguageDivider,
+} from "./PrivacyPage";
 
 /**
  * /terms — short Terms of Service for the open beta. Intentionally
@@ -21,6 +28,7 @@ export default function TermsPage() {
           updatedLabel={t("terms.last_updated_label")}
           updatedDate={t("terms.last_updated_date")}
         />
+        <LegalDraftBanner />
         <TermsBodyForLocale strings={hu.terms} sectionLocale="hu" />
         <SecondaryLanguageDivider label="English" />
         <TermsBodyForLocale strings={en.terms} sectionLocale="en" secondary />

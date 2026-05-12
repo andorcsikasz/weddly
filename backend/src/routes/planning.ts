@@ -6,7 +6,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
 import {
-  type PlanningItemRow,
+  getPlanningItemJoined,
   getPlanningItemScoped,
   isPlanningKind,
   listPlanningItemsByCouple,
@@ -16,6 +16,7 @@ import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from ".
 
 const MAX_TITLE = 200;
 const MAX_BODY = 5000;
+const MAX_ASSIGNEE = 80;
 // HH:MM, 00:00..23:59. Anchored regex — no leading/trailing whitespace.
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 // YYYY-MM-DD. Loose check; we don't validate calendar validity (Feb 30 sneaks
@@ -29,6 +30,7 @@ interface UpsertBody {
   done?: unknown;
   due_date?: unknown;
   scheduled_time?: unknown;
+  assignee?: unknown;
   position?: unknown;
 }
 
@@ -46,6 +48,17 @@ function parseBody(raw: unknown): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (trimmed.length > MAX_BODY) throw new HttpError(400, `body too long (max ${MAX_BODY})`);
+  return trimmed;
+}
+
+function parseAssignee(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "assignee must be a string");
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > MAX_ASSIGNEE) {
+    throw new HttpError(400, `assignee too long (max ${MAX_ASSIGNEE})`);
+  }
   return trimmed;
 }
 
@@ -105,16 +118,35 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   // them so an inadvertent client send doesn't 400.
   const dueDate = kind === "task" ? parseDueDate(body.due_date) : null;
   const scheduledTime = kind === "schedule" ? parseScheduledTime(body.scheduled_time) : null;
+  const assignee = kind === "task" ? parseAssignee(body.assignee) : null;
+  // Ideas auto-stamp the authoring partner so "— Anna javasolta" can render
+  // on every idea row, even ones created through the wand / dice helpers.
+  // Other kinds leave it null (the schedule/task author isn't surfaced).
+  const suggestedBy = kind === "idea" ? userId : null;
   const position = parsePosition(body.position, 0);
   const ts = now();
 
   const result = db
     .prepare(
       `INSERT INTO planning_items
-        (couple_id, kind, title, body, done, due_date, scheduled_time, position, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (couple_id, kind, title, body, done, due_date, scheduled_time, assignee,
+         suggested_by_user_id, position, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(couple.id, kind, title, bodyText, done, dueDate, scheduledTime, position, ts, ts);
+    .run(
+      couple.id,
+      kind,
+      title,
+      bodyText,
+      done,
+      dueDate,
+      scheduledTime,
+      assignee,
+      suggestedBy,
+      position,
+      ts,
+      ts,
+    );
   const id = Number(result.lastInsertRowid);
 
   addAuditLog({
@@ -126,7 +158,8 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     after: { kind, title },
   });
 
-  const row = db.prepare("SELECT * FROM planning_items WHERE id = ?").get(id) as PlanningItemRow;
+  const row = getPlanningItemJoined(id, couple.id);
+  if (!row) throw new HttpError(500, "Planning item missing after insert");
   return json({ item: toPlanningItem(row) }, { status: 201 });
 }
 
@@ -159,15 +192,21 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
       : existing.kind === "schedule"
         ? parseScheduledTime(body.scheduled_time)
         : null;
+  const assignee =
+    body.assignee === undefined
+      ? existing.assignee
+      : existing.kind === "task"
+        ? parseAssignee(body.assignee)
+        : null;
   const position = parsePosition(body.position, existing.position);
   const ts = now();
 
   db.prepare(
     `UPDATE planning_items SET
         title = ?, body = ?, done = ?, due_date = ?, scheduled_time = ?,
-        position = ?, updated_at = ?
+        assignee = ?, position = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
-  ).run(title, bodyText, done, dueDate, scheduledTime, position, ts, id, couple.id);
+  ).run(title, bodyText, done, dueDate, scheduledTime, assignee, position, ts, id, couple.id);
 
   addAuditLog({
     actor_user_id: userId,
@@ -179,7 +218,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     after: { title, done },
   });
 
-  const row = db.prepare("SELECT * FROM planning_items WHERE id = ?").get(id) as PlanningItemRow;
+  const row = getPlanningItemJoined(id, couple.id);
+  if (!row) throw new HttpError(500, "Planning item missing after update");
   return json({ item: toPlanningItem(row) });
 }
 

@@ -782,6 +782,11 @@ export interface LocaleMessages {
     set_dates_cta: string;
     destination_placeholder: string;
     destination_empty_cta: string;
+    /** Aria-label + tooltip for the small map icon in the destination tile. */
+    show_on_map: string;
+    /** Body text for the map modal when Nominatim returned no hits. */
+    map_not_found: string;
+    map_error: string;
     /** Day-count plural — receives `{count}`. */
     day_one: string;
     day_other: string;
@@ -1033,6 +1038,10 @@ export interface LocaleMessages {
     lines_title: string;
     lines_sub: string;
     lines_empty: string;
+    /** Hint shown in the aggregated honeymoon row's note cell. */
+    honeymoon_breakdown_hint: string;
+    /** Aria-label for the chevron link that opens /app/honeymoon. */
+    honeymoon_open_aria: string;
     snapshots_sub: string;
     snapshot_default_name: string;
     snapshot_planned_label: string;
@@ -1460,12 +1469,25 @@ export interface LocaleMessages {
     table_actions: string;
     status_active: string;
     status_hidden: string;
+    /** Submitted, email-ownership not yet verified. */
+    status_pending: string;
+    /** Email verified but admin hasn't approved yet — sits invisible until
+     *  an admin clicks "Approve". */
+    status_awaiting_review: string;
     /** Status filter chips. */
     filter_status_label: string;
     filter_status_all: string;
     filter_status_pending: string;
+    filter_status_awaiting_review: string;
     filter_status_active: string;
     filter_status_hidden: string;
+    /** Per-row admin actions for community suppliers. */
+    approve: string;
+    approve_success: string;
+    enrich: string;
+    enrich_running: string;
+    enrich_filled: string;
+    enrich_none: string;
     /** Bulk-action toolbar. */
     bulk_selected: string;
     bulk_clear: string;

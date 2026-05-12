@@ -1,5 +1,6 @@
-// "Drop your own" supplier submissions. Auto-published — no moderation queue.
-// Admins can hide or hard-delete via /api/admin/suppliers/*.
+// "Drop your own" supplier submissions. Gated by TWO sequential checks
+// before a row goes live: (1) email-ownership verification and (2) admin
+// approval. Admins can also hide or hard-delete via /api/admin/suppliers/*.
 
 import type {
   CommunitySupplierReportReason,
@@ -7,16 +8,23 @@ import type {
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
 import type { SupplierCategory } from "@shared/suppliers";
+import { CONFIG } from "../config";
 import {
+  consumeVerificationToken,
+  createVerificationToken,
   findActiveByWebsite,
   getCommunitySupplierById,
   insertCommunitySupplier,
   insertReport,
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
+import { recordEmailAttempt } from "../domain/emails/log";
 import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "../domain/maps_resolver";
+import { enrichSupplier } from "../domain/supplier_enrich";
+import { log } from "../lib/logger";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { bilingualBody, sendEmail } from "../lib/mailer";
 import { rateLimit } from "../lib/rate_limit";
 
 const VALID_REPORT_REASONS: ReadonlySet<CommunitySupplierReportReason> = new Set([
@@ -109,18 +117,18 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
     if (!parsedUrl.hostname) throw new HttpError(400, "website hostname required");
   }
 
-  let contact_email: string | null = null;
-  if (body.contact_email != null && body.contact_email !== "") {
-    const e = trimStr(body.contact_email);
-    if (e) {
-      const at = e.indexOf("@");
-      if (at < 1 || e.indexOf(".", at) === -1) {
-        throw new HttpError(400, "contact_email is not a valid email");
-      }
-      if (e.length > 200) throw new HttpError(400, "contact_email too long (max 200)");
-      contact_email = e;
-    }
+  // `contact_email` is REQUIRED now — we send a verification link there to
+  // confirm the listing belongs to that business before it goes public. Pre-
+  // verification listings stored in the DB without one are grandfathered;
+  // only new submissions are gated.
+  const e = trimStr(body.contact_email);
+  if (!e) throw new HttpError(400, "contact_email required");
+  const at = e.indexOf("@");
+  if (at < 1 || e.indexOf(".", at) === -1) {
+    throw new HttpError(400, "contact_email is not a valid email");
   }
+  if (e.length > 200) throw new HttpError(400, "contact_email too long (max 200)");
+  const contact_email: string = e;
 
   let contact_phone: string | null = null;
   if (body.contact_phone != null && body.contact_phone !== "") {
@@ -156,6 +164,71 @@ function shouldCheckDuplicate(website: string): boolean {
   return website.length > 0;
 }
 
+async function sendVerificationEmail(
+  toEmail: string,
+  supplierName: string,
+  token: string,
+): Promise<void> {
+  const url = `${CONFIG.frontendBaseUrl}/verify-supplier/${encodeURIComponent(token)}`;
+  const { html, text } = bilingualBody({
+    hu: {
+      greeting: "Szia!",
+      body:
+        `Valaki a Weddly esküvőtervezőn felvette a vállalkozásod (${supplierName}) ` +
+        "a közösségi szolgáltató-katalógusba. Ha tényleg szeretnéd, hogy szerepeljen, " +
+        "erősítsd meg az alábbi linkkel — addig nem látszik a páraknak. Ha nem te küldted " +
+        "és nem szeretnéd, hogy itt szerepelj, hagyd figyelmen kívül ezt az e-mailt: link " +
+        "kattintás nélkül a hirdetés nem kerül publikálásra.",
+      cta: "Hirdetés megerősítése",
+    },
+    en: {
+      greeting: "Hi there,",
+      body:
+        `Someone added your business (${supplierName}) to the community supplier ` +
+        "directory on Weddly. If you'd like the listing to go live, confirm via the link " +
+        "below — until then it's hidden from couples. If this wasn't you, just ignore " +
+        "this email: the listing won't publish without your confirmation.",
+      cta: "Confirm listing",
+    },
+    ctaUrl: url,
+  });
+
+  try {
+    await sendEmail({
+      to: toEmail,
+      subject: "Weddly: erősítsd meg a hirdetésed / confirm your listing",
+      html,
+      text,
+    });
+    recordEmailAttempt({
+      user_id: null,
+      couple_id: null,
+      kind: "community_supplier_verify",
+      category: "transactional",
+      to_email: toEmail,
+      subject: "Weddly: erősítsd meg a hirdetésed / confirm your listing",
+      status: "sent",
+      payload: { supplier_name: supplierName },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    recordEmailAttempt({
+      user_id: null,
+      couple_id: null,
+      kind: "community_supplier_verify",
+      category: "transactional",
+      to_email: toEmail,
+      subject: "Weddly: erősítsd meg a hirdetésed / confirm your listing",
+      status: "failed",
+      error: msg,
+      payload: { supplier_name: supplierName },
+    });
+    // Don't rethrow — submission succeeds even if mail send hiccups; admin can
+    // re-send from the moderation queue later. The user already sees a "check
+    // your inbox" copy and can ask support if nothing arrives.
+  }
+}
+
 async function handleSubmit(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   // Per-IP guard runs before validation to throttle floods of garbage. Per-user
@@ -179,6 +252,20 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   const row = getCommunitySupplierById(id);
   if (!row) throw new HttpError(500, "Failed to read inserted supplier");
 
+  // Fire-and-forget enrichment: backfill blurb / phone / email / address from
+  // the website + maps URL while the submitter goes through email verify.
+  // The supplier is still 'pending' and invisible, so a network blip here
+  // is harmless — admin can hit "Re-enrich" later from the moderation page.
+  void enrichSupplier(id).catch((e) =>
+    log.warn("supplier.enrich.failed", { supplierId: id, error: String(e) }),
+  );
+
+  // Issue a fresh verification token + send the email. The supplier stays in
+  // 'pending' state until the token is consumed; only then does it move to
+  // 'awaiting_review' (admin still has to approve before it's public).
+  const token = createVerificationToken(id);
+  await sendVerificationEmail(input.contact_email, input.name, token.token);
+
   addAuditLog({
     actor_user_id: userId,
     couple_id: null,
@@ -191,15 +278,56 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
       category: input.category,
       price_band: input.price_band,
       website: input.website,
+      status: "pending",
     },
   });
 
-  // Fresh submission → no votes yet; overlay zeros so the frontend's
-  // `DirectorySupplier` shape is satisfied without a second list fetch.
+  // Pending submissions aren't shown publicly, so the response shape is
+  // primarily informational — clients show a "check your inbox" toast and
+  // don't optimistically inject the supplier into the visible list.
   return json(
-    { supplier: { ...toDirectorySupplierBase(row), votes_score: 0, user_vote: 0 } },
+    {
+      pending: true,
+      supplier: { ...toDirectorySupplierBase(row), votes_score: 0, user_vote: 0 },
+    },
     { status: 201 },
   );
+}
+
+interface VerifyParams {
+  token?: string;
+}
+
+async function handleVerify(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "supplier_verify", { capacity: 10, refillRate: 1 / 60 });
+  const params = ctx.params as VerifyParams;
+  const raw = params.token ?? "";
+  if (!raw || raw.length < 16 || raw.length > 128) {
+    throw new HttpError(400, "Invalid verification token");
+  }
+  const result = consumeVerificationToken(raw);
+  if (!result.ok) {
+    if (result.reason === "not_found") throw new HttpError(404, "Token not found");
+    if (result.reason === "expired") throw new HttpError(410, "Verification link expired");
+    if (result.reason === "already_consumed") {
+      // Idempotent re-click — tell the client the listing is live without
+      // raising a hard error. UX: success page with a "Already verified" note.
+      return json({ ok: true, already_consumed: true });
+    }
+    if (result.reason === "supplier_missing") {
+      throw new HttpError(410, "Listing no longer exists");
+    }
+  } else {
+    addAuditLog({
+      actor_user_id: null,
+      couple_id: null,
+      action: "supplier.community.verified",
+      target_kind: "community_supplier",
+      target_id: result.supplierId,
+      after: { activated: !result.alreadyActive },
+    });
+  }
+  return json({ ok: true, already_consumed: false });
 }
 
 interface ResolveBody {
@@ -304,4 +432,7 @@ export function registerCommunitySupplierRoutes(router: Router) {
   router.post("/api/suppliers/community", handleSubmit, true);
   router.post("/api/suppliers/community/:id/report", handleReport, true);
   router.post("/api/suppliers/resolve-maps-url", handleResolveMapsUrl, true);
+  // Public — the link comes from an email and the recipient is the listing's
+  // contact_email, who may not be a Weddly user. Token in path acts as bearer.
+  router.post("/api/suppliers/community/verify/:token", handleVerify, false);
 }

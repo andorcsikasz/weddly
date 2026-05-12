@@ -129,6 +129,13 @@ export interface VendorWaitlistReceivedPayload {
   landingUrl: string;
 }
 
+export interface CommunitySupplierVerifyPayload {
+  /** Business / listing name surfaced in the email body. */
+  supplierName: string;
+  /** Full URL the recipient clicks to confirm — includes the single-use token. */
+  verifyUrl: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -149,6 +156,7 @@ export type KindPayload = {
   wedding_today: WeddingTodayPayload;
   wedding_date_changed: WeddingDateChangedPayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
+  community_supplier_verify: CommunitySupplierVerifyPayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -656,6 +664,31 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Thanks for planning with us. Enjoy every minute; your data stays here whenever you want to look back.",
       ],
       cta: "Back to Weddly",
+    },
+  }),
+  community_supplier_verify: (p) => ({
+    subject: "Weddly: erősítsd meg a hirdetésed / confirm your listing",
+    ctaUrl: p.verifyUrl,
+    hu: {
+      preheader: `${p.supplierName} hozzá lett adva a Weddly katalógushoz.`,
+      greeting: "Szia!",
+      paragraphs: [
+        `Valaki a Weddly-n hozzáadta a vállalkozásod (${p.supplierName}) a közösségi szolgáltató-katalógushoz.`,
+        "Ha tényleg szeretnéd, hogy a párok lássák, erősítsd meg az alábbi linkkel — addig nem jelenik meg.",
+        "Ha nem te küldted és nem szeretnéd, hogy itt szerepelj, hagyd figyelmen kívül ezt a levelet. Kattintás nélkül a hirdetés nem kerül publikálásra.",
+      ],
+      cta: "Hirdetés megerősítése",
+      footnote: "A link 7 napig érvényes.",
+    },
+    en: {
+      greeting: "Hi there,",
+      paragraphs: [
+        `Someone added your business (${p.supplierName}) to the community supplier directory on Weddly.`,
+        "If you'd like couples to see the listing, confirm via the button below — until then it's hidden from the public.",
+        "If this wasn't you and you don't want a listing, just ignore this email — the listing won't publish without a click.",
+      ],
+      cta: "Confirm listing",
+      footnote: "Link expires in 7 days.",
     },
   }),
 };

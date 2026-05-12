@@ -112,6 +112,17 @@ addColumnIfMissing("guests", "invited_at", "invited_at INTEGER");
 // Nullable timestamp; non-null implies invited_at is also non-null.
 addColumnIfMissing("guests", "invitation_delivered_at", "invitation_delivered_at INTEGER");
 
+// Planning items: tasks carry an optional free-text `assignee` (e.g. "Anna",
+// "Apa", "Tanú1"). Ideas carry `suggested_by_user_id` — stamped at create time
+// from the current session — so the UI can render "— Anna javasolta". Both
+// columns are nullable so old rows + non-applicable kinds stay clean.
+addColumnIfMissing("planning_items", "assignee", "assignee TEXT");
+addColumnIfMissing(
+  "planning_items",
+  "suggested_by_user_id",
+  "suggested_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL",
+);
+
 // Global slug uniqueness — couples.slug paired with the 4-digit household
 // code is the public RSVP credential, so two weddings must never share a
 // slug. Application code (uniqueCoupleSlug + PATCH /api/couples/slug)

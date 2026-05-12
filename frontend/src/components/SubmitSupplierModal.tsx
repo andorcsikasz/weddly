@@ -173,9 +173,11 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     const website = form.website.trim();
     if (website && !isValidUrl(website)) next.website = t("suppliers.submit.err_invalid_url");
 
+    // contact_email is required now — we send a verification link there to
+    // confirm the listing belongs to that business before publishing it.
     const email = form.contact_email.trim();
-    if (email && !isLikelyEmail(email))
-      next.contact_email = t("suppliers.submit.err_invalid_email");
+    if (!email) next.contact_email = required;
+    else if (!isLikelyEmail(email)) next.contact_email = t("suppliers.submit.err_invalid_email");
 
     if (form.blurb.trim().length > 500) next.blurb = tooLong;
 
@@ -200,7 +202,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       city: form.city.trim(),
       address: form.address.trim() ? form.address.trim() : null,
       website: form.website.trim(),
-      contact_email: form.contact_email.trim() ? form.contact_email.trim() : null,
+      contact_email: form.contact_email.trim(),
       contact_phone: form.contact_phone.trim() ? form.contact_phone.trim() : null,
       blurb: form.blurb.trim(),
       price_band: form.price_band,

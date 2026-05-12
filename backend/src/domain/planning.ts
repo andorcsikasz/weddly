@@ -21,12 +21,22 @@ export interface PlanningItemRow {
   done: number;
   due_date: string | null;
   scheduled_time: string | null;
+  assignee: string | null;
+  suggested_by_user_id: number | null;
   position: number;
   created_at: number;
   updated_at: number;
 }
 
-export function toPlanningItem(row: PlanningItemRow): PlanningItem {
+/** Listing rows carry the resolved suggester name via LEFT JOIN on users.
+ *  Single-row fetchers (`getPlanningItemScoped`) read without the join, so
+ *  callers wrapping a write should hit `getPlanningItemJoined` to surface the
+ *  display name in the response. */
+export interface PlanningItemJoinedRow extends PlanningItemRow {
+  suggested_by_name: string | null;
+}
+
+export function toPlanningItem(row: PlanningItemJoinedRow): PlanningItem {
   return {
     id: row.id,
     couple_id: row.couple_id,
@@ -36,27 +46,36 @@ export function toPlanningItem(row: PlanningItemRow): PlanningItem {
     done: Boolean(row.done),
     due_date: row.due_date,
     scheduled_time: row.scheduled_time,
+    assignee: row.assignee,
+    suggested_by_user_id: row.suggested_by_user_id,
+    suggested_by_name: row.suggested_by_name,
     position: row.position,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
 }
 
+const LIST_SELECT = `
+  SELECT pi.*, u.full_name AS suggested_by_name
+    FROM planning_items pi
+    LEFT JOIN users u ON u.id = pi.suggested_by_user_id
+`;
+
 export function listPlanningItemsByCouple(coupleId: number): PlanningItem[] {
   // Order: schedule entries by scheduled_time (then position) — the others
   // by position then created_at, so newest stays at the bottom of the list.
   const rows = db
     .prepare(
-      `SELECT * FROM planning_items
-         WHERE couple_id = ?
+      `${LIST_SELECT}
+         WHERE pi.couple_id = ?
          ORDER BY
-           CASE WHEN kind = 'schedule' AND scheduled_time IS NOT NULL THEN 0 ELSE 1 END,
-           scheduled_time ASC,
-           position ASC,
-           created_at ASC,
-           id ASC`,
+           CASE WHEN pi.kind = 'schedule' AND pi.scheduled_time IS NOT NULL THEN 0 ELSE 1 END,
+           pi.scheduled_time ASC,
+           pi.position ASC,
+           pi.created_at ASC,
+           pi.id ASC`,
     )
-    .all(coupleId) as PlanningItemRow[];
+    .all(coupleId) as PlanningItemJoinedRow[];
   return rows.map(toPlanningItem);
 }
 
@@ -64,6 +83,16 @@ export function getPlanningItemScoped(id: number, coupleId: number): PlanningIte
   return (
     (db.prepare("SELECT * FROM planning_items WHERE id = ? AND couple_id = ?").get(id, coupleId) as
       | PlanningItemRow
+      | undefined) ?? null
+  );
+}
+
+/** Re-fetch after a write so the response carries the up-to-date
+ *  `suggested_by_name` join. */
+export function getPlanningItemJoined(id: number, coupleId: number): PlanningItemJoinedRow | null {
+  return (
+    (db.prepare(`${LIST_SELECT} WHERE pi.id = ? AND pi.couple_id = ?`).get(id, coupleId) as
+      | PlanningItemJoinedRow
       | undefined) ?? null
   );
 }

@@ -9,6 +9,7 @@ import {
   BedDouble,
   Calendar,
   Compass,
+  Map as MapIcon,
   MapPin,
   MoreHorizontal,
   Plane,
@@ -20,6 +21,8 @@ import {
 import {
   type ComponentType,
   type KeyboardEvent,
+  lazy,
+  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -33,6 +36,9 @@ import { budgetApi, coupleApi, placesApi } from "../lib/endpoints";
 import { formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { publish, subscribe } from "../lib/sync";
+
+// Lazy — Leaflet (~150KB) only ships when the user opens the map popup.
+const HoneymoonMapModal = lazy(() => import("../components/HoneymoonMapModal"));
 
 /* ─── Sub-category presets ─────────────────────────────────────────────
  * Fixed list of friendly sub-categories surfaced as one-tap "add cost"
@@ -457,9 +463,10 @@ function DestinationTile({
 }) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="card-hover">
+    <div className="card-hover relative">
       <div className="flex items-center gap-2 text-ink-500">
         <MapPin size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
@@ -493,6 +500,30 @@ function DestinationTile({
             </span>
           )}
         </button>
+      )}
+
+      {/* Corner trigger — only when a destination is set and we're not in
+       *  edit mode (the autocomplete dropdown would overlap otherwise). */}
+      {value && !editing && (
+        <button
+          type="button"
+          onClick={(e) => {
+            // Don't bubble — the tile body acts as the edit-trigger button.
+            e.stopPropagation();
+            setMapOpen(true);
+          }}
+          className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-500 shadow-soft transition hover:border-blush-300 hover:text-blush-700"
+          aria-label={t("honeymoon.show_on_map")}
+          title={t("honeymoon.show_on_map")}
+        >
+          <MapIcon size={14} aria-hidden="true" />
+        </button>
+      )}
+
+      {mapOpen && value && (
+        <Suspense fallback={null}>
+          <HoneymoonMapModal destination={value} onClose={() => setMapOpen(false)} />
+        </Suspense>
       )}
     </div>
   );

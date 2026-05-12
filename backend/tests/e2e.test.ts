@@ -2647,10 +2647,32 @@ describe("community suppliers", () => {
     expect(verify.status).toBe(200);
     expect(verify.data.ok).toBe(true);
 
-    // Now it's visible.
+    // After email verify the row is `awaiting_review` — still INVISIBLE to
+    // the public until an admin signs off (v1.1 approval gate). The earlier
+    // auto-activation regression is what we're guarding against here.
     const afterVerify = await req<ListResponse>("GET", "/api/suppliers");
-    expect(afterVerify.data.suppliers.length).toBe(beforeLen + 1);
-    expect(afterVerify.data.suppliers.find((s) => s.id === r.data.supplier.id)).toBeDefined();
+    expect(afterVerify.data.suppliers.length).toBe(beforeLen);
+    expect(afterVerify.data.suppliers.find((s) => s.id === r.data.supplier.id)).toBeUndefined();
+    const statusAfterVerify = (
+      db.prepare("SELECT status FROM community_suppliers WHERE id = ?").get(supplierId) as {
+        status: string;
+      }
+    ).status;
+    expect(statusAfterVerify).toBe("awaiting_review");
+
+    // Admin approves → row becomes visible.
+    const adminToken = await registerAdmin();
+    const approve = await req(
+      "POST",
+      `/api/admin/suppliers/${supplierId}/approve`,
+      {},
+      { token: adminToken },
+    );
+    expect(approve.status).toBe(200);
+
+    const afterApprove = await req<ListResponse>("GET", "/api/suppliers");
+    expect(afterApprove.data.suppliers.length).toBe(beforeLen + 1);
+    expect(afterApprove.data.suppliers.find((s) => s.id === r.data.supplier.id)).toBeDefined();
   });
 
   test("validation rejects bad inputs", async () => {
@@ -2773,15 +2795,17 @@ describe("community suppliers", () => {
     const publicId = submit.data.supplier.id; // "c{n}"
     const numericId = Number(publicId.slice(1));
 
-    // Promote past the verification gate so the public-list assertion below
-    // exercises the hide-via-admin flow rather than the pending-invisibility
-    // path (that's covered in its own describe block).
+    // Promote past BOTH gates (email-verify, then admin-approve) so the
+    // public-list assertion below exercises the hide-via-admin flow rather
+    // than the pending/awaiting-review invisibility paths (those are covered
+    // in their own describe blocks).
     const verifyRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
       )
       .get(numericId) as { token: string };
     await req("POST", `/api/suppliers/community/verify/${verifyRow.token}`);
+    await req("POST", `/api/admin/suppliers/${numericId}/approve`, {}, { token: adminToken });
 
     // Visible publicly before hide.
     const beforeHide = await req<ListResponse>("GET", "/api/suppliers");
@@ -2902,6 +2926,153 @@ describe("community suppliers", () => {
     expect(after.data.suppliers.some((s) => s.id === numericId)).toBe(false);
   });
 
+  test("approval gate: cannot approve from pending or hidden — only awaiting_review", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("gate@weddly.test");
+
+    const submit = await req<SubmitResponse>(
+      "POST",
+      "/api/suppliers/community",
+      validPayload({ name: "Gate Hall", website: "https://gate-hall.test" }),
+      { token: coupleToken },
+    );
+    expect(submit.status).toBe(201);
+    const numericId = Number(submit.data.supplier.id.slice(1));
+
+    // Still in `pending` — approve must refuse with 409.
+    const earlyApprove = await req(
+      "POST",
+      `/api/admin/suppliers/${numericId}/approve`,
+      {},
+      { token: adminToken },
+    );
+    expect(earlyApprove.status).toBe(409);
+
+    // Verify email → row moves to awaiting_review (still NOT public).
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(numericId) as { token: string };
+    await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
+
+    const list = await req<{ suppliers: { id: number }[] }>("GET", "/api/suppliers");
+    expect(list.data.suppliers.some((s) => s.id === submit.data.supplier.id)).toBe(false);
+
+    // Now approve works.
+    const ok = await req(
+      "POST",
+      `/api/admin/suppliers/${numericId}/approve`,
+      {},
+      { token: adminToken },
+    );
+    expect(ok.status).toBe(200);
+
+    // Re-approving an already-active row also 409s.
+    const reApprove = await req(
+      "POST",
+      `/api/admin/suppliers/${numericId}/approve`,
+      {},
+      { token: adminToken },
+    );
+    expect(reApprove.status).toBe(409);
+
+    // Hide it, then approve must refuse — admin has to unhide first.
+    await req(
+      "POST",
+      `/api/admin/suppliers/${numericId}/hide`,
+      { reason: null },
+      { token: adminToken },
+    );
+    const hiddenApprove = await req(
+      "POST",
+      `/api/admin/suppliers/${numericId}/approve`,
+      {},
+      { token: adminToken },
+    );
+    expect(hiddenApprove.status).toBe(409);
+  });
+
+  test("enrich: Google Maps URL fills address + coords without a network fetch", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("enrich-maps@weddly.test");
+
+    const mapsUrl =
+      "https://www.google.com/maps/place/Hertelendy+Kastely/@46.4123,17.6512,15z/data=foo";
+    const submit = await req<SubmitResponse>(
+      "POST",
+      "/api/suppliers/community",
+      validPayload({
+        name: "Maps Hall",
+        website: "https://no-such-website-anywhere.invalid",
+        address: mapsUrl,
+        contact_phone: null,
+        blurb: "",
+      }),
+      { token: coupleToken },
+    );
+    expect(submit.status).toBe(201);
+    const numericId = Number(submit.data.supplier.id.slice(1));
+
+    // Submission triggers a background enrich; admin-side endpoint is the
+    // deterministic way to assert what it filled.
+    const r = await req<{ fields_filled: number }>(
+      "POST",
+      `/api/admin/suppliers/${numericId}/enrich`,
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+
+    const row = db
+      .prepare("SELECT address FROM community_suppliers WHERE id = ?")
+      .get(numericId) as { address: string | null };
+    expect(row.address).toContain("Hertelendy Kastely");
+  });
+
+  test("enrich: SSRF-block — localhost/IP/loopback URLs never get fetched", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("ssrf@weddly.test");
+
+    const evilUrls = [
+      "http://localhost/admin",
+      "http://127.0.0.1:9999/etc/passwd",
+      "http://169.254.169.254/latest/meta-data/",
+      "http://192.168.1.1/router",
+      "http://internal.local/secret",
+    ];
+
+    for (const url of evilUrls) {
+      const submit = await req<SubmitResponse>(
+        "POST",
+        "/api/suppliers/community",
+        validPayload({
+          name: `Evil ${url.slice(0, 16)}`,
+          website: url,
+          contact_phone: null,
+          blurb: "",
+        }),
+        { token: coupleToken },
+      );
+      // Note: submission still succeeds — the website passes the loose
+      // format check. The point is enrich never reaches the inner network.
+      expect(submit.status).toBe(201);
+      const numericId = Number(submit.data.supplier.id.slice(1));
+      const r = await req<{ fields_filled: number }>(
+        "POST",
+        `/api/admin/suppliers/${numericId}/enrich`,
+        {},
+        { token: adminToken },
+      );
+      expect(r.status).toBe(200);
+      // No fields should be populated from a refused URL.
+      expect(r.data.fields_filled).toBe(0);
+    }
+  });
+
   test("audit log records hide / unhide / delete actions", async () => {
     wipeAll();
     const adminToken = await registerAdmin();
@@ -2987,15 +3158,32 @@ describe("community supplier reports", () => {
     expect(r.status).toBe(201);
     // String id is "c{N}" — strip the prefix for the numeric report endpoint.
     const numericId = Number(r.data.supplier.id.slice(1));
-    // Reports run against verified listings only (pending ones are invisible
-    // to everyone). Consume the token here so the rest of the test exercises
-    // the report flow rather than the gate.
+    // Reports run against active listings only (pending and awaiting_review are
+    // invisible to everyone). Consume the email-verify token here, then admin-
+    // approve so the rest of the test exercises the report flow rather than the
+    // gate. The admin registration is idempotent across helper calls — the
+    // second one hits 409 which we silently tolerate.
     const tokenRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
       )
       .get(numericId) as { token: string };
     await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    // Pull the existing admin's session if the email's already taken.
+    let adminToken = adminReg.data.token;
+    if (adminReg.status === 409) {
+      const login = await req<{ token: string }>("POST", "/api/auth/login", {
+        email: "admin@test.test",
+        password: "supersafe123",
+      });
+      adminToken = login.data.token;
+    }
+    await req("POST", `/api/admin/suppliers/${numericId}/approve`, {}, { token: adminToken });
     return numericId;
   }
 
@@ -3047,14 +3235,13 @@ describe("community supplier reports", () => {
     expect(list3.data.suppliers.find((s) => s.id === `c${supId}`)).toBeUndefined();
 
     // Admin view shows status=hidden + count=3 + synthetic hide_reason.
-    const adminEmail = "admin@test.test";
-    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
-      email: adminEmail,
+    // submitOne() already registered admin@test.test, so we log in instead.
+    const adminLogin = await req<{ token: string }>("POST", "/api/auth/login", {
+      email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
     });
     const adminList = await req<AdminListResp>("GET", "/api/admin/suppliers", undefined, {
-      token: adminReg.data.token,
+      token: adminLogin.data.token,
     });
     expect(adminList.status).toBe(200);
     const row = adminList.data.suppliers.find((s) => s.id === supId);
@@ -3125,12 +3312,12 @@ describe("community supplier reports", () => {
       { token: tB },
     );
 
-    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+    // submitOne() registered admin@test.test already — log in to grab a token.
+    const adminLogin = await req<{ token: string }>("POST", "/api/auth/login", {
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
     });
-    const adminToken = adminReg.data.token;
+    const adminToken = adminLogin.data.token;
 
     // Admin dismisses both → count returns to 0.
     const dismiss = await req<{ dismissed: number }>(
@@ -4423,8 +4610,9 @@ describe("round-2: community supplier email privacy", () => {
     expect(submit.status).toBe(201);
     expect(submit.data.supplier.contact_email).toBeNull();
 
-    // New submissions are pending until verified — promote to active for the
-    // privacy assertion (the gate is exercised in its own describe block).
+    // New submissions are pending until verified AND admin-approved — promote
+    // both gates so the privacy assertion runs against a public-visible row.
+    // (Each gate is exercised in its own describe block.)
     const supplierId = Number(submit.data.supplier.id.slice(1));
     const tokenRow = db
       .prepare(
@@ -4432,6 +4620,17 @@ describe("round-2: community supplier email privacy", () => {
       )
       .get(supplierId) as { token: string };
     await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    await req(
+      "POST",
+      `/api/admin/suppliers/${supplierId}/approve`,
+      {},
+      { token: adminReg.data.token },
+    );
 
     const publicList = await req<{
       suppliers: { id: string; contact_email: string | null }[];
@@ -4439,16 +4638,16 @@ describe("round-2: community supplier email privacy", () => {
     const found = publicList.data.suppliers.find((s) => s.id === submit.data.supplier.id);
     expect(found?.contact_email).toBeNull();
 
-    // Admin view still surfaces the address.
-    const admin = await req<{ token: string }>("POST", "/api/auth/register", {
+    // Admin view still surfaces the address. The admin user was already
+    // created above (to perform the approval), so log in instead of register.
+    const adminLogin = await req<{ token: string }>("POST", "/api/auth/login", {
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
     });
-    expect(admin.status).toBe(201);
+    expect(adminLogin.status).toBe(200);
     const adminList = await req<{
       suppliers: { id: number; contact_email: string | null }[];
-    }>("GET", "/api/admin/suppliers", undefined, { token: admin.data.token });
+    }>("GET", "/api/admin/suppliers", undefined, { token: adminLogin.data.token });
     expect(adminList.status).toBe(200);
     const adminRow = adminList.data.suppliers.find(
       (s) => s.contact_email === "private@hidden-email.example",
@@ -4486,10 +4685,11 @@ describe("community supplier verification gate", () => {
     return { supplierId, publicId: r.data.supplier.id, token: tokenRow.token };
   }
 
-  test("verifying a token flips the supplier from pending to active", async () => {
+  test("verifying a token flips the supplier from pending to awaiting_review (admin approval still required)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("gate-1@weddly.test");
-    const { publicId, token: verifyToken } = await submitPending(token);
+    const { publicId, supplierId, token: verifyToken } = await submitPending(token);
+    const numericId = supplierId;
 
     const beforeList = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
     expect(beforeList.data.suppliers.find((s) => s.id === publicId)).toBeUndefined();
@@ -4501,8 +4701,30 @@ describe("community supplier verification gate", () => {
     expect(v.status).toBe(200);
     expect(v.data.already_consumed).toBe(false);
 
-    const afterList = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
-    expect(afterList.data.suppliers.find((s) => s.id === publicId)).toBeDefined();
+    // Post-verify the row is `awaiting_review` — still NOT in the public list.
+    // (This is the v1.1 approval gate that closed the auto-activation regression.)
+    const afterVerify = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
+    expect(afterVerify.data.suppliers.find((s) => s.id === publicId)).toBeUndefined();
+    const statusRow = db
+      .prepare("SELECT status FROM community_suppliers WHERE id = ?")
+      .get(numericId) as { status: string };
+    expect(statusRow.status).toBe("awaiting_review");
+
+    // Admin approves → row becomes public.
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    await req(
+      "POST",
+      `/api/admin/suppliers/${numericId}/approve`,
+      {},
+      { token: adminReg.data.token },
+    );
+
+    const afterApprove = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
+    expect(afterApprove.data.suppliers.find((s) => s.id === publicId)).toBeDefined();
   });
 
   test("re-consuming an already-used token returns ok+already_consumed", async () => {
@@ -5378,9 +5600,9 @@ describe("loop A: per-couple supplier votes + self-vote block", () => {
     expect(sub.status).toBe(201);
     const supplierPublicId = sub.data.supplier.id;
 
-    // Promote past the verification gate so the vote endpoint sees an active
-    // listing — voting on pending listings has no UX meaning since they're
-    // invisible publicly.
+    // Promote past BOTH gates (email-verify, admin-approve) so the vote
+    // endpoint sees an active listing — voting on awaiting_review / pending
+    // listings has no UX meaning since they're invisible publicly.
     const numericId = Number(supplierPublicId.slice(1));
     const verifyRow = db
       .prepare(
@@ -5388,6 +5610,17 @@ describe("loop A: per-couple supplier votes + self-vote block", () => {
       )
       .get(numericId) as { token: string };
     await req("POST", `/api/suppliers/community/verify/${verifyRow.token}`);
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    await req(
+      "POST",
+      `/api/admin/suppliers/${numericId}/approve`,
+      {},
+      { token: adminReg.data.token },
+    );
 
     const selfVote = await req(
       "PUT",

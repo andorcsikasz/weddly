@@ -21,7 +21,8 @@ export type EmailKind =
   | "milestone_t7" // 7 days before
   | "wedding_today" // morning-of congratulations
   | "wedding_date_changed" // couple edited the wedding date, notify guests
-  | "vendor_waitlist_received"; // /vendors form submission → confirm we got it
+  | "vendor_waitlist_received" // /vendors form submission → confirm we got it
+  | "community_supplier_verify"; // sent to a community-submitted listing's contact_email to publish
 
 export type EmailCategory = "transactional" | "lifecycle";
 
@@ -56,4 +57,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: vendor explicitly submitted the /vendors form and is
   // waiting on a "we got it" reply.
   vendor_waitlist_received: "transactional",
+  // Transactional: someone submitted a listing claiming this contact email;
+  // we ask the owner to confirm or ignore.
+  community_supplier_verify: "transactional",
 };

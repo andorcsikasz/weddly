@@ -5,7 +5,17 @@
 import type { SupplierCategory } from "./suppliers";
 
 export type SupplierSource = "curated" | "community";
-export type CommunitySupplierStatus = "active" | "hidden";
+/** Lifecycle:
+ *  - `pending`          submitted but `contact_email` not yet verified — invisible
+ *                       to everyone except the admin moderation queue.
+ *  - `awaiting_review`  email verified, but admin hasn't signed off yet. Still
+ *                       invisible to couples. This is the second of two gates
+ *                       (email-ownership + human review) that v1.1 added after
+ *                       the auto-activation regression.
+ *  - `active`           approved by admin (or grandfathered from before the gate
+ *                       existed); appears in the public directory.
+ *  - `hidden`           admin moderation OR auto-hidden by the report queue. */
+export type CommunitySupplierStatus = "pending" | "awaiting_review" | "active" | "hidden";
 /** $ (1) = budget through $$$$$ (5) = ultra-luxury. The directory has real
  *  $$$$$ entries (Hertelendy, Aria, Várkert Bazár), so 4 levels can't capture
  *  the spread. */
@@ -21,7 +31,10 @@ export interface SubmitCommunitySupplierInput {
    *  through to the website. */
   address: string | null;
   website: string;
-  contact_email: string | null;
+  /** Required — we send a verification link here before the listing goes
+   *  public. The address remains hidden from the public DTO (privacy) and
+   *  only surfaces in the admin moderation view. */
+  contact_email: string;
   contact_phone: string | null;
   blurb: string;
   price_band: PriceBand;

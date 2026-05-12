@@ -1,6 +1,9 @@
-// User-submitted supplier rows: storage, mappers, and helpers. Auto-active on
-// insert. Admins can hide (soft) or hard-delete via the admin routes.
+// User-submitted supplier rows: storage, mappers, and helpers. New submissions
+// land as status='pending' and only flip to 'active' once the contact email
+// owner clicks the verification link. Admins can hide (soft) or hard-delete
+// via the admin routes.
 
+import { randomBytes } from "node:crypto";
 import type {
   CommunitySupplierAdminView,
   CommunitySupplierReportReason,
@@ -10,6 +13,10 @@ import type {
 } from "@shared/community_suppliers";
 import type { DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
 import { db, now } from "../db";
+
+/** Verification-token TTL — 7 days. Vendors often share a generic inbox that
+ *  is only checked weekly, so a week-long window keeps the friction low. */
+export const VERIFICATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Distinct-reporter threshold that flips a community listing to status='hidden'
  *  automatically. Tuned conservatively (3) — at scale we may want to weight by
@@ -128,14 +135,18 @@ export function listAllForAdmin(): CommunitySupplierRowWithEmail[] {
     .all() as CommunitySupplierRowWithEmail[];
 }
 
-/** Case-insensitive lookup for an *active* community supplier with the same
- *  website. Used to reject duplicate submissions before they land in the
- *  public list. Hidden duplicates don't block — admin already removed them. */
+/** Case-insensitive lookup for a live (active OR pending verification)
+ *  community supplier with the same website. Used to reject duplicate
+ *  submissions before they queue. Hidden duplicates don't block — admin
+ *  already removed them and the user may be re-submitting with corrected
+ *  details after their previous one was rejected. */
 export function findActiveByWebsite(website: string): CommunitySupplierRow | null {
   return (
     (db
       .prepare(
-        "SELECT * FROM community_suppliers WHERE LOWER(website) = LOWER(?) AND status = 'active' LIMIT 1",
+        `SELECT * FROM community_suppliers
+          WHERE LOWER(website) = LOWER(?) AND status IN ('active', 'pending')
+          LIMIT 1`,
       )
       .get(website) as CommunitySupplierRow | undefined) ?? null
   );
@@ -172,7 +183,7 @@ export function insertCommunitySupplier(
       `INSERT INTO community_suppliers
         (submitter_user_id, category, name, city, address, website, contact_email, contact_phone,
          blurb, price_band, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
     )
     .run(
       submitterUserId,
@@ -189,6 +200,99 @@ export function insertCommunitySupplier(
       ts,
     );
   return Number(result.lastInsertRowid);
+}
+
+// ── Email verification tokens ──────────────────────────────────────────────
+
+export interface VerificationTokenRow {
+  id: number;
+  supplier_id: number;
+  token: string;
+  expires_at: number;
+  consumed_at: number | null;
+  created_at: number;
+}
+
+/** Generates + persists a fresh verification token tied to a supplier. The
+ *  same supplier can have multiple tokens over time (e.g. admin re-sends);
+ *  each is independently consumable. */
+export function createVerificationToken(supplierId: number): VerificationTokenRow {
+  const ts = now();
+  const token = randomBytes(32).toString("hex");
+  const expires = ts + VERIFICATION_TTL_MS;
+  const r = db
+    .prepare(
+      `INSERT INTO community_supplier_verifications
+        (supplier_id, token, expires_at, created_at)
+       VALUES (?, ?, ?, ?)`,
+    )
+    .run(supplierId, token, expires, ts);
+  return {
+    id: Number(r.lastInsertRowid),
+    supplier_id: supplierId,
+    token,
+    expires_at: expires,
+    consumed_at: null,
+    created_at: ts,
+  };
+}
+
+export type VerificationResult =
+  | { ok: true; supplierId: number; alreadyActive: boolean }
+  | { ok: false; reason: "not_found" | "expired" | "already_consumed" | "supplier_missing" };
+
+/** Consumes a verification token: marks the row, flips the supplier to
+ *  'active'. Idempotent — re-using an already-consumed token returns
+ *  `already_consumed`; the supplier stays whatever state it was in. */
+export function consumeVerificationToken(token: string): VerificationResult {
+  const ts = now();
+  const row = db
+    .prepare("SELECT * FROM community_supplier_verifications WHERE token = ?")
+    .get(token) as VerificationTokenRow | undefined;
+  if (!row) return { ok: false, reason: "not_found" };
+  if (row.consumed_at !== null) return { ok: false, reason: "already_consumed" };
+  if (row.expires_at < ts) return { ok: false, reason: "expired" };
+
+  const supplier = getCommunitySupplierById(row.supplier_id);
+  if (!supplier) return { ok: false, reason: "supplier_missing" };
+
+  db.prepare("UPDATE community_supplier_verifications SET consumed_at = ? WHERE id = ?").run(
+    ts,
+    row.id,
+  );
+
+  // Email verification only proves the submitter controls the address — it
+  // does NOT make the listing live. Flip `pending` → `awaiting_review` so the
+  // admin still has to approve it. Earlier versions of this code flipped
+  // straight to `active`, which let listings appear in the public directory
+  // without human review; that was the v1.1 regression we're closing here.
+  // Admin may have already hidden the row during the verification window;
+  // respect that.
+  let alreadyActive = supplier.status === "active";
+  if (supplier.status === "pending") {
+    db.prepare(
+      "UPDATE community_suppliers SET status = 'awaiting_review', updated_at = ? WHERE id = ?",
+    ).run(ts, row.supplier_id);
+    alreadyActive = false;
+  }
+
+  return { ok: true, supplierId: row.supplier_id, alreadyActive };
+}
+
+/** Admin approval: flip `awaiting_review` → `active`. No-op if the row is
+ *  already active. Hidden rows are NOT auto-approved — admin has to explicitly
+ *  unhide first. Returns the new status. */
+export function approveSupplier(id: number): CommunitySupplierStatus {
+  const ts = now();
+  const cur = getCommunitySupplierById(id);
+  if (!cur) throw new Error("supplier not found");
+  if (cur.status === "active") return "active";
+  if (cur.status !== "awaiting_review") return cur.status as CommunitySupplierStatus;
+  db.prepare("UPDATE community_suppliers SET status = 'active', updated_at = ? WHERE id = ?").run(
+    ts,
+    id,
+  );
+  return "active";
 }
 
 export function setStatus(

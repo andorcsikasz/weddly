@@ -428,7 +428,14 @@ export default function BudgetPage() {
                   </tr>
                 );
               })}
-              {lines.length === 0 && (
+              {honeymoonAgg && (
+                <HoneymoonAggregateRow
+                  planned={honeymoonAgg.planned}
+                  actual={honeymoonAgg.actual}
+                  locale={locale}
+                />
+              )}
+              {!hasAnyTableRow && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-ink-500">
                     {t("budget.lines_empty")}
@@ -542,6 +549,61 @@ function CategoryCell({ category }: { category: BudgetCategory }) {
       <Icon size={14} className="text-ink-500" aria-hidden />
       {t(`budget.cat.${category}`)}
     </span>
+  );
+}
+
+/** Read-only row that rolls every honeymoon-category line into one entry.
+ *  The actual edits happen on /app/honeymoon — the chevron link in the
+ *  action cell sends the user there. */
+function HoneymoonAggregateRow({
+  planned,
+  actual,
+  locale,
+}: {
+  planned: number;
+  actual: number;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const Icon = CATEGORY_ICONS.honeymoon;
+  const delta = actual - planned;
+  return (
+    <tr className="border-t border-paper-200 transition hover:bg-paper-50">
+      <td className="px-4 py-2 align-middle">
+        <Link
+          to="/app/honeymoon"
+          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-blush-700"
+        >
+          <Icon size={14} className="text-ink-500" aria-hidden />
+          {t("budget.cat.honeymoon")}
+        </Link>
+      </td>
+      <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900">
+        {formatHuf(planned, locale)}
+      </td>
+      <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900">
+        {formatHuf(actual, locale)}
+      </td>
+      <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
+        {delta !== 0 && (
+          <span className={delta > 0 ? "font-medium text-red-600" : "font-medium text-emerald-600"}>
+            {formatHuf(delta, locale)}
+          </span>
+        )}
+      </td>
+      <td className="hidden px-4 py-2 align-middle text-sm text-ink-500 md:table-cell">
+        {t("budget.honeymoon_breakdown_hint")}
+      </td>
+      <td className="px-2 py-2 text-right align-middle">
+        <Link
+          to="/app/honeymoon"
+          className="btn-ghost btn-sm text-ink-500 hover:text-blush-700"
+          aria-label={t("budget.honeymoon_open_aria")}
+        >
+          <ArrowUpRight size={14} />
+        </Link>
+      </td>
+    </tr>
   );
 }
 

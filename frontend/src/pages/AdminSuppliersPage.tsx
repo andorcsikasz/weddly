@@ -1,5 +1,5 @@
 import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
-import { ExternalLink, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Check, ExternalLink, Eye, EyeOff, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -18,17 +18,11 @@ function formatDate(unixSeconds: number, locale: string): string {
   }).format(d);
 }
 
-/** UI filter buckets. The backend only stores "active" | "hidden", but we
- *  surface a "pending" bucket = freshly active rows the admin hasn't reviewed
- *  yet (last 24 h). Crude but useful for triage. */
-type StatusFilter = "all" | "pending" | "active" | "hidden";
-
-/** Pending = active and submitted in the last 24h. Same heuristic the spec
- *  asks for ("Függőben"). */
-function isPending(s: CommunitySupplierAdminView, nowSec: number): boolean {
-  if (s.status !== "active") return false;
-  return nowSec - s.created_at < 24 * 60 * 60;
-}
+/** UI filter buckets. The backend stores four real statuses now —
+ *  `pending` (email not yet verified), `awaiting_review` (email verified,
+ *  admin sign-off pending), `active`, `hidden`. The `awaiting_review` bucket
+ *  is the moderation queue and the default place the admin lands. */
+type StatusFilter = "all" | "pending" | "awaiting_review" | "active" | "hidden";
 
 export default function AdminSuppliersPage() {
   const { t, locale } = useT();
@@ -61,14 +55,14 @@ export default function AdminSuppliersPage() {
 
   // Apply the status filter. We re-derive once per render — list stays small.
   const visibleSuppliers = useMemo(() => {
-    const now = Math.floor(Date.now() / 1000);
     if (filter === "all") return suppliers;
-    if (filter === "active")
-      return suppliers.filter((s) => s.status === "active" && !isPending(s, now));
-    if (filter === "hidden") return suppliers.filter((s) => s.status === "hidden");
-    if (filter === "pending") return suppliers.filter((s) => isPending(s, now));
-    return suppliers;
+    return suppliers.filter((s) => s.status === filter);
   }, [suppliers, filter]);
+
+  const awaitingReviewCount = useMemo(
+    () => suppliers.filter((s) => s.status === "awaiting_review").length,
+    [suppliers],
+  );
 
   // Reset selection when filter changes — selected ids might no longer be visible.
   useEffect(() => {
@@ -120,6 +114,34 @@ export default function AdminSuppliersPage() {
       toast.success(t("admin.unhide"));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  async function onApprove(supplier: CommunitySupplierAdminView) {
+    try {
+      const r = await adminSupplierApi.approve(supplier.id);
+      replaceSupplier(r.supplier);
+      toast.success(t("admin.approve_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  const [enriching, setEnriching] = useState<number | null>(null);
+  async function onEnrich(supplier: CommunitySupplierAdminView) {
+    setEnriching(supplier.id);
+    try {
+      const r = await adminSupplierApi.enrich(supplier.id);
+      replaceSupplier(r.supplier);
+      if (r.fields_filled > 0) {
+        toast.success(t("admin.enrich_filled", { n: r.fields_filled }));
+      } else {
+        toast.success(t("admin.enrich_none"));
+      }
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setEnriching(null);
     }
   }
 
@@ -217,6 +239,15 @@ export default function AdminSuppliersPage() {
           label={t("admin.filter_status_pending")}
           active={filter === "pending"}
           onClick={() => setFilter("pending")}
+        />
+        <FilterChip
+          label={
+            awaitingReviewCount > 0
+              ? `${t("admin.filter_status_awaiting_review")} · ${awaitingReviewCount}`
+              : t("admin.filter_status_awaiting_review")
+          }
+          active={filter === "awaiting_review"}
+          onClick={() => setFilter("awaiting_review")}
         />
         <FilterChip
           label={t("admin.filter_status_active")}
@@ -327,6 +358,30 @@ export default function AdminSuppliersPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {s.status === "awaiting_review" && (
+                        <button
+                          type="button"
+                          className="btn-primary btn-sm"
+                          onClick={() => onApprove(s)}
+                          aria-label={t("admin.approve")}
+                        >
+                          <Check size={14} />
+                          <span className="hidden sm:inline">{t("admin.approve")}</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm"
+                        onClick={() => onEnrich(s)}
+                        disabled={enriching === s.id}
+                        aria-label={t("admin.enrich")}
+                        title={t("admin.enrich")}
+                      >
+                        <Sparkles size={14} />
+                        <span className="hidden md:inline">
+                          {enriching === s.id ? t("admin.enrich_running") : t("admin.enrich")}
+                        </span>
+                      </button>
                       {s.status === "active" ? (
                         <button
                           type="button"
@@ -337,7 +392,7 @@ export default function AdminSuppliersPage() {
                           <EyeOff size={14} />
                           <span className="hidden sm:inline">{t("admin.hide")}</span>
                         </button>
-                      ) : (
+                      ) : s.status === "hidden" ? (
                         <button
                           type="button"
                           className="btn-ghost btn-sm"
@@ -347,7 +402,7 @@ export default function AdminSuppliersPage() {
                           <Eye size={14} />
                           <span className="hidden sm:inline">{t("admin.unhide")}</span>
                         </button>
-                      )}
+                      ) : null}
                       <button
                         type="button"
                         className="btn-ghost btn-sm text-blush-700"
@@ -394,11 +449,21 @@ function FilterChip({
   );
 }
 
-function StatusPill({ status, label }: { status: "active" | "hidden"; label: string }) {
+function StatusPill({
+  status,
+  label,
+}: {
+  status: "active" | "hidden" | "pending" | "awaiting_review";
+  label: string;
+}) {
   const cls =
     status === "active"
       ? "border-ink-700 bg-ink-700 text-paper-100"
-      : "border-paper-300 bg-paper-100 text-ink-500";
+      : status === "awaiting_review"
+        ? "border-blush-500 bg-blush-100 text-blush-800 font-semibold"
+        : status === "pending"
+          ? "border-blush-300 bg-blush-50 text-blush-700"
+          : "border-paper-300 bg-paper-100 text-ink-500";
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}

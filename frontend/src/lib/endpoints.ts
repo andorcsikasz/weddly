@@ -555,6 +555,18 @@ export const adminSupplierTaxonomyApi = {
 
 export const adminSupplierApi = {
   list: () => apiFetch<{ suppliers: CommunitySupplierAdminView[] }>("GET", "/api/admin/suppliers"),
+  approve: (id: number) =>
+    apiFetch<{ supplier: CommunitySupplierAdminView }>(
+      "POST",
+      `/api/admin/suppliers/${id}/approve`,
+      {},
+    ),
+  enrich: (id: number) =>
+    apiFetch<{ supplier: CommunitySupplierAdminView; fields_filled: number }>(
+      "POST",
+      `/api/admin/suppliers/${id}/enrich`,
+      {},
+    ),
   hide: (id: number, reason?: string) =>
     apiFetch<{ supplier: CommunitySupplierAdminView }>("POST", `/api/admin/suppliers/${id}/hide`, {
       reason: reason ?? null,

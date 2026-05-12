@@ -621,6 +621,16 @@ export interface PlanningItem {
   due_date: string | null;
   /** Schedule entries only — optional HH:MM local-time slot ("14:30"). */
   scheduled_time: string | null;
+  /** Tasks only — free-text owner ("Anna", "Apa", "Tanú1"). The frontend
+   *  offers the union of existing assignees as a datalist so re-typing stays
+   *  minimal. */
+  assignee: string | null;
+  /** Ideas only — id of the partner who logged the idea. Auto-stamped at
+   *  create time. NULL only for legacy rows or items whose author was deleted. */
+  suggested_by_user_id: number | null;
+  /** Resolved server-side via JOIN on users.full_name for display. Mirrors
+   *  `suggested_by_user_id` 1:1 unless the user was deleted (then null). */
+  suggested_by_name: string | null;
   /** Manual ordering within a tab. Lower = earlier in the list. */
   position: number;
   created_at: UnixMs;
