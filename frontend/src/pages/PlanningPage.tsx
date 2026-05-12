@@ -1,7 +1,9 @@
-// Free-form planning surface. Three tabs over the same backend table:
-// Feladatok (tasks — checklist with optional due date), Ötletek (notes — free
-// text), Programterv (wedding-day timeline — HH:MM + label). One quick-add
-// row per tab; rows are inline-editable on click.
+// Free-form planning surface. Two tabs over the same backend table:
+// Feladatok (tasks — checklist with optional due date, optional assignee) +
+// Ötletek (notes — free text, auto-stamped with the partner who logged it).
+// The wedding-day run-of-show lives on its own page at /app/schedule (richer
+// model with duration, location, sort, PDF export). One quick-add row per tab;
+// rows are inline-editable on click.
 
 import type { PlanningItem, PlanningKind } from "@shared/types";
 import {
@@ -31,39 +33,11 @@ import {
 } from "../lib/planning_templates";
 import { useDocumentMeta } from "../lib/seo";
 
-/** Wedding-day template entries anchored to ceremony time. Offsets are in
- *  minutes; events whose computed time falls outside 00:00..23:59 are silently
- *  skipped (very early ceremonies don't get a 03:00 "preparations", very late
- *  ones don't get a 26:00 "bride's dance" — the couple adds late events
- *  manually). Titles are i18n keys resolved at apply time. */
-const WEDDING_TEMPLATE: { offsetMins: number; titleKey: string }[] = [
-  { offsetMins: -240, titleKey: "planning.template_preparations" },
-  { offsetMins: -30, titleKey: "planning.template_guests_arrive" },
-  { offsetMins: 0, titleKey: "planning.template_ceremony" },
-  { offsetMins: 30, titleKey: "planning.template_congrats" },
-  { offsetMins: 60, titleKey: "planning.template_group_photo" },
-  { offsetMins: 120, titleKey: "planning.template_cocktail" },
-  { offsetMins: 240, titleKey: "planning.template_dinner" },
-  { offsetMins: 330, titleKey: "planning.template_cake" },
-  { offsetMins: 360, titleKey: "planning.template_first_dance" },
-  { offsetMins: 400, titleKey: "planning.template_party" },
-  { offsetMins: 480, titleKey: "planning.template_bride_dance" },
-];
+type PlanningTabKind = Exclude<PlanningKind, "schedule">;
 
-function formatHHMM(mins: number): string {
-  return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
-}
-
-function parseHHMM(s: string): number | null {
-  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(s);
-  if (!m) return null;
-  return Number(m[1]) * 60 + Number(m[2]);
-}
-
-const TABS: { kind: PlanningKind; labelKey: string }[] = [
+const TABS: { kind: PlanningTabKind; labelKey: string }[] = [
   { kind: "task", labelKey: "planning.tab_tasks" },
   { kind: "idea", labelKey: "planning.tab_ideas" },
-  { kind: "schedule", labelKey: "planning.tab_schedule" },
 ];
 
 export default function PlanningPage() {
@@ -73,11 +47,10 @@ export default function PlanningPage() {
   const confirm = useConfirm();
   const [items, setItems] = useState<PlanningItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeKind, setActiveKind] = useState<PlanningKind>("task");
-  const [templateOpen, setTemplateOpen] = useState(false);
-  const [applyingTemplate, setApplyingTemplate] = useState(false);
-  // Per-kind wand modal flags. Schedule reuses the existing TemplateDialog;
-  // task + idea each open their own previewer (different field shapes).
+  const [activeKind, setActiveKind] = useState<PlanningTabKind>("task");
+  // Per-kind wand modal flags. Task + idea each open their own previewer
+  // (different field shapes). The wedding-day program template lives on
+  // /app/schedule, so there's no schedule wand here.
   const [taskWandOpen, setTaskWandOpen] = useState(false);
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
@@ -103,7 +76,6 @@ export default function PlanningPage() {
     title: string;
     body?: string | null;
     due_date?: string | null;
-    scheduled_time?: string | null;
     assignee?: string | null;
   }) {
     try {
@@ -163,36 +135,6 @@ export default function PlanningPage() {
     }
   }
 
-  async function onApplyTemplate(ceremonyHHMM: string) {
-    const anchor = parseHHMM(ceremonyHHMM);
-    if (anchor === null) return;
-    setApplyingTemplate(true);
-    try {
-      // POST sequentially so each created item gets a deterministic position
-      // (defaults to 0; render order falls back to created_at). Failures bail
-      // out — the user can re-run with a different time after fixing.
-      const created: PlanningItem[] = [];
-      for (const tmpl of WEDDING_TEMPLATE) {
-        const mins = anchor + tmpl.offsetMins;
-        if (mins < 0 || mins >= 1440) continue;
-        const r = await planningApi.create({
-          kind: "schedule",
-          title: t(tmpl.titleKey),
-          scheduled_time: formatHHMM(mins),
-        });
-        created.push(r.item);
-      }
-      setItems((prev) => [...prev, ...created]);
-      toast.success(t("planning.template_done", { count: created.length }));
-      setTemplateOpen(false);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-    } finally {
-      setApplyingTemplate(false);
-    }
-  }
-
-  const hasScheduleItems = useMemo(() => items.some((i) => i.kind === "schedule"), [items]);
   const hasTaskItems = useMemo(() => items.some((i) => i.kind === "task"), [items]);
   const hasIdeaItems = useMemo(() => items.some((i) => i.kind === "idea"), [items]);
 
@@ -257,8 +199,7 @@ export default function PlanningPage() {
         >
           {TABS.map((tab) => {
             const active = tab.kind === activeKind;
-            const Icon =
-              tab.kind === "task" ? CheckCircle2 : tab.kind === "idea" ? Lightbulb : Calendar;
+            const Icon = tab.kind === "task" ? CheckCircle2 : Lightbulb;
             return (
               <button
                 key={tab.kind}
@@ -313,17 +254,6 @@ export default function PlanningPage() {
               </button>
             </>
           )}
-          {activeKind === "schedule" && (
-            <button
-              type="button"
-              onClick={() => setTemplateOpen(true)}
-              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
-              title={t("planning.template_button_hint")}
-            >
-              <Wand2 size={14} aria-hidden="true" />
-              <span>{t("planning.template_button")}</span>
-            </button>
-          )}
         </div>
 
         <QuickAddForm
@@ -350,15 +280,6 @@ export default function PlanningPage() {
           </ul>
         )}
       </div>
-
-      {templateOpen && (
-        <TemplateDialog
-          existing={hasScheduleItems}
-          applying={applyingTemplate}
-          onClose={() => setTemplateOpen(false)}
-          onApply={onApplyTemplate}
-        />
-      )}
 
       {taskWandOpen && (
         <TaskTemplateDialog
@@ -402,90 +323,6 @@ export default function PlanningPage() {
         />
       )}
     </AppShell>
-  );
-}
-
-function TemplateDialog({
-  existing,
-  applying,
-  onClose,
-  onApply,
-}: {
-  existing: boolean;
-  applying: boolean;
-  onClose: () => void;
-  onApply: (ceremonyHHMM: string) => Promise<void>;
-}) {
-  const { t } = useT();
-  const [ceremonyTime, setCeremonyTime] = useState("15:00");
-  const previewTimes = useMemo(() => {
-    const anchor = parseHHMM(ceremonyTime);
-    if (anchor === null) return [];
-    return WEDDING_TEMPLATE.flatMap((tmpl) => {
-      const mins = anchor + tmpl.offsetMins;
-      if (mins < 0 || mins >= 1440) return [];
-      return [{ time: formatHHMM(mins), titleKey: tmpl.titleKey }];
-    });
-  }, [ceremonyTime]);
-
-  return (
-    <Dialog
-      open
-      title={t("planning.template_dialog_title")}
-      role="dialog"
-      closeOnBackdrop
-      onClose={() => {
-        if (!applying) onClose();
-      }}
-      footer={
-        <>
-          <button type="button" className="btn-ghost" onClick={onClose} disabled={applying}>
-            {t("common.cancel")}
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => onApply(ceremonyTime)}
-            disabled={applying || parseHHMM(ceremonyTime) === null}
-          >
-            {applying ? t("common.loading") : t("planning.template_confirm")}
-          </button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <p className="text-ink-700">{t("planning.template_dialog_body")}</p>
-        <label className="flex items-center gap-3 text-sm text-ink-700">
-          <span className="font-medium">{t("planning.template_ceremony_label")}</span>
-          <input
-            type="time"
-            value={ceremonyTime}
-            onChange={(e) => setCeremonyTime(e.target.value)}
-            className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 outline-none focus:border-ink-400"
-          />
-        </label>
-        {existing && (
-          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600">
-            {t("planning.template_warning_existing")}
-          </p>
-        )}
-        {previewTimes.length > 0 && (
-          <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-500">
-              {t("planning.template_preview_label")}
-            </p>
-            <ul className="space-y-1 text-xs text-ink-700">
-              {previewTimes.map((p) => (
-                <li key={p.titleKey} className="flex items-center gap-3">
-                  <span className="font-mono text-ink-900">{p.time}</span>
-                  <span>{t(p.titleKey)}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </Dialog>
   );
 }
 
@@ -746,20 +583,18 @@ function QuickAddForm({
   assigneeSuggestions,
   onCreate,
 }: {
-  kind: PlanningKind;
+  kind: PlanningTabKind;
   assigneeSuggestions: string[];
   onCreate: (input: {
     title: string;
     body?: string | null;
     due_date?: string | null;
-    scheduled_time?: string | null;
     assignee?: string | null;
   }) => Promise<void>;
 }) {
   const { t } = useT();
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
   const [assignee, setAssignee] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const assigneeListId = "planning-assignee-list";
@@ -771,22 +606,16 @@ function QuickAddForm({
     await onCreate({
       title: trimmed,
       due_date: kind === "task" && dueDate ? dueDate : null,
-      scheduled_time: kind === "schedule" && scheduledTime ? scheduledTime : null,
       assignee: kind === "task" && assignee.trim() ? assignee.trim() : null,
     });
     setTitle("");
     setDueDate("");
-    setScheduledTime("");
     setAssignee("");
     inputRef.current?.focus();
   }
 
   const placeholder =
-    kind === "task"
-      ? t("planning.task_placeholder")
-      : kind === "idea"
-        ? t("planning.idea_placeholder")
-        : t("planning.schedule_placeholder");
+    kind === "task" ? t("planning.task_placeholder") : t("planning.idea_placeholder");
 
   return (
     <form onSubmit={onSubmit} className="card flex flex-wrap items-end gap-3 p-3">
@@ -830,15 +659,6 @@ function QuickAddForm({
             className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400"
           />
         </>
-      )}
-      {kind === "schedule" && (
-        <input
-          type="time"
-          value={scheduledTime}
-          onChange={(e) => setScheduledTime(e.target.value)}
-          aria-label={t("planning.time_label")}
-          className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400"
-        />
       )}
       <button
         type="submit"
@@ -897,14 +717,6 @@ function PlanningRow({
         >
           {item.done ? <CheckCircle2 size={18} className="text-sage-700" /> : <Circle size={18} />}
         </button>
-      )}
-      {item.kind === "schedule" && (
-        <span
-          className="mt-0.5 inline-flex h-6 min-w-[3rem] shrink-0 items-center justify-center rounded-md bg-ink-100 px-1.5 font-mono text-xs text-ink-700"
-          aria-label={t("planning.time_label")}
-        >
-          {item.scheduled_time ?? "—:—"}
-        </span>
       )}
       {item.kind === "idea" && (
         <Lightbulb size={18} className="mt-0.5 shrink-0 text-ink-400" aria-hidden="true" />
@@ -1002,9 +814,9 @@ function PlanningRow({
   );
 }
 
-function EmptyState({ kind }: { kind: PlanningKind }) {
+function EmptyState({ kind }: { kind: PlanningTabKind }) {
   const { t } = useT();
-  const Icon = kind === "task" ? CheckCircle2 : kind === "idea" ? Lightbulb : Calendar;
+  const Icon = kind === "task" ? CheckCircle2 : Lightbulb;
   return (
     <div className="mt-6 rounded-2xl border border-dashed border-paper-300 bg-paper-50 px-4 py-10 text-center">
       <Icon size={28} className="mx-auto text-ink-400" aria-hidden="true" />

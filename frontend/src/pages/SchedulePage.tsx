@@ -247,12 +247,15 @@ export default function SchedulePage() {
                 </span>
               </button>
               <div className="ml-auto flex shrink-0 items-center gap-1">
-                <span
-                  aria-hidden="true"
-                  className="hidden h-7 w-7 items-center justify-center rounded-full text-ink-400 sm:inline-flex"
+                <button
+                  type="button"
+                  aria-label={t("schedule.edit_event")}
+                  title={t("schedule.edit_event")}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800"
+                  onClick={() => setEditing({ event })}
                 >
                   <Pencil size={14} />
-                </span>
+                </button>
                 <button
                   type="button"
                   aria-label={t("schedule.delete_event")}

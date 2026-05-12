@@ -21,7 +21,7 @@ const DEFAULT_ROOM_H_MM = 9_000;
 // Sensible bounds for the editable input: 3m (intimate) to 50m (ballroom).
 const MIN_ROOM_MM = 3_000;
 const MAX_ROOM_MM = 50_000;
-const GRID_STEP_MM = 1_000; // 1-metre grid lines
+const GRID_STEP_MM = 500; // 50-cm grid lines — fine enough to plan furniture against
 
 const MIN_DIM_MM = 100;
 const MAX_DIM_MM = 10_000;
@@ -496,7 +496,7 @@ function clampRoom(mm: number): number {
 }
 
 function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
-  // Faint dashed 1m grid plus a soft room border. The dashes match the
+  // Faint dashed 50cm grid plus a soft room border. The dashes match the
   // landing-page mockup aesthetic — feels like graph paper rather than a
   // technical CAD grid.
   const lines: React.ReactElement[] = [];

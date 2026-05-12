@@ -63,7 +63,8 @@ const ITEMS: NavItem[] = [
     icon: <Heart size={18} />,
   },
   // Free-form planning surface — desktop-only so the mobile bottom nav stays
-  // at the 5 core flows. Three tabs inside: tasks, ideas, wedding-day program.
+  // at the 5 core flows. Two tabs inside: tasks + ideas. The wedding-day
+  // run-of-show lives on its own page at /app/schedule (richer model + PDF).
   {
     to: "/app/planning",
     labelKey: "nav.planning",
