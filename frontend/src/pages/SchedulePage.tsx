@@ -12,39 +12,24 @@ import {
   SCHEDULE_MAX_NOTES_LEN,
   SCHEDULE_MIN_DURATION,
 } from "@shared/schedule";
-import { Clock, Download, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Clock, Download, MapPin, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useConfirm, useToast } from "../components/ui";
+import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { fetchPdfBlob, scheduleApi, schedulePdfUrl } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
+import {
+  SCHEDULE_TEMPLATE,
+  buildScheduleProposal,
+  localizeKnownLabel,
+} from "../lib/schedule_templates";
 import { useDocumentMeta } from "../lib/seo";
 
 interface DrawerInit {
   /** Existing event being edited, or `null` for "create new". */
   event: ScheduleEvent | null;
 }
-
-/** Default starter timeline — appears as a one-click bootstrap on the empty
- *  state. Times chosen to mirror a typical HU civil-ceremony day. */
-interface StarterRow {
-  labelKey:
-    | "schedule.starter_arrival"
-    | "schedule.starter_ceremony"
-    | "schedule.starter_group_photo"
-    | "schedule.starter_dinner"
-    | "schedule.starter_first_dance";
-  minutes: number;
-}
-
-const STARTER_ROWS: StarterRow[] = [
-  { labelKey: "schedule.starter_arrival", minutes: 15 * 60 },
-  { labelKey: "schedule.starter_ceremony", minutes: 15 * 60 + 30 },
-  { labelKey: "schedule.starter_group_photo", minutes: 16 * 60 + 30 },
-  { labelKey: "schedule.starter_dinner", minutes: 19 * 60 },
-  { labelKey: "schedule.starter_first_dance", minutes: 21 * 60 },
-];
 
 function formatHHMM(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -65,7 +50,7 @@ function parseHHMM(text: string): number | null {
 }
 
 export default function SchedulePage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("seo.schedule_title", "seo.schedule_description");
   const toast = useToast();
   const confirm = useConfirm();
@@ -73,7 +58,8 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [seedingStarter, setSeedingStarter] = useState(false);
+  const [wandOpen, setWandOpen] = useState(false);
+  const [wandApplying, setWandApplying] = useState(false);
 
   async function refresh() {
     try {
@@ -109,25 +95,38 @@ export default function SchedulePage() {
     }
   }
 
-  async function onSeedStarter() {
-    setSeedingStarter(true);
+  /** Bulk-create wand picks sequentially. Mirrors PlanningPage's pattern so
+   *  a mid-run failure still leaves a coherent prefix behind, and the
+   *  successful rows still land in state. */
+  async function onApplyWand(
+    picks: { label: string; starts_at_minutes: number; duration_minutes: number | null }[],
+  ): Promise<number> {
+    if (picks.length === 0) return 0;
+    setWandApplying(true);
+    let added = 0;
+    const created: ScheduleEvent[] = [];
     try {
-      // Create sequentially so a partial failure leaves a coherent prefix
-      // behind instead of N parallel rows in indeterminate order.
-      for (const row of STARTER_ROWS) {
-        await scheduleApi.create({
-          label: t(row.labelKey),
-          starts_at_minutes: row.minutes,
+      for (const pick of picks) {
+        const r = await scheduleApi.create({
+          label: pick.label,
+          starts_at_minutes: pick.starts_at_minutes,
+          duration_minutes: pick.duration_minutes,
         });
+        created.push(r.event);
+        added += 1;
       }
-      await refresh();
+      setEvents((prev) => [...prev, ...created]);
+      if (added > 0) {
+        toast.success(t("schedule.wand_apply_done", { count: added }));
+        setWandOpen(false);
+      }
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-      // Refresh so any partial-success rows are reflected.
-      await refresh();
+      if (created.length > 0) setEvents((prev) => [...prev, ...created]);
     } finally {
-      setSeedingStarter(false);
+      setWandApplying(false);
     }
+    return added;
   }
 
   async function onDownloadPdf() {
@@ -181,6 +180,15 @@ export default function SchedulePage() {
             <Download size={16} />
             {t("schedule.download_pdf")}
           </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => setWandOpen(true)}
+            title={t("schedule.wand_button_hint")}
+          >
+            <Wand2 size={16} aria-hidden="true" />
+            {t("schedule.wand_button")}
+          </button>
           <button type="button" className="btn-primary" onClick={() => setEditing({ event: null })}>
             <Plus size={16} />
             {t("schedule.add_event")}
@@ -197,10 +205,10 @@ export default function SchedulePage() {
           <button
             type="button"
             className="btn-primary mt-4 inline-flex"
-            onClick={onSeedStarter}
-            disabled={seedingStarter}
+            onClick={() => setWandOpen(true)}
           >
-            {seedingStarter ? t("schedule.saving") : t("schedule.starter_button")}
+            <Wand2 size={16} aria-hidden="true" />
+            {t("schedule.wand_button")}
           </button>
         </div>
       ) : (
@@ -224,7 +232,9 @@ export default function SchedulePage() {
                   {formatHHMM(event.starts_at_minutes)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-ink-900">{event.label}</span>
+                  <span className="block text-sm font-medium text-ink-900">
+                    {localizeKnownLabel(event.label, locale)}
+                  </span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-500">
                     {event.duration_minutes !== null && (
                       <span className="inline-flex items-center gap-1">
@@ -290,6 +300,18 @@ export default function SchedulePage() {
             // against the freshest copy.
             await refresh();
           }}
+        />
+      )}
+
+      {wandOpen && (
+        <ScheduleWandDialog
+          locale={locale}
+          existing={events.length > 0}
+          applying={wandApplying}
+          onClose={() => {
+            if (!wandApplying) setWandOpen(false);
+          }}
+          onApply={onApplyWand}
         />
       )}
     </AppShell>
@@ -493,5 +515,169 @@ function FormRow({
       {children}
       {error ? <p className="field-error">{error}</p> : null}
     </div>
+  );
+}
+
+/** Ask for start + end, scale the canonical milestone template across that
+ *  window, let the couple uncheck what they don't want, then bulk-create. */
+function ScheduleWandDialog({
+  locale,
+  existing,
+  applying,
+  onClose,
+  onApply,
+}: {
+  locale: Locale;
+  existing: boolean;
+  applying: boolean;
+  onClose: () => void;
+  onApply: (
+    picks: { label: string; starts_at_minutes: number; duration_minutes: number | null }[],
+  ) => Promise<number>;
+}) {
+  const { t } = useT();
+  const [startText, setStartText] = useState("15:00");
+  const [endText, setEndText] = useState("23:00");
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set(SCHEDULE_TEMPLATE.map((item) => item.key)),
+  );
+
+  const startMinutes = parseHHMM(startText);
+  const endMinutes = parseHHMM(endText);
+  const windowValid = startMinutes !== null && endMinutes !== null && endMinutes > startMinutes;
+
+  const proposal = useMemo(() => {
+    if (!windowValid || startMinutes === null || endMinutes === null) return [];
+    return buildScheduleProposal(startMinutes, endMinutes);
+  }, [windowValid, startMinutes, endMinutes]);
+
+  const total = SCHEDULE_TEMPLATE.length;
+  const allSelected = selected.size === total;
+
+  function toggle(key: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  async function onConfirm() {
+    if (!windowValid) return;
+    const picks = proposal
+      .filter((row) => selected.has(row.item.key))
+      .map((row) => ({
+        label: row.item.title[locale],
+        starts_at_minutes: row.starts_at_minutes,
+        duration_minutes: row.duration_minutes,
+      }));
+    await onApply(picks);
+  }
+
+  return (
+    <Dialog
+      open
+      title={t("schedule.wand_dialog_title")}
+      role="dialog"
+      closeOnBackdrop
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={applying}>
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={onConfirm}
+            disabled={applying || !windowValid || selected.size === 0}
+          >
+            {applying ? t("common.loading") : t("schedule.wand_apply", { count: selected.size })}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-ink-700">{t("schedule.wand_dialog_body")}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm">
+            <span className="field-label">{t("schedule.wand_start_label")}</span>
+            <input
+              className="input"
+              type="time"
+              value={startText}
+              onChange={(e) => setStartText(e.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="field-label">{t("schedule.wand_end_label")}</span>
+            <input
+              className="input"
+              type="time"
+              value={endText}
+              onChange={(e) => setEndText(e.target.value)}
+            />
+          </label>
+        </div>
+        {!windowValid && (
+          <p className="rounded-lg border border-blush-300 bg-blush-50 px-3 py-2 text-xs text-blush-700">
+            {t("schedule.wand_window_error")}
+          </p>
+        )}
+        {existing && (
+          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600">
+            {t("schedule.wand_warning_existing")}
+          </p>
+        )}
+        <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+              {t("schedule.wand_select_label", { count: selected.size, total })}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setSelected(allSelected ? new Set() : new Set(SCHEDULE_TEMPLATE.map((i) => i.key)))
+              }
+              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900"
+            >
+              {allSelected ? t("schedule.wand_select_none") : t("schedule.wand_select_all")}
+            </button>
+          </div>
+          <ul className="space-y-0.5">
+            {proposal.map((row) => {
+              const on = selected.has(row.item.key);
+              return (
+                <li key={row.item.key}>
+                  <button
+                    type="button"
+                    onClick={() => toggle(row.item.key)}
+                    aria-pressed={on}
+                    className={`flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                      on
+                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200"
+                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600"
+                    }`}
+                  >
+                    <span className="min-w-[3.5rem] shrink-0 tabular-nums">
+                      {formatHHMM(row.starts_at_minutes)}
+                    </span>
+                    <span className={`flex-1 ${on ? "" : "line-through"}`}>
+                      {row.item.title[locale]}
+                    </span>
+                    {row.duration_minutes !== null && on && (
+                      <span className="shrink-0 text-xs text-ink-500">
+                        {t("schedule.duration_unit", { n: row.duration_minutes })}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </Dialog>
   );
 }

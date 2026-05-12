@@ -861,12 +861,22 @@ export interface LocaleMessages {
     save_conflict: string;
     empty_title: string;
     empty_body: string;
-    starter_button: string;
-    starter_arrival: string;
-    starter_ceremony: string;
-    starter_group_photo: string;
-    starter_dinner: string;
-    starter_first_dance: string;
+    wand_button: string;
+    wand_button_hint: string;
+    wand_dialog_title: string;
+    wand_dialog_body: string;
+    wand_start_label: string;
+    wand_end_label: string;
+    wand_window_error: string;
+    wand_warning_existing: string;
+    /** Receives `{count}` + `{total}`. */
+    wand_select_label: string;
+    wand_select_all: string;
+    wand_select_none: string;
+    /** Receives `{count}`. */
+    wand_apply: string;
+    /** Receives `{count}`. */
+    wand_apply_done: string;
     /** Receives `{n}`. */
     duration_unit: string;
   };
