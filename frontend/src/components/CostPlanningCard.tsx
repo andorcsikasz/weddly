@@ -10,6 +10,8 @@ import {
   Camera,
   Car,
   Circle,
+  Eye,
+  EyeOff,
   Flower2,
   Gift,
   Home,
@@ -131,6 +133,7 @@ export function CostPlanningCard({
   frozenCategories,
   onToggleFreeze,
   amountLinkTo,
+  showActualToggle = false,
 }: {
   lines: BudgetLine[];
   baseline: number;
@@ -164,8 +167,17 @@ export function CostPlanningCard({
    *  category appended as a hash (e.g. `/app/budget#cat-venue`). Used on the
    *  dashboard to route precise entries into the budget table. */
   amountLinkTo?: string;
+  /** Surface a header toggle that overlays a non-interactive red bar under
+   *  each category slider showing the live `actual_huf` total — a "what have
+   *  we already spent?" second view layer. Only /app/budget passes `true`;
+   *  the dashboard hides the toggle to keep the panel compact. */
+  showActualToggle?: boolean;
 }) {
   const { t, locale } = useT();
+  // Second-layer overlay: when on, each category row renders a thin red bar
+  // under the planned slider showing the actual spend. Local state — no
+  // persistence; toggling is cheap and most users won't keep it on.
+  const [showActualOverlay, setShowActualOverlay] = useState(false);
   const factor = baseline > 0 ? count / baseline : 1;
 
   // Aggregate lines into category buckets. Every category in CATEGORY_ORDER
@@ -246,37 +258,66 @@ export function CostPlanningCard({
   // count shown big and centred above.
   const midCount = Math.round((minCount + maxCount) / 2 / 5) * 5;
 
+  // Whether the overlay actually has anything to show. Without it we keep the
+  // toggle clickable so the user understands the feature exists, but skip the
+  // empty red bars on every row.
+  const hasAnyActual = totalActual > 0;
+
   return (
     <section className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">
           {t("budget.cost_planning_headline")}
         </p>
-        {cap !== null &&
-          (tier === "safe" ? (
-            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
-              <ArrowDown size={12} className="self-center" aria-hidden />
-              {t("budget.under_by", { amount: formatHuf(underAmount, locale) })}
-            </span>
-          ) : tier === "soft" ? (
-            // 0–5 % over: calm amber dot, no blush pill — well within the
-            // noise floor of cap accuracy, so the warning is muted on purpose.
-            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
-              <span
-                className="inline-block h-2 w-2 self-center rounded-full bg-amber-500"
-                aria-hidden="true"
-              />
-              {t("cost_planning.overcap_soft_label")}
-            </span>
-          ) : (
-            // medium (5–20 %) + serious (>20 %): same blush pill; the serious
-            // tier adds an action link below the card total. Keeping the pill
-            // shape stable across tiers preserves the visual anchor.
-            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700">
-              <ArrowUp size={12} className="self-center" aria-hidden />
-              {t("cost_planning.overcap_medium_label", { amount: formatHuf(overage, locale) })}
-            </span>
-          ))}
+        <div className="flex items-center gap-3">
+          {showActualToggle && (
+            // Pill toggle for the second-view actual overlay. We render the red
+            // dot inside the button so the state reads at a glance, and the
+            // press flips the colour palette to make the active state obvious.
+            <button
+              type="button"
+              onClick={() => setShowActualOverlay((v) => !v)}
+              aria-pressed={showActualOverlay}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 ${
+                showActualOverlay
+                  ? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
+                  : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700"
+              }`}
+              title={t(
+                showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay",
+              )}
+            >
+              {showActualOverlay ? <EyeOff size={12} aria-hidden /> : <Eye size={12} aria-hidden />}
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />
+              {t(showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay")}
+            </button>
+          )}
+          {cap !== null &&
+            (tier === "safe" ? (
+              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
+                <ArrowDown size={12} className="self-center" aria-hidden />
+                {t("budget.under_by", { amount: formatHuf(underAmount, locale) })}
+              </span>
+            ) : tier === "soft" ? (
+              // 0–5 % over: calm amber dot, no blush pill — well within the
+              // noise floor of cap accuracy, so the warning is muted on purpose.
+              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
+                <span
+                  className="inline-block h-2 w-2 self-center rounded-full bg-amber-500"
+                  aria-hidden="true"
+                />
+                {t("cost_planning.overcap_soft_label")}
+              </span>
+            ) : (
+              // medium (5–20 %) + serious (>20 %): same blush pill; the serious
+              // tier adds an action link below the card total. Keeping the pill
+              // shape stable across tiers preserves the visual anchor.
+              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700">
+                <ArrowUp size={12} className="self-center" aria-hidden />
+                {t("cost_planning.overcap_medium_label", { amount: formatHuf(overage, locale) })}
+              </span>
+            ))}
+        </div>
       </div>
 
       {/* Big centred live count — number large, "vendég" small below. The
@@ -350,6 +391,7 @@ export function CostPlanningCard({
             onEditPlanned={onEditPlanned}
             onToggleFreeze={onToggleFreeze}
             amountLinkTo={amountLinkTo}
+            showActualOverlay={showActualOverlay && hasAnyActual}
             linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
           />
         ))}
@@ -425,6 +467,7 @@ function CategoryRow({
   onEditPlanned,
   onToggleFreeze,
   amountLinkTo,
+  showActualOverlay = false,
   linkTo,
 }: {
   category: BudgetCategory;
@@ -450,6 +493,10 @@ function CategoryRow({
    *  `${amountLinkTo}#cat-${category}` so a tap routes the user to the budget
    *  table for precise entry. Used on the dashboard. */
   amountLinkTo?: string;
+  /** When `true`, a thin non-interactive red bar appears under the planned
+   *  slider showing the actual spend (sum of `actual_huf` for this category)
+   *  scaled by the same `widthAnchor`. Toggled via the panel header. */
+  showActualOverlay?: boolean;
   /** When set, the row is non-interactive (no slider drag) and the whole
    *  row clicks through to this internal route. Used for honeymoon — its
    *  sub-categories live on /app/honeymoon, so we route there instead of
@@ -622,6 +669,25 @@ function CategoryRow({
     />
   );
 
+  // Actual-spend overlay: a thin red lookalike-slider rendered under the real
+  // one, fill width tied to the same widthAnchor as planned so the two bars
+  // are visually comparable at a glance. Non-interactive — `aria-hidden`
+  // keeps it out of the AT tree (the actual amount is already in the right
+  // tile copy). Clamped to 100% so over-spend doesn't bleed past the row.
+  const actualFillPct = rowMax > 0 ? Math.max(0, Math.min(100, (actual / rowMax) * 100)) : 0;
+  const actualOverlayStyle: CSSProperties = {
+    width: `${widthPct}%`,
+    background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${actualFillPct}%, #fef2f2 ${actualFillPct}%, #fef2f2 100%)`,
+  };
+  const actualOverlayEl =
+    showActualOverlay && actual > 0 ? (
+      <div
+        className="range-fill range-fill-thin mt-1 block"
+        style={actualOverlayStyle}
+        aria-hidden="true"
+      />
+    ) : null;
+
   if (linkTo) {
     return (
       <li>
@@ -631,7 +697,10 @@ function CategoryRow({
           aria-label={categoryLabel}
         >
           <span className="flex items-center gap-2 text-ink-700">{leftTileContent}</span>
-          <div className="w-full">{trackEl}</div>
+          <div className="w-full">
+            {trackEl}
+            {actualOverlayEl}
+          </div>
           <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
             {amountInner}
           </span>
@@ -646,7 +715,10 @@ function CategoryRow({
       className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] scroll-mt-24 items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm"
     >
       {leftTile}
-      <div className="w-full">{trackEl}</div>
+      <div className="w-full">
+        {trackEl}
+        {actualOverlayEl}
+      </div>
       {amountTile}
     </li>
   );

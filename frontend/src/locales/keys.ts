@@ -1115,6 +1115,11 @@ export interface LocaleMessages {
     /** Toast shown when the backend rejects a write because the category is
      *  frozen. The user needs to unfreeze first. */
     frozen_save_failed: string;
+    /** Header pill label when the actual-spend overlay is OFF (clicking turns
+     *  it on). Used only on /app/budget. */
+    show_actual_overlay: string;
+    /** Header pill label when the actual-spend overlay is ON. */
+    hide_actual_overlay: string;
     category_locked_hint: string;
     slider_min_aria: string;
     slider_max_aria: string;

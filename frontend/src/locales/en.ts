@@ -1088,6 +1088,8 @@ const en: LocaleMessages = {
     unfreeze_aria: "Unfreeze {category} category",
     open_table_aria: "Enter exact {category} amount in the table",
     frozen_save_failed: "This category is frozen. Unfreeze it first.",
+    show_actual_overlay: "Actual spend",
+    hide_actual_overlay: "Hide actual",
     category_locked_hint: "Category is set when the line is created.",
     slider_min_aria: "Minimum guest count",
     slider_max_aria: "Maximum guest count",

@@ -1092,6 +1092,8 @@ const hu: LocaleMessages = {
     unfreeze_aria: "{category} kategória feloldása",
     open_table_aria: "{category} pontos összegének beírása a táblázatban",
     frozen_save_failed: "Ez a kategória rögzítve van. Oldd fel előbb.",
+    show_actual_overlay: "Tényleges költés",
+    hide_actual_overlay: "Tényleges elrejtése",
     category_locked_hint: "A kategória a létrehozáskor rögzül.",
     slider_min_aria: "Minimum vendégszám",
     slider_max_aria: "Maximum vendégszám",

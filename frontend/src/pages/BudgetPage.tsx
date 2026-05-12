@@ -507,6 +507,7 @@ export default function BudgetPage() {
         onCapChange={saveCap}
         frozenCategories={frozenCategoriesSet}
         onToggleFreeze={toggleFreeze}
+        showActualToggle
       />
 
       <section id="top-overage" className="mt-8 scroll-mt-24">
