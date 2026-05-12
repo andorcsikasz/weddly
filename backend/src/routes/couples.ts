@@ -27,6 +27,7 @@ import { sendKind } from "../domain/emails";
 import { recordExport } from "../domain/exports";
 import { generateInviteToken } from "../domain/invite_codes";
 import { listGuestsByCouple } from "../domain/guests";
+import { createHousehold } from "../domain/households";
 import { renderSeatingChartPdf } from "../domain/pdf";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
 import { getUserById, toUser, type UserRow } from "../domain/users";
@@ -444,6 +445,14 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   // RSVP check-in URL is shareable from minute zero.
   const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), coupleId);
   db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(slug, ts, coupleId);
+
+  // Seed a first household named after the couple so /app/guests opens with
+  // a placeholder party already in place — gives the couple a default seat
+  // assignment target and saves the "create your first household" friction.
+  // Label prefers the joined bride + groom names; falls back to display_name
+  // when both parts are present (onboarding currently requires them).
+  const householdLabel = brideName && groomName ? `${brideName} & ${groomName}` : displayName;
+  createHousehold({ couple_id: coupleId, label: householdLabel });
 
   db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
     coupleId,

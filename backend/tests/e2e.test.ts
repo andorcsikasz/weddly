@@ -1264,16 +1264,24 @@ describe("households + airport check-in", () => {
     expect(g.status).toBe(201);
     expect(g.data.guest.household_id).toBeTruthy();
 
-    const list = await req<{ households: { id: number; code: string; member_ids: number[] }[] }>(
-      "GET",
-      "/api/households",
-      undefined,
-      { token },
-    );
+    const list = await req<{
+      households: { id: number; code: string; label: string; member_ids: number[] }[];
+    }>("GET", "/api/households", undefined, { token });
     expect(list.status).toBe(200);
-    expect(list.data.households.length).toBe(1);
-    expect(list.data.households[0]!.code).toMatch(/^\d{4}$/);
-    expect(list.data.households[0]!.member_ids.length).toBe(1);
+    // Onboarding spawns one household named after the couple ("Anna & Bence")
+    // plus the household-of-one created above for Anna Solo.
+    expect(list.data.households.length).toBe(2);
+    const solo = list.data.households.find((h) => h.label === "Anna Solo");
+    expect(solo).toBeTruthy();
+    expect(solo!.code).toMatch(/^\d{4}$/);
+    expect(solo!.member_ids.length).toBe(1);
+    // The other one is the couple's own auto-created household — empty by
+    // default, labelled with their joined names so /app/guests opens with
+    // a placeholder party already named.
+    const couple = list.data.households.find((h) => h.label !== "Anna Solo");
+    expect(couple).toBeTruthy();
+    expect(couple!.label).toBe("Anna & Bence");
+    expect(couple!.member_ids.length).toBe(0);
   });
 
   test("multi-member household: lookup + checkin updates everyone in one shot", async () => {
@@ -1626,7 +1634,9 @@ describe("households + airport check-in", () => {
       undefined,
       { token },
     );
-    const hh = list.data.households[0]!;
+    // Onboarding pre-creates a household named after the couple, so Anna's
+    // auto-created household-of-one is not the first row. Pick it by id.
+    const hh = list.data.households.find((h) => h.id === host.data.guest.household_id)!;
 
     const checkin = await req<{ rsvp: { members: { full_name: string; kind: string }[] } }>(
       "POST",
