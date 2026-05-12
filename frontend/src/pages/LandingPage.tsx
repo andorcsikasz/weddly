@@ -630,7 +630,7 @@ function AudienceRow({
     </span>
   );
   return (
-    <div className="grid gap-3 py-8 sm:grid-cols-[14rem_1fr_auto] sm:items-baseline sm:gap-x-10 sm:gap-y-2 sm:py-10">
+    <div className="grid gap-3 py-8 sm:grid-cols-[14rem_1fr_auto] sm:items-center sm:gap-x-10 sm:gap-y-2 sm:py-10">
       <p className="font-serif text-2xl leading-[1.05] tracking-tight text-ink-900 sm:text-3xl">
         {row}
       </p>
