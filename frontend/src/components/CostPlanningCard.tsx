@@ -39,6 +39,16 @@ function rangeFillStyle(value: number, min: number, max: number): { background: 
   };
 }
 
+/** Per-row slider visual + drag constants.
+ *  - `ANCHOR_BLUE_PCT`: the panel-biggest row's *committed* value paints up to
+ *    this much of the column. Smaller rows scale linearly under it.
+ *  - `FIXED_DRAG_HUF_RANGE`: the gray "headroom" tail beyond the committed
+ *    value. Identical HUF range for every row, regardless of size — caps how
+ *    far a single drag can grow the value before commit. Without this fix,
+ *    rowMax compounded with each release and values shot up too fast. */
+const ANCHOR_BLUE_PCT = 75;
+const FIXED_DRAG_HUF_RANGE = 200_000;
+
 /** Categories whose planned cost scales with headcount. Everything else is
  *  treated as a fixed cost (venue rental, photographer day rate, rings, …). */
 export const PER_GUEST_CATEGORIES = new Set<BudgetCategory>([
@@ -146,15 +156,6 @@ export function CostPlanningCard({
   const overCap = cap !== null && totalPlanned > cap;
   const overage = overCap && cap !== null ? totalPlanned - cap : 0;
 
-  // Anchor for the per-row slider WIDTH. Each row's slider track width is
-  // scaled to its current value relative to the biggest row, so the column
-  // reads like a horizontal bar chart and shrinks live as headcount drops.
-  // Floored so an all-empty panel doesn't divide by zero.
-  const widthAnchor = useMemo(() => {
-    const biggest = buckets.reduce((m, b) => Math.max(m, b.plannedDisplay), 0);
-    return Math.max(biggest, 100_000);
-  }, [buckets]);
-
   // Slider bounds — editable via the small inputs under the slider. Initial
   // values are ±50% around the parent's baseline (snapped to 5). Local state
   // only; the parent's `baseline` stays the math anchor for per-guest scaling.
@@ -164,6 +165,21 @@ export function CostPlanningCard({
   const [maxCount, setMaxCount] = useState(() =>
     Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5),
   );
+
+  // Anchor for the per-row slider WIDTH. Computed from the *peak* possible
+  // value each row can reach (baseline value × max-headcount factor for
+  // per-guest rows, plain baseline value for fixed). Stable across headcount
+  // changes — so when the headcount slider moves, per-guest row sliders grow
+  // and shrink visibly instead of all proportionally locking together.
+  const widthAnchor = useMemo(() => {
+    const maxFactor = baseline > 0 ? maxCount / baseline : 1;
+    let peak = 0;
+    for (const b of buckets) {
+      const rowPeak = b.scales ? Math.round(b.plannedBaseline * maxFactor) : b.plannedBaseline;
+      if (rowPeak > peak) peak = rowPeak;
+    }
+    return Math.max(peak, 100_000);
+  }, [buckets, baseline, maxCount]);
 
   // If the user narrows the bounds below the current slider value, clamp
   // it back into range so the thumb doesn't pin off the track.
@@ -355,19 +371,27 @@ function CategoryRow({
   // Slider operates in display units so the thumb tracks the headcount
   // slider for per-guest categories — drag a per-fő rate, the total moves.
   const liveDisplay = Math.round(editBaseline * scaleFactor);
+  // Committed display value drives the slider's CSS width + max so the track
+  // stays *stable while dragging* — only the gradient fill animates with
+  // localValue. The slider re-sizes after commit.
+  const plannedDisplay = Math.round(plannedBaseline * scaleFactor);
 
-  // Per-row max with 50% headroom above the current value, floored so empty
-  // rows still have a usable scale to drag against. Bound below at the
-  // widthAnchor's floor (100k) so an all-zero panel doesn't collapse.
-  const rowMax = Math.max(Math.round(liveDisplay * 1.5), 150_000);
+  // HUF per percent-of-column. Derived from widthAnchor so the panel-biggest
+  // committed row paints exactly ANCHOR_BLUE_PCT % of the column with a fixed
+  // gray tail beyond it. Same scale across all rows → consistent feel.
+  const hufPerPct = widthAnchor / ANCHOR_BLUE_PCT;
+  // Drag headroom is a *fixed HUF amount* — one drag can grow the value by
+  // at most FIXED_DRAG_HUF_RANGE before release. No compounding rowMax.
+  const rowMax = plannedDisplay + FIXED_DRAG_HUF_RANGE;
+  // Total slider width (column-percent), clamped so very small/empty rows
+  // are still grabbable and a dominant row doesn't overflow the column.
+  const widthPct = Math.max(8, Math.min(100, rowMax / hufPerPct));
+  // Gradient fill follows the LIVE value so dragging feels instant; the
+  // slider element itself stays the same width during a drag.
+  const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
 
   // Slider step — fine enough for big budgets, coarse enough not to spam.
-  const step = rowMax >= 1_000_000 ? 25_000 : rowMax >= 200_000 ? 10_000 : 5_000;
-
-  // Physical slider width — proportional to the current value vs. the biggest
-  // row in the panel. Clamped so empty/tiny rows are still grabbable and a
-  // single dominant row doesn't pin everything else at 0%.
-  const widthPct = Math.max(8, Math.min(100, (liveDisplay / widthAnchor) * 100));
+  const step = rowMax >= 1_000_000 ? 25_000 : 10_000;
 
   // Per-guest unit for the cross-coupling hint.
   const perGuest = scales && count > 0 ? Math.round(liveDisplay / count) : null;
@@ -404,9 +428,11 @@ function CategoryRow({
         <Icon size={14} className="shrink-0 text-ink-500" aria-hidden />
         <span className="truncate">{t(`budget.cat.${category}`)}</span>
       </span>
-      {/* The wrapper occupies the full grid cell; the input itself is
-       *  width-scaled by liveDisplay/widthAnchor so the row reads as a bar
-       *  in a horizontal bar chart. Empty space to the right is intentional. */}
+      {/* The wrapper takes the full grid cell; the input is width-scaled to
+       *  read like a horizontal bar chart. Width is fixed by the *committed*
+       *  value (stable during drag); only the gradient fill animates as the
+       *  user drags. The gray tail (FIXED_DRAG_HUF_RANGE worth of HUF) is
+       *  constant across rows so single-drag escalation is capped. */}
       <div className="w-full">
         <input
           type="range"
@@ -420,7 +446,10 @@ function CategoryRow({
           onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
           onKeyUp={(e) => commit(Number(e.currentTarget.value))}
           className="range-fill range-fill-thin block"
-          style={{ ...rangeFillStyle(liveDisplay, 0, rowMax), width: `${widthPct}%` }}
+          style={{
+            width: `${widthPct}%`,
+            background: `linear-gradient(to right, #243150 0%, #243150 ${fillPct}%, #efe9d9 ${fillPct}%, #efe9d9 100%)`,
+          }}
           aria-label={t("budget.edit_planned_aria", {
             category: t(`budget.cat.${category}`),
           })}
