@@ -146,13 +146,14 @@ export function CostPlanningCard({
   const overCap = cap !== null && totalPlanned > cap;
   const overage = overCap && cap !== null ? totalPlanned - cap : 0;
 
-  // Per-row slider max — derived from cap if set, else a generous default.
-  // 60% of the cap is enough room for any single category to grow without
-  // making small-budget categories look like empty rails.
-  const sliderMax = useMemo(() => {
-    if (cap !== null && cap > 0) return Math.round(cap * 0.6);
-    return Math.max(1_000_000, totalPlanned > 0 ? totalPlanned : 1_000_000);
-  }, [cap, totalPlanned]);
+  // Anchor for the per-row slider WIDTH. Each row's slider track width is
+  // scaled to its current value relative to the biggest row, so the column
+  // reads like a horizontal bar chart and shrinks live as headcount drops.
+  // Floored so an all-empty panel doesn't divide by zero.
+  const widthAnchor = useMemo(() => {
+    const biggest = buckets.reduce((m, b) => Math.max(m, b.plannedDisplay), 0);
+    return Math.max(biggest, 100_000);
+  }, [buckets]);
 
   // Slider bounds — editable via the small inputs under the slider. Initial
   // values are ±50% around the parent's baseline (snapped to 5). Local state
@@ -259,7 +260,7 @@ export function CostPlanningCard({
             // /fő unit price (not the baseline planned amount).
             scaleFactor={b.scales ? factor : 1}
             count={count}
-            sliderMax={sliderMax}
+            widthAnchor={widthAnchor}
             onEditPlanned={onEditPlanned}
           />
         ))}
@@ -315,7 +316,7 @@ function CategoryRow({
   scales,
   scaleFactor,
   count,
-  sliderMax,
+  widthAnchor,
   onEditPlanned,
 }: {
   category: BudgetCategory;
@@ -328,7 +329,10 @@ function CategoryRow({
    *  unit price stable when only the headcount changes. */
   scaleFactor: number;
   count: number;
-  sliderMax: number;
+  /** Current biggest row value (in display units). The slider's CSS width is
+   *  scaled relative to this so the rows read like a horizontal bar chart.
+   *  Floored upstream so it never hits zero. */
+  widthAnchor: number;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
 }) {
   const { t, locale } = useT();
@@ -352,8 +356,18 @@ function CategoryRow({
   // slider for per-guest categories — drag a per-fő rate, the total moves.
   const liveDisplay = Math.round(editBaseline * scaleFactor);
 
+  // Per-row max with 50% headroom above the current value, floored so empty
+  // rows still have a usable scale to drag against. Bound below at the
+  // widthAnchor's floor (100k) so an all-zero panel doesn't collapse.
+  const rowMax = Math.max(Math.round(liveDisplay * 1.5), 150_000);
+
   // Slider step — fine enough for big budgets, coarse enough not to spam.
-  const step = sliderMax >= 5_000_000 ? 25_000 : 10_000;
+  const step = rowMax >= 1_000_000 ? 25_000 : rowMax >= 200_000 ? 10_000 : 5_000;
+
+  // Physical slider width — proportional to the current value vs. the biggest
+  // row in the panel. Clamped so empty/tiny rows are still grabbable and a
+  // single dominant row doesn't pin everything else at 0%.
+  const widthPct = Math.max(8, Math.min(100, (liveDisplay / widthAnchor) * 100));
 
   // Per-guest unit for the cross-coupling hint.
   const perGuest = scales && count > 0 ? Math.round(liveDisplay / count) : null;
@@ -390,23 +404,28 @@ function CategoryRow({
         <Icon size={14} className="shrink-0 text-ink-500" aria-hidden />
         <span className="truncate">{t(`budget.cat.${category}`)}</span>
       </span>
-      <input
-        type="range"
-        min={0}
-        max={sliderMax}
-        step={step}
-        value={liveDisplay}
-        disabled={!editable || saving}
-        onChange={(e) => applyScaledDrag(Number(e.target.value))}
-        onMouseUp={(e) => commit(Number(e.currentTarget.value))}
-        onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
-        onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-        className="range-fill range-fill-thin block w-full"
-        style={rangeFillStyle(liveDisplay, 0, sliderMax)}
-        aria-label={t("budget.edit_planned_aria", {
-          category: t(`budget.cat.${category}`),
-        })}
-      />
+      {/* The wrapper occupies the full grid cell; the input itself is
+       *  width-scaled by liveDisplay/widthAnchor so the row reads as a bar
+       *  in a horizontal bar chart. Empty space to the right is intentional. */}
+      <div className="w-full">
+        <input
+          type="range"
+          min={0}
+          max={rowMax}
+          step={step}
+          value={liveDisplay}
+          disabled={!editable || saving}
+          onChange={(e) => applyScaledDrag(Number(e.target.value))}
+          onMouseUp={(e) => commit(Number(e.currentTarget.value))}
+          onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
+          onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+          className="range-fill range-fill-thin block"
+          style={{ ...rangeFillStyle(liveDisplay, 0, rowMax), width: `${widthPct}%` }}
+          aria-label={t("budget.edit_planned_aria", {
+            category: t(`budget.cat.${category}`),
+          })}
+        />
+      </div>
       <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
         {actual > 0 && <span className="text-ink-400">{formatHuf(actual, locale)} / </span>}
         <span className="font-medium">{formatHuf(liveDisplay, locale)}</span>

@@ -15,14 +15,17 @@ import type { ScheduleEvent } from "@shared/schedule";
 import {
   CalendarClock,
   CalendarHeart,
+  Camera,
   ChefHat,
   Clipboard,
+  ClipboardList,
   Clock,
   Coins,
   Download,
   Heart,
   Mail,
   MapPin,
+  Plane,
   Printer,
   QrCode,
   Users,
@@ -920,36 +923,46 @@ export default function DashboardPage() {
           )}
 
           {/* ── Quick links ───────────────────────────────────────────── */}
+          {/* Compact icon-only strip mirroring the sidebar (minus the current
+           *  page) so the overview doubles as a hub. Tooltips + aria-labels
+           *  surface the destination names; full labels live in the sidebar. */}
           <section>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
               {t("dashboard.quick_links_title")}
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <FeatureLink
-                to="/app/guests"
-                icon={<Users size={20} />}
-                title={t("dashboard.feature_guests")}
-              />
-              <FeatureLink
+            <div className="flex flex-wrap gap-2">
+              <IconNavLink to="/app/guests" icon={<Users size={18} />} label={t("nav.guests")} />
+              <IconNavLink
                 to="/app/budget"
-                icon={<UtensilsCrossed size={20} />}
-                title={t("dashboard.feature_budget")}
+                icon={<UtensilsCrossed size={18} />}
+                label={t("nav.budget")}
               />
-              <FeatureLink
+              <IconNavLink
                 to="/app/seating"
-                icon={<ChefHat size={20} />}
-                title={t("dashboard.feature_seating")}
+                icon={<ChefHat size={18} />}
+                label={t("nav.seating")}
               />
-              <FeatureLink
-                to="/app/seating"
-                icon={<Printer size={20} />}
-                title={t("dashboard.feature_print")}
+              <IconNavLink
+                to="/app/schedule"
+                icon={<CalendarClock size={18} />}
+                label={t("nav.schedule")}
               />
-              <FeatureLink
+              <IconNavLink
                 to="/app/suppliers"
-                icon={<Heart size={20} />}
-                title={t("dashboard.feature_suppliers")}
+                icon={<Heart size={18} />}
+                label={t("nav.suppliers")}
               />
+              <IconNavLink
+                to="/app/planning"
+                icon={<ClipboardList size={18} />}
+                label={t("nav.planning")}
+              />
+              <IconNavLink
+                to="/app/honeymoon"
+                icon={<Plane size={18} />}
+                label={t("nav.honeymoon")}
+              />
+              <IconNavLink to="/app/media" icon={<Camera size={18} />} label={t("nav.media")} />
             </div>
           </section>
         </>
@@ -1101,13 +1114,15 @@ function RsvpRow({
   );
 }
 
-function FeatureLink({ to, icon, title }: { to: string; icon: JSX.Element; title: string }) {
+function IconNavLink({ to, icon, label }: { to: string; icon: JSX.Element; label: string }) {
   return (
-    <Link to={to} className="card-hover flex items-center gap-3">
-      <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700">
-        {icon}
-      </div>
-      <h3 className="text-base font-semibold text-ink-900">{title}</h3>
+    <Link
+      to={to}
+      title={label}
+      aria-label={label}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-paper-50 text-ink-700 ring-1 ring-paper-200 transition hover:bg-blush-100 hover:text-blush-700 hover:ring-blush-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300"
+    >
+      {icon}
     </Link>
   );
 }
