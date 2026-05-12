@@ -1298,6 +1298,8 @@ const hu: LocaleMessages = {
     sort_label: "Rendezés",
     sort_top: "Népszerűség",
     sort_alpha: "Név (A–Z)",
+    sort_price_asc: "Ár (olcsóbb elöl)",
+    sort_price_desc: "Ár (drágább elöl)",
     view_label: "Nézet",
     view_grid: "Rács",
     view_line: "Lista",

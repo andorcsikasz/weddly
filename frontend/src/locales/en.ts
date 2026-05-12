@@ -1291,6 +1291,8 @@ const en: LocaleMessages = {
     sort_label: "Sort",
     sort_top: "Top voted",
     sort_alpha: "Name (A–Z)",
+    sort_price_asc: "Price (low to high)",
+    sort_price_desc: "Price (high to low)",
     view_label: "View",
     view_grid: "Grid",
     view_line: "List",

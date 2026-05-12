@@ -1363,6 +1363,8 @@ export interface LocaleMessages {
     sort_label: string;
     sort_top: string;
     sort_alpha: string;
+    sort_price_asc: string;
+    sort_price_desc: string;
     /** Grid / line / map view toggle on the directory header. */
     view_label: string;
     view_grid: string;

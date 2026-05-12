@@ -161,7 +161,11 @@ export default function SuppliersPage() {
   const query = params.get("q") ?? "";
   const cityFilter = params.get("city") ?? "";
   const showSavedOnly = params.get("saved") === "1";
-  const sortMode: "top" | "alpha" = params.get("sort") === "alpha" ? "alpha" : "top";
+  const sortMode: "top" | "alpha" | "price_asc" | "price_desc" = (() => {
+    const v = params.get("sort");
+    if (v === "alpha" || v === "price_asc" || v === "price_desc") return v;
+    return "top";
+  })();
   // viewMode controls how the result set is presented:
   //   "grid" → 2-column cards (default)
   //   "line" → single-column compact rows
@@ -210,10 +214,10 @@ export default function SuppliersPage() {
     else p.set("saved", "1");
     setParams(p, { replace: true });
   }
-  function setSortMode(next: "top" | "alpha") {
+  function setSortMode(next: "top" | "alpha" | "price_asc" | "price_desc") {
     const p = new URLSearchParams(params);
-    if (next === "alpha") p.set("sort", "alpha");
-    else p.delete("sort");
+    if (next === "top") p.delete("sort");
+    else p.set("sort", next);
     setParams(p, { replace: true });
   }
   function setViewMode(next: "grid" | "line" | "map") {
@@ -427,9 +431,26 @@ export default function SuppliersPage() {
     // Stable sort. Top mode: DIY entries first (they're the couple's own
     // plan), then directory cards ranked by net votes with curated-first
     // tie-break. Alpha mode ignores everything but the locale-aware name.
+    // Price modes sort by declared price_band; suppliers with no declared
+    // band sink to the bottom so the ranked area stays meaningful.
     const sorted = [...out];
+    const collator = (a: { name: string }, b: { name: string }) =>
+      a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en");
     if (sortMode === "alpha") {
-      sorted.sort((a, b) => a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en"));
+      sorted.sort(collator);
+    } else if (sortMode === "price_asc" || sortMode === "price_desc") {
+      const dir = sortMode === "price_asc" ? 1 : -1;
+      const bandOf = (s: (typeof sorted)[number]): number | null =>
+        "price_band" in s ? (s.price_band ?? null) : null;
+      sorted.sort((a, b) => {
+        const ab = bandOf(a);
+        const bb = bandOf(b);
+        const aHas = ab != null ? 1 : 0;
+        const bHas = bb != null ? 1 : 0;
+        if (aHas !== bHas) return bHas - aHas;
+        if (ab != null && bb != null && ab !== bb) return (ab - bb) * dir;
+        return collator(a, b);
+      });
     } else {
       sorted.sort((a, b) => {
         const aSelf = a.source === "self" ? 1 : 0;
@@ -439,7 +460,7 @@ export default function SuppliersPage() {
           if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
           if (a.source !== b.source) return a.source === "curated" ? -1 : 1;
         }
-        return a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en");
+        return collator(a, b);
       });
     }
     return sorted;
@@ -621,10 +642,14 @@ export default function SuppliersPage() {
           <select
             className="h-9 min-w-[10rem] rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
             value={sortMode}
-            onChange={(e) => setSortMode(e.target.value as "top" | "alpha")}
+            onChange={(e) =>
+              setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
+            }
             aria-label={t("suppliers.sort_label")}
           >
             <option value="top">{t("suppliers.sort_top")}</option>
+            <option value="price_asc">{t("suppliers.sort_price_asc")}</option>
+            <option value="price_desc">{t("suppliers.sort_price_desc")}</option>
             <option value="alpha">{t("suppliers.sort_alpha")}</option>
           </select>
         </label>

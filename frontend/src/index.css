@@ -237,6 +237,20 @@
     );
   }
 
+  /* Blush stationery — blush-100 base + blush-600 hairlines. Used on the
+     dashboard "date changed" alert so it reads as a louder cousin of the
+     plain `.stationery` letterhead without leaving the blush palette. */
+  .stationery-blush {
+    background-color: theme("colors.blush.100");
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(191, 74, 48, 0.08) 0,
+      rgba(191, 74, 48, 0.08) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+
   /* Dark stationery — ink-900 base with paper-toned hairlines. Used on
      the Stats band so the dark interruption matches the same hairline
      texture as the rest of the page. */

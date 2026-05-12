@@ -572,21 +572,21 @@ export default function DashboardPage() {
           the couple edits it; we fan-out an email and clear the flag. */}
       {dateChanged && (
         <section
-          className="mb-6 rounded-2xl border-2 border-blush-400 bg-blush-50/60 px-4 py-3"
+          className="stationery-blush mb-6 rounded-2xl border-2 border-blush-500 px-4 py-3"
           role="region"
           aria-label={t("dashboard.date_changed_title")}
         >
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-semibold text-blush-800">
                 {t("dashboard.date_changed_title")}
               </h2>
-              <p className="mt-1 text-sm text-ink-700">{t("dashboard.date_changed_body")}</p>
+              <p className="mt-1 text-sm text-ink-800">{t("dashboard.date_changed_body")}</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-blush-700 hover:bg-blush-100 disabled:opacity-50"
+                className="btn bg-blush-600 px-3 text-white hover:bg-blush-700"
                 onClick={onDismissDateChange}
                 disabled={dismissingDateChange || notifyingDateChange}
                 aria-label={t("dashboard.date_changed_dismiss_aria")}
@@ -596,7 +596,7 @@ export default function DashboardPage() {
               </button>
               <button
                 type="button"
-                className="btn bg-sage-600 text-white hover:bg-sage-700"
+                className="btn bg-sage-700 text-white hover:bg-sage-800"
                 onClick={onNotifyDateChange}
                 disabled={notifyingDateChange || dismissingDateChange || notifyableGuests === 0}
               >
