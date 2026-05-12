@@ -68,7 +68,18 @@ export interface ApiFetchOptions {
   signal?: AbortSignal;
   /** Override the default 20s timeout. Pass 0 to disable. */
   timeoutMs?: number;
+  /** Retry transient failures (network_error, timeout, 5xx). Defaults to
+   *  `true` for GET, `false` for other methods. POST/PATCH/PUT/DELETE
+   *  callers must opt in explicitly because not every mutation is safe to
+   *  re-issue — set this only when the endpoint is idempotent (uses an
+   *  Idempotency-Key, an If-Match etag guard, or is a pure overwrite). */
+  retry?: boolean;
 }
+
+/** Backoff between retry attempts. Two short delays — enough to ride out a
+ *  ~1s blip without making a flaky endpoint feel slow. Jitter is applied
+ *  on top to avoid thundering-herd retries from synchronised clients. */
+const RETRY_BACKOFF_MS = [250, 1000] as const;
 
 export async function apiFetch<T>(
   method: string,
@@ -83,90 +94,115 @@ export async function apiFetch<T>(
     for (const [k, v] of Object.entries(opts.headers)) headers[k] = v;
   }
 
-  // Build an internal AbortController so we always own the timeout. If the
-  // caller passed their own signal, mirror its abort into ours so either
-  // source kills the request.
-  const controller = new AbortController();
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  let timedOut = false;
-  const timer =
-    timeoutMs > 0
-      ? setTimeout(() => {
-          timedOut = true;
-          controller.abort();
-        }, timeoutMs)
-      : null;
+  const retryEnabled = opts.retry ?? method.toUpperCase() === "GET";
+  const maxAttempts = retryEnabled ? RETRY_BACKOFF_MS.length + 1 : 1;
+  let lastTransientError: ApiError | null = null;
 
-  let externalAbortHandler: (() => void) | null = null;
-  if (opts.signal) {
-    if (opts.signal.aborted) {
-      controller.abort();
-    } else {
-      externalAbortHandler = () => controller.abort();
-      opts.signal.addEventListener("abort", externalAbortHandler);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      const base = RETRY_BACKOFF_MS[attempt - 1] ?? 1000;
+      const jitter = Math.random() * 0.4 * base;
+      await new Promise((r) => setTimeout(r, base + jitter));
     }
-  }
 
-  let res: Response;
-  try {
-    res = await fetch(path, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } catch (e) {
+    // Build an internal AbortController so we always own the timeout. If the
+    // caller passed their own signal, mirror its abort into ours so either
+    // source kills the request. Re-armed per attempt — a previous timeout
+    // must not poison the next try.
+    const controller = new AbortController();
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    let timedOut = false;
+    const timer =
+      timeoutMs > 0
+        ? setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+          }, timeoutMs)
+        : null;
+
+    let externalAbortHandler: (() => void) | null = null;
+    if (opts.signal) {
+      if (opts.signal.aborted) {
+        controller.abort();
+      } else {
+        externalAbortHandler = () => controller.abort();
+        opts.signal.addEventListener("abort", externalAbortHandler);
+      }
+    }
+
+    let res: Response;
+    try {
+      res = await fetch(path, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      if (timer) clearTimeout(timer);
+      if (externalAbortHandler && opts.signal) {
+        opts.signal.removeEventListener("abort", externalAbortHandler);
+      }
+      // External abort takes priority over an internal timeout race — if the
+      // caller cancelled, never retry.
+      if (opts.signal?.aborted) {
+        throw new ApiError(0, "aborted", "Request aborted");
+      }
+      if (timedOut) {
+        lastTransientError = new ApiError(0, "timeout", "Request timed out");
+      } else {
+        // TypeError("Failed to fetch") in Chrome/Firefox, "Network request
+        // failed" in Safari, "NetworkError when attempting to fetch
+        // resource." in some older Firefox builds — all map to the same
+        // condition.
+        lastTransientError = new ApiError(0, "network_error", "Network unavailable");
+      }
+      continue;
+    }
     if (timer) clearTimeout(timer);
     if (externalAbortHandler && opts.signal) {
       opts.signal.removeEventListener("abort", externalAbortHandler);
     }
-    if (timedOut) {
-      throw new ApiError(0, "timeout", "Request timed out");
-    }
-    if (opts.signal?.aborted) {
-      throw new ApiError(0, "aborted", "Request aborted");
-    }
-    // TypeError("Failed to fetch") in Chrome/Firefox, "Network request failed"
-    // in Safari, "NetworkError when attempting to fetch resource." in some
-    // older Firefox builds — all map to the same condition.
-    throw new ApiError(0, "network_error", "Network unavailable");
-  }
-  if (timer) clearTimeout(timer);
-  if (externalAbortHandler && opts.signal) {
-    opts.signal.removeEventListener("abort", externalAbortHandler);
-  }
 
-  let data: unknown = null;
-  const text = await res.text();
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      // Non-JSON response (e.g. HTML 502) — treat as raw error message.
-    }
-  }
-
-  if (!res.ok) {
-    const errBody = (data ?? {}) as { error?: string; detail?: unknown };
-    const msg = errBody.error ?? `Request failed (${res.status})`;
-    if (res.status === 401) {
-      // Surface as a typed event so AuthProvider can pop the
-      // SessionExpiredDialog. We deliberately do NOT call setToken(null)
-      // here — clearing the token mid-render would yank the user back to
-      // /login and lose whatever they had typed. The dialog handler decides
-      // whether to clear after the user reacts.
-      if (typeof window !== "undefined") {
-        try {
-          window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
-        } catch {
-          /* CustomEvent may not exist on some odd embeds */
-        }
+    let data: unknown = null;
+    const text = await res.text();
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Non-JSON response (e.g. HTML 502) — treat as raw error message.
       }
-      throw new ApiError(401, "session_expired", msg, errBody.detail);
     }
-    const code: ApiErrorCode = res.status >= 500 ? "server_error" : "client_error";
-    throw new ApiError(res.status, code, msg, errBody.detail);
+
+    if (!res.ok) {
+      const errBody = (data ?? {}) as { error?: string; detail?: unknown };
+      const msg = errBody.error ?? `Request failed (${res.status})`;
+      if (res.status === 401) {
+        // Surface as a typed event so AuthProvider can pop the
+        // SessionExpiredDialog. We deliberately do NOT call setToken(null)
+        // here — clearing the token mid-render would yank the user back to
+        // /login and lose whatever they had typed. The dialog handler decides
+        // whether to clear after the user reacts.
+        if (typeof window !== "undefined") {
+          try {
+            window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
+          } catch {
+            /* CustomEvent may not exist on some odd embeds */
+          }
+        }
+        // 401 is not transient — never retry.
+        throw new ApiError(401, "session_expired", msg, errBody.detail);
+      }
+      if (res.status >= 500) {
+        lastTransientError = new ApiError(res.status, "server_error", msg, errBody.detail);
+        continue;
+      }
+      // 4xx — caller's request was rejected; retry would just re-fail.
+      throw new ApiError(res.status, "client_error", msg, errBody.detail);
+    }
+
+    return data as T;
   }
 
-  return data as T;
+  throw lastTransientError ?? new ApiError(0, "network_error", "Network unavailable");
 }

@@ -350,6 +350,7 @@ export interface LocaleMessages {
     date_changed_title: string;
     date_changed_body: string;
     date_changed_button: string;
+    date_changed_dismiss_aria: string;
     date_changed_sending: string;
     date_changed_confirm_title: string;
     date_changed_confirm_body: string;
@@ -1092,6 +1093,12 @@ export interface LocaleMessages {
     snapshot_restored: string;
     /** Generic failure toast for a restore round-trip. */
     snapshot_restore_failed: string;
+    /** Button label on each snapshot card — opens the breakdown dialog. */
+    snapshot_breakdown_label: string;
+    /** Title of the per-snapshot category breakdown dialog. */
+    snapshot_breakdown_title: string;
+    /** Row label for the totals row at the bottom of the breakdown table. */
+    snapshot_breakdown_total_label: string;
     add_template_help: string;
     edit_planned_aria: string;
     per_guest_unit: string;

@@ -359,6 +359,7 @@ const hu: LocaleMessages = {
     date_changed_body:
       "Új dátumot rögzítettetek. Küldjünk értesítést a vendégeknek, hogy a régi időpont már nem érvényes?",
     date_changed_button: "Vendégek értesítése",
+    date_changed_dismiss_aria: "Mégsem szükséges értesítés",
     date_changed_sending: "Küldés…",
     date_changed_confirm_title: "Dátumváltozás kiküldése",
     date_changed_confirm_body:
@@ -1079,6 +1080,9 @@ const hu: LocaleMessages = {
     snapshot_restore_confirm_yes: "Igen, állítsd vissza",
     snapshot_restored: "Pillanatkép visszaállítva · {n} sor",
     snapshot_restore_failed: "A pillanatkép visszaállítása nem sikerült.",
+    snapshot_breakdown_label: "Bontás megtekintése",
+    snapshot_breakdown_title: "Pillanatkép bontása",
+    snapshot_breakdown_total_label: "Összesen",
     add_template_help: "Válassz kategóriát",
     edit_planned_aria: "{category} tervezett összegének módosítása",
     per_guest_unit: "{n}/fő",

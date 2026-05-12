@@ -1333,6 +1333,15 @@ async function handleNotifyDateChange(ctx: Ctx): Promise<Response> {
     notified += 1;
   }
 
+  // Clear the snapshot so the dashboard banner disappears on the next refresh.
+  // We do this after the fan-out loop (which only schedules emails) so a hard
+  // crash mid-loop wouldn't strand the flag set — `sendKind` is fire-and-forget
+  // anyway, so once we've enqueued the work the snapshot has served its purpose.
+  db.prepare("UPDATE couples SET previous_wedding_date = NULL, updated_at = ? WHERE id = ?").run(
+    now(),
+    couple.id,
+  );
+
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -1343,6 +1352,32 @@ async function handleNotifyDateChange(ctx: Ctx): Promise<Response> {
   });
 
   return json({ notified_count: notified, skipped_count: skipped });
+}
+
+/** Dismiss the date-changed banner without sending notifications. Clears
+ *  `previous_wedding_date` so the dashboard banner disappears, and audit-logs
+ *  the choice so partners can see "X dismissed the date-change notice" in the
+ *  recent-activity feed. No emails go out. */
+function handleDismissDateChange(ctx: Ctx): Response {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to dismiss");
+
+  db.prepare("UPDATE couples SET previous_wedding_date = NULL, updated_at = ? WHERE id = ?").run(
+    now(),
+    couple.id,
+  );
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.dismiss_date_change",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: { dismissed: true },
+  });
+
+  return json({ ok: true });
 }
 
 /** Returns the OTHER partner's identity + lifecycle state from the calling
@@ -1416,6 +1451,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.pause",
   "couple.unpause",
   "couple.notify_date_change",
+  "couple.dismiss_date_change",
   "couple.onboard",
   "couple.export",
   // Loop C₁: per-field splits so partner B sees "Anna changed the budget cap"
@@ -1542,4 +1578,5 @@ export function registerCoupleRoutes(router: Router) {
   router.post("/api/invites/:token/accept", handleAcceptInvite, true);
   router.post("/api/couples/current/archive", handleArchive, true);
   router.post("/api/couples/current/notify-date-change", handleNotifyDateChange, true);
+  router.post("/api/couples/current/dismiss-date-change", handleDismissDateChange, true);
 }

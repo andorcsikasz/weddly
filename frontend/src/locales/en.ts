@@ -360,6 +360,7 @@ const en: LocaleMessages = {
     date_changed_body:
       "Your wedding date has changed. Want to email everyone so they know the old date is no longer valid?",
     date_changed_button: "Notify guests",
+    date_changed_dismiss_aria: "Dismiss — no notification needed",
     date_changed_sending: "Sending…",
     date_changed_confirm_title: "Send date-change notification",
     date_changed_confirm_body:
@@ -1075,6 +1076,9 @@ const en: LocaleMessages = {
     snapshot_restore_confirm_yes: "Yes, restore",
     snapshot_restored: "Snapshot restored · {n} lines",
     snapshot_restore_failed: "Couldn't restore the snapshot.",
+    snapshot_breakdown_label: "View breakdown",
+    snapshot_breakdown_title: "Snapshot breakdown",
+    snapshot_breakdown_total_label: "Total",
     add_template_help: "Pick a category to add",
     edit_planned_aria: "Edit planned amount for {category}",
     per_guest_unit: "{n}/guest",

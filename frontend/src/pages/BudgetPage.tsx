@@ -2,12 +2,20 @@
 // re-prices per-guest categories live, plus an inline-editable line table.
 
 import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple } from "@shared/types";
-import { ArrowUpRight, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  BarChart3,
+  Loader2,
+  Plus,
+  RotateCcw,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CATEGORY_ICONS, CostPlanningCard } from "../components/CostPlanningCard";
-import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
 import {
@@ -747,6 +755,7 @@ function SnapshotCard({
   onRemove: () => void;
 }) {
   const { t } = useT();
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
   let planned = 0;
   let actual = 0;
   try {
@@ -787,7 +796,9 @@ function SnapshotCard({
           </dd>
         </div>
       </dl>
-      <div className="mt-3 flex items-center gap-1">
+      {/* Three actions on a tight card — flex-wrap so they spill to a second
+       *  row on the narrowest layouts instead of overflowing horizontally. */}
+      <div className="mt-3 flex flex-wrap items-center gap-1">
         <button
           type="button"
           className="btn-ghost btn-sm"
@@ -804,6 +815,15 @@ function SnapshotCard({
         </button>
         <button
           type="button"
+          className="btn-ghost btn-sm"
+          onClick={() => setBreakdownOpen(true)}
+          disabled={restoring || disabled}
+          aria-label={t("budget.snapshot_breakdown_label")}
+        >
+          <BarChart3 size={14} /> {t("budget.snapshot_breakdown_label")}
+        </button>
+        <button
+          type="button"
           className="btn-ghost btn-sm text-blush-700"
           onClick={onRemove}
           disabled={restoring || disabled}
@@ -811,7 +831,137 @@ function SnapshotCard({
           <Trash2 size={14} /> {t("budget.delete")}
         </button>
       </div>
+      {breakdownOpen && (
+        <SnapshotBreakdownDialog
+          snapshot={snapshot}
+          locale={locale}
+          onClose={() => setBreakdownOpen(false)}
+        />
+      )}
     </div>
+  );
+}
+
+/** Modal showing the per-category planned/actual totals captured inside one
+ *  saved snapshot. Lets the user inspect what's actually inside the scenario
+ *  before deciding whether to restore it. */
+function SnapshotBreakdownDialog({
+  snapshot,
+  locale,
+  onClose,
+}: {
+  snapshot: BudgetSnapshot;
+  locale: "hu" | "en";
+  onClose: () => void;
+}) {
+  const { t } = useT();
+
+  // Parse + aggregate by category. Defensive: a malformed payload yields an
+  // empty breakdown rather than a crash (matches `SnapshotCard`'s inline
+  // parse).
+  const { rows, totalPlanned, totalActual } = useMemo(() => {
+    const agg = new Map<BudgetCategory, { planned: number; actual: number }>();
+    try {
+      const arr = JSON.parse(snapshot.payload_json) as {
+        category?: unknown;
+        planned_huf?: unknown;
+        actual_huf?: unknown;
+      }[];
+      for (const l of arr) {
+        // Only trust strings that match the closed BudgetCategory set. The
+        // mapper-side guard already validates server-issued categories, but
+        // payload_json is opaque JSON so we re-check here.
+        const cat = l.category as BudgetCategory;
+        if (typeof cat !== "string") continue;
+        const planned = Number(l.planned_huf) || 0;
+        const actual = Number(l.actual_huf) || 0;
+        const entry = agg.get(cat) ?? { planned: 0, actual: 0 };
+        entry.planned += planned;
+        entry.actual += actual;
+        agg.set(cat, entry);
+      }
+    } catch {
+      // ignore — empty breakdown table is the graceful fallback.
+    }
+    const rows = Array.from(agg.entries())
+      .map(([category, totals]) => ({ category, ...totals }))
+      // Hide all-zero categories so the table stays scannable.
+      .filter((r) => r.planned !== 0 || r.actual !== 0)
+      // Heaviest planned spend first.
+      .sort((a, b) => b.planned - a.planned);
+    let totalPlanned = 0;
+    let totalActual = 0;
+    for (const r of rows) {
+      totalPlanned += r.planned;
+      totalActual += r.actual;
+    }
+    return { rows, totalPlanned, totalActual };
+  }, [snapshot.payload_json]);
+
+  return (
+    <Dialog
+      open
+      title={t("budget.snapshot_breakdown_title")}
+      role="dialog"
+      closeOnBackdrop
+      onClose={onClose}
+      footer={
+        <button type="button" className="btn-primary" onClick={onClose}>
+          {t("a11y.close")}
+        </button>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-xs uppercase tracking-wide text-ink-400">{snapshot.name}</p>
+        {rows.length === 0 ? (
+          <p className="text-ink-500">{t("budget.lines_empty")}</p>
+        ) : (
+          <div className="-mx-2 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
+                <tr>
+                  <th className="px-2 py-2 font-medium">{t("budget.category")}</th>
+                  <th className="px-2 py-2 text-right font-medium">{t("budget.planned")}</th>
+                  <th className="px-2 py-2 text-right font-medium">{t("budget.actual")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
+                  const Icon = CATEGORY_ICONS[row.category];
+                  return (
+                    <tr key={row.category} className="border-t border-paper-200">
+                      <td className="px-2 py-2 align-middle">
+                        <span className="inline-flex items-center gap-2 text-ink-800">
+                          <Icon size={14} className="text-ink-500" aria-hidden />
+                          {t(`budget.cat.${row.category}`)}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900">
+                        {formatHuf(row.planned, locale)}
+                      </td>
+                      <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900">
+                        {formatHuf(row.actual, locale)}
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr className="border-t border-paper-300 font-medium">
+                  <td className="px-2 py-2 align-middle text-ink-900">
+                    {t("budget.snapshot_breakdown_total_label")}
+                  </td>
+                  <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900">
+                    {formatHuf(totalPlanned, locale)}
+                  </td>
+                  <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900">
+                    {formatHuf(totalActual, locale)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </Dialog>
   );
 }
 

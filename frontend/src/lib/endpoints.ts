@@ -140,6 +140,11 @@ export const coupleApi = {
       "/api/couples/current/notify-date-change",
       {},
     ),
+  /** Dismiss the dashboard "date changed" banner without sending notifications.
+   *  Clears `previous_wedding_date` server-side so the banner disappears on the
+   *  next refresh. No emails go out. */
+  dismissDateChange: () =>
+    apiFetch<{ ok: true }>("POST", "/api/couples/current/dismiss-date-change", {}),
   updateSlug: (slug: string) =>
     apiFetch<{ couple: Couple }>("PATCH", "/api/couples/slug", { slug }),
   createInvite: (body: { invited_email?: string }) =>

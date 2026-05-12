@@ -31,6 +31,7 @@ import {
   Users,
   UtensilsCrossed,
   Wallet,
+  X,
 } from "lucide-react";
 import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
@@ -110,6 +111,7 @@ export default function DashboardPage() {
   // Date-changed notify + archive — separate spinners so the button labels
   // can swap to a localised "sending…" / "archiving…" copy on press.
   const [notifyingDateChange, setNotifyingDateChange] = useState(false);
+  const [dismissingDateChange, setDismissingDateChange] = useState(false);
   const [archiving, setArchiving] = useState(false);
   // Cancel-invite spinner. Must be declared up here with the other useState
   // calls — placing it after the early `data === "loading"` return below
@@ -448,6 +450,23 @@ export default function DashboardPage() {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setNotifyingDateChange(false);
+    }
+  }
+
+  // Dismiss the banner without sending notifications. Just clears the
+  // server-side snapshot and refreshes the couple so the banner disappears.
+  // No confirm + no toast — the X icon is its own intent signal.
+  async function onDismissDateChange() {
+    if (data === "loading" || data === null) return;
+    setDismissingDateChange(true);
+    try {
+      await coupleApi.dismissDateChange();
+      const cur = await coupleApi.current();
+      if (cur.couple) setData({ ...data, couple: cur.couple });
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setDismissingDateChange(false);
     }
   }
 
