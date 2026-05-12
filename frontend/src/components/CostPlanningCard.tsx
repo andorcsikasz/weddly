@@ -396,16 +396,16 @@ function CategoryRow({
   // localValue. The slider re-sizes after commit.
   const plannedDisplay = Math.round(plannedBaseline * scaleFactor);
 
-  // HUF per percent-of-column. Derived from widthAnchor so the panel-biggest
-  // committed row paints exactly ANCHOR_BLUE_PCT % of the column with a fixed
-  // gray tail beyond it. Same scale across all rows → consistent feel.
-  const hufPerPct = widthAnchor / ANCHOR_BLUE_PCT;
   // Drag headroom is a *fixed HUF amount* — one drag can grow the value by
   // at most FIXED_DRAG_HUF_RANGE before release. No compounding rowMax.
   const rowMax = plannedDisplay + FIXED_DRAG_HUF_RANGE;
-  // Total slider width (column-percent), clamped so very small/empty rows
-  // are still grabbable and a dominant row doesn't overflow the column.
-  const widthPct = Math.max(8, Math.min(100, rowMax / hufPerPct));
+  // Slider always spans the full row — the user asked for the gray track to
+  // reach the right edge of every row rather than ending early on small
+  // categories. We keep widthAnchor referenced in the panel-level peak math
+  // so the per-row drag step / formatting stays stable, but the row's CSS
+  // width is now constant.
+  void widthAnchor;
+  const widthPct = 100;
   // Gradient fill follows the LIVE value so dragging feels instant; the
   // slider element itself stays the same width during a drag.
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
