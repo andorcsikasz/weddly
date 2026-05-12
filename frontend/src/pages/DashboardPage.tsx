@@ -953,7 +953,10 @@ export default function DashboardPage() {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
               {t("dashboard.quick_links_title")}
             </h2>
-            <div className="flex flex-wrap gap-2">
+            {/* Eight quick-link pills laid out as an equal-column grid so they
+             *  span the full container width — 4 columns on mobile, 8 on
+             *  ≥sm. The pills inside stretch with the cells. */}
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
               <IconNavLink to="/app/guests" icon={<Users size={18} />} label={t("nav.guests")} />
               <IconNavLink
                 to="/app/budget"
@@ -1143,7 +1146,7 @@ function IconNavLink({ to, icon, label }: { to: string; icon: JSX.Element; label
       to={to}
       title={label}
       aria-label={label}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-paper-50 text-ink-700 ring-1 ring-paper-200 transition hover:bg-blush-100 hover:text-blush-700 hover:ring-blush-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300"
+      className="inline-flex h-10 w-full items-center justify-center rounded-full bg-paper-50 text-ink-700 ring-1 ring-paper-200 transition hover:bg-blush-100 hover:text-blush-700 hover:ring-blush-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300"
     >
       {icon}
     </Link>

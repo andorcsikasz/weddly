@@ -15,7 +15,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
-import { type PDFFont, PDFDocument, rgb } from "pdf-lib";
+import { type PDFFont, type PDFPage, PDFDocument, rgb } from "pdf-lib";
 import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
@@ -123,6 +123,30 @@ interface TableLayout {
   ry_mm: number;
 }
 
+/** Scale + offset describing the affine map applied to the user's plan to
+ *  fit it on the page. Only meaningful when the user actually placed tables
+ *  (i.e. `useUserPos` was true inside `layoutTables`). When `null`, the PDF
+ *  used the auto-flow branch and there's no single scale to draw a 50cm
+ *  real-world grid against. */
+interface PlanTransform {
+  /** Page-mm per real-world-mm. */
+  scale: number;
+  /** Page-mm offset applied AFTER scaling (so page_x = real_x * scale + offsetX). */
+  offsetX: number;
+  offsetY: number;
+  /** Real-world bounding-box used for the fit (inclusive). */
+  planMinX: number;
+  planMinY: number;
+  planMaxX: number;
+  planMaxY: number;
+}
+
+interface LayoutResult {
+  tableLayouts: Map<number, TableLayout>;
+  /** Null when the renderer fell back to the auto-flow grid path. */
+  transform: PlanTransform | null;
+}
+
 function tableHalfDims(t: SeatingTable): { rx: number; ry: number } {
   if (t.shape === "round") {
     const r = t.width_mm / 2;
@@ -140,11 +164,7 @@ function tableHalfDims(t: SeatingTable): { rx: number; ry: number } {
 /** Lay tables out on the page. If any table has a positive position, we use
  *  the user-set coordinates and render every table at its real-world size. If
  *  no positions are set, we auto-flow into a grid scaled to fit. */
-function layoutTables(
-  tables: SeatingTable[],
-  pageW_mm: number,
-  pageH_mm: number,
-): Map<number, TableLayout> {
+function layoutTables(tables: SeatingTable[], pageW_mm: number, pageH_mm: number): LayoutResult {
   const margin = 20;
   const headerH = 30;
   const useUserPos = tables.some((t) => t.x_mm > 0 || t.y_mm > 0);
@@ -180,7 +200,18 @@ function layoutTables(
         ry_mm: ry * scale,
       });
     }
-    return out;
+    return {
+      tableLayouts: out,
+      transform: {
+        scale,
+        offsetX,
+        offsetY,
+        planMinX: minX,
+        planMinY: minY,
+        planMaxX: maxX,
+        planMaxY: maxY,
+      },
+    };
   }
 
   // Auto grid — fit a circle of radius cell*0.35 into each cell.
@@ -203,7 +234,53 @@ function layoutTables(
       ry_mm: ry * fit,
     });
   }
-  return out;
+  return { tableLayouts: out, transform: null };
+}
+
+/** Real-world 50-cm dashed grid behind the tables. Lines are spaced at
+ *  GRID_STEP_MM in user coordinates, then mapped through `transform` to
+ *  page-mm. Faint colour + 1.2 / 2.4 mm dash so it reads as planning paper
+ *  without dominating.
+ *
+ *  Coordinate convention matches the rest of this file: y is used as
+ *  pdf-lib's raw y (no flip), so the grid lines up with the same
+ *  table-render code. */
+const GRID_STEP_MM = 500;
+function drawPlanGrid(
+  page: PDFPage,
+  transform: PlanTransform,
+  _pageW_mm: number,
+  _pageH_mm: number,
+): void {
+  const { scale, offsetX, offsetY, planMinX, planMinY, planMaxX, planMaxY } = transform;
+  // Snap to the nearest grid line outside the bounding box so the dashes
+  // visibly extend past every table without leaving a flat strip.
+  const startX = Math.floor(planMinX / GRID_STEP_MM) * GRID_STEP_MM;
+  const endX = Math.ceil(planMaxX / GRID_STEP_MM) * GRID_STEP_MM;
+  const startY = Math.floor(planMinY / GRID_STEP_MM) * GRID_STEP_MM;
+  const endY = Math.ceil(planMaxY / GRID_STEP_MM) * GRID_STEP_MM;
+  const xPt = (xMm: number): number => mm(xMm * scale + offsetX);
+  const yPt = (yMm: number): number => mm(yMm * scale + offsetY);
+  const colour = rgb(0.78, 0.74, 0.66);
+  const dash = [mm(1.2), mm(2.4)];
+  for (let x = startX; x <= endX; x += GRID_STEP_MM) {
+    page.drawLine({
+      start: { x: xPt(x), y: yPt(startY) },
+      end: { x: xPt(x), y: yPt(endY) },
+      thickness: 0.35,
+      color: colour,
+      dashArray: dash,
+    });
+  }
+  for (let y = startY; y <= endY; y += GRID_STEP_MM) {
+    page.drawLine({
+      start: { x: xPt(startX), y: yPt(y) },
+      end: { x: xPt(endX), y: yPt(y) },
+      thickness: 0.35,
+      color: colour,
+      dashArray: dash,
+    });
+  }
 }
 
 export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<Uint8Array> {
@@ -256,7 +333,15 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     color: rgb(0.27, 0.33, 0.48),
   });
 
-  const positions = layoutTables(input.tables, width_mm, height_mm);
+  const { tableLayouts: positions, transform } = layoutTables(input.tables, width_mm, height_mm);
+
+  // Faint 50 cm dashed grid behind the tables — matches the on-screen
+  // canvas and gives the couple a real-world ruler when planning the
+  // room on paper. Only drawn when the user actually placed the tables
+  // (auto-flow renders cell-fitted shapes, no consistent real-world scale).
+  if (transform) {
+    drawPlanGrid(page, transform, width_mm, height_mm);
+  }
   const guestById = new Map(input.guests.map((g) => [g.id, g]));
   const seatsByTable = new Map<number, SeatAssignment[]>();
   for (const a of input.assignments) {
