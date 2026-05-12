@@ -320,7 +320,7 @@ export default function AdminSuppliersPage() {
           </button>
           <button
             type="button"
-            className="btn-ghost btn-sm text-violet-800"
+            className="btn-ghost btn-sm text-violet-950"
             onClick={onBulkDelete}
             disabled={selected.size === 0}
           >
@@ -375,8 +375,8 @@ function FilterChip({
       aria-pressed={active}
       className={
         active
-          ? "rounded-full border border-violet-700 bg-violet-700 px-3 py-1 text-xs font-medium text-paper-100"
-          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-800 hover:border-violet-300"
+          ? "rounded-full border border-violet-900 bg-violet-900 px-3 py-1 text-xs font-medium text-paper-100"
+          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-950 hover:border-violet-300"
       }
     >
       {label}
@@ -393,11 +393,11 @@ function StatusPill({
 }) {
   const cls =
     status === "active"
-      ? "border-violet-700 bg-violet-700 text-paper-100"
+      ? "border-violet-900 bg-violet-900 text-paper-100"
       : status === "awaiting_review"
-        ? "border-violet-500 bg-violet-100 text-violet-900 font-semibold"
+        ? "border-violet-700 bg-violet-100 text-violet-900 font-semibold"
         : status === "pending"
-          ? "border-violet-300 bg-violet-50 text-violet-800"
+          ? "border-violet-300 bg-violet-50 text-violet-950"
           : "border-paper-300 bg-paper-100 text-ink-500";
   return (
     <span
@@ -517,7 +517,7 @@ function SupplierCard({
   return (
     <article
       className={`card flex flex-col gap-5 p-5 transition ${
-        selected ? "ring-2 ring-violet-500" : ""
+        selected ? "ring-2 ring-violet-700" : ""
       }`}
       aria-label={s.name}
     >
@@ -554,7 +554,7 @@ function SupplierCard({
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {/* Contact column */}
         <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950">
             {t("admin.suppliers_card_section_contact")}
           </h3>
           <CardField
@@ -597,7 +597,7 @@ function SupplierCard({
 
         {/* Listing column */}
         <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950">
             {t("admin.suppliers_card_section_listing")}
           </h3>
           <CardField
@@ -614,7 +614,7 @@ function SupplierCard({
 
         {/* Meta + metrics column */}
         <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950">
             {t("admin.suppliers_card_section_meta")}
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -644,7 +644,7 @@ function SupplierCard({
                 <span
                   className={
                     s.open_report_count > 0
-                      ? "inline-flex items-center gap-1 font-semibold text-violet-800"
+                      ? "inline-flex items-center gap-1 font-semibold text-violet-950"
                       : "inline-flex items-center gap-1 text-ink-500"
                   }
                 >
@@ -663,7 +663,7 @@ function SupplierCard({
        *  away doesn't silently drop a half-typed thought. */}
       <section className="flex flex-col gap-2 rounded-xl border border-paper-300 bg-paper-50 p-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950">
             {t("admin.suppliers_card_section_notes")}
           </h3>
           <span
@@ -743,7 +743,7 @@ function SupplierCard({
         ) : null}
         <button
           type="button"
-          className="btn-ghost btn-sm text-violet-800"
+          className="btn-ghost btn-sm text-violet-950"
           onClick={onDelete}
           aria-label={t("admin.delete")}
         >

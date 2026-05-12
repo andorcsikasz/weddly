@@ -142,7 +142,7 @@ export function ProfileMenu() {
               <Link
                 to={inAdminView ? "/app" : "/app/admin/suppliers"}
                 role="menuitem"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-violet-800 hover:bg-violet-50"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-violet-950 hover:bg-violet-100"
               >
                 {inAdminView ? (
                   <ArrowLeftRight size={16} aria-hidden="true" />

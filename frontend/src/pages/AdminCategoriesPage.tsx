@@ -136,7 +136,7 @@ export default function AdminCategoriesPage() {
                   </button>
                   <button
                     type="button"
-                    className="btn-ghost btn-sm text-violet-800"
+                    className="btn-ghost btn-sm text-violet-950"
                     onClick={() => onDeleteGroup(g)}
                     aria-label={t("admin.taxonomy_delete")}
                   >
@@ -176,7 +176,7 @@ export default function AdminCategoriesPage() {
                         </button>
                         <button
                           type="button"
-                          className="btn-ghost btn-sm text-violet-800"
+                          className="btn-ghost btn-sm text-violet-950"
                           onClick={() => onDeleteCategory(c)}
                           aria-label={t("admin.taxonomy_delete")}
                         >

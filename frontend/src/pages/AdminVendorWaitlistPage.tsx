@@ -33,7 +33,7 @@ const STATUS_CARD_CLASSES: Record<VendorWaitlistStatus, string> = {
 
 const STATUS_PILL_CLASSES: Record<VendorWaitlistStatus, string> = {
   new: "border-blush-300 bg-blush-100 text-blush-800",
-  under_review: "border-violet-300 bg-violet-100 text-violet-800",
+  under_review: "border-violet-300 bg-violet-100 text-violet-950",
   accepted: "border-sage-300 bg-sage-100 text-sage-800",
   rejected: "border-paper-300 bg-paper-200 text-ink-700",
 };
@@ -203,8 +203,8 @@ function FilterPill({
       aria-pressed={active}
       className={
         active
-          ? "rounded-full border border-violet-700 bg-violet-700 px-3 py-1 text-xs font-medium text-paper-100"
-          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-800 hover:border-violet-300"
+          ? "rounded-full border border-violet-900 bg-violet-900 px-3 py-1 text-xs font-medium text-paper-100"
+          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-950 hover:border-violet-300"
       }
     >
       {label}
@@ -443,8 +443,8 @@ function RespondDialog({
               current={outcome}
               label={t("admin.waitlist_modal_outcome_under_review")}
               onPick={pickOutcome}
-              tint="bg-violet-50 border-violet-300 text-violet-800"
-              activeTint="bg-violet-700 border-violet-700 text-white"
+              tint="bg-violet-50 border-violet-300 text-violet-950"
+              activeTint="bg-violet-900 border-violet-900 text-white"
             />
             <OutcomeButton
               outcome="rejected"

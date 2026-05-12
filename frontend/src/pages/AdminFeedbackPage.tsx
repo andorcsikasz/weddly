@@ -215,7 +215,7 @@ export default function AdminFeedbackPage() {
                         )}
                         <button
                           type="button"
-                          className="btn-ghost btn-sm text-violet-800 hover:bg-violet-50"
+                          className="btn-ghost btn-sm text-violet-950 hover:bg-violet-50"
                           disabled={pendingId === e.id}
                           onClick={() => remove(e.id)}
                         >
@@ -243,9 +243,9 @@ function StatusPill({
 }) {
   const className =
     status === "new"
-      ? "inline-flex items-center rounded-full bg-violet-700 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-paper-100"
+      ? "inline-flex items-center rounded-full bg-violet-900 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-paper-100"
       : status === "read"
-        ? "inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-800"
+        ? "inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-950"
         : status === "resolved"
           ? "inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-green-700"
           : "inline-flex items-center rounded-full border border-paper-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-500";

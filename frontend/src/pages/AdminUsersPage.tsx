@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
           {!u.verified_email &&
             (verifySentIds.has(u.id) ? (
               <span
-                className="inline-flex items-center gap-1 rounded-md bg-violet-100 px-1.5 py-0.5 text-[11px] font-medium text-violet-800"
+                className="inline-flex items-center gap-1 rounded-md bg-violet-100 px-1.5 py-0.5 text-[11px] font-medium text-violet-950"
                 title={t("admin.resend_verify_sent_label")}
               >
                 <Check size={12} aria-hidden />
@@ -210,7 +210,7 @@ export default function AdminUsersPage() {
           {!isSelf && (
             <button
               type="button"
-              className="btn-ghost btn-sm text-violet-800"
+              className="btn-ghost btn-sm text-violet-950"
               onClick={() => onDelete(u)}
               disabled={isPending}
               title={t("admin.delete_user")}
@@ -245,7 +245,7 @@ export default function AdminUsersPage() {
                 {deletingCount > 0 && (
                   <button
                     type="button"
-                    className="btn-ghost btn-sm text-violet-800"
+                    className="btn-ghost btn-sm text-violet-950"
                     onClick={onPurgeDeleting}
                     disabled={purgingDeleting}
                   >
@@ -379,9 +379,9 @@ function Badge({
 }) {
   const cls =
     tone === "violet"
-      ? "border-violet-700 bg-violet-700 text-paper-100"
+      ? "border-violet-900 bg-violet-900 text-paper-100"
       : tone === "violet-soft"
-        ? "border-violet-300 bg-violet-100 text-violet-800"
+        ? "border-violet-400 bg-violet-100 text-violet-950"
         : "border-paper-300 bg-paper-100 text-ink-500";
   return (
     <span
