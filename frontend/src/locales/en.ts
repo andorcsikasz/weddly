@@ -808,6 +808,8 @@ const en: LocaleMessages = {
     show_on_map: "Show on map",
     map_not_found: "We couldn't pin this on the map. Try a more specific address.",
     map_error: "The map couldn't load. Try again later.",
+    total_slider_label: "Total budget",
+    total_slider_aria: "Total honeymoon planned amount — scales every line proportionally",
     day_one: "day",
     day_other: "days",
     budget_actual_inline: "Spent: {actual}",

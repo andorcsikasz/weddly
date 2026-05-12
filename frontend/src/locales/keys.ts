@@ -787,6 +787,9 @@ export interface LocaleMessages {
     /** Body text for the map modal when Nominatim returned no hits. */
     map_not_found: string;
     map_error: string;
+    /** Master slider above the cost grid — scales every honeymoon line. */
+    total_slider_label: string;
+    total_slider_aria: string;
     /** Day-count plural — receives `{count}`. */
     day_one: string;
     day_other: string;

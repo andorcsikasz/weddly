@@ -32,6 +32,7 @@ import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { applyCategoryPlanned } from "../lib/budget";
 import { budgetApi, coupleApi, placesApi } from "../lib/endpoints";
 import { formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -149,6 +150,21 @@ function honeymoonSliderMax(couple: Couple | null, totalPlanned: number): number
   return Math.max(500_000, totalPlanned * 2);
 }
 
+/** Ceiling for the master "total honeymoon" slider. The sum of all
+ *  sub-categories needs more headroom than any single line — we cap at
+ *  the couple's wedding budget (so honeymoon can in theory equal the
+ *  whole budget but no more), falling back to 1.5× the current total
+ *  or a 2M floor when no cap is set. */
+function honeymoonTotalMax(couple: Couple | null, totalPlanned: number): number {
+  if (couple?.budget_goal.kind === "exact" && couple.budget_goal.exact_huf) {
+    return Math.max(2_000_000, couple.budget_goal.exact_huf);
+  }
+  if (couple?.budget_goal.kind === "range" && couple.budget_goal.max_huf) {
+    return Math.max(2_000_000, couple.budget_goal.max_huf);
+  }
+  return Math.max(2_000_000, Math.round(totalPlanned * 1.5));
+}
+
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 
 export default function HoneymoonPage() {
@@ -250,6 +266,29 @@ export default function HoneymoonPage() {
     }
   }
 
+  /** Master slider commit — scales every honeymoon line proportionally to
+   *  match the new total. Delegates to the shared helper so the round-off
+   *  drift handling stays in one place. */
+  async function setHoneymoonTotal(newTotal: number) {
+    try {
+      const next = await applyCategoryPlanned(
+        "honeymoon",
+        newTotal,
+        lines,
+        t("honeymoon.preset.other"),
+      );
+      setLines(next);
+      publish("budget:changed");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        toast.error(t("budget.save_conflict"));
+        refresh();
+        return;
+      }
+      toast.error(t("budget.save_failed_retry"));
+    }
+  }
+
   async function removeLine(line: BudgetLine) {
     const ok = await confirm({
       title: t("common.confirm_delete_title"),
@@ -309,6 +348,15 @@ export default function HoneymoonPage() {
           </div>
           {honeymoonLines.length > 0 && <PresetChips onPick={addPreset} compact />}
         </div>
+
+        {honeymoonLines.length > 0 && (
+          <TotalSlider
+            total={totals.planned}
+            sliderMax={honeymoonTotalMax(couple, totals.planned)}
+            locale={locale}
+            onCommit={setHoneymoonTotal}
+          />
+        )}
 
         {honeymoonLines.length === 0 ? (
           <div className="card flex flex-col items-start gap-4 text-left">
@@ -733,6 +781,77 @@ function BudgetSummaryTile({
 }
 
 /* ─── Cost grid ────────────────────────────────────────────────────────── */
+
+/** Master slider above the cost grid. Drives the SUM of every honeymoon
+ *  line — scaling each sub-category proportionally on commit. Local drag
+ *  state mirrors the per-card pattern so the rail feels instant, the API
+ *  fan-out only fires on release. */
+function TotalSlider({
+  total,
+  sliderMax,
+  locale,
+  onCommit,
+}: {
+  total: number;
+  sliderMax: number;
+  locale: "hu" | "en";
+  onCommit: (next: number) => Promise<void>;
+}) {
+  const { t } = useT();
+  const [localValue, setLocalValue] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!saving) setLocalValue(null);
+  }, [total, saving]);
+
+  const editValue = localValue ?? total;
+  // Coarser step than the per-line sliders — the master moves a bigger
+  // number; 25k under 5M and 50k above keeps the thumb feeling decisive.
+  const step = sliderMax >= 5_000_000 ? 50_000 : 25_000;
+
+  async function commit(next: number) {
+    const snapped = Math.round(next / step) * step;
+    if (snapped === total) {
+      setLocalValue(null);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onCommit(snapped);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="card mb-4 bg-gradient-to-br from-blush-50 via-paper-50 to-paper-50">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
+          {t("honeymoon.total_slider_label")}
+        </span>
+        <span className="font-serif text-2xl font-semibold tabular-nums text-ink-900 sm:text-3xl">
+          {formatHuf(editValue, locale)}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={sliderMax}
+        step={step}
+        value={editValue}
+        disabled={saving}
+        onChange={(e) => setLocalValue(Number(e.target.value))}
+        onMouseUp={(e) => commit(Number(e.currentTarget.value))}
+        onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
+        onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+        className="range-fill mt-3 block w-full"
+        style={rangeFillStyle(editValue, 0, sliderMax)}
+        aria-label={t("honeymoon.total_slider_aria")}
+      />
+    </div>
+  );
+}
 
 function PresetChips({
   onPick,

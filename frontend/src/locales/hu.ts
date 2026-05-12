@@ -809,6 +809,8 @@ const hu: LocaleMessages = {
     show_on_map: "Mutasd a térképen",
     map_not_found: "Nem találtuk meg ezt a helyet a térképen. Próbálj pontosabb címet.",
     map_error: "A térkép betöltése nem sikerült. Próbáld újra később.",
+    total_slider_label: "Teljes keret",
+    total_slider_aria: "Nászút összes tervezett kerete — a tételek arányosan változnak",
     day_one: "nap",
     day_other: "nap",
     budget_actual_inline: "Eddig: {actual}",
