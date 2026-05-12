@@ -269,7 +269,7 @@ function SideLink({
       end={to === "/app"}
       className={({ isActive }) =>
         `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
-          isActive ? "bg-ink-800 text-paper-100" : "text-ink-700 hover:bg-paper-200"
+          isActive ? "stationery-dark text-paper-100" : "text-ink-700 hover:bg-paper-200"
         }`
       }
     >
