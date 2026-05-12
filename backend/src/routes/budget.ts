@@ -25,6 +25,26 @@ const VALID_CATEGORIES: ReadonlySet<BudgetCategory> = new Set([
   "other",
 ]);
 
+/** Decode `couples.frozen_categories_json` into a lookup set. Malformed JSON
+ *  or unknown entries are silently treated as "not frozen" — the column has a
+ *  '[]' default so on a healthy install we never hit the catch branch. */
+function parseFrozenCategoriesJson(raw: string | null | undefined): Set<BudgetCategory> {
+  const set = new Set<BudgetCategory>();
+  if (!raw) return set;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return set;
+    for (const v of parsed) {
+      if (typeof v === "string" && VALID_CATEGORIES.has(v as BudgetCategory)) {
+        set.add(v as BudgetCategory);
+      }
+    }
+  } catch {
+    // Fall through with an empty set.
+  }
+  return set;
+}
+
 interface LineRow {
   id: number;
   couple_id: number;
@@ -130,6 +150,13 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<UpsertLineBody>(ctx.req);
   const parsed = parseLineBody(body);
+  // Refuse to add a new line in a frozen category — it'd inflate the locked
+  // category total. The frontend hides the "+ line" affordance for frozen
+  // rows, so this is the belt-and-braces guard against a stale tab.
+  const frozenSet = parseFrozenCategoriesJson(couple.frozen_categories_json);
+  if (frozenSet.has(parsed.category)) {
+    throw new HttpError(409, "This category is frozen", { code: "frozen" });
+  }
   const ts = now();
   const result = db
     .prepare(
@@ -196,6 +223,20 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
   }
 
   const body = await readJson<UpsertLineBody>(ctx.req);
+  // Frozen categories are read-only end-to-end. If the caller tries to change
+  // planned_huf on a line whose category sits in `couple.frozen_categories`,
+  // bail with `code: "frozen"` so the frontend can surface a toast and revert.
+  // Label / actual / notes still flow through — the freeze is a planned-cost
+  // pin, not a full row lock.
+  if (body.planned_huf !== undefined) {
+    const frozenSet = parseFrozenCategoriesJson(couple.frozen_categories_json);
+    if (frozenSet.has(existing.category as BudgetCategory)) {
+      const incoming = Number(body.planned_huf);
+      if (Number.isFinite(incoming) && Math.round(incoming) !== existing.planned_huf) {
+        throw new HttpError(409, "This category is frozen", { code: "frozen" });
+      }
+    }
+  }
   const parsed = parsePartialLine(body, existing);
   const ts = now();
   db.prepare(
@@ -278,6 +319,12 @@ function handleDeleteLine(ctx: Ctx): Response {
     throw new HttpError(409, "This line is managed by a DIY supplier entry", {
       code: "locked",
     });
+  }
+  // Deleting a line in a frozen category would silently drop its planned cost
+  // from the locked total. Refuse — the user must unfreeze first.
+  const frozenSet = parseFrozenCategoriesJson(couple.frozen_categories_json);
+  if (frozenSet.has(existing.category as BudgetCategory)) {
+    throw new HttpError(409, "This category is frozen", { code: "frozen" });
   }
 
   db.prepare("DELETE FROM budget_lines WHERE id = ? AND couple_id = ?").run(id, couple.id);

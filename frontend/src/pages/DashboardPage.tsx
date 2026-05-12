@@ -34,7 +34,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type JSX, type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
@@ -288,10 +288,16 @@ export default function DashboardPage() {
   // ── Scaled ROI ──────────────────────────────────────────────────────
   // Mirror CostPlanningCard's scaling so the tile tracks the slider live:
   // per-guest categories scale with count/baseline; fixed categories don't.
+  // Frozen categories skip the rescale entirely (the couple has locked them
+  // to a real quote that shouldn't drift with the headcount slider).
+  const frozenCategoriesSet = useMemo(
+    () => new Set<BudgetCategory>(couple.frozen_categories ?? []),
+    [couple.frozen_categories],
+  );
   const planningFactor = baselineCount > 0 ? effectivePlanningCount / baselineCount : 1;
   let scaledPlannedTotal = 0;
   for (const line of lines) {
-    if (PER_GUEST_CATEGORIES.has(line.category)) {
+    if (PER_GUEST_CATEGORIES.has(line.category) && !frozenCategoriesSet.has(line.category)) {
       scaledPlannedTotal += Math.round(line.planned_huf * planningFactor);
     } else {
       scaledPlannedTotal += line.planned_huf;
@@ -533,6 +539,24 @@ export default function DashboardPage() {
       const r = await coupleApi.update({
         budget_goal: { kind: "exact", exact_huf: newCapHuf, min_huf: null, max_huf: null },
       });
+      setData({ ...data, couple: r.couple });
+    } catch {
+      const r = await coupleApi.current();
+      if (r.couple) setData({ ...data, couple: r.couple });
+    }
+  }
+
+  // Toggle freeze state for a category. Optimistic local update + server
+  // PATCH — refetch on failure so the row reverts. The set lives on `couple`
+  // so it survives reload and propagates to the budget page automatically.
+  async function toggleFreeze(category: BudgetCategory) {
+    if (data === "loading" || data === null) return;
+    const current = data.couple.frozen_categories ?? [];
+    const next = current.includes(category)
+      ? current.filter((c) => c !== category)
+      : [...current, category];
+    try {
+      const r = await coupleApi.update({ frozen_categories: next });
       setData({ ...data, couple: r.couple });
     } catch {
       const r = await coupleApi.current();
@@ -922,6 +946,12 @@ export default function DashboardPage() {
               onBoundsChange={saveBounds}
               onEditPlanned={setCategoryPlanned}
               onCapChange={saveCap}
+              frozenCategories={frozenCategoriesSet}
+              onToggleFreeze={toggleFreeze}
+              // Clicking a row's amount on the dashboard should land the user
+              // in the budget table at the same category — `cat-<slug>` is the
+              // anchor each CategoryRow renders.
+              amountLinkTo="/app/budget"
             />
           </section>
 

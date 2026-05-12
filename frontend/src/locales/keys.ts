@@ -968,6 +968,9 @@ export interface LocaleMessages {
     kind_adult: string;
     kind_child: string;
     kind_baby: string;
+    /** Tooltip + a11y label on the Crown icon next to bride / groom rows. */
+    partner_role_bride: string;
+    partner_role_groom: string;
     /** Free-text search above the household list. */
     search_label: string;
     search_placeholder: string;
@@ -1102,6 +1105,16 @@ export interface LocaleMessages {
     add_template_help: string;
     edit_planned_aria: string;
     per_guest_unit: string;
+    /** Aria-label on the category toggle button when the row is unfrozen. */
+    freeze_aria: string;
+    /** Aria-label on the category toggle button when the row is frozen. */
+    unfreeze_aria: string;
+    /** Aria-label on the per-row amount when it's a deep-link to the budget
+     *  table for precise entry. */
+    open_table_aria: string;
+    /** Toast shown when the backend rejects a write because the category is
+     *  frozen. The user needs to unfreeze first. */
+    frozen_save_failed: string;
     category_locked_hint: string;
     slider_min_aria: string;
     slider_max_aria: string;

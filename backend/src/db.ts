@@ -228,6 +228,16 @@ addColumnIfMissing("couples", "honeymoon_end_date", "honeymoon_end_date TEXT");
 // touched the slider; the frontend then falls back to target_guest_count.
 addColumnIfMissing("couples", "planning_count", "planning_count INTEGER");
 
+// JSON-encoded `BudgetCategory[]` — the set of categories the couple has
+// pinned on the cost-planning panel. Frozen categories are read-only in the
+// slider + the budget table, and the headcount slider doesn't rescale their
+// planned amount (per-guest scaling is skipped). Empty array = nothing frozen.
+addColumnIfMissing(
+  "couples",
+  "frozen_categories_json",
+  "frozen_categories_json TEXT NOT NULL DEFAULT '[]'",
+);
+
 // "Have we actually paid this yet?" flag on DIY supplier entries. Default 0
 // (planned-only) — the mirrored budget line writes the price to
 // `planned_huf` but leaves `actual_huf` at 0 until the couple flips the
@@ -242,6 +252,14 @@ addColumnIfMissing("couple_suppliers", "paid", "paid INTEGER NOT NULL DEFAULT 0"
 // against each row without leaking those notes to the submitter. NULL is
 // the default ("no notes yet"); empty string clears.
 addColumnIfMissing("community_suppliers", "admin_notes", "admin_notes TEXT");
+
+// Partner role marker on the two host guest rows that mirror
+// `couples.bride_name` / `couples.groom_name`. Server-derived: clients
+// never write it. NULL on every regular guest. Used by /app/seating to pin
+// the couple's own slots at the top of the unassigned panel, and by
+// /app/guests to render a Crown next to the hosts. Schema additive: no
+// DEFAULT, NULL is the resting state.
+addColumnIfMissing("guests", "partner_role", "partner_role TEXT");
 
 export function now(): number {
   return Date.now();

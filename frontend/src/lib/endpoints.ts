@@ -4,6 +4,7 @@ import type {
   AdminCoupleView,
   AdminUserView,
   AuthSession,
+  BudgetCategory,
   BudgetGoal,
   BudgetLine,
   BudgetSnapshot,
@@ -116,8 +117,8 @@ export const coupleApi = {
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
   /** Partial update — supports `wedding_date_goal`, `guest_count_goal`,
    *  `budget_goal`, `ceremony_kind`, the honeymoon trip header fields
-   *  (destination + start/end dates), partner names, and the cost-planning
-   *  scenario `planning_count`. */
+   *  (destination + start/end dates), partner names, the cost-planning
+   *  scenario `planning_count`, and the frozen-category set. */
   update: (body: {
     bride_name?: string;
     groom_name?: string;
@@ -129,6 +130,7 @@ export const coupleApi = {
     honeymoon_start_date?: string | null;
     honeymoon_end_date?: string | null;
     planning_count?: number | null;
+    frozen_categories?: BudgetCategory[];
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */

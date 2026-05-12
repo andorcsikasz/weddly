@@ -2,6 +2,7 @@
 // current couple, generate a partner-B invite, accept an invite.
 
 import {
+  type BudgetCategory,
   type BudgetGoal,
   type BudgetKind,
   type CeremonyKind,
@@ -26,7 +27,7 @@ import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../do
 import { sendKind } from "../domain/emails";
 import { recordExport } from "../domain/exports";
 import { generateInviteToken } from "../domain/invite_codes";
-import { listGuestsByCouple, uniqueInviteCode } from "../domain/guests";
+import { ensurePartnerGuests, listGuestsByCouple, renamePartnerGuest } from "../domain/guests";
 import { createHousehold } from "../domain/households";
 import { renderSeatingChartPdf } from "../domain/pdf";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
@@ -94,6 +95,8 @@ interface OnboardBody {
   honeymoon_end_date?: unknown;
   /** Cost-planning scenario count. Integer 1..2000 or null. */
   planning_count?: unknown;
+  /** Categories the couple has frozen on the cost-planning panel. */
+  frozen_categories?: unknown;
 }
 
 const VALID_CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -458,40 +461,16 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
 
   // The bride and groom are guests at their own wedding — and they need to
   // count in headcount, catering, and seating. Materialize them as real
-  // guest rows in the couple's auto-household when both names are known.
-  // rsvp_status='yes' since they're definitely attending; kind='adult';
-  // group_tag splits along family side so the dashboard pie chart looks
-  // sensible from minute zero.
-  if (brideName && groomName) {
-    const insertGuest = db.prepare(
-      `INSERT INTO guests
-         (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
-          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
-          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
-          created_at, updated_at, household_id)
-       VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 'yes',
-               NULL, NULL, NULL, NULL, 0,
-               NULL, NULL, ?, ?, ?,
-               ?, ?, ?)`,
-    );
-    for (const [name, groupTag] of [
-      [brideName, "her_family"],
-      [groomName, "his_family"],
-    ] as const) {
-      insertGuest.run(
-        coupleId,
-        name,
-        groupTag,
-        uniqueInviteCode(),
-        ts, // rsvp_responded_at
-        ts, // invited_at (self-invited)
-        ts, // invitation_delivered_at (definitely received)
-        ts, // created_at
-        ts, // updated_at
-        coupleHousehold.id,
-      );
-    }
-  }
+  // guest rows in the couple's auto-household, stamped with `partner_role`
+  // so the seating panel can pin their slots without name-matching and the
+  // guests page can render a Crown next to them. Helper is idempotent +
+  // shared with the boot-time backfill in init_households.ts.
+  ensurePartnerGuests({
+    coupleId,
+    householdId: coupleHousehold.id,
+    brideName,
+    groomName,
+  });
 
   db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
     coupleId,
@@ -825,6 +804,41 @@ async function handleUpdateSlug(ctx: Ctx): Promise<Response> {
   return json({ couple: toCouple(refreshed) });
 }
 
+const ALLOWED_BUDGET_CATEGORIES: ReadonlySet<BudgetCategory> = new Set([
+  "venue",
+  "catering",
+  "drinks",
+  "attire",
+  "decor_floral",
+  "photo_video",
+  "music_dj",
+  "cake_dessert",
+  "hair_makeup",
+  "transport",
+  "honeymoon",
+  "stationery",
+  "favours",
+  "rings",
+  "other",
+]);
+
+/** `frozen_categories`: array of valid `BudgetCategory` slugs. Unknown entries
+ *  are silently dropped; duplicates collapse. Returns the JSON-encoded form so
+ *  the caller can stuff it straight into the UPDATE. */
+function parseFrozenCategories(raw: unknown): string {
+  if (!Array.isArray(raw)) throw new HttpError(400, "frozen_categories must be an array");
+  const seen = new Set<BudgetCategory>();
+  const out: BudgetCategory[] = [];
+  for (const v of raw) {
+    if (typeof v !== "string") continue;
+    const cat = v as BudgetCategory;
+    if (!ALLOWED_BUDGET_CATEGORIES.has(cat) || seen.has(cat)) continue;
+    seen.add(cat);
+    out.push(cat);
+  }
+  return JSON.stringify(out);
+}
+
 /** Cost-planning scenario count: integer 1..2000, or null to clear. */
 function parsePlanningCount(raw: unknown): number | null {
   if (raw === null || raw === undefined || raw === "") return null;
@@ -881,6 +895,12 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
 
   // Names — bride / groom. Either field's presence triggers a names_update
   // audit row with both fields in before/after so the UI can render a diff.
+  // We also track which of the two actually CHANGED so we can mirror the
+  // rename onto the matching `partner_role` guest row after the UPDATE.
+  let renameBride = false;
+  let renameGroom = false;
+  let nextBride = couple.bride_name;
+  let nextGroom = couple.groom_name;
   if (body.bride_name !== undefined || body.groom_name !== undefined) {
     const newBride =
       body.bride_name !== undefined
@@ -909,6 +929,10 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         display_name: newDisplay,
       },
     });
+    renameBride = newBride !== couple.bride_name && newBride.length > 0;
+    renameGroom = newGroom !== couple.groom_name && newGroom.length > 0;
+    nextBride = newBride;
+    nextGroom = newGroom;
   }
 
   if (body.wedding_date_goal !== undefined || body.wedding_date !== undefined) {
@@ -1011,12 +1035,31 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     });
   }
 
+  if (body.frozen_categories !== undefined) {
+    const json = parseFrozenCategories(body.frozen_categories);
+    updates.push({ col: "frozen_categories_json", val: json });
+    auditEntries.push({
+      action: "couple.frozen_categories_update",
+      before: { frozen_categories_json: couple.frozen_categories_json },
+      after: { frozen_categories_json: json },
+    });
+  }
+
   if (updates.length === 0) throw new HttpError(400, "No fields to update");
 
   const ts = now();
   const setClause = `${updates.map((u) => `${u.col} = ?`).join(", ")}, updated_at = ?`;
   const values = [...updates.map((u) => u.val), ts, couple.id];
   db.prepare(`UPDATE couples SET ${setClause} WHERE id = ?`).run(...values);
+
+  // Keep the partner-role guest rows in sync with the canonical bride/groom
+  // names on the couple row. Renames flow one way (couple → guest); the
+  // guests-page edit drawer would normally write the guest first, but the
+  // host rows are read-mostly from that side. If the matching guest row
+  // doesn't exist yet (e.g. legacy couple that's never booted with this
+  // backfill), seed it on the fly via ensurePartnerGuests below.
+  if (renameBride) renamePartnerGuest(couple.id, "bride", nextBride);
+  if (renameGroom) renamePartnerGuest(couple.id, "groom", nextGroom);
 
   const refreshed = getCoupleById(couple.id);
   if (!refreshed) throw new HttpError(500, "Couple vanished after update");
@@ -1461,6 +1504,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.names_update",
   "couple.ceremony_kind_update",
   "couple.planning_count_update",
+  "couple.frozen_categories_update",
   // Guests
   "guest.create",
   "guest.update",

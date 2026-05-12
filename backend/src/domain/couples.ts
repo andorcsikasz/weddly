@@ -1,6 +1,7 @@
 // Couple row → DTO mapper + the workspace helpers used by every protected route.
 
 import type {
+  BudgetCategory,
   BudgetGoal,
   BudgetKind,
   CeremonyKind,
@@ -51,6 +52,7 @@ export interface CoupleRow {
   honeymoon_start_date: string | null;
   honeymoon_end_date: string | null;
   planning_count: number | null;
+  frozen_categories_json: string;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -65,6 +67,43 @@ const DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
 const SEASONS: ReadonlySet<WeddingSeason> = new Set(["spring", "summer", "fall", "winter"]);
 const COUNT_KINDS: ReadonlySet<GuestCountKind> = new Set(["exact", "range", "tbd"]);
 const BUDGET_KINDS: ReadonlySet<BudgetKind> = new Set(["exact", "range", "tbd"]);
+
+const VALID_BUDGET_CATEGORIES: ReadonlySet<BudgetCategory> = new Set([
+  "venue",
+  "catering",
+  "drinks",
+  "attire",
+  "decor_floral",
+  "photo_video",
+  "music_dj",
+  "cake_dessert",
+  "hair_makeup",
+  "transport",
+  "honeymoon",
+  "stationery",
+  "favours",
+  "rings",
+  "other",
+]);
+
+function parseFrozenCategoriesJson(raw: string): BudgetCategory[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const out: BudgetCategory[] = [];
+    const seen = new Set<BudgetCategory>();
+    for (const v of parsed) {
+      if (typeof v !== "string") continue;
+      const cat = v as BudgetCategory;
+      if (!VALID_BUDGET_CATEGORIES.has(cat) || seen.has(cat)) continue;
+      seen.add(cat);
+      out.push(cat);
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
 
 function rowToDateGoal(row: CoupleRow): WeddingDateGoal {
   const raw = (row.wedding_date_kind ?? "exact") as WeddingDateKind;
@@ -143,6 +182,7 @@ export function toCouple(row: CoupleRow): Couple {
     honeymoon_start_date: row.honeymoon_start_date,
     honeymoon_end_date: row.honeymoon_end_date,
     planning_count: row.planning_count,
+    frozen_categories: parseFrozenCategoriesJson(row.frozen_categories_json ?? "[]"),
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

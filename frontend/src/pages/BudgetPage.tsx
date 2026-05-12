@@ -177,7 +177,19 @@ export default function BudgetPage() {
    *  the user's local edit and offer a Retry. */
   function handleSaveError(e: unknown, retry: () => void) {
     if (e instanceof ApiError && e.status === 409) {
-      toast.error(t("budget.save_conflict"));
+      // Server attaches `{ code: "frozen" }` when a write hits a frozen
+      // category — distinguish that from a generic stale-row collision so
+      // the user understands what they need to do (unfreeze first) rather
+      // than "someone else edited this".
+      const detailCode =
+        e.detail && typeof e.detail === "object"
+          ? (e.detail as { code?: unknown }).code
+          : undefined;
+      if (detailCode === "frozen") {
+        toast.error(t("budget.frozen_save_failed"));
+      } else {
+        toast.error(t("budget.save_conflict"));
+      }
       refresh();
       return;
     }
@@ -279,6 +291,26 @@ export default function BudgetPage() {
       handleSaveError(e, () => saveBounds(min, max));
     }
   }
+
+  async function toggleFreeze(category: BudgetCategory) {
+    if (!couple) return;
+    const current = couple.frozen_categories ?? [];
+    const next = current.includes(category)
+      ? current.filter((c) => c !== category)
+      : [...current, category];
+    try {
+      const r = await coupleApi.update({ frozen_categories: next });
+      setCouple(r.couple);
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => toggleFreeze(category));
+    }
+  }
+
+  const frozenCategoriesSet = useMemo(
+    () => new Set<BudgetCategory>(couple?.frozen_categories ?? []),
+    [couple?.frozen_categories],
+  );
 
   async function removeLine(id: number) {
     const ok = await confirm({
@@ -412,6 +444,24 @@ export default function BudgetPage() {
     // and the post-refresh case where lines arrive after the hash.
   }, [location.hash, lines, topOverageLineId]);
 
+  // Dashboard "tap the amount" deep-link → /app/budget#cat-<category>. Scroll
+  // the first table row of that category into view and focus its planned-huf
+  // input so the user lands ready to type. Falls back to the CostPlanningCard
+  // anchor (same id on the slider row) when the table is empty.
+  useEffect(() => {
+    const m = location.hash.match(/^#cat-([a-z_]+)$/);
+    if (!m) return;
+    const category = m[1];
+    if (lines.length === 0) return;
+    // The table tr carries `data-category`; the first matching row wins.
+    const row = document.querySelector<HTMLElement>(`tr[data-category="${category}"]`);
+    if (!row) return;
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    const input = row.querySelector<HTMLInputElement>('input[data-budget-planned="true"]');
+    input?.focus();
+    input?.select?.();
+  }, [location.hash, lines]);
+
   // Honeymoon rolls up into a single read-only row on the budget table — the
   // sub-category breakdown lives on /app/honeymoon. We still feed all lines
   // (including honeymoon) into CostPlanningCard above so the total/category
@@ -455,6 +505,8 @@ export default function BudgetPage() {
         onBoundsChange={saveBounds}
         onEditPlanned={setCategoryPlanned}
         onCapChange={saveCap}
+        frozenCategories={frozenCategoriesSet}
+        onToggleFreeze={toggleFreeze}
       />
 
       <section id="top-overage" className="mt-8 scroll-mt-24">
@@ -486,10 +538,12 @@ export default function BudgetPage() {
               {tableLines.map((line) => {
                 const delta = line.actual_huf - line.planned_huf;
                 const isHighlighted = line.id === highlightLineId;
+                const isFrozen = frozenCategoriesSet.has(line.category);
                 return (
                   <tr
                     key={line.id}
                     data-budget-line-id={line.id}
+                    data-category={line.category}
                     className={`border-t border-paper-200 transition hover:bg-paper-50 ${
                       isHighlighted ? "ring-2 ring-blush-300 ring-offset-2" : ""
                     }`}
@@ -501,12 +555,17 @@ export default function BudgetPage() {
                       <HufInput
                         value={line.planned_huf}
                         onCommit={(v) => save(line, "planned_huf", v)}
+                        readOnly={isFrozen}
+                        dataKey="planned"
+                        ariaLabel={t("budget.planned")}
                       />
                     </td>
                     <td className="px-4 py-2 align-middle">
                       <HufInput
                         value={line.actual_huf}
                         onCommit={(v) => save(line, "actual_huf", v)}
+                        dataKey="actual"
+                        ariaLabel={t("budget.actual")}
                       />
                     </td>
                     <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
@@ -532,8 +591,9 @@ export default function BudgetPage() {
                     <td className="px-2 py-2 text-right align-middle">
                       <button
                         type="button"
-                        className="btn-ghost btn-sm text-ink-500 hover:text-blush-700"
+                        className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 disabled:cursor-not-allowed disabled:opacity-40"
                         onClick={() => removeLine(line.id)}
+                        disabled={isFrozen}
                         aria-label={t("budget.delete")}
                       >
                         <Trash2 size={14} />
@@ -974,8 +1034,25 @@ function formatSnapshotDate(unixMs: number, locale: "hu" | "en"): string {
 
 /** Numeric HUF input that accepts space- and dot-separated thousands. Stores
  *  the canonical integer Forint via `onCommit`. Live-formats on blur for
- *  legibility. Rejects negatives and bogus chars. */
-function HufInput({ value, onCommit }: { value: number; onCommit: (v: number) => void }) {
+ *  legibility. Rejects negatives and bogus chars.
+ *
+ *  `readOnly` flips the input to non-editable (used by frozen budget rows so
+ *  the planned amount stays pinned). `dataKey` (e.g. `"planned"`) emits a
+ *  `data-budget-<key>="true"` attribute so the dashboard-→-table deep-link
+ *  effect can focus the right cell on arrival. */
+function HufInput({
+  value,
+  onCommit,
+  readOnly = false,
+  dataKey,
+  ariaLabel,
+}: {
+  value: number;
+  onCommit: (v: number) => void;
+  readOnly?: boolean;
+  dataKey?: "planned" | "actual";
+  ariaLabel?: string;
+}) {
   const [draft, setDraft] = useState<string>(formatNumber(value, "hu"));
   const [error, setError] = useState(false);
 
@@ -986,11 +1063,13 @@ function HufInput({ value, onCommit }: { value: number; onCommit: (v: number) =>
   }, [value]);
 
   function onChange(e: ChangeEvent<HTMLInputElement>) {
+    if (readOnly) return;
     setDraft(e.target.value);
     if (error) setError(false);
   }
 
   function onBlur() {
+    if (readOnly) return;
     const parsed = parseHuf(draft);
     if (parsed === null) {
       setError(true);
@@ -1006,9 +1085,13 @@ function HufInput({ value, onCommit }: { value: number; onCommit: (v: number) =>
       type="text"
       inputMode="numeric"
       autoComplete="off"
+      readOnly={readOnly}
+      data-budget-planned={dataKey === "planned" ? "true" : undefined}
+      data-budget-actual={dataKey === "actual" ? "true" : undefined}
+      aria-label={ariaLabel}
       className={`input h-9 min-h-0 py-1 text-center text-sm tabular-nums ${
         error ? "input-invalid" : ""
-      }`}
+      } ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500" : ""}`}
       value={draft}
       onChange={onChange}
       onBlur={onBlur}

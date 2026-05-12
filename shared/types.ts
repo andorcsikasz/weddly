@@ -153,6 +153,12 @@ export interface Couple {
    *  and all devices — distinct from `target_guest_count` (the onboarding goal)
    *  so a couple can model "what if we go to 130?" without rewriting the goal. */
   planning_count: number | null;
+  /** Categories the couple has "frozen" on the cost-planning panel. A frozen
+   *  category's planned amount is read-only everywhere (slider on /app and
+   *  /app/budget, planned input in the budget table) and is exempt from the
+   *  headcount slider's per-guest rescaling — the user has locked in a real
+   *  quote and doesn't want it scaling with hypotheticals. */
+  frozen_categories: BudgetCategory[];
   location_lat: number | null;
   location_lng: number | null;
   location_radius_km: number | null;
@@ -326,6 +332,12 @@ export interface Guest {
   invite_code: string;
   /** Adult / child / baby. Defaults to "adult". */
   kind: GuestKind;
+  /** Set on the two host guest rows that mirror `couples.bride_name` /
+   *  `couples.groom_name`. `null` on every other guest. Server-derived only —
+   *  PATCH/POST `/api/guests` ignores this field. The seating page reads it to
+   *  pin the couple's own slots at the top of the unassigned panel; the
+   *  guest list shows a Crown next to matching rows. */
+  partner_role: "bride" | "groom" | null;
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary: string | null;

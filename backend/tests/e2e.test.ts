@@ -1179,6 +1179,85 @@ describe("budget", () => {
     const arr = JSON.parse(snap.data.snapshot.payload_json) as { label: string }[];
     expect(arr.length).toBeGreaterThan(0);
   });
+
+  test("frozen categories: planned writes / creates / deletes return 409 {code:'frozen'}", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("frozen@weddly.test");
+
+    // Pin venue. Couple endpoint should accept the field and persist it.
+    const upd = await req<{ couple: { frozen_categories: string[] } }>(
+      "PATCH",
+      "/api/couples/current",
+      { frozen_categories: ["venue"] },
+      { token },
+    );
+    expect(upd.status).toBe(200);
+    expect(upd.data.couple.frozen_categories).toEqual(["venue"]);
+
+    // Find the seeded venue line.
+    const list = await req<{ lines: { id: number; category: string; planned_huf: number }[] }>(
+      "GET",
+      "/api/budget/lines",
+      undefined,
+      { token },
+    );
+    const venue = list.data.lines.find((l) => l.category === "venue");
+    expect(venue).toBeTruthy();
+    if (!venue) return;
+    const originalPlanned = venue.planned_huf;
+
+    // PATCH planned_huf on a frozen line → 409 with frozen code.
+    const patch = await req<{ error: string; detail: { code: string } }>(
+      "PATCH",
+      `/api/budget/lines/${venue.id}`,
+      { planned_huf: originalPlanned + 100_000 },
+      { token },
+    );
+    expect(patch.status).toBe(409);
+    expect(patch.data.detail.code).toBe("frozen");
+
+    // POST a new line in a frozen category → also 409 with frozen code.
+    const create = await req<{ error: string; detail: { code: string } }>(
+      "POST",
+      "/api/budget/lines",
+      { category: "venue", label: "Extra venue cost", planned_huf: 50_000, actual_huf: 0 },
+      { token },
+    );
+    expect(create.status).toBe(409);
+    expect(create.data.detail.code).toBe("frozen");
+
+    // DELETE on a frozen line → 409 with frozen code.
+    const del = await req<{ error: string; detail: { code: string } }>(
+      "DELETE",
+      `/api/budget/lines/${venue.id}`,
+      undefined,
+      { token },
+    );
+    expect(del.status).toBe(409);
+    expect(del.data.detail.code).toBe("frozen");
+
+    // Same-planned_huf updates DO go through (label / actual / notes are still
+    // editable on a frozen line) — sanity check the freeze only pins planned.
+    const samePlanned = await req<{ line: { actual_huf: number } }>(
+      "PATCH",
+      `/api/budget/lines/${venue.id}`,
+      { actual_huf: 42_000 },
+      { token },
+    );
+    expect(samePlanned.status).toBe(200);
+    expect(samePlanned.data.line.actual_huf).toBe(42_000);
+
+    // Unfreeze → planned write should now succeed.
+    await req("PATCH", "/api/couples/current", { frozen_categories: [] }, { token });
+    const finalPatch = await req<{ line: { planned_huf: number } }>(
+      "PATCH",
+      `/api/budget/lines/${venue.id}`,
+      { planned_huf: originalPlanned + 100_000 },
+      { token },
+    );
+    expect(finalPatch.status).toBe(200);
+    expect(finalPatch.data.line.planned_huf).toBe(originalPlanned + 100_000);
+  });
 });
 
 describe("rsvp", () => {
@@ -1322,7 +1401,8 @@ describe("households + airport check-in", () => {
     expect(hh.member_ids.length).toBe(2);
 
     // Each partner is a real guest row: rsvp=yes, kind=adult, side-tagged
-    // for the dashboard pie, in their own household.
+    // for the dashboard pie, in their own household, with partner_role
+    // stamped so the seating + guests page can render the Crown.
     const guests = await req<{
       guests: {
         full_name: string;
@@ -1330,13 +1410,16 @@ describe("households + airport check-in", () => {
         kind: string;
         group_tag: string;
         household_id: number;
+        partner_role: string | null;
       }[];
     }>("GET", "/api/guests", undefined, { token: reg.data.token });
     expect(guests.data.guests.length).toBe(2);
-    const bride = guests.data.guests.find((g) => g.full_name === "Anna");
-    const groom = guests.data.guests.find((g) => g.full_name === "Bence");
+    const bride = guests.data.guests.find((g) => g.partner_role === "bride");
+    const groom = guests.data.guests.find((g) => g.partner_role === "groom");
     expect(bride).toBeTruthy();
     expect(groom).toBeTruthy();
+    expect(bride!.full_name).toBe("Anna");
+    expect(groom!.full_name).toBe("Bence");
     expect(bride!.rsvp_status).toBe("yes");
     expect(groom!.rsvp_status).toBe("yes");
     expect(bride!.kind).toBe("adult");
@@ -1344,6 +1427,115 @@ describe("households + airport check-in", () => {
     expect(groom!.group_tag).toBe("his_family");
     expect(bride!.household_id).toBe(hh.id);
     expect(groom!.household_id).toBe(hh.id);
+  });
+
+  test("partner-role guest rows: rename, backfill idempotence, same-named adoption, client cannot write", async () => {
+    wipeAll();
+
+    // 1. Onboard a fresh couple. The two host rows arrive with partner_role
+    //    already stamped via the onboarding handler.
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "partner-role@weddly.test",
+      password: "supersafe123",
+      full_name: "Owner",
+    });
+    await verifyUserEmail("partner-role@weddly.test");
+    const ob = await req<{ couple: { id: number } }>(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Sári",
+        groom_name: "Andor",
+        wedding_date: "2026-09-12",
+        target_guest_count: 80,
+        budget_ceiling_huf: 5_000_000,
+        style_tags: [],
+      },
+      { token: reg.data.token },
+    );
+    expect(ob.status).toBe(201);
+    const token = reg.data.token;
+    const coupleId = ob.data.couple.id;
+
+    type GuestStub = {
+      id: number;
+      full_name: string;
+      partner_role: string | null;
+      household_id: number;
+    };
+
+    let list = await req<{ guests: GuestStub[] }>("GET", "/api/guests", undefined, { token });
+    expect(list.data.guests.length).toBe(2);
+    const bride0 = list.data.guests.find((g) => g.partner_role === "bride");
+    const groom0 = list.data.guests.find((g) => g.partner_role === "groom");
+    expect(bride0?.full_name).toBe("Sári");
+    expect(groom0?.full_name).toBe("Andor");
+
+    // 2. Renaming the bride on the couple row mirrors to the host guest row.
+    const patched = await req<{ couple: { bride_name: string } }>(
+      "PATCH",
+      "/api/couples/current",
+      { bride_name: "Sara" },
+      { token },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.couple.bride_name).toBe("Sara");
+    list = await req<{ guests: GuestStub[] }>("GET", "/api/guests", undefined, { token });
+    expect(list.data.guests.length).toBe(2);
+    const brideRenamed = list.data.guests.find((g) => g.partner_role === "bride");
+    expect(brideRenamed?.full_name).toBe("Sara");
+
+    // 3. Backfill idempotence: directly invoke the helper twice. No duplicates.
+    const { ensurePartnerGuests } = await import("../src/domain/guests");
+    const hhRow = db
+      .prepare("SELECT id FROM households WHERE couple_id = ? ORDER BY id ASC LIMIT 1")
+      .get(coupleId) as { id: number };
+    ensurePartnerGuests({
+      coupleId,
+      householdId: hhRow.id,
+      brideName: "Sara",
+      groomName: "Andor",
+    });
+    ensurePartnerGuests({
+      coupleId,
+      householdId: hhRow.id,
+      brideName: "Sara",
+      groomName: "Andor",
+    });
+    list = await req<{ guests: GuestStub[] }>("GET", "/api/guests", undefined, { token });
+    expect(list.data.guests.length).toBe(2);
+
+    // 4. Same-named adoption: delete the bride host row, then add a regular
+    //    guest with the same name. Re-running the helper should adopt that
+    //    row (stamp partner_role) instead of inserting a sibling.
+    db.prepare("DELETE FROM guests WHERE couple_id = ? AND partner_role = 'bride'").run(coupleId);
+    const manual = await req<{ guest: { id: number; partner_role: string | null } }>(
+      "POST",
+      "/api/guests",
+      {
+        full_name: "Sara",
+        group_tag: "her_family",
+        // Client tries to set partner_role — must be ignored (server-derived).
+        partner_role: "bride",
+      },
+      { token },
+    );
+    expect(manual.status).toBe(201);
+    // Server ignored partner_role on POST — the new row is a regular guest.
+    expect(manual.data.guest.partner_role).toBeNull();
+
+    ensurePartnerGuests({
+      coupleId,
+      householdId: hhRow.id,
+      brideName: "Sara",
+      groomName: "Andor",
+    });
+    list = await req<{ guests: GuestStub[] }>("GET", "/api/guests", undefined, { token });
+    // Still exactly 2 guests (groom + adopted-Sara) — no duplicate sibling.
+    expect(list.data.guests.length).toBe(2);
+    const adopted = list.data.guests.find((g) => g.id === manual.data.guest.id);
+    expect(adopted?.partner_role).toBe("bride");
+    expect(adopted?.full_name).toBe("Sara");
   });
 
   test("multi-member household: lookup + checkin updates everyone in one shot", async () => {

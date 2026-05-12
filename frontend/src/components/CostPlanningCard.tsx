@@ -13,6 +13,7 @@ import {
   Flower2,
   Gift,
   Home,
+  Lock,
   Mail,
   MoreHorizontal,
   Music,
@@ -127,6 +128,9 @@ export function CostPlanningCard({
   onBoundsChange,
   onEditPlanned,
   onCapChange,
+  frozenCategories,
+  onToggleFreeze,
+  amountLinkTo,
 }: {
   lines: BudgetLine[];
   baseline: number;
@@ -150,6 +154,16 @@ export function CostPlanningCard({
   /** Called when the user inline-edits the budget cap. The parent persists
    *  it via `coupleApi.update({ budget_goal: ... })`. */
   onCapChange?: (newCapHuf: number) => Promise<void>;
+  /** Categories the couple has frozen. Frozen rows render with a lock badge,
+   *  disable the slider, ignore the headcount per-guest rescale, and route
+   *  the amount click straight to /app/budget for exact entry. */
+  frozenCategories?: ReadonlySet<BudgetCategory>;
+  /** Toggles freeze state for a category. Parent persists via couplesApi. */
+  onToggleFreeze?: (category: BudgetCategory) => void | Promise<void>;
+  /** When set, the per-row amount becomes a link to this base path with the
+   *  category appended as a hash (e.g. `/app/budget#cat-venue`). Used on the
+   *  dashboard to route precise entries into the budget table. */
+  amountLinkTo?: string;
 }) {
   const { t, locale } = useT();
   const factor = baseline > 0 ? count / baseline : 1;
@@ -168,16 +182,21 @@ export function CostPlanningCard({
     return CATEGORY_ORDER.map((cat) => {
       const v = map.get(cat) ?? { planned: 0, actual: 0 };
       const isPerGuest = PER_GUEST_CATEGORIES.has(cat);
+      const frozen = frozenCategories?.has(cat) ?? false;
+      // Frozen categories opt out of per-guest scaling — the user has pinned
+      // a real-world quote and doesn't want it sliding around with the count.
+      const scales = isPerGuest && !frozen;
       return {
         category: cat,
         actual: v.actual,
         // Display planned = baseline planned scaled for per-guest categories.
-        plannedDisplay: isPerGuest ? Math.round(v.planned * factor) : v.planned,
+        plannedDisplay: scales ? Math.round(v.planned * factor) : v.planned,
         plannedBaseline: v.planned,
-        scales: isPerGuest,
+        scales,
+        frozen,
       };
     });
-  }, [lines, factor]);
+  }, [lines, factor, frozenCategories]);
 
   const totalPlanned = buckets.reduce((s, b) => s + b.plannedDisplay, 0);
   const totalActual = buckets.reduce((s, b) => s + b.actual, 0);
@@ -320,13 +339,17 @@ export function CostPlanningCard({
             plannedBaseline={b.plannedBaseline}
             actual={b.actual}
             scales={b.scales}
+            frozen={b.frozen}
             // Per-guest categories receive the live headcount factor so the
             // slider thumb tracks the count slider and a drag preserves the
-            // /fő unit price (not the baseline planned amount).
+            // /fő unit price (not the baseline planned amount). Frozen rows
+            // pass `scales=false` so the factor is 1 — no rescale.
             scaleFactor={b.scales ? factor : 1}
             count={count}
             widthAnchor={widthAnchor}
             onEditPlanned={onEditPlanned}
+            onToggleFreeze={onToggleFreeze}
+            amountLinkTo={amountLinkTo}
             linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
           />
         ))}
@@ -395,16 +418,22 @@ function CategoryRow({
   plannedBaseline,
   actual,
   scales,
+  frozen,
   scaleFactor,
   count,
   widthAnchor,
   onEditPlanned,
+  onToggleFreeze,
+  amountLinkTo,
   linkTo,
 }: {
   category: BudgetCategory;
   plannedBaseline: number;
   actual: number;
   scales: boolean;
+  /** Frozen — slider is read-only, per-guest scaling is off, the left side
+   *  shows a lock affordance, and the planned amount stays pinned. */
+  frozen: boolean;
   /** Live count/baseline ratio for per-guest categories (1 for fixed). The
    *  per-row slider lives in *display* units, so we use this both to convert
    *  the drag input back to baseline before persisting and to keep the /fő
@@ -416,6 +445,11 @@ function CategoryRow({
    *  Floored upstream so it never hits zero. */
   widthAnchor: number;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
+  onToggleFreeze?: (category: BudgetCategory) => void | Promise<void>;
+  /** When set, the per-row amount is rendered as a Link to
+   *  `${amountLinkTo}#cat-${category}` so a tap routes the user to the budget
+   *  table for precise entry. Used on the dashboard. */
+  amountLinkTo?: string;
   /** When set, the row is non-interactive (no slider drag) and the whole
    *  row clicks through to this internal route. Used for honeymoon — its
    *  sub-categories live on /app/honeymoon, so we route there instead of
@@ -497,50 +531,95 @@ function CategoryRow({
     background: `linear-gradient(to right, #243150 0%, #243150 ${fillPct}%, #efe9d9 ${fillPct}%, #efe9d9 100%)`,
   };
 
-  const rowInner = (
+  const categoryLabel = t(`budget.cat.${category}`);
+  const canToggleFreeze = !!onToggleFreeze && !linkTo;
+  const sliderDisabled = !editable || saving || frozen;
+
+  // Left tile — icon + name. Doubles as the freeze toggle on non-link rows
+  // (honeymoon routes the whole row through to /app/honeymoon, so its left
+  // tile stays inert). When frozen, a tiny lock badge replaces the icon's
+  // ink-500 with the blush tint so the row reads as pinned at a glance.
+  const leftTileContent = (
     <>
-      <span className="flex items-center gap-2 text-ink-700">
+      {frozen ? (
+        <Lock size={14} className="shrink-0 text-blush-700" aria-hidden />
+      ) : (
         <Icon size={14} className="shrink-0 text-ink-500" aria-hidden />
-        <span className="truncate">{t(`budget.cat.${category}`)}</span>
-      </span>
-      <div className="w-full">
-        {linkTo ? (
-          // Lookalike static bar — same height/radius/gradient as the real
-          // slider, but no thumb and no input affordance. The row itself is
-          // clickable (Link wrapper above), and the whole tile reads as a
-          // bar-chart entry without inviting an in-place drag.
-          <div className="range-fill range-fill-thin block" style={trackStyle} aria-hidden="true" />
-        ) : (
-          <input
-            type="range"
-            min={0}
-            max={rowMax}
-            step={step}
-            value={liveDisplay}
-            disabled={!editable || saving}
-            onChange={(e) => applyScaledDrag(Number(e.target.value))}
-            onMouseUp={(e) => commit(Number(e.currentTarget.value))}
-            onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
-            onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-            className="range-fill range-fill-thin block"
-            style={trackStyle}
-            aria-label={t("budget.edit_planned_aria", {
-              category: t(`budget.cat.${category}`),
-            })}
-          />
-        )}
-      </div>
-      <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
-        {actual > 0 && <span className="text-ink-400">{formatHuf(actual, locale)} / </span>}
-        <span className="font-medium">{formatHuf(liveDisplay, locale)}</span>
-        {perGuest !== null && (
-          <span className="text-[11px] text-ink-400">
-            {" · "}
-            {t("budget.per_guest_unit", { n: formatNumber(perGuest, locale) })}
-          </span>
-        )}
-      </span>
+      )}
+      <span className={`truncate ${frozen ? "text-blush-700" : ""}`}>{categoryLabel}</span>
     </>
+  );
+
+  const leftTile = canToggleFreeze ? (
+    <button
+      type="button"
+      onClick={() => onToggleFreeze?.(category)}
+      className={`flex items-center gap-2 text-left text-ink-700 transition hover:text-ink-900 ${
+        frozen ? "text-blush-700 hover:text-blush-800" : ""
+      }`}
+      aria-pressed={frozen}
+      aria-label={t(frozen ? "budget.unfreeze_aria" : "budget.freeze_aria", {
+        category: categoryLabel,
+      })}
+    >
+      {leftTileContent}
+    </button>
+  ) : (
+    <span className="flex items-center gap-2 text-ink-700">{leftTileContent}</span>
+  );
+
+  // Right tile — the amount. On the dashboard we promote this to a Link so a
+  // tap on the number routes the user to /app/budget for precise entry; the
+  // hash drops them at the matching category section.
+  const amountInner = (
+    <>
+      {actual > 0 && <span className="text-ink-400">{formatHuf(actual, locale)} / </span>}
+      <span className="font-medium">{formatHuf(liveDisplay, locale)}</span>
+      {perGuest !== null && (
+        <span className="text-[11px] text-ink-400">
+          {" · "}
+          {t("budget.per_guest_unit", { n: formatNumber(perGuest, locale) })}
+        </span>
+      )}
+    </>
+  );
+
+  const amountTile =
+    amountLinkTo && !linkTo ? (
+      <Link
+        to={`${amountLinkTo}#cat-${category}`}
+        className="stat-num whitespace-nowrap rounded text-right text-xs text-ink-700 underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200"
+        aria-label={t("budget.open_table_aria", { category: categoryLabel })}
+      >
+        {amountInner}
+      </Link>
+    ) : (
+      <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
+        {amountInner}
+      </span>
+    );
+
+  const trackEl = linkTo ? (
+    // Lookalike static bar — same height/radius/gradient as the real slider,
+    // but no thumb and no input affordance. The whole row is the click
+    // target (Link wrapper below), so the bar reads as a chart entry.
+    <div className="range-fill range-fill-thin block" style={trackStyle} aria-hidden="true" />
+  ) : (
+    <input
+      type="range"
+      min={0}
+      max={rowMax}
+      step={step}
+      value={liveDisplay}
+      disabled={sliderDisabled}
+      onChange={(e) => applyScaledDrag(Number(e.target.value))}
+      onMouseUp={(e) => commit(Number(e.currentTarget.value))}
+      onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
+      onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+      className={`range-fill range-fill-thin block ${frozen ? "cursor-not-allowed opacity-60" : ""}`}
+      style={trackStyle}
+      aria-label={t("budget.edit_planned_aria", { category: categoryLabel })}
+    />
   );
 
   if (linkTo) {
@@ -549,17 +628,26 @@ function CategoryRow({
         <Link
           to={linkTo}
           className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm -mx-2 px-2 rounded-md"
-          aria-label={t("budget.cat.honeymoon")}
+          aria-label={categoryLabel}
         >
-          {rowInner}
+          <span className="flex items-center gap-2 text-ink-700">{leftTileContent}</span>
+          <div className="w-full">{trackEl}</div>
+          <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
+            {amountInner}
+          </span>
         </Link>
       </li>
     );
   }
 
   return (
-    <li className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm">
-      {rowInner}
+    <li
+      id={`cat-${category}`}
+      className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] scroll-mt-24 items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm"
+    >
+      {leftTile}
+      <div className="w-full">{trackEl}</div>
+      {amountTile}
     </li>
   );
 }
