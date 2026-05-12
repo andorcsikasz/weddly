@@ -8,8 +8,12 @@ import { adminSupplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
-function formatDate(unixSeconds: number, locale: string): string {
-  const d = new Date(unixSeconds * 1000);
+/** `created_at` is Unix milliseconds (server uses `Date.now()` everywhere —
+ *  see backend/src/db.ts `now()`). Earlier versions multiplied by 1000 here,
+ *  which threw the date 1000× into the future and rendered the column
+ *  unreadable — that was the "hozzáadás dátuma" bug. */
+function formatDate(unixMs: number, locale: string): string {
+  const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
     year: "numeric",
