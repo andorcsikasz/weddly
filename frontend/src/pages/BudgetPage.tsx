@@ -2,8 +2,9 @@
 // re-prices per-guest categories live, plus an inline-editable line table.
 
 import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple } from "@shared/types";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { ArrowUpRight, Plus, Save, Trash2 } from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CATEGORY_ICONS, CostPlanningCard } from "../components/CostPlanningCard";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -20,6 +21,8 @@ import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
 
+// Honeymoon is intentionally absent — its lines are managed on /app/honeymoon
+// and shown as a single aggregated row in the table below.
 const CATEGORIES: BudgetCategory[] = [
   "venue",
   "catering",
@@ -31,7 +34,6 @@ const CATEGORIES: BudgetCategory[] = [
   "cake_dessert",
   "hair_makeup",
   "transport",
-  "honeymoon",
   "stationery",
   "favours",
   "rings",
@@ -303,6 +305,31 @@ export default function BudgetPage() {
   // count is small.
   const livePlannedTotal = useMemo(() => lines.reduce((s, l) => s + l.planned_huf, 0), [lines]);
 
+  // Honeymoon rolls up into a single read-only row on the budget table — the
+  // sub-category breakdown lives on /app/honeymoon. We still feed all lines
+  // (including honeymoon) into CostPlanningCard above so the total/category
+  // sliders behave the same.
+  const { tableLines, honeymoonAgg } = useMemo(() => {
+    const others: BudgetLine[] = [];
+    let planned = 0;
+    let actual = 0;
+    let count = 0;
+    for (const l of lines) {
+      if (l.category === "honeymoon") {
+        planned += l.planned_huf;
+        actual += l.actual_huf;
+        count += 1;
+      } else {
+        others.push(l);
+      }
+    }
+    return {
+      tableLines: others,
+      honeymoonAgg: count > 0 ? { planned, actual, count } : null,
+    };
+  }, [lines]);
+  const hasAnyTableRow = tableLines.length > 0 || honeymoonAgg !== null;
+
   return (
     <AppShell>
       <header className="mb-6">
@@ -339,12 +366,14 @@ export default function BudgetPage() {
                 <th className="hidden px-4 py-3 text-center font-medium sm:table-cell">
                   {t("budget.delta")}
                 </th>
-                <th className="hidden px-4 py-3 font-medium md:table-cell">{t("budget.note")}</th>
+                <th className="hidden px-4 py-3 text-center font-medium md:table-cell">
+                  {t("budget.note")}
+                </th>
                 <th className="w-10 px-2 py-3" />
               </tr>
             </thead>
             <tbody>
-              {lines.map((line) => {
+              {tableLines.map((line) => {
                 const delta = line.actual_huf - line.planned_huf;
                 return (
                   <tr
@@ -379,7 +408,7 @@ export default function BudgetPage() {
                     </td>
                     <td className="hidden px-4 py-2 align-middle md:table-cell">
                       <input
-                        className="input h-9 min-h-0 py-1 text-sm"
+                        className="input h-9 min-h-0 py-1 text-center text-sm"
                         defaultValue={line.notes ?? ""}
                         maxLength={1000}
                         aria-label={t("budget.note")}

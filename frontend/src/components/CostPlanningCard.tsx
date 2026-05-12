@@ -249,10 +249,13 @@ export function CostPlanningCard({
           <CategoryRow
             key={b.category}
             category={b.category}
-            plannedDisplay={b.plannedDisplay}
             plannedBaseline={b.plannedBaseline}
             actual={b.actual}
             scales={b.scales}
+            // Per-guest categories receive the live headcount factor so the
+            // slider thumb tracks the count slider and a drag preserves the
+            // /fő unit price (not the baseline planned amount).
+            scaleFactor={b.scales ? factor : 1}
             count={count}
             sliderMax={sliderMax}
             onEditPlanned={onEditPlanned}
@@ -305,32 +308,36 @@ export function CostPlanningCard({
 
 function CategoryRow({
   category,
-  plannedDisplay,
   plannedBaseline,
   actual,
   scales,
+  scaleFactor,
   count,
   sliderMax,
   onEditPlanned,
 }: {
   category: BudgetCategory;
-  plannedDisplay: number;
   plannedBaseline: number;
   actual: number;
   scales: boolean;
+  /** Live count/baseline ratio for per-guest categories (1 for fixed). The
+   *  per-row slider lives in *display* units, so we use this both to convert
+   *  the drag input back to baseline before persisting and to keep the /fő
+   *  unit price stable when only the headcount changes. */
+  scaleFactor: number;
   count: number;
   sliderMax: number;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
 }) {
   const { t, locale } = useT();
   // Local drag state — slider feels instant; commit fires on release only.
+  // Stored in *baseline* units so we don't drift when the headcount changes
+  // mid-drag (rare, but tidier).
   const [localValue, setLocalValue] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Drop any local drag state when the upstream baseline changes (e.g. lines
-  // refetched, sibling row saved, headcount slider scaled the value). The
-  // [saving] dep keeps the existing post-save reset working when the new
-  // baseline happens to equal the value we just sent.
+  // refetched, sibling row saved, headcount slider scaled the value).
   useEffect(() => {
     if (!saving) setLocalValue(null);
   }, [plannedBaseline, saving]);
@@ -338,26 +345,38 @@ function CategoryRow({
   const Icon = CATEGORY_ICONS[category];
   const editable = !!onEditPlanned;
 
-  const editValue = localValue ?? plannedBaseline;
-  // The parent already pre-scaled plannedDisplay; recover the factor so the
-  // on-screen amount keeps tracking the slider while the user drags.
-  const factor = plannedBaseline > 0 ? plannedDisplay / plannedBaseline : 1;
-  const liveDisplay = scales ? Math.round(editValue * factor) : editValue;
+  const editBaseline = localValue ?? plannedBaseline;
+  // Slider operates in display units so the thumb tracks the headcount
+  // slider for per-guest categories — drag a per-fő rate, the total moves.
+  const liveDisplay = Math.round(editBaseline * scaleFactor);
 
   // Slider step — fine enough for big budgets, coarse enough not to spam.
   const step = sliderMax >= 5_000_000 ? 25_000 : 10_000;
 
-  // Per-guest unit for cross-coupling hint.
+  // Per-guest unit for the cross-coupling hint.
   const perGuest = scales && count > 0 ? Math.round(liveDisplay / count) : null;
 
-  async function commit(next: number) {
-    if (!onEditPlanned || next === plannedBaseline) {
+  // Drag input is in display units. Convert back to baseline before storing,
+  // so the saved planned amount is normalised to the couple's baseline guest
+  // count regardless of where the headcount slider currently sits.
+  function applyScaledDrag(scaledNew: number) {
+    const baselineNew = scaleFactor > 0 ? Math.round(scaledNew / scaleFactor) : scaledNew;
+    setLocalValue(baselineNew);
+  }
+
+  async function commit(scaledNext: number) {
+    if (!onEditPlanned) {
+      setLocalValue(null);
+      return;
+    }
+    const baselineNext = scaleFactor > 0 ? Math.round(scaledNext / scaleFactor) : scaledNext;
+    if (baselineNext === plannedBaseline) {
       setLocalValue(null);
       return;
     }
     setSaving(true);
     try {
-      await onEditPlanned(category, next);
+      await onEditPlanned(category, baselineNext);
     } finally {
       setSaving(false);
     }
@@ -374,14 +393,14 @@ function CategoryRow({
         min={0}
         max={sliderMax}
         step={step}
-        value={editValue}
+        value={liveDisplay}
         disabled={!editable || saving}
-        onChange={(e) => setLocalValue(Number(e.target.value))}
+        onChange={(e) => applyScaledDrag(Number(e.target.value))}
         onMouseUp={(e) => commit(Number(e.currentTarget.value))}
         onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
         onKeyUp={(e) => commit(Number(e.currentTarget.value))}
         className="range-fill range-fill-thin block w-full"
-        style={rangeFillStyle(editValue, 0, sliderMax)}
+        style={rangeFillStyle(liveDisplay, 0, sliderMax)}
         aria-label={t("budget.edit_planned_aria", {
           category: t(`budget.cat.${category}`),
         })}
