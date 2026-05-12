@@ -72,6 +72,7 @@ function wipeAll() {
     "community_suppliers",
     "couple_suppliers",
     "couple_supplier_costs",
+    "couple_picks",
     "supplier_votes",
     "vendor_waitlist",
     "feedback_submissions",
@@ -6342,5 +6343,447 @@ describe("places search (Nominatim proxy)", () => {
   test("requires auth", async () => {
     const r = await req("GET", "/api/places/search?q=bali");
     expect(r.status).toBe(401);
+  });
+});
+
+describe("loop C₁: couple_picks (server-side per-category supplier picks)", () => {
+  test("CRUD happy path + audit-log entries", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("picks-crud@weddly.test");
+
+    // Empty workspace: list returns []
+    const empty = await req<{ picks: { category: string; supplier_id: string }[] }>(
+      "GET",
+      "/api/picks",
+      undefined,
+      { token },
+    );
+    expect(empty.status).toBe(200);
+    expect(empty.data.picks).toEqual([]);
+
+    // Set a curated-slug pick under venue.
+    const set = await req<{
+      pick: { category: string; supplier_id: string; picked_by_user_id: number | null };
+    }>("PUT", "/api/picks/venue", { supplier_id: "normafa-rendezvenyhaz" }, { token });
+    expect(set.status).toBe(200);
+    expect(set.data.pick.category).toBe("venue");
+    expect(set.data.pick.supplier_id).toBe("normafa-rendezvenyhaz");
+    expect(set.data.pick.picked_by_user_id).toBeGreaterThan(0);
+
+    // A second category lives independently.
+    await req("PUT", "/api/picks/catering", { supplier_id: "c42" }, { token });
+
+    const list = await req<{ picks: { category: string; supplier_id: string }[] }>(
+      "GET",
+      "/api/picks",
+      undefined,
+      { token },
+    );
+    expect(list.data.picks.length).toBe(2);
+    const byCat = new Map(list.data.picks.map((p) => [p.category, p.supplier_id]));
+    expect(byCat.get("venue")).toBe("normafa-rendezvenyhaz");
+    expect(byCat.get("catering")).toBe("c42");
+
+    // Audit log fired pick.upsert twice.
+    const upsertAudit = db
+      .prepare(
+        "SELECT id, before_json, after_json FROM audit_log WHERE action = 'pick.upsert' AND couple_id = ?",
+      )
+      .all(coupleId) as { id: number; before_json: string | null; after_json: string | null }[];
+    expect(upsertAudit.length).toBe(2);
+    // Each has after.supplier_id set; the FIRST upsert in a category has before.supplier_id null.
+    const firstUpsert = upsertAudit[0]!;
+    expect(JSON.parse(firstUpsert.after_json!)).toMatchObject({
+      category: expect.any(String),
+      supplier_id: expect.any(String),
+    });
+
+    // DELETE clears + audits.
+    const del = await req("DELETE", "/api/picks/venue", undefined, { token });
+    expect(del.status).toBe(200);
+    const after = await req<{ picks: { category: string }[] }>("GET", "/api/picks", undefined, {
+      token,
+    });
+    expect(after.data.picks.length).toBe(1);
+    expect(after.data.picks[0]!.category).toBe("catering");
+
+    const removeAudit = db
+      .prepare(
+        "SELECT after_json, before_json FROM audit_log WHERE action = 'pick.remove' AND couple_id = ?",
+      )
+      .all(coupleId) as { after_json: string | null; before_json: string | null }[];
+    expect(removeAudit.length).toBe(1);
+    expect(JSON.parse(removeAudit[0]!.before_json!)).toMatchObject({
+      category: "venue",
+      supplier_id: "normafa-rendezvenyhaz",
+    });
+  });
+
+  test("upsert replaces (one row per category) + audit captures the swap", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("picks-replace@weddly.test");
+
+    await req("PUT", "/api/picks/venue", { supplier_id: "first-slug" }, { token });
+    await req("PUT", "/api/picks/venue", { supplier_id: "second-slug" }, { token });
+    await req("PUT", "/api/picks/venue", { supplier_id: "third-slug" }, { token });
+
+    // Exactly one row in the DB for (couple, venue).
+    const rows = db
+      .prepare("SELECT supplier_id FROM couple_picks WHERE couple_id = ? AND category = ?")
+      .all(coupleId, "venue") as { supplier_id: string }[];
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.supplier_id).toBe("third-slug");
+
+    // Three pick.upsert audit rows — the second + third have a non-null before.
+    const audits = db
+      .prepare(
+        "SELECT before_json, after_json FROM audit_log WHERE action = 'pick.upsert' AND couple_id = ? ORDER BY id ASC",
+      )
+      .all(coupleId) as { before_json: string | null; after_json: string | null }[];
+    expect(audits.length).toBe(3);
+    expect(JSON.parse(audits[0]!.before_json!).supplier_id).toBeNull();
+    expect(JSON.parse(audits[1]!.before_json!).supplier_id).toBe("first-slug");
+    expect(JSON.parse(audits[2]!.before_json!).supplier_id).toBe("second-slug");
+    expect(JSON.parse(audits[2]!.after_json!).supplier_id).toBe("third-slug");
+  });
+
+  test("cross-couple isolation: A's picks invisible to B", async () => {
+    wipeAll();
+    const a = await bootstrapCouple("picks-iso-a@weddly.test");
+    await req("PUT", "/api/picks/venue", { supplier_id: "a-venue" }, { token: a.token });
+
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "picks-iso-b@weddly.test",
+      password: "supersafe123",
+      full_name: "B",
+    });
+    await verifyUserEmail("picks-iso-b@weddly.test");
+    await req(
+      "POST",
+      "/api/couples/onboard",
+      {
+        display_name: "Beth & Carl",
+        wedding_date: "2027-04-01",
+        target_guest_count: 50,
+        budget_ceiling_huf: 3_000_000,
+        style_tags: [],
+      },
+      { token: reg.data.token },
+    );
+
+    // B sees an empty pick list — A's row is scoped by couple_id.
+    const bList = await req<{ picks: unknown[] }>("GET", "/api/picks", undefined, {
+      token: reg.data.token,
+    });
+    expect(bList.data.picks).toEqual([]);
+
+    // B can take the same category for their own supplier without collision.
+    const bSet = await req<{ pick: { supplier_id: string } }>(
+      "PUT",
+      "/api/picks/venue",
+      { supplier_id: "b-venue" },
+      { token: reg.data.token },
+    );
+    expect(bSet.status).toBe(200);
+    expect(bSet.data.pick.supplier_id).toBe("b-venue");
+
+    // A's pick is untouched.
+    const aList = await req<{ picks: { supplier_id: string }[] }>("GET", "/api/picks", undefined, {
+      token: a.token,
+    });
+    expect(aList.data.picks[0]!.supplier_id).toBe("a-venue");
+  });
+
+  test("validation: rejects bad category + empty / too-long supplier_id", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("picks-val@weddly.test");
+
+    const badCat = await req("PUT", "/api/picks/not-a-category", { supplier_id: "x" }, { token });
+    expect(badCat.status).toBe(400);
+
+    const empty = await req("PUT", "/api/picks/venue", { supplier_id: "" }, { token });
+    expect(empty.status).toBe(400);
+
+    const tooLong = await req(
+      "PUT",
+      "/api/picks/venue",
+      { supplier_id: "x".repeat(100) },
+      { token },
+    );
+    expect(tooLong.status).toBe(400);
+
+    const missingBody = await req("PUT", "/api/picks/venue", {}, { token });
+    expect(missingBody.status).toBe(400);
+  });
+
+  test("auth required on every endpoint", async () => {
+    expect((await req("GET", "/api/picks")).status).toBe(401);
+    expect((await req("PUT", "/api/picks/venue", { supplier_id: "x" })).status).toBe(401);
+    expect((await req("DELETE", "/api/picks/venue")).status).toBe(401);
+  });
+});
+
+describe("loop C₁: couples.planning_count (server-side cost-planning slider)", () => {
+  test("PATCH accepts planning_count, persists across GET, fires per-field audit", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("plan-count@weddly.test");
+
+    // Defaults to null before any edit.
+    const before = await req<{ couple: { planning_count: number | null } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(before.data.couple.planning_count).toBeNull();
+
+    // Set to 130 — value mirrors back + survives a refresh.
+    const set = await req<{ couple: { planning_count: number | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { planning_count: 130 },
+      { token },
+    );
+    expect(set.status).toBe(200);
+    expect(set.data.couple.planning_count).toBe(130);
+
+    const refresh = await req<{ couple: { planning_count: number | null } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(refresh.data.couple.planning_count).toBe(130);
+
+    // Per-field audit row, not the generic couple.update.
+    const audits = db
+      .prepare(
+        "SELECT action, before_json, after_json FROM audit_log WHERE couple_id = ? AND action LIKE 'couple.%' ORDER BY id ASC",
+      )
+      .all(coupleId) as { action: string; before_json: string | null; after_json: string | null }[];
+    const planningAudits = audits.filter((a) => a.action === "couple.planning_count_update");
+    expect(planningAudits.length).toBe(1);
+    expect(JSON.parse(planningAudits[0]!.before_json!)).toEqual({ planning_count: null });
+    expect(JSON.parse(planningAudits[0]!.after_json!)).toEqual({ planning_count: 130 });
+    expect(audits.filter((a) => a.action === "couple.update").length).toBe(0);
+
+    // Clearing back to null also persists.
+    const clear = await req<{ couple: { planning_count: number | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { planning_count: null },
+      { token },
+    );
+    expect(clear.data.couple.planning_count).toBeNull();
+  });
+
+  test("rejects out-of-range / non-integer values", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("plan-count-val@weddly.test");
+
+    expect(
+      (await req("PATCH", "/api/couples/current", { planning_count: 0 }, { token })).status,
+    ).toBe(400);
+    expect(
+      (await req("PATCH", "/api/couples/current", { planning_count: -5 }, { token })).status,
+    ).toBe(400);
+    expect(
+      (await req("PATCH", "/api/couples/current", { planning_count: 2001 }, { token })).status,
+    ).toBe(400);
+    expect(
+      (await req("PATCH", "/api/couples/current", { planning_count: 12.5 }, { token })).status,
+    ).toBe(400);
+    expect(
+      (await req("PATCH", "/api/couples/current", { planning_count: "abc" }, { token })).status,
+    ).toBe(400);
+  });
+});
+
+describe("loop C₁: audit-log granularity split on couple.update", () => {
+  test("budget-cap-only PATCH fires couple.budget_cap_update exactly once + NO couple.update", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("audit-cap@weddly.test");
+
+    // Clear out the onboarding audit row to keep the assertion simple.
+    db.prepare("DELETE FROM audit_log WHERE couple_id = ? AND action = 'couple.onboard'").run(
+      coupleId,
+    );
+
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { budget_ceiling_huf: 6_500_000 },
+      { token },
+    );
+    expect(r.status).toBe(200);
+
+    const audits = db
+      .prepare(
+        "SELECT action, before_json, after_json FROM audit_log WHERE couple_id = ? AND action LIKE 'couple.%' ORDER BY id ASC",
+      )
+      .all(coupleId) as { action: string; before_json: string | null; after_json: string | null }[];
+
+    const capAudits = audits.filter((a) => a.action === "couple.budget_cap_update");
+    expect(capAudits.length).toBe(1);
+    const cap = capAudits[0]!;
+    const beforePayload = JSON.parse(cap.before_json!);
+    const afterPayload = JSON.parse(cap.after_json!);
+    expect(beforePayload.budget_ceiling_huf).toBe(5_000_000); // bootstrap default
+    expect(afterPayload.budget_ceiling_huf).toBe(6_500_000);
+
+    // Generic couple.update is NOT fired when a per-field cluster matched.
+    expect(audits.some((a) => a.action === "couple.update")).toBe(false);
+  });
+
+  test("multi-field PATCH (date + cap) fires TWO audit rows, one per cluster", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("audit-multi@weddly.test");
+    db.prepare("DELETE FROM audit_log WHERE couple_id = ? AND action = 'couple.onboard'").run(
+      coupleId,
+    );
+
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      {
+        wedding_date_goal: {
+          kind: "exact",
+          exact_date: "2027-06-12",
+          target_year: 2027,
+          target_month: 6,
+          target_season: null,
+        },
+        budget_ceiling_huf: 7_500_000,
+      },
+      { token },
+    );
+    expect(r.status).toBe(200);
+
+    const audits = db
+      .prepare(
+        "SELECT action FROM audit_log WHERE couple_id = ? AND action LIKE 'couple.%' ORDER BY id ASC",
+      )
+      .all(coupleId) as { action: string }[];
+    const actions = audits.map((a) => a.action);
+    expect(actions).toContain("couple.wedding_date_update");
+    expect(actions).toContain("couple.budget_cap_update");
+    expect(actions.includes("couple.update")).toBe(false);
+    expect(
+      actions.filter((a) => a === "couple.wedding_date_update" || a === "couple.budget_cap_update")
+        .length,
+    ).toBe(2);
+  });
+
+  test("planning_count-only PATCH fires couple.planning_count_update, NOT couple.update", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("audit-plan@weddly.test");
+    db.prepare("DELETE FROM audit_log WHERE couple_id = ? AND action = 'couple.onboard'").run(
+      coupleId,
+    );
+
+    await req("PATCH", "/api/couples/current", { planning_count: 95 }, { token });
+
+    const audits = db
+      .prepare(
+        "SELECT action FROM audit_log WHERE couple_id = ? AND action LIKE 'couple.%' ORDER BY id ASC",
+      )
+      .all(coupleId) as { action: string }[];
+    expect(audits.length).toBe(1);
+    expect(audits[0]!.action).toBe("couple.planning_count_update");
+  });
+
+  test("names PATCH fires couple.names_update with before/after", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("audit-names@weddly.test");
+    db.prepare("DELETE FROM audit_log WHERE couple_id = ? AND action = 'couple.onboard'").run(
+      coupleId,
+    );
+
+    // bootstrapCouple uses display_name only (legacy shape) — so bride/groom
+    // are empty strings. PATCH them to real values.
+    const r = await req<{
+      couple: { bride_name: string; groom_name: string; display_name: string };
+    }>("PATCH", "/api/couples/current", { bride_name: "Eszter", groom_name: "Levente" }, { token });
+    expect(r.status).toBe(200);
+    expect(r.data.couple.bride_name).toBe("Eszter");
+    expect(r.data.couple.groom_name).toBe("Levente");
+    expect(r.data.couple.display_name).toBe("Eszter & Levente");
+
+    const audits = db
+      .prepare(
+        "SELECT action, before_json, after_json FROM audit_log WHERE couple_id = ? AND action = 'couple.names_update'",
+      )
+      .all(coupleId) as { action: string; before_json: string | null; after_json: string | null }[];
+    expect(audits.length).toBe(1);
+    expect(JSON.parse(audits[0]!.after_json!)).toMatchObject({
+      bride_name: "Eszter",
+      groom_name: "Levente",
+      display_name: "Eszter & Levente",
+    });
+  });
+
+  test("ceremony_kind PATCH fires couple.ceremony_kind_update", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("audit-cer@weddly.test");
+    db.prepare("DELETE FROM audit_log WHERE couple_id = ? AND action = 'couple.onboard'").run(
+      coupleId,
+    );
+
+    await req("PATCH", "/api/couples/current", { ceremony_kind: "religious" }, { token });
+
+    const audits = db
+      .prepare(
+        "SELECT action, after_json FROM audit_log WHERE couple_id = ? AND action LIKE 'couple.%' ORDER BY id ASC",
+      )
+      .all(coupleId) as { action: string; after_json: string | null }[];
+    expect(audits.length).toBe(1);
+    expect(audits[0]!.action).toBe("couple.ceremony_kind_update");
+    expect(JSON.parse(audits[0]!.after_json!)).toEqual({ ceremony_kind: "religious" });
+  });
+
+  test("activity feed surfaces the new actions + carries before/after JSON", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("audit-feed@weddly.test");
+
+    // Mix of new per-field clusters + a pick.upsert so the feed has variety.
+    await req("PATCH", "/api/couples/current", { budget_ceiling_huf: 9_000_000 }, { token });
+    await req("PATCH", "/api/couples/current", { planning_count: 100 }, { token });
+    await req("PUT", "/api/picks/venue", { supplier_id: "feed-venue" }, { token });
+
+    const r = await req<{
+      entries: { action: string; before_json: string | null; after_json: string | null }[];
+    }>("GET", "/api/couples/activity", undefined, { token });
+    expect(r.status).toBe(200);
+    const actions = r.data.entries.map((e) => e.action);
+    expect(actions).toContain("couple.budget_cap_update");
+    expect(actions).toContain("couple.planning_count_update");
+    expect(actions).toContain("pick.upsert");
+
+    // Each surfaced entry has either before or after JSON populated.
+    const planRow = r.data.entries.find((e) => e.action === "couple.planning_count_update");
+    expect(planRow).toBeTruthy();
+    expect(planRow!.before_json).not.toBeNull();
+    expect(planRow!.after_json).not.toBeNull();
+    expect(JSON.parse(planRow!.after_json!)).toEqual({ planning_count: 100 });
+  });
+
+  test("honeymoon-only PATCH still fires legacy couple.update (fallback path)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("audit-honey@weddly.test");
+    db.prepare("DELETE FROM audit_log WHERE couple_id = ? AND action = 'couple.onboard'").run(
+      coupleId,
+    );
+
+    await req("PATCH", "/api/couples/current", { honeymoon_destination: "Bali" }, { token });
+
+    const audits = db
+      .prepare(
+        "SELECT action FROM audit_log WHERE couple_id = ? AND action LIKE 'couple.%' ORDER BY id ASC",
+      )
+      .all(coupleId) as { action: string }[];
+    // No per-field cluster matched — the fallback couple.update preserves
+    // legacy history rendering.
+    expect(audits.length).toBe(1);
+    expect(audits[0]!.action).toBe("couple.update");
   });
 });

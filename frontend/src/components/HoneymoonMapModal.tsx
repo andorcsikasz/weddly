@@ -1,24 +1,16 @@
-// Lazy-loaded map preview for the honeymoon destination. Lives in its own
-// file so the ~150KB Leaflet bundle only ships when the user actually opens
-// the popup. On mount we geocode the destination text against Nominatim
-// (via our /api/places/search proxy) and centre a small map there.
+// Map preview for the honeymoon destination. Renders a 60vw × 60vh popup
+// with an OpenStreetMap embed iframe centred on the destination's lat/lng.
+//
+// We use an iframe (not react-leaflet) because the modal needs to render
+// reliably across React 19 / Suspense / lazy combinations — Leaflet's
+// canvas-sizing was prone to mounting in a half-grey state when the parent
+// flexbox animated in. The iframe is fully self-contained and always paints.
 
-import "leaflet/dist/leaflet.css";
-import { Loader2, MapPin, X } from "lucide-react";
+import { ExternalLink, Loader2, MapPin, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { placesApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
-
-const PIN_STYLE = {
-  radius: 9,
-  fillColor: "#bf4a30", // blush-600
-  color: "#fbfaf5", // paper-50
-  weight: 2,
-  opacity: 1,
-  fillOpacity: 0.95,
-} as const;
 
 interface Coords {
   lat: number;
@@ -33,13 +25,16 @@ interface HoneymoonMapModalProps {
 export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMapModalProps) {
   const { t } = useT();
   const titleId = useId();
-  const containerRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<Coords | null>(null);
   const [label, setLabel] = useState<string>(destination);
   const [state, setState] = useState<"loading" | "ready" | "not_found" | "error">("loading");
 
-  // Geocode the destination via /api/places/search on mount. Use the first
-  // hit — Nominatim already ranks by relevance/importance.
+  // Hold onClose in a ref so the ESC listener doesn't need to re-bind on
+  // every parent render (the parent passes a fresh arrow each render).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Geocode the destination via /api/places/search on mount.
   useEffect(() => {
     let cancelled = false;
     setState("loading");
@@ -50,8 +45,6 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
         const first = r.places[0];
         if (first && first.lat !== null && first.lng !== null) {
           setCoords({ lat: first.lat, lng: first.lng });
-          // Prefer the primary headline as the map's marker title; the input
-          // text may be a partial typo. Fall back to the original if missing.
           setLabel(first.primary || destination);
           setState("ready");
         } else {
@@ -66,37 +59,23 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
     };
   }, [destination]);
 
-  // ESC closes; manage scroll-lock + inert the rest of the body — same
-  // pattern as components/ui/Dialog.tsx so background content stays out of
-  // VoiceOver / Tab order while the modal is open.
+  // ESC closes; scroll-lock the page behind. Empty deps — listener mounts /
+  // unmounts with the modal, onCloseRef keeps the callback current.
   useEffect(() => {
-    const triggerEl = (document.activeElement as HTMLElement) ?? null;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const toggled: HTMLElement[] = [];
-    const container = containerRef.current;
-    for (const child of Array.from(document.body.children)) {
-      if (!(child instanceof HTMLElement)) continue;
-      if (container && child.contains(container)) continue;
-      if (child.hasAttribute("inert")) continue;
-      child.setAttribute("inert", "");
-      toggled.push(child);
-    }
-
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     }
     document.addEventListener("keydown", onKey);
-
     return () => {
-      document.body.style.overflow = "";
-      for (const el of toggled) el.removeAttribute("inert");
+      document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKey);
-      queueMicrotask(() => triggerEl?.focus?.());
     };
-  }, [onClose]);
+  }, []);
 
   return createPortal(
     <div
@@ -106,11 +85,10 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
       }}
     >
       <div
-        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-[60vh] w-[60vw] min-h-[400px] min-w-[320px] flex-col overflow-hidden rounded-2xl bg-white shadow-pop"
+        className="relative flex h-[60vh] min-h-[400px] w-[60vw] min-w-[320px] flex-col overflow-hidden rounded-2xl bg-white shadow-pop"
       >
         <header className="flex items-start justify-between gap-3 border-b border-paper-200 px-4 py-3">
           <div className="min-w-0">
@@ -121,17 +99,31 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
               {label}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn-ghost btn-sm -mr-1"
-            aria-label={t("a11y.close")}
-          >
-            <X size={18} aria-hidden="true" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            {state === "ready" && coords && (
+              <a
+                href={osmExternalUrl(coords, label)}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="btn-ghost btn-sm"
+                aria-label={t("honeymoon.map_open_external")}
+                title={t("honeymoon.map_open_external")}
+              >
+                <ExternalLink size={16} aria-hidden="true" />
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-ghost btn-sm -mr-1"
+              aria-label={t("a11y.close")}
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
         </header>
 
-        <div className="relative flex-1">
+        <div className="relative flex-1 bg-paper-100">
           {state === "loading" && (
             <div className="flex h-full items-center justify-center text-sm text-ink-500">
               <Loader2 size={16} className="mr-2 animate-spin" aria-hidden="true" />
@@ -150,23 +142,14 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
             </div>
           )}
           {state === "ready" && coords && (
-            <MapContainer
-              center={[coords.lat, coords.lng]}
-              zoom={pickZoom(label)}
-              scrollWheelZoom
-              style={{ height: "100%", width: "100%" }}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <CircleMarker center={[coords.lat, coords.lng]} pathOptions={PIN_STYLE}>
-                <Popup>
-                  <p className="font-semibold text-ink-900">{label}</p>
-                </Popup>
-              </CircleMarker>
-              <FitToBounds lat={coords.lat} lng={coords.lng} />
-            </MapContainer>
+            <iframe
+              key={`${coords.lat},${coords.lng}`}
+              title={`Map of ${label}`}
+              src={osmEmbedUrl(coords, label)}
+              loading="eager"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="absolute inset-0 h-full w-full border-0"
+            />
           )}
         </div>
       </div>
@@ -175,24 +158,42 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
   );
 }
 
-/** Centre + zoom on mount. Without this the map renders with the initial
- *  zoom but doesn't auto-fit if the lat/lng changes between mounts. */
-function FitToBounds({ lat, lng }: { lat: number; lng: number }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView([lat, lng], map.getZoom(), { animate: false });
-    // Force a redraw — Leaflet sometimes mis-sizes the canvas when the
-    // container animates in (modal flex layout).
-    queueMicrotask(() => map.invalidateSize());
-  }, [map, lat, lng]);
-  return null;
+/** Build OpenStreetMap's `/export/embed.html` URL with a small bbox around
+ *  the marker. The bbox width is a heuristic: a tighter zoom for detailed
+ *  addresses, wider for bare country / region names. */
+function osmEmbedUrl(coords: Coords, label: string): string {
+  const { lat, lng } = coords;
+  const halfWidth = pickHalfWidth(label);
+  // Aspect-correct half-height. We don't know the iframe's exact dimensions
+  // here so we use the modal's roughly 1.5:1 (60vw × 60vh on a 16:9 display)
+  // — close enough that the marker stays centred.
+  const halfHeight = halfWidth * 0.75;
+  const bbox = [lng - halfWidth, lat - halfHeight, lng + halfWidth, lat + halfHeight];
+  const params = new URLSearchParams({
+    bbox: bbox.join(","),
+    layer: "mapnik",
+    marker: `${lat},${lng}`,
+  });
+  return `https://www.openstreetmap.org/export/embed.html?${params.toString()}`;
 }
 
-/** Heuristic zoom level — city-name-ish labels zoom in tight, country / region
- *  hits stay wider. Cheap proxy: comma count in the picked label. */
-function pickZoom(label: string): number {
+function osmExternalUrl(coords: Coords, _label: string): string {
+  return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=${pickZoomFor(_label)}/${coords.lat}/${coords.lng}`;
+}
+
+/** Half-bbox width in degrees. More commas in the label → more specific
+ *  address → tighter view. Same heuristic spirit as our earlier
+ *  Leaflet `pickZoom`, expressed in lng-degree spread. */
+function pickHalfWidth(label: string): number {
   const commas = (label.match(/,/g) ?? []).length;
-  if (commas >= 3) return 14; // detailed address → street level
-  if (commas >= 1) return 10; // city in a region
-  return 6; // bare country / region name
+  if (commas >= 3) return 0.005; // street level
+  if (commas >= 1) return 0.06; // city in a region
+  return 4; // bare country / region name
+}
+
+function pickZoomFor(label: string): number {
+  const commas = (label.match(/,/g) ?? []).length;
+  if (commas >= 3) return 14;
+  if (commas >= 1) return 10;
+  return 6;
 }

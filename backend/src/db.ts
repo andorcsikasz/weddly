@@ -211,6 +211,12 @@ addColumnIfMissing("couples", "honeymoon_destination", "honeymoon_destination TE
 addColumnIfMissing("couples", "honeymoon_start_date", "honeymoon_start_date TEXT");
 addColumnIfMissing("couples", "honeymoon_end_date", "honeymoon_end_date TEXT");
 
+// Cost-planning scenario count — shared between partners across all devices.
+// Distinct from `target_guest_count` (the onboarding goal): this is the
+// "what if we go to 130?" slider on /app/budget. NULL = the couple hasn't
+// touched the slider; the frontend then falls back to target_guest_count.
+addColumnIfMissing("couples", "planning_count", "planning_count INTEGER");
+
 export function now(): number {
   return Date.now();
 }

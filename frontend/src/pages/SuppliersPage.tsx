@@ -54,6 +54,7 @@ import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button } from "../components/ui";
 import {
+  hydrateCostPlanningCount,
   readCostPlanningCount,
   subscribeCostPlanningCount,
   writeCostPlanningCount,
@@ -290,6 +291,10 @@ export default function SuppliersPage() {
         const id = couple.couple?.id ?? null;
         setCoupleId(id);
         setTargetGuestCount(couple.couple?.target_guest_count ?? null);
+        // Seed the shared cost-planning cache from the couple we just
+        // fetched so the Vendégszám filter and the /app/budget slider
+        // start on the same value.
+        if (couple.couple) hydrateCostPlanningCount(couple.couple);
         if (id !== null) setSelectionState(readSelection(id));
       })
       .catch(() => undefined);

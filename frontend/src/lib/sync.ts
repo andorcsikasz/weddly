@@ -10,7 +10,12 @@
 
 const CHANNEL_NAME = "weddly";
 
-export type SyncTopic = "budget:changed" | "seating:changed" | "guests:changed";
+export type SyncTopic =
+  | "budget:changed"
+  | "seating:changed"
+  | "guests:changed"
+  | "picks:changed"
+  | "planning_count:changed";
 
 interface SyncMessage {
   topic: SyncTopic;

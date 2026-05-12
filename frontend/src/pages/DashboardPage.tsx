@@ -41,6 +41,12 @@ import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
 import {
+  hydrateCostPlanningCount,
+  readCostPlanningCount,
+  subscribeCostPlanningCount,
+  writeCostPlanningCount,
+} from "../lib/cost_planning";
+import {
   budgetApi,
   coupleApi,
   dietaryApi,
@@ -118,6 +124,12 @@ export default function DashboardPage() {
         setData(null);
         return;
       }
+      // Seed the cost-planning cache from the couple we just fetched so the
+      // slider lands on the shared scenario count instantly — no waiting on
+      // a second round-trip just to hydrate one number.
+      hydrateCostPlanningCount(couple);
+      const seeded = readCostPlanningCount(couple.id);
+      if (seeded !== null) setPlanningCount(seeded);
       const [guestsR, linesR, planR, inviteR] = await Promise.all([
         guestApi.list(),
         budgetApi.listLines(),
@@ -140,6 +152,17 @@ export default function DashboardPage() {
       });
     })();
   }, []);
+
+  // Cross-tab cost-planning subscription. Once the couple is loaded, any
+  // partner-side slider drag on /app/budget (or another /app tab) flows in
+  // here so the KPI tiles re-scale without a manual refresh.
+  useEffect(() => {
+    if (data === "loading" || data === null) return;
+    const id = data.couple.id;
+    return subscribeCostPlanningCount(id, (next) => {
+      setPlanningCount(next);
+    });
+  }, [data]);
 
   // ── Day-of payloads (dietary aggregate + schedule preview) ───────────
   // Lazy-hydrated AFTER the first paint so the planning-mode dashboard
@@ -834,7 +857,13 @@ export default function DashboardPage() {
               boundsMax={boundsMax}
               cap={cap}
               count={effectivePlanningCount}
-              onCountChange={setPlanningCount}
+              onCountChange={(n) => {
+                // Local optimistic update + debounced server write. The lib
+                // collapses a slider drag into one PATCH and re-publishes
+                // across tabs so /app/budget + /app/suppliers stay in sync.
+                setPlanningCount(n);
+                writeCostPlanningCount(couple.id, n);
+              }}
               onBoundsChange={saveBounds}
               onEditPlanned={setCategoryPlanned}
               onCapChange={saveCap}

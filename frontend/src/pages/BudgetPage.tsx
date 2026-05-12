@@ -11,6 +11,7 @@ import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
 import {
+  hydrateCostPlanningCount,
   readCostPlanningCount,
   subscribeCostPlanningCount,
   writeCostPlanningCount,
@@ -116,8 +117,11 @@ export default function BudgetPage() {
     setCouple(coupleR.couple);
     // Seed the slider with the shared cost-planning count if /app/suppliers
     // or a prior session has one stored. Otherwise stay at `null` so the
-    // slider defaults to the couple's onboarding target.
+    // slider defaults to the couple's onboarding target. Hydration moved
+    // server-side via `couple.planning_count` (one-way local→server
+    // migration is fire-and-forget inside `hydrateCostPlanningCount`).
     if (coupleR.couple) {
+      hydrateCostPlanningCount(coupleR.couple);
       const stored = readCostPlanningCount(coupleR.couple.id);
       if (stored !== null) setCount(stored);
     }

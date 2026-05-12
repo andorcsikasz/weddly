@@ -23,6 +23,7 @@ import {
   Wine,
 } from "lucide-react";
 import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { formatHuf, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 
@@ -282,7 +283,11 @@ export function CostPlanningCard({
         </div>
       </div>
 
-      {/* Per-category sliders — single line per category, denser spacing. */}
+      {/* Per-category sliders — single line per category, denser spacing.
+       *  Honeymoon is the one exception: its lines live on /app/honeymoon
+       *  (a dedicated sub-page with its own breakdown + map), so we show
+       *  the same row visual here but route the click through and skip
+       *  the slider input — no in-place drag. */}
       <ul className="mt-4 divide-y divide-paper-100">
         {buckets.map((b) => (
           <CategoryRow
@@ -298,6 +303,7 @@ export function CostPlanningCard({
             count={count}
             widthAnchor={widthAnchor}
             onEditPlanned={onEditPlanned}
+            linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
           />
         ))}
       </ul>
@@ -354,6 +360,7 @@ function CategoryRow({
   count,
   widthAnchor,
   onEditPlanned,
+  linkTo,
 }: {
   category: BudgetCategory;
   plannedBaseline: number;
@@ -370,6 +377,11 @@ function CategoryRow({
    *  Floored upstream so it never hits zero. */
   widthAnchor: number;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
+  /** When set, the row is non-interactive (no slider drag) and the whole
+   *  row clicks through to this internal route. Used for honeymoon — its
+   *  sub-categories live on /app/honeymoon, so we route there instead of
+   *  duplicating editing here. */
+  linkTo?: string;
 }) {
   const { t, locale } = useT();
   // Local drag state — slider feels instant; commit fires on release only.

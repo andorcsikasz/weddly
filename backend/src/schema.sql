@@ -519,6 +519,24 @@ CREATE TABLE IF NOT EXISTS couple_suppliers (
 CREATE INDEX IF NOT EXISTS idx_couple_suppliers_couple ON couple_suppliers(couple_id);
 
 
+-- Per-category "this is our pick" supplier selections. One row per
+-- (couple, category) — picking a new supplier in the same category REPLACES
+-- the prior one via the UNIQUE constraint. `supplier_id` is the public string
+-- id from the directory (curated slug, "c{N}" community id, or DIY hex) —
+-- same shape as `couple_supplier_costs`, no FK because curated suppliers
+-- live in code. Migrating from per-device localStorage (Loop C₁) so both
+-- partners on any device see the same pick.
+CREATE TABLE IF NOT EXISTS couple_picks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,                                      -- one of SupplierCategory
+  supplier_id TEXT NOT NULL,                                   -- curated slug, "c{N}", or DIY hex
+  picked_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  picked_at INTEGER NOT NULL,
+  UNIQUE(couple_id, category)
+);
+CREATE INDEX IF NOT EXISTS idx_couple_picks_couple ON couple_picks(couple_id);
+
 -- Free-form planning surface for the /app/planning page. One table, three
 -- "kinds": tasks (checklist with optional due_date), ideas (note-style free
 -- text), schedule (wedding-day timeline with optional HH:MM slot). Couple-

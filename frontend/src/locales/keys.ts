@@ -733,6 +733,14 @@ export interface LocaleMessages {
     task_template_dialog_body: string;
     task_template_default_assignee_label: string;
     task_template_default_assignee_placeholder: string;
+    /** Per-item selection inside the wand template dialogs (tasks + ideas).
+     *  `template_select_label` takes `{count}` + `{total}`. `template_confirm_count`
+     *  is the primary CTA — it shows the count and uses plural variants. */
+    template_select_label: string;
+    template_select_all: string;
+    template_select_none: string;
+    template_confirm_count_one: string;
+    template_confirm_count_other: string;
     template_tasks_done_one: string;
     template_tasks_done_other: string;
     /** Idea tab wand button + dialog. */
@@ -787,6 +795,8 @@ export interface LocaleMessages {
     /** Body text for the map modal when Nominatim returned no hits. */
     map_not_found: string;
     map_error: string;
+    /** Aria-label + tooltip for the "open in OpenStreetMap" link in the map modal. */
+    map_open_external: string;
     /** Master slider above the cost grid — scales every honeymoon line. */
     total_slider_label: string;
     total_slider_aria: string;
@@ -1747,6 +1757,29 @@ export interface LocaleMessages {
     activity_action_invite_accept: string;
     activity_action_supplier_cost_upsert: string;
     activity_action_supplier_community_create: string;
+    /** Loop C₁: per-field couple-update splits + DIY / pick / schedule entries.
+     *  These strings receive `{before}` / `{after}` / `{category}` / `{label}` /
+     *  `{name}` interpolation from `renderActivityEntry()` in ProfilePage. */
+    activity_action_couple_budget_cap_update: string;
+    activity_action_couple_wedding_date_update: string;
+    activity_action_couple_names_update: string;
+    activity_action_couple_ceremony_kind_update: string;
+    activity_action_couple_planning_count_update: string;
+    activity_action_pick_upsert: string;
+    activity_action_pick_remove: string;
+    activity_action_schedule_create: string;
+    activity_action_schedule_update: string;
+    activity_action_schedule_delete: string;
+    activity_action_couple_supplier_create: string;
+    activity_action_couple_supplier_update: string;
+    activity_action_couple_supplier_delete: string;
+    /** Generic catch-all when an unknown / unwhitelisted action slips through —
+     *  rather than show the raw key, fall back to a calm sentence. */
+    activity_action_generic: string;
+    /** Used inside the wedding-date diff render when one side is TBD. */
+    activity_date_tbd: string;
+    /** Empty fallback for unknown / missing values in a diff (e.g. cleared field). */
+    activity_value_empty: string;
     payments_title: string;
     payments_body: string;
     /** Security section — change-password form lives here. Collapsible:

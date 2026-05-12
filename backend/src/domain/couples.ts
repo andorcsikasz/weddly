@@ -50,6 +50,7 @@ export interface CoupleRow {
   honeymoon_destination: string | null;
   honeymoon_start_date: string | null;
   honeymoon_end_date: string | null;
+  planning_count: number | null;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -141,6 +142,7 @@ export function toCouple(row: CoupleRow): Couple {
     honeymoon_destination: row.honeymoon_destination,
     honeymoon_start_date: row.honeymoon_start_date,
     honeymoon_end_date: row.honeymoon_end_date,
+    planning_count: row.planning_count,
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

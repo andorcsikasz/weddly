@@ -49,6 +49,7 @@ import type {
   VendorWaitlistEntry,
   VendorWaitlistStatus,
 } from "@shared/vendor_waitlist";
+import type { CouplePick } from "@shared/picks";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
 import type {
   AdminSupplierCategory,
@@ -113,9 +114,12 @@ export const coupleApi = {
   onboard: (body: OnboardInput) =>
     apiFetch<{ couple: Couple }>("POST", "/api/couples/onboard", body),
   /** Partial update — supports `wedding_date_goal`, `guest_count_goal`,
-   *  `budget_goal`, `ceremony_kind`, plus the honeymoon trip header fields
-   *  (destination + start/end dates). */
+   *  `budget_goal`, `ceremony_kind`, the honeymoon trip header fields
+   *  (destination + start/end dates), partner names, and the cost-planning
+   *  scenario `planning_count`. */
   update: (body: {
+    bride_name?: string;
+    groom_name?: string;
     wedding_date_goal?: WeddingDateGoal;
     guest_count_goal?: GuestCountGoal;
     budget_goal?: BudgetGoal;
@@ -123,6 +127,7 @@ export const coupleApi = {
     honeymoon_destination?: string | null;
     honeymoon_start_date?: string | null;
     honeymoon_end_date?: string | null;
+    planning_count?: number | null;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
@@ -484,6 +489,19 @@ export const supplierCostApi = {
       `/api/couples/supplier-costs/${encodeURIComponent(supplierId)}`,
       body,
     ),
+};
+
+/** Per-category "this is our pick" supplier selections. Shared between
+ *  partners so partner B on another device sees the same picks — see
+ *  backend/src/routes/couple_picks.ts. */
+export const picksApi = {
+  list: () => apiFetch<{ picks: CouplePick[] }>("GET", "/api/picks"),
+  set: (category: string, supplier_id: string) =>
+    apiFetch<{ pick: CouplePick }>("PUT", `/api/picks/${encodeURIComponent(category)}`, {
+      supplier_id,
+    }),
+  clear: (category: string) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/picks/${encodeURIComponent(category)}`),
 };
 
 export const adminUserApi = {

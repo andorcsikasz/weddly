@@ -32,7 +32,6 @@ import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { applyCategoryPlanned } from "../lib/budget";
 import { budgetApi, coupleApi, placesApi } from "../lib/endpoints";
 import { formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -150,21 +149,6 @@ function honeymoonSliderMax(couple: Couple | null, totalPlanned: number): number
   return Math.max(500_000, totalPlanned * 2);
 }
 
-/** Ceiling for the master "total honeymoon" slider. The sum of all
- *  sub-categories needs more headroom than any single line — we cap at
- *  the couple's wedding budget (so honeymoon can in theory equal the
- *  whole budget but no more), falling back to 1.5× the current total
- *  or a 2M floor when no cap is set. */
-function honeymoonTotalMax(couple: Couple | null, totalPlanned: number): number {
-  if (couple?.budget_goal.kind === "exact" && couple.budget_goal.exact_huf) {
-    return Math.max(2_000_000, couple.budget_goal.exact_huf);
-  }
-  if (couple?.budget_goal.kind === "range" && couple.budget_goal.max_huf) {
-    return Math.max(2_000_000, couple.budget_goal.max_huf);
-  }
-  return Math.max(2_000_000, Math.round(totalPlanned * 1.5));
-}
-
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 
 export default function HoneymoonPage() {
@@ -266,29 +250,6 @@ export default function HoneymoonPage() {
     }
   }
 
-  /** Master slider commit — scales every honeymoon line proportionally to
-   *  match the new total. Delegates to the shared helper so the round-off
-   *  drift handling stays in one place. */
-  async function setHoneymoonTotal(newTotal: number) {
-    try {
-      const next = await applyCategoryPlanned(
-        "honeymoon",
-        newTotal,
-        lines,
-        t("honeymoon.preset.other"),
-      );
-      setLines(next);
-      publish("budget:changed");
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 409) {
-        toast.error(t("budget.save_conflict"));
-        refresh();
-        return;
-      }
-      toast.error(t("budget.save_failed_retry"));
-    }
-  }
-
   async function removeLine(line: BudgetLine) {
     const ok = await confirm({
       title: t("common.confirm_delete_title"),
@@ -349,15 +310,6 @@ export default function HoneymoonPage() {
           {honeymoonLines.length > 0 && <PresetChips onPick={addPreset} compact />}
         </div>
 
-        {honeymoonLines.length > 0 && (
-          <TotalSlider
-            total={totals.planned}
-            sliderMax={honeymoonTotalMax(couple, totals.planned)}
-            locale={locale}
-            onCommit={setHoneymoonTotal}
-          />
-        )}
-
         {honeymoonLines.length === 0 ? (
           <div className="card flex flex-col items-start gap-4 text-left">
             <div>
@@ -367,17 +319,19 @@ export default function HoneymoonPage() {
             <PresetChips onPick={addPreset} />
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {honeymoonLines.map((line) => (
-              <CostCard
-                key={line.id}
-                line={line}
-                locale={locale}
-                sliderMax={sliderMax}
-                onPlannedChange={(v) => updateLinePlanned(line, v)}
-                onRemove={() => removeLine(line)}
-              />
-            ))}
+          <div className="card overflow-hidden p-0">
+            <ul className="divide-y divide-paper-200">
+              {honeymoonLines.map((line) => (
+                <CostRow
+                  key={line.id}
+                  line={line}
+                  locale={locale}
+                  sliderMax={sliderMax}
+                  onPlannedChange={(v) => updateLinePlanned(line, v)}
+                  onRemove={() => removeLine(line)}
+                />
+              ))}
+            </ul>
           </div>
         )}
       </section>
@@ -782,77 +736,6 @@ function BudgetSummaryTile({
 
 /* ─── Cost grid ────────────────────────────────────────────────────────── */
 
-/** Master slider above the cost grid. Drives the SUM of every honeymoon
- *  line — scaling each sub-category proportionally on commit. Local drag
- *  state mirrors the per-card pattern so the rail feels instant, the API
- *  fan-out only fires on release. */
-function TotalSlider({
-  total,
-  sliderMax,
-  locale,
-  onCommit,
-}: {
-  total: number;
-  sliderMax: number;
-  locale: "hu" | "en";
-  onCommit: (next: number) => Promise<void>;
-}) {
-  const { t } = useT();
-  const [localValue, setLocalValue] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!saving) setLocalValue(null);
-  }, [total, saving]);
-
-  const editValue = localValue ?? total;
-  // Coarser step than the per-line sliders — the master moves a bigger
-  // number; 25k under 5M and 50k above keeps the thumb feeling decisive.
-  const step = sliderMax >= 5_000_000 ? 50_000 : 25_000;
-
-  async function commit(next: number) {
-    const snapped = Math.round(next / step) * step;
-    if (snapped === total) {
-      setLocalValue(null);
-      return;
-    }
-    setSaving(true);
-    try {
-      await onCommit(snapped);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="card mb-4 bg-gradient-to-br from-blush-50 via-paper-50 to-paper-50">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
-          {t("honeymoon.total_slider_label")}
-        </span>
-        <span className="font-serif text-2xl font-semibold tabular-nums text-ink-900 sm:text-3xl">
-          {formatHuf(editValue, locale)}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={sliderMax}
-        step={step}
-        value={editValue}
-        disabled={saving}
-        onChange={(e) => setLocalValue(Number(e.target.value))}
-        onMouseUp={(e) => commit(Number(e.currentTarget.value))}
-        onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
-        onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-        className="range-fill mt-3 block w-full"
-        style={rangeFillStyle(editValue, 0, sliderMax)}
-        aria-label={t("honeymoon.total_slider_aria")}
-      />
-    </div>
-  );
-}
-
 function PresetChips({
   onPick,
   compact,
@@ -881,7 +764,11 @@ function PresetChips({
   );
 }
 
-function CostCard({
+/** Single stacked row in the cost list — mirrors BudgetPage's line-table
+ *  density but keeps the slider control. Layout adapts: label + amount on
+ *  one line on mobile (slider wraps beneath), full single-row grid on
+ *  desktop where the slider spans the middle column. */
+function CostRow({
   line,
   locale,
   sliderMax,
@@ -897,8 +784,6 @@ function CostCard({
   const { t } = useT();
   const preset = presetFor(line.label);
   const Icon = preset.icon;
-  // Local drag state — slider feels instant; commit fires on release only,
-  // mirroring CostPlanningCard's CategoryRow pattern.
   const [localValue, setLocalValue] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -907,7 +792,6 @@ function CostCard({
   }, [line.planned_huf, saving]);
 
   const editValue = localValue ?? line.planned_huf;
-  // 5k steps below 1M for fine-grained sub-category control, 10k above.
   const step = sliderMax >= 2_000_000 ? 10_000 : 5_000;
 
   async function commit(next: number) {
@@ -925,16 +809,9 @@ function CostCard({
   }
 
   return (
-    <div className="card-hover group relative">
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute right-3 top-3 rounded-md p-1 text-ink-400 opacity-0 transition hover:bg-paper-100 hover:text-blush-700 focus:opacity-100 group-hover:opacity-100"
-        aria-label={t("budget.delete")}
-      >
-        <Trash2 size={14} />
-      </button>
-      <div className="flex items-center gap-3">
+    <li className="group grid items-center gap-x-3 gap-y-2 px-4 py-3 sm:grid-cols-[14rem_minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:gap-y-0 grid-cols-[minmax(0,1fr)_auto_auto]">
+      {/* Icon + label — col 1 on both layouts. */}
+      <div className="col-start-1 row-start-1 flex items-center gap-3 min-w-0">
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blush-50 text-blush-700">
           <Icon size={16} aria-hidden="true" />
         </span>
@@ -942,18 +819,8 @@ function CostCard({
           {line.label}
         </p>
       </div>
-      <div className="mt-3 flex items-baseline justify-between gap-3">
-        <span className="font-serif text-xl font-semibold tabular-nums text-ink-900">
-          {formatHuf(editValue, locale)}
-        </span>
-        {line.actual_huf > 0 && (
-          <span className="text-[11px] text-ink-500">
-            {t("honeymoon.cost_actual_inline", {
-              actual: formatHuf(line.actual_huf, locale),
-            })}
-          </span>
-        )}
-      </div>
+
+      {/* Slider — row 2 spanning all cols on mobile, col 2 inline on desktop. */}
       <input
         type="range"
         min={0}
@@ -965,10 +832,34 @@ function CostCard({
         onMouseUp={(e) => commit(Number(e.currentTarget.value))}
         onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
         onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-        className="range-fill range-fill-thin mt-3 block w-full"
+        className="range-fill range-fill-thin col-span-3 col-start-1 row-start-2 w-full sm:col-span-1 sm:col-start-2 sm:row-start-1"
         style={rangeFillStyle(editValue, 0, sliderMax)}
         aria-label={t("honeymoon.slider_aria", { label: line.label })}
       />
-    </div>
+
+      {/* Amount — right-aligned next to the label on mobile, dedicated col on desktop. */}
+      <div className="col-start-2 row-start-1 flex flex-col items-end whitespace-nowrap sm:col-start-3">
+        <span className="font-serif text-lg font-semibold tabular-nums text-ink-900 sm:text-xl">
+          {formatHuf(editValue, locale)}
+        </span>
+        {line.actual_huf > 0 && (
+          <span className="text-[11px] text-ink-500">
+            {t("honeymoon.cost_actual_inline", {
+              actual: formatHuf(line.actual_huf, locale),
+            })}
+          </span>
+        )}
+      </div>
+
+      {/* Delete — last col, fades in on hover/focus. */}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="col-start-3 row-start-1 p-1 text-ink-400 opacity-0 transition hover:text-blush-700 focus:opacity-100 group-hover:opacity-100 sm:col-start-4"
+        aria-label={t("budget.delete")}
+      >
+        <Trash2 size={14} />
+      </button>
+    </li>
   );
 }

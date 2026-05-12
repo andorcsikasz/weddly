@@ -165,21 +165,35 @@ export default function PlanningPage() {
     return added;
   }
 
-  async function onApplyTaskTemplate(defaultAssignee: string) {
+  async function onApplyTaskTemplate(selected: Set<number>, defaultAssignee: string) {
     const trimmed = defaultAssignee.trim();
-    const entries = TASK_TEMPLATE.map((tmpl) => ({
-      title: localizeText(tmpl.title, locale),
-      assignee: trimmed || null,
-    }));
+    const entries = TASK_TEMPLATE.flatMap((tmpl, idx) =>
+      selected.has(idx)
+        ? [
+            {
+              title: localizeText(tmpl.title, locale),
+              assignee: trimmed || null,
+            },
+          ]
+        : [],
+    );
+    if (entries.length === 0) return;
     const added = await bulkCreate(entries, "task", "planning.template_tasks_done");
     if (added > 0) setTaskWandOpen(false);
   }
 
-  async function onApplyIdeaTemplate() {
-    const entries = IDEA_TEMPLATE.map((tmpl) => ({
-      title: localizeText(tmpl.title, locale),
-      body: tmpl.body ? localizeText(tmpl.body, locale) : null,
-    }));
+  async function onApplyIdeaTemplate(selected: Set<number>) {
+    const entries = IDEA_TEMPLATE.flatMap((tmpl, idx) =>
+      selected.has(idx)
+        ? [
+            {
+              title: localizeText(tmpl.title, locale),
+              body: tmpl.body ? localizeText(tmpl.body, locale) : null,
+            },
+          ]
+        : [],
+    );
+    if (entries.length === 0) return;
     const added = await bulkCreate(entries, "idea", "planning.template_ideas_done");
     if (added > 0) setIdeaWandOpen(false);
   }
@@ -339,11 +353,28 @@ function TaskTemplateDialog({
   assigneeSuggestions: string[];
   locale: Locale;
   onClose: () => void;
-  onApply: (defaultAssignee: string) => Promise<void>;
+  onApply: (selected: Set<number>, defaultAssignee: string) => Promise<void>;
 }) {
   const { t } = useT();
   const [defaultAssignee, setDefaultAssignee] = useState("");
+  // Default: all selected. The user unchecks the ones they don't want — keeps
+  // the "just give me everything" flow at one click, while still letting them
+  // narrow it down before committing.
+  const [selected, setSelected] = useState<Set<number>>(
+    () => new Set(TASK_TEMPLATE.map((_, idx) => idx)),
+  );
   const datalistId = "task-wand-assignee-list";
+  const total = TASK_TEMPLATE.length;
+  const allSelected = selected.size === total;
+
+  function toggle(idx: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }
 
   return (
     <Dialog
@@ -362,10 +393,12 @@ function TaskTemplateDialog({
           <button
             type="button"
             className="btn-primary"
-            onClick={() => onApply(defaultAssignee)}
-            disabled={applying}
+            onClick={() => onApply(selected, defaultAssignee)}
+            disabled={applying || selected.size === 0}
           >
-            {applying ? t("common.loading") : t("planning.template_confirm")}
+            {applying
+              ? t("common.loading")
+              : t("planning.template_confirm_count", { count: selected.size })}
           </button>
         </>
       }
@@ -397,16 +430,51 @@ function TaskTemplateDialog({
           </p>
         )}
         <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-500">
-            {t("planning.template_preview_label")}
-          </p>
-          <ul className="space-y-1 text-xs text-ink-700">
-            {TASK_TEMPLATE.map((tmpl) => (
-              <li key={tmpl.title.en} className="flex items-center gap-2">
-                <Circle size={12} className="shrink-0 text-ink-400" aria-hidden="true" />
-                <span>{localizeText(tmpl.title, locale)}</span>
-              </li>
-            ))}
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+              {t("planning.template_select_label", { count: selected.size, total })}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setSelected(allSelected ? new Set() : new Set(TASK_TEMPLATE.map((_, idx) => idx)))
+              }
+              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900"
+            >
+              {allSelected ? t("planning.template_select_none") : t("planning.template_select_all")}
+            </button>
+          </div>
+          <ul className="space-y-0.5">
+            {TASK_TEMPLATE.map((tmpl, idx) => {
+              const on = selected.has(idx);
+              return (
+                <li key={tmpl.title.en}>
+                  <button
+                    type="button"
+                    onClick={() => toggle(idx)}
+                    aria-pressed={on}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                      on
+                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200"
+                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600"
+                    }`}
+                  >
+                    {on ? (
+                      <CheckCircle2
+                        size={14}
+                        className="shrink-0 text-sage-700"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Circle size={14} className="shrink-0" aria-hidden="true" />
+                    )}
+                    <span className={on ? "" : "line-through"}>
+                      {localizeText(tmpl.title, locale)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -425,9 +493,24 @@ function IdeaTemplateDialog({
   applying: boolean;
   locale: Locale;
   onClose: () => void;
-  onApply: () => Promise<void>;
+  onApply: (selected: Set<number>) => Promise<void>;
 }) {
   const { t } = useT();
+  const [selected, setSelected] = useState<Set<number>>(
+    () => new Set(IDEA_TEMPLATE.map((_, idx) => idx)),
+  );
+  const total = IDEA_TEMPLATE.length;
+  const allSelected = selected.size === total;
+
+  function toggle(idx: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }
+
   return (
     <Dialog
       open
@@ -445,10 +528,12 @@ function IdeaTemplateDialog({
           <button
             type="button"
             className="btn-primary"
-            onClick={() => onApply()}
-            disabled={applying}
+            onClick={() => onApply(selected)}
+            disabled={applying || selected.size === 0}
           >
-            {applying ? t("common.loading") : t("planning.template_confirm")}
+            {applying
+              ? t("common.loading")
+              : t("planning.template_confirm_count", { count: selected.size })}
           </button>
         </>
       }
@@ -461,16 +546,51 @@ function IdeaTemplateDialog({
           </p>
         )}
         <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-500">
-            {t("planning.template_preview_label")}
-          </p>
-          <ul className="space-y-1 text-xs text-ink-700">
-            {IDEA_TEMPLATE.map((tmpl) => (
-              <li key={tmpl.title.en} className="flex items-center gap-2">
-                <Lightbulb size={12} className="shrink-0 text-ink-400" aria-hidden="true" />
-                <span>{localizeText(tmpl.title, locale)}</span>
-              </li>
-            ))}
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+              {t("planning.template_select_label", { count: selected.size, total })}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setSelected(allSelected ? new Set() : new Set(IDEA_TEMPLATE.map((_, idx) => idx)))
+              }
+              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900"
+            >
+              {allSelected ? t("planning.template_select_none") : t("planning.template_select_all")}
+            </button>
+          </div>
+          <ul className="space-y-0.5">
+            {IDEA_TEMPLATE.map((tmpl, idx) => {
+              const on = selected.has(idx);
+              return (
+                <li key={tmpl.title.en}>
+                  <button
+                    type="button"
+                    onClick={() => toggle(idx)}
+                    aria-pressed={on}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                      on
+                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200"
+                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600"
+                    }`}
+                  >
+                    {on ? (
+                      <CheckCircle2
+                        size={14}
+                        className="shrink-0 text-sage-700"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Lightbulb size={14} className="shrink-0" aria-hidden="true" />
+                    )}
+                    <span className={on ? "" : "line-through"}>
+                      {localizeText(tmpl.title, locale)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>

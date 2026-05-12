@@ -28,7 +28,7 @@ import {
   pauseApi,
   userApi,
 } from "../lib/endpoints";
-import { formatDate } from "../lib/format";
+import { formatDate, formatHuf, formatHufRange, formatYearMonth } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -732,6 +732,194 @@ function relativeTime(
   return formatTimestamp(ms, locale);
 }
 
+/** Loop C₁: the activity feed now carries `before_json` / `after_json` for
+ *  per-field couple edits, picks, schedule, and DIY supplier rows. This
+ *  helper picks out the meaningful fields for each known action and feeds
+ *  them through `t(...)` as `{before}` / `{after}` / `{category}` / `{label}`
+ *  / `{name}` interpolation. Returns the localized verb-phrase that the
+ *  panel renders next to the actor name.
+ *
+ *  Safety: every JSON.parse is wrapped in try/catch. Unknown action types
+ *  fall through to the standard `profile.activity_action_<path>` lookup,
+ *  which itself falls back to `profile.activity_action_generic` if the key
+ *  isn't translated. */
+type T = (path: string, vars?: Record<string, string | number>) => string;
+
+function safeParse(value: string | null): Record<string, unknown> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function asString(v: unknown): string | null {
+  return typeof v === "string" ? v : null;
+}
+function asNumber(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+/** Try a localized lookup; fall back to a generic phrase if the key isn't
+ *  translated (i.e. the returned string is identical to the key path). */
+function tWithFallback(t: T, key: string, vars: Record<string, string | number>): string {
+  const out = t(key, vars);
+  if (out === key) return t("profile.activity_action_generic", vars);
+  return out;
+}
+
+/** Format a budget side (before or after) — honours `budget_kind` so a range
+ *  renders as "min – max" and tbd renders as the i18n "TBD" string. */
+function formatBudgetSide(side: Record<string, unknown>, locale: Locale, t: T): string {
+  const kind = asString(side.budget_kind);
+  const exact = asNumber(side.budget_ceiling_huf);
+  const min = asNumber(side.budget_ceiling_min_huf);
+  const max = asNumber(side.budget_ceiling_max_huf);
+  if (kind === "range" && min !== null && max !== null) return formatHufRange(min, max, locale);
+  if (kind === "exact" && exact !== null) return formatHuf(exact, locale);
+  if (exact !== null) return formatHuf(exact, locale);
+  if (min !== null && max !== null) return formatHufRange(min, max, locale);
+  return t("profile.activity_value_empty");
+}
+
+/** Format a wedding-date side respecting the chosen `wedding_date_kind`. */
+function formatWeddingDateSide(side: Record<string, unknown>, locale: Locale, t: T): string {
+  const kind = asString(side.wedding_date_kind);
+  const exact = asString(side.wedding_date);
+  const year = asNumber(side.wedding_target_year);
+  const month = asNumber(side.wedding_target_month);
+  const season = asString(side.wedding_target_season);
+  if (kind === "tbd") return t("profile.activity_date_tbd");
+  if (kind === "exact" && exact) return formatDate(exact, locale);
+  if (kind === "month" && year !== null && month !== null) {
+    return formatYearMonth(year, month, locale);
+  }
+  if (kind === "season" && year !== null && season) {
+    return t("goal.date_season", { season: t(`season.${season}`), year });
+  }
+  if (kind === "year" && year !== null) return String(year);
+  if (exact) return formatDate(exact, locale);
+  return t("profile.activity_date_tbd");
+}
+
+/** Bride & Groom — both sides always carry both names so a single field
+ *  edit still produces a paired "Anna & Béla → Anna & Botond" diff. */
+function formatNamesSide(side: Record<string, unknown>): string {
+  const bride = asString(side.bride_name) ?? "";
+  const groom = asString(side.groom_name) ?? "";
+  if (!bride && !groom) return "—";
+  return `${bride} & ${groom}`.trim();
+}
+
+/** Localized ceremony kind label. Backend stores raw enum strings; falls
+ *  back to the raw value if a new kind ever ships without an i18n pair. */
+function formatCeremonyKind(value: string | null, t: T): string {
+  if (!value) return t("profile.activity_value_empty");
+  const label = t(`onboarding.ceremony_kind_${value}`);
+  // i18n miss → just show the enum so we never block an audit render.
+  if (label === `onboarding.ceremony_kind_${value}`) return value;
+  return label;
+}
+
+/** Returns the localized verb-phrase for one activity entry. The actor name
+ *  is rendered separately by `ActivityPanel`, so this string starts with the
+ *  verb ("updated the budget cap: X → Y"). */
+function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): string {
+  const before = safeParse(entry.before_json);
+  const after = safeParse(entry.after_json);
+  const action = entry.action;
+
+  // Per-field couple updates — these always carry both before and after.
+  if (action === "couple.budget_cap_update" && before && after) {
+    return tWithFallback(t, "profile.activity_action_couple_budget_cap_update", {
+      before: formatBudgetSide(before, locale, t),
+      after: formatBudgetSide(after, locale, t),
+    });
+  }
+  if (action === "couple.wedding_date_update" && before && after) {
+    return tWithFallback(t, "profile.activity_action_couple_wedding_date_update", {
+      before: formatWeddingDateSide(before, locale, t),
+      after: formatWeddingDateSide(after, locale, t),
+    });
+  }
+  if (action === "couple.names_update" && before && after) {
+    return tWithFallback(t, "profile.activity_action_couple_names_update", {
+      before: formatNamesSide(before),
+      after: formatNamesSide(after),
+    });
+  }
+  if (action === "couple.ceremony_kind_update" && before && after) {
+    return tWithFallback(t, "profile.activity_action_couple_ceremony_kind_update", {
+      before: formatCeremonyKind(asString(before.ceremony_kind), t),
+      after: formatCeremonyKind(asString(after.ceremony_kind), t),
+    });
+  }
+  if (action === "couple.planning_count_update" && before && after) {
+    const b = asNumber(before.planning_count);
+    const a = asNumber(after.planning_count);
+    return tWithFallback(t, "profile.activity_action_couple_planning_count_update", {
+      before: b === null ? t("profile.activity_value_empty") : String(b),
+      after: a === null ? t("profile.activity_value_empty") : String(a),
+    });
+  }
+
+  // Pick events — category is the only meaningful field. Localize via the
+  // shared `suppliers.cat.*` namespace; fall through to the raw slug if
+  // it's a category we don't have a label for yet.
+  if (action === "pick.upsert" || action === "pick.remove") {
+    const side = after ?? before;
+    const cat = side ? asString(side.category) : null;
+    const catLabel = cat ? t(`suppliers.cat.${cat}`) : null;
+    return tWithFallback(t, `profile.activity_action_${action.replace(/\./g, "_")}`, {
+      category: catLabel && catLabel !== `suppliers.cat.${cat}` ? catLabel : (cat ?? ""),
+    });
+  }
+
+  // Schedule events — label is the visible item name. Pull from the
+  // surviving side (delete → only `before`, create → only `after`).
+  if (
+    action === "schedule.create" ||
+    action === "schedule.update" ||
+    action === "schedule.delete" ||
+    action === "schedule.event_create" ||
+    action === "schedule.event_update" ||
+    action === "schedule.event_delete"
+  ) {
+    const label = asString(after?.label) ?? asString(before?.label) ?? "";
+    // Normalise both whitelist variants (`schedule.create`) and the legacy
+    // emitter (`schedule.event_create`) to the same i18n key.
+    const normalised = action.replace("event_", "");
+    return tWithFallback(t, `profile.activity_action_${normalised.replace(/\./g, "_")}`, {
+      label,
+    });
+  }
+
+  // DIY ("Csinálom magam") supplier entries — name lives in after for
+  // create/update, in before for delete. Backend currently only emits an
+  // `after` payload for create/update and none for delete, but keep both
+  // lookups so we render gracefully on either shape.
+  if (
+    action === "couple_supplier.create" ||
+    action === "couple_supplier.update" ||
+    action === "couple_supplier.delete"
+  ) {
+    const name = asString(after?.name) ?? asString(before?.name) ?? "";
+    return tWithFallback(t, `profile.activity_action_${action.replace(/\./g, "_")}`, { name });
+  }
+
+  // Default: try the static label key for the action. If that's also
+  // missing, fall back to the generic phrase so the user never sees a
+  // raw `profile.activity_action_*` string.
+  const key = `profile.activity_action_${action.replace(/\./g, "_")}`;
+  const resolved = t(key);
+  if (resolved !== key) return resolved;
+  return t("profile.activity_action_generic");
+}
+
 /** Dark "what happened" panel — the Profile-page audit log. Reads as a
  *  console card (ink-900 bg, paper-100 text) so the eye treats it as a
  *  log, not a content surface. Matches the user's "fekete doboz" ask. */
@@ -761,14 +949,14 @@ function ActivityPanel({
             const actorName = actorIsSelf
               ? t("profile.activity_actor_you")
               : (e.actor_full_name ?? t("profile.activity_actor_unknown"));
-            const actionKey = `profile.activity_action_${e.action.replace(/\./g, "_")}`;
+            const phrase = renderActivityEntry(e, t, locale);
             return (
               <li
                 key={e.id}
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-6 py-3 text-sm"
               >
                 <span className="font-medium text-paper-50">{actorName}</span>
-                <span className="text-paper-200">{t(actionKey)}</span>
+                <span className="text-paper-200">{phrase}</span>
                 <span className="ml-auto font-mono text-xs text-ink-300">
                   {relativeTime(e.created_at, locale, t)}
                 </span>

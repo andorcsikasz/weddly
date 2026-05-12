@@ -145,6 +145,10 @@ export interface Couple {
   budget_goal: BudgetGoal;
   /** Back-compat shortcut. Equal to budget_goal.exact_huf. */
   budget_ceiling_huf: Huf | null;
+  /** Scenario count for the cost-planning slider. Shared across both partners
+   *  and all devices — distinct from `target_guest_count` (the onboarding goal)
+   *  so a couple can model "what if we go to 130?" without rewriting the goal. */
+  planning_count: number | null;
   location_lat: number | null;
   location_lng: number | null;
   location_radius_km: number | null;
@@ -224,6 +228,12 @@ export interface CoupleActivityEntry {
   target_id: number | null;
   /** Optional human note attached at audit time. */
   note: string | null;
+  /** Raw JSON payloads from the underlying `audit_log` row. The frontend
+   *  parses and renders these to show before/after diffs in the activity
+   *  feed — backend doesn't try to format them. `null` for actions that
+   *  didn't capture a payload (e.g. legacy entries pre-Loop-C₁). */
+  before_json: string | null;
+  after_json: string | null;
   created_at: UnixMs;
 }
 

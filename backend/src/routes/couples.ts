@@ -92,6 +92,8 @@ interface OnboardBody {
   /** ISO YYYY-MM-DD. Empty string clears. */
   honeymoon_start_date?: unknown;
   honeymoon_end_date?: unknown;
+  /** Cost-planning scenario count. Integer 1..2000 or null. */
+  planning_count?: unknown;
 }
 
 const VALID_CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -786,10 +788,27 @@ async function handleUpdateSlug(ctx: Ctx): Promise<Response> {
   return json({ couple: toCouple(refreshed) });
 }
 
+/** Cost-planning scenario count: integer 1..2000, or null to clear. */
+function parsePlanningCount(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 0 || n > 2000) {
+    throw new HttpError(400, "planning_count must be an integer between 1 and 2000");
+  }
+  return n;
+}
+
 /** Partial-update endpoint for inline edits from the workspace (e.g. clicking
  *  the wedding date on the dashboard to change it). Reuses onboarding parsers
- *  so validation stays consistent. Currently supports `wedding_date_goal`;
- *  other goal fields can be wired in here as inline-edit affordances ship. */
+ *  so validation stays consistent. Currently supports `wedding_date_goal`,
+ *  `ceremony_kind`, names (bride/groom), `budget_goal`, the honeymoon trip
+ *  fields, and the cost-planning `planning_count` slider.
+ *
+ *  Audit-log strategy: each field cluster fires its OWN per-field action so
+ *  partner B can see "Anna changed the wedding date" vs "Bence updated the
+ *  budget cap" in the activity feed. A multi-field PATCH writes multiple
+ *  rows. We keep generic `couple.update` only as a fallback when none of the
+ *  recognised clusters match — historical entries still render. */
 async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
@@ -813,7 +832,47 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<Partial<OnboardBody>>(ctx.req);
   const updates: { col: string; val: string | number | null }[] = [];
-  const auditAfter: Record<string, unknown> = {};
+
+  // Each entry records WHICH per-field audit action to fire for the cluster,
+  // and a (before, after) pair that the UI can render as a diff. We collect
+  // them, then emit one audit row per entry after the UPDATE succeeds.
+  const auditEntries: {
+    action: string;
+    before: Record<string, unknown>;
+    after: Record<string, unknown>;
+  }[] = [];
+
+  // Names — bride / groom. Either field's presence triggers a names_update
+  // audit row with both fields in before/after so the UI can render a diff.
+  if (body.bride_name !== undefined || body.groom_name !== undefined) {
+    const newBride =
+      body.bride_name !== undefined
+        ? parsePartnerName(body.bride_name, "bride_name")
+        : couple.bride_name;
+    const newGroom =
+      body.groom_name !== undefined
+        ? parsePartnerName(body.groom_name, "groom_name")
+        : couple.groom_name;
+    const newDisplay = `${newBride} & ${newGroom}`;
+    updates.push(
+      { col: "bride_name", val: newBride },
+      { col: "groom_name", val: newGroom },
+      { col: "display_name", val: newDisplay },
+    );
+    auditEntries.push({
+      action: "couple.names_update",
+      before: {
+        bride_name: couple.bride_name,
+        groom_name: couple.groom_name,
+        display_name: couple.display_name,
+      },
+      after: {
+        bride_name: newBride,
+        groom_name: newGroom,
+        display_name: newDisplay,
+      },
+    });
+  }
 
   if (body.wedding_date_goal !== undefined || body.wedding_date !== undefined) {
     const goal = parseWeddingDateGoal(body as OnboardBody);
@@ -831,30 +890,54 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       { col: "wedding_target_month", val: goal.target_month },
       { col: "wedding_target_season", val: goal.target_season },
     );
-    auditAfter.wedding_date_goal = goal;
+    auditEntries.push({
+      action: "couple.wedding_date_update",
+      before: {
+        wedding_date: couple.wedding_date,
+        wedding_date_kind: couple.wedding_date_kind,
+        wedding_target_year: couple.wedding_target_year,
+        wedding_target_month: couple.wedding_target_month,
+        wedding_target_season: couple.wedding_target_season,
+      },
+      after: {
+        wedding_date: goal.exact_date,
+        wedding_date_kind: goal.kind,
+        wedding_target_year: goal.target_year,
+        wedding_target_month: goal.target_month,
+        wedding_target_season: goal.target_season,
+      },
+    });
   }
 
   if (body.ceremony_kind !== undefined) {
     const kind = parseCeremonyKind(body.ceremony_kind);
     updates.push({ col: "ceremony_kind", val: kind });
-    auditAfter.ceremony_kind = kind;
+    auditEntries.push({
+      action: "couple.ceremony_kind_update",
+      before: { ceremony_kind: couple.ceremony_kind },
+      after: { ceremony_kind: kind },
+    });
   }
 
   if (body.honeymoon_destination !== undefined) {
     const val = parseHoneymoonDestination(body.honeymoon_destination);
     updates.push({ col: "honeymoon_destination", val });
-    auditAfter.honeymoon_destination = val;
   }
   if (body.honeymoon_start_date !== undefined) {
     const val = parseIsoDateOrNull(body.honeymoon_start_date, "honeymoon_start_date");
     updates.push({ col: "honeymoon_start_date", val });
-    auditAfter.honeymoon_start_date = val;
   }
   if (body.honeymoon_end_date !== undefined) {
     const val = parseIsoDateOrNull(body.honeymoon_end_date, "honeymoon_end_date");
     updates.push({ col: "honeymoon_end_date", val });
-    auditAfter.honeymoon_end_date = val;
   }
+  // Honeymoon edits don't get a per-field audit cluster (yet) — they were
+  // never split out before either. Fold any honeymoon change into a single
+  // generic-fallback row below if NOTHING else matched.
+  const honeymoonTouched =
+    body.honeymoon_destination !== undefined ||
+    body.honeymoon_start_date !== undefined ||
+    body.honeymoon_end_date !== undefined;
 
   if (body.budget_goal !== undefined || body.budget_ceiling_huf !== undefined) {
     const goal = parseBudgetGoal(body as OnboardBody);
@@ -864,7 +947,31 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       { col: "budget_ceiling_min_huf", val: goal.min_huf },
       { col: "budget_ceiling_max_huf", val: goal.max_huf },
     );
-    auditAfter.budget_goal = goal;
+    auditEntries.push({
+      action: "couple.budget_cap_update",
+      before: {
+        budget_ceiling_huf: couple.budget_ceiling_huf,
+        budget_kind: couple.budget_kind,
+        budget_ceiling_min_huf: couple.budget_ceiling_min_huf,
+        budget_ceiling_max_huf: couple.budget_ceiling_max_huf,
+      },
+      after: {
+        budget_ceiling_huf: goal.exact_huf,
+        budget_kind: goal.kind,
+        budget_ceiling_min_huf: goal.min_huf,
+        budget_ceiling_max_huf: goal.max_huf,
+      },
+    });
+  }
+
+  if (body.planning_count !== undefined) {
+    const val = parsePlanningCount(body.planning_count);
+    updates.push({ col: "planning_count", val });
+    auditEntries.push({
+      action: "couple.planning_count_update",
+      before: { planning_count: couple.planning_count },
+      after: { planning_count: val },
+    });
   }
 
   if (updates.length === 0) throw new HttpError(400, "No fields to update");
@@ -877,14 +984,37 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   const refreshed = getCoupleById(couple.id);
   if (!refreshed) throw new HttpError(500, "Couple vanished after update");
 
-  addAuditLog({
-    actor_user_id: userId,
-    couple_id: couple.id,
-    action: "couple.update",
-    target_kind: "couple",
-    target_id: couple.id,
-    after: auditAfter,
-  });
+  // Fan out per-field audit rows. Each cluster gets its own action so
+  // partner B sees "Anna changed the wedding date" + "Anna updated the
+  // budget cap" as two distinct rows when both moved in one PATCH.
+  for (const entry of auditEntries) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: entry.action,
+      target_kind: "couple",
+      target_id: couple.id,
+      before: entry.before,
+      after: entry.after,
+    });
+  }
+  // Fallback: nothing matched a per-field cluster (e.g. only honeymoon
+  // fields moved). Preserve the legacy `couple.update` action so existing
+  // history keeps rendering and so we never silently swallow a change.
+  if (auditEntries.length === 0 && honeymoonTouched) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "couple.update",
+      target_kind: "couple",
+      target_id: couple.id,
+      after: {
+        honeymoon_destination: refreshed.honeymoon_destination,
+        honeymoon_start_date: refreshed.honeymoon_start_date,
+        honeymoon_end_date: refreshed.honeymoon_end_date,
+      },
+    });
+  }
 
   return json({ couple: toCouple(refreshed) });
 }
@@ -1243,7 +1373,7 @@ function handleGetPartner(ctx: Ctx): Response {
  *  there for forensics, hidden from the user-facing UI". */
 const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   // Couple workspace
-  "couple.update",
+  "couple.update", // fallback — legacy entries + honeymoon-only edits
   "couple.slug_update",
   "couple.archive",
   "couple.pause",
@@ -1251,6 +1381,13 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.notify_date_change",
   "couple.onboard",
   "couple.export",
+  // Loop C₁: per-field splits so partner B sees "Anna changed the budget cap"
+  // rather than a generic "frissítette a beállításokat".
+  "couple.wedding_date_update",
+  "couple.budget_cap_update",
+  "couple.names_update",
+  "couple.ceremony_kind_update",
+  "couple.planning_count_update",
   // Guests
   "guest.create",
   "guest.update",
@@ -1290,6 +1427,17 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   // Cost rows + suppliers attached to the couple
   "supplier_cost.upsert",
   "supplier.community.create",
+  // Day-of run-of-show
+  "schedule.create",
+  "schedule.update",
+  "schedule.delete",
+  // DIY ("Csinálom magam") supplier entries
+  "couple_supplier.create",
+  "couple_supplier.update",
+  "couple_supplier.delete",
+  // Loop C₁: per-category supplier picks (shared across partners)
+  "pick.upsert",
+  "pick.remove",
 ]);
 
 interface ActivityRow {
@@ -1299,6 +1447,8 @@ interface ActivityRow {
   target_kind: string;
   target_id: number | null;
   note: string | null;
+  before_json: string | null;
+  after_json: string | null;
   created_at: number;
   actor_full_name: string | null;
 }
@@ -1313,6 +1463,7 @@ function handleGetActivity(ctx: Ctx): Response {
   const rows = db
     .prepare(
       `SELECT a.id, a.actor_user_id, a.action, a.target_kind, a.target_id, a.note,
+              a.before_json, a.after_json,
               a.created_at, u.full_name AS actor_full_name
          FROM audit_log a
          LEFT JOIN users u ON u.id = a.actor_user_id
@@ -1332,6 +1483,8 @@ function handleGetActivity(ctx: Ctx): Response {
     target_kind: r.target_kind,
     target_id: r.target_id,
     note: r.note,
+    before_json: r.before_json,
+    after_json: r.after_json,
     created_at: r.created_at,
   }));
   return json({ entries });
