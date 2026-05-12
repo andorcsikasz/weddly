@@ -2,15 +2,7 @@
 // re-prices per-guest categories live, plus an inline-editable line table.
 
 import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple } from "@shared/types";
-import {
-  ArrowUpRight,
-  BarChart3,
-  Loader2,
-  Plus,
-  RotateCcw,
-  Save,
-  Trash2,
-} from "lucide-react";
+import { ArrowUpRight, BarChart3, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppShell } from "../components/AppShell";

@@ -186,6 +186,12 @@ export default function HoneymoonPage() {
   const [couple, setCouple] = useState<Couple | null>(null);
   const [lines, setLines] = useState<BudgetLine[]>([]);
   const [loaded, setLoaded] = useState(false);
+  // Per-line draft amounts published from each CostRow while its slider is
+  // being dragged. Lets the planned-total tile read the in-flight value
+  // before mouseup commits the PATCH, so the figure tracks the drag instead
+  // of jumping only on release. Keyed by line id; cleared when the row
+  // settles (save lands or drag returns to the saved value).
+  const [drafts, setDrafts] = useState<Record<number, number>>({});
 
   async function refresh() {
     const [c, l] = await Promise.all([coupleApi.current(), budgetApi.listLines()]);
@@ -219,12 +225,15 @@ export default function HoneymoonPage() {
     let actual = 0;
     let biggest = 0;
     for (const l of honeymoonLines) {
-      planned += l.planned_huf;
+      // Prefer the in-flight draft from a row that's currently being
+      // dragged so the planned-total tile updates live with the slider.
+      const p = drafts[l.id] ?? l.planned_huf;
+      planned += p;
       actual += l.actual_huf;
-      if (l.planned_huf > biggest) biggest = l.planned_huf;
+      if (p > biggest) biggest = p;
     }
     return { planned, actual, biggest };
-  }, [honeymoonLines]);
+  }, [honeymoonLines, drafts]);
   const nights = nightsBetween(
     couple?.honeymoon_start_date ?? null,
     couple?.honeymoon_end_date ?? null,
@@ -379,6 +388,16 @@ export default function HoneymoonPage() {
                   locale={locale}
                   sliderMax={sliderMax}
                   onPlannedChange={(v) => updateLinePlanned(line, v)}
+                  onDraft={(v) =>
+                    setDrafts((d) => {
+                      if (v === null) {
+                        if (!(line.id in d)) return d;
+                        const { [line.id]: _omit, ...rest } = d;
+                        return rest;
+                      }
+                      return { ...d, [line.id]: v };
+                    })
+                  }
                   onRemove={() => removeLine(line)}
                 />
               ))}
@@ -845,12 +864,17 @@ function CostRow({
   locale,
   sliderMax,
   onPlannedChange,
+  onDraft,
   onRemove,
 }: {
   line: BudgetLine;
   locale: "hu" | "en";
   sliderMax: number;
   onPlannedChange: (v: number) => Promise<void>;
+  /** Publish the row's in-flight value to the parent so the planned-total
+   *  tile can update live during drag. Call with `null` once the row has
+   *  settled (commit landed, drag returned to the saved value, etc.). */
+  onDraft: (v: number | null) => void;
   onRemove: () => void;
 }) {
   const { t } = useT();
@@ -875,6 +899,7 @@ function CostRow({
     const snapped = Math.round(next / step) * step;
     if (snapped === line.planned_huf) {
       setLocalValue(null);
+      onDraft(null);
       return;
     }
     inFlightRef.current = true;
@@ -884,6 +909,8 @@ function CostRow({
     } finally {
       inFlightRef.current = false;
       setSaving(false);
+      // Hand control back to the saved line value once the PATCH settles.
+      onDraft(null);
     }
   }
 
@@ -914,7 +941,12 @@ function CostRow({
         step={step}
         value={editValue}
         disabled={saving}
-        onChange={(e) => setLocalValue(Number(e.target.value))}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          setLocalValue(v);
+          // Publish on every tick so the planned-total tile tracks the drag.
+          onDraft(v);
+        }}
         onMouseUp={commitPending}
         onTouchEnd={commitPending}
         onKeyUp={commitPending}

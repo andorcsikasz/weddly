@@ -583,16 +583,28 @@ export default function DashboardPage() {
               </h2>
               <p className="mt-1 text-sm text-ink-700">{t("dashboard.date_changed_body")}</p>
             </div>
-            <button
-              type="button"
-              className="btn-accent"
-              onClick={onNotifyDateChange}
-              disabled={notifyingDateChange || notifyableGuests === 0}
-            >
-              {notifyingDateChange
-                ? t("dashboard.date_changed_sending")
-                : t("dashboard.date_changed_button")}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-blush-700 hover:bg-blush-100 disabled:opacity-50"
+                onClick={onDismissDateChange}
+                disabled={dismissingDateChange || notifyingDateChange}
+                aria-label={t("dashboard.date_changed_dismiss_aria")}
+                title={t("dashboard.date_changed_dismiss_aria")}
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="btn bg-sage-600 text-white hover:bg-sage-700"
+                onClick={onNotifyDateChange}
+                disabled={notifyingDateChange || dismissingDateChange || notifyableGuests === 0}
+              >
+                {notifyingDateChange
+                  ? t("dashboard.date_changed_sending")
+                  : t("dashboard.date_changed_button")}
+              </button>
+            </div>
           </div>
         </section>
       )}
