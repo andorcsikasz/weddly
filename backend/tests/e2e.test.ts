@@ -3464,6 +3464,7 @@ describe("admin users + couples directory", () => {
     groom_name: string | null;
     status: string;
     partners: { id: number; full_name: string; email: string }[];
+    created_at: number;
   }
 
   async function registerAdmin(): Promise<string> {
@@ -3636,6 +3637,68 @@ describe("admin users + couples directory", () => {
       token: coupleToken,
     });
     expect(r2.status).toBe(403);
+  });
+
+  test("admin listCouples includes created_at on every row", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    await bootstrapCouple("a@weddly.test");
+    await bootstrapCouple("b@weddly.test");
+
+    const r = await req<{ couples: AdminCouple[] }>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.couples.length).toBe(2);
+    for (const c of r.data.couples) {
+      expect(typeof c.created_at).toBe("number");
+      expect(c.created_at).toBeGreaterThan(0);
+    }
+  });
+
+  test("admin purge-deleting: only removes status='deleting' rows, returns count", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { coupleId: keepId } = await bootstrapCouple("keep@weddly.test");
+    const { coupleId: doomedAId } = await bootstrapCouple("doomedA@weddly.test");
+    const { coupleId: doomedBId } = await bootstrapCouple("doomedB@weddly.test");
+
+    // Drive the doomed couples into the `deleting` tombstone state without
+    // touching the keeper. Reuse the same purgeOneCouple helper the admin
+    // delete path uses — it flips status to 'deleting'.
+    const { purgeOneCouple } = await import("../src/domain/purge");
+    purgeOneCouple(doomedAId);
+    purgeOneCouple(doomedBId);
+
+    const r = await req<{ purged: number }>(
+      "POST",
+      "/api/admin/couples/purge-deleting",
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.purged).toBe(2);
+
+    // The keeper survives untouched.
+    const after = await req<{ couples: AdminCouple[] }>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
+    const keep = after.data.couples.find((c) => c.id === keepId);
+    expect(keep?.status).toBe("active");
+    // The doomed rows are still in the list (audit retention) and remain
+    // 'deleting'; purgeOneCouple is idempotent so re-running doesn't change
+    // their state. The admin UI hides them via a client-side filter.
+    const doomedA = after.data.couples.find((c) => c.id === doomedAId);
+    expect(doomedA?.status).toBe("deleting");
+  });
+
+  test("admin gate: non-admin gets 403 on /api/admin/couples/purge-deleting", async () => {
+    wipeAll();
+    await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("notadmin@weddly.test");
+
+    const r = await req("POST", "/api/admin/couples/purge-deleting", {}, { token: coupleToken });
+    expect(r.status).toBe(403);
   });
 });
 

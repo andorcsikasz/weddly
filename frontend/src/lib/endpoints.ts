@@ -529,6 +529,9 @@ export const adminUserApi = {
       {},
     ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/users/${id}`),
+  /** One-shot bulk re-purge of every couple flagged `status="deleting"`. */
+  purgeDeleting: () =>
+    apiFetch<{ purged: number }>("POST", "/api/admin/couples/purge-deleting", {}),
 };
 
 export const vendorWaitlistApi = {

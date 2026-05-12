@@ -6,7 +6,7 @@ import type { AdminCoupleView, AdminUserView } from "@shared/types";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { sendKind } from "../domain/emails";
-import { purgeOneUser } from "../domain/purge";
+import { purgeOneCouple, purgeOneUser } from "../domain/purge";
 import { isAdminEmail, requireAdmin, type UserRow } from "../domain/users";
 import { type CoupleRow, toCouple } from "../domain/couples";
 import { addAuditLog } from "../lib/audit";
@@ -131,9 +131,41 @@ function handleDeleteUser(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+/**
+ * Bulk re-purge every couple currently flagged `status="deleting"`. These
+ * rows have already had their PII scrubbed by `purgeOneCouple` (either via
+ * admin delete or the scheduled-pause worker) — re-running is idempotent and
+ * cheap, and gives us a one-shot "clean residue" sweep for legacy tombstones.
+ * Returns the count of rows that were touched so the UI can show a toast.
+ */
+function handlePurgeDeletingCouples(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const rows = db
+    .prepare("SELECT id FROM couples WHERE status = 'deleting' ORDER BY id ASC")
+    .all() as { id: number }[];
+
+  for (const r of rows) {
+    purgeOneCouple(r.id);
+  }
+
+  if (rows.length > 0) {
+    addAuditLog({
+      actor_user_id: admin.id,
+      couple_id: null,
+      action: "admin.couples_purge_deleting",
+      target_kind: "couple",
+      target_id: null,
+      note: `bulk purge of ${rows.length} deleting couples`,
+    });
+  }
+
+  return json({ purged: rows.length });
+}
+
 export function registerAdminUserRoutes(router: Router) {
   router.get("/api/admin/users", handleListUsers, true);
   router.get("/api/admin/couples", handleListCouples, true);
   router.post("/api/admin/users/:id/resend-verify", handleResendVerify, true);
   router.delete("/api/admin/users/:id", handleDeleteUser, true);
+  router.post("/api/admin/couples/purge-deleting", handlePurgeDeletingCouples, true);
 }

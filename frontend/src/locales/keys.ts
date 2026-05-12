@@ -1576,9 +1576,18 @@ export interface LocaleMessages {
     table_workspace_id: string;
     table_workspace_name: string;
     table_workspace_members: string;
+    /** Creation date column on the workspaces list (e.g. "2026. máj. 12."). */
+    table_workspace_created: string;
     workspace_solo_member: string;
     workspace_status_paused: string;
     workspace_status_deleting: string;
+    /** One-shot bulk purge of every couple in `status="deleting"` — already
+     *  PII-scrubbed tombstones the regular UI now hides. */
+    purge_deleting_button: string;
+    purge_deleting_confirm_title: string;
+    purge_deleting_confirm_body: string;
+    purge_deleting_confirm: string;
+    purge_deleting_success: string;
     badge_admin: string;
     badge_suspended: string;
     badge_unverified: string;

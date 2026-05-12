@@ -8,8 +8,21 @@ import { useAuth } from "../lib/auth";
 import { adminUserApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
+/** `created_at` is Unix milliseconds (see backend/src/db.ts `now()`). Mirrors
+ *  the formatter on AdminSuppliersPage so the admin pages render dates
+ *  identically (e.g. "2026. máj. 12."). */
+function formatDate(unixMs: number, locale: string): string {
+  const d = new Date(unixMs);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(d);
+}
+
 export default function AdminUsersPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const { user: currentAdmin } = useAuth();
   const toast = useToast();
   const promptEntry = useEntryPrompt();
@@ -19,6 +32,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
+  const [purgingDeleting, setPurgingDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +58,14 @@ export default function AdminUsersPage() {
   // into a single line (members listed inside) instead of one row per user.
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
   const orphans = useMemo(() => users.filter((u) => u.couple_id == null), [users]);
+  // Couples flagged "deleting" are already-purged tombstones (PII scrubbed,
+  // row kept for audit retention). Hide them from the main list and surface a
+  // one-shot purge action so admins can sweep the residue.
+  const visibleCouples = useMemo(() => couples.filter((c) => c.status !== "deleting"), [couples]);
+  const deletingCount = useMemo(
+    () => couples.filter((c) => c.status === "deleting").length,
+    [couples],
+  );
 
   function workspaceLabel(c: AdminCoupleView): string {
     if (c.display_name && c.display_name.trim()) return c.display_name;
@@ -53,14 +75,11 @@ export default function AdminUsersPage() {
     return a || b || `#${c.id}`;
   }
 
-  /** Admin workspace code: alphanumeric, guaranteed unique even when two
-   *  couples share a name (e.g. two "Peti & Zoé"s collide on slug). The
-   *  numeric suffix is the couple.id, so the code is also stable across
-   *  reloads. Slug stays the human-meaningful prefix; falls back to WEDDLY
-   *  when the couple pre-dates the slug column. */
+  /** Zero-padded 5-digit numeric workspace code (e.g. couple.id=7 → "00007").
+   *  Stable across reloads and trivially sortable; the human-meaningful
+   *  `slug` is still available on the type for other consumers. */
   function workspaceId(c: AdminCoupleView): string {
-    const prefix = c.slug && c.slug.trim() ? c.slug : "WEDDLY";
-    return `${prefix}-${c.id}`;
+    return String(c.id).padStart(5, "0");
   }
 
   async function onResendVerify(u: AdminUserView) {
@@ -129,6 +148,30 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function onPurgeDeleting() {
+    if (deletingCount === 0) return;
+    const ok = await confirm({
+      title: t("admin.purge_deleting_confirm_title"),
+      body: t("admin.purge_deleting_confirm_body", { n: deletingCount }),
+      confirmLabel: t("admin.purge_deleting_confirm"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setPurgingDeleting(true);
+    try {
+      const r = await adminUserApi.purgeDeleting();
+      const [u2, c2] = await Promise.all([adminUserApi.listUsers(), adminUserApi.listCouples()]);
+      setUsers(u2.users);
+      setCouples(c2.couples);
+      toast.success(t("admin.purge_deleting_success", { n: r.purged }));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPurgingDeleting(false);
+    }
+  }
+
   function renderUserCell(u: AdminUserView) {
     const isSelf = currentAdmin?.id === u.id;
     const isPending = pendingId === u.id;
@@ -192,70 +235,77 @@ export default function AdminUsersPage() {
         <div className="text-sm text-ink-500">{t("common.loading")}</div>
       ) : (
         <>
-          {/* ── Workspaces (couples) — one row per couple ─────────────────── */}
+          {/* ── Workspaces (couples) — one card per couple ────────────────── */}
           <section className="mb-10">
-            <div className="mb-3 flex items-baseline justify-between">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
               <h2 className="text-lg font-semibold text-ink-900">
                 {t("admin.workspaces_section")}
               </h2>
-              <span className="text-xs uppercase tracking-wide text-ink-500">
-                {t(
-                  couples.length === 1
-                    ? "admin.workspaces_count_one"
-                    : "admin.workspaces_count_other",
-                  { n: couples.length },
+              <div className="flex items-center gap-3">
+                {deletingCount > 0 && (
+                  <button
+                    type="button"
+                    className="btn-ghost btn-sm text-violet-800"
+                    onClick={onPurgeDeleting}
+                    disabled={purgingDeleting}
+                  >
+                    {t("admin.purge_deleting_button", { n: deletingCount })}
+                  </button>
                 )}
-              </span>
+                <span className="text-xs uppercase tracking-wide text-ink-500">
+                  {t(
+                    visibleCouples.length === 1
+                      ? "admin.workspaces_count_one"
+                      : "admin.workspaces_count_other",
+                    { n: visibleCouples.length },
+                  )}
+                </span>
+              </div>
             </div>
-            {couples.length === 0 ? (
+            {visibleCouples.length === 0 ? (
               <div className="card text-sm text-ink-500">{t("admin.couples_empty")}</div>
             ) : (
-              <div className="card overflow-x-auto p-0">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-paper-100 text-left text-[11px] uppercase tracking-wide text-ink-500">
-                    <tr>
-                      <th className="px-3 py-2">{t("admin.table_workspace_id")}</th>
-                      <th className="px-3 py-2">{t("admin.table_workspace_name")}</th>
-                      <th className="px-3 py-2">{t("admin.table_workspace_members")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {couples.map((c) => {
-                      // Server returns partners scrubbed of users we already
-                      // know are missing (rare race); fall back to userById
-                      // for the freshest local state.
-                      const members = c.partners
-                        .map((p) => userById.get(p.id))
-                        .filter((u): u is AdminUserView => u != null);
-                      const statusLabel =
-                        c.status === "paused"
-                          ? t("admin.workspace_status_paused")
-                          : c.status === "deleting"
-                            ? t("admin.workspace_status_deleting")
-                            : null;
-                      return (
-                        <tr key={c.id} className="border-t border-paper-200 align-top">
-                          <td className="px-3 py-2 whitespace-nowrap">
+              <>
+                {/* Card-style row header — uses the same 4-column grid as the
+                 *  rows below so the labels line up exactly. Hidden on small
+                 *  screens (rows stack vertically there). */}
+                <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_8rem] gap-4 px-5 text-[11px] uppercase tracking-wide text-ink-500 md:grid">
+                  <div>{t("admin.table_workspace_id")}</div>
+                  <div>{t("admin.table_workspace_name")}</div>
+                  <div>{t("admin.table_workspace_members")}</div>
+                  <div>{t("admin.table_workspace_created")}</div>
+                </div>
+                <ul className="space-y-3">
+                  {visibleCouples.map((c) => {
+                    // Server returns partners scrubbed of users we already
+                    // know are missing (rare race); fall back to userById
+                    // for the freshest local state.
+                    const members = c.partners
+                      .map((p) => userById.get(p.id))
+                      .filter((u): u is AdminUserView => u != null);
+                    const statusLabel =
+                      c.status === "paused" ? t("admin.workspace_status_paused") : null;
+                    return (
+                      <li
+                        key={c.id}
+                        className="rounded-2xl border-2 border-paper-300 bg-white px-5 py-4 shadow-soft"
+                      >
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_8rem] md:items-center">
+                          <div className="whitespace-nowrap">
                             <code className="rounded bg-paper-100 px-1.5 py-0.5 text-[11px] font-medium text-ink-700">
                               {workspaceId(c)}
                             </code>
-                          </td>
-                          <td className="px-3 py-2">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                              <span className="font-medium text-ink-900">{workspaceLabel(c)}</span>
-                              {statusLabel && (
-                                <Badge tone={c.status === "deleting" ? "violet-soft" : "muted"}>
-                                  {statusLabel}
-                                </Badge>
-                              )}
-                              {members.length === 1 && (
-                                <span className="text-[11px] italic text-ink-500">
-                                  {t("admin.workspace_solo_member")}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2">
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <span className="font-medium text-ink-900">{workspaceLabel(c)}</span>
+                            {statusLabel && <Badge tone="muted">{statusLabel}</Badge>}
+                            {members.length === 1 && (
+                              <span className="text-[11px] italic text-ink-500">
+                                {t("admin.workspace_solo_member")}
+                              </span>
+                            )}
+                          </div>
+                          <div>
                             {members.length === 0 ? (
                               <span className="text-xs italic text-ink-500">—</span>
                             ) : (
@@ -267,13 +317,16 @@ export default function AdminUsersPage() {
                                 ))}
                               </ul>
                             )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                          <div className="whitespace-nowrap text-xs text-ink-500">
+                            {formatDate(c.created_at, locale)}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
             )}
           </section>
 
