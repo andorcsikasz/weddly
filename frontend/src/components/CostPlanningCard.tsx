@@ -22,7 +22,7 @@ import {
   UtensilsCrossed,
   Wine,
 } from "lucide-react";
-import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { type ComponentType, type CSSProperties, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatHuf, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -40,15 +40,8 @@ function rangeFillStyle(value: number, min: number, max: number): { background: 
   };
 }
 
-/** Per-row slider visual + drag constants.
- *  - `ANCHOR_BLUE_PCT`: the panel-biggest row's *committed* value paints up to
- *    this much of the column. Smaller rows scale linearly under it.
- *  - `FIXED_DRAG_HUF_RANGE`: the gray "headroom" tail beyond the committed
- *    value. Identical HUF range for every row, regardless of size — caps how
- *    far a single drag can grow the value before commit. Without this fix,
- *    rowMax compounded with each release and values shot up too fast. */
-const ANCHOR_BLUE_PCT = 75;
-const FIXED_DRAG_HUF_RANGE = 200_000;
+// (Visual constants previously lived here — per-row tuning is now derived
+//  from `widthAnchor` directly so every row shares the same denominator.)
 
 /** Categories whose planned cost scales with headcount. Everything else is
  *  treated as a fixed cost (venue rental, photographer day rate, rings, …). */
@@ -403,23 +396,20 @@ function CategoryRow({
   // Slider operates in display units so the thumb tracks the headcount
   // slider for per-guest categories — drag a per-fő rate, the total moves.
   const liveDisplay = Math.round(editBaseline * scaleFactor);
-  // Committed display value drives the slider's CSS width + max so the track
-  // stays *stable while dragging* — only the gradient fill animates with
-  // localValue. The slider re-sizes after commit.
-  const plannedDisplay = Math.round(plannedBaseline * scaleFactor);
 
-  // Drag headroom is a *fixed HUF amount* — one drag can grow the value by
-  // at most FIXED_DRAG_HUF_RANGE before release. No compounding rowMax.
-  const rowMax = plannedDisplay + FIXED_DRAG_HUF_RANGE;
-  // Slider always spans the full row — the user asked for the gray track to
-  // reach the right edge of every row rather than ending early on small
-  // categories. We keep widthAnchor referenced in the panel-level peak math
-  // so the per-row drag step / formatting stays stable, but the row's CSS
-  // width is now constant.
-  void widthAnchor;
+  // Every row shares `widthAnchor` (the panel's peak possible row value) as
+  // its slider denominator. Two consequences this fix relies on:
+  //   1. **No commit jump.** Both during drag and after release, the fill
+  //      position uses the same formula `liveDisplay / widthAnchor`. The
+  //      previous formula used `liveDisplay / (plannedDisplay + 200k)`,
+  //      whose denominator shifted on release — same value, different fill,
+  //      visible jump.
+  //   2. **Proportional rows.** With one shared denominator, each row's
+  //      filled segment is linearly proportional to its value — a 1.2 M
+  //      row fills twice as much rail as a 600 k row, instead of every row
+  //      being squashed near 100 % by its own narrow rowMax.
+  const rowMax = widthAnchor;
   const widthPct = 100;
-  // Gradient fill follows the LIVE value so dragging feels instant; the
-  // slider element itself stays the same width during a drag.
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
 
   // Slider step — fine enough for big budgets, coarse enough not to spam.
@@ -454,38 +444,45 @@ function CategoryRow({
     }
   }
 
-  return (
-    <li className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm">
+  // Track gradient + dimensions are computed identically in both modes so
+  // the link-mode honeymoon row reads as the same bar chart as the rest.
+  const trackStyle: CSSProperties = {
+    width: `${widthPct}%`,
+    background: `linear-gradient(to right, #243150 0%, #243150 ${fillPct}%, #efe9d9 ${fillPct}%, #efe9d9 100%)`,
+  };
+
+  const rowInner = (
+    <>
       <span className="flex items-center gap-2 text-ink-700">
         <Icon size={14} className="shrink-0 text-ink-500" aria-hidden />
         <span className="truncate">{t(`budget.cat.${category}`)}</span>
       </span>
-      {/* The wrapper takes the full grid cell; the input is width-scaled to
-       *  read like a horizontal bar chart. Width is fixed by the *committed*
-       *  value (stable during drag); only the gradient fill animates as the
-       *  user drags. The gray tail (FIXED_DRAG_HUF_RANGE worth of HUF) is
-       *  constant across rows so single-drag escalation is capped. */}
       <div className="w-full">
-        <input
-          type="range"
-          min={0}
-          max={rowMax}
-          step={step}
-          value={liveDisplay}
-          disabled={!editable || saving}
-          onChange={(e) => applyScaledDrag(Number(e.target.value))}
-          onMouseUp={(e) => commit(Number(e.currentTarget.value))}
-          onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
-          onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-          className="range-fill range-fill-thin block"
-          style={{
-            width: `${widthPct}%`,
-            background: `linear-gradient(to right, #243150 0%, #243150 ${fillPct}%, #efe9d9 ${fillPct}%, #efe9d9 100%)`,
-          }}
-          aria-label={t("budget.edit_planned_aria", {
-            category: t(`budget.cat.${category}`),
-          })}
-        />
+        {linkTo ? (
+          // Lookalike static bar — same height/radius/gradient as the real
+          // slider, but no thumb and no input affordance. The row itself is
+          // clickable (Link wrapper above), and the whole tile reads as a
+          // bar-chart entry without inviting an in-place drag.
+          <div className="range-fill range-fill-thin block" style={trackStyle} aria-hidden="true" />
+        ) : (
+          <input
+            type="range"
+            min={0}
+            max={rowMax}
+            step={step}
+            value={liveDisplay}
+            disabled={!editable || saving}
+            onChange={(e) => applyScaledDrag(Number(e.target.value))}
+            onMouseUp={(e) => commit(Number(e.currentTarget.value))}
+            onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
+            onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+            className="range-fill range-fill-thin block"
+            style={trackStyle}
+            aria-label={t("budget.edit_planned_aria", {
+              category: t(`budget.cat.${category}`),
+            })}
+          />
+        )}
       </div>
       <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
         {actual > 0 && <span className="text-ink-400">{formatHuf(actual, locale)} / </span>}
@@ -497,6 +494,26 @@ function CategoryRow({
           </span>
         )}
       </span>
+    </>
+  );
+
+  if (linkTo) {
+    return (
+      <li>
+        <Link
+          to={linkTo}
+          className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm -mx-2 px-2 rounded-md"
+          aria-label={t("budget.cat.honeymoon")}
+        >
+          {rowInner}
+        </Link>
+      </li>
+    );
+  }
+
+  return (
+    <li className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm">
+      {rowInner}
     </li>
   );
 }
