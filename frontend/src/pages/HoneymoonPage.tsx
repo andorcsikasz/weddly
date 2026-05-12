@@ -8,6 +8,7 @@ import type { BudgetLine, Couple, PlaceSuggestion } from "@shared/types";
 import {
   BedDouble,
   Calendar,
+  Check,
   Compass,
   Map as MapIcon,
   MapPin,
@@ -177,6 +178,15 @@ export default function HoneymoonPage() {
   }, []);
 
   const honeymoonLines = useMemo(() => lines.filter((l) => l.category === "honeymoon"), [lines]);
+  // Each preset chip is single-use. We resolve every existing line back to
+  // its preset via the same label-keyword matcher used by the cost rows, so
+  // a renamed line still counts toward "already added" (e.g. user renamed
+  // "Utazás" → "Repjegy" — the Travel chip should still gray out).
+  const usedPresetIds = useMemo(() => {
+    const used = new Set<Preset["id"]>();
+    for (const l of honeymoonLines) used.add(presetFor(l.label).id);
+    return used;
+  }, [honeymoonLines]);
   const totals = useMemo(() => {
     let planned = 0;
     let actual = 0;
@@ -219,6 +229,9 @@ export default function HoneymoonPage() {
   /* ─── Cost-line saves ─────────────────────────────────────────────── */
 
   async function addPreset(preset: Preset) {
+    // Belt-and-suspenders — the chip is disabled in the UI when used, but
+    // guard the action too so a stale click can't double-add a category.
+    if (usedPresetIds.has(preset.id)) return;
     const label = t(`honeymoon.preset.${preset.id}`);
     try {
       const r = await budgetApi.createLine({
@@ -307,7 +320,9 @@ export default function HoneymoonPage() {
             <h2>{t("honeymoon.costs_title")}</h2>
             <p className="mt-1 text-sm text-ink-500">{t("honeymoon.costs_sub")}</p>
           </div>
-          {honeymoonLines.length > 0 && <PresetChips onPick={addPreset} compact />}
+          {honeymoonLines.length > 0 && (
+            <PresetChips onPick={addPreset} usedIds={usedPresetIds} compact />
+          )}
         </div>
 
         {honeymoonLines.length === 0 ? (
@@ -316,7 +331,7 @@ export default function HoneymoonPage() {
               <h3 className="font-serif text-lg">{t("honeymoon.costs_empty_title")}</h3>
               <p className="mt-1 text-sm text-ink-700">{t("honeymoon.costs_empty_body")}</p>
             </div>
-            <PresetChips onPick={addPreset} />
+            <PresetChips onPick={addPreset} usedIds={usedPresetIds} />
           </div>
         ) : (
           <div className="card overflow-hidden p-0">
@@ -591,9 +606,21 @@ function DestinationAutocomplete({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft]);
 
+  /** Commit on Enter / blur / click-outside. If Nominatim has suggestions
+   *  visible, snap to the explicit highlight or the first hit — we'd rather
+   *  save a real, map-searchable address than free text the map can't find.
+   *  Fall back to raw text only when no suggestions are available
+   *  (network failure or string too short). */
   function commitDraft() {
     if (committed.current) return;
     committed.current = true;
+    const explicit = highlight >= 0 ? suggestions[highlight] : null;
+    const fallback = suggestions[0] ?? null;
+    const picked = explicit ?? fallback;
+    if (picked) {
+      onCommit(picked.secondary || picked.primary);
+      return;
+    }
     const trimmed = draft.trim();
     onCommit(trimmed.length > 0 ? trimmed : null);
   }
@@ -601,9 +628,8 @@ function DestinationAutocomplete({
   function pick(s: PlaceSuggestion) {
     committed.current = true;
     setOpen(false);
-    // Prefer the full address (secondary) when picking from the dropdown —
-    // it's what users asked for when they said "pontos cím". Fall back to
-    // the primary headline if Nominatim didn't return a display_name.
+    // Prefer the full address (secondary) — that's the precise location
+    // string the map modal hands back to Nominatim later.
     const value = s.secondary || s.primary;
     onCommit(value);
   }
@@ -621,11 +647,7 @@ function DestinationAutocomplete({
       setHighlight((h) => (h <= 0 ? suggestions.length - 1 : h - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (open && highlight >= 0 && suggestions[highlight]) {
-        pick(suggestions[highlight]);
-      } else {
-        commitDraft();
-      }
+      commitDraft();
     } else if (e.key === "Escape") {
       e.preventDefault();
       committed.current = true;
@@ -738,22 +760,33 @@ function BudgetSummaryTile({
 
 function PresetChips({
   onPick,
+  usedIds,
   compact,
 }: {
   onPick: (preset: Preset) => Promise<void>;
+  /** Preset IDs that already have a matching honeymoon line. Their chip
+   *  goes disabled with a check icon — one category per line. */
+  usedIds: Set<Preset["id"]>;
   compact?: boolean;
 }) {
   const { t } = useT();
   return (
     <div className={`flex flex-wrap gap-2 ${compact ? "" : "pt-1"}`}>
       {PRESETS.map((p) => {
-        const Icon = p.icon;
+        const used = usedIds.has(p.id);
+        const Icon = used ? Check : p.icon;
         return (
           <button
             key={p.id}
             type="button"
+            disabled={used}
             onClick={() => onPick(p)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-blush-300 hover:text-blush-700"
+            aria-pressed={used || undefined}
+            className={
+              used
+                ? "inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-paper-200 bg-paper-100 px-3 py-1.5 text-xs font-medium text-ink-400"
+                : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-blush-300 hover:text-blush-700"
+            }
           >
             <Icon size={14} aria-hidden="true" />
             {t(`honeymoon.preset.${p.id}`)}

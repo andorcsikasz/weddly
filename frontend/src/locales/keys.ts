@@ -722,9 +722,12 @@ export interface LocaleMessages {
     /** Success toast (plural variants). */
     template_done_one: string;
     template_done_other: string;
-    /** Assignee chip on tasks + idea-suggester byline. */
+    /** Assignee chip on tasks + idea-suggester byline. `assignee_add` labels
+     *  the dashed "+ owner" affordance shown on tasks with no owner set. */
     assignee_label: string;
     assignee_placeholder: string;
+    assignee_add: string;
+    assignee_edit_hint: string;
     idea_suggested_by: string;
     /** Task tab wand button + dialog. */
     task_template_button: string;
@@ -797,9 +800,6 @@ export interface LocaleMessages {
     map_error: string;
     /** Aria-label + tooltip for the "open in OpenStreetMap" link in the map modal. */
     map_open_external: string;
-    /** Master slider above the cost grid — scales every honeymoon line. */
-    total_slider_label: string;
-    total_slider_aria: string;
     /** Day-count plural — receives `{count}`. */
     day_one: string;
     day_other: string;

@@ -748,6 +748,8 @@ const hu: LocaleMessages = {
     // Assignee chip + idea suggester display.
     assignee_label: "Felelős",
     assignee_placeholder: "Felelős",
+    assignee_add: "Felelős",
+    assignee_edit_hint: "Kattints a felelős átírásához",
     idea_suggested_by: "— {name} javasolta",
     // Task tab wand (varázspálca) + dialog.
     task_template_button: "Sablon feladatok",
@@ -816,8 +818,6 @@ const hu: LocaleMessages = {
     map_not_found: "Nem találtuk meg ezt a helyet a térképen. Próbálj pontosabb címet.",
     map_error: "A térkép betöltése nem sikerült. Próbáld újra később.",
     map_open_external: "Megnyitás új lapon",
-    total_slider_label: "Teljes keret",
-    total_slider_aria: "Nászút összes tervezett kerete — a tételek arányosan változnak",
     day_one: "nap",
     day_other: "nap",
     budget_actual_inline: "Eddig: {actual}",

@@ -747,6 +747,8 @@ const en: LocaleMessages = {
     // Assignee chip + idea suggester display.
     assignee_label: "Owner",
     assignee_placeholder: "Owner",
+    assignee_add: "Owner",
+    assignee_edit_hint: "Click to change the owner",
     idea_suggested_by: "— suggested by {name}",
     // Task tab wand + dialog.
     task_template_button: "Task template",
@@ -815,8 +817,6 @@ const en: LocaleMessages = {
     map_not_found: "We couldn't pin this on the map. Try a more specific address.",
     map_error: "The map couldn't load. Try again later.",
     map_open_external: "Open in a new tab",
-    total_slider_label: "Total budget",
-    total_slider_aria: "Total honeymoon planned amount — scales every line proportionally",
     day_one: "day",
     day_other: "days",
     budget_actual_inline: "Spent: {actual}",
