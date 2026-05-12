@@ -849,6 +849,10 @@ function CostRow({
   const Icon = preset.icon;
   const [localValue, setLocalValue] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  // Ref-guard prevents a duplicate save when blur fires immediately after
+  // mouseup — state updates haven't flushed yet, so a useState gate would
+  // see `saving === false` on the second call.
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     if (!saving) setLocalValue(null);
@@ -858,17 +862,29 @@ function CostRow({
   const step = sliderMax >= 2_000_000 ? 10_000 : 5_000;
 
   async function commit(next: number) {
+    if (inFlightRef.current) return;
     const snapped = Math.round(next / step) * step;
     if (snapped === line.planned_huf) {
       setLocalValue(null);
       return;
     }
+    inFlightRef.current = true;
     setSaving(true);
     try {
       await onPlannedChange(snapped);
     } finally {
+      inFlightRef.current = false;
       setSaving(false);
     }
+  }
+
+  // Commit whatever's been dragged but not yet persisted. Called from every
+  // release-style event (mouseup / touchend / keyup) AND blur — blur is the
+  // safety net for the "drag thumb, drift cursor off slider, release outside"
+  // path where onMouseUp never fires on the input element.
+  function commitPending() {
+    if (localValue === null) return;
+    void commit(localValue);
   }
 
   return (
@@ -890,9 +906,10 @@ function CostRow({
         value={editValue}
         disabled={saving}
         onChange={(e) => setLocalValue(Number(e.target.value))}
-        onMouseUp={(e) => commit(Number(e.currentTarget.value))}
-        onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
-        onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+        onMouseUp={commitPending}
+        onTouchEnd={commitPending}
+        onKeyUp={commitPending}
+        onBlur={commitPending}
         className="range-fill range-fill-thin col-span-3 col-start-1 row-start-2 w-full sm:col-span-1 sm:col-start-2 sm:row-start-1"
         style={rangeFillStyle(editValue, 0, sliderMax)}
         aria-label={t("honeymoon.slider_aria", { label: line.label })}

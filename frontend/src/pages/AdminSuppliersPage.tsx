@@ -280,7 +280,7 @@ export default function AdminSuppliersPage() {
             </button>
             <button
               type="button"
-              className="btn-ghost btn-sm text-blush-700"
+              className="btn-ghost btn-sm text-violet-800"
               onClick={onBulkDelete}
             >
               <Trash2 size={14} /> {t("admin.bulk_delete")}
@@ -409,7 +409,7 @@ export default function AdminSuppliersPage() {
                       ) : null}
                       <button
                         type="button"
-                        className="btn-ghost btn-sm text-blush-700"
+                        className="btn-ghost btn-sm text-violet-800"
                         onClick={() => onDelete(s)}
                         aria-label={t("admin.delete")}
                       >
@@ -444,8 +444,8 @@ function FilterChip({
       aria-pressed={active}
       className={
         active
-          ? "rounded-full border border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100"
-          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 hover:border-ink-300"
+          ? "rounded-full border border-violet-700 bg-violet-700 px-3 py-1 text-xs font-medium text-paper-100"
+          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-800 hover:border-violet-300"
       }
     >
       {label}
@@ -462,11 +462,11 @@ function StatusPill({
 }) {
   const cls =
     status === "active"
-      ? "border-ink-700 bg-ink-700 text-paper-100"
+      ? "border-violet-700 bg-violet-700 text-paper-100"
       : status === "awaiting_review"
-        ? "border-blush-500 bg-blush-100 text-blush-800 font-semibold"
+        ? "border-violet-500 bg-violet-100 text-violet-900 font-semibold"
         : status === "pending"
-          ? "border-blush-300 bg-blush-50 text-blush-700"
+          ? "border-violet-300 bg-violet-50 text-violet-800"
           : "border-paper-300 bg-paper-100 text-ink-500";
   return (
     <span

@@ -137,15 +137,17 @@ export default function AdminUsersPage() {
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="font-medium text-ink-900">{u.full_name}</span>
           <span className="text-xs text-ink-500 break-all">{u.email}</span>
-          {u.is_admin && <Badge tone="ink">{t("admin.badge_admin")}</Badge>}
-          {u.status === "suspended" && <Badge tone="blush">{t("admin.badge_suspended")}</Badge>}
+          {u.is_admin && <Badge tone="violet">{t("admin.badge_admin")}</Badge>}
+          {u.status === "suspended" && (
+            <Badge tone="violet-soft">{t("admin.badge_suspended")}</Badge>
+          )}
           {!u.verified_email && <Badge tone="muted">{t("admin.badge_unverified")}</Badge>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {!u.verified_email &&
             (verifySentIds.has(u.id) ? (
               <span
-                className="inline-flex items-center gap-1 rounded-md bg-blush-100 px-1.5 py-0.5 text-[11px] font-medium text-blush-800"
+                className="inline-flex items-center gap-1 rounded-md bg-violet-100 px-1.5 py-0.5 text-[11px] font-medium text-violet-800"
                 title={t("admin.resend_verify_sent_label")}
               >
                 <Check size={12} aria-hidden />
@@ -165,7 +167,7 @@ export default function AdminUsersPage() {
           {!isSelf && (
             <button
               type="button"
-              className="btn-ghost btn-sm text-blush-700"
+              className="btn-ghost btn-sm text-violet-800"
               onClick={() => onDelete(u)}
               disabled={isPending}
               title={t("admin.delete_user")}
@@ -242,7 +244,7 @@ export default function AdminUsersPage() {
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                               <span className="font-medium text-ink-900">{workspaceLabel(c)}</span>
                               {statusLabel && (
-                                <Badge tone={c.status === "deleting" ? "blush" : "muted"}>
+                                <Badge tone={c.status === "deleting" ? "violet-soft" : "muted"}>
                                   {statusLabel}
                                 </Badge>
                               )}
@@ -320,13 +322,13 @@ function Badge({
   tone,
 }: {
   children: ReactNode;
-  tone: "ink" | "blush" | "muted";
+  tone: "violet" | "violet-soft" | "muted";
 }) {
   const cls =
-    tone === "ink"
-      ? "border-ink-700 bg-ink-700 text-paper-100"
-      : tone === "blush"
-        ? "border-blush-300 bg-blush-100 text-blush-700"
+    tone === "violet"
+      ? "border-violet-700 bg-violet-700 text-paper-100"
+      : tone === "violet-soft"
+        ? "border-violet-300 bg-violet-100 text-violet-800"
         : "border-paper-300 bg-paper-100 text-ink-500";
   return (
     <span

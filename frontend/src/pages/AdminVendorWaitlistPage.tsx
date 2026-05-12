@@ -155,9 +155,9 @@ function StatusPill({
 }) {
   const className =
     status === "new"
-      ? "inline-flex items-center rounded-full bg-ink-700 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-paper-100"
+      ? "inline-flex items-center rounded-full bg-violet-700 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-paper-100"
       : status === "contacted"
-        ? "inline-flex items-center rounded-full bg-blush-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700"
+        ? "inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-800"
         : "inline-flex items-center rounded-full border border-paper-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-500";
   return <span className={className}>{t(`admin.waitlist_status_${status}`)}</span>;
 }
