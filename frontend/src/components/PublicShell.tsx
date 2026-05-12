@@ -1,4 +1,4 @@
-import { LogIn, Menu, MessageSquare, UserCheck, X } from "lucide-react";
+import { Languages, LogIn, Menu, MessageSquare, UserCheck, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
@@ -166,10 +166,11 @@ function PublicHeader() {
           <button
             type="button"
             onClick={() => setLocale(otherLocale)}
-            className="hidden text-sm font-medium uppercase tracking-wider text-ink-500 transition-colors hover:text-ink-900 md:inline-flex"
-            aria-label="Switch language"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 md:inline-flex"
+            aria-label={`Switch language to ${otherLocale.toUpperCase()}`}
+            title={otherLocale.toUpperCase()}
           >
-            {otherLocale}
+            <Languages size={18} aria-hidden="true" />
           </button>
           <button
             type="button"
