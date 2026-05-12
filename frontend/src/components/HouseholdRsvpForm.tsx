@@ -94,6 +94,11 @@ interface AttachedDraft {
   /** Locally-generated string id so list keys stay stable across edits. */
   ui_key: string;
   full_name: string;
+  /** Meal selection — present for plus-ones (adults who eat). Babies skip
+   *  this (no wedding-menu meal), so the field is unused for them. */
+  meal_choice: MealChoice | null;
+  /** Same allergen tags the host can mark on themselves. */
+  dietary_tags: Set<DietaryTag>;
 }
 
 interface MemberDraft {
@@ -275,11 +280,20 @@ export function HouseholdRsvpForm({
     );
   }
 
+  function freshAttached(): AttachedDraft {
+    return {
+      ui_key: makeUiKey(),
+      full_name: "",
+      meal_choice: null,
+      dietary_tags: new Set(),
+    };
+  }
+
   function togglePlusOne(d: MemberDraft) {
     if (d.plus_one) {
       updateMember(d.id, { plus_one: null });
     } else {
-      updateMember(d.id, { plus_one: { ui_key: makeUiKey(), full_name: "" } });
+      updateMember(d.id, { plus_one: freshAttached() });
     }
   }
 
@@ -287,7 +301,7 @@ export function HouseholdRsvpForm({
     if (d.baby) {
       updateMember(d.id, { baby: null });
     } else {
-      updateMember(d.id, { baby: { ui_key: makeUiKey(), full_name: "" } });
+      updateMember(d.id, { baby: freshAttached() });
     }
   }
 
@@ -298,6 +312,36 @@ export function HouseholdRsvpForm({
         const cur = d[kind];
         if (!cur) return d;
         return { ...d, [kind]: { ...cur, full_name } };
+      }),
+    );
+  }
+
+  /** Patch the +1's (or baby's) meal/dietary state in place. */
+  function patchAttached(
+    id: number,
+    kind: "plus_one" | "baby",
+    patch: Partial<Pick<AttachedDraft, "meal_choice" | "dietary_tags">>,
+  ) {
+    setDrafts((prev) =>
+      prev.map((d) => {
+        if (d.id !== id) return d;
+        const cur = d[kind];
+        if (!cur) return d;
+        return { ...d, [kind]: { ...cur, ...patch } };
+      }),
+    );
+  }
+
+  function toggleAttachedDietaryTag(id: number, kind: "plus_one" | "baby", tag: DietaryTag) {
+    setDrafts((prev) =>
+      prev.map((d) => {
+        if (d.id !== id) return d;
+        const cur = d[kind];
+        if (!cur) return d;
+        const next = new Set(cur.dietary_tags);
+        if (next.has(tag)) next.delete(tag);
+        else next.add(tag);
+        return { ...d, [kind]: { ...cur, dietary_tags: next } };
       }),
     );
   }
@@ -328,8 +372,10 @@ export function HouseholdRsvpForm({
           full_name: d.plus_one.full_name.trim(),
           kind: "adult",
           rsvp_status: "yes",
-          meal_choice: null,
-          dietary: null,
+          meal_choice: d.plus_one.meal_choice,
+          // Reuse the same tag→string encoding the main member rows use so
+          // the dietary string round-trips through to the admin icons.
+          dietary: buildDietary(d.plus_one.dietary_tags, ""),
         });
       }
       if (d.baby) {
@@ -337,8 +383,10 @@ export function HouseholdRsvpForm({
           full_name: d.baby.full_name.trim(),
           kind: "baby",
           rsvp_status: "yes",
+          // Babies don't pick a wedding meal but can still have allergies
+          // (e.g. lactose) — pass through if the host marked any.
           meal_choice: null,
-          dietary: null,
+          dietary: buildDietary(d.baby.dietary_tags, ""),
         });
       }
     }
@@ -546,21 +594,23 @@ export function HouseholdRsvpForm({
                   {MEALS.map((m) => {
                     const Icon = MEAL_ICONS[m];
                     const active = d.meal_choice === m;
+                    const label = t(`guests.meal_${m}`);
                     return (
                       <button
                         key={m}
                         type="button"
                         role="radio"
                         aria-checked={active}
+                        aria-label={label}
+                        title={label}
                         onClick={() => updateMember(d.id, { meal_choice: active ? null : m })}
                         className={
                           active
-                            ? "flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-ink-700 bg-ink-700 px-2 py-2 text-xs font-medium text-paper-100"
-                            : "flex flex-col items-center justify-center gap-1 rounded-xl border border-paper-300 bg-paper-50 px-2 py-2 text-xs text-ink-700 hover:border-ink-400"
+                            ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100"
+                            : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400"
                         }
                       >
-                        <Icon size={18} aria-hidden />
-                        {t(`guests.meal_${m}`)}
+                        <Icon size={22} aria-hidden />
                       </button>
                     );
                   })}
@@ -633,13 +683,20 @@ export function HouseholdRsvpForm({
                     />
                   </div>
                   {d.plus_one && (
-                    <div className="mt-3">
+                    <div className="mt-3 space-y-3">
                       <AttachedNameField
                         id={`plus-one-${d.id}`}
                         label={t("rsvp.added_name_plus_one")}
                         placeholder={t("rsvp.added_name_placeholder")}
                         value={d.plus_one.full_name}
                         onChange={(v) => updateAttached(d.id, "plus_one", v)}
+                      />
+                      <AttachedDietary
+                        member={d.plus_one}
+                        onMealChange={(meal) =>
+                          patchAttached(d.id, "plus_one", { meal_choice: meal })
+                        }
+                        onToggleTag={(tag) => toggleAttachedDietaryTag(d.id, "plus_one", tag)}
                       />
                     </div>
                   )}
@@ -789,6 +846,81 @@ function AttachedNameField({
         maxLength={120}
         aria-required="true"
       />
+    </div>
+  );
+}
+
+/**
+ * Meal + allergen picker for an attached guest (the +1). Same icon-only
+ * meal row + 3 allergen chips as the host's own controls, just plumbed
+ * into the attached draft. Babies skip the meal row (they don't eat from
+ * the wedding menu) — only allergens are exposed for them.
+ */
+function AttachedDietary({
+  member,
+  onMealChange,
+  onToggleTag,
+  showMeal = true,
+}: {
+  member: AttachedDraft;
+  onMealChange: (m: MealChoice | null) => void;
+  onToggleTag: (tag: DietaryTag) => void;
+  showMeal?: boolean;
+}) {
+  const { t } = useT();
+  return (
+    <div className="space-y-3">
+      {showMeal && (
+        <div
+          role="radiogroup"
+          aria-label={t("rsvp.meal")}
+          className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
+        >
+          {MEALS.map((m) => {
+            const Icon = MEAL_ICONS[m];
+            const active = member.meal_choice === m;
+            const label = t(`guests.meal_${m}`);
+            return (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={label}
+                title={label}
+                onClick={() => onMealChange(active ? null : m)}
+                className={
+                  active
+                    ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100"
+                    : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400"
+                }
+              >
+                <Icon size={22} aria-hidden />
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        <Chip
+          on={member.dietary_tags.has("lactose")}
+          onClick={() => onToggleTag("lactose")}
+          icon={<Milk size={14} aria-hidden />}
+          label={t("rsvp.tag_lactose")}
+        />
+        <Chip
+          on={member.dietary_tags.has("gluten")}
+          onClick={() => onToggleTag("gluten")}
+          icon={<Wheat size={14} aria-hidden />}
+          label={t("rsvp.tag_gluten")}
+        />
+        <Chip
+          on={member.dietary_tags.has("nut")}
+          onClick={() => onToggleTag("nut")}
+          icon={<Nut size={14} aria-hidden />}
+          label={t("rsvp.tag_nut")}
+        />
+      </div>
     </div>
   );
 }

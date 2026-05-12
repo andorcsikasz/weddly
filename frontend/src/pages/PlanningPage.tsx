@@ -17,7 +17,7 @@ import {
   User,
   Wand2,
 } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -286,6 +286,7 @@ export default function PlanningPage() {
               <PlanningRow
                 key={item.id}
                 item={item}
+                assigneeSuggestions={assigneeSuggestions}
                 onToggleDone={() => onToggleDone(item)}
                 onPatch={(patch) => onPatch(item, patch)}
                 onDelete={() => onDelete(item)}
@@ -793,19 +794,25 @@ function QuickAddForm({
 
 function PlanningRow({
   item,
+  assigneeSuggestions,
   onToggleDone,
   onPatch,
   onDelete,
 }: {
   item: PlanningItem;
+  assigneeSuggestions: string[];
   onToggleDone: () => void;
   onPatch: (patch: Partial<PlanningItem>) => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
+  const [editingAssignee, setEditingAssignee] = useState(false);
   const [draftTitle, setDraftTitle] = useState(item.title);
   const [draftBody, setDraftBody] = useState(item.body ?? "");
+  const [draftAssignee, setDraftAssignee] = useState(item.assignee ?? "");
+  // Unique id so each row's datalist doesn't collide with siblings.
+  const assigneeListId = useId();
 
   function commit() {
     const trimmed = draftTitle.trim();
@@ -822,9 +829,17 @@ function PlanningRow({
     setEditing(false);
   }
 
+  function commitAssignee() {
+    const next = draftAssignee.trim() || null;
+    if (next !== (item.assignee ?? null)) {
+      onPatch({ assignee: next });
+    }
+    setEditingAssignee(false);
+  }
+
   return (
     <li
-      className={`card flex items-start gap-3 p-3 transition-colors ${
+      className={`card flex items-center gap-3 p-3 transition-colors ${
         item.done ? "bg-paper-100/50" : ""
       }`}
     >
@@ -833,13 +848,13 @@ function PlanningRow({
           type="button"
           onClick={onToggleDone}
           aria-label={item.done ? t("planning.mark_undone") : t("planning.mark_done")}
-          className="mt-0.5 shrink-0 text-ink-500 transition-colors hover:text-ink-800"
+          className="shrink-0 text-ink-500 transition-colors hover:text-ink-800"
         >
           {item.done ? <CheckCircle2 size={18} className="text-sage-700" /> : <Circle size={18} />}
         </button>
       )}
       {item.kind === "idea" && (
-        <Lightbulb size={18} className="mt-0.5 shrink-0 text-ink-400" aria-hidden="true" />
+        <Lightbulb size={18} className="shrink-0 text-ink-400" aria-hidden="true" />
       )}
 
       <div className="min-w-0 flex-1">
@@ -889,13 +904,19 @@ function PlanningRow({
             </div>
           </div>
         ) : (
-          <button type="button" onClick={() => setEditing(true)} className="block w-full text-left">
-            <p className={`text-sm ${item.done ? "text-ink-400 line-through" : "text-ink-900"}`}>
-              {item.title}
-            </p>
-            {item.body && (
-              <p className="mt-1 whitespace-pre-wrap text-xs text-ink-600">{item.body}</p>
-            )}
+          <>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="block w-full text-left"
+            >
+              <p className={`text-sm ${item.done ? "text-ink-400 line-through" : "text-ink-900"}`}>
+                {item.title}
+              </p>
+              {item.body && (
+                <p className="mt-1 whitespace-pre-wrap text-xs text-ink-600">{item.body}</p>
+              )}
+            </button>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-ink-500">
               {item.kind === "task" && item.due_date && (
                 <span className="inline-flex items-center gap-1">
@@ -903,22 +924,71 @@ function PlanningRow({
                   {item.due_date}
                 </span>
               )}
-              {item.kind === "task" && item.assignee && (
-                <span
-                  className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-ink-700"
-                  title={t("planning.assignee_label")}
-                >
-                  <User size={11} aria-hidden="true" />
-                  {item.assignee}
-                </span>
-              )}
+              {item.kind === "task" &&
+                (editingAssignee ? (
+                  <>
+                    <input
+                      type="text"
+                      value={draftAssignee}
+                      onChange={(e) => setDraftAssignee(e.target.value)}
+                      onBlur={commitAssignee}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitAssignee();
+                        } else if (e.key === "Escape") {
+                          setDraftAssignee(item.assignee ?? "");
+                          setEditingAssignee(false);
+                        }
+                      }}
+                      list={assigneeSuggestions.length > 0 ? assigneeListId : undefined}
+                      placeholder={t("planning.assignee_placeholder")}
+                      aria-label={t("planning.assignee_label")}
+                      autoFocus
+                      maxLength={80}
+                      className="h-6 w-28 rounded-full border border-ink-300 bg-paper-50 px-2 text-[11px] text-ink-700 outline-none focus:border-ink-500"
+                    />
+                    {assigneeSuggestions.length > 0 && (
+                      <datalist id={assigneeListId}>
+                        {assigneeSuggestions.map((name) => (
+                          <option key={name} value={name} />
+                        ))}
+                      </datalist>
+                    )}
+                  </>
+                ) : item.assignee ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftAssignee(item.assignee ?? "");
+                      setEditingAssignee(true);
+                    }}
+                    title={t("planning.assignee_edit_hint")}
+                    className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-ink-700 transition-colors hover:bg-ink-200"
+                  >
+                    <User size={11} aria-hidden="true" />
+                    {item.assignee}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftAssignee("");
+                      setEditingAssignee(true);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-paper-400 px-2 py-0.5 text-ink-500 transition-colors hover:border-ink-300 hover:text-ink-700"
+                  >
+                    <User size={11} aria-hidden="true" />
+                    {t("planning.assignee_add")}
+                  </button>
+                ))}
               {item.kind === "idea" && item.suggested_by_name && (
                 <span className="italic text-ink-500">
                   {t("planning.idea_suggested_by", { name: item.suggested_by_name })}
                 </span>
               )}
             </div>
-          </button>
+          </>
         )}
       </div>
 
@@ -926,7 +996,7 @@ function PlanningRow({
         type="button"
         onClick={onDelete}
         aria-label={t("common.delete")}
-        className="btn-ghost btn-sm shrink-0 text-blush-700"
+        className="btn-ghost btn-sm shrink-0 self-center text-blush-700"
       >
         <Trash2 size={14} />
       </button>
