@@ -9,7 +9,8 @@
       "shared/**",
       "Dockerfile",
       "package.json",
-      "bun.lock"
+      "bun.lock",
+      "railway.json"
     ]
   },
   "deploy": {
