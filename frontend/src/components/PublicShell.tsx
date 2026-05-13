@@ -1,4 +1,4 @@
-import { Languages, LogIn, Menu, MessageSquare, UserCheck, X } from "lucide-react";
+import { Languages, LogIn, Menu, MessageSquare, Moon, Sun, UserCheck, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
@@ -77,10 +77,10 @@ function useHeaderHidden(): boolean {
 export function PublicShell({ children }: { children: ReactNode }) {
   const { t } = useT();
   return (
-    <div className="flex min-h-full flex-col bg-paper-50 text-ink-800">
+    <div className="flex min-h-full flex-col bg-paper-50 text-ink-800 dark:bg-umber-900 dark:text-paper-100">
       <a
         href="#main-content"
-        className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2"
+        className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-blush-400"
       >
         {t("landing.skip_to_main")}
       </a>
@@ -100,6 +100,23 @@ function PublicHeader() {
   const otherLocale = locale === "hu" ? "en" : "hu";
   const hidden = useHeaderHidden();
 
+  // Theme toggle shared with AppShell via `localStorage["weddly.theme"]`.
+  // Public default is `light` (the warm paper marketing aesthetic); /app
+  // defaults to `dark` when the user has never expressed a preference.
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    if (typeof window === "undefined") return "light";
+    return window.localStorage.getItem("weddly.theme") === "dark" ? "dark" : "light";
+  });
+  useEffect(() => {
+    if (theme === "dark") document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+    try {
+      window.localStorage.setItem("weddly.theme", theme);
+    } catch {
+      /* localStorage blocked — preference just won't persist */
+    }
+  }, [theme]);
+
   function openFeedback() {
     setMenuOpen(false);
     setFeedbackOpen(true);
@@ -108,12 +125,15 @@ function PublicHeader() {
   return (
     <header
       data-scroll-hide="true"
-      className={`sticky top-0 z-40 border-b border-paper-300 bg-paper-50/85 backdrop-blur transition-transform duration-200 ${
+      className={`sticky top-0 z-40 border-b border-paper-300 bg-paper-50/85 backdrop-blur transition-transform duration-200 dark:border-umber-700 dark:bg-umber-900/85 ${
         hidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
-        <Link to="/" className="shrink-0 text-ink-900 transition-colors hover:text-ink-700">
+        <Link
+          to="/"
+          className="shrink-0 text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+        >
           {/* Header wordmark sits between Wordmark's md and lg presets:
               bigger than the body brand mark, but tracked tightly so the
               full WĒDDLY + audience cluster + right cluster fit at lg
@@ -128,13 +148,13 @@ function PublicHeader() {
         <nav aria-label="Audience" className="ml-2 hidden items-center gap-2 md:flex">
           <Link
             to="/vendors"
-            className="rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200"
+            className="rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700"
           >
             {t("landing.nav_vendors")}
           </Link>
           <Link
             to="/rsvp"
-            className="rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200"
+            className="rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700"
           >
             {t("landing.footer_guests")}
           </Link>
@@ -146,7 +166,7 @@ function PublicHeader() {
           <button
             type="button"
             onClick={openFeedback}
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:inline-flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
             aria-label={t("landing.nav_feedback")}
             title={t("landing.nav_feedback")}
           >
@@ -154,7 +174,7 @@ function PublicHeader() {
           </button>
           <Link
             to="/login"
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:inline-flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
             aria-label={t("landing.cta_login")}
             title={t("landing.cta_login")}
           >
@@ -166,7 +186,7 @@ function PublicHeader() {
           <button
             type="button"
             onClick={() => setLocale(otherLocale)}
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 md:inline-flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:inline-flex"
             aria-label={`Switch language to ${otherLocale.toUpperCase()}`}
             title={otherLocale.toUpperCase()}
           >
@@ -174,11 +194,24 @@ function PublicHeader() {
           </button>
           <button
             type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+            title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+          >
+            {theme === "dark" ? (
+              <Sun size={18} aria-hidden="true" />
+            ) : (
+              <Moon size={18} aria-hidden="true" />
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-controls="public-mobile-nav"
             aria-label={menuOpen ? t("public.menu_close") : t("public.menu_open")}
-            className="-mr-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 md:hidden"
+            className="-mr-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:hidden"
           >
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -189,26 +222,26 @@ function PublicHeader() {
         <nav
           id="public-mobile-nav"
           aria-label="Primary mobile"
-          className="border-t border-paper-300 bg-paper-50 md:hidden"
+          className="border-t border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900 md:hidden"
         >
-          <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 text-sm text-ink-700 sm:px-6">
+          <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 text-sm text-ink-700 dark:text-paper-100 sm:px-6">
             <Link
               to="/vendors"
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
               {t("landing.nav_vendors")}
             </Link>
             <Link
               to="/rsvp"
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
               {t("landing.footer_guests")}
             </Link>
             <Link
               to="/login"
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900"
+              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
               {t("landing.cta_login")}
@@ -216,7 +249,7 @@ function PublicHeader() {
             <button
               type="button"
               onClick={openFeedback}
-              className="rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900"
+              className="rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
               {t("landing.nav_feedback")}
             </button>
@@ -226,12 +259,27 @@ function PublicHeader() {
                 setLocale(otherLocale);
                 setMenuOpen(false);
               }}
-              className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900"
+              className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
               <span>Language</span>
-              <span className="text-xs font-medium uppercase tracking-wider text-ink-500">
+              <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
                 {locale} → {otherLocale}
               </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTheme(theme === "dark" ? "light" : "dark");
+                setMenuOpen(false);
+              }}
+              className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            >
+              <span>{theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}</span>
+              {theme === "dark" ? (
+                <Sun size={14} aria-hidden="true" />
+              ) : (
+                <Moon size={14} aria-hidden="true" />
+              )}
             </button>
           </div>
         </nav>
@@ -245,19 +293,19 @@ function PublicFooter() {
   const { t } = useT();
   const askGuestCode = useGuestCodePrompt();
   return (
-    <footer className="mt-24 border-t border-paper-300 bg-paper-100/60">
+    <footer className="mt-24 border-t border-paper-300 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-950/60">
       {/* Band: guest CTA — italic serif label sitting just to the left of
           the stationery-textured button, centred as a single cluster so
           the invitation reads as one quiet beat instead of two opposed
           ends of the band. */}
-      <div className="border-b border-paper-300">
+      <div className="border-b border-paper-300 dark:border-umber-700">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:flex-row sm:gap-5 sm:px-6">
-          <p className="font-serif text-lg italic text-ink-900 sm:text-xl">
+          <p className="font-serif text-lg italic text-ink-900 dark:text-paper-50 sm:text-xl">
             {t("landing.footer_band_text")}
           </p>
           <button
             type="button"
-            className="stationery inline-flex items-center gap-2.5 rounded-lg border border-paper-400/80 px-5 py-2.5 text-sm font-medium text-ink-900 shadow-sm transition-all hover:border-ink-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 focus-visible:ring-offset-2"
+            className="stationery inline-flex items-center gap-2.5 rounded-lg border border-paper-400/80 px-5 py-2.5 text-sm font-medium text-ink-900 shadow-sm transition-all hover:border-ink-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 focus-visible:ring-offset-2 dark:border-umber-600 dark:text-paper-50 dark:hover:border-blush-300 dark:focus-visible:ring-blush-400"
             onClick={() => {
               void askGuestCode();
             }}
@@ -270,8 +318,10 @@ function PublicFooter() {
 
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         <div>
-          <Wordmark size="md" className="text-ink-900" />
-          <p className="mt-3 text-sm text-ink-600">{t("landing.footer_tagline")}</p>
+          <Wordmark size="md" className="text-ink-900 dark:text-paper-50" />
+          <p className="mt-3 text-sm text-ink-600 dark:text-umber-200">
+            {t("landing.footer_tagline")}
+          </p>
         </div>
         <FooterColumn title={t("landing.footer_couples")}>
           <FooterLink to="/signup">{t("landing.footer_couples_signup")}</FooterLink>
@@ -285,7 +335,7 @@ function PublicFooter() {
         <FooterColumn title={t("landing.footer_guests")}>
           <button
             type="button"
-            className="text-left text-sm text-ink-700 hover:text-ink-900"
+            className="text-left text-sm text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
             onClick={() => {
               void askGuestCode();
             }}
@@ -300,19 +350,19 @@ function PublicFooter() {
         </FooterColumn>
       </div>
 
-      <div className="border-t border-paper-300">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-5 text-xs text-ink-500 sm:flex-row sm:items-center sm:px-6">
+      <div className="border-t border-paper-300 dark:border-umber-700">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-5 text-xs text-ink-500 dark:text-umber-300 sm:flex-row sm:items-center sm:px-6">
           <p>
             © {new Date().getFullYear()} {t("app.name")}
           </p>
           <div className="flex gap-5">
-            <Link to="/terms" className="hover:text-ink-700">
+            <Link to="/terms" className="hover:text-ink-700 dark:hover:text-paper-100">
               {t("landing.footer_legal_terms")}
             </Link>
-            <Link to="/privacy" className="hover:text-ink-700">
+            <Link to="/privacy" className="hover:text-ink-700 dark:hover:text-paper-100">
               {t("landing.footer_legal_privacy")}
             </Link>
-            <Link to="/about" className="hover:text-ink-700">
+            <Link to="/about" className="hover:text-ink-700 dark:hover:text-paper-100">
               {t("landing.footer_legal_about")}
             </Link>
           </div>
@@ -325,7 +375,9 @@ function PublicFooter() {
 function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">{title}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        {title}
+      </p>
       <div className="mt-3 flex flex-col gap-2">{children}</div>
     </div>
   );
@@ -333,7 +385,10 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
 
 function FooterLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link to={to} className="text-sm text-ink-700 hover:text-ink-900">
+    <Link
+      to={to}
+      className="text-sm text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+    >
       {children}
     </Link>
   );
@@ -341,7 +396,10 @@ function FooterLink({ to, children }: { to: string; children: ReactNode }) {
 
 function FooterAnchor({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a href={href} className="text-sm text-ink-700 hover:text-ink-900">
+    <a
+      href={href}
+      className="text-sm text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+    >
       {children}
     </a>
   );

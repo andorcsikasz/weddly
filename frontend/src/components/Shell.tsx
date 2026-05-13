@@ -17,9 +17,12 @@ function Header() {
   const { user, logout } = useAuth();
   const { locale, setLocale, t } = useT();
   return (
-    <header className="border-b border-paper-300 bg-paper-50/80 backdrop-blur">
+    <header className="border-b border-paper-300 bg-paper-50/80 backdrop-blur dark:border-umber-700 dark:bg-umber-900/80">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link to="/" className="text-ink-900 transition-colors hover:text-ink-700">
+        <Link
+          to="/"
+          className="text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+        >
           <Wordmark size="md" />
         </Link>
         <div className="flex items-center gap-2">
