@@ -195,14 +195,28 @@ export default function SeatingPage() {
   };
   const partnerSlots = useMemo<PartnerSlot[]>(() => {
     if (!couple) return [];
-    const findUnassignedByRole = (role: "bride" | "groom"): Guest | null =>
-      guests.find((g) => partnerRole(g) === role && !seatedIds.has(g.id)) ?? null;
+    // Three states per role:
+    //   • no matching guest in the list → show the dashed placeholder hint
+    //     ("Add a vendéglistához…") so the couple sees the reserved spot.
+    //   • matching guest exists AND is unassigned → render as a draggable
+    //     guest with the crown so they can be dropped onto a seat.
+    //   • matching guest exists AND is already seated → drop the slot
+    //     entirely. The crown rendered against their table seat is now the
+    //     load-bearing visual; surfacing the placeholder *and* the seated
+    //     row used to read as "Andor needs to be added to the guest list"
+    //     even though he was already seated.
+    const findByRole = (role: "bride" | "groom"): Guest | null =>
+      guests.find((g) => partnerRole(g) === role) ?? null;
     const brideName = couple.bride_name?.trim() || t("seating.bride_label");
     const groomName = couple.groom_name?.trim() || t("seating.groom_label");
-    return [
-      { role: "bride", name: brideName, guest: findUnassignedByRole("bride") },
-      { role: "groom", name: groomName, guest: findUnassignedByRole("groom") },
-    ];
+    const buildSlot = (role: "bride" | "groom", name: string): PartnerSlot | null => {
+      const g = findByRole(role);
+      if (g && seatedIds.has(g.id)) return null;
+      return { role, name, guest: g };
+    };
+    return [buildSlot("bride", brideName), buildSlot("groom", groomName)].filter(
+      (s): s is PartnerSlot => s !== null,
+    );
   }, [couple, guests, seatedIds, partnerRole, t]);
   // Unassigned guests *excluding* the partners — those are rendered first
   // via partnerSlots so they don't double up.
