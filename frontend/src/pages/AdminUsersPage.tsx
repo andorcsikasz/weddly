@@ -178,8 +178,8 @@ export default function AdminUsersPage() {
     return (
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="font-medium text-ink-900">{u.full_name}</span>
-          <span className="text-xs text-ink-500 break-all">{u.email}</span>
+          <span className="font-medium text-ink-900 dark:text-paper-50">{u.full_name}</span>
+          <span className="text-xs text-ink-500 dark:text-umber-300 break-all">{u.email}</span>
           {u.is_admin && <Badge tone="violet">{t("admin.badge_admin")}</Badge>}
           {u.status === "suspended" && (
             <Badge tone="violet-soft">{t("admin.badge_suspended")}</Badge>
@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
           {!u.verified_email &&
             (verifySentIds.has(u.id) ? (
               <span
-                className="inline-flex items-center gap-1 rounded-md bg-violet-100 px-1.5 py-0.5 text-[11px] font-medium text-violet-950"
+                className="inline-flex items-center gap-1 rounded-md bg-violet-100 dark:bg-violet-500/20 px-1.5 py-0.5 text-[11px] font-medium text-violet-950 dark:text-violet-200"
                 title={t("admin.resend_verify_sent_label")}
               >
                 <Check size={12} aria-hidden />
@@ -210,7 +210,7 @@ export default function AdminUsersPage() {
           {!isSelf && (
             <button
               type="button"
-              className="btn-ghost btn-sm text-violet-950"
+              className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
               onClick={() => onDelete(u)}
               disabled={isPending}
               title={t("admin.delete_user")}
@@ -228,31 +228,31 @@ export default function AdminUsersPage() {
     <AppShell>
       <header className="mb-6">
         <h1>{t("admin.users_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500">{t("admin.users_sub")}</p>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.users_sub")}</p>
       </header>
 
       {loading ? (
-        <div className="text-sm text-ink-500">{t("common.loading")}</div>
+        <div className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</div>
       ) : (
         <>
           {/* ── Workspaces (couples) — one card per couple ────────────────── */}
           <section className="mb-10">
             <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h2 className="text-lg font-semibold text-ink-900">
+              <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
                 {t("admin.workspaces_section")}
               </h2>
               <div className="flex items-center gap-3">
                 {deletingCount > 0 && (
                   <button
                     type="button"
-                    className="btn-ghost btn-sm text-violet-950"
+                    className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
                     onClick={onPurgeDeleting}
                     disabled={purgingDeleting}
                   >
                     {t("admin.purge_deleting_button", { n: deletingCount })}
                   </button>
                 )}
-                <span className="text-xs uppercase tracking-wide text-ink-500">
+                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
                   {t(
                     visibleCouples.length === 1
                       ? "admin.workspaces_count_one"
@@ -263,13 +263,15 @@ export default function AdminUsersPage() {
               </div>
             </div>
             {visibleCouples.length === 0 ? (
-              <div className="card text-sm text-ink-500">{t("admin.couples_empty")}</div>
+              <div className="card text-sm text-ink-500 dark:text-umber-300">
+                {t("admin.couples_empty")}
+              </div>
             ) : (
               <>
                 {/* Card-style row header — uses the same 4-column grid as the
                  *  rows below so the labels line up exactly. Hidden on small
                  *  screens (rows stack vertically there). */}
-                <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_8rem] gap-4 px-5 text-[11px] uppercase tracking-wide text-ink-500 md:grid">
+                <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_8rem] gap-4 px-5 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300 md:grid">
                   <div>{t("admin.table_workspace_id")}</div>
                   <div>{t("admin.table_workspace_name")}</div>
                   <div>{t("admin.table_workspace_members")}</div>
@@ -288,28 +290,32 @@ export default function AdminUsersPage() {
                     return (
                       <li
                         key={c.id}
-                        className="rounded-2xl border-2 border-paper-300 bg-white px-5 py-4 shadow-soft"
+                        className="rounded-2xl border-2 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-800 px-5 py-4 shadow-soft"
                       >
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_8rem] md:items-center">
                           <div className="whitespace-nowrap">
-                            <code className="rounded bg-paper-100 px-1.5 py-0.5 text-[11px] font-medium text-ink-700">
+                            <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                               {workspaceId(c)}
                             </code>
                           </div>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                            <span className="font-medium text-ink-900">{workspaceLabel(c)}</span>
+                            <span className="font-medium text-ink-900 dark:text-paper-50">
+                              {workspaceLabel(c)}
+                            </span>
                             {statusLabel && <Badge tone="muted">{statusLabel}</Badge>}
                             {members.length === 1 && (
-                              <span className="text-[11px] italic text-ink-500">
+                              <span className="text-[11px] italic text-ink-500 dark:text-umber-300">
                                 {t("admin.workspace_solo_member")}
                               </span>
                             )}
                           </div>
                           <div>
                             {members.length === 0 ? (
-                              <span className="text-xs italic text-ink-500">—</span>
+                              <span className="text-xs italic text-ink-500 dark:text-umber-300">
+                                —
+                              </span>
                             ) : (
-                              <ul className="divide-y divide-paper-200/70">
+                              <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
                                 {members.map((u) => (
                                   <li key={u.id} className="py-1.5 first:pt-0 last:pb-0">
                                     {renderUserCell(u)}
@@ -318,7 +324,7 @@ export default function AdminUsersPage() {
                               </ul>
                             )}
                           </div>
-                          <div className="whitespace-nowrap text-xs text-ink-500">
+                          <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
                             {formatDate(c.created_at, locale)}
                           </div>
                         </div>
@@ -333,19 +339,23 @@ export default function AdminUsersPage() {
           {/* ── Orphan users — no workspace yet ───────────────────────────── */}
           <section>
             <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold text-ink-900">{t("admin.orphans_section")}</h2>
-              <span className="text-xs uppercase tracking-wide text-ink-500">
+              <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+                {t("admin.orphans_section")}
+              </h2>
+              <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t(orphans.length === 1 ? "admin.orphans_count_one" : "admin.orphans_count_other", {
                   n: orphans.length,
                 })}
               </span>
             </div>
             {orphans.length === 0 ? (
-              <div className="card text-sm text-ink-500">{t("admin.orphans_empty")}</div>
+              <div className="card text-sm text-ink-500 dark:text-umber-300">
+                {t("admin.orphans_empty")}
+              </div>
             ) : (
               <div className="card overflow-x-auto p-0">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-paper-100 text-left text-[11px] uppercase tracking-wide text-ink-500">
+                  <thead className="bg-paper-100 dark:bg-umber-700/60 text-left text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
                     <tr>
                       <th className="px-3 py-2">{t("admin.table_name")}</th>
                       <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
@@ -353,7 +363,7 @@ export default function AdminUsersPage() {
                   </thead>
                   <tbody>
                     {orphans.map((u) => (
-                      <tr key={u.id} className="border-t border-paper-200">
+                      <tr key={u.id} className="border-t border-paper-200 dark:border-umber-700">
                         <td className="px-3 py-2" colSpan={2}>
                           {renderUserCell(u)}
                         </td>
@@ -379,10 +389,10 @@ function Badge({
 }) {
   const cls =
     tone === "violet"
-      ? "border-violet-900 bg-violet-900 text-paper-100"
+      ? "border-violet-900 bg-violet-900 text-paper-100 dark:border-violet-500/50 dark:bg-violet-500/30 dark:text-violet-100"
       : tone === "violet-soft"
-        ? "border-violet-400 bg-violet-100 text-violet-950"
-        : "border-paper-300 bg-paper-100 text-ink-500";
+        ? "border-violet-400 bg-violet-100 text-violet-950 dark:border-violet-400/40 dark:bg-violet-500/15 dark:text-violet-200"
+        : "border-paper-300 bg-paper-100 text-ink-500 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300";
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}

@@ -35,7 +35,7 @@ export function PasswordField({
       <label htmlFor={id} className="field-label">
         {label}
         {required && (
-          <span aria-hidden="true" className="ml-0.5 text-blush-700">
+          <span aria-hidden="true" className="ml-0.5 text-blush-700 dark:text-blush-300">
             *
           </span>
         )}
@@ -58,7 +58,7 @@ export function PasswordField({
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? t("auth.hide_password") : t("auth.show_password")}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-500 hover:text-ink-800"
+          className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-50"
           tabIndex={-1}
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}

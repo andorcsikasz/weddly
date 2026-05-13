@@ -89,7 +89,7 @@ export default function AdminCategoriesPage() {
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1>{t("admin.taxonomy_title")}</h1>
-          <p className="mt-1 text-sm text-ink-500">{t("admin.taxonomy_sub")}</p>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.taxonomy_sub")}</p>
         </div>
         <button
           type="button"
@@ -102,21 +102,25 @@ export default function AdminCategoriesPage() {
       </header>
 
       {loading ? (
-        <div className="text-sm text-ink-500">{t("common.loading")}</div>
+        <div className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</div>
       ) : groups.length === 0 ? (
-        <div className="card text-sm text-ink-500">{t("admin.taxonomy_empty")}</div>
+        <div className="card text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.taxonomy_empty")}
+        </div>
       ) : (
         <div className="space-y-4">
           {groups.map((g) => (
             <section key={g.id} className="card p-0 overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
                 <div>
-                  <div className="font-medium text-ink-900">
+                  <div className="font-medium text-ink-900 dark:text-paper-50">
                     {g.label_hu}
-                    <span className="mx-2 text-ink-300">·</span>
-                    <span className="text-ink-500">{g.label_en}</span>
+                    <span className="mx-2 text-ink-300 dark:text-umber-300">·</span>
+                    <span className="text-ink-500 dark:text-umber-300">{g.label_en}</span>
                   </div>
-                  <div className="text-xs uppercase tracking-wide text-ink-400">{g.slug}</div>
+                  <div className="text-xs uppercase tracking-wide text-ink-400 dark:text-umber-300">
+                    {g.slug}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   <button
@@ -136,7 +140,7 @@ export default function AdminCategoriesPage() {
                   </button>
                   <button
                     type="button"
-                    className="btn-ghost btn-sm text-violet-950"
+                    className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
                     onClick={() => onDeleteGroup(g)}
                     aria-label={t("admin.taxonomy_delete")}
                   >
@@ -145,23 +149,23 @@ export default function AdminCategoriesPage() {
                 </div>
               </div>
               {g.categories.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-ink-500 italic">—</div>
+                <div className="px-4 py-3 text-sm text-ink-500 dark:text-umber-300 italic">—</div>
               ) : (
-                <ul className="divide-y divide-paper-200">
+                <ul className="divide-y divide-paper-200 dark:divide-umber-700">
                   {g.categories.map((c) => (
                     <li
                       key={c.id}
                       className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
                     >
                       <div>
-                        <div className="text-ink-900">
+                        <div className="text-ink-900 dark:text-paper-50">
                           {c.label_hu}
-                          <span className="mx-2 text-ink-300">·</span>
-                          <span className="text-ink-500">{c.label_en}</span>
+                          <span className="mx-2 text-ink-300 dark:text-umber-300">·</span>
+                          <span className="text-ink-500 dark:text-umber-300">{c.label_en}</span>
                         </div>
-                        <div className="mt-0.5 text-[11px] uppercase tracking-wide text-ink-400">
+                        <div className="mt-0.5 text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
                           {c.slug}
-                          <span className="mx-1.5 text-ink-300">→</span>
+                          <span className="mx-1.5 text-ink-300 dark:text-umber-300">→</span>
                           {c.budget_category}
                         </div>
                       </div>
@@ -176,7 +180,7 @@ export default function AdminCategoriesPage() {
                         </button>
                         <button
                           type="button"
-                          className="btn-ghost btn-sm text-violet-950"
+                          className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
                           onClick={() => onDeleteCategory(c)}
                           aria-label={t("admin.taxonomy_delete")}
                         >

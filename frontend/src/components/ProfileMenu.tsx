@@ -90,21 +90,21 @@ export function ProfileMenu() {
         aria-expanded={open}
         aria-label={t("profile.menu_label")}
         onClick={() => setOpen((v) => !v)}
-        className="group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-1 text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2"
+        className="group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-1 text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
       >
         <span className="flex items-center">
           {showPartner && (
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-blush-700 text-xs font-semibold uppercase text-paper-100 ring-2 ring-paper-50"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-blush-700 text-xs font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-blush-500 dark:ring-umber-800"
               title={partner?.full_name ?? ""}
             >
               {partnerInitials}
             </span>
           )}
           <span
-            className={`flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 ${
-              showPartner ? "-ml-3 ring-2 ring-paper-50" : ""
+            className={`flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 dark:bg-umber-600 dark:text-paper-50 dark:group-hover:bg-umber-500 ${
+              showPartner ? "-ml-3 ring-2 ring-paper-50 dark:ring-umber-800" : ""
             }`}
           >
             {initials}
@@ -116,19 +116,19 @@ export function ProfileMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-30 mt-2 w-64 origin-top-right rounded-2xl border border-paper-300 bg-white p-2 shadow-pop"
+          className="absolute right-0 top-full z-30 mt-2 w-64 origin-top-right rounded-2xl border border-paper-300 bg-white p-2 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
           <div className="px-3 py-2">
-            <p className="truncate text-sm font-medium text-ink-900">
+            <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
               {user.full_name || t("profile.no_name")}
             </p>
-            <p className="truncate text-xs text-ink-500">{user.email}</p>
+            <p className="truncate text-xs text-ink-500 dark:text-umber-300">{user.email}</p>
           </div>
-          <div className="my-1 h-px bg-paper-200" />
+          <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
           <Link
             to="/app/profile"
             role="menuitem"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
           >
             <UserRound size={16} aria-hidden="true" />
             <span>{t("profile.menu_profile")}</span>
@@ -138,7 +138,7 @@ export function ProfileMenu() {
               <Link
                 to={inAdminView ? "/app" : "/app/admin/suppliers"}
                 role="menuitem"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-violet-950 hover:bg-violet-100"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-violet-950 hover:bg-violet-100 dark:text-violet-200 dark:hover:bg-violet-500/20"
               >
                 {inAdminView ? (
                   <ArrowLeftRight size={16} aria-hidden="true" />
@@ -149,7 +149,7 @@ export function ProfileMenu() {
                   {inAdminView ? t("admin.exit_admin_view") : t("admin.enter_admin_view")}
                 </span>
               </Link>
-              <div className="my-1 h-px bg-paper-200" />
+              <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
             </>
           )}
           <button
@@ -159,7 +159,7 @@ export function ProfileMenu() {
               setOpen(false);
               logout();
             }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
           >
             <LogOut size={16} aria-hidden="true" />
             <span>{t("common.sign_out")}</span>
@@ -182,7 +182,7 @@ function ChevronDownIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className="text-ink-500"
+      className="text-ink-500 dark:text-umber-300"
     >
       <path d="M3 4.5L6 7.5L9 4.5" />
     </svg>

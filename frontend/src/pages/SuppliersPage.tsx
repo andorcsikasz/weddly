@@ -534,13 +534,13 @@ export default function SuppliersPage() {
       <header className="mb-6 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1>{t("suppliers.title")}</h1>
-          <p className="mt-1 text-sm text-ink-500">{t("suppliers.sub")}</p>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("suppliers.sub")}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <div
             role="group"
             aria-label={t("suppliers.view_label")}
-            className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 p-0.5 text-xs"
+            className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-0.5 text-xs"
           >
             {(
               [
@@ -556,8 +556,8 @@ export default function SuppliersPage() {
                 aria-pressed={viewMode === mode}
                 className={
                   viewMode === mode
-                    ? "inline-flex items-center gap-1 rounded-full bg-ink-700 px-2.5 py-1 text-paper-100"
-                    : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 hover:text-ink-900"
+                    ? "inline-flex items-center gap-1 rounded-full bg-ink-700 dark:bg-paper-50 dark:text-umber-900 px-2.5 py-1 text-paper-100"
+                    : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 dark:text-umber-200 hover:text-ink-900 dark:hover:text-paper-50"
                 }
               >
                 <VIcon size={12} aria-hidden /> {t(`suppliers.${label}`)}
@@ -578,12 +578,12 @@ export default function SuppliersPage() {
           <span className="sr-only">{t("suppliers.search_label")}</span>
           <Search
             size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
             aria-hidden
           />
           <input
             type="search"
-            className="h-9 w-full rounded-full border border-paper-300 bg-paper-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
+            className="h-9 w-full rounded-full border border-paper-300 bg-paper-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
             placeholder={t("suppliers.search_placeholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -593,7 +593,7 @@ export default function SuppliersPage() {
         <label className="flex items-center gap-2">
           <span className="sr-only">{t("suppliers.city_label")}</span>
           <select
-            className="h-9 min-w-[10rem] rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
+            className="h-9 min-w-[10rem] rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
             value={cityFilter}
             onChange={(e) => setCityFilter(e.target.value)}
             aria-label={t("suppliers.city_label")}
@@ -614,8 +614,8 @@ export default function SuppliersPage() {
           title={t("suppliers.saved_filter", { n: saved.size })}
           className={
             showSavedOnly
-              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 px-3 text-sm font-medium text-paper-100"
-              : "inline-flex h-9 items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-700 hover:border-ink-300"
+              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 text-sm font-medium text-paper-100"
+              : "inline-flex h-9 items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 text-sm text-ink-700 dark:text-paper-100 hover:border-ink-300 dark:hover:border-umber-600"
           }
         >
           <Star size={14} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
@@ -626,8 +626,8 @@ export default function SuppliersPage() {
           title={t("suppliers.picked_filter", { n: Object.keys(selection).length })}
           className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm ${
             Object.keys(selection).length > 0
-              ? "border-sage-400 bg-sage-50 text-sage-700"
-              : "border-paper-300 bg-paper-50 text-ink-500"
+              ? "border-sage-400 bg-sage-50 text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
+              : "border-paper-300 bg-paper-50 text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
           }`}
         >
           <BookmarkCheck
@@ -640,7 +640,7 @@ export default function SuppliersPage() {
         <label className="flex items-center gap-2">
           <span className="sr-only">{t("suppliers.sort_label")}</span>
           <select
-            className="h-9 min-w-[10rem] rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
+            className="h-9 min-w-[10rem] rounded-full border border-paper-300 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
             value={sortMode}
             onChange={(e) =>
               setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
@@ -661,9 +661,9 @@ export default function SuppliersPage() {
           the 4th dot filters to band-4 suppliers only, not "up to 4". Click
           the same dot to clear. Suppliers with no declared value pass
           through so non-venue cards are not dropped. */}
-      <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-200 bg-paper-100/60 px-4 py-3">
+      <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-200 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-700/40 px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
           </span>
           <div className="inline-flex items-center gap-1.5">
@@ -678,8 +678,8 @@ export default function SuppliersPage() {
                   onClick={() => setPriceBand(active ? null : band)}
                   className={
                     active
-                      ? "h-3.5 w-3.5 rounded-full bg-ink-700 ring-1 ring-ink-700 ring-offset-2 ring-offset-paper-100 transition"
-                      : "h-3.5 w-3.5 rounded-full border border-ink-300 bg-paper-50 transition hover:border-ink-500"
+                      ? "h-3.5 w-3.5 rounded-full bg-ink-700 ring-1 ring-ink-700 ring-offset-2 ring-offset-paper-100 dark:bg-paper-50 dark:ring-paper-50 dark:ring-offset-umber-800 transition"
+                      : "h-3.5 w-3.5 rounded-full border border-ink-300 bg-paper-50 transition hover:border-ink-500 dark:border-umber-600 dark:bg-umber-800 dark:hover:border-umber-500"
                   }
                 />
               );
@@ -689,15 +689,18 @@ export default function SuppliersPage() {
             <button
               type="button"
               onClick={() => setPriceBand(null)}
-              className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline"
+              className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
             >
               {t("suppliers.guests_filter_clear")}
             </button>
           )}
         </div>
-        <div className="hidden h-5 w-px self-center bg-paper-300 sm:block" aria-hidden />
+        <div
+          className="hidden h-5 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
+          aria-hidden
+        />
         <label className="flex items-center gap-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.guests_filter_label")}
           </span>
           <input
@@ -705,7 +708,7 @@ export default function SuppliersPage() {
             inputMode="numeric"
             min={1}
             step={1}
-            className="h-9 w-16 rounded-full border border-paper-300 bg-paper-50 px-2 text-center text-sm tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none"
+            className="h-9 w-16 rounded-full border border-paper-300 bg-paper-50 px-2 text-center text-sm tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
             placeholder={t("suppliers.guests_filter_placeholder")}
             value={guestsFilter ?? ""}
             onChange={(e) => setGuestsFilter(e.target.value)}
@@ -715,7 +718,7 @@ export default function SuppliersPage() {
             <button
               type="button"
               onClick={() => setGuestsFilter("")}
-              className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline"
+              className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
             >
               {t("suppliers.guests_filter_clear")}
             </button>
@@ -740,7 +743,7 @@ export default function SuppliersPage() {
               return (
                 <div key={g.id} className="flex items-stretch gap-1">
                   {i > 0 && (
-                    <span className="self-center text-paper-400" aria-hidden>
+                    <span className="self-center text-paper-400 dark:text-umber-300" aria-hidden>
                       →
                     </span>
                   )}
@@ -762,11 +765,11 @@ export default function SuppliersPage() {
         </div>
         {/* Right-edge fade hints there's more to scroll. */}
         <div
-          className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 to-transparent"
+          className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 dark:from-umber-900 to-transparent"
           aria-hidden
         />
       </div>
-      <p className="mb-5 text-xs text-ink-500">{t("suppliers.chain_help")}</p>
+      <p className="mb-5 text-xs text-ink-500 dark:text-umber-300">{t("suppliers.chain_help")}</p>
 
       {/* Sub-category pills (only when a group is selected). Each pill shows
           the count of suppliers in that category after the non-category
@@ -778,16 +781,16 @@ export default function SuppliersPage() {
             onClick={() => setActiveCat(null)}
             className={
               activeCat === null
-                ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100"
-                : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700"
+                ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 py-1 text-xs font-medium text-paper-100"
+                : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
             }
           >
             {t("suppliers.filter_all")}
             <span
               className={
                 activeCat === null
-                  ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
-                  : "text-[10px] font-medium tabular-nums text-ink-400"
+                  ? "rounded-full bg-paper-100/20 dark:bg-umber-900/30 px-1.5 text-[10px] font-medium tabular-nums"
+                  : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
               }
             >
               {inGroupTotal}
@@ -804,8 +807,8 @@ export default function SuppliersPage() {
                 onClick={() => setActiveCat(c)}
                 className={
                   selected
-                    ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100"
-                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700"
+                    ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 py-1 text-xs font-medium text-paper-100"
+                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
                 }
               >
                 <Icon size={13} />
@@ -813,8 +816,8 @@ export default function SuppliersPage() {
                 <span
                   className={
                     selected
-                      ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
-                      : "text-[10px] font-medium tabular-nums text-ink-400"
+                      ? "rounded-full bg-paper-100/20 dark:bg-umber-900/30 px-1.5 text-[10px] font-medium tabular-nums"
+                      : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
                   }
                 >
                   {count}
@@ -831,7 +834,7 @@ export default function SuppliersPage() {
               setDiyEditing(null);
               setDiyOpen(true);
             }}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition hover:border-sage-600 hover:bg-sage-100"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition hover:border-sage-600 hover:bg-sage-100 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
           >
             <Pencil size={13} aria-hidden />
             {t("suppliers.diy_button_short")}
@@ -842,7 +845,7 @@ export default function SuppliersPage() {
       {viewMode === "map" ? (
         <Suspense
           fallback={
-            <div className="rounded-2xl border border-paper-300 bg-paper-50 p-8 text-center text-sm text-ink-500">
+            <div className="rounded-2xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-8 text-center text-sm text-ink-500 dark:text-umber-300">
               {t("common.loading")}
             </div>
           }
@@ -872,7 +875,7 @@ export default function SuppliersPage() {
                   <article
                     key={s.id}
                     data-supplier-id={s.id}
-                    className={`relative flex items-center gap-3 rounded-2xl border border-sage-200 border-l-4 border-l-sage-500 bg-sage-50/60 px-4 py-3 transition hover:border-sage-300 hover:shadow-sm ${
+                    className={`relative flex items-center gap-3 rounded-2xl border border-sage-200 border-l-4 border-l-sage-500 bg-sage-50/60 px-4 py-3 transition hover:border-sage-300 hover:shadow-sm dark:border-sage-400/40 dark:bg-sage-400/15 dark:hover:border-sage-400/60 ${
                       isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                     }`}
                   >
@@ -880,21 +883,21 @@ export default function SuppliersPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="truncate text-sm font-semibold">{s.name}</h3>
-                        <span className="hidden shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 sm:inline-flex">
+                        <span className="hidden shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300 sm:inline-flex">
                           {t("suppliers.diy_pill")}
                         </span>
                       </div>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500">
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
                         <span className="inline-flex items-center gap-1 uppercase tracking-wide">
                           <Icon size={11} aria-hidden />
                           {t(`suppliers.cat.${s.category}`)}
                         </span>
                         {s.price_huf !== null && s.price_huf > 0 && (
                           <>
-                            <span aria-hidden className="text-paper-400">
+                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
                               ·
                             </span>
-                            <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700">
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700 dark:text-sage-300">
                               <Wallet size={11} aria-hidden />
                               {formatHuf(s.price_huf, locale === "hu" ? "hu" : "en")}
                             </span>
@@ -906,7 +909,7 @@ export default function SuppliersPage() {
                       type="button"
                       onClick={openEdit}
                       aria-label={t("suppliers.diy_action_edit_aria")}
-                      className="inline-flex h-7 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-3 text-xs font-medium text-sage-700 transition hover:border-sage-500"
+                      className="inline-flex h-7 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-3 text-xs font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
                     >
                       <Pencil size={12} aria-hidden />
                       <span className="hidden sm:inline">{t("suppliers.diy_modal_edit")}</span>
@@ -918,7 +921,7 @@ export default function SuppliersPage() {
                 <article
                   key={s.id}
                   data-supplier-id={s.id}
-                  className={`card-hover relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 transition-shadow ${
+                  className={`card-hover relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 dark:!bg-sage-400/15 transition-shadow ${
                     isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                   }`}
                 >
@@ -926,7 +929,7 @@ export default function SuppliersPage() {
                     type="button"
                     onClick={openEdit}
                     aria-label={t("suppliers.diy_action_edit_aria")}
-                    className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-600 transition hover:bg-sage-100 hover:text-sage-800"
+                    className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-600 transition hover:bg-sage-100 hover:text-sage-800 dark:text-sage-300 dark:hover:bg-sage-400/20 dark:hover:text-sage-200"
                   >
                     <Pencil size={14} aria-hidden />
                   </button>
@@ -935,21 +938,21 @@ export default function SuppliersPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                        <span className="shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700">
+                        <span className="shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300">
                           {t("suppliers.diy_pill")}
                         </span>
                       </div>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500">
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                         <span className="inline-flex items-center gap-1 uppercase tracking-wide">
                           <Icon size={12} aria-hidden />
                           {t(`suppliers.cat.${s.category}`)}
                         </span>
                         {s.price_huf !== null && s.price_huf > 0 && (
                           <>
-                            <span aria-hidden className="text-paper-400">
+                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
                               ·
                             </span>
-                            <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700">
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700 dark:text-sage-300">
                               <Wallet size={12} aria-hidden />
                               {formatHuf(s.price_huf, locale === "hu" ? "hu" : "en")}
                             </span>
@@ -958,12 +961,16 @@ export default function SuppliersPage() {
                       </p>
                     </div>
                   </div>
-                  {s.notes && <p className="mt-3 line-clamp-3 text-sm text-ink-700">{s.notes}</p>}
+                  {s.notes && (
+                    <p className="mt-3 line-clamp-3 text-sm text-ink-700 dark:text-paper-100">
+                      {s.notes}
+                    </p>
+                  )}
                   <div className="mt-auto flex items-center justify-end gap-2 pt-4">
                     <button
                       type="button"
                       onClick={openEdit}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700 transition hover:border-sage-500 hover:bg-sage-100"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700 transition hover:border-sage-500 hover:bg-sage-100 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
                     >
                       <Pencil size={13} aria-hidden />
                       {t("suppliers.diy_modal_edit")}
@@ -979,8 +986,8 @@ export default function SuppliersPage() {
                   data-supplier-id={s.id}
                   className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:shadow-sm ${
                     isPicked
-                      ? "border-sage-400 border-l-4 border-l-sage-500 bg-sage-50/70"
-                      : "border-paper-200 bg-paper-50 hover:border-paper-300"
+                      ? "border-sage-400 border-l-4 border-l-sage-500 bg-sage-50/70 dark:border-sage-400/40 dark:bg-sage-400/15"
+                      : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
                   <Avatar name={s.name} />
@@ -988,36 +995,39 @@ export default function SuppliersPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="truncate text-sm font-semibold">{s.name}</h3>
                       {s.source === "community" && (
-                        <span className="hidden shrink-0 rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600 sm:inline-flex">
+                        <span className="hidden shrink-0 rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200 sm:inline-flex">
                           {t("suppliers.community_pill")}
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500">
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
                       <span className="inline-flex items-center gap-1 uppercase tracking-wide">
                         <Icon size={11} aria-hidden />
                         {t(`suppliers.cat.${s.category}`)}
                       </span>
-                      <span aria-hidden className="text-paper-400">
+                      <span aria-hidden className="text-paper-400 dark:text-umber-300">
                         ·
                       </span>
                       <span className="uppercase tracking-wide">{s.city}</span>
                       {s.price_band !== null && (
                         <>
-                          <span aria-hidden className="text-paper-400">
+                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
                             ·
                           </span>
-                          <span className="text-ink-600" title={t("suppliers.price_legend")}>
+                          <span
+                            className="text-ink-600 dark:text-umber-200"
+                            title={t("suppliers.price_legend")}
+                          >
                             <PriceBandDots band={s.price_band} />
                           </span>
                         </>
                       )}
                       {(s.capacity_max ?? 0) > 0 && (
                         <>
-                          <span aria-hidden className="text-paper-400">
+                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
                             ·
                           </span>
-                          <span className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600">
+                          <span className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200">
                             <Users size={11} aria-hidden />
                             {s.capacity_min && s.capacity_max
                               ? t("suppliers.capacity_range", {
@@ -1064,7 +1074,7 @@ export default function SuppliersPage() {
                       }
                       aria-label={t("suppliers.report.aria_label")}
                       title={t("suppliers.report.aria_label")}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
                     >
                       <Flag size={14} aria-hidden />
                     </button>
@@ -1076,8 +1086,8 @@ export default function SuppliersPage() {
                       title={t("suppliers.pick_aria")}
                       className={
                         isPicked
-                          ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100"
-                          : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700"
+                          ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                          : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                       }
                     >
                       {isPicked ? (
@@ -1091,7 +1101,7 @@ export default function SuppliersPage() {
                       onClick={() => toggleSaved(s.id)}
                       aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
                       aria-pressed={isSaved}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
                     >
                       <Star
                         size={15}
@@ -1109,7 +1119,9 @@ export default function SuppliersPage() {
                 key={s.id}
                 data-supplier-id={s.id}
                 className={`card-hover relative flex h-full flex-col transition-shadow ${
-                  isPicked ? "border-sage-400 border-l-4 border-l-sage-500 !bg-sage-50/60" : ""
+                  isPicked
+                    ? "border-sage-400 border-l-4 border-l-sage-500 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
+                    : ""
                 } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
               >
                 {/* Top-right corner: pick (left) + save (right). The pick
@@ -1124,8 +1136,8 @@ export default function SuppliersPage() {
                     title={t("suppliers.pick_aria")}
                     className={
                       isPicked
-                        ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100"
-                        : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700"
+                        ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                        : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                     }
                   >
                     {isPicked ? (
@@ -1139,7 +1151,7 @@ export default function SuppliersPage() {
                     onClick={() => toggleSaved(s.id)}
                     aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
                     aria-pressed={isSaved}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
                   >
                     <Star
                       size={15}
@@ -1158,22 +1170,22 @@ export default function SuppliersPage() {
                   <Avatar name={s.name} />
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500">
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                       <span className="inline-flex items-center gap-1 uppercase tracking-wide">
                         <Icon size={12} aria-hidden />
                         {t(`suppliers.cat.${s.category}`)}
                       </span>
-                      <span aria-hidden className="text-paper-400">
+                      <span aria-hidden className="text-paper-400 dark:text-umber-300">
                         ·
                       </span>
                       <span className="uppercase tracking-wide">{s.city}</span>
                       {s.price_band !== null && (
                         <>
-                          <span aria-hidden className="text-paper-400">
+                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
                             ·
                           </span>
                           <span
-                            className="text-ink-600"
+                            className="text-ink-600 dark:text-umber-200"
                             title={t("suppliers.price_legend")}
                             aria-label={t("suppliers.price_legend")}
                           >
@@ -1183,11 +1195,11 @@ export default function SuppliersPage() {
                       )}
                       {(s.capacity_max ?? 0) > 0 && (
                         <>
-                          <span aria-hidden className="text-paper-400">
+                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
                             ·
                           </span>
                           <span
-                            className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600"
+                            className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200"
                             aria-label={t("suppliers.capacity_label")}
                           >
                             <Users size={11} aria-hidden />
@@ -1201,15 +1213,19 @@ export default function SuppliersPage() {
                         </>
                       )}
                       {s.source === "community" && (
-                        <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600">
+                        <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200">
                           {t("suppliers.community_pill")}
                         </span>
                       )}
                     </p>
                   </div>
                 </div>
-                {s.address && <p className="mt-2 line-clamp-1 text-xs text-ink-500">{s.address}</p>}
-                <p className="mt-3 line-clamp-2 text-sm text-ink-700">
+                {s.address && (
+                  <p className="mt-2 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
+                    {s.address}
+                  </p>
+                )}
+                <p className="mt-3 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
                   {locale === "hu" ? s.blurb_hu : s.blurb_en}
                 </p>
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-4">
@@ -1244,7 +1260,7 @@ export default function SuppliersPage() {
                           name: s.name,
                         })
                       }
-                      className="btn-ghost btn-sm text-ink-500 hover:text-blush-700"
+                      className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
                       aria-label={t("suppliers.report.aria_label")}
                       title={t("suppliers.report.aria_label")}
                     >
@@ -1259,7 +1275,7 @@ export default function SuppliersPage() {
             );
           })}
           {filtered.length === 0 && items.length > 0 && (
-            <p className="col-span-full py-8 text-center text-sm text-ink-500">
+            <p className="col-span-full py-8 text-center text-sm text-ink-500 dark:text-umber-300">
               {t("suppliers.empty_filtered")}
             </p>
           )}
@@ -1355,10 +1371,10 @@ function ChainStep({
       onClick={onClick}
       className={`group flex flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition-colors ${
         active
-          ? "border-ink-700 bg-ink-700 text-paper-100"
+          ? "border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
           : allDone
-            ? "border-sage-400 bg-sage-50 text-sage-800 hover:border-sage-500"
-            : "border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-300"
+            ? "border-sage-400 bg-sage-50 text-sage-800 hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
+            : "border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
       }`}
     >
       <span className="flex items-center gap-1.5">
@@ -1367,7 +1383,11 @@ function ChainStep({
         {count !== undefined && (
           <span
             className={`text-[10px] font-medium tabular-nums ${
-              active ? "text-paper-100/80" : allDone ? "text-sage-700/80" : "text-ink-400"
+              active
+                ? "text-paper-100/80 dark:text-umber-900/80"
+                : allDone
+                  ? "text-sage-700/80 dark:text-sage-300/80"
+                  : "text-ink-400 dark:text-umber-300"
             }`}
           >
             {count}
@@ -1389,7 +1409,11 @@ function ChainStep({
             <span
               key={bar.id}
               className={`h-[3px] w-3 rounded-full transition-colors ${
-                bar.filled ? "bg-sage-500" : active ? "bg-paper-100/30" : "bg-paper-300"
+                bar.filled
+                  ? "bg-sage-500"
+                  : active
+                    ? "bg-paper-100/30 dark:bg-umber-900/30"
+                    : "bg-paper-300 dark:bg-umber-700"
               }`}
               aria-hidden
             />
@@ -1403,7 +1427,7 @@ function ChainStep({
 function Avatar({ name }: { name: string }) {
   const initial = name.charAt(0).toUpperCase();
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100">
       {initial}
     </div>
   );
@@ -1441,7 +1465,7 @@ function VoteRow({
   // widget — important on score = 0 entries where the arrows otherwise
   // floated as bare icons next to a plain digit.
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-full border border-paper-300 bg-paper-50 px-1 py-0.5 text-sm">
+    <div className="inline-flex items-center gap-0.5 rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-1 py-0.5 text-sm">
       <button
         type="button"
         onClick={() => handle(1)}
@@ -1449,8 +1473,8 @@ function VoteRow({
         aria-label={t("suppliers.vote_up_aria")}
         className={
           my === 1
-            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-blush-100 text-blush-700"
-            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-blush-700"
+            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/20 dark:text-blush-300"
+            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-blush-300"
         }
       >
         <ArrowUp size={14} aria-hidden />
@@ -1458,10 +1482,10 @@ function VoteRow({
       <span
         className={`min-w-[1.25rem] text-center tabular-nums ${
           supplier.votes_score > 0
-            ? "text-blush-700"
+            ? "text-blush-700 dark:text-blush-300"
             : supplier.votes_score < 0
-              ? "text-ink-400"
-              : "text-ink-600"
+              ? "text-ink-400 dark:text-umber-300"
+              : "text-ink-600 dark:text-umber-200"
         }`}
       >
         {supplier.votes_score}
@@ -1473,8 +1497,8 @@ function VoteRow({
         aria-label={t("suppliers.vote_down_aria")}
         className={
           my === -1
-            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-paper-300 text-ink-800"
-            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-ink-800"
+            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-paper-300 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
+            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
         }
       >
         <ArrowDown size={14} aria-hidden />

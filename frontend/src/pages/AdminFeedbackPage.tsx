@@ -83,17 +83,21 @@ export default function AdminFeedbackPage() {
     <AppShell>
       <header className="mb-6">
         <h1>{t("admin.feedback_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500">{t("admin.feedback_sub")}</p>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.feedback_sub")}</p>
       </header>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-ink-500">{t("common.loading")}</p>
+        <p className="py-8 text-center text-sm text-ink-500 dark:text-umber-300">
+          {t("common.loading")}
+        </p>
       ) : entries.length === 0 ? (
-        <div className="card text-center text-sm text-ink-500">{t("admin.feedback_empty")}</div>
+        <div className="card text-center text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.feedback_empty")}
+        </div>
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
+            <thead className="text-left text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
               <tr>
                 <th className="pb-3">{t("admin.feedback_col_submitter")}</th>
                 <th className="pb-3">{t("admin.feedback_col_message")}</th>
@@ -111,36 +115,41 @@ export default function AdminFeedbackPage() {
                 const displayName =
                   e.user_full_name ?? (displayEmail ? "" : t("admin.feedback_anon"));
                 return (
-                  <tr key={e.id} className="border-t border-paper-200 align-top">
+                  <tr
+                    key={e.id}
+                    className="border-t border-paper-200 dark:border-umber-700 align-top"
+                  >
                     <td className="py-3 pr-4">
-                      {displayName && <p className="font-medium text-ink-900">{displayName}</p>}
+                      {displayName && (
+                        <p className="font-medium text-ink-900 dark:text-paper-50">{displayName}</p>
+                      )}
                       {displayEmail && (
                         <a
                           href={`mailto:${displayEmail}`}
-                          className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-800"
+                          className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-50"
                         >
                           <Mail size={11} aria-hidden />
                           {displayEmail}
                         </a>
                       )}
                       {!displayName && !displayEmail && (
-                        <span className="text-xs italic text-ink-500">
+                        <span className="text-xs italic text-ink-500 dark:text-umber-300">
                           {t("admin.feedback_anon")}
                         </span>
                       )}
                     </td>
                     <td className="py-3 pr-4">
                       {e.message ? (
-                        <p className="max-w-md whitespace-pre-wrap text-sm text-ink-800">
+                        <p className="max-w-md whitespace-pre-wrap text-sm text-ink-800 dark:text-paper-100">
                           {e.message}
                         </p>
                       ) : (
-                        <span className="text-xs italic text-ink-500">
+                        <span className="text-xs italic text-ink-500 dark:text-umber-300">
                           {t("admin.feedback_no_message")}
                         </span>
                       )}
                       {/* Mobile fallback: surface rating/monthly inline when hidden columns are off. */}
-                      <div className="mt-1 flex gap-3 text-xs text-ink-500 sm:hidden">
+                      <div className="mt-1 flex gap-3 text-xs text-ink-500 dark:text-umber-300 sm:hidden">
                         {e.rating !== null && <span>★ {e.rating}/10</span>}
                         {e.monthly_value_ft !== null && e.monthly_value_ft > 0 && (
                           <span>{fmtMoney(e.monthly_value_ft)}</span>
@@ -149,22 +158,26 @@ export default function AdminFeedbackPage() {
                     </td>
                     <td className="hidden py-3 pr-4 sm:table-cell">
                       {e.rating === null ? (
-                        <span className="text-ink-300">—</span>
+                        <span className="text-ink-300 dark:text-umber-300">—</span>
                       ) : (
-                        <span className="font-medium text-ink-900">{e.rating}/10</span>
+                        <span className="font-medium text-ink-900 dark:text-paper-50">
+                          {e.rating}/10
+                        </span>
                       )}
                     </td>
                     <td className="hidden py-3 pr-4 md:table-cell">
                       {e.monthly_value_ft === null || e.monthly_value_ft === 0 ? (
-                        <span className="text-ink-300">—</span>
+                        <span className="text-ink-300 dark:text-umber-300">—</span>
                       ) : (
-                        <span className="text-ink-900">{fmtMoney(e.monthly_value_ft)}</span>
+                        <span className="text-ink-900 dark:text-paper-50">
+                          {fmtMoney(e.monthly_value_ft)}
+                        </span>
                       )}
                     </td>
-                    <td className="hidden py-3 pr-4 text-xs text-ink-500 md:table-cell">
+                    <td className="hidden py-3 pr-4 text-xs text-ink-500 dark:text-umber-300 md:table-cell">
                       {t(`admin.feedback_source_${e.source}`)}
                     </td>
-                    <td className="hidden py-3 pr-4 text-xs text-ink-500 sm:table-cell">
+                    <td className="hidden py-3 pr-4 text-xs text-ink-500 dark:text-umber-300 sm:table-cell">
                       {fmtDate(e.created_at)}
                     </td>
                     <td className="py-3 pr-4">
@@ -215,7 +228,7 @@ export default function AdminFeedbackPage() {
                         )}
                         <button
                           type="button"
-                          className="btn-ghost btn-sm text-violet-950 hover:bg-violet-50"
+                          className="btn-ghost btn-sm text-violet-950 hover:bg-violet-50 dark:text-violet-200 dark:hover:bg-violet-500/20"
                           disabled={pendingId === e.id}
                           onClick={() => remove(e.id)}
                         >
@@ -243,11 +256,11 @@ function StatusPill({
 }) {
   const className =
     status === "new"
-      ? "inline-flex items-center rounded-full bg-violet-900 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-paper-100"
+      ? "inline-flex items-center rounded-full bg-violet-900 dark:bg-violet-500/25 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-paper-100 dark:text-violet-100"
       : status === "read"
-        ? "inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-950"
+        ? "inline-flex items-center rounded-full bg-violet-100 dark:bg-violet-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-950 dark:text-violet-200"
         : status === "resolved"
-          ? "inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-green-700"
-          : "inline-flex items-center rounded-full border border-paper-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-500";
+          ? "inline-flex items-center rounded-full bg-green-100 dark:bg-sage-400/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-green-700 dark:text-sage-300"
+          : "inline-flex items-center rounded-full border border-paper-300 dark:border-umber-700 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300";
   return <span className={className}>{t(`admin.feedback_status_${status}`)}</span>;
 }

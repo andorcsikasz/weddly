@@ -88,14 +88,17 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-[60vh] min-h-[400px] w-[60vw] min-w-[320px] flex-col overflow-hidden rounded-2xl bg-white shadow-pop"
+        className="relative flex h-[60vh] min-h-[400px] w-[60vw] min-w-[320px] flex-col overflow-hidden rounded-2xl bg-white shadow-pop dark:bg-umber-800"
       >
-        <header className="flex items-start justify-between gap-3 border-b border-paper-200 px-4 py-3">
+        <header className="flex items-start justify-between gap-3 border-b border-paper-200 px-4 py-3 dark:border-umber-700">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t("honeymoon.tile_destination")}
             </p>
-            <h2 id={titleId} className="mt-0.5 truncate font-serif text-lg text-ink-900">
+            <h2
+              id={titleId}
+              className="mt-0.5 truncate font-serif text-lg text-ink-900 dark:text-paper-50"
+            >
               {label}
             </h2>
           </div>
@@ -123,21 +126,21 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
           </div>
         </header>
 
-        <div className="relative flex-1 bg-paper-100">
+        <div className="relative flex-1 bg-paper-100 dark:bg-umber-700/60">
           {state === "loading" && (
-            <div className="flex h-full items-center justify-center text-sm text-ink-500">
+            <div className="flex h-full items-center justify-center text-sm text-ink-500 dark:text-umber-300">
               <Loader2 size={16} className="mr-2 animate-spin" aria-hidden="true" />
               {t("common.loading")}
             </div>
           )}
           {state === "not_found" && (
-            <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-sm text-ink-500">
-              <MapPin size={20} className="text-ink-400" aria-hidden="true" />
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-sm text-ink-500 dark:text-umber-300">
+              <MapPin size={20} className="text-ink-400 dark:text-umber-300" aria-hidden="true" />
               <p>{t("honeymoon.map_not_found")}</p>
             </div>
           )}
           {state === "error" && (
-            <div className="flex h-full items-center justify-center px-6 text-center text-sm text-ink-500">
+            <div className="flex h-full items-center justify-center px-6 text-center text-sm text-ink-500 dark:text-umber-300">
               {t("honeymoon.map_error")}
             </div>
           )}

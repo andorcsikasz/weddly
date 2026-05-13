@@ -202,14 +202,16 @@ export default function PlanningPage() {
     <AppShell>
       <div className="mx-auto max-w-3xl">
         <header className="mb-6">
-          <h1 className="text-3xl font-serif text-ink-900">{t("planning.title")}</h1>
-          <p className="mt-2 text-sm text-ink-600">{t("planning.sub")}</p>
+          <h1 className="text-3xl font-serif text-ink-900 dark:text-paper-50">
+            {t("planning.title")}
+          </h1>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("planning.sub")}</p>
         </header>
 
         <nav
           role="tablist"
           aria-label={t("planning.tabs_aria")}
-          className="mb-5 flex gap-1 rounded-2xl border border-paper-300 bg-paper-100/50 p-1"
+          className="mb-5 flex gap-1 rounded-2xl border border-paper-300 bg-paper-100/50 p-1 dark:border-umber-700 dark:bg-umber-700/60"
         >
           {TABS.map((tab) => {
             const active = tab.kind === activeKind;
@@ -223,8 +225,8 @@ export default function PlanningPage() {
                 onClick={() => setActiveKind(tab.kind)}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
                   active
-                    ? "bg-ink-800 text-paper-100 shadow-soft"
-                    : "text-ink-600 hover:bg-paper-200"
+                    ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-paper-50 dark:text-umber-900"
+                    : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
                 }`}
               >
                 <Icon size={16} aria-hidden="true" />
@@ -277,7 +279,7 @@ export default function PlanningPage() {
         />
 
         {loading ? (
-          <p className="mt-6 text-sm text-ink-500">{t("common.loading")}</p>
+          <p className="mt-6 text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
         ) : scoped.length === 0 ? (
           <EmptyState kind={activeKind} />
         ) : (
@@ -405,8 +407,10 @@ function TaskTemplateDialog({
       }
     >
       <div className="space-y-4">
-        <p className="text-ink-700">{t("planning.task_template_dialog_body")}</p>
-        <label className="flex items-center gap-3 text-sm text-ink-700">
+        <p className="text-ink-700 dark:text-paper-100">
+          {t("planning.task_template_dialog_body")}
+        </p>
+        <label className="flex items-center gap-3 text-sm text-ink-700 dark:text-paper-100">
           <span className="font-medium">{t("planning.task_template_default_assignee_label")}</span>
           <input
             type="text"
@@ -415,7 +419,7 @@ function TaskTemplateDialog({
             list={assigneeSuggestions.length > 0 ? datalistId : undefined}
             placeholder={t("planning.task_template_default_assignee_placeholder")}
             maxLength={80}
-            className="flex-1 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 outline-none focus:border-ink-400"
+            className="flex-1 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
           />
           {assigneeSuggestions.length > 0 && (
             <datalist id={datalistId}>
@@ -426,13 +430,13 @@ function TaskTemplateDialog({
           )}
         </label>
         {existing && (
-          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600">
+          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200">
             {t("planning.template_warning_existing")}
           </p>
         )}
-        <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
+        <div className="rounded-lg border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
               {t("planning.template_select_label", { count: selected.size, total })}
             </p>
             <button
@@ -440,7 +444,7 @@ function TaskTemplateDialog({
               onClick={() =>
                 setSelected(allSelected ? new Set() : new Set(TASK_TEMPLATE.map((_, idx) => idx)))
               }
-              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900"
+              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
             >
               {allSelected ? t("planning.template_select_none") : t("planning.template_select_all")}
             </button>
@@ -456,14 +460,14 @@ function TaskTemplateDialog({
                     aria-pressed={on}
                     className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
                       on
-                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200"
-                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600"
+                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200 dark:bg-umber-700/60 dark:text-paper-50 dark:hover:bg-umber-700"
+                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                     }`}
                   >
                     {on ? (
                       <CheckCircle2
                         size={14}
-                        className="shrink-0 text-sage-700"
+                        className="shrink-0 text-sage-700 dark:text-sage-300"
                         aria-hidden="true"
                       />
                     ) : (
@@ -540,15 +544,17 @@ function IdeaTemplateDialog({
       }
     >
       <div className="space-y-4">
-        <p className="text-ink-700">{t("planning.idea_template_dialog_body")}</p>
+        <p className="text-ink-700 dark:text-paper-100">
+          {t("planning.idea_template_dialog_body")}
+        </p>
         {existing && (
-          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600">
+          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200">
             {t("planning.template_warning_existing")}
           </p>
         )}
-        <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
+        <div className="rounded-lg border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
               {t("planning.template_select_label", { count: selected.size, total })}
             </p>
             <button
@@ -556,7 +562,7 @@ function IdeaTemplateDialog({
               onClick={() =>
                 setSelected(allSelected ? new Set() : new Set(IDEA_TEMPLATE.map((_, idx) => idx)))
               }
-              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900"
+              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
             >
               {allSelected ? t("planning.template_select_none") : t("planning.template_select_all")}
             </button>
@@ -572,14 +578,14 @@ function IdeaTemplateDialog({
                     aria-pressed={on}
                     className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
                       on
-                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200"
-                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600"
+                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200 dark:bg-umber-700/60 dark:text-paper-50 dark:hover:bg-umber-700"
+                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                     }`}
                   >
                     {on ? (
                       <CheckCircle2
                         size={14}
-                        className="shrink-0 text-sage-700"
+                        className="shrink-0 text-sage-700 dark:text-sage-300"
                         aria-hidden="true"
                       />
                     ) : (
@@ -645,7 +651,7 @@ function DiceDialog({
       }
     >
       <div className="space-y-3">
-        <p className="text-ink-700">{t("planning.dice_dialog_body")}</p>
+        <p className="text-ink-700 dark:text-paper-100">{t("planning.dice_dialog_body")}</p>
         <ul className="space-y-3">
           {picks.map((idea) => {
             const key = idea.title.en;
@@ -653,25 +659,27 @@ function DiceDialog({
             return (
               <li
                 key={key}
-                className="rounded-xl border border-paper-300 bg-paper-50 p-3 transition-colors"
+                className="rounded-xl border border-paper-300 bg-paper-50 p-3 transition-colors dark:border-umber-700 dark:bg-umber-800"
               >
                 <div className="flex items-start gap-3">
                   <Lightbulb
                     size={16}
-                    className="mt-0.5 shrink-0 text-ink-400"
+                    className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-300"
                     aria-hidden="true"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-ink-900">
+                    <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
                       {localizeText(idea.title, locale)}
                     </p>
-                    <p className="mt-1 text-xs text-ink-600">{localizeText(idea.body, locale)}</p>
+                    <p className="mt-1 text-xs text-ink-600 dark:text-umber-200">
+                      {localizeText(idea.body, locale)}
+                    </p>
                   </div>
                   <button
                     type="button"
                     className={
                       accepted
-                        ? "btn-ghost btn-sm shrink-0 text-sage-700"
+                        ? "btn-ghost btn-sm shrink-0 text-sage-700 dark:text-sage-300"
                         : "btn-primary btn-sm shrink-0"
                     }
                     disabled={accepted || applying}
@@ -741,7 +749,7 @@ function QuickAddForm({
   return (
     <form onSubmit={onSubmit} className="card flex flex-wrap items-end gap-3 p-3">
       <div className="flex flex-1 min-w-[200px] items-center gap-2">
-        <Plus size={16} className="text-ink-400" aria-hidden="true" />
+        <Plus size={16} className="text-ink-400 dark:text-umber-300" aria-hidden="true" />
         <input
           ref={inputRef}
           type="text"
@@ -749,7 +757,7 @@ function QuickAddForm({
           onChange={(e) => setTitle(e.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="w-full bg-transparent text-sm outline-none placeholder:text-ink-400"
+          className="w-full bg-transparent text-sm outline-none placeholder:text-ink-400 dark:text-paper-50 dark:placeholder:text-umber-300"
           maxLength={200}
         />
       </div>
@@ -762,7 +770,7 @@ function QuickAddForm({
             list={assigneeSuggestions.length > 0 ? assigneeListId : undefined}
             placeholder={t("planning.assignee_placeholder")}
             aria-label={t("planning.assignee_label")}
-            className="w-32 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400"
+            className="w-32 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
             maxLength={80}
           />
           {assigneeSuggestions.length > 0 && (
@@ -777,7 +785,7 @@ function QuickAddForm({
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             aria-label={t("planning.due_date_label")}
-            className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400"
+            className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
           />
         </>
       )}
@@ -840,7 +848,7 @@ function PlanningRow({
   return (
     <li
       className={`card flex items-center gap-3 p-3 transition-colors ${
-        item.done ? "bg-paper-100/50" : ""
+        item.done ? "bg-paper-100/50 dark:bg-umber-700/60" : ""
       }`}
     >
       {item.kind === "task" && (
@@ -848,13 +856,21 @@ function PlanningRow({
           type="button"
           onClick={onToggleDone}
           aria-label={item.done ? t("planning.mark_undone") : t("planning.mark_done")}
-          className="shrink-0 text-ink-500 transition-colors hover:text-ink-800"
+          className="shrink-0 text-ink-500 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
         >
-          {item.done ? <CheckCircle2 size={18} className="text-sage-700" /> : <Circle size={18} />}
+          {item.done ? (
+            <CheckCircle2 size={18} className="text-sage-700 dark:text-sage-300" />
+          ) : (
+            <Circle size={18} />
+          )}
         </button>
       )}
       {item.kind === "idea" && (
-        <Lightbulb size={18} className="shrink-0 text-ink-400" aria-hidden="true" />
+        <Lightbulb
+          size={18}
+          className="shrink-0 text-ink-400 dark:text-umber-300"
+          aria-hidden="true"
+        />
       )}
 
       <div className="min-w-0 flex-1">
@@ -875,7 +891,7 @@ function PlanningRow({
                   setEditing(false);
                 }
               }}
-              className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm outline-none focus:border-ink-400"
+              className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
               maxLength={200}
             />
             <textarea
@@ -883,7 +899,7 @@ function PlanningRow({
               onChange={(e) => setDraftBody(e.target.value)}
               placeholder={t("planning.body_placeholder")}
               rows={2}
-              className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-xs text-ink-700 outline-none focus:border-ink-400"
+              className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-xs text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
               maxLength={5000}
             />
             <div className="flex gap-2">
@@ -910,14 +926,18 @@ function PlanningRow({
               onClick={() => setEditing(true)}
               className="block w-full text-left"
             >
-              <p className={`text-sm ${item.done ? "text-ink-400 line-through" : "text-ink-900"}`}>
+              <p
+                className={`text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
+              >
                 {item.title}
               </p>
               {item.body && (
-                <p className="mt-1 whitespace-pre-wrap text-xs text-ink-600">{item.body}</p>
+                <p className="mt-1 whitespace-pre-wrap text-xs text-ink-600 dark:text-umber-200">
+                  {item.body}
+                </p>
               )}
             </button>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-ink-500">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-ink-500 dark:text-umber-300">
               {item.kind === "task" && item.due_date && (
                 <span className="inline-flex items-center gap-1">
                   <Calendar size={12} aria-hidden="true" />
@@ -946,7 +966,7 @@ function PlanningRow({
                       aria-label={t("planning.assignee_label")}
                       autoFocus
                       maxLength={80}
-                      className="h-6 w-28 rounded-full border border-ink-300 bg-paper-50 px-2 text-[11px] text-ink-700 outline-none focus:border-ink-500"
+                      className="h-6 w-28 rounded-full border border-ink-300 bg-paper-50 px-2 text-[11px] text-ink-700 outline-none focus:border-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
                     />
                     {assigneeSuggestions.length > 0 && (
                       <datalist id={assigneeListId}>
@@ -964,7 +984,7 @@ function PlanningRow({
                       setEditingAssignee(true);
                     }}
                     title={t("planning.assignee_edit_hint")}
-                    className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-ink-700 transition-colors hover:bg-ink-200"
+                    className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-ink-700 transition-colors hover:bg-ink-200 dark:bg-umber-700/60 dark:text-paper-100 dark:hover:bg-umber-700"
                   >
                     <User size={11} aria-hidden="true" />
                     {item.assignee}
@@ -976,14 +996,14 @@ function PlanningRow({
                       setDraftAssignee("");
                       setEditingAssignee(true);
                     }}
-                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-paper-400 px-2 py-0.5 text-ink-500 transition-colors hover:border-ink-300 hover:text-ink-700"
+                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-paper-400 px-2 py-0.5 text-ink-500 transition-colors hover:border-ink-300 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-700 dark:hover:text-paper-100"
                   >
                     <User size={11} aria-hidden="true" />
                     {t("planning.assignee_add")}
                   </button>
                 ))}
               {item.kind === "idea" && item.suggested_by_name && (
-                <span className="italic text-ink-500">
+                <span className="italic text-ink-500 dark:text-umber-300">
                   {t("planning.idea_suggested_by", { name: item.suggested_by_name })}
                 </span>
               )}
@@ -996,7 +1016,7 @@ function PlanningRow({
         type="button"
         onClick={onDelete}
         aria-label={t("common.delete")}
-        className="btn-ghost btn-sm shrink-0 self-center text-blush-700"
+        className="btn-ghost btn-sm shrink-0 self-center text-blush-700 dark:text-blush-300"
       >
         <Trash2 size={14} />
       </button>
@@ -1008,9 +1028,9 @@ function EmptyState({ kind }: { kind: PlanningTabKind }) {
   const { t } = useT();
   const Icon = kind === "task" ? CheckCircle2 : Lightbulb;
   return (
-    <div className="mt-6 rounded-2xl border border-dashed border-paper-300 bg-paper-50 px-4 py-10 text-center">
-      <Icon size={28} className="mx-auto text-ink-400" aria-hidden="true" />
-      <p className="mt-3 text-sm text-ink-700">{t(`planning.empty_${kind}`)}</p>
+    <div className="mt-6 rounded-2xl border border-dashed border-paper-300 bg-paper-50 px-4 py-10 text-center dark:border-umber-700 dark:bg-umber-800">
+      <Icon size={28} className="mx-auto text-ink-400 dark:text-umber-300" aria-hidden="true" />
+      <p className="mt-3 text-sm text-ink-700 dark:text-paper-100">{t(`planning.empty_${kind}`)}</p>
     </div>
   );
 }

@@ -25,17 +25,20 @@ import { useT } from "../lib/i18n";
  *  so the inbox/under-review/accepted/rejected buckets are visually distinct
  *  at a glance. No raw hex colors per CLAUDE.md. */
 const STATUS_CARD_CLASSES: Record<VendorWaitlistStatus, string> = {
-  new: "bg-blush-50 border-blush-300",
-  under_review: "bg-violet-50 border-violet-300",
-  accepted: "bg-sage-50 border-sage-300",
-  rejected: "bg-paper-100 border-paper-300",
+  new: "bg-blush-50 border-blush-300 dark:bg-blush-400/15 dark:border-blush-400/40",
+  under_review: "bg-violet-50 border-violet-300 dark:bg-violet-500/15 dark:border-violet-400/40",
+  accepted: "bg-sage-50 border-sage-300 dark:bg-sage-400/15 dark:border-sage-400/40",
+  rejected: "bg-paper-100 border-paper-300 dark:bg-umber-800 dark:border-umber-700",
 };
 
 const STATUS_PILL_CLASSES: Record<VendorWaitlistStatus, string> = {
-  new: "border-blush-300 bg-blush-100 text-blush-800",
-  under_review: "border-violet-300 bg-violet-100 text-violet-950",
-  accepted: "border-sage-300 bg-sage-100 text-sage-800",
-  rejected: "border-paper-300 bg-paper-200 text-ink-700",
+  new: "border-blush-300 bg-blush-100 text-blush-800 dark:border-blush-400/40 dark:bg-blush-400/20 dark:text-blush-300",
+  under_review:
+    "border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200",
+  accepted:
+    "border-sage-300 bg-sage-100 text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300",
+  rejected:
+    "border-paper-300 bg-paper-200 text-ink-700 dark:border-umber-700 dark:bg-umber-700 dark:text-paper-100",
 };
 
 const STATUS_KEY: Record<VendorWaitlistStatus, string> = {
@@ -124,7 +127,7 @@ export default function AdminVendorWaitlistPage() {
     <AppShell>
       <header className="mb-6">
         <h1>{t("admin.waitlist_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500">{t("admin.waitlist_sub")}</p>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.waitlist_sub")}</p>
       </header>
 
       <div className="mb-5 flex flex-wrap gap-2">
@@ -142,9 +145,13 @@ export default function AdminVendorWaitlistPage() {
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-ink-500">{t("common.loading")}</p>
+        <p className="py-8 text-center text-sm text-ink-500 dark:text-umber-300">
+          {t("common.loading")}
+        </p>
       ) : visibleEntries.length === 0 ? (
-        <div className="card text-center text-sm text-ink-500">{t(EMPTY_KEY[filter])}</div>
+        <div className="card text-center text-sm text-ink-500 dark:text-umber-300">
+          {t(EMPTY_KEY[filter])}
+        </div>
       ) : (
         <ul className="grid gap-4">
           {visibleEntries.map((e) => (
@@ -203,8 +210,8 @@ function FilterPill({
       aria-pressed={active}
       className={
         active
-          ? "rounded-full border border-violet-900 bg-violet-900 px-3 py-1 text-xs font-medium text-paper-100"
-          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-950 hover:border-violet-300"
+          ? "rounded-full border border-violet-900 bg-violet-900 dark:border-violet-500/50 dark:bg-violet-500/30 px-3 py-1 text-xs font-medium text-paper-100 dark:text-violet-100"
+          : "rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-violet-950 dark:text-violet-200 hover:border-violet-300 dark:hover:border-violet-400/40"
       }
     >
       {label}
@@ -232,33 +239,37 @@ function EntryCard({
     <article className={cardCls}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-medium text-ink-900">{entry.business_name}</h2>
+          <h2 className="text-lg font-medium text-ink-900 dark:text-paper-50">
+            {entry.business_name}
+          </h2>
           <a
             href={`mailto:${entry.email}`}
-            className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900"
+            className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
           >
             <Mail size={12} aria-hidden /> {entry.email}
           </a>
-          {entry.location && <p className="mt-1 text-xs text-ink-600">{entry.location}</p>}
+          {entry.location && (
+            <p className="mt-1 text-xs text-ink-600 dark:text-umber-200">{entry.location}</p>
+          )}
         </div>
         <StatusPill status={entry.status} label={t(STATUS_KEY[entry.status])} />
       </div>
 
-      <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-600">
+      <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-600 dark:text-umber-200">
         <div>
-          <dt className="inline font-medium text-ink-700">
+          <dt className="inline font-medium text-ink-700 dark:text-paper-100">
             {t("admin.waitlist_card_submitted")}:{" "}
           </dt>
           <dd className="inline">{fmtDate(entry.created_at)}</dd>
         </div>
         <div>
-          <dd className="inline rounded-full bg-white/60 px-2 py-0.5">
+          <dd className="inline rounded-full bg-white/60 dark:bg-umber-900/40 px-2 py-0.5">
             {t(`suppliers.cat.${entry.category}`)}
           </dd>
         </div>
         {entry.outcome_at && (
           <div>
-            <dt className="inline font-medium text-ink-700">
+            <dt className="inline font-medium text-ink-700 dark:text-paper-100">
               {t("admin.waitlist_card_decided")}:{" "}
             </dt>
             <dd className="inline">{fmtDate(entry.outcome_at)}</dd>
@@ -267,8 +278,8 @@ function EntryCard({
       </dl>
 
       {entry.message && (
-        <p className="mt-3 rounded-lg bg-white/60 p-3 text-sm italic text-ink-700">
-          <span className="not-italic font-medium text-ink-800">
+        <p className="mt-3 rounded-lg bg-white/60 dark:bg-umber-900/40 p-3 text-sm italic text-ink-700 dark:text-paper-100">
+          <span className="not-italic font-medium text-ink-800 dark:text-paper-50">
             {t("admin.waitlist_card_message_label")}:{" "}
           </span>
           {entry.message}
@@ -276,19 +287,21 @@ function EntryCard({
       )}
 
       {entry.sent_subject && (
-        <details className="mt-3 text-xs text-ink-700">
-          <summary className="cursor-pointer font-medium text-ink-800">
+        <details className="mt-3 text-xs text-ink-700 dark:text-paper-100">
+          <summary className="cursor-pointer font-medium text-ink-800 dark:text-paper-50">
             {t("admin.waitlist_card_sent_label")}: {entry.sent_subject}
           </summary>
-          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-white/60 p-3 font-sans text-xs leading-relaxed">
+          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-white/60 dark:bg-umber-900/40 p-3 font-sans text-xs leading-relaxed">
             {entry.sent_body ?? ""}
           </pre>
         </details>
       )}
 
       {entry.notes && (
-        <p className="mt-3 rounded-lg border border-dashed border-ink-300 bg-white/40 p-3 text-xs text-ink-700">
-          <span className="font-medium text-ink-800">{t("admin.waitlist_card_notes_label")}: </span>
+        <p className="mt-3 rounded-lg border border-dashed border-ink-300 bg-white/40 dark:border-umber-700 dark:bg-umber-900/30 p-3 text-xs text-ink-700 dark:text-paper-100">
+          <span className="font-medium text-ink-800 dark:text-paper-50">
+            {t("admin.waitlist_card_notes_label")}:{" "}
+          </span>
           {entry.notes}
         </p>
       )}
@@ -435,24 +448,24 @@ function RespondDialog({
               current={outcome}
               label={t("admin.waitlist_modal_outcome_accepted")}
               onPick={pickOutcome}
-              tint="bg-sage-50 border-sage-300 text-sage-800"
-              activeTint="bg-sage-500 border-sage-600 text-white"
+              tint="bg-sage-50 border-sage-300 text-sage-800 dark:bg-sage-400/15 dark:border-sage-400/40 dark:text-sage-300"
+              activeTint="bg-sage-500 border-sage-600 text-white dark:bg-sage-400 dark:border-sage-400 dark:text-umber-900"
             />
             <OutcomeButton
               outcome="under_review"
               current={outcome}
               label={t("admin.waitlist_modal_outcome_under_review")}
               onPick={pickOutcome}
-              tint="bg-violet-50 border-violet-300 text-violet-950"
-              activeTint="bg-violet-900 border-violet-900 text-white"
+              tint="bg-violet-50 border-violet-300 text-violet-950 dark:bg-violet-500/15 dark:border-violet-400/40 dark:text-violet-200"
+              activeTint="bg-violet-900 border-violet-900 text-white dark:bg-violet-500/40 dark:border-violet-400/60 dark:text-violet-100"
             />
             <OutcomeButton
               outcome="rejected"
               current={outcome}
               label={t("admin.waitlist_modal_outcome_rejected")}
               onPick={pickOutcome}
-              tint="bg-paper-100 border-paper-300 text-ink-700"
-              activeTint="bg-ink-800 border-ink-800 text-paper-100"
+              tint="bg-paper-100 border-paper-300 text-ink-700 dark:bg-umber-700/60 dark:border-umber-700 dark:text-paper-100"
+              activeTint="bg-ink-800 border-ink-800 text-paper-100 dark:bg-paper-50 dark:border-paper-50 dark:text-umber-900"
             />
           </div>
         </div>

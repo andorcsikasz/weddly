@@ -266,7 +266,7 @@ export function CostPlanningCard({
   return (
     <section className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
           {t("budget.cost_planning_headline")}
         </p>
         <div className="flex items-center gap-3">
@@ -288,8 +288,8 @@ export function CostPlanningCard({
               )}
               className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 ${
                 showActualOverlay
-                  ? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
-                  : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700"
+                  ? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-400/60 dark:bg-red-400/15 dark:text-red-300 dark:hover:bg-red-400/25"
+                  : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
               }`}
             >
               {showActualOverlay ? <EyeOff size={14} aria-hidden /> : <Eye size={14} aria-hidden />}
@@ -297,16 +297,16 @@ export function CostPlanningCard({
           )}
           {cap !== null &&
             (tier === "safe" ? (
-              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
+              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
                 <ArrowDown size={12} className="self-center" aria-hidden />
                 {t("budget.under_by", { amount: formatHuf(underAmount, locale) })}
               </span>
             ) : tier === "soft" ? (
               // 0–5 % over: calm amber dot, no blush pill — well within the
               // noise floor of cap accuracy, so the warning is muted on purpose.
-              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600">
+              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
                 <span
-                  className="inline-block h-2 w-2 self-center rounded-full bg-amber-500"
+                  className="inline-block h-2 w-2 self-center rounded-full bg-amber-500 dark:bg-amber-400"
                   aria-hidden="true"
                 />
                 {t("cost_planning.overcap_soft_label")}
@@ -315,7 +315,7 @@ export function CostPlanningCard({
               // medium (5–20 %) + serious (>20 %): same blush pill; the serious
               // tier adds an action link below the card total. Keeping the pill
               // shape stable across tiers preserves the visual anchor.
-              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700">
+              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700 dark:text-blush-300">
                 <ArrowUp size={12} className="self-center" aria-hidden />
                 {t("cost_planning.overcap_medium_label", { amount: formatHuf(overage, locale) })}
               </span>
@@ -327,10 +327,10 @@ export function CostPlanningCard({
        *  negative top margin pulls the number up flush under the eyebrow row
        *  so there's no empty band between them. */}
       <div className="-mt-3 text-center">
-        <div className="font-serif text-4xl leading-none text-ink-900 sm:text-5xl">
+        <div className="font-serif text-4xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
           {formatNumber(count, locale)}
         </div>
-        <div className="mt-0.5 text-xs uppercase tracking-wide text-ink-500">
+        <div className="mt-0.5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
           {t("budget.cost_planning_unit_label")}
         </div>
       </div>
@@ -348,7 +348,7 @@ export function CostPlanningCard({
           style={rangeFillStyle(count, minCount, maxCount)}
           aria-label={t("budget.cost_planning_title")}
         />
-        <div className="mt-1 flex items-center justify-between text-[11px] text-ink-400">
+        <div className="mt-1 flex items-center justify-between text-[11px] text-ink-400 dark:text-umber-300">
           <CountInput
             value={minCount}
             min={10}
@@ -375,7 +375,7 @@ export function CostPlanningCard({
        *  (a dedicated sub-page with its own breakdown + map), so we show
        *  the same row visual here but route the click through and skip
        *  the slider input — no in-place drag. */}
-      <ul className="mt-4 divide-y divide-paper-100">
+      <ul className="mt-4 divide-y divide-paper-100 dark:divide-umber-700">
         {buckets.map((b) => (
           <CategoryRow
             key={b.category}
@@ -400,17 +400,19 @@ export function CostPlanningCard({
         ))}
       </ul>
 
-      <div className="mt-4 border-t border-paper-200 pt-3">
+      <div className="mt-4 border-t border-paper-200 pt-3 dark:border-umber-700">
         <div className="flex items-baseline justify-between">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-500">
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {/* Label tracks what's actually shown — pure planned vs. actual/planned. */}
             {totalActual > 0 ? t("budget.total_actual") : t("budget.total_planned")}
           </span>
           <span
-            className={`stat-num text-xl font-semibold ${overCap ? "text-blush-700" : "text-ink-900"}`}
+            className={`stat-num text-xl font-semibold ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-900 dark:text-paper-50"}`}
           >
             {totalActual > 0 && (
-              <span className={`text-sm ${overCap ? "text-blush-400" : "text-ink-500"}`}>
+              <span
+                className={`text-sm ${overCap ? "text-blush-400 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"}`}
+              >
                 {formatHuf(totalActual, locale)} /{" "}
               </span>
             )}
@@ -423,7 +425,7 @@ export function CostPlanningCard({
          *  to fill it in here. */}
         {(cap !== null || onCapChange) && (
           <div className="mt-1 flex items-baseline justify-between text-[11px]">
-            <span className="text-ink-400">{t("budget.cap")}</span>
+            <span className="text-ink-400 dark:text-umber-300">{t("budget.cap")}</span>
             {onCapChange ? (
               <EditableHuf
                 value={cap}
@@ -432,7 +434,9 @@ export function CostPlanningCard({
                 emphasise={overCap}
               />
             ) : (
-              <span className={`stat-num ${overCap ? "text-blush-700" : "text-ink-400"}`}>
+              <span
+                className={`stat-num ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
+              >
                 {cap !== null ? formatHuf(cap, locale) : "—"}
               </span>
             )}
@@ -447,7 +451,7 @@ export function CostPlanningCard({
           <div className="mt-1.5 text-[11px]">
             <Link
               to="/app/budget#top-overage"
-              className="text-blush-700 underline-offset-2 hover:text-blush-800 hover:underline"
+              className="text-blush-700 underline-offset-2 hover:text-blush-800 hover:underline dark:text-blush-300 dark:hover:text-blush-200"
             >
               {t("cost_planning.overcap_serious_action")}
             </Link>
@@ -592,11 +596,13 @@ function CategoryRow({
   const leftTileContent = (
     <>
       {frozen ? (
-        <Lock size={14} className="shrink-0 text-blush-700" aria-hidden />
+        <Lock size={14} className="shrink-0 text-blush-700 dark:text-blush-300" aria-hidden />
       ) : (
-        <Icon size={14} className="shrink-0 text-ink-500" aria-hidden />
+        <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
       )}
-      <span className={`truncate ${frozen ? "text-blush-700" : ""}`}>{categoryLabel}</span>
+      <span className={`truncate ${frozen ? "text-blush-700 dark:text-blush-300" : ""}`}>
+        {categoryLabel}
+      </span>
     </>
   );
 
@@ -604,8 +610,10 @@ function CategoryRow({
     <button
       type="button"
       onClick={() => onToggleFreeze?.(category)}
-      className={`flex items-center gap-2 text-left text-ink-700 transition hover:text-ink-900 ${
-        frozen ? "text-blush-700 hover:text-blush-800" : ""
+      className={`flex items-center gap-2 text-left text-ink-700 transition hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50 ${
+        frozen
+          ? "text-blush-700 hover:text-blush-800 dark:text-blush-300 dark:hover:text-blush-200"
+          : ""
       }`}
       aria-pressed={frozen}
       aria-label={t(frozen ? "budget.unfreeze_aria" : "budget.freeze_aria", {
@@ -615,7 +623,9 @@ function CategoryRow({
       {leftTileContent}
     </button>
   ) : (
-    <span className="flex items-center gap-2 text-ink-700">{leftTileContent}</span>
+    <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
+      {leftTileContent}
+    </span>
   );
 
   // Right tile — the amount. On the dashboard we promote this to a Link so a
@@ -623,10 +633,12 @@ function CategoryRow({
   // hash drops them at the matching category section.
   const amountInner = (
     <>
-      {actual > 0 && <span className="text-ink-400">{formatHuf(actual, locale)} / </span>}
+      {actual > 0 && (
+        <span className="text-ink-400 dark:text-umber-300">{formatHuf(actual, locale)} / </span>
+      )}
       <span className="font-medium">{formatHuf(liveDisplay, locale)}</span>
       {perGuest !== null && (
-        <span className="text-[11px] text-ink-400">
+        <span className="text-[11px] text-ink-400 dark:text-umber-300">
           {" · "}
           {t("budget.per_guest_unit", { n: formatNumber(perGuest, locale) })}
         </span>
@@ -638,13 +650,13 @@ function CategoryRow({
     amountLinkTo && !linkTo ? (
       <Link
         to={`${amountLinkTo}#cat-${category}`}
-        className="stat-num whitespace-nowrap rounded text-right text-xs text-ink-700 underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200"
+        className="stat-num whitespace-nowrap rounded text-right text-xs text-ink-700 underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-paper-100 dark:hover:text-paper-50"
         aria-label={t("budget.open_table_aria", { category: categoryLabel })}
       >
         {amountInner}
       </Link>
     ) : (
-      <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
+      <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700 dark:text-paper-100">
         {amountInner}
       </span>
     );
@@ -696,15 +708,17 @@ function CategoryRow({
       <li>
         <Link
           to={linkTo}
-          className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm -mx-2 px-2 rounded-md"
+          className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
           aria-label={categoryLabel}
         >
-          <span className="flex items-center gap-2 text-ink-700">{leftTileContent}</span>
+          <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
+            {leftTileContent}
+          </span>
           <div className="w-full">
             {trackEl}
             {actualOverlayEl}
           </div>
-          <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700">
+          <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700 dark:text-paper-100">
             {amountInner}
           </span>
         </Link>
@@ -781,7 +795,7 @@ function CountInput({
         }
       }}
       aria-label={ariaLabel}
-      className="stat-num w-10 rounded border border-transparent bg-transparent px-1 text-center text-[11px] text-ink-400 transition hover:border-paper-300 hover:text-ink-700 focus:border-blush-500 focus:text-ink-800 focus:outline-none"
+      className="stat-num w-10 rounded border border-transparent bg-transparent px-1 text-center text-[11px] text-ink-400 transition hover:border-paper-300 hover:text-ink-700 focus:border-blush-500 focus:text-ink-800 focus:outline-none dark:text-umber-300 dark:hover:border-umber-700 dark:hover:text-paper-100 dark:focus:text-paper-50"
     />
   );
 }
@@ -855,7 +869,7 @@ function EditableHuf({
           else if (e.key === "Escape") setEditing(false);
         }}
         aria-label={ariaLabel}
-        className="stat-num w-28 rounded border border-blush-500 bg-white px-1 py-0.5 text-right text-[11px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100"
+        className="stat-num w-28 rounded border border-blush-500 bg-white px-1 py-0.5 text-right text-[11px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 dark:bg-umber-800 dark:text-paper-50"
       />
     );
   }
@@ -865,8 +879,10 @@ function EditableHuf({
       type="button"
       onClick={startEdit}
       aria-label={ariaLabel}
-      className={`stat-num rounded border border-transparent px-1 py-0.5 text-right transition hover:border-paper-300 ${
-        emphasise ? "text-blush-700 hover:text-blush-800" : "text-ink-400 hover:text-ink-700"
+      className={`stat-num rounded border border-transparent px-1 py-0.5 text-right transition hover:border-paper-300 dark:hover:border-umber-700 ${
+        emphasise
+          ? "text-blush-700 hover:text-blush-800 dark:text-blush-300 dark:hover:text-blush-200"
+          : "text-ink-400 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
       } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200`}
     >
       {value !== null ? formatHuf(value, locale) : (placeholder ?? "—")}

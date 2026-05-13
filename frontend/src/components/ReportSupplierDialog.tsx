@@ -102,7 +102,9 @@ export function ReportSupplierDialog({ supplierId, supplierName, onClose, onRepo
         </>
       }
     >
-      <p className="text-sm text-ink-600">{t("suppliers.report.intro", { name: supplierName })}</p>
+      <p className="text-sm text-ink-600 dark:text-umber-200">
+        {t("suppliers.report.intro", { name: supplierName })}
+      </p>
       <form id="report-supplier-form" onSubmit={onSubmit} className="mt-4 space-y-4">
         <fieldset className="space-y-2">
           <legend className="field-label">{t("suppliers.report.reason_label")}</legend>
@@ -112,8 +114,8 @@ export function ReportSupplierDialog({ supplierId, supplierName, onClose, onRepo
                 key={r}
                 className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2 text-sm transition ${
                   reason === r
-                    ? "border-sage-400 bg-sage-50"
-                    : "border-paper-200 bg-paper-50 hover:border-paper-300"
+                    ? "border-sage-400 bg-sage-50 dark:border-sage-400/40 dark:bg-sage-400/15"
+                    : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
                 }`}
               >
                 <input
@@ -126,7 +128,7 @@ export function ReportSupplierDialog({ supplierId, supplierName, onClose, onRepo
                 />
                 <span>
                   <span className="font-medium">{t(`suppliers.report.reason.${r}.label`)}</span>
-                  <span className="block text-xs text-ink-500">
+                  <span className="block text-xs text-ink-500 dark:text-umber-300">
                     {t(`suppliers.report.reason.${r}.desc`)}
                   </span>
                 </span>
@@ -147,7 +149,7 @@ export function ReportSupplierDialog({ supplierId, supplierName, onClose, onRepo
             onChange={(e) => setNote(e.target.value)}
             placeholder={t("suppliers.report.note_placeholder")}
           />
-          <p className="mt-1 text-xs text-ink-500">{note.length}/500</p>
+          <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">{note.length}/500</p>
         </div>
       </form>
     </Dialog>

@@ -95,14 +95,16 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
     >
       {done ? (
         <div className="flex flex-col items-center gap-3 py-4 text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blush-100 text-blush-700">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
             <CheckCircle2 size={26} />
           </span>
-          <p className="text-base text-ink-800">{t("landing.feedback_success_body")}</p>
+          <p className="text-base text-ink-800 dark:text-paper-100">
+            {t("landing.feedback_success_body")}
+          </p>
         </div>
       ) : (
         <form id="feedback-form" onSubmit={onSubmit} className="space-y-6" noValidate>
-          <p className="text-sm text-ink-600">{t("landing.feedback_intro")}</p>
+          <p className="text-sm text-ink-600 dark:text-umber-200">{t("landing.feedback_intro")}</p>
 
           {/* Segment 1 — free text */}
           <div>
@@ -140,8 +142,8 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
                     onClick={() => setRating(selected ? null : n)}
                     className={
                       selected
-                        ? "aspect-square w-full rounded-full bg-ink-900 text-xs font-medium text-paper-100 transition-colors sm:text-sm"
-                        : "aspect-square w-full rounded-full border border-paper-300 bg-white text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 sm:text-sm"
+                        ? "aspect-square w-full rounded-full bg-ink-900 text-xs font-medium text-paper-100 transition-colors sm:text-sm dark:bg-umber-600 dark:text-paper-50"
+                        : "aspect-square w-full rounded-full border border-paper-300 bg-white text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 sm:text-sm dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700"
                     }
                   >
                     {n}
@@ -149,7 +151,7 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
                 );
               })}
             </div>
-            <p className="mt-1.5 flex justify-between text-xs text-ink-500">
+            <p className="mt-1.5 flex justify-between text-xs text-ink-500 dark:text-umber-300">
               <span>
                 {t("landing.feedback_rating_low")} — {t("landing.feedback_rating_hint")}
               </span>
@@ -183,17 +185,19 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
               />
               {/* Scale endpoints. tabular-nums keeps "0 Ft" and "15 000 Ft"
                   vertically aligned across HU/EN number formats. */}
-              <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-ink-400">
+              <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
                 <span>{`0 Ft`}</span>
                 <span>{`${MONTHLY_MAX.toLocaleString(locale === "hu" ? "hu" : "en")} Ft`}</span>
               </div>
               <div className="mt-2 flex items-center justify-between text-sm">
-                <span className="text-ink-500">
+                <span className="text-ink-500 dark:text-umber-300">
                   {monthly === null || monthly === 0
                     ? t("landing.feedback_monthly_zero")
                     : `${monthly.toLocaleString(locale === "hu" ? "hu" : "en")} Ft`}
                 </span>
-                <span className="text-xs text-ink-500">{t("landing.feedback_monthly_hint")}</span>
+                <span className="text-xs text-ink-500 dark:text-umber-300">
+                  {t("landing.feedback_monthly_hint")}
+                </span>
               </div>
             </div>
           </div>

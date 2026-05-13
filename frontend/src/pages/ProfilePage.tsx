@@ -346,15 +346,15 @@ export default function ProfilePage() {
 
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.partner_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("profile.partner_body")}</p>
+        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.partner_body")}</p>
         {partner ? (
           <>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-ink-900">
+                <p className="font-medium text-ink-900 dark:text-paper-50">
                   {partner.full_name ?? t("profile.partner_no_name")}
                 </p>
-                <p className="text-sm text-ink-600 break-all">
+                <p className="text-sm text-ink-600 break-all dark:text-umber-200">
                   {partner.email ?? t("profile.partner_no_email")}
                 </p>
               </div>
@@ -362,7 +362,9 @@ export default function ProfilePage() {
             </div>
             {partner.status === "invited" && (
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <p className="text-xs text-ink-500">{t("profile.partner_invited_hint")}</p>
+                <p className="text-xs text-ink-500 dark:text-umber-300">
+                  {t("profile.partner_invited_hint")}
+                </p>
                 <button
                   type="button"
                   className={`btn-sm ${
@@ -383,13 +385,17 @@ export default function ProfilePage() {
             )}
           </>
         ) : (
-          <p className="mt-4 text-sm text-ink-500">{t("profile.partner_none")}</p>
+          <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
+            {t("profile.partner_none")}
+          </p>
         )}
       </section>
 
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.payments_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("profile.payments_body")}</p>
+        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+          {t("profile.payments_body")}
+        </p>
       </section>
 
       <section className="card mt-6 p-0">
@@ -397,17 +403,19 @@ export default function ProfilePage() {
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5">
             <div className="min-w-0">
               <h2 className="text-lg">{t("profile.security_title")}</h2>
-              <p className="mt-1 text-sm text-ink-500">{t("profile.security_summary")}</p>
+              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+                {t("profile.security_summary")}
+              </p>
             </div>
             <ChevronDown
               size={18}
-              className="shrink-0 text-ink-500 transition-transform group-open:rotate-180"
+              className="shrink-0 text-ink-500 transition-transform group-open:rotate-180 dark:text-umber-300"
               aria-hidden
             />
           </summary>
-          <div className="grid gap-6 border-t border-paper-200 px-6 py-5 md:grid-cols-2">
+          <div className="grid gap-6 border-t border-paper-200 px-6 py-5 md:grid-cols-2 dark:border-umber-700">
             <form className="grid gap-2" onSubmit={changePassword} noValidate>
-              <h3 className="text-sm font-medium text-ink-800">
+              <h3 className="text-sm font-medium text-ink-800 dark:text-paper-100">
                 {t("profile.security_pw_heading")}
               </h3>
               <div>
@@ -465,7 +473,7 @@ export default function ProfilePage() {
             </form>
 
             <form className="grid gap-2" onSubmit={requestEmailChange} noValidate>
-              <h3 className="text-sm font-medium text-ink-800">
+              <h3 className="text-sm font-medium text-ink-800 dark:text-paper-100">
                 {t("profile.security_email_heading")}
               </h3>
               <div>
@@ -513,7 +521,7 @@ export default function ProfilePage() {
 
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.export_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("profile.export_body")}</p>
+        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.export_body")}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
@@ -536,19 +544,21 @@ export default function ProfilePage() {
 
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.archive_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("profile.archive_body")}</p>
+        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.archive_body")}</p>
         {documents.length === 0 ? (
-          <p className="mt-4 text-sm text-ink-500">{t("profile.archive_empty")}</p>
+          <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
+            {t("profile.archive_empty")}
+          </p>
         ) : (
-          <ul className="mt-4 divide-y divide-paper-200">
+          <ul className="mt-4 divide-y divide-paper-200 dark:divide-umber-700">
             {documents.map((doc) => (
               <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
-                <span className="rounded bg-paper-100 px-2 py-0.5 text-xs uppercase text-ink-600">
+                <span className="rounded bg-paper-100 px-2 py-0.5 text-xs uppercase text-ink-600 dark:bg-umber-700/60 dark:text-umber-200">
                   {t(`profile.archive_kind_${doc.kind}` as `profile.archive_kind_${ExportKind}`)}
                   {doc.format ? ` · ${doc.format.toUpperCase()}` : ""}
                 </span>
-                <span className="font-medium text-ink-800">{doc.filename}</span>
-                <span className="text-xs text-ink-500">
+                <span className="font-medium text-ink-800 dark:text-paper-100">{doc.filename}</span>
+                <span className="text-xs text-ink-500 dark:text-umber-300">
                   {formatTimestamp(doc.created_at, locale)} · {formatBytes(doc.byte_size)}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
@@ -567,7 +577,7 @@ export default function ProfilePage() {
                     className={`h-8 rounded-xl border px-3 text-xs transition-colors ${
                       armedDeleteId === doc.id
                         ? "border-blush-500 bg-blush-500 text-white hover:bg-blush-600"
-                        : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100"
+                        : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
                     }`}
                     onClick={() => clickDelete(doc)}
                     disabled={removing === doc.id}
@@ -596,10 +606,12 @@ export default function ProfilePage() {
         <section className="card mt-6">
           <h2 className="text-lg">{t("profile.leave_couple_title")}</h2>
           {authUser.id === couple.partner_a_id ? (
-            <p className="mt-2 text-sm text-ink-600">{t("profile.leave_couple_body_owner")}</p>
+            <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+              {t("profile.leave_couple_body_owner")}
+            </p>
           ) : (
             <>
-              <p className="mt-2 text-sm text-ink-600">
+              <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
                 {t("profile.leave_couple_body_partner_b")}
               </p>
               <button
@@ -615,16 +627,20 @@ export default function ProfilePage() {
         </section>
       )}
 
-      <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40">
-        <h2 className="text-lg text-blush-800">{t("profile.delete_account_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600">{t("profile.delete_account_body")}</p>
+      <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40 dark:bg-blush-400/15">
+        <h2 className="text-lg text-blush-800 dark:text-blush-300">
+          {t("profile.delete_account_title")}
+        </h2>
+        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+          {t("profile.delete_account_body")}
+        </p>
         {coupleStatus === "paused" && pauseReq ? (
-          <div className="mt-4 rounded-xl bg-blush-50 p-4">
-            <p className="text-sm font-medium text-blush-800">
+          <div className="mt-4 rounded-xl bg-blush-50 p-4 dark:bg-blush-400/15">
+            <p className="text-sm font-medium text-blush-800 dark:text-blush-300">
               {t("profile.delete_account_pending")}
             </p>
             {scheduledYmd && (
-              <p className="mt-1 text-xs text-blush-700">
+              <p className="mt-1 text-xs text-blush-700 dark:text-blush-300">
                 {t("profile.delete_account_pending_until", {
                   date: formatDate(scheduledYmd, locale),
                 })}
@@ -659,9 +675,12 @@ function PartnerStatusPill({
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   const cls = {
-    invited: "bg-blush-100 text-blush-800 border border-blush-200",
-    joined: "bg-paper-200 text-ink-700 border border-paper-300",
-    active: "bg-ink-700 text-paper-100 border border-ink-800",
+    invited:
+      "bg-blush-100 text-blush-800 border border-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:border-blush-400/40",
+    joined:
+      "bg-paper-200 text-ink-700 border border-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:border-umber-700",
+    active:
+      "bg-ink-700 text-paper-100 border border-ink-800 dark:bg-paper-50 dark:text-umber-900 dark:border-paper-100",
   }[status];
   return (
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${cls}`}>

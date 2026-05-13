@@ -1162,7 +1162,10 @@ const hu: LocaleMessages = {
     conflict_avoid: "kerüljék egymást",
     print_a4: "A4 ültetési rend",
     print_a3: "A3 ültetési rend",
-    print_place_cards: "Ültetőkártyák (100 × 50 mm)",
+    print_place_cards: "Ültetőkártyák",
+    print_seating_chart_label: "Ültetési rend",
+    print_format_a4: "A4",
+    print_format_a3: "A3",
     map_title: "Terem térkép",
     map_help:
       "Húzd az asztalt a helyére. Húzd az oldalát az átméretezéshez. Kattints a részletekért.",

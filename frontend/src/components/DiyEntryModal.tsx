@@ -199,7 +199,7 @@ export function DiyEntryModal({
       }
     >
       <form id="diy-entry-form" onSubmit={handleSubmit} className="space-y-4">
-        <p className="text-sm text-ink-500">{t("suppliers.diy_modal_intro")}</p>
+        <p className="text-sm text-ink-500 dark:text-umber-300">{t("suppliers.diy_modal_intro")}</p>
 
         <TextField
           id="diy-name"
@@ -283,17 +283,22 @@ export function DiyEntryModal({
           const hasPrice = form.price.trim() !== "" && Number.isFinite(parsed) && parsed > 0;
           return (
             <div className="block">
-              <label htmlFor="diy-paid" className="flex items-center gap-2 text-sm text-ink-800">
+              <label
+                htmlFor="diy-paid"
+                className="flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100"
+              >
                 <input
                   id="diy-paid"
                   type="checkbox"
-                  className="h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-4 w-4 cursor-pointer rounded border-paper-300 dark:border-umber-700 text-blush-600 focus:ring-blush-400 disabled:cursor-not-allowed disabled:opacity-50"
                   checked={hasPrice && form.paid}
                   disabled={!hasPrice}
                   onChange={(e) => setField("paid", e.target.checked)}
                   aria-describedby="diy-paid-help"
                 />
-                <span className={hasPrice ? "" : "text-ink-400"}>{t("diy.paid_label")}</span>
+                <span className={hasPrice ? "" : "text-ink-400 dark:text-umber-300"}>
+                  {t("diy.paid_label")}
+                </span>
               </label>
               <HelperText id="diy-paid-help">
                 {hasPrice ? t("diy.paid_help") : t("diy.paid_disabled_hint")}
@@ -302,7 +307,7 @@ export function DiyEntryModal({
           );
         })()}
 
-        <p className="rounded-xl bg-paper-100 px-3 py-2 text-xs text-ink-500">
+        <p className="rounded-xl bg-paper-100 dark:bg-umber-700/60 px-3 py-2 text-xs text-ink-500 dark:text-umber-300">
           {t("suppliers.diy_modal_privacy")}
         </p>
       </form>

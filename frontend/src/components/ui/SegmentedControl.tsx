@@ -71,7 +71,7 @@ export function SegmentedControl<T extends string>({
       aria-label={ariaLabel}
       id={groupId}
       className={[
-        "inline-flex max-w-full overflow-x-auto rounded-full border border-paper-300 bg-paper-100 p-1 [&::-webkit-scrollbar]:hidden",
+        "inline-flex max-w-full overflow-x-auto rounded-full border border-paper-300 bg-paper-100 p-1 dark:border-umber-700 dark:bg-umber-800 [&::-webkit-scrollbar]:hidden",
         className ?? "",
       ]
         .filter(Boolean)
@@ -92,9 +92,11 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(opt.value)}
             onKeyDown={onKey}
             className={[
-              "min-h-tap whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ink-700",
+              "min-h-tap whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100",
               compact ? "flex flex-col items-center gap-0.5" : "inline-flex items-center gap-1.5",
-              active ? "bg-ink-800 text-paper-50 shadow-soft" : "text-ink-700 hover:text-ink-900",
+              active
+                ? "bg-ink-800 text-paper-50 shadow-soft dark:bg-umber-700 dark:text-paper-50"
+                : "text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50",
             ].join(" ")}
           >
             {opt.icon}

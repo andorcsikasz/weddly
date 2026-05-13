@@ -84,11 +84,13 @@ export function VerifyEmailGate({ email }: { email: string }) {
       <div className="mx-auto max-w-md">
         <div className="card">
           <h1 className="text-2xl">{t("verify.gate_title")}</h1>
-          <p className="mt-4 text-sm text-ink-700">{t("verify.gate_body")}</p>
-          <p className="mt-4 text-xs uppercase tracking-wider text-ink-500">
+          <p className="mt-4 text-sm text-ink-700 dark:text-paper-100">{t("verify.gate_body")}</p>
+          <p className="mt-4 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-200">
             {t("verify.gate_email_intro")}
           </p>
-          <p className="mt-1 break-all text-sm font-medium text-ink-900">{email}</p>
+          <p className="mt-1 break-all text-sm font-medium text-ink-900 dark:text-paper-50">
+            {email}
+          </p>
 
           {inbox && (
             <a
@@ -121,18 +123,24 @@ export function VerifyEmailGate({ email }: { email: string }) {
           </div>
 
           {status === "sent" && (
-            <p className="mt-3 text-sm text-ink-600">{t("verify.gate_resent")}</p>
+            <p className="mt-3 text-sm text-ink-600 dark:text-umber-200">
+              {t("verify.gate_resent")}
+            </p>
           )}
           {status === "already" && (
-            <p className="mt-3 text-sm text-ink-600">{t("verify.gate_already_verified")}</p>
+            <p className="mt-3 text-sm text-ink-600 dark:text-umber-200">
+              {t("verify.gate_already_verified")}
+            </p>
           )}
 
-          <p className="mt-6 text-xs text-ink-500">{t("verify.check_inbox_spam_hint")}</p>
+          <p className="mt-6 text-xs text-ink-500 dark:text-umber-300">
+            {t("verify.check_inbox_spam_hint")}
+          </p>
 
-          <div className="mt-6 border-t border-paper-300 pt-4">
+          <div className="mt-6 border-t border-paper-300 pt-4 dark:border-umber-700">
             <button
               type="button"
-              className="btn-ghost btn-sm text-ink-500"
+              className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
               onClick={() => void logout()}
             >
               {t("verify.gate_logout")}

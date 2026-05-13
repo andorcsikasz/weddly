@@ -31,7 +31,7 @@ export function TextField({
       <label htmlFor={id} className="field-label">
         {label}
         {required && (
-          <span aria-hidden="true" className="ml-0.5 text-blush-700">
+          <span aria-hidden="true" className="ml-0.5 text-blush-700 dark:text-blush-300">
             *
           </span>
         )}

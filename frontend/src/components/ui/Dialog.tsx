@@ -148,7 +148,7 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={describedById}
-        className={`card relative max-h-[90vh] w-full ${size === "lg" ? "max-w-3xl" : "max-w-md"} overflow-y-auto rounded-b-none rounded-t-2xl shadow-pop sm:rounded-2xl`}
+        className={`card relative max-h-[90vh] w-full ${size === "lg" ? "max-w-3xl" : "max-w-md"} overflow-y-auto rounded-b-none rounded-t-2xl shadow-pop sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
       >
         <div className="flex items-start gap-4">
           <h2 id={titleId} className="flex-1 text-xl">
@@ -163,7 +163,7 @@ export function Dialog({
             <X size={18} aria-hidden="true" />
           </button>
         </div>
-        <div className="mt-3 text-sm text-ink-700">{children}</div>
+        <div className="mt-3 text-sm text-ink-700 dark:text-paper-100">{children}</div>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">{footer}</div>
       </div>
     </div>,

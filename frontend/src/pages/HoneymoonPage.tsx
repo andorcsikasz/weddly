@@ -331,7 +331,7 @@ export default function HoneymoonPage() {
     <AppShell>
       <header className="mb-6">
         <h1>{t("honeymoon.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500">{t("honeymoon.sub")}</p>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("honeymoon.sub")}</p>
       </header>
 
       <section className="grid gap-3 sm:grid-cols-3">
@@ -363,7 +363,9 @@ export default function HoneymoonPage() {
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2>{t("honeymoon.costs_title")}</h2>
-            <p className="mt-1 text-sm text-ink-500">{t("honeymoon.costs_sub")}</p>
+            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+              {t("honeymoon.costs_sub")}
+            </p>
           </div>
           {honeymoonLines.length > 0 && (
             <PresetChips onPick={addPreset} usedIds={usedPresetIds} compact />
@@ -374,13 +376,15 @@ export default function HoneymoonPage() {
           <div className="card flex flex-col items-start gap-4 text-left">
             <div>
               <h3 className="font-serif text-lg">{t("honeymoon.costs_empty_title")}</h3>
-              <p className="mt-1 text-sm text-ink-700">{t("honeymoon.costs_empty_body")}</p>
+              <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
+                {t("honeymoon.costs_empty_body")}
+              </p>
             </div>
             <PresetChips onPick={addPreset} usedIds={usedPresetIds} />
           </div>
         ) : (
           <div className="card overflow-hidden p-0">
-            <ul className="divide-y divide-paper-200">
+            <ul className="divide-y divide-paper-200 dark:divide-umber-700">
               {honeymoonLines.map((line) => (
                 <CostRow
                   key={line.id}
@@ -466,7 +470,7 @@ function DaysTile({
 
   return (
     <div ref={wrapperRef} className="card-hover stationery-light relative !p-5">
-      <div className="flex items-center gap-2 text-ink-500">
+      <div className="flex items-center gap-2 text-ink-500 dark:text-umber-300">
         <Calendar size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_days")}
@@ -476,7 +480,7 @@ function DaysTile({
       {editing ? (
         <div className="mt-3 space-y-2">
           <label className="block">
-            <span className="text-[11px] uppercase tracking-wide text-ink-400">
+            <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
               {t("honeymoon.start_label")}
             </span>
             <input
@@ -488,7 +492,7 @@ function DaysTile({
             />
           </label>
           <label className="block">
-            <span className="text-[11px] uppercase tracking-wide text-ink-400">
+            <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
               {t("honeymoon.end_label")}
             </span>
             <input
@@ -507,17 +511,19 @@ function DaysTile({
           className="mt-2 block w-full text-center"
           aria-label={t("honeymoon.edit_dates")}
         >
-          <span className="font-serif text-4xl font-semibold tabular-nums text-ink-900">
+          <span className="font-serif text-4xl font-semibold tabular-nums text-ink-900 dark:text-paper-50">
             {nights !== null ? nights : loaded ? "—" : ""}
           </span>
-          <span className="ml-2 text-sm text-ink-500">
+          <span className="ml-2 text-sm text-ink-500 dark:text-umber-300">
             {nights !== null
               ? t("honeymoon.day", { count: nights })
               : loaded
                 ? t("honeymoon.set_dates_cta")
                 : ""}
           </span>
-          {dateRange && <p className="mt-1 text-xs text-ink-400">{dateRange}</p>}
+          {dateRange && (
+            <p className="mt-1 text-xs text-ink-400 dark:text-umber-300">{dateRange}</p>
+          )}
         </button>
       )}
     </div>
@@ -539,7 +545,7 @@ function DestinationTile({
 
   return (
     <div className="card-hover stationery-light relative !p-5">
-      <div className="flex items-center gap-2 text-ink-500">
+      <div className="flex items-center gap-2 text-ink-500 dark:text-umber-300">
         <MapPin size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_destination")}
@@ -564,13 +570,13 @@ function DestinationTile({
         >
           {value ? (
             <span
-              className="line-clamp-2 font-serif text-xl font-semibold text-ink-900 sm:text-2xl"
+              className="line-clamp-2 font-serif text-xl font-semibold text-ink-900 sm:text-2xl dark:text-paper-50"
               title={value}
             >
               {value}
             </span>
           ) : (
-            <span className="text-sm text-ink-500">
+            <span className="text-sm text-ink-500 dark:text-umber-300">
               {loaded ? t("honeymoon.destination_empty_cta") : ""}
             </span>
           )}
@@ -587,7 +593,7 @@ function DestinationTile({
             e.stopPropagation();
             setMapOpen(true);
           }}
-          className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-500 shadow-soft transition hover:border-blush-300 hover:text-blush-700"
+          className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-500 shadow-soft transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300 dark:hover:border-blush-400/40 dark:hover:text-blush-300"
           aria-label={t("honeymoon.show_on_map")}
           title={t("honeymoon.show_on_map")}
         >
@@ -733,7 +739,7 @@ function DestinationAutocomplete({
       {open && suggestions.length > 0 && (
         <ul
           role="listbox"
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-80 overflow-y-auto rounded-xl border border-paper-300 bg-white py-1 shadow-pop"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-80 overflow-y-auto rounded-xl border border-paper-300 bg-white py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
           {suggestions.map((s, i) => (
             <li key={`${s.primary}-${i}`}>
@@ -748,16 +754,24 @@ function DestinationAutocomplete({
                 }}
                 onMouseEnter={() => setHighlight(i)}
                 className={`flex w-full items-start gap-2 px-3 py-2 text-left ${
-                  i === highlight ? "bg-blush-50" : "hover:bg-paper-50"
+                  i === highlight
+                    ? "bg-blush-50 dark:bg-blush-400/15"
+                    : "hover:bg-paper-50 dark:hover:bg-umber-700"
                 }`}
               >
-                <MapPin size={14} className="mt-0.5 shrink-0 text-blush-700" aria-hidden="true" />
+                <MapPin
+                  size={14}
+                  className="mt-0.5 shrink-0 text-blush-700 dark:text-blush-300"
+                  aria-hidden="true"
+                />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-ink-900">
+                  <span className="block truncate text-sm font-medium text-ink-900 dark:text-paper-50">
                     {s.primary}
                   </span>
                   {s.secondary && s.secondary !== s.primary && (
-                    <span className="block truncate text-[11px] text-ink-500">{s.secondary}</span>
+                    <span className="block truncate text-[11px] text-ink-500 dark:text-umber-300">
+                      {s.secondary}
+                    </span>
                   )}
                 </span>
               </button>
@@ -785,18 +799,18 @@ function BudgetSummaryTile({
   const { t } = useT();
   return (
     <Link to="/app/budget" className="card-hover stationery-blush relative overflow-hidden !p-5">
-      <div className="flex items-center gap-2 text-ink-500">
+      <div className="flex items-center gap-2 text-ink-500 dark:text-umber-300">
         <Wallet size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_budget")}
         </span>
       </div>
       <div className="mt-2 flex items-baseline justify-center gap-2">
-        <span className="font-serif text-3xl font-semibold tabular-nums text-ink-900 sm:text-4xl">
+        <span className="font-serif text-3xl font-semibold tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
           {loaded ? formatHuf(planned, locale) : ""}
         </span>
       </div>
-      <p className="mt-1 text-center text-xs text-ink-400">
+      <p className="mt-1 text-center text-xs text-ink-400 dark:text-umber-300">
         {actual > 0
           ? t("honeymoon.budget_actual_inline", {
               actual: formatHuf(actual, locale),
@@ -839,8 +853,8 @@ function PresetChips({
             aria-pressed={used || undefined}
             className={
               used
-                ? "inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-paper-200 bg-paper-100 px-3 py-1.5 text-xs font-medium text-ink-400"
-                : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-blush-300 hover:text-blush-700"
+                ? "inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-paper-200 bg-paper-100 px-3 py-1.5 text-xs font-medium text-ink-400 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300"
+                : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:text-blush-300"
             }
           >
             <Icon size={14} aria-hidden="true" />
@@ -924,8 +938,15 @@ function CostRow({
     <li className="group grid items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:grid-cols-[14rem_minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:gap-y-0 sm:py-2 grid-cols-[minmax(0,1fr)_auto_auto]">
       {/* Icon + label — col 1 on both layouts. */}
       <div className="col-start-1 row-start-1 flex items-center gap-2.5 min-w-0">
-        <Icon size={18} className="shrink-0 text-blush-700" aria-hidden="true" />
-        <p className="truncate text-sm font-medium text-ink-900" title={line.label}>
+        <Icon
+          size={18}
+          className="shrink-0 text-blush-700 dark:text-blush-300"
+          aria-hidden="true"
+        />
+        <p
+          className="truncate text-sm font-medium text-ink-900 dark:text-paper-50"
+          title={line.label}
+        >
           {line.label}
         </p>
       </div>
@@ -955,11 +976,11 @@ function CostRow({
 
       {/* Amount — right-aligned next to the label on mobile, dedicated col on desktop. */}
       <div className="col-start-2 row-start-1 flex flex-col items-end whitespace-nowrap sm:col-start-3">
-        <span className="font-serif text-lg font-semibold tabular-nums text-ink-900 sm:text-xl">
+        <span className="font-serif text-lg font-semibold tabular-nums text-ink-900 sm:text-xl dark:text-paper-50">
           {formatHuf(editValue, locale)}
         </span>
         {line.actual_huf > 0 && (
-          <span className="text-[11px] text-ink-500">
+          <span className="text-[11px] text-ink-500 dark:text-umber-300">
             {t("honeymoon.cost_actual_inline", {
               actual: formatHuf(line.actual_huf, locale),
             })}
@@ -971,7 +992,7 @@ function CostRow({
       <button
         type="button"
         onClick={onRemove}
-        className="col-start-3 row-start-1 p-1 text-ink-400 opacity-0 transition hover:text-blush-700 focus:opacity-100 group-hover:opacity-100 sm:col-start-4"
+        className="col-start-3 row-start-1 p-1 text-ink-400 opacity-0 transition hover:text-blush-700 focus:opacity-100 group-hover:opacity-100 sm:col-start-4 dark:text-umber-300 dark:hover:text-blush-300"
         aria-label={t("budget.delete")}
       >
         <Trash2 size={14} />

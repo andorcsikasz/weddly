@@ -52,7 +52,7 @@ export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplie
   }, [pins]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-paper-300 shadow-pop">
+    <div className="overflow-hidden rounded-2xl border border-paper-300 dark:border-umber-700 shadow-pop">
       <MapContainer
         center={HUNGARY_CENTER}
         zoom={7}
@@ -100,7 +100,7 @@ export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplie
         ))}
       </MapContainer>
       {suppliers.length > pins.length && (
-        <p className="border-t border-paper-200 bg-paper-50 px-4 py-2 text-xs text-ink-500">
+        <p className="border-t border-paper-200 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-4 py-2 text-xs text-ink-500 dark:text-umber-300">
           {t("suppliers.map_missing_count", { n: suppliers.length - pins.length })}
         </p>
       )}

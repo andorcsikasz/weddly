@@ -26,10 +26,10 @@ export function TagChip({
   ...rest
 }: TagChipProps) {
   const base =
-    "relative inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ink-700 disabled:cursor-not-allowed disabled:opacity-50 before:absolute before:inset-x-0 before:-inset-y-1.5 before:content-['']";
+    "relative inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 disabled:cursor-not-allowed disabled:opacity-50 before:absolute before:inset-x-0 before:-inset-y-1.5 before:content-['']";
   const variant = selected
-    ? "border-2 border-ink-700 bg-ink-700 text-paper-100"
-    : "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400";
+    ? "border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-50"
+    : "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600";
 
   if (removable) {
     return (
@@ -43,7 +43,7 @@ export function TagChip({
           type="button"
           onClick={onRemove}
           disabled={disabled}
-          className="-mr-1 rounded-full p-0.5 hover:bg-ink-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-200"
+          className="-mr-1 rounded-full p-0.5 hover:bg-ink-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-200 dark:hover:bg-paper-50/20 dark:focus-visible:ring-paper-100"
           aria-label={`Remove ${label}`}
         >
           <X size={12} aria-hidden="true" />

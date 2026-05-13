@@ -568,7 +568,9 @@ export default function DashboardPage() {
           <h1 className="font-serif text-4xl">{couple.display_name}</h1>
           <EditableWeddingDate goal={couple.wedding_date_goal} onSave={saveWeddingDate} />
         </div>
-        <div className="text-xs uppercase tracking-wide text-ink-500">{t("dashboard.title")}</div>
+        <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          {t("dashboard.title")}
+        </div>
       </header>
 
       {/* ── Next-action CTA — surfaces the first incomplete checklist item.
@@ -589,7 +591,7 @@ export default function DashboardPage() {
             </Link>
           )
         ) : (
-          <div className="mb-6 inline-flex rounded-xl bg-blush-50 px-4 py-2 text-sm font-medium text-blush-800">
+          <div className="mb-6 inline-flex rounded-xl bg-blush-50 px-4 py-2 text-sm font-medium text-blush-800 dark:bg-blush-400/15 dark:text-blush-300">
             {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
           </div>
         ))}
@@ -608,12 +610,12 @@ export default function DashboardPage() {
             {/* Identity badge — single-glance signal of *what* changed before
                 the eye lands on the title. Filled blush over the striped
                 ground gives the alert a clear focal point. */}
-            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blush-600 text-white shadow-soft">
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blush-600 text-white shadow-soft dark:bg-blush-500 dark:text-paper-50">
               <CalendarClock size={22} aria-hidden="true" />
             </span>
 
             <div className="min-w-0 flex-1">
-              <h2 className="font-serif text-xl font-semibold leading-tight text-blush-800">
+              <h2 className="font-serif text-xl font-semibold leading-tight text-blush-800 dark:text-blush-300">
                 {t("dashboard.date_changed_title")}
               </h2>
               {/* Old → new chip row. Renders only when both dates are present
@@ -622,22 +624,28 @@ export default function DashboardPage() {
                   banner). */}
               {couple.previous_wedding_date && couple.wedding_date && (
                 <p className="mt-1.5 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                  <span className="stat-num text-ink-500 line-through decoration-blush-400 decoration-2">
+                  <span className="stat-num text-ink-500 line-through decoration-blush-400 decoration-2 dark:text-umber-300">
                     {formatDate(couple.previous_wedding_date, locale)}
                   </span>
-                  <ArrowRight size={14} className="text-blush-500" aria-hidden="true" />
-                  <span className="stat-num font-semibold text-ink-900">
+                  <ArrowRight
+                    size={14}
+                    className="text-blush-500 dark:text-blush-300"
+                    aria-hidden="true"
+                  />
+                  <span className="stat-num font-semibold text-ink-900 dark:text-paper-50">
                     {formatDate(couple.wedding_date, locale)}
                   </span>
                 </p>
               )}
-              <p className="mt-1 text-sm text-ink-700">{t("dashboard.date_changed_body")}</p>
+              <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
+                {t("dashboard.date_changed_body")}
+              </p>
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blush-300 bg-white/70 text-blush-700 transition hover:border-blush-500 hover:bg-blush-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blush-300 bg-white/70 text-blush-700 transition hover:border-blush-500 hover:bg-blush-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blush-400/40 dark:bg-umber-800/70 dark:text-blush-300 dark:hover:border-blush-300 dark:hover:bg-blush-400/15"
                 onClick={onDismissDateChange}
                 disabled={dismissingDateChange || notifyingDateChange}
                 aria-label={t("dashboard.date_changed_dismiss_aria")}
@@ -779,12 +787,12 @@ export default function DashboardPage() {
             <div className="card lg:col-span-2">
               <div className="mb-4 flex items-baseline justify-between">
                 <h2>{t("dashboard.tasks_title")}</h2>
-                <span className="text-xs text-ink-500">
+                <span className="text-xs text-ink-500 dark:text-umber-300">
                   {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
                 </span>
               </div>
               <div
-                className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-paper-200"
+                className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={tasksTotal}
@@ -798,14 +806,16 @@ export default function DashboardPage() {
               </div>
               <ul className="grid gap-1.5 sm:grid-cols-2">
                 {tasks.map((task) => {
-                  const tone = task.done ? "text-ink-500" : "text-ink-800";
+                  const tone = task.done
+                    ? "text-ink-500 dark:text-umber-300"
+                    : "text-ink-800 dark:text-paper-100";
                   const body = (
                     <>
                       <span
                         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
                           task.done
                             ? "border-blush-500 bg-blush-500 text-white"
-                            : "border-paper-400 bg-white"
+                            : "border-paper-400 bg-white dark:border-umber-600 dark:bg-umber-800"
                         }`}
                       >
                         {task.done && (
@@ -823,12 +833,18 @@ export default function DashboardPage() {
                           </svg>
                         )}
                       </span>
-                      <span className={task.done ? "line-through decoration-ink-300" : ""}>
+                      <span
+                        className={
+                          task.done
+                            ? "line-through decoration-ink-300 dark:decoration-umber-600"
+                            : ""
+                        }
+                      >
                         {t(`dashboard.${task.key}`)}
                       </span>
                     </>
                   );
-                  const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-paper-100 ${tone}`;
+                  const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700 ${tone}`;
                   return (
                     <li key={task.key}>
                       {task.to ? (
@@ -857,10 +873,10 @@ export default function DashboardPage() {
             {/* RSVP breakdown — stretches to match the tasks column. */}
             <div className="grid gap-4">
               <div className="card flex h-full flex-col">
-                <h3 className="text-sm font-semibold text-ink-700">
+                <h3 className="text-sm font-semibold text-ink-700 dark:text-paper-100">
                   {t("dashboard.rsvp_breakdown_title")}
                 </h3>
-                <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper-200">
+                <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   <Segment
                     count={rsvp.yes}
                     total={Math.max(totalGuests, 1)}
@@ -882,7 +898,7 @@ export default function DashboardPage() {
                     className="bg-slate-300"
                   />
                 </div>
-                <ul className="mt-4 flex-1 divide-y divide-paper-100">
+                <ul className="mt-4 flex-1 divide-y divide-paper-100 dark:divide-umber-700">
                   <RsvpRow
                     swatch="bg-emerald-500"
                     label={t("dashboard.rsvp_yes")}
@@ -913,7 +929,7 @@ export default function DashboardPage() {
                   />
                 </ul>
                 {totalGuests > 0 && (
-                  <p className="mt-4 border-t border-paper-200 pt-3 text-center text-xs text-ink-500">
+                  <p className="mt-4 border-t border-paper-200 pt-3 text-center text-xs text-ink-500 dark:border-umber-700 dark:text-umber-300">
                     {t("dashboard.rsvp_responded_of_total", {
                       responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
                       total: formatNumber(totalGuests, locale),
@@ -960,7 +976,9 @@ export default function DashboardPage() {
           {!couple.partner_b_id && (!invite || sentToEmail) && (
             <section id="invite-partner" className="card stationery mb-8 scroll-mt-24">
               <h2>{t("dashboard.invite_partner")}</h2>
-              <p className="mt-2 text-sm text-ink-700">{t("dashboard.invite_partner_help")}</p>
+              <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
+                {t("dashboard.invite_partner_help")}
+              </p>
 
               {!inviteUrl ? (
                 <form className="mt-4" onSubmit={onSendInvite}>
@@ -998,26 +1016,26 @@ export default function DashboardPage() {
                 // (this is what the user just asked for and is now waiting on).
                 // The shareable link stays available as a backup in case the email
                 // doesn't land, but it's demoted to a secondary block.
-                <div className="mt-4 rounded-2xl border border-paper-300 bg-paper-50 p-5">
+                <div className="mt-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-800">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-800">
+                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-800 dark:bg-blush-400/15 dark:text-blush-300">
                       <Mail size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-serif text-lg text-ink-900">
+                      <h3 className="font-serif text-lg text-ink-900 dark:text-paper-50">
                         {t("dashboard.invite_sent_title")}
                       </h3>
-                      <p className="mt-1 text-sm text-ink-700">
+                      <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
                         {t("dashboard.invite_sent_body", { email: sentToEmail })}
                       </p>
-                      <p className="mt-2 text-xs text-ink-500">
+                      <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
                         {t("dashboard.invite_sent_spam_hint")}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-4 border-t border-paper-300 pt-4">
-                    <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
+                  <div className="mt-4 border-t border-paper-300 pt-4 dark:border-umber-700">
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
                       {t("dashboard.invite_sent_backup_label")}
                     </p>
                     <div className="mt-2 flex flex-col gap-2 sm:flex-row">
@@ -1031,7 +1049,7 @@ export default function DashboardPage() {
                   <div className="mt-3">
                     <button
                       type="button"
-                      className="btn-ghost btn-sm text-ink-500"
+                      className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
                       onClick={onCancelInvite}
                       disabled={inviteCancelling}
                     >
@@ -1061,7 +1079,7 @@ export default function DashboardPage() {
            *  page) so the overview doubles as a hub. Tooltips + aria-labels
            *  surface the destination names; full labels live in the sidebar. */}
           <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t("dashboard.quick_links_title")}
             </h2>
             {/* Eight quick-link pills laid out as an equal-column grid so they
@@ -1125,11 +1143,13 @@ function KpiTile({
   progressOver?: boolean;
   accent?: "blush";
 }) {
-  const accentBg = accent === "blush" ? "bg-blush-50" : "bg-paper-50";
-  const accentRing = accent === "blush" ? "text-blush-700" : "text-ink-700";
+  const accentBg =
+    accent === "blush" ? "bg-blush-50 dark:bg-blush-400/15" : "bg-paper-50 dark:bg-umber-700/60";
+  const accentRing =
+    accent === "blush" ? "text-blush-700 dark:text-blush-300" : "text-ink-700 dark:text-paper-100";
   return (
     <div className="card p-4">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span
           className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
         >
@@ -1137,15 +1157,17 @@ function KpiTile({
         </span>
         {label}
       </div>
-      <div className="stat-num mt-2 text-center text-2xl font-bold leading-none text-ink-900">
+      <div className="stat-num mt-2 text-center text-2xl font-bold leading-none text-ink-900 dark:text-paper-50">
         {value}
       </div>
-      <div className="mt-1 text-center text-xs font-semibold text-ink-500">{unit}</div>
+      <div className="mt-1 text-center text-xs font-semibold text-ink-500 dark:text-umber-300">
+        {unit}
+      </div>
       {progress !== undefined && progress !== null && (
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200">
+        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
           <div
             className={`h-full rounded-full transition-all ${
-              progressOver ? "bg-blush-700" : "bg-ink-700"
+              progressOver ? "bg-blush-700 dark:bg-blush-400" : "bg-ink-700 dark:bg-paper-100"
             }`}
             style={{ width: `${Math.max(2, progress)}%` }}
           />
@@ -1200,8 +1222,8 @@ function DaysToGoTile({
 
   return (
     <div className="card p-4">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-50 text-blush-700">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
           <CalendarHeart size={14} aria-hidden="true" />
         </span>
         {label}
@@ -1219,7 +1241,7 @@ function DaysToGoTile({
           onKeyDown={(e) => {
             if (e.key === "Escape") setEditing(false);
           }}
-          className="mt-2 w-full rounded border border-blush-500 bg-white px-2 py-1 text-center text-sm font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100"
+          className="mt-2 w-full rounded border border-blush-500 bg-white px-2 py-1 text-center text-sm font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 dark:bg-umber-800 dark:text-paper-50"
         />
       ) : (
         <button
@@ -1227,12 +1249,12 @@ function DaysToGoTile({
           onClick={() => setEditing(true)}
           title={t("dashboard.kpi_days_edit_hint")}
           aria-label={t("dashboard.kpi_days_edit_hint")}
-          className="-mx-2 mt-1 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200"
+          className="-mx-2 mt-1 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:hover:bg-umber-700"
         >
-          <div className="stat-num text-2xl font-bold leading-none text-ink-900">
+          <div className="stat-num text-2xl font-bold leading-none text-ink-900 dark:text-paper-50">
             {days !== null ? formatNumber(days, locale) : "—"}
           </div>
-          <div className="mt-1 text-xs font-semibold text-ink-500">
+          <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
             {days !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
           </div>
         </button>
@@ -1265,19 +1287,27 @@ function PastWeddingTile({
   onArchive: () => void;
 }) {
   return (
-    <div className="card bg-blush-50 p-4">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blush-700">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-100 text-blush-700">
+    <div className="card bg-blush-50 p-4 dark:bg-blush-400/15">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blush-700 dark:text-blush-300">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
           <Heart size={12} aria-hidden="true" />
         </span>
         {label}
       </div>
-      <div className="stat-num mt-2 text-lg font-bold leading-tight text-ink-900">{sub}</div>
+      <div className="stat-num mt-2 text-lg font-bold leading-tight text-ink-900 dark:text-paper-50">
+        {sub}
+      </div>
       <div className="mt-3 flex flex-col gap-1.5 text-sm">
-        <Link to={seatingHref} className="text-blush-800 underline-offset-2 hover:underline">
+        <Link
+          to={seatingHref}
+          className="text-blush-800 underline-offset-2 hover:underline dark:text-blush-300"
+        >
           {seatingLabel}
         </Link>
-        <Link to={guestsHref} className="text-blush-800 underline-offset-2 hover:underline">
+        <Link
+          to={guestsHref}
+          className="text-blush-800 underline-offset-2 hover:underline dark:text-blush-300"
+        >
           {guestsLabel}
         </Link>
         {!archived && (
@@ -1285,7 +1315,7 @@ function PastWeddingTile({
             type="button"
             onClick={onArchive}
             disabled={archiving}
-            className="mt-1 text-left text-blush-800 underline-offset-2 hover:underline disabled:opacity-60"
+            className="mt-1 text-left text-blush-800 underline-offset-2 hover:underline disabled:opacity-60 dark:text-blush-300"
           >
             {archiving ? "…" : archiveLabel}
           </button>
@@ -1325,13 +1355,15 @@ function RsvpRow({
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <li className="flex items-center justify-between gap-3 py-2.5 text-sm">
-      <span className="flex items-center gap-2.5 text-ink-700">
+      <span className="flex items-center gap-2.5 text-ink-700 dark:text-paper-100">
         <span className={`inline-block h-2.5 w-2.5 rounded-full ${swatch}`} aria-hidden="true" />
         {label}
       </span>
-      <span className="stat-num inline-flex items-baseline gap-2 text-ink-900">
+      <span className="stat-num inline-flex items-baseline gap-2 text-ink-900 dark:text-paper-50">
         <span className="text-base font-semibold tabular-nums">{formatNumber(value, locale)}</span>
-        <span className="w-10 text-right text-xs tabular-nums text-ink-400">{pct}%</span>
+        <span className="w-10 text-right text-xs tabular-nums text-ink-400 dark:text-umber-300">
+          {pct}%
+        </span>
       </span>
     </li>
   );
@@ -1343,7 +1375,7 @@ function IconNavLink({ to, icon, label }: { to: string; icon: JSX.Element; label
       to={to}
       title={label}
       aria-label={label}
-      className="inline-flex h-10 w-full items-center justify-center rounded-full bg-paper-50 text-ink-700 ring-1 ring-paper-200 transition hover:bg-blush-100 hover:text-blush-700 hover:ring-blush-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300"
+      className="inline-flex h-10 w-full items-center justify-center rounded-full bg-paper-50 text-ink-700 ring-1 ring-paper-200 transition hover:bg-blush-100 hover:text-blush-700 hover:ring-blush-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-blush-400/15 dark:hover:text-blush-300 dark:hover:ring-blush-400/40"
     >
       {icon}
     </Link>
@@ -1404,7 +1436,7 @@ function EditableWeddingDate({
         onKeyDown={(e) => {
           if (e.key === "Escape") setEditing(false);
         }}
-        className="mt-1 rounded border border-blush-500 bg-white px-2 py-0.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100"
+        className="mt-1 rounded border border-blush-500 bg-white px-2 py-0.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 dark:bg-umber-800 dark:text-paper-50"
       />
     );
   }
@@ -1413,7 +1445,7 @@ function EditableWeddingDate({
     <button
       type="button"
       onClick={() => setEditing(true)}
-      className="mt-1 rounded text-left text-sm text-ink-600 underline-offset-4 transition hover:text-ink-900 hover:underline hover:decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200"
+      className="mt-1 rounded text-left text-sm text-ink-600 underline-offset-4 transition hover:text-ink-900 hover:underline hover:decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-200 dark:hover:text-paper-50"
     >
       {dateText}
     </button>
@@ -1531,20 +1563,20 @@ function DayOfPanel({
     <div className="mx-auto mb-8 max-w-3xl">
       {/* Hero — Today / Tomorrow + big check-in URL + (TODO) QR. */}
       <section
-        className="card mb-6 border-2 border-blush-200 bg-blush-50/40 text-center"
+        className="card mb-6 border-2 border-blush-200 bg-blush-50/40 text-center dark:border-blush-400/40 dark:bg-blush-400/15"
         aria-label={t("dashboard.day_of_mode_title")}
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blush-700">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
           {t("dashboard.day_of_mode_title")}
         </p>
-        <p className="mt-2 text-3xl font-serif text-ink-900">
+        <p className="mt-2 text-3xl font-serif text-ink-900 dark:text-paper-50">
           {isToday ? t("dashboard.day_of_today_label") : t("dashboard.day_of_tomorrow_label")}
         </p>
-        <h2 className="mt-6 flex items-center justify-center gap-2 text-base font-semibold text-ink-900">
+        <h2 className="mt-6 flex items-center justify-center gap-2 text-base font-semibold text-ink-900 dark:text-paper-50">
           <QrCode size={18} aria-hidden="true" />
           {t("dashboard.day_of_checkin_title")}
         </h2>
-        <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">
+        <p className="mx-auto mt-1 max-w-md text-sm text-ink-600 dark:text-umber-200">
           {t("dashboard.day_of_checkin_intro")}
         </p>
         {couple.slug ? (
@@ -1552,13 +1584,13 @@ function DayOfPanel({
             <button
               type="button"
               onClick={onCopyCheckin}
-              className="mt-4 inline-block w-full max-w-xl rounded-2xl border border-ink-200 bg-white px-4 py-4 text-center font-mono text-xl tabular-nums text-ink-900 transition hover:border-ink-400 sm:text-2xl"
+              className="mt-4 inline-block w-full max-w-xl rounded-2xl border border-ink-200 bg-white px-4 py-4 text-center font-mono text-xl tabular-nums text-ink-900 transition hover:border-ink-400 sm:text-2xl dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:border-umber-600"
               aria-label={t("dashboard.day_of_checkin_copy")}
             >
               {checkinUrl}
             </button>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
-              <span className="rounded-full bg-ink-900 px-3 py-1 text-xs font-medium uppercase tracking-wider text-paper-50">
+              <span className="rounded-full bg-ink-900 px-3 py-1 text-xs font-medium uppercase tracking-wider text-paper-50 dark:bg-paper-50 dark:text-umber-900">
                 {couple.slug}
               </span>
               <button type="button" className="btn-outline" onClick={onCopyCheckin}>
@@ -1569,10 +1601,12 @@ function DayOfPanel({
             {/* TODO(v2): inline SVG QR encoder. Avoiding a new heavy dep for
                 now — the URL above is the source of truth and most door-
                 staff workflows just need to type it on a kiosk anyway. */}
-            <p className="mt-4 text-xs italic text-ink-500">{t("dashboard.day_of_qr_todo")}</p>
+            <p className="mt-4 text-xs italic text-ink-500 dark:text-umber-300">
+              {t("dashboard.day_of_qr_todo")}
+            </p>
           </>
         ) : (
-          <p className="mt-4 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700">
+          <p className="mt-4 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
             {t("dashboard.day_of_checkin_no_slug")}
           </p>
         )}
@@ -1597,10 +1631,12 @@ function DayOfPanel({
           to say. The 0-counts path was just noise on early-fire dashboards. */}
       {stripPieces.length > 0 && (
         <section className="card mb-6">
-          <h3 className="text-sm font-semibold text-ink-700">
+          <h3 className="text-sm font-semibold text-ink-700 dark:text-paper-100">
             {t("dashboard.day_of_dietary_title")}
           </h3>
-          <p className="mt-2 text-base text-ink-900">{stripPieces.join(" · ")}</p>
+          <p className="mt-2 text-base text-ink-900 dark:text-paper-50">
+            {stripPieces.join(" · ")}
+          </p>
         </section>
       )}
 
@@ -1608,40 +1644,44 @@ function DayOfPanel({
           schedule page so the couple can edit on the way. */}
       <section className="card mb-6">
         <div className="mb-3 flex items-baseline justify-between">
-          <h3 className="text-sm font-semibold text-ink-700">
+          <h3 className="text-sm font-semibold text-ink-700 dark:text-paper-100">
             {t("dashboard.day_of_schedule_title")}
           </h3>
           <Link
             to="/app/schedule"
-            className="text-xs text-ink-500 underline-offset-2 hover:text-ink-900 hover:underline"
+            className="text-xs text-ink-500 underline-offset-2 hover:text-ink-900 hover:underline dark:text-umber-300 dark:hover:text-paper-50"
           >
             {t("dashboard.day_of_schedule_open")}
           </Link>
         </div>
         {schedule === null ? (
-          <p className="text-sm text-ink-500">{t("common.loading")}</p>
+          <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
         ) : upcoming.length === 0 ? (
-          <p className="text-sm text-ink-500">{t("dashboard.day_of_schedule_empty")}</p>
+          <p className="text-sm text-ink-500 dark:text-umber-300">
+            {t("dashboard.day_of_schedule_empty")}
+          </p>
         ) : (
-          <ul className="divide-y divide-paper-200">
+          <ul className="divide-y divide-paper-200 dark:divide-umber-700">
             {upcoming.map((event) => (
               <li key={event.id} className="flex items-start gap-4 py-2.5">
-                <span className="stat-num min-w-[3.5rem] shrink-0 text-base font-semibold tabular-nums text-ink-900">
+                <span className="stat-num min-w-[3.5rem] shrink-0 text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                   {`${String(Math.floor(event.starts_at_minutes / 60)).padStart(2, "0")}:${String(
                     event.starts_at_minutes % 60,
                   ).padStart(2, "0")}`}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-ink-900">{event.label}</p>
+                  <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                    {event.label}
+                  </p>
                   {event.location && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-500">
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
                       <MapPin size={12} aria-hidden="true" />
                       {event.location}
                     </p>
                   )}
                 </div>
                 {event.duration_minutes !== null && (
-                  <span className="inline-flex items-center gap-1 text-xs text-ink-500">
+                  <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
                     <Clock size={12} aria-hidden="true" />
                     {event.duration_minutes}m
                   </span>
@@ -1655,7 +1695,9 @@ function DayOfPanel({
       {/* Print actions — big buttons because the bridal party is opening
           this from a stressed phone, not a calm laptop. */}
       <section className="card">
-        <h3 className="text-sm font-semibold text-ink-700">{t("dashboard.day_of_print_title")}</h3>
+        <h3 className="text-sm font-semibold text-ink-700 dark:text-paper-100">
+          {t("dashboard.day_of_print_title")}
+        </h3>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <button
             type="button"
@@ -1687,11 +1729,13 @@ function DayOfStatTile({
 }) {
   return (
     <div className="card text-center">
-      <div className="flex items-center justify-center gap-2 text-xs uppercase tracking-wide text-ink-500">
+      <div className="flex items-center justify-center gap-2 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
         {icon}
         {label}
       </div>
-      <div className="stat-num mt-2 text-4xl font-semibold leading-none text-ink-900">{value}</div>
+      <div className="stat-num mt-2 text-4xl font-semibold leading-none text-ink-900 dark:text-paper-50">
+        {value}
+      </div>
     </div>
   );
 }
@@ -1756,11 +1800,15 @@ function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
   ].filter((c) => c.value > 0);
 
   return (
-    <section className="card mb-6 border border-blush-200 bg-blush-50/30">
+    <section className="card mb-6 border border-blush-200 bg-blush-50/30 dark:border-blush-400/40 dark:bg-blush-400/15">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-ink-900">{t("dashboard.caterer_title")}</h2>
-          <p className="mt-0.5 text-xs text-ink-500">{t("dashboard.caterer_sub")}</p>
+          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+            {t("dashboard.caterer_title")}
+          </h2>
+          <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+            {t("dashboard.caterer_sub")}
+          </p>
         </div>
         <button type="button" className="btn-outline btn-sm" onClick={onCopy}>
           <Clipboard size={14} aria-hidden="true" />
@@ -1772,9 +1820,9 @@ function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
           {chips.map((c) => (
             <li
               key={c.label}
-              className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs text-ink-700"
+              className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs text-ink-700 dark:bg-umber-700/60 dark:text-paper-100"
             >
-              <span className="font-semibold tabular-nums text-ink-900">
+              <span className="font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                 {formatNumber(c.value, locale)}
               </span>
               {c.label}
@@ -1782,9 +1830,11 @@ function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
           ))}
         </ul>
       ) : (
-        <p className="mt-3 text-sm text-ink-500">{t("dashboard.day_of_dietary_empty")}</p>
+        <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
+          {t("dashboard.day_of_dietary_empty")}
+        </p>
       )}
-      <p className="mt-3 text-xs italic text-ink-500">
+      <p className="mt-3 text-xs italic text-ink-500 dark:text-umber-300">
         {t("dashboard.caterer_total", { n: dietary.counted_guests })}
       </p>
     </section>

@@ -359,27 +359,29 @@ export default function GuestsPage() {
           <h1>{t("guests.title")}</h1>
           {guests.length > 0 ? (
             <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-3xl font-semibold tabular-nums text-ink-900">
+              <span className="text-3xl font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                 {guests.length}
               </span>
-              <span className="text-sm text-ink-500">{t("guests.total_summary_unit")}</span>
-              <span aria-hidden className="text-ink-300">
+              <span className="text-sm text-ink-500 dark:text-umber-300">
+                {t("guests.total_summary_unit")}
+              </span>
+              <span aria-hidden className="text-ink-300 dark:text-umber-300">
                 ·
               </span>
-              <span className="text-sm text-ink-600">
+              <span className="text-sm text-ink-600 dark:text-umber-200">
                 {t("guests.total_summary_households", { n: households.length })}
               </span>
-              <span aria-hidden className="text-ink-300">
+              <span aria-hidden className="text-ink-300 dark:text-umber-300">
                 ·
               </span>
-              <span className="text-sm text-ink-600">
+              <span className="text-sm text-ink-600 dark:text-umber-200">
                 {t("guests.total_summary_invited", {
                   n: guests.filter((g) => g.invited_at != null).length,
                 })}
               </span>
             </div>
           ) : (
-            <p className="mt-1 text-sm text-ink-500">{guests.length}</p>
+            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{guests.length}</p>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -426,7 +428,7 @@ export default function GuestsPage() {
             <Search
               size={14}
               aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
             />
             <input
               type="search"
@@ -453,7 +455,7 @@ export default function GuestsPage() {
       {households.length === 0 && guests.length === 0 ? (
         <div className="card stationery text-center">
           <h3 className="text-base font-semibold">{t("guests.empty_title")}</h3>
-          <p className="mt-1 text-sm text-ink-600">{t("guests.empty_body")}</p>
+          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{t("guests.empty_body")}</p>
         </div>
       ) : debouncedQuery ? (
         <SearchResults
@@ -484,14 +486,20 @@ export default function GuestsPage() {
             />
           ))}
           {!virtualReveal && households.length > 100 && (
-            <p className="text-center text-xs text-ink-500">{t("guests.search_load_more")}</p>
+            <p className="text-center text-xs text-ink-500 dark:text-umber-300">
+              {t("guests.search_load_more")}
+            </p>
           )}
 
           {orphanGuests.length > 0 && (
-            <div className="card border-blush-200 bg-blush-50/40">
-              <h3 className="text-base font-semibold text-ink-900">{t("guests.orphans_title")}</h3>
-              <p className="mt-1 text-sm text-ink-700">{t("guests.orphans_body")}</p>
-              <ul className="mt-3 text-sm text-ink-700">
+            <div className="card border-blush-200 bg-blush-50/40 dark:border-blush-400/40 dark:bg-blush-400/15">
+              <h3 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+                {t("guests.orphans_title")}
+              </h3>
+              <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
+                {t("guests.orphans_body")}
+              </p>
+              <ul className="mt-3 text-sm text-ink-700 dark:text-paper-100">
                 {orphanGuests.map((g) => (
                   <li key={g.id} className="flex items-center justify-between py-1">
                     <span>{g.full_name}</span>
@@ -515,7 +523,7 @@ export default function GuestsPage() {
                   {orphanFixing ? t("guests.orphans_assigning") : t("guests.orphans_assign_button")}
                 </button>
                 <a
-                  className="text-sm text-ink-600 underline underline-offset-2 hover:text-ink-900"
+                  className="text-sm text-ink-600 underline underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
                   href={t("guests.orphans_support_url")}
                 >
                   {t("guests.orphans_support_link")}
@@ -568,23 +576,25 @@ function SearchResults({
 }) {
   const { t } = useT();
   if (loading && guests.length === 0) {
-    return <p className="card text-sm text-ink-500">{t("common.loading")}</p>;
+    return <p className="card text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>;
   }
   if (guests.length === 0) {
-    return <p className="card text-sm text-ink-500">{t("guests.search_empty")}</p>;
+    return (
+      <p className="card text-sm text-ink-500 dark:text-umber-300">{t("guests.search_empty")}</p>
+    );
   }
   return (
-    <ul className="card divide-y divide-paper-200 p-0">
+    <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
       {guests.map((g) => (
         <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
+            <p className="flex items-center gap-1.5 truncate text-sm text-ink-900 dark:text-paper-50">
               <PartnerRoleIcon role={g.partner_role} />
               <KindIcon kind={g.kind} />
               <span className="truncate">{g.full_name}</span>
               <MealIcons meal={g.meal_choice} dietary={g.dietary} />
             </p>
-            <p className="text-xs text-ink-500">
+            <p className="text-xs text-ink-500 dark:text-umber-300">
               {t(`guests.group_${g.group_tag}`)}
               {g.email ? ` · ${g.email}` : ""}
             </p>
@@ -648,13 +658,13 @@ function HouseholdCard({
   const isHosts = household.is_couple_household;
   return (
     <div className="card overflow-hidden p-0">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3 dark:border-umber-700 dark:bg-umber-700/60">
         {/* Single-line metadata: label · slug · code · invited · delivered.
             Keeps the same column positions across cards so the eye scans
             the same fields in the same place. The couple's own household
             (bride + groom) renders just the label — slug / code / invited
             columns are hidden because the hosts don't check themselves in. */}
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600 dark:text-umber-200">
           <HouseholdLabelEditor
             household={household}
             count={members.length}
@@ -669,7 +679,7 @@ function HouseholdCard({
                 </>
               )}
               <span aria-hidden>·</span>
-              <span className="font-mono text-base text-ink-900 tracking-[0.3em]">
+              <span className="font-mono text-base text-ink-900 tracking-[0.3em] dark:text-paper-50">
                 {household.code}
               </span>
               {members.length > 0 && (
@@ -678,10 +688,10 @@ function HouseholdCard({
                   <span
                     className={
                       invitedCount === members.length
-                        ? "text-ink-700"
+                        ? "text-ink-700 dark:text-paper-100"
                         : invitedCount > 0
-                          ? "text-ink-600"
-                          : "text-ink-400"
+                          ? "text-ink-600 dark:text-umber-200"
+                          : "text-ink-400 dark:text-umber-300"
                     }
                     title={t("guests.invited_progress_help")}
                   >
@@ -690,7 +700,10 @@ function HouseholdCard({
                   {deliveredCount > 0 && (
                     <>
                       <span aria-hidden>·</span>
-                      <span className="text-sage-700" title={t("guests.delivered_progress_help")}>
+                      <span
+                        className="text-sage-700 dark:text-sage-300"
+                        title={t("guests.delivered_progress_help")}
+                      >
                         {deliveredCount}/{members.length} {t("guests.delivered_short")}
                       </span>
                     </>
@@ -725,7 +738,7 @@ function HouseholdCard({
           {members.length === 0 && !isHosts && (
             <button
               type="button"
-              className="btn-ghost btn-sm text-blush-700"
+              className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
               onClick={onDeleteHousehold}
               title={t("guests.household_remove")}
             >
@@ -735,19 +748,21 @@ function HouseholdCard({
         </div>
       </header>
 
-      <ul className="divide-y divide-paper-200">
+      <ul className="divide-y divide-paper-200 dark:divide-umber-700">
         {members.map((g) => (
           <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
             <div className="flex min-w-0 items-center gap-3">
               <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
               <div className="min-w-0">
-                <p className="flex items-center gap-1.5 truncate text-sm text-ink-900">
+                <p className="flex items-center gap-1.5 truncate text-sm text-ink-900 dark:text-paper-50">
                   <PartnerRoleIcon role={g.partner_role} />
                   <KindIcon kind={g.kind} />
                   <span className="truncate">{g.full_name}</span>
                   <MealIcons meal={g.meal_choice} dietary={g.dietary} />
                 </p>
-                <p className="text-xs text-ink-500">{t(`guests.group_${g.group_tag}`)}</p>
+                <p className="text-xs text-ink-500 dark:text-umber-300">
+                  {t(`guests.group_${g.group_tag}`)}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -771,7 +786,7 @@ function HouseholdCard({
               </button>
               <button
                 type="button"
-                className="btn-ghost btn-sm text-blush-700"
+                className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
                 onClick={() => onDeleteGuest(g.id)}
                 aria-label={t("guests.delete")}
               >
@@ -809,21 +824,21 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
   // for back-compat / future "rename with full confirm" UI.
 
   return (
-    <div className="mb-4 overflow-hidden rounded-2xl border border-paper-300 bg-paper-100/40">
+    <div className="mb-4 overflow-hidden rounded-2xl border border-paper-300 bg-paper-100/40 dark:border-umber-700 dark:bg-umber-700/60">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
         aria-label={expanded ? t("guests.checkin_pill_hide") : t("guests.checkin_pill_show")}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700"
       >
-        <span className="text-xs font-medium uppercase tracking-wider text-ink-500">
+        <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
           {t("guests.checkin_pill_lead")}
         </span>
-        <span className="font-mono text-base uppercase tracking-[0.3em] text-ink-900">
+        <span className="font-mono text-base uppercase tracking-[0.3em] text-ink-900 dark:text-paper-50">
           {couple.slug ?? "—"}
         </span>
-        <span className="text-sm text-ink-600 hidden sm:inline">
+        <span className="text-sm text-ink-600 hidden sm:inline dark:text-umber-200">
           {t("guests.checkin_pill_suffix")}
         </span>
         <ChevronDown
@@ -831,30 +846,38 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
           aria-hidden
           className={
             expanded
-              ? "ml-auto rotate-180 text-ink-700 transition-transform"
-              : "ml-auto text-ink-500 transition-transform"
+              ? "ml-auto rotate-180 text-ink-700 transition-transform dark:text-paper-100"
+              : "ml-auto text-ink-500 transition-transform dark:text-umber-300"
           }
         />
       </button>
 
       {expanded && (
-        <div className="space-y-4 border-t border-paper-300 px-4 py-4">
+        <div className="space-y-4 border-t border-paper-300 px-4 py-4 dark:border-umber-700">
           <div>
-            <p className="text-sm text-ink-700">{t("guests.checkin_pill_url_hint")}</p>
-            <p className="mt-2 text-xs text-ink-500 sm:hidden">{t("guests.checkin_pill_suffix")}</p>
+            <p className="text-sm text-ink-700 dark:text-paper-100">
+              {t("guests.checkin_pill_url_hint")}
+            </p>
+            <p className="mt-2 text-xs text-ink-500 sm:hidden dark:text-umber-300">
+              {t("guests.checkin_pill_suffix")}
+            </p>
           </div>
 
-          <div className="rounded-xl border border-paper-200 bg-paper-50 px-3 py-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+          <div className="rounded-xl border border-paper-200 bg-paper-50 px-3 py-3 dark:border-umber-700 dark:bg-umber-800">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
               {t("guests.couple_slug_title")}
             </p>
-            <p className="mt-1 text-xs text-ink-600">{t("guests.couple_slug_help_locked")}</p>
-            <div className="mt-3 font-mono text-2xl uppercase tracking-[0.3em] text-ink-900">
+            <p className="mt-1 text-xs text-ink-600 dark:text-umber-200">
+              {t("guests.couple_slug_help_locked")}
+            </p>
+            <div className="mt-3 font-mono text-2xl uppercase tracking-[0.3em] text-ink-900 dark:text-paper-50">
               {couple.slug ?? "—"}
             </div>
           </div>
 
-          <p className="text-xs text-ink-500">{t("guests.household_section_help")}</p>
+          <p className="text-xs text-ink-500 dark:text-umber-300">
+            {t("guests.household_section_help")}
+          </p>
         </div>
       )}
     </div>
@@ -872,12 +895,12 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
   // guests to be the loudest signal. Other states keep their existing tones.
   const cls =
     status === "yes"
-      ? "inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
+      ? "inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-300"
       : status === "no"
         ? "badge-ink"
         : status === "maybe"
           ? "badge-paper"
-          : "badge-paper border border-dashed border-paper-300";
+          : "badge-paper border border-dashed border-paper-300 dark:border-umber-700";
   const label =
     status === "yes"
       ? t("guests.rsvp_badge_yes")
@@ -933,10 +956,10 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
         : t("guests.invite_state_cycle_to_clear");
   const cls =
     state === "delivered"
-      ? "border-sage-300 bg-sage-100 text-sage-700 hover:bg-sage-200"
+      ? "border-sage-300 bg-sage-100 text-sage-700 hover:bg-sage-200 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
       : state === "invited"
-        ? "border-ink-800 bg-ink-800 text-paper-50 hover:bg-ink-900"
-        : "border-paper-300 bg-paper-50 text-ink-400 hover:border-ink-300 hover:text-ink-600";
+        ? "border-ink-800 bg-ink-800 text-paper-50 hover:bg-ink-900 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-100"
+        : "border-paper-300 bg-paper-50 text-ink-400 hover:border-ink-300 hover:text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-umber-200";
   return (
     <button
       type="button"
@@ -1005,7 +1028,7 @@ function HouseholdLabelEditor({
           }}
           maxLength={200}
         />
-        <span className="text-sm font-normal text-ink-500">({count})</span>
+        <span className="text-sm font-normal text-ink-500 dark:text-umber-300">({count})</span>
       </div>
     );
   }
@@ -1017,10 +1040,10 @@ function HouseholdLabelEditor({
         setEditing(true);
       }}
       aria-label={t("guests.household_label")}
-      className="inline-flex max-w-full items-baseline gap-1.5 truncate rounded text-left text-base font-semibold text-ink-900 hover:text-ink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400"
+      className="inline-flex max-w-full items-baseline gap-1.5 truncate rounded text-left text-base font-semibold text-ink-900 hover:text-ink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400 dark:text-paper-50 dark:hover:text-paper-100 dark:focus-visible:outline-umber-600"
     >
       <span className="truncate">{household.label}</span>
-      <span className="text-sm font-normal text-ink-500">({count})</span>
+      <span className="text-sm font-normal text-ink-500 dark:text-umber-300">({count})</span>
     </button>
   );
 }
@@ -1036,7 +1059,9 @@ function KindIcon({ kind }: { kind: GuestKind }) {
   if (kind === "adult") return null;
   const Icon = kind === "baby" ? Baby : Cookie;
   const label = t(`guests.kind_${kind}`);
-  return <Icon size={14} aria-label={label} className="shrink-0 text-blush-700" />;
+  return (
+    <Icon size={14} aria-label={label} className="shrink-0 text-blush-700 dark:text-blush-300" />
+  );
 }
 
 /** Inline Crown next to the bride / groom rows so the couple can spot
@@ -1048,7 +1073,7 @@ function PartnerRoleIcon({ role }: { role: "bride" | "groom" | null }) {
   const label = t(`guests.partner_role_${role}`);
   return (
     <span title={label} className="inline-flex shrink-0">
-      <Crown size={14} aria-label={label} className="text-blush-600" />
+      <Crown size={14} aria-label={label} className="text-blush-600 dark:text-blush-300" />
     </span>
   );
 }
@@ -1105,7 +1130,7 @@ function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string
   const { tags, remainder } = parseDietaryTags(dietary);
   if (!veg && !fish && tags.size === 0 && !remainder) return null;
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 text-blush-700">
+    <span className="inline-flex shrink-0 items-center gap-1 text-blush-700 dark:text-blush-300">
       {veg && (
         <Leaf
           size={14}
@@ -1243,11 +1268,11 @@ function GuestDrawer({
       }}
     >
       <form
-        className="flex w-full max-w-2xl max-h-[85vh] flex-col overflow-hidden rounded-2xl bg-paper-50 shadow-pop"
+        className="flex w-full max-w-2xl max-h-[85vh] flex-col overflow-hidden rounded-2xl bg-paper-50 shadow-pop dark:bg-umber-800"
         onSubmit={onSubmit}
       >
-        <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4">
-          <h2 className="text-base font-semibold text-ink-900">
+        <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4 dark:border-umber-700">
+          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
             {guest ? t("guests.edit") : t("guests.add")}
           </h2>
           <button
@@ -1294,7 +1319,7 @@ function GuestDrawer({
 
           <div className="mb-3">
             <label className="field-label">{t("guests.kind_label")}</label>
-            <p className="mb-2 text-xs text-ink-500">{t("guests.kind_help")}</p>
+            <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">{t("guests.kind_help")}</p>
             <div className="grid grid-cols-3 gap-2">
               {(["adult", "child", "baby"] as GuestKind[]).map((k) => {
                 const active = (form.kind ?? "adult") === k;
@@ -1305,8 +1330,8 @@ function GuestDrawer({
                     onClick={() => setForm({ ...form, kind: k })}
                     className={
                       active
-                        ? "flex items-center justify-center gap-1.5 rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
-                        : "flex items-center justify-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+                        ? "flex items-center justify-center gap-1.5 rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                        : "flex items-center justify-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
                     }
                   >
                     <KindIcon kind={k} />
@@ -1317,9 +1342,11 @@ function GuestDrawer({
             </div>
           </div>
 
-          <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3">
+          <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3 dark:border-umber-700 dark:bg-umber-700/60">
             <label className="field-label">{t("guests.household_label")}</label>
-            <p className="mb-2 text-xs text-ink-500">{t("guests.household_assign_help")}</p>
+            <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+              {t("guests.household_assign_help")}
+            </p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -1327,8 +1354,8 @@ function GuestDrawer({
                 disabled={households.length === 0}
                 className={
                   householdMode === "existing"
-                    ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
-                    : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+                    ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                    : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
                 }
               >
                 {t("guests.household_existing")}
@@ -1338,8 +1365,8 @@ function GuestDrawer({
                 onClick={() => setHouseholdMode("new")}
                 className={
                   householdMode === "new"
-                    ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
-                    : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+                    ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                    : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
                 }
               >
                 {t("guests.household_new")}
@@ -1404,7 +1431,7 @@ function GuestDrawer({
             onChange={(v) => setForm({ ...form, dietary: v || null })}
             placeholder={t("guests.allergies_placeholder")}
           />
-          <label className="mb-3 flex items-center gap-2 text-sm text-ink-700">
+          <label className="mb-3 flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
             <input
               type="checkbox"
               checked={Boolean(form.accommodation_needed)}
@@ -1426,7 +1453,7 @@ function GuestDrawer({
 
           {error && <p className="field-error">{error}</p>}
         </div>
-        <div className="flex gap-2 border-t border-paper-200 px-6 py-4">
+        <div className="flex gap-2 border-t border-paper-200 px-6 py-4 dark:border-umber-700">
           <button
             type="button"
             className="btn-ghost flex-1"
@@ -1503,18 +1530,18 @@ function ImportResultDialog({
       }
     >
       <div className="space-y-3">
-        <p className="text-ink-700">
+        <p className="text-ink-700 dark:text-paper-100">
           <strong>{t("guests.import_imported_label")}:</strong> {result.created_count}
           {" · "}
           <strong>{t("guests.import_errors_label")}:</strong> {result.errors.length}
         </p>
         {result.errors.length > 0 && (
           <>
-            <p className="text-ink-700">{t("guests.import_errors_body")}</p>
-            <ul className="max-h-64 space-y-1 overflow-y-auto rounded-xl border border-paper-200 bg-paper-100/40 p-3 text-sm">
+            <p className="text-ink-700 dark:text-paper-100">{t("guests.import_errors_body")}</p>
+            <ul className="max-h-64 space-y-1 overflow-y-auto rounded-xl border border-paper-200 bg-paper-100/40 p-3 text-sm dark:border-umber-700 dark:bg-umber-700/60">
               {result.errors.map((err) => (
-                <li key={`${err.row}-${err.reason}`} className="text-ink-700">
-                  <span className="font-mono text-ink-500">
+                <li key={`${err.row}-${err.reason}`} className="text-ink-700 dark:text-paper-100">
+                  <span className="font-mono text-ink-500 dark:text-umber-300">
                     {t("guests.import_row_label")} {err.row}:
                   </span>{" "}
                   {err.reason}
@@ -1543,7 +1570,7 @@ function CopyFallbackDialog({ url, onClose }: { url: string; onClose: () => void
       }
     >
       <div className="space-y-3">
-        <p className="text-ink-700">{t("guests.copy_failed_body")}</p>
+        <p className="text-ink-700 dark:text-paper-100">{t("guests.copy_failed_body")}</p>
         <input
           readOnly
           value={url}

@@ -341,10 +341,10 @@ export function SeatingMap({
 
   return (
     <div className="card overflow-hidden p-0">
-      <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-4 py-2.5">
+      <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-4 py-2.5 dark:border-umber-700">
         <div>
           <h2 className="text-base">{t("seating.map_title")}</h2>
-          <p className="text-xs text-ink-500">{t("seating.map_help")}</p>
+          <p className="text-xs text-ink-500 dark:text-umber-300">{t("seating.map_help")}</p>
         </div>
         <RoomDimsInput
           widthMm={ROOM_W_MM}
@@ -354,7 +354,7 @@ export function SeatingMap({
           heightAriaLabel={t("seating.room_height_aria")}
         />
       </header>
-      <div className="relative bg-paper-50">
+      <div className="relative bg-paper-50 dark:bg-umber-900">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
@@ -454,9 +454,9 @@ function RoomDimsInput({
     onChange(w, h);
   }
   const cls =
-    "w-12 rounded-md border border-paper-300 bg-paper-50 px-1.5 py-0.5 text-right text-xs text-ink-700 focus:border-ink-700 focus:outline-none";
+    "w-12 rounded-md border border-paper-300 bg-paper-50 px-1.5 py-0.5 text-right text-xs text-ink-700 focus:border-ink-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:focus:border-paper-100";
   return (
-    <span className="flex items-center gap-1 text-xs text-ink-400">
+    <span className="flex items-center gap-1 text-xs text-ink-400 dark:text-umber-300">
       <input
         type="number"
         min={MIN_ROOM_MM / 1000}
@@ -756,6 +756,22 @@ function TableShape({
                   strokeWidth={2}
                 />
               </g>
+            )}
+            {!isDisabled && !isBaby && (
+              <text
+                x={px}
+                y={py}
+                transform={`rotate(${-rotation} ${px} ${py})`}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={chairHeightMm * 0.6}
+                fontFamily='"Cormorant Garamond", Georgia, serif'
+                fontWeight={600}
+                className={isFilled ? "fill-paper-50" : "fill-ink-700"}
+                style={{ pointerEvents: "none" }}
+              >
+                {i + 1}
+              </text>
             )}
           </g>
         );

@@ -135,6 +135,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   // pass that happens before /api/auth/me resolves.
   const prevUserId = useRef<number | null>(null);
 
+  // ── Warm-dark mode scope ─────────────────────────────────────────────
+  // AppShell only mounts inside RequireAuth + /app/* routes, so its
+  // lifecycle is the perfect signal for "is the user inside the protected
+  // workspace". Toggling `dark` on <html> rather than a wrapper div lets
+  // portals (Toasts, Dialogs, HoneymoonMapModal) inherit the dark scope
+  // automatically. Public pages (landing, /login, /vendors) stay light.
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+    return () => {
+      document.documentElement.classList.remove("dark");
+    };
+  }, []);
+
   // ── Workspace handoff cleanup ────────────────────────────────────────
   // When the user signs out, wipe every `weddly.*` localStorage key so
   // the next person on this device doesn't inherit the previous tenant's
@@ -196,13 +209,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-full">
       <a
         href="#main-content"
-        className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2"
+        className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-blush-400"
       >
         {t("landing.skip_to_main")}
       </a>
-      <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <Link to="/" className="text-ink-900 transition-colors hover:text-ink-700">
+          <Link
+            to="/"
+            className="text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+          >
             <Wordmark size="sm" />
           </Link>
           <div className="flex items-center gap-2">
@@ -271,7 +287,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           tint to mirror the desktop rail. */}
       <nav
         className={`safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur lg:hidden ${
-          inAdminView ? "stationery-admin border-violet-400/70" : "border-paper-300 bg-paper-50/95"
+          inAdminView
+            ? "stationery-admin border-violet-400/70"
+            : "border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95"
         }`}
       >
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
@@ -334,7 +352,9 @@ function SideLink({
       end={to === "/app"}
       className={({ isActive }) =>
         `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
-          isActive ? "stationery-dark text-paper-100" : "text-ink-700 hover:bg-paper-200"
+          isActive
+            ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
+            : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
         }`
       }
     >

@@ -198,7 +198,9 @@ export default function SchedulePage() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1>{t("schedule.title")}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-ink-500">{t("schedule.sub")}</p>
+          <p className="mt-1 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
+            {t("schedule.sub")}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -227,11 +229,13 @@ export default function SchedulePage() {
       </header>
 
       {loading ? (
-        <p className="card text-sm text-ink-500">{t("common.loading")}</p>
+        <p className="card text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
       ) : sortedEvents.length === 0 ? (
         <div className="card stationery text-center">
           <h3 className="text-base font-semibold">{t("schedule.empty_title")}</h3>
-          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">{t("schedule.empty_body")}</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600 dark:text-umber-200">
+            {t("schedule.empty_body")}
+          </p>
           <button
             type="button"
             className="btn-primary mt-4 inline-flex"
@@ -242,11 +246,11 @@ export default function SchedulePage() {
           </button>
         </div>
       ) : (
-        <ul className="card divide-y divide-paper-200 p-0">
+        <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
           {sortedEvents.map((event) => (
             <li
               key={event.id}
-              className="flex items-start gap-4 px-4 py-3 transition-colors hover:bg-paper-100/60"
+              className="flex items-start gap-4 px-4 py-3 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700"
             >
               {/* The big edit hit-area is a `<button>` so keyboard users get
                   a real Tab stop. We keep the delete action as a sibling
@@ -259,20 +263,20 @@ export default function SchedulePage() {
                 className="flex min-w-0 flex-1 items-start gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
               >
                 <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start leading-none">
-                  <span className="stat-num text-base font-semibold tabular-nums text-ink-900">
+                  <span className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                     {formatHHMM(event.starts_at_minutes)}
                   </span>
                   {event.duration_minutes !== null && event.duration_minutes > 0 && (
-                    <span className="stat-num mt-0.5 text-[11px] tabular-nums text-ink-400">
+                    <span className="stat-num mt-0.5 text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
                       –{formatHHMM(event.starts_at_minutes + event.duration_minutes)}
                     </span>
                   )}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-ink-900">
+                  <span className="block text-sm font-medium text-ink-900 dark:text-paper-50">
                     {localizeKnownLabel(event.label, locale)}
                   </span>
-                  <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-500">
+                  <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
                     {event.duration_minutes !== null && (
                       <span className="inline-flex items-center gap-1">
                         <Clock size={12} aria-hidden="true" />
@@ -298,7 +302,7 @@ export default function SchedulePage() {
                   type="button"
                   aria-label={t("schedule.edit_event")}
                   title={t("schedule.edit_event")}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                   onClick={() => setEditing({ event })}
                 >
                   <Pencil size={14} />
@@ -307,7 +311,7 @@ export default function SchedulePage() {
                   type="button"
                   aria-label={t("schedule.delete_event")}
                   title={t("schedule.delete_event")}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
                   onClick={() => void onDelete(event)}
                 >
                   <Trash2 size={14} />
@@ -454,11 +458,11 @@ function ScheduleEventDialog({
       }}
     >
       <form
-        className="flex w-full max-w-lg max-h-[85vh] flex-col overflow-hidden rounded-2xl bg-paper-50 shadow-pop"
+        className="flex w-full max-w-lg max-h-[85vh] flex-col overflow-hidden rounded-2xl bg-paper-50 shadow-pop dark:bg-umber-800"
         onSubmit={onSubmit}
       >
-        <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4">
-          <h2 className="text-base font-semibold text-ink-900">
+        <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4 dark:border-umber-700">
+          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
             {existing ? t("schedule.edit_event") : t("schedule.add_event")}
           </h2>
           <button
@@ -536,7 +540,7 @@ function ScheduleEventDialog({
             />
           </FormRow>
         </div>
-        <div className="flex gap-2 border-t border-paper-200 px-6 py-4">
+        <div className="flex gap-2 border-t border-paper-200 px-6 py-4 dark:border-umber-700">
           <button type="button" className="btn-ghost flex-1" onClick={onClose}>
             {t("common.cancel")}
           </button>
@@ -660,7 +664,7 @@ function ScheduleWandDialog({
       }
     >
       <div className="space-y-4">
-        <p className="text-ink-700">{t("schedule.wand_dialog_body")}</p>
+        <p className="text-ink-700 dark:text-paper-100">{t("schedule.wand_dialog_body")}</p>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
             <span className="field-label">{t("schedule.wand_start_label")}</span>
@@ -682,18 +686,18 @@ function ScheduleWandDialog({
           </label>
         </div>
         {!windowValid && (
-          <p className="rounded-lg border border-blush-300 bg-blush-50 px-3 py-2 text-xs text-blush-700">
+          <p className="rounded-lg border border-blush-300 bg-blush-50 px-3 py-2 text-xs text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300">
             {t("schedule.wand_window_error")}
           </p>
         )}
         {existingEvents.length > 0 && (
-          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600">
+          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200">
             {t("schedule.wand_warning_existing")}
           </p>
         )}
-        <div className="rounded-lg border border-paper-200 bg-paper-50 p-3">
+        <div className="rounded-lg border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
               {t("schedule.wand_select_label", { count: selectedAvailable, total: availableCount })}
             </p>
             <button
@@ -709,7 +713,7 @@ function ScheduleWandDialog({
                       ),
                 )
               }
-              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900"
+              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
             >
               {allSelected ? t("schedule.wand_select_none") : t("schedule.wand_select_all")}
             </button>
@@ -727,10 +731,10 @@ function ScheduleWandDialog({
                     disabled={conflict !== null}
                     className={`flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
                       conflict !== null
-                        ? "cursor-not-allowed text-ink-300"
+                        ? "cursor-not-allowed text-ink-300 dark:text-umber-300"
                         : on
-                          ? "bg-paper-100 text-ink-900 hover:bg-paper-200"
-                          : "text-ink-400 hover:bg-paper-100 hover:text-ink-600"
+                          ? "bg-paper-100 text-ink-900 hover:bg-paper-200 dark:bg-umber-700/60 dark:text-paper-50 dark:hover:bg-umber-700"
+                          : "text-ink-400 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                     }`}
                   >
                     <span className="min-w-[3.5rem] shrink-0 tabular-nums">
@@ -741,7 +745,7 @@ function ScheduleWandDialog({
                     </span>
                     {conflict !== null ? (
                       <span
-                        className="shrink-0 rounded-full bg-paper-200 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500"
+                        className="shrink-0 rounded-full bg-paper-200 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:bg-umber-700 dark:text-umber-300"
                         title={localizeKnownLabel(conflict.label, locale)}
                       >
                         {t("schedule.wand_item_conflict")}
@@ -749,7 +753,7 @@ function ScheduleWandDialog({
                     ) : (
                       row.duration_minutes !== null &&
                       on && (
-                        <span className="shrink-0 text-xs text-ink-500">
+                        <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
                           {t("schedule.duration_unit", { n: row.duration_minutes })}
                         </span>
                       )

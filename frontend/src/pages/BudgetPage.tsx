@@ -501,7 +501,7 @@ export default function BudgetPage() {
     <AppShell>
       <header className="mb-6">
         <h1>{t("budget.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500">{t("budget.sub")}</p>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.sub")}</p>
       </header>
 
       <CostPlanningCard
@@ -524,14 +524,14 @@ export default function BudgetPage() {
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2>{t("budget.lines_title")}</h2>
-            <p className="mt-1 text-sm text-ink-500">{t("budget.lines_sub")}</p>
+            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
           </div>
           <AddLinePicker onPick={addLineForCategory} />
         </div>
 
         <div className="card overflow-hidden p-0">
           <table className="min-w-full text-sm">
-            <thead className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500">
+            <thead className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:text-umber-300">
               <tr>
                 <th className="px-4 py-3 font-medium">{t("budget.category")}</th>
                 <th className="px-4 py-3 text-center font-medium">{t("budget.planned")}</th>
@@ -555,8 +555,10 @@ export default function BudgetPage() {
                     key={line.id}
                     data-budget-line-id={line.id}
                     data-category={line.category}
-                    className={`border-t border-paper-200 transition hover:bg-paper-50 ${
-                      isHighlighted ? "ring-2 ring-blush-300 ring-offset-2" : ""
+                    className={`border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60 ${
+                      isHighlighted
+                        ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
+                        : ""
                     }`}
                   >
                     <td className="px-4 py-2 align-middle">
@@ -583,7 +585,9 @@ export default function BudgetPage() {
                       {delta !== 0 && (
                         <span
                           className={
-                            delta > 0 ? "font-medium text-red-600" : "font-medium text-emerald-600"
+                            delta > 0
+                              ? "font-medium text-red-600 dark:text-red-400"
+                              : "font-medium text-emerald-600 dark:text-emerald-400"
                           }
                         >
                           {formatHuf(delta, locale)}
@@ -602,7 +606,7 @@ export default function BudgetPage() {
                     <td className="px-2 py-2 text-right align-middle">
                       <button
                         type="button"
-                        className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-umber-300 dark:hover:text-blush-300"
                         onClick={() => removeLine(line.id)}
                         disabled={isFrozen}
                         aria-label={t("budget.delete")}
@@ -622,7 +626,10 @@ export default function BudgetPage() {
               )}
               {!hasAnyTableRow && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-ink-500">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-10 text-center text-sm text-ink-500 dark:text-umber-300"
+                  >
                     {t("budget.lines_empty")}
                   </td>
                 </tr>
@@ -636,14 +643,16 @@ export default function BudgetPage() {
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2>{t("budget.snapshots_title")}</h2>
-            <p className="mt-1 text-sm text-ink-500">{t("budget.snapshots_sub")}</p>
+            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+              {t("budget.snapshots_sub")}
+            </p>
           </div>
           <button type="button" className="btn-outline" onClick={saveSnapshot}>
             <Save size={16} /> {t("budget.save_snapshot")}
           </button>
         </div>
         {snapshots.length === 0 ? (
-          <p className="text-sm text-ink-500">{t("budget.no_snapshots")}</p>
+          <p className="text-sm text-ink-500 dark:text-umber-300">{t("budget.no_snapshots")}</p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {snapshots.map((s) => (
@@ -695,9 +704,9 @@ function AddLinePicker({ onPick }: { onPick: (cat: BudgetCategory) => Promise<vo
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-paper-300 bg-white p-2 shadow-pop"
+          className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-paper-300 bg-white p-2 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
-          <p className="px-2 pb-1 pt-0.5 text-xs uppercase tracking-wide text-ink-500">
+          <p className="px-2 pb-1 pt-0.5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.add_template_help")}
           </p>
           <ul className="max-h-72 overflow-y-auto">
@@ -708,13 +717,13 @@ function AddLinePicker({ onPick }: { onPick: (cat: BudgetCategory) => Promise<vo
                   <button
                     type="button"
                     role="menuitem"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink-800 transition hover:bg-paper-100"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink-800 transition hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
                     onClick={async () => {
                       setOpen(false);
                       await onPick(cat);
                     }}
                   >
-                    <Icon size={14} className="text-ink-500" />
+                    <Icon size={14} className="text-ink-500 dark:text-umber-300" />
                     {t(`budget.cat.${cat}`)}
                   </button>
                 </li>
@@ -733,8 +742,8 @@ function CategoryCell({ category }: { category: BudgetCategory }) {
   const { t } = useT();
   const Icon = CATEGORY_ICONS[category];
   return (
-    <span className="inline-flex items-center gap-2 text-sm text-ink-800">
-      <Icon size={14} className="text-ink-500" aria-hidden />
+    <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
+      <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
       {t(`budget.cat.${category}`)}
     </span>
   );
@@ -756,36 +765,42 @@ function HoneymoonAggregateRow({
   const Icon = CATEGORY_ICONS.honeymoon;
   const delta = actual - planned;
   return (
-    <tr className="border-t border-paper-200 transition hover:bg-paper-50">
+    <tr className="border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60">
       <td className="px-4 py-2 align-middle">
         <Link
           to="/app/honeymoon"
-          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-blush-700"
+          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-blush-700 dark:text-paper-100 dark:hover:text-blush-300"
         >
-          <Icon size={14} className="text-ink-500" aria-hidden />
+          <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
           {t("budget.cat.honeymoon")}
         </Link>
       </td>
-      <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900">
+      <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900 dark:text-paper-50">
         {formatHuf(planned, locale)}
       </td>
-      <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900">
+      <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900 dark:text-paper-50">
         {formatHuf(actual, locale)}
       </td>
       <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
         {delta !== 0 && (
-          <span className={delta > 0 ? "font-medium text-red-600" : "font-medium text-emerald-600"}>
+          <span
+            className={
+              delta > 0
+                ? "font-medium text-red-600 dark:text-red-400"
+                : "font-medium text-emerald-600 dark:text-emerald-400"
+            }
+          >
             {formatHuf(delta, locale)}
           </span>
         )}
       </td>
-      <td className="hidden px-4 py-2 align-middle text-sm text-ink-500 md:table-cell">
+      <td className="hidden px-4 py-2 align-middle text-sm text-ink-500 md:table-cell dark:text-umber-300">
         {t("budget.honeymoon_breakdown_hint")}
       </td>
       <td className="px-2 py-2 text-right align-middle">
         <Link
           to="/app/honeymoon"
-          className="btn-ghost btn-sm text-ink-500 hover:text-blush-700"
+          className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
           aria-label={t("budget.honeymoon_open_aria")}
         >
           <ArrowUpRight size={14} />
@@ -840,20 +855,22 @@ function SnapshotCard({
   return (
     <div className="card-hover">
       <h3 className="text-base font-semibold">{snapshot.name}</h3>
-      <p className="mt-0.5 text-xs uppercase tracking-wide text-ink-400">{created}</p>
-      <dl className="mt-3 space-y-1 text-xs text-ink-700">
+      <p className="mt-0.5 text-xs uppercase tracking-wide text-ink-400 dark:text-umber-300">
+        {created}
+      </p>
+      <dl className="mt-3 space-y-1 text-xs text-ink-700 dark:text-paper-100">
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-ink-500">{t("budget.snapshot_planned_label")}</dt>
+          <dt className="text-ink-500 dark:text-umber-300">{t("budget.snapshot_planned_label")}</dt>
           <dd className="tabular-nums">{formatHuf(planned, locale)}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-ink-500">{t("budget.snapshot_actual_label")}</dt>
+          <dt className="text-ink-500 dark:text-umber-300">{t("budget.snapshot_actual_label")}</dt>
           <dd className="tabular-nums">{formatHuf(actual, locale)}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-ink-500">{t("budget.snapshot_diff_label")}</dt>
+          <dt className="text-ink-500 dark:text-umber-300">{t("budget.snapshot_diff_label")}</dt>
           <dd
-            className={`tabular-nums ${diff > 0 ? "text-blush-700" : diff < 0 ? "text-ink-500" : "text-ink-400"}`}
+            className={`tabular-nums ${diff > 0 ? "text-blush-700 dark:text-blush-300" : diff < 0 ? "text-ink-500 dark:text-umber-300" : "text-ink-400 dark:text-umber-300"}`}
           >
             {diffStr}
           </dd>
@@ -887,7 +904,7 @@ function SnapshotCard({
         </button>
         <button
           type="button"
-          className="btn-ghost btn-sm text-blush-700"
+          className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
           onClick={onRemove}
           disabled={restoring || disabled}
         >
@@ -975,13 +992,15 @@ function SnapshotBreakdownDialog({
       }
     >
       <div className="space-y-3">
-        <p className="text-xs uppercase tracking-wide text-ink-400">{snapshot.name}</p>
+        <p className="text-xs uppercase tracking-wide text-ink-400 dark:text-umber-300">
+          {snapshot.name}
+        </p>
         {rows.length === 0 ? (
-          <p className="text-ink-500">{t("budget.lines_empty")}</p>
+          <p className="text-ink-500 dark:text-umber-300">{t("budget.lines_empty")}</p>
         ) : (
           <div className="-mx-2 overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
+              <thead className="text-left text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 <tr>
                   <th className="px-2 py-2 font-medium">{t("budget.category")}</th>
                   <th className="px-2 py-2 text-right font-medium">{t("budget.planned")}</th>
@@ -992,30 +1011,37 @@ function SnapshotBreakdownDialog({
                 {rows.map((row) => {
                   const Icon = CATEGORY_ICONS[row.category];
                   return (
-                    <tr key={row.category} className="border-t border-paper-200">
+                    <tr
+                      key={row.category}
+                      className="border-t border-paper-200 dark:border-umber-700"
+                    >
                       <td className="px-2 py-2 align-middle">
-                        <span className="inline-flex items-center gap-2 text-ink-800">
-                          <Icon size={14} className="text-ink-500" aria-hidden />
+                        <span className="inline-flex items-center gap-2 text-ink-800 dark:text-paper-100">
+                          <Icon
+                            size={14}
+                            className="text-ink-500 dark:text-umber-300"
+                            aria-hidden
+                          />
                           {t(`budget.cat.${row.category}`)}
                         </span>
                       </td>
-                      <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900">
+                      <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
                         {formatHuf(row.planned, locale)}
                       </td>
-                      <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900">
+                      <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
                         {formatHuf(row.actual, locale)}
                       </td>
                     </tr>
                   );
                 })}
-                <tr className="border-t border-paper-300 font-medium">
-                  <td className="px-2 py-2 align-middle text-ink-900">
+                <tr className="border-t border-paper-300 font-medium dark:border-umber-700">
+                  <td className="px-2 py-2 align-middle text-ink-900 dark:text-paper-50">
                     {t("budget.snapshot_breakdown_total_label")}
                   </td>
-                  <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900">
+                  <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
                     {formatHuf(totalPlanned, locale)}
                   </td>
-                  <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900">
+                  <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
                     {formatHuf(totalActual, locale)}
                   </td>
                 </tr>
@@ -1151,7 +1177,7 @@ function HufInput({
       aria-label={ariaLabel}
       className={`input h-9 min-h-0 py-1 text-center text-sm tabular-nums ${
         error ? "input-invalid" : ""
-      } ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500" : ""}`}
+      } ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500 dark:bg-umber-700/60 dark:text-umber-300" : ""}`}
       value={draft}
       onChange={onChange}
       onBlur={onBlur}

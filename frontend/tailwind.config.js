@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  // `dark` is applied to <html> by AppShell (mount/unmount). That scopes
+  // the warm-dark theme to /app/* protected routes only — public pages
+  // (landing, /login, /vendors) stay on the light paper palette.
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -64,6 +68,24 @@ export default {
           700: "#1c6633",
           800: "#19512b",
           900: "#154124",
+        },
+        // Umber — warm dark palette. The paper-inverted complement to `paper`.
+        // Used exclusively for /app/* dark mode (scoped via `html.dark`).
+        // 900 = page bg, 800 = surface (card), 700 = border, 600 = elevated
+        // border / hover. 200–300 are bright cream variants for muted text on
+        // dark surfaces. Designed so blush-400 + sage-400 sit cleanly on top.
+        umber: {
+          50: "#fbf7f0",
+          100: "#f4ead5",
+          200: "#e6d3ad",
+          300: "#d2b078",
+          400: "#b48a55",
+          500: "#8a6841",
+          600: "#4a3a2e",
+          700: "#3a2e22",
+          800: "#251c14",
+          900: "#1a1410",
+          950: "#0f0a07",
         },
       },
       fontFamily: {

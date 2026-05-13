@@ -319,7 +319,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       }}
       footer={
         <div className="flex w-full flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-ink-500" aria-live="polite">
+          <p className="text-xs text-ink-500 dark:text-umber-300" aria-live="polite">
             {t("suppliers.submit.progress_label", { done: requiredFilled, total: 4 })}
           </p>
           <div className="flex gap-2 sm:justify-end">
@@ -339,7 +339,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
         </div>
       }
     >
-      <p className="text-sm text-ink-600">{t("suppliers.submit.intro")}</p>
+      <p className="text-sm text-ink-600 dark:text-umber-200">{t("suppliers.submit.intro")}</p>
 
       <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         {/* LEFT — form */}
@@ -509,7 +509,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
           {/* Trust signals — moved to the bottom of the form, small and quiet,
               so they read as guarantees the user discovers AFTER they've
               committed mentally rather than as a noisy preamble. */}
-          <ul className="space-y-1.5 border-t border-paper-200 pt-4 text-xs text-ink-500">
+          <ul className="space-y-1.5 border-t border-paper-200 dark:border-umber-700 pt-4 text-xs text-ink-500 dark:text-umber-300">
             <TrustLine icon={<Mail size={12} aria-hidden />}>
               {t("suppliers.submit.trust_review")}
             </TrustLine>
@@ -529,7 +529,9 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
         >
           <p className="field-label">{t("suppliers.submit.preview_title")}</p>
           <LivePreviewCard form={form} t={t} />
-          <p className="mt-2 text-[11px] text-ink-500">{t("suppliers.submit.preview_caption")}</p>
+          <p className="mt-2 text-[11px] text-ink-500 dark:text-umber-300">
+            {t("suppliers.submit.preview_caption")}
+          </p>
         </aside>
       </div>
     </Dialog>
@@ -538,7 +540,10 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
 
 function SectionHeading({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <h3 id={id} className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+    <h3
+      id={id}
+      className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500 dark:text-umber-300"
+    >
       {children}
     </h3>
   );
@@ -557,7 +562,7 @@ function OptionalLabel({
   return (
     <>
       {base}{" "}
-      <span className="text-ink-400 normal-case tracking-normal">
+      <span className="text-ink-400 dark:text-umber-300 normal-case tracking-normal">
         ({t("suppliers.submit.optional")})
       </span>
     </>
@@ -575,7 +580,7 @@ function TrustLine({
     <li className="flex items-start gap-2">
       <span
         aria-hidden
-        className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-paper-200 text-ink-600"
+        className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-paper-200 dark:bg-umber-700 text-ink-600 dark:text-umber-200"
       >
         {icon}
       </span>
@@ -613,10 +618,10 @@ function MapsLinkHero({
     <div
       className={`rounded-2xl border p-4 transition-colors ${
         ok
-          ? "border-sage-300 bg-sage-50/60"
+          ? "border-sage-300 bg-sage-50/60 dark:border-sage-400/40 dark:bg-sage-400/15"
           : error
-            ? "border-blush-300 bg-blush-50/40"
-            : "border-blush-200 bg-gradient-to-br from-blush-50 via-paper-50 to-sage-50"
+            ? "border-blush-300 bg-blush-50/40 dark:border-blush-400/40 dark:bg-blush-400/15"
+            : "border-blush-200 bg-gradient-to-br from-blush-50 via-paper-50 to-sage-50 dark:border-blush-400/40 dark:from-blush-400/10 dark:via-umber-800 dark:to-sage-400/10"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -629,10 +634,15 @@ function MapsLinkHero({
           {ok ? <Check size={14} /> : <Sparkles size={14} />}
         </span>
         <div className="min-w-0 flex-1">
-          <label htmlFor={inputId} className="block text-sm font-semibold text-ink-900">
+          <label
+            htmlFor={inputId}
+            className="block text-sm font-semibold text-ink-900 dark:text-paper-50"
+          >
             {t("suppliers.submit.magic_title")}
           </label>
-          <p className="mt-0.5 text-xs text-ink-600">{t("suppliers.submit.magic_help")}</p>
+          <p className="mt-0.5 text-xs text-ink-600 dark:text-umber-200">
+            {t("suppliers.submit.magic_help")}
+          </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input
               id={inputId}
@@ -676,12 +686,12 @@ function MapsLinkHero({
             aria-live="polite"
             className={`mt-2 text-[11px] ${
               ok
-                ? "text-sage-700"
+                ? "text-sage-700 dark:text-sage-300"
                 : partial
-                  ? "text-ink-500"
+                  ? "text-ink-500 dark:text-umber-300"
                   : error
-                    ? "text-blush-700"
-                    : "text-ink-400"
+                    ? "text-blush-700 dark:text-blush-300"
+                    : "text-ink-400 dark:text-umber-300"
             }`}
           >
             {ok && t("suppliers.submit.address_resolved")}
@@ -720,15 +730,17 @@ function CategoryChipGrid({
         role="radiogroup"
         aria-label={t("suppliers.submit.category_label")}
         aria-invalid={invalid || undefined}
-        className={`grid gap-1.5 rounded-2xl border bg-paper-50 p-2 ${
-          invalid ? "border-blush-400" : "border-paper-200"
+        className={`grid gap-1.5 rounded-2xl border bg-paper-50 dark:bg-umber-800 p-2 ${
+          invalid
+            ? "border-blush-400 dark:border-blush-400/40"
+            : "border-paper-200 dark:border-umber-700"
         }`}
       >
         {SUPPLIER_GROUPS.map((g) => {
           const GroupIcon = GROUP_ICON[g.id];
           return (
             <div key={g.id} className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex shrink-0 items-center gap-1 pr-1 text-[10px] font-medium uppercase tracking-wide text-ink-400">
+              <span className="inline-flex shrink-0 items-center gap-1 pr-1 text-[10px] font-medium uppercase tracking-wide text-ink-400 dark:text-umber-300">
                 <GroupIcon size={11} aria-hidden />
                 {t(`suppliers.group.${g.id}`)}
               </span>
@@ -744,8 +756,8 @@ function CategoryChipGrid({
                     onClick={() => onPick(c)}
                     className={
                       selected
-                        ? "inline-flex items-center gap-1.5 rounded-full bg-ink-800 px-2.5 py-1 text-xs font-medium text-paper-100 transition"
-                        : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition hover:border-ink-400 hover:text-ink-900"
+                        ? "inline-flex items-center gap-1.5 rounded-full bg-ink-800 dark:bg-paper-50 dark:text-umber-900 px-2.5 py-1 text-xs font-medium text-paper-100 transition"
+                        : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white dark:bg-umber-700 dark:border-umber-700 px-2.5 py-1 text-xs text-ink-700 dark:text-paper-100 transition hover:border-ink-400 hover:text-ink-900 dark:hover:border-umber-600"
                     }
                   >
                     <Icon size={12} aria-hidden />
@@ -799,15 +811,15 @@ function PriceBandPicker({
               title={label}
               className={
                 selected
-                  ? "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-ink-800 bg-ink-800 px-2 py-2 text-paper-100 transition"
+                  ? "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-ink-800 bg-ink-800 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-2 py-2 text-paper-100 transition"
                   : invalid
-                    ? "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-blush-300 bg-white px-2 py-2 text-ink-700 transition hover:border-blush-500"
-                    : "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-paper-300 bg-white px-2 py-2 text-ink-700 transition hover:border-ink-400"
+                    ? "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-blush-300 bg-white dark:bg-umber-700 dark:border-blush-400/40 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-blush-500 dark:hover:border-blush-400/60"
+                    : "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-paper-300 bg-white dark:bg-umber-700 dark:border-umber-700 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-ink-400 dark:hover:border-umber-600"
               }
             >
               <span className="font-mono text-[10px] leading-none">
                 {"●".repeat(band)}
-                <span className={selected ? "opacity-50" : "text-ink-300"}>
+                <span className={selected ? "opacity-50" : "text-ink-300 dark:text-umber-300"}>
                   {"○".repeat(5 - band)}
                 </span>
               </span>
@@ -838,21 +850,21 @@ function LivePreviewCard({
     <div className="card relative mt-1 overflow-hidden border-l-4 border-l-blush-400 !p-4 shadow-sm">
       {/* "Pending" ribbon — sets expectations that this is what the listing
           will look like AFTER email confirmation. */}
-      <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-blush-700">
+      <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-400/15 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-blush-700 dark:text-blush-300">
         <Sparkles size={9} aria-hidden />
         {t("suppliers.submit.preview_pending_pill")}
       </span>
       <div className="flex items-start gap-3 pr-16">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 dark:border-umber-700 bg-paper-100 dark:bg-umber-700/60 font-serif text-lg text-ink-700 dark:text-paper-100">
           {initial}
         </div>
         <div className="min-w-0 flex-1">
           <h4
-            className={`truncate text-sm font-semibold ${name ? "text-ink-900" : "text-ink-400"}`}
+            className={`truncate text-sm font-semibold ${name ? "text-ink-900 dark:text-paper-50" : "text-ink-400 dark:text-umber-300"}`}
           >
             {displayName}
           </h4>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-ink-500">
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-ink-500 dark:text-umber-300">
             {form.category && Icon && (
               <span className="inline-flex items-center gap-1 uppercase tracking-wide">
                 <Icon size={11} aria-hidden />
@@ -860,7 +872,7 @@ function LivePreviewCard({
               </span>
             )}
             {form.category && form.city.trim() && (
-              <span aria-hidden className="text-paper-400">
+              <span aria-hidden className="text-paper-400 dark:text-umber-300">
                 ·
               </span>
             )}
@@ -870,13 +882,15 @@ function LivePreviewCard({
             {form.price_band !== null && (
               <>
                 {(form.category || form.city.trim()) && (
-                  <span aria-hidden className="text-paper-400">
+                  <span aria-hidden className="text-paper-400 dark:text-umber-300">
                     ·
                   </span>
                 )}
-                <span className="font-mono text-ink-600">
+                <span className="font-mono text-ink-600 dark:text-umber-200">
                   {"●".repeat(form.price_band)}
-                  <span className="text-ink-300">{"○".repeat(5 - form.price_band)}</span>
+                  <span className="text-ink-300 dark:text-umber-300">
+                    {"○".repeat(5 - form.price_band)}
+                  </span>
                 </span>
               </>
             )}
@@ -884,20 +898,24 @@ function LivePreviewCard({
         </div>
       </div>
       {form.address.trim() && !looksLikeMapsUrl(form.address) && (
-        <p className="mt-2 line-clamp-1 text-[11px] text-ink-500">{form.address.trim()}</p>
+        <p className="mt-2 line-clamp-1 text-[11px] text-ink-500 dark:text-umber-300">
+          {form.address.trim()}
+        </p>
       )}
-      <p className={`mt-3 line-clamp-3 text-xs ${blurb ? "text-ink-700" : "italic text-ink-400"}`}>
+      <p
+        className={`mt-3 line-clamp-3 text-xs ${blurb ? "text-ink-700 dark:text-paper-100" : "italic text-ink-400 dark:text-umber-300"}`}
+      >
         {blurbDisplay}
       </p>
-      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] text-ink-500">
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] text-ink-500 dark:text-umber-300">
         {form.website.trim() && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5">
+          <span className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-700/60 px-2 py-0.5">
             <Mail size={10} aria-hidden />
             {t("suppliers.visit_website")}
           </span>
         )}
         {form.contact_phone.trim() && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5">
+          <span className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-700/60 px-2 py-0.5">
             <Phone size={10} aria-hidden />
             {form.contact_phone.trim()}
           </span>

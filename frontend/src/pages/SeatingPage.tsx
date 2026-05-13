@@ -828,7 +828,7 @@ export default function SeatingPage() {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>{t("seating.title")}</h1>
-          <p className="mt-1 text-sm text-ink-500">{t("seating.sub")}</p>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("seating.sub")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -840,14 +840,14 @@ export default function SeatingPage() {
           >
             <HelpCircle size={16} aria-hidden />
           </button>
-          <div className="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-paper-50 px-3 py-1.5">
-            <Printer size={14} className="text-ink-500" aria-hidden />
-            <span className="text-xs font-medium uppercase tracking-wide text-ink-600">
+          <div className="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-paper-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800">
+            <Printer size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
+            <span className="text-xs font-medium uppercase tracking-wide text-ink-600 dark:text-umber-200">
               {t("seating.print_seating_chart_label")}
             </span>
             <button
               type="button"
-              className="rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-800 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700"
+              className="rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-800 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-umber-300"
               disabled={previewLoading !== null}
               onClick={() =>
                 requestDownload(
@@ -863,7 +863,7 @@ export default function SeatingPage() {
             </button>
             <button
               type="button"
-              className="rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-800 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700"
+              className="rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-800 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-umber-300"
               disabled={previewLoading !== null}
               onClick={() =>
                 requestDownload(
@@ -910,9 +910,11 @@ export default function SeatingPage() {
 
       {tables.length === 0 ? (
         <div className="card stationery text-center">
-          <ChefHat size={28} className="mx-auto text-ink-500" />
+          <ChefHat size={28} className="mx-auto text-ink-500 dark:text-umber-300" />
           <h3 className="mt-3 text-base font-semibold">{t("seating.no_tables")}</h3>
-          <p className="mt-1 text-sm text-ink-600">{t("seating.add_first_table")}</p>
+          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+            {t("seating.add_first_table")}
+          </p>
         </div>
       ) : (
         <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -948,11 +950,13 @@ export default function SeatingPage() {
       )}
 
       {tables.length > 0 && (
-        <div className="mb-4 mt-2 border-t border-paper-300 pt-4">
+        <div className="mb-4 mt-2 border-t border-paper-300 pt-4 dark:border-umber-700">
           <h2 className="text-base">{t("seating.assignments_section_title")}</h2>
-          <p className="mt-1 text-xs text-ink-500">{t("seating.assignments_section_hint")}</p>
+          <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+            {t("seating.assignments_section_hint")}
+          </p>
           {tapMode && (
-            <div className="mt-3 rounded-lg border border-blush-200 bg-blush-50 px-3 py-2 text-xs text-blush-900">
+            <div className="mt-3 rounded-lg border border-blush-200 bg-blush-50 px-3 py-2 text-xs text-blush-900 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300">
               {selectedGuestId !== null
                 ? t("seating.tap_place_hint").replace(
                     "{guest}",
@@ -1028,8 +1032,8 @@ export default function SeatingPage() {
           className={`card sticky top-20 self-start transition-colors ${
             draggingSeatedId !== null
               ? unassignedHover
-                ? "ring-2 ring-blush-500 bg-blush-50"
-                : "ring-2 ring-blush-300 ring-dashed"
+                ? "ring-2 ring-blush-500 bg-blush-50 dark:bg-blush-400/15"
+                : "ring-2 ring-blush-300 ring-dashed dark:ring-blush-400/40"
               : ""
           }`}
           onDragOver={(e) => {
@@ -1048,7 +1052,7 @@ export default function SeatingPage() {
           }}
         >
           <h2 className="text-lg">{t("seating.unassigned_guests")}</h2>
-          <p className="mt-1 text-xs text-ink-500">
+          <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
             {draggingSeatedId !== null
               ? unassignedHover
                 ? t("seating.drop_to_unassign_active")
@@ -1058,7 +1062,9 @@ export default function SeatingPage() {
                 : t("seating.drag_help")}
           </p>
           {unassigned.length === 0 && partnerSlots.length === 0 ? (
-            <p className="mt-4 text-sm text-ink-600">{t("seating.no_unassigned")}</p>
+            <p className="mt-4 text-sm text-ink-600 dark:text-umber-200">
+              {t("seating.no_unassigned")}
+            </p>
           ) : (
             <ul className="mt-3 max-h-[60vh] space-y-1 overflow-y-auto">
               {partnerSlots.map((slot) =>
@@ -1116,7 +1122,9 @@ export default function SeatingPage() {
             </>
           }
         >
-          <p className="mb-3 text-sm text-ink-600">{t("seating.preview_help")}</p>
+          <p className="mb-3 text-sm text-ink-600 dark:text-umber-200">
+            {t("seating.preview_help")}
+          </p>
           {/* <iframe> beats <object> for blob-URL PDFs in production: <object>
               looked equivalent on paper, but Chrome rendered the modal empty
               (the plugin-host fallback path interacts oddly with our CSP).
@@ -1127,9 +1135,9 @@ export default function SeatingPage() {
             src={preview.url}
             title={preview.label}
             aria-label={preview.label}
-            className="block h-[70vh] w-full rounded-xl border border-paper-300 bg-paper-50"
+            className="block h-[70vh] w-full rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900"
           />
-          <p className="mt-2 text-xs text-ink-500">
+          <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
             <a href={preview.url} target="_blank" rel="noopener noreferrer" className="underline">
               {t("seating.preview_open_in_new_tab")}
             </a>
@@ -1206,7 +1214,7 @@ export default function SeatingPage() {
             </>
           }
         >
-          <p className="text-sm text-ink-700">
+          <p className="text-sm text-ink-700 dark:text-paper-100">
             {t("seating.swap_seats_body")
               .replace("{occupant}", conflictPrompt.occupant.full_name)
               .replace("{guest}", conflictPrompt.incoming.full_name)}
@@ -1220,12 +1228,12 @@ export default function SeatingPage() {
 function ShortcutRow({ keys, label }: { keys: string[]; label: string }) {
   return (
     <li className="flex items-center justify-between gap-3">
-      <span className="text-ink-700">{label}</span>
+      <span className="text-ink-700 dark:text-paper-100">{label}</span>
       <span className="flex flex-wrap gap-1">
         {keys.map((k) => (
           <kbd
             key={k}
-            className="rounded border border-paper-300 bg-paper-100 px-1.5 py-0.5 text-xs font-mono text-ink-700"
+            className="rounded border border-paper-300 bg-paper-100 px-1.5 py-0.5 text-xs font-mono text-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100"
           >
             {k}
           </kbd>
@@ -1255,7 +1263,7 @@ function TableEditor({
 }) {
   if (!table) {
     return (
-      <div className="card text-sm text-ink-500">
+      <div className="card text-sm text-ink-500 dark:text-umber-300">
         <p>{t("seating.editor_empty")}</p>
       </div>
     );
@@ -1359,10 +1367,10 @@ function TableEditor({
         </div>
       </Section>
 
-      <div className="flex flex-wrap items-center gap-1.5 border-t border-paper-200 pt-3">
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-paper-200 pt-3 dark:border-umber-700">
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100"
+          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
           onClick={onRotate}
           aria-label={t("seating.rotate_table")}
           title={t("seating.rotate_table")}
@@ -1372,7 +1380,7 @@ function TableEditor({
         </button>
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100"
+          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
           onClick={onDuplicate}
           aria-label={t("seating.duplicate_table")}
           title={t("seating.duplicate_table")}
@@ -1382,7 +1390,7 @@ function TableEditor({
         </button>
         <button
           type="button"
-          className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-blush-700 transition-colors hover:bg-blush-50"
+          className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-blush-700 transition-colors hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
           onClick={onDelete}
           aria-label={t("seating.delete_table")}
         >
@@ -1390,7 +1398,7 @@ function TableEditor({
           <span>{t("seating.delete_table")}</span>
         </button>
       </div>
-      <p className="text-xs text-ink-400">
+      <p className="text-xs text-ink-400 dark:text-umber-300">
         {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
       </p>
 
@@ -1465,7 +1473,7 @@ function SeatLayoutPreview({
       viewBox={`${minX} ${minY} ${w} ${h}`}
       role="group"
       aria-label={ariaLabel}
-      className="block h-32 w-full rounded-xl border border-paper-200 bg-paper-50 p-1"
+      className="block h-32 w-full rounded-xl border border-paper-200 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-900"
     >
       {table.shape === "round" ? (
         <circle r={rx} className="fill-paper-50 stroke-ink-800" strokeWidth={1.5} />
@@ -1690,24 +1698,26 @@ function EditableHeading({
               setEditing(false);
             }
           }}
-          className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 font-serif text-xl text-ink-900 focus:border-ink-700 focus:outline-none"
+          className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 font-serif text-xl text-ink-900 focus:border-ink-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:focus:border-paper-100"
         />
       ) : (
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="group flex w-full items-center gap-2 rounded-lg text-left transition-colors hover:bg-paper-100"
+          className="group flex w-full items-center gap-2 rounded-lg text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700"
           aria-label={editAriaLabel}
         >
-          <h3 className="flex-1 truncate font-serif text-xl text-ink-900">{value}</h3>
+          <h3 className="flex-1 truncate font-serif text-xl text-ink-900 dark:text-paper-50">
+            {value}
+          </h3>
           <Pencil
             size={14}
             aria-hidden
-            className="text-ink-300 opacity-0 transition-opacity group-hover:opacity-100"
+            className="text-ink-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-umber-300"
           />
         </button>
       )}
-      <p className="mt-1 text-xs text-ink-500">{subtitle}</p>
+      <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">{subtitle}</p>
     </div>
   );
 }
@@ -1718,7 +1728,7 @@ function EditableHeading({
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-300">
         {label}
       </p>
       {children}
@@ -1761,17 +1771,17 @@ function SeatsStepper({
   const decDisabled = value <= 1;
   return (
     <div className="block">
-      <div className="inline-flex items-center gap-2 rounded-xl border border-paper-200 bg-paper-50 p-1">
+      <div className="inline-flex items-center gap-2 rounded-xl border border-paper-200 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800">
         <button
           type="button"
           onClick={dec}
           disabled={decDisabled}
-          className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
+          className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent dark:text-paper-100 dark:hover:bg-umber-700 dark:disabled:text-umber-300"
           aria-label="−"
         >
           <Minus size={16} aria-hidden />
         </button>
-        <span className="min-w-[2ch] text-center text-base font-semibold tabular-nums text-ink-900">
+        <span className="min-w-[2ch] text-center text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
           {value}
         </span>
         <button
@@ -1779,18 +1789,20 @@ function SeatsStepper({
           onClick={inc}
           aria-disabled={atMax || undefined}
           className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
-            atMax ? "text-ink-300 hover:bg-blush-50" : "text-ink-700 hover:bg-paper-100"
+            atMax
+              ? "text-ink-300 hover:bg-blush-50 dark:text-umber-300 dark:hover:bg-blush-400/15"
+              : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
           }`}
           aria-label="+"
         >
           <Plus size={16} aria-hidden />
         </button>
-        <span className="px-1 text-xs tabular-nums text-ink-400" aria-hidden>
+        <span className="px-1 text-xs tabular-nums text-ink-400 dark:text-umber-300" aria-hidden>
           /{upper}
         </span>
       </div>
       {atMax && atCapHint && (
-        <p className="mt-1.5 text-[11px] text-blush-700" role="status">
+        <p className="mt-1.5 text-[11px] text-blush-700 dark:text-blush-300" role="status">
           {atCapHint}
         </p>
       )}
@@ -1839,7 +1851,7 @@ function SuffixedInput({
       />
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-ink-400"
+        className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-ink-400 dark:text-umber-300"
       >
         {suffix}
       </span>
@@ -1858,9 +1870,9 @@ function Field({
 }) {
   return (
     <label className="block text-xs">
-      <span className="mb-1 flex items-center justify-between text-ink-500">
+      <span className="mb-1 flex items-center justify-between text-ink-500 dark:text-umber-300">
         <span>{label}</span>
-        {hint && <span className="text-ink-300">{hint}</span>}
+        {hint && <span className="text-ink-300 dark:text-umber-300">{hint}</span>}
       </span>
       {children}
     </label>
@@ -1943,11 +1955,16 @@ function ShapePicker({
             className={[
               "flex items-center justify-center rounded-xl border py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700",
               active
-                ? "border-blush-300 bg-blush-50"
-                : "border-paper-200 bg-paper-50 hover:bg-paper-100",
+                ? "border-blush-300 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-400/15"
+                : "border-paper-200 bg-paper-50 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:hover:bg-umber-700",
             ].join(" ")}
           >
-            <Icon size={22} className={active ? "text-blush-700" : "text-ink-500"} />
+            <Icon
+              size={22}
+              className={
+                active ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"
+              }
+            />
           </button>
         );
       })}
@@ -1989,7 +2006,7 @@ function TableCard({
   return (
     <div
       className={`card cursor-pointer transition-shadow ${
-        isSelected ? "ring-2 ring-blush-400" : "hover:shadow-pop"
+        isSelected ? "ring-2 ring-blush-400 dark:ring-blush-400/60" : "hover:shadow-pop"
       }`}
       onClick={onSelect}
       role="button"
@@ -2009,7 +2026,7 @@ function TableCard({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-serif text-xl">{table.label}</h3>
-                <p className="mt-0.5 text-xs text-ink-500">
+                <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
                   {t(`seating.shape_${table.shape}`)} · {usable} {t("seating.seats_label")}
                 </p>
               </div>
@@ -2053,11 +2070,11 @@ function TableCard({
                         .replace("{seat}", String(idx + 1))}
                       className={
                         guest
-                          ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 ${tappable ? "cursor-pointer" : ""}`
-                          : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 ${tappable ? "cursor-pointer ring-1 ring-blush-200" : ""}`
+                          ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer" : ""}`
+                          : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer ring-1 ring-blush-200 dark:ring-blush-400/40" : ""}`
                       }
                     >
-                      <span className="text-[10px] uppercase tracking-wider text-ink-400">
+                      <span className="text-[10px] uppercase tracking-wider text-ink-400 dark:text-umber-300">
                         #{idx + 1}
                       </span>
                       <div className="mt-0.5">
@@ -2141,13 +2158,13 @@ function DraggableGuest({
       }}
       className={[
         compact
-          ? "text-sm font-medium text-ink-900"
+          ? "text-sm font-medium text-ink-900 dark:text-paper-50"
           : partnerRole
-            ? "rounded-lg border border-blush-300 bg-blush-50 px-2 py-1.5 text-sm font-medium text-ink-900 hover:border-blush-500"
-            : "rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400",
+            ? "rounded-lg border border-blush-300 bg-blush-50 px-2 py-1.5 text-sm font-medium text-ink-900 hover:border-blush-500 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-paper-50 dark:hover:border-blush-400"
+            : "rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600",
         tapMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
-        selected ? "ring-2 ring-blush-500" : "",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700",
+        selected ? "ring-2 ring-blush-500 dark:ring-blush-400/60" : "",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-umber-300",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -2159,7 +2176,7 @@ function DraggableGuest({
         <Crown
           size={compact ? 14 : 16}
           aria-hidden
-          className="mr-1 inline-block align-text-bottom text-blush-600"
+          className="mr-1 inline-block align-text-bottom text-blush-600 dark:text-blush-300"
         />
       )}
       {/* Baby icon for guests where kind === "baby" so couples can see at a
@@ -2170,7 +2187,7 @@ function DraggableGuest({
         <Baby
           size={compact ? 14 : 16}
           aria-hidden
-          className="mr-1 inline-block align-text-bottom text-blush-500"
+          className="mr-1 inline-block align-text-bottom text-blush-500 dark:text-blush-300"
         />
       )}
       {guest.full_name}
@@ -2193,14 +2210,14 @@ function PartnerSlotPlaceholder({
 }) {
   return (
     <div
-      className="flex items-start gap-2 rounded-lg border border-dashed border-blush-300 bg-blush-50/70 px-2 py-1.5"
+      className="flex items-start gap-2 rounded-lg border border-dashed border-blush-300 bg-blush-50/70 px-2 py-1.5 dark:border-blush-400/40 dark:bg-blush-400/15"
       role="presentation"
       aria-label={`${role}: ${name}`}
     >
-      <Crown size={14} aria-hidden className="mt-0.5 text-blush-600" />
+      <Crown size={14} aria-hidden className="mt-0.5 text-blush-600 dark:text-blush-300" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-ink-900">{name}</p>
-        <p className="text-[11px] text-ink-500">{hint}</p>
+        <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">{name}</p>
+        <p className="text-[11px] text-ink-500 dark:text-umber-300">{hint}</p>
       </div>
     </div>
   );

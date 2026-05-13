@@ -252,12 +252,12 @@ export default function AdminSuppliersPage() {
     <AppShell>
       <header className="mb-6">
         <h1>{t("admin.suppliers_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500">{t("admin.suppliers_sub")}</p>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.suppliers_sub")}</p>
       </header>
 
       {/* Status filter chips. */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="text-xs uppercase tracking-wide text-ink-500">
+        <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
           {t("admin.filter_status_label")}
         </span>
         <FilterChip
@@ -294,8 +294,8 @@ export default function AdminSuppliersPage() {
       {/* Bulk-action toolbar. Stays mounted for layout stability when the
        *  card grid loads. The select-all checkbox lives here so the toolbar
        *  doubles as the grid header. */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 px-3 py-2 text-sm">
-        <label className="inline-flex items-center gap-2 text-xs text-ink-700">
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 dark:border-umber-700 dark:bg-umber-700/60 px-3 py-2 text-sm">
+        <label className="inline-flex items-center gap-2 text-xs text-ink-700 dark:text-paper-100">
           <input
             type="checkbox"
             checked={allSelected}
@@ -320,7 +320,7 @@ export default function AdminSuppliersPage() {
           </button>
           <button
             type="button"
-            className="btn-ghost btn-sm text-violet-950"
+            className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
             onClick={onBulkDelete}
             disabled={selected.size === 0}
           >
@@ -330,11 +330,13 @@ export default function AdminSuppliersPage() {
       </div>
 
       {loading ? (
-        <div className="text-sm text-ink-500">{t("common.loading")}</div>
+        <div className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</div>
       ) : suppliers.length === 0 ? (
-        <div className="card text-sm text-ink-500">{t("admin.empty")}</div>
+        <div className="card text-sm text-ink-500 dark:text-umber-300">{t("admin.empty")}</div>
       ) : visibleSuppliers.length === 0 ? (
-        <div className="card text-sm text-ink-500">{t("admin.empty_filtered")}</div>
+        <div className="card text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.empty_filtered")}
+        </div>
       ) : (
         <div className="flex flex-col gap-4">
           {visibleSuppliers.map((s) => (
@@ -375,8 +377,8 @@ function FilterChip({
       aria-pressed={active}
       className={
         active
-          ? "rounded-full border border-violet-900 bg-violet-900 px-3 py-1 text-xs font-medium text-paper-100"
-          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-950 hover:border-violet-300"
+          ? "rounded-full border border-violet-900 bg-violet-900 dark:border-violet-500/50 dark:bg-violet-500/30 px-3 py-1 text-xs font-medium text-paper-100 dark:text-violet-100"
+          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-950 hover:border-violet-300 dark:border-umber-700 dark:bg-umber-800 dark:text-violet-200 dark:hover:border-violet-400/40"
       }
     >
       {label}
@@ -393,12 +395,12 @@ function StatusPill({
 }) {
   const cls =
     status === "active"
-      ? "border-violet-900 bg-violet-900 text-paper-100"
+      ? "border-violet-900 bg-violet-900 text-paper-100 dark:border-violet-500/50 dark:bg-violet-500/30 dark:text-violet-100"
       : status === "awaiting_review"
-        ? "border-violet-700 bg-violet-100 text-violet-900 font-semibold"
+        ? "border-violet-700 bg-violet-100 text-violet-900 font-semibold dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200"
         : status === "pending"
-          ? "border-violet-300 bg-violet-50 text-violet-950"
-          : "border-paper-300 bg-paper-100 text-ink-500";
+          ? "border-violet-300 bg-violet-50 text-violet-950 dark:border-violet-400/30 dark:bg-violet-500/15 dark:text-violet-200"
+          : "border-paper-300 bg-paper-100 text-ink-500 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300";
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}
@@ -413,7 +415,7 @@ function StatusPill({
  *  defensively on the server. */
 function PriceBandPill({ band }: { band: 1 | 2 | 3 | 4 | 5 }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-xs font-medium text-ink-700 stat-num">
+    <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-2 py-0.5 text-xs font-medium text-ink-700 dark:text-paper-100 stat-num">
       {"$".repeat(band)}
     </span>
   );
@@ -436,15 +438,19 @@ function CardField({
   const isEmpty = value == null || (typeof value === "string" && value.trim().length === 0);
   return (
     <div className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wide text-ink-500">{label}</span>
+      <span className="text-[10px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        {label}
+      </span>
       {isEmpty ? (
-        <span className="text-sm text-ink-400">{t("admin.suppliers_card_empty_value")}</span>
+        <span className="text-sm text-ink-400 dark:text-umber-300">
+          {t("admin.suppliers_card_empty_value")}
+        </span>
       ) : href ? (
         <a
           href={href}
           target="_blank"
           rel="noreferrer noopener"
-          className={`mt-0.5 inline-flex items-center gap-1 text-sm text-ink-800 underline-offset-2 hover:underline ${
+          className={`mt-0.5 inline-flex items-center gap-1 text-sm text-ink-800 dark:text-paper-100 underline-offset-2 hover:underline ${
             mono ? "stat-num" : ""
           }`}
         >
@@ -452,7 +458,9 @@ function CardField({
           <ExternalLink size={12} aria-hidden className="shrink-0" />
         </a>
       ) : (
-        <span className={`mt-0.5 break-words text-sm text-ink-800 ${mono ? "stat-num" : ""}`}>
+        <span
+          className={`mt-0.5 break-words text-sm text-ink-800 dark:text-paper-100 ${mono ? "stat-num" : ""}`}
+        >
           {value}
         </span>
       )}
@@ -517,7 +525,7 @@ function SupplierCard({
   return (
     <article
       className={`card flex flex-col gap-5 p-5 transition ${
-        selected ? "ring-2 ring-violet-700" : ""
+        selected ? "ring-2 ring-violet-700 dark:ring-violet-400/60" : ""
       }`}
       aria-label={s.name}
     >
@@ -533,16 +541,22 @@ function SupplierCard({
         </label>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="m-0 text-base font-semibold text-ink-900">{s.name}</h2>
+            <h2 className="m-0 text-base font-semibold text-ink-900 dark:text-paper-50">
+              {s.name}
+            </h2>
             <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
             <PriceBandPill band={s.price_band} />
-            <span className="text-xs text-ink-500">{t(`suppliers.cat.${s.category}`)}</span>
+            <span className="text-xs text-ink-500 dark:text-umber-300">
+              {t(`suppliers.cat.${s.category}`)}
+            </span>
           </div>
           {s.city ? (
-            <div className="mt-1 inline-flex items-center gap-1 text-xs text-ink-500">
+            <div className="mt-1 inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
               <MapPin size={12} aria-hidden />
               <span>{s.city}</span>
-              {s.address ? <span className="text-ink-400">· {s.address}</span> : null}
+              {s.address ? (
+                <span className="text-ink-400 dark:text-umber-300">· {s.address}</span>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -554,7 +568,7 @@ function SupplierCard({
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {/* Contact column */}
         <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
             {t("admin.suppliers_card_section_contact")}
           </h3>
           <CardField
@@ -567,7 +581,7 @@ function SupplierCard({
             value={
               s.contact_email ? (
                 <span className="inline-flex items-center gap-1">
-                  <Mail size={12} aria-hidden className="text-ink-500" />
+                  <Mail size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
                   <span className="break-all">{s.contact_email}</span>
                 </span>
               ) : null
@@ -578,7 +592,7 @@ function SupplierCard({
             value={
               s.contact_phone ? (
                 <span className="inline-flex items-center gap-1">
-                  <Phone size={12} aria-hidden className="text-ink-500" />
+                  <Phone size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
                   <span>{s.contact_phone}</span>
                 </span>
               ) : null
@@ -588,7 +602,7 @@ function SupplierCard({
             label={t("admin.suppliers_card_field_submitter")}
             value={
               <span className="inline-flex items-center gap-1">
-                <User size={12} aria-hidden className="text-ink-500" />
+                <User size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
                 <span className="break-all">{s.submitter_email}</span>
               </span>
             }
@@ -597,7 +611,7 @@ function SupplierCard({
 
         {/* Listing column */}
         <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
             {t("admin.suppliers_card_section_listing")}
           </h3>
           <CardField
@@ -607,14 +621,16 @@ function SupplierCard({
           {s.status === "hidden" && s.hide_reason ? (
             <CardField
               label={t("admin.suppliers_card_field_hide_reason")}
-              value={<span className="italic text-ink-600">{s.hide_reason}</span>}
+              value={
+                <span className="italic text-ink-600 dark:text-umber-200">{s.hide_reason}</span>
+              }
             />
           ) : null}
         </section>
 
         {/* Meta + metrics column */}
         <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
             {t("admin.suppliers_card_section_meta")}
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -644,8 +660,8 @@ function SupplierCard({
                 <span
                   className={
                     s.open_report_count > 0
-                      ? "inline-flex items-center gap-1 font-semibold text-violet-950"
-                      : "inline-flex items-center gap-1 text-ink-500"
+                      ? "inline-flex items-center gap-1 font-semibold text-violet-950 dark:text-violet-200"
+                      : "inline-flex items-center gap-1 text-ink-500 dark:text-umber-300"
                   }
                 >
                   <Flag size={12} aria-hidden />
@@ -661,14 +677,14 @@ function SupplierCard({
       {/* Admin notes — the CRM heart of the page. Editable in place, with a
        *  dirty indicator and an explicit save action so an accidental tab
        *  away doesn't silently drop a half-typed thought. */}
-      <section className="flex flex-col gap-2 rounded-xl border border-paper-300 bg-paper-50 p-3">
+      <section className="flex flex-col gap-2 rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950">
+          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
             {t("admin.suppliers_card_section_notes")}
           </h3>
           <span
             className={`text-[10px] uppercase tracking-wide ${
-              dirty ? "text-blush-700" : "text-ink-500"
+              dirty ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"
             }`}
           >
             {dirty
@@ -677,14 +693,16 @@ function SupplierCard({
           </span>
         </div>
         <textarea
-          className="input min-h-[80px] resize-y bg-white"
+          className="input min-h-[80px] resize-y bg-white dark:bg-umber-700"
           placeholder={t("admin.suppliers_card_field_admin_notes_placeholder")}
           value={notesDraft}
           onChange={(e) => setNotesDraft(e.target.value)}
           aria-label={t("admin.suppliers_card_field_admin_notes")}
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-ink-500">{t("admin.suppliers_card_field_admin_notes_help")}</p>
+          <p className="text-xs text-ink-500 dark:text-umber-300">
+            {t("admin.suppliers_card_field_admin_notes_help")}
+          </p>
           <button
             type="button"
             className="btn-outline btn-sm"
@@ -700,7 +718,7 @@ function SupplierCard({
 
       {/* Footer: per-row action buttons. Keep the order familiar: Approve
        *  (when applicable) → Enrich → Hide/Unhide → Delete. */}
-      <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 pt-3">
+      <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-3">
         {s.status === "awaiting_review" && (
           <button
             type="button"

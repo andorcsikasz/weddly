@@ -98,7 +98,7 @@ export function SessionExpiredDialog({ open, email, onClose, onLoggedIn }: Props
         </>
       }
     >
-      <p className="text-sm text-ink-700">{t("session.expired_body")}</p>
+      <p className="text-sm text-ink-700 dark:text-paper-100">{t("session.expired_body")}</p>
       <form id="session-relogin-form" className="mt-4 space-y-3" onSubmit={onSubmit} noValidate>
         <div>
           <label htmlFor="session-email" className="field-label">

@@ -496,37 +496,48 @@ export function HouseholdRsvpForm({
 
   return (
     <form className="card stationery animate-fade-in-up" onSubmit={onSubmit}>
-      <p className="text-xs uppercase tracking-widest text-ink-500">{view.couple_display_name}</p>
+      <p className="text-xs uppercase tracking-widest text-ink-500 dark:text-umber-300">
+        {view.couple_display_name}
+      </p>
       {view.wedding_date && (
-        <p className="text-sm text-ink-600">{formatDate(view.wedding_date, locale)}</p>
+        <p className="text-sm text-ink-600 dark:text-umber-200">
+          {formatDate(view.wedding_date, locale)}
+        </p>
       )}
 
       {/* Boarding-pass anchor: monospace REF · slug · code so the credential
           on the page matches what was on the invite the guest just typed.
           flex-wrap keeps the pill from overflowing on narrow phones. */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 self-start rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-xs uppercase tracking-[0.25em] text-ink-700 max-w-full overflow-hidden">
-        <span className="text-ink-500">{t("rsvp.checkin_ref_label")}</span>
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 self-start rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-xs uppercase tracking-[0.25em] text-ink-700 max-w-full overflow-hidden dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
+        <span className="text-ink-500 dark:text-umber-300">{t("rsvp.checkin_ref_label")}</span>
         <span aria-hidden>·</span>
         <span className="break-all">{view.couple_slug}</span>
         <span aria-hidden>·</span>
-        <span className="tracking-[0.4em] text-ink-900">{view.household_code}</span>
+        <span className="tracking-[0.4em] text-ink-900 dark:text-paper-50">
+          {view.household_code}
+        </span>
       </div>
 
       <h1 className="mt-4 font-serif text-2xl sm:text-3xl">
         {t("rsvp.checkin_party_of", { n: drafts.length })}
       </h1>
-      <p className="mt-1 break-words text-sm text-ink-700">{view.household_label}</p>
+      <p className="mt-1 break-words text-sm text-ink-700 dark:text-paper-100">
+        {view.household_label}
+      </p>
 
       {/* Offline queue badge — surfaces when at least one record is sitting in
           localStorage waiting to flush. Small calm chip, not a banner; the
           guest already got a success toast at submit time. */}
       {offlineQueueCount > 0 && (
         <p
-          className="mt-3 inline-flex items-center gap-1.5 self-start rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs text-ink-700"
+          className="mt-3 inline-flex items-center gap-1.5 self-start rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
           role="status"
           aria-live="polite"
         >
-          <span aria-hidden className="inline-block size-1.5 rounded-full bg-blush-500" />
+          <span
+            aria-hidden
+            className="inline-block size-1.5 rounded-full bg-blush-500 dark:bg-blush-300"
+          />
           {t("rsvp.offline_pending", { n: offlineQueueCount })}
         </p>
       )}
@@ -535,9 +546,9 @@ export function HouseholdRsvpForm({
         {drafts.map((d) => (
           <fieldset
             key={d.id}
-            className="rounded-2xl border border-paper-200 bg-paper-50/60 p-4 space-y-3"
+            className="rounded-2xl border border-paper-200 bg-paper-50/60 p-4 space-y-3 dark:border-umber-700 dark:bg-umber-800/60"
           >
-            <legend className="px-1 font-serif text-lg text-ink-900 break-words">
+            <legend className="px-1 font-serif text-lg text-ink-900 break-words dark:text-paper-50">
               {d.full_name}
             </legend>
             {d.is_plus_one && (
@@ -572,8 +583,8 @@ export function HouseholdRsvpForm({
                   onClick={() => void pickStatus(d, s)}
                   className={
                     d.rsvp_status === s
-                      ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100"
-                      : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400"
+                      ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                      : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
                   }
                 >
                   {t(`rsvp.pick_${s}`)}
@@ -606,8 +617,8 @@ export function HouseholdRsvpForm({
                         onClick={() => updateMember(d.id, { meal_choice: active ? null : m })}
                         className={
                           active
-                            ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100"
-                            : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400"
+                            ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                            : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
                         }
                       >
                         <Icon size={22} aria-hidden />
@@ -640,7 +651,7 @@ export function HouseholdRsvpForm({
                   />
                 </div>
 
-                <label className="flex items-center gap-2 text-sm text-ink-700">
+                <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
                   <input
                     type="checkbox"
                     checked={d.accommodation_needed}
@@ -660,8 +671,8 @@ export function HouseholdRsvpForm({
                 {/* Family additions — visually separated from the allergen
                     block above so guests don't conflate "bringing a +1"
                     with a dietary attribute. */}
-                <div className="mt-6 border-t border-paper-200 pt-4">
-                  <p className="mb-2 text-xs uppercase tracking-wider text-ink-500">
+                <div className="mt-6 border-t border-paper-200 pt-4 dark:border-umber-700">
+                  <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
                     {t("rsvp.additions_section_title")}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -721,16 +732,16 @@ export function HouseholdRsvpForm({
       {/* Pre-submit summary so guests notice when they've only answered for
           part of the party. Hidden once everyone has picked something. */}
       {drafts.length > 1 && (
-        <p className="mt-6 text-center text-xs text-ink-600">
-          <span className="font-medium text-ink-900">
+        <p className="mt-6 text-center text-xs text-ink-600 dark:text-umber-200">
+          <span className="font-medium text-ink-900 dark:text-paper-50">
             {t("rsvp.checkin_summary_ready", { n: readyCount })}
           </span>
           {pendingCount > 0 && (
             <>
-              <span aria-hidden className="mx-2 text-ink-400">
+              <span aria-hidden className="mx-2 text-ink-400 dark:text-umber-300">
                 ·
               </span>
-              <span className="text-blush-700">
+              <span className="text-blush-700 dark:text-blush-300">
                 {pendingCount === 1
                   ? t("rsvp.checkin_summary_pending_one")
                   : t("rsvp.checkin_summary_pending_n", { n: pendingCount })}
@@ -749,7 +760,7 @@ export function HouseholdRsvpForm({
         {submitting ? t("common.loading") : t("rsvp.checkin_complete")}
       </button>
       {done && (
-        <p className="mt-2 text-center text-sm text-ink-700">
+        <p className="mt-2 text-center text-sm text-ink-700 dark:text-paper-100">
           <strong>{t("rsvp.checkin_done_title")}</strong> — {t("rsvp.thanks_body")}
         </p>
       )}
@@ -805,8 +816,8 @@ function Chip({
       onClick={onClick}
       className={
         on
-          ? "inline-flex items-center gap-1.5 rounded-full border-2 border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100 transition-colors"
-          : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition-colors hover:border-ink-400"
+          ? "inline-flex items-center gap-1.5 rounded-full border-2 border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100 transition-colors dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+          : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition-colors hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
       }
     >
       {icon}
@@ -891,8 +902,8 @@ function AttachedDietary({
                 onClick={() => onMealChange(active ? null : m)}
                 className={
                   active
-                    ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100"
-                    : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400"
+                    ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                    : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
                 }
               >
                 <Icon size={22} aria-hidden />

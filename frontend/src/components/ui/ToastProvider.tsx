@@ -41,16 +41,20 @@ const ToastContext = createContext<ToastApi | null>(null);
 
 const KIND_STYLE: Record<ToastKind, { wrap: string; icon: ReactNode }> = {
   success: {
-    wrap: "border-ink-200 bg-paper-50 text-ink-800",
-    icon: <CheckCircle2 size={18} className="text-ink-700" aria-hidden="true" />,
+    wrap: "border-ink-200 bg-paper-50 text-ink-800 dark:border-sage-400/40 dark:bg-sage-500 dark:text-umber-900",
+    icon: (
+      <CheckCircle2 size={18} className="text-ink-700 dark:text-umber-900" aria-hidden="true" />
+    ),
   },
   error: {
-    wrap: "border-blush-300 bg-blush-50 text-blush-900",
-    icon: <AlertCircle size={18} className="text-blush-700" aria-hidden="true" />,
+    wrap: "border-blush-300 bg-blush-50 text-blush-900 dark:border-blush-400/40 dark:bg-blush-500 dark:text-umber-900",
+    icon: (
+      <AlertCircle size={18} className="text-blush-700 dark:text-umber-900" aria-hidden="true" />
+    ),
   },
   info: {
-    wrap: "border-paper-300 bg-paper-100 text-ink-800",
-    icon: <Info size={18} className="text-ink-600" aria-hidden="true" />,
+    wrap: "border-paper-300 bg-paper-100 text-ink-800 dark:border-umber-700 dark:bg-paper-50 dark:text-umber-900",
+    icon: <Info size={18} className="text-ink-600 dark:text-umber-700" aria-hidden="true" />,
   },
 };
 
@@ -242,7 +246,7 @@ function ToastItem({
       <button
         type="button"
         onClick={() => onDismiss(toast.id)}
-        className="-m-1 rounded-full p-1 text-ink-500 hover:text-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2"
+        className="-m-1 rounded-full p-1 text-ink-500 hover:text-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-700 dark:hover:text-umber-900 dark:focus-visible:ring-umber-700"
         aria-label={dismissLabel}
       >
         <X size={14} aria-hidden="true" />
