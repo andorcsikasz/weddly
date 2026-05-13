@@ -1054,11 +1054,11 @@ function CostRow({
 
       {/* Amount — right-aligned next to the label on mobile, dedicated col on desktop. */}
       <div className="col-start-2 row-start-1 flex flex-col items-end whitespace-nowrap sm:col-start-3">
-        <span className="font-serif text-lg font-semibold tabular-nums text-ink-900 sm:text-xl dark:text-paper-50">
+        <span className="stat-num text-base font-semibold text-ink-900 sm:text-lg dark:text-paper-50">
           {formatHuf(editValue, locale)}
         </span>
         {line.actual_huf > 0 && (
-          <span className="text-[11px] text-ink-500 dark:text-umber-300">
+          <span className="stat-num text-[11px] text-ink-500 dark:text-umber-300">
             {t("honeymoon.cost_actual_inline", {
               actual: formatHuf(line.actual_huf, locale),
             })}
