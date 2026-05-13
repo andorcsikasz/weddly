@@ -139,11 +139,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const prevUserId = useRef<number | null>(null);
 
   // ── Warm-dark mode toggle ────────────────────────────────────────────
-  // AppShell only mounts inside RequireAuth + /app/* routes, so dark mode
-  // is scoped to the protected workspace. Default is `dark`; the user can
-  // flip to light via the header button, and the choice persists across
-  // sessions. Class lives on <html> so portals (Toasts, Dialogs, maps)
-  // inherit the scope automatically.
+  // Theme preference is shared with PublicShell via `localStorage["weddly.theme"]`,
+  // so toggling on the landing carries into /app and vice versa. Class lives
+  // on <html> so portals (Toasts, Dialogs, maps) inherit it automatically.
+  // We deliberately do NOT remove the `dark` class on unmount — that would
+  // strip the preference when navigating between shells. PublicShell re-applies
+  // it on its own mount.
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     if (typeof window === "undefined") return "dark";
     return window.localStorage.getItem("weddly.theme") === "light" ? "light" : "dark";
@@ -156,9 +157,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     } catch {
       /* localStorage blocked — fine, the user's choice just won't persist */
     }
-    return () => {
-      document.documentElement.classList.remove("dark");
-    };
   }, [theme]);
 
   // ── Workspace handoff cleanup ────────────────────────────────────────
@@ -237,23 +235,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+              className="btn-ghost btn-sm inline-flex items-center"
               aria-label={t("landing.nav_feedback")}
+              title={t("landing.nav_feedback")}
               onClick={() => setFeedbackOpen(true)}
             >
               <MessageCircle size={14} aria-hidden="true" />
-              <span className="hidden sm:inline">{t("landing.nav_feedback")}</span>
             </button>
             <button
               type="button"
-              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+              className="btn-ghost btn-sm inline-flex items-center"
               onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
               aria-label={t("nav.switch_language")}
+              title={locale === "hu" ? t("nav.switch_to_en") : t("nav.switch_to_hu")}
             >
               <Languages size={14} aria-hidden="true" />
-              <span className="hidden sm:inline">
-                {locale === "hu" ? t("nav.switch_to_en") : t("nav.switch_to_hu")}
-              </span>
             </button>
             <button
               type="button"
