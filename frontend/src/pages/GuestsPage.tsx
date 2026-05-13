@@ -40,6 +40,7 @@ import {
   X,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -76,6 +77,19 @@ export default function GuestsPage() {
   useDocumentMeta("seo.guests_title", "seo.guests_description");
   const confirm = useConfirm();
   const toast = useToast();
+  // ── RSVP filter ────────────────────────────────────────────────────
+  // Dashboard's RSVP breakdown links here with `?rsvp=yes|maybe|no|pending`.
+  // While active, we switch to the flat-list view filtered by status.
+  const [params, setParams] = useSearchParams();
+  const rsvpFilter = ((): RsvpStatus | null => {
+    const v = params.get("rsvp");
+    return v === "yes" || v === "no" || v === "maybe" || v === "pending" ? v : null;
+  })();
+  function clearRsvpFilter() {
+    const next = new URLSearchParams(params);
+    next.delete("rsvp");
+    setParams(next, { replace: true });
+  }
   const [couple, setCouple] = useState<Couple | null>(null);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [households, setHouseholds] = useState<Household[]>([]);
@@ -357,6 +371,11 @@ export default function GuestsPage() {
 
   const orphanGuests = useMemo(() => guests.filter((g) => g.household_id == null), [guests]);
 
+  const rsvpFilteredGuests = useMemo(
+    () => (rsvpFilter ? guests.filter((g) => g.rsvp_status === rsvpFilter) : []),
+    [guests, rsvpFilter],
+  );
+
   return (
     <AppShell>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -450,6 +469,23 @@ export default function GuestsPage() {
         </div>
       )}
 
+      {rsvpFilter && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full bg-paper-100 px-3 py-1 text-sm text-ink-700 ring-1 ring-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700">
+            <span className="text-ink-500 dark:text-umber-300">{t("guests.rsvp")}:</span>
+            <span className="font-medium">{t(`guests.rsvp_${rsvpFilter}`)}</span>
+            <button
+              type="button"
+              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+              onClick={clearRsvpFilter}
+              aria-label={t("guests.search_clear")}
+            >
+              <X size={12} />
+            </button>
+          </span>
+        </div>
+      )}
+
       {households.length === 0 && guests.length === 0 ? (
         <div className="card stationery text-center">
           <h3 className="text-base font-semibold">{t("guests.empty_title")}</h3>
@@ -459,6 +495,13 @@ export default function GuestsPage() {
         <SearchResults
           loading={searching}
           guests={searchResults ?? []}
+          onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+          onPrintPlaceCard={onPrintPlaceCard}
+        />
+      ) : rsvpFilter ? (
+        <SearchResults
+          loading={false}
+          guests={rsvpFilteredGuests}
           onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
           onPrintPlaceCard={onPrintPlaceCard}
         />

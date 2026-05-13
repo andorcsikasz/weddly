@@ -934,6 +934,7 @@ export default function DashboardPage() {
                 </div>
                 <ul className="mt-4 flex-1 divide-y divide-paper-100 dark:divide-umber-700">
                   <RsvpRow
+                    status="yes"
                     swatch="bg-emerald-500"
                     label={t("dashboard.rsvp_yes")}
                     value={rsvp.yes}
@@ -941,6 +942,7 @@ export default function DashboardPage() {
                     locale={locale}
                   />
                   <RsvpRow
+                    status="maybe"
                     swatch="bg-amber-400"
                     label={t("dashboard.rsvp_maybe")}
                     value={rsvp.maybe}
@@ -948,6 +950,7 @@ export default function DashboardPage() {
                     locale={locale}
                   />
                   <RsvpRow
+                    status="no"
                     swatch="bg-red-500"
                     label={t("dashboard.rsvp_no")}
                     value={rsvp.no}
@@ -955,6 +958,7 @@ export default function DashboardPage() {
                     locale={locale}
                   />
                   <RsvpRow
+                    status="pending"
                     swatch="bg-slate-300"
                     label={t("dashboard.rsvp_pending")}
                     value={rsvp.pending}
@@ -1374,12 +1378,14 @@ function Segment({
 }
 
 function RsvpRow({
+  status,
   swatch,
   label,
   value,
   total,
   locale,
 }: {
+  status: "yes" | "maybe" | "no" | "pending";
   swatch: string;
   label: string;
   value: number;
@@ -1388,17 +1394,24 @@ function RsvpRow({
 }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
-    <li className="flex items-center justify-between gap-3 py-2.5 text-sm">
-      <span className="flex items-center gap-2.5 text-ink-700 dark:text-paper-100">
-        <span className={`inline-block h-2.5 w-2.5 rounded-full ${swatch}`} aria-hidden="true" />
-        {label}
-      </span>
-      <span className="stat-num inline-flex items-baseline gap-2 text-ink-900 dark:text-paper-50">
-        <span className="text-base font-semibold tabular-nums">{formatNumber(value, locale)}</span>
-        <span className="w-10 text-right text-xs tabular-nums text-ink-400 dark:text-umber-300">
-          {pct}%
+    <li>
+      <Link
+        to={`/app/guests?rsvp=${status}`}
+        className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-sm transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 dark:hover:bg-umber-700/60"
+      >
+        <span className="flex items-center gap-2.5 text-ink-700 dark:text-paper-100">
+          <span className={`inline-block h-2.5 w-2.5 rounded-full ${swatch}`} aria-hidden="true" />
+          {label}
         </span>
-      </span>
+        <span className="stat-num inline-flex items-baseline gap-2 text-ink-900 dark:text-paper-50">
+          <span className="text-base font-semibold tabular-nums">
+            {formatNumber(value, locale)}
+          </span>
+          <span className="w-10 text-right text-xs tabular-nums text-ink-400 dark:text-umber-300">
+            {pct}%
+          </span>
+        </span>
+      </Link>
     </li>
   );
 }
