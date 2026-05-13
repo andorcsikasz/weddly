@@ -798,7 +798,7 @@ function BudgetSummaryTile({
 }) {
   const { t } = useT();
   return (
-    <Link to="/app/budget" className="card-hover stationery-blush relative overflow-hidden !p-5">
+    <Link to="/app/budget" className="card-hover stationery-light relative overflow-hidden !p-5">
       <div className="flex items-center gap-2 text-ink-500 dark:text-umber-300">
         <Wallet size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">

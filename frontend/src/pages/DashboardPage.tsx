@@ -550,9 +550,7 @@ export default function DashboardPage() {
     if (data === "loading" || data === null) return;
     const current = data.couple.frozen_categories ?? [];
     const willFreeze = !current.includes(category);
-    const next = willFreeze
-      ? [...current, category]
-      : current.filter((c) => c !== category);
+    const next = willFreeze ? [...current, category] : current.filter((c) => c !== category);
     try {
       // Freezing a per-guest category at count ≠ baseline would otherwise
       // snap the row from its scaled display down to the unscaled baseline —

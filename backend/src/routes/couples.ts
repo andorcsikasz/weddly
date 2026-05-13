@@ -1012,6 +1012,31 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     });
   }
 
+  if (body.guest_count_goal !== undefined || body.target_guest_count !== undefined) {
+    const goal = parseGuestCountGoal(body as OnboardBody);
+    updates.push(
+      { col: "target_guest_count", val: goal.exact },
+      { col: "guest_count_kind", val: goal.kind },
+      { col: "target_guest_count_min", val: goal.min },
+      { col: "target_guest_count_max", val: goal.max },
+    );
+    auditEntries.push({
+      action: "couple.guest_count_update",
+      before: {
+        target_guest_count: couple.target_guest_count,
+        guest_count_kind: couple.guest_count_kind,
+        target_guest_count_min: couple.target_guest_count_min,
+        target_guest_count_max: couple.target_guest_count_max,
+      },
+      after: {
+        target_guest_count: goal.exact,
+        guest_count_kind: goal.kind,
+        target_guest_count_min: goal.min,
+        target_guest_count_max: goal.max,
+      },
+    });
+  }
+
   if (body.planning_count !== undefined) {
     const val = parsePlanningCount(body.planning_count);
     updates.push({ col: "planning_count", val });
@@ -1492,6 +1517,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.ceremony_kind_update",
   "couple.planning_count_update",
   "couple.frozen_categories_update",
+  "couple.guest_count_update",
   // Guests
   "guest.create",
   "guest.update",

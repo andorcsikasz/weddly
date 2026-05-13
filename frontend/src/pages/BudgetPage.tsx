@@ -6,7 +6,11 @@ import { ArrowUpRight, BarChart3, Loader2, Plus, RotateCcw, Save, Trash2 } from 
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { CATEGORY_ICONS, CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
+import {
+  CATEGORY_ICONS,
+  CostPlanningCard,
+  PER_GUEST_CATEGORIES,
+} from "../components/CostPlanningCard";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
@@ -306,9 +310,7 @@ export default function BudgetPage() {
     if (!couple) return;
     const current = couple.frozen_categories ?? [];
     const willFreeze = !current.includes(category);
-    const next = willFreeze
-      ? [...current, category]
-      : current.filter((c) => c !== category);
+    const next = willFreeze ? [...current, category] : current.filter((c) => c !== category);
     try {
       // Freezing a per-guest category at count ≠ baseline would otherwise
       // snap the row from its scaled display down to the unscaled baseline —

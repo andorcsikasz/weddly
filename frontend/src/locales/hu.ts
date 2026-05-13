@@ -1163,7 +1163,6 @@ const hu: LocaleMessages = {
     print_a4: "A4 ültetési rend",
     print_a3: "A3 ültetési rend",
     print_place_cards: "Ültetőkártyák",
-    print_seating_chart_label: "Ültetési rend",
     print_format_a4: "A4",
     print_format_a3: "A3",
     map_title: "Terem térkép",

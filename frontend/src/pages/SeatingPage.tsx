@@ -840,44 +840,38 @@ export default function SeatingPage() {
           >
             <HelpCircle size={16} aria-hidden />
           </button>
-          <div className="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-paper-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800">
-            <Printer size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
-            <span className="text-xs font-medium uppercase tracking-wide text-ink-600 dark:text-umber-200">
-              {t("seating.print_seating_chart_label")}
-            </span>
-            <button
-              type="button"
-              className="rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-800 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-umber-300"
-              disabled={previewLoading !== null}
-              onClick={() =>
-                requestDownload(
-                  "/api/print/seating/a4",
-                  "weddly-seating-a4.pdf",
-                  t("seating.print_a4"),
-                )
-              }
-              aria-label={t("seating.print_a4")}
-              title={t("seating.print_a4")}
-            >
-              {t("seating.print_format_a4")}
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-800 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-umber-300"
-              disabled={previewLoading !== null}
-              onClick={() =>
-                requestDownload(
-                  "/api/print/seating/a3",
-                  "weddly-seating-a3.pdf",
-                  t("seating.print_a3"),
-                )
-              }
-              aria-label={t("seating.print_a3")}
-              title={t("seating.print_a3")}
-            >
-              {t("seating.print_format_a3")}
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn-outline"
+            disabled={previewLoading !== null}
+            onClick={() =>
+              requestDownload(
+                "/api/print/seating/a4",
+                "weddly-seating-a4.pdf",
+                t("seating.print_a4"),
+              )
+            }
+            aria-label={t("seating.print_a4")}
+            title={t("seating.print_a4")}
+          >
+            <Printer size={16} aria-hidden /> {t("seating.print_format_a4")}
+          </button>
+          <button
+            type="button"
+            className="btn-outline"
+            disabled={previewLoading !== null}
+            onClick={() =>
+              requestDownload(
+                "/api/print/seating/a3",
+                "weddly-seating-a3.pdf",
+                t("seating.print_a3"),
+              )
+            }
+            aria-label={t("seating.print_a3")}
+            title={t("seating.print_a3")}
+          >
+            <Printer size={16} aria-hidden /> {t("seating.print_format_a3")}
+          </button>
           <button
             type="button"
             className="btn-outline"

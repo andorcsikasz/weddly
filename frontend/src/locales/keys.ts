@@ -1213,7 +1213,6 @@ export interface LocaleMessages {
     print_a4: string;
     print_a3: string;
     print_place_cards: string;
-    print_seating_chart_label: string;
     print_format_a4: string;
     print_format_a3: string;
     map_title: string;

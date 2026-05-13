@@ -1159,7 +1159,6 @@ const en: LocaleMessages = {
     print_a4: "A4 seating chart",
     print_a3: "A3 seating chart",
     print_place_cards: "Place cards",
-    print_seating_chart_label: "Seating chart",
     print_format_a4: "A4",
     print_format_a3: "A3",
     map_title: "Floor plan",
