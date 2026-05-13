@@ -551,30 +551,42 @@ export default function DashboardPage() {
     const current = data.couple.frozen_categories ?? [];
     const willFreeze = !current.includes(category);
     const next = willFreeze ? [...current, category] : current.filter((c) => c !== category);
+    const factor = baselineCount > 0 ? effectivePlanningCount / baselineCount : 1;
+    const rewriteLines = PER_GUEST_CATEGORIES.has(category) && factor !== 1;
+    const sumFor = (ls: BudgetLine[]) =>
+      ls.filter((l) => l.category === category).reduce((s, l) => s + l.planned_huf, 0);
     try {
-      // Freezing a per-guest category at count ≠ baseline would otherwise
-      // snap the row from its scaled display down to the unscaled baseline —
-      // discarding the user's last drag. Pin the currently-displayed total
-      // into planned_huf first so freeze locks what they actually see.
+      // Freeze: pin the displayed total (scaled) into planned_huf so the
+      // lock captures what the user sees. Must precede the flag flip —
+      // PATCH on a frozen line is rejected when planned_huf changes.
       let nextLines = lines;
-      if (willFreeze && PER_GUEST_CATEGORIES.has(category) && baselineCount > 0) {
-        const factor = effectivePlanningCount / baselineCount;
-        if (factor !== 1) {
-          const baselineSum = lines
-            .filter((l) => l.category === category)
-            .reduce((s, l) => s + l.planned_huf, 0);
-          if (baselineSum > 0) {
-            const displayedTotal = Math.round(baselineSum * factor);
-            nextLines = await applyCategoryPlanned(
-              category,
-              displayedTotal,
-              lines,
-              t(`budget.cat.${category}`),
-            );
-          }
+      if (willFreeze && rewriteLines) {
+        const displayed = Math.round(sumFor(lines) * factor);
+        if (displayed > 0) {
+          nextLines = await applyCategoryPlanned(
+            category,
+            displayed,
+            lines,
+            t(`budget.cat.${category}`),
+          );
         }
       }
       const r = await coupleApi.update({ frozen_categories: next });
+      // Unfreeze: planned_huf still holds the displayed total from the prior
+      // freeze. Scaling is about to resume, so divide by factor to cancel it.
+      // Has to run AFTER the flag flips for the same frozen-line guard.
+      if (!willFreeze && rewriteLines) {
+        const cur = sumFor(nextLines);
+        if (cur > 0) {
+          const perBaseline = Math.round(cur / factor);
+          nextLines = await applyCategoryPlanned(
+            category,
+            perBaseline,
+            nextLines,
+            t(`budget.cat.${category}`),
+          );
+        }
+      }
       setData({ ...data, couple: r.couple, lines: nextLines });
     } catch {
       const r = await coupleApi.current();

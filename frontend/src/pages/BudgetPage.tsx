@@ -311,31 +311,45 @@ export default function BudgetPage() {
     const current = couple.frozen_categories ?? [];
     const willFreeze = !current.includes(category);
     const next = willFreeze ? [...current, category] : current.filter((c) => c !== category);
+    const factor = baseline > 0 ? effectiveCount / baseline : 1;
+    const rewriteLines = PER_GUEST_CATEGORIES.has(category) && factor !== 1;
+    const sumFor = (ls: BudgetLine[]) =>
+      ls.filter((l) => l.category === category).reduce((s, l) => s + l.planned_huf, 0);
     try {
-      // Freezing a per-guest category at count ≠ baseline would otherwise
-      // snap the row from its scaled display down to the unscaled baseline —
-      // discarding the user's last drag. Pin the currently-displayed total
-      // into planned_huf first so freeze locks what they actually see.
-      if (willFreeze && PER_GUEST_CATEGORIES.has(category) && baseline > 0) {
-        const factor = effectiveCount / baseline;
-        if (factor !== 1) {
-          const baselineSum = lines
-            .filter((l) => l.category === category)
-            .reduce((s, l) => s + l.planned_huf, 0);
-          if (baselineSum > 0) {
-            const displayedTotal = Math.round(baselineSum * factor);
-            const nextLines = await applyCategoryPlanned(
-              category,
-              displayedTotal,
-              lines,
-              t(`budget.cat.${category}`),
-            );
-            setLines(nextLines);
-          }
+      // Freeze: pin the displayed total (scaled) into planned_huf so the
+      // lock captures what the user sees. Must precede the flag flip —
+      // PATCH on a frozen line is rejected when planned_huf changes.
+      if (willFreeze && rewriteLines) {
+        const displayed = Math.round(sumFor(lines) * factor);
+        if (displayed > 0) {
+          const upd = await applyCategoryPlanned(
+            category,
+            displayed,
+            lines,
+            t(`budget.cat.${category}`),
+          );
+          setLines(upd);
         }
       }
       const r = await coupleApi.update({ frozen_categories: next });
       setCouple(r.couple);
+      // Unfreeze: planned_huf still holds the displayed total written on the
+      // prior freeze. Scaling is about to resume, so divide by factor to
+      // cancel it — otherwise the display jumps by × factor on unfreeze.
+      // Has to run AFTER the flag flips for the same frozen-line guard.
+      if (!willFreeze && rewriteLines) {
+        const cur = sumFor(lines);
+        if (cur > 0) {
+          const perBaseline = Math.round(cur / factor);
+          const upd = await applyCategoryPlanned(
+            category,
+            perBaseline,
+            lines,
+            t(`budget.cat.${category}`),
+          );
+          setLines(upd);
+        }
+      }
       publish("budget:changed");
     } catch (e) {
       handleSaveError(e, () => toggleFreeze(category));
