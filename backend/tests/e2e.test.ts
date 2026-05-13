@@ -1349,23 +1349,14 @@ describe("households + airport check-in", () => {
       households: { id: number; code: string; label: string; member_ids: number[] }[];
     }>("GET", "/api/households", undefined, { token });
     expect(list.status).toBe(200);
-    // Onboarding spawns one household named after the couple ("Anna & Bence")
-    // plus the household-of-one created above for Anna Solo.
-    expect(list.data.households.length).toBe(2);
-    const solo = list.data.households.find((h) => h.label === "Anna Solo");
-    expect(solo).toBeTruthy();
-    expect(solo!.code).toMatch(/^\d{4}$/);
-    expect(solo!.member_ids.length).toBe(1);
-    // The other one is the couple's own auto-created household — empty by
-    // default, labelled with their joined names so /app/guests opens with
-    // a placeholder party already named.
-    const couple = list.data.households.find((h) => h.label !== "Anna Solo");
-    expect(couple).toBeTruthy();
-    expect(couple!.label).toBe("Anna & Bence");
-    // Legacy onboard with display_name only (no bride/groom split) does not
-    // seed partner guests — the wizard always sends the split form, so
-    // production paths get bride+groom; this is the test-only fallback.
-    expect(couple!.member_ids.length).toBe(0);
+    // The bootstrapCouple helper uses the legacy display-name-only form
+    // (no bride/groom split), so no host households get auto-spawned.
+    // The only household here is the household-of-one for Anna Solo.
+    expect(list.data.households.length).toBe(1);
+    const solo = list.data.households[0]!;
+    expect(solo.label).toBe("Anna Solo");
+    expect(solo.code).toMatch(/^\d{4}$/);
+    expect(solo.member_ids.length).toBe(1);
   });
 
   test("onboarding with bride+groom split seeds them as guests in the couple household", async () => {
@@ -1391,14 +1382,26 @@ describe("households + airport check-in", () => {
     );
     expect(ob.status).toBe(201);
 
-    // The auto-household exists with both partners as members.
+    // Each partner now lives in their OWN dedicated household — couples
+    // asked for this so the GuestsPage reads as two distinct host cards
+    // instead of one merged "Anna & Bence" entry.
     const list = await req<{
-      households: { id: number; label: string; member_ids: number[] }[];
+      households: {
+        id: number;
+        label: string;
+        member_ids: number[];
+        is_couple_household: boolean;
+      }[];
     }>("GET", "/api/households", undefined, { token: reg.data.token });
-    expect(list.data.households.length).toBe(1);
-    const hh = list.data.households[0]!;
-    expect(hh.label).toBe("Anna & Bence");
-    expect(hh.member_ids.length).toBe(2);
+    expect(list.data.households.length).toBe(2);
+    const labels = list.data.households.map((h) => h.label).sort();
+    expect(labels).toEqual(["Anna", "Bence"]);
+    // Both single-host households should flag as `is_couple_household` so the
+    // GuestsPage hides the per-household share-link button on each card.
+    for (const h of list.data.households) {
+      expect(h.member_ids.length).toBe(1);
+      expect(h.is_couple_household).toBe(true);
+    }
 
     // Each partner is a real guest row: rsvp=yes, kind=adult, side-tagged
     // for the dashboard pie, in their own household, with partner_role
@@ -1425,8 +1428,13 @@ describe("households + airport check-in", () => {
     expect(bride!.kind).toBe("adult");
     expect(bride!.group_tag).toBe("her_family");
     expect(groom!.group_tag).toBe("his_family");
-    expect(bride!.household_id).toBe(hh.id);
-    expect(groom!.household_id).toBe(hh.id);
+    // Each host belongs to their own dedicated single-person household —
+    // assert the two host rows do NOT share a household_id.
+    expect(bride!.household_id).not.toBe(groom!.household_id);
+    const brideHh = list.data.households.find((h) => h.id === bride!.household_id);
+    const groomHh = list.data.households.find((h) => h.id === groom!.household_id);
+    expect(brideHh?.label).toBe("Anna");
+    expect(groomHh?.label).toBe("Bence");
   });
 
   test("partner-role guest rows: rename, backfill idempotence, same-named adoption, client cannot write", async () => {
@@ -1487,18 +1495,13 @@ describe("households + airport check-in", () => {
 
     // 3. Backfill idempotence: directly invoke the helper twice. No duplicates.
     const { ensurePartnerGuests } = await import("../src/domain/guests");
-    const hhRow = db
-      .prepare("SELECT id FROM households WHERE couple_id = ? ORDER BY id ASC LIMIT 1")
-      .get(coupleId) as { id: number };
     ensurePartnerGuests({
       coupleId,
-      householdId: hhRow.id,
       brideName: "Sara",
       groomName: "Andor",
     });
     ensurePartnerGuests({
       coupleId,
-      householdId: hhRow.id,
       brideName: "Sara",
       groomName: "Andor",
     });
@@ -1526,7 +1529,6 @@ describe("households + airport check-in", () => {
 
     ensurePartnerGuests({
       coupleId,
-      householdId: hhRow.id,
       brideName: "Sara",
       groomName: "Andor",
     });

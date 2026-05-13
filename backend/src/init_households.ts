@@ -172,51 +172,22 @@ function backfillCoupleHostGuests() {
     return;
   }
 
-  const ts = now();
-  const findFirstHh = db.prepare(
-    "SELECT id FROM households WHERE couple_id = ? ORDER BY created_at ASC LIMIT 1",
-  );
-  const insertHh = db.prepare(
-    "INSERT INTO households (couple_id, code, label, notes, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?)",
-  );
-
-  let seededHouseholds = 0;
   let seededGuests = 0;
   // Run each couple's host-seed in its own transaction so a hiccup on one
   // couple's invite-code collision doesn't roll back the whole batch.
+  // Each host now lives in their OWN dedicated household — the helper
+  // creates them, so no pre-step "find/create first household" needed.
   for (const c of couples) {
-    // First household by created_at = the couple's auto-household.
-    let hhId: number;
-    const first = findFirstHh.get(c.id) as { id: number } | undefined;
-    if (first) {
-      hhId = first.id;
-    } else {
-      const label =
-        c.bride_name && c.groom_name
-          ? `${c.bride_name} & ${c.groom_name}`
-          : c.display_name || "Couple";
-      const code = freshHouseholdCode(c.id);
-      const result = insertHh.run(c.id, code, label, ts, ts);
-      hhId = Number(result.lastInsertRowid);
-      seededHouseholds++;
-    }
-
-    // The helper is idempotent — `partner_role` keys the SELECT-before-INSERT
-    // so reboots don't duplicate. Same-named existing rows get adopted by
-    // stamping `partner_role` rather than inserting a sibling. That's the
-    // deliberate guarantee of this feature: the couple is always on their
-    // own guest list, fully seatable, with a stable role marker.
     seededGuests += ensurePartnerGuests({
       coupleId: c.id,
-      householdId: hhId,
       brideName: c.bride_name,
       groomName: c.groom_name,
     });
   }
 
-  if (nameSplits > 0 || seededHouseholds > 0 || seededGuests > 0) {
+  if (nameSplits > 0 || seededGuests > 0) {
     console.log(
-      `[init_households] host backfill — name splits: ${nameSplits}, new couple households: ${seededHouseholds}, seeded host guests: ${seededGuests}`,
+      `[init_households] host backfill — name splits: ${nameSplits}, seeded host guests: ${seededGuests}`,
     );
   }
 }

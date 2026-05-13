@@ -9,7 +9,7 @@ import type {
   RsvpStatus,
 } from "@shared/types";
 import { db, now } from "../db";
-import { generateInviteCode } from "./invite_codes";
+import { generateHouseholdCode, generateInviteCode } from "./invite_codes";
 
 export interface GuestRow {
   id: number;
@@ -111,27 +111,32 @@ export function toGuest(row: GuestRow): Guest {
   };
 }
 
-/** Idempotently materialize the bride + groom as real guest rows inside the
- *  couple's own household. Shared by the onboarding handler (fresh couple)
- *  and the boot-time backfill (pre-existing couples).
+/** Idempotently materialize the bride + groom as real guest rows. Each host
+ *  lives in their OWN dedicated household labelled with their name — couples
+ *  asked for this so the guest-list view reads as two distinct hosts rather
+ *  than one merged "Smith couple" entry, and so each card carries its own
+ *  household code (handy if a partner ever needs an independent share-link
+ *  for their side of the family).
  *
  *  Behaviour per role:
  *   1. If a `partner_role = role` guest already exists for this couple,
  *      leave it alone. Renames are owned by the live PATCH path.
  *   2. Otherwise, if a same-named guest already exists (case-insensitive,
- *      trimmed), adopt it by stamping `partner_role` — no duplicate row.
- *   3. Otherwise, insert a fresh row in `householdId`. rsvp=yes, kind=adult,
- *      group_tag splits by family side so the dashboard pie chart looks sane.
+ *      trimmed), adopt it by stamping `partner_role` — no duplicate row,
+ *      and don't move them out of whichever household they were in.
+ *   3. Otherwise, create a fresh single-person household labelled with the
+ *      partner's name and insert a fresh guest row inside it. rsvp=yes,
+ *      kind=adult, group_tag splits by family side so the dashboard pie
+ *      chart still bisects the couple's two clans sensibly.
  *
  *  Returns the number of rows touched (created OR adopted) so callers can
  *  log "seeded N host guest rows" without re-querying. */
 export function ensurePartnerGuests(input: {
   coupleId: number;
-  householdId: number;
   brideName: string;
   groomName: string;
 }): number {
-  const { coupleId, householdId } = input;
+  const { coupleId } = input;
   const bride = input.brideName.trim();
   const groom = input.groomName.trim();
   const targets: { name: string; role: PartnerRole; groupTag: string }[] = [];
@@ -146,7 +151,10 @@ export function ensurePartnerGuests(input: {
     "SELECT id, household_id FROM guests WHERE couple_id = ? AND lower(trim(full_name)) = lower(trim(?)) AND partner_role IS NULL LIMIT 1",
   );
   const adopt = db.prepare("UPDATE guests SET partner_role = ?, updated_at = ? WHERE id = ?");
-  const insert = db.prepare(
+  const insertHh = db.prepare(
+    "INSERT INTO households (couple_id, code, label, notes, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?)",
+  );
+  const insertGuest = db.prepare(
     `INSERT INTO guests
        (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
         meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
@@ -169,10 +177,30 @@ export function ensurePartnerGuests(input: {
       touched++;
       continue;
     }
-    insert.run(coupleId, t.name, t.groupTag, uniqueInviteCode(), ts, ts, householdId, t.role);
+    // Fresh insert path: each host gets their own single-person household.
+    // Label = the partner's own name so the GuestsPage card reads "Sári" /
+    // "Andor" rather than the merged "Sári & Andor" letterhead. Household
+    // code generated via the local uniqueness probe (see below).
+    const hhCode = uniqueHouseholdCode(coupleId);
+    const hhResult = insertHh.run(coupleId, hhCode, t.name, ts, ts);
+    const newHhId = Number(hhResult.lastInsertRowid);
+    insertGuest.run(coupleId, t.name, t.groupTag, uniqueInviteCode(), ts, ts, newHhId, t.role);
     touched++;
   }
   return touched;
+}
+
+/** Local copy of the household-code uniqueness probe — `households.ts`
+ *  imports from this module (for `GuestRow` + the guest mapper), so calling
+ *  back into `households.ts` for its own helper would close a circular
+ *  import. The probe is small enough to live here. */
+function uniqueHouseholdCode(coupleId: number): string {
+  const stmt = db.prepare("SELECT 1 FROM households WHERE couple_id = ? AND code = ?");
+  for (let i = 0; i < 32; i++) {
+    const code = generateHouseholdCode();
+    if (!stmt.get(coupleId, code)) return code;
+  }
+  throw new Error(`Could not generate a unique household code for couple ${coupleId}`);
 }
 
 /** Rename the partner-role guest row when bride_name / groom_name changes. */

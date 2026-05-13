@@ -88,16 +88,15 @@ export function regenerateHouseholdCode(householdId: number, coupleId: number): 
 export function toHousehold(
   row: HouseholdRow,
   members: GuestRow[],
-  opts: { brideName?: string | null; groomName?: string | null } = {},
+  // The `opts` arg is retained for callers that pass the couple's split names
+  // — we no longer read it because `is_couple_household` is now derived
+  // strictly from the explicit `partner_role` column on members. Each host
+  // lives in their own dedicated household, so the flag fires per-partner
+  // (and the GuestsPage "hide RSVP share link" affordance stays intact for
+  // both cards individually).
+  _opts: { brideName?: string | null; groomName?: string | null } = {},
 ): Household {
-  const bride = opts.brideName?.trim() ?? "";
-  const groom = opts.groomName?.trim() ?? "";
-  // The couple's own household is the one whose members include both partners.
-  // Matched on full_name so renaming the household label doesn't break the
-  // flag, but renaming a partner's guest row does (and that's intentional —
-  // the new name *is* the new host).
-  const memberNames = new Set(members.map((m) => m.full_name));
-  const isCouple = bride !== "" && groom !== "" && memberNames.has(bride) && memberNames.has(groom);
+  const isCouple = members.some((m) => m.partner_role !== null && m.partner_role !== undefined);
   return {
     id: row.id,
     couple_id: row.couple_id,

@@ -28,7 +28,6 @@ import { sendKind } from "../domain/emails";
 import { recordExport } from "../domain/exports";
 import { generateInviteToken } from "../domain/invite_codes";
 import { ensurePartnerGuests, listGuestsByCouple, renamePartnerGuest } from "../domain/guests";
-import { createHousehold } from "../domain/households";
 import { renderSeatingChartPdf } from "../domain/pdf";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
 import { getUserById, toUser, type UserRow } from "../domain/users";
@@ -451,26 +450,15 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), coupleId);
   db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(slug, ts, coupleId);
 
-  // Seed a first household named after the couple so /app/guests opens with
-  // a placeholder party already in place — gives the couple a default seat
-  // assignment target and saves the "create your first household" friction.
-  // Label prefers the joined bride + groom names; falls back to display_name
-  // when both parts are present (onboarding currently requires them).
-  const householdLabel = brideName && groomName ? `${brideName} & ${groomName}` : displayName;
-  const coupleHousehold = createHousehold({ couple_id: coupleId, label: householdLabel });
-
   // The bride and groom are guests at their own wedding — and they need to
-  // count in headcount, catering, and seating. Materialize them as real
-  // guest rows in the couple's auto-household, stamped with `partner_role`
-  // so the seating panel can pin their slots without name-matching and the
-  // guests page can render a Crown next to them. Helper is idempotent +
-  // shared with the boot-time backfill in init_households.ts.
-  ensurePartnerGuests({
-    coupleId,
-    householdId: coupleHousehold.id,
-    brideName,
-    groomName,
-  });
+  // count in headcount, catering, and seating. The helper materializes them
+  // as real guest rows AND creates a dedicated single-person household per
+  // partner (labelled with their own name). The previous version inserted a
+  // joined "{bride} & {groom}" household and stuffed both partners in it,
+  // but couples explicitly asked for separate cards on /app/guests so each
+  // host reads as their own party. Helper is idempotent + shared with the
+  // boot-time backfill in init_households.ts.
+  ensurePartnerGuests({ coupleId, brideName, groomName });
 
   db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
     coupleId,
