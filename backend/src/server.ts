@@ -104,7 +104,10 @@ const CSP = [
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
-  "frame-src https://www.openstreetmap.org",
+  // `blob:` is for the /app/seating PDF preview modal — the generated chart
+  // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
+  // renders it inline. Without blob: in frame-src the iframe loads blank.
+  "frame-src https://www.openstreetmap.org blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

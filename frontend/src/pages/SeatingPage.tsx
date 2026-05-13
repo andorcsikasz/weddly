@@ -840,34 +840,44 @@ export default function SeatingPage() {
           >
             <HelpCircle size={16} aria-hidden />
           </button>
-          <button
-            type="button"
-            className="btn-outline"
-            disabled={previewLoading !== null}
-            onClick={() =>
-              requestDownload(
-                "/api/print/seating/a4",
-                "weddly-seating-a4.pdf",
-                t("seating.print_a4"),
-              )
-            }
-          >
-            <Printer size={16} /> {t("seating.print_a4")}
-          </button>
-          <button
-            type="button"
-            className="btn-outline"
-            disabled={previewLoading !== null}
-            onClick={() =>
-              requestDownload(
-                "/api/print/seating/a3",
-                "weddly-seating-a3.pdf",
-                t("seating.print_a3"),
-              )
-            }
-          >
-            <Printer size={16} /> {t("seating.print_a3")}
-          </button>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-paper-50 px-3 py-1.5">
+            <Printer size={14} className="text-ink-500" aria-hidden />
+            <span className="text-xs font-medium uppercase tracking-wide text-ink-600">
+              {t("seating.print_seating_chart_label")}
+            </span>
+            <button
+              type="button"
+              className="rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-800 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700"
+              disabled={previewLoading !== null}
+              onClick={() =>
+                requestDownload(
+                  "/api/print/seating/a4",
+                  "weddly-seating-a4.pdf",
+                  t("seating.print_a4"),
+                )
+              }
+              aria-label={t("seating.print_a4")}
+              title={t("seating.print_a4")}
+            >
+              {t("seating.print_format_a4")}
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-ink-200 bg-white px-2.5 py-1 text-xs font-semibold text-ink-800 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700"
+              disabled={previewLoading !== null}
+              onClick={() =>
+                requestDownload(
+                  "/api/print/seating/a3",
+                  "weddly-seating-a3.pdf",
+                  t("seating.print_a3"),
+                )
+              }
+              aria-label={t("seating.print_a3")}
+              title={t("seating.print_a3")}
+            >
+              {t("seating.print_format_a3")}
+            </button>
+          </div>
           <button
             type="button"
             className="btn-outline"
@@ -1107,24 +1117,23 @@ export default function SeatingPage() {
           }
         >
           <p className="mb-3 text-sm text-ink-600">{t("seating.preview_help")}</p>
-          {/* <object> is the most reliable cross-browser embed for PDFs from
-              blob URLs — Chrome, Firefox and Safari all hand it to their
-              built-in PDF viewer. <embed> renders inside <object> on
-              browsers that prefer it; if neither works the user gets a
-              direct "Open in new tab" fallback. */}
-          <object
-            data={preview.url}
-            type="application/pdf"
+          {/* <iframe> beats <object> for blob-URL PDFs in production: <object>
+              looked equivalent on paper, but Chrome rendered the modal empty
+              (the plugin-host fallback path interacts oddly with our CSP).
+              <iframe src="blob:..."> drops straight into the browser's native
+              PDF viewer in Chrome / Firefox / Safari. The "open in new tab"
+              link sits below as a fallback if the iframe still fails. */}
+          <iframe
+            src={preview.url}
+            title={preview.label}
             aria-label={preview.label}
             className="block h-[70vh] w-full rounded-xl border border-paper-300 bg-paper-50"
-          >
-            <embed src={preview.url} type="application/pdf" className="block h-full w-full" />
-            <div className="p-4 text-sm text-ink-600">
-              <a href={preview.url} target="_blank" rel="noopener noreferrer" className="underline">
-                {t("seating.preview_open_in_new_tab")}
-              </a>
-            </div>
-          </object>
+          />
+          <p className="mt-2 text-xs text-ink-500">
+            <a href={preview.url} target="_blank" rel="noopener noreferrer" className="underline">
+              {t("seating.preview_open_in_new_tab")}
+            </a>
+          </p>
         </Dialog>
       )}
 
