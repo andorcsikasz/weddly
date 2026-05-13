@@ -5,6 +5,7 @@ import {
   ChefHat,
   ClipboardList,
   Heart,
+  Image as ImageIcon,
   Inbox,
   Languages,
   LayoutDashboard,
@@ -83,6 +84,13 @@ const ITEMS: NavItem[] = [
     to: "/app/honeymoon",
     labelKey: "nav.honeymoon",
     icon: <Plane size={18} />,
+  },
+  // Visual inspiration — pre-wedding companion to /app/media. Embeds a
+  // Pinterest board the couple links; no backend, URL stored in localStorage.
+  {
+    to: "/app/moodboard",
+    labelKey: "nav.moodboard",
+    icon: <ImageIcon size={18} />,
   },
   {
     to: "/app/media",

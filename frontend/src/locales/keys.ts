@@ -669,6 +669,8 @@ export interface LocaleMessages {
     planning: string;
     /** Post-wedding follow-up surfaces — honeymoon planning + photo share. */
     honeymoon: string;
+    /** Pre-wedding inspiration — embeds a Pinterest board the couple links. */
+    moodboard: string;
     media: string;
     print: string;
     /** Accessible label for the locale toggle. */
@@ -839,6 +841,21 @@ export interface LocaleMessages {
     coming_soon_title: string;
     coming_soon_body: string;
   };
+  /** Inspiration page that embeds a Pinterest board the couple links. */
+  moodboard: {
+    title: string;
+    sub: string;
+    url_label: string;
+    url_placeholder: string;
+    url_help: string;
+    save: string;
+    change: string;
+    clear: string;
+    invalid_url: string;
+    empty_title: string;
+    empty_body: string;
+    open_in_pinterest: string;
+  };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {
     title: string;
@@ -960,6 +977,8 @@ export interface LocaleMessages {
     total_summary_unit: string;
     total_summary_households: string;
     total_summary_invited: string;
+    total_summary_households_unit: string;
+    total_summary_invited_unit: string;
     /** Adult / child / baby kind selector. */
     kind_label: string;
     kind_help: string;
@@ -987,6 +1006,10 @@ export interface LocaleMessages {
     notes: string;
     accommodation: string;
     song_request: string;
+    song_title_placeholder: string;
+    song_add: string;
+    song_add_link: string;
+    song_remove: string;
     // ── Orphan-guests rescue card ────────────────────────────────────
     orphans_title: string;
     orphans_body: string;
@@ -1260,6 +1283,8 @@ export interface LocaleMessages {
     toast_replaced: string;
     toast_moved: string;
     toast_resized: string;
+    toast_arranged: string;
+    arrange_button_label: string;
     /** Conflict (already-occupied seat) prompt. */
     swap_seats_title: string;
     swap_seats_body: string;

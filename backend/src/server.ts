@@ -96,18 +96,22 @@ const IS_PROD = process.env.NODE_ENV === "production";
 // so those origins are whitelisted for fonts and stylesheets.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' https://plausible.io",
+  // assets.pinterest.com serves the pinit.js widget loader used on /app/moodboard.
+  "script-src 'self' https://plausible.io https://assets.pinterest.com",
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
+  // *.pinimg.com hosts the pin thumbnails embedded by the Pinterest widget.
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
-  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me",
+  // widgets.pinterest.com / log.pinterest.com are hit by pinit.js for board data + telemetry.
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://*.pinterest.com",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
   // `blob:` is for the /app/seating PDF preview modal — the generated chart
   // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
   // renders it inline. Without blob: in frame-src the iframe loads blank.
-  "frame-src https://www.openstreetmap.org blob:",
+  // *.pinterest.com is the iframe that pinit.js mounts for the embedded board.
+  "frame-src https://www.openstreetmap.org blob: https://*.pinterest.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

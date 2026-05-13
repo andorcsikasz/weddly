@@ -29,6 +29,7 @@ import SchedulePage from "./pages/SchedulePage";
 import SeatingPage from "./pages/SeatingPage";
 import HoneymoonPage from "./pages/HoneymoonPage";
 import MediaPage from "./pages/MediaPage";
+import MoodboardPage from "./pages/MoodboardPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import TermsPage from "./pages/TermsPage";
 import VendorsPage from "./pages/VendorsPage";
@@ -284,6 +285,16 @@ export default function App() {
           <Page>
             <RequireAuth>
               <HoneymoonPage />
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/moodboard"
+        element={
+          <Page>
+            <RequireAuth>
+              <MoodboardPage />
             </RequireAuth>
           </Page>
         }
