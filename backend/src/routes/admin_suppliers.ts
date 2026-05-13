@@ -102,7 +102,10 @@ async function handleEnrich(ctx: Ctx): Promise<Response> {
   const before = getCommunitySupplierById(id);
   if (!before) throw new HttpError(404, "Supplier not found");
 
-  const filled = await enrichSupplier(id);
+  // Admin-triggered: force overwrite. The auto-enrich on submit only fills
+  // blanks, but moderators hitting this button explicitly want to refresh
+  // the row — usually because the first pass scraped junk.
+  const filled = await enrichSupplier(id, { force: true });
 
   addAuditLog({
     actor_user_id: admin.id,

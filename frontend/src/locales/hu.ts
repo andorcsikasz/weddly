@@ -1675,6 +1675,8 @@ const hu: LocaleMessages = {
     confirm_hide_body: "A felhasználók nem fogják látni. Bármikor visszahozhatod.",
     confirm_delete_title: "Tipp törlése",
     confirm_delete_body: "Ez végleges törlés. Nem vonható vissza.",
+    suppliers_card_expand: "Részletek mutatása",
+    suppliers_card_collapse: "Részletek elrejtése",
     suppliers_card_section_contact: "Kapcsolat",
     suppliers_card_section_location: "Helyszín",
     suppliers_card_section_listing: "Listázás",

@@ -1,6 +1,7 @@
 import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
 import {
   Check,
+  ChevronDown,
   ExternalLink,
   Eye,
   EyeOff,
@@ -19,6 +20,22 @@ import { ApiError } from "../lib/api";
 import { adminSupplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+/** Decode HTML numeric character entities (`&#NN;`, `&#xHH;`) and the four
+ *  named entities that show up in scraped emails/phones. Belt-and-braces:
+ *  the backend now decodes during scrape, but older rows still carry the
+ *  obfuscated text — decoding at the render boundary fixes them retroactively
+ *  until the admin re-runs "Fetch from website". */
+function decodeEntities(s: string | null): string {
+  if (!s) return "";
+  return s
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+}
 
 /** `created_at` is Unix milliseconds (server uses `Date.now()` everywhere —
  *  see backend/src/db.ts `now()`). Earlier versions multiplied by 1000 here,
@@ -499,6 +516,13 @@ function SupplierCard({
   const toast = useToast();
   const [notesDraft, setNotesDraft] = useState<string>(s.admin_notes ?? "");
   const [notesSaving, setNotesSaving] = useState(false);
+  // Cards collapse by default — moderators rarely need the full CRM detail
+  // surface for every row at once. Click the chevron (or "Részletek") to
+  // expand. Pending/awaiting-review rows start expanded since those are the
+  // ones the admin actually has to read end-to-end before approving.
+  const [expanded, setExpanded] = useState<boolean>(
+    s.status === "pending" || s.status === "awaiting_review",
+  );
   const persisted = s.admin_notes ?? "";
   const dirty = notesDraft !== persisted;
 
@@ -524,14 +548,15 @@ function SupplierCard({
 
   return (
     <article
-      className={`card flex flex-col gap-5 p-5 transition ${
+      className={`card flex flex-col gap-3 p-3 transition ${
         selected ? "ring-2 ring-violet-700 dark:ring-violet-400/60" : ""
       }`}
       aria-label={s.name}
     >
-      {/* Header row: select + name/city + status + price band */}
-      <header className="flex flex-wrap items-start gap-3">
-        <label className="mt-1 inline-flex items-center">
+      {/* Header row: select + name/city + status + price band + expand toggle.
+       *  This row is the entire card when collapsed. */}
+      <header className="flex flex-wrap items-center gap-2">
+        <label className="inline-flex items-center">
           <input
             type="checkbox"
             checked={selected}
@@ -539,8 +564,16 @@ function SupplierCard({
             aria-label={t("admin.select_row_aria")}
           />
         </label>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-left"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-label={
+            expanded ? t("admin.suppliers_card_collapse") : t("admin.suppliers_card_expand")
+          }
+        >
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h2 className="m-0 text-base font-semibold text-ink-900 dark:text-paper-50">
               {s.name}
             </h2>
@@ -549,176 +582,196 @@ function SupplierCard({
             <span className="text-xs text-ink-500 dark:text-umber-300">
               {t(`suppliers.cat.${s.category}`)}
             </span>
+            {s.city ? (
+              <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+                <MapPin size={12} aria-hidden />
+                {s.city}
+              </span>
+            ) : null}
+            {s.open_report_count > 0 ? (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-violet-950 dark:text-violet-200">
+                <Flag size={12} aria-hidden />
+                {s.open_report_count}
+              </span>
+            ) : null}
           </div>
-          {s.city ? (
-            <div className="mt-1 inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-              <MapPin size={12} aria-hidden />
-              <span>{s.city}</span>
-              {s.address ? (
-                <span className="text-ink-400 dark:text-umber-300">· {s.address}</span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+        </button>
+        <ChevronDown
+          size={16}
+          aria-hidden
+          className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
+            expanded ? "rotate-180" : ""
+          }`}
+        />
       </header>
 
-      {/* Body: three even columns on lg, stacking on small viewports. The
-       *  card stays vertically centred via items-stretch on the parent — each
-       *  column carries its own gap-3 so internal rhythm is consistent. */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {/* Contact column */}
-        <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
-            {t("admin.suppliers_card_section_contact")}
-          </h3>
-          <CardField
-            label={t("admin.suppliers_card_field_website")}
-            value={s.website}
-            href={s.website || undefined}
-          />
-          <CardField
-            label={t("admin.suppliers_card_field_contact_email")}
-            value={
-              s.contact_email ? (
-                <span className="inline-flex items-center gap-1">
-                  <Mail size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
-                  <span className="break-all">{s.contact_email}</span>
-                </span>
-              ) : null
-            }
-          />
-          <CardField
-            label={t("admin.suppliers_card_field_contact_phone")}
-            value={
-              s.contact_phone ? (
-                <span className="inline-flex items-center gap-1">
-                  <Phone size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
-                  <span>{s.contact_phone}</span>
-                </span>
-              ) : null
-            }
-          />
-          <CardField
-            label={t("admin.suppliers_card_field_submitter")}
-            value={
-              <span className="inline-flex items-center gap-1">
-                <User size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
-                <span className="break-all">{s.submitter_email}</span>
-              </span>
-            }
-          />
-        </section>
-
-        {/* Listing column */}
-        <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
-            {t("admin.suppliers_card_section_listing")}
-          </h3>
-          <CardField
-            label={t("admin.suppliers_card_field_blurb")}
-            value={s.blurb ? <span className="whitespace-pre-line">{s.blurb}</span> : null}
-          />
-          {s.status === "hidden" && s.hide_reason ? (
-            <CardField
-              label={t("admin.suppliers_card_field_hide_reason")}
-              value={
-                <span className="italic text-ink-600 dark:text-umber-200">{s.hide_reason}</span>
-              }
-            />
-          ) : null}
-        </section>
-
-        {/* Meta + metrics column */}
-        <section className="flex flex-col gap-3">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
-            {t("admin.suppliers_card_section_meta")}
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <CardField label={t("admin.suppliers_card_field_id")} value={`#${s.id}`} mono />
-            <CardField
-              label={t("admin.suppliers_card_field_submitter_id")}
-              value={`#${s.submitter_user_id}`}
-              mono
-            />
-            <CardField
-              label={t("admin.suppliers_card_field_submitted_at")}
-              value={formatDate(s.created_at, locale)}
-            />
-            <CardField
-              label={t("admin.suppliers_card_field_updated_at")}
-              value={formatDateTime(s.updated_at, locale)}
-            />
-            {s.hidden_at ? (
+      {expanded ? (
+        <>
+          {/* Body: three even columns on lg, stacking on small viewports. The
+           *  card stays vertically centred via items-stretch on the parent — each
+           *  column carries its own gap-3 so internal rhythm is consistent. */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* Contact column */}
+            <section className="flex flex-col gap-3">
+              <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
+                {t("admin.suppliers_card_section_contact")}
+              </h3>
               <CardField
-                label={t("admin.suppliers_card_field_hidden_at")}
-                value={formatDateTime(s.hidden_at, locale)}
+                label={t("admin.suppliers_card_field_website")}
+                value={s.website}
+                href={s.website || undefined}
               />
-            ) : null}
-            <CardField
-              label={t("admin.suppliers_card_field_open_reports")}
-              value={
-                <span
-                  className={
-                    s.open_report_count > 0
-                      ? "inline-flex items-center gap-1 font-semibold text-violet-950 dark:text-violet-200"
-                      : "inline-flex items-center gap-1 text-ink-500 dark:text-umber-300"
-                  }
-                >
-                  <Flag size={12} aria-hidden />
-                  {s.open_report_count}
-                </span>
-              }
-              mono
-            />
-          </div>
-        </section>
-      </div>
+              <CardField
+                label={t("admin.suppliers_card_field_contact_email")}
+                value={
+                  s.contact_email ? (
+                    <a
+                      href={`mailto:${decodeEntities(s.contact_email)}`}
+                      className="inline-flex items-center gap-1 hover:underline"
+                    >
+                      <Mail size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                      <span className="break-all">{decodeEntities(s.contact_email)}</span>
+                    </a>
+                  ) : null
+                }
+              />
+              <CardField
+                label={t("admin.suppliers_card_field_contact_phone")}
+                value={
+                  s.contact_phone ? (
+                    <a
+                      href={`tel:${decodeEntities(s.contact_phone).replace(/\s+/g, "")}`}
+                      className="inline-flex items-center gap-1 hover:underline"
+                    >
+                      <Phone size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                      <span>{decodeEntities(s.contact_phone)}</span>
+                    </a>
+                  ) : null
+                }
+              />
+              <CardField
+                label={t("admin.suppliers_card_field_submitter")}
+                value={
+                  <span className="inline-flex items-center gap-1">
+                    <User size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                    <span className="break-all">{s.submitter_email}</span>
+                  </span>
+                }
+              />
+            </section>
 
-      {/* Admin notes — the CRM heart of the page. Editable in place, with a
-       *  dirty indicator and an explicit save action so an accidental tab
-       *  away doesn't silently drop a half-typed thought. */}
-      <section className="flex flex-col gap-2 rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-3">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
-            {t("admin.suppliers_card_section_notes")}
-          </h3>
-          <span
-            className={`text-[10px] uppercase tracking-wide ${
-              dirty ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"
-            }`}
-          >
-            {dirty
-              ? t("admin.suppliers_card_field_notes_dirty")
-              : t("admin.suppliers_card_field_notes_saved")}
-          </span>
-        </div>
-        <textarea
-          className="input min-h-[80px] resize-y bg-white dark:bg-umber-700"
-          placeholder={t("admin.suppliers_card_field_admin_notes_placeholder")}
-          value={notesDraft}
-          onChange={(e) => setNotesDraft(e.target.value)}
-          aria-label={t("admin.suppliers_card_field_admin_notes")}
-        />
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-ink-500 dark:text-umber-300">
-            {t("admin.suppliers_card_field_admin_notes_help")}
-          </p>
-          <button
-            type="button"
-            className="btn-outline btn-sm"
-            onClick={onSaveNotes}
-            disabled={!dirty || notesSaving}
-          >
-            {notesSaving
-              ? t("admin.suppliers_card_field_notes_saving")
-              : t("admin.suppliers_card_field_notes_save")}
-          </button>
-        </div>
-      </section>
+            {/* Listing column */}
+            <section className="flex flex-col gap-3">
+              <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
+                {t("admin.suppliers_card_section_listing")}
+              </h3>
+              <CardField
+                label={t("admin.suppliers_card_field_blurb")}
+                value={s.blurb ? <span className="whitespace-pre-line">{s.blurb}</span> : null}
+              />
+              {s.status === "hidden" && s.hide_reason ? (
+                <CardField
+                  label={t("admin.suppliers_card_field_hide_reason")}
+                  value={
+                    <span className="italic text-ink-600 dark:text-umber-200">{s.hide_reason}</span>
+                  }
+                />
+              ) : null}
+            </section>
+
+            {/* Meta + metrics column */}
+            <section className="flex flex-col gap-3">
+              <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
+                {t("admin.suppliers_card_section_meta")}
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <CardField label={t("admin.suppliers_card_field_id")} value={`#${s.id}`} mono />
+                <CardField
+                  label={t("admin.suppliers_card_field_submitter_id")}
+                  value={`#${s.submitter_user_id}`}
+                  mono
+                />
+                <CardField
+                  label={t("admin.suppliers_card_field_submitted_at")}
+                  value={formatDate(s.created_at, locale)}
+                />
+                <CardField
+                  label={t("admin.suppliers_card_field_updated_at")}
+                  value={formatDateTime(s.updated_at, locale)}
+                />
+                {s.hidden_at ? (
+                  <CardField
+                    label={t("admin.suppliers_card_field_hidden_at")}
+                    value={formatDateTime(s.hidden_at, locale)}
+                  />
+                ) : null}
+                <CardField
+                  label={t("admin.suppliers_card_field_open_reports")}
+                  value={
+                    <span
+                      className={
+                        s.open_report_count > 0
+                          ? "inline-flex items-center gap-1 font-semibold text-violet-950 dark:text-violet-200"
+                          : "inline-flex items-center gap-1 text-ink-500 dark:text-umber-300"
+                      }
+                    >
+                      <Flag size={12} aria-hidden />
+                      {s.open_report_count}
+                    </span>
+                  }
+                  mono
+                />
+              </div>
+            </section>
+          </div>
+
+          {/* Admin notes — the CRM heart of the page. Editable in place, with a
+           *  dirty indicator and an explicit save action so an accidental tab
+           *  away doesn't silently drop a half-typed thought. */}
+          <section className="flex flex-col gap-2 rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
+                {t("admin.suppliers_card_section_notes")}
+              </h3>
+              <span
+                className={`text-[10px] uppercase tracking-wide ${
+                  dirty ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"
+                }`}
+              >
+                {dirty
+                  ? t("admin.suppliers_card_field_notes_dirty")
+                  : t("admin.suppliers_card_field_notes_saved")}
+              </span>
+            </div>
+            <textarea
+              className="input min-h-[80px] resize-y bg-white dark:bg-umber-700"
+              placeholder={t("admin.suppliers_card_field_admin_notes_placeholder")}
+              value={notesDraft}
+              onChange={(e) => setNotesDraft(e.target.value)}
+              aria-label={t("admin.suppliers_card_field_admin_notes")}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-ink-500 dark:text-umber-300">
+                {t("admin.suppliers_card_field_admin_notes_help")}
+              </p>
+              <button
+                type="button"
+                className="btn-outline btn-sm"
+                onClick={onSaveNotes}
+                disabled={!dirty || notesSaving}
+              >
+                {notesSaving
+                  ? t("admin.suppliers_card_field_notes_saving")
+                  : t("admin.suppliers_card_field_notes_save")}
+              </button>
+            </div>
+          </section>
+        </>
+      ) : null}
 
       {/* Footer: per-row action buttons. Keep the order familiar: Approve
        *  (when applicable) → Enrich → Hide/Unhide → Delete. */}
-      <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-3">
+      <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-2">
         {s.status === "awaiting_review" && (
           <button
             type="button"

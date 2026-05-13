@@ -190,14 +190,17 @@ function extractPhone(html: string): string | null {
   // First pass: `tel:` anchors — high signal.
   const telMatch = html.match(/href=["']tel:([^"']+)["']/i);
   if (telMatch && telMatch[1]) {
-    const raw = telMatch[1].trim();
+    const raw = decodeHtmlEntities(telMatch[1]).trim();
     if (raw.replace(/\D/g, "").length >= 7) return raw;
   }
-  // Second pass: scan the body text after stripping tags.
-  const text = html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ");
+  // Second pass: scan the body text after stripping tags. Decode entities
+  // first so phone digits split as `&#43;36 70 ...` reassemble correctly.
+  const text = decodeHtmlEntities(
+    html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " "),
+  );
   const matches = text.match(PHONE_RE);
   if (!matches) return null;
   for (const candidate of matches) {
@@ -211,10 +214,25 @@ function extractPhone(html: string): string | null {
   return null;
 }
 
+/** Decode HTML numeric character entities (`&#NN;`, `&#xHH;`) and the four
+ *  named entities we actually meet in scraped pages. Anti-scraping sites
+ *  obfuscate emails as `&#104;ello@...` so the regex below misses them
+ *  unless we decode first. We do NOT pull in a full entity table — only
+ *  what shows up in `mailto:` and `tel:` payloads in practice. */
+function decodeHtmlEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+}
+
 function extractEmail(html: string): string | null {
   const mailto = html.match(/href=["']mailto:([^"'?]+)/i);
-  if (mailto && mailto[1]) return mailto[1].trim().toLowerCase();
-  const text = html.replace(/<[^>]+>/g, " ");
+  if (mailto && mailto[1]) return decodeHtmlEntities(mailto[1]).trim().toLowerCase();
+  const text = decodeHtmlEntities(html.replace(/<[^>]+>/g, " "));
   const m = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
   if (m) {
     const e = m[0].toLowerCase();
@@ -268,10 +286,21 @@ interface CommunitySupplierEnrichable {
   blurb: string;
 }
 
-/** Reads the supplier's website + address, enriches MISSING fields only,
- *  writes them back, and audit-logs. Idempotent. Returns the count of fields
- *  that were filled this run. */
-export async function enrichSupplier(supplierId: number): Promise<number> {
+/** Reads the supplier's website + address, enriches the four supported
+ *  fields (blurb, phone, email, address), writes them back, and audit-logs.
+ *  Idempotent. Returns the count of fields that were filled this run.
+ *
+ *  By default only MISSING fields are filled — the auto-enrich on submit
+ *  must never clobber what the submitter typed. When the admin manually
+ *  re-runs from the moderation page, pass `{ force: true }` so existing
+ *  values get overwritten with the freshly scraped ones (the common case
+ *  is fixing junk that landed during the initial scrape, e.g. an email
+ *  the source site obfuscated with HTML entities). */
+export async function enrichSupplier(
+  supplierId: number,
+  options: { force?: boolean } = {},
+): Promise<number> {
+  const force = options.force === true;
   const row = db
     .prepare(
       "SELECT id, website, address, contact_email, contact_phone, blurb FROM community_suppliers WHERE id = ?",
@@ -297,19 +326,21 @@ export async function enrichSupplier(supplierId: number): Promise<number> {
   const params: (string | number)[] = [];
   const filled: Record<string, unknown> = {};
 
-  // Only fill fields the submitter left blank. The blurb has NOT NULL DEFAULT ''
-  // in the schema, so "blank" = empty string OR whitespace.
-  if ((row.blurb ?? "").trim().length < 8 && merged.blurb) {
+  // Auto-enrich (force=false) only fills blanks. Admin-triggered enrich
+  // (force=true) overwrites whatever's there with the freshly scraped value
+  // — useful for repairing junk that landed on the first auto-pass.
+  const blurbBlank = (row.blurb ?? "").trim().length < 8;
+  if ((force || blurbBlank) && merged.blurb) {
     updates.push("blurb = ?");
     params.push(merged.blurb);
     filled.blurb = merged.blurb;
   }
-  if (!row.contact_phone && merged.phone) {
+  if ((force || !row.contact_phone) && merged.phone) {
     updates.push("contact_phone = ?");
     params.push(merged.phone);
     filled.contact_phone = merged.phone;
   }
-  if (!row.contact_email && merged.email) {
+  if ((force || !row.contact_email) && merged.email) {
     updates.push("contact_email = ?");
     params.push(merged.email);
     filled.contact_email = merged.email;
@@ -317,9 +348,9 @@ export async function enrichSupplier(supplierId: number): Promise<number> {
   // The "address" field doubles as the user's input slot for a Google Maps
   // URL (the submit modal accepts either). If they pasted a URL, we replace
   // it with the human-readable place name we extracted — but if they typed
-  // a plain street address, we leave it alone.
+  // a plain street address, we leave it alone (unless force=true).
   const addressLooksLikeUrl = !!row.address && /^https?:\/\//i.test(row.address);
-  const shouldFillAddress = (!row.address || addressLooksLikeUrl) && !!merged.address;
+  const shouldFillAddress = (force || !row.address || addressLooksLikeUrl) && !!merged.address;
   if (shouldFillAddress && merged.address) {
     updates.push("address = ?");
     params.push(merged.address);

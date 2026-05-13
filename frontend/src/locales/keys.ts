@@ -1758,6 +1758,8 @@ export interface LocaleMessages {
     confirm_delete_title: string;
     confirm_delete_body: string;
     /** CRM-style admin card fields. */
+    suppliers_card_expand: string;
+    suppliers_card_collapse: string;
     suppliers_card_section_contact: string;
     suppliers_card_section_location: string;
     suppliers_card_section_listing: string;

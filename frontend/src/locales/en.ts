@@ -1667,6 +1667,8 @@ const en: LocaleMessages = {
     confirm_hide_body: "Couples won't see it. You can bring it back any time.",
     confirm_delete_title: "Delete this supplier",
     confirm_delete_body: "This is permanent — no undo.",
+    suppliers_card_expand: "Show details",
+    suppliers_card_collapse: "Hide details",
     suppliers_card_section_contact: "Contact",
     suppliers_card_section_location: "Location",
     suppliers_card_section_listing: "Listing",
