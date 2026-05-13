@@ -21,6 +21,7 @@ import type {
   GuestCountGoal,
   Guest,
   Household,
+  MoodboardPin,
   PlaceSuggestion,
   PublicCheckinView,
   PublicRsvpView,
@@ -214,6 +215,17 @@ export const guestApi = {
  *  `dietary` field — see `DietarySummary` docs in shared/types.ts. */
 export const dietaryApi = {
   summary: () => apiFetch<DietarySummary>("GET", "/api/guests/dietary-summary"),
+};
+
+/** Moodboard — proxies a public Pinterest board's RSS feed and returns its
+ *  pins. The backend distinguishes private/missing/empty boards so the page
+ *  can surface a specific error instead of a blank widget. */
+export const moodboardApi = {
+  preview: (url: string) =>
+    apiFetch<{ pins: MoodboardPin[] }>(
+      "GET",
+      `/api/moodboard/preview?url=${encodeURIComponent(url)}`,
+    ),
 };
 
 /** Honeymoon destination autocomplete — proxies OpenStreetMap Nominatim. */

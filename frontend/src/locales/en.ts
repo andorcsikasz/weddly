@@ -861,7 +861,7 @@ const en: LocaleMessages = {
   },
   moodboard: {
     title: "Moodboard",
-    sub: "Paste your Pinterest board link and the pins will show up here — your wedding inspiration in one place.",
+    sub: "Paste your Pinterest board link and the 25 most recent pins from your board will appear here.",
     url_label: "Pinterest board link",
     url_placeholder: "https://www.pinterest.com/username/wedding/",
     url_help:
@@ -869,11 +869,20 @@ const en: LocaleMessages = {
     save: "Save",
     change: "Replace",
     clear: "Remove",
+    loading: "Loading pins from Pinterest…",
     invalid_url: "Please enter a valid pinterest.com board link.",
     empty_title: "No moodboard yet",
     empty_body:
       "Create a Pinterest board for your wedding ideas, then paste its link here. The 25 most recent pins from your board will appear below.",
     open_in_pinterest: "Open on Pinterest",
+    error_title: "Couldn't load this board",
+    error_not_found:
+      "We can't find this Pinterest board. Double-check the link — make sure the username and board name are exact.",
+    error_private:
+      "This board is secret or not public. Make it public on Pinterest (Board settings → turn off “Secret”), then try again.",
+    error_empty:
+      "This board is empty — no pins yet. Pin a few images on Pinterest, then come back here.",
+    error_fetch: "We couldn't reach Pinterest just now. Please try again in a few minutes.",
   },
   schedule: {
     title: "Run of show",

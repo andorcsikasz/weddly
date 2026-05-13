@@ -856,7 +856,7 @@ export interface LocaleMessages {
     coming_soon_title: string;
     coming_soon_body: string;
   };
-  /** Inspiration page that embeds a Pinterest board the couple links. */
+  /** Inspiration page that renders pins from a linked public Pinterest board. */
   moodboard: {
     title: string;
     sub: string;
@@ -866,10 +866,16 @@ export interface LocaleMessages {
     save: string;
     change: string;
     clear: string;
+    loading: string;
     invalid_url: string;
     empty_title: string;
     empty_body: string;
     open_in_pinterest: string;
+    error_title: string;
+    error_not_found: string;
+    error_private: string;
+    error_empty: string;
+    error_fetch: string;
   };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {

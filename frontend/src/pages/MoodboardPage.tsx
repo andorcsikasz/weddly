@@ -1,107 +1,102 @@
-// Moodboard — embeds a Pinterest board the couple links. The widget script
-// (assets.pinterest.com/js/pinit.js) replaces a marker <a data-pin-do=...>
-// with an iframe full of pins, so no backend or API key is needed; the URL
-// itself is the entire persisted state and lives in localStorage.
+// Moodboard — renders pins from a public Pinterest board the couple links.
+// The backend proxies the board's RSS feed (browsers can't reach Pinterest
+// directly because of CORS, and the official widget script is unreliable),
+// so this page is a pure render-the-list-of-{image_url, link_url} grid.
+// Typed error codes from the proxy drive specific copy for private/missing/
+// empty boards rather than a blank failure state.
 
-import { ExternalLink, Sparkles, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import type { MoodboardPin } from "@shared/types";
+import { AlertTriangle, ExternalLink, Sparkles, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useToast } from "../components/ui";
+import { ApiError } from "../lib/api";
+import { moodboardApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 const STORAGE_KEY = "weddly.moodboard_url";
-const PIN_SCRIPT_SRC = "https://assets.pinterest.com/js/pinit.js";
 
-declare global {
-  interface Window {
-    PinUtils?: { build: (root?: HTMLElement) => void };
-  }
-}
+type ErrorCode = "invalid_url" | "not_found" | "private" | "empty" | "fetch_failed";
+
+const ERROR_KEY: Record<ErrorCode, string> = {
+  invalid_url: "moodboard.invalid_url",
+  not_found: "moodboard.error_not_found",
+  private: "moodboard.error_private",
+  empty: "moodboard.error_empty",
+  fetch_failed: "moodboard.error_fetch",
+};
 
 function isPinterestBoardUrl(raw: string): boolean {
   try {
     const u = new URL(raw.trim());
     if (!/(^|\.)pinterest\.[a-z.]+$/i.test(u.hostname)) return false;
-    // Board URLs look like /<username>/<board>/ — require at least two segments
-    // so a bare profile link doesn't silently embed an empty widget.
     return u.pathname.split("/").filter(Boolean).length >= 2;
   } catch {
     return false;
   }
 }
 
-function loadPinterestWidgetScript(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (window.PinUtils) return Promise.resolve();
-  const existing = document.querySelector<HTMLScriptElement>(`script[src="${PIN_SCRIPT_SRC}"]`);
-  if (existing) {
-    return new Promise((resolve, reject) => {
-      // pinit.js evaluates on load — poll briefly in case the previous mount
-      // injected it but it hasn't finished parsing yet.
-      let tries = 0;
-      const id = window.setInterval(() => {
-        tries += 1;
-        if (window.PinUtils) {
-          window.clearInterval(id);
-          resolve();
-        } else if (tries > 40) {
-          window.clearInterval(id);
-          reject(new Error("pinit.js never initialised"));
-        }
-      }, 50);
-    });
+function classifyError(err: unknown): ErrorCode {
+  if (err instanceof ApiError) {
+    const detail = err.detail as { code?: string } | null | undefined;
+    const code = detail?.code;
+    if (code === "invalid_url") return "invalid_url";
+    if (code === "not_found") return "not_found";
+    if (code === "private") return "private";
+    if (code === "empty") return "empty";
   }
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = PIN_SCRIPT_SRC;
-    s.async = true;
-    s.defer = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("pinit.js failed to load"));
-    document.body.appendChild(s);
-  });
+  // Network/timeout/5xx/anything else — Pinterest hiccup or our proxy.
+  return "fetch_failed";
 }
 
 export default function MoodboardPage() {
   const { t } = useT();
-  const toast = useToast();
   const [url, setUrl] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     return window.localStorage.getItem(STORAGE_KEY) ?? "";
   });
   const [draft, setDraft] = useState(url);
   const [editing, setEditing] = useState(!url);
-  const embedRoot = useRef<HTMLDivElement | null>(null);
+  const [pins, setPins] = useState<MoodboardPin[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<ErrorCode | null>(null);
+  const [previewError, setPreviewError] = useState<ErrorCode | null>(null);
 
   useEffect(() => {
     if (!url || editing) return;
-    const node = embedRoot.current;
-    if (!node) return;
-    // Replace any previous widget output so a URL change re-renders cleanly.
-    node.innerHTML = "";
-    const a = document.createElement("a");
-    a.setAttribute("data-pin-do", "embedBoard");
-    a.setAttribute("data-pin-board-width", "740");
-    a.setAttribute("data-pin-scale-height", "320");
-    a.setAttribute("data-pin-scale-width", "115");
-    a.setAttribute("href", url);
-    node.appendChild(a);
-    loadPinterestWidgetScript()
-      .then(() => window.PinUtils?.build(node))
-      .catch(() => toast.error(t("common.error_generic")));
-  }, [url, editing, t, toast]);
+    let cancelled = false;
+    setLoading(true);
+    setPreviewError(null);
+    moodboardApi
+      .preview(url)
+      .then((res) => {
+        if (cancelled) return;
+        setPins(res.pins);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setPins([]);
+        setPreviewError(classifyError(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [url, editing]);
 
   function commit() {
     const trimmed = draft.trim();
     if (!isPinterestBoardUrl(trimmed)) {
-      toast.error(t("moodboard.invalid_url"));
+      setFormError("invalid_url");
       return;
     }
+    setFormError(null);
     setUrl(trimmed);
     try {
       window.localStorage.setItem(STORAGE_KEY, trimmed);
     } catch {
-      /* localStorage blocked — fine, the embed still works for this session */
+      /* localStorage blocked — fine, the page still works for this session */
     }
     setEditing(false);
   }
@@ -109,6 +104,9 @@ export default function MoodboardPage() {
   function clear() {
     setUrl("");
     setDraft("");
+    setPins([]);
+    setPreviewError(null);
+    setFormError(null);
     try {
       window.localStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -154,12 +152,29 @@ export default function MoodboardPage() {
               className="input h-10 min-h-0 w-full text-base"
               placeholder={t("moodboard.url_placeholder")}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                if (formError) setFormError(null);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") commit();
               }}
+              aria-invalid={formError ? true : undefined}
+              aria-describedby={formError ? "moodboard-url-error" : "moodboard-url-help"}
             />
-            <p className="text-xs text-ink-500 dark:text-umber-300">{t("moodboard.url_help")}</p>
+            {formError ? (
+              <p
+                id="moodboard-url-error"
+                className="text-xs text-blush-700 dark:text-blush-300"
+                role="alert"
+              >
+                {t(ERROR_KEY[formError])}
+              </p>
+            ) : (
+              <p id="moodboard-url-help" className="text-xs text-ink-500 dark:text-umber-300">
+                {t("moodboard.url_help")}
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className="btn-primary btn-sm" onClick={commit}>
@@ -171,6 +186,7 @@ export default function MoodboardPage() {
                 className="btn-ghost btn-sm"
                 onClick={() => {
                   setDraft(url);
+                  setFormError(null);
                   setEditing(false);
                 }}
               >
@@ -212,7 +228,52 @@ export default function MoodboardPage() {
               </button>
             </div>
           </div>
-          <div ref={embedRoot} className="overflow-hidden rounded-2xl" />
+
+          {loading ? (
+            <div
+              className="card flex items-center justify-center text-sm text-ink-500 dark:text-umber-300"
+              role="status"
+              aria-live="polite"
+            >
+              {t("moodboard.loading")}
+            </div>
+          ) : previewError ? (
+            <div
+              role="alert"
+              className="card flex items-start gap-3 border-blush-300 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-500/15"
+            >
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blush-100 text-blush-700 dark:bg-blush-400/20 dark:text-blush-200">
+                <AlertTriangle size={18} aria-hidden="true" />
+              </span>
+              <div className="text-sm">
+                <p className="font-medium text-blush-900 dark:text-blush-100">
+                  {t("moodboard.error_title")}
+                </p>
+                <p className="mt-1 text-blush-800 dark:text-blush-100">
+                  {t(ERROR_KEY[previewError])}
+                </p>
+              </div>
+            </div>
+          ) : pins.length > 0 ? (
+            <div className="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3">
+              {pins.map((pin) => (
+                <a
+                  key={pin.link_url}
+                  href={pin.link_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block break-inside-avoid overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-md dark:border-umber-700 dark:bg-umber-800"
+                >
+                  <img
+                    src={pin.image_url}
+                    alt={pin.title ?? ""}
+                    loading="lazy"
+                    className="block w-full"
+                  />
+                </a>
+              ))}
+            </div>
+          ) : null}
         </>
       )}
     </AppShell>

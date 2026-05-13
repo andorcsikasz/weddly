@@ -635,6 +635,19 @@ export const DEFAULT_BUDGET_SPLIT: Record<BudgetCategory, number> = {
  *  UI and which tab a row lives under on /app/planning. Adding a new kind
  *  means: extend this union, add `is*Kind` guard + i18n keys + a tab on the
  *  PlanningPage. */
+/** One image extracted from a Pinterest board's public RSS feed. Used by
+ *  /api/moodboard/preview — the backend proxies the feed (CORS-blocked from
+ *  the browser) and returns a normalised pin list for the moodboard page. */
+export interface MoodboardPin {
+  /** Full image URL on i.pinimg.com. The backend upgrades the size segment
+   *  (`/236x/`) to `/736x/` for nicer rendering in the moodboard grid. */
+  image_url: string;
+  /** Permalink to the pin on pinterest.com — used as the click-through. */
+  link_url: string;
+  /** Pin title from the feed `<title>` tag; often empty, hence nullable. */
+  title: string | null;
+}
+
 export type PlanningKind = "task" | "idea" | "schedule";
 
 export interface PlanningItem {

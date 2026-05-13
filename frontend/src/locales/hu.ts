@@ -863,7 +863,7 @@ const hu: LocaleMessages = {
   },
   moodboard: {
     title: "Hangulattábla",
-    sub: "Illesszétek be a Pinterest tábla linkjét, és a képek itt jelennek meg — egy helyen az esküvői inspirációkkal.",
+    sub: "Illesszétek be a Pinterest tábla linkjét, és a táblátok 25 legutóbbi képe itt jelenik meg.",
     url_label: "Pinterest tábla linkje",
     url_placeholder: "https://www.pinterest.com/felhasznalo/eskuvo/",
     url_help:
@@ -871,11 +871,20 @@ const hu: LocaleMessages = {
     save: "Mentés",
     change: "Csere",
     clear: "Eltávolítás",
+    loading: "Képek betöltése a Pinterestről…",
     invalid_url: "Adj meg egy érvényes pinterest.com tábla linket.",
     empty_title: "Még nincs hangulattábla",
     empty_body:
       "Hozz létre egy táblát a Pinteresten az esküvői ötleteknek, majd illeszd be ide a linkjét. A táblád 25 legutóbbi képe jelenik meg.",
     open_in_pinterest: "Megnyitás a Pinteresten",
+    error_title: "Nem sikerült betölteni a táblát",
+    error_not_found:
+      "Nem találunk ilyen Pinterest táblát. Ellenőrizd, hogy pontos-e a link, és hogy a felhasználónév + tábla neve helyes-e.",
+    error_private:
+      "Ez a tábla titkos vagy nem nyilvános. Tedd publikussá a Pinteresten (Tábla beállítások → „Titkos” kikapcsolása), majd próbáld újra.",
+    error_empty:
+      "A tábla még üres — nincs rajta egy pin sem. Tűzz fel néhány képet a Pinteresten, aztán térj vissza ide.",
+    error_fetch: "Nem tudtuk most elérni a Pinterestet. Próbáld újra pár perc múlva.",
   },
   schedule: {
     title: "Programterv",
