@@ -137,6 +137,19 @@ function nightsBetween(start: string | null, end: string | null): number | null 
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
+/** Whole-day countdown to the honeymoon start, measured in local time.
+ *  Returns positive when the trip is in the future, 0 the day it starts,
+ *  negative once it's begun. Null when no start date is set or unparseable. */
+function daysToStart(start: string | null): number | null {
+  if (!start) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(`${start}T00:00:00`);
+  if (Number.isNaN(startDate.getTime())) return null;
+  startDate.setHours(0, 0, 0, 0);
+  return Math.round((startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 function formatDateShort(iso: string | null, locale: "hu" | "en"): string {
   if (!iso) return "";
   const d = new Date(`${iso}T00:00:00`);
@@ -496,6 +509,18 @@ function DaysTile({
     return s || e;
   }, [start, end, locale]);
 
+  // Countdown to honeymoon start. We also compute "ended N days ago" / "now
+  // travelling" so the pill stays informative on every leg of the trip.
+  const countdown = useMemo(() => {
+    const dToStart = daysToStart(start);
+    if (dToStart === null) return null;
+    if (dToStart > 0) return { kind: "future" as const, days: dToStart };
+    if (dToStart === 0) return { kind: "today" as const };
+    const dToEnd = daysToStart(end);
+    if (dToEnd !== null && dToEnd >= 0) return { kind: "ongoing" as const };
+    return { kind: "past" as const, days: Math.abs(dToStart) };
+  }, [start, end]);
+
   return (
     <div ref={wrapperRef} className="card-hover stationery-light relative !p-5">
       <div className="flex items-center gap-2 text-ink-500 dark:text-umber-300">
@@ -551,6 +576,16 @@ function DaysTile({
           </span>
           {dateRange && (
             <p className="mt-1 text-xs text-ink-400 dark:text-umber-300">{dateRange}</p>
+          )}
+          {countdown && (
+            <p className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-2.5 py-0.5 text-[11px] font-medium text-blush-800 dark:border-blush-400/30 dark:bg-blush-400/10 dark:text-blush-200">
+              {countdown.kind === "future" &&
+                t("honeymoon.countdown_future", { count: countdown.days })}
+              {countdown.kind === "today" && t("honeymoon.countdown_today")}
+              {countdown.kind === "ongoing" && t("honeymoon.countdown_ongoing")}
+              {countdown.kind === "past" &&
+                t("honeymoon.countdown_past", { count: countdown.days })}
+            </p>
           )}
         </button>
       )}

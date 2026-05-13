@@ -810,6 +810,12 @@ const hu: LocaleMessages = {
     before_wedding_title: "Várj — ez biztosan jó?",
     before_wedding_body:
       "A nászút kezdete {honeymoon}, de az esküvő {wedding}. A legtöbb pár az esküvő után indul — nézd át a dátumokat.",
+    countdown_future_one: "Még {count} nap",
+    countdown_future_other: "Még {count} nap",
+    countdown_today: "Ma indul!",
+    countdown_ongoing: "Most úton vagytok",
+    countdown_past_one: "{count} napja indult",
+    countdown_past_other: "{count} napja indult",
     tile_days: "Hány nap",
     tile_destination: "Hova",
     tile_budget: "Tervezett keret",

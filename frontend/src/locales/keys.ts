@@ -793,6 +793,15 @@ export interface LocaleMessages {
      *  date strings. */
     before_wedding_title: string;
     before_wedding_body: string;
+    /** Inline countdown pill in the Days tile. The `_future` and `_past`
+     *  variants take `{count}` (whole days); plural is handled by `_one` /
+     *  `_other` suffixes via the t() helper. */
+    countdown_future_one: string;
+    countdown_future_other: string;
+    countdown_today: string;
+    countdown_ongoing: string;
+    countdown_past_one: string;
+    countdown_past_other: string;
     /** Header tiles (days / destination / budget). */
     tile_days: string;
     tile_destination: string;

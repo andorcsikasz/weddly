@@ -809,6 +809,12 @@ const en: LocaleMessages = {
     before_wedding_title: "Wait — is this right?",
     before_wedding_body:
       "Your honeymoon starts on {honeymoon}, but the wedding is on {wedding}. Most couples leave after the wedding — double-check the dates.",
+    countdown_future_one: "{count} day to go",
+    countdown_future_other: "{count} days to go",
+    countdown_today: "Starts today!",
+    countdown_ongoing: "On the trip now",
+    countdown_past_one: "Started {count} day ago",
+    countdown_past_other: "Started {count} days ago",
     tile_days: "Days",
     tile_destination: "Where",
     tile_budget: "Allocated budget",
