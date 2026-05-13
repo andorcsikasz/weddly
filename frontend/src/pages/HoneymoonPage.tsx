@@ -472,6 +472,7 @@ function DaysTile({
   onSave: (start: string | null, end: string | null) => Promise<void>;
 }) {
   const { t } = useT();
+  const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [draftStart, setDraftStart] = useState<string>(start ?? "");
   const [draftEnd, setDraftEnd] = useState<string>(end ?? "");
@@ -495,7 +496,15 @@ function DaysTile({
 
   async function commit() {
     const nextStart = draftStart === "" ? null : draftStart;
-    const nextEnd = draftEnd === "" ? null : draftEnd;
+    let nextEnd = draftEnd === "" ? null : draftEnd;
+    // Return < depart is almost always a typo. Refuse the save and revert
+    // the end draft to whatever was last persisted so the user sees the
+    // inconsistency cleared rather than a silent rollback.
+    if (nextStart && nextEnd && nextEnd < nextStart) {
+      toast.error(t("honeymoon.end_before_start"));
+      setDraftEnd(end ?? "");
+      nextEnd = end;
+    }
     setEditing(false);
     if (nextStart === start && nextEnd === end) return;
     await onSave(nextStart, nextEnd);
@@ -540,7 +549,13 @@ function DaysTile({
               type="date"
               className="input mt-1 h-9 min-h-0 py-1 text-sm"
               value={draftStart}
-              onChange={(e) => setDraftStart(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDraftStart(v);
+                // Keep the range valid: if the new depart is past the
+                // current return, pull the return forward to match.
+                if (v && draftEnd && draftEnd < v) setDraftEnd(v);
+              }}
               autoFocus
             />
           </label>

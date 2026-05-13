@@ -821,6 +821,7 @@ const hu: LocaleMessages = {
     tile_budget: "Tervezett keret",
     start_label: "Indulás",
     end_label: "Hazaérkezés",
+    end_before_start: "A hazaérkezés nem lehet korábbi az indulásnál.",
     edit_dates: "Dátumok szerkesztése",
     edit_destination: "Úti cél szerkesztése",
     set_dates_cta: "Add meg a dátumokat",

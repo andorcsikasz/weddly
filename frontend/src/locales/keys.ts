@@ -809,6 +809,7 @@ export interface LocaleMessages {
     /** Inline editors for the trip tiles. */
     start_label: string;
     end_label: string;
+    end_before_start: string;
     edit_dates: string;
     edit_destination: string;
     set_dates_cta: string;

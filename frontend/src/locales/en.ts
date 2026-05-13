@@ -820,6 +820,7 @@ const en: LocaleMessages = {
     tile_budget: "Allocated budget",
     start_label: "Depart",
     end_label: "Return",
+    end_before_start: "Return must be on or after the depart date.",
     edit_dates: "Edit dates",
     edit_destination: "Edit destination",
     set_dates_cta: "Set the dates",
