@@ -210,7 +210,16 @@ export default function BudgetPage() {
     const next = lines.map((l) => (l.id === line.id ? { ...l, [key]: val } : l));
     setLines(next);
     try {
-      await budgetApi.updateLine(line.id, { ...line, [key]: val }, { ifMatch: line.updated_at });
+      const r = await budgetApi.updateLine(
+        line.id,
+        { ...line, [key]: val },
+        { ifMatch: line.updated_at },
+      );
+      // Adopt the server's fresh row (most importantly updated_at) so a
+      // quick second edit on the same line doesn't PATCH with a now-stale
+      // version and trip the OCC guard with a phantom "valaki más is
+      // szerkesztette" toast on solo edits.
+      setLines((prev) => prev.map((l) => (l.id === r.line.id ? r.line : l)));
       publish("budget:changed");
     } catch (e) {
       handleSaveError(e, () => save(line, key, val));
@@ -224,11 +233,12 @@ export default function BudgetPage() {
     const nextLines = lines.map((l) => (l.id === line.id ? { ...l, notes: nextNotes } : l));
     setLines(nextLines);
     try {
-      await budgetApi.updateLine(
+      const r = await budgetApi.updateLine(
         line.id,
         { ...line, notes: nextNotes },
         { ifMatch: line.updated_at },
       );
+      setLines((prev) => prev.map((l) => (l.id === r.line.id ? r.line : l)));
       publish("budget:changed");
     } catch (e) {
       handleSaveError(e, () => saveNotes(line, notes));
@@ -1056,6 +1066,12 @@ function HufInput({
 }) {
   const [draft, setDraft] = useState<string>(formatNumber(value, "hu"));
   const [error, setError] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Where to drop the caret after the next render — measured in *digits*
+  // before the cursor in the raw input, so reformatting (which changes the
+  // space positions) can put it back at the equivalent spot in the grouped
+  // output. Null means "leave the caret alone" (initial mount / blur).
+  const caretDigitsRef = useRef<number | null>(null);
 
   // Reset when the upstream value changes (e.g. snapshot reload, refresh).
   useEffect(() => {
@@ -1063,9 +1079,51 @@ function HufInput({
     setError(false);
   }, [value]);
 
+  // Restore caret to the digit-equivalent position after a reformat.
+  useEffect(() => {
+    const wantDigits = caretDigitsRef.current;
+    if (wantDigits === null) return;
+    caretDigitsRef.current = null;
+    const el = inputRef.current;
+    if (!el) return;
+    let pos = 0;
+    let seen = 0;
+    while (pos < draft.length && seen < wantDigits) {
+      if (/[\d-]/.test(draft[pos] ?? "")) seen++;
+      pos++;
+    }
+    el.setSelectionRange(pos, pos);
+  }, [draft]);
+
   function onChange(e: ChangeEvent<HTMLInputElement>) {
     if (readOnly) return;
-    setDraft(e.target.value);
+    const raw = e.target.value;
+    // Count digit-like chars before the caret in the *raw* input — that's
+    // the anchor we want to preserve across the reformat.
+    const selStart = e.target.selectionStart ?? raw.length;
+    const digitsBeforeCaret = raw.slice(0, selStart).replace(/[^\d-]/g, "").length;
+
+    // Strip everything except digits and a leading minus so the grouping
+    // re-applies cleanly. A bare "-" while typing is left as-is so the
+    // user can type a negative number digit-by-digit.
+    const stripped = raw.replace(/[^\d-]/g, "");
+    if (stripped === "" || stripped === "-") {
+      caretDigitsRef.current = digitsBeforeCaret;
+      setDraft(stripped);
+      if (error) setError(false);
+      return;
+    }
+    const n = Number(stripped);
+    if (!Number.isFinite(n)) {
+      // Fall back to whatever the user typed if Number choked (shouldn't
+      // happen given the strip, but covers edge cases like "--"). We don't
+      // reformat in this branch, so no caret restore needed.
+      setDraft(raw);
+      if (error) setError(false);
+      return;
+    }
+    caretDigitsRef.current = digitsBeforeCaret;
+    setDraft(formatNumber(n, "hu"));
     if (error) setError(false);
   }
 
@@ -1083,6 +1141,7 @@ function HufInput({
 
   return (
     <input
+      ref={inputRef}
       type="text"
       inputMode="numeric"
       autoComplete="off"
