@@ -549,15 +549,39 @@ export default function DashboardPage() {
   async function toggleFreeze(category: BudgetCategory) {
     if (data === "loading" || data === null) return;
     const current = data.couple.frozen_categories ?? [];
-    const next = current.includes(category)
-      ? current.filter((c) => c !== category)
-      : [...current, category];
+    const willFreeze = !current.includes(category);
+    const next = willFreeze
+      ? [...current, category]
+      : current.filter((c) => c !== category);
     try {
+      // Freezing a per-guest category at count ≠ baseline would otherwise
+      // snap the row from its scaled display down to the unscaled baseline —
+      // discarding the user's last drag. Pin the currently-displayed total
+      // into planned_huf first so freeze locks what they actually see.
+      let nextLines = lines;
+      if (willFreeze && PER_GUEST_CATEGORIES.has(category) && baselineCount > 0) {
+        const factor = effectivePlanningCount / baselineCount;
+        if (factor !== 1) {
+          const baselineSum = lines
+            .filter((l) => l.category === category)
+            .reduce((s, l) => s + l.planned_huf, 0);
+          if (baselineSum > 0) {
+            const displayedTotal = Math.round(baselineSum * factor);
+            nextLines = await applyCategoryPlanned(
+              category,
+              displayedTotal,
+              lines,
+              t(`budget.cat.${category}`),
+            );
+          }
+        }
+      }
       const r = await coupleApi.update({ frozen_categories: next });
-      setData({ ...data, couple: r.couple });
+      setData({ ...data, couple: r.couple, lines: nextLines });
     } catch {
       const r = await coupleApi.current();
-      if (r.couple) setData({ ...data, couple: r.couple });
+      const fresh = await budgetApi.listLines();
+      if (r.couple) setData({ ...data, couple: r.couple, lines: fresh.lines });
     }
   }
 

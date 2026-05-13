@@ -6,7 +6,7 @@ import { ArrowUpRight, BarChart3, Loader2, Plus, RotateCcw, Save, Trash2 } from 
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { CATEGORY_ICONS, CostPlanningCard } from "../components/CostPlanningCard";
+import { CATEGORY_ICONS, CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
@@ -305,10 +305,33 @@ export default function BudgetPage() {
   async function toggleFreeze(category: BudgetCategory) {
     if (!couple) return;
     const current = couple.frozen_categories ?? [];
-    const next = current.includes(category)
-      ? current.filter((c) => c !== category)
-      : [...current, category];
+    const willFreeze = !current.includes(category);
+    const next = willFreeze
+      ? [...current, category]
+      : current.filter((c) => c !== category);
     try {
+      // Freezing a per-guest category at count ≠ baseline would otherwise
+      // snap the row from its scaled display down to the unscaled baseline —
+      // discarding the user's last drag. Pin the currently-displayed total
+      // into planned_huf first so freeze locks what they actually see.
+      if (willFreeze && PER_GUEST_CATEGORIES.has(category) && baseline > 0) {
+        const factor = effectiveCount / baseline;
+        if (factor !== 1) {
+          const baselineSum = lines
+            .filter((l) => l.category === category)
+            .reduce((s, l) => s + l.planned_huf, 0);
+          if (baselineSum > 0) {
+            const displayedTotal = Math.round(baselineSum * factor);
+            const nextLines = await applyCategoryPlanned(
+              category,
+              displayedTotal,
+              lines,
+              t(`budget.cat.${category}`),
+            );
+            setLines(nextLines);
+          }
+        }
+      }
       const r = await coupleApi.update({ frozen_categories: next });
       setCouple(r.couple);
       publish("budget:changed");
