@@ -181,6 +181,23 @@ export function CostPlanningCard({
   const [showActualOverlay, setShowActualOverlay] = useState(false);
   const factor = baseline > 0 ? count / baseline : 1;
 
+  // In-progress per-category drag values (baseline units). Lifted out of the
+  // CategoryRow because:
+  //   1. The summary total at the bottom of the card needs to reflect drags
+  //      live — otherwise totalPlanned lags behind the row sliders during a
+  //      drag.
+  //   2. Row-local state could get stranded when the browser drops a mouseup
+  //      outside the slider element; centralising lets us clear stale entries
+  //      whenever `lines` rehydrates from the server.
+  const [drags, setDrags] = useState<Map<BudgetCategory, number>>(() => new Map());
+  // Wipe stale drag entries whenever the source-of-truth lines change. Any
+  // committed save (own or partner-via-`budget:changed`) propagates a fresh
+  // `lines` array — at that point the parent's view IS the truth and any
+  // lingering drag baseline would only confuse the total.
+  useEffect(() => {
+    setDrags((m) => (m.size === 0 ? m : new Map()));
+  }, [lines]);
+
   // Aggregate lines into category buckets. Every category in CATEGORY_ORDER
   // gets a row (even with 0 planned) so the user can slide it up from zero.
   const buckets = useMemo(() => {
@@ -199,17 +216,20 @@ export function CostPlanningCard({
       // Frozen categories opt out of per-guest scaling — the user has pinned
       // a real-world quote and doesn't want it sliding around with the count.
       const scales = isPerGuest && !frozen;
+      // Active drag (if any) overrides the committed baseline — that's how
+      // totalPlanned tracks the slider live.
+      const liveBaseline = drags.get(cat) ?? v.planned;
       return {
         category: cat,
         actual: v.actual,
         // Display planned = baseline planned scaled for per-guest categories.
-        plannedDisplay: scales ? Math.round(v.planned * factor) : v.planned,
-        plannedBaseline: v.planned,
+        plannedDisplay: scales ? Math.round(liveBaseline * factor) : liveBaseline,
+        plannedBaseline: liveBaseline,
         scales,
         frozen,
       };
     });
-  }, [lines, factor, frozenCategories]);
+  }, [lines, factor, frozenCategories, drags]);
 
   const totalPlanned = buckets.reduce((s, b) => s + b.plannedDisplay, 0);
   const totalActual = buckets.reduce((s, b) => s + b.actual, 0);
@@ -394,6 +414,13 @@ export function CostPlanningCard({
             widthAnchor={widthAnchor}
             onEditPlanned={onEditPlanned}
             onToggleFreeze={onToggleFreeze}
+            onDrag={(baselineValue) =>
+              setDrags((m) => {
+                const next = new Map(m);
+                next.set(b.category, baselineValue);
+                return next;
+              })
+            }
             amountLinkTo={amountLinkTo}
             showActualOverlay={showActualOverlay && hasAnyActual}
             linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
@@ -408,6 +435,7 @@ export function CostPlanningCard({
             {totalActual > 0 ? t("budget.total_actual") : t("budget.total_planned")}
           </span>
           <span
+            data-testid="cost-planning-total"
             className={`stat-num text-xl font-semibold ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-900 dark:text-paper-50"}`}
           >
             {totalActual > 0 && (
@@ -474,6 +502,7 @@ function CategoryRow({
   widthAnchor,
   onEditPlanned,
   onToggleFreeze,
+  onDrag,
   amountLinkTo,
   showActualOverlay = false,
   linkTo,
@@ -497,6 +526,10 @@ function CategoryRow({
   widthAnchor: number;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
   onToggleFreeze?: (category: BudgetCategory) => void | Promise<void>;
+  /** Drag handler — fires on each slider change with the new *baseline* value.
+   *  Parent stores it in a category-keyed drag map so the panel total and any
+   *  sibling totals reflect the slider live, not on commit. */
+  onDrag?: (baselineValue: number) => void;
   /** When set, the per-row amount is rendered as a Link to
    *  `${amountLinkTo}#cat-${category}` so a tap routes the user to the budget
    *  table for precise entry. Used on the dashboard. */
@@ -512,25 +545,19 @@ function CategoryRow({
   linkTo?: string;
 }) {
   const { t, locale } = useT();
-  // Local drag state — slider feels instant; commit fires on release only.
-  // Stored in *baseline* units so we don't drift when the headcount changes
-  // mid-drag (rare, but tidier).
-  const [localValue, setLocalValue] = useState<number | null>(null);
+  // `saving` blocks the slider while a commit is in flight so a chatty drag
+  // can't queue duplicate PATCHes. Drag state itself lives in the parent —
+  // see the `drags` map in CostPlanningCard.
   const [saving, setSaving] = useState(false);
-
-  // Drop any local drag state when the upstream baseline changes (e.g. lines
-  // refetched, sibling row saved, headcount slider scaled the value).
-  useEffect(() => {
-    if (!saving) setLocalValue(null);
-  }, [plannedBaseline, saving]);
 
   const Icon = CATEGORY_ICONS[category];
   const editable = !!onEditPlanned;
 
-  const editBaseline = localValue ?? plannedBaseline;
-  // Slider operates in display units so the thumb tracks the headcount
-  // slider for per-guest categories — drag a per-fő rate, the total moves.
-  const liveDisplay = Math.round(editBaseline * scaleFactor);
+  // `plannedBaseline` already reflects any active drag (parent merges drag
+  // state into the bucket value). Slider operates in display units so the
+  // thumb tracks the headcount slider for per-guest categories — drag a
+  // per-fő rate, the total moves.
+  const liveDisplay = Math.round(plannedBaseline * scaleFactor);
 
   // Every row shares `widthAnchor` (the panel's peak possible row value) as
   // its slider denominator. Two consequences this fix relies on:
@@ -553,24 +580,21 @@ function CategoryRow({
   // Per-guest unit for the cross-coupling hint.
   const perGuest = scales && count > 0 ? Math.round(liveDisplay / count) : null;
 
-  // Drag input is in display units. Convert back to baseline before storing,
-  // so the saved planned amount is normalised to the couple's baseline guest
-  // count regardless of where the headcount slider currently sits.
+  // Drag input is in display units. Convert back to baseline before pushing
+  // up to the parent's drag map, so the saved planned amount is normalised
+  // to the couple's baseline guest count regardless of where the headcount
+  // slider currently sits.
   function applyScaledDrag(scaledNew: number) {
     const baselineNew = scaleFactor > 0 ? Math.round(scaledNew / scaleFactor) : scaledNew;
-    setLocalValue(baselineNew);
+    onDrag?.(baselineNew);
   }
 
   async function commit(scaledNext: number) {
-    if (!onEditPlanned) {
-      setLocalValue(null);
-      return;
-    }
+    if (!onEditPlanned) return;
     const baselineNext = scaleFactor > 0 ? Math.round(scaledNext / scaleFactor) : scaledNext;
-    if (baselineNext === plannedBaseline) {
-      setLocalValue(null);
-      return;
-    }
+    // Parent will rehydrate `lines` after the PATCH and the drag clears via
+    // the useEffect on `lines` in CostPlanningCard; nothing to do here when
+    // the slider released on the same value it started on.
     setSaving(true);
     try {
       await onEditPlanned(category, baselineNext);
