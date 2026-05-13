@@ -947,8 +947,8 @@ const en: LocaleMessages = {
     meal_vegan: "Vegan",
     meal_child: "Child",
     meal_none: "No meal",
-    group_his_family: "Partner 1's family",
-    group_her_family: "Partner 2's family",
+    group_his_family: "Groom's family",
+    group_her_family: "Bride's family",
     group_his_friends: "Shared friends",
     group_her_friends: "Shared coworkers",
     group_shared_friends: "Shared friends",
@@ -980,9 +980,6 @@ const en: LocaleMessages = {
     household_section_title: "Households",
     household_section_help:
       "Group people who RSVP together (a couple, a family). They'll see each other on the check-in page.",
-    household_hosts_badge: "Hosts",
-    household_hosts_help:
-      "You're attending — no check-in code needed. Dietary notes still count toward catering totals.",
     couple_slug_title: "Your couple identifier",
     couple_slug_help:
       "Guests type this on the /rsvp page along with their 4-digit code. Letters and digits only.",

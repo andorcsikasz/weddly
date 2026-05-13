@@ -370,9 +370,10 @@ export interface Household {
   label: string;
   notes: string | null;
   member_ids: number[];
-  /** True when this household is the couple's own (members include the bride
-   *  and groom). The /app/guests UI hides the RSVP share-link button on this
-   *  card — the hosts don't need to check themselves in. */
+  /** True when this household holds the bride and/or groom (any member with
+   *  `partner_role` set). The /app/guests UI sorts this card to the top and
+   *  hides the slug / code / share-link metadata — the hosts don't need to
+   *  check themselves in. */
   is_couple_household: boolean;
   created_at: UnixMs;
   updated_at: UnixMs;

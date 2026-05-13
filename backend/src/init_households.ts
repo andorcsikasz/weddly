@@ -175,8 +175,10 @@ function backfillCoupleHostGuests() {
   let seededGuests = 0;
   // Run each couple's host-seed in its own transaction so a hiccup on one
   // couple's invite-code collision doesn't roll back the whole batch.
-  // Each host now lives in their OWN dedicated household — the helper
-  // creates them, so no pre-step "find/create first household" needed.
+  // The helper finds-or-creates the shared bride+groom household, force-
+  // relocates any partner_role guests already stamped on legacy rows into
+  // it, and cleans up any now-empty single-partner households left over
+  // from the brief "split host households" era. So no pre-step needed.
   for (const c of couples) {
     seededGuests += ensurePartnerGuests({
       coupleId: c.id,

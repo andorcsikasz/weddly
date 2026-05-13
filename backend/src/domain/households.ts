@@ -34,8 +34,21 @@ export function getHouseholdByCoupleAndCode(coupleId: number, code: string): Hou
 }
 
 export function listHouseholdsByCouple(coupleId: number): HouseholdRow[] {
+  // Host household (the bride + groom's own dedicated 2-person home) always
+  // sorts to the top of /app/guests. Everything else falls back to creation
+  // order so existing arrangements stay stable.
   return db
-    .prepare("SELECT * FROM households WHERE couple_id = ? ORDER BY created_at ASC")
+    .prepare(
+      `SELECT h.*
+         FROM households h
+        WHERE h.couple_id = ?
+        ORDER BY (
+          CASE WHEN EXISTS (
+            SELECT 1 FROM guests g
+             WHERE g.household_id = h.id AND g.partner_role IS NOT NULL
+          ) THEN 0 ELSE 1 END
+        ) ASC, h.created_at ASC`,
+    )
     .all(coupleId) as HouseholdRow[];
 }
 

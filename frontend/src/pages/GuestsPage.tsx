@@ -652,22 +652,15 @@ function HouseholdCard({
         {/* Single-line metadata: label · slug · code · invited · delivered.
             Keeps the same column positions across cards so the eye scans
             the same fields in the same place. The couple's own household
-            (the hosts) skips the slug / code / invited columns — they
-            don't check themselves in, so those fields are noise. */}
+            (bride + groom) renders just the label — slug / code / invited
+            columns are hidden because the hosts don't check themselves in. */}
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600">
           <HouseholdLabelEditor
             household={household}
             count={members.length}
             onSave={(label) => onRenameHousehold(household.id, label)}
           />
-          {isHosts ? (
-            <span
-              className="inline-flex items-center rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-blush-700"
-              title={t("guests.household_hosts_help")}
-            >
-              {t("guests.household_hosts_badge")}
-            </span>
-          ) : (
+          {!isHosts && (
             <>
               {coupleSlug && (
                 <>

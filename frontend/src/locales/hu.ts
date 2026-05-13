@@ -950,8 +950,8 @@ const hu: LocaleMessages = {
     meal_vegan: "Vegán",
     meal_child: "Gyerek",
     meal_none: "Nem kér",
-    group_his_family: "Társ 1 családja",
-    group_her_family: "Társ 2 családja",
+    group_his_family: "Vőlegény családja",
+    group_her_family: "Menyasszony családja",
     group_his_friends: "Közös barátok",
     group_her_friends: "Közös munkatársak",
     group_shared_friends: "Közös barátok",
@@ -983,9 +983,6 @@ const hu: LocaleMessages = {
     household_section_title: "Háztartások",
     household_section_help:
       "Csoportosítsd egy háztartásba azokat, akik együtt válaszolnak (pár, család). A check-in oldalon egymást is látják.",
-    household_hosts_badge: "Háziak",
-    household_hosts_help:
-      "Ti ott lesztek — nem kell check-in kód. Az étrendi jelölés a vendéglátási összesítésbe így is beleszámít.",
     couple_slug_title: "Jegyes pár azonosítója",
     couple_slug_help:
       "A vendégek ezt írják be a /rsvp oldalon a 4 jegyű kódjuk mellé. Csak betűk és számok.",

@@ -1382,9 +1382,9 @@ describe("households + airport check-in", () => {
     );
     expect(ob.status).toBe(201);
 
-    // Each partner now lives in their OWN dedicated household — couples
-    // asked for this so the GuestsPage reads as two distinct host cards
-    // instead of one merged "Anna & Bence" entry.
+    // Bride + groom share ONE dedicated 2-person household labelled
+    // "{bride} & {groom}", and that household is the first row returned by
+    // /api/households (host card sorts to the top of /app/guests).
     const list = await req<{
       households: {
         id: number;
@@ -1393,18 +1393,14 @@ describe("households + airport check-in", () => {
         is_couple_household: boolean;
       }[];
     }>("GET", "/api/households", undefined, { token: reg.data.token });
-    expect(list.data.households.length).toBe(2);
-    const labels = list.data.households.map((h) => h.label).sort();
-    expect(labels).toEqual(["Anna", "Bence"]);
-    // Both single-host households should flag as `is_couple_household` so the
-    // GuestsPage hides the per-household share-link button on each card.
-    for (const h of list.data.households) {
-      expect(h.member_ids.length).toBe(1);
-      expect(h.is_couple_household).toBe(true);
-    }
+    expect(list.data.households.length).toBe(1);
+    const host = list.data.households[0]!;
+    expect(host.label).toBe("Anna & Bence");
+    expect(host.member_ids.length).toBe(2);
+    expect(host.is_couple_household).toBe(true);
 
     // Each partner is a real guest row: rsvp=yes, kind=adult, side-tagged
-    // for the dashboard pie, in their own household, with partner_role
+    // for the dashboard pie, sharing the host household, with partner_role
     // stamped so the seating + guests page can render the Crown.
     const guests = await req<{
       guests: {
@@ -1428,13 +1424,9 @@ describe("households + airport check-in", () => {
     expect(bride!.kind).toBe("adult");
     expect(bride!.group_tag).toBe("her_family");
     expect(groom!.group_tag).toBe("his_family");
-    // Each host belongs to their own dedicated single-person household —
-    // assert the two host rows do NOT share a household_id.
-    expect(bride!.household_id).not.toBe(groom!.household_id);
-    const brideHh = list.data.households.find((h) => h.id === bride!.household_id);
-    const groomHh = list.data.households.find((h) => h.id === groom!.household_id);
-    expect(brideHh?.label).toBe("Anna");
-    expect(groomHh?.label).toBe("Bence");
+    // Both hosts share the same household_id — the dedicated 2-person home.
+    expect(bride!.household_id).toBe(groom!.household_id);
+    expect(bride!.household_id).toBe(host.id);
   });
 
   test("partner-role guest rows: rename, backfill idempotence, same-named adoption, client cannot write", async () => {

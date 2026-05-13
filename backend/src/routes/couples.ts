@@ -452,12 +452,11 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
 
   // The bride and groom are guests at their own wedding — and they need to
   // count in headcount, catering, and seating. The helper materializes them
-  // as real guest rows AND creates a dedicated single-person household per
-  // partner (labelled with their own name). The previous version inserted a
-  // joined "{bride} & {groom}" household and stuffed both partners in it,
-  // but couples explicitly asked for separate cards on /app/guests so each
-  // host reads as their own party. Helper is idempotent + shared with the
-  // boot-time backfill in init_households.ts.
+  // as real guest rows inside ONE shared dedicated 2-person household labelled
+  // "{bride} & {groom}", which sorts to the top of /app/guests. The helper is
+  // idempotent + shared with the boot-time backfill in init_households.ts; it
+  // also force-relocates any partner_role guest currently mixed into another
+  // household into the dedicated host home.
   ensurePartnerGuests({ coupleId, brideName, groomName });
 
   db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(

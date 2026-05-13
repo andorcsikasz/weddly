@@ -925,11 +925,6 @@ export interface LocaleMessages {
     household_remove: string;
     household_section_title: string;
     household_section_help: string;
-    /** Small pill on the couple's own household card explaining the row.
-     *  Replaces the slug / code / invited columns since the hosts don't
-     *  check themselves in. */
-    household_hosts_badge: string;
-    household_hosts_help: string;
     couple_slug_title: string;
     couple_slug_help: string;
     couple_slug_save: string;

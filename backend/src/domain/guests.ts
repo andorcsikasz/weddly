@@ -111,26 +111,43 @@ export function toGuest(row: GuestRow): Guest {
   };
 }
 
-/** Idempotently materialize the bride + groom as real guest rows. Each host
- *  lives in their OWN dedicated household labelled with their name — couples
- *  asked for this so the guest-list view reads as two distinct hosts rather
- *  than one merged "Smith couple" entry, and so each card carries its own
- *  household code (handy if a partner ever needs an independent share-link
- *  for their side of the family).
+/** Idempotently materialize the bride + groom as real guest rows inside ONE
+ *  shared, dedicated 2-person household. Couples asked for the host card to
+ *  read as a single "Sári & Andor" entry at the top of /app/guests, separate
+ *  from any household where their names might otherwise have been mixed in
+ *  with family members.
  *
- *  Behaviour per role:
- *   1. If a `partner_role = role` guest already exists for this couple,
- *      leave it alone. Renames are owned by the live PATCH path.
- *   2. Otherwise, if a same-named guest already exists (case-insensitive,
- *      trimmed), adopt it by stamping `partner_role` — no duplicate row,
- *      and don't move them out of whichever household they were in.
- *   3. Otherwise, create a fresh single-person household labelled with the
- *      partner's name and insert a fresh guest row inside it. rsvp=yes,
- *      kind=adult, group_tag splits by family side so the dashboard pie
- *      chart still bisects the couple's two clans sensibly.
+ *  The function is responsible for three things, in order:
  *
- *  Returns the number of rows touched (created OR adopted) so callers can
- *  log "seeded N host guest rows" without re-querying. */
+ *  (1) Find-or-create the canonical host household. "Canonical" = a household
+ *      that contains AT LEAST ONE partner_role guest AND ZERO non-partner
+ *      guests. The pure-host check is what makes this idempotent in the face
+ *      of legacy state where a partner's name was adopted in place inside a
+ *      mixed household — we don't pick that household as the home, we make a
+ *      fresh dedicated one and force-relocate the partner row out.
+ *
+ *  (2) For each role (bride, groom): ensure exactly one guest row exists with
+ *      `partner_role = role`, lives inside the canonical host household, and
+ *      carries the canonical name. Three sub-cases:
+ *        a. A `partner_role = role` guest already exists. If it's outside the
+ *           host household, move it in. If its old household becomes empty,
+ *           delete the old household (so we don't strand "Sári"-only HH ghosts
+ *           from yesterday's split-HH commit).
+ *        b. No `partner_role` guest exists but a same-named guest does
+ *           (case-insensitive, trimmed). Adopt it by stamping `partner_role`
+ *           AND relocate it into the host household, with the same empty-HH
+ *           cleanup as (a).
+ *        c. No matching guest at all. Insert a fresh row directly inside the
+ *           host household (rsvp=yes, kind=adult, group_tag splits by family
+ *           side so the dashboard pie still bisects the couple's two clans).
+ *
+ *  (3) If the host household was freshly created OR its label still matches a
+ *      single partner's name (a leftover from the split-HH era), relabel to
+ *      "{bride} & {groom}". Otherwise leave the label alone — users may have
+ *      hand-edited it.
+ *
+ *  Returns the number of rows touched (created / adopted / relocated) so
+ *  callers can log "seeded N host guest rows" without re-querying. */
 export function ensurePartnerGuests(input: {
   coupleId: number;
   brideName: string;
@@ -144,16 +161,59 @@ export function ensurePartnerGuests(input: {
   if (groom) targets.push({ name: groom, role: "groom", groupTag: "his_family" });
   if (targets.length === 0) return 0;
 
+  const joinedLabel = bride && groom ? `${bride} & ${groom}` : bride || groom;
+
+  // (1) Find or create the canonical host household. Pure-host = has at least
+  // one partner_role member, zero non-partner members.
+  const selectPureHostHh = db.prepare(
+    `SELECT h.id AS id, h.label AS label
+       FROM households h
+      WHERE h.couple_id = ?
+        AND EXISTS (
+              SELECT 1 FROM guests g
+               WHERE g.household_id = h.id AND g.partner_role IS NOT NULL
+            )
+        AND NOT EXISTS (
+              SELECT 1 FROM guests g
+               WHERE g.household_id = h.id AND g.partner_role IS NULL
+            )
+      ORDER BY h.created_at ASC
+      LIMIT 1`,
+  );
+  const insertHh = db.prepare(
+    "INSERT INTO households (couple_id, code, label, notes, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?)",
+  );
+  const updateHhLabel = db.prepare("UPDATE households SET label = ?, updated_at = ? WHERE id = ?");
+  const countMembers = db.prepare("SELECT COUNT(*) AS n FROM guests WHERE household_id = ?");
+  const deleteHh = db.prepare("DELETE FROM households WHERE id = ?");
+
+  const ts = now();
+  let hostHhId: number;
+  let hostHhLabelWasAutoNamed: boolean; // true when label = just one partner's name OR fresh insert
+  {
+    const existing = selectPureHostHh.get(coupleId) as { id: number; label: string } | undefined;
+    if (existing) {
+      hostHhId = existing.id;
+      hostHhLabelWasAutoNamed =
+        existing.label === bride || existing.label === groom || existing.label === joinedLabel;
+    } else {
+      const code = uniqueHouseholdCode(coupleId);
+      const r = insertHh.run(coupleId, code, joinedLabel, ts, ts);
+      hostHhId = Number(r.lastInsertRowid);
+      hostHhLabelWasAutoNamed = true;
+    }
+  }
+
   const selectByRole = db.prepare(
-    "SELECT id FROM guests WHERE couple_id = ? AND partner_role = ? LIMIT 1",
+    "SELECT id, household_id FROM guests WHERE couple_id = ? AND partner_role = ? LIMIT 1",
   );
   const selectByName = db.prepare(
     "SELECT id, household_id FROM guests WHERE couple_id = ? AND lower(trim(full_name)) = lower(trim(?)) AND partner_role IS NULL LIMIT 1",
   );
-  const adopt = db.prepare("UPDATE guests SET partner_role = ?, updated_at = ? WHERE id = ?");
-  const insertHh = db.prepare(
-    "INSERT INTO households (couple_id, code, label, notes, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?)",
+  const adoptAndMove = db.prepare(
+    "UPDATE guests SET partner_role = ?, household_id = ?, updated_at = ? WHERE id = ?",
   );
+  const moveOnly = db.prepare("UPDATE guests SET household_id = ?, updated_at = ? WHERE id = ?");
   const insertGuest = db.prepare(
     `INSERT INTO guests
        (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
@@ -166,27 +226,52 @@ export function ensurePartnerGuests(input: {
              ?, ?, ?, ?)`,
   );
 
+  const cleanupIfEmpty = (hhId: number | null) => {
+    if (hhId == null || hhId === hostHhId) return;
+    const row = countMembers.get(hhId) as { n: number };
+    if (row.n === 0) deleteHh.run(hhId);
+  };
+
   let touched = 0;
-  const ts = now();
   for (const t of targets) {
-    const existing = selectByRole.get(coupleId, t.role) as { id: number } | undefined;
-    if (existing) continue;
-    const match = selectByName.get(coupleId, t.name) as { id: number } | undefined;
+    const existing = selectByRole.get(coupleId, t.role) as
+      | { id: number; household_id: number | null }
+      | undefined;
+    if (existing) {
+      if (existing.household_id !== hostHhId) {
+        const oldHhId = existing.household_id;
+        moveOnly.run(hostHhId, ts, existing.id);
+        cleanupIfEmpty(oldHhId);
+        touched++;
+      }
+      continue;
+    }
+    const match = selectByName.get(coupleId, t.name) as
+      | { id: number; household_id: number | null }
+      | undefined;
     if (match) {
-      adopt.run(t.role, ts, match.id);
+      const oldHhId = match.household_id;
+      adoptAndMove.run(t.role, hostHhId, ts, match.id);
+      cleanupIfEmpty(oldHhId);
       touched++;
       continue;
     }
-    // Fresh insert path: each host gets their own single-person household.
-    // Label = the partner's own name so the GuestsPage card reads "Sári" /
-    // "Andor" rather than the merged "Sári & Andor" letterhead. Household
-    // code generated via the local uniqueness probe (see below).
-    const hhCode = uniqueHouseholdCode(coupleId);
-    const hhResult = insertHh.run(coupleId, hhCode, t.name, ts, ts);
-    const newHhId = Number(hhResult.lastInsertRowid);
-    insertGuest.run(coupleId, t.name, t.groupTag, uniqueInviteCode(), ts, ts, newHhId, t.role);
+    insertGuest.run(coupleId, t.name, t.groupTag, uniqueInviteCode(), ts, ts, hostHhId, t.role);
     touched++;
   }
+
+  // (3) Sync the host household label to "{bride} & {groom}" when it was
+  // auto-named (fresh insert OR leftover single-partner label from the
+  // split-HH era). Skip if the user has hand-edited it to something else.
+  if (hostHhLabelWasAutoNamed) {
+    const current = db.prepare("SELECT label FROM households WHERE id = ?").get(hostHhId) as
+      | { label: string }
+      | undefined;
+    if (current && current.label !== joinedLabel) {
+      updateHhLabel.run(joinedLabel, ts, hostHhId);
+    }
+  }
+
   return touched;
 }
 
