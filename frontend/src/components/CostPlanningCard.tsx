@@ -271,25 +271,28 @@ export function CostPlanningCard({
         </p>
         <div className="flex items-center gap-3">
           {showActualToggle && (
-            // Pill toggle for the second-view actual overlay. We render the red
-            // dot inside the button so the state reads at a glance, and the
-            // press flips the colour palette to make the active state obvious.
+            // Icon-only toggle for the actual-overlay. The eye-on/eye-off
+            // glyph carries the state; the red ring when active picks up the
+            // overlay's red stroke colour so they read as a single affordance.
+            // Title + aria-label keep the action discoverable for keyboard
+            // and screen-reader users.
             <button
               type="button"
               onClick={() => setShowActualOverlay((v) => !v)}
               aria-pressed={showActualOverlay}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 ${
+              aria-label={t(
+                showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay",
+              )}
+              title={t(
+                showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay",
+              )}
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 ${
                 showActualOverlay
                   ? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
                   : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700"
               }`}
-              title={t(
-                showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay",
-              )}
             >
-              {showActualOverlay ? <EyeOff size={12} aria-hidden /> : <Eye size={12} aria-hidden />}
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />
-              {t(showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay")}
+              {showActualOverlay ? <EyeOff size={14} aria-hidden /> : <Eye size={14} aria-hidden />}
             </button>
           )}
           {cap !== null &&
