@@ -7,12 +7,40 @@
   :root {
     /* Mode accent re-themes the entire UI. Default = ink (couple workspace). */
     --color-mode-accent: theme(colors.ink.700);
+    /* Range-slider gradient: amount = the filled spent portion, remainder =
+       the leftover track. In light mode the amount is dark (ink-700) on a
+       light track (paper-200). Dark mode inverts to draw the eye to the
+       spent amount, not the empty space (paper-100 amount on umber-700). */
+    --range-fill-amount: theme("colors.ink.700");
+    --range-fill-remainder: theme("colors.paper.200");
+    /* Same inversion for the over-budget "actual spend" overlay: keeps the
+       red as the eye-catching half in both modes (bright red on light, soft
+       red on umber) and dims the empty side. */
+    --range-actual-amount: #dc2626;
+    --range-actual-remainder: #fef2f2;
+  }
+  html.dark {
+    --range-fill-amount: theme("colors.paper.100");
+    --range-fill-remainder: theme("colors.umber.700");
+    --range-actual-amount: #fca5a5;
+    --range-actual-remainder: theme("colors.umber.700");
   }
 
   html,
   body,
   #root {
     height: 100%;
+  }
+
+  /* Belt-and-braces background on <html> so content that grows past the
+     body's 100% height still paints over a themed surface (otherwise
+     scrolling past the viewport reveals the browser's default white
+     html background, especially noticeable in warm-dark mode). */
+  html {
+    background-color: theme("colors.paper.100");
+  }
+  html.dark {
+    background-color: theme("colors.umber.900");
   }
 
   body {

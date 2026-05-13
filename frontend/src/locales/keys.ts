@@ -676,6 +676,9 @@ export interface LocaleMessages {
     /** Word for the *target* language shown next to the globe. */
     switch_to_en: string;
     switch_to_hu: string;
+    /** Accessible labels for the dark/light theme toggle in /app header. */
+    switch_to_dark: string;
+    switch_to_light: string;
     /** Short variants for the bottom nav, in case full labels truncate. */
     tab_dashboard: string;
     tab_guests: string;

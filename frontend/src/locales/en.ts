@@ -703,6 +703,8 @@ const en: LocaleMessages = {
     switch_language: "Switch language",
     switch_to_en: "English",
     switch_to_hu: "Magyar",
+    switch_to_dark: "Dark mode",
+    switch_to_light: "Light mode",
     // Bottom-nav short variants — kept short for the 11px label.
     tab_dashboard: "Home",
     tab_guests: "Guests",

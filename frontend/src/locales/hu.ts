@@ -703,6 +703,8 @@ const hu: LocaleMessages = {
     switch_language: "Nyelv váltása",
     switch_to_en: "English",
     switch_to_hu: "Magyar",
+    switch_to_dark: "Sötét mód",
+    switch_to_light: "Világos mód",
     // Bottom-nav short variants (HU compounds tend to truncate at 11px).
     tab_dashboard: "Kezdő",
     tab_guests: "Vendég",

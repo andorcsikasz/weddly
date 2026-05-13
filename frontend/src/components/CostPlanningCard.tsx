@@ -33,13 +33,14 @@ import { useT } from "../lib/i18n";
 /** Build a left-fill gradient for `<input type="range">`. Native ranges only
  *  paint the thumb via `accent-color` (and patchily fill the track on Firefox
  *  but not Chrome/Safari), so we paint the filled portion ourselves via an
- *  inline gradient. Pair with the `.range-fill` component class. */
+ *  inline gradient. Pair with the `.range-fill` component class. Colors come
+ *  from CSS vars (`--range-fill-amount` / `--range-fill-remainder`) so the
+ *  fill inverts under `html.dark` (filled = bright, remainder = dark). */
 function rangeFillStyle(value: number, min: number, max: number): { background: string } {
   const span = max - min;
   const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
-  // ink-700 → paper-200 hard stop at the thumb position.
   return {
-    background: `linear-gradient(to right, #243150 0%, #243150 ${pct}%, #efe9d9 ${pct}%, #efe9d9 100%)`,
+    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${pct}%, var(--range-fill-remainder) ${pct}%, var(--range-fill-remainder) 100%)`,
   };
 }
 
@@ -582,7 +583,7 @@ function CategoryRow({
   // the link-mode honeymoon row reads as the same bar chart as the rest.
   const trackStyle: CSSProperties = {
     width: `${widthPct}%`,
-    background: `linear-gradient(to right, #243150 0%, #243150 ${fillPct}%, #efe9d9 ${fillPct}%, #efe9d9 100%)`,
+    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${fillPct}%, var(--range-fill-remainder) ${fillPct}%, var(--range-fill-remainder) 100%)`,
   };
 
   const categoryLabel = t(`budget.cat.${category}`);
@@ -692,7 +693,7 @@ function CategoryRow({
   const actualFillPct = rowMax > 0 ? Math.max(0, Math.min(100, (actual / rowMax) * 100)) : 0;
   const actualOverlayStyle: CSSProperties = {
     width: `${widthPct}%`,
-    background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${actualFillPct}%, #fef2f2 ${actualFillPct}%, #fef2f2 100%)`,
+    background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillPct}%, var(--range-actual-remainder) ${actualFillPct}%, var(--range-actual-remainder) 100%)`,
   };
   const actualOverlayEl =
     showActualOverlay && actual > 0 ? (

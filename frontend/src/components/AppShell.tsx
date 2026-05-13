@@ -6,11 +6,14 @@ import {
   ClipboardList,
   Heart,
   Inbox,
+  Languages,
   LayoutDashboard,
   LayoutList,
   MessageCircle,
+  Moon,
   Plane,
   ShieldCheck,
+  Sun,
   UserCog,
   Users,
   UtensilsCrossed,
@@ -135,18 +138,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   // pass that happens before /api/auth/me resolves.
   const prevUserId = useRef<number | null>(null);
 
-  // ── Warm-dark mode scope ─────────────────────────────────────────────
-  // AppShell only mounts inside RequireAuth + /app/* routes, so its
-  // lifecycle is the perfect signal for "is the user inside the protected
-  // workspace". Toggling `dark` on <html> rather than a wrapper div lets
-  // portals (Toasts, Dialogs, HoneymoonMapModal) inherit the dark scope
-  // automatically. Public pages (landing, /login, /vendors) stay light.
+  // ── Warm-dark mode toggle ────────────────────────────────────────────
+  // AppShell only mounts inside RequireAuth + /app/* routes, so dark mode
+  // is scoped to the protected workspace. Default is `dark`; the user can
+  // flip to light via the header button, and the choice persists across
+  // sessions. Class lives on <html> so portals (Toasts, Dialogs, maps)
+  // inherit the scope automatically.
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    if (typeof window === "undefined") return "dark";
+    return window.localStorage.getItem("weddly.theme") === "light" ? "light" : "dark";
+  });
   useEffect(() => {
-    document.documentElement.classList.add("dark");
+    if (theme === "dark") document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+    try {
+      window.localStorage.setItem("weddly.theme", theme);
+    } catch {
+      /* localStorage blocked — fine, the user's choice just won't persist */
+    }
     return () => {
       document.documentElement.classList.remove("dark");
     };
-  }, []);
+  }, [theme]);
 
   // ── Workspace handoff cleanup ────────────────────────────────────────
   // When the user signs out, wipe every `weddly.*` localStorage key so
@@ -237,10 +250,23 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
               aria-label={t("nav.switch_language")}
             >
-              <GlobeIcon />
+              <Languages size={14} aria-hidden="true" />
               <span className="hidden sm:inline">
                 {locale === "hu" ? t("nav.switch_to_en") : t("nav.switch_to_hu")}
               </span>
+            </button>
+            <button
+              type="button"
+              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+              title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+            >
+              {theme === "dark" ? (
+                <Sun size={14} aria-hidden="true" />
+              ) : (
+                <Moon size={14} aria-hidden="true" />
+              )}
             </button>
             <ProfileMenu />
           </div>
@@ -305,29 +331,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="app" />
     </div>
-  );
-}
-
-/** Tiny hand-rolled globe icon (no new deps). aria-hidden — the button's
- *  aria-label carries the meaning. */
-function GlobeIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="8" cy="8" r="6.5" />
-      <path d="M1.5 8h13" />
-      <path d="M8 1.5c2 2 2 11 0 13" />
-      <path d="M8 1.5c-2 2-2 11 0 13" />
-    </svg>
   );
 }
 
