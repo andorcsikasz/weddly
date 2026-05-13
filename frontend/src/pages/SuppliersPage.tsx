@@ -921,7 +921,7 @@ export default function SuppliersPage() {
                 <article
                   key={s.id}
                   data-supplier-id={s.id}
-                  className={`card-hover relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 dark:!bg-sage-400/15 transition-shadow ${
+                  className={`card-hover !p-4 relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 dark:!bg-sage-400/15 transition-shadow ${
                     isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                   }`}
                 >
@@ -962,11 +962,11 @@ export default function SuppliersPage() {
                     </div>
                   </div>
                   {s.notes && (
-                    <p className="mt-3 line-clamp-3 text-sm text-ink-700 dark:text-paper-100">
+                    <p className="mt-2 line-clamp-3 text-sm text-ink-700 dark:text-paper-100">
                       {s.notes}
                     </p>
                   )}
-                  <div className="mt-auto flex items-center justify-end gap-2 pt-4">
+                  <div className="mt-auto flex items-center justify-end gap-2 pt-3">
                     <button
                       type="button"
                       onClick={openEdit}
@@ -1118,7 +1118,7 @@ export default function SuppliersPage() {
               <article
                 key={s.id}
                 data-supplier-id={s.id}
-                className={`card-hover relative flex h-full flex-col transition-shadow ${
+                className={`card-hover !p-4 relative flex h-full flex-col transition-shadow ${
                   isPicked
                     ? "border-sage-400 border-l-4 border-l-sage-500 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
                     : ""
@@ -1225,10 +1225,10 @@ export default function SuppliersPage() {
                     {s.address}
                   </p>
                 )}
-                <p className="mt-3 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
+                <p className="mt-2 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
                   {locale === "hu" ? s.blurb_hu : s.blurb_en}
                 </p>
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-4">
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <a
                       href={s.website}
