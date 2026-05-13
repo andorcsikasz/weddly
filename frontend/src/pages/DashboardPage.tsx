@@ -34,7 +34,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { type FormEvent, type JSX, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
@@ -290,10 +290,7 @@ export default function DashboardPage() {
   // per-guest categories scale with count/baseline; fixed categories don't.
   // Frozen categories skip the rescale entirely (the couple has locked them
   // to a real quote that shouldn't drift with the headcount slider).
-  const frozenCategoriesSet = useMemo(
-    () => new Set<BudgetCategory>(couple.frozen_categories ?? []),
-    [couple.frozen_categories],
-  );
+  const frozenCategoriesSet = new Set<BudgetCategory>(couple.frozen_categories ?? []);
   const planningFactor = baselineCount > 0 ? effectivePlanningCount / baselineCount : 1;
   let scaledPlannedTotal = 0;
   for (const line of lines) {

@@ -71,7 +71,6 @@ export function ProfileMenu() {
 
   const inAdminView = location.pathname.startsWith("/app/admin");
   const initials = getInitials(user.full_name, user.email);
-  const firstName = (user.full_name || user.email).trim().split(/\s+/)[0] ?? "";
   // Only stack the partner monogram once they've actually joined — while
   // the partner is "invited" (no name, no account) showing a placeholder
   // would lie about presence.
@@ -93,9 +92,6 @@ export function ProfileMenu() {
         onClick={() => setOpen((v) => !v)}
         className="group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-1 text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2"
       >
-        {firstName && (
-          <span className="hidden text-sm font-medium text-ink-800 lg:inline">{firstName}</span>
-        )}
         <span className="flex items-center">
           {showPartner && (
             <span
