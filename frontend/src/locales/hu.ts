@@ -807,6 +807,9 @@ const hu: LocaleMessages = {
   honeymoon: {
     title: "Nászút",
     sub: "Tervezzétek meg a nászutatokat — úti cél, dátumok, költségek — egy helyen.",
+    before_wedding_title: "Várj — ez biztosan jó?",
+    before_wedding_body:
+      "A nászút kezdete {honeymoon}, de az esküvő {wedding}. A legtöbb pár az esküvő után indul — nézd át a dátumokat.",
     tile_days: "Hány nap",
     tile_destination: "Hova",
     tile_budget: "Tervezett keret",

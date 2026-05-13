@@ -11,6 +11,7 @@ import {
   Check,
   Compass,
   Map as MapIcon,
+  AlertTriangle,
   MapPin,
   Plane,
   ShieldCheck,
@@ -242,6 +243,15 @@ export default function HoneymoonPage() {
   // (not `totalPlanned`) into the fallback so one outsize line doesn't
   // push the others into a tiny strip of the track.
   const sliderMax = honeymoonSliderMax(couple, totals.biggest);
+  // Sanity check: a honeymoon that starts before the wedding date is almost
+  // certainly a typo — surface it as a soft warning rather than letting it
+  // sit silently in the date tile. ISO YYYY-MM-DD compares lexicographically
+  // correctly, so a plain string compare is enough.
+  const honeymoonBeforeWedding = Boolean(
+    couple?.wedding_date &&
+      couple?.honeymoon_start_date &&
+      couple.honeymoon_start_date < couple.wedding_date,
+  );
 
   /* ─── Trip-detail saves (destination + dates) ─────────────────────── */
 
@@ -333,6 +343,24 @@ export default function HoneymoonPage() {
         <h1>{t("honeymoon.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("honeymoon.sub")}</p>
       </header>
+
+      {honeymoonBeforeWedding && couple?.wedding_date && couple?.honeymoon_start_date && (
+        <section
+          role="alert"
+          className="stationery-blush mb-4 flex items-start gap-3 rounded-2xl border-2 border-blush-500 px-4 py-3"
+        >
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-blush-700" aria-hidden="true" />
+          <div className="min-w-0 flex-1 text-sm">
+            <p className="font-semibold text-blush-800">{t("honeymoon.before_wedding_title")}</p>
+            <p className="mt-0.5 text-ink-700">
+              {t("honeymoon.before_wedding_body", {
+                wedding: formatDateShort(couple.wedding_date, locale),
+                honeymoon: formatDateShort(couple.honeymoon_start_date, locale),
+              })}
+            </p>
+          </div>
+        </section>
+      )}
 
       <section className="grid gap-3 sm:grid-cols-3">
         <DaysTile

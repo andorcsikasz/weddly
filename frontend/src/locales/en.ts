@@ -806,6 +806,9 @@ const en: LocaleMessages = {
   honeymoon: {
     title: "Honeymoon",
     sub: "Plan the trip — destination, dates, costs — without leaving the workspace.",
+    before_wedding_title: "Wait — is this right?",
+    before_wedding_body:
+      "Your honeymoon starts on {honeymoon}, but the wedding is on {wedding}. Most couples leave after the wedding — double-check the dates.",
     tile_days: "Days",
     tile_destination: "Where",
     tile_budget: "Allocated budget",

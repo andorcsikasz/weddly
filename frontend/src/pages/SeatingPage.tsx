@@ -15,6 +15,7 @@ import {
   Copy,
   Crown,
   HelpCircle,
+  LayoutGrid,
   Minus,
   Pencil,
   Plus,
@@ -634,6 +635,117 @@ export default function SeatingPage() {
     announceUndoable(t("seating.toast_moved").replace("{table}", table.label));
   }
 
+  // One-click symmetric layout: head table hugs the top wall on the room's
+  // vertical centreline; the remaining tables are distributed into an evenly-
+  // spaced grid below it, with the last (partial) row centred so the result
+  // reads balanced. Sizes and rotations are preserved — this only moves.
+  async function arrangeTablesSymmetrically() {
+    if (tables.length === 0) return;
+    const MARGIN_MM = 1500;
+    const HEAD_CLEARANCE_MM = 1500;
+
+    const head = tables.find((tb) => tb.shape === "head") ?? null;
+    const guests = tables.filter((tb) => tb.shape !== "head");
+
+    const newPos = new Map<number, { x_mm: number; y_mm: number }>();
+    let usedTopMm = MARGIN_MM;
+
+    if (head) {
+      const headRy = head.width_mm / 2;
+      newPos.set(head.id, {
+        x_mm: Math.round(roomWidthMm / 2),
+        y_mm: Math.round(MARGIN_MM + headRy),
+      });
+      usedTopMm = MARGIN_MM + head.width_mm + HEAD_CLEARANCE_MM;
+    }
+
+    if (guests.length > 0) {
+      const availTop = usedTopMm;
+      const availBottom = roomHeightMm - MARGIN_MM;
+      const availLeft = MARGIN_MM;
+      const availRight = roomWidthMm - MARGIN_MM;
+      const availW = Math.max(0, availRight - availLeft);
+      const availH = Math.max(0, availBottom - availTop);
+
+      if (availW > 0 && availH > 0) {
+        const n = guests.length;
+        // Pick a column count that roughly matches the available aspect ratio
+        // so cells stay close to square — wide rooms get more columns, tall
+        // rooms get more rows.
+        const ratio = availW / availH;
+        const cols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * ratio))));
+        const rows = Math.ceil(n / cols);
+        const cellW = availW / cols;
+        const cellH = availH / rows;
+        const lastRowCount = n - (rows - 1) * cols;
+
+        for (let i = 0; i < n; i++) {
+          const g = guests[i];
+          if (!g) continue;
+          const r = Math.floor(i / cols);
+          const c = i % cols;
+          // Centre the last row if it isn't full, so 5-of-3-cols reads as 3+2
+          // centred rather than 3+2-left-aligned.
+          const isLastPartial = r === rows - 1 && lastRowCount < cols;
+          const colsInRow = isLastPartial ? lastRowCount : cols;
+          const rowOffset = isLastPartial ? ((cols - colsInRow) * cellW) / 2 : 0;
+          newPos.set(g.id, {
+            x_mm: Math.round(availLeft + rowOffset + (c + 0.5) * cellW),
+            y_mm: Math.round(availTop + (r + 0.5) * cellH),
+          });
+        }
+      }
+    }
+
+    // Effective moves only — skip tables that already match the target spot.
+    const moves: Array<{ table: SeatingTable; x_mm: number; y_mm: number }> = [];
+    for (const tb of tables) {
+      const next = newPos.get(tb.id);
+      if (!next) continue;
+      if (next.x_mm === tb.x_mm && next.y_mm === tb.y_mm) continue;
+      moves.push({ table: tb, x_mm: next.x_mm, y_mm: next.y_mm });
+    }
+    if (moves.length === 0) return;
+
+    // Snapshot for a single composite undo, instead of N separate entries
+    // that would force the user to press ⌘Z once per table.
+    const before = moves.map((m) => ({ id: m.table.id, x_mm: m.table.x_mm, y_mm: m.table.y_mm }));
+
+    try {
+      for (const m of moves) {
+        await seatingApi.updateTable(
+          m.table.id,
+          { x_mm: m.x_mm, y_mm: m.y_mm },
+          { ifMatch: m.table.updated_at },
+        );
+      }
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        toast.error(t("seating.save_conflict"));
+      } else {
+        toast.error(t("seating.save_failed"));
+      }
+      await refresh();
+      return;
+    }
+
+    pushUndo({
+      label: t("seating.undo_label"),
+      undo: async () => {
+        for (const prev of before) {
+          try {
+            await seatingApi.updateTable(prev.id, { x_mm: prev.x_mm, y_mm: prev.y_mm });
+          } catch {
+            /* surface via the refresh that popAndUndo runs */
+          }
+        }
+      },
+    });
+    publish("seating:changed");
+    await refresh();
+    announceUndoable(t("seating.toast_arranged"));
+  }
+
   async function resizeTable(id: number, width_mm: number, length_mm: number) {
     const table = tables.find((tb) => tb.id === id);
     if (!table) return;
@@ -896,6 +1008,16 @@ export default function SeatingPage() {
               {t("seating.pdf_cancel")}
             </button>
           )}
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={arrangeTablesSymmetrically}
+            disabled={tables.length === 0}
+            aria-label={t("seating.arrange_button_label")}
+            title={t("seating.arrange_button_label")}
+          >
+            <LayoutGrid size={16} aria-hidden />
+          </button>
           <button type="button" className="btn-primary" onClick={addTable}>
             <Plus size={16} /> {t("seating.add_table")}
           </button>

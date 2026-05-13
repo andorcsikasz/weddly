@@ -788,6 +788,11 @@ export interface LocaleMessages {
   honeymoon: {
     title: string;
     sub: string;
+    /** Soft warning banner when honeymoon_start_date is before wedding_date —
+     *  almost always a typo. Body receives `{wedding}` + `{honeymoon}` short
+     *  date strings. */
+    before_wedding_title: string;
+    before_wedding_body: string;
     /** Header tiles (days / destination / budget). */
     tile_days: string;
     tile_destination: string;

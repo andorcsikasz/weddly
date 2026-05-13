@@ -14,6 +14,8 @@ import type {
 } from "@shared/types";
 import {
   Baby,
+  Ban,
+  Beef,
   Check,
   CheckCheck,
   ChevronDown,
@@ -21,20 +23,23 @@ import {
   Crown,
   Fish,
   Leaf,
+  Link2,
   Milk,
+  Music,
   Nut,
   Pencil,
   Plus,
   Printer,
   RefreshCw,
   Search,
+  Sprout,
   Trash2,
   Upload,
   UserPlus,
   Wheat,
   X,
 } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -358,28 +363,21 @@ export default function GuestsPage() {
         <div>
           <h1>{t("guests.title")}</h1>
           {guests.length > 0 ? (
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-3xl font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-                {guests.length}
-              </span>
-              <span className="text-sm text-ink-500 dark:text-umber-300">
-                {t("guests.total_summary_unit")}
-              </span>
-              <span aria-hidden className="text-ink-300 dark:text-umber-300">
-                ·
-              </span>
-              <span className="text-sm text-ink-600 dark:text-umber-200">
-                {t("guests.total_summary_households", { n: households.length })}
-              </span>
-              <span aria-hidden className="text-ink-300 dark:text-umber-300">
-                ·
-              </span>
-              <span className="text-sm text-ink-600 dark:text-umber-200">
-                {t("guests.total_summary_invited", {
-                  n: guests.filter((g) => g.invited_at != null).length,
-                })}
-              </span>
-            </div>
+            <dl className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-3">
+              <GuestStat
+                value={guests.length}
+                label={t("guests.total_summary_unit")}
+                tone="primary"
+              />
+              <GuestStat
+                value={households.length}
+                label={t("guests.total_summary_households_unit")}
+              />
+              <GuestStat
+                value={guests.filter((g) => g.invited_at != null).length}
+                label={t("guests.total_summary_invited_unit")}
+              />
+            </dl>
           ) : (
             <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{guests.length}</p>
           )}
@@ -1097,11 +1095,70 @@ function PartnerRoleIcon({ role }: { role: "bride" | "groom" | null }) {
 // as residue, which then triggered the fallback Wheat icon as "unknown
 // free-text dietary". Stop only at separators so we never bleed into the
 // next tag.
-const DIETARY_DETECTORS: { kind: "lactose" | "gluten" | "nut"; re: RegExp }[] = [
+type DietaryTag = "lactose" | "gluten" | "nut";
+const DIETARY_TAG_KEYS: DietaryTag[] = ["lactose", "gluten", "nut"];
+
+const DIETARY_DETECTORS: { kind: DietaryTag; re: RegExp }[] = [
   { kind: "lactose", re: /(?:laktóz|lactose)[^,;\s]*/i },
   { kind: "gluten", re: /(?:glutén|gluten)[^,;\s]*/i },
   { kind: "nut", re: /(?:mogyoró|peanut|nut[- ]?aller)[^,;\s]*/i },
 ];
+
+// Stored tokens — must match what HouseholdRsvpForm writes so chips round-trip
+// no matter which side last edited the row.
+const DIETARY_TOKEN: Record<DietaryTag, string> = {
+  lactose: "laktóz-érzékeny",
+  gluten: "gluténmentes",
+  nut: "mogyoró-allergia",
+};
+
+function buildDietary(tags: Set<DietaryTag>, free: string): string | null {
+  const parts: string[] = [];
+  for (const tag of DIETARY_TAG_KEYS) {
+    if (tags.has(tag)) parts.push(DIETARY_TOKEN[tag]);
+  }
+  const f = free.trim();
+  if (f) parts.push(f);
+  const joined = parts.join(", ");
+  return joined || null;
+}
+
+// Song request multi-row encoding. Each non-empty line is one song; if a line
+// contains a URL we treat it as an attached link and the rest as the title.
+// Backwards-compatible with the prior single-line free-text format.
+const SONG_URL_RE = /\bhttps?:\/\/\S+/i;
+
+interface SongEntry {
+  title: string;
+  url: string;
+}
+
+function parseSongRequests(s: string | null): SongEntry[] {
+  if (!s) return [];
+  return s
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const m = line.match(SONG_URL_RE);
+      if (!m) return { title: line, url: "" };
+      const url = m[0];
+      const title = line.replace(SONG_URL_RE, "").trim();
+      return { title: title || url, url };
+    });
+}
+
+function serializeSongRequests(entries: SongEntry[]): string | null {
+  const lines: string[] = [];
+  for (const e of entries) {
+    const title = e.title.trim();
+    const url = e.url.trim();
+    if (!title && !url) continue;
+    if (title && url) lines.push(`${title} ${url}`);
+    else lines.push(title || url);
+  }
+  return lines.length ? lines.join("\n") : null;
+}
 
 function parseDietaryTags(dietary: string | null): {
   tags: Set<"lactose" | "gluten" | "nut">;
@@ -1191,6 +1248,19 @@ function GuestDrawer({
       notes: null,
     },
   );
+  // Dietary is stored as a single free-text column server-side; locally we
+  // split it into chip toggles + a free-text remainder so the UI can offer
+  // icon chips without losing notes the user typed by hand.
+  const initialDietary = useMemo(() => parseDietaryTags(guest?.dietary ?? null), [guest?.dietary]);
+  const [dietaryTags, setDietaryTags] = useState<Set<DietaryTag>>(initialDietary.tags);
+  const [dietaryFree, setDietaryFree] = useState<string>(initialDietary.remainder);
+  // Song requests are also a single text column; we render a repeating row UI
+  // and re-serialise on submit so the field still round-trips through the
+  // 500-char string limit the backend enforces.
+  const [songs, setSongs] = useState<SongEntry[]>(() =>
+    parseSongRequests(guest?.song_request ?? null),
+  );
+
   const [householdMode, setHouseholdMode] = useState<"existing" | "new">(
     init.defaultHouseholdId !== null || guest?.household_id ? "existing" : "new",
   );
@@ -1203,7 +1273,11 @@ function GuestDrawer({
   const toast = useToast();
 
   function buildBody(): Record<string, unknown> {
-    const body: Record<string, unknown> = { ...form };
+    const body: Record<string, unknown> = {
+      ...form,
+      dietary: buildDietary(dietaryTags, dietaryFree),
+      song_request: serializeSongRequests(songs),
+    };
     if (householdMode === "existing" && householdId) {
       body.household_id = householdId;
     } else if (householdMode === "new") {
@@ -1285,11 +1359,18 @@ function GuestDrawer({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          <Field
-            label={t("guests.full_name")}
+          {/* Name reads as the page's headline — a borderless serif input that
+              looks like display text but stays editable, with a faint
+              underline on focus so the affordance is still legible. */}
+          <input
+            type="text"
             value={form.full_name ?? ""}
-            onChange={(v) => setForm({ ...form, full_name: v })}
+            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            placeholder={t("guests.full_name")}
+            aria-label={t("guests.full_name")}
+            className="mb-5 w-full border-0 border-b border-transparent bg-transparent px-0 pb-1 pt-0 font-serif text-3xl font-medium text-ink-900 placeholder:text-ink-300 focus:border-ink-300 focus:outline-none focus:ring-0 dark:text-paper-50 dark:placeholder:text-umber-500 dark:focus:border-umber-500"
           />
+
           <Field
             label={t("guests.email")}
             value={form.email ?? ""}
@@ -1321,24 +1402,15 @@ function GuestDrawer({
             <label className="field-label">{t("guests.kind_label")}</label>
             <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">{t("guests.kind_help")}</p>
             <div className="grid grid-cols-3 gap-2">
-              {(["adult", "child", "baby"] as GuestKind[]).map((k) => {
-                const active = (form.kind ?? "adult") === k;
-                return (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setForm({ ...form, kind: k })}
-                    className={
-                      active
-                        ? "flex items-center justify-center gap-1.5 rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                        : "flex items-center justify-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-                    }
-                  >
-                    <KindIcon kind={k} />
-                    {t(`guests.kind_${k}`)}
-                  </button>
-                );
-              })}
+              {(["adult", "child", "baby"] as GuestKind[]).map((k) => (
+                <SegmentButton
+                  key={k}
+                  active={(form.kind ?? "adult") === k}
+                  onClick={() => setForm({ ...form, kind: k })}
+                  icon={<KindIcon kind={k} />}
+                  label={t(`guests.kind_${k}`)}
+                />
+              ))}
             </div>
           </div>
 
@@ -1348,29 +1420,17 @@ function GuestDrawer({
               {t("guests.household_assign_help")}
             </p>
             <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
+              <SegmentButton
+                active={householdMode === "existing"}
                 onClick={() => setHouseholdMode("existing")}
                 disabled={households.length === 0}
-                className={
-                  householdMode === "existing"
-                    ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                    : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-                }
-              >
-                {t("guests.household_existing")}
-              </button>
-              <button
-                type="button"
+                label={t("guests.household_existing")}
+              />
+              <SegmentButton
+                active={householdMode === "new"}
                 onClick={() => setHouseholdMode("new")}
-                className={
-                  householdMode === "new"
-                    ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                    : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-                }
-              >
-                {t("guests.household_new")}
-              </button>
+                label={t("guests.household_new")}
+              />
             </div>
             {householdMode === "existing" ? (
               <select
@@ -1396,41 +1456,71 @@ function GuestDrawer({
 
           <div className="mb-3">
             <label className="field-label">{t("guests.rsvp")}</label>
-            <select
-              className="input"
-              value={form.rsvp_status ?? "pending"}
-              onChange={(e) => setForm({ ...form, rsvp_status: e.target.value as RsvpStatus })}
-            >
+            <div className="grid grid-cols-4 gap-2">
               {RSVPS.map((s) => (
-                <option key={s} value={s}>
-                  {t(`guests.rsvp_${s}`)}
-                </option>
+                <SegmentButton
+                  key={s}
+                  active={(form.rsvp_status ?? "pending") === s}
+                  onClick={() => setForm({ ...form, rsvp_status: s })}
+                  icon={<RsvpGlyph status={s} />}
+                  label={t(`guests.rsvp_${s}`)}
+                  compact
+                />
               ))}
-            </select>
+            </div>
           </div>
+
           <div className="mb-3">
             <label className="field-label">{t("guests.meal")}</label>
-            <select
-              className="input"
-              value={form.meal_choice ?? ""}
-              onChange={(e) =>
-                setForm({ ...form, meal_choice: (e.target.value as MealChoice) || null })
-              }
-            >
-              <option value="">—</option>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {MEALS.map((m) => (
-                <option key={m} value={m}>
-                  {t(`guests.meal_${m}`)}
-                </option>
+                <SegmentButton
+                  key={m}
+                  active={form.meal_choice === m}
+                  // Re-clicking the active option clears it so the user can
+                  // return to "no preference" without a dedicated null button.
+                  onClick={() =>
+                    setForm({ ...form, meal_choice: form.meal_choice === m ? null : m })
+                  }
+                  icon={<MealIcon meal={m} />}
+                  label={t(`guests.meal_${m}`)}
+                  compact
+                />
               ))}
-            </select>
+            </div>
           </div>
-          <Field
-            label={t("guests.allergies")}
-            value={form.dietary ?? ""}
-            onChange={(v) => setForm({ ...form, dietary: v || null })}
-            placeholder={t("guests.allergies_placeholder")}
-          />
+
+          <div className="mb-3">
+            <label className="field-label">{t("guests.allergies")}</label>
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              <DietaryChip
+                on={dietaryTags.has("lactose")}
+                onClick={() => toggleSetMember(setDietaryTags, "lactose")}
+                icon={<Milk size={14} aria-hidden />}
+                label={t("rsvp.tag_lactose")}
+              />
+              <DietaryChip
+                on={dietaryTags.has("gluten")}
+                onClick={() => toggleSetMember(setDietaryTags, "gluten")}
+                icon={<Wheat size={14} aria-hidden />}
+                label={t("rsvp.tag_gluten")}
+              />
+              <DietaryChip
+                on={dietaryTags.has("nut")}
+                onClick={() => toggleSetMember(setDietaryTags, "nut")}
+                icon={<Nut size={14} aria-hidden />}
+                label={t("rsvp.tag_nut")}
+              />
+            </div>
+            <input
+              className="input"
+              type="text"
+              value={dietaryFree}
+              onChange={(e) => setDietaryFree(e.target.value)}
+              placeholder={t("guests.allergies_placeholder")}
+            />
+          </div>
+
           <label className="mb-3 flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
             <input
               type="checkbox"
@@ -1439,11 +1529,12 @@ function GuestDrawer({
             />
             {t("guests.accommodation")}
           </label>
-          <Field
-            label={t("guests.song_request")}
-            value={form.song_request ?? ""}
-            onChange={(v) => setForm({ ...form, song_request: v || null })}
-          />
+
+          <div className="mb-3">
+            <label className="field-label">{t("guests.song_request")}</label>
+            <SongRequestList entries={songs} onChange={setSongs} />
+          </div>
+
           <Field
             label={t("guests.notes")}
             value={form.notes ?? ""}
@@ -1505,6 +1596,229 @@ function Field({
           placeholder={placeholder}
         />
       )}
+    </div>
+  );
+}
+
+// Single button in a segmented control. Shared shape for kind / household /
+// rsvp / meal so the drawer reads consistently — only the icon + label
+// change. `compact` switches the padding & font for narrow chips like the
+// 4-up RSVP row.
+function SegmentButton({
+  active,
+  onClick,
+  icon,
+  label,
+  disabled,
+  compact,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon?: ReactNode;
+  label: string;
+  disabled?: boolean;
+  compact?: boolean;
+}) {
+  const pad = compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm";
+  const base = `flex items-center justify-center gap-1.5 rounded-xl ${pad} transition-colors`;
+  const tone = active
+    ? "border-2 border-ink-700 bg-ink-700 font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+    : "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`${base} ${tone} disabled:cursor-not-allowed disabled:opacity-50`}
+    >
+      {icon}
+      <span className="truncate">{label}</span>
+    </button>
+  );
+}
+
+function RsvpGlyph({ status }: { status: RsvpStatus }) {
+  // Same glyph language as RsvpBadge, sized to sit next to the label text.
+  const ch = status === "yes" ? "✓" : status === "no" ? "✗" : status === "maybe" ? "?" : "⌛";
+  return (
+    <span aria-hidden className="text-sm font-semibold leading-none">
+      {ch}
+    </span>
+  );
+}
+
+function MealIcon({ meal }: { meal: MealChoice }) {
+  const size = 16;
+  switch (meal) {
+    case "meat":
+      return <Beef size={size} aria-hidden />;
+    case "fish":
+      return <Fish size={size} aria-hidden />;
+    case "vegetarian":
+      return <Leaf size={size} aria-hidden />;
+    case "vegan":
+      return <Sprout size={size} aria-hidden />;
+    case "child":
+      return <Cookie size={size} aria-hidden />;
+    case "none":
+      return <Ban size={size} aria-hidden />;
+  }
+}
+
+// Pill-shaped allergen chip. Mirrors the chip in HouseholdRsvpForm so admin-
+// side and guest-side selectors look identical.
+function DietaryChip({
+  on,
+  onClick,
+  icon,
+  label,
+}: {
+  on: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={on}
+      onClick={onClick}
+      className={
+        on
+          ? "inline-flex items-center gap-1.5 rounded-full border-2 border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100 transition-colors dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+          : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition-colors hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+      }
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+// Idiomatic helper: toggle membership in a Set held in a React useState.
+function toggleSetMember<T>(setter: (updater: (prev: Set<T>) => Set<T>) => void, value: T) {
+  setter((prev) => {
+    const next = new Set(prev);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    return next;
+  });
+}
+
+// Song-request editor: one row per song with an optional attached URL. The
+// link input is hidden behind a chip so the default state stays tidy; clicking
+// the chip reveals the URL field for that row only.
+interface SongRow extends SongEntry {
+  /** Stable React key. Local-only; stripped before bubbling up. */
+  ui_key: string;
+}
+
+function makeSongKey(): string {
+  return `s_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function SongRequestList({
+  entries,
+  onChange,
+}: {
+  entries: SongEntry[];
+  onChange: (next: SongEntry[]) => void;
+}) {
+  const { t } = useT();
+  // Owns the row array with stable ids. We seed once from `entries` on mount;
+  // bubbling up via onChange is what keeps the parent state in sync. We
+  // intentionally don't re-seed from `entries` after mount — the drawer never
+  // resets these rows from outside, and re-seeding would clobber typing.
+  const [rows, setRows] = useState<SongRow[]>(() =>
+    entries.length === 0
+      ? [{ ui_key: makeSongKey(), title: "", url: "" }]
+      : entries.map((e) => ({ ui_key: makeSongKey(), ...e })),
+  );
+
+  function bubble(next: SongRow[]) {
+    setRows(next);
+    onChange(next.map(({ ui_key: _, ...rest }) => rest));
+  }
+  function update(idx: number, patch: Partial<SongEntry>) {
+    bubble(rows.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
+  }
+  function remove(idx: number) {
+    const next = rows.filter((_, i) => i !== idx);
+    bubble(next.length === 0 ? [{ ui_key: makeSongKey(), title: "", url: "" }] : next);
+  }
+  function add() {
+    bubble([...rows, { ui_key: makeSongKey(), title: "", url: "" }]);
+  }
+
+  return (
+    <div className="space-y-2">
+      {rows.map((row, i) => {
+        const hasLink = row.url.length > 0;
+        return (
+          <div
+            key={row.ui_key}
+            className="rounded-xl border border-paper-200 bg-paper-50 p-2 dark:border-umber-700 dark:bg-umber-800"
+          >
+            <div className="flex items-center gap-2">
+              <Music size={14} aria-hidden className="shrink-0 text-ink-400 dark:text-umber-300" />
+              <input
+                className="input flex-1 border-0 bg-transparent px-1 py-1 focus:ring-0"
+                type="text"
+                value={row.title}
+                onChange={(e) => update(i, { title: e.target.value })}
+                placeholder={t("guests.song_title_placeholder")}
+              />
+              {!hasLink && (
+                <button
+                  type="button"
+                  onClick={() => update(i, { url: "https://" })}
+                  className="inline-flex items-center gap-1 rounded-full border border-paper-300 px-2 py-1 text-xs text-ink-600 hover:border-ink-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
+                  aria-label={t("guests.song_add_link")}
+                  title={t("guests.song_add_link")}
+                >
+                  <Link2 size={12} aria-hidden />
+                </button>
+              )}
+              {rows.length > 1 || row.title || row.url ? (
+                <button
+                  type="button"
+                  onClick={() => remove(i)}
+                  className="inline-flex shrink-0 items-center justify-center rounded-full p-1 text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                  aria-label={t("guests.song_remove")}
+                  title={t("guests.song_remove")}
+                >
+                  <X size={14} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+            {hasLink && (
+              <div className="mt-1.5 flex items-center gap-2 pl-6">
+                <Link2
+                  size={12}
+                  aria-hidden
+                  className="shrink-0 text-ink-400 dark:text-umber-300"
+                />
+                <input
+                  className="input flex-1 border-0 bg-transparent px-1 py-1 font-mono text-xs focus:ring-0"
+                  type="url"
+                  value={row.url}
+                  onChange={(e) => update(i, { url: e.target.value })}
+                  placeholder="https://"
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <button
+        type="button"
+        onClick={add}
+        className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-paper-300 px-3 py-1 text-xs text-ink-500 hover:border-ink-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
+      >
+        <Plus size={12} aria-hidden /> {t("guests.song_add")}
+      </button>
     </div>
   );
 }
@@ -1579,6 +1893,32 @@ function CopyFallbackDialog({ url, onClose }: { url: string; onClose: () => void
         />
       </div>
     </Dialog>
+  );
+}
+
+// Page-header stat block: a big tabular-nums number stacked over a small
+// uppercase caption. `primary` gives the headline metric a touch more weight
+// (heavier number colour) so guests-count still reads as the lead figure.
+function GuestStat({
+  value,
+  label,
+  tone = "secondary",
+}: {
+  value: number;
+  label: string;
+  tone?: "primary" | "secondary";
+}) {
+  const numClass =
+    tone === "primary"
+      ? "text-3xl font-semibold tabular-nums text-ink-900 dark:text-paper-50"
+      : "text-3xl font-semibold tabular-nums text-ink-700 dark:text-paper-100";
+  return (
+    <div className="flex flex-col items-start leading-none">
+      <dd className={numClass}>{value}</dd>
+      <dt className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-400 dark:text-umber-300">
+        {label}
+      </dt>
+    </div>
   );
 }
 
