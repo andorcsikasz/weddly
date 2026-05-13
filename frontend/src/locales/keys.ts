@@ -336,6 +336,11 @@ export interface LocaleMessages {
     quick_links_title: string;
     /** "Next action" hero CTA above the KPIs. */
     next_action_label: string;
+    /** Inline set-date dialog opened from the "Next step: lock the wedding date"
+     *  CTA — keeps the user on the dashboard instead of bouncing to onboarding. */
+    set_date_dialog_title: string;
+    set_date_dialog_body: string;
+    set_date_dialog_save: string;
     /** When the wedding date is in the past, the days-to-go tile flips to a celebration. */
     kpi_days_past: string;
     kpi_days_past_sub: string;

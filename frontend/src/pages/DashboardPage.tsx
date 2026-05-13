@@ -38,7 +38,7 @@ import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "r
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
-import { useConfirm, useToast } from "../components/ui";
+import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
@@ -125,6 +125,12 @@ export default function DashboardPage() {
   // would violate the Rules of Hooks (React error #310 on first → loaded
   // transition).
   const [inviteCancelling, setInviteCancelling] = useState(false);
+  // "Lock the wedding date" CTA opens a modal date picker in-place instead
+  // of bouncing the user to /onboarding. State + draft live with the other
+  // hooks above the early returns so the Rules of Hooks stays clean.
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [datePickerDraft, setDatePickerDraft] = useState("");
+  const [datePickerSaving, setDatePickerSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -610,11 +616,24 @@ export default function DashboardPage() {
       {/* ── Next-action CTA — surfaces the first incomplete checklist item.
           Hash targets use a plain <a> so the browser scrolls to the section
           natively; react-router's <Link> swallows the navigation and never
-          scrolls, which made this CTA appear inert. Hidden in day-of mode
-          where the jumbo check-in panel takes over. ── */}
+          scrolls, which made this CTA appear inert. The "lock the wedding
+          date" task is special-cased into a modal so the user doesn't get
+          punted out to /onboarding for a single date field. Hidden in day-of
+          mode where the jumbo check-in panel takes over. ── */}
       {!dayOfMode &&
         nextTask &&
-        (nextTask.to ? (
+        (nextTask.key === "task_set_date" ? (
+          <button
+            type="button"
+            className="btn-primary mb-6 inline-flex"
+            onClick={() => {
+              setDatePickerDraft(couple.wedding_date_goal.exact_date ?? "");
+              setDatePickerOpen(true);
+            }}
+          >
+            {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
+          </button>
+        ) : nextTask.to ? (
           nextTask.to.startsWith("#") ? (
             <a href={nextTask.to} className="btn-primary mb-6 inline-flex">
               {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
@@ -629,6 +648,63 @@ export default function DashboardPage() {
             {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
           </div>
         ))}
+
+      {/* ── Inline wedding-date picker dialog (CTA target). ──────────────
+          Reuses the same WeddingDateGoal shape as the header/KPI inline
+          pickers so save → KPI tile flip works without a refetch. */}
+      <Dialog
+        open={datePickerOpen}
+        role="dialog"
+        closeOnBackdrop
+        title={t("dashboard.set_date_dialog_title")}
+        onClose={() => {
+          if (!datePickerSaving) setDatePickerOpen(false);
+        }}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setDatePickerOpen(false)}
+              disabled={datePickerSaving}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={datePickerSaving || !/^\d{4}-\d{2}-\d{2}$/.test(datePickerDraft)}
+              onClick={async () => {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(datePickerDraft)) return;
+                setDatePickerSaving(true);
+                try {
+                  await saveWeddingDate({
+                    kind: "exact",
+                    exact_date: datePickerDraft,
+                    target_year: Number(datePickerDraft.slice(0, 4)),
+                    target_month: Number(datePickerDraft.slice(5, 7)),
+                    target_season: null,
+                  });
+                  setDatePickerOpen(false);
+                } finally {
+                  setDatePickerSaving(false);
+                }
+              }}
+            >
+              {t("dashboard.set_date_dialog_save")}
+            </button>
+          </>
+        }
+      >
+        <p className="mb-3">{t("dashboard.set_date_dialog_body")}</p>
+        <input
+          type="date"
+          value={datePickerDraft}
+          disabled={datePickerSaving}
+          onChange={(e) => setDatePickerDraft(e.target.value)}
+          className="input"
+        />
+      </Dialog>
 
       {/* ── Date-changed banner ──────────────────────────────────────
           Shown when previous_wedding_date is set AND different from the

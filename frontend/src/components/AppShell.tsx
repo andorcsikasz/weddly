@@ -234,42 +234,50 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+          {/* When signed in, the wordmark routes to the in-app dashboard so
+              users don't get punted to the marketing landing (which reads as
+              "I got logged out"). Signed-out viewers (rare here, but safe)
+              still get /. */}
           <Link
-            to="/"
-            className="text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+            to={user ? "/app" : "/"}
+            className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
           >
             <Wordmark size="sm" />
           </Link>
-          <div className="flex items-center gap-2">
+          {/* Header icon row — every button is a 44×44 square so tap targets
+              line up with the avatar pill and stay HIG-compliant on mobile.
+              gap-1 is plenty between square buttons; gap-2 made the row
+              spread out beyond the wordmark on narrow viewports. */}
+          <div className="flex items-center gap-1">
             <button
               type="button"
-              className="btn-ghost btn-sm inline-flex items-center"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
               aria-label={t("landing.nav_feedback")}
               title={t("landing.nav_feedback")}
               onClick={() => setFeedbackOpen(true)}
             >
-              <MessageCircle size={14} aria-hidden="true" />
+              <MessageCircle size={18} aria-hidden="true" />
             </button>
             <button
               type="button"
-              className="btn-ghost btn-sm inline-flex items-center"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
               onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
               aria-label={t("nav.switch_language")}
               title={locale === "hu" ? t("nav.switch_to_en") : t("nav.switch_to_hu")}
             >
-              <Languages size={14} aria-hidden="true" />
+              <Languages size={18} aria-hidden="true" />
             </button>
             <button
               type="button"
-              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
               title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
             >
               {theme === "dark" ? (
-                <Sun size={14} aria-hidden="true" />
+                <Sun size={18} aria-hidden="true" />
               ) : (
-                <Moon size={14} aria-hidden="true" />
+                <Moon size={18} aria-hidden="true" />
               )}
             </button>
             <ProfileMenu />
