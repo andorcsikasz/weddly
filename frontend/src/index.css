@@ -280,21 +280,6 @@
     );
   }
 
-  /* Admin stationery — purple-100 base + purple-900 hairlines. Used by
-     the admin sub-nav rail in AppShell so the moderation surfaces read
-     as visually distinct from the couple-facing pages without changing
-     the design system's three-color palette anywhere else. */
-  .stationery-admin {
-    background-color: #ede9fe; /* tailwind violet-100 */
-    background-image: repeating-linear-gradient(
-      45deg,
-      rgba(76, 29, 149, 0.09) 0,
-      rgba(76, 29, 149, 0.09) 1px,
-      transparent 1px,
-      transparent 8px
-    );
-  }
-
   /* Blush stationery — blush-100 base + blush-600 hairlines. Used on the
      dashboard "date changed" alert so it reads as a louder cousin of the
      plain `.stationery` letterhead without leaving the blush palette. */

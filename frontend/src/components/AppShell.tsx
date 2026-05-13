@@ -250,8 +250,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8">
         <aside className="hidden w-56 shrink-0 lg:block">
           {inAdminView ? (
-            <nav className="stationery-admin sticky top-20 flex flex-col gap-0.5 rounded-xl border border-violet-400/70 p-2">
-              <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-900">
+            <nav className="sticky top-20 flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-300">
                 <ShieldCheck size={11} aria-hidden="true" />
                 {t("admin.nav_label")}
               </div>
@@ -285,13 +285,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           capped at 5 to keep the row legible on narrow viewports. In admin
           view the bar swaps to the 5 admin pages and inverts to a violet
           tint to mirror the desktop rail. */}
-      <nav
-        className={`safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur lg:hidden ${
-          inAdminView
-            ? "stationery-admin border-violet-400/70"
-            : "border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95"
-        }`}
-      >
+      <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur lg:hidden border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95">
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
           {displayItems
             .filter((item) => item.tabKey)
@@ -364,9 +358,10 @@ function SideLink({
   );
 }
 
-/** Purple-themed sidebar link for admin pages. Active state inverts to a
- *  solid violet pill so it pops off the striped purple stationery background;
- *  inactive rows stay violet-950 text so the whole rail reads as "admin". */
+/** Sidebar link for admin pages. Inactive rows read as the regular
+ *  neutral nav (ink-700) so the rail doesn't shout violet across every
+ *  item; the active row alone fills a deep violet pill that signals
+ *  "you are here". */
 function AdminSideLink({
   to,
   icon,
@@ -381,7 +376,9 @@ function AdminSideLink({
       to={to}
       className={({ isActive }) =>
         `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
-          isActive ? "bg-violet-900 text-white" : "text-violet-950 hover:bg-violet-100"
+          isActive
+            ? "bg-violet-950 text-white dark:bg-violet-700"
+            : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
         }`
       }
     >
@@ -403,7 +400,7 @@ function BottomLink({
   variant?: "default" | "admin";
 }) {
   const active = variant === "admin" ? "text-violet-950" : "text-ink-900";
-  const idle = variant === "admin" ? "text-violet-900/80" : "text-ink-500";
+  const idle = variant === "admin" ? "text-ink-500" : "text-ink-500";
   return (
     <NavLink
       to={to}
