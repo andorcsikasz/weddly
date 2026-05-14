@@ -538,15 +538,11 @@ export default function ProfilePage() {
       </section>
 
       <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.budget_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.budget_body")}</p>
-        {/* Currency picker — three pills. Switching here re-skins every
-         *  money field across the app on next paint; stored integers stay
-         *  put (no auto-conversion). */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-            {t("profile.budget_currency_label")}
-          </span>
+        {/* Header row: title left, currency picker right. The picker stays
+         *  inline with the heading so the section opens with one compact
+         *  band instead of a stacked label-on-top-of-pills layout. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h2 className="text-lg">{t("profile.budget_title")}</h2>
           <div
             role="radiogroup"
             aria-label={t("profile.budget_currency_label")}
@@ -561,27 +557,36 @@ export default function ProfilePage() {
                   role="radio"
                   aria-checked={active}
                   onClick={() => saveCurrency(c)}
-                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
                     active
                       ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
                       : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
                   }`}
                 >
-                  {t(`profile.budget_currency_${c.toLowerCase()}`)}
+                  {c}
                 </button>
               );
             })}
           </div>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {/* Cost-cap tile — inline-editable. */}
-          <div className="rounded-2xl border border-ink-200 bg-paper-50/60 p-4 dark:border-umber-700 dark:bg-ink-800/40">
-            <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-              {t("profile.budget_cap_label")}
-            </p>
+
+        {/* Two stat rows on a hairline-divided list. ~40px per row vs the
+         *  ~120px tiles the previous design used, while still hosting the
+         *  inline edit + quick-add forms when triggered. */}
+        <ul className="mt-3 divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
+          {/* Cap row — rest state shows label + value + Edit, edit state
+           *  swaps the right half for an inline input + save/cancel. */}
+          <li className="py-2.5">
             {editingCap ? (
-              <form onSubmit={saveCap} className="mt-2">
-                <div className="flex items-center gap-2">
+              <form
+                onSubmit={saveCap}
+                className="flex flex-wrap items-center gap-x-3 gap-y-2"
+                aria-label={t("profile.budget_cap_label")}
+              >
+                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  {t("profile.budget_cap_label")}
+                </span>
+                <div className="ml-auto flex items-center gap-2">
                   <input
                     type="number"
                     inputMode="numeric"
@@ -590,22 +595,21 @@ export default function ProfilePage() {
                     value={capInput}
                     onChange={(ev) => setCapInput(ev.target.value)}
                     placeholder={t("profile.budget_cap_placeholder")}
-                    className="input flex-1"
+                    className="input h-8 w-32 py-0 text-right text-sm tabular-nums"
                     autoFocus
                     disabled={savingCap}
                   />
-                  <span className="text-sm text-ink-500 dark:text-umber-300">{symbol}</span>
-                </div>
-                {capError && (
-                  <p className="mt-2 text-xs text-blush-700 dark:text-blush-300">{capError}</p>
-                )}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="submit" className="btn-sm btn-primary" disabled={savingCap}>
+                  <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
+                  <button
+                    type="submit"
+                    className="btn-sm btn-primary !px-3 !py-1 !text-xs"
+                    disabled={savingCap}
+                  >
                     {savingCap ? t("common.saving") : t("common.save")}
                   </button>
                   <button
                     type="button"
-                    className="btn-sm btn-outline"
+                    className="btn-sm btn-outline !px-3 !py-1 !text-xs"
                     onClick={() => {
                       setEditingCap(false);
                       setCapError(null);
@@ -615,32 +619,46 @@ export default function ProfilePage() {
                     {t("common.cancel")}
                   </button>
                 </div>
+                {capError && (
+                  <p className="basis-full text-right text-[11px] text-blush-700 dark:text-blush-300">
+                    {capError}
+                  </p>
+                )}
               </form>
             ) : (
-              <div className="mt-2 flex items-baseline justify-between gap-3">
-                <p className="text-2xl font-medium text-ink-900 dark:text-paper-50">
+              <div className="flex items-center gap-3">
+                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  {t("profile.budget_cap_label")}
+                </span>
+                <span className="ml-auto text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                   {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "—"}
-                </p>
-                <button type="button" className="btn-sm btn-outline" onClick={beginCapEdit}>
+                </span>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                  onClick={beginCapEdit}
+                  aria-label={t("common.edit")}
+                >
                   {t("common.edit")}
                 </button>
               </div>
             )}
-          </div>
+          </li>
 
-          {/* Already-paid tile — derived sum + quick "add payment" form. */}
-          <div className="rounded-2xl border border-ink-200 bg-paper-50/60 p-4 dark:border-umber-700 dark:bg-ink-800/40">
-            <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-              {t("profile.budget_paid_label")}
-            </p>
-            <div className="mt-2 flex items-baseline justify-between gap-3">
-              <p className="text-2xl font-medium text-ink-900 dark:text-paper-50">
+          {/* Paid row — same shape; quick-add expands into a two-field
+           *  inline form below the rest state. */}
+          <li className="py-2.5">
+            <div className="flex items-center gap-3">
+              <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                {t("profile.budget_paid_label")}
+              </span>
+              <span className="ml-auto text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                 {formatMoney(totalPaidHuf, currency, locale)}
-              </p>
+              </span>
               {!addingPayment && (
                 <button
                   type="button"
-                  className="btn-sm btn-outline"
+                  className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
                   onClick={() => {
                     setAddingPayment(true);
                     setPaymentError(null);
@@ -651,18 +669,21 @@ export default function ProfilePage() {
               )}
             </div>
             {addingPayment && (
-              <form onSubmit={savePayment} className="mt-3 space-y-2">
+              <form
+                onSubmit={savePayment}
+                className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-2"
+              >
                 <input
                   type="text"
                   value={paymentLabel}
                   onChange={(ev) => setPaymentLabel(ev.target.value)}
                   placeholder={t("profile.budget_payment_label_placeholder")}
-                  className="input w-full"
+                  className="input h-8 flex-1 min-w-[8rem] py-0 text-sm"
                   maxLength={200}
                   autoFocus
                   disabled={savingPayment}
                 />
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <input
                     type="number"
                     inputMode="numeric"
@@ -671,39 +692,40 @@ export default function ProfilePage() {
                     value={paymentAmount}
                     onChange={(ev) => setPaymentAmount(ev.target.value)}
                     placeholder={t("profile.budget_payment_amount_placeholder")}
-                    className="input flex-1"
+                    className="input h-8 w-28 py-0 text-right text-sm tabular-nums"
                     disabled={savingPayment}
                   />
-                  <span className="text-sm text-ink-500 dark:text-umber-300">{symbol}</span>
+                  <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
                 </div>
+                <button
+                  type="submit"
+                  className="btn-sm btn-primary !px-3 !py-1 !text-xs"
+                  disabled={savingPayment}
+                >
+                  {savingPayment ? t("common.saving") : t("profile.budget_payment_save")}
+                </button>
+                <button
+                  type="button"
+                  className="btn-sm btn-outline !px-3 !py-1 !text-xs"
+                  onClick={() => {
+                    setAddingPayment(false);
+                    setPaymentLabel("");
+                    setPaymentAmount("");
+                    setPaymentError(null);
+                  }}
+                  disabled={savingPayment}
+                >
+                  {t("common.cancel")}
+                </button>
                 {paymentError && (
-                  <p className="text-xs text-blush-700 dark:text-blush-300">{paymentError}</p>
+                  <p className="basis-full text-[11px] text-blush-700 dark:text-blush-300">
+                    {paymentError}
+                  </p>
                 )}
-                <div className="flex flex-wrap gap-2">
-                  <button type="submit" className="btn-sm btn-primary" disabled={savingPayment}>
-                    {savingPayment ? t("common.saving") : t("profile.budget_payment_save")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-sm btn-outline"
-                    onClick={() => {
-                      setAddingPayment(false);
-                      setPaymentLabel("");
-                      setPaymentAmount("");
-                      setPaymentError(null);
-                    }}
-                    disabled={savingPayment}
-                  >
-                    {t("common.cancel")}
-                  </button>
-                </div>
               </form>
             )}
-            <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
-              {t("profile.budget_paid_hint")}
-            </p>
-          </div>
-        </div>
+          </li>
+        </ul>
       </section>
 
       <section className="card mt-6">

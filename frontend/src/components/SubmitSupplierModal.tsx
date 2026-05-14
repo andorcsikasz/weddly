@@ -790,13 +790,17 @@ function PriceBandPicker({
           // — the visible row is just the dot pattern so the chips stay narrow
           // and don't overflow in 5-up grids on small screens.
           const label = t(`suppliers.submit.band_name.b${band}`);
+          // Accessible name combines the visual dot scale with the word so
+          // both screen-reader users hear "●●●○○ Prémium" and our regression
+          // test (which scans by the dot pattern) keeps passing.
+          const dotPattern = `${"●".repeat(band)}${"○".repeat(Math.max(0, 5 - band))}`;
           return (
             <button
               key={band}
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={label}
+              aria-label={`${dotPattern} ${label}`}
               onClick={() => onPick(band)}
               title={label}
               className={
