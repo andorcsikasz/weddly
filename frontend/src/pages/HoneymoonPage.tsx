@@ -165,12 +165,14 @@ function formatDateShort(iso: string | null, locale: "hu" | "en"): string {
 
 /** Mirror of CostPlanningCard's range-fill trick — paint the filled portion
  *  of a native range input ourselves so the look stays consistent across
- *  Chromium / Firefox / WebKit. */
+ *  Chromium / Firefox / WebKit. Colors come from the shared CSS vars
+ *  (`--range-fill-amount` / `--range-fill-remainder`) so the fill inverts
+ *  under `html.dark` (filled = bright paper, remainder = dark umber). */
 function rangeFillStyle(value: number, min: number, max: number): { background: string } {
   const span = max - min;
   const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
   return {
-    background: `linear-gradient(to right, #243150 0%, #243150 ${pct}%, #efe9d9 ${pct}%, #efe9d9 100%)`,
+    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${pct}%, var(--range-fill-remainder) ${pct}%, var(--range-fill-remainder) 100%)`,
   };
 }
 
