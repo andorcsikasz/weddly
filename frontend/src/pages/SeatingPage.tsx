@@ -958,7 +958,7 @@ export default function SeatingPage() {
             disabled={previewLoading !== null}
             onClick={() =>
               requestDownload(
-                "/api/print/seating/a4",
+                `/api/print/seating/a4?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
                 "weddly-seating-a4.pdf",
                 t("seating.print_a4"),
               )
@@ -974,7 +974,7 @@ export default function SeatingPage() {
             disabled={previewLoading !== null}
             onClick={() =>
               requestDownload(
-                "/api/print/seating/a3",
+                `/api/print/seating/a3?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
                 "weddly-seating-a3.pdf",
                 t("seating.print_a3"),
               )

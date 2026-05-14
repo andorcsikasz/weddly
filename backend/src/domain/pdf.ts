@@ -15,7 +15,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
-import { type PDFFont, type PDFPage, PDFDocument, rgb } from "pdf-lib";
+import { type PDFFont, type PDFPage, PDFDocument, degrees, rgb } from "pdf-lib";
 import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
@@ -62,6 +62,12 @@ interface SeatingChartInput {
   tables: SeatingTable[];
   assignments: SeatAssignment[];
   guests: Guest[];
+  /** Floor-plan dimensions in mm. When provided, the renderer lays the page
+   *  out against the actual room rectangle (preserving empty floor space)
+   *  and auto-selects landscape vs portrait to maximise scale. Without
+   *  these, falls back to a tight bbox around the placed tables. */
+  room_width_mm?: number;
+  room_height_mm?: number;
 }
 
 function mm(v: number): number {
@@ -161,14 +167,55 @@ function tableHalfDims(t: SeatingTable): { rx: number; ry: number } {
   return { rx: t.length_mm / 2, ry: t.width_mm / 2 };
 }
 
-/** Lay tables out on the page. If any table has a positive position, we use
- *  the user-set coordinates and render every table at its real-world size. If
- *  no positions are set, we auto-flow into a grid scaled to fit. */
-function layoutTables(tables: SeatingTable[], pageW_mm: number, pageH_mm: number): LayoutResult {
-  const margin = 20;
-  const headerH = 30;
+/** Lay tables out on the page. Layout strategy:
+ *  - If room dimensions are provided, scale the whole room rectangle into
+ *    the page so the print mirrors what the couple sees in the editor
+ *    (empty floor space preserved). Caller picks page orientation first.
+ *  - Else, if any table has a positive position, fit a tight bbox around
+ *    the placed tables.
+ *  - Else, auto-flow into a grid. */
+function layoutTables(
+  tables: SeatingTable[],
+  pageW_mm: number,
+  pageH_mm: number,
+  room?: { width_mm: number; height_mm: number },
+): LayoutResult {
+  const margin = 12;
+  const headerH = 22;
   const useUserPos = tables.some((t) => t.x_mm > 0 || t.y_mm > 0);
   const out = new Map<number, TableLayout>();
+
+  if (room && useUserPos) {
+    // Render the actual room rectangle so empty floor space is preserved.
+    const planW = Math.max(1, room.width_mm);
+    const planH = Math.max(1, room.height_mm);
+    const availW = pageW_mm - 2 * margin;
+    const availH = pageH_mm - 2 * margin - headerH;
+    const scale = Math.min(availW / planW, availH / planH);
+    const offsetX = margin + (availW - planW * scale) / 2;
+    const offsetY = margin + headerH + (availH - planH * scale) / 2;
+    for (const t of tables) {
+      const { rx, ry } = tableHalfDims(t);
+      out.set(t.id, {
+        x_mm: t.x_mm * scale + offsetX,
+        y_mm: t.y_mm * scale + offsetY,
+        rx_mm: rx * scale,
+        ry_mm: ry * scale,
+      });
+    }
+    return {
+      tableLayouts: out,
+      transform: {
+        scale,
+        offsetX,
+        offsetY,
+        planMinX: 0,
+        planMinY: 0,
+        planMaxX: planW,
+        planMaxY: planH,
+      },
+    };
+  }
 
   if (useUserPos) {
     // Find the bounding box of the user-placed tables and scale it to fit
@@ -287,7 +334,49 @@ function drawPlanGrid(
 }
 
 export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<Uint8Array> {
-  const { width_mm, height_mm } = FORMATS[input.format];
+  const fmt = FORMATS[input.format];
+  // Auto-pick portrait vs landscape so the floor plan fills the page. We
+  // try both orientations against the room rectangle (or table bbox) and
+  // pick whichever yields the larger fit scale. Tall rooms stay portrait;
+  // wide rooms flip to landscape automatically.
+  let width_mm: number = fmt.width_mm;
+  let height_mm: number = fmt.height_mm;
+  const roomW = input.room_width_mm ?? 0;
+  const roomH = input.room_height_mm ?? 0;
+  const useRoom = roomW > 0 && roomH > 0;
+  let planW = useRoom ? roomW : 0;
+  let planH = useRoom ? roomH : 0;
+  if (!useRoom && input.tables.length > 0) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const t of input.tables) {
+      const { rx, ry } = tableHalfDims(t);
+      minX = Math.min(minX, t.x_mm - rx);
+      minY = Math.min(minY, t.y_mm - ry);
+      maxX = Math.max(maxX, t.x_mm + rx);
+      maxY = Math.max(maxY, t.y_mm + ry);
+    }
+    planW = Math.max(1, maxX - minX);
+    planH = Math.max(1, maxY - minY);
+  }
+  if (planW > 0 && planH > 0) {
+    const margin = 12;
+    const headerH = 22;
+    const portraitFit = Math.min(
+      (width_mm - 2 * margin) / planW,
+      (height_mm - 2 * margin - headerH) / planH,
+    );
+    const landscapeFit = Math.min(
+      (height_mm - 2 * margin) / planW,
+      (width_mm - 2 * margin - headerH) / planH,
+    );
+    if (landscapeFit > portraitFit) {
+      [width_mm, height_mm] = [height_mm, width_mm];
+    }
+  }
+
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   const helv = await pdf.embedFont(NOTO_REGULAR, { subset: true });
@@ -312,8 +401,8 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
   const title = safe(input.couple_display_name);
   page.drawText(title, {
     x: mm(15),
-    y: mm(height_mm - 18),
-    size: 24,
+    y: mm(height_mm - 14),
+    size: 18,
     font: await pickFontAsync(fontPair, title, "bold"),
     color: rgb(0.06, 0.09, 0.19),
   });
@@ -321,22 +410,27 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     const dateText = safe(input.wedding_date);
     page.drawText(dateText, {
       x: mm(15),
-      y: mm(height_mm - 26),
-      size: 11,
+      y: mm(height_mm - 20),
+      size: 10,
       font: await pickFontAsync(fontPair, dateText, "regular"),
       color: rgb(0.27, 0.33, 0.48),
     });
   }
   const header = "Ültetési rend / Seating chart";
   page.drawText(header, {
-    x: mm(width_mm - 80),
-    y: mm(height_mm - 18),
-    size: 11,
+    x: mm(width_mm - 70),
+    y: mm(height_mm - 14),
+    size: 10,
     font: await pickFontAsync(fontPair, header, "regular"),
     color: rgb(0.27, 0.33, 0.48),
   });
 
-  const { tableLayouts: positions, transform } = layoutTables(input.tables, width_mm, height_mm);
+  const { tableLayouts: positions, transform } = layoutTables(
+    input.tables,
+    width_mm,
+    height_mm,
+    useRoom ? { width_mm: roomW, height_mm: roomH } : undefined,
+  );
 
   // Faint 50 cm dashed grid behind the tables — matches the on-screen
   // canvas and gives the couple a real-world ruler when planning the
@@ -344,6 +438,40 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
   // (auto-flow renders cell-fitted shapes, no consistent real-world scale).
   if (transform) {
     drawPlanGrid(page, transform, width_mm, height_mm);
+    // Room boundary — chunky ink frame matching the SVG editor. Drawn as
+    // four lines so we don't overpaint the grid with a fill.
+    if (useRoom) {
+      const x0 = mm(transform.offsetX);
+      const y0 = mm(transform.offsetY);
+      const x1 = x0 + mm(roomW * transform.scale);
+      const y1 = y0 + mm(roomH * transform.scale);
+      const frame = rgb(0.14, 0.19, 0.31);
+      const thick = 1.2;
+      page.drawLine({
+        start: { x: x0, y: y0 },
+        end: { x: x1, y: y0 },
+        thickness: thick,
+        color: frame,
+      });
+      page.drawLine({
+        start: { x: x1, y: y0 },
+        end: { x: x1, y: y1 },
+        thickness: thick,
+        color: frame,
+      });
+      page.drawLine({
+        start: { x: x1, y: y1 },
+        end: { x: x0, y: y1 },
+        thickness: thick,
+        color: frame,
+      });
+      page.drawLine({
+        start: { x: x0, y: y1 },
+        end: { x: x0, y: y0 },
+        thickness: thick,
+        color: frame,
+      });
+    }
   }
   const guestById = new Map(input.guests.map((g) => [g.id, g]));
   const seatsByTable = new Map<number, SeatAssignment[]>();
@@ -351,6 +479,26 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     if (!seatsByTable.has(a.table_id)) seatsByTable.set(a.table_id, []);
     seatsByTable.get(a.table_id)!.push(a);
   }
+
+  // Brand palette for table + chair rendering — keep these in lockstep with
+  // the SVG editor so the print mirrors what the couple sees. Hex sources:
+  // ink-800 (#1a2440), paper-50 (#fbfaf5), blush-300 (#eda997),
+  // blush-700 (#9d3b27).
+  const INK_800 = rgb(0.102, 0.141, 0.251);
+  const PAPER_50 = rgb(0.984, 0.98, 0.961);
+  const BLUSH_300 = rgb(0.929, 0.663, 0.592);
+  const BLUSH_700 = rgb(0.616, 0.231, 0.153);
+
+  // Standard banquet chair size in mm — constant in real-world space.
+  // Scaled into page mm via the layout transform so chairs stay proportional
+  // to the room (~30% of a 1.5 m round table = 44 cm wide, which matches).
+  const CHAIR_W_MM = 440;
+  const CHAIR_H_MM = 360;
+  const CHAIR_GAP_MM = 60;
+  const chairScale = transform ? transform.scale : 1;
+  const chairWpt = mm(CHAIR_W_MM * chairScale);
+  const chairHpt = mm(CHAIR_H_MM * chairScale);
+  const chairGapPt = mm(CHAIR_GAP_MM * chairScale);
 
   for (const t of input.tables) {
     const pos = positions.get(t.id);
@@ -363,62 +511,103 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     // NOTE: t.rotation_deg is honoured on the on-screen canvas but renders
     // as 0° here. pdf-lib rotation is around the bottom-left corner — the
     // off-axis math (rotate, then re-center) is tracked for a follow-up.
+    const borderW = 1.4;
     if (t.shape === "round") {
       page.drawCircle({
         x: cx,
         y: cy,
         size: rx,
-        borderWidth: 1,
-        borderColor: rgb(0.06, 0.09, 0.19),
-        color: rgb(0.97, 0.96, 0.92),
+        borderWidth: borderW,
+        borderColor: INK_800,
+        color: PAPER_50,
       });
     } else {
-      // square or long — draw an axis-aligned rectangle at the layout dims.
+      // pdf-lib doesn't expose rounded corners on drawRectangle — the
+      // strong stroke alone reads correctly at print scale. Future: build
+      // an SVG path with arc-corners.
       page.drawRectangle({
         x: cx - rx,
         y: cy - ry,
         width: rx * 2,
         height: ry * 2,
-        borderWidth: 1,
-        borderColor: rgb(0.06, 0.09, 0.19),
-        color: rgb(0.97, 0.96, 0.92),
+        borderWidth: borderW,
+        borderColor: INK_800,
+        color: PAPER_50,
       });
     }
 
-    const fitted = await fitText(fontPair, t.label, 10, Math.min(rx, ry) * 1.8, "bold");
-    const labelW = fitted.font.widthOfTextAtSize(fitted.text, 10);
-    page.drawText(fitted.text, {
-      x: cx - labelW / 2,
-      y: cy - 2,
-      size: 10,
-      font: fitted.font,
-      color: rgb(0.06, 0.09, 0.19),
-    });
-
-    // Render guest names around the table perimeter using the same chair
-    // layout as the on-screen map (round = even angles; rectangular = chairs
-    // distributed along the long sides first, with end-caps if needed).
-    const seats = (seatsByTable.get(t.id) ?? []).sort((a, b) => a.seat_index - b.seat_index);
+    // Chairs — blush rounded rectangles tangent to the perimeter, matching
+    // the SVG editor. Centre of each chair sits CHAIR_GAP_MM outside the
+    // edge, with its long axis along the table edge.
     const chairs = chairOffsets(t.shape, t.seats, rx, ry);
-    for (const a of seats) {
-      const offset = chairs[a.seat_index];
-      const guest = guestById.get(a.guest_id);
-      if (!offset || !guest) continue;
-      const guestFit = await fitText(fontPair, guest.full_name, 7, mm(35));
-      // Push the label a bit further out than the chair itself to avoid
-      // colliding with the table border.
-      const padPt = 3;
-      const norm = Math.hypot(offset.dx, offset.dy) || 1;
-      const px = cx + offset.dx + (offset.dx / norm) * padPt;
-      const py = cy + offset.dy + (offset.dy / norm) * padPt;
-      page.drawText(guestFit.text, {
-        x: px,
-        y: py,
-        size: 7,
-        font: guestFit.font,
-        color: rgb(0.1, 0.14, 0.25),
+    const seats = (seatsByTable.get(t.id) ?? []).sort((a, b) => a.seat_index - b.seat_index);
+    const seatByIndex = new Map(seats.map((a) => [a.seat_index, a]));
+    const disabledSet = new Set(t.disabled_seats ?? []);
+    for (let i = 0; i < chairs.length; i++) {
+      const c = chairs[i];
+      if (!c) continue;
+      const isDisabled = disabledSet.has(i);
+      const isFilled = seatByIndex.has(i);
+      const norm = Math.hypot(c.dx, c.dy) || 1;
+      const pushPt = chairHpt / 2 + chairGapPt;
+      const px = cx + c.dx + (c.dx / norm) * pushPt;
+      const py = cy + c.dy + (c.dy / norm) * pushPt;
+      const rotDeg = ((c.angle * 180) / Math.PI + 90) % 360;
+      // pdf-lib rotates around the rectangle's bottom-left corner. To rotate
+      // around the chair centre, place the bottom-left such that after the
+      // rotation the centre lands at (px, py).
+      const rad = (rotDeg * Math.PI) / 180;
+      const cosR = Math.cos(rad);
+      const sinR = Math.sin(rad);
+      const blX = px - (chairWpt / 2) * cosR + (chairHpt / 2) * sinR;
+      const blY = py - (chairWpt / 2) * sinR - (chairHpt / 2) * cosR;
+      const fill = isDisabled ? rgb(0.93, 0.91, 0.85) : isFilled ? INK_800 : BLUSH_300;
+      page.drawRectangle({
+        x: blX,
+        y: blY,
+        width: chairWpt,
+        height: chairHpt,
+        rotate: degrees(rotDeg),
+        color: fill,
       });
     }
+
+    // Guest names just outside each filled chair.
+    for (const a of seats) {
+      const c = chairs[a.seat_index];
+      if (!c) continue;
+      const guest = guestById.get(a.guest_id);
+      if (!guest) continue;
+      const norm = Math.hypot(c.dx, c.dy) || 1;
+      const pushPt = chairHpt + chairGapPt + 2;
+      const px = cx + c.dx + (c.dx / norm) * pushPt;
+      const py = cy + c.dy + (c.dy / norm) * pushPt;
+      const guestFit = await fitText(fontPair, guest.full_name, 6.5, mm(28));
+      const w = guestFit.font.widthOfTextAtSize(guestFit.text, 6.5);
+      page.drawText(guestFit.text, {
+        x: px - w / 2,
+        y: py - 2,
+        size: 6.5,
+        font: guestFit.font,
+        color: INK_800,
+      });
+    }
+
+    // Table label — large blush text in the centre. Sized to fit the
+    // shorter half-dim so it stays inside the table footprint. Min 9pt so
+    // names stay legible even on tiny tables; the fitText caller truncates
+    // with an ellipsis if it still overflows.
+    const maxLabelW = Math.min(rx, ry) * 1.6;
+    const labelSize = Math.max(9, Math.min(20, Math.min(rx, ry) * 0.5));
+    const labelFit = await fitText(fontPair, t.label, labelSize, maxLabelW, "bold");
+    const labelW = labelFit.font.widthOfTextAtSize(labelFit.text, labelSize);
+    page.drawText(labelFit.text, {
+      x: cx - labelW / 2,
+      y: cy - labelSize / 3,
+      size: labelSize,
+      font: labelFit.font,
+      color: BLUSH_700,
+    });
   }
 
   return pdf.save();

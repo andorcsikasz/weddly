@@ -108,6 +108,19 @@ async function handleSeatingChart(ctx: Ctx, fmt: "a4" | "a3"): Promise<Response>
   const tables = loadTables(couple.id);
   const assignments = loadAssignments(couple.id);
   const guests = listGuestsByCouple(couple.id);
+  // Optional room dimensions — when the client sends both, the renderer
+  // auto-picks page orientation to fit the room AND draws the floor plan
+  // against the real venue rectangle instead of a tight bbox.
+  const roomWRaw = Number(ctx.url.searchParams.get("room_w"));
+  const roomHRaw = Number(ctx.url.searchParams.get("room_h"));
+  const room_width_mm =
+    Number.isFinite(roomWRaw) && roomWRaw >= 1000 && roomWRaw <= 100_000
+      ? Math.round(roomWRaw)
+      : undefined;
+  const room_height_mm =
+    Number.isFinite(roomHRaw) && roomHRaw >= 1000 && roomHRaw <= 100_000
+      ? Math.round(roomHRaw)
+      : undefined;
   const pdf = await renderSeatingChartPdf({
     format: fmt,
     couple_display_name: couple.display_name,
@@ -115,6 +128,8 @@ async function handleSeatingChart(ctx: Ctx, fmt: "a4" | "a3"): Promise<Response>
     tables,
     assignments,
     guests,
+    room_width_mm,
+    room_height_mm,
   });
   addAuditLog({
     actor_user_id: userId,

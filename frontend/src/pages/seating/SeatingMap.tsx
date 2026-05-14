@@ -8,8 +8,9 @@
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
 import { chairOffsets, maxSeatsForTable } from "@shared/seating";
-import { Baby, Minus, Plus } from "lucide-react";
+import { Baby, Maximize2, Minus, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useT } from "../../lib/i18n";
 
 // Default room: 12m × 9m. Wide enough for a 200-person wedding without feeling
@@ -118,6 +119,30 @@ export function SeatingMap({
     new Map(),
   );
   const [drag, setDrag] = useState<DragState | null>(null);
+  // When true, the whole card mounts into a fullscreen portal at 90vw × 90vh.
+  // Same SVG inside — viewBox-based scaling means tables stay correctly
+  // proportioned regardless of container size, so all drag/resize logic
+  // continues to work without changes.
+  const [expanded, setExpanded] = useState(false);
+
+  // ESC closes the expanded overlay. Lock body scroll while open so the
+  // backdrop doesn't reveal the page underneath when the user scrolls.
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setExpanded(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [expanded]);
 
   // Reset local overrides whenever the underlying tables prop changes
   // (e.g. server refresh). Otherwise stale drag positions could linger.
@@ -339,27 +364,40 @@ export function SeatingMap({
     [selectedId, tables, localPos, onMove, onSeatsChange, onDeleteTable, onAddTable],
   );
 
-  return (
-    <div className="card overflow-hidden p-0">
+  const cardContent = (
+    <>
       <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-4 py-2.5 dark:border-umber-700">
         <div>
           <h2 className="text-base">{t("seating.map_title")}</h2>
           <p className="text-xs text-ink-500 dark:text-umber-300">{t("seating.map_help")}</p>
         </div>
-        <RoomDimsInput
-          widthMm={ROOM_W_MM}
-          heightMm={ROOM_H_MM}
-          onChange={onRoomChange}
-          widthAriaLabel={t("seating.room_width_aria")}
-          heightAriaLabel={t("seating.room_height_aria")}
-        />
+        <div className="flex items-center gap-2">
+          <RoomDimsInput
+            widthMm={ROOM_W_MM}
+            heightMm={ROOM_H_MM}
+            onChange={onRoomChange}
+            widthAriaLabel={t("seating.room_width_aria")}
+            heightAriaLabel={t("seating.room_height_aria")}
+          />
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="rounded-md border border-paper-300 bg-paper-50 p-1.5 text-ink-500 transition-colors hover:border-ink-700 hover:text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-paper-100 dark:hover:text-paper-100"
+            aria-label={expanded ? t("seating.map_collapse") : t("seating.map_expand")}
+            title={expanded ? t("seating.map_collapse") : t("seating.map_expand")}
+          >
+            {expanded ? <X size={16} aria-hidden /> : <Maximize2 size={16} aria-hidden />}
+          </button>
+        </div>
       </header>
-      <div className="relative bg-paper-50 dark:bg-umber-900">
+      <div className={`relative bg-paper-50 dark:bg-umber-900 ${expanded ? "flex-1" : ""}`}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
-          // 4:3 aspect; height is set via CSS so the SVG stays responsive.
-          className="block h-[60vh] max-h-[640px] w-full select-none touch-none focus:outline-none"
+          // Inline: fixed 60vh-ish frame. Expanded: fills the 90vh overlay.
+          className={`block w-full select-none touch-none focus:outline-none ${
+            expanded ? "h-full" : "h-[60vh] max-h-[640px]"
+          }`}
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           onPointerLeave={endDrag}
@@ -427,8 +465,33 @@ export function SeatingMap({
           })}
         </svg>
       </div>
-    </div>
+    </>
   );
+
+  if (expanded) {
+    // Empty placeholder keeps the parent grid slot occupied so the side
+    // TableEditor doesn't reflow while the map sits in the overlay.
+    return (
+      <>
+        <div aria-hidden className="h-[60vh] max-h-[640px]" />
+        {createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4 backdrop-blur-sm"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setExpanded(false);
+            }}
+          >
+            <div className="card flex h-[90vh] w-[90vw] flex-col overflow-hidden p-0 shadow-pop">
+              {cardContent}
+            </div>
+          </div>,
+          document.body,
+        )}
+      </>
+    );
+  }
+
+  return <div className="card overflow-hidden p-0">{cardContent}</div>;
 }
 
 function RoomDimsInput({
@@ -593,11 +656,12 @@ function TableShape({
 
   // Stationery aesthetic from the landing-page mockup: clean white-ish
   // table body, dark navy single stroke, blush rounded-rect chairs spaced
-  // just outside the perimeter. Selection lifts the stroke without changing
-  // the warmth of the fill.
+  // just outside the perimeter. Selection swaps the body to a warm blush
+  // tint AND thickens the stroke so the active table is unmissable on
+  // a crowded floor plan.
   const strokeClass = isSelected ? "stroke-blush-600" : "stroke-ink-800";
   const strokeWidth = isSelected ? 22 : 14;
-  const fillClass = "fill-paper-50";
+  const fillClass = isSelected ? "fill-blush-100" : "fill-paper-50";
 
   // Long and head get a softer banquet-bench corner; square stays tighter.
   const rectCorner =
