@@ -161,6 +161,7 @@ export default function SuppliersPage() {
   const query = params.get("q") ?? "";
   const cityFilter = params.get("city") ?? "";
   const showSavedOnly = params.get("saved") === "1";
+  const showPickedOnly = params.get("picked") === "1";
   const sortMode: "top" | "alpha" | "price_asc" | "price_desc" = (() => {
     const v = params.get("sort");
     if (v === "alpha" || v === "price_asc" || v === "price_desc") return v;
@@ -212,6 +213,12 @@ export default function SuppliersPage() {
     const p = new URLSearchParams(params);
     if (showSavedOnly) p.delete("saved");
     else p.set("saved", "1");
+    setParams(p, { replace: true });
+  }
+  function togglePickedFilter() {
+    const p = new URLSearchParams(params);
+    if (showPickedOnly) p.delete("picked");
+    else p.set("picked", "1");
     setParams(p, { replace: true });
   }
   function setSortMode(next: "top" | "alpha" | "price_asc" | "price_desc") {
@@ -390,6 +397,10 @@ export default function SuppliersPage() {
     let dir = items;
     if (cityFilter) dir = dir.filter((s) => s.city === cityFilter);
     if (showSavedOnly) dir = dir.filter((s) => saved.has(s.id));
+    if (showPickedOnly) {
+      const pickedIds = new Set(Object.values(selection));
+      dir = dir.filter((s) => pickedIds.has(s.id));
+    }
     if (priceBand !== null) {
       // Exact-match: only suppliers whose declared band equals the picked
       // value. Suppliers without a declared price band pass through so
@@ -414,11 +425,26 @@ export default function SuppliersPage() {
     // Saved-only view is a directory feature; DIY entries are always "yours"
     // so they don't belong in the saved-list summary either way.
     let mine = showSavedOnly ? [] : coupleSuppliers;
+    if (showPickedOnly) {
+      const pickedIds = new Set(Object.values(selection));
+      mine = mine.filter((s) => pickedIds.has(s.id));
+    }
     if (q) {
       mine = mine.filter((s) => normalize(`${s.name} ${s.notes ?? ""}`).includes(q));
     }
     return [...mine, ...dir];
-  }, [items, coupleSuppliers, cityFilter, showSavedOnly, saved, priceBand, guestsFilter, query]);
+  }, [
+    items,
+    coupleSuppliers,
+    cityFilter,
+    showSavedOnly,
+    saved,
+    showPickedOnly,
+    selection,
+    priceBand,
+    guestsFilter,
+    query,
+  ]);
 
   const filtered = useMemo(() => {
     let out = filteredBeforeCategory;
@@ -621,22 +647,38 @@ export default function SuppliersPage() {
           <Star size={14} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
           <span className="tabular-nums">{saved.size}</span>
         </button>
-        <span
-          aria-label={t("suppliers.picked_filter", { n: Object.keys(selection).length })}
-          title={t("suppliers.picked_filter", { n: Object.keys(selection).length })}
-          className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm ${
-            Object.keys(selection).length > 0
-              ? "border-sage-400 bg-sage-50 text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
-              : "border-paper-300 bg-paper-50 text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
-          }`}
+        <button
+          type="button"
+          onClick={togglePickedFilter}
+          disabled={Object.keys(selection).length === 0 && !showPickedOnly}
+          aria-pressed={showPickedOnly}
+          aria-label={t(
+            showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
+            { n: Object.keys(selection).length },
+          )}
+          title={t(
+            showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
+            { n: Object.keys(selection).length },
+          )}
+          className={
+            showPickedOnly
+              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-sage-600 bg-sage-600 px-3 text-sm font-medium text-paper-100 dark:border-sage-300 dark:bg-sage-300 dark:text-umber-900"
+              : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
+                  Object.keys(selection).length > 0
+                    ? "border-sage-400 bg-sage-50 text-sage-700 hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
+                    : "border-paper-300 bg-paper-50 text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
+                }`
+          }
         >
           <BookmarkCheck
             size={14}
-            className={Object.keys(selection).length > 0 ? "fill-sage-200" : ""}
+            className={
+              showPickedOnly || Object.keys(selection).length > 0 ? "fill-sage-200" : ""
+            }
             aria-hidden
           />
           <span className="tabular-nums">{Object.keys(selection).length}</span>
-        </span>
+        </button>
         <label className="flex items-center gap-2">
           <span className="sr-only">{t("suppliers.sort_label")}</span>
           <select

@@ -1401,7 +1401,8 @@ export interface LocaleMessages {
     /** Per-category "this is our pick" selection — one card per sub-category. */
     pick_aria: string;
     unpick_aria: string;
-    picked_filter: string;
+    picked_filter_idle: string;
+    picked_filter_active: string;
     picked_pill: string;
     chain_progress_aria: string;
     /** Per-couple planned + final cost row on each supplier card. */
