@@ -310,7 +310,15 @@ export interface LocaleMessages {
     kpi_guests_no_data: string;
     kpi_budget_label: string;
     kpi_budget_unit: string;
+    /** Tiny connector word between the spent total and the cap on the budget
+     *  KPI tile. Rendered inline before the (interactive) cap value. */
+    kpi_budget_unit_connector: string;
     kpi_budget_no_cap: string;
+    /** Toast + tooltip surfaced when the cap value is single-clicked, telling
+     *  the user the double-click affordance for editing the planned budget. */
+    kpi_budget_edit_hint: string;
+    /** Accessible name for the cap edit field while inline editing. */
+    kpi_budget_edit_aria: string;
     /** Cost per guest, falling back from actual/confirmed to planned/target. */
     kpi_roi_label: string;
     kpi_roi_unit_actual: string;
@@ -1248,6 +1256,8 @@ export interface LocaleMessages {
     add_table: string;
     table_label_prompt: string;
     seats_label: string;
+    /** Numbered seat count, e.g. "6 hely" / "6 seats". `{n}` is the count. */
+    seats_count: string;
     shape_label: string;
     shape_round: string;
     shape_long: string;

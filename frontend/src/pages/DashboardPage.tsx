@@ -852,17 +852,13 @@ export default function DashboardPage() {
                 : null
             }
           />
-          <KpiTile
+          <BudgetKpiTile
             label={t("dashboard.kpi_budget_label")}
-            icon={<Wallet size={16} aria-hidden="true" />}
-            value={formatMoney(totalActual, currency, locale)}
-            unit={
-              cap !== null
-                ? t("dashboard.kpi_budget_unit", {
-                    cap: `${formatHufCompact(cap, locale)} ${currencySymbol(currency, locale)}`,
-                  })
-                : t("dashboard.kpi_budget_no_cap")
-            }
+            totalActual={totalActual}
+            cap={cap}
+            currency={currency}
+            locale={locale}
+            onSaveCap={saveCap}
             progress={spentPct}
             progressOver={cap !== null && totalActual > cap}
           />
@@ -1290,6 +1286,127 @@ function KpiTile({
         {unit}
       </div>
       {progress !== undefined && progress !== null && (
+        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+          <div
+            className={`h-full rounded-full transition-all ${
+              progressOver ? "bg-blush-700 dark:bg-blush-400" : "bg-ink-700 dark:bg-paper-100"
+            }`}
+            style={{ width: `${Math.max(2, progress)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Spent / cap KPI tile with an inline-editable cap. Cap renders as a full
+ *  HU-formatted figure (no compact "5M" abbreviation) so the user sees the
+ *  exact ceiling. Double-click on the cap drops it into edit mode; single
+ *  click surfaces a toast hint about the double-click affordance to teach
+ *  the gesture without arming it on accidental brushes. */
+function BudgetKpiTile({
+  label,
+  totalActual,
+  cap,
+  currency,
+  locale,
+  onSaveCap,
+  progress,
+  progressOver,
+}: {
+  label: string;
+  totalActual: number;
+  cap: number | null;
+  currency: Currency;
+  locale: "hu" | "en";
+  onSaveCap: (next: number) => Promise<void>;
+  progress: number | null;
+  progressOver: boolean;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function startEdit() {
+    if (cap === null) return;
+    setDraft(formatNumber(cap, "hu"));
+    setEditing(true);
+  }
+
+  async function commit() {
+    const digits = draft.replace(/\D/g, "");
+    if (digits === "") {
+      setEditing(false);
+      return;
+    }
+    const n = Number(digits);
+    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000 || n === cap) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSaveCap(Math.round(n));
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  }
+
+  return (
+    <div className="card p-4">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100">
+          <Wallet size={14} aria-hidden="true" />
+        </span>
+        {label}
+      </div>
+      <div className="stat-num mt-2 text-center text-2xl font-bold leading-none text-ink-900 dark:text-paper-50">
+        {formatMoney(totalActual, currency, locale)}
+      </div>
+      <div className="mt-1 flex items-baseline justify-center gap-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+        {cap === null ? (
+          <span>{t("dashboard.kpi_budget_no_cap")}</span>
+        ) : editing ? (
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            autoFocus
+            disabled={saving}
+            value={draft}
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "");
+              setDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+            }}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+              else if (e.key === "Escape") setEditing(false);
+            }}
+            aria-label={t("dashboard.kpi_budget_edit_aria")}
+            className="stat-num w-32 rounded border border-blush-500 bg-white px-1 py-0.5 text-center text-xs font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 dark:bg-umber-800 dark:text-paper-50"
+          />
+        ) : (
+          <>
+            <span>{t("dashboard.kpi_budget_unit_connector")}</span>
+            <button
+              type="button"
+              onClick={() => toast.info(t("dashboard.kpi_budget_edit_hint"))}
+              onDoubleClick={startEdit}
+              title={t("dashboard.kpi_budget_edit_hint")}
+              aria-label={t("dashboard.kpi_budget_edit_aria")}
+              className="stat-num cursor-pointer underline decoration-dotted decoration-ink-400 underline-offset-4 transition hover:text-ink-900 hover:decoration-ink-700 dark:hover:text-paper-50 dark:hover:decoration-paper-100"
+            >
+              {formatMoney(cap, currency, locale)}
+            </button>
+          </>
+        )}
+      </div>
+      {progress !== null && (
         <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
           <div
             className={`h-full rounded-full transition-all ${

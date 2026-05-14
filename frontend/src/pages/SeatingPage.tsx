@@ -1397,9 +1397,10 @@ function TableEditor({
       <EditableHeading
         value={table.label}
         onCommit={(label) => onPatch({ label })}
-        subtitle={`${t(`seating.shape_${table.shape}`)} · ${table.seats} ${t(
-          "seating.seats_label",
-        ).toLowerCase()}`}
+        subtitle={`${t(`seating.shape_${table.shape}`)} · ${t("seating.seats_count").replace(
+          "{n}",
+          String(table.seats),
+        )}`}
         editAriaLabel={t("seating.table_label_prompt")}
       />
 
@@ -2143,7 +2144,8 @@ function TableCard({
               <div>
                 <h3 className="font-serif text-xl">{table.label}</h3>
                 <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
-                  {t(`seating.shape_${table.shape}`)} · {usable} {t("seating.seats_label")}
+                  {t(`seating.shape_${table.shape}`)} ·{" "}
+                  {t("seating.seats_count").replace("{n}", String(usable))}
                 </p>
               </div>
             </div>

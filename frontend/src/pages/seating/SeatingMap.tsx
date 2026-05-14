@@ -23,6 +23,10 @@ const DEFAULT_ROOM_H_MM = 9_000;
 const MIN_ROOM_MM = 3_000;
 const MAX_ROOM_MM = 50_000;
 const GRID_STEP_MM = 500; // 50-cm grid lines — fine enough to plan furniture against
+// Fixed pixel scale used in the expanded fullscreen overlay. ~80 px/m matches
+// what the 12×12 m default room looks like in a 90 vh modal on a typical
+// laptop, and lets bigger rooms scroll instead of squashing chairs/labels.
+const EXPANDED_PX_PER_MM = 0.08;
 
 const MIN_DIM_MM = 100;
 const MAX_DIM_MM = 10_000;
@@ -390,13 +394,23 @@ export function SeatingMap({
           </button>
         </div>
       </header>
-      <div className={`relative bg-paper-50 dark:bg-umber-900 ${expanded ? "flex-1" : ""}`}>
+      <div
+        className={`relative bg-paper-50 dark:bg-umber-900 ${
+          expanded ? "flex flex-1 items-center justify-center overflow-auto" : ""
+        }`}
+      >
         <svg
           ref={svgRef}
           viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
-          // Inline: fixed 60vh-ish frame. Expanded: fills the 90vh overlay.
-          className={`block w-full select-none touch-none focus:outline-none ${
-            expanded ? "h-full" : "h-[60vh] max-h-[640px]"
+          // Inline: fits the 60vh frame via CSS so the SVG stays responsive
+          // to the parent card. Expanded: renders at a fixed pixel scale
+          // (~80 px/m) so chairs + labels stay readable; the wrapper scrolls
+          // when the room is bigger than the 90 vw × 90 vh overlay can hold.
+          width={expanded ? ROOM_W_MM * EXPANDED_PX_PER_MM : undefined}
+          height={expanded ? ROOM_H_MM * EXPANDED_PX_PER_MM : undefined}
+          style={expanded ? { flexShrink: 0 } : undefined}
+          className={`block select-none touch-none focus:outline-none ${
+            expanded ? "" : "h-[60vh] max-h-[640px] w-full"
           }`}
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
@@ -659,9 +673,9 @@ function TableShape({
   // just outside the perimeter. Selection swaps the body to a warm blush
   // tint AND thickens the stroke so the active table is unmissable on
   // a crowded floor plan.
-  const strokeClass = isSelected ? "stroke-blush-600" : "stroke-ink-800";
+  const strokeClass = isSelected ? "stroke-blush-700" : "stroke-ink-800";
   const strokeWidth = isSelected ? 22 : 14;
-  const fillClass = isSelected ? "fill-blush-100" : "fill-paper-50";
+  const fillClass = isSelected ? "fill-blush-400" : "fill-paper-50";
 
   // Long and head get a softer banquet-bench corner; square stays tighter.
   const rectCorner =
@@ -867,7 +881,7 @@ function TableShape({
           fontSize={Math.min(rx, ry) * 0.42}
           fontFamily='"Cormorant Garamond", Georgia, serif'
           fontWeight={600}
-          className="fill-blush-700"
+          className={isSelected ? "fill-paper-50" : "fill-blush-700"}
         >
           {table.label}
         </text>

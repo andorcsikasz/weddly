@@ -562,6 +562,10 @@ function CategoryRow({
   // can't queue duplicate PATCHes. Drag state itself lives in the parent —
   // see the `drags` map in CostPlanningCard.
   const [saving, setSaving] = useState(false);
+  // Hover preview — when the user mouses over the left tile of an unfrozen
+  // row, swap the category icon to Lock so the freeze affordance is
+  // discoverable without a click. Click is what actually freezes.
+  const [tilePreview, setTilePreview] = useState(false);
 
   const Icon = CATEGORY_ICONS[category];
   const editable = !!onEditPlanned;
@@ -631,9 +635,12 @@ function CategoryRow({
   // (honeymoon routes the whole row through to /app/honeymoon, so its left
   // tile stays inert). When frozen, a tiny lock badge replaces the icon's
   // ink-500 with the blush tint so the row reads as pinned at a glance.
+  // Hover-preview: on a toggleable, unfrozen row, mousing over swaps the
+  // icon to Lock so the freeze affordance is discoverable pre-click.
+  const showLockIcon = frozen || (canToggleFreeze && tilePreview);
   const leftTileContent = (
     <>
-      {frozen ? (
+      {showLockIcon ? (
         <Lock size={14} className="shrink-0 text-blush-700 dark:text-blush-300" aria-hidden />
       ) : (
         <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
@@ -648,6 +655,10 @@ function CategoryRow({
     <button
       type="button"
       onClick={() => onToggleFreeze?.(category)}
+      onMouseEnter={() => setTilePreview(true)}
+      onMouseLeave={() => setTilePreview(false)}
+      onFocus={() => setTilePreview(true)}
+      onBlur={() => setTilePreview(false)}
       className={`flex items-center gap-2 text-left text-ink-700 transition hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50 ${
         frozen
           ? "text-blush-700 hover:text-blush-800 dark:text-blush-300 dark:hover:text-blush-200"
