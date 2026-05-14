@@ -16,6 +16,7 @@ import {
   getCommunitySupplierById,
   insertCommunitySupplier,
   insertReport,
+  markPendingAsAwaitingReview,
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
 import { recordEmailAttempt } from "../domain/emails/log";
@@ -118,18 +119,21 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
     if (!parsedUrl.hostname) throw new HttpError(400, "website hostname required");
   }
 
-  // `contact_email` is REQUIRED now — we send a verification link there to
-  // confirm the listing belongs to that business before it goes public. Pre-
-  // verification listings stored in the DB without one are grandfathered;
-  // only new submissions are gated.
+  // `contact_email` is OPTIONAL. When the submitter provides one we send a
+  // verification link there to confirm the listing belongs to that business;
+  // without it the submission skips straight to the admin moderation queue
+  // (the admin gate is the last safety net either way). Format is still
+  // validated when present so we don't queue bogus addresses for sending.
+  let contact_email: string | null = null;
   const e = trimStr(body.contact_email);
-  if (!e) throw new HttpError(400, "contact_email required");
-  const at = e.indexOf("@");
-  if (at < 1 || e.indexOf(".", at) === -1) {
-    throw new HttpError(400, "contact_email is not a valid email");
+  if (e) {
+    const at = e.indexOf("@");
+    if (at < 1 || e.indexOf(".", at) === -1) {
+      throw new HttpError(400, "contact_email is not a valid email");
+    }
+    if (e.length > 200) throw new HttpError(400, "contact_email too long (max 200)");
+    contact_email = e;
   }
-  if (e.length > 200) throw new HttpError(400, "contact_email too long (max 200)");
-  const contact_email: string = e;
 
   let contact_phone: string | null = null;
   if (body.contact_phone != null && body.contact_phone !== "") {
@@ -268,11 +272,17 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     );
   }
 
-  // Issue a fresh verification token + send the email. The supplier stays in
-  // 'pending' state until the token is consumed; only then does it move to
-  // 'awaiting_review' (admin still has to approve before it's public).
-  const token = createVerificationToken(id);
-  await sendVerificationEmail(input.contact_email, input.name, token.token);
+  // When the submitter gave a contact email: issue a fresh verification token
+  // and mail it. The supplier stays in 'pending' until the link is clicked,
+  // at which point it flips to 'awaiting_review' for admin moderation.
+  // When no email was given: nothing to verify, so we move straight to
+  // 'awaiting_review' — admin moderation is the remaining gate before public.
+  if (input.contact_email) {
+    const token = createVerificationToken(id);
+    await sendVerificationEmail(input.contact_email, input.name, token.token);
+  } else {
+    markPendingAsAwaitingReview(id);
+  }
 
   addAuditLog({
     actor_user_id: userId,
@@ -286,7 +296,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
       category: input.category,
       price_band: input.price_band,
       website: input.website,
-      status: "pending",
+      status: input.contact_email ? "pending" : "awaiting_review",
     },
   });
 

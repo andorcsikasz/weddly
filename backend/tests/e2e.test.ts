@@ -2951,8 +2951,8 @@ describe("community suppliers", () => {
         label: "website with javascript: protocol",
         body: validPayload({ website: "javascript:alert(1)" }),
       },
-      { label: "missing contact_email", body: validPayload({ contact_email: undefined }) },
-      { label: "empty contact_email", body: validPayload({ contact_email: "" }) },
+      // contact_email is OPTIONAL now (admin moderation is the remaining gate
+      // when no email is supplied). Only malformed strings still 400.
       {
         label: "invalid contact_email",
         body: validPayload({ contact_email: "not-an-email" }),

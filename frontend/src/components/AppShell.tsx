@@ -12,14 +12,17 @@ import {
   LayoutList,
   MessageCircle,
   Moon,
+  MoreHorizontal,
   Plane,
   ShieldCheck,
   Sun,
   UserCog,
   Users,
   UtensilsCrossed,
+  X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
@@ -72,10 +75,12 @@ const ITEMS: NavItem[] = [
     labelKey: "nav.schedule",
     icon: <CalendarClock size={18} />,
   },
+  // Seating moved off the mobile bottom nav into the "More" sheet — the row
+  // now stays at the four core flows (Dashboard / Guests / Budget / Suppliers)
+  // plus the More button.
   {
     to: "/app/seating",
     labelKey: "nav.seating",
-    tabKey: "nav.tab_seating",
     icon: <ChefHat size={18} />,
   },
   // Post-wedding "follow-up" entries — desktop sidebar only; bottom mobile
@@ -141,6 +146,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const mainRef = useRef<HTMLElement | null>(null);
   const { user } = useAuth();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Bottom-nav "More" sheet — surfaces the flows that didn't make the 4-tab
+  // cut (Planning, Schedule, Seating, Honeymoon, Moodboard, Media). Admin
+  // view doesn't need it because the admin nav already fits in 5 slots.
+  const [moreOpen, setMoreOpen] = useState(false);
+  // Auto-close on route change so navigating to a sheet item dismisses it.
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [location.pathname]);
   // Track previous auth state so we only fire the localStorage sweep on
   // the user → null transition (sign-out), not on the initial null-loading
   // pass that happens before /api/auth/me resolves.
@@ -319,15 +332,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      {/* Mobile bottom nav — only items with an explicit `tabKey` get a slot,
-          capped at 5 to keep the row legible on narrow viewports. In admin
-          view the bar swaps to the 5 admin pages and inverts to a violet
-          tint to mirror the desktop rail. */}
+      {/* Mobile bottom nav — couple view shows 4 tabKey-flagged items + a
+          "More" button that opens a bottom sheet with the rest. Admin view
+          keeps its existing 5-tab layout (the 5 admin pages all fit) and
+          inverts to a violet tint to mirror the desktop rail. */}
       <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur lg:hidden border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95">
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
           {displayItems
             .filter((item) => item.tabKey)
-            .slice(0, 5)
+            .slice(0, inAdminView ? 5 : 4)
             .map((item) => (
               <BottomLink
                 key={item.to}
@@ -338,8 +351,32 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {t(item.tabKey ?? item.labelKey)}
               </BottomLink>
             ))}
+          {!inAdminView && (
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={moreOpen}
+              className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] ${
+                moreOpen ? "text-ink-900 dark:text-paper-50" : "text-ink-500"
+              }`}
+            >
+              <MoreHorizontal size={18} aria-hidden="true" />
+              <span className="truncate">{t("nav.tab_more")}</span>
+            </button>
+          )}
         </div>
       </nav>
+
+      {moreOpen && (
+        <MoreSheet
+          items={ITEMS.filter((item) => !item.tabKey)}
+          title={t("nav.more_sheet_title")}
+          closeLabel={t("a11y.close")}
+          onClose={() => setMoreOpen(false)}
+          translate={t}
+        />
+      )}
 
       <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="app" />
     </div>
@@ -400,6 +437,87 @@ function AdminSideLink({
       {icon}
       <span>{children}</span>
     </NavLink>
+  );
+}
+
+/** Bottom-sheet rendering the nav items that didn't fit in the 4-tab mobile
+ *  bar. Portal-mounted so it floats above the bottom nav with its own
+ *  backdrop; closes on ESC, backdrop tap, and route change (handled by the
+ *  caller's `location.pathname` effect). */
+function MoreSheet({
+  items,
+  title,
+  closeLabel,
+  onClose,
+  translate,
+}: {
+  items: NavItem[];
+  title: string;
+  closeLabel: string;
+  onClose: () => void;
+  translate: (key: string) => string;
+}) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-30 flex items-end justify-center bg-ink-900/40 backdrop-blur-sm lg:hidden"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="safe-bottom w-full rounded-t-2xl border-t border-paper-300 bg-paper-50 px-4 pb-3 pt-4 shadow-pop dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={closeLabel}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <ul className="grid grid-cols-3 gap-2">
+          {items.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                className={({ isActive }) =>
+                  `flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-center text-xs ${
+                    isActive
+                      ? "border-ink-900 bg-ink-900/5 text-ink-900 dark:border-paper-100 dark:bg-paper-100/10 dark:text-paper-50"
+                      : "border-paper-300 text-ink-700 hover:bg-paper-200 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
+                  }`
+                }
+              >
+                {item.icon}
+                <span className="truncate">{translate(item.labelKey)}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

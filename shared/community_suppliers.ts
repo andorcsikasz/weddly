@@ -31,10 +31,11 @@ export interface SubmitCommunitySupplierInput {
    *  through to the website. */
   address: string | null;
   website: string;
-  /** Required — we send a verification link here before the listing goes
-   *  public. The address remains hidden from the public DTO (privacy) and
-   *  only surfaces in the admin moderation view. */
-  contact_email: string;
+  /** Optional. When provided we send a verification link here before the
+   *  listing goes to admin review; without it the submission skips straight
+   *  to the moderation queue. The address remains hidden from the public DTO
+   *  (privacy) and only surfaces in the admin moderation view. */
+  contact_email: string | null;
   contact_phone: string | null;
   blurb: string;
   price_band: PriceBand;

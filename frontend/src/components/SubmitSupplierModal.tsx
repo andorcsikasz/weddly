@@ -34,7 +34,7 @@ import {
   Wine,
 } from "lucide-react";
 import type { ComponentType, FormEvent, SVGProps } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -181,6 +181,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       setForm((cur) => ({
         ...cur,
         address: place.address ?? cur.address,
+        city: cur.city.trim() ? cur.city : (place.city ?? cur.city),
         name: cur.name.trim() ? cur.name : (place.name ?? cur.name),
         website: cur.website.trim() ? cur.website : (place.website ?? cur.website),
         contact_phone: cur.contact_phone.trim()
@@ -189,6 +190,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       }));
       const filled =
         Number(!!place.address) +
+        Number(!!place.city) +
         Number(!!place.name) +
         Number(!!place.website) +
         Number(!!place.phone);
@@ -237,8 +239,9 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     if (website && !isValidUrl(website)) next.website = t("suppliers.submit.err_invalid_url");
 
     const email = form.contact_email.trim();
-    if (!email) next.contact_email = required;
-    else if (!isLikelyEmail(email)) next.contact_email = t("suppliers.submit.err_invalid_email");
+    if (email && !isLikelyEmail(email)) {
+      next.contact_email = t("suppliers.submit.err_invalid_email");
+    }
 
     if (form.blurb.trim().length > 500) next.blurb = tooLong;
 
@@ -257,13 +260,14 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
 
     if (!form.category || form.price_band === null) return;
 
+    const trimmedEmail = form.contact_email.trim();
     const payload: SubmitCommunitySupplierInput = {
       category: form.category,
       name: form.name.trim(),
       city: form.city.trim(),
       address: form.address.trim() ? form.address.trim() : null,
       website: form.website.trim(),
-      contact_email: form.contact_email.trim(),
+      contact_email: trimmedEmail ? trimmedEmail : null,
       contact_phone: form.contact_phone.trim() ? form.contact_phone.trim() : null,
       blurb: form.blurb.trim(),
       price_band: form.price_band,
@@ -273,7 +277,9 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     try {
       const res = await supplierApi.submitCommunity(payload);
       toast.success(
-        `${t("suppliers.submit.next_steps_title")} ${t("suppliers.submit.next_steps_body")}`,
+        trimmedEmail
+          ? `${t("suppliers.submit.next_steps_title")} ${t("suppliers.submit.next_steps_body")}`
+          : `${t("suppliers.submit.next_steps_review_title")} ${t("suppliers.submit.next_steps_review_body")}`,
       );
       onSubmitted(res.supplier);
       onClose();
@@ -294,17 +300,18 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     }
   }
 
-  // The 4 required slots are category / name / email / price_band. The progress
-  // counter motivates the user across the finish line without surfacing it as
-  // gamified "complete your profile" noise.
+  // The 3 required slots are category / name / price_band. Email is now
+  // optional — listings without one skip email-verification and go straight
+  // into the admin moderation queue. The progress counter motivates the user
+  // across the finish line without surfacing it as gamified "complete your
+  // profile" noise.
   const requiredFilled = useMemo(() => {
     let n = 0;
     if (form.category) n++;
     if (form.name.trim()) n++;
-    if (form.contact_email.trim() && isLikelyEmail(form.contact_email.trim())) n++;
     if (form.price_band !== null) n++;
     return n;
-  }, [form.category, form.name, form.contact_email, form.price_band]);
+  }, [form.category, form.name, form.price_band]);
 
   const blurbLen = form.blurb.length;
 
@@ -320,7 +327,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       footer={
         <div className="flex w-full flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-ink-500 dark:text-umber-300" aria-live="polite">
-            {t("suppliers.submit.progress_label", { done: requiredFilled, total: 4 })}
+            {t("suppliers.submit.progress_label", { done: requiredFilled, total: 3 })}
           </p>
           <div className="flex gap-2 sm:justify-end">
             <Button variant="outline" type="button" onClick={onClose} disabled={submitting}>
@@ -399,7 +406,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
               />
               <TextField
                 id="submit-supplier-address"
-                label={<OptionalLabel base={t("suppliers.submit.address_label")} t={t} optional />}
+                label={t("suppliers.submit.address_label")}
                 maxLength={600}
                 value={form.address}
                 onChange={(e) => setField("address", e.target.value)}
@@ -409,7 +416,9 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
             </div>
           </section>
 
-          {/* CONTACT — email (required), phone (optional), website (optional). */}
+          {/* CONTACT — all fields optional. Email triggers a verification
+              email when provided; without one the listing skips straight to
+              admin moderation. */}
           <section className="space-y-3" aria-labelledby="section-contact-heading">
             <SectionHeading id="section-contact-heading">
               {t("suppliers.submit.section_contact")}
@@ -420,7 +429,6 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
                 label={t("suppliers.submit.email_label")}
                 type="email"
                 inputMode="email"
-                required
                 value={form.contact_email}
                 onChange={(e) => setField("contact_email", e.target.value)}
                 errorText={errors.contact_email}
@@ -428,7 +436,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
               />
               <TextField
                 id="submit-supplier-phone"
-                label={<OptionalLabel base={t("suppliers.submit.phone_label")} t={t} optional />}
+                label={t("suppliers.submit.phone_label")}
                 type="tel"
                 inputMode="tel"
                 value={form.contact_phone}
@@ -439,7 +447,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
             </div>
             <TextField
               id="submit-supplier-website"
-              label={<OptionalLabel base={t("suppliers.submit.website_label")} t={t} optional />}
+              label={t("suppliers.submit.website_label")}
               type="url"
               inputMode="url"
               placeholder="https://"
@@ -459,12 +467,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
                 htmlFor="submit-supplier-blurb"
                 className="field-label flex items-baseline justify-between"
               >
-                <span>
-                  {t("suppliers.submit.blurb_label")}{" "}
-                  <span className="text-ink-400 normal-case tracking-normal">
-                    ({t("suppliers.submit.optional")})
-                  </span>
-                </span>
+                <span>{t("suppliers.submit.blurb_label")}</span>
                 <span className="font-mono text-[10px] tabular-nums text-ink-400">
                   {t("suppliers.submit.blurb_count", { n: blurbLen })}
                 </span>
@@ -549,26 +552,6 @@ function SectionHeading({ id, children }: { id: string; children: React.ReactNod
   );
 }
 
-function OptionalLabel({
-  base,
-  t,
-  optional,
-}: {
-  base: string;
-  t: (key: string) => string;
-  optional?: boolean;
-}) {
-  if (!optional) return <>{base}</>;
-  return (
-    <>
-      {base}{" "}
-      <span className="text-ink-400 dark:text-umber-300 normal-case tracking-normal">
-        ({t("suppliers.submit.optional")})
-      </span>
-    </>
-  );
-}
-
 function TrustLine({
   icon,
   children,
@@ -578,10 +561,7 @@ function TrustLine({
 }) {
   return (
     <li className="flex items-start gap-2">
-      <span
-        aria-hidden
-        className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-paper-200 dark:bg-umber-700 text-ink-600 dark:text-umber-200"
-      >
+      <span aria-hidden className="mt-0.5 shrink-0 text-ink-500 dark:text-umber-300">
         {icon}
       </span>
       <span>{children}</span>
@@ -726,11 +706,15 @@ function CategoryChipGrid({
           *
         </span>
       </span>
+      {/* Two-column grid: group caption left, wrapping chip cluster right.
+          The auto-sized left column keeps every group's chip cluster left-
+          aligned at the same x, so the cluster reads as a tidy table rather
+          than the previous inline label-and-chips tangle. */}
       <div
         role="radiogroup"
         aria-label={t("suppliers.submit.category_label")}
         aria-invalid={invalid || undefined}
-        className={`grid gap-1.5 rounded-2xl border bg-paper-50 dark:bg-umber-800 p-2 ${
+        className={`grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 rounded-2xl border bg-paper-50 dark:bg-umber-800 p-3 ${
           invalid
             ? "border-blush-400 dark:border-blush-400/40"
             : "border-paper-200 dark:border-umber-700"
@@ -739,33 +723,35 @@ function CategoryChipGrid({
         {SUPPLIER_GROUPS.map((g) => {
           const GroupIcon = GROUP_ICON[g.id];
           return (
-            <div key={g.id} className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex shrink-0 items-center gap-1 pr-1 text-[10px] font-medium uppercase tracking-wide text-ink-400 dark:text-umber-300">
+            <Fragment key={g.id}>
+              <span className="flex items-center gap-1 self-center text-[10px] font-medium uppercase tracking-wide text-ink-400 dark:text-umber-300">
                 <GroupIcon size={11} aria-hidden />
                 {t(`suppliers.group.${g.id}`)}
               </span>
-              {g.categories.map((c) => {
-                const Icon = CATEGORY_ICON[c];
-                const selected = value === c;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => onPick(c)}
-                    className={
-                      selected
-                        ? "inline-flex items-center gap-1.5 rounded-full bg-ink-800 dark:bg-paper-50 dark:text-umber-900 px-2.5 py-1 text-xs font-medium text-paper-100 transition"
-                        : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white dark:bg-umber-700 dark:border-umber-700 px-2.5 py-1 text-xs text-ink-700 dark:text-paper-100 transition hover:border-ink-400 hover:text-ink-900 dark:hover:border-umber-600"
-                    }
-                  >
-                    <Icon size={12} aria-hidden />
-                    {t(`suppliers.cat.${c}`)}
-                  </button>
-                );
-              })}
-            </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {g.categories.map((c) => {
+                  const Icon = CATEGORY_ICON[c];
+                  const selected = value === c;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => onPick(c)}
+                      className={
+                        selected
+                          ? "inline-flex items-center gap-1.5 rounded-full bg-ink-800 dark:bg-paper-50 dark:text-umber-900 px-2.5 py-1 text-xs font-medium text-paper-100 transition"
+                          : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white dark:bg-umber-700 dark:border-umber-700 px-2.5 py-1 text-xs text-ink-700 dark:text-paper-100 transition hover:border-ink-400 hover:text-ink-900 dark:hover:border-umber-600"
+                      }
+                    >
+                      <Icon size={12} aria-hidden />
+                      {t(`suppliers.cat.${c}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            </Fragment>
           );
         })}
       </div>
@@ -800,6 +786,9 @@ function PriceBandPicker({
       >
         {PRICE_BANDS.map((band) => {
           const selected = value === band;
+          // Word labels (Pénztárcabarát / Kedvező / …) live in the tooltip only
+          // — the visible row is just the dot pattern so the chips stay narrow
+          // and don't overflow in 5-up grids on small screens.
           const label = t(`suppliers.submit.band_name.b${band}`);
           return (
             <button
@@ -807,23 +796,23 @@ function PriceBandPicker({
               type="button"
               role="radio"
               aria-checked={selected}
+              aria-label={label}
               onClick={() => onPick(band)}
               title={label}
               className={
                 selected
-                  ? "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-ink-800 bg-ink-800 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-2 py-2 text-paper-100 transition"
+                  ? "flex min-h-tap items-center justify-center rounded-xl border border-ink-800 bg-ink-800 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-2 py-2 text-paper-100 transition"
                   : invalid
-                    ? "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-blush-300 bg-white dark:bg-umber-700 dark:border-blush-400/40 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-blush-500 dark:hover:border-blush-400/60"
-                    : "flex min-h-tap flex-col items-center justify-center gap-0.5 rounded-xl border border-paper-300 bg-white dark:bg-umber-700 dark:border-umber-700 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-ink-400 dark:hover:border-umber-600"
+                    ? "flex min-h-tap items-center justify-center rounded-xl border border-blush-300 bg-white dark:bg-umber-700 dark:border-blush-400/40 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-blush-500 dark:hover:border-blush-400/60"
+                    : "flex min-h-tap items-center justify-center rounded-xl border border-paper-300 bg-white dark:bg-umber-700 dark:border-umber-700 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-ink-400 dark:hover:border-umber-600"
               }
             >
-              <span className="font-mono text-[10px] leading-none">
+              <span className="font-mono text-xs leading-none">
                 {"●".repeat(band)}
                 <span className={selected ? "opacity-50" : "text-ink-300 dark:text-umber-300"}>
                   {"○".repeat(5 - band)}
                 </span>
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wide">{label}</span>
             </button>
           );
         })}

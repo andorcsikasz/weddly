@@ -15,6 +15,7 @@
 export interface ResolvedPlace {
   name: string | null;
   address: string | null;
+  city: string | null;
   lat: number | null;
   lng: number | null;
   website: string | null;
@@ -116,6 +117,17 @@ interface NominatimResponse {
     "contact:website"?: string;
     url?: string;
   };
+  // `addressdetails=1` returns a structured object. The locality lives under
+  // one of several keys depending on settlement size — in HU `village` is
+  // common (Verseg, Tinnye, etc.) and the larger settlements use `town` or
+  // `city`. `municipality`/`hamlet` are last-resort fallbacks.
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    hamlet?: string;
+  };
   name?: string;
 }
 
@@ -128,6 +140,7 @@ async function reverseGeocode(
   lng: number,
 ): Promise<{
   address: string | null;
+  city: string | null;
   phone: string | null;
   website: string | null;
   name: string | null;
@@ -135,19 +148,27 @@ async function reverseGeocode(
   const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&extratags=1&zoom=18&accept-language=hu,en`;
   try {
     const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-    if (!res.ok) return { address: null, phone: null, website: null, name: null };
+    if (!res.ok) return { address: null, city: null, phone: null, website: null, name: null };
     const data = (await res.json()) as NominatimResponse;
     const phone = data.extratags?.phone ?? data.extratags?.["contact:phone"] ?? null;
     const website =
       data.extratags?.website ?? data.extratags?.["contact:website"] ?? data.extratags?.url ?? null;
+    const city =
+      data.address?.city ??
+      data.address?.town ??
+      data.address?.village ??
+      data.address?.municipality ??
+      data.address?.hamlet ??
+      null;
     return {
       address: data.display_name?.trim() || null,
+      city: city?.trim() || null,
       phone: phone?.trim() || null,
       website: website?.trim() || null,
       name: data.name?.trim() || null,
     };
   } catch {
-    return { address: null, phone: null, website: null, name: null };
+    return { address: null, city: null, phone: null, website: null, name: null };
   }
 }
 
@@ -158,6 +179,7 @@ export async function resolveGoogleMapsUrl(raw: string): Promise<ResolvedPlace> 
   const empty: ResolvedPlace = {
     name: null,
     address: null,
+    city: null,
     lat: null,
     lng: null,
     website: null,
@@ -194,6 +216,7 @@ export async function resolveGoogleMapsUrl(raw: string): Promise<ResolvedPlace> 
   return {
     name: placeName ?? geo.name,
     address: geo.address,
+    city: geo.city,
     lat: coords.lat,
     lng: coords.lng,
     website: geo.website,

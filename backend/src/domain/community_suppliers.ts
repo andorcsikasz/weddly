@@ -295,6 +295,17 @@ export function consumeVerificationToken(token: string): VerificationResult {
   return { ok: true, supplierId: row.supplier_id, alreadyActive };
 }
 
+/** Used when a submitter doesn't provide a contact email: there's no token
+ *  to consume, so we move the row directly into the admin moderation queue.
+ *  Same destination as `consumeVerificationToken`, just without the email
+ *  ownership proof. Idempotent — only acts when status is still 'pending'. */
+export function markPendingAsAwaitingReview(supplierId: number): void {
+  const ts = now();
+  db.prepare(
+    "UPDATE community_suppliers SET status = 'awaiting_review', updated_at = ? WHERE id = ? AND status = 'pending'",
+  ).run(ts, supplierId);
+}
+
 /** Admin approval: flip `awaiting_review` → `active`. No-op if the row is
  *  already active. Hidden rows are NOT auto-approved — admin has to explicitly
  *  unhide first. Returns the new status. */

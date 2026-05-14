@@ -697,9 +697,33 @@ function HouseholdCard({
   const invitedCount = members.filter((g) => g.invited_at != null).length;
   const deliveredCount = members.filter((g) => g.invitation_delivered_at != null).length;
   const isHosts = household.is_couple_household;
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = window.localStorage.getItem("weddly.guests.collapsed_households");
+      if (!raw) return false;
+      const ids = JSON.parse(raw) as unknown;
+      return Array.isArray(ids) && ids.includes(household.id);
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("weddly.guests.collapsed_households");
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      const ids = new Set<number>(Array.isArray(parsed) ? (parsed as number[]) : []);
+      if (collapsed) ids.add(household.id);
+      else ids.delete(household.id);
+      window.localStorage.setItem("weddly.guests.collapsed_households", JSON.stringify([...ids]));
+    } catch {}
+  }, [collapsed, household.id]);
   return (
     <div className="card overflow-hidden p-0">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3 dark:border-umber-700 dark:bg-umber-700/60">
+      <header
+        className={`flex flex-wrap items-center justify-between gap-3 bg-paper-100/60 px-4 py-3 dark:bg-umber-700/60 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
+      >
         {/* Single-line metadata: label · slug · code · invited · delivered.
             Keeps the same column positions across cards so the eye scans
             the same fields in the same place. The couple's own household
@@ -786,66 +810,82 @@ function HouseholdCard({
               <Trash2 size={14} />
             </button>
           )}
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? t("guests.household_expand") : t("guests.household_collapse")}
+            title={collapsed ? t("guests.household_expand") : t("guests.household_collapse")}
+          >
+            <ChevronDown
+              size={14}
+              aria-hidden
+              className={collapsed ? "transition-transform" : "rotate-180 transition-transform"}
+            />
+          </button>
         </div>
       </header>
 
-      <ul className="divide-y divide-paper-200 dark:divide-umber-700">
-        {members.map((g) => (
-          <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-            <div className="flex min-w-0 items-center gap-3">
-              <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
-              <div className="min-w-0">
-                <p className="flex items-center gap-1.5 truncate text-sm text-ink-900 dark:text-paper-50">
-                  <PartnerRoleIcon role={g.partner_role} />
-                  <KindIcon kind={g.kind} />
-                  <span className="truncate">{g.full_name}</span>
-                  <MealIcons meal={g.meal_choice} dietary={g.dietary} />
-                </p>
-                <p className="text-xs text-ink-500 dark:text-umber-300">
-                  {t(`guests.group_${g.group_tag}`)}
-                </p>
+      {!collapsed && (
+        <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+          {members.map((g) => (
+            <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+              <div className="flex min-w-0 items-center gap-3">
+                <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 truncate text-sm text-ink-900 dark:text-paper-50">
+                    <PartnerRoleIcon role={g.partner_role} />
+                    <KindIcon kind={g.kind} />
+                    <span className="truncate">{g.full_name}</span>
+                    <MealIcons meal={g.meal_choice} dietary={g.dietary} />
+                  </p>
+                  <p className="text-xs text-ink-500 dark:text-umber-300">
+                    {t(`guests.group_${g.group_tag}`)}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <RsvpBadge status={g.rsvp_status} />
-              <button
-                type="button"
-                className="btn-ghost btn-sm"
-                onClick={() => onEditGuest(g)}
-                aria-label={t("guests.edit")}
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                type="button"
-                className="btn-ghost btn-sm"
-                onClick={() => void onPrintPlaceCard(g)}
-                aria-label={t("guests.print_place_card")}
-                title={t("guests.print_place_card")}
-              >
-                <Printer size={14} />
-              </button>
-              <button
-                type="button"
-                className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
-                onClick={() => onDeleteGuest(g.id)}
-                aria-label={t("guests.delete")}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
+              <div className="flex items-center gap-2">
+                <RsvpBadge status={g.rsvp_status} />
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => onEditGuest(g)}
+                  aria-label={t("guests.edit")}
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => void onPrintPlaceCard(g)}
+                  aria-label={t("guests.print_place_card")}
+                  title={t("guests.print_place_card")}
+                >
+                  <Printer size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
+                  onClick={() => onDeleteGuest(g.id)}
+                  aria-label={t("guests.delete")}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </li>
+          ))}
+          <li className="px-4 py-2.5">
+            <button
+              type="button"
+              className="btn-ghost btn-sm w-full justify-start"
+              onClick={onAddMember}
+            >
+              <UserPlus size={14} /> {t("guests.household_add_member")}
+            </button>
           </li>
-        ))}
-        <li className="px-4 py-2.5">
-          <button
-            type="button"
-            className="btn-ghost btn-sm w-full justify-start"
-            onClick={onAddMember}
-          >
-            <UserPlus size={14} /> {t("guests.household_add_member")}
-          </button>
-        </li>
-      </ul>
+        </ul>
+      )}
     </div>
   );
 }
