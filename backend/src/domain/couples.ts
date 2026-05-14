@@ -7,6 +7,7 @@ import type {
   CeremonyKind,
   Couple,
   CoupleStatus,
+  Currency,
   GuestCountGoal,
   GuestCountKind,
   WeddingDateGoal,
@@ -53,6 +54,7 @@ export interface CoupleRow {
   honeymoon_end_date: string | null;
   planning_count: number | null;
   frozen_categories_json: string;
+  currency: string | null;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -67,6 +69,10 @@ const DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
 const SEASONS: ReadonlySet<WeddingSeason> = new Set(["spring", "summer", "fall", "winter"]);
 const COUNT_KINDS: ReadonlySet<GuestCountKind> = new Set(["exact", "range", "tbd"]);
 const BUDGET_KINDS: ReadonlySet<BudgetKind> = new Set(["exact", "range", "tbd"]);
+const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
+function rowToCurrency(raw: string | null | undefined): Currency {
+  return raw && VALID_CURRENCIES.has(raw as Currency) ? (raw as Currency) : "HUF";
+}
 
 const VALID_BUDGET_CATEGORIES: ReadonlySet<BudgetCategory> = new Set([
   "venue",
@@ -183,6 +189,7 @@ export function toCouple(row: CoupleRow): Couple {
     honeymoon_end_date: row.honeymoon_end_date,
     planning_count: row.planning_count,
     frozen_categories: parseFrozenCategoriesJson(row.frozen_categories_json ?? "[]"),
+    currency: rowToCurrency(row.currency),
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

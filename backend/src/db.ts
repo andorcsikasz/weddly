@@ -238,6 +238,12 @@ addColumnIfMissing(
   "frozen_categories_json TEXT NOT NULL DEFAULT '[]'",
 );
 
+// Display currency for the couple's money fields. Storage stays as integer
+// units in whatever currency the couple picked — switching does NOT
+// retro-convert past entries, it only flips the symbol/format on display.
+// Default 'HUF' so legacy couples behave exactly as before.
+addColumnIfMissing("couples", "currency", "currency TEXT NOT NULL DEFAULT 'HUF'");
+
 // "Have we actually paid this yet?" flag on DIY supplier entries. Default 0
 // (planned-only) — the mirrored budget line writes the price to
 // `planned_huf` but leaves `actual_huf` at 0 until the couple flips the

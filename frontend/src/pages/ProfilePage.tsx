@@ -9,9 +9,11 @@ import type {
   CouplePartnerView,
   CouplePauseRequest,
   CoupleStatus,
+  Currency,
   DataExportSummary,
   ExportKind,
 } from "@shared/types";
+import { CURRENCIES } from "@shared/types";
 import { ChevronDown } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -31,10 +33,12 @@ import {
   userApi,
 } from "../lib/endpoints";
 import {
+  currencySymbol,
   formatBudgetGoal,
   formatDate,
   formatHuf,
   formatHufRange,
+  formatMoney,
   formatYearMonth,
 } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -462,6 +466,25 @@ export default function ProfilePage() {
   }
 
   const totalPaidHuf = budgetLines.reduce((s, l) => s + l.actual_huf, 0);
+  // Source of truth for the cap + paid tiles and the picker pills below.
+  // Falls back to HUF so the tiles still render through the first paint
+  // before /api/couples/current resolves.
+  const currency: Currency = couple?.currency ?? "HUF";
+  const symbol = currencySymbol(currency, locale);
+
+  /** Persist a new display currency. Existing money fields keep their
+   *  integer values — see the schema comment on couples.currency. We don't
+   *  re-fetch the budget lines: the values don't change, only their
+   *  formatting does. */
+  async function saveCurrency(next: Currency) {
+    if (next === currency) return;
+    try {
+      const r = await coupleApi.update({ currency: next });
+      setCouple(r.couple);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+    }
+  }
 
   return (
     <AppShell>
@@ -517,6 +540,39 @@ export default function ProfilePage() {
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.budget_title")}</h2>
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.budget_body")}</p>
+        {/* Currency picker — three pills. Switching here re-skins every
+         *  money field across the app on next paint; stored integers stay
+         *  put (no auto-conversion). */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("profile.budget_currency_label")}
+          </span>
+          <div
+            role="radiogroup"
+            aria-label={t("profile.budget_currency_label")}
+            className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+          >
+            {CURRENCIES.map((c) => {
+              const active = c === currency;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => saveCurrency(c)}
+                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                    active
+                      ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                      : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+                  }`}
+                >
+                  {t(`profile.budget_currency_${c.toLowerCase()}`)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {/* Cost-cap tile — inline-editable. */}
           <div className="rounded-2xl border border-ink-200 bg-paper-50/60 p-4 dark:border-umber-700 dark:bg-ink-800/40">
@@ -538,7 +594,7 @@ export default function ProfilePage() {
                     autoFocus
                     disabled={savingCap}
                   />
-                  <span className="text-sm text-ink-500 dark:text-umber-300">Ft</span>
+                  <span className="text-sm text-ink-500 dark:text-umber-300">{symbol}</span>
                 </div>
                 {capError && (
                   <p className="mt-2 text-xs text-blush-700 dark:text-blush-300">{capError}</p>
@@ -563,7 +619,7 @@ export default function ProfilePage() {
             ) : (
               <div className="mt-2 flex items-baseline justify-between gap-3">
                 <p className="text-2xl font-medium text-ink-900 dark:text-paper-50">
-                  {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }) : "—"}
+                  {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "—"}
                 </p>
                 <button type="button" className="btn-sm btn-outline" onClick={beginCapEdit}>
                   {t("common.edit")}
@@ -579,7 +635,7 @@ export default function ProfilePage() {
             </p>
             <div className="mt-2 flex items-baseline justify-between gap-3">
               <p className="text-2xl font-medium text-ink-900 dark:text-paper-50">
-                {formatHuf(totalPaidHuf, locale)}
+                {formatMoney(totalPaidHuf, currency, locale)}
               </p>
               {!addingPayment && (
                 <button
@@ -618,7 +674,7 @@ export default function ProfilePage() {
                     className="input flex-1"
                     disabled={savingPayment}
                   />
-                  <span className="text-sm text-ink-500 dark:text-umber-300">Ft</span>
+                  <span className="text-sm text-ink-500 dark:text-umber-300">{symbol}</span>
                 </div>
                 {paymentError && (
                   <p className="text-xs text-blush-700 dark:text-blush-300">{paymentError}</p>

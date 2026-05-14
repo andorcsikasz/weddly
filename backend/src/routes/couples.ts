@@ -11,6 +11,7 @@ import {
   COUPLE_ACTIVITY_RETENTION_DAYS,
   type CoupleInvite,
   type CouplePartnerView,
+  type Currency,
   DEFAULT_BUDGET_SPLIT,
   type GuestCountGoal,
   type GuestCountKind,
@@ -96,6 +97,17 @@ interface OnboardBody {
   planning_count?: unknown;
   /** Categories the couple has frozen on the cost-planning panel. */
   frozen_categories?: unknown;
+  /** Display currency for every money field on this couple. */
+  currency?: unknown;
+}
+
+const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
+function parseCurrency(raw: unknown): Currency | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string" || !VALID_CURRENCIES.has(raw as Currency)) {
+    throw new HttpError(400, "currency must be HUF, EUR, or USD");
+  }
+  return raw as Currency;
 }
 
 const VALID_CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -396,6 +408,9 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const locLng = parseOptionalFloat(body.location_lng, "location_lng", -180, 180);
   const locRadius = parseOptionalInt(body.location_radius_km, "location_radius_km", 0, 5000);
   const styleTags = parseStyleTags(body.style_tags);
+  // Currency is optional in onboarding — DB DEFAULT 'HUF' kicks in when the
+  // wizard skips the picker. Validated to the same allowlist as PATCH.
+  const currency: Currency = parseCurrency(body.currency) ?? "HUF";
 
   const existing = getCoupleForUser(userId);
   if (existing) throw new HttpError(409, "Couple already onboarded for this user");
@@ -409,13 +424,13 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
          target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
          budget_ceiling_huf, budget_kind, budget_ceiling_min_huf, budget_ceiling_max_huf,
          location_lat, location_lng, location_radius_km,
-         style_tags_json, status, created_at, updated_at, onboarded_at)
+         style_tags_json, currency, status, created_at, updated_at, onboarded_at)
        VALUES (?, NULL, ?, ?, ?,
                ?, ?, ?, ?, ?,
                ?, ?, ?, ?,
                ?, ?, ?, ?,
                ?, ?, ?,
-               ?, 'active', ?, ?, ?)`,
+               ?, ?, 'active', ?, ?, ?)`,
     )
     .run(
       userId,
@@ -439,6 +454,7 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
       locLng,
       locRadius,
       JSON.stringify(styleTags),
+      currency,
       ts,
       ts,
       ts,
@@ -1057,6 +1073,19 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     });
   }
 
+  if (body.currency !== undefined) {
+    const next = parseCurrency(body.currency) ?? "HUF";
+    const prev = couple.currency ?? "HUF";
+    if (next !== prev) {
+      updates.push({ col: "currency", val: next });
+      auditEntries.push({
+        action: "couple.currency_update",
+        before: { currency: prev },
+        after: { currency: next },
+      });
+    }
+  }
+
   if (updates.length === 0) throw new HttpError(400, "No fields to update");
 
   const ts = now();
@@ -1516,6 +1545,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.names_update",
   "couple.ceremony_kind_update",
   "couple.planning_count_update",
+  "couple.currency_update",
   "couple.frozen_categories_update",
   "couple.guest_count_update",
   // Guests

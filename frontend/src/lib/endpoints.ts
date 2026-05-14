@@ -16,6 +16,7 @@ import type {
   CouplePartnerView,
   CouplePauseRequest,
   CoupleStatus,
+  Currency,
   DataExportSummary,
   DietarySummary,
   GuestCountGoal,
@@ -98,6 +99,8 @@ export interface OnboardInput {
   wedding_date_goal?: WeddingDateGoal;
   guest_count_goal?: GuestCountGoal;
   budget_goal?: BudgetGoal;
+  /** Display currency. Defaults to HUF on the backend when omitted. */
+  currency?: Currency;
   /** Legacy scalars — kept for one or two clients still on the old shape. */
   wedding_date?: string | null;
   target_guest_count?: number | null;
@@ -132,6 +135,7 @@ export const coupleApi = {
     honeymoon_end_date?: string | null;
     planning_count?: number | null;
     frozen_categories?: BudgetCategory[];
+    currency?: Currency;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
@@ -454,12 +458,13 @@ export const supplierApi = {
   submitCommunity: (body: SubmitCommunitySupplierInput) =>
     apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
   /** Best-effort resolver: paste a Google Maps URL, get back any of:
-   *  name, address, lat/lng, website, phone. Each field may be null. */
+   *  name, address, city, lat/lng, website, phone. Each field may be null. */
   resolveMapsUrl: (url: string) =>
     apiFetch<{
       place: {
         name: string | null;
         address: string | null;
+        city: string | null;
         lat: number | null;
         lng: number | null;
         website: string | null;

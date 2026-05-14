@@ -233,6 +233,10 @@ const en: LocaleMessages = {
     budget_min_label: "Lower bound",
     budget_max_label: "Upper bound",
     budget_preview_label: "Looks like",
+    budget_currency_label: "Currency",
+    budget_currency_huf: "Forint (Ft)",
+    budget_currency_eur: "Euro (€)",
+    budget_currency_usd: "Dollar ($)",
     ceremony_kind_question: "Ceremony type (optional)",
     ceremony_kind_civil: "Civil",
     ceremony_kind_religious: "Religious",
@@ -717,6 +721,8 @@ const en: LocaleMessages = {
     tab_budget: "Budget",
     tab_seating: "Seats",
     tab_suppliers: "Vendors",
+    tab_more: "More",
+    more_sheet_title: "More",
   },
   planning: {
     title: "Planning",
@@ -1024,6 +1030,8 @@ const en: LocaleMessages = {
     household_remove_confirm_body:
       "Move the members elsewhere first — this only deletes empty households.",
     household_remove: "Delete household",
+    household_expand: "Expand household",
+    household_collapse: "Collapse household",
     household_section_title: "Households",
     household_section_help:
       "Group people who RSVP together (a couple, a family). They'll see each other on the check-in page.",
@@ -1362,12 +1370,15 @@ const en: LocaleMessages = {
     submit: {
       title: "Drop your own",
       intro: "A few details is all it takes — other couples will find them faster.",
-      trust_review: "We email a confirmation link before the listing goes live",
+      trust_review: "Our team reviews it before it shows in the directory",
       trust_email_private: "Your email stays private",
       trust_no_fees: "Free, forever — no commissions",
       next_steps_title: "Check your inbox!",
       next_steps_body:
         "We sent a confirmation link to the email above. Click it and the listing will appear in the directory.",
+      next_steps_review_title: "Thanks — got it!",
+      next_steps_review_body:
+        "Our team will review the entry and it'll appear in the couples' directory shortly.",
       category_label: "Category",
       category_placeholder: "Pick a category",
       name_label: "Name",
@@ -1942,6 +1953,10 @@ const en: LocaleMessages = {
     budget_payment_amount_placeholder: "Amount",
     budget_payment_label_required: "Give the entry a name.",
     budget_payment_amount_invalid: "Enter a valid positive amount.",
+    budget_currency_label: "Currency",
+    budget_currency_huf: "Forint (Ft)",
+    budget_currency_eur: "Euro (€)",
+    budget_currency_usd: "Dollar ($)",
     payments_title: "Payments",
     payments_body: "Payment history and billing settings will appear here soon.",
     security_title: "Security",

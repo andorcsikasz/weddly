@@ -60,7 +60,8 @@ import {
   writeCostPlanningCount,
 } from "../lib/cost_planning";
 import { coupleApi, coupleSupplierApi, supplierApi } from "../lib/endpoints";
-import { formatHuf } from "../lib/format";
+import type { Currency } from "@shared/types";
+import { formatMoney } from "../lib/format";
 import {
   readSelection,
   type SelectionMap,
@@ -142,6 +143,10 @@ export default function SuppliersPage() {
   const [items, setItems] = useState<DirectorySupplier[]>([]);
   const [coupleSuppliers, setCoupleSuppliers] = useState<CoupleSupplier[]>([]);
   const [coupleId, setCoupleId] = useState<number | null>(null);
+  /** Currency comes from /api/couples/current. Falls back to HUF when the
+   *  couple is still loading so the price chips render through the empty
+   *  state cleanly. */
+  const [currency, setCurrency] = useState<Currency>("HUF");
   const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
   // Per-category "this is our pick" selection. Keys are SupplierCategory,
   // values are supplier IDs (curated slug, "c{N}" community id, or DIY hex).
@@ -302,6 +307,7 @@ export default function SuppliersPage() {
         const id = couple.couple?.id ?? null;
         setCoupleId(id);
         setTargetGuestCount(couple.couple?.target_guest_count ?? null);
+        if (couple.couple) setCurrency(couple.couple.currency ?? "HUF");
         // Seed the shared cost-planning cache from the couple we just
         // fetched so the Vendégszám filter and the /app/budget slider
         // start on the same value.
@@ -672,9 +678,7 @@ export default function SuppliersPage() {
         >
           <BookmarkCheck
             size={14}
-            className={
-              showPickedOnly || Object.keys(selection).length > 0 ? "fill-sage-200" : ""
-            }
+            className={showPickedOnly || Object.keys(selection).length > 0 ? "fill-sage-200" : ""}
             aria-hidden
           />
           <span className="tabular-nums">{Object.keys(selection).length}</span>
@@ -941,7 +945,7 @@ export default function SuppliersPage() {
                             </span>
                             <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700 dark:text-sage-300">
                               <Wallet size={11} aria-hidden />
-                              {formatHuf(s.price_huf, locale === "hu" ? "hu" : "en")}
+                              {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
                             </span>
                           </>
                         )}
@@ -996,7 +1000,7 @@ export default function SuppliersPage() {
                             </span>
                             <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700 dark:text-sage-300">
                               <Wallet size={12} aria-hidden />
-                              {formatHuf(s.price_huf, locale === "hu" ? "hu" : "en")}
+                              {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
                             </span>
                           </>
                         )}

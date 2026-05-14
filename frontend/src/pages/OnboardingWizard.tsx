@@ -8,6 +8,7 @@ import type {
   BudgetKind,
   CeremonyKind,
   Couple,
+  Currency,
   GuestCountGoal,
   GuestCountKind,
   WeddingDateGoal,
@@ -15,16 +16,18 @@ import type {
   WeddingSeason,
   WeddingStyleTag,
 } from "@shared/types";
+import { CURRENCIES } from "@shared/types";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { TagChip } from "../components/ui";
 import { coupleApi } from "../lib/endpoints";
 import {
+  currencySymbol,
   formatBudgetGoal,
   formatGuestCountGoal,
-  formatHuf,
-  formatHufRange,
+  formatMoney,
+  formatMoneyRange,
   formatNumber,
   formatWeddingDateGoal,
 } from "../lib/format";
@@ -69,6 +72,9 @@ interface FormState {
   budget_exact: string;
   budget_min: string;
   budget_max: string;
+  /** Picked on step 3 next to the budget inputs. Stored verbatim on the
+   *  couple via the onboard call; flips every money field after onboarding. */
+  currency: Currency;
   style_tags: WeddingStyleTag[];
 }
 
@@ -91,6 +97,7 @@ const DEFAULT_FORM: FormState = {
   budget_exact: "",
   budget_min: "4000000",
   budget_max: "6000000",
+  currency: "HUF",
   style_tags: [],
 };
 
@@ -342,6 +349,7 @@ export default function OnboardingWizard() {
         wedding_date_goal: buildDateGoal(form),
         guest_count_goal: buildGuestGoal(form),
         budget_goal: buildBudgetGoal(form),
+        currency: form.currency,
         style_tags: form.style_tags,
       });
       // Persist optional ceremony_kind via the partial-update endpoint —
@@ -615,6 +623,40 @@ export default function OnboardingWizard() {
             <>
               <h1>{t("onboarding.step4_title")}</h1>
               <p className="mt-2 text-sm text-ink-600">{t("onboarding.budget_help")}</p>
+              {/* Currency picker — pinned above the budget inputs so the user
+               *  picks the unit before typing an amount. Defaults to HUF; flips
+               *  the preview formatting (and every money field after onboarding). */}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-xs uppercase tracking-wide text-ink-500">
+                  {t("onboarding.budget_currency_label")}
+                </span>
+                <div
+                  role="radiogroup"
+                  aria-label={t("onboarding.budget_currency_label")}
+                  className="inline-flex overflow-hidden rounded-full border border-ink-200"
+                >
+                  {CURRENCIES.map((c) => {
+                    const active = c === form.currency;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => update("currency", c)}
+                        className={`px-3 py-1 text-xs font-medium transition-colors ${
+                          active
+                            ? "bg-ink-900 text-paper-50"
+                            : "bg-paper-50 text-ink-600 hover:bg-paper-100"
+                        }`}
+                      >
+                        {t(`onboarding.budget_currency_${c.toLowerCase()}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <p className="mt-4 text-sm text-ink-600">{t("onboarding.budget_kind_question")}</p>
               <div
                 className="mt-3 grid grid-cols-3 gap-2"
@@ -636,21 +678,26 @@ export default function OnboardingWizard() {
                   <label htmlFor="budget_exact" className="field-label">
                     {t("onboarding.budget_label")}
                   </label>
-                  <input
-                    id="budget_exact"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    className="input"
-                    value={formatGroupedDigits(form.budget_exact, locale)}
-                    onChange={(e) => update("budget_exact", digitsOnly(e.target.value))}
-                    placeholder={formatGroupedDigits("5000000", locale)}
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="budget_exact"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      className="input flex-1"
+                      value={formatGroupedDigits(form.budget_exact, locale)}
+                      onChange={(e) => update("budget_exact", digitsOnly(e.target.value))}
+                      placeholder={formatGroupedDigits("5000000", locale)}
+                    />
+                    <span className="text-sm text-ink-500">
+                      {currencySymbol(form.currency, locale)}
+                    </span>
+                  </div>
                   {Number(form.budget_exact) > 0 && (
                     <p className="mt-2 text-sm text-ink-500">
                       {t("onboarding.budget_preview_label")}{" "}
                       <span className="font-medium text-ink-700">
-                        {formatHuf(Number(form.budget_exact), locale)}
+                        {formatMoney(Number(form.budget_exact), form.currency, locale)}
                       </span>
                     </p>
                   )}
@@ -664,29 +711,39 @@ export default function OnboardingWizard() {
                       <label htmlFor="budget_min" className="field-label">
                         {t("onboarding.budget_min_label")}
                       </label>
-                      <input
-                        id="budget_min"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        className="input"
-                        value={formatGroupedDigits(form.budget_min, locale)}
-                        onChange={(e) => update("budget_min", digitsOnly(e.target.value))}
-                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="budget_min"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          className="input flex-1"
+                          value={formatGroupedDigits(form.budget_min, locale)}
+                          onChange={(e) => update("budget_min", digitsOnly(e.target.value))}
+                        />
+                        <span className="text-sm text-ink-500">
+                          {currencySymbol(form.currency, locale)}
+                        </span>
+                      </div>
                     </div>
                     <div>
                       <label htmlFor="budget_max" className="field-label">
                         {t("onboarding.budget_max_label")}
                       </label>
-                      <input
-                        id="budget_max"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        className="input"
-                        value={formatGroupedDigits(form.budget_max, locale)}
-                        onChange={(e) => update("budget_max", digitsOnly(e.target.value))}
-                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="budget_max"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          className="input flex-1"
+                          value={formatGroupedDigits(form.budget_max, locale)}
+                          onChange={(e) => update("budget_max", digitsOnly(e.target.value))}
+                        />
+                        <span className="text-sm text-ink-500">
+                          {currencySymbol(form.currency, locale)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   {Number(form.budget_min) > 0 &&
@@ -694,7 +751,12 @@ export default function OnboardingWizard() {
                       <p className="mt-3 text-sm text-ink-500">
                         {t("onboarding.budget_preview_label")}{" "}
                         <span className="font-medium text-ink-700">
-                          {formatHufRange(Number(form.budget_min), Number(form.budget_max), locale)}
+                          {formatMoneyRange(
+                            Number(form.budget_min),
+                            Number(form.budget_max),
+                            form.currency,
+                            locale,
+                          )}
                         </span>
                       </p>
                     )}
@@ -856,7 +918,7 @@ function ExistingCoupleWelcome({ couple }: { couple: Couple }) {
   const goalCtx = { t, locale };
   const dateText = formatWeddingDateGoal(couple.wedding_date_goal, goalCtx);
   const guestText = formatGuestCountGoal(couple.guest_count_goal, goalCtx);
-  const budgetText = formatBudgetGoal(couple.budget_goal, goalCtx);
+  const budgetText = formatBudgetGoal(couple.budget_goal, goalCtx, couple.currency ?? "HUF");
   const styleText =
     couple.style_tags.length > 0
       ? couple.style_tags.map((tag) => t(`onboarding.style_${tag}`)).join(", ")

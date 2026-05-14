@@ -211,6 +211,11 @@ export interface LocaleMessages {
     budget_min_label: string;
     budget_max_label: string;
     budget_preview_label: string;
+    /** Currency picker pinned above the budget inputs in step 4. */
+    budget_currency_label: string;
+    budget_currency_huf: string;
+    budget_currency_eur: string;
+    budget_currency_usd: string;
     // ── Ceremony kind — optional radio group on the Couple step ───────
     ceremony_kind_question: string;
     ceremony_kind_civil: string;
@@ -694,6 +699,9 @@ export interface LocaleMessages {
     tab_budget: string;
     tab_seating: string;
     tab_suppliers: string;
+    /** Mobile bottom nav "more" button — opens a sheet with the remaining flows. */
+    tab_more: string;
+    more_sheet_title: string;
   };
   /** Free-form planning surface — three tabs over the planning_items table. */
   planning: {
@@ -971,6 +979,8 @@ export interface LocaleMessages {
     household_remove_confirm_title: string;
     household_remove_confirm_body: string;
     household_remove: string;
+    household_expand: string;
+    household_collapse: string;
     household_section_title: string;
     household_section_help: string;
     couple_slug_title: string;
@@ -1454,6 +1464,8 @@ export interface LocaleMessages {
       trust_no_fees: string;
       next_steps_title: string;
       next_steps_body: string;
+      next_steps_review_title: string;
+      next_steps_review_body: string;
       category_label: string;
       category_placeholder: string;
       name_label: string;
@@ -2084,6 +2096,11 @@ export interface LocaleMessages {
     budget_payment_amount_placeholder: string;
     budget_payment_label_required: string;
     budget_payment_amount_invalid: string;
+    /** Currency picker — label + the three pill captions. */
+    budget_currency_label: string;
+    budget_currency_huf: string;
+    budget_currency_eur: string;
+    budget_currency_usd: string;
     payments_title: string;
     payments_body: string;
     /** Security section — change-password form lives here. Collapsible:

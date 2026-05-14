@@ -7,6 +7,7 @@ import type {
   BudgetLine,
   Couple,
   CoupleInvite,
+  Currency,
   DietarySummary,
   Guest,
   WeddingDateGoal,
@@ -59,9 +60,10 @@ import {
   seatingApi,
 } from "../lib/endpoints";
 import {
+  currencySymbol,
   formatDate,
-  formatHuf,
   formatHufCompact,
+  formatMoney,
   formatNumber,
   formatWeddingDateGoal,
 } from "../lib/format";
@@ -250,6 +252,9 @@ export default function DashboardPage() {
   const totalPlanned = lines.reduce((s, l) => s + l.planned_huf, 0);
   const totalActual = lines.reduce((s, l) => s + l.actual_huf, 0);
   const cap = budgetCapHuf(couple.budget_goal);
+  // Currency lives on the couple — KPI tiles + the cost-planning card both
+  // read this so a flip on /app/profile re-skins the dashboard immediately.
+  const currency: Currency = couple.currency ?? "HUF";
   const spentPct = cap && cap > 0 ? Math.min(100, Math.round((totalActual / cap) * 100)) : null;
   const overCap = cap !== null && totalPlanned > cap;
 
@@ -850,10 +855,12 @@ export default function DashboardPage() {
           <KpiTile
             label={t("dashboard.kpi_budget_label")}
             icon={<Wallet size={16} aria-hidden="true" />}
-            value={formatHuf(totalActual, locale)}
+            value={formatMoney(totalActual, currency, locale)}
             unit={
               cap !== null
-                ? t("dashboard.kpi_budget_unit", { cap: `${formatHufCompact(cap, locale)} Ft` })
+                ? t("dashboard.kpi_budget_unit", {
+                    cap: `${formatHufCompact(cap, locale)} ${currencySymbol(currency, locale)}`,
+                  })
                 : t("dashboard.kpi_budget_no_cap")
             }
             progress={spentPct}
@@ -863,7 +870,7 @@ export default function DashboardPage() {
             <KpiTile
               label={t("dashboard.kpi_total_spend_label")}
               icon={<Coins size={16} aria-hidden="true" />}
-              value={totalActual > 0 ? formatHuf(totalActual, locale) : "—"}
+              value={totalActual > 0 ? formatMoney(totalActual, currency, locale) : "—"}
               unit={
                 totalActual > 0
                   ? t("dashboard.kpi_total_spend_unit")
@@ -878,7 +885,11 @@ export default function DashboardPage() {
             <KpiTile
               label={t("dashboard.kpi_roi_label")}
               icon={<Coins size={16} aria-hidden="true" />}
-              value={roiPlanned !== null ? formatHufCompact(roiPlanned, locale) : "—"}
+              value={
+                roiPlanned !== null
+                  ? `${formatHufCompact(roiPlanned, locale)} ${currencySymbol(currency, locale)}`
+                  : "—"
+              }
               unit={t("dashboard.kpi_roi_unit_planned", {
                 n: formatNumber(effectivePlanningCount, locale),
               })}
@@ -1063,6 +1074,7 @@ export default function DashboardPage() {
               boundsMax={boundsMax}
               cap={cap}
               count={effectivePlanningCount}
+              currency={currency}
               onCountChange={(n) => {
                 // Local optimistic update + debounced server write. The lib
                 // collapses a slider drag into one PATCH and re-publishes

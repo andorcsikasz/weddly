@@ -1,7 +1,7 @@
 // Budget planner. Hero "cost planning" panel with a guest-count slider that
 // re-prices per-guest categories live, plus an inline-editable line table.
 
-import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple } from "@shared/types";
+import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple, Currency } from "@shared/types";
 import { ArrowUpRight, BarChart3, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -21,7 +21,7 @@ import {
   writeCostPlanningCount,
 } from "../lib/cost_planning";
 import { budgetApi, coupleApi } from "../lib/endpoints";
-import { formatHuf, formatNumber } from "../lib/format";
+import { formatMoney, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
@@ -535,6 +535,10 @@ export default function BudgetPage() {
     };
   }, [lines]);
   const hasAnyTableRow = tableLines.length > 0 || honeymoonAgg !== null;
+  // Pulled once near the top so every money render below — table, totals,
+  // snapshot card, breakdown dialog — shares one source of truth and stays
+  // in sync with whatever the couple picked on /app/profile.
+  const currency: Currency = couple?.currency ?? "HUF";
 
   return (
     <AppShell>
@@ -550,6 +554,7 @@ export default function BudgetPage() {
         boundsMax={bounds.max}
         cap={cap}
         count={effectiveCount}
+        currency={currency}
         onCountChange={setCount}
         onBoundsChange={saveBounds}
         onEditPlanned={setCategoryPlanned}
@@ -629,7 +634,7 @@ export default function BudgetPage() {
                               : "font-medium text-emerald-600 dark:text-emerald-400"
                           }
                         >
-                          {formatHuf(delta, locale)}
+                          {formatMoney(delta, currency, locale)}
                         </span>
                       )}
                     </td>
@@ -661,6 +666,7 @@ export default function BudgetPage() {
                   planned={honeymoonAgg.planned}
                   actual={honeymoonAgg.actual}
                   locale={locale}
+                  currency={currency}
                 />
               )}
               {!hasAnyTableRow && (
@@ -700,6 +706,7 @@ export default function BudgetPage() {
                 snapshot={s}
                 livePlannedTotal={livePlannedTotal}
                 locale={locale}
+                currency={currency}
                 restoring={restoringId === s.id}
                 disabled={restoringId !== null && restoringId !== s.id}
                 onRestore={() => restoreSnapshot(s.id)}
@@ -795,10 +802,12 @@ function HoneymoonAggregateRow({
   planned,
   actual,
   locale,
+  currency,
 }: {
   planned: number;
   actual: number;
   locale: "hu" | "en";
+  currency: Currency;
 }) {
   const { t } = useT();
   const Icon = CATEGORY_ICONS.honeymoon;
@@ -815,10 +824,10 @@ function HoneymoonAggregateRow({
         </Link>
       </td>
       <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900 dark:text-paper-50">
-        {formatHuf(planned, locale)}
+        {formatMoney(planned, currency, locale)}
       </td>
       <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900 dark:text-paper-50">
-        {formatHuf(actual, locale)}
+        {formatMoney(actual, currency, locale)}
       </td>
       <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
         {delta !== 0 && (
@@ -829,7 +838,7 @@ function HoneymoonAggregateRow({
                 : "font-medium text-emerald-600 dark:text-emerald-400"
             }
           >
-            {formatHuf(delta, locale)}
+            {formatMoney(delta, currency, locale)}
           </span>
         )}
       </td>
@@ -855,6 +864,7 @@ function SnapshotCard({
   snapshot,
   livePlannedTotal,
   locale,
+  currency,
   restoring,
   disabled,
   onRestore,
@@ -863,6 +873,7 @@ function SnapshotCard({
   snapshot: BudgetSnapshot;
   livePlannedTotal: number;
   locale: "hu" | "en";
+  currency: Currency;
   /** This card is the one currently being restored — show a spinner. */
   restoring: boolean;
   /** Another card is being restored — soft-disable both actions here so the
@@ -889,7 +900,7 @@ function SnapshotCard({
   }
   const diff = livePlannedTotal - planned;
   const created = formatSnapshotDate(snapshot.created_at, locale);
-  const diffStr = (diff >= 0 ? "+" : "") + formatHuf(diff, locale);
+  const diffStr = (diff >= 0 ? "+" : "") + formatMoney(diff, currency, locale);
 
   return (
     <div className="card-hover">
@@ -900,11 +911,11 @@ function SnapshotCard({
       <dl className="mt-3 space-y-1 text-xs text-ink-700 dark:text-paper-100">
         <div className="flex items-baseline justify-between gap-2">
           <dt className="text-ink-500 dark:text-umber-300">{t("budget.snapshot_planned_label")}</dt>
-          <dd className="tabular-nums">{formatHuf(planned, locale)}</dd>
+          <dd className="tabular-nums">{formatMoney(planned, currency, locale)}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
           <dt className="text-ink-500 dark:text-umber-300">{t("budget.snapshot_actual_label")}</dt>
-          <dd className="tabular-nums">{formatHuf(actual, locale)}</dd>
+          <dd className="tabular-nums">{formatMoney(actual, currency, locale)}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
           <dt className="text-ink-500 dark:text-umber-300">{t("budget.snapshot_diff_label")}</dt>
@@ -954,6 +965,7 @@ function SnapshotCard({
         <SnapshotBreakdownDialog
           snapshot={snapshot}
           locale={locale}
+          currency={currency}
           onClose={() => setBreakdownOpen(false)}
         />
       )}
@@ -967,10 +979,12 @@ function SnapshotCard({
 function SnapshotBreakdownDialog({
   snapshot,
   locale,
+  currency,
   onClose,
 }: {
   snapshot: BudgetSnapshot;
   locale: "hu" | "en";
+  currency: Currency;
   onClose: () => void;
 }) {
   const { t } = useT();
@@ -1065,10 +1079,10 @@ function SnapshotBreakdownDialog({
                         </span>
                       </td>
                       <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
-                        {formatHuf(row.planned, locale)}
+                        {formatMoney(row.planned, currency, locale)}
                       </td>
                       <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
-                        {formatHuf(row.actual, locale)}
+                        {formatMoney(row.actual, currency, locale)}
                       </td>
                     </tr>
                   );
@@ -1078,10 +1092,10 @@ function SnapshotBreakdownDialog({
                     {t("budget.snapshot_breakdown_total_label")}
                   </td>
                   <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
-                    {formatHuf(totalPlanned, locale)}
+                    {formatMoney(totalPlanned, currency, locale)}
                   </td>
                   <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
-                    {formatHuf(totalActual, locale)}
+                    {formatMoney(totalActual, currency, locale)}
                   </td>
                 </tr>
               </tbody>

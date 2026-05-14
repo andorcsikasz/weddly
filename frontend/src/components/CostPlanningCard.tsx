@@ -2,7 +2,7 @@
 // Used by the Dashboard and Budget pages. Per-guest categories cross-couple
 // with the headcount slider (move headcount → catering/drinks/etc. rescale).
 
-import type { BudgetCategory, BudgetLine } from "@shared/types";
+import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
 import {
   ArrowDown,
   ArrowUp,
@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { type ComponentType, type CSSProperties, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatHuf, formatNumber } from "../lib/format";
+import { formatMoney, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 /** Build a left-fill gradient for `<input type="range">`. Native ranges only
@@ -127,6 +127,7 @@ export function CostPlanningCard({
   boundsMax,
   cap,
   count,
+  currency = "HUF",
   onCountChange,
   onBoundsChange,
   onEditPlanned,
@@ -138,6 +139,10 @@ export function CostPlanningCard({
 }: {
   lines: BudgetLine[];
   baseline: number;
+  /** Display currency for the cap, totals and per-row amounts. Defaults to
+   *  HUF so legacy embedders (or anywhere the couple is still loading) keep
+   *  their pre-currency behaviour. */
+  currency?: Currency;
   /** Lower bound of the headcount slider. Comes from couple.guest_count_goal so
    *  both /app and /app/budget show the same number — see DashboardPage /
    *  BudgetPage `guestCountBounds()`. */
@@ -320,7 +325,7 @@ export function CostPlanningCard({
             (tier === "safe" ? (
               <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
                 <ArrowDown size={12} className="self-center" aria-hidden />
-                {t("budget.under_by", { amount: formatHuf(underAmount, locale) })}
+                {t("budget.under_by", { amount: formatMoney(underAmount, currency, locale) })}
               </span>
             ) : tier === "soft" ? (
               // 0–5 % over: calm amber dot, no blush pill — well within the
@@ -338,7 +343,9 @@ export function CostPlanningCard({
               // shape stable across tiers preserves the visual anchor.
               <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700 dark:text-blush-300">
                 <ArrowUp size={12} className="self-center" aria-hidden />
-                {t("cost_planning.overcap_medium_label", { amount: formatHuf(overage, locale) })}
+                {t("cost_planning.overcap_medium_label", {
+                  amount: formatMoney(overage, currency, locale),
+                })}
               </span>
             ))}
         </div>
@@ -412,6 +419,7 @@ export function CostPlanningCard({
             scaleFactor={b.scales ? factor : 1}
             count={count}
             widthAnchor={widthAnchor}
+            currency={currency}
             onEditPlanned={onEditPlanned}
             onToggleFreeze={onToggleFreeze}
             onDrag={(baselineValue) =>
@@ -442,10 +450,10 @@ export function CostPlanningCard({
               <span
                 className={`text-sm ${overCap ? "text-blush-400 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"}`}
               >
-                {formatHuf(totalActual, locale)} /{" "}
+                {formatMoney(totalActual, currency, locale)} /{" "}
               </span>
             )}
-            {formatHuf(totalPlanned, locale)}
+            {formatMoney(totalPlanned, currency, locale)}
           </span>
         </div>
         {/* Always render the cap row — when the couple hasn't set a ceiling
@@ -461,12 +469,13 @@ export function CostPlanningCard({
                 onSave={onCapChange}
                 ariaLabel={t("budget.cap")}
                 emphasise={overCap}
+                currency={currency}
               />
             ) : (
               <span
                 className={`stat-num ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
               >
-                {cap !== null ? formatHuf(cap, locale) : "—"}
+                {cap !== null ? formatMoney(cap, currency, locale) : "—"}
               </span>
             )}
           </div>
@@ -500,6 +509,7 @@ function CategoryRow({
   scaleFactor,
   count,
   widthAnchor,
+  currency,
   onEditPlanned,
   onToggleFreeze,
   onDrag,
@@ -511,6 +521,9 @@ function CategoryRow({
   plannedBaseline: number;
   actual: number;
   scales: boolean;
+  /** Display currency for the amount tile. Passed through from the parent
+   *  CostPlanningCard so every row matches the couple's preference. */
+  currency: Currency;
   /** Frozen — slider is read-only, per-guest scaling is off, the left side
    *  shows a lock affordance, and the planned amount stays pinned. */
   frozen: boolean;
@@ -656,32 +669,40 @@ function CategoryRow({
   // Right tile — the amount. On the dashboard we promote this to a Link so a
   // tap on the number routes the user to /app/budget for precise entry; the
   // hash drops them at the matching category section.
+  // Two-line amount tile so the right-hand column can stay a fixed width —
+  // see the grid template below. Inline per-guest hint blew the column out
+  // on per-guest categories, which made the bar rail width inconsistent
+  // across rows; with the hint on its own line the rail length is the
+  // same for every row and "x px = y HUF" reads correctly.
   const amountInner = (
-    <>
-      {actual > 0 && (
-        <span className="text-ink-400 dark:text-umber-300">{formatHuf(actual, locale)} / </span>
-      )}
-      <span className="font-medium">{formatHuf(liveDisplay, locale)}</span>
+    <span className="flex flex-col items-end leading-tight">
+      <span className="whitespace-nowrap">
+        {actual > 0 && (
+          <span className="text-ink-400 dark:text-umber-300">
+            {formatMoney(actual, currency, locale)} /{" "}
+          </span>
+        )}
+        <span className="font-medium">{formatMoney(liveDisplay, currency, locale)}</span>
+      </span>
       {perGuest !== null && (
-        <span className="text-[11px] text-ink-400 dark:text-umber-300">
-          {" · "}
+        <span className="whitespace-nowrap text-[10px] text-ink-400 dark:text-umber-300">
           {t("budget.per_guest_unit", { n: formatNumber(perGuest, locale) })}
         </span>
       )}
-    </>
+    </span>
   );
 
   const amountTile =
     amountLinkTo && !linkTo ? (
       <Link
         to={`${amountLinkTo}#cat-${category}`}
-        className="stat-num whitespace-nowrap rounded text-right text-xs text-ink-700 underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-paper-100 dark:hover:text-paper-50"
+        className="stat-num block rounded text-right text-xs text-ink-700 underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-paper-100 dark:hover:text-paper-50"
         aria-label={t("budget.open_table_aria", { category: categoryLabel })}
       >
         {amountInner}
       </Link>
     ) : (
-      <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700 dark:text-paper-100">
+      <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
         {amountInner}
       </span>
     );
@@ -733,7 +754,7 @@ function CategoryRow({
       <li>
         <Link
           to={linkTo}
-          className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
+          className="grid grid-cols-[8.5rem_minmax(0,1fr)_8rem] items-center gap-3 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
           aria-label={categoryLabel}
         >
           <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
@@ -743,7 +764,7 @@ function CategoryRow({
             {trackEl}
             {actualOverlayEl}
           </div>
-          <span className="stat-num whitespace-nowrap text-right text-xs text-ink-700 dark:text-paper-100">
+          <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
             {amountInner}
           </span>
         </Link>
@@ -754,7 +775,7 @@ function CategoryRow({
   return (
     <li
       id={`cat-${category}`}
-      className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] scroll-mt-24 items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:text-sm"
+      className="grid grid-cols-[8.5rem_minmax(0,1fr)_8rem] scroll-mt-24 items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:text-sm"
     >
       {leftTile}
       <div className="w-full">
@@ -836,6 +857,7 @@ function EditableHuf({
   ariaLabel,
   placeholder,
   emphasise,
+  currency = "HUF",
 }: {
   value: number | null;
   onSave: (next: number) => Promise<void>;
@@ -843,6 +865,10 @@ function EditableHuf({
   /** Shown when value is null and the button is at rest. Plain dash by default. */
   placeholder?: string;
   emphasise?: boolean;
+  /** Display currency for the rest-state amount. Editing still parses as a
+   *  plain integer — the picker lives on the parent (Profile / Dashboard
+   *  cap tile), so we don't surface a sub-picker here. */
+  currency?: Currency;
 }) {
   const { locale } = useT();
   const [editing, setEditing] = useState(false);
@@ -910,7 +936,7 @@ function EditableHuf({
           : "text-ink-400 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
       } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200`}
     >
-      {value !== null ? formatHuf(value, locale) : (placeholder ?? "—")}
+      {value !== null ? formatMoney(value, currency, locale) : (placeholder ?? "—")}
     </button>
   );
 }

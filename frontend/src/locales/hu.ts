@@ -232,6 +232,10 @@ const hu: LocaleMessages = {
     budget_min_label: "Alsó határ",
     budget_max_label: "Felső határ",
     budget_preview_label: "Vagyis",
+    budget_currency_label: "Valuta",
+    budget_currency_huf: "Forint (Ft)",
+    budget_currency_eur: "Euró (€)",
+    budget_currency_usd: "Dollár ($)",
     ceremony_kind_question: "Milyen szertartás lesz? (opcionális)",
     ceremony_kind_civil: "Polgári",
     ceremony_kind_religious: "Egyházi",
@@ -717,6 +721,8 @@ const hu: LocaleMessages = {
     tab_budget: "Költés",
     tab_seating: "Ültetés",
     tab_suppliers: "Szállító",
+    tab_more: "Több",
+    more_sheet_title: "További funkciók",
   },
   planning: {
     title: "Tervezés",
@@ -1027,6 +1033,8 @@ const hu: LocaleMessages = {
     household_remove_confirm_body:
       "Először tedd át máshová a tagjait — csak üres háztartást törlünk.",
     household_remove: "Háztartás törlése",
+    household_expand: "Háztartás kibontása",
+    household_collapse: "Háztartás összecsukása",
     household_section_title: "Háztartások",
     household_section_help:
       "Csoportosítsd egy háztartásba azokat, akik együtt válaszolnak (pár, család). A check-in oldalon egymást is látják.",
@@ -1369,12 +1377,15 @@ const hu: LocaleMessages = {
     submit: {
       title: "Tipp leadása",
       intro: "Pár adat — és más párok is könnyebben rátalálnak.",
-      trust_review: "Megerősítő linket küldünk e-mailben — addig nem jelenik meg",
+      trust_review: "Csapatunk átnézi mielőtt megjelenik a párok listáján",
       trust_email_private: "Az e-mail címed nem lesz nyilvános",
       trust_no_fees: "Örökre ingyenes — semmilyen jutalékot nem kérünk",
       next_steps_title: "Megerősítő linket küldtünk!",
       next_steps_body:
         "Nézd meg a megadott e-mail fiókot, kattints a linkre, és a hirdetés megjelenik a párok számára.",
+      next_steps_review_title: "Köszönjük, megkaptuk!",
+      next_steps_review_body:
+        "Csapatunk átnézi a bejegyzést, és hamarosan megjelenik a párok listáján.",
       category_label: "Kategória",
       category_placeholder: "Válassz kategóriát",
       name_label: "Név",
@@ -1957,6 +1968,10 @@ const hu: LocaleMessages = {
     budget_payment_amount_placeholder: "Összeg",
     budget_payment_label_required: "Adj nevet a tételnek.",
     budget_payment_amount_invalid: "Adj meg egy érvényes pozitív összeget.",
+    budget_currency_label: "Valuta",
+    budget_currency_huf: "Forint (Ft)",
+    budget_currency_eur: "Euró (€)",
+    budget_currency_usd: "Dollár ($)",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
     security_title: "Biztonság",

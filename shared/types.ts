@@ -85,6 +85,11 @@ export type WeddingDateKind = "exact" | "month" | "season" | "year" | "tbd";
 export type WeddingSeason = "spring" | "summer" | "fall" | "winter";
 export type GuestCountKind = "exact" | "range" | "tbd";
 export type BudgetKind = "exact" | "range" | "tbd";
+/** Display currency for the couple's money fields. Stored amounts are
+ *  integers in this currency's base unit — switching the value here does
+ *  NOT retro-convert past entries, it only flips the symbol/format. */
+export type Currency = "HUF" | "EUR" | "USD";
+export const CURRENCIES: readonly Currency[] = ["HUF", "EUR", "USD"];
 
 export interface WeddingDateGoal {
   kind: WeddingDateKind;
@@ -149,6 +154,11 @@ export interface Couple {
   budget_goal: BudgetGoal;
   /** Back-compat shortcut. Equal to budget_goal.exact_huf. */
   budget_ceiling_huf: Huf | null;
+  /** Display currency for every money field on this couple. Storage stays
+   *  as integer units of the picked currency — `budget_ceiling_huf` /
+   *  `budget_lines.planned_huf` etc. keep their historic column names but
+   *  semantically hold whatever currency is set here. */
+  currency: Currency;
   /** Scenario count for the cost-planning slider. Shared across both partners
    *  and all devices — distinct from `target_guest_count` (the onboarding goal)
    *  so a couple can model "what if we go to 130?" without rewriting the goal. */
