@@ -11,22 +11,65 @@ export function localizeText(text: LocaleText, locale: Locale): string {
   return text[locale];
 }
 
-/** Wedding-task starter set — covers the universally-applicable bookings +
- *  decisions every Hungarian couple makes. Couples add specifics on top. */
-export const TASK_TEMPLATE: { title: LocaleText }[] = [
-  { title: { hu: "Helyszínt foglalni", en: "Book the venue" } },
-  { title: { hu: "Anyakönyvvezetőt egyeztetni", en: "Confirm registrar" } },
-  { title: { hu: "Meghívókat megrendelni", en: "Order invitations" } },
-  { title: { hu: "Fotóst lefoglalni", en: "Book photographer" } },
-  { title: { hu: "Zenekart vagy DJ-t lefoglalni", en: "Book band or DJ" } },
-  { title: { hu: "Virágost egyeztetni", en: "Confirm florist" } },
-  { title: { hu: "Tortát megrendelni", en: "Order wedding cake" } },
-  { title: { hu: "Menyasszonyi ruhát kiválasztani", en: "Choose wedding dress" } },
-  { title: { hu: "Vőlegény öltönyt kiválasztani", en: "Choose groom's suit" } },
-  { title: { hu: "Karikagyűrűket beszerezni", en: "Buy wedding rings" } },
-  { title: { hu: "Tanúkat felkérni", en: "Ask the witnesses" } },
-  { title: { hu: "Esküvői próbát egyeztetni", en: "Schedule wedding rehearsal" } },
+/** Task starter set, organised into two sections the wand renders as
+ *  separate groups: the universally-applicable wedding bookings + decisions
+ *  every Hungarian couple makes, followed by the honeymoon trip-prep set
+ *  (passport, flights, insurance…) added once the couple sets a honeymoon
+ *  destination. Groups stay distinct in the modal so the wedding list isn't
+ *  drowned by trip items. */
+export type TaskTemplateGroupId = "wedding" | "honeymoon";
+
+export const TASK_TEMPLATE_GROUPS: {
+  id: TaskTemplateGroupId;
+  label: LocaleText;
+  items: { title: LocaleText }[];
+}[] = [
+  {
+    id: "wedding",
+    label: { hu: "Esküvő", en: "Wedding" },
+    items: [
+      { title: { hu: "Helyszínt foglalni", en: "Book the venue" } },
+      { title: { hu: "Anyakönyvvezetőt egyeztetni", en: "Confirm registrar" } },
+      { title: { hu: "Meghívókat megrendelni", en: "Order invitations" } },
+      { title: { hu: "Fotóst lefoglalni", en: "Book photographer" } },
+      { title: { hu: "Zenekart vagy DJ-t lefoglalni", en: "Book band or DJ" } },
+      { title: { hu: "Virágost egyeztetni", en: "Confirm florist" } },
+      { title: { hu: "Tortát megrendelni", en: "Order wedding cake" } },
+      { title: { hu: "Menyasszonyi ruhát kiválasztani", en: "Choose wedding dress" } },
+      { title: { hu: "Vőlegény öltönyt kiválasztani", en: "Choose groom's suit" } },
+      { title: { hu: "Karikagyűrűket beszerezni", en: "Buy wedding rings" } },
+      { title: { hu: "Tanúkat felkérni", en: "Ask the witnesses" } },
+      { title: { hu: "Esküvői próbát egyeztetni", en: "Schedule wedding rehearsal" } },
+    ],
+  },
+  {
+    id: "honeymoon",
+    label: { hu: "Nászút", en: "Honeymoon" },
+    items: [
+      { title: { hu: "Útlevél lejáratot ellenőrizni", en: "Check passport validity" } },
+      { title: { hu: "Vízum/ESTA igényt megnézni", en: "Check visa / ESTA requirements" } },
+      { title: { hu: "Repjegyet lefoglalni", en: "Book flights" } },
+      { title: { hu: "Szállást lefoglalni", en: "Book accommodation" } },
+      { title: { hu: "Utasbiztosítást kötni", en: "Take out travel insurance" } },
+      { title: { hu: "Bankot értesíteni az utazásról", en: "Notify the bank about travel" } },
+      {
+        title: {
+          hu: "Devizát váltani / kártyát ellenőrizni",
+          en: "Exchange currency / check cards",
+        },
+      },
+      { title: { hu: "Reptéri transzfert szervezni", en: "Arrange airport transfer" } },
+      { title: { hu: "Programot tervezni a helyszínen", en: "Plan activities at destination" } },
+      { title: { hu: "Csomagolási lista", en: "Pack list" } },
+    ],
+  },
 ];
+
+/** Backwards-compatible flat task list — the wand modal still indexes its
+ *  selection state into this array, so the index order must stay stable
+ *  (wedding first, then honeymoon). New items get appended to the end of
+ *  their group to keep prior indices pointing to the same task. */
+export const TASK_TEMPLATE: { title: LocaleText }[] = TASK_TEMPLATE_GROUPS.flatMap((g) => g.items);
 
 /** Light starter set of "what to consider adding" ideas — the obvious-but-
  *  easy-to-forget options. The Wand button drops these in as starting points

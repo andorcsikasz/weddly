@@ -28,6 +28,7 @@ import {
   IDEA_TEMPLATE,
   type LocaleText,
   TASK_TEMPLATE,
+  TASK_TEMPLATE_GROUPS,
   localizeText,
   rollDice,
 } from "../lib/planning_templates";
@@ -449,38 +450,57 @@ function TaskTemplateDialog({
               {allSelected ? t("planning.template_select_none") : t("planning.template_select_all")}
             </button>
           </div>
-          <ul className="space-y-0.5">
-            {TASK_TEMPLATE.map((tmpl, idx) => {
-              const on = selected.has(idx);
+          {/* Render groups one after the other with a small heading +
+              divider between them. Each item's index in the flat
+              TASK_TEMPLATE array is what `selected` tracks, so we keep a
+              running offset as we walk the groups. */}
+          {(() => {
+            let offset = 0;
+            return TASK_TEMPLATE_GROUPS.map((group, gIdx) => {
+              const startIdx = offset;
+              offset += group.items.length;
               return (
-                <li key={tmpl.title.en}>
-                  <button
-                    type="button"
-                    onClick={() => toggle(idx)}
-                    aria-pressed={on}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                      on
-                        ? "bg-paper-100 text-ink-900 hover:bg-paper-200 dark:bg-umber-700/60 dark:text-paper-50 dark:hover:bg-umber-700"
-                        : "text-ink-400 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                    }`}
-                  >
-                    {on ? (
-                      <CheckCircle2
-                        size={14}
-                        className="shrink-0 text-sage-700 dark:text-sage-300"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <Circle size={14} className="shrink-0" aria-hidden="true" />
-                    )}
-                    <span className={on ? "" : "line-through"}>
-                      {localizeText(tmpl.title, locale)}
-                    </span>
-                  </button>
-                </li>
+                <div key={group.id} className={gIdx > 0 ? "mt-3" : ""}>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                    {localizeText(group.label, locale)}
+                  </p>
+                  <ul className="space-y-0.5">
+                    {group.items.map((tmpl, localIdx) => {
+                      const idx = startIdx + localIdx;
+                      const on = selected.has(idx);
+                      return (
+                        <li key={tmpl.title.en}>
+                          <button
+                            type="button"
+                            onClick={() => toggle(idx)}
+                            aria-pressed={on}
+                            className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                              on
+                                ? "bg-paper-100 text-ink-900 hover:bg-paper-200 dark:bg-umber-700/60 dark:text-paper-50 dark:hover:bg-umber-700"
+                                : "text-ink-400 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                            }`}
+                          >
+                            {on ? (
+                              <CheckCircle2
+                                size={14}
+                                className="shrink-0 text-sage-700 dark:text-sage-300"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Circle size={14} className="shrink-0" aria-hidden="true" />
+                            )}
+                            <span className={on ? "" : "line-through"}>
+                              {localizeText(tmpl.title, locale)}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
-            })}
-          </ul>
+            });
+          })()}
         </div>
       </div>
     </Dialog>
