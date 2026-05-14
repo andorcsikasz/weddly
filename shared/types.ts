@@ -690,3 +690,29 @@ export interface PlanningItem {
   created_at: UnixMs;
   updated_at: UnixMs;
 }
+
+/** Round-trip flight cost estimate shown on /app/honeymoon. The figure is a
+ *  *suggestion* — it comes from Amadeus's cheapest-offer feed for the route,
+ *  not a bookable quote. Cached server-side for 12 h. `null` rather than this
+ *  shape when destination/dates are incomplete, no offer was found, or the
+ *  Amadeus credentials aren't configured. */
+export interface FlightEstimate {
+  /** Origin IATA airport code (e.g. "BUD"). */
+  origin: string;
+  /** Free-text destination the couple typed. Echoed back so the UI can show
+   *  "Bali → BUD" etc. without re-reading the couple state. */
+  destination_text: string;
+  /** Resolved destination IATA code, or `null` if Amadeus's location lookup
+   *  didn't find a match (then `price_amount` is also null). */
+  destination_iata: string | null;
+  depart_date: string;
+  return_date: string;
+  adults: number;
+  /** ISO 4217 (e.g. "HUF"). */
+  currency: string;
+  /** Whole-unit price in `currency`. `null` if no offer was found for these
+   *  dates / route. */
+  price_amount: number | null;
+  /** Server-side cache timestamp — let the frontend show "frissítve: …". */
+  fetched_at: UnixMs;
+}

@@ -825,6 +825,14 @@ export interface LocaleMessages {
     countdown_ongoing: string;
     countdown_past_one: string;
     countdown_past_other: string;
+    /** Amadeus-powered flight estimate card under the three tiles. Hidden
+     *  when no destination/dates or Amadeus isn't configured. `_basis`
+     *  receives `{origin}` + `{destination}` (IATA codes) + `{adults}`;
+     *  `_attribution` receives `{updated}` (localised short timestamp). */
+    flight_estimate_title: string;
+    flight_estimate_basis: string;
+    flight_estimate_empty: string;
+    flight_estimate_attribution: string;
     /** Header tiles (days / destination / budget). */
     tile_days: string;
     tile_destination: string;
@@ -933,7 +941,19 @@ export interface LocaleMessages {
     wand_dialog_body: string;
     wand_start_label: string;
     wand_end_label: string;
+    /** Inline hint under the End picker once the user has chosen an end
+     *  at-or-before the start, signalling we're laying the schedule across
+     *  two calendar days. */
+    wand_overnight_hint: string;
     wand_window_error: string;
+    /** Compact badge appended to the time column whenever a row's
+     *  `starts_at_minutes` falls on the second day (>= 1440). Used by both
+     *  wand proposal rows and committed schedule rows. */
+    day_two_badge: string;
+    /** Drawer toggle that flips `starts_at_minutes` by +1440 so the user
+     *  can record a single post-midnight event without going through the
+     *  wand. */
+    field_next_day: string;
     wand_warning_existing: string;
     /** Receives `{count}` + `{total}`. */
     wand_select_label: string;

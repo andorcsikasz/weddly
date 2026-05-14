@@ -559,3 +559,24 @@ CREATE TABLE IF NOT EXISTS planning_items (
 );
 CREATE INDEX IF NOT EXISTS idx_planning_couple ON planning_items(couple_id);
 CREATE INDEX IF NOT EXISTS idx_planning_kind ON planning_items(couple_id, kind, position);
+
+-- Cache for Amadeus flight-offer lookups powering the honeymoon flight
+-- estimate card. Rows are keyed by (origin, destination_text, depart_date,
+-- return_date, adults) so every couple targeting the same route shares the
+-- cache hit. `fetched_at` is checked against a 12 h TTL on read; stale rows
+-- are refreshed in-place. Price stored as minor units in the requested
+-- currency (HUF: forints directly, no cents).
+CREATE TABLE IF NOT EXISTS flight_estimates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  origin TEXT NOT NULL,
+  destination_text TEXT NOT NULL,
+  destination_iata TEXT,
+  depart_date TEXT NOT NULL,                                   -- ISO YYYY-MM-DD
+  return_date TEXT NOT NULL,                                   -- ISO YYYY-MM-DD
+  adults INTEGER NOT NULL DEFAULT 2,
+  currency TEXT NOT NULL,
+  price_amount INTEGER NOT NULL,                               -- whole units in `currency` (no cents for HUF)
+  fetched_at INTEGER NOT NULL,                                 -- unix ms
+  UNIQUE(origin, destination_text, depart_date, return_date, adults)
+);
+CREATE INDEX IF NOT EXISTS idx_flight_estimates_fetched ON flight_estimates(fetched_at);

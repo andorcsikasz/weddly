@@ -4,7 +4,7 @@
 // proxy). Cost cards mirror `budget_lines` rows in the `honeymoon` category,
 // so a slider drag here shows up on /app/budget and vice versa.
 
-import type { BudgetLine, Couple, Currency, PlaceSuggestion } from "@shared/types";
+import type { BudgetLine, Couple, Currency, FlightEstimate, PlaceSuggestion } from "@shared/types";
 import {
   BedDouble,
   Calendar,
@@ -33,7 +33,7 @@ import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { budgetApi, coupleApi, placesApi } from "../lib/endpoints";
+import { budgetApi, coupleApi, honeymoonApi, placesApi } from "../lib/endpoints";
 import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { publish, subscribe } from "../lib/sync";
@@ -208,6 +208,11 @@ export default function HoneymoonPage() {
   // of jumping only on release. Keyed by line id; cleared when the row
   // settles (save lands or drag returns to the saved value).
   const [drafts, setDrafts] = useState<Record<number, number>>({});
+  // Amadeus flight estimate for the current destination + dates. Loaded
+  // lazily on mount and whenever the couple's destination/dates change;
+  // server-side cache (12 h) keeps the upstream API call rare. `null` while
+  // loading, on miss, or when Amadeus isn't configured — the card just hides.
+  const [flightEstimate, setFlightEstimate] = useState<FlightEstimate | null>(null);
 
   async function refresh() {
     const [c, l] = await Promise.all([coupleApi.current(), budgetApi.listLines()]);
@@ -225,6 +230,32 @@ export default function HoneymoonPage() {
       refresh();
     });
   }, []);
+
+  // (Re)fetch the flight estimate whenever the destination or dates change.
+  // Bail when any of the three is missing so we don't hammer the server with
+  // empty-input requests during onboarding.
+  useEffect(() => {
+    if (
+      !couple?.honeymoon_destination ||
+      !couple?.honeymoon_start_date ||
+      !couple?.honeymoon_end_date
+    ) {
+      setFlightEstimate(null);
+      return;
+    }
+    let cancelled = false;
+    honeymoonApi
+      .flightEstimate()
+      .then((r) => {
+        if (!cancelled) setFlightEstimate(r.estimate);
+      })
+      .catch(() => {
+        if (!cancelled) setFlightEstimate(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [couple?.honeymoon_destination, couple?.honeymoon_start_date, couple?.honeymoon_end_date]);
 
   const honeymoonLines = useMemo(() => lines.filter((l) => l.category === "honeymoon"), [lines]);
   // Each preset chip is single-use. We resolve every existing line back to
@@ -403,6 +434,8 @@ export default function HoneymoonPage() {
           currency={currency}
         />
       </section>
+
+      {flightEstimate && <FlightEstimateCard estimate={flightEstimate} locale={locale} t={t} />}
 
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
@@ -1083,5 +1116,69 @@ function CostRow({
         <Trash2 size={14} />
       </button>
     </li>
+  );
+}
+
+/** Suggestion card showing Amadeus's cheapest round-trip offer for the
+ *  couple's destination + dates. Hidden by the caller when the estimate is
+ *  null — so this component renders only when we have *something* to say,
+ *  even if `price_amount` is null (no offer found for these dates). */
+function FlightEstimateCard({
+  estimate,
+  locale,
+  t,
+}: {
+  estimate: FlightEstimate;
+  locale: "hu" | "en";
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const updated = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(estimate.fetched_at));
+
+  return (
+    <section
+      className="card-hover stationery-light relative !p-5 mt-4 flex items-start gap-3"
+      aria-label={t("honeymoon.flight_estimate_title")}
+    >
+      <span
+        aria-hidden="true"
+        className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
+      >
+        <Plane size={16} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          {t("honeymoon.flight_estimate_title")}
+        </p>
+        {estimate.price_amount !== null ? (
+          <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="stat-num text-lg font-semibold text-ink-900 sm:text-xl dark:text-paper-50">
+              ~{" "}
+              {new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+                style: "currency",
+                currency: estimate.currency,
+                maximumFractionDigits: 0,
+              }).format(estimate.price_amount)}
+            </span>
+            <span className="text-xs text-ink-500 dark:text-umber-300">
+              {t("honeymoon.flight_estimate_basis", {
+                origin: estimate.origin,
+                destination: estimate.destination_iata ?? "",
+                adults: estimate.adults,
+              })}
+            </span>
+          </p>
+        ) : (
+          <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">
+            {t("honeymoon.flight_estimate_empty")}
+          </p>
+        )}
+        <p className="mt-1 text-[11px] text-ink-400 dark:text-umber-300">
+          {t("honeymoon.flight_estimate_attribution", { updated })}
+        </p>
+      </div>
+    </section>
   );
 }

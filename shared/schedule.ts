@@ -5,15 +5,20 @@
 import type { UnixMs } from "./types";
 
 /** One row of the wedding-day timeline. Time is stored as minutes from
- *  midnight (0..1439) in wedding-day-local time, deliberately *not* a full
- *  timestamp — the date itself may shift right up to D-1, and decoupling the
- *  timeline from `couples.wedding_date` means a date change doesn't rewrite
- *  every row. */
+ *  the wedding-day's local midnight (0..2879 — two 24h spans, so an
+ *  afternoon ceremony that runs into the small hours of the next morning
+ *  can be expressed as 1440+ without wrapping). Deliberately *not* a full
+ *  timestamp — the date itself may shift right up to D-1, and decoupling
+ *  the timeline from `couples.wedding_date` means a date change doesn't
+ *  rewrite every row. The UI renders 1440+ as HH:MM with a "next day"
+ *  badge; sort order is the raw minutes value, so day-2 rows naturally
+ *  follow day-1 rows. */
 export interface ScheduleEvent {
   id: number;
   couple_id: number;
   label: string;
-  /** Minutes from midnight, 0..1439. */
+  /** Minutes from wedding-day-local midnight, 0..2879 (covers the day
+   *  itself + the small hours of the next morning). */
   starts_at_minutes: number;
   /** Optional. Minutes the event runs for (1..1440). `null` = display the
    *  event as a single bullet with no end time. */
@@ -39,8 +44,14 @@ export interface UpsertScheduleEventInput {
   sort_order?: number;
 }
 
-/** Time bounds — exported so the page agents validate identically. */
-export const SCHEDULE_MAX_MINUTES = 1439;
+/** Time bounds — exported so the page agents validate identically. Two-day
+ *  ceiling so weddings that run past midnight can store post-midnight rows
+ *  as 1440+ minutes instead of wrapping back to a day-1 clock value (which
+ *  would break sort order on the schedule page + PDF). */
+export const SCHEDULE_MAX_MINUTES = 2879;
+/** First minute of the next calendar day. Used as the boundary that
+ *  separates day-1 rows from day-2 rows when rendering badges. */
+export const SCHEDULE_DAY_TWO_MINUTES = 1440;
 export const SCHEDULE_MIN_DURATION = 1;
 export const SCHEDULE_MAX_DURATION = 1440;
 export const SCHEDULE_MAX_LABEL_LEN = 200;

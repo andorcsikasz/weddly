@@ -5,10 +5,10 @@
 
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import {
+  SCHEDULE_DAY_TWO_MINUTES,
   SCHEDULE_MAX_DURATION,
   SCHEDULE_MAX_LABEL_LEN,
   SCHEDULE_MAX_LOCATION_LEN,
-  SCHEDULE_MAX_MINUTES,
   SCHEDULE_MAX_NOTES_LEN,
   SCHEDULE_MIN_DURATION,
 } from "@shared/schedule";
@@ -31,12 +31,26 @@ interface DrawerInit {
   event: ScheduleEvent | null;
 }
 
+/** Wedding-day clock formatter. Day-2 minutes (>= 1440) wrap back to a 0-23
+ *  clock value — callers render the "next day" badge alongside. */
 function formatHHMM(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
+  const safe = Math.max(0, Math.floor(minutes));
+  const wall = safe % 1440;
+  const h = Math.floor(wall / 60);
+  const m = wall % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+/** True for any minutes value that belongs to the post-midnight half of the
+ *  2-day timeline. Used to decide when to render the day-2 badge. */
+function isDayTwo(minutes: number): boolean {
+  return minutes >= SCHEDULE_DAY_TWO_MINUTES;
+}
+
+/** Parse a single `<input type="time">` value into wall-clock minutes
+ *  (0..1439). The day-2 offset is applied separately by the caller via
+ *  a checkbox or the wand's overnight detection — we never infer it
+ *  from the text alone. */
 function parseHHMM(text: string): number | null {
   if (!/^\d{1,2}:\d{2}$/.test(text)) return null;
   const [hRaw, mRaw] = text.split(":");
@@ -45,7 +59,7 @@ function parseHHMM(text: string): number | null {
   if (Number.isNaN(h) || Number.isNaN(m)) return null;
   if (h < 0 || h > 23 || m < 0 || m > 59) return null;
   const value = h * 60 + m;
-  if (value > SCHEDULE_MAX_MINUTES) return null;
+  if (value >= SCHEDULE_DAY_TWO_MINUTES) return null;
   return value;
 }
 
@@ -263,8 +277,13 @@ export default function SchedulePage() {
                 className="flex min-w-0 flex-1 items-start gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
               >
                 <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start leading-none">
-                  <span className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-                    {formatHHMM(event.starts_at_minutes)}
+                  <span className="stat-num flex items-baseline gap-1 text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                    <span>{formatHHMM(event.starts_at_minutes)}</span>
+                    {isDayTwo(event.starts_at_minutes) && (
+                      <span className="text-[10px] font-normal uppercase tracking-wide text-ink-400 dark:text-umber-300">
+                        {t("schedule.day_two_badge")}
+                      </span>
+                    )}
                   </span>
                   {event.duration_minutes !== null && event.duration_minutes > 0 && (
                     <span className="stat-num mt-0.5 text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
@@ -380,6 +399,13 @@ function ScheduleEventDialog({
   const existing = init.event;
   const [label, setLabel] = useState(existing?.label ?? "");
   const [time, setTime] = useState(existing ? formatHHMM(existing.starts_at_minutes) : "15:00");
+  // Day-2 toggle. Stored separately from `time` (which is a wall-clock value
+  // 00:00..23:59) because `<input type="time">` has no notion of which day.
+  // Pre-populated from the existing row's `starts_at_minutes` so editing a
+  // day-2 event opens with the box already ticked.
+  const [nextDay, setNextDay] = useState<boolean>(
+    existing !== null && existing.starts_at_minutes >= SCHEDULE_DAY_TWO_MINUTES,
+  );
   const [duration, setDuration] = useState<string>(
     existing?.duration_minutes !== null && existing?.duration_minutes !== undefined
       ? String(existing.duration_minutes)
@@ -398,11 +424,12 @@ function ScheduleEventDialog({
       setLabelError(t("schedule.label_required"));
       return;
     }
-    const minutes = parseHHMM(time);
-    if (minutes === null) {
+    const wallMinutes = parseHHMM(time);
+    if (wallMinutes === null) {
       setTimeError(t("schedule.time_required"));
       return;
     }
+    const minutes = nextDay ? wallMinutes + SCHEDULE_DAY_TWO_MINUTES : wallMinutes;
     const conflict = findConflictingEvent(minutes, events, existing?.id ?? null);
     if (conflict) {
       setTimeError(
@@ -517,6 +544,18 @@ function ScheduleEventDialog({
               />
             </FormRow>
           </div>
+          <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+            <input
+              type="checkbox"
+              checked={nextDay}
+              onChange={(e) => {
+                setNextDay(e.target.checked);
+                if (timeError) setTimeError(null);
+              }}
+              className="h-4 w-4 cursor-pointer rounded border-paper-300 text-ink-900 dark:border-umber-600"
+            />
+            <span>{t("schedule.field_next_day")}</span>
+          </label>
 
           <FormRow label={t("schedule.field_location")}>
             <input
@@ -598,7 +637,17 @@ function ScheduleWandDialog({
   );
 
   const startMinutes = parseHHMM(startText);
-  const endMinutes = parseHHMM(endText);
+  const rawEndMinutes = parseHHMM(endText);
+  // Overnight: if the user picks an end time at or before the start, treat
+  // it as the small hours of the next day so the schedule scales across
+  // the full party (e.g. 15:00 → 02:00 = 11h window, not "invalid").
+  const overnight = startMinutes !== null && rawEndMinutes !== null && rawEndMinutes <= startMinutes;
+  const endMinutes =
+    rawEndMinutes === null || startMinutes === null
+      ? rawEndMinutes
+      : overnight
+        ? rawEndMinutes + SCHEDULE_DAY_TWO_MINUTES
+        : rawEndMinutes;
   const windowValid = startMinutes !== null && endMinutes !== null && endMinutes > startMinutes;
 
   const proposal = useMemo(() => {
@@ -690,6 +739,11 @@ function ScheduleWandDialog({
             {t("schedule.wand_window_error")}
           </p>
         )}
+        {windowValid && overnight && (
+          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200">
+            {t("schedule.wand_overnight_hint")}
+          </p>
+        )}
         {existingEvents.length > 0 && (
           <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200">
             {t("schedule.wand_warning_existing")}
@@ -737,8 +791,13 @@ function ScheduleWandDialog({
                           : "text-ink-400 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                     }`}
                   >
-                    <span className="min-w-[3.5rem] shrink-0 tabular-nums">
-                      {formatHHMM(row.starts_at_minutes)}
+                    <span className="flex min-w-[5rem] shrink-0 items-baseline gap-1 tabular-nums">
+                      <span>{formatHHMM(row.starts_at_minutes)}</span>
+                      {isDayTwo(row.starts_at_minutes) && (
+                        <span className="text-[10px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+                          +1
+                        </span>
+                      )}
                     </span>
                     <span className={`flex-1 ${on || conflict !== null ? "" : "line-through"}`}>
                       {row.item.title[locale]}

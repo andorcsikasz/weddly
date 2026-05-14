@@ -19,6 +19,7 @@ import type {
   Currency,
   DataExportSummary,
   DietarySummary,
+  FlightEstimate,
   GuestCountGoal,
   Guest,
   Household,
@@ -236,6 +237,14 @@ export const moodboardApi = {
 export const placesApi = {
   search: (q: string) =>
     apiFetch<{ places: PlaceSuggestion[] }>("GET", `/api/places/search?q=${encodeURIComponent(q)}`),
+};
+
+/** Honeymoon-specific server state. Right now only the Amadeus flight
+ *  estimate; destination + dates ride along on /api/couples. The estimate is
+ *  server-cached for 12 h, so calling this from a page mount is cheap. */
+export const honeymoonApi = {
+  flightEstimate: () =>
+    apiFetch<{ estimate: FlightEstimate | null }>("GET", "/api/honeymoon/flight-estimate"),
 };
 
 /** Day-of run-of-show timeline. Times are minutes from midnight in wedding-

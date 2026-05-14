@@ -3,6 +3,7 @@
 // to keys.ts triples the i18n maintenance per template item. Mirrors the
 // pattern used by `lib/planning_templates.ts`.
 
+import { SCHEDULE_MAX_MINUTES } from "@shared/schedule";
 import type { Locale } from "./i18n";
 import type { LocaleText } from "./planning_templates";
 
@@ -113,7 +114,10 @@ export function buildScheduleProposal(
   return SCHEDULE_TEMPLATE.map((item, idx) => {
     const raw = startMinutes + window * item.fraction;
     const rounded = roundTo5(raw);
-    const clamped = Math.max(0, Math.min(1439, rounded));
+    // 2-day model: allow minutes past 1440 so an overnight window (end <=
+    // start) lays the late-night milestones on day 2 instead of wrapping
+    // them to morning. Day-2 rows render with a "+1 nap" badge.
+    const clamped = Math.max(0, Math.min(SCHEDULE_MAX_MINUTES, rounded));
     // Cap default duration so it doesn't overshoot the next event.
     let duration: number | null = null;
     if (item.defaultDuration) {

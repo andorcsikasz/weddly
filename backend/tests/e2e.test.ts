@@ -6956,10 +6956,21 @@ describe("loop B-A: schedule CRUD", () => {
     );
     expect(noLabel.status).toBe(400);
 
+    // 2-day model: 1440..2879 is now valid (post-midnight, day 2). Anything
+    // at or above 2880 still has to be rejected — that's two full days, and
+    // we don't model 3+ day weddings.
+    const dayTwoOk = await req(
+      "POST",
+      "/api/schedule",
+      { label: "Day-two test", starts_at_minutes: 1440 },
+      { token },
+    );
+    expect(dayTwoOk.status).toBe(201);
+
     const badStart = await req(
       "POST",
       "/api/schedule",
-      { label: "Test", starts_at_minutes: 1440 },
+      { label: "Test", starts_at_minutes: 2880 },
       { token },
     );
     expect(badStart.status).toBe(400);

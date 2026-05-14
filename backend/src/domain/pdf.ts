@@ -725,15 +725,18 @@ interface ScheduleInput {
   events: ScheduleEvent[];
 }
 
-/** Format minutes-from-midnight as "HH:MM". Wedding-day-local time only —
- *  no timezone juggling. */
+/** Format wedding-day-local minutes as "HH:MM". Day-2 rows (minutes >= 1440)
+ *  get a trailing `+1` so the PDF reader can tell post-midnight events apart
+ *  from the morning ones — same convention as the on-screen day-2 badge. */
 function formatHhmm(minutes: number): string {
-  const m = Math.max(0, Math.min(1439, Math.floor(minutes)));
-  const hh = Math.floor(m / 60)
+  const m = Math.max(0, Math.floor(minutes));
+  const dayTwo = m >= 1440;
+  const wall = m % 1440;
+  const hh = Math.floor(wall / 60)
     .toString()
     .padStart(2, "0");
-  const mm = (m % 60).toString().padStart(2, "0");
-  return `${hh}:${mm}`;
+  const mm = (wall % 60).toString().padStart(2, "0");
+  return dayTwo ? `${hh}:${mm}+1` : `${hh}:${mm}`;
 }
 
 /** Word-wrap `text` to `maxWidthPt` at `sizePt` using the given font, with
@@ -904,9 +907,7 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
     // Build the right-column wrapped lines first so we know how tall this
     // row will be before deciding whether it fits on the current page.
     const timeText = ev.duration_minutes
-      ? `${formatHhmm(ev.starts_at_minutes)}–${formatHhmm(
-          Math.min(1439, ev.starts_at_minutes + ev.duration_minutes),
-        )}`
+      ? `${formatHhmm(ev.starts_at_minutes)}–${formatHhmm(ev.starts_at_minutes + ev.duration_minutes)}`
       : formatHhmm(ev.starts_at_minutes);
     const labelWrap = await wrapLines(fontPair, ev.label, 12, mm(labelColWidthMm), 2, "bold");
     const subBits: string[] = [];
