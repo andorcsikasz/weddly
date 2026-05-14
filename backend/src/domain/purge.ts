@@ -41,18 +41,34 @@ export function purgeOneCouple(coupleId: number, options: { adminInitiated?: boo
     }
   }
 
-  // Children with PII — delete entirely.
+  // Children with PII — delete entirely. We keep the `couples` and `users`
+  // rows (FK targets for `audit_log`) but every child table that holds
+  // user-authored content or personally identifying information is wiped
+  // here. The full sweep is the right-to-erasure contract — anything we
+  // leave behind has to either be content-free or referenced by retention
+  // (audit_log only). Schema is additive, so we DELETE rather than DROP.
   db.prepare(
     "DELETE FROM seat_assignments WHERE table_id IN (SELECT id FROM seating_tables WHERE couple_id = ?)",
   ).run(coupleId);
   db.prepare("DELETE FROM seating_conflicts WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM seating_tables WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM guests WHERE couple_id = ?").run(coupleId);
+  db.prepare("DELETE FROM households WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM couple_suppliers WHERE couple_id = ?").run(coupleId);
+  db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ?").run(coupleId);
+  db.prepare("DELETE FROM couple_picks WHERE couple_id = ?").run(coupleId);
+  db.prepare("DELETE FROM supplier_votes WHERE couple_id = ?").run(coupleId);
+  db.prepare("DELETE FROM planning_items WHERE couple_id = ?").run(coupleId);
+  db.prepare("DELETE FROM schedule_events WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM budget_lines WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM budget_snapshots WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM data_exports WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM couple_invites WHERE couple_id = ?").run(coupleId);
+  // Feedback rows authored by users on this workspace — message body and
+  // from_email are both personally identifying content.
+  db.prepare(
+    "DELETE FROM feedback_submissions WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+  ).run(coupleId);
   // Email log + dispatch ledger: drop direct mentions of this couple. The
   // `to_email` column may also contain PII; scrub via the user-id link below.
   db.prepare("DELETE FROM email_log WHERE couple_id = ?").run(coupleId);
@@ -159,6 +175,11 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
   db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").run(userId);
   db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(userId);
   db.prepare("DELETE FROM email_change_tokens WHERE user_id = ?").run(userId);
+  // Orphan users may have voted on community suppliers or submitted
+  // feedback before they were deleted. Wipe both — they're personally
+  // identifying content tied to this user.
+  db.prepare("DELETE FROM supplier_votes WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM feedback_submissions WHERE user_id = ?").run(userId);
   db.prepare(
     `UPDATE users SET email = 'deleted-' || id || '@purged.local',
                       password_hash = '!purged!',

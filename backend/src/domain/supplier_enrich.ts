@@ -107,20 +107,53 @@ function extractMapsPlace(u: URL): string | null {
   }
 }
 
-async function fetchHtml(u: URL): Promise<string | null> {
+// Cap on the redirect chain length. Real sites rarely chain more than 1–2
+// hops (canonical → www → https). Three keeps us generous without enabling
+// long bounce trains an SSRF probe might rely on.
+const MAX_REDIRECTS = 3;
+
+async function fetchHtml(initial: URL): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(u.toString(), {
-      method: "GET",
-      redirect: "follow",
-      headers: {
-        // Some sites refuse default fetch UA; identify ourselves explicitly.
-        "User-Agent": "WeddlyEnrichBot/1.0 (+https://weddly.xyz)",
-        Accept: "text/html,application/xhtml+xml",
-      },
-      signal: controller.signal,
-    });
+    // Follow redirects manually so every hop is re-validated through
+    // `isFetchableUrl`. With `redirect: "follow"` a benign-looking public
+    // site can 302 us into the cloud-metadata IP or any RFC-1918 target;
+    // re-running the gate per hop is the SSRF mitigation.
+    let current: URL = initial;
+    let res: Response | null = null;
+    for (let i = 0; i <= MAX_REDIRECTS; i += 1) {
+      res = await fetch(current.toString(), {
+        method: "GET",
+        redirect: "manual",
+        headers: {
+          // Some sites refuse default fetch UA; identify ourselves explicitly.
+          "User-Agent": "WeddlyEnrichBot/1.0 (+https://weddly.xyz)",
+          Accept: "text/html,application/xhtml+xml",
+        },
+        signal: controller.signal,
+      });
+      if (res.status < 300 || res.status >= 400) break;
+      const loc = res.headers.get("location");
+      if (!loc) break;
+      // Resolve relative redirects against the current URL.
+      let next: URL;
+      try {
+        next = new URL(loc, current);
+      } catch {
+        return null;
+      }
+      const checked = isFetchableUrl(next.toString());
+      if (!checked) return null;
+      current = checked;
+      // Cancel the redirect response body so the connection releases cleanly.
+      try {
+        await res.body?.cancel();
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!res) return null;
     if (!res.ok) return null;
     const ct = res.headers.get("content-type") ?? "";
     if (!ct.includes("text/html") && !ct.includes("application/xhtml")) return null;

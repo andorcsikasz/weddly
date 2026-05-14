@@ -2166,6 +2166,67 @@ describe("pause-to-delete purge job", () => {
     expect(audit.n).toBe(1);
   });
 
+  test("purge wipes every PII-bearing child table (right-to-erasure)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("erasure@weddly.test");
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, { token });
+    const userId = me.data.user.id;
+    const ts = now();
+
+    // Seed a row in every PII child table the purge is supposed to clear.
+    // Direct INSERTs avoid exercising every API just to populate the schema.
+    db.prepare(
+      "INSERT INTO planning_items (couple_id, kind, title, position, created_at, updated_at) VALUES (?, 'task', 'Pick a baker', 0, ?, ?)",
+    ).run(coupleId, ts, ts);
+    db.prepare(
+      "INSERT INTO schedule_events (couple_id, label, starts_at_minutes, duration_minutes, created_at, updated_at) VALUES (?, 'Ceremony', 600, 60, ?, ?)",
+    ).run(coupleId, ts, ts);
+    db.prepare(
+      "INSERT INTO households (couple_id, label, code, created_at, updated_at) VALUES (?, 'Smith family', 'ABC123', ?, ?)",
+    ).run(coupleId, ts, ts);
+    db.prepare(
+      "INSERT INTO couple_picks (couple_id, category, supplier_id, picked_at) VALUES (?, 'cake', 's1', ?)",
+    ).run(coupleId, ts);
+    db.prepare(
+      "INSERT INTO couple_supplier_costs (couple_id, supplier_id, planned_huf, created_at, updated_at) VALUES (?, 's1', 100000, ?, ?)",
+    ).run(coupleId, ts, ts);
+    db.prepare(
+      "INSERT INTO supplier_votes (user_id, couple_id, supplier_id, value, created_at, updated_at) VALUES (?, ?, 's1', 1, ?, ?)",
+    ).run(userId, coupleId, ts, ts);
+    db.prepare(
+      "INSERT INTO feedback_submissions (user_id, message, from_email, created_at) VALUES (?, 'painful UX', 'erasure@weddly.test', ?)",
+    ).run(userId, ts);
+
+    // Run the purge directly — same code path the worker uses.
+    const { purgeOneCouple } = await import("../src/domain/purge");
+    purgeOneCouple(coupleId);
+
+    const countTable = (sql: string, params: (string | number)[]) =>
+      (db.prepare(sql).get(...params) as { n: number }).n;
+
+    expect(
+      countTable("SELECT COUNT(*) AS n FROM planning_items WHERE couple_id = ?", [coupleId]),
+    ).toBe(0);
+    expect(
+      countTable("SELECT COUNT(*) AS n FROM schedule_events WHERE couple_id = ?", [coupleId]),
+    ).toBe(0);
+    expect(countTable("SELECT COUNT(*) AS n FROM households WHERE couple_id = ?", [coupleId])).toBe(
+      0,
+    );
+    expect(
+      countTable("SELECT COUNT(*) AS n FROM couple_picks WHERE couple_id = ?", [coupleId]),
+    ).toBe(0);
+    expect(
+      countTable("SELECT COUNT(*) AS n FROM couple_supplier_costs WHERE couple_id = ?", [coupleId]),
+    ).toBe(0);
+    expect(
+      countTable("SELECT COUNT(*) AS n FROM supplier_votes WHERE couple_id = ?", [coupleId]),
+    ).toBe(0);
+    expect(
+      countTable("SELECT COUNT(*) AS n FROM feedback_submissions WHERE user_id = ?", [userId]),
+    ).toBe(0);
+  });
+
   test("does not purge couples whose deadline is still in the future", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("notyet@weddly.test");
