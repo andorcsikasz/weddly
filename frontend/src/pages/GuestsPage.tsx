@@ -16,15 +16,19 @@ import {
   Baby,
   Ban,
   Beef,
+  Briefcase,
   Check,
   CheckCheck,
   ChevronDown,
   Cookie,
   Crown,
   Fish,
+  Flower2,
+  Home,
   Leaf,
   Link2,
   Milk,
+  MoreHorizontal,
   Music,
   Nut,
   Pencil,
@@ -35,7 +39,10 @@ import {
   Sprout,
   Trash2,
   Upload,
+  User,
+  UserCircle,
   UserPlus,
+  Users,
   Wheat,
   X,
 } from "lucide-react";
@@ -587,6 +594,7 @@ export default function GuestsPage() {
         <GuestDrawer
           init={editing}
           households={households}
+          guests={guests}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -1297,11 +1305,16 @@ function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string
 function GuestDrawer({
   init,
   households,
+  guests,
   onClose,
   onSaved,
 }: {
   init: DrawerInit;
   households: Household[];
+  /** Full guest roster, used by the "new household" input to suggest existing
+   *  households (by label) and existing guests (by name) — clicking a hit
+   *  switches the mode to "existing" and attaches the new guest there. */
+  guests: Guest[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -1343,6 +1356,43 @@ function GuestDrawer({
     guest?.household_id ?? init.defaultHouseholdId ?? households[0]?.id ?? null,
   );
   const [newHouseholdLabel, setNewHouseholdLabel] = useState("");
+
+  /** Autocomplete hits for the "Új háztartás" input. Match existing
+   *  households by label, then existing guests by full_name (their
+   *  household becomes the suggestion). Households a guest match would
+   *  redundantly point to are deduped so the user doesn't see the same
+   *  household twice. Cap at 6 — longer than that the user should refine
+   *  the query rather than scroll. */
+  const householdSuggestions = useMemo(() => {
+    const q = newHouseholdLabel.trim().toLowerCase();
+    if (!q)
+      return [] as Array<
+        | { kind: "household"; household: Household }
+        | { kind: "guest"; guest: Guest; household: Household | null }
+      >;
+    const seenHh = new Set<number>();
+    const out: Array<
+      | { kind: "household"; household: Household }
+      | { kind: "guest"; guest: Guest; household: Household | null }
+    > = [];
+    for (const h of households) {
+      if (h.label.toLowerCase().includes(q)) {
+        out.push({ kind: "household", household: h });
+        seenHh.add(h.id);
+      }
+    }
+    for (const g of guests) {
+      if (guest && g.id === guest.id) continue; // skip self when editing
+      if (!g.household_id || seenHh.has(g.household_id)) continue;
+      if (g.full_name.toLowerCase().includes(q)) {
+        const hh = households.find((h) => h.id === g.household_id) ?? null;
+        out.push({ kind: "guest", guest: g, household: hh });
+        if (hh) seenHh.add(hh.id);
+      }
+      if (out.length >= 6) break;
+    }
+    return out.slice(0, 6);
+  }, [newHouseholdLabel, households, guests, guest]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
@@ -1460,17 +1510,23 @@ function GuestDrawer({
 
           <div className="mb-3">
             <label className="field-label">{t("guests.group")}</label>
-            <select
-              className="input"
-              value={form.group_tag ?? "other"}
-              onChange={(e) => setForm({ ...form, group_tag: e.target.value as GuestGroupTag })}
-            >
+            {/* Icon-only segmented row — full label sits in title/aria-label
+                so the meaning is one hover (or screen-reader tap) away.
+                Tooltips matter here because two pairs of icons share a
+                glyph (his_friends / her_friends both use a person-style
+                User icon) — see GroupIcon for the mapping. */}
+            <div className="grid grid-cols-7 gap-2">
               {GROUPS.map((g) => (
-                <option key={g} value={g}>
-                  {t(`guests.group_${g}`)}
-                </option>
+                <SegmentButton
+                  key={g}
+                  active={(form.group_tag ?? "other") === g}
+                  onClick={() => setForm({ ...form, group_tag: g })}
+                  icon={<GroupIcon group={g} />}
+                  label={t(`guests.group_${g}`)}
+                  iconOnly
+                />
               ))}
-            </select>
+            </div>
           </div>
 
           <div className="mb-3">
@@ -1520,12 +1576,72 @@ function GuestDrawer({
                 ))}
               </select>
             ) : (
-              <input
-                className="input mt-2"
-                placeholder={t("guests.household_new_label")}
-                value={newHouseholdLabel}
-                onChange={(e) => setNewHouseholdLabel(e.target.value)}
-              />
+              <div className="mt-2">
+                <input
+                  className="input"
+                  placeholder={t("guests.household_new_label")}
+                  value={newHouseholdLabel}
+                  onChange={(e) => setNewHouseholdLabel(e.target.value)}
+                />
+                {/* Autocomplete results — clicking a row switches the form
+                    to "existing household" mode and attaches the new guest
+                    to that household. The new-label input is cleared so
+                    submit doesn't ALSO create a fresh household with the
+                    same name. */}
+                {householdSuggestions.length > 0 && (
+                  <ul className="mt-2 divide-y divide-paper-200 overflow-hidden rounded-xl border border-paper-300 bg-paper-50 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
+                    {householdSuggestions.map((s) => {
+                      const targetHouseholdId =
+                        s.kind === "household" ? s.household.id : (s.household?.id ?? null);
+                      const targetHouseholdLabel =
+                        s.kind === "household"
+                          ? s.household.label
+                          : (s.household?.label ?? null);
+                      return (
+                        <li
+                          key={s.kind === "household" ? `h-${s.household.id}` : `g-${s.guest.id}`}
+                        >
+                          <button
+                            type="button"
+                            disabled={targetHouseholdId === null}
+                            onClick={() => {
+                              if (targetHouseholdId === null) return;
+                              setHouseholdMode("existing");
+                              setHouseholdId(targetHouseholdId);
+                              setNewHouseholdLabel("");
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-900 hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-paper-100 dark:hover:bg-umber-700"
+                          >
+                            {s.kind === "household" ? (
+                              <Home
+                                size={14}
+                                aria-hidden
+                                className="shrink-0 text-ink-500 dark:text-umber-300"
+                              />
+                            ) : (
+                              <User
+                                size={14}
+                                aria-hidden
+                                className="shrink-0 text-ink-500 dark:text-umber-300"
+                              />
+                            )}
+                            <span className="truncate">
+                              {s.kind === "household"
+                                ? `${s.household.label} (${s.household.member_ids.length})`
+                                : s.guest.full_name}
+                            </span>
+                            {s.kind === "guest" && targetHouseholdLabel && (
+                              <span className="ml-auto truncate text-xs text-ink-500 dark:text-umber-300">
+                                {targetHouseholdLabel}
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             )}
           </div>
 
@@ -1686,6 +1802,7 @@ function SegmentButton({
   label,
   disabled,
   compact,
+  iconOnly,
 }: {
   active: boolean;
   onClick: () => void;
@@ -1693,8 +1810,12 @@ function SegmentButton({
   label: string;
   disabled?: boolean;
   compact?: boolean;
+  /** Render the icon only — keep the label as `title` + `aria-label`. Used
+   *  by the group-tag picker where 7 options would never fit horizontally
+   *  with text on mobile. */
+  iconOnly?: boolean;
 }) {
-  const pad = compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm";
+  const pad = iconOnly ? "px-2 py-2" : compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm";
   const base = `flex items-center justify-center gap-1.5 rounded-xl ${pad} transition-colors`;
   const tone = active
     ? "border-2 border-ink-700 bg-ink-700 font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
@@ -1705,12 +1826,38 @@ function SegmentButton({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
+      aria-label={iconOnly ? label : undefined}
+      title={iconOnly ? label : undefined}
       className={`${base} ${tone} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {icon}
-      <span className="truncate">{label}</span>
+      {!iconOnly && <span className="truncate">{label}</span>}
     </button>
   );
+}
+
+/** Icon glyph for each guest group tag. The label sits in `title`/`aria-label`
+ *  on the segmented button so the meaning is one hover (or screen-reader tap)
+ *  away. Same-icon collisions between his_friends / her_friends are
+ *  intentional — the tooltip disambiguates. */
+function GroupIcon({ group }: { group: GuestGroupTag }) {
+  const size = 16;
+  switch (group) {
+    case "his_family":
+      return <Crown size={size} aria-hidden />;
+    case "her_family":
+      return <Flower2 size={size} aria-hidden />;
+    case "his_friends":
+      return <User size={size} aria-hidden />;
+    case "her_friends":
+      return <UserCircle size={size} aria-hidden />;
+    case "shared_friends":
+      return <Users size={size} aria-hidden />;
+    case "work":
+      return <Briefcase size={size} aria-hidden />;
+    case "other":
+      return <MoreHorizontal size={size} aria-hidden />;
+  }
 }
 
 function RsvpGlyph({ status }: { status: RsvpStatus }) {
