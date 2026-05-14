@@ -724,58 +724,50 @@ function HouseholdCard({
       <header
         className={`flex flex-wrap items-center justify-between gap-3 bg-paper-100/60 px-4 py-3 dark:bg-umber-700/60 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
-        {/* Single-line metadata: label · slug · code · invited · delivered.
-            Keeps the same column positions across cards so the eye scans
-            the same fields in the same place. The couple's own household
-            (bride + groom) renders just the label — slug / code / invited
-            columns are hidden because the hosts don't check themselves in. */}
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600 dark:text-umber-200">
+        {/* Metadata columns: label · slug · code · invited (+ delivered).
+            Fixed-width tracks with `md:col-start-*` force every field to
+            the same x across cards so the eye scans down the column. On
+            mobile the grid collapses to a single stacked column. The
+            couple's own household (bride + groom) renders just the label —
+            slug / code / invited cells are skipped because the hosts don't
+            check themselves in. */}
+        <div className="grid min-w-0 flex-1 items-baseline gap-x-6 gap-y-1 text-xs text-ink-600 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_8rem_5.5rem_auto]">
           <HouseholdLabelEditor
             household={household}
             count={members.length}
             onSave={(label) => onRenameHousehold(household.id, label)}
           />
+          {!isHosts && coupleSlug && (
+            <span className="font-mono uppercase md:col-start-2">{coupleSlug}</span>
+          )}
           {!isHosts && (
-            <>
-              {coupleSlug && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="font-mono uppercase">{coupleSlug}</span>
-                </>
-              )}
-              <span aria-hidden>·</span>
-              <span className="font-mono text-base text-ink-900 tracking-[0.3em] dark:text-paper-50">
-                {household.code}
+            <span className="font-mono text-base text-ink-900 tracking-[0.3em] dark:text-paper-50 md:col-start-3">
+              {household.code}
+            </span>
+          )}
+          {!isHosts && members.length > 0 && (
+            <span className="flex items-baseline gap-3 md:col-start-4">
+              <span
+                className={
+                  invitedCount === members.length
+                    ? "text-ink-700 dark:text-paper-100"
+                    : invitedCount > 0
+                      ? "text-ink-600 dark:text-umber-200"
+                      : "text-ink-400 dark:text-umber-300"
+                }
+                title={t("guests.invited_progress_help")}
+              >
+                {invitedCount}/{members.length} {t("guests.invited_short")}
               </span>
-              {members.length > 0 && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span
-                    className={
-                      invitedCount === members.length
-                        ? "text-ink-700 dark:text-paper-100"
-                        : invitedCount > 0
-                          ? "text-ink-600 dark:text-umber-200"
-                          : "text-ink-400 dark:text-umber-300"
-                    }
-                    title={t("guests.invited_progress_help")}
-                  >
-                    {invitedCount}/{members.length} {t("guests.invited_short")}
-                  </span>
-                  {deliveredCount > 0 && (
-                    <>
-                      <span aria-hidden>·</span>
-                      <span
-                        className="text-sage-700 dark:text-sage-300"
-                        title={t("guests.delivered_progress_help")}
-                      >
-                        {deliveredCount}/{members.length} {t("guests.delivered_short")}
-                      </span>
-                    </>
-                  )}
-                </>
+              {deliveredCount > 0 && (
+                <span
+                  className="text-sage-700 dark:text-sage-300"
+                  title={t("guests.delivered_progress_help")}
+                >
+                  {deliveredCount}/{members.length} {t("guests.delivered_short")}
+                </span>
               )}
-            </>
+            </span>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1">
