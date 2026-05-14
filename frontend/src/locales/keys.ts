@@ -3,6 +3,8 @@
 export interface LocaleMessages {
   common: {
     save: string;
+    saving: string;
+    edit: string;
     cancel: string;
     next: string;
     back: string;
@@ -1269,6 +1271,8 @@ export interface LocaleMessages {
     print_format_a3: string;
     map_title: string;
     map_help: string;
+    map_expand: string;
+    map_collapse: string;
     editor_empty: string;
     size_mm_label: string;
     width_mm_label: string;
@@ -2064,6 +2068,22 @@ export interface LocaleMessages {
     activity_date_tbd: string;
     /** Empty fallback for unknown / missing values in a diff (e.g. cleared field). */
     activity_value_empty: string;
+    /** Budget summary card on /app/profile — shows the cap + total paid with
+     *  inline edits so couples don't have to bounce to /app/budget for a
+     *  quick number tweak or a one-off payment record. */
+    budget_title: string;
+    budget_body: string;
+    budget_cap_label: string;
+    budget_cap_placeholder: string;
+    budget_cap_invalid: string;
+    budget_paid_label: string;
+    budget_paid_hint: string;
+    budget_payment_add: string;
+    budget_payment_save: string;
+    budget_payment_label_placeholder: string;
+    budget_payment_amount_placeholder: string;
+    budget_payment_label_required: string;
+    budget_payment_amount_invalid: string;
     payments_title: string;
     payments_body: string;
     /** Security section — change-password form lives here. Collapsible:

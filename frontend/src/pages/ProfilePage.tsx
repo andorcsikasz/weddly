@@ -2,6 +2,7 @@
 // saved download archive, delete account.
 
 import type {
+  BudgetLine,
   Couple,
   CoupleActivityEntry,
   CouplePartnerStatus,
@@ -20,6 +21,7 @@ import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import {
   authApi,
+  budgetApi,
   coupleApi,
   documentsApi,
   exportApi,
@@ -28,7 +30,13 @@ import {
   pauseApi,
   userApi,
 } from "../lib/endpoints";
-import { formatDate, formatHuf, formatHufRange, formatYearMonth } from "../lib/format";
+import {
+  formatBudgetGoal,
+  formatDate,
+  formatHuf,
+  formatHufRange,
+  formatYearMonth,
+} from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -90,6 +98,24 @@ export default function ProfilePage() {
    *  Mirrors the archive-document delete pattern below (4s auto-disarm). */
   const [armedCancelInvite, setArmedCancelInvite] = useState(false);
   const [activity, setActivity] = useState<CoupleActivityEntry[]>([]);
+  /** Live budget lines — used for the "already paid" running total tile on
+   *  the Profile budget card. Source of truth is /api/budget/lines so the
+   *  number always matches what /app/budget shows. */
+  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
+  /** Cap-edit state. `capInput` is the in-progress text — kept as a string so
+   *  the user can clear the field without us coercing to NaN. */
+  const [editingCap, setEditingCap] = useState(false);
+  const [capInput, setCapInput] = useState("");
+  const [savingCap, setSavingCap] = useState(false);
+  const [capError, setCapError] = useState<string | null>(null);
+  /** Quick-payment state — drops a new budget_line in the "other" category
+   *  with `planned_huf = actual_huf = amount` so the spend shows up on the
+   *  budget page under "Egyéb" with the user-supplied label. */
+  const [addingPayment, setAddingPayment] = useState(false);
+  const [paymentLabel, setPaymentLabel] = useState("");
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNext, setPwNext] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -101,12 +127,13 @@ export default function ProfilePage() {
   const [emailSubmitting, setEmailSubmitting] = useState(false);
 
   async function refresh() {
-    const [pause, current, docs, partnerRes, activityRes] = await Promise.all([
+    const [pause, current, docs, partnerRes, activityRes, lines] = await Promise.all([
       pauseApi.status(),
       coupleApi.current(),
       documentsApi.list(),
       coupleApi.partner(),
       coupleApi.activity(),
+      budgetApi.listLines(),
     ]);
     setCoupleStatus(pause.couple_status);
     setPauseReq(pause.pause_request);
@@ -114,6 +141,7 @@ export default function ProfilePage() {
     setDocuments(docs.exports);
     setPartner(partnerRes.partner);
     setActivity(activityRes.entries);
+    setBudgetLines(lines.lines);
   }
   async function refreshDocuments() {
     try {
@@ -340,6 +368,101 @@ export default function ProfilePage() {
     }
   }
 
+  /** Pre-fill the cap input with whatever the couple currently has so the
+   *  user can tweak rather than re-type. Range / TBD collapse to exact on
+   *  save — matches the Dashboard cap slider's behaviour. */
+  function beginCapEdit() {
+    if (!couple) return;
+    const goal = couple.budget_goal;
+    const start =
+      goal.kind === "exact" && goal.exact_huf !== null
+        ? String(goal.exact_huf)
+        : goal.kind === "range" && goal.min_huf !== null
+          ? String(goal.min_huf)
+          : "";
+    setCapInput(start);
+    setCapError(null);
+    setEditingCap(true);
+  }
+
+  async function saveCap(e: FormEvent) {
+    e.preventDefault();
+    if (!couple) return;
+    const trimmed = capInput.trim();
+    // Empty input = "I don't have a number yet" → flip back to TBD.
+    if (trimmed === "") {
+      setSavingCap(true);
+      try {
+        const r = await coupleApi.update({
+          budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
+        });
+        setCouple(r.couple);
+        setEditingCap(false);
+      } catch (err) {
+        setCapError(err instanceof ApiError ? err.message : t("common.error_generic"));
+      } finally {
+        setSavingCap(false);
+      }
+      return;
+    }
+    const n = Number(trimmed);
+    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) {
+      setCapError(t("profile.budget_cap_invalid"));
+      return;
+    }
+    setSavingCap(true);
+    setCapError(null);
+    try {
+      const r = await coupleApi.update({
+        budget_goal: { kind: "exact", exact_huf: Math.round(n), min_huf: null, max_huf: null },
+      });
+      setCouple(r.couple);
+      setEditingCap(false);
+    } catch (err) {
+      setCapError(err instanceof ApiError ? err.message : t("common.error_generic"));
+    } finally {
+      setSavingCap(false);
+    }
+  }
+
+  /** Drop a quick payment as a new "Egyéb" budget line. We set both planned
+   *  and actual to the entered amount so the line reads as a paid, fully
+   *  accounted-for spend in the budget table. The user can re-categorise it
+   *  on /app/budget if they want a tighter category later. */
+  async function savePayment(e: FormEvent) {
+    e.preventDefault();
+    const label = paymentLabel.trim();
+    const n = Number(paymentAmount);
+    if (!label) {
+      setPaymentError(t("profile.budget_payment_label_required"));
+      return;
+    }
+    if (!Number.isFinite(n) || n <= 0 || n > 10_000_000_000) {
+      setPaymentError(t("profile.budget_payment_amount_invalid"));
+      return;
+    }
+    setSavingPayment(true);
+    setPaymentError(null);
+    try {
+      const r = await budgetApi.createLine({
+        category: "other",
+        label,
+        planned_huf: Math.round(n),
+        actual_huf: Math.round(n),
+      });
+      setBudgetLines((cur) => [...cur, r.line]);
+      setPaymentLabel("");
+      setPaymentAmount("");
+      setAddingPayment(false);
+    } catch (err) {
+      setPaymentError(err instanceof ApiError ? err.message : t("common.error_generic"));
+    } finally {
+      setSavingPayment(false);
+    }
+  }
+
+  const totalPaidHuf = budgetLines.reduce((s, l) => s + l.actual_huf, 0);
+
   return (
     <AppShell>
       <h1>{t("profile.title")}</h1>
@@ -389,6 +512,142 @@ export default function ProfilePage() {
             {t("profile.partner_none")}
           </p>
         )}
+      </section>
+
+      <section className="card mt-6">
+        <h2 className="text-lg">{t("profile.budget_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.budget_body")}</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {/* Cost-cap tile — inline-editable. */}
+          <div className="rounded-2xl border border-ink-200 bg-paper-50/60 p-4 dark:border-umber-700 dark:bg-ink-800/40">
+            <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              {t("profile.budget_cap_label")}
+            </p>
+            {editingCap ? (
+              <form onSubmit={saveCap} className="mt-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1000}
+                    value={capInput}
+                    onChange={(ev) => setCapInput(ev.target.value)}
+                    placeholder={t("profile.budget_cap_placeholder")}
+                    className="input flex-1"
+                    autoFocus
+                    disabled={savingCap}
+                  />
+                  <span className="text-sm text-ink-500 dark:text-umber-300">Ft</span>
+                </div>
+                {capError && (
+                  <p className="mt-2 text-xs text-blush-700 dark:text-blush-300">{capError}</p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="submit" className="btn-sm btn-primary" disabled={savingCap}>
+                    {savingCap ? t("common.saving") : t("common.save")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-sm btn-outline"
+                    onClick={() => {
+                      setEditingCap(false);
+                      setCapError(null);
+                    }}
+                    disabled={savingCap}
+                  >
+                    {t("common.cancel")}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="mt-2 flex items-baseline justify-between gap-3">
+                <p className="text-2xl font-medium text-ink-900 dark:text-paper-50">
+                  {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }) : "—"}
+                </p>
+                <button type="button" className="btn-sm btn-outline" onClick={beginCapEdit}>
+                  {t("common.edit")}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Already-paid tile — derived sum + quick "add payment" form. */}
+          <div className="rounded-2xl border border-ink-200 bg-paper-50/60 p-4 dark:border-umber-700 dark:bg-ink-800/40">
+            <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              {t("profile.budget_paid_label")}
+            </p>
+            <div className="mt-2 flex items-baseline justify-between gap-3">
+              <p className="text-2xl font-medium text-ink-900 dark:text-paper-50">
+                {formatHuf(totalPaidHuf, locale)}
+              </p>
+              {!addingPayment && (
+                <button
+                  type="button"
+                  className="btn-sm btn-outline"
+                  onClick={() => {
+                    setAddingPayment(true);
+                    setPaymentError(null);
+                  }}
+                >
+                  {t("profile.budget_payment_add")}
+                </button>
+              )}
+            </div>
+            {addingPayment && (
+              <form onSubmit={savePayment} className="mt-3 space-y-2">
+                <input
+                  type="text"
+                  value={paymentLabel}
+                  onChange={(ev) => setPaymentLabel(ev.target.value)}
+                  placeholder={t("profile.budget_payment_label_placeholder")}
+                  className="input w-full"
+                  maxLength={200}
+                  autoFocus
+                  disabled={savingPayment}
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    step={1000}
+                    value={paymentAmount}
+                    onChange={(ev) => setPaymentAmount(ev.target.value)}
+                    placeholder={t("profile.budget_payment_amount_placeholder")}
+                    className="input flex-1"
+                    disabled={savingPayment}
+                  />
+                  <span className="text-sm text-ink-500 dark:text-umber-300">Ft</span>
+                </div>
+                {paymentError && (
+                  <p className="text-xs text-blush-700 dark:text-blush-300">{paymentError}</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" className="btn-sm btn-primary" disabled={savingPayment}>
+                    {savingPayment ? t("common.saving") : t("profile.budget_payment_save")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-sm btn-outline"
+                    onClick={() => {
+                      setAddingPayment(false);
+                      setPaymentLabel("");
+                      setPaymentAmount("");
+                      setPaymentError(null);
+                    }}
+                    disabled={savingPayment}
+                  >
+                    {t("common.cancel")}
+                  </button>
+                </div>
+              </form>
+            )}
+            <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+              {t("profile.budget_paid_hint")}
+            </p>
+          </div>
+        </div>
       </section>
 
       <section className="card mt-6">

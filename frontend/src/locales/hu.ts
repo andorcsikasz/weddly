@@ -3,6 +3,8 @@ import type { LocaleMessages } from "./keys";
 const hu: LocaleMessages = {
   common: {
     save: "Mentés",
+    saving: "Mentés…",
+    edit: "Szerkesztés",
     cancel: "Mégse",
     next: "Tovább",
     back: "Vissza",
@@ -1215,6 +1217,8 @@ const hu: LocaleMessages = {
     map_title: "Terem térkép",
     map_help:
       "Húzd az asztalt a helyére. Húzd az oldalát az átméretezéshez. Kattints a részletekért.",
+    map_expand: "Térkép nagyítása",
+    map_collapse: "Térkép bezárása",
     editor_empty: "Válassz egy asztalt a térképen a részletek szerkesztéséhez.",
     size_mm_label: "Méret",
     width_mm_label: "Szélesség",
@@ -1938,6 +1942,21 @@ const hu: LocaleMessages = {
     activity_action_generic: "változtatott a munkaterületen",
     activity_date_tbd: "még nincs kitűzve",
     activity_value_empty: "—",
+    budget_title: "Költségvetés",
+    budget_body:
+      "A két legfontosabb számod egy helyen: a tervezett keret és az eddig kifizetett összeg.",
+    budget_cap_label: "Tervezett keret",
+    budget_cap_placeholder: "pl. 5 000 000",
+    budget_cap_invalid: "Adj meg egy érvényes összeget (0 és 10 000 000 000 Ft között).",
+    budget_paid_label: "Eddig kifizetve",
+    budget_paid_hint:
+      "Élő összeg a költségvetési soraidból. Részletek és kategóriák a Költségvetés oldalon.",
+    budget_payment_add: "Új tétel",
+    budget_payment_save: "Hozzáadás",
+    budget_payment_label_placeholder: "Mi a tétel? (pl. Helyszín foglaló)",
+    budget_payment_amount_placeholder: "Összeg",
+    budget_payment_label_required: "Adj nevet a tételnek.",
+    budget_payment_amount_invalid: "Adj meg egy érvényes pozitív összeget.",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
     security_title: "Biztonság",
