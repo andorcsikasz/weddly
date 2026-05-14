@@ -4,7 +4,7 @@
 // proxy). Cost cards mirror `budget_lines` rows in the `honeymoon` category,
 // so a slider drag here shows up on /app/budget and vice versa.
 
-import type { BudgetLine, Couple, PlaceSuggestion } from "@shared/types";
+import type { BudgetLine, Couple, Currency, PlaceSuggestion } from "@shared/types";
 import {
   BedDouble,
   Calendar,
@@ -34,7 +34,7 @@ import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { budgetApi, coupleApi, placesApi } from "../lib/endpoints";
-import { formatHuf } from "../lib/format";
+import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { publish, subscribe } from "../lib/sync";
 
@@ -248,6 +248,7 @@ export default function HoneymoonPage() {
     }
     return { planned, actual, biggest };
   }, [honeymoonLines, drafts]);
+  const currency: Currency = couple?.currency ?? "HUF";
   const nights = nightsBetween(
     couple?.honeymoon_start_date ?? null,
     couple?.honeymoon_end_date ?? null,
@@ -397,6 +398,7 @@ export default function HoneymoonPage() {
           count={honeymoonLines.length}
           locale={locale}
           loaded={loaded}
+          currency={currency}
         />
       </section>
 
@@ -432,6 +434,7 @@ export default function HoneymoonPage() {
                   line={line}
                   locale={locale}
                   sliderMax={sliderMax}
+                  currency={currency}
                   onPlannedChange={(v) => updateLinePlanned(line, v)}
                   onDraft={(v) =>
                     setDrafts((d) => {
@@ -531,8 +534,8 @@ function DaysTile({
   }, [start, end]);
 
   return (
-    <div ref={wrapperRef} className="card-hover stationery-light relative !p-5">
-      <div className="flex items-center gap-2 text-ink-500 dark:text-umber-300">
+    <div ref={wrapperRef} className="card-hover stationery-dark relative !p-5">
+      <div className="flex items-center gap-2 text-paper-200">
         <Calendar size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_days")}
@@ -542,7 +545,7 @@ function DaysTile({
       {editing ? (
         <div className="mt-3 space-y-2">
           <label className="block">
-            <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+            <span className="text-[11px] uppercase tracking-wide text-paper-200">
               {t("honeymoon.start_label")}
             </span>
             <input
@@ -560,7 +563,7 @@ function DaysTile({
             />
           </label>
           <label className="block">
-            <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+            <span className="text-[11px] uppercase tracking-wide text-paper-200">
               {t("honeymoon.end_label")}
             </span>
             <input
@@ -579,21 +582,19 @@ function DaysTile({
           className="mt-2 block w-full text-center"
           aria-label={t("honeymoon.edit_dates")}
         >
-          <span className="font-serif text-4xl font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+          <span className="font-serif text-4xl font-semibold tabular-nums text-paper-50">
             {nights !== null ? nights : loaded ? "—" : ""}
           </span>
-          <span className="ml-2 text-sm text-ink-500 dark:text-umber-300">
+          <span className="ml-2 text-sm text-paper-200">
             {nights !== null
               ? t("honeymoon.day", { count: nights })
               : loaded
                 ? t("honeymoon.set_dates_cta")
                 : ""}
           </span>
-          {dateRange && (
-            <p className="mt-1 text-xs text-ink-400 dark:text-umber-300">{dateRange}</p>
-          )}
+          {dateRange && <p className="mt-1 text-xs text-paper-300">{dateRange}</p>}
           {countdown && (
-            <p className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-2.5 py-0.5 text-[11px] font-medium text-blush-800 dark:border-blush-400/30 dark:bg-blush-400/10 dark:text-blush-200">
+            <p className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-400/40 bg-blush-400/15 px-2.5 py-0.5 text-[11px] font-medium text-blush-200">
               {countdown.kind === "future" &&
                 t("honeymoon.countdown_future", { count: countdown.days })}
               {countdown.kind === "today" && t("honeymoon.countdown_today")}
@@ -622,8 +623,8 @@ function DestinationTile({
   const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="card-hover stationery-light relative !p-5">
-      <div className="flex items-center gap-2 text-ink-500 dark:text-umber-300">
+    <div className="card-hover stationery-dark relative !p-5">
+      <div className="flex items-center gap-2 text-paper-200">
         <MapPin size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_destination")}
@@ -648,13 +649,13 @@ function DestinationTile({
         >
           {value ? (
             <span
-              className="line-clamp-2 font-serif text-xl font-semibold text-ink-900 sm:text-2xl dark:text-paper-50"
+              className="line-clamp-2 font-serif text-xl font-semibold text-paper-50 sm:text-2xl"
               title={value}
             >
               {value}
             </span>
           ) : (
-            <span className="text-sm text-ink-500 dark:text-umber-300">
+            <span className="text-sm text-paper-200">
               {loaded ? t("honeymoon.destination_empty_cta") : ""}
             </span>
           )}
@@ -671,7 +672,7 @@ function DestinationTile({
             e.stopPropagation();
             setMapOpen(true);
           }}
-          className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-500 shadow-soft transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300 dark:hover:border-blush-400/40 dark:hover:text-blush-300"
+          className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-paper-50/20 bg-paper-50/10 text-paper-100 shadow-soft transition hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700"
           aria-label={t("honeymoon.show_on_map")}
           title={t("honeymoon.show_on_map")}
         >
@@ -867,31 +868,33 @@ function BudgetSummaryTile({
   count,
   locale,
   loaded,
+  currency,
 }: {
   planned: number;
   actual: number;
   count: number;
   locale: "hu" | "en";
   loaded: boolean;
+  currency: Currency;
 }) {
   const { t } = useT();
   return (
-    <Link to="/app/budget" className="card-hover stationery-light relative overflow-hidden !p-5">
-      <div className="flex items-center gap-2 text-ink-500 dark:text-umber-300">
+    <Link to="/app/budget" className="card-hover stationery-dark relative overflow-hidden !p-5">
+      <div className="flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_budget")}
         </span>
       </div>
       <div className="mt-2 flex items-baseline justify-center gap-2">
-        <span className="font-serif text-3xl font-semibold tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
-          {loaded ? formatHuf(planned, locale) : ""}
+        <span className="font-serif text-3xl font-semibold tabular-nums text-paper-50 sm:text-4xl">
+          {loaded ? formatMoney(planned, currency, locale) : ""}
         </span>
       </div>
-      <p className="mt-1 text-center text-xs text-ink-400 dark:text-umber-300">
+      <p className="mt-1 text-center text-xs text-paper-300">
         {actual > 0
           ? t("honeymoon.budget_actual_inline", {
-              actual: formatHuf(actual, locale),
+              actual: formatMoney(actual, currency, locale),
             })
           : count === 0
             ? loaded
@@ -952,6 +955,7 @@ function CostRow({
   line,
   locale,
   sliderMax,
+  currency,
   onPlannedChange,
   onDraft,
   onRemove,
@@ -959,6 +963,7 @@ function CostRow({
   line: BudgetLine;
   locale: "hu" | "en";
   sliderMax: number;
+  currency: Currency;
   onPlannedChange: (v: number) => Promise<void>;
   /** Publish the row's in-flight value to the parent so the planned-total
    *  tile can update live during drag. Call with `null` once the row has
@@ -1055,12 +1060,12 @@ function CostRow({
       {/* Amount — right-aligned next to the label on mobile, dedicated col on desktop. */}
       <div className="col-start-2 row-start-1 flex flex-col items-end whitespace-nowrap sm:col-start-3">
         <span className="stat-num text-base font-semibold text-ink-900 sm:text-lg dark:text-paper-50">
-          {formatHuf(editValue, locale)}
+          {formatMoney(editValue, currency, locale)}
         </span>
         {line.actual_huf > 0 && (
           <span className="stat-num text-[11px] text-ink-500 dark:text-umber-300">
             {t("honeymoon.cost_actual_inline", {
-              actual: formatHuf(line.actual_huf, locale),
+              actual: formatMoney(line.actual_huf, currency, locale),
             })}
           </span>
         )}
