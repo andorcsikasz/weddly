@@ -102,8 +102,8 @@ export default function RegisterPage() {
       <Shell>
         <div className="mx-auto max-w-md">
           <div className="card text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blush-100 text-blush-700">
-              <Mail size={22} />
+            <div className="mx-auto flex h-12 w-12 items-center justify-center text-ink-700">
+              <Mail size={28} strokeWidth={1.5} />
             </div>
             <h1 className="mt-5 text-2xl">{t("verify.check_inbox_title")}</h1>
             <p className="mt-3 text-sm text-ink-700">{t("verify.check_inbox_body")}</p>

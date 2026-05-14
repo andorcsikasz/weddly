@@ -533,6 +533,21 @@ function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
     <g>
       <rect x={0} y={0} width={widthMm} height={heightMm} className="fill-paper-50" />
       {lines}
+      {/* Room boundary — chunky ink frame around the planning canvas so the
+          area reads as the actual venue floorplan rather than a free-floating
+          grid. `pointer-events: none` so tables on the edge stay draggable
+          and clicks in negative space still bubble to the SVG root for the
+          deselect-on-empty handler. Stroke is ~5x the grid hairline so it
+          pops without competing with the table fills. */}
+      <rect
+        x={0}
+        y={0}
+        width={widthMm}
+        height={heightMm}
+        className="fill-none stroke-ink-700"
+        strokeWidth={60}
+        pointerEvents="none"
+      />
     </g>
   );
 }
