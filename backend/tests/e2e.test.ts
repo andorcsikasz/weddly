@@ -3855,6 +3855,95 @@ describe("admin users + couples directory", () => {
     expect(scrubbed?.email.endsWith("@purged.local")).toBe(true);
   });
 
+  test("admin delete: orphan user gets an admin-purge email at deletion", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "doomed-orphan@weddly.test",
+      password: "supersafe123",
+      full_name: "Doomed Orphan",
+    });
+    const orphanId = reg.data.user.id;
+
+    // Capture mailer.dev_print writes during the DELETE so we can assert
+    // the admin-purge notice actually fired (and went to the right address).
+    const captured: { subject: string; to: string }[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      const first = args[0];
+      if (typeof first === "string" && first.includes('"mailer.dev_print"')) {
+        try {
+          const parsed = JSON.parse(first) as {
+            msg: string;
+            subject?: string;
+            to?: string;
+          };
+          if (parsed.msg === "mailer.dev_print") {
+            captured.push({ subject: parsed.subject ?? "", to: parsed.to ?? "" });
+          }
+        } catch {
+          // not our JSON
+        }
+      }
+      origLog(...args);
+    };
+    try {
+      const del = await req("DELETE", `/api/admin/users/${orphanId}`, undefined, {
+        token: adminToken,
+      });
+      expect(del.status).toBe(200);
+    } finally {
+      console.log = origLog;
+    }
+
+    const purgeMail = captured.find((c) => c.to === "doomed-orphan@weddly.test");
+    expect(purgeMail).toBeDefined();
+    expect(purgeMail?.subject).toContain("Fiókod törölve");
+  });
+
+  test("admin delete: couple workspace partners get an admin-purge email", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { token: ownerToken } = await bootstrapCouple("doomed-couple@weddly.test");
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, {
+      token: ownerToken,
+    });
+    const ownerId = me.data.user.id;
+
+    const captured: { subject: string; to: string }[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      const first = args[0];
+      if (typeof first === "string" && first.includes('"mailer.dev_print"')) {
+        try {
+          const parsed = JSON.parse(first) as {
+            msg: string;
+            subject?: string;
+            to?: string;
+          };
+          if (parsed.msg === "mailer.dev_print") {
+            captured.push({ subject: parsed.subject ?? "", to: parsed.to ?? "" });
+          }
+        } catch {
+          // not our JSON
+        }
+      }
+      origLog(...args);
+    };
+    try {
+      const del = await req("DELETE", `/api/admin/users/${ownerId}`, undefined, {
+        token: adminToken,
+      });
+      expect(del.status).toBe(200);
+    } finally {
+      console.log = origLog;
+    }
+
+    const purgeMail = captured.find((c) => c.to === "doomed-couple@weddly.test");
+    expect(purgeMail).toBeDefined();
+    expect(purgeMail?.subject).toContain("Esküvői munkaterületed törölve");
+  });
+
   test("admin delete: target with couple_id purges the whole workspace", async () => {
     wipeAll();
     const adminToken = await registerAdmin();

@@ -12,8 +12,9 @@ import { addAuditLog } from "../lib/audit";
 import { log } from "../lib/logger";
 import { sendKind } from "./emails";
 
-export function purgeOneCouple(coupleId: number): void {
+export function purgeOneCouple(coupleId: number, options: { adminInitiated?: boolean } = {}): void {
   const ts = now();
+  const adminInitiated = options.adminInitiated === true;
 
   // Send the "your data is gone" notice BEFORE we scrub the user table —
   // afterwards the email column is rewritten to `deleted-…@purged.local`
@@ -29,14 +30,15 @@ export function purgeOneCouple(coupleId: number): void {
       .all(coupleId) as Array<{ id: number; email: string; full_name: string }>
   ).filter((u) => u.email && !u.email.endsWith("@purged.local"));
   for (const u of usersToNotify) {
-    void sendKind(
-      "account_purged",
-      { coupleDisplayName },
-      {
-        user: { id: u.id, email: u.email, full_name: u.full_name },
-        couple_id: coupleId,
-      },
-    );
+    const target = {
+      user: { id: u.id, email: u.email, full_name: u.full_name },
+      couple_id: coupleId,
+    };
+    if (adminInitiated) {
+      void sendKind("account_admin_purged", { coupleDisplayName }, target);
+    } else {
+      void sendKind("account_purged", { coupleDisplayName }, target);
+    }
   }
 
   // Children with PII — delete entirely.
@@ -120,16 +122,34 @@ export function purgeOneCouple(coupleId: number): void {
  * - For orphan users (signed up but never onboarded), just kill the row and
  *   their sessions / email artefacts. Audit-log entry tracks the action.
  */
-export function purgeOneUser(userId: number): void {
+export function purgeOneUser(userId: number, options: { adminInitiated?: boolean } = {}): void {
   const ts = now();
-  const user = db.prepare("SELECT id, email, couple_id FROM users WHERE id = ?").get(userId) as
-    | { id: number; email: string; couple_id: number | null }
+  const adminInitiated = options.adminInitiated === true;
+  const user = db
+    .prepare("SELECT id, email, couple_id, full_name FROM users WHERE id = ?")
+    .get(userId) as
+    | { id: number; email: string; couple_id: number | null; full_name: string }
     | undefined;
   if (!user) return;
 
   if (user.couple_id) {
-    purgeOneCouple(user.couple_id);
+    purgeOneCouple(user.couple_id, { adminInitiated });
     return;
+  }
+
+  // Orphan user (signed up, never onboarded). Send the "your account is gone"
+  // notice BEFORE we scrub the row — same fire-and-forget pattern as the
+  // couple purge. Only fires for admin-initiated deletes; the scheduled-pause
+  // worker can't reach orphans (no couple_id → no pause request to expire).
+  if (adminInitiated && user.email && !user.email.endsWith("@purged.local")) {
+    void sendKind(
+      "account_admin_purged",
+      { coupleDisplayName: null },
+      {
+        user: { id: user.id, email: user.email, full_name: user.full_name },
+        couple_id: null,
+      },
+    );
   }
 
   db.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);

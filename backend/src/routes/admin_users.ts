@@ -117,7 +117,7 @@ function handleDeleteUser(ctx: Ctx): Response {
     | undefined;
   if (!before) throw new HttpError(404, "User not found");
 
-  purgeOneUser(userId);
+  purgeOneUser(userId, { adminInitiated: true });
 
   addAuditLog({
     actor_user_id: admin.id,
@@ -145,7 +145,11 @@ function handlePurgeDeletingCouples(ctx: Ctx): Response {
     .all() as { id: number }[];
 
   for (const r of rows) {
-    purgeOneCouple(r.id);
+    // adminInitiated=true is the right semantic (this is an admin action),
+    // though in practice no email fires here because every user on these
+    // tombstone rows already has a `@purged.local` address from the prior
+    // sweep — the notify-list filter in `purgeOneCouple` will be empty.
+    purgeOneCouple(r.id, { adminInitiated: true });
   }
 
   if (rows.length > 0) {

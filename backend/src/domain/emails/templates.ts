@@ -68,6 +68,11 @@ export interface AccountPurgedPayload {
   /** Display name the workspace had at purge time ("Anna & Bence"). */
   coupleDisplayName: string;
 }
+export interface AccountAdminPurgedPayload {
+  /** Workspace name at purge time, or null when the deleted user never
+   *  onboarded a couple (orphan-user direct delete). */
+  coupleDisplayName: string | null;
+}
 export interface RsvpReceivedForCouplePayload {
   guestName: string;
   rsvpStatus: "yes" | "no" | "maybe";
@@ -146,6 +151,7 @@ export type KindPayload = {
   partner_invite: PartnerInvitePayload;
   couple_paused: CouplePausedPayload;
   account_purged: AccountPurgedPayload;
+  account_admin_purged: AccountAdminPurgedPayload;
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
   rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
@@ -422,6 +428,45 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Thanks for trying us. You're welcome to start fresh any time with a new account if you need it again.",
       ],
       cta: "Back to Weddly",
+    },
+  }),
+
+  // Fired when an admin manually deletes a user or workspace from the
+  // moderation console (no 30-day grace window). Couple-flavored copy when
+  // the user had a workspace, account-flavored when they were an orphan.
+  account_admin_purged: (p, ctx) => ({
+    subject: p.coupleDisplayName
+      ? "Esküvői munkaterületed törölve / Your wedding workspace has been deleted"
+      : "Fiókod törölve / Your account has been deleted",
+    ctaUrl: CONFIG.frontendBaseUrl,
+    hu: {
+      preheader: p.coupleDisplayName
+        ? `${p.coupleDisplayName} munkaterülete törölve.`
+        : "A Weddly fiókod törölve.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: p.coupleDisplayName
+        ? [
+            `A Weddly adminisztrátora törölte ${p.coupleDisplayName} esküvőtervező munkaterületét. Minden hozzátartozó adat — vendéglista, ülésrend, költségvetés, RSVP-k — eltávolítva, és a bejelentkezésetek innentől nem működik.`,
+            "Ha úgy gondolod, hogy ez tévedésből történt, válaszolj erre az e-mailre — visszanézzük.",
+          ]
+        : [
+            "A Weddly adminisztrátora törölte a fiókodat. A bejelentkezésed innentől nem működik, és nincs visszaállítási lehetőség.",
+            "Ha úgy gondolod, hogy ez tévedésből történt, válaszolj erre az e-mailre — visszanézzük.",
+          ],
+      cta: "Weddly",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: p.coupleDisplayName
+        ? [
+            `A Weddly administrator has deleted ${p.coupleDisplayName}'s wedding-planning workspace. All of the associated data — guest list, seating, budget, RSVPs — has been removed, and your sign-in no longer works from this point on.`,
+            "If you think this was a mistake, just reply to this email and we'll take a look.",
+          ]
+        : [
+            "A Weddly administrator has deleted your account. Your sign-in no longer works from this point on, and the deletion cannot be undone.",
+            "If you think this was a mistake, just reply to this email and we'll take a look.",
+          ],
+      cta: "Weddly",
     },
   }),
 
