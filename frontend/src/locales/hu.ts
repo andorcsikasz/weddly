@@ -703,7 +703,7 @@ const hu: LocaleMessages = {
     suppliers: "Szolgáltatók",
     planning: "Tervezés",
     honeymoon: "Nászút",
-    moodboard: "Hangulattábla",
+    moodboard: "Moodboard",
     media: "Képek",
     print: "Nyomtatás",
     switch_language: "Nyelv váltása",
@@ -867,7 +867,7 @@ const hu: LocaleMessages = {
       "Az esküvő után feltölthetitek a képeket, és egy kattintással elküldhetitek a letöltési linket minden vendégnek, aki igent mondott — közvetlenül innen, külön galéria-fiók nélkül.",
   },
   moodboard: {
-    title: "Hangulattábla",
+    title: "Moodboard",
     sub: "Illesszétek be a Pinterest tábla linkjét, és a táblátok 25 legutóbbi képe itt jelenik meg.",
     url_label: "Pinterest tábla linkje",
     url_placeholder: "https://www.pinterest.com/felhasznalo/eskuvo/",
@@ -878,7 +878,7 @@ const hu: LocaleMessages = {
     clear: "Eltávolítás",
     loading: "Képek betöltése a Pinterestről…",
     invalid_url: "Adj meg egy érvényes pinterest.com tábla linket.",
-    empty_title: "Még nincs hangulattábla",
+    empty_title: "Még nincs moodboard",
     empty_body:
       "Hozz létre egy táblát a Pinteresten az esküvői ötleteknek, majd illeszd be ide a linkjét. A táblád 25 legutóbbi képe jelenik meg.",
     open_in_pinterest: "Megnyitás a Pinteresten",
