@@ -142,15 +142,20 @@ export function Dialog({
         if (closeOnBackdrop && e.target === e.currentTarget) onClose();
       }}
     >
+      {/* Flex column so the header + footer stay pinned while only the body
+       *  scrolls. Without this, long-content dialogs (e.g. the task-template
+       *  wand with 22 items) push the action buttons off-screen and force
+       *  the user to scroll back up to confirm. The outer card no longer
+       *  scrolls — only the middle slot does. */}
       <div
         ref={containerRef}
         role={role}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={describedById}
-        className={`card relative max-h-[90vh] w-full ${size === "lg" ? "max-w-3xl" : "max-w-md"} overflow-y-auto rounded-b-none rounded-t-2xl shadow-pop sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
+        className={`card relative flex max-h-[90vh] w-full flex-col ${size === "lg" ? "max-w-3xl" : "max-w-md"} rounded-b-none rounded-t-2xl p-0 shadow-pop sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
       >
-        <div className="flex items-start gap-4">
+        <div className="flex shrink-0 items-start gap-4 px-6 pt-6">
           <h2 id={titleId} className="flex-1 text-xl">
             {title}
           </h2>
@@ -163,8 +168,12 @@ export function Dialog({
             <X size={18} aria-hidden="true" />
           </button>
         </div>
-        <div className="mt-3 text-sm text-ink-700 dark:text-paper-100">{children}</div>
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">{footer}</div>
+        <div className="mt-3 flex-1 overflow-y-auto px-6 pb-2 text-sm text-ink-700 dark:text-paper-100">
+          {children}
+        </div>
+        <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-paper-200 px-6 py-4 sm:flex-row sm:justify-end dark:border-umber-700">
+          {footer}
+        </div>
       </div>
     </div>,
     document.body,
