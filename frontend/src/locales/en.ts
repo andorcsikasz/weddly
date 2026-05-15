@@ -2006,6 +2006,11 @@ const en: LocaleMessages = {
     budget_currency_confirm_yes: "Yes, switch",
     payments_title: "Payments",
     payments_body: "Payment history and billing settings will appear here soon.",
+    rsvp_title: "RSVP settings",
+    rsvp_body: "These settings control which questions guests see when they respond.",
+    rsvp_offers_accommodation_label: "Offer accommodation in RSVP",
+    rsvp_offers_accommodation_help:
+      "When enabled, guests can flag if they need accommodation when responding.",
     security_title: "Security",
     security_summary: "Change your password or email address",
     security_body:

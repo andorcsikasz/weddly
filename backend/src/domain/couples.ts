@@ -55,6 +55,7 @@ export interface CoupleRow {
   planning_count: number | null;
   frozen_categories_json: string;
   currency: string | null;
+  rsvp_offers_accommodation: number;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -190,6 +191,7 @@ export function toCouple(row: CoupleRow): Couple {
     planning_count: row.planning_count,
     frozen_categories: parseFrozenCategoriesJson(row.frozen_categories_json ?? "[]"),
     currency: rowToCurrency(row.currency),
+    rsvp_offers_accommodation: Boolean(row.rsvp_offers_accommodation),
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

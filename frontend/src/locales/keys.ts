@@ -2184,6 +2184,13 @@ export interface LocaleMessages {
     budget_currency_confirm_yes: string;
     payments_title: string;
     payments_body: string;
+    /** "Wedding RSVP" settings card on /app/profile. Today it carries a
+     *  single opt-in: whether the RSVP flow asks guests if they need
+     *  accommodation. Default off so couples who don't offer it don't ask. */
+    rsvp_title: string;
+    rsvp_body: string;
+    rsvp_offers_accommodation_label: string;
+    rsvp_offers_accommodation_help: string;
     /** Security section — change-password form lives here. Collapsible:
      *  `security_summary` is the one-line teaser shown when the section is
      *  closed; the in-form sub-headings live in `security_pw_heading` and

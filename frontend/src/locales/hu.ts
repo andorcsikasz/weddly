@@ -2021,6 +2021,12 @@ const hu: LocaleMessages = {
     budget_currency_confirm_yes: "Igen, váltsunk",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
+    rsvp_title: "RSVP beállítások",
+    rsvp_body:
+      "Ezek a beállítások szabályozzák, milyen kérdéseket látnak a vendégek a visszajelzéskor.",
+    rsvp_offers_accommodation_label: "Szállásajánlat az RSVP-ben",
+    rsvp_offers_accommodation_help:
+      "Ha bekapcsolod, a vendégek a válaszadáskor jelezhetik, hogy kérnek-e szállást.",
     security_title: "Biztonság",
     security_summary: "Jelszó és e-mail cím módosítása",
     security_body:

@@ -614,6 +614,7 @@ export default function GuestsPage() {
           init={editing}
           households={households}
           guests={guests}
+          couple={couple}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -1414,6 +1415,7 @@ function GuestDrawer({
   init,
   households,
   guests,
+  couple,
   onClose,
   onSaved,
 }: {
@@ -1423,6 +1425,10 @@ function GuestDrawer({
    *  households (by label) and existing guests (by name) — clicking a hit
    *  switches the mode to "existing" and attaches the new guest there. */
   guests: Guest[];
+  /** The current couple workspace. Read to decide whether to render the
+   *  "needs accommodation?" checkbox — hidden when the couple hasn't opted
+   *  in via the Profile-page toggle. Null briefly during initial load. */
+  couple: Couple | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -1836,14 +1842,16 @@ function GuestDrawer({
             />
           </div>
 
-          <label className="mb-3 flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
-            <input
-              type="checkbox"
-              checked={Boolean(form.accommodation_needed)}
-              onChange={(e) => setForm({ ...form, accommodation_needed: e.target.checked })}
-            />
-            {t("guests.accommodation")}
-          </label>
+          {couple?.rsvp_offers_accommodation && (
+            <label className="mb-3 flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+              <input
+                type="checkbox"
+                checked={Boolean(form.accommodation_needed)}
+                onChange={(e) => setForm({ ...form, accommodation_needed: e.target.checked })}
+              />
+              {t("guests.accommodation")}
+            </label>
+          )}
 
           <div className="mb-3">
             <label className="field-label">{t("guests.song_request")}</label>

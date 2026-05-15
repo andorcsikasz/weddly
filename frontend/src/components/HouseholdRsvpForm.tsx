@@ -707,14 +707,18 @@ export function HouseholdRsvpForm({
                   />
                 </div>
 
-                <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
-                  <input
-                    type="checkbox"
-                    checked={d.accommodation_needed}
-                    onChange={(e) => updateMember(d.id, { accommodation_needed: e.target.checked })}
-                  />
-                  {t("rsvp.checkin_member_accommodation")}
-                </label>
+                {view.rsvp_offers_accommodation && (
+                  <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                    <input
+                      type="checkbox"
+                      checked={d.accommodation_needed}
+                      onChange={(e) =>
+                        updateMember(d.id, { accommodation_needed: e.target.checked })
+                      }
+                    />
+                    {t("rsvp.checkin_member_accommodation")}
+                  </label>
+                )}
                 <div>
                   <label className="field-label">{t("rsvp.checkin_member_song")}</label>
                   <input

@@ -187,6 +187,12 @@ export interface Couple {
   /** ISO YYYY-MM-DD. Pair with `honeymoon_end_date` to compute the night count. */
   honeymoon_start_date: string | null;
   honeymoon_end_date: string | null;
+  /** Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
+   *  Default `false` — when off, neither the public household RSVP form nor
+   *  the in-app GuestDrawer renders the question. Flipping it on from the
+   *  Profile page surfaces a checkbox on both surfaces; existing per-guest
+   *  `Guest.accommodation_needed` values stay in the DB either way. */
+  rsvp_offers_accommodation: boolean;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`
@@ -429,6 +435,10 @@ export interface PublicCheckinView {
   household_code: string;
   household_label: string;
   members: HouseholdMember[];
+  /** Mirrors `Couple.rsvp_offers_accommodation`. When false, the form hides
+   *  the "needs accommodation?" checkbox so couples who don't offer it
+   *  don't surface an irrelevant question to their guests. */
+  rsvp_offers_accommodation: boolean;
 }
 
 /** Submit shape for the household check-in. The credential pair (slug+code)

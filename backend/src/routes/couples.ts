@@ -99,6 +99,10 @@ interface OnboardBody {
   frozen_categories?: unknown;
   /** Display currency for every money field on this couple. */
   currency?: unknown;
+  /** Boolean — when true, the RSVP flow surfaces a "needs accommodation?"
+   *  checkbox on each member; when false (the default) the question is
+   *  hidden on both the public form and the in-app guest drawer. */
+  rsvp_offers_accommodation?: unknown;
 }
 
 const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
@@ -842,6 +846,16 @@ function parseFrozenCategories(raw: unknown): string {
   return JSON.stringify(out);
 }
 
+/** Opt-in toggle for the RSVP "needs accommodation?" question. Accepts a
+ *  plain boolean — we coerce explicitly rather than `Boolean(raw)` because
+ *  the latter would silently turn the string "false" into true. */
+function parseRsvpOffersAccommodation(raw: unknown): boolean {
+  if (typeof raw !== "boolean") {
+    throw new HttpError(400, "rsvp_offers_accommodation must be a boolean");
+  }
+  return raw;
+}
+
 /** Cost-planning scenario count: integer 1..2000, or null to clear. */
 function parsePlanningCount(raw: unknown): number | null {
   if (raw === null || raw === undefined || raw === "") return null;
@@ -1082,6 +1096,19 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.currency_update",
         before: { currency: prev },
         after: { currency: next },
+      });
+    }
+  }
+
+  if (body.rsvp_offers_accommodation !== undefined) {
+    const next = parseRsvpOffersAccommodation(body.rsvp_offers_accommodation);
+    const prev = Boolean(couple.rsvp_offers_accommodation);
+    if (next !== prev) {
+      updates.push({ col: "rsvp_offers_accommodation", val: next ? 1 : 0 });
+      auditEntries.push({
+        action: "couple.rsvp_offers_accommodation_update",
+        before: { rsvp_offers_accommodation: prev },
+        after: { rsvp_offers_accommodation: next },
       });
     }
   }
@@ -1548,6 +1575,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.currency_update",
   "couple.frozen_categories_update",
   "couple.guest_count_update",
+  "couple.rsvp_offers_accommodation_update",
   // Guests
   "guest.create",
   "guest.update",

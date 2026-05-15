@@ -280,6 +280,19 @@ addColumnIfMissing("guests", "partner_role", "partner_role TEXT");
 // active" column. NULL means "never logged in since the column was added".
 addColumnIfMissing("users", "last_seen_at", "last_seen_at INTEGER");
 
+// Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
+// Default 0 (off) so couples who don't offer accommodation don't pester
+// guests with an irrelevant checkbox. When the couple flips it on from the
+// Profile page, both the in-app GuestDrawer and the public household RSVP
+// form render the question; otherwise the field is hidden on both surfaces
+// (existing per-guest `accommodation_needed` rows are preserved, just not
+// edited). Stored 0/1 to match the project's other boolean columns.
+addColumnIfMissing(
+  "couples",
+  "rsvp_offers_accommodation",
+  "rsvp_offers_accommodation INTEGER NOT NULL DEFAULT 0",
+);
+
 // Household-level group tag — one source of truth for the whole party (his
 // family, her friends, work, etc.) so the household card can render the
 // chip in its header and every member inherits the same group. Backfills
