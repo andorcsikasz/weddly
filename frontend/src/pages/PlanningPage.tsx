@@ -19,7 +19,7 @@ import {
   User,
   Wand2,
 } from "lucide-react";
-import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -31,6 +31,7 @@ import {
   type LocaleText,
   TASK_TEMPLATE,
   TASK_TEMPLATE_GROUPS,
+  type TaskTemplateGroupId,
   localizeText,
   rollDice,
 } from "../lib/planning_templates";
@@ -42,6 +43,27 @@ const TABS: { kind: PlanningTabKind; labelKey: string }[] = [
   { kind: "task", labelKey: "planning.tab_tasks" },
   { kind: "idea", labelKey: "planning.tab_ideas" },
 ];
+
+/** Lookup table mapping every TASK_TEMPLATE title (HU + EN) to the group it
+ *  came from. Lets us render a divider between Esküvő and Nászút tasks in
+ *  the main list without storing a group column on `planning_items`. Hand-
+ *  edited or user-typed titles fall through to "other" and don't trigger a
+ *  divider, which is the right default — only the well-known template
+ *  titles get the divider treatment. */
+const TASK_TITLE_TO_GROUP = (() => {
+  const map = new Map<string, TaskTemplateGroupId>();
+  for (const group of TASK_TEMPLATE_GROUPS) {
+    for (const item of group.items) {
+      map.set(item.title.hu, group.id);
+      map.set(item.title.en, group.id);
+    }
+  }
+  return map;
+})();
+
+function taskGroupOf(title: string): TaskTemplateGroupId | "other" {
+  return TASK_TITLE_TO_GROUP.get(title) ?? "other";
+}
 
 export default function PlanningPage() {
   const { t, locale } = useT();
@@ -343,19 +365,39 @@ export default function PlanningPage() {
           <EmptyState kind={activeKind} />
         ) : (
           <ul className="mt-4 space-y-2">
-            {scoped.map((item, idx) => (
-              <PlanningRow
-                key={item.id}
-                item={item}
-                assigneeSuggestions={assigneeSuggestions}
-                canMoveUp={idx > 0}
-                canMoveDown={idx < scoped.length - 1}
-                onToggleDone={() => onToggleDone(item)}
-                onPatch={(patch) => onPatch(item, patch)}
-                onMove={(direction) => onMove(item, direction)}
-                onDelete={() => onDelete(item)}
-              />
-            ))}
+            {scoped.map((item, idx) => {
+              // Insert a divider when consecutive task rows cross a template
+              // group boundary (e.g. last Esküvő → first Nászút). The wand
+              // inserts items group-by-group, so this naturally separates
+              // the two starter sets without forcing a strict sort.
+              const prev = idx > 0 ? scoped[idx - 1] : null;
+              const showDivider =
+                activeKind === "task" &&
+                prev !== null &&
+                prev !== undefined &&
+                taskGroupOf(prev.title) !== taskGroupOf(item.title);
+              return (
+                <Fragment key={item.id}>
+                  {showDivider && (
+                    <li
+                      role="separator"
+                      aria-hidden="true"
+                      className="!mt-4 mb-2 border-t border-paper-300 dark:border-umber-700"
+                    />
+                  )}
+                  <PlanningRow
+                    item={item}
+                    assigneeSuggestions={assigneeSuggestions}
+                    canMoveUp={idx > 0}
+                    canMoveDown={idx < scoped.length - 1}
+                    onToggleDone={() => onToggleDone(item)}
+                    onPatch={(patch) => onPatch(item, patch)}
+                    onMove={(direction) => onMove(item, direction)}
+                    onDelete={() => onDelete(item)}
+                  />
+                </Fragment>
+              );
+            })}
           </ul>
         )}
       </div>
