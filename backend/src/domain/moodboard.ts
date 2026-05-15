@@ -9,7 +9,6 @@ import type { MoodboardPin } from "@shared/types";
 import { HttpError } from "../lib/http";
 
 const FETCH_TIMEOUT_MS = 8000;
-const MAX_PINS = 25;
 const PIN_USER_AGENT = "Mozilla/5.0 (compatible; Weddly/1.0; +https://weddly.xyz)";
 
 /** Parsed `<user>/<board>` segments from a Pinterest board URL.
@@ -33,8 +32,8 @@ function parseBoardUrl(raw: string): { user: string; slug: string } | null {
 }
 
 /** Fetches the public RSS feed for `https://www.pinterest.com/<user>/<board>/`
- *  and returns up to 25 pins. Throws `HttpError` with an `extra.code` set
- *  to one of:
+ *  and returns every pin the feed yields. Throws `HttpError` with an
+ *  `extra.code` set to one of:
  *    - "invalid_url"   — link didn't parse as a Pinterest board URL
  *    - "not_found"     — board doesn't exist (404)
  *    - "private"       — board is secret or otherwise non-public (redirect /
@@ -91,7 +90,7 @@ export async function fetchPinterestBoardPins(rawUrl: string): Promise<Moodboard
   if (pins.length === 0) {
     throw new HttpError(404, "Board has no pins", { code: "empty" });
   }
-  return pins.slice(0, MAX_PINS);
+  return pins;
 }
 
 function parseRssItems(xml: string): MoodboardPin[] {

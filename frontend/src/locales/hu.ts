@@ -883,7 +883,7 @@ const hu: LocaleMessages = {
   },
   moodboard: {
     title: "Moodboard",
-    sub: "Illesszétek be a Pinterest tábla linkjét, és a táblátok 25 legutóbbi képe itt jelenik meg.",
+    sub: "Illesszétek be a Pinterest tábla linkjét, és a táblátok legutóbbi képei itt jelennek meg.",
     url_label: "Pinterest tábla linkje",
     url_placeholder: "https://www.pinterest.com/felhasznalo/eskuvo/",
     url_help:
@@ -895,7 +895,7 @@ const hu: LocaleMessages = {
     invalid_url: "Adj meg egy érvényes pinterest.com tábla linket.",
     empty_title: "Még nincs moodboard",
     empty_body:
-      "Hozz létre egy táblát a Pinteresten az esküvői ötleteknek, majd illeszd be ide a linkjét. A táblád 25 legutóbbi képe jelenik meg.",
+      "Hozz létre egy táblát a Pinteresten az esküvői ötleteknek, majd illeszd be ide a linkjét. A táblád legutóbbi képei jelennek meg.",
     open_in_pinterest: "Megnyitás a Pinteresten",
     error_title: "Nem sikerült betölteni a táblát",
     error_not_found:
