@@ -881,7 +881,7 @@ const en: LocaleMessages = {
   },
   moodboard: {
     title: "Moodboard",
-    sub: "Paste your Pinterest board link and the 25 most recent pins from your board will appear here.",
+    sub: "Paste your Pinterest board link and the most recent pins from your board will appear here.",
     url_label: "Pinterest board link",
     url_placeholder: "https://www.pinterest.com/username/wedding/",
     url_help:
@@ -893,7 +893,7 @@ const en: LocaleMessages = {
     invalid_url: "Please enter a valid pinterest.com board link.",
     empty_title: "No moodboard yet",
     empty_body:
-      "Create a Pinterest board for your wedding ideas, then paste its link here. The 25 most recent pins from your board will appear below.",
+      "Create a Pinterest board for your wedding ideas, then paste its link here. The most recent pins from your board will appear below.",
     open_in_pinterest: "Open on Pinterest",
     error_title: "Couldn't load this board",
     error_not_found:
