@@ -445,42 +445,41 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     useRoom ? { width_mm: roomW, height_mm: roomH } : undefined,
   );
 
-  // Faint 50 cm dashed grid behind the tables — matches the on-screen
-  // canvas and gives the couple a real-world ruler when planning the
-  // room on paper. Only drawn when the user actually placed the tables
-  // (auto-flow renders cell-fitted shapes, no consistent real-world scale).
+  // Hairline 1 m planning grid behind the tables — a ruler hint, not a
+  // focal element. Only drawn when the user actually placed the tables;
+  // auto-flow's cell-fitted shapes don't share a single real-world scale.
   if (transform) {
     drawPlanGrid(page, transform, width_mm, height_mm);
-    // Room boundary — chunky ink frame matching the SVG editor. Drawn as
-    // four lines so we don't overpaint the grid with a fill.
+    // Room boundary — soft ink frame around the venue rectangle. Y-up:
+    // transform.offsetY is the TOP edge; bottom = offsetY - roomH * scale.
     if (useRoom) {
-      const x0 = mm(transform.offsetX);
-      const y0 = mm(transform.offsetY);
-      const x1 = x0 + mm(roomW * transform.scale);
-      const y1 = y0 + mm(roomH * transform.scale);
-      const frame = rgb(0.14, 0.19, 0.31);
-      const thick = 1.2;
+      const xLeft = mm(transform.offsetX);
+      const xRight = mm(transform.offsetX + roomW * transform.scale);
+      const yTop = mm(transform.offsetY);
+      const yBot = mm(transform.offsetY - roomH * transform.scale);
+      const frame = rgb(0.27, 0.33, 0.48); // ink-500 — softer than the table strokes
+      const thick = 0.6;
       page.drawLine({
-        start: { x: x0, y: y0 },
-        end: { x: x1, y: y0 },
+        start: { x: xLeft, y: yTop },
+        end: { x: xRight, y: yTop },
         thickness: thick,
         color: frame,
       });
       page.drawLine({
-        start: { x: x1, y: y0 },
-        end: { x: x1, y: y1 },
+        start: { x: xRight, y: yTop },
+        end: { x: xRight, y: yBot },
         thickness: thick,
         color: frame,
       });
       page.drawLine({
-        start: { x: x1, y: y1 },
-        end: { x: x0, y: y1 },
+        start: { x: xRight, y: yBot },
+        end: { x: xLeft, y: yBot },
         thickness: thick,
         color: frame,
       });
       page.drawLine({
-        start: { x: x0, y: y1 },
-        end: { x: x0, y: y0 },
+        start: { x: xLeft, y: yBot },
+        end: { x: xLeft, y: yTop },
         thickness: thick,
         color: frame,
       });
