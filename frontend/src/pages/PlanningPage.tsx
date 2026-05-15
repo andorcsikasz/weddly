@@ -281,7 +281,7 @@ export default function PlanningPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl">
+      <div>
         <header className="mb-6">
           <h1 className="text-3xl font-serif text-ink-900 dark:text-paper-50">
             {t("planning.title")}
