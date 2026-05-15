@@ -133,12 +133,20 @@ interface TableLayout {
  *  fit it on the page. Only meaningful when the user actually placed tables
  *  (i.e. `useUserPos` was true inside `layoutTables`). When `null`, the PDF
  *  used the auto-flow branch and there's no single scale to draw a 50cm
- *  real-world grid against. */
+ *  real-world grid against.
+ *
+ *  Coordinate convention: editor Y grows DOWN (top = 0); PDF Y grows UP.
+ *  We invert Y at layout time so the page reads right-side-up.
+ *    page_x = (real_x - planMinX) * scale + offsetX
+ *    page_y = topPdfY            - (real_y - planMinY) * scale
+ *  `offsetY` stores topPdfY, i.e. the PDF y-coordinate of the top of the
+ *  plan box (where the editor's planMinY lives). */
 interface PlanTransform {
   /** Page-mm per real-world-mm. */
   scale: number;
-  /** Page-mm offset applied AFTER scaling (so page_x = real_x * scale + offsetX). */
+  /** PDF x-coordinate of the LEFT edge of the plan box (planMinX maps here). */
   offsetX: number;
+  /** PDF y-coordinate of the TOP edge of the plan box (planMinY maps here). */
   offsetY: number;
   /** Real-world bounding-box used for the fit (inclusive). */
   planMinX: number;
@@ -185,20 +193,28 @@ function layoutTables(
   const useUserPos = tables.some((t) => t.x_mm > 0 || t.y_mm > 0);
   const out = new Map<number, TableLayout>();
 
+  // Plan area lives below the title strip at the top of the page. In PDF
+  // coords (Y-up) that means: top edge sits at pageH - margin - headerH,
+  // bottom edge sits at margin.
+  const planTopY = pageH_mm - margin - headerH;
+  const planBottomY = margin;
+  const availW = pageW_mm - 2 * margin;
+  const availH = planTopY - planBottomY;
+
   if (room && useUserPos) {
     // Render the actual room rectangle so empty floor space is preserved.
     const planW = Math.max(1, room.width_mm);
     const planH = Math.max(1, room.height_mm);
-    const availW = pageW_mm - 2 * margin;
-    const availH = pageH_mm - 2 * margin - headerH;
     const scale = Math.min(availW / planW, availH / planH);
     const offsetX = margin + (availW - planW * scale) / 2;
-    const offsetY = margin + headerH + (availH - planH * scale) / 2;
+    // offsetY = PDF y of the TOP of the plan; editor row 0 lands here.
+    const offsetY = planTopY - (availH - planH * scale) / 2;
     for (const t of tables) {
       const { rx, ry } = tableHalfDims(t);
       out.set(t.id, {
         x_mm: t.x_mm * scale + offsetX,
-        y_mm: t.y_mm * scale + offsetY,
+        // Y-flip: editor y grows DOWN, PDF y grows UP. Subtract.
+        y_mm: offsetY - t.y_mm * scale,
         rx_mm: rx * scale,
         ry_mm: ry * scale,
       });
@@ -233,16 +249,14 @@ function layoutTables(
     }
     const planW = Math.max(1, maxX - minX);
     const planH = Math.max(1, maxY - minY);
-    const availW = pageW_mm - 2 * margin;
-    const availH = pageH_mm - 2 * margin - headerH;
     const scale = Math.min(1, availW / planW, availH / planH);
     const offsetX = margin + (availW - planW * scale) / 2 - minX * scale;
-    const offsetY = margin + headerH + (availH - planH * scale) / 2 - minY * scale;
+    const offsetY = planTopY - (availH - planH * scale) / 2 + minY * scale;
     for (const t of tables) {
       const { rx, ry } = tableHalfDims(t);
       out.set(t.id, {
         x_mm: t.x_mm * scale + offsetX,
-        y_mm: t.y_mm * scale + offsetY,
+        y_mm: offsetY - t.y_mm * scale,
         rx_mm: rx * scale,
         ry_mm: ry * scale,
       });
@@ -261,11 +275,12 @@ function layoutTables(
     };
   }
 
-  // Auto grid — fit a circle of radius cell*0.35 into each cell.
+  // Auto grid — fit a circle of radius cell*0.35 into each cell. Row 0 sits
+  // at the TOP of the plan area in PDF coords (Y-up).
   const cols = Math.max(1, Math.ceil(Math.sqrt(tables.length)));
   const rows = Math.max(1, Math.ceil(tables.length / cols));
-  const cellW = (pageW_mm - 2 * margin) / cols;
-  const cellH = (pageH_mm - 2 * margin - headerH) / rows;
+  const cellW = availW / cols;
+  const cellH = availH / rows;
   for (let i = 0; i < tables.length; i++) {
     const c = i % cols;
     const r = Math.floor(i / cols);
@@ -276,7 +291,7 @@ function layoutTables(
     const fit = Math.min(cellRadius, cellRadius * aspect) / Math.max(rx, ry);
     out.set(t.id, {
       x_mm: margin + cellW * (c + 0.5),
-      y_mm: margin + headerH + cellH * (r + 0.5),
+      y_mm: planTopY - cellH * (r + 0.5),
       rx_mm: rx * fit,
       ry_mm: ry * fit,
     });
@@ -284,15 +299,15 @@ function layoutTables(
   return { tableLayouts: out, transform: null };
 }
 
-/** Real-world 50-cm dashed grid behind the tables. Lines are spaced at
- *  GRID_STEP_MM in user coordinates, then mapped through `transform` to
- *  page-mm. Faint colour + 1.2 / 2.4 mm dash so it reads as planning paper
- *  without dominating.
+/** Subtle 1-metre planning grid behind the tables. Lines are spaced at
+ *  GRID_STEP_MM in real-world coords, mapped through `transform` to PDF
+ *  points via the Y-flipped projection (editor y-down → PDF y-up).
  *
- *  Coordinate convention matches the rest of this file: y is used as
- *  pdf-lib's raw y (no flip), so the grid lines up with the same
- *  table-render code. */
-const GRID_STEP_MM = 500;
+ *  Earlier drafts used a 50-cm chunky dashed grid in mid-beige; that read
+ *  fine on screen but DOMINATED the print, fighting the tables for
+ *  attention. The new grid is a 1 m hairline in a soft paper tone — a
+ *  ruler hint, not a focal element. */
+const GRID_STEP_MM = 1000;
 function drawPlanGrid(
   page: PDFPage,
   transform: PlanTransform,
@@ -300,35 +315,33 @@ function drawPlanGrid(
   _pageH_mm: number,
 ): void {
   const { scale, offsetX, offsetY, planMinX, planMinY, planMaxX, planMaxY } = transform;
-  // Snap to the nearest grid line outside the bounding box so the dashes
-  // visibly extend past every table without leaving a flat strip.
-  const startX = Math.floor(planMinX / GRID_STEP_MM) * GRID_STEP_MM;
-  const endX = Math.ceil(planMaxX / GRID_STEP_MM) * GRID_STEP_MM;
-  const startY = Math.floor(planMinY / GRID_STEP_MM) * GRID_STEP_MM;
-  const endY = Math.ceil(planMaxY / GRID_STEP_MM) * GRID_STEP_MM;
+  // Snap to the nearest grid line at or beyond the bounding box so the
+  // grid visibly extends past every table edge.
+  const startX = Math.ceil(planMinX / GRID_STEP_MM) * GRID_STEP_MM;
+  const endX = Math.floor(planMaxX / GRID_STEP_MM) * GRID_STEP_MM;
+  const startY = Math.ceil(planMinY / GRID_STEP_MM) * GRID_STEP_MM;
+  const endY = Math.floor(planMaxY / GRID_STEP_MM) * GRID_STEP_MM;
   const xPt = (xMm: number): number => mm(xMm * scale + offsetX);
-  const yPt = (yMm: number): number => mm(yMm * scale + offsetY);
-  // Darker beige + thicker stroke + chunkier dash so the 50-cm grid reads
-  // clearly at print scale. Earlier 0.35 pt / rgb(0.78, …) was almost
-  // invisible on glossy paper.
-  const colour = rgb(0.6, 0.55, 0.46);
-  const dash = [mm(2.5), mm(2.5)];
+  // Y-up flip: editor y grows DOWN; PDF y grows UP from the bottom.
+  const yPt = (yMm: number): number => mm(offsetY - (yMm - planMinY) * scale);
+  // paper-300 (#e3d9bf) — barely-there hairline. 0.25 pt = the thinnest
+  // stroke that still prints cleanly on a 600 dpi laser.
+  const colour = rgb(0.89, 0.85, 0.75);
+  const thickness = 0.25;
   for (let x = startX; x <= endX; x += GRID_STEP_MM) {
     page.drawLine({
-      start: { x: xPt(x), y: yPt(startY) },
-      end: { x: xPt(x), y: yPt(endY) },
-      thickness: 0.7,
+      start: { x: xPt(x), y: yPt(planMinY) },
+      end: { x: xPt(x), y: yPt(planMaxY) },
+      thickness,
       color: colour,
-      dashArray: dash,
     });
   }
   for (let y = startY; y <= endY; y += GRID_STEP_MM) {
     page.drawLine({
-      start: { x: xPt(startX), y: yPt(y) },
-      end: { x: xPt(endX), y: yPt(y) },
-      thickness: 0.7,
+      start: { x: xPt(planMinX), y: yPt(y) },
+      end: { x: xPt(planMaxX), y: yPt(y) },
+      thickness,
       color: colour,
-      dashArray: dash,
     });
   }
 }
