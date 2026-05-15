@@ -1122,6 +1122,7 @@ export interface LocaleMessages {
     import_done_other: string;
     download_template: string;
     guest_section_divider: string;
+    hosts_badge: string;
   };
   budget: {
     title: string;
