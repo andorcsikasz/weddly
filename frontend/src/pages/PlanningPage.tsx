@@ -361,12 +361,11 @@ function TaskTemplateDialog({
 }) {
   const { t } = useT();
   const [defaultAssignee, setDefaultAssignee] = useState("");
-  // Default: all selected. The user unchecks the ones they don't want — keeps
-  // the "just give me everything" flow at one click, while still letting them
-  // narrow it down before committing.
-  const [selected, setSelected] = useState<Set<number>>(
-    () => new Set(TASK_TEMPLATE.map((_, idx) => idx)),
-  );
+  // Default: nothing selected. Couples pick the items they actually want
+  // (most templates ship with more entries than any single couple needs;
+  // unchecking 15 of 22 was the wrong default). "Select all" stays one
+  // click away via the toggle in the section header.
+  const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const datalistId = "task-wand-assignee-list";
   const total = TASK_TEMPLATE.length;
   const allSelected = selected.size === total;
@@ -521,9 +520,10 @@ function IdeaTemplateDialog({
   onApply: (selected: Set<number>) => Promise<void>;
 }) {
   const { t } = useT();
-  const [selected, setSelected] = useState<Set<number>>(
-    () => new Set(IDEA_TEMPLATE.map((_, idx) => idx)),
-  );
+  // Default: nothing selected. Couples pick the items they want — mirrors
+  // the task-template behaviour and avoids dropping every starter idea on
+  // people who only liked two of them.
+  const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const total = IDEA_TEMPLATE.length;
   const allSelected = selected.size === total;
 

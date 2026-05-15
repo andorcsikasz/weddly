@@ -632,16 +632,18 @@ function ScheduleWandDialog({
   const { t } = useT();
   const [startText, setStartText] = useState("15:00");
   const [endText, setEndText] = useState("23:00");
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(SCHEDULE_TEMPLATE.map((item) => item.key)),
-  );
+  // Default: nothing selected. The couple picks the milestones they actually
+  // want — matches the planning task/idea wand behaviour and avoids the
+  // "now uncheck 8 of 10" friction.
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   const startMinutes = parseHHMM(startText);
   const rawEndMinutes = parseHHMM(endText);
   // Overnight: if the user picks an end time at or before the start, treat
   // it as the small hours of the next day so the schedule scales across
   // the full party (e.g. 15:00 → 02:00 = 11h window, not "invalid").
-  const overnight = startMinutes !== null && rawEndMinutes !== null && rawEndMinutes <= startMinutes;
+  const overnight =
+    startMinutes !== null && rawEndMinutes !== null && rawEndMinutes <= startMinutes;
   const endMinutes =
     rawEndMinutes === null || startMinutes === null
       ? rawEndMinutes
