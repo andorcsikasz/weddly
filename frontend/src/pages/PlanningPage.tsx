@@ -520,7 +520,12 @@ function TaskTemplateDialog({
               const startIdx = offset;
               offset += group.items.length;
               return (
-                <div key={group.id} className={gIdx > 0 ? "mt-3" : ""}>
+                <div
+                  key={group.id}
+                  className={
+                    gIdx > 0 ? "mt-3 border-t border-paper-300 pt-3 dark:border-umber-700" : ""
+                  }
+                >
                   <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
                     {localizeText(group.label, locale)}
                   </p>
