@@ -914,7 +914,10 @@ function BudgetSummaryTile({
 }) {
   const { t } = useT();
   return (
-    <Link to="/app/budget" className="card-hover stationery-dark relative overflow-hidden !p-5">
+    <Link
+      to="/app/budget"
+      className="card-hover stationery-dark relative flex h-full flex-col justify-center overflow-hidden !p-5"
+    >
       <div className="flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide">
@@ -1094,7 +1097,7 @@ function CostRow({
 
       {/* Amount — right-aligned next to the label on mobile, dedicated col on desktop. */}
       <div className="col-start-2 row-start-1 flex flex-col items-end whitespace-nowrap sm:col-start-3">
-        <span className="stat-num text-base font-semibold text-ink-900 sm:text-lg dark:text-paper-50">
+        <span className="stat-num text-sm font-medium text-ink-900 dark:text-paper-50">
           {formatMoney(editValue, currency, locale)}
         </span>
         {line.actual_huf > 0 && (
