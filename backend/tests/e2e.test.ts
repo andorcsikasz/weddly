@@ -4981,6 +4981,59 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     expect(clear.data.couple.ceremony_kind).toBeNull();
   });
 
+  test("rsvp_offers_accommodation defaults off; toggle round-trips through PATCH", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rsvp-accom@weddly.test");
+
+    // Default state after onboarding: off.
+    const initial = await req<{ couple: { rsvp_offers_accommodation: boolean } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(initial.status).toBe(200);
+    expect(initial.data.couple.rsvp_offers_accommodation).toBe(false);
+
+    // Flip on.
+    const on = await req<{ couple: { rsvp_offers_accommodation: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { rsvp_offers_accommodation: true },
+      { token },
+    );
+    expect(on.status).toBe(200);
+    expect(on.data.couple.rsvp_offers_accommodation).toBe(true);
+
+    // GET reflects the new value.
+    const after = await req<{ couple: { rsvp_offers_accommodation: boolean } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(after.data.couple.rsvp_offers_accommodation).toBe(true);
+
+    // Flip back off.
+    const off = await req<{ couple: { rsvp_offers_accommodation: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { rsvp_offers_accommodation: false },
+      { token },
+    );
+    expect(off.status).toBe(200);
+    expect(off.data.couple.rsvp_offers_accommodation).toBe(false);
+
+    // Non-boolean payload rejected.
+    const bad = await req(
+      "PATCH",
+      "/api/couples/current",
+      { rsvp_offers_accommodation: "yes" },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
   test("is_kids_table flag persists on create + update", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("kids@weddly.test");
