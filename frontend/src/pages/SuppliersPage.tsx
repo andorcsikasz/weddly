@@ -712,23 +712,23 @@ export default function SuppliersPage() {
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
           </span>
-          <div className="inline-flex items-center gap-1">
+          <div className="inline-flex items-center gap-0.5 font-mono">
             {[1, 2, 3, 4, 5].map((band) => {
-              const active = priceBand === band;
+              const active = priceBand !== null && band <= priceBand;
               return (
                 <button
                   key={band}
                   type="button"
-                  aria-pressed={active}
+                  aria-pressed={priceBand === band}
                   aria-label={t("suppliers.price_filter_band_aria", { n: band })}
-                  onClick={() => setPriceBand(active ? null : band)}
+                  onClick={() => setPriceBand(priceBand === band ? null : band)}
                   className={
                     active
-                      ? "inline-flex h-7 min-w-[2.25rem] items-center justify-center rounded-full border border-ink-700 bg-ink-700 px-2 font-mono text-xs font-medium text-paper-100 transition dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                      : "inline-flex h-7 min-w-[2.25rem] items-center justify-center rounded-full border border-ink-300 bg-paper-50 px-2 font-mono text-xs text-ink-700 transition hover:border-ink-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500"
+                      ? "inline-flex h-6 w-5 items-center justify-center text-sm font-semibold text-ink-700 transition hover:text-ink-900 dark:text-paper-50"
+                      : "inline-flex h-6 w-5 items-center justify-center text-sm text-ink-300 transition hover:text-ink-500 dark:text-umber-500 dark:hover:text-umber-300"
                   }
                 >
-                  {"$".repeat(band)}
+                  $
                 </button>
               );
             })}

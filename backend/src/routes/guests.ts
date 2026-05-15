@@ -158,19 +158,34 @@ function handleList(ctx: Ctx): Response {
   return json({ guests });
 }
 
-function resolveHouseholdForCreate(body: UpsertBody, coupleId: number, guestName: string): number {
+/** Resolve the household the new guest will live in.
+ *
+ *  Returns the household id + the group_tag the guest must inherit. The group
+ *  is the source-of-truth for the whole household — when the body picks an
+ *  existing household, the guest takes that household's group_tag; when the
+ *  body spawns a new household (explicit or implicit), the new household is
+ *  seeded with the guest's own group_tag so the household + member stay in
+ *  lock-step from the first row. */
+function resolveHouseholdForCreate(
+  body: UpsertBody,
+  coupleId: number,
+  guestName: string,
+  guestGroupTag: GuestGroupTag,
+): { id: number; group_tag: GuestGroupTag } {
   if (typeof body.household_id === "number" && Number.isFinite(body.household_id)) {
     const hh = getHouseholdById(body.household_id, coupleId);
     if (!hh) throw new HttpError(400, "household_id not found in this couple");
-    return hh.id;
+    const tag: GuestGroupTag = isGuestGroupTag(hh.group_tag) ? hh.group_tag : "other";
+    return { id: hh.id, group_tag: tag };
   }
   // Either an explicit "new household with label X" intent, or implicit
-  // household-of-one named after the guest.
+  // household-of-one named after the guest. The new household is created with
+  // the guest's chosen group_tag.
   const labelRaw =
     typeof body.new_household_label === "string" ? body.new_household_label.trim() : "";
   const label = labelRaw || guestName;
-  const created = createHousehold({ couple_id: coupleId, label });
-  return created.id;
+  const created = createHousehold({ couple_id: coupleId, label, group_tag: guestGroupTag });
+  return { id: created.id, group_tag: guestGroupTag };
 }
 
 async function handleCreate(ctx: Ctx): Promise<Response> {
@@ -182,7 +197,12 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const parsed = parseUpsert(body);
   const ts = now();
   const code = uniqueInviteCode();
-  const householdId = resolveHouseholdForCreate(body, couple.id, parsed.full_name);
+  const household = resolveHouseholdForCreate(body, couple.id, parsed.full_name, parsed.group_tag);
+  // Household is the source of truth for group_tag — override the per-guest
+  // value the client may have sent. (Matches existing-household join; for new
+  // households the resolver already seeded the household with parsed.group_tag.)
+  parsed.group_tag = household.group_tag;
+  const householdId = household.id;
 
   // `invited` / `delivered` are optional — when truthy, the create call stamps
   // both timestamps at `ts`. `delivered=true` implies `invited=true` (you
@@ -251,12 +271,16 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   // Optional household reassignment. `household_id` may be: omitted (no change),
   // a number (move to that household), or paired with `new_household_label` to
-  // spawn a new household for this guest.
+  // spawn a new household for this guest. The resulting household's group_tag
+  // overrides whatever the client sent for the guest — household is the source
+  // of truth so the chip in the header always matches every member.
   let nextHouseholdId = existing.household_id;
+  let inheritedGroupTag: GuestGroupTag | null = null;
   if (typeof body.household_id === "number" && Number.isFinite(body.household_id)) {
     const target = getHouseholdById(body.household_id, couple.id);
     if (!target) throw new HttpError(400, "household_id not found in this couple");
     nextHouseholdId = target.id;
+    inheritedGroupTag = isGuestGroupTag(target.group_tag) ? target.group_tag : "other";
   } else if (
     body.household_id === null &&
     typeof body.new_household_label === "string" &&
@@ -265,8 +289,23 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     const created = createHousehold({
       couple_id: couple.id,
       label: body.new_household_label.trim(),
+      group_tag: parsed.group_tag,
     });
     nextHouseholdId = created.id;
+    inheritedGroupTag = parsed.group_tag;
+  } else if (nextHouseholdId !== null) {
+    // No reassignment requested — keep the guest's group_tag aligned with the
+    // current household's tag (the household chip is canonical, even if the
+    // legacy drawer happened to ship a different per-guest value).
+    const current = getHouseholdById(nextHouseholdId, couple.id);
+    if (current)
+      inheritedGroupTag = isGuestGroupTag(current.group_tag) ? current.group_tag : "other";
+  }
+  // Partner-role rows (bride / groom) are exempt — their split her_family /
+  // his_family tags drive the dashboard pie's two-clans cut and stay fixed
+  // even when the host household carries a single group chip.
+  if (inheritedGroupTag !== null && existing.partner_role === null) {
+    parsed.group_tag = inheritedGroupTag;
   }
 
   // Tri-state `invited` + `delivered`: omitted = leave as-is; true = stamp;
@@ -402,13 +441,21 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
   // Same-named `household` values get folded into the same household so an
   // import can express "Anna + Mark + Lilla all RSVP together" with one column.
   const tx = db.transaction(() => {
-    const householdByLabel = new Map<string, number>();
-    const ensureHousehold = (label: string): number => {
+    // Track each household's resolved group_tag so siblings within the same
+    // household always inherit a single value — the first row of that
+    // household wins, later rows for the same label adopt it. Keeps the
+    // household.group_tag === every member.group_tag invariant intact.
+    const householdByLabel = new Map<string, { id: number; group_tag: GuestGroupTag }>();
+    const ensureHousehold = (
+      label: string,
+      group: GuestGroupTag,
+    ): { id: number; group_tag: GuestGroupTag } => {
       const cached = householdByLabel.get(label);
       if (cached) return cached;
-      const created = createHousehold({ couple_id: couple.id, label });
-      householdByLabel.set(label, created.id);
-      return created.id;
+      const created = createHousehold({ couple_id: couple.id, label, group_tag: group });
+      const entry = { id: created.id, group_tag: group };
+      householdByLabel.set(label, entry);
+      return entry;
     };
 
     for (let i = 1; i < rows.length; i++) {
@@ -419,10 +466,11 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
         continue;
       }
       const groupRaw = idx.group_tag !== undefined ? (r[idx.group_tag]?.trim() ?? "") : "";
-      const group: GuestGroupTag = isGuestGroupTag(groupRaw) ? groupRaw : "other";
+      const requestedGroup: GuestGroupTag = isGuestGroupTag(groupRaw) ? groupRaw : "other";
       const code = uniqueInviteCode();
       const householdLabel = idx.household !== undefined ? (r[idx.household]?.trim() ?? "") : "";
-      const householdId = ensureHousehold(householdLabel || name);
+      const household = ensureHousehold(householdLabel || name, requestedGroup);
+      const group = household.group_tag; // household wins
       const result = insert.run(
         couple.id,
         name,
@@ -435,7 +483,7 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
         idx.notes !== undefined ? r[idx.notes]?.trim() || null : null,
         ts,
         ts,
-        householdId,
+        household.id,
       );
       const guestId = Number(result.lastInsertRowid);
       const row = getGuestByIdScoped(guestId, couple.id);

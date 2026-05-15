@@ -22,6 +22,7 @@ import type {
   FlightEstimate,
   GuestCountGoal,
   Guest,
+  GuestGroupTag,
   Household,
   MoodboardPin,
   PlaceSuggestion,
@@ -297,10 +298,12 @@ export const planningApi = {
 
 export const householdApi = {
   list: () => apiFetch<{ households: Household[] }>("GET", "/api/households"),
-  create: (body: { label: string; notes?: string | null }) =>
+  create: (body: { label: string; notes?: string | null; group_tag?: GuestGroupTag }) =>
     apiFetch<{ household: Household }>("POST", "/api/households", body),
-  update: (id: number, body: { label?: string; notes?: string | null }) =>
-    apiFetch<{ household: Household }>("PATCH", `/api/households/${id}`, body),
+  update: (
+    id: number,
+    body: { label?: string; notes?: string | null; group_tag?: GuestGroupTag },
+  ) => apiFetch<{ household: Household }>("PATCH", `/api/households/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/households/${id}`),
   regenerateCode: (id: number) =>
     apiFetch<{ household: Household }>("POST", `/api/households/${id}/regenerate-code`, {}),

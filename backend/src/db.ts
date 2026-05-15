@@ -280,6 +280,27 @@ addColumnIfMissing("guests", "partner_role", "partner_role TEXT");
 // active" column. NULL means "never logged in since the column was added".
 addColumnIfMissing("users", "last_seen_at", "last_seen_at INTEGER");
 
+// Household-level group tag — one source of truth for the whole party (his
+// family, her friends, work, etc.) so the household card can render the
+// chip in its header and every member inherits the same group. Backfills
+// each household with the most common group_tag among its current members
+// (ties broken by first encountered). Households with no members stay on
+// 'other' (the column default).
+addColumnIfMissing("households", "group_tag", "group_tag TEXT NOT NULL DEFAULT 'other'");
+db.exec(`
+  UPDATE households
+     SET group_tag = COALESCE((
+       SELECT g.group_tag
+         FROM guests g
+        WHERE g.household_id = households.id
+        GROUP BY g.group_tag
+        ORDER BY COUNT(*) DESC, MIN(g.id) ASC
+        LIMIT 1
+     ), 'other')
+   WHERE group_tag = 'other'
+     AND EXISTS (SELECT 1 FROM guests WHERE household_id = households.id)
+`);
+
 export function now(): number {
   return Date.now();
 }

@@ -420,7 +420,10 @@ export interface LocaleMessages {
     caterer_label_unspecified: string;
     caterer_label_gluten: string;
     caterer_label_lactose: string;
+    caterer_label_milk_protein: string;
     caterer_label_nut: string;
+    caterer_label_egg: string;
+    caterer_label_fish_shellfish: string;
     caterer_label_other: string;
   };
   invite: {
@@ -1985,8 +1988,11 @@ export interface LocaleMessages {
     /** Per-member dietary / family chips (vega + 3 allergies + baby + plus-one). */
     tag_vegan: string;
     tag_lactose: string;
+    tag_milk_protein: string;
     tag_gluten: string;
     tag_nut: string;
+    tag_egg: string;
+    tag_fish_shellfish: string;
     tag_plus_one: string;
     tag_baby: string;
     /** Header above the +1/baby chip row so guests don't conflate "bringing

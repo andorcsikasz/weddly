@@ -2,9 +2,15 @@
 // belong to it via guests.household_id. The 4-digit `code` is unique per
 // couple and pairs with `couples.slug` to form the public check-in credential.
 
-import type { Household, HouseholdMember, MealChoice, RsvpStatus } from "@shared/types";
+import type {
+  GuestGroupTag,
+  Household,
+  HouseholdMember,
+  MealChoice,
+  RsvpStatus,
+} from "@shared/types";
 import { db, now } from "../db";
-import { type GuestRow, isMealChoice, isRsvpStatus, toGuest } from "./guests";
+import { type GuestRow, isGuestGroupTag, isMealChoice, isRsvpStatus, toGuest } from "./guests";
 import { generateHouseholdCode } from "./invite_codes";
 
 export interface HouseholdRow {
@@ -13,6 +19,7 @@ export interface HouseholdRow {
   code: string;
   label: string;
   notes: string | null;
+  group_tag: string;
   created_at: number;
   updated_at: number;
 }
@@ -73,18 +80,42 @@ export function createHousehold(input: {
   couple_id: number;
   label: string;
   notes?: string | null;
+  group_tag?: GuestGroupTag;
 }): HouseholdRow {
   const ts = now();
   const code = uniqueHouseholdCode(input.couple_id);
+  const groupTag: GuestGroupTag = input.group_tag ?? "other";
   const result = db
     .prepare(
-      "INSERT INTO households (couple_id, code, label, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO households (couple_id, code, label, notes, group_tag, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
-    .run(input.couple_id, code, input.label, input.notes ?? null, ts, ts);
+    .run(input.couple_id, code, input.label, input.notes ?? null, groupTag, ts, ts);
   const id = Number(result.lastInsertRowid);
   const row = getHouseholdById(id, input.couple_id);
   if (!row) throw new Error("createHousehold: insert succeeded but row missing");
   return row;
+}
+
+/** Set the household's group_tag and propagate to every NON-partner member
+ *  guest so the whole party stays in lock-step. Partner-role rows (bride /
+ *  groom) keep their existing group_tag (her_family / his_family) — that pair
+ *  is what bisects the dashboard "who's coming" pie into the two clans, and
+ *  forcing them into a single bucket would erase that. Caller is responsible
+ *  for the audit log. */
+export function setHouseholdGroupTag(
+  householdId: number,
+  coupleId: number,
+  groupTag: GuestGroupTag,
+): void {
+  const ts = now();
+  db.prepare(
+    "UPDATE households SET group_tag = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+  ).run(groupTag, ts, householdId, coupleId);
+  db.prepare(
+    `UPDATE guests
+        SET group_tag = ?, updated_at = ?
+      WHERE household_id = ? AND couple_id = ? AND partner_role IS NULL`,
+  ).run(groupTag, ts, householdId, coupleId);
 }
 
 export function regenerateHouseholdCode(householdId: number, coupleId: number): string {
@@ -117,6 +148,7 @@ export function toHousehold(
     label: row.label,
     notes: row.notes,
     member_ids: members.map((m) => m.id),
+    group_tag: isGuestGroupTag(row.group_tag) ? row.group_tag : "other",
     is_couple_household: isCouple,
     created_at: row.created_at,
     updated_at: row.updated_at,

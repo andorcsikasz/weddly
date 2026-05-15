@@ -395,6 +395,11 @@ export interface Household {
   label: string;
   notes: string | null;
   member_ids: number[];
+  /** Single group classification (his family, work, etc.) shared by every
+   *  member. The household header on /app/guests renders it as a clickable
+   *  chip; changing it propagates to all members' `Guest.group_tag` so the
+   *  household card and the dashboard "who's coming" pie stay consistent. */
+  group_tag: GuestGroupTag;
   /** True when this household holds the bride and/or groom (any member with
    *  `partner_role` set). The /app/guests UI sorts this card to the top and
    *  hides the slug / code / share-link metadata — the hosts don't need to

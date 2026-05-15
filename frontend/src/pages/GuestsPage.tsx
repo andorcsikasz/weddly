@@ -238,6 +238,15 @@ export default function GuestsPage() {
     }
   }
 
+  async function onChangeHouseholdGroup(id: number, groupTag: GuestGroupTag) {
+    try {
+      await householdApi.update(id, { group_tag: groupTag });
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   async function onCycleInviteState(g: Guest) {
     // 3-state cycle: not-invited → invited → delivered → not-invited.
     // Encode the *target* as a (invited, delivered) pair on the wire so the
@@ -528,6 +537,7 @@ export default function GuestsPage() {
               onRegenCode={() => onRegenCode(hh)}
               onDeleteHousehold={() => onDeleteHousehold(hh)}
               onRenameHousehold={onRenameHousehold}
+              onChangeGroup={onChangeHouseholdGroup}
               onCycleInviteState={onCycleInviteState}
               onPrintPlaceCard={onPrintPlaceCard}
             />
@@ -684,6 +694,7 @@ function HouseholdCard({
   onRegenCode,
   onDeleteHousehold,
   onRenameHousehold,
+  onChangeGroup,
   onCycleInviteState,
   onPrintPlaceCard,
 }: {
@@ -697,6 +708,7 @@ function HouseholdCard({
   onRegenCode: () => void;
   onDeleteHousehold: () => void;
   onRenameHousehold: (id: number, label: string) => Promise<void>;
+  onChangeGroup: (id: number, groupTag: GuestGroupTag) => Promise<void>;
   onCycleInviteState: (g: Guest) => void;
   onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
@@ -739,11 +751,19 @@ function HouseholdCard({
             slug / code / invited cells are skipped because the hosts don't
             check themselves in. */}
         <div className="grid min-w-0 flex-1 items-baseline gap-x-6 gap-y-1 text-xs text-ink-600 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_8rem_5.5rem_auto]">
-          <HouseholdLabelEditor
-            household={household}
-            count={members.length}
-            onSave={(label) => onRenameHousehold(household.id, label)}
-          />
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <HouseholdLabelEditor
+              household={household}
+              count={members.length}
+              onSave={(label) => onRenameHousehold(household.id, label)}
+            />
+            {!isHosts && (
+              <HouseholdGroupChip
+                value={household.group_tag}
+                onChange={(g) => onChangeGroup(household.id, g)}
+              />
+            )}
+          </div>
           {!isHosts && coupleSlug && (
             <span className="font-mono uppercase md:col-start-2">{coupleSlug}</span>
           )}
@@ -838,9 +858,6 @@ function HouseholdCard({
                     <KindIcon kind={g.kind} />
                     <span className="truncate">{g.full_name}</span>
                     <MealIcons meal={g.meal_choice} dietary={g.dietary} />
-                  </p>
-                  <p className="text-xs text-ink-500 dark:text-umber-300">
-                    {t(`guests.group_${g.group_tag}`)}
                   </p>
                 </div>
               </div>
@@ -1177,21 +1194,40 @@ function PartnerRoleIcon({ role }: { role: "bride" | "groom" | null }) {
 // as residue, which then triggered the fallback Wheat icon as "unknown
 // free-text dietary". Stop only at separators so we never bleed into the
 // next tag.
-type DietaryTag = "lactose" | "gluten" | "nut";
-const DIETARY_TAG_KEYS: DietaryTag[] = ["lactose", "gluten", "nut"];
+type DietaryTag = "lactose" | "milk_protein" | "gluten" | "nut" | "egg" | "fish_shellfish";
+const DIETARY_TAG_KEYS: DietaryTag[] = [
+  "milk_protein",
+  "lactose",
+  "gluten",
+  "nut",
+  "egg",
+  "fish_shellfish",
+];
 
+// Run order matters: milk_protein BEFORE lactose so the "tejfehérje-allergia"
+// token isn't shortened to "tej" + bare lactose hit. (See HouseholdRsvpForm
+// for the matching producer side — the two files must stay in lock-step.)
 const DIETARY_DETECTORS: { kind: DietaryTag; re: RegExp }[] = [
+  { kind: "milk_protein", re: /(?:tejfehérje|tejfeherje|milk[- ]?protein|casein|kazein)[^,;\s]*/i },
   { kind: "lactose", re: /(?:laktóz|lactose)[^,;\s]*/i },
   { kind: "gluten", re: /(?:glutén|gluten)[^,;\s]*/i },
   { kind: "nut", re: /(?:mogyoró|peanut|nut[- ]?aller)[^,;\s]*/i },
+  { kind: "egg", re: /(?:tojás|tojas|egg[- ]?aller|egg)[^,;\s]*/i },
+  {
+    kind: "fish_shellfish",
+    re: /(?:hal-tengeri|hal[- ]?aller|tengeri[- ]?herkenty|shellfish|seafood|crustacean)[^,;\s]*/i,
+  },
 ];
 
 // Stored tokens — must match what HouseholdRsvpForm writes so chips round-trip
 // no matter which side last edited the row.
 const DIETARY_TOKEN: Record<DietaryTag, string> = {
   lactose: "laktóz-érzékeny",
+  milk_protein: "tejfehérje-allergia",
   gluten: "gluténmentes",
   nut: "mogyoró-allergia",
+  egg: "tojás-allergia",
+  fish_shellfish: "hal-tengeri-allergia",
 };
 
 function buildDietary(tags: Set<DietaryTag>, free: string): string | null {
@@ -1243,10 +1279,10 @@ function serializeSongRequests(entries: SongEntry[]): string | null {
 }
 
 function parseDietaryTags(dietary: string | null): {
-  tags: Set<"lactose" | "gluten" | "nut">;
+  tags: Set<DietaryTag>;
   remainder: string;
 } {
-  const tags = new Set<"lactose" | "gluten" | "nut">();
+  const tags = new Set<DietaryTag>();
   let rest = (dietary ?? "").trim();
   if (!rest) return { tags, remainder: "" };
   for (const det of DIETARY_DETECTORS) {
@@ -1507,24 +1543,26 @@ function GuestDrawer({
             onChange={(v) => setForm({ ...form, phone: v || null })}
           />
 
-          <div className="mb-3">
-            <label className="field-label">{t("guests.group")}</label>
-            {/* Icon-only segmented row — full label sits in title/aria-label
-                so the meaning is one hover (or screen-reader tap) away.
-                See GroupIcon for the per-tag glyph mapping. */}
-            <div className="grid grid-cols-7 gap-2">
-              {GROUPS.map((g) => (
-                <SegmentButton
-                  key={g}
-                  active={(form.group_tag ?? "other") === g}
-                  onClick={() => setForm({ ...form, group_tag: g })}
-                  icon={<GroupIcon group={g} />}
-                  label={t(`guests.group_${g}`)}
-                  iconOnly
-                />
-              ))}
+          {/* Group picker only when creating a new household — the household
+              owns the group_tag and every member inherits it. For an existing
+              household the chip in the header is the single edit surface. */}
+          {householdMode === "new" && (
+            <div className="mb-3">
+              <label className="field-label">{t("guests.group")}</label>
+              <div className="grid grid-cols-7 gap-2">
+                {GROUPS.map((g) => (
+                  <SegmentButton
+                    key={g}
+                    active={(form.group_tag ?? "other") === g}
+                    onClick={() => setForm({ ...form, group_tag: g })}
+                    icon={<GroupIcon group={g} />}
+                    label={t(`guests.group_${g}`)}
+                    iconOnly
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="mb-3">
             <label className="field-label">{t("guests.kind_label")}</label>
@@ -1863,6 +1901,40 @@ function GroupIcon({ group }: { group: GuestGroupTag }) {
     case "other":
       return <MoreHorizontal size={size} aria-hidden />;
   }
+}
+
+/** Compact group picker rendered inline in a household header. Shows the
+ *  icon + label as a button; the actual dropdown is a transparent native
+ *  <select> overlaying the chip — that side-steps positioning + z-index
+ *  inside the card's overflow-clipped container, and gets keyboard support
+ *  for free. */
+function HouseholdGroupChip({
+  value,
+  onChange,
+}: {
+  value: GuestGroupTag;
+  onChange: (g: GuestGroupTag) => void;
+}) {
+  const { t } = useT();
+  return (
+    <span className="relative inline-flex items-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 px-2 py-1 text-xs font-medium text-ink-700 transition-colors hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600">
+      <GroupIcon group={value} />
+      <span className="truncate">{t(`guests.group_${value}`)}</span>
+      <ChevronDown size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as GuestGroupTag)}
+        className="absolute inset-0 cursor-pointer opacity-0"
+        aria-label={t("guests.group")}
+      >
+        {GROUPS.map((g) => (
+          <option key={g} value={g}>
+            {t(`guests.group_${g}`)}
+          </option>
+        ))}
+      </select>
+    </span>
+  );
 }
 
 function RsvpGlyph({ status }: { status: RsvpStatus }) {

@@ -12,7 +12,22 @@ import type {
   PublicCheckinView,
   RsvpStatus,
 } from "@shared/types";
-import { Baby, Ban, Beef, Cookie, Fish, Leaf, Milk, Nut, Plus, Sprout, Wheat } from "lucide-react";
+import {
+  Baby,
+  Ban,
+  Beef,
+  Cookie,
+  Droplets,
+  Egg,
+  Fish,
+  Leaf,
+  Milk,
+  Nut,
+  Plus,
+  Shell,
+  Sprout,
+  Wheat,
+} from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useConfirm, useToast } from "./ui";
 import { ApiError, isOnline } from "../lib/api";
@@ -38,17 +53,30 @@ const MEAL_ICONS: Record<MealChoice, typeof Beef> = {
 // validation forces them to commit before the server is called.)
 const STATUSES: RsvpStatus[] = ["yes", "no", "maybe"];
 
-type DietaryTag = "lactose" | "gluten" | "nut";
+type DietaryTag = "lactose" | "milk_protein" | "gluten" | "nut" | "egg" | "fish_shellfish";
 
-const DIETARY_TAG_KEYS: DietaryTag[] = ["lactose", "gluten", "nut"];
+// Order matters for `buildDietary`: `milk_protein` must come BEFORE `lactose`
+// so the milk-protein token (which contains "tej") isn't accidentally
+// matched first by the lactose detector when the chip state is read back.
+const DIETARY_TAG_KEYS: DietaryTag[] = [
+  "milk_protein",
+  "lactose",
+  "gluten",
+  "nut",
+  "egg",
+  "fish_shellfish",
+];
 
 // Tokens we encode into the free-text `dietary` field so the chip state
 // round-trips through the server. Round-tripping keeps the chip on after
 // the form re-renders post-submit.
 const DIETARY_TOKEN: Record<DietaryTag, string> = {
   lactose: "laktóz-érzékeny",
+  milk_protein: "tejfehérje-allergia",
   gluten: "gluténmentes",
   nut: "mogyoró-allergia",
+  egg: "tojás-allergia",
+  fish_shellfish: "hal-tengeri-allergia",
 };
 
 // Permissive matchers — the server may store any past spelling, so the
@@ -56,11 +84,17 @@ const DIETARY_TOKEN: Record<DietaryTag, string> = {
 // the keyword devours the whole compound word (accented chars aren't in
 // `\w`, so `[\w-]*\b` used to stop at `laktóz` and leave `-érzékeny` as
 // residue — that bled back into `dietary_free` on round-trip and
-// corrupted the stored string).
+// corrupted the stored string). Run order is `DIETARY_TAG_KEYS` (above):
+// milk_protein BEFORE lactose so the "tejfehérje" token isn't mistakenly
+// shortened to "tej" + bare lactose.
 const DIETARY_MATCHERS: Record<DietaryTag, RegExp> = {
   lactose: /(?:laktóz|lactose)[^,;\s]*/i,
+  milk_protein: /(?:tejfehérje|tejfeherje|milk[- ]?protein|casein|kazein)[^,;\s]*/i,
   gluten: /(?:glutén|gluten)[^,;\s]*/i,
   nut: /(?:mogyoró|peanut|nut[- ]?aller)[^,;\s]*/i,
+  egg: /(?:tojás|tojas|egg[- ]?aller|egg)[^,;\s]*/i,
+  fish_shellfish:
+    /(?:hal-tengeri|hal[- ]?aller|tengeri[- ]?herkenty|shellfish|seafood|crustacean)[^,;\s]*/i,
 };
 
 function parseDietary(s: string | null): { tags: Set<DietaryTag>; free: string } {
@@ -630,11 +664,21 @@ export function HouseholdRsvpForm({
                 {/* Allergen chips — multi-select. Icon-only modifiers on
                     top of the meal choice; replace the old free-text
                     "Egyéb / allergia" input. */}
+                {/* Allergen chips — Milk icon is reserved for milk-protein
+                    (the actual dairy allergen, distinct from lactose
+                    intolerance); lactose uses Droplets so the two read as
+                    unambiguously different at a glance. */}
                 <div className="flex flex-wrap gap-1.5">
+                  <Chip
+                    on={d.dietary_tags.has("milk_protein")}
+                    onClick={() => toggleDietaryTag(d.id, "milk_protein")}
+                    icon={<Milk size={14} aria-hidden />}
+                    label={t("rsvp.tag_milk_protein")}
+                  />
                   <Chip
                     on={d.dietary_tags.has("lactose")}
                     onClick={() => toggleDietaryTag(d.id, "lactose")}
-                    icon={<Milk size={14} aria-hidden />}
+                    icon={<Droplets size={14} aria-hidden />}
                     label={t("rsvp.tag_lactose")}
                   />
                   <Chip
@@ -648,6 +692,18 @@ export function HouseholdRsvpForm({
                     onClick={() => toggleDietaryTag(d.id, "nut")}
                     icon={<Nut size={14} aria-hidden />}
                     label={t("rsvp.tag_nut")}
+                  />
+                  <Chip
+                    on={d.dietary_tags.has("egg")}
+                    onClick={() => toggleDietaryTag(d.id, "egg")}
+                    icon={<Egg size={14} aria-hidden />}
+                    label={t("rsvp.tag_egg")}
+                  />
+                  <Chip
+                    on={d.dietary_tags.has("fish_shellfish")}
+                    onClick={() => toggleDietaryTag(d.id, "fish_shellfish")}
+                    icon={<Shell size={14} aria-hidden />}
+                    label={t("rsvp.tag_fish_shellfish")}
                   />
                 </div>
 
