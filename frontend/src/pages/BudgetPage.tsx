@@ -18,7 +18,9 @@ import { AppShell } from "../components/AppShell";
 import {
   CATEGORY_ICONS,
   CostPlanningCard,
+  CUSTOM_ICON_CHOICES,
   PER_GUEST_CATEGORIES,
+  resolveCustomIcon,
 } from "../components/CostPlanningCard";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -793,14 +795,7 @@ export default function BudgetPage() {
                       }`}
                     >
                       <td className="px-4 py-2 align-middle">
-                        <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
-                          <MoreHorizontal
-                            size={14}
-                            className="text-ink-500 dark:text-umber-300"
-                            aria-hidden
-                          />
-                          {line.label}
-                        </span>
+                        <CustomRowLabel icon={line.icon} label={line.label} />
                       </td>
                       <td className="px-4 py-2 align-middle">
                         <HufInput
@@ -888,24 +883,45 @@ export default function BudgetPage() {
 
 /* ─── Inline "Új sor" form rendered as the final tbody row ────────── */
 
+/** Custom-row category cell — resolves the stored icon slug via the shared
+ *  helper so a row picked an icon in the widget shows up with the same
+ *  glyph here. */
+function CustomRowLabel({ icon, label }: { icon: string | null; label: string }) {
+  const Icon = resolveCustomIcon(icon);
+  return (
+    <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
+      <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
+      {label}
+    </span>
+  );
+}
+
 /** Mirrors the AddCustomRow affordance in CostPlanningCard but expressed as
  *  a table row so the column structure stays intact. Collapsed by default,
- *  expands inline to a label + amount form when clicked. */
+ *  expands inline to a label + amount form when clicked. Carries the same
+ *  icon picker the widget exposes so an icon picked here renders both in
+ *  this table and in the Élő költségvetés widget above. */
 function AddCustomRowTr({
   onAdd,
 }: {
-  onAdd: (label: string, plannedHuf: number) => Promise<void> | void;
+  onAdd: (
+    label: string,
+    plannedHuf: number,
+    options?: { perGuest?: boolean; icon?: string | null },
+  ) => Promise<void> | void;
 }) {
   const { t } = useT();
   const [expanded, setExpanded] = useState(false);
   const [label, setLabel] = useState("");
   const [amountDraft, setAmountDraft] = useState("");
+  const [iconSlug, setIconSlug] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function reset() {
     setLabel("");
     setAmountDraft("");
+    setIconSlug(null);
     setError(null);
     setExpanded(false);
   }
@@ -924,7 +940,7 @@ function AddCustomRowTr({
     }
     setSaving(true);
     try {
-      await onAdd(trimmed, Math.round(amount));
+      await onAdd(trimmed, Math.round(amount), { icon: iconSlug });
       reset();
     } finally {
       setSaving(false);
@@ -1004,6 +1020,40 @@ function AddCustomRowTr({
           >
             {t("budget.custom_row_cancel")}
           </button>
+        </div>
+        {/* Icon picker — matches the same six-glyph strip the widget's add
+         *  form exposes so a row picks the same icon regardless of where
+         *  the user opened the form. */}
+        <div
+          role="radiogroup"
+          aria-label={t("budget.custom_row_icon_label")}
+          className="mt-2 flex flex-wrap items-center gap-1"
+        >
+          <span className="mr-1 text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+            {t("budget.custom_row_icon_label")}
+          </span>
+          {CUSTOM_ICON_CHOICES.map(({ slug, Icon }) => {
+            const selected = iconSlug === slug;
+            return (
+              <button
+                key={slug}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={saving}
+                onClick={() => setIconSlug(selected ? null : slug)}
+                title={t(`budget.custom_row_icon_choice.${slug}` as const)}
+                aria-label={t(`budget.custom_row_icon_choice.${slug}` as const)}
+                className={`inline-flex h-7 w-7 items-center justify-center rounded-md border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 ${
+                  selected
+                    ? "border-blush-500 bg-blush-50 text-blush-700 dark:border-blush-400/60 dark:bg-blush-400/15 dark:text-blush-300"
+                    : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
+                }`}
+              >
+                <Icon size={14} aria-hidden />
+              </button>
+            );
+          })}
         </div>
         {error && (
           <p className="mt-1 text-[11px] text-blush-700 dark:text-blush-300" role="alert">
