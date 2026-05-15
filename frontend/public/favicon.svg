@@ -1,4 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="28" fill="#efe9d9" />
-  <text x="32" y="42" font-family="Georgia, serif" font-size="32" font-weight="600" fill="#101830" text-anchor="middle">W</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Weddly">
+  <!-- Wedding-band-inspired badge. Dark navy disc with a thin warm-coral
+       inset ring stands in for the band; a bold cream serif W is drawn as a
+       zig-zag path (rather than rendered text) so it stays sharp at 16×16
+       and doesn't depend on the OS having Georgia installed. Miter joins at
+       the valleys give the W a subtle serif-flavoured character without the
+       cost of full thick/thin contrast (which collapses at favicon scale). -->
+  <circle cx="32" cy="32" r="31" fill="#101830"/>
+  <circle cx="32" cy="32" r="27" fill="none" stroke="#e2826a" stroke-width="1.25" stroke-opacity="0.7"/>
+  <path d="M 14 20 L 24 46 L 32 27 L 40 46 L 50 20"
+        fill="none" stroke="#efe9d9" stroke-width="6.5"
+        stroke-linejoin="miter" stroke-linecap="round" stroke-miterlimit="2"/>
 </svg>
