@@ -22,6 +22,8 @@ import {
   ChevronDown,
   Cookie,
   Crown,
+  Droplets,
+  Egg,
   Fish,
   Gem,
   Home,
@@ -36,6 +38,7 @@ import {
   Printer,
   RefreshCw,
   Search,
+  Shell,
   Sprout,
   Trash2,
   Upload,
@@ -1313,9 +1316,14 @@ function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string
         />
       )}
       {fish && <Fish size={14} aria-label={t("guests.meal_fish")} />}
+      {tags.has("milk_protein") && (
+        <span title={t("rsvp.tag_milk_protein")} className="inline-flex">
+          <Milk size={14} aria-label={t("rsvp.tag_milk_protein")} />
+        </span>
+      )}
       {tags.has("lactose") && (
         <span title={t("rsvp.tag_lactose")} className="inline-flex">
-          <Milk size={14} aria-label={t("rsvp.tag_lactose")} />
+          <Droplets size={14} aria-label={t("rsvp.tag_lactose")} />
         </span>
       )}
       {tags.has("gluten") && (
@@ -1326,6 +1334,16 @@ function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string
       {tags.has("nut") && (
         <span title={t("rsvp.tag_nut")} className="inline-flex">
           <Nut size={14} aria-label={t("rsvp.tag_nut")} />
+        </span>
+      )}
+      {tags.has("egg") && (
+        <span title={t("rsvp.tag_egg")} className="inline-flex">
+          <Egg size={14} aria-label={t("rsvp.tag_egg")} />
+        </span>
+      )}
+      {tags.has("fish_shellfish") && (
+        <span title={t("rsvp.tag_fish_shellfish")} className="inline-flex">
+          <Shell size={14} aria-label={t("rsvp.tag_fish_shellfish")} />
         </span>
       )}
       {remainder && (
@@ -1718,9 +1736,15 @@ function GuestDrawer({
             <label className="field-label">{t("guests.allergies")}</label>
             <div className="mb-2 flex flex-wrap gap-1.5">
               <DietaryChip
+                on={dietaryTags.has("milk_protein")}
+                onClick={() => toggleSetMember(setDietaryTags, "milk_protein")}
+                icon={<Milk size={14} aria-hidden />}
+                label={t("rsvp.tag_milk_protein")}
+              />
+              <DietaryChip
                 on={dietaryTags.has("lactose")}
                 onClick={() => toggleSetMember(setDietaryTags, "lactose")}
-                icon={<Milk size={14} aria-hidden />}
+                icon={<Droplets size={14} aria-hidden />}
                 label={t("rsvp.tag_lactose")}
               />
               <DietaryChip
@@ -1734,6 +1758,18 @@ function GuestDrawer({
                 onClick={() => toggleSetMember(setDietaryTags, "nut")}
                 icon={<Nut size={14} aria-hidden />}
                 label={t("rsvp.tag_nut")}
+              />
+              <DietaryChip
+                on={dietaryTags.has("egg")}
+                onClick={() => toggleSetMember(setDietaryTags, "egg")}
+                icon={<Egg size={14} aria-hidden />}
+                label={t("rsvp.tag_egg")}
+              />
+              <DietaryChip
+                on={dietaryTags.has("fish_shellfish")}
+                onClick={() => toggleSetMember(setDietaryTags, "fish_shellfish")}
+                icon={<Shell size={14} aria-hidden />}
+                label={t("rsvp.tag_fish_shellfish")}
               />
             </div>
             <input

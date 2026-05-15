@@ -484,7 +484,10 @@ export interface DietarySummary {
   allergies: {
     gluten: number;
     lactose: number;
+    milk_protein: number;
     nut: number;
+    egg: number;
+    fish_shellfish: number;
     /** Guests with a non-empty `dietary` field that didn't match any keyword. */
     other_text_count: number;
   };

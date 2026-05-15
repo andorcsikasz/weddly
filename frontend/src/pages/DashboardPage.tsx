@@ -2079,8 +2079,11 @@ function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
     pushIf(t("dashboard.caterer_label_none"), dietary.meal.none);
     pushIf(t("dashboard.caterer_label_unspecified"), dietary.meal.unspecified);
     pushIf(t("dashboard.caterer_label_gluten"), dietary.allergies.gluten);
+    pushIf(t("dashboard.caterer_label_milk_protein"), dietary.allergies.milk_protein);
     pushIf(t("dashboard.caterer_label_lactose"), dietary.allergies.lactose);
     pushIf(t("dashboard.caterer_label_nut"), dietary.allergies.nut);
+    pushIf(t("dashboard.caterer_label_egg"), dietary.allergies.egg);
+    pushIf(t("dashboard.caterer_label_fish_shellfish"), dietary.allergies.fish_shellfish);
     pushIf(t("dashboard.caterer_label_other"), dietary.allergies.other_text_count);
     lines.push("");
     lines.push(`(${t("dashboard.caterer_total", { n: dietary.counted_guests })})`);
@@ -2109,8 +2112,14 @@ function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
     { label: t("dashboard.caterer_label_vegan"), value: dietary.meal.vegan },
     { label: t("dashboard.caterer_label_child"), value: dietary.meal.child },
     { label: t("dashboard.caterer_label_gluten"), value: dietary.allergies.gluten },
+    { label: t("dashboard.caterer_label_milk_protein"), value: dietary.allergies.milk_protein },
     { label: t("dashboard.caterer_label_lactose"), value: dietary.allergies.lactose },
     { label: t("dashboard.caterer_label_nut"), value: dietary.allergies.nut },
+    { label: t("dashboard.caterer_label_egg"), value: dietary.allergies.egg },
+    {
+      label: t("dashboard.caterer_label_fish_shellfish"),
+      value: dietary.allergies.fish_shellfish,
+    },
   ].filter((c) => c.value > 0);
 
   return (

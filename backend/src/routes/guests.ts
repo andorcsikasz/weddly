@@ -629,17 +629,31 @@ function handleDietarySummary(ctx: Ctx): Response {
 
   const summary: DietarySummary = {
     meal: { meat: 0, fish: 0, vegetarian: 0, vegan: 0, child: 0, none: 0, unspecified: 0 },
-    allergies: { gluten: 0, lactose: 0, nut: 0, other_text_count: 0 },
+    allergies: {
+      gluten: 0,
+      lactose: 0,
+      milk_protein: 0,
+      nut: 0,
+      egg: 0,
+      fish_shellfish: 0,
+      other_text_count: 0,
+    },
     counted_guests: rows.length,
   };
 
   // Case-insensitive substring tests. Hungarian keywords first (most common
-  // in this market), English fallbacks listed in the same regex. We test
-  // `g`, `t`, `n` separately so a single note that says "gluten & nut free"
-  // bumps both gluten and nut without double-counting other_text_count.
+  // in this market), English fallbacks listed in the same regex. Milk protein
+  // is detected before lactose so the "tejfehérje" token (or any free-text
+  // "tejfehérje-allergia") gets attributed to the right bucket — the lactose
+  // regex deliberately does NOT match the bare "tej" prefix to avoid double-
+  // counting milk-protein guests as lactose-intolerant.
   const RE_GLUTEN = /glut[eé]n|gluten/i;
-  const RE_LACTOSE = /tej|laktóz|laktoz|lactose|dairy/i;
+  const RE_MILK_PROTEIN = /tejfehérje|tejfeherje|milk[- ]?protein|casein|kazein/i;
+  const RE_LACTOSE = /laktóz|laktoz|lactose|dairy/i;
   const RE_NUT = /mogyoró|mogyoro|mandula|nut|peanut|földimogyoró|földimogyoro/i;
+  const RE_EGG = /tojás|tojas|\begg\b|egg[- ]?allerg/i;
+  const RE_FISH_SHELLFISH =
+    /hal-tengeri|hal[- ]?allerg|tengeri[- ]?herkenty|shellfish|seafood|crustacean/i;
 
   for (const row of rows) {
     // Meal bucket — defaults to "unspecified" when null or unrecognised.
@@ -652,12 +666,18 @@ function handleDietarySummary(ctx: Ctx): Response {
     else if (meal === "none") summary.meal.none += 1;
     else summary.meal.unspecified += 1;
 
-    // Allergy bucket — keyword scan over `dietary` text.
+    // Allergy bucket — keyword scan over `dietary` text. Run milk_protein
+    // before lactose; `matchedKeyword` flips once so a multi-allergen note
+    // doesn't also count as "other_text".
     const text = (row.dietary ?? "").trim();
     if (!text) continue;
     let matchedKeyword = false;
     if (RE_GLUTEN.test(text)) {
       summary.allergies.gluten += 1;
+      matchedKeyword = true;
+    }
+    if (RE_MILK_PROTEIN.test(text)) {
+      summary.allergies.milk_protein += 1;
       matchedKeyword = true;
     }
     if (RE_LACTOSE.test(text)) {
@@ -666,6 +686,14 @@ function handleDietarySummary(ctx: Ctx): Response {
     }
     if (RE_NUT.test(text)) {
       summary.allergies.nut += 1;
+      matchedKeyword = true;
+    }
+    if (RE_EGG.test(text)) {
+      summary.allergies.egg += 1;
+      matchedKeyword = true;
+    }
+    if (RE_FISH_SHELLFISH.test(text)) {
+      summary.allergies.fish_shellfish += 1;
       matchedKeyword = true;
     }
     if (!matchedKeyword) summary.allergies.other_text_count += 1;

@@ -970,9 +970,15 @@ function AttachedDietary({
       )}
       <div className="flex flex-wrap gap-1.5">
         <Chip
+          on={member.dietary_tags.has("milk_protein")}
+          onClick={() => onToggleTag("milk_protein")}
+          icon={<Milk size={14} aria-hidden />}
+          label={t("rsvp.tag_milk_protein")}
+        />
+        <Chip
           on={member.dietary_tags.has("lactose")}
           onClick={() => onToggleTag("lactose")}
-          icon={<Milk size={14} aria-hidden />}
+          icon={<Droplets size={14} aria-hidden />}
           label={t("rsvp.tag_lactose")}
         />
         <Chip
@@ -986,6 +992,18 @@ function AttachedDietary({
           onClick={() => onToggleTag("nut")}
           icon={<Nut size={14} aria-hidden />}
           label={t("rsvp.tag_nut")}
+        />
+        <Chip
+          on={member.dietary_tags.has("egg")}
+          onClick={() => onToggleTag("egg")}
+          icon={<Egg size={14} aria-hidden />}
+          label={t("rsvp.tag_egg")}
+        />
+        <Chip
+          on={member.dietary_tags.has("fish_shellfish")}
+          onClick={() => onToggleTag("fish_shellfish")}
+          icon={<Shell size={14} aria-hidden />}
+          label={t("rsvp.tag_fish_shellfish")}
         />
       </div>
     </div>
