@@ -799,16 +799,16 @@ function HouseholdCard({
     } catch {}
   }, [collapsed, household.id]);
   return (
-    /* The couple's own household card gets a soft blush left-rail + a
-       small "A pár" badge in the header so it stands apart from regular
-       guest households at a glance. The rail picks up the same blush
-       palette as the Crown icon next to each partner's name — quiet but
-       unmistakable. */
+    /* The couple's own household card swaps the neutral card chrome for
+       a thin blush outline + the shared `.stationery-blush` diagonal
+       hairline texture on the header (same pattern as the dashboard's
+       "date changed" stationery). Reads as the same design language as
+       the Crown icon next to each partner's name — elegant, not loud. */
     <div
-      className={`card overflow-hidden p-0 ${isHosts ? "border-l-4 border-blush-400 dark:border-blush-600" : ""}`}
+      className={`card overflow-hidden p-0 ${isHosts ? "!border-blush-300 dark:!border-blush-500/40" : ""}`}
     >
       <header
-        className={`flex flex-wrap items-center justify-between gap-3 bg-paper-100/60 px-4 py-3 dark:bg-umber-700/60 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
+        className={`flex flex-wrap items-center justify-between gap-3 ${isHosts ? "stationery-blush" : "bg-paper-100/60 dark:bg-umber-700/60"} px-4 py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
         {/* Metadata columns: label · slug · code · invited (+ delivered).
             Fixed-width tracks with `md:col-start-*` force every field to
@@ -825,7 +825,7 @@ function HouseholdCard({
               onSave={(label) => onRenameHousehold(household.id, label)}
             />
             {isHosts && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-blush-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blush-700 dark:bg-blush-900/40 dark:text-blush-200">
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-blush-700 dark:text-blush-200">
                 <Crown size={10} aria-hidden />
                 {t("guests.hosts_badge")}
               </span>
