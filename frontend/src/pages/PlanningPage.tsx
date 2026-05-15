@@ -9,6 +9,8 @@ import type { PlanningItem, PlanningKind } from "@shared/types";
 import {
   Calendar,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Circle,
   Dices,
   Lightbulb,
@@ -71,7 +73,19 @@ export default function PlanningPage() {
     void refresh();
   }, []);
 
-  const scoped = useMemo(() => items.filter((i) => i.kind === activeKind), [items, activeKind]);
+  // Display order: (position ASC, created_at ASC) — matches the backend's
+  // canonical sort so the list looks identical on first paint and after
+  // local reorder PATCHes.
+  const scoped = useMemo(
+    () =>
+      items
+        .filter((i) => i.kind === activeKind)
+        .sort((a, b) => {
+          if (a.position !== b.position) return a.position - b.position;
+          return a.created_at - b.created_at;
+        }),
+    [items, activeKind],
+  );
 
   async function onCreate(input: {
     title: string;
@@ -115,6 +129,50 @@ export default function PlanningPage() {
       await planningApi.update(item.id, patch);
     } catch (e) {
       setItems((list) => list.map((i) => (i.id === item.id ? prev : i)));
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  /** Swap an item with its visible neighbour. Re-stripes the entire scoped
+   *  list to 0..N-1 so all-zero defaults (every freshly-created row stores
+   *  position=0) settle into a stable order before the swap lands. Each row
+   *  whose position changed gets its own PATCH. */
+  async function onMove(item: PlanningItem, direction: "up" | "down") {
+    const list = items
+      .filter((i) => i.kind === item.kind)
+      .sort((a, b) => {
+        if (a.position !== b.position) return a.position - b.position;
+        return a.created_at - b.created_at;
+      });
+    const idx = list.findIndex((i) => i.id === item.id);
+    if (idx === -1) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= list.length) return;
+
+    const reordered = [...list];
+    const a = reordered[idx];
+    const b = reordered[swapIdx];
+    if (!a || !b) return;
+    reordered[idx] = b;
+    reordered[swapIdx] = a;
+    const newPositions = new Map<number, number>(reordered.map((it, i) => [it.id, i]));
+
+    const snapshot = items;
+    setItems((prev) =>
+      prev.map((p) => {
+        const np = newPositions.get(p.id);
+        return np === undefined ? p : { ...p, position: np };
+      }),
+    );
+    try {
+      for (const it of list) {
+        const np = newPositions.get(it.id);
+        if (np !== undefined && it.position !== np) {
+          await planningApi.update(it.id, { position: np });
+        }
+      }
+    } catch (e) {
+      setItems(snapshot);
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     }
   }
@@ -285,13 +343,16 @@ export default function PlanningPage() {
           <EmptyState kind={activeKind} />
         ) : (
           <ul className="mt-4 space-y-2">
-            {scoped.map((item) => (
+            {scoped.map((item, idx) => (
               <PlanningRow
                 key={item.id}
                 item={item}
                 assigneeSuggestions={assigneeSuggestions}
+                canMoveUp={idx > 0}
+                canMoveDown={idx < scoped.length - 1}
                 onToggleDone={() => onToggleDone(item)}
                 onPatch={(patch) => onPatch(item, patch)}
+                onMove={(direction) => onMove(item, direction)}
                 onDelete={() => onDelete(item)}
               />
             ))}
@@ -823,14 +884,22 @@ function QuickAddForm({
 function PlanningRow({
   item,
   assigneeSuggestions,
+  canMoveUp,
+  canMoveDown,
   onToggleDone,
   onPatch,
+  onMove,
   onDelete,
 }: {
   item: PlanningItem;
   assigneeSuggestions: string[];
+  /** False on the first row of the visible list — disables the ↑ button. */
+  canMoveUp: boolean;
+  /** False on the last row of the visible list — disables the ↓ button. */
+  canMoveDown: boolean;
   onToggleDone: () => void;
   onPatch: (patch: Partial<PlanningItem>) => void;
+  onMove: (direction: "up" | "down") => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
@@ -1032,14 +1101,41 @@ function PlanningRow({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label={t("common.delete")}
-        className="btn-ghost btn-sm shrink-0 self-center text-blush-700 dark:text-blush-300"
-      >
-        <Trash2 size={14} />
-      </button>
+      <div className="flex shrink-0 items-center gap-0.5 self-center">
+        {/* Reorder controls — vertical stack so the row stays compact. Disabled
+         *  at the boundaries; we still render them (just dimmed) so the row
+         *  width doesn't shift as items reach the top/bottom. */}
+        <div className="flex flex-col">
+          <button
+            type="button"
+            onClick={() => onMove("up")}
+            disabled={!canMoveUp}
+            aria-label={t("planning.move_up")}
+            title={t("planning.move_up")}
+            className="inline-flex h-4 w-6 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+          >
+            <ChevronUp size={14} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove("down")}
+            disabled={!canMoveDown}
+            aria-label={t("planning.move_down")}
+            title={t("planning.move_down")}
+            className="inline-flex h-4 w-6 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+          >
+            <ChevronDown size={14} aria-hidden="true" />
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label={t("common.delete")}
+          className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
     </li>
   );
 }

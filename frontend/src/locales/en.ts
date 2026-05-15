@@ -743,6 +743,8 @@ const en: LocaleMessages = {
     body_placeholder: "Notes (optional)…",
     mark_done: "Mark done",
     mark_undone: "Mark not done",
+    move_up: "Move up",
+    move_down: "Move down",
     delete_confirm_title: "Delete this item?",
     delete_confirm_body: "This action cannot be undone.",
     empty_task: "No tasks yet. Add one to keep track of what's left to do.",
@@ -938,7 +940,6 @@ const en: LocaleMessages = {
     wand_overnight_hint:
       "End is past midnight — late-night events will be scheduled for the following day.",
     wand_window_error: "Start and end can't be the same time.",
-    day_two_badge: "next day",
     field_next_day: "Next day (after midnight)",
     wand_warning_existing: "You already have events — these will be added alongside them.",
     wand_select_label: "{count} of {total} selected",

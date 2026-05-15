@@ -743,6 +743,8 @@ const hu: LocaleMessages = {
     body_placeholder: "Részletek (opcionális)…",
     mark_done: "Kész",
     mark_undone: "Vissza",
+    move_up: "Mozgatás feljebb",
+    move_down: "Mozgatás lejjebb",
     delete_confirm_title: "Törlöd ezt a tételt?",
     delete_confirm_body: "Ez a művelet nem visszavonható.",
     empty_task: "Még nincs feladat. Adj hozzá egyet, hogy nyomon követhesd, mi van hátra.",
@@ -941,7 +943,6 @@ const hu: LocaleMessages = {
     wand_overnight_hint:
       "A zárás éjfél után van — az éjszakai programpontokat másnapra osztjuk be.",
     wand_window_error: "A kezdés és a zárás nem lehet ugyanaz az időpont.",
-    day_two_badge: "másnap",
     field_next_day: "Másnap (éjfél után)",
     wand_warning_existing: "Már vannak programpontok — az új sorok melléjük kerülnek.",
     wand_select_label: "{count} / {total} kiválasztva",

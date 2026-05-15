@@ -734,6 +734,9 @@ export interface LocaleMessages {
     /** Task checkbox a11y labels (one for each toggle direction). */
     mark_done: string;
     mark_undone: string;
+    /** Aria + tooltip for the up/down reorder buttons on each row. */
+    move_up: string;
+    move_down: string;
     delete_confirm_title: string;
     delete_confirm_body: string;
     /** Empty-state copy per tab. */
@@ -946,10 +949,6 @@ export interface LocaleMessages {
      *  two calendar days. */
     wand_overnight_hint: string;
     wand_window_error: string;
-    /** Compact badge appended to the time column whenever a row's
-     *  `starts_at_minutes` falls on the second day (>= 1440). Used by both
-     *  wand proposal rows and committed schedule rows. */
-    day_two_badge: string;
     /** Drawer toggle that flips `starts_at_minutes` by +1440 so the user
      *  can record a single post-midnight event without going through the
      *  wand. */
