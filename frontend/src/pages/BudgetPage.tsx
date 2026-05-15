@@ -1137,14 +1137,12 @@ function HoneymoonAggregateRow({
           </span>
         )}
       </td>
-      <td className="hidden px-4 py-2 align-middle text-sm text-ink-500 md:table-cell dark:text-umber-300">
-        {t("budget.honeymoon_breakdown_hint")}
-      </td>
       <td className="px-2 py-2 text-right align-middle">
         <Link
           to="/app/honeymoon"
           className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
           aria-label={t("budget.honeymoon_open_aria")}
+          title={t("budget.honeymoon_breakdown_hint")}
         >
           <ArrowUpRight size={14} />
         </Link>
