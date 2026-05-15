@@ -46,7 +46,7 @@ import {
   Wine,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { DiyEntryModal } from "../components/DiyEntryModal";
@@ -161,6 +161,20 @@ export default function SuppliersPage() {
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => readSaved());
+  // Step-chain overflow detection. We render the right-edge fade only when
+  // the row actually overflows so the gradient doesn't leave a phantom
+  // white slab on wide screens where every group already fits.
+  const chainScrollRef = useRef<HTMLDivElement | null>(null);
+  const [chainOverflows, setChainOverflows] = useState(false);
+  useEffect(() => {
+    const el = chainScrollRef.current;
+    if (!el) return;
+    const measure = () => setChainOverflows(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Filter state lives in URL params so back-button restores it.
   const query = params.get("q") ?? "";
@@ -778,9 +792,11 @@ export default function SuppliersPage() {
           Steps are packed tightly (gap-1) and separated by a thin forward
           arrow so the row reads as one process flow, not a sequence of
           buttons. Each step also carries a row of discreet bars (one per
-          sub-category) that turn sage as the couple locks each pick in. */}
+          sub-category) that turn sage as the couple locks each pick in.
+          The right-edge fade only shows when the row actually overflows —
+          otherwise it leaves a phantom white slab next to the last step. */}
       <div className="relative mb-3">
-        <div className="overflow-x-auto pb-1">
+        <div ref={chainScrollRef} className="overflow-x-auto pb-1">
           <div className="flex min-w-max items-stretch gap-1">
             {SUPPLIER_GROUPS.map((g, i) => {
               const Icon = GROUP_ICON[g.id];
@@ -811,11 +827,13 @@ export default function SuppliersPage() {
             })}
           </div>
         </div>
-        {/* Right-edge fade hints there's more to scroll. */}
-        <div
-          className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 dark:from-umber-900 to-transparent"
-          aria-hidden
-        />
+        {/* Right-edge fade — only when the row overflows. */}
+        {chainOverflows && (
+          <div
+            className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 dark:from-umber-900 to-transparent"
+            aria-hidden
+          />
+        )}
       </div>
       <p className="mb-5 text-xs text-ink-500 dark:text-umber-300">{t("suppliers.chain_help")}</p>
 
@@ -1485,20 +1503,11 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-/** Five-position price-band scale: $···· … $$$$$. N filled dollars in
- *  current text colour, plus (5−N) greyed dollars so the scale width
- *  stays consistent across cards. */
+/** Price-band scale: just N dollar signs ($ … $$$$$). No greyed
+ *  remainder — the card reads cleaner without ghost glyphs. */
 function PriceBandDots({ band }: { band: number }) {
-  const total = 5;
-  const filled = Math.max(0, Math.min(total, band));
-  return (
-    <span className="font-mono">
-      {"$".repeat(filled)}
-      <span className="text-ink-300 dark:text-umber-300">
-        {"$".repeat(Math.max(0, total - filled))}
-      </span>
-    </span>
-  );
+  const filled = Math.max(0, Math.min(5, band));
+  return <span className="font-mono">{"$".repeat(filled)}</span>;
 }
 
 function VoteRow({

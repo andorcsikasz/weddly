@@ -883,9 +883,6 @@ function LivePreviewCard({
                 )}
                 <span className="font-mono text-ink-600 dark:text-umber-200">
                   {"$".repeat(form.price_band)}
-                  <span className="text-ink-300 dark:text-umber-300">
-                    {"$".repeat(5 - form.price_band)}
-                  </span>
                 </span>
               </>
             )}
