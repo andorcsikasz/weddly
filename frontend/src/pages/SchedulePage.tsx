@@ -15,7 +15,7 @@ import {
 import { Clock, Download, MapPin, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Dialog, useConfirm, useToast } from "../components/ui";
+import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { fetchPdfBlob, scheduleApi, schedulePdfUrl } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
@@ -243,7 +243,7 @@ export default function SchedulePage() {
       </header>
 
       {loading ? (
-        <p className="card text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
+        <ScheduleListSkeleton />
       ) : sortedEvents.length === 0 ? (
         <div className="card stationery text-center">
           <h3 className="text-base font-semibold">{t("schedule.empty_title")}</h3>
@@ -376,6 +376,33 @@ export default function SchedulePage() {
         />
       )}
     </AppShell>
+  );
+}
+
+function ScheduleListSkeleton() {
+  const labelWidths = ["68%", "52%", "78%", "44%", "60%"];
+  return (
+    <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700" aria-hidden="true">
+      {labelWidths.map((w, i) => (
+        <li key={i} className="flex items-start gap-4 px-4 py-3">
+          <div className="flex min-w-[4.5rem] shrink-0 flex-col gap-1">
+            <Skeleton variant="block" width={56} height={18} rounded="md" />
+            <Skeleton variant="block" width={44} height={11} rounded="md" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton variant="block" height={14} width={w} rounded="md" />
+            <div className="flex items-center gap-3">
+              <Skeleton variant="block" width={56} height={11} rounded="md" />
+              <Skeleton variant="block" width={88} height={11} rounded="md" />
+            </div>
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <Skeleton variant="circle" width={28} />
+            <Skeleton variant="circle" width={28} />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

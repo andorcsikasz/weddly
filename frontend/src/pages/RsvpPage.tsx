@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
 import { Wordmark } from "../components/Wordmark";
+import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -54,7 +55,19 @@ export default function RsvpPage() {
       ) : view ? (
         <HouseholdRsvpForm view={view} onUpdated={setView} />
       ) : (
-        <p className="text-sm text-ink-500">{t("common.loading")}</p>
+        <div className="card">
+          <Skeleton variant="block" width={180} height={28} rounded="md" />
+          <Skeleton variant="line" height={12} width="70%" className="mt-3" />
+          <div className="mt-6 flex flex-col gap-5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <Skeleton variant="line" height={10} width="40%" />
+                <Skeleton variant="block" height={44} rounded="lg" />
+              </div>
+            ))}
+          </div>
+          <Skeleton variant="block" height={48} rounded="lg" className="mt-8 w-full" />
+        </div>
       )}
     </FullPage>
   );

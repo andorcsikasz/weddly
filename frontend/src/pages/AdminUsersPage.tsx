@@ -2,7 +2,7 @@ import type { AdminCoupleView, AdminUserView } from "@shared/types";
 import { Check, Mail, Trash2 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { adminUserApi } from "../lib/endpoints";
@@ -255,7 +255,78 @@ export default function AdminUsersPage() {
       </header>
 
       {loading ? (
-        <div className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</div>
+        <>
+          <section className="mb-10">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+                {t("admin.workspaces_section")}
+              </h2>
+            </div>
+            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300 md:grid">
+              <div>{t("admin.table_workspace_id")}</div>
+              <div>{t("admin.table_workspace_name")}</div>
+              <div>{t("admin.table_workspace_members")}</div>
+              <div>{t("admin.table_workspace_created")}</div>
+              <div>{t("admin.table_workspace_last_active")}</div>
+            </div>
+            <ul className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <li
+                  key={i}
+                  className="rounded-2xl border-2 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-800 px-5 py-4 shadow-soft"
+                >
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
+                    <Skeleton width={56} height={18} rounded="sm" />
+                    <Skeleton width={160} height={16} />
+                    <div className="flex flex-col gap-1.5">
+                      <Skeleton width="80%" height={14} />
+                      <Skeleton width="60%" height={12} />
+                    </div>
+                    <Skeleton width={96} height={12} />
+                    <Skeleton width={80} height={12} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+                {t("admin.orphans_section")}
+              </h2>
+            </div>
+            <div className="card overflow-x-auto p-0">
+              <table className="min-w-full text-sm">
+                <thead className="bg-paper-100 dark:bg-umber-700/60 text-left text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  <tr>
+                    <th className="px-3 py-2">{t("admin.table_name")}</th>
+                    <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <tr key={i} className="border-t border-paper-200 dark:border-umber-700">
+                      <td className="px-3 py-2" colSpan={2}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <Skeleton width={120} height={14} />
+                            <Skeleton width={180} height={12} />
+                            <Skeleton width={56} height={16} rounded="full" />
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <Skeleton width={28} height={28} rounded="md" />
+                            <Skeleton width={28} height={28} rounded="md" />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
       ) : (
         <>
           {/* ── Workspaces (couples) — one card per couple ────────────────── */}

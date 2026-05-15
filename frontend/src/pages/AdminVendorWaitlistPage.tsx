@@ -16,7 +16,7 @@ import { buildEmailDraft } from "@shared/vendor_waitlist";
 import { Mail, MessageSquare, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Button, Dialog, useConfirm, useToast } from "../components/ui";
+import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminVendorWaitlistApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -145,9 +145,33 @@ export default function AdminVendorWaitlistPage() {
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-ink-500 dark:text-umber-300">
-          {t("common.loading")}
-        </p>
+        <ul className="grid gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <li key={i}>
+              <article className="rounded-2xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-5 shadow-soft">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 flex flex-col gap-1.5">
+                    <Skeleton width={200} height={20} />
+                    <Skeleton width={160} height={12} />
+                    <Skeleton width={120} height={12} />
+                  </div>
+                  <Skeleton width={80} height={20} rounded="full" />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                  <Skeleton width={130} height={12} />
+                  <Skeleton width={90} height={18} rounded="full" />
+                </div>
+                <div className="mt-3 flex flex-col gap-1.5 rounded-lg bg-white/60 dark:bg-umber-900/40 p-3">
+                  <Skeleton width="100%" height={12} />
+                  <Skeleton width="80%" height={12} />
+                </div>
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <Skeleton width={120} height={32} rounded="md" />
+                </div>
+              </article>
+            </li>
+          ))}
+        </ul>
       ) : visibleEntries.length === 0 ? (
         <div className="card text-center text-sm text-ink-500 dark:text-umber-300">
           {t(EMPTY_KEY[filter])}

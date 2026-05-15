@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Dialog, useConfirm, useToast } from "../components/ui";
+import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { planningApi } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
@@ -338,7 +338,7 @@ export default function PlanningPage() {
         />
 
         {loading ? (
-          <p className="mt-6 text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
+          <PlanningListSkeleton kind={activeKind} />
         ) : scoped.length === 0 ? (
           <EmptyState kind={activeKind} />
         ) : (
@@ -1138,6 +1138,32 @@ function PlanningRow({
         </button>
       </div>
     </li>
+  );
+}
+
+function PlanningListSkeleton({ kind }: { kind: PlanningTabKind }) {
+  const widths = ["72%", "58%", "84%", "46%", "68%", "52%"];
+  return (
+    <ul className="mt-4 space-y-2" aria-hidden="true">
+      {widths.map((w, i) => (
+        <li key={i} className="card flex items-center gap-3 p-3">
+          <Skeleton variant="circle" width={18} className="shrink-0" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton variant="block" height={14} width={w} rounded="md" />
+            {kind === "task" && (
+              <div className="flex items-center gap-2">
+                <Skeleton variant="block" width={80} height={16} rounded="full" />
+                <Skeleton variant="block" width={64} height={12} rounded="md" />
+              </div>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Skeleton variant="block" width={24} height={24} rounded="md" />
+            <Skeleton variant="circle" width={20} />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

@@ -52,7 +52,7 @@ import { AppShell } from "../components/AppShell";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
-import { Button } from "../components/ui";
+import { Button, Skeleton } from "../components/ui";
 import {
   hydrateCostPlanningCount,
   readCostPlanningCount,
@@ -893,9 +893,13 @@ export default function SuppliersPage() {
       {viewMode === "map" ? (
         <Suspense
           fallback={
-            <div className="rounded-2xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-8 text-center text-sm text-ink-500 dark:text-umber-300">
-              {t("common.loading")}
-            </div>
+            <Skeleton
+              variant="block"
+              rounded="2xl"
+              className="w-full"
+              style={{ height: "70vh", minHeight: "480px" }}
+              aria-label={t("common.loading")}
+            />
           }
         >
           <SupplierMap

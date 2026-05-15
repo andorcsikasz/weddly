@@ -361,4 +361,31 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
+
+  /* Loading placeholder — a soft base with a brighter highlight that sweeps
+     across the block (see `animate-shimmer` keyframes in tailwind.config.js).
+     The gradient is layered on top of a flat base so the surface still has a
+     resting tint at 0% / 100% of the animation (otherwise it would flash to
+     transparent at the loop boundary). Tuned for both paper + umber. */
+  .skeleton {
+    background-color: theme("colors.paper.200");
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.55) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    background-position: -200% 0;
+  }
+  html.dark .skeleton {
+    background-color: theme("colors.umber.700");
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(246, 242, 231, 0.08) 50%,
+      transparent 100%
+    );
+  }
 }

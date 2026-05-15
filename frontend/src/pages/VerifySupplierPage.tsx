@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
+import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -55,23 +56,33 @@ export default function VerifySupplierPage() {
     <Shell>
       <div className="mx-auto max-w-md">
         <div className="card">
-          <h1 className="text-2xl">{t("verify_supplier.page_title")}</h1>
-          <p className="mt-4 text-sm text-ink-700">
-            {state.kind === "loading" && t("verify_supplier.page_loading")}
-            {state.kind === "success" &&
-              (state.alreadyConsumed
-                ? t("verify_supplier.page_already")
-                : t("verify_supplier.page_success"))}
-            {state.kind === "invalid" && t("verify_supplier.page_invalid")}
-            {state.kind === "expired" && t("verify_supplier.page_expired")}
-            {state.kind === "missing" && t("verify_supplier.page_missing")}
-          </p>
-          {state.kind !== "loading" && (
-            <p className="mt-4 text-sm text-ink-600">
-              <Link to="/" className="font-medium text-ink-900 underline">
-                {t("verify_supplier.page_home")}
-              </Link>
-            </p>
+          {state.kind === "loading" ? (
+            <>
+              <Skeleton variant="circle" width={40} />
+              <Skeleton variant="block" height={28} rounded="md" className="mt-4 w-3/5" />
+              <div className="mt-4 flex flex-col gap-2">
+                <Skeleton variant="line" height={12} width="85%" />
+                <Skeleton variant="line" height={12} width="55%" />
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl">{t("verify_supplier.page_title")}</h1>
+              <p className="mt-4 text-sm text-ink-700">
+                {state.kind === "success" &&
+                  (state.alreadyConsumed
+                    ? t("verify_supplier.page_already")
+                    : t("verify_supplier.page_success"))}
+                {state.kind === "invalid" && t("verify_supplier.page_invalid")}
+                {state.kind === "expired" && t("verify_supplier.page_expired")}
+                {state.kind === "missing" && t("verify_supplier.page_missing")}
+              </p>
+              <p className="mt-4 text-sm text-ink-600">
+                <Link to="/" className="font-medium text-ink-900 underline">
+                  {t("verify_supplier.page_home")}
+                </Link>
+              </p>
+            </>
           )}
         </div>
       </div>

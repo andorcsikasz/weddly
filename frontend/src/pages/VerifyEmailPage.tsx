@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
+import { Skeleton } from "../components/ui";
 import { useAuth } from "../lib/auth";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -43,18 +44,28 @@ export default function VerifyEmailPage() {
     <Shell>
       <div className="mx-auto max-w-md">
         <div className="card">
-          <h1 className="text-2xl">{t("verify.page_title")}</h1>
-          <p className="mt-4 text-sm text-ink-700">
-            {state === "loading" && t("verify.page_loading")}
-            {state === "success" && t("verify.page_success")}
-            {state === "invalid" && t("verify.page_invalid")}
-          </p>
-          {state !== "loading" && (
-            <p className="mt-4 text-sm text-ink-600">
-              <Link to={user ? "/app" : "/login"} className="font-medium text-ink-900 underline">
-                {user ? t("verify.page_back_to_app") : t("auth.back_to_login")}
-              </Link>
-            </p>
+          {state === "loading" ? (
+            <>
+              <Skeleton variant="circle" width={40} />
+              <Skeleton variant="block" height={28} rounded="md" className="mt-4 w-3/5" />
+              <div className="mt-4 flex flex-col gap-2">
+                <Skeleton variant="line" height={12} width="85%" />
+                <Skeleton variant="line" height={12} width="55%" />
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl">{t("verify.page_title")}</h1>
+              <p className="mt-4 text-sm text-ink-700">
+                {state === "success" && t("verify.page_success")}
+                {state === "invalid" && t("verify.page_invalid")}
+              </p>
+              <p className="mt-4 text-sm text-ink-600">
+                <Link to={user ? "/app" : "/login"} className="font-medium text-ink-900 underline">
+                  {user ? t("verify.page_back_to_app") : t("auth.back_to_login")}
+                </Link>
+              </p>
+            </>
           )}
         </div>
       </div>

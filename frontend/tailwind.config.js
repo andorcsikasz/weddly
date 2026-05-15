@@ -123,12 +123,20 @@ export default {
       animation: {
         "fade-in": "fadeIn 200ms ease-out",
         "fade-in-up": "fadeInUp 280ms ease-out",
+        // Skeleton/loading shimmer — a translucent highlight that sweeps
+        // left-to-right across a placeholder block to signal "loading".
+        // 1.6s feels lively without being hectic; longer reads as stalled.
+        shimmer: "shimmer 1.6s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
         fadeInUp: {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
     },

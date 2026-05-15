@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -347,7 +347,28 @@ export default function AdminSuppliersPage() {
       </div>
 
       {loading ? (
-        <div className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</div>
+        <div className="flex flex-col gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <article key={i} className="card flex flex-col gap-3 p-3">
+              <header className="flex flex-wrap items-center gap-2">
+                <Skeleton width={16} height={16} rounded="sm" />
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+                  <Skeleton width={180} height={18} />
+                  <Skeleton width={64} height={20} rounded="full" />
+                  <Skeleton width={44} height={20} rounded="full" />
+                  <Skeleton width={110} height={12} />
+                  <Skeleton width={80} height={12} />
+                </div>
+                <Skeleton width={16} height={16} rounded="sm" />
+              </header>
+              <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-2">
+                <Skeleton width={80} height={28} rounded="md" />
+                <Skeleton width={68} height={28} rounded="md" />
+                <Skeleton width={68} height={28} rounded="md" />
+              </footer>
+            </article>
+          ))}
+        </div>
       ) : suppliers.length === 0 ? (
         <div className="card text-sm text-ink-500 dark:text-umber-300">{t("admin.empty")}</div>
       ) : visibleSuppliers.length === 0 ? (

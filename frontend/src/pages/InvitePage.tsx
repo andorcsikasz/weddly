@@ -13,6 +13,7 @@ import type { CoupleInvite } from "@shared/types";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
+import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { coupleApi } from "../lib/endpoints";
@@ -100,8 +101,13 @@ export default function InvitePage() {
             </>
           ) : !invite ? (
             <>
-              <h1>{t("invite.title")}</h1>
-              <p className="mt-4 text-sm text-ink-500">{t("common.loading")}</p>
+              <Skeleton variant="line" height={10} width="35%" />
+              <Skeleton variant="block" height={36} rounded="md" className="mt-3 w-3/4" />
+              <div className="mt-5 flex flex-col gap-2">
+                <Skeleton variant="line" height={12} />
+                <Skeleton variant="line" height={12} width="80%" />
+              </div>
+              <Skeleton variant="block" height={48} rounded="lg" className="mt-6 w-full" />
             </>
           ) : isOwnInvite ? (
             <>

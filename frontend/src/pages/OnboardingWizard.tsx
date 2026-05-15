@@ -20,7 +20,7 @@ import { CURRENCIES } from "@shared/types";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
-import { TagChip } from "../components/ui";
+import { Skeleton, TagChip } from "../components/ui";
 import { coupleApi } from "../lib/endpoints";
 import {
   currencySymbol,
@@ -308,7 +308,26 @@ export default function OnboardingWizard() {
   // Wait for the couple lookup before rendering anything — flashing the
   // wizard for a partner-B user who already has a workspace would be
   // worse than a blank moment.
-  if (existing === null) return null;
+  if (existing === null) {
+    return (
+      <Shell>
+        <div className="mx-auto max-w-xl">
+          <div className="card">
+            <Skeleton variant="block" width={200} height={32} rounded="md" />
+            <Skeleton variant="line" height={12} width="65%" className="mt-3" />
+            <div className="mt-8 flex flex-col gap-5">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  <Skeleton variant="line" height={10} width="35%" />
+                  <Skeleton variant="block" height={44} rounded="lg" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
 
   // Couple already set up by the other partner: render a read-only welcome
   // card instead of the form. Partner B never gets asked to re-enter data.

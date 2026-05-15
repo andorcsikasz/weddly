@@ -51,7 +51,7 @@ import {
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { Dialog, useConfirm, useToast } from "../components/ui";
+import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, fetchPdfBlob, guestApi, householdApi, placeCardsUrl } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -102,6 +102,7 @@ export default function GuestsPage() {
   const [couple, setCouple] = useState<Couple | null>(null);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [households, setHouseholds] = useState<Household[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -174,14 +175,18 @@ export default function GuestsPage() {
   }, [households.length]);
 
   async function refresh() {
-    const [c, g, h] = await Promise.all([
-      coupleApi.current(),
-      guestApi.list(),
-      householdApi.list(),
-    ]);
-    setCouple(c.couple);
-    setGuests(g.guests);
-    setHouseholds(h.households);
+    try {
+      const [c, g, h] = await Promise.all([
+        coupleApi.current(),
+        guestApi.list(),
+        householdApi.list(),
+      ]);
+      setCouple(c.couple);
+      setGuests(g.guests);
+      setHouseholds(h.households);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -504,7 +509,9 @@ export default function GuestsPage() {
         </div>
       )}
 
-      {households.length === 0 && guests.length === 0 ? (
+      {loading ? (
+        <HouseholdListSkeleton />
+      ) : households.length === 0 && guests.length === 0 ? (
         <div className="card stationery text-center">
           <h3 className="text-base font-semibold">{t("guests.empty_title")}</h3>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{t("guests.empty_body")}</p>
@@ -618,6 +625,42 @@ export default function GuestsPage() {
   );
 }
 
+function HouseholdListSkeleton() {
+  const rowCounts = [3, 2, 4, 2];
+  return (
+    <div className="space-y-4" aria-hidden="true">
+      {rowCounts.map((n, i) => (
+        <div key={i} className="card overflow-hidden p-0">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-3 dark:border-umber-700 dark:bg-umber-700/60">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <Skeleton variant="block" width={160} height={16} rounded="md" />
+              <Skeleton variant="block" width={72} height={20} rounded="full" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Skeleton variant="block" width={88} height={16} rounded="md" />
+              <Skeleton variant="block" width={56} height={14} rounded="md" />
+            </div>
+          </div>
+          <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+            {Array.from({ length: n }).map((_, j) => (
+              <li key={j} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <Skeleton variant="circle" width={16} />
+                  <Skeleton variant="block" height={14} width="45%" rounded="md" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton variant="block" width={56} height={20} rounded="full" />
+                  <Skeleton variant="circle" width={24} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Flat search-results list, shown instead of the grouped household view
  * whenever the search input has content. We render up to 200 hits — past
@@ -637,7 +680,19 @@ function SearchResults({
 }) {
   const { t } = useT();
   if (loading && guests.length === 0) {
-    return <p className="card text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>;
+    return (
+      <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700" aria-hidden="true">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <li key={i} className="flex items-center justify-between gap-3 px-4 py-2.5">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Skeleton variant="block" height={14} width="55%" rounded="md" />
+              <Skeleton variant="block" height={10} width="35%" rounded="md" />
+            </div>
+            <Skeleton variant="block" width={64} height={20} rounded="full" />
+          </li>
+        ))}
+      </ul>
+    );
   }
   if (guests.length === 0) {
     return (

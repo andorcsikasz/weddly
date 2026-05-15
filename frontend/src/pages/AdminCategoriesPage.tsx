@@ -6,7 +6,7 @@ import type {
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Button, Dialog, TextField, useConfirm, useToast } from "../components/ui";
+import { Button, Dialog, Skeleton, TextField, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierTaxonomyApi, supplierTaxonomyApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -102,7 +102,40 @@ export default function AdminCategoriesPage() {
       </header>
 
       {loading ? (
-        <div className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</div>
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, gi) => (
+            <section key={gi} className="card p-0 overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
+                <div className="flex flex-col gap-1.5">
+                  <Skeleton width={220} height={16} />
+                  <Skeleton width={90} height={10} />
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  <Skeleton width={120} height={28} rounded="md" />
+                  <Skeleton width={28} height={28} rounded="md" />
+                  <Skeleton width={28} height={28} rounded="md" />
+                </div>
+              </div>
+              <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+                {Array.from({ length: 2 }).map((_, ci) => (
+                  <li
+                    key={ci}
+                    className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
+                  >
+                    <div className="flex flex-col gap-1.5">
+                      <Skeleton width={260} height={14} />
+                      <Skeleton width={140} height={10} />
+                    </div>
+                    <div className="flex gap-1">
+                      <Skeleton width={28} height={28} rounded="md" />
+                      <Skeleton width={28} height={28} rounded="md" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       ) : groups.length === 0 ? (
         <div className="card text-sm text-ink-500 dark:text-umber-300">
           {t("admin.taxonomy_empty")}

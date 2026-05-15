@@ -9,6 +9,7 @@ import type { MoodboardPin } from "@shared/types";
 import { AlertTriangle, ExternalLink, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { moodboardApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -231,11 +232,20 @@ export default function MoodboardPage() {
 
           {loading ? (
             <div
-              className="card flex items-center justify-center text-sm text-ink-500 dark:text-umber-300"
+              className="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3"
               role="status"
               aria-live="polite"
+              aria-label={t("moodboard.loading")}
             >
-              {t("moodboard.loading")}
+              {[200, 260, 180, 240, 200, 220, 280, 200].map((h, i) => (
+                <Skeleton
+                  key={i}
+                  variant="block"
+                  height={h}
+                  rounded="2xl"
+                  className="block w-full break-inside-avoid"
+                />
+              ))}
             </div>
           ) : previewError ? (
             <div

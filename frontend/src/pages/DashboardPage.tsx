@@ -39,7 +39,7 @@ import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "r
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
-import { Dialog, useConfirm, useToast } from "../components/ui";
+import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
@@ -99,6 +99,63 @@ function targetGuestCount(couple: Couple): number | null {
     return Math.round((g.min + g.max) / 2);
   }
   return null;
+}
+
+function DashboardSkeleton() {
+  return (
+    <AppShell>
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <Skeleton variant="block" width={240} height={36} rounded="md" />
+          <Skeleton variant="block" width={160} height={16} rounded="md" />
+        </div>
+        <Skeleton variant="block" width={96} height={12} rounded="md" />
+      </header>
+
+      <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="card flex h-[120px] flex-col justify-between">
+            <Skeleton variant="block" width={96} height={12} rounded="md" />
+            <Skeleton variant="block" width={120} height={32} rounded="md" />
+            <Skeleton variant="line" />
+          </div>
+        ))}
+      </section>
+
+      <section className="mb-8 grid gap-4 lg:grid-cols-3">
+        <div className="card flex flex-col gap-4 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <Skeleton variant="block" width={140} height={20} rounded="md" />
+            <Skeleton variant="block" width={64} height={12} rounded="md" />
+          </div>
+          <Skeleton variant="block" height={6} rounded="full" />
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <li key={i} className="flex items-center gap-2 px-2 py-1.5">
+                <Skeleton variant="circle" width={16} />
+                <Skeleton variant="line" />
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="card flex h-full flex-col gap-4">
+          <Skeleton variant="block" width={120} height={16} rounded="md" />
+          <Skeleton variant="block" height={8} rounded="full" />
+          <ul className="flex flex-1 flex-col gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li key={i} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Skeleton variant="circle" width={10} />
+                  <Skeleton variant="block" width={80} height={12} rounded="md" />
+                </div>
+                <Skeleton variant="block" width={48} height={12} rounded="md" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    </AppShell>
+  );
 }
 
 export default function DashboardPage() {
@@ -207,7 +264,7 @@ export default function DashboardPage() {
     };
   }, [data]);
 
-  if (data === "loading") return null;
+  if (data === "loading") return <DashboardSkeleton />;
   if (data === null) return <Navigate to="/onboarding" replace />;
 
   const { couple, guests, lines, tableCount, seatedGuestIds, dietary, schedule } = data;
