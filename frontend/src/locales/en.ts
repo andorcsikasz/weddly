@@ -1028,6 +1028,7 @@ const en: LocaleMessages = {
     import_done_one: "Imported {count} guest",
     import_done_other: "Imported {count} guests",
     download_template: "Download template",
+    guest_section_divider: "Filled by the guest via RSVP",
     household_label: "Household",
     household_assign_help: "People who RSVP together share one 4-digit code.",
     household_new: "New household",

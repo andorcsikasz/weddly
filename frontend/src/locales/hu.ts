@@ -1031,6 +1031,7 @@ const hu: LocaleMessages = {
     import_done_one: "Importálva: {count} vendég",
     import_done_other: "Importálva: {count} vendég",
     download_template: "Sablon letöltése",
+    guest_section_divider: "Innentől a vendég tölti ki",
     household_label: "Háztartás",
     household_assign_help: "Akik együtt válaszolnak, közös 4 jegyű kódot kapnak.",
     household_new: "Új háztartás",

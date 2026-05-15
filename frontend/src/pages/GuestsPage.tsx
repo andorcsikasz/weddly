@@ -22,6 +22,7 @@ import {
   ChevronDown,
   Cookie,
   Crown,
+  Download,
   Droplets,
   Egg,
   Fish,
@@ -431,10 +432,10 @@ export default function GuestsPage() {
             onClick={downloadCsvTemplate}
             title={t("guests.download_template")}
           >
-            CSV
+            <Download size={16} aria-hidden /> {t("guests.download_template")}
           </button>
           <label className="btn-outline cursor-pointer">
-            <Upload size={16} /> {t("guests.import_csv")}
+            <Upload size={16} aria-hidden /> {t("guests.import_csv")}
             <input
               type="file"
               accept=".csv,text/csv"
@@ -1755,6 +1756,18 @@ function GuestDrawer({
                 )}
               </div>
             )}
+          </div>
+
+          {/* ── Guest-fills divider ─────────────────────────────────────
+              Visual break so the couple sees at a glance which fields are
+              "what we know about this guest" (above: name, contact,
+              household) vs "the guest's own answers" (below: RSVP, meal,
+              dietary, etc.) — the couple can pre-fill these too, but the
+              public RSVP form is the canonical author. */}
+          <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+            <span>{t("guests.guest_section_divider")}</span>
+            <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
           </div>
 
           <div className="mb-3">
