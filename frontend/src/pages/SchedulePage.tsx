@@ -785,7 +785,7 @@ function ScheduleWandDialog({
                     onClick={() => toggle(row.item.key)}
                     aria-pressed={on}
                     disabled={conflict !== null}
-                    className={`flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                    className={`flex w-full items-start gap-3 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
                       conflict !== null
                         ? "cursor-not-allowed text-ink-300 dark:text-umber-300"
                         : on
@@ -801,24 +801,27 @@ function ScheduleWandDialog({
                         </span>
                       )}
                     </span>
-                    <span className={`flex-1 ${on || conflict !== null ? "" : "line-through"}`}>
-                      {row.item.title[locale]}
-                    </span>
-                    {conflict !== null ? (
-                      <span
-                        className="shrink-0 rounded-full bg-paper-200 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:bg-umber-700 dark:text-umber-300"
-                        title={localizeKnownLabel(conflict.label, locale)}
-                      >
-                        {t("schedule.wand_item_conflict")}
-                      </span>
-                    ) : (
-                      row.duration_minutes !== null &&
-                      on && (
-                        <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
-                          {t("schedule.duration_unit", { n: row.duration_minutes })}
+                    {/* Title + (conflict-badge OR duration) stacked in one
+                     *  flex-1 column with min-w-0 so the title can shrink and
+                     *  the conflict pill never overflows the dialog edge. */}
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span>{row.item.title[locale]}</span>
+                      {conflict !== null ? (
+                        <span
+                          className="inline-flex w-fit max-w-full rounded-full bg-paper-200 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:bg-umber-700 dark:text-umber-300"
+                          title={localizeKnownLabel(conflict.label, locale)}
+                        >
+                          <span className="truncate">{t("schedule.wand_item_conflict")}</span>
                         </span>
-                      )
-                    )}
+                      ) : (
+                        row.duration_minutes !== null &&
+                        on && (
+                          <span className="text-xs text-ink-500 dark:text-umber-300">
+                            {t("schedule.duration_unit", { n: row.duration_minutes })}
+                          </span>
+                        )
+                      )}
+                    </span>
                   </button>
                 </li>
               );

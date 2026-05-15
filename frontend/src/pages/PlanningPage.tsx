@@ -554,9 +554,7 @@ function TaskTemplateDialog({
                             ) : (
                               <Circle size={14} className="shrink-0" aria-hidden="true" />
                             )}
-                            <span className={on ? "" : "line-through"}>
-                              {localizeText(tmpl.title, locale)}
-                            </span>
+                            <span>{localizeText(tmpl.title, locale)}</span>
                           </button>
                         </li>
                       );
@@ -677,9 +675,7 @@ function IdeaTemplateDialog({
                     ) : (
                       <Lightbulb size={14} className="shrink-0" aria-hidden="true" />
                     )}
-                    <span className={on ? "" : "line-through"}>
-                      {localizeText(tmpl.title, locale)}
-                    </span>
+                    <span>{localizeText(tmpl.title, locale)}</span>
                   </button>
                 </li>
               );
