@@ -55,6 +55,8 @@ interface LineRow {
   supplier_id: number | null;
   couple_supplier_id: string | null;
   notes: string | null;
+  per_guest: number;
+  icon: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -72,9 +74,22 @@ function toLine(r: LineRow): BudgetLine {
     supplier_id: r.supplier_id,
     couple_supplier_id: r.couple_supplier_id,
     notes: r.notes,
+    per_guest: r.per_guest === 1,
+    icon: r.icon,
     created_at: r.created_at,
     updated_at: r.updated_at,
   };
+}
+
+// Identifier whitelist for custom-row icon slugs. Frontend renders only
+// from a curated allowlist (see CostPlanningCard `CUSTOM_ICON_CHOICES`); on
+// the wire we accept any alphanumeric ≤40 char string so the allowlist can
+// grow without a schema change. Unknown slugs render as the default icon.
+function coerceIcon(raw: unknown): string | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string") throw new HttpError(400, "icon must be a string");
+  if (!/^[A-Za-z0-9_-]{1,40}$/.test(raw)) throw new HttpError(400, "icon has invalid format");
+  return raw;
 }
 
 function listLines(coupleId: number): BudgetLine[] {
@@ -115,6 +130,8 @@ interface UpsertLineBody {
   planned_huf?: unknown;
   actual_huf?: unknown;
   notes?: unknown;
+  per_guest?: unknown;
+  icon?: unknown;
 }
 
 function parseLineBody(body: UpsertLineBody, requireCategory = true) {
@@ -134,12 +151,16 @@ function parseLineBody(body: UpsertLineBody, requireCategory = true) {
   }
   const notes =
     typeof body.notes === "string" && body.notes.trim() ? body.notes.trim().slice(0, 1000) : null;
+  const perGuest = body.per_guest === true || body.per_guest === 1;
+  const icon = coerceIcon(body.icon);
   return {
     category: (cat ?? "other") as BudgetCategory,
     label,
     planned_huf: Math.round(planned),
     actual_huf: Math.round(actual),
     notes,
+    per_guest: perGuest ? 1 : 0,
+    icon,
   };
 }
 
@@ -160,8 +181,8 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, supplier_id, notes, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
+      `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, supplier_id, notes, per_guest, icon, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -170,6 +191,8 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
       parsed.planned_huf,
       parsed.actual_huf,
       parsed.notes,
+      parsed.per_guest,
+      parsed.icon,
       ts,
       ts,
     );
@@ -360,6 +383,8 @@ async function handleCreateSnapshot(ctx: Ctx): Promise<Response> {
     planned_huf: l.planned_huf,
     actual_huf: l.actual_huf,
     notes: l.notes,
+    per_guest: l.per_guest,
+    icon: l.icon,
     // Carried into the payload so `POST /snapshots/:id/restore` can decide
     // whether to skip a row (the live DIY supplier still owns it) or
     // re-insert it as a regular orphan.
@@ -416,6 +441,8 @@ interface RestoreLinePayload {
   planned_huf?: unknown;
   actual_huf?: unknown;
   notes?: unknown;
+  per_guest?: unknown;
+  icon?: unknown;
   couple_supplier_id?: unknown;
 }
 
@@ -501,8 +528,8 @@ function handleRestoreSnapshot(ctx: Ctx): Response {
     const insertStmt = db.prepare(
       `INSERT INTO budget_lines
          (couple_id, category, label, planned_huf, actual_huf, supplier_id,
-          couple_supplier_id, notes, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+          couple_supplier_id, notes, per_guest, icon, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
     );
     for (const raw of payload) {
       const cspId = typeof raw.couple_supplier_id === "string" ? raw.couple_supplier_id : null;
@@ -514,6 +541,15 @@ function handleRestoreSnapshot(ctx: Ctx): Response {
       }
       const label = coerceLabel(raw.label);
       if (!label) continue;
+      const perGuest = raw.per_guest === true || raw.per_guest === 1 ? 1 : 0;
+      // Snapshots can pre-date the icon allowlist; treat malformed slugs as
+      // "no icon" rather than failing the whole restore.
+      let icon: string | null = null;
+      try {
+        icon = coerceIcon(raw.icon);
+      } catch {
+        icon = null;
+      }
       insertStmt.run(
         couple.id,
         coerceCategory(raw.category),
@@ -522,6 +558,8 @@ function handleRestoreSnapshot(ctx: Ctx): Response {
         coerceMoney(raw.actual_huf),
         cspId,
         coerceNotes(raw.notes),
+        perGuest,
+        icon,
         ts,
         ts,
       );

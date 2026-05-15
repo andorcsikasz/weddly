@@ -179,6 +179,13 @@ addColumnIfMissing("vendor_waitlist", "sent_body", "sent_body TEXT");
 // supplier's update / delete flow keeps them in sync.
 addColumnIfMissing("budget_lines", "couple_supplier_id", "couple_supplier_id TEXT");
 
+// Custom rows can opt into the headcount-driven rescale that built-in
+// per-guest categories already get, and can pick a Lucide icon slug so the
+// row renders distinguishably in the list. Both default to fixed/no-icon so
+// historic rows behave exactly as before.
+addColumnIfMissing("budget_lines", "per_guest", "per_guest INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("budget_lines", "icon", "icon TEXT");
+
 // Per-couple supplier votes — see schema.sql. The legacy `(user_id, supplier_id)`
 // keying let both partners stack two votes on a self-submitted supplier, which
 // brigaded the directory's default sort. Backfill `couple_id` from the voter's

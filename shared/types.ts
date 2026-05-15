@@ -300,6 +300,14 @@ export interface BudgetLine {
    *  /app/suppliers and is locked — editing happens on the supplier card. */
   couple_supplier_id: string | null;
   notes: string | null;
+  /** Custom rows opt in. When `true`, the planned amount rescales with the
+   *  headcount slider just like built-in per-guest categories. Built-in
+   *  categories ignore this column — their per-guest behaviour is driven by
+   *  `PER_GUEST_CATEGORIES`. */
+  per_guest: boolean;
+  /** Lucide icon slug for custom rows (e.g. "Sparkles"). Null on built-in
+   *  category lines — those use `CATEGORY_ICONS[category]`. */
+  icon: string | null;
   created_at: UnixMs;
   updated_at: UnixMs;
 }

@@ -265,18 +265,24 @@ export default function BudgetPage() {
     }
   }
 
-  async function addCustomRow(label: string, plannedHuf: number) {
+  async function addCustomRow(
+    label: string,
+    plannedHuf: number,
+    options?: { perGuest?: boolean; icon?: string | null },
+  ) {
     try {
       const r = await budgetApi.createLine({
         category: "other",
         label,
         planned_huf: plannedHuf,
         actual_huf: 0,
+        per_guest: options?.perGuest ?? false,
+        icon: options?.icon ?? null,
       });
       setLines((prev) => [...prev, r.line]);
       publish("budget:changed");
     } catch (e) {
-      handleSaveError(e, () => addCustomRow(label, plannedHuf));
+      handleSaveError(e, () => addCustomRow(label, plannedHuf, options));
     }
   }
 

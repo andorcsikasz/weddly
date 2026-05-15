@@ -1224,6 +1224,21 @@ export interface LocaleMessages {
     custom_row_edit_aria: string;
     /** Inline error when the user submits the add-row form with empty label. */
     custom_row_label_required: string;
+    /** Toggle next to the icon picker — opt this custom row into headcount
+     *  scaling (mirrors `PER_GUEST_CATEGORIES` for built-ins). */
+    custom_row_per_guest_toggle: string;
+    /** Label above the inline icon picker in the add-row form. */
+    custom_row_icon_label: string;
+    /** Localised names for the icons offered in the picker. The key matches
+     *  the slug stored in `budget_lines.icon`. */
+    custom_row_icon_choice: {
+      Sparkles: string;
+      Heart: string;
+      Star: string;
+      Bell: string;
+      Briefcase: string;
+      ShoppingBag: string;
+    };
     slider_min_aria: string;
     slider_max_aria: string;
     over_by: string;

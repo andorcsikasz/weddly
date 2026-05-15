@@ -335,7 +335,11 @@ export default function DashboardPage() {
     }
   }
 
-  async function addCustomRow(label: string, plannedHuf: number) {
+  async function addCustomRow(
+    label: string,
+    plannedHuf: number,
+    options?: { perGuest?: boolean; icon?: string | null },
+  ) {
     if (data === "loading" || data === null) return;
     try {
       const r = await budgetApi.createLine({
@@ -343,6 +347,8 @@ export default function DashboardPage() {
         label,
         planned_huf: plannedHuf,
         actual_huf: 0,
+        per_guest: options?.perGuest ?? false,
+        icon: options?.icon ?? null,
       });
       setData({ ...data, lines: [...lines, r.line] });
     } catch {

@@ -6,6 +6,8 @@ import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
 import {
   ArrowDown,
   ArrowUp,
+  Bell,
+  Briefcase,
   Cake,
   Camera,
   Car,
@@ -14,6 +16,7 @@ import {
   EyeOff,
   Flower2,
   Gift,
+  Heart,
   Home,
   Lock,
   Mail,
@@ -23,7 +26,11 @@ import {
   Plus,
   Scissors,
   Shirt,
+  ShoppingBag,
+  Sparkles,
+  Star,
   UtensilsCrossed,
+  Users,
   Wine,
   X,
 } from "lucide-react";
@@ -80,6 +87,35 @@ export const CATEGORY_ICONS: Record<
   rings: Circle,
   other: MoreHorizontal,
 };
+
+/** Curated Lucide icons the couple can attach to a custom budget row. Keep
+ *  the list short — the picker is a single inline strip under the label
+ *  input, and too many choices would push the form below the fold. Keys are
+ *  the slugs persisted to `budget_lines.icon`; the backend allow-pattern
+ *  matches `[A-Za-z0-9_-]{1,40}` so renaming a slug means a one-way schema
+ *  change. Unknown slugs (legacy / removed icons) fall back to the default. */
+export const CUSTOM_ICON_CHOICES: Array<{
+  slug: string;
+  Icon: ComponentType<{ size?: number; className?: string }>;
+}> = [
+  { slug: "Sparkles", Icon: Sparkles },
+  { slug: "Heart", Icon: Heart },
+  { slug: "Star", Icon: Star },
+  { slug: "Bell", Icon: Bell },
+  { slug: "Briefcase", Icon: Briefcase },
+  { slug: "ShoppingBag", Icon: ShoppingBag },
+];
+
+/** Resolve a stored icon slug to a Lucide component. Falls back to the
+ *  generic `MoreHorizontal` when the slug is null/unknown so an old row or
+ *  a slug we later remove still renders. */
+export function resolveCustomIcon(
+  slug: string | null,
+): ComponentType<{ size?: number; className?: string }> {
+  if (!slug) return MoreHorizontal;
+  const match = CUSTOM_ICON_CHOICES.find((c) => c.slug === slug);
+  return match ? match.Icon : MoreHorizontal;
+}
 
 /** Pure escalation classifier for the over-cap warning. `safe` when planned
  *  ≤ cap; `soft` when 0–5 % over (noise — calm dot, no alarm); `medium` when
@@ -187,8 +223,15 @@ export function CostPlanningCard({
    *  rows. Couples can add free-form line items (e.g. "Anyakönyvvezető",
    *  "Egyházi szertartás") that show as their own row in the panel rather
    *  than being lumped into Egyéb. Stored as `category="other"` lines with
-   *  a non-default label. */
-  onAddCustomRow?: (label: string, plannedHuf: number) => void | Promise<void>;
+   *  a non-default label. `options.perGuest` opts the row into the same
+   *  headcount-driven rescale that built-in per-guest categories get;
+   *  `options.icon` is a slug from CUSTOM_ICON_CHOICES that renders in
+   *  place of the default MoreHorizontal glyph. */
+  onAddCustomRow?: (
+    label: string,
+    plannedHuf: number,
+    options?: { perGuest?: boolean; icon?: string | null },
+  ) => void | Promise<void>;
   /** Commits a slider drag on a custom row. The lineId identifies the
    *  underlying BudgetLine — custom rows are not aggregated, so we edit by
    *  line instead of by category. */
@@ -276,14 +319,24 @@ export function CostPlanningCard({
   }, [aggregatableLines, factor, frozenCategories, drags]);
 
   // Live custom-row totals — same drag-aware pattern as `buckets` so the
-  // panel's grand total tracks slider movement, not just commits.
+  // panel's grand total tracks slider movement, not just commits. Per-guest
+  // custom rows store the BASELINE amount in `planned_huf`; the display
+  // value is `baseline * factor` so a drag of the headcount slider rescales
+  // them just like built-in per-guest categories.
   const customDisplays = useMemo(
     () =>
       customRows.map((l) => {
-        const liveValue = customDrags.get(l.id) ?? l.planned_huf;
-        return { line: l, planned: liveValue, actual: l.actual_huf };
+        const liveBaseline = customDrags.get(l.id) ?? l.planned_huf;
+        const scales = l.per_guest;
+        return {
+          line: l,
+          planned: scales ? Math.round(liveBaseline * factor) : liveBaseline,
+          plannedBaseline: liveBaseline,
+          actual: l.actual_huf,
+          scales,
+        };
       }),
-    [customRows, customDrags],
+    [customRows, customDrags, factor],
   );
 
   const totalPlanned =
@@ -318,9 +371,11 @@ export function CostPlanningCard({
       const rowPeak = b.scales ? Math.round(b.plannedBaseline * maxFactor) : b.plannedBaseline;
       if (rowPeak > peak) peak = rowPeak;
     }
-    // Custom rows are fixed (no per-guest scaling) so their peak == live value.
+    // Custom rows mirror the bucket logic: per-guest custom rows hit their
+    // peak at the max-headcount factor, fixed ones cap at their baseline.
     for (const c of customDisplays) {
-      if (c.planned > peak) peak = c.planned;
+      const rowPeak = c.scales ? Math.round(c.plannedBaseline * maxFactor) : c.plannedBaseline;
+      if (rowPeak > peak) peak = rowPeak;
     }
     return Math.max(peak, 100_000);
   }, [buckets, customDisplays, baseline, maxCount]);
@@ -499,14 +554,16 @@ export function CostPlanningCard({
             key={c.line.id}
             line={c.line}
             liveDisplay={c.planned}
+            scaleFactor={c.scales ? factor : 1}
+            count={count}
             widthAnchor={widthAnchor}
             currency={currency}
             onEditPlanned={onEditCustomRowPlanned}
             onRemove={onRemoveCustomRow}
-            onDrag={(value) =>
+            onDrag={(baselineValue) =>
               setCustomDrags((m) => {
                 const next = new Map(m);
-                next.set(c.line.id, value);
+                next.set(c.line.id, baselineValue);
                 return next;
               })
             }
@@ -887,6 +944,8 @@ function CategoryRow({
 function CustomRow({
   line,
   liveDisplay,
+  scaleFactor,
+  count,
   widthAnchor,
   currency,
   onEditPlanned,
@@ -896,11 +955,19 @@ function CustomRow({
 }: {
   line: BudgetLine;
   liveDisplay: number;
+  /** 1 for fixed rows; `count/baseline` for per-guest rows. The slider runs
+   *  in display units, so we divide by this factor before persisting so the
+   *  saved `planned_huf` stays normalised to the baseline guest count. */
+  scaleFactor: number;
+  /** Current headcount slider value — used to compute the per-guest hint. */
+  count: number;
   widthAnchor: number;
   currency: Currency;
   onEditPlanned?: (lineId: number, plannedHuf: number) => void | Promise<void>;
   onRemove?: (lineId: number) => void | Promise<void>;
-  onDrag?: (value: number) => void;
+  /** Receives a value in BASELINE units (slider input is converted before
+   *  this fires) so the parent's drag map matches `line.planned_huf`. */
+  onDrag?: (baselineValue: number) => void;
   showActualOverlay?: boolean;
 }) {
   const { t, locale } = useT();
@@ -909,6 +976,8 @@ function CustomRow({
   const rowMax = widthAnchor;
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
   const step = rowMax >= 1_000_000 ? 25_000 : 10_000;
+  const Icon = resolveCustomIcon(line.icon);
+  const perGuest = line.per_guest && count > 0 ? Math.round(liveDisplay / count) : null;
 
   const trackStyle: CSSProperties = {
     width: "100%",
@@ -922,11 +991,17 @@ function CustomRow({
     background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillPct}%, var(--range-actual-remainder) ${actualFillPct}%, var(--range-actual-remainder) 100%)`,
   };
 
-  async function commit(next: number) {
+  // Slider input is in display units; convert back to baseline before
+  // pushing into the parent's drag map / persisting. Mirrors CategoryRow.
+  function toBaseline(scaledNew: number): number {
+    return scaleFactor > 0 ? Math.round(scaledNew / scaleFactor) : scaledNew;
+  }
+
+  async function commit(scaledNext: number) {
     if (!onEditPlanned) return;
     setSaving(true);
     try {
-      await onEditPlanned(line.id, next);
+      await onEditPlanned(line.id, toBaseline(scaledNext));
     } finally {
       setSaving(false);
     }
@@ -945,11 +1020,7 @@ function CustomRow({
             <X size={12} aria-hidden />
           </button>
         ) : (
-          <MoreHorizontal
-            size={14}
-            className="shrink-0 text-ink-500 dark:text-umber-300"
-            aria-hidden
-          />
+          <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
         )}
         <span className="truncate">{line.label}</span>
       </span>
@@ -961,7 +1032,7 @@ function CustomRow({
           step={step}
           value={liveDisplay}
           disabled={!onEditPlanned || saving}
-          onChange={(e) => onDrag?.(Number(e.target.value))}
+          onChange={(e) => onDrag?.(toBaseline(Number(e.target.value)))}
           onMouseUp={(e) => commit(Number(e.currentTarget.value))}
           onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
           onKeyUp={(e) => commit(Number(e.currentTarget.value))}
@@ -987,6 +1058,11 @@ function CustomRow({
             )}
             <span className="font-medium">{formatMoney(liveDisplay, currency, locale)}</span>
           </span>
+          {perGuest !== null && (
+            <span className="whitespace-nowrap text-[10px] text-ink-400 dark:text-umber-300">
+              {t("budget.per_guest_unit", { n: formatNumber(perGuest, locale) })}
+            </span>
+          )}
         </span>
       </span>
     </li>
@@ -1001,18 +1077,26 @@ function CustomRow({
 function AddCustomRow({
   onAdd,
 }: {
-  onAdd: (label: string, plannedHuf: number) => void | Promise<void>;
+  onAdd: (
+    label: string,
+    plannedHuf: number,
+    options?: { perGuest?: boolean; icon?: string | null },
+  ) => void | Promise<void>;
 }) {
   const { t } = useT();
   const [expanded, setExpanded] = useState(false);
   const [label, setLabel] = useState("");
   const [amountDraft, setAmountDraft] = useState("");
+  const [perGuest, setPerGuest] = useState(false);
+  const [iconSlug, setIconSlug] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function reset() {
     setLabel("");
     setAmountDraft("");
+    setPerGuest(false);
+    setIconSlug(null);
     setError(null);
     setExpanded(false);
   }
@@ -1031,7 +1115,7 @@ function AddCustomRow({
     }
     setSaving(true);
     try {
-      await onAdd(trimmed, Math.round(amount));
+      await onAdd(trimmed, Math.round(amount), { perGuest, icon: iconSlug });
       reset();
     } finally {
       setSaving(false);
@@ -1108,6 +1192,54 @@ function AddCustomRow({
         >
           {t("budget.custom_row_cancel")}
         </button>
+      </div>
+      {/* Secondary options row — icon picker + per-guest toggle. Sits below
+       *  the main inputs so it stays out of the way for couples who just
+       *  want a quick label + amount, but is visible while the form is
+       *  open so the affordance is discoverable. */}
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <div
+          role="radiogroup"
+          aria-label={t("budget.custom_row_icon_label")}
+          className="flex flex-wrap items-center gap-1"
+        >
+          <span className="mr-1 text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+            {t("budget.custom_row_icon_label")}
+          </span>
+          {CUSTOM_ICON_CHOICES.map(({ slug, Icon }) => {
+            const selected = iconSlug === slug;
+            return (
+              <button
+                key={slug}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={saving}
+                onClick={() => setIconSlug(selected ? null : slug)}
+                title={t(`budget.custom_row_icon_choice.${slug}`)}
+                aria-label={t(`budget.custom_row_icon_choice.${slug}`)}
+                className={`inline-flex h-7 w-7 items-center justify-center rounded-md border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 ${
+                  selected
+                    ? "border-blush-500 bg-blush-50 text-blush-700 dark:border-blush-400/60 dark:bg-blush-400/15 dark:text-blush-300"
+                    : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
+                }`}
+              >
+                <Icon size={14} aria-hidden />
+              </button>
+            );
+          })}
+        </div>
+        <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-ink-500 dark:text-umber-300">
+          <input
+            type="checkbox"
+            checked={perGuest}
+            disabled={saving}
+            onChange={(e) => setPerGuest(e.target.checked)}
+            className="h-3.5 w-3.5 cursor-pointer accent-blush-600 dark:accent-blush-400"
+          />
+          <Users size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+          <span>{t("budget.custom_row_per_guest_toggle")}</span>
+        </label>
       </div>
       {error && (
         <p className="mt-1 text-[11px] text-blush-700 dark:text-blush-300" role="alert">

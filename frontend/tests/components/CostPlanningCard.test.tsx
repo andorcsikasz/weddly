@@ -24,6 +24,8 @@ function line(id: number, category: BudgetCategory, planned: number): BudgetLine
     supplier_id: null,
     couple_supplier_id: null,
     notes: null,
+    per_guest: false,
+    icon: null,
     created_at: 0,
     updated_at: 0,
   };
