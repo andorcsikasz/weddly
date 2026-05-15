@@ -21,6 +21,26 @@ function formatDate(unixMs: number, locale: string): string {
   }).format(d);
 }
 
+/** Coarse-grained "X minutes/hours/days ago" for the Last-active column. We
+ *  show absolute dates beyond a week so the column doesn't drift into "47
+ *  days ago" territory where the date itself is more informative. */
+function formatRelative(
+  unixMs: number | null,
+  locale: string,
+  t: (k: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (unixMs == null) return t("admin.last_active_never");
+  const diff = Date.now() - unixMs;
+  if (diff < 60 * 1000) return t("admin.last_active_now");
+  const mins = Math.floor(diff / (60 * 1000));
+  if (mins < 60) return t("admin.last_active_minutes", { n: mins });
+  const hours = Math.floor(diff / (60 * 60 * 1000));
+  if (hours < 24) return t("admin.last_active_hours", { n: hours });
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  if (days < 7) return t("admin.last_active_days", { n: days });
+  return formatDate(unixMs, locale);
+}
+
 export default function AdminUsersPage() {
   const { t, locale } = useT();
   const { user: currentAdmin } = useAuth();
@@ -185,6 +205,9 @@ export default function AdminUsersPage() {
             <Badge tone="violet-soft">{t("admin.badge_suspended")}</Badge>
           )}
           {!u.verified_email && <Badge tone="muted">{t("admin.badge_unverified")}</Badge>}
+          <span className="text-[11px] italic text-ink-500 dark:text-umber-300">
+            {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
+          </span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {!u.verified_email &&
@@ -271,11 +294,12 @@ export default function AdminUsersPage() {
                 {/* Card-style row header — uses the same 4-column grid as the
                  *  rows below so the labels line up exactly. Hidden on small
                  *  screens (rows stack vertically there). */}
-                <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_8rem] gap-4 px-5 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300 md:grid">
+                <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300 md:grid">
                   <div>{t("admin.table_workspace_id")}</div>
                   <div>{t("admin.table_workspace_name")}</div>
                   <div>{t("admin.table_workspace_members")}</div>
                   <div>{t("admin.table_workspace_created")}</div>
+                  <div>{t("admin.table_workspace_last_active")}</div>
                 </div>
                 <ul className="space-y-3">
                   {visibleCouples.map((c) => {
@@ -292,7 +316,7 @@ export default function AdminUsersPage() {
                         key={c.id}
                         className="rounded-2xl border-2 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-800 px-5 py-4 shadow-soft"
                       >
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_8rem] md:items-center">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
                           <div className="whitespace-nowrap">
                             <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                               {workspaceId(c)}
@@ -326,6 +350,9 @@ export default function AdminUsersPage() {
                           </div>
                           <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
                             {formatDate(c.created_at, locale)}
+                          </div>
+                          <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+                            {formatRelative(c.last_seen_at, locale, t)}
                           </div>
                         </div>
                       </li>

@@ -1721,6 +1721,15 @@ export interface LocaleMessages {
     table_workspace_members: string;
     /** Creation date column on the workspaces list (e.g. "2026. máj. 12."). */
     table_workspace_created: string;
+    /** Most recent activity column — coarse "X minutes/hours/days ago" via
+     *  the relative formatter (admin.last_active_*). Server stamps the value
+     *  on every successful token verify, throttled to 5min per user. */
+    table_workspace_last_active: string;
+    last_active_never: string;
+    last_active_now: string;
+    last_active_minutes: string;
+    last_active_hours: string;
+    last_active_days: string;
     workspace_solo_member: string;
     workspace_status_paused: string;
     workspace_status_deleting: string;

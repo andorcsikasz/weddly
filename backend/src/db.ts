@@ -267,6 +267,12 @@ addColumnIfMissing("community_suppliers", "admin_notes", "admin_notes TEXT");
 // DEFAULT, NULL is the resting state.
 addColumnIfMissing("guests", "partner_role", "partner_role TEXT");
 
+// Last-active marker — stamped from `verifySessionToken` on every successful
+// bearer-token verify (debounced to once per 5 minutes per user to avoid a
+// hot-loop write on every API call). Powers the admin directory's "Last
+// active" column. NULL means "never logged in since the column was added".
+addColumnIfMissing("users", "last_seen_at", "last_seen_at INTEGER");
+
 export function now(): number {
   return Date.now();
 }

@@ -42,6 +42,10 @@ export interface AdminUserView {
   verified_email: boolean;
   couple_id: number | null;
   created_at: UnixMs;
+  /** Last successful bearer-token verify, throttled to once per 5 minutes
+   *  in `verifySessionToken`. Null if the user hasn't loaded the app since
+   *  the column was added. */
+  last_seen_at: UnixMs | null;
 }
 
 export interface AdminCoupleView {
@@ -56,6 +60,9 @@ export interface AdminCoupleView {
   status: CoupleStatus;
   partners: { id: number; full_name: string; email: string }[];
   created_at: UnixMs;
+  /** MAX(last_seen_at) across the workspace's members. Null when nobody on
+   *  the workspace has been seen since the column was added. */
+  last_seen_at: UnixMs | null;
 }
 
 // ─── Couples (the workspace) ─────────────────────────────────────────────────

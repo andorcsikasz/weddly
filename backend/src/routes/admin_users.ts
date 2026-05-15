@@ -24,6 +24,7 @@ function toAdminUser(row: UserRow): AdminUserView {
     verified_email: Boolean(row.verified_email),
     couple_id: row.couple_id,
     created_at: row.created_at,
+    last_seen_at: row.last_seen_at,
   };
 }
 
@@ -49,6 +50,11 @@ function partnersForCouple(coupleId: number): PartnerRow[] {
 
 function toAdminCouple(row: CoupleRow): AdminCoupleView {
   const c = toCouple(row);
+  // Workspace-level "last active" = the most recent partner activity. NULL
+  // when neither partner has loaded the app since the column was added.
+  const seen = db
+    .prepare("SELECT MAX(last_seen_at) AS max FROM users WHERE couple_id = ?")
+    .get(c.id) as { max: number | null };
   return {
     id: c.id,
     slug: row.slug ?? null,
@@ -58,6 +64,7 @@ function toAdminCouple(row: CoupleRow): AdminCoupleView {
     status: c.status,
     partners: partnersForCouple(c.id),
     created_at: c.created_at,
+    last_seen_at: seen.max,
   };
 }
 

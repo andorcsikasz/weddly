@@ -16,6 +16,8 @@ export interface UserRow {
   verified_email: number;
   created_at: number;
   updated_at: number;
+  /** Additive column (see db.ts) — null for rows that pre-date the field. */
+  last_seen_at: number | null;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var
