@@ -2131,6 +2131,11 @@ export interface LocaleMessages {
     budget_currency_huf: string;
     budget_currency_eur: string;
     budget_currency_usd: string;
+    /** Confirm dialog shown when the user taps a different currency pill —
+     *  spells out that we DON'T retro-convert past entries by FX rate. */
+    budget_currency_confirm_title: string;
+    budget_currency_confirm_body: string;
+    budget_currency_confirm_yes: string;
     payments_title: string;
     payments_body: string;
     /** Security section — change-password form lives here. Collapsible:

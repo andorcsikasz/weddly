@@ -475,9 +475,18 @@ export default function ProfilePage() {
   /** Persist a new display currency. Existing money fields keep their
    *  integer values — see the schema comment on couples.currency. We don't
    *  re-fetch the budget lines: the values don't change, only their
-   *  formatting does. */
+   *  formatting does. Guarded by a confirm dialog so the couple knows
+   *  upfront that switching only re-skins the symbol, NOT auto-converts
+   *  past entries by FX rate. */
   async function saveCurrency(next: Currency) {
     if (next === currency) return;
+    const ok = await confirm({
+      title: t("profile.budget_currency_confirm_title"),
+      body: t("profile.budget_currency_confirm_body"),
+      confirmLabel: t("profile.budget_currency_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
     try {
       const r = await coupleApi.update({ currency: next });
       setCouple(r.couple);
@@ -570,23 +579,36 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Two stat rows on a hairline-divided list. ~40px per row vs the
-         *  ~120px tiles the previous design used, while still hosting the
-         *  inline edit + quick-add forms when triggered. */}
+        {/* Two stat rows on a hairline-divided list. Each row: label +
+         *  action on the top line, the amount on its own line right below.
+         *  The amount sits on the left column so the two values stack
+         *  vertically and the eye reads them as a list of figures rather
+         *  than a label-value table. Edit + quick-add forms replace the
+         *  amount line in place so the row height doesn't double. */}
         <ul className="mt-3 divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
-          {/* Cap row — rest state shows label + value + Edit, edit state
-           *  swaps the right half for an inline input + save/cancel. */}
           <li className="py-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                {t("profile.budget_cap_label")}
+              </span>
+              {!editingCap && (
+                <button
+                  type="button"
+                  className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                  onClick={beginCapEdit}
+                  aria-label={t("common.edit")}
+                >
+                  {t("common.edit")}
+                </button>
+              )}
+            </div>
             {editingCap ? (
               <form
                 onSubmit={saveCap}
-                className="flex flex-wrap items-center gap-x-3 gap-y-2"
+                className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2"
                 aria-label={t("profile.budget_cap_label")}
               >
-                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                  {t("profile.budget_cap_label")}
-                </span>
-                <div className="ml-auto flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="number"
                     inputMode="numeric"
@@ -600,60 +622,42 @@ export default function ProfilePage() {
                     disabled={savingCap}
                   />
                   <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
-                  <button
-                    type="submit"
-                    className="btn-sm btn-primary !px-3 !py-1 !text-xs"
-                    disabled={savingCap}
-                  >
-                    {savingCap ? t("common.saving") : t("common.save")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-sm btn-outline !px-3 !py-1 !text-xs"
-                    onClick={() => {
-                      setEditingCap(false);
-                      setCapError(null);
-                    }}
-                    disabled={savingCap}
-                  >
-                    {t("common.cancel")}
-                  </button>
                 </div>
+                <button
+                  type="submit"
+                  className="btn-sm btn-primary !px-3 !py-1 !text-xs"
+                  disabled={savingCap}
+                >
+                  {savingCap ? t("common.saving") : t("common.save")}
+                </button>
+                <button
+                  type="button"
+                  className="btn-sm btn-outline !px-3 !py-1 !text-xs"
+                  onClick={() => {
+                    setEditingCap(false);
+                    setCapError(null);
+                  }}
+                  disabled={savingCap}
+                >
+                  {t("common.cancel")}
+                </button>
                 {capError && (
-                  <p className="basis-full text-right text-[11px] text-blush-700 dark:text-blush-300">
+                  <p className="basis-full text-[11px] text-blush-700 dark:text-blush-300">
                     {capError}
                   </p>
                 )}
               </form>
             ) : (
-              <div className="flex items-center gap-3">
-                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                  {t("profile.budget_cap_label")}
-                </span>
-                <span className="ml-auto text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-                  {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "—"}
-                </span>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
-                  onClick={beginCapEdit}
-                  aria-label={t("common.edit")}
-                >
-                  {t("common.edit")}
-                </button>
-              </div>
+              <p className="mt-0.5 text-xl font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "—"}
+              </p>
             )}
           </li>
 
-          {/* Paid row — same shape; quick-add expands into a two-field
-           *  inline form below the rest state. */}
           <li className="py-2.5">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("profile.budget_paid_label")}
-              </span>
-              <span className="ml-auto text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-                {formatMoney(totalPaidHuf, currency, locale)}
               </span>
               {!addingPayment && (
                 <button
@@ -668,10 +672,10 @@ export default function ProfilePage() {
                 </button>
               )}
             </div>
-            {addingPayment && (
+            {addingPayment ? (
               <form
                 onSubmit={savePayment}
-                className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-2"
+                className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2"
               >
                 <input
                   type="text"
@@ -723,6 +727,10 @@ export default function ProfilePage() {
                   </p>
                 )}
               </form>
+            ) : (
+              <p className="mt-0.5 text-xl font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                {formatMoney(totalPaidHuf, currency, locale)}
+              </p>
             )}
           </li>
         </ul>
@@ -879,58 +887,16 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.archive_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.archive_body")}</p>
-        {documents.length === 0 ? (
-          <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
-            {t("profile.archive_empty")}
-          </p>
-        ) : (
-          <ul className="mt-4 divide-y divide-paper-200 dark:divide-umber-700">
-            {documents.map((doc) => (
-              <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
-                <span className="rounded bg-paper-100 px-2 py-0.5 text-xs uppercase text-ink-600 dark:bg-umber-700/60 dark:text-umber-200">
-                  {t(`profile.archive_kind_${doc.kind}` as `profile.archive_kind_${ExportKind}`)}
-                  {doc.format ? ` · ${doc.format.toUpperCase()}` : ""}
-                </span>
-                <span className="font-medium text-ink-800 dark:text-paper-100">{doc.filename}</span>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {formatTimestamp(doc.created_at, locale)} · {formatBytes(doc.byte_size)}
-                </span>
-                <div className="ml-auto flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="btn-outline h-8 px-3 text-xs"
-                    onClick={() => redownloadSaved(doc)}
-                    disabled={redownloading === doc.id}
-                  >
-                    {redownloading === doc.id
-                      ? t("profile.export_downloading")
-                      : t("profile.archive_redownload")}
-                  </button>
-                  <button
-                    type="button"
-                    className={`h-8 rounded-xl border px-3 text-xs transition-colors ${
-                      armedDeleteId === doc.id
-                        ? "border-blush-500 bg-blush-500 text-white hover:bg-blush-600"
-                        : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
-                    }`}
-                    onClick={() => clickDelete(doc)}
-                    disabled={removing === doc.id}
-                  >
-                    {removing === doc.id
-                      ? t("profile.archive_deleting")
-                      : armedDeleteId === doc.id
-                        ? t("profile.archive_delete_confirm")
-                        : t("profile.archive_delete")}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <DocumentsPanel
+        documents={documents}
+        locale={locale}
+        t={t}
+        redownloading={redownloading}
+        removing={removing}
+        armedDeleteId={armedDeleteId}
+        onRedownload={redownloadSaved}
+        onDelete={clickDelete}
+      />
 
       <ActivityPanel
         entries={activity}
@@ -1347,6 +1313,120 @@ function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): 
   const resolved = t(key);
   if (resolved !== key) return resolved;
   return t("profile.activity_action_generic");
+}
+
+/** Saved-export archive — the list of one-click "send me my data" PDFs +
+ *  CSVs the user has previously downloaded. Same collapse pattern as
+ *  ActivityPanel: header toggles a chevron, state lives in the component
+ *  (open/close per visit, no persistence). Default closed so the section
+ *  doesn't dominate the page when the archive grows. */
+function DocumentsPanel({
+  documents,
+  locale,
+  t,
+  redownloading,
+  removing,
+  armedDeleteId,
+  onRedownload,
+  onDelete,
+}: {
+  documents: DataExportSummary[];
+  locale: Locale;
+  t: T;
+  redownloading: number | null;
+  removing: number | null;
+  armedDeleteId: number | null;
+  onRedownload: (doc: DataExportSummary) => void;
+  onDelete: (doc: DataExportSummary) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const toggleLabel = open
+    ? t("profile.activity_toggle_collapse")
+    : t("profile.activity_toggle_expand");
+  return (
+    <section className="card mt-6 p-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="documents-panel-body"
+        className="flex w-full items-start gap-4 px-6 py-5 text-left transition-colors hover:bg-paper-50/60 dark:hover:bg-umber-800/40"
+      >
+        <span className="flex-1">
+          <span className="block text-lg text-ink-900 dark:text-paper-50">
+            {t("profile.archive_title")}
+          </span>
+          <span className="mt-1 block text-sm text-ink-600 dark:text-umber-200">
+            {t("profile.archive_body")}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2 pt-1 text-xs text-ink-500 dark:text-umber-300">
+          {documents.length > 0 && <span className="tabular-nums">{documents.length}</span>}
+          <span className="sr-only">{toggleLabel}</span>
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={`transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </span>
+      </button>
+      {open && (
+        <div
+          id="documents-panel-body"
+          className="border-t border-paper-200 px-6 py-4 dark:border-umber-700"
+        >
+          {documents.length === 0 ? (
+            <p className="text-sm text-ink-500 dark:text-umber-300">{t("profile.archive_empty")}</p>
+          ) : (
+            <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+              {documents.map((doc) => (
+                <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
+                  <span className="rounded bg-paper-100 px-2 py-0.5 text-xs uppercase text-ink-600 dark:bg-umber-700/60 dark:text-umber-200">
+                    {t(`profile.archive_kind_${doc.kind}` as `profile.archive_kind_${ExportKind}`)}
+                    {doc.format ? ` · ${doc.format.toUpperCase()}` : ""}
+                  </span>
+                  <span className="font-medium text-ink-800 dark:text-paper-100">
+                    {doc.filename}
+                  </span>
+                  <span className="text-xs text-ink-500 dark:text-umber-300">
+                    {formatTimestamp(doc.created_at, locale)} · {formatBytes(doc.byte_size)}
+                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn-outline h-8 px-3 text-xs"
+                      onClick={() => onRedownload(doc)}
+                      disabled={redownloading === doc.id}
+                    >
+                      {redownloading === doc.id
+                        ? t("profile.export_downloading")
+                        : t("profile.archive_redownload")}
+                    </button>
+                    <button
+                      type="button"
+                      className={`h-8 rounded-xl border px-3 text-xs transition-colors ${
+                        armedDeleteId === doc.id
+                          ? "border-blush-500 bg-blush-500 text-white hover:bg-blush-600"
+                          : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+                      }`}
+                      onClick={() => onDelete(doc)}
+                      disabled={removing === doc.id}
+                    >
+                      {removing === doc.id
+                        ? t("profile.archive_deleting")
+                        : armedDeleteId === doc.id
+                          ? t("profile.archive_delete_confirm")
+                          : t("profile.archive_delete")}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
 }
 
 /** Dark "what happened" panel — the Profile-page audit log. Reads as a

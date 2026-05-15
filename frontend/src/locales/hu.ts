@@ -1984,6 +1984,10 @@ const hu: LocaleMessages = {
     budget_currency_huf: "Forint (Ft)",
     budget_currency_eur: "Euró (€)",
     budget_currency_usd: "Dollár ($)",
+    budget_currency_confirm_title: "Pénznem váltása",
+    budget_currency_confirm_body:
+      "Biztos, hogy más pénznemben szeretnéd a továbbiakban vezetni a költségeket? Ez csak a megjelenítést váltja — a már bevitt összegeket nem számoljuk át árfolyam szerint, ugyanazok a számok jelennek meg az új szimbólummal.",
+    budget_currency_confirm_yes: "Igen, váltsunk",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
     security_title: "Biztonság",

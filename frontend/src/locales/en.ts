@@ -1969,6 +1969,10 @@ const en: LocaleMessages = {
     budget_currency_huf: "Forint (Ft)",
     budget_currency_eur: "Euro (€)",
     budget_currency_usd: "Dollar ($)",
+    budget_currency_confirm_title: "Switch currency",
+    budget_currency_confirm_body:
+      "Sure you want to track costs in a different currency going forward? This only switches the symbol — existing amounts are NOT converted by FX rate, the same numbers will display under the new symbol.",
+    budget_currency_confirm_yes: "Yes, switch",
     payments_title: "Payments",
     payments_body: "Payment history and billing settings will appear here soon.",
     security_title: "Security",
