@@ -787,20 +787,22 @@ function PriceBandPicker({
         {PRICE_BANDS.map((band) => {
           const selected = value === band;
           // Word labels (Pénztárcabarát / Kedvező / …) live in the tooltip only
-          // — the visible row is just the dot pattern so the chips stay narrow
-          // and don't overflow in 5-up grids on small screens.
+          // — the visible row is just the dollar-sign pattern so the chips
+          // stay narrow and don't overflow in 5-up grids on small screens.
           const label = t(`suppliers.submit.band_name.b${band}`);
-          // Accessible name combines the visual dot scale with the word so
-          // both screen-reader users hear "●●●○○ Prémium" and our regression
-          // test (which scans by the dot pattern) keeps passing.
-          const dotPattern = `${"●".repeat(band)}${"○".repeat(Math.max(0, 5 - band))}`;
+          // Accessible name combines the visual scale with the word so
+          // screen-reader users hear "$$$ Prémium" and our regression test
+          // (which scans by the dollar count) keeps passing. Only the
+          // filled-band count goes into the aria pattern — the greyed
+          // remainder is purely visual.
+          const dollarPattern = "$".repeat(band);
           return (
             <button
               key={band}
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={`${dotPattern} ${label}`}
+              aria-label={`${dollarPattern} ${label}`}
               onClick={() => onPick(band)}
               title={label}
               className={
@@ -812,9 +814,9 @@ function PriceBandPicker({
               }
             >
               <span className="font-mono text-xs leading-none">
-                {"●".repeat(band)}
+                {"$".repeat(band)}
                 <span className={selected ? "opacity-50" : "text-ink-300 dark:text-umber-300"}>
-                  {"○".repeat(5 - band)}
+                  {"$".repeat(5 - band)}
                 </span>
               </span>
             </button>
@@ -880,9 +882,9 @@ function LivePreviewCard({
                   </span>
                 )}
                 <span className="font-mono text-ink-600 dark:text-umber-200">
-                  {"●".repeat(form.price_band)}
+                  {"$".repeat(form.price_band)}
                   <span className="text-ink-300 dark:text-umber-300">
-                    {"○".repeat(5 - form.price_band)}
+                    {"$".repeat(5 - form.price_band)}
                   </span>
                 </span>
               </>

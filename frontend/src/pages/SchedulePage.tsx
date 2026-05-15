@@ -281,7 +281,7 @@ export default function SchedulePage() {
                     <span>{formatHHMM(event.starts_at_minutes)}</span>
                     {isDayTwo(event.starts_at_minutes) && (
                       <span className="text-[10px] font-normal uppercase tracking-wide text-ink-400 dark:text-umber-300">
-                        {t("schedule.day_two_badge")}
+                        +1
                       </span>
                     )}
                   </span>

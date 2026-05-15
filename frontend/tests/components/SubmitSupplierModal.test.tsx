@@ -1,5 +1,5 @@
 // Regression: extending PriceBand to 5 broke the modal because the price-band
-// picker was rendering `"○".repeat(4 - band)` — band=5 → repeat(-1) → RangeError,
+// picker was rendering `"$".repeat(4 - band)` — band=5 → repeat(-1) → RangeError,
 // which bubbled up to the page-level ErrorBoundary on `/app/suppliers`. The fix
 // is `Math.max(0, 5 - band)`; this test catches the regression.
 
@@ -22,9 +22,9 @@ function renderModal(open: boolean) {
 describe("<SubmitSupplierModal>", () => {
   it("renders all 5 price-band buttons without RangeError when open", () => {
     expect(() => renderModal(true)).not.toThrow();
-    // Buttons use a five-dot scale: ●○○○○ through ●●●●●. Sanity-check that the
-    // last button (band=5) shows five filled dots.
-    const fivePack = screen.getByRole("radio", { name: /●●●●●/ });
+    // Buttons use a five-position dollar scale: $$$$$ … $$$$$. Sanity-check
+    // that the last button (band=5) renders five dollar signs.
+    const fivePack = screen.getByRole("radio", { name: /\$\$\$\$\$/ });
     expect(fivePack).toBeInTheDocument();
   });
 

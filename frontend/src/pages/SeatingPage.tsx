@@ -1660,11 +1660,15 @@ function SeatLayoutPreview({
             )}
             {isBaby && (
               <g
-                transform={`translate(${px} ${py}) rotate(${rotDeg})`}
+                transform={`translate(${px - babyR * 1.4} ${py - babyR * 1.4}) rotate(${rotDeg} ${babyR * 1.4} ${babyR * 1.4})`}
                 style={{ pointerEvents: "none" }}
               >
-                <circle r={babyR} className="fill-paper-50 stroke-ink-800" strokeWidth={1.2} />
-                <circle r={babyR * 0.4} className="fill-ink-800" />
+                <Baby
+                  width={babyR * 2.8}
+                  height={babyR * 2.8}
+                  className="fill-none stroke-ink-800"
+                  strokeWidth={1.6}
+                />
               </g>
             )}
           </g>

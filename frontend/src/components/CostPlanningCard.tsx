@@ -20,10 +20,13 @@ import {
   MoreHorizontal,
   Music,
   Plane,
+  Plus,
   Scissors,
   Shirt,
+  Trash2,
   UtensilsCrossed,
   Wine,
+  X,
 } from "lucide-react";
 import { type ComponentType, type CSSProperties, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -136,6 +139,9 @@ export function CostPlanningCard({
   onToggleFreeze,
   amountLinkTo,
   showActualToggle = false,
+  onAddCustomRow,
+  onEditCustomRowPlanned,
+  onRemoveCustomRow,
 }: {
   lines: BudgetLine[];
   baseline: number;
@@ -178,6 +184,18 @@ export function CostPlanningCard({
    *  we already spent?" second view layer. Only /app/budget passes `true`;
    *  the dashboard hides the toggle to keep the panel compact. */
   showActualToggle?: boolean;
+  /** When set, the panel renders an "Új sor" affordance under the category
+   *  rows. Couples can add free-form line items (e.g. "Anyakönyvvezető",
+   *  "Egyházi szertartás") that show as their own row in the panel rather
+   *  than being lumped into Egyéb. Stored as `category="other"` lines with
+   *  a non-default label. */
+  onAddCustomRow?: (label: string, plannedHuf: number) => void | Promise<void>;
+  /** Commits a slider drag on a custom row. The lineId identifies the
+   *  underlying BudgetLine — custom rows are not aggregated, so we edit by
+   *  line instead of by category. */
+  onEditCustomRowPlanned?: (lineId: number, plannedHuf: number) => void | Promise<void>;
+  /** Removes a custom row. Parent should confirm before calling. */
+  onRemoveCustomRow?: (lineId: number) => void | Promise<void>;
 }) {
   const { t, locale } = useT();
   // Second-layer overlay: when on, each category row renders a thin red bar
@@ -195,19 +213,42 @@ export function CostPlanningCard({
   //      outside the slider element; centralising lets us clear stale entries
   //      whenever `lines` rehydrates from the server.
   const [drags, setDrags] = useState<Map<BudgetCategory, number>>(() => new Map());
+  // Parallel drag map for custom rows. Keyed by line id since custom rows are
+  // edited per-line, not per-category.
+  const [customDrags, setCustomDrags] = useState<Map<number, number>>(() => new Map());
   // Wipe stale drag entries whenever the source-of-truth lines change. Any
   // committed save (own or partner-via-`budget:changed`) propagates a fresh
   // `lines` array — at that point the parent's view IS the truth and any
   // lingering drag baseline would only confuse the total.
   useEffect(() => {
     setDrags((m) => (m.size === 0 ? m : new Map()));
+    setCustomDrags((m) => (m.size === 0 ? m : new Map()));
   }, [lines]);
+
+  // Custom rows: `category="other"` lines whose label diverges from the
+  // localized default ("Egyéb" / "Other"). Identify them once so we can:
+  //   1. exclude them from the "Egyéb" bucket so they don't double-count, and
+  //   2. render them as standalone rows after the category sliders.
+  // Both HU and EN defaults are matched so a couple switching locales doesn't
+  // suddenly see their old "Egyéb" rows promoted to custom.
+  const defaultOtherLabels = useMemo(() => new Set(["Egyéb", "Other"]), []);
+  const customRows = useMemo(
+    () =>
+      lines.filter((l) => l.category === "other" && !defaultOtherLabels.has(l.label)),
+    [lines, defaultOtherLabels],
+  );
+  const aggregatableLines = useMemo(
+    () => lines.filter((l) => !(l.category === "other" && !defaultOtherLabels.has(l.label))),
+    [lines, defaultOtherLabels],
+  );
 
   // Aggregate lines into category buckets. Every category in CATEGORY_ORDER
   // gets a row (even with 0 planned) so the user can slide it up from zero.
+  // Custom rows are excluded — they own their own row below the buckets so
+  // we don't want them folded back into "Egyéb" here.
   const buckets = useMemo(() => {
     const map = new Map<BudgetCategory, { planned: number; actual: number }>();
-    for (const l of lines) {
+    for (const l of aggregatableLines) {
       const cur = map.get(l.category) ?? { planned: 0, actual: 0 };
       map.set(l.category, {
         planned: cur.planned + l.planned_huf,
@@ -234,10 +275,25 @@ export function CostPlanningCard({
         frozen,
       };
     });
-  }, [lines, factor, frozenCategories, drags]);
+  }, [aggregatableLines, factor, frozenCategories, drags]);
 
-  const totalPlanned = buckets.reduce((s, b) => s + b.plannedDisplay, 0);
-  const totalActual = buckets.reduce((s, b) => s + b.actual, 0);
+  // Live custom-row totals — same drag-aware pattern as `buckets` so the
+  // panel's grand total tracks slider movement, not just commits.
+  const customDisplays = useMemo(
+    () =>
+      customRows.map((l) => {
+        const liveValue = customDrags.get(l.id) ?? l.planned_huf;
+        return { line: l, planned: liveValue, actual: l.actual_huf };
+      }),
+    [customRows, customDrags],
+  );
+
+  const totalPlanned =
+    buckets.reduce((s, b) => s + b.plannedDisplay, 0) +
+    customDisplays.reduce((s, c) => s + c.planned, 0);
+  const totalActual =
+    buckets.reduce((s, b) => s + b.actual, 0) +
+    customDisplays.reduce((s, c) => s + c.actual, 0);
   const overCap = cap !== null && totalPlanned > cap;
   const overage = overCap && cap !== null ? totalPlanned - cap : 0;
   // Escalation tier replaces the binary blush pill. `safe` keeps the
@@ -265,8 +321,12 @@ export function CostPlanningCard({
       const rowPeak = b.scales ? Math.round(b.plannedBaseline * maxFactor) : b.plannedBaseline;
       if (rowPeak > peak) peak = rowPeak;
     }
+    // Custom rows are fixed (no per-guest scaling) so their peak == live value.
+    for (const c of customDisplays) {
+      if (c.planned > peak) peak = c.planned;
+    }
     return Math.max(peak, 100_000);
-  }, [buckets, baseline, maxCount]);
+  }, [buckets, customDisplays, baseline, maxCount]);
 
   // If the user narrows the bounds below the current slider value, clamp
   // it back into range so the thumb doesn't pin off the track.
@@ -434,6 +494,31 @@ export function CostPlanningCard({
             linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
           />
         ))}
+        {/* Custom rows live in the same list so the grid template + dividers
+         *  carry over. Each row owns its own slider tied to a specific
+         *  BudgetLine.id rather than a category bucket. */}
+        {customDisplays.map((c) => (
+          <CustomRow
+            key={c.line.id}
+            line={c.line}
+            liveDisplay={c.planned}
+            widthAnchor={widthAnchor}
+            currency={currency}
+            onEditPlanned={onEditCustomRowPlanned}
+            onRemove={onRemoveCustomRow}
+            onDrag={(value) =>
+              setCustomDrags((m) => {
+                const next = new Map(m);
+                next.set(c.line.id, value);
+                return next;
+              })
+            }
+            showActualOverlay={showActualOverlay && hasAnyActual}
+          />
+        ))}
+        {onAddCustomRow && (
+          <AddCustomRow onAdd={onAddCustomRow} currency={currency} />
+        )}
       </ul>
 
       <div className="mt-4 border-t border-paper-200 pt-3 dark:border-umber-700">
@@ -794,6 +879,248 @@ function CategoryRow({
         {actualOverlayEl}
       </div>
       {amountTile}
+    </li>
+  );
+}
+
+/** Standalone budget row whose value lives in a single BudgetLine rather than
+ *  an aggregated category bucket. Visually mirrors `CategoryRow` (left tile +
+ *  slider rail + amount tile) so the panel reads as one continuous bar chart,
+ *  but the left tile shows the user-supplied label and a remove handle, the
+ *  slider edits the line's `planned_huf` directly, and there's no per-guest
+ *  scaling (custom rows are treated as fixed costs). */
+function CustomRow({
+  line,
+  liveDisplay,
+  widthAnchor,
+  currency,
+  onEditPlanned,
+  onRemove,
+  onDrag,
+  showActualOverlay,
+}: {
+  line: BudgetLine;
+  liveDisplay: number;
+  widthAnchor: number;
+  currency: Currency;
+  onEditPlanned?: (lineId: number, plannedHuf: number) => void | Promise<void>;
+  onRemove?: (lineId: number) => void | Promise<void>;
+  onDrag?: (value: number) => void;
+  showActualOverlay?: boolean;
+}) {
+  const { t, locale } = useT();
+  const [saving, setSaving] = useState(false);
+
+  const rowMax = widthAnchor;
+  const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
+  const step = rowMax >= 1_000_000 ? 25_000 : 10_000;
+
+  const trackStyle: CSSProperties = {
+    width: "100%",
+    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${fillPct}%, var(--range-fill-remainder) ${fillPct}%, var(--range-fill-remainder) 100%)`,
+  };
+
+  const actualFillPct =
+    rowMax > 0 ? Math.max(0, Math.min(100, (line.actual_huf / rowMax) * 100)) : 0;
+  const actualOverlayStyle: CSSProperties = {
+    width: "100%",
+    background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillPct}%, var(--range-actual-remainder) ${actualFillPct}%, var(--range-actual-remainder) 100%)`,
+  };
+
+  async function commit(next: number) {
+    if (!onEditPlanned) return;
+    setSaving(true);
+    try {
+      await onEditPlanned(line.id, next);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <li className="grid grid-cols-[8.5rem_minmax(0,1fr)_8rem] items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:text-sm">
+      <span className="flex items-center gap-1.5 text-ink-700 dark:text-paper-100">
+        {onRemove ? (
+          <button
+            type="button"
+            onClick={() => onRemove(line.id)}
+            className="-ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+            aria-label={t("budget.custom_row_delete_aria", { label: line.label })}
+          >
+            <X size={12} aria-hidden />
+          </button>
+        ) : (
+          <MoreHorizontal size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
+        )}
+        <span className="truncate">{line.label}</span>
+      </span>
+      <div className="w-full">
+        <input
+          type="range"
+          min={0}
+          max={rowMax}
+          step={step}
+          value={liveDisplay}
+          disabled={!onEditPlanned || saving}
+          onChange={(e) => onDrag?.(Number(e.target.value))}
+          onMouseUp={(e) => commit(Number(e.currentTarget.value))}
+          onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
+          onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+          className="range-fill range-fill-thin block"
+          style={trackStyle}
+          aria-label={t("budget.custom_row_edit_aria", { label: line.label })}
+        />
+        {showActualOverlay && line.actual_huf > 0 && (
+          <div
+            className="range-fill range-fill-thin mt-1 block"
+            style={actualOverlayStyle}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+      <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
+        <span className="flex flex-col items-end leading-tight">
+          <span className="whitespace-nowrap">
+            {line.actual_huf > 0 && (
+              <span className="text-ink-400 dark:text-umber-300">
+                {formatMoney(line.actual_huf, currency, locale)} /{" "}
+              </span>
+            )}
+            <span className="font-medium">{formatMoney(liveDisplay, currency, locale)}</span>
+          </span>
+        </span>
+      </span>
+    </li>
+  );
+}
+
+/** "Új sor" affordance — collapsed pill by default, expands to a label +
+ *  amount form on click. Commits via `onAdd` which the parent wires to a
+ *  POST /api/budget/lines call with `category="other"` and the custom label.
+ *  We keep the form inline (not a modal) because the panel sits in a card —
+ *  staying in-flow preserves the user's place in the list. */
+function AddCustomRow({
+  onAdd,
+  currency,
+}: {
+  onAdd: (label: string, plannedHuf: number) => void | Promise<void>;
+  currency: Currency;
+}) {
+  const { t, locale } = useT();
+  const [expanded, setExpanded] = useState(false);
+  const [label, setLabel] = useState("");
+  const [amountDraft, setAmountDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function reset() {
+    setLabel("");
+    setAmountDraft("");
+    setError(null);
+    setExpanded(false);
+  }
+
+  async function commit() {
+    const trimmed = label.trim();
+    if (trimmed.length === 0) {
+      setError(t("budget.custom_row_label_required"));
+      return;
+    }
+    const digits = amountDraft.replace(/\D/g, "");
+    const amount = digits === "" ? 0 : Number(digits);
+    if (!Number.isFinite(amount) || amount < 0) {
+      setError(t("budget.custom_row_label_required"));
+      return;
+    }
+    setSaving(true);
+    try {
+      await onAdd(trimmed, Math.round(amount));
+      reset();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!expanded) {
+    return (
+      <li className="py-2">
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-paper-300 px-2.5 py-1 text-xs text-ink-500 transition hover:border-paper-400 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
+        >
+          <Plus size={12} aria-hidden />
+          {t("budget.add_custom_row")}
+        </button>
+      </li>
+    );
+  }
+
+  return (
+    <li className="py-2">
+      <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+        <input
+          type="text"
+          autoFocus
+          maxLength={80}
+          value={label}
+          disabled={saving}
+          placeholder={t("budget.custom_row_label_placeholder")}
+          onChange={(e) => {
+            setLabel(e.target.value);
+            if (error) setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void commit();
+            else if (e.key === "Escape") reset();
+          }}
+          aria-label={t("budget.custom_row_label_placeholder")}
+          className="input h-9 min-h-0 flex-1 py-1 text-sm sm:flex-none sm:basis-44"
+        />
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={14}
+          value={amountDraft}
+          disabled={saving}
+          placeholder={t("budget.custom_row_amount_placeholder")}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "");
+            setAmountDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void commit();
+            else if (e.key === "Escape") reset();
+          }}
+          aria-label={t("budget.custom_row_amount_placeholder")}
+          className="input h-9 min-h-0 flex-1 py-1 text-right text-sm tabular-nums sm:flex-none sm:basis-32"
+        />
+        <span className="hidden text-xs text-ink-400 sm:inline dark:text-umber-300">
+          {/* Suffix label so the user sees the currency unit they're typing. */}
+          {formatMoney(0, currency, locale).replace(/[\d\s.,]/g, "").trim() || "Ft"}
+        </span>
+        <button
+          type="button"
+          onClick={commit}
+          disabled={saving}
+          className="btn-primary btn-sm whitespace-nowrap"
+        >
+          {t("budget.custom_row_save")}
+        </button>
+        <button
+          type="button"
+          onClick={reset}
+          disabled={saving}
+          className="btn-ghost btn-sm whitespace-nowrap text-ink-500 dark:text-umber-300"
+        >
+          {t("budget.custom_row_cancel")}
+        </button>
+      </div>
+      {error && (
+        <p className="mt-1 text-[11px] text-blush-700 dark:text-blush-300" role="alert">
+          {error}
+        </p>
+      )}
     </li>
   );
 }

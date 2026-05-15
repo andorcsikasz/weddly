@@ -23,7 +23,7 @@ import {
   Cookie,
   Crown,
   Fish,
-  Flower2,
+  Gem,
   Home,
   Leaf,
   Link2,
@@ -40,7 +40,6 @@ import {
   Trash2,
   Upload,
   User,
-  UserCircle,
   UserPlus,
   Users,
   Wheat,
@@ -1512,9 +1511,7 @@ function GuestDrawer({
             <label className="field-label">{t("guests.group")}</label>
             {/* Icon-only segmented row — full label sits in title/aria-label
                 so the meaning is one hover (or screen-reader tap) away.
-                Tooltips matter here because two pairs of icons share a
-                glyph (his_friends / her_friends both use a person-style
-                User icon) — see GroupIcon for the mapping. */}
+                See GroupIcon for the per-tag glyph mapping. */}
             <div className="grid grid-cols-7 gap-2">
               {GROUPS.map((g) => (
                 <SegmentButton
@@ -1594,9 +1591,7 @@ function GuestDrawer({
                       const targetHouseholdId =
                         s.kind === "household" ? s.household.id : (s.household?.id ?? null);
                       const targetHouseholdLabel =
-                        s.kind === "household"
-                          ? s.household.label
-                          : (s.household?.label ?? null);
+                        s.kind === "household" ? s.household.label : (s.household?.label ?? null);
                       return (
                         <li
                           key={s.kind === "household" ? `h-${s.household.id}` : `g-${s.guest.id}`}
@@ -1836,21 +1831,31 @@ function SegmentButton({
   );
 }
 
-/** Icon glyph for each guest group tag. The label sits in `title`/`aria-label`
- *  on the segmented button so the meaning is one hover (or screen-reader tap)
- *  away. Same-icon collisions between his_friends / her_friends are
- *  intentional — the tooltip disambiguates. */
+/** Icon glyph for each guest group tag. Crown pairs with Gem (groom/bride) and
+ *  the friend tags compose that side's symbol with Users so the side is
+ *  readable at a glance. The full label sits in `title`/`aria-label` on the
+ *  segmented button so a hover or screen-reader tap disambiguates. */
 function GroupIcon({ group }: { group: GuestGroupTag }) {
   const size = 16;
   switch (group) {
     case "his_family":
       return <Crown size={size} aria-hidden />;
     case "her_family":
-      return <Flower2 size={size} aria-hidden />;
+      return <Gem size={size} aria-hidden />;
     case "his_friends":
-      return <User size={size} aria-hidden />;
+      return (
+        <>
+          <Crown size={size} aria-hidden />
+          <Users size={size} aria-hidden />
+        </>
+      );
     case "her_friends":
-      return <UserCircle size={size} aria-hidden />;
+      return (
+        <>
+          <Gem size={size} aria-hidden />
+          <Users size={size} aria-hidden />
+        </>
+      );
     case "shared_friends":
       return <Users size={size} aria-hidden />;
     case "work":

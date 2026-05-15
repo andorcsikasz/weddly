@@ -701,18 +701,18 @@ export default function SuppliersPage() {
         </label>
       </div>
 
-      {/* Row 2: price-band picker (5 simple dots, one per exact 1..5) +
+      {/* Row 2: price-band picker (5 dollar-sign chips, one per exact 1..5) +
           guest-count number filter, grouped inside a softened container so
-          they read as one control. Each dot represents one band — clicking
-          the 4th dot filters to band-4 suppliers only, not "up to 4". Click
-          the same dot to clear. Suppliers with no declared value pass
-          through so non-venue cards are not dropped. */}
+          they read as one control. Each chip represents one band —
+          clicking the $$$$ chip filters to band-4 suppliers only, not
+          "up to 4". Click the same chip to clear. Suppliers with no
+          declared value pass through so non-venue cards are not dropped. */}
       <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-200 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-700/40 px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
           </span>
-          <div className="inline-flex items-center gap-1.5">
+          <div className="inline-flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((band) => {
               const active = priceBand === band;
               return (
@@ -724,10 +724,12 @@ export default function SuppliersPage() {
                   onClick={() => setPriceBand(active ? null : band)}
                   className={
                     active
-                      ? "h-3.5 w-3.5 rounded-full bg-ink-700 ring-1 ring-ink-700 ring-offset-2 ring-offset-paper-100 dark:bg-paper-50 dark:ring-paper-50 dark:ring-offset-umber-800 transition"
-                      : "h-3.5 w-3.5 rounded-full border border-ink-300 bg-paper-50 transition hover:border-ink-500 dark:border-umber-600 dark:bg-umber-800 dark:hover:border-umber-500"
+                      ? "inline-flex h-7 min-w-[2.25rem] items-center justify-center rounded-full border border-ink-700 bg-ink-700 px-2 font-mono text-xs font-medium text-paper-100 transition dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                      : "inline-flex h-7 min-w-[2.25rem] items-center justify-center rounded-full border border-ink-300 bg-paper-50 px-2 font-mono text-xs text-ink-700 transition hover:border-ink-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500"
                   }
-                />
+                >
+                  {"$".repeat(band)}
+                </button>
               );
             })}
           </div>
@@ -1479,14 +1481,18 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-/** Five-dot price-band scale: ●○○○○ … ●●●●●. Cleaner than $$$ for HU. */
+/** Five-position price-band scale: $···· … $$$$$. N filled dollars in
+ *  current text colour, plus (5−N) greyed dollars so the scale width
+ *  stays consistent across cards. */
 function PriceBandDots({ band }: { band: number }) {
   const total = 5;
   const filled = Math.max(0, Math.min(total, band));
   return (
     <span className="font-mono">
-      {"●".repeat(filled)}
-      {"○".repeat(Math.max(0, total - filled))}
+      {"$".repeat(filled)}
+      <span className="text-ink-300 dark:text-umber-300">
+        {"$".repeat(Math.max(0, total - filled))}
+      </span>
     </span>
   );
 }

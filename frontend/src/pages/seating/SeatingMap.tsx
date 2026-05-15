@@ -530,8 +530,10 @@ function RoomDimsInput({
     if (w === widthMm && h === heightMm) return;
     onChange(w, h);
   }
+  // Plain inline-text affordance: no box, just the number. A subtle dotted
+  // underline appears on hover/focus so the user still knows it's editable.
   const cls =
-    "w-12 rounded-md border border-paper-300 bg-paper-50 px-1.5 py-0.5 text-right text-xs text-ink-700 focus:border-ink-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:focus:border-paper-100";
+    "w-8 border-0 bg-transparent p-0 text-right text-sm font-medium text-ink-700 tabular-nums focus:outline-none focus:underline focus:decoration-dotted hover:underline hover:decoration-dotted dark:text-paper-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
   return (
     <span className="flex items-center gap-1 text-xs text-ink-400 dark:text-umber-300">
       <input
