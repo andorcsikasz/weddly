@@ -2,7 +2,16 @@
 // re-prices per-guest categories live, plus an inline-editable line table.
 
 import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple, Currency } from "@shared/types";
-import { ArrowUpRight, BarChart3, Loader2, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  BarChart3,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  RotateCcw,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
@@ -785,7 +794,11 @@ export default function BudgetPage() {
                     >
                       <td className="px-4 py-2 align-middle">
                         <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
-                          <X size={12} className="text-ink-400 dark:text-umber-300" aria-hidden />
+                          <MoreHorizontal
+                            size={14}
+                            className="text-ink-500 dark:text-umber-300"
+                            aria-hidden
+                          />
                           {line.label}
                         </span>
                       </td>
