@@ -556,6 +556,11 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     // SVG Y-down convention, but PDF Y grows UP. We negate dy for the
     // position AND the rotation so chairs land where the user placed them
     // and orient outwards correctly.
+    //
+    // Outward push direction: use the chair's `angle` field (which encodes
+    // the edge-perpendicular direction) rather than normalising (dx, dy).
+    // For rectangular tables this matters — a chair on the top edge
+    // pushes straight UP regardless of where along the edge it sits.
     const chairs = chairOffsets(t.shape, t.seats, rx, ry);
     const seats = (seatsByTable.get(t.id) ?? []).sort((a, b) => a.seat_index - b.seat_index);
     const seatByIndex = new Map(seats.map((a) => [a.seat_index, a]));
@@ -565,11 +570,12 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       if (!c) continue;
       const isDisabled = disabledSet.has(i);
       const isFilled = seatByIndex.has(i);
-      const norm = Math.hypot(c.dx, c.dy) || 1;
+      const outX = Math.cos(c.angle);
+      const outY_svg = Math.sin(c.angle); // SVG Y-down
       const pushPt = chairHpt / 2 + chairGapPt;
-      const px = cx + c.dx + (c.dx / norm) * pushPt;
-      const py = cy - c.dy - (c.dy / norm) * pushPt;
-      // Visual rotation is mirrored under the Y-flip — negate.
+      const px = cx + c.dx + outX * pushPt;
+      // Y-flip: editor dy and outward y BOTH flip sign in PDF coords.
+      const py = cy - c.dy - outY_svg * pushPt;
       const rotDeg = -((c.angle * 180) / Math.PI + 90);
       const rad = (rotDeg * Math.PI) / 180;
       const cosR = Math.cos(rad);
@@ -601,42 +607,50 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       }
     }
 
-    // Guest names just outside each filled chair.
+    // Guest names just outside each filled chair. Push past the chair's
+    // outer edge AND past half its tangential width — for chairs sitting
+    // at table corners (e.g. round seat 3 at 45°) the chair is rotated,
+    // so its tangential footprint sweeps into the horizontal text region.
+    // Without the extra chairWpt/2 buffer, dark "Á" characters would land
+    // on a dark filled chair and disappear.
     for (const a of seats) {
       const c = chairs[a.seat_index];
       if (!c) continue;
       const guest = guestById.get(a.guest_id);
       if (!guest) continue;
-      const norm = Math.hypot(c.dx, c.dy) || 1;
-      const pushPt = chairHpt + chairGapPt + 3;
-      const px = cx + c.dx + (c.dx / norm) * pushPt;
-      const py = cy - c.dy - (c.dy / norm) * pushPt;
-      const guestFit = await fitText(fontPair, guest.full_name, 7, mm(32));
+      const outX = Math.cos(c.angle);
+      const outY_svg = Math.sin(c.angle);
+      const namePush = chairHpt + chairGapPt + chairWpt / 2 + 4;
+      const px = cx + c.dx + outX * namePush;
+      const py = cy - c.dy - outY_svg * namePush;
+      const guestFit = await fitText(fontPair, guest.full_name, 7, mm(28));
       const w = guestFit.font.widthOfTextAtSize(guestFit.text, 7);
       page.drawText(guestFit.text, {
         x: px - w / 2,
-        y: py - 2,
+        y: py - 2.5,
         size: 7,
         font: guestFit.font,
         color: INK_800,
       });
     }
 
-    // Table label — large blush text in the table's centre. Sizing rules:
-    //   - Width: long/head tables use the long axis (rx for those shapes);
-    //     round/square use the shared dimension. Allow up to 1.6× the
-    //     budget so the label can SPILL slightly past the table on a tiny
-    //     footprint rather than truncate to "T…".
-    //   - Height: scale labelSize against the short axis so the line still
-    //     fits inside the table on rounds, but cap at 22pt for tasteful
-    //     hierarchy on big tables.
-    //   - Floor: never below 10pt — that's the readability threshold on
-    //     print, even if it means the label visually overlaps adjacent
-    //     chairs at extreme scales.
+    // Table label — blush text centred inside the table. Sizing rules:
+    //   - Width: long/head tables size against the LONG axis (~85% of
+    //     length). Round/square get 2.4× the short axis, i.e. roughly
+    //     diameter + chair-gap, so a "Table 5" fits even when the round
+    //     is small on the page.
+    //   - Height: tied to the SHORT axis so a single line still fits
+    //     inside the table footprint. Capped at 14pt — earlier 22pt cap
+    //     overpowered the layout on big tables; 14pt gives a calmer,
+    //     stationery-style hierarchy alongside the chairs.
+    //   - Floor: 10pt is the print-legibility floor. Below that, the
+    //     label visually overlaps chair gaps at extreme room scales —
+    //     acceptable tradeoff for keeping names readable.
     const isElongated = t.shape === "long" || t.shape === "head";
     const shortDim = Math.min(rx, ry);
-    const widthBudget = isElongated ? rx * 1.6 : shortDim * 1.7;
-    const labelSize = Math.max(10, Math.min(22, shortDim * 0.85));
+    const longDim = Math.max(rx, ry);
+    const widthBudget = isElongated ? longDim * 1.7 : shortDim * 2.4;
+    const labelSize = Math.max(10, Math.min(14, shortDim * 0.65));
     const labelFit = await fitText(fontPair, t.label, labelSize, widthBudget, "bold");
     const labelW = labelFit.font.widthOfTextAtSize(labelFit.text, labelSize);
     page.drawText(labelFit.text, {
