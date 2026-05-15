@@ -492,12 +492,14 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     seatsByTable.get(a.table_id)!.push(a);
   }
 
-  // Brand palette for table + chair rendering — keep these in lockstep with
-  // the SVG editor so the print mirrors what the couple sees. Hex sources:
-  // ink-800 (#1a2440), paper-50 (#fbfaf5), blush-300 (#eda997),
-  // blush-700 (#9d3b27).
+  // Brand palette — keep these in lockstep with the SVG editor so the
+  // print mirrors what the couple sees. Hex sources:
+  // ink-700 #243150, ink-800 #1a2440, paper-50 #fbfaf5, paper-300 #e3d9bf,
+  // blush-300 #eda997, blush-700 #9d3b27.
+  const INK_700 = rgb(0.141, 0.192, 0.314);
   const INK_800 = rgb(0.102, 0.141, 0.251);
   const PAPER_50 = rgb(0.984, 0.98, 0.961);
+  const PAPER_300 = rgb(0.89, 0.85, 0.75);
   const BLUSH_300 = rgb(0.929, 0.663, 0.592);
   const BLUSH_700 = rgb(0.616, 0.231, 0.153);
 
@@ -511,6 +513,7 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
   const chairWpt = mm(CHAIR_W_MM * chairScale);
   const chairHpt = mm(CHAIR_H_MM * chairScale);
   const chairGapPt = mm(CHAIR_GAP_MM * chairScale);
+  const chairTooSmallForGlyph = chairHpt < 5; // sub-5pt chairs can't carry a digit
 
   for (const t of input.tables) {
     const pos = positions.get(t.id);
@@ -523,7 +526,7 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     // NOTE: t.rotation_deg is honoured on the on-screen canvas but renders
     // as 0° here. pdf-lib rotation is around the bottom-left corner — the
     // off-axis math (rotate, then re-center) is tracked for a follow-up.
-    const borderW = 1.4;
+    const borderW = 1;
     if (t.shape === "round") {
       page.drawCircle({
         x: cx,
@@ -534,9 +537,6 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
         color: PAPER_50,
       });
     } else {
-      // pdf-lib doesn't expose rounded corners on drawRectangle — the
-      // strong stroke alone reads correctly at print scale. Future: build
-      // an SVG path with arc-corners.
       page.drawRectangle({
         x: cx - rx,
         y: cy - ry,
@@ -549,8 +549,13 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     }
 
     // Chairs — blush rounded rectangles tangent to the perimeter, matching
-    // the SVG editor. Centre of each chair sits CHAIR_GAP_MM outside the
+    // the SVG editor. The chair's CENTRE sits CHAIR_GAP_MM outside the
     // edge, with its long axis along the table edge.
+    //
+    // Y is flipped vs. the editor: chairOffsets returns (dx, dy) in the
+    // SVG Y-down convention, but PDF Y grows UP. We negate dy for the
+    // position AND the rotation so chairs land where the user placed them
+    // and orient outwards correctly.
     const chairs = chairOffsets(t.shape, t.seats, rx, ry);
     const seats = (seatsByTable.get(t.id) ?? []).sort((a, b) => a.seat_index - b.seat_index);
     const seatByIndex = new Map(seats.map((a) => [a.seat_index, a]));
@@ -563,17 +568,15 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       const norm = Math.hypot(c.dx, c.dy) || 1;
       const pushPt = chairHpt / 2 + chairGapPt;
       const px = cx + c.dx + (c.dx / norm) * pushPt;
-      const py = cy + c.dy + (c.dy / norm) * pushPt;
-      const rotDeg = ((c.angle * 180) / Math.PI + 90) % 360;
-      // pdf-lib rotates around the rectangle's bottom-left corner. To rotate
-      // around the chair centre, place the bottom-left such that after the
-      // rotation the centre lands at (px, py).
+      const py = cy - c.dy - (c.dy / norm) * pushPt;
+      // Visual rotation is mirrored under the Y-flip — negate.
+      const rotDeg = -((c.angle * 180) / Math.PI + 90);
       const rad = (rotDeg * Math.PI) / 180;
       const cosR = Math.cos(rad);
       const sinR = Math.sin(rad);
       const blX = px - (chairWpt / 2) * cosR + (chairHpt / 2) * sinR;
       const blY = py - (chairWpt / 2) * sinR - (chairHpt / 2) * cosR;
-      const fill = isDisabled ? rgb(0.93, 0.91, 0.85) : isFilled ? INK_800 : BLUSH_300;
+      const fill = isDisabled ? PAPER_300 : isFilled ? INK_800 : BLUSH_300;
       page.drawRectangle({
         x: blX,
         y: blY,
@@ -582,6 +585,20 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
         rotate: degrees(rotDeg),
         color: fill,
       });
+      // Seat number on the chair — same as the SVG editor. Skipped when
+      // the chair is sub-5pt tall (the digit wouldn't read at print scale).
+      if (!isDisabled && !chairTooSmallForGlyph) {
+        const num = String(i + 1);
+        const numSize = Math.max(5, chairHpt * 0.6);
+        const numW = helvBold.widthOfTextAtSize(num, numSize);
+        page.drawText(num, {
+          x: px - numW / 2,
+          y: py - numSize * 0.35,
+          size: numSize,
+          font: helvBold,
+          color: isFilled ? PAPER_50 : INK_700,
+        });
+      }
     }
 
     // Guest names just outside each filled chair.
@@ -591,31 +608,40 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       const guest = guestById.get(a.guest_id);
       if (!guest) continue;
       const norm = Math.hypot(c.dx, c.dy) || 1;
-      const pushPt = chairHpt + chairGapPt + 2;
+      const pushPt = chairHpt + chairGapPt + 3;
       const px = cx + c.dx + (c.dx / norm) * pushPt;
-      const py = cy + c.dy + (c.dy / norm) * pushPt;
-      const guestFit = await fitText(fontPair, guest.full_name, 6.5, mm(28));
-      const w = guestFit.font.widthOfTextAtSize(guestFit.text, 6.5);
+      const py = cy - c.dy - (c.dy / norm) * pushPt;
+      const guestFit = await fitText(fontPair, guest.full_name, 7, mm(32));
+      const w = guestFit.font.widthOfTextAtSize(guestFit.text, 7);
       page.drawText(guestFit.text, {
         x: px - w / 2,
         y: py - 2,
-        size: 6.5,
+        size: 7,
         font: guestFit.font,
         color: INK_800,
       });
     }
 
-    // Table label — large blush text in the centre. Sized to fit the
-    // shorter half-dim so it stays inside the table footprint. Min 9pt so
-    // names stay legible even on tiny tables; the fitText caller truncates
-    // with an ellipsis if it still overflows.
-    const maxLabelW = Math.min(rx, ry) * 1.6;
-    const labelSize = Math.max(9, Math.min(20, Math.min(rx, ry) * 0.5));
-    const labelFit = await fitText(fontPair, t.label, labelSize, maxLabelW, "bold");
+    // Table label — large blush text in the table's centre. Sizing rules:
+    //   - Width: long/head tables use the long axis (rx for those shapes);
+    //     round/square use the shared dimension. Allow up to 1.6× the
+    //     budget so the label can SPILL slightly past the table on a tiny
+    //     footprint rather than truncate to "T…".
+    //   - Height: scale labelSize against the short axis so the line still
+    //     fits inside the table on rounds, but cap at 22pt for tasteful
+    //     hierarchy on big tables.
+    //   - Floor: never below 10pt — that's the readability threshold on
+    //     print, even if it means the label visually overlaps adjacent
+    //     chairs at extreme scales.
+    const isElongated = t.shape === "long" || t.shape === "head";
+    const shortDim = Math.min(rx, ry);
+    const widthBudget = isElongated ? rx * 1.6 : shortDim * 1.7;
+    const labelSize = Math.max(10, Math.min(22, shortDim * 0.85));
+    const labelFit = await fitText(fontPair, t.label, labelSize, widthBudget, "bold");
     const labelW = labelFit.font.widthOfTextAtSize(labelFit.text, labelSize);
     page.drawText(labelFit.text, {
       x: cx - labelW / 2,
-      y: cy - labelSize / 3,
+      y: cy - labelSize * 0.32,
       size: labelSize,
       font: labelFit.font,
       color: BLUSH_700,
