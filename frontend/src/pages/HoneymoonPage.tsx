@@ -1059,11 +1059,7 @@ function CostRow({
     <li className="group grid items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:grid-cols-[14rem_minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:gap-y-0 sm:py-2 grid-cols-[minmax(0,1fr)_auto_auto]">
       {/* Icon + label — col 1 on both layouts. */}
       <div className="col-start-1 row-start-1 flex items-center gap-2.5 min-w-0">
-        <Icon
-          size={18}
-          className="shrink-0 text-blush-700 dark:text-blush-300"
-          aria-hidden="true"
-        />
+        <Icon size={18} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden="true" />
         <p
           className="truncate text-sm font-medium text-ink-900 dark:text-paper-50"
           title={line.label}
