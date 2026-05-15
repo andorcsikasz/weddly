@@ -1207,6 +1207,23 @@ export interface LocaleMessages {
     /** Header pill label when the actual-spend overlay is ON. */
     hide_actual_overlay: string;
     category_locked_hint: string;
+    /** Pill at the end of the CostPlanningCard row list — click expands the
+     *  inline add-row form. */
+    add_custom_row: string;
+    /** Placeholder for the label input in the add-row inline form. */
+    custom_row_label_placeholder: string;
+    /** Placeholder for the amount input in the add-row inline form. */
+    custom_row_amount_placeholder: string;
+    /** Confirm button on the add-row inline form. */
+    custom_row_save: string;
+    /** Cancel button on the add-row inline form. */
+    custom_row_cancel: string;
+    /** aria-label for the per-row X handle on a custom budget row. */
+    custom_row_delete_aria: string;
+    /** aria-label for the slider on a custom budget row. */
+    custom_row_edit_aria: string;
+    /** Inline error when the user submits the add-row form with empty label. */
+    custom_row_label_required: string;
     slider_min_aria: string;
     slider_max_aria: string;
     over_by: string;

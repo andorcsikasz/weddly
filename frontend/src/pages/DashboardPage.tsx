@@ -335,6 +335,59 @@ export default function DashboardPage() {
     }
   }
 
+  async function addCustomRow(label: string, plannedHuf: number) {
+    if (data === "loading" || data === null) return;
+    try {
+      const r = await budgetApi.createLine({
+        category: "other",
+        label,
+        planned_huf: plannedHuf,
+        actual_huf: 0,
+      });
+      setData({ ...data, lines: [...lines, r.line] });
+    } catch {
+      const r = await budgetApi.listLines();
+      setData({ ...data, lines: r.lines });
+    }
+  }
+
+  async function setCustomRowPlanned(lineId: number, plannedHuf: number) {
+    if (data === "loading" || data === null) return;
+    const line = lines.find((l) => l.id === lineId);
+    if (!line) return;
+    const updated = { ...line, planned_huf: plannedHuf };
+    setData({ ...data, lines: lines.map((l) => (l.id === lineId ? updated : l)) });
+    try {
+      const r = await budgetApi.updateLine(line.id, updated, { ifMatch: line.updated_at });
+      setData((cur) => {
+        if (!cur || cur === "loading") return cur;
+        return { ...cur, lines: cur.lines.map((l) => (l.id === r.line.id ? r.line : l)) };
+      });
+    } catch {
+      const r = await budgetApi.listLines();
+      setData((cur) => (cur && cur !== "loading" ? { ...cur, lines: r.lines } : cur));
+    }
+  }
+
+  async function removeCustomRow(lineId: number) {
+    if (data === "loading" || data === null) return;
+    const ok = await confirm({
+      title: t("common.confirm_delete_title"),
+      body: t("common.confirm_delete_body"),
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await budgetApi.removeLine(lineId);
+      setData({ ...data, lines: lines.filter((l) => l.id !== lineId) });
+    } catch {
+      const r = await budgetApi.listLines();
+      setData((cur) => (cur && cur !== "loading" ? { ...cur, lines: r.lines } : cur));
+    }
+  }
+
   // ── Seating ───────────────────────────────────────────────────────────
   const confirmedGuests = guests.filter((g) => g.rsvp_status === "yes");
   const seatedConfirmed = confirmedGuests.filter((g) => seatedGuestIds.has(g.id)).length;
@@ -1083,6 +1136,9 @@ export default function DashboardPage() {
               onCapChange={saveCap}
               frozenCategories={frozenCategoriesSet}
               onToggleFreeze={toggleFreeze}
+              onAddCustomRow={addCustomRow}
+              onEditCustomRowPlanned={setCustomRowPlanned}
+              onRemoveCustomRow={removeCustomRow}
               // Clicking a row's amount on the dashboard should land the user
               // in the budget table at the same category — `cat-<slug>` is the
               // anchor each CategoryRow renders.

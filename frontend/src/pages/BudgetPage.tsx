@@ -265,6 +265,31 @@ export default function BudgetPage() {
     }
   }
 
+  async function addCustomRow(label: string, plannedHuf: number) {
+    try {
+      const r = await budgetApi.createLine({
+        category: "other",
+        label,
+        planned_huf: plannedHuf,
+        actual_huf: 0,
+      });
+      setLines((prev) => [...prev, r.line]);
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => addCustomRow(label, plannedHuf));
+    }
+  }
+
+  async function setCustomRowPlanned(lineId: number, plannedHuf: number) {
+    const line = lines.find((l) => l.id === lineId);
+    if (!line) return;
+    await save(line, "planned_huf", plannedHuf);
+  }
+
+  async function removeCustomRow(lineId: number) {
+    await removeLine(lineId);
+  }
+
   async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
     try {
       const next = await applyCategoryPlanned(
@@ -562,6 +587,9 @@ export default function BudgetPage() {
         frozenCategories={frozenCategoriesSet}
         onToggleFreeze={toggleFreeze}
         showActualToggle
+        onAddCustomRow={addCustomRow}
+        onEditCustomRowPlanned={setCustomRowPlanned}
+        onRemoveCustomRow={removeCustomRow}
       />
 
       <section id="top-overage" className="mt-8 scroll-mt-24">

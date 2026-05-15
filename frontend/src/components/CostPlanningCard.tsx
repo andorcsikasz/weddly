@@ -23,7 +23,6 @@ import {
   Plus,
   Scissors,
   Shirt,
-  Trash2,
   UtensilsCrossed,
   Wine,
   X,
@@ -233,8 +232,7 @@ export function CostPlanningCard({
   // suddenly see their old "Egyéb" rows promoted to custom.
   const defaultOtherLabels = useMemo(() => new Set(["Egyéb", "Other"]), []);
   const customRows = useMemo(
-    () =>
-      lines.filter((l) => l.category === "other" && !defaultOtherLabels.has(l.label)),
+    () => lines.filter((l) => l.category === "other" && !defaultOtherLabels.has(l.label)),
     [lines, defaultOtherLabels],
   );
   const aggregatableLines = useMemo(
@@ -292,8 +290,7 @@ export function CostPlanningCard({
     buckets.reduce((s, b) => s + b.plannedDisplay, 0) +
     customDisplays.reduce((s, c) => s + c.planned, 0);
   const totalActual =
-    buckets.reduce((s, b) => s + b.actual, 0) +
-    customDisplays.reduce((s, c) => s + c.actual, 0);
+    buckets.reduce((s, b) => s + b.actual, 0) + customDisplays.reduce((s, c) => s + c.actual, 0);
   const overCap = cap !== null && totalPlanned > cap;
   const overage = overCap && cap !== null ? totalPlanned - cap : 0;
   // Escalation tier replaces the binary blush pill. `safe` keeps the
@@ -516,9 +513,7 @@ export function CostPlanningCard({
             showActualOverlay={showActualOverlay && hasAnyActual}
           />
         ))}
-        {onAddCustomRow && (
-          <AddCustomRow onAdd={onAddCustomRow} currency={currency} />
-        )}
+        {onAddCustomRow && <AddCustomRow onAdd={onAddCustomRow} />}
       </ul>
 
       <div className="mt-4 border-t border-paper-200 pt-3 dark:border-umber-700">
@@ -950,7 +945,11 @@ function CustomRow({
             <X size={12} aria-hidden />
           </button>
         ) : (
-          <MoreHorizontal size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
+          <MoreHorizontal
+            size={14}
+            className="shrink-0 text-ink-500 dark:text-umber-300"
+            aria-hidden
+          />
         )}
         <span className="truncate">{line.label}</span>
       </span>
@@ -1001,12 +1000,10 @@ function CustomRow({
  *  staying in-flow preserves the user's place in the list. */
 function AddCustomRow({
   onAdd,
-  currency,
 }: {
   onAdd: (label: string, plannedHuf: number) => void | Promise<void>;
-  currency: Currency;
 }) {
-  const { t, locale } = useT();
+  const { t } = useT();
   const [expanded, setExpanded] = useState(false);
   const [label, setLabel] = useState("");
   const [amountDraft, setAmountDraft] = useState("");
@@ -1095,10 +1092,6 @@ function AddCustomRow({
           aria-label={t("budget.custom_row_amount_placeholder")}
           className="input h-9 min-h-0 flex-1 py-1 text-right text-sm tabular-nums sm:flex-none sm:basis-32"
         />
-        <span className="hidden text-xs text-ink-400 sm:inline dark:text-umber-300">
-          {/* Suffix label so the user sees the currency unit they're typing. */}
-          {formatMoney(0, currency, locale).replace(/[\d\s.,]/g, "").trim() || "Ft"}
-        </span>
         <button
           type="button"
           onClick={commit}
