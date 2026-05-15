@@ -2,7 +2,7 @@
 // re-prices per-guest categories live, plus an inline-editable line table.
 
 import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple, Currency } from "@shared/types";
-import { ArrowUpRight, BarChart3, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowUpRight, BarChart3, Loader2, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
@@ -13,7 +13,12 @@ import {
 } from "../components/CostPlanningCard";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
+import {
+  applyCategoryActual,
+  applyCategoryPlanned,
+  guestCountBaseline,
+  guestCountBounds,
+} from "../lib/budget";
 import {
   hydrateCostPlanningCount,
   readCostPlanningCount,
@@ -296,18 +301,70 @@ export default function BudgetPage() {
     await removeLine(lineId);
   }
 
-  async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
+  /** Aggregated "Egyéb" needs the same scaling math as the widget slider, but
+   *  without dragging the custom rows along — they share `category === "other"`
+   *  but live as their own rows in the table and would jump every time the
+   *  user tweaks the Egyéb aggregate otherwise. The widget's CostPlanningCard
+   *  uses the localised default label to identify custom rows; mirror that
+   *  here so the two views stay in lockstep. */
+  const isDefaultOtherLine = (line: BudgetLine) => line.label === "Egyéb" || line.label === "Other";
+
+  async function setAggregatedPlanned(category: BudgetCategory, newTotal: number) {
     try {
       const next = await applyCategoryPlanned(
         category,
         newTotal,
         lines,
         t(`budget.cat.${category}`),
+        category === "other" ? isDefaultOtherLine : undefined,
       );
       setLines(next);
       publish("budget:changed");
     } catch (e) {
-      handleSaveError(e, () => setCategoryPlanned(category, newTotal));
+      handleSaveError(e, () => setAggregatedPlanned(category, newTotal));
+    }
+  }
+
+  async function setAggregatedActual(category: BudgetCategory, newTotal: number) {
+    try {
+      const next = await applyCategoryActual(
+        category,
+        newTotal,
+        lines,
+        t(`budget.cat.${category}`),
+        category === "other" ? isDefaultOtherLine : undefined,
+      );
+      setLines(next);
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => setAggregatedActual(category, newTotal));
+    }
+  }
+
+  async function removeAllInCategory(category: BudgetCategory) {
+    const candidates =
+      category === "other"
+        ? lines.filter(
+            (l) => l.category === "other" && isDefaultOtherLine(l) && l.couple_supplier_id === null,
+          )
+        : lines.filter((l) => l.category === category && l.couple_supplier_id === null);
+    if (candidates.length === 0) return;
+    const ok = await confirm({
+      title: t("common.confirm_delete_title"),
+      body: t("common.confirm_delete_body"),
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await Promise.all(candidates.map((l) => budgetApi.removeLine(l.id)));
+      const removed = new Set(candidates.map((l) => l.id));
+      setLines((prev) => prev.filter((l) => !removed.has(l.id)));
+      publish("budget:changed");
+    } catch {
+      const r = await budgetApi.listLines();
+      setLines(r.lines);
     }
   }
 
@@ -588,7 +645,7 @@ export default function BudgetPage() {
         currency={currency}
         onCountChange={setCount}
         onBoundsChange={saveBounds}
-        onEditPlanned={setCategoryPlanned}
+        onEditPlanned={setAggregatedPlanned}
         onCapChange={saveCap}
         frozenCategories={frozenCategoriesSet}
         onToggleFreeze={toggleFreeze}
@@ -599,12 +656,9 @@ export default function BudgetPage() {
       />
 
       <section id="top-overage" className="mt-8 scroll-mt-24">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2>{t("budget.lines_title")}</h2>
-            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
-          </div>
-          <AddLinePicker onPick={addLineForCategory} />
+        <div className="mb-3">
+          <h2>{t("budget.lines_title")}</h2>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
         </div>
 
         <div className="card overflow-hidden p-0">
@@ -617,44 +671,68 @@ export default function BudgetPage() {
                 <th className="hidden px-4 py-3 text-center font-medium sm:table-cell">
                   {t("budget.delta")}
                 </th>
-                <th className="hidden px-4 py-3 text-center font-medium md:table-cell">
-                  {t("budget.note")}
-                </th>
                 <th className="w-10 px-2 py-3" />
               </tr>
             </thead>
             <tbody>
-              {tableLines.map((line) => {
-                const delta = line.actual_huf - line.planned_huf;
-                const isHighlighted = line.id === highlightLineId;
-                const isFrozen = frozenCategoriesSet.has(line.category);
+              {CATEGORIES.map((cat) => {
+                if (cat === "honeymoon") {
+                  // Honeymoon row stays read-only — its breakdown lives on
+                  // /app/honeymoon. Render it at the same slot as the widget
+                  // even when no honeymoon lines exist (0/0) so the two views
+                  // stay element-aligned.
+                  return (
+                    <HoneymoonAggregateRow
+                      key={cat}
+                      planned={honeymoonAgg?.planned ?? 0}
+                      actual={honeymoonAgg?.actual ?? 0}
+                      locale={locale}
+                      currency={currency}
+                    />
+                  );
+                }
+                const linesForCat =
+                  cat === "other"
+                    ? lines.filter((l) => l.category === "other" && isDefaultOtherLine(l))
+                    : lines.filter((l) => l.category === cat);
+                const planned = linesForCat.reduce((s, l) => s + l.planned_huf, 0);
+                const actual = linesForCat.reduce((s, l) => s + l.actual_huf, 0);
+                const delta = actual - planned;
+                const isHighlighted = linesForCat.some((l) => l.id === highlightLineId);
+                const isFrozen = frozenCategoriesSet.has(cat);
+                // Lines from DIY suppliers are read-only here; if a category
+                // is entirely supplier-managed the aggregate edit would fail,
+                // so disable the inputs in that case.
+                const editable = linesForCat.every((l) => l.couple_supplier_id === null);
+                const canDelete = !isFrozen && linesForCat.length > 0 && editable;
                 return (
                   <tr
-                    key={line.id}
-                    data-budget-line-id={line.id}
-                    data-category={line.category}
-                    className={`border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60 ${
+                    key={cat}
+                    id={`cat-${cat}`}
+                    data-category={cat}
+                    className={`scroll-mt-24 border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60 ${
                       isHighlighted
                         ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
                         : ""
                     }`}
                   >
                     <td className="px-4 py-2 align-middle">
-                      <CategoryCell category={line.category} />
+                      <CategoryCell category={cat} />
                     </td>
                     <td className="px-4 py-2 align-middle">
                       <HufInput
-                        value={line.planned_huf}
-                        onCommit={(v) => save(line, "planned_huf", v)}
-                        readOnly={isFrozen}
+                        value={planned}
+                        onCommit={(v) => setAggregatedPlanned(cat, v)}
+                        readOnly={isFrozen || !editable}
                         dataKey="planned"
                         ariaLabel={t("budget.planned")}
                       />
                     </td>
                     <td className="px-4 py-2 align-middle">
                       <HufInput
-                        value={line.actual_huf}
-                        onCommit={(v) => save(line, "actual_huf", v)}
+                        value={actual}
+                        onCommit={(v) => setAggregatedActual(cat, v)}
+                        readOnly={!editable}
                         dataKey="actual"
                         ariaLabel={t("budget.actual")}
                       />
@@ -672,21 +750,12 @@ export default function BudgetPage() {
                         </span>
                       )}
                     </td>
-                    <td className="hidden px-4 py-2 align-middle md:table-cell">
-                      <input
-                        className="input h-9 min-h-0 py-1 text-center text-sm"
-                        defaultValue={line.notes ?? ""}
-                        maxLength={1000}
-                        aria-label={t("budget.note")}
-                        onBlur={(e) => saveNotes(line, e.target.value)}
-                      />
-                    </td>
                     <td className="px-2 py-2 text-right align-middle">
                       <button
                         type="button"
                         className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-umber-300 dark:hover:text-blush-300"
-                        onClick={() => removeLine(line.id)}
-                        disabled={isFrozen}
+                        onClick={() => removeAllInCategory(cat)}
+                        disabled={!canDelete}
                         aria-label={t("budget.delete")}
                       >
                         <Trash2 size={14} />
@@ -695,24 +764,74 @@ export default function BudgetPage() {
                   </tr>
                 );
               })}
-              {honeymoonAgg && (
-                <HoneymoonAggregateRow
-                  planned={honeymoonAgg.planned}
-                  actual={honeymoonAgg.actual}
-                  locale={locale}
-                  currency={currency}
-                />
-              )}
-              {!hasAnyTableRow && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-10 text-center text-sm text-ink-500 dark:text-umber-300"
-                  >
-                    {t("budget.lines_empty")}
-                  </td>
-                </tr>
-              )}
+              {/* Custom rows — `category="other"` lines whose label diverges
+               *  from the default. Each is 1:1 with a BudgetLine so the
+               *  inputs commit per-line. */}
+              {lines
+                .filter((l) => l.category === "other" && !isDefaultOtherLine(l))
+                .map((line) => {
+                  const delta = line.actual_huf - line.planned_huf;
+                  const isHighlighted = line.id === highlightLineId;
+                  return (
+                    <tr
+                      key={line.id}
+                      data-budget-line-id={line.id}
+                      data-category="other-custom"
+                      className={`border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60 ${
+                        isHighlighted
+                          ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
+                          : ""
+                      }`}
+                    >
+                      <td className="px-4 py-2 align-middle">
+                        <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
+                          <X size={12} className="text-ink-400 dark:text-umber-300" aria-hidden />
+                          {line.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <HufInput
+                          value={line.planned_huf}
+                          onCommit={(v) => save(line, "planned_huf", v)}
+                          dataKey="planned"
+                          ariaLabel={t("budget.planned")}
+                        />
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <HufInput
+                          value={line.actual_huf}
+                          onCommit={(v) => save(line, "actual_huf", v)}
+                          dataKey="actual"
+                          ariaLabel={t("budget.actual")}
+                        />
+                      </td>
+                      <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
+                        {delta !== 0 && (
+                          <span
+                            className={
+                              delta > 0
+                                ? "font-medium text-red-600 dark:text-red-400"
+                                : "font-medium text-emerald-600 dark:text-emerald-400"
+                            }
+                          >
+                            {formatMoney(delta, currency, locale)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right align-middle">
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
+                          onClick={() => removeLine(line.id)}
+                          aria-label={t("budget.delete")}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              <AddCustomRowTr onAdd={addCustomRow} />
             </tbody>
           </table>
         </div>
@@ -751,6 +870,135 @@ export default function BudgetPage() {
         )}
       </section>
     </AppShell>
+  );
+}
+
+/* ─── Inline "Új sor" form rendered as the final tbody row ────────── */
+
+/** Mirrors the AddCustomRow affordance in CostPlanningCard but expressed as
+ *  a table row so the column structure stays intact. Collapsed by default,
+ *  expands inline to a label + amount form when clicked. */
+function AddCustomRowTr({
+  onAdd,
+}: {
+  onAdd: (label: string, plannedHuf: number) => Promise<void> | void;
+}) {
+  const { t } = useT();
+  const [expanded, setExpanded] = useState(false);
+  const [label, setLabel] = useState("");
+  const [amountDraft, setAmountDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function reset() {
+    setLabel("");
+    setAmountDraft("");
+    setError(null);
+    setExpanded(false);
+  }
+
+  async function commit() {
+    const trimmed = label.trim();
+    if (trimmed.length === 0) {
+      setError(t("budget.custom_row_label_required"));
+      return;
+    }
+    const digits = amountDraft.replace(/\D/g, "");
+    const amount = digits === "" ? 0 : Number(digits);
+    if (!Number.isFinite(amount) || amount < 0) {
+      setError(t("budget.custom_row_label_required"));
+      return;
+    }
+    setSaving(true);
+    try {
+      await onAdd(trimmed, Math.round(amount));
+      reset();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!expanded) {
+    return (
+      <tr className="border-t border-paper-200 dark:border-umber-700">
+        <td colSpan={5} className="px-4 py-2">
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-paper-300 px-2.5 py-1 text-xs text-ink-500 transition hover:border-paper-400 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
+          >
+            <Plus size={12} aria-hidden />
+            {t("budget.add_custom_row")}
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className="border-t border-paper-200 dark:border-umber-700">
+      <td colSpan={5} className="px-4 py-2">
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+          <input
+            type="text"
+            autoFocus
+            maxLength={80}
+            value={label}
+            disabled={saving}
+            placeholder={t("budget.custom_row_label_placeholder")}
+            onChange={(e) => {
+              setLabel(e.target.value);
+              if (error) setError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void commit();
+              else if (e.key === "Escape") reset();
+            }}
+            aria-label={t("budget.custom_row_label_placeholder")}
+            className="input h-9 min-h-0 flex-1 py-1 text-sm sm:flex-none sm:basis-56"
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={14}
+            value={amountDraft}
+            disabled={saving}
+            placeholder={t("budget.custom_row_amount_placeholder")}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "");
+              setAmountDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void commit();
+              else if (e.key === "Escape") reset();
+            }}
+            aria-label={t("budget.custom_row_amount_placeholder")}
+            className="input h-9 min-h-0 flex-1 py-1 text-right text-sm tabular-nums sm:flex-none sm:basis-32"
+          />
+          <button
+            type="button"
+            onClick={commit}
+            disabled={saving}
+            className="btn-primary btn-sm whitespace-nowrap"
+          >
+            {t("budget.custom_row_save")}
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            disabled={saving}
+            className="btn-ghost btn-sm whitespace-nowrap text-ink-500 dark:text-umber-300"
+          >
+            {t("budget.custom_row_cancel")}
+          </button>
+        </div>
+        {error && (
+          <p className="mt-1 text-[11px] text-blush-700 dark:text-blush-300" role="alert">
+            {error}
+          </p>
+        )}
+      </td>
+    </tr>
   );
 }
 

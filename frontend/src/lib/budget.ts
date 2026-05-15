@@ -18,8 +18,14 @@ export async function applyCategoryPlanned(
   newTotal: number,
   lines: BudgetLine[],
   fallbackLabel: string,
+  /** Optional predicate to narrow which lines count as "in this category".
+   *  Used by the aggregated budget table to scope edits on the `other`
+   *  aggregate to default-labeled lines only — without it, custom rows
+   *  (which share `category === "other"`) would get scaled too and the
+   *  user's custom-row values would jump around when they tweak Egyéb. */
+  filter?: (line: BudgetLine) => boolean,
 ): Promise<BudgetLine[]> {
-  const inCat = lines.filter((l) => l.category === category);
+  const inCat = lines.filter((l) => l.category === category && (filter ? filter(l) : true));
 
   if (inCat.length === 0) {
     const r = await budgetApi.createLine({
@@ -48,6 +54,56 @@ export async function applyCategoryPlanned(
   const drift = newTotal - updates.reduce((s, l) => s + l.planned_huf, 0);
   if (drift !== 0 && updates[0]) {
     updates[0] = { ...updates[0], planned_huf: updates[0].planned_huf + drift };
+  }
+  await Promise.all(updates.map((l) => budgetApi.updateLine(l.id, l)));
+  const updateMap = new Map(updates.map((l) => [l.id, l]));
+  return lines.map((l) => updateMap.get(l.id) ?? l);
+}
+
+/** Apply a new total `actual_huf` to all lines in a category. Same scaling
+ *  rules as `applyCategoryPlanned`. DIY-supplier-linked lines (`couple_supplier_id`
+ *  not null) are owned by the supplier card and would 409 if we tried to write
+ *  them — filter them out so the rest of the category still scales. */
+export async function applyCategoryActual(
+  category: BudgetCategory,
+  newTotal: number,
+  lines: BudgetLine[],
+  fallbackLabel: string,
+  /** Same scope-narrowing escape hatch as `applyCategoryPlanned` — see that
+   *  helper for the reasoning behind the parameter. */
+  filter?: (line: BudgetLine) => boolean,
+): Promise<BudgetLine[]> {
+  const inCat = lines.filter(
+    (l) => l.category === category && l.couple_supplier_id === null && (filter ? filter(l) : true),
+  );
+
+  if (inCat.length === 0) {
+    const r = await budgetApi.createLine({
+      category,
+      label: fallbackLabel,
+      planned_huf: 0,
+      actual_huf: newTotal,
+    });
+    return [...lines, r.line];
+  }
+
+  if (inCat.length === 1) {
+    const line = inCat[0];
+    if (!line) return lines;
+    const updated = { ...line, actual_huf: newTotal };
+    await budgetApi.updateLine(line.id, updated);
+    return lines.map((l) => (l.id === line.id ? updated : l));
+  }
+
+  const oldTotal = inCat.reduce((s, l) => s + l.actual_huf, 0);
+  const updates: BudgetLine[] = inCat.map((l, i) => {
+    const next =
+      oldTotal > 0 ? Math.round((l.actual_huf / oldTotal) * newTotal) : i === 0 ? newTotal : 0;
+    return { ...l, actual_huf: next };
+  });
+  const drift = newTotal - updates.reduce((s, l) => s + l.actual_huf, 0);
+  if (drift !== 0 && updates[0]) {
+    updates[0] = { ...updates[0], actual_huf: updates[0].actual_huf + drift };
   }
   await Promise.all(updates.map((l) => budgetApi.updateLine(l.id, l)));
   const updateMap = new Map(updates.map((l) => [l.id, l]));

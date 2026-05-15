@@ -12,8 +12,6 @@ import {
   Camera,
   Car,
   Circle,
-  Eye,
-  EyeOff,
   Flower2,
   Gift,
   Heart,
@@ -24,6 +22,7 @@ import {
   Music,
   Plane,
   Plus,
+  Receipt,
   Scissors,
   Shirt,
   ShoppingBag,
@@ -409,11 +408,10 @@ export function CostPlanningCard({
         </p>
         <div className="flex items-center gap-3">
           {showActualToggle && (
-            // Icon-only toggle for the actual-overlay. The eye-on/eye-off
-            // glyph carries the state; the red ring when active picks up the
-            // overlay's red stroke colour so they read as a single affordance.
-            // Title + aria-label keep the action discoverable for keyboard
-            // and screen-reader users.
+            // Icon-only toggle for the actual-overlay. The receipt glyph signals
+            // "actual paid spend"; the red ring when active picks up the overlay's
+            // red stroke colour so they read as a single affordance. Title +
+            // aria-label keep the action discoverable for keyboard and SR users.
             <button
               type="button"
               onClick={() => setShowActualOverlay((v) => !v)}
@@ -430,7 +428,7 @@ export function CostPlanningCard({
                   : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
               }`}
             >
-              {showActualOverlay ? <EyeOff size={14} aria-hidden /> : <Eye size={14} aria-hidden />}
+              <Receipt size={14} aria-hidden />
             </button>
           )}
           {cap !== null &&
