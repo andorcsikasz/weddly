@@ -50,6 +50,29 @@ export interface AdminUserView {
    *  the latest flag has been resolved. Drives the flag badge + countdown
    *  on AdminUsersPage. */
   active_flag: UserFlag | null;
+  /** Compact activity counters surfaced on the admin row so the moderator
+   *  can see at a glance which users are actually contributing vs. dormant.
+   *  Counters include resolved/hidden rows — the admin cares about total
+   *  engagement, not just live-listing volume. `*_last_at` is the unix-ms
+   *  of the most recent entry; null when the count is 0. */
+  activity: AdminUserActivity;
+}
+
+export interface AdminUserActivity {
+  /** Community supplier tips this user has submitted. Includes hidden +
+   *  deleted rows so the count stays a stable engagement signal even
+   *  after admin moderation. */
+  supplier_tip_count: number;
+  supplier_tip_last_at: UnixMs | null;
+  /** Free-form feedback the user has filed via the in-app dialog or the
+   *  landing-page form (matched by user_id, not by from_email — anon
+   *  feedback is not attributed). */
+  feedback_count: number;
+  feedback_last_at: UnixMs | null;
+  /** Historical moderation flags closed before this point — surfaces a
+   *  faded counter so the admin knows this user has been flagged before
+   *  even if there's no live flag right now. */
+  prior_flag_count: number;
 }
 
 /** Admin-side projection of `user_flags`. Internal columns

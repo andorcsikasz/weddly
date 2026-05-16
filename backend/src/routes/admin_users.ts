@@ -2,7 +2,7 @@
 // Gate with requireAdmin() — same ADMIN_EMAILS allowlist as the supplier
 // moderation routes.
 
-import type { AdminCoupleView, AdminUserView, UserFlag } from "@shared/types";
+import type { AdminCoupleView, AdminUserActivity, AdminUserView, UserFlag } from "@shared/types";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { sendKind } from "../domain/emails";
@@ -30,8 +30,77 @@ function toUserFlag(row: UserFlagRow): UserFlag {
   };
 }
 
-function toAdminUser(row: UserRow, flagByUser: Map<number, UserFlagRow>): AdminUserView {
+const EMPTY_ACTIVITY: AdminUserActivity = {
+  supplier_tip_count: 0,
+  supplier_tip_last_at: null,
+  feedback_count: 0,
+  feedback_last_at: null,
+  prior_flag_count: 0,
+};
+
+/** One pass over the engagement tables, keyed by user_id. Used by the admin
+ *  list to render compact "3 tipp · 5 napja" chips next to each row without
+ *  triggering N+1 reads. Returns an empty record-shaped row for any user
+ *  with no activity so callers can index unconditionally. */
+function activityByUserId(): Map<number, AdminUserActivity> {
+  const out = new Map<number, AdminUserActivity>();
+  const ensure = (id: number): AdminUserActivity => {
+    let row = out.get(id);
+    if (!row) {
+      row = { ...EMPTY_ACTIVITY };
+      out.set(id, row);
+    }
+    return row;
+  };
+
+  // Supplier tips — every row counts (including hidden + deleted) so the
+  // total engagement signal stays stable across moderation actions.
+  const supplierRows = db
+    .prepare(
+      "SELECT submitter_user_id AS user_id, COUNT(*) AS n, MAX(created_at) AS last_at FROM community_suppliers GROUP BY submitter_user_id",
+    )
+    .all() as { user_id: number; n: number; last_at: number | null }[];
+  for (const r of supplierRows) {
+    const a = ensure(r.user_id);
+    a.supplier_tip_count = r.n;
+    a.supplier_tip_last_at = r.last_at;
+  }
+
+  // Feedback — only user_id-attributed rows (anonymous landing feedback
+  // doesn't carry a user link, intentionally).
+  const feedbackRows = db
+    .prepare(
+      "SELECT user_id, COUNT(*) AS n, MAX(created_at) AS last_at FROM feedback_submissions WHERE user_id IS NOT NULL GROUP BY user_id",
+    )
+    .all() as { user_id: number; n: number; last_at: number | null }[];
+  for (const r of feedbackRows) {
+    const a = ensure(r.user_id);
+    a.feedback_count = r.n;
+    a.feedback_last_at = r.last_at;
+  }
+
+  // Prior (resolved) moderation flags — only counts closed rows; the live
+  // flag is surfaced separately via active_flag.
+  const flagRows = db
+    .prepare(
+      "SELECT user_id, COUNT(*) AS n FROM user_flags WHERE resolved_at IS NOT NULL GROUP BY user_id",
+    )
+    .all() as { user_id: number; n: number }[];
+  for (const r of flagRows) {
+    const a = ensure(r.user_id);
+    a.prior_flag_count = r.n;
+  }
+
+  return out;
+}
+
+function toAdminUser(
+  row: UserRow,
+  flagByUser: Map<number, UserFlagRow>,
+  activityByUser: Map<number, AdminUserActivity>,
+): AdminUserView {
   const flag = flagByUser.get(row.id);
+  const activity = activityByUser.get(row.id) ?? { ...EMPTY_ACTIVITY };
   return {
     id: row.id,
     full_name: row.full_name,
@@ -44,6 +113,7 @@ function toAdminUser(row: UserRow, flagByUser: Map<number, UserFlagRow>): AdminU
     created_at: row.created_at,
     last_seen_at: row.last_seen_at,
     active_flag: flag ? toUserFlag(flag) : null,
+    activity,
   };
 }
 
@@ -93,13 +163,19 @@ function listOneUserAdminView(userId: number): AdminUserView | null {
   const flag = getActiveFlagForUser(userId);
   const flagMap = new Map<number, UserFlagRow>();
   if (flag) flagMap.set(userId, flag);
-  return toAdminUser(row, flagMap);
+  // Single-row lookup — we still build the activity map but it's bounded
+  // to whatever this user touched, so the queries stay tiny.
+  const activityMap = activityByUserId();
+  return toAdminUser(row, flagMap, activityMap);
 }
 
 function handleListUsers(ctx: Ctx): Response {
   requireAdmin(ctx);
   const flagMap = activeFlagsByUserId();
-  return json({ users: listAllUsers().map((u) => toAdminUser(u, flagMap)) });
+  const activityMap = activityByUserId();
+  return json({
+    users: listAllUsers().map((u) => toAdminUser(u, flagMap, activityMap)),
+  });
 }
 
 function handleListCouples(ctx: Ctx): Response {

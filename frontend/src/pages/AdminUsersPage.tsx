@@ -1,5 +1,5 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
-import { Check, Flag, FlagOff, Mail, Trash2 } from "lucide-react";
+import { Check, Flag, FlagOff, Lightbulb, Mail, MessageCircle, Trash2 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -270,6 +270,39 @@ export default function AdminUsersPage() {
             >
               <Flag size={11} aria-hidden />
               {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
+            </span>
+          )}
+          {u.activity.prior_flag_count > 0 && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-300"
+              title={t("admin.activity_prior_flags_tooltip", { n: u.activity.prior_flag_count })}
+            >
+              <Flag size={10} aria-hidden />
+              {u.activity.prior_flag_count}
+            </span>
+          )}
+          {u.activity.supplier_tip_count > 0 && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200"
+              title={t("admin.activity_supplier_tips_tooltip", {
+                n: u.activity.supplier_tip_count,
+                when: formatRelative(u.activity.supplier_tip_last_at, locale, t),
+              })}
+            >
+              <Lightbulb size={10} aria-hidden />
+              {t("admin.activity_supplier_tips", { n: u.activity.supplier_tip_count })}
+            </span>
+          )}
+          {u.activity.feedback_count > 0 && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200"
+              title={t("admin.activity_feedback_tooltip", {
+                n: u.activity.feedback_count,
+                when: formatRelative(u.activity.feedback_last_at, locale, t),
+              })}
+            >
+              <MessageCircle size={10} aria-hidden />
+              {t("admin.activity_feedback", { n: u.activity.feedback_count })}
             </span>
           )}
           {opts.showLastActive && (
