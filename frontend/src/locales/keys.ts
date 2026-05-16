@@ -823,6 +823,11 @@ export interface LocaleMessages {
     /** Cross-link from the Tasks tab toolbar to the /app/timeline Gantt view. */
     timeline_link: string;
     timeline_link_hint: string;
+    /** Section headers above the strictly-separated task groups on the
+     *  Tasks tab. Only rendered when at least two groups have items. */
+    task_group_wedding: string;
+    task_group_honeymoon: string;
+    task_group_other: string;
     /** SOS / important flag button + filter pills above the task list. */
     priority_filter_aria: string;
     priority_filter_all: string;

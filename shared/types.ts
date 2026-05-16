@@ -720,10 +720,20 @@ export interface MoodboardPin {
 
 export type PlanningKind = "task" | "idea" | "schedule";
 
+/** Sub-topic a planning item belongs to. Drives which surface shows it —
+ *  the planning page shows everything (with a "Nászút" group on the wand);
+ *  the honeymoon page only shows tasks tagged "honeymoon". `null` is
+ *  treated as "wedding" by every reader for backward compatibility with
+ *  rows that pre-date the column. */
+export type PlanningTopic = "wedding" | "honeymoon";
+
 export interface PlanningItem {
   id: number;
   couple_id: number;
   kind: PlanningKind;
+  /** Sub-topic — see `PlanningTopic`. `null` means the row pre-dates the
+   *  column; readers treat it as "wedding". */
+  topic: PlanningTopic | null;
   /** Short headline. Required. */
   title: string;
   /** Free-form longer text. Used by "ideas" mostly; tasks/schedule entries can

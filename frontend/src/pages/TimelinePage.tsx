@@ -537,26 +537,20 @@ function buildGeometry(
       ticks.push({ date: cur, label: fmt.format(cur) });
       cur = addDays(cur, 7);
     }
-  } else if (mode === "month") {
-    let cur = startOfMonth(start);
-    const fmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
-    while (cur <= end) {
-      ticks.push({ date: cur, label: fmt.format(cur) });
-      cur = startOfNextMonth(cur);
-    }
-  } else if (mode === "quarter") {
-    let cur = startOfQuarter(start);
-    const fmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
-    while (cur <= end) {
-      ticks.push({ date: cur, label: fmt.format(cur) });
-      cur = startOfNextQuarter(cur);
-    }
   } else {
-    let cur = startOfHalf(start);
-    const fmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
+    // month / quarter / half all tick per-month so the axis stays read-as-
+    // calendar. The year is only printed when it changes (January or the
+    // first visible tick) — at 3M / 6M scale we don't have room to repeat
+    // "Apr 2026" / "Jul 2026" twelve times across the chart.
+    let cur = startOfMonth(start);
+    const monthFmt = new Intl.DateTimeFormat(intl, { month: "short" });
+    const monthYearFmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
+    let lastYear: number | null = null;
     while (cur <= end) {
-      ticks.push({ date: cur, label: fmt.format(cur) });
-      cur = startOfNextHalf(cur);
+      const showYear = lastYear === null || cur.getFullYear() !== lastYear;
+      ticks.push({ date: cur, label: showYear ? monthYearFmt.format(cur) : monthFmt.format(cur) });
+      lastYear = cur.getFullYear();
+      cur = startOfNextMonth(cur);
     }
   }
 

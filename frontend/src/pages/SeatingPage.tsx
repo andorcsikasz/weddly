@@ -1120,92 +1120,94 @@ export default function SeatingPage() {
       <span aria-live="polite" aria-atomic="true" className="sr-only">
         {a11yMessage}
       </span>
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1>{t("seating.title")}</h1>
-          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("seating.sub")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={() => setShortcutsOpen(true)}
-            aria-label={t("seating.shortcuts_button_label")}
-            title={t("seating.shortcuts_button_label")}
-          >
-            <HelpCircle size={16} aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="btn-outline"
-            disabled={previewLoading !== null}
-            onClick={() =>
-              requestDownload(
-                `/api/print/seating/a4?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
-                "weddly-seating-a4.pdf",
-                t("seating.print_a4"),
-              )
-            }
-            aria-label={t("seating.print_a4")}
-            title={t("seating.print_a4")}
-          >
-            <Printer size={16} aria-hidden /> {t("seating.print_format_a4")}
-          </button>
-          <button
-            type="button"
-            className="btn-outline"
-            disabled={previewLoading !== null}
-            onClick={() =>
-              requestDownload(
-                `/api/print/seating/a3?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
-                "weddly-seating-a3.pdf",
-                t("seating.print_a3"),
-              )
-            }
-            aria-label={t("seating.print_a3")}
-            title={t("seating.print_a3")}
-          >
-            <Printer size={16} aria-hidden /> {t("seating.print_format_a3")}
-          </button>
-          <button
-            type="button"
-            className="btn-outline"
-            disabled={previewLoading !== null}
-            onClick={() =>
-              requestDownload(
-                "/api/print/place-cards",
-                "weddly-place-cards.pdf",
-                t("seating.print_place_cards"),
-              )
-            }
-          >
-            <Printer size={16} /> {t("seating.print_place_cards")}
-          </button>
-          {previewLoading !== null && (
-            <button
-              type="button"
-              className="btn-outline"
-              onClick={cancelDownload}
-              aria-label={t("seating.pdf_cancel")}
-            >
-              {t("seating.pdf_cancel")}
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={arrangeTablesSymmetrically}
-            disabled={tables.length === 0}
-            aria-label={t("seating.arrange_button_label")}
-            title={t("seating.arrange_button_label")}
-          >
-            <LayoutGrid size={16} aria-hidden />
-          </button>
-          <button type="button" className="btn-primary" onClick={addTable}>
-            <Plus size={16} /> {t("seating.add_table")}
-          </button>
-        </div>
+      <header className="mb-6">
+        <h1>{t("seating.title")}</h1>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("seating.sub")}</p>
       </header>
+
+      {/* Action toolbar sits just above the floor plan so the title + sub
+          read as a clean intro, and the print/add affordances stay close
+          to the thing they act on. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className="btn-outline"
+          onClick={() => setShortcutsOpen(true)}
+          aria-label={t("seating.shortcuts_button_label")}
+          title={t("seating.shortcuts_button_label")}
+        >
+          <HelpCircle size={16} aria-hidden />
+        </button>
+        <button
+          type="button"
+          className="btn-outline"
+          disabled={previewLoading !== null}
+          onClick={() =>
+            requestDownload(
+              `/api/print/seating/a4?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
+              "weddly-seating-a4.pdf",
+              t("seating.print_a4"),
+            )
+          }
+          aria-label={t("seating.print_a4")}
+          title={t("seating.print_a4")}
+        >
+          <Printer size={16} aria-hidden /> {t("seating.print_format_a4")}
+        </button>
+        <button
+          type="button"
+          className="btn-outline"
+          disabled={previewLoading !== null}
+          onClick={() =>
+            requestDownload(
+              `/api/print/seating/a3?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
+              "weddly-seating-a3.pdf",
+              t("seating.print_a3"),
+            )
+          }
+          aria-label={t("seating.print_a3")}
+          title={t("seating.print_a3")}
+        >
+          <Printer size={16} aria-hidden /> {t("seating.print_format_a3")}
+        </button>
+        <button
+          type="button"
+          className="btn-outline"
+          disabled={previewLoading !== null}
+          onClick={() =>
+            requestDownload(
+              "/api/print/place-cards",
+              "weddly-place-cards.pdf",
+              t("seating.print_place_cards"),
+            )
+          }
+        >
+          <Printer size={16} /> {t("seating.print_place_cards")}
+        </button>
+        {previewLoading !== null && (
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={cancelDownload}
+            aria-label={t("seating.pdf_cancel")}
+          >
+            {t("seating.pdf_cancel")}
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn-outline"
+          onClick={arrangeTablesSymmetrically}
+          disabled={tables.length === 0}
+          aria-label={t("seating.arrange_button_label")}
+          title={t("seating.arrange_button_label")}
+        >
+          <LayoutGrid size={16} aria-hidden />
+        </button>
+        <button type="button" className="btn-primary ml-auto" onClick={addTable}>
+          <Plus size={16} /> {t("seating.add_table")}
+        </button>
+      </div>
 
       {tables.length === 0 ? (
         <div className="card stationery text-center">

@@ -254,13 +254,22 @@ export default function MonthView({
                 const day = addDays(weekStart, col);
                 const inMonth = day.getMonth() === currentDate.getMonth();
                 const isToday = sameDay(day, today);
-                const dayNumClass = inMonth
-                  ? "text-ink-900 dark:text-paper-50"
-                  : "text-ink-400 dark:text-umber-400";
+                const isPast = day < today && !isToday;
+                // Three-tier dimming: in-month future = full ink, in-month
+                // past = muted (already happened — couples don't need them
+                // to compete visually with what's still ahead), out-of-month
+                // = the lightest tier so the month boundary still reads.
+                const dayNumClass = !inMonth
+                  ? "text-ink-400 dark:text-umber-400"
+                  : isPast
+                    ? "text-ink-400 dark:text-umber-300"
+                    : "text-ink-900 dark:text-paper-50";
                 return (
                   <div
                     key={col}
-                    className="relative min-h-[80px] border-r border-paper-200 last:border-r-0 dark:border-umber-700"
+                    className={`relative min-h-[80px] border-r border-paper-200 last:border-r-0 dark:border-umber-700 ${
+                      isPast && inMonth ? "bg-paper-100/40 dark:bg-umber-900/30" : ""
+                    }`}
                   >
                     <div className="px-1.5 pt-1">
                       {isToday ? (

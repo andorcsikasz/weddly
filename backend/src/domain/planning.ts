@@ -3,19 +3,26 @@
 // All queries take a coupleId; the caller is responsible for scoping to the
 // authenticated couple via getCoupleForUser.
 
-import type { PlanningItem, PlanningKind } from "@shared/types";
+import type { PlanningItem, PlanningKind, PlanningTopic } from "@shared/types";
 import { db } from "../db";
 
 const VALID_KINDS: ReadonlySet<PlanningKind> = new Set(["task", "idea", "schedule"]);
+const VALID_TOPICS: ReadonlySet<PlanningTopic> = new Set(["wedding", "honeymoon"]);
 
 export function isPlanningKind(s: string): s is PlanningKind {
   return VALID_KINDS.has(s as PlanningKind);
+}
+
+export function isPlanningTopic(s: string): s is PlanningTopic {
+  return VALID_TOPICS.has(s as PlanningTopic);
 }
 
 export interface PlanningItemRow {
   id: number;
   couple_id: number;
   kind: string;
+  /** "wedding" | "honeymoon" | null. NULL on rows that pre-date the column. */
+  topic: string | null;
   title: string;
   body: string | null;
   done: number;
@@ -45,6 +52,7 @@ export function toPlanningItem(row: PlanningItemJoinedRow): PlanningItem {
     id: row.id,
     couple_id: row.couple_id,
     kind: (isPlanningKind(row.kind) ? row.kind : "task") as PlanningKind,
+    topic: row.topic && isPlanningTopic(row.topic) ? row.topic : null,
     title: row.title,
     body: row.body,
     done: Boolean(row.done),

@@ -392,14 +392,26 @@ export function SeatingMap({
       </header>
       {/* Expanded mode auto-fits the whole floor plan into the 90vh × 90vw
             overlay via the SVG's viewBox — the full room is always visible,
-            no scrolling. Inline mode keeps the fixed 60vh frame. */}
-      <div className={`relative bg-paper-50 dark:bg-umber-900 ${expanded ? "flex-1 p-4" : ""}`}>
+            no scrolling. Inline mode keeps the fixed 60vh frame.
+            `min-h-0` is the critical bit in expanded: a flex child has
+            `min-height: auto` by default, so the SVG's intrinsic content
+            size lets the wrapper grow past its allotted height and clip
+            the bottom of the room. Forcing min-h-0 lets the flex math
+            actually constrain the wrapper to whatever's left in the
+            90vh card. The SVG inside fills the wrapper via absolute
+            positioning, which sidesteps the same min-height: auto quirk
+            on the SVG itself. */}
+      <div
+        className={`relative bg-paper-50 dark:bg-umber-900 ${expanded ? "min-h-0 flex-1 p-4" : ""}`}
+      >
         <svg
           ref={svgRef}
           viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
           preserveAspectRatio="xMidYMid meet"
           className={`block select-none touch-none focus:outline-none ${
-            expanded ? "h-full w-full" : "h-[60vh] max-h-[640px] w-full"
+            expanded
+              ? "absolute inset-4 h-[calc(100%-2rem)] w-[calc(100%-2rem)]"
+              : "h-[60vh] max-h-[640px] w-full"
           }`}
           onPointerMove={moveDrag}
           onPointerUp={endDrag}

@@ -132,8 +132,7 @@ function CreateWorkspaceDialog({
 }) {
   const { t } = useT();
   const toast = useToast();
-  const [brideName, setBrideName] = useState("");
-  const [groomName, setGroomName] = useState("");
+  const [eventName, setEventName] = useState("");
   const [weddingDate, setWeddingDate] = useState("");
   const [seedOn, setSeedOn] = useState(false);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -204,10 +203,9 @@ function CreateWorkspaceDialog({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const bride = brideName.trim();
-    const groom = groomName.trim();
-    if (!bride || !groom) {
-      toast.error(t("profile.workspaces_create_names_required"));
+    const name = eventName.trim();
+    if (!name) {
+      toast.error(t("profile.workspaces_create_event_required"));
       return;
     }
     setSubmitting(true);
@@ -231,12 +229,8 @@ function CreateWorkspaceDialog({
       const seedFrom = seedOn && activeCoupleId !== null ? activeCoupleId : null;
       const seedIds = seedOn ? Array.from(selectedGuestIds) : [];
       const r = await coupleApi.createAdditional({
-        bride_name: bride,
-        groom_name: groom,
+        event_name: name,
         wedding_date_goal,
-        guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
-        budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
-        style_tags: [],
         seed_from_couple_id: seedFrom,
         seed_guest_ids: seedIds,
       });
@@ -278,36 +272,21 @@ function CreateWorkspaceDialog({
         <p className="text-sm text-ink-600 dark:text-umber-200">
           {t("profile.workspaces_create_body")}
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label htmlFor="cw-bride" className="field-label">
-              {t("onboarding.bride_name_label")}
-            </label>
-            <input
-              id="cw-bride"
-              type="text"
-              className="input"
-              value={brideName}
-              onChange={(e) => setBrideName(e.target.value)}
-              maxLength={100}
-              autoFocus
-              disabled={submitting}
-            />
-          </div>
-          <div>
-            <label htmlFor="cw-groom" className="field-label">
-              {t("onboarding.groom_name_label")}
-            </label>
-            <input
-              id="cw-groom"
-              type="text"
-              className="input"
-              value={groomName}
-              onChange={(e) => setGroomName(e.target.value)}
-              maxLength={100}
-              disabled={submitting}
-            />
-          </div>
+        <div>
+          <label htmlFor="cw-event" className="field-label">
+            {t("profile.workspaces_create_event_label")}
+          </label>
+          <input
+            id="cw-event"
+            type="text"
+            className="input"
+            value={eventName}
+            onChange={(e) => setEventName(e.target.value)}
+            placeholder={t("profile.workspaces_create_event_placeholder")}
+            maxLength={100}
+            autoFocus
+            disabled={submitting}
+          />
         </div>
         <div>
           <label htmlFor="cw-date" className="field-label">

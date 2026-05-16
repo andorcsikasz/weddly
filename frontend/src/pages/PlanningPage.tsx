@@ -23,7 +23,6 @@ import {
   Wand2,
 } from "lucide-react";
 import {
-  Fragment,
   type FormEvent,
   type ReactNode,
   useEffect,
@@ -75,9 +74,21 @@ const TASK_TITLE_TO_GROUP = (() => {
   return map;
 })();
 
-function taskGroupOf(title: string): TaskTemplateGroupId | "other" {
+type TaskGroupOrOther = TaskTemplateGroupId | "other";
+
+function taskGroupOf(title: string): TaskGroupOrOther {
   return TASK_TITLE_TO_GROUP.get(title) ?? "other";
 }
+
+/** i18n key for the section header above each task group. The bare "Egyéb"
+ *  / "Other" header only appears when there are user-typed tasks that don't
+ *  match a wand template title; it sits below the wedding + honeymoon
+ *  sections. */
+const TASK_GROUP_LABEL_KEY: Record<TaskGroupOrOther, string> = {
+  wedding: "planning.task_group_wedding",
+  honeymoon: "planning.task_group_honeymoon",
+  other: "planning.task_group_other",
+};
 
 export default function PlanningPage() {
   const { t, locale } = useT();
@@ -133,6 +144,27 @@ export default function PlanningPage() {
         }),
     [items, activeKind, priorityFilter],
   );
+
+  /** Tasks split into strictly-ordered sections: Esküvő → Nászút → Egyéb.
+   *  Each section is its own to-do list — reorder buttons stop at the
+   *  section boundary so a Nászút row can't slide past an Esküvő row by
+   *  accident. Empty sections drop out at render time. Ideas tab returns
+   *  one anonymous section containing everything (no group separation). */
+  const taskSections = useMemo(() => {
+    if (activeKind !== "task") {
+      return [{ group: "other" as TaskGroupOrOther, items: scoped }];
+    }
+    const byGroup: Record<TaskGroupOrOther, PlanningItem[]> = {
+      wedding: [],
+      honeymoon: [],
+      other: [],
+    };
+    for (const i of scoped) byGroup[taskGroupOf(i.title)].push(i);
+    const order: TaskGroupOrOther[] = ["wedding", "honeymoon", "other"];
+    return order
+      .map((g) => ({ group: g, items: byGroup[g] }))
+      .filter((s) => s.items.length > 0);
+  }, [activeKind, scoped]);
 
   /** Counts per priority level for the filter-pill badges. Computed once
    *  per items/tab change so the pill labels stay in sync as the user
@@ -210,13 +242,23 @@ export default function PlanningPage() {
     }
   }
 
-  /** Swap an item with its visible neighbour. Re-stripes the entire scoped
-   *  list to 0..N-1 so all-zero defaults (every freshly-created row stores
+  /** Swap an item with its visible neighbour. Re-stripes the affected list
+   *  to 0..N-1 so all-zero defaults (every freshly-created row stores
    *  position=0) settle into a stable order before the swap lands. Each row
-   *  whose position changed gets its own PATCH. */
+   *  whose position changed gets its own PATCH.
+   *
+   *  Boundary rule: for tasks the swap scope is the item's *group* (wedding
+   *  / honeymoon / other), not the entire kind. The two template groups are
+   *  rendered as separate to-do lists, so a wedding row can never move past
+   *  the first honeymoon row and vice versa. Ideas use kind-wide scope. */
   async function onMove(item: PlanningItem, direction: "up" | "down") {
+    const itemGroup = item.kind === "task" ? taskGroupOf(item.title) : null;
     const list = items
-      .filter((i) => i.kind === item.kind)
+      .filter((i) => {
+        if (i.kind !== item.kind) return false;
+        if (item.kind === "task") return taskGroupOf(i.title) === itemGroup;
+        return true;
+      })
       .sort((a, b) => {
         if (a.position !== b.position) return a.position - b.position;
         return a.created_at - b.created_at;
@@ -477,42 +519,39 @@ export default function PlanningPage() {
         ) : scoped.length === 0 ? (
           <EmptyState kind={activeKind} />
         ) : (
-          <ul className="mt-4 space-y-2">
-            {scoped.map((item, idx) => {
-              // Insert a divider when consecutive task rows cross a template
-              // group boundary (e.g. last Esküvő → first Nászút). The wand
-              // inserts items group-by-group, so this naturally separates
-              // the two starter sets without forcing a strict sort.
-              const prev = idx > 0 ? scoped[idx - 1] : null;
-              const showDivider =
-                activeKind === "task" &&
-                prev !== null &&
-                prev !== undefined &&
-                taskGroupOf(prev.title) !== taskGroupOf(item.title);
+          <div className="mt-4 space-y-6">
+            {taskSections.map((section) => {
+              // Section header only on the tasks tab AND only when there are
+              // at least two distinct groups visible — a single-group list
+              // doesn't need a label, that's just noise.
+              const showHeader = activeKind === "task" && taskSections.length > 1;
               return (
-                <Fragment key={item.id}>
-                  {showDivider && (
-                    <li
-                      role="separator"
-                      aria-hidden="true"
-                      className="!mt-4 mb-2 border-t border-paper-300 dark:border-umber-700"
-                    />
+                <section key={section.group}>
+                  {showHeader && (
+                    <h2 className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+                      {t(TASK_GROUP_LABEL_KEY[section.group])}
+                    </h2>
                   )}
-                  <PlanningRow
-                    item={item}
-                    assigneeSuggestions={assigneeSuggestions}
-                    canMoveUp={idx > 0}
-                    canMoveDown={idx < scoped.length - 1}
-                    onToggleDone={() => onToggleDone(item)}
-                    onPatch={(patch) => onPatch(item, patch)}
-                    onCyclePriority={() => onCyclePriority(item)}
-                    onMove={(direction) => onMove(item, direction)}
-                    onDelete={() => onDelete(item)}
-                  />
-                </Fragment>
+                  <ul className="space-y-2">
+                    {section.items.map((item, idx) => (
+                      <PlanningRow
+                        key={item.id}
+                        item={item}
+                        assigneeSuggestions={assigneeSuggestions}
+                        canMoveUp={idx > 0}
+                        canMoveDown={idx < section.items.length - 1}
+                        onToggleDone={() => onToggleDone(item)}
+                        onPatch={(patch) => onPatch(item, patch)}
+                        onCyclePriority={() => onCyclePriority(item)}
+                        onMove={(direction) => onMove(item, direction)}
+                        onDelete={() => onDelete(item)}
+                      />
+                    ))}
+                  </ul>
+                </section>
               );
             })}
-          </ul>
+          </div>
         )}
       </div>
 
@@ -1116,7 +1155,10 @@ function PlanningRow({
               <Circle size={18} />
             )}
           </button>
-          <PriorityFlagButton priority={(item.priority ?? 0) as 0 | 1 | 2} onCycle={onCyclePriority} />
+          <PriorityFlagButton
+            priority={(item.priority ?? 0) as 0 | 1 | 2}
+            onCycle={onCyclePriority}
+          />
         </>
       )}
       {item.kind === "idea" && (
