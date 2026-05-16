@@ -13,6 +13,7 @@ export type EmailKind =
   | "couple_paused" // workspace paused → 30-day delete countdown started
   | "account_purged" // 30-day window elapsed, all couple data deleted
   | "account_admin_purged" // an admin immediately deleted the account (no 30-day grace)
+  | "account_flagged" // admin flagged the account — 7-day window to reply or it gets purged
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
   | "rsvp_received_household_for_couple" // aggregated notification: whole party RSVP'd in one go
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
@@ -45,6 +46,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   couple_paused: "transactional",
   account_purged: "transactional",
   account_admin_purged: "transactional",
+  account_flagged: "transactional",
   rsvp_received_for_couple: "transactional",
   rsvp_received_household_for_couple: "transactional",
   rsvp_thanks_for_guest: "transactional",

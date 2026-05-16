@@ -73,6 +73,14 @@ export interface AccountAdminPurgedPayload {
    *  onboarded a couple (orphan-user direct delete). */
   coupleDisplayName: string | null;
 }
+export interface AccountFlaggedPayload {
+  /** Free-text concern the admin typed. Rendered verbatim in the email. */
+  reason: string;
+  /** Localised "you have until 2026-05-23" string, computed by the caller
+   *  so the mail copy stays simple. */
+  deadlineDateHu: string;
+  deadlineDateEn: string;
+}
 export interface RsvpReceivedForCouplePayload {
   guestName: string;
   rsvpStatus: "yes" | "no" | "maybe";
@@ -152,6 +160,7 @@ export type KindPayload = {
   couple_paused: CouplePausedPayload;
   account_purged: AccountPurgedPayload;
   account_admin_purged: AccountAdminPurgedPayload;
+  account_flagged: AccountFlaggedPayload;
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
   rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
@@ -466,6 +475,37 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
             "A Weddly administrator has deleted your account. Your sign-in no longer works from this point on, and the deletion cannot be undone.",
             "If you think this was a mistake, just reply to this email and we'll take a look.",
           ],
+      cta: "Weddly",
+    },
+  }),
+
+  // Moderation flag — fires the moment an admin clicks "Flag" on a user
+  // in the admin directory. Tells the recipient WHY they were flagged
+  // (verbatim free-text the admin typed) and gives them 7 days to reply
+  // to the email; the hourly sweep deletes the account after the deadline
+  // unless the admin manually clears the flag.
+  account_flagged: (p, ctx) => ({
+    subject: "Fiókod ellenőrzés alatt / Your account is under review",
+    ctaUrl: CONFIG.frontendBaseUrl,
+    hu: {
+      preheader: `Válaszolj erre az e-mailre ${p.deadlineDateHu}-ig.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "A Weddly adminisztrátora megjelölte a fiókodat ellenőrzésre. Az alábbi aggály miatt kértük a visszajelzésedet:",
+        `„${p.reason}"`,
+        `Ha úgy érzed, hogy ez tévedés vagy szeretnéd elmagyarázni a helyzetet, válaszolj erre az e-mailre ${p.deadlineDateHu}-ig.`,
+        "Ha eddig az időpontig nem kapunk választ, a fiókodat és a hozzátartozó adatokat (vendéglista, ülésrend, költségvetés, RSVP-k) automatikusan és véglegesen töröljük.",
+      ],
+      cta: "Weddly",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "A Weddly administrator has flagged your account for review. We'd like to hear from you about the following concern:",
+        `"${p.reason}"`,
+        `If you think this is a mistake or want to explain the situation, just reply to this email by ${p.deadlineDateEn}.`,
+        "If we don't hear back by then, your account and all associated data (guest list, seating, budget, RSVPs) will be automatically and permanently deleted.",
+      ],
       cta: "Weddly",
     },
   }),

@@ -34,6 +34,7 @@ import {
   PartyPopper,
   Pencil,
   Phone,
+  Scale,
   Scissors,
   Search,
   Shirt,
@@ -59,8 +60,16 @@ import {
   subscribeCostPlanningCount,
   writeCostPlanningCount,
 } from "../lib/cost_planning";
-import { coupleApi, coupleSupplierApi, supplierApi } from "../lib/endpoints";
-import type { Currency } from "@shared/types";
+import {
+  budgetApi,
+  coupleApi,
+  coupleSupplierApi,
+  supplierApi,
+  supplierCostApi,
+} from "../lib/endpoints";
+import type { BudgetLine, Currency } from "@shared/types";
+import type { CoupleSupplierCost } from "@shared/supplier_costs";
+import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
 import { formatMoney } from "../lib/format";
 import {
   readSelection,
@@ -148,6 +157,11 @@ export default function SuppliersPage() {
    *  state cleanly. */
   const [currency, setCurrency] = useState<Currency>("HUF");
   const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
+  // Couple-side context for the comparison dialog. We pre-load both so
+  // opening the dialog doesn't trigger a network round-trip — the payloads
+  // are small (a few rows each) and they also feed other parts of the page.
+  const [supplierCosts, setSupplierCosts] = useState<CoupleSupplierCost[]>([]);
+  const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
   // Per-category "this is our pick" selection. Keys are SupplierCategory,
   // values are supplier IDs (curated slug, "c{N}" community id, or DIY hex).
   // One pick per category — choosing a new card replaces the prior pick.
@@ -207,6 +221,27 @@ export default function SuppliersPage() {
     const n = Number(raw);
     return Number.isInteger(n) && n >= 1 && n <= 5 ? (n as 1 | 2 | 3 | 4 | 5) : null;
   })();
+  // Comparison set: 1–4 supplier ids the couple ticked for side-by-side
+  // comparison. Lives in URL (`?compare=id1,id2,id3`) so back-button and
+  // bookmarks keep the set; cap at 4 so columns stay readable inside the
+  // dialog.
+  const COMPARE_MAX = 4;
+  const compareIds = useMemo<string[]>(() => {
+    const raw = params.get("compare");
+    if (!raw) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const id of raw.split(",")) {
+      const trimmed = id.trim();
+      if (trimmed && !seen.has(trimmed)) {
+        seen.add(trimmed);
+        out.push(trimmed);
+        if (out.length >= COMPARE_MAX) break;
+      }
+    }
+    return out;
+  }, [params]);
+  const [compareOpen, setCompareOpen] = useState(false);
   // Guest count: positive integer. Suppliers without a declared capacity
   // pass through (otherwise this filter would hide every photographer).
   const guestsFilter = (() => {
@@ -239,6 +274,29 @@ export default function SuppliersPage() {
     if (showPickedOnly) p.delete("picked");
     else p.set("picked", "1");
     setParams(p, { replace: true });
+  }
+  function toggleCompare(id: string) {
+    const p = new URLSearchParams(params);
+    const current = compareIds;
+    let next: string[];
+    if (current.includes(id)) {
+      next = current.filter((c) => c !== id);
+    } else if (current.length >= COMPARE_MAX) {
+      // Silently no-op past the cap — the per-card toggle is disabled there,
+      // but defensive guard keeps the URL well-formed.
+      return;
+    } else {
+      next = [...current, id];
+    }
+    if (next.length === 0) p.delete("compare");
+    else p.set("compare", next.join(","));
+    setParams(p, { replace: true });
+  }
+  function clearCompare() {
+    const p = new URLSearchParams(params);
+    p.delete("compare");
+    setParams(p, { replace: true });
+    setCompareOpen(false);
   }
   function setSortMode(next: "top" | "alpha" | "price_asc" | "price_desc") {
     const p = new URLSearchParams(params);
@@ -328,6 +386,17 @@ export default function SuppliersPage() {
         if (couple.couple) hydrateCostPlanningCount(couple.couple);
         if (id !== null) setSelectionState(readSelection(id));
       })
+      .catch(() => undefined);
+    // Per-supplier quotes + category budgets feed the comparison dialog.
+    // Fire in parallel with the main load; either failing is fine — the
+    // dialog gracefully falls back to "no quote" / "no budget" cells.
+    supplierCostApi
+      .list()
+      .then((r) => setSupplierCosts(r.costs))
+      .catch(() => undefined);
+    budgetApi
+      .listLines()
+      .then((r) => setBudgetLines(r.lines))
       .catch(() => undefined);
   }, []);
 
@@ -935,6 +1004,8 @@ export default function SuppliersPage() {
             const isHighlighted = s.id === highlightId;
             const isSaved = s.source !== "self" && saved.has(s.id);
             const isPicked = selection[s.category] === s.id;
+            const isCompared = compareIds.includes(s.id);
+            const compareCapReached = compareIds.length >= COMPARE_MAX;
             if (s.source === "self") {
               const openEdit = () => {
                 setDiyEditing(s);
@@ -1148,6 +1219,13 @@ export default function SuppliersPage() {
                     >
                       <Flag size={14} aria-hidden />
                     </button>
+                    <CompareToggle
+                      supplierId={s.id}
+                      isCompared={isCompared}
+                      capReached={compareCapReached}
+                      onToggle={() => toggleCompare(s.id)}
+                      t={t}
+                    />
                     <button
                       type="button"
                       onClick={() => togglePicked(s)}
@@ -1194,10 +1272,18 @@ export default function SuppliersPage() {
                     : ""
                 } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
               >
-                {/* Top-right corner: pick (left) + save (right). The pick
-                    button is what marks a card as "our chosen one" for its
-                    sub-category; the star is the lightweight bookmark. */}
+                {/* Top-right corner: compare + pick + save. The pick button
+                    marks a card as "our chosen one" for its sub-category, the
+                    star is the lightweight bookmark, and compare collects the
+                    card into the side-by-side view. */}
                 <div className="absolute right-3 top-3 inline-flex items-center gap-1">
+                  <CompareToggle
+                    supplierId={s.id}
+                    isCompared={isCompared}
+                    capReached={compareCapReached}
+                    onToggle={() => toggleCompare(s.id)}
+                    t={t}
+                  />
                   <button
                     type="button"
                     onClick={() => togglePicked(s)}
@@ -1408,6 +1494,53 @@ export default function SuppliersPage() {
           }
         }}
       />
+      {compareIds.length > 0 && (
+        <div
+          className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 sm:bottom-6"
+          aria-live="polite"
+        >
+          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-paper-300 bg-paper-50/95 px-2 py-2 shadow-lg backdrop-blur dark:border-umber-700 dark:bg-umber-800/95">
+            <span className="inline-flex items-center gap-1.5 pl-2 text-sm font-medium text-ink-700 dark:text-paper-100">
+              <Scale size={14} aria-hidden />
+              {t("suppliers.compare.floating_label", { n: compareIds.length })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCompareOpen(true)}
+              disabled={compareIds.length < 2}
+              title={
+                compareIds.length < 2 ? t("suppliers.compare.floating_min_hint") : undefined
+              }
+              className="inline-flex h-8 items-center gap-1 rounded-full bg-ink-700 px-3 text-xs font-medium text-paper-100 transition hover:bg-ink-900 disabled:cursor-not-allowed disabled:bg-ink-300 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-100 dark:disabled:bg-umber-600 dark:disabled:text-umber-400"
+            >
+              {t("suppliers.compare.floating_open")}
+            </button>
+            <button
+              type="button"
+              onClick={clearCompare}
+              aria-label={t("suppliers.compare.floating_clear")}
+              title={t("suppliers.compare.floating_clear")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+      <SupplierCompareDialog
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        compareIds={compareIds}
+        items={items}
+        supplierCosts={supplierCosts}
+        budgetLines={budgetLines}
+        targetGuestCount={targetGuestCount}
+        coupleCityFilter={cityFilter}
+        currency={currency}
+        locale={locale}
+        onRemove={toggleCompare}
+        t={t}
+      />
     </AppShell>
   );
 }
@@ -1508,6 +1641,46 @@ function Avatar({ name }: { name: string }) {
 function PriceBandDots({ band }: { band: number }) {
   const filled = Math.max(0, Math.min(5, band));
   return <span className="font-mono">{"$".repeat(filled)}</span>;
+}
+
+/** Per-card toggle that adds / removes a supplier from the side-by-side
+ *  comparison set. Disabled (but still keyboard-focusable) when the cap is
+ *  reached and the card isn't already in the set. */
+function CompareToggle({
+  supplierId,
+  isCompared,
+  capReached,
+  onToggle,
+  t,
+}: {
+  supplierId: string;
+  isCompared: boolean;
+  capReached: boolean;
+  onToggle: () => void;
+  t: (key: string) => string;
+}) {
+  const disabled = !isCompared && capReached;
+  const label = isCompared ? t("suppliers.compare.remove_aria") : t("suppliers.compare.add_aria");
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={disabled}
+      aria-pressed={isCompared}
+      aria-label={label}
+      title={label}
+      data-supplier-id={supplierId}
+      className={
+        isCompared
+          ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush-100 text-blush-700 transition hover:bg-blush-200 dark:bg-blush-400/20 dark:text-blush-300 dark:hover:bg-blush-400/30"
+          : disabled
+            ? "inline-flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full text-ink-300 dark:text-umber-500"
+            : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
+      }
+    >
+      <Scale size={14} aria-hidden />
+    </button>
+  );
 }
 
 function VoteRow({

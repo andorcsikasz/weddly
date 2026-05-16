@@ -335,16 +335,11 @@ async function runOneUser(i: number): Promise<void> {
   // household so a regression in the new write path shows up here instead
   // of silently in a couple's prod data.
   if (householdIds.length > 0) {
-    await req(
-      "households.rsvp_toggle",
-      "PATCH",
-      `/api/households/${householdIds[0]}`,
-      {
-        token,
-        ip,
-        body: { rsvp_offers_accommodation: true, rsvp_collects_meal: false },
-      },
-    );
+    await req("households.rsvp_toggle", "PATCH", `/api/households/${householdIds[0]}`, {
+      token,
+      ip,
+      body: { rsvp_offers_accommodation: true, rsvp_collects_meal: false },
+    });
   }
 
   // 12. Dashboard-style reads (the ones that suffer first as data grows)

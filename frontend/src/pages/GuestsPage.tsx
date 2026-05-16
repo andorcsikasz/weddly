@@ -22,6 +22,7 @@ import {
   CheckCheck,
   Atom,
   ChevronDown,
+  ClipboardCopy,
   Cookie,
   Crown,
   Download,
@@ -47,6 +48,7 @@ import {
   User,
   UserPlus,
   Users,
+  Utensils,
   Wheat,
   X,
 } from "lucide-react";
@@ -108,6 +110,7 @@ export default function GuestsPage() {
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [mealsOpen, setMealsOpen] = useState(false);
   const [orphanFixing, setOrphanFixing] = useState(false);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   // ── Search state ────────────────────────────────────────────────────
@@ -469,6 +472,14 @@ export default function GuestsPage() {
           </label>
           <button
             type="button"
+            className="btn-outline"
+            onClick={() => setMealsOpen(true)}
+            title={t("guests.meals_title")}
+          >
+            <Utensils size={16} aria-hidden /> {t("guests.meals_button")}
+          </button>
+          <button
+            type="button"
             className="btn-primary"
             onClick={() => setEditing({ guest: null, defaultHouseholdId: null })}
           >
@@ -629,6 +640,8 @@ export default function GuestsPage() {
       {copyFallback && (
         <CopyFallbackDialog url={copyFallback} onClose={() => setCopyFallback(null)} />
       )}
+
+      {mealsOpen && <MealsDialog guests={guests} onClose={() => setMealsOpen(false)} />}
 
       {editing && (
         <GuestDrawer
@@ -2448,6 +2461,185 @@ function SongRequestList({
         <Plus size={12} aria-hidden /> {t("guests.song_add")}
       </button>
     </div>
+  );
+}
+
+/** Pre-event roll-up surfaced via the toolbar "Étkezés" button. Counts meal
+ *  selections + allergen tags across every guest who answered yes, so the
+ *  couple can hand the caterer one clean tally instead of scrolling the
+ *  list. "Copy as text" exports a plain summary suitable for email/Slack.
+ *  Babies (`kind === "baby"`) are excluded from the meal pending count —
+ *  they don't get a wedding-menu plate. */
+const MEAL_ORDER: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
+
+function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void }) {
+  const { t } = useT();
+  const toast = useToast();
+
+  const stats = useMemo(() => {
+    const mealCounts: Record<MealChoice, number> = {
+      meat: 0,
+      fish: 0,
+      vegetarian: 0,
+      vegan: 0,
+      child: 0,
+      none: 0,
+    };
+    const dietaryCounts: Record<DietaryTag, number> = {
+      lactose: 0,
+      milk_protein: 0,
+      gluten: 0,
+      nut: 0,
+      egg: 0,
+      fish_shellfish: 0,
+    };
+    let pending = 0;
+    let totalYes = 0;
+    for (const g of guests) {
+      if (g.rsvp_status !== "yes") continue;
+      totalYes += 1;
+      if (g.meal_choice) {
+        mealCounts[g.meal_choice] += 1;
+      } else if (g.kind !== "baby") {
+        pending += 1;
+      }
+      const { tags } = parseDietaryTags(g.dietary);
+      for (const tag of tags) dietaryCounts[tag] += 1;
+    }
+    return { mealCounts, dietaryCounts, pending, totalYes };
+  }, [guests]);
+
+  async function copySummary() {
+    const lines: string[] = [];
+    lines.push(t("guests.meals_summary_header"));
+    lines.push("");
+    lines.push(t("guests.meals_total_yes", { count: stats.totalYes }));
+    lines.push("");
+    lines.push(`${t("guests.meals_section_meals")}:`);
+    for (const m of MEAL_ORDER) {
+      lines.push(`  ${t(`guests.meal_${m}`)}: ${stats.mealCounts[m]}`);
+    }
+    if (stats.pending > 0) {
+      lines.push(`  ${t("guests.meals_pending_label")}: ${stats.pending}`);
+    }
+    lines.push("");
+    lines.push(`${t("guests.meals_section_dietary")}:`);
+    for (const tag of DIETARY_TAG_KEYS) {
+      lines.push(`  ${t(`rsvp.tag_${tag}`)}: ${stats.dietaryCounts[tag]}`);
+    }
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      toast.success(t("guests.meals_copy_success"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      title={t("guests.meals_title")}
+      role="dialog"
+      onClose={onClose}
+      size="lg"
+      closeOnBackdrop
+      footer={
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={copySummary}
+            disabled={stats.totalYes === 0}
+          >
+            <ClipboardCopy size={16} aria-hidden /> {t("guests.meals_copy_text")}
+          </button>
+          <button type="button" className="btn-primary" onClick={onClose}>
+            {t("guests.meals_close")}
+          </button>
+        </div>
+      }
+    >
+      {stats.totalYes === 0 ? (
+        <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_no_yes_yet")}</p>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_help")}</p>
+            <p className="text-sm font-medium text-ink-800 dark:text-paper-100">
+              {t("guests.meals_total_yes", { count: stats.totalYes })}
+            </p>
+          </div>
+
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {t("guests.meals_section_meals")}
+            </h3>
+            <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {MEAL_ORDER.map((m) => (
+                <MealStatRow
+                  key={m}
+                  icon={<MealIcon meal={m} />}
+                  label={t(`guests.meal_${m}`)}
+                  count={stats.mealCounts[m]}
+                />
+              ))}
+            </ul>
+            {stats.pending > 0 && (
+              <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.meals_pending_help", { count: stats.pending })}
+              </p>
+            )}
+          </section>
+
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {t("guests.meals_section_dietary")}
+            </h3>
+            <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {DIETARY_TAG_KEYS.map((tag) => (
+                <MealStatRow
+                  key={tag}
+                  icon={<DietaryTagIcon tag={tag} />}
+                  label={t(`rsvp.tag_${tag}`)}
+                  count={stats.dietaryCounts[tag]}
+                />
+              ))}
+            </ul>
+          </section>
+        </div>
+      )}
+    </Dialog>
+  );
+}
+
+function MealStatRow({ icon, label, count }: { icon: ReactNode; label: string; count: number }) {
+  const dim = count === 0;
+  return (
+    <li
+      className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors ${
+        dim
+          ? "border-paper-200 bg-paper-50/60 dark:border-umber-700/60 dark:bg-umber-800/40"
+          : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+      }`}
+    >
+      <span
+        className={`flex items-center gap-2 text-sm ${
+          dim
+            ? "text-ink-400 dark:text-umber-300"
+            : "text-ink-700 dark:text-paper-100"
+        }`}
+      >
+        <span aria-hidden>{icon}</span>
+        {label}
+      </span>
+      <span
+        className={`font-mono text-lg font-semibold tabular-nums ${
+          dim ? "text-ink-400 dark:text-umber-400" : "text-ink-900 dark:text-paper-50"
+        }`}
+      >
+        {count}
+      </span>
+    </li>
   );
 }
 

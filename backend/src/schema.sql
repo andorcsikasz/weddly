@@ -584,3 +584,68 @@ CREATE TABLE IF NOT EXISTS flight_estimates (
   UNIQUE(origin, destination_text, depart_date, return_date, adults)
 );
 CREATE INDEX IF NOT EXISTS idx_flight_estimates_fetched ON flight_estimates(fetched_at);
+
+-- Admin moderation flags. An admin flags a user with a reason; the
+-- system emails the user explaining the concern and giving 7 days to
+-- reply. After the deadline, the hourly purge sweep auto-deletes the
+-- account unless the flag has been resolved (admin sets `resolved_at`
+-- with a note after the user explains by email).
+--
+-- Lifecycle:
+--   created_at        — stamped on insert
+--   scheduled_delete_at = created_at + 7 days
+--   resolved_at        — null while pending; non-null after admin clears
+--                        the flag (manual decision, e.g. user replied)
+--   resolution_note    — admin's own note recording why the flag was cleared
+CREATE TABLE IF NOT EXISTS user_flags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  flagged_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reason TEXT NOT NULL,
+  scheduled_delete_at INTEGER NOT NULL,
+  resolved_at INTEGER,
+  resolved_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  resolution_note TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_user_flags_user ON user_flags(user_id);
+-- Index for the sweep query (filter on unresolved, sort by deadline).
+CREATE INDEX IF NOT EXISTS idx_user_flags_pending ON user_flags(scheduled_delete_at, resolved_at);
+
+-- Logistics: lodgings the couple has booked / proposed for guests. One row per
+-- bookable unit (a hotel room, an apartment, "Mama háza"). `capacity` caps how
+-- many guests can be assigned via `guests.accommodation_id`; the route layer
+-- treats it as an advisory soft cap — overflow is allowed but flagged in the UI
+-- so the couple can fix it. `price_huf` is the total cost for the unit (not per
+-- guest), kept as integer Forint to match the rest of the money columns.
+CREATE TABLE IF NOT EXISTS accommodations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  address TEXT,
+  capacity INTEGER NOT NULL DEFAULT 2,
+  price_huf INTEGER,
+  link TEXT,
+  contact TEXT,
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_accommodations_couple ON accommodations(couple_id);
+
+-- Logistics: transfer trips between airport/lodging/venue. A guest can sit in
+-- one transfer at a time (1:N via `guests.transfer_id`). v1 is intentionally
+-- "basic" per product spec — a flat list with a label + optional time/capacity;
+-- richer routing (multi-leg, return trip) lands later.
+CREATE TABLE IF NOT EXISTS transfers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  direction TEXT,                                              -- free-form: 'oda', 'vissza', or anything the couple writes
+  depart_at TEXT,                                              -- ISO 8601 local: 'YYYY-MM-DDTHH:MM' or NULL
+  capacity INTEGER,                                            -- advisory; NULL = unbounded
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_transfers_couple ON transfers(couple_id);

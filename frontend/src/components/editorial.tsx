@@ -153,7 +153,9 @@ export function DropCap({ children, className = "" }: DropCapProps) {
   const first = text.slice(0, 1);
   const rest = text.slice(1);
   return (
-    <p className={`text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg ${className}`}>
+    <p
+      className={`text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg ${className}`}
+    >
       <span
         aria-hidden="true"
         className="float-left mr-3 mt-1 font-serif text-7xl leading-none text-blush-700 dark:text-blush-300 sm:text-8xl"
@@ -231,7 +233,9 @@ export function SectionLabel({
 // ─────────────────────────── internal helpers ───────────────────────────
 
 function NumeralGlyph({ value }: { value: string }): ReactNode {
-  return <span className="font-serif text-base italic text-blush-700 dark:text-blush-300">{value}</span>;
+  return (
+    <span className="font-serif text-base italic text-blush-700 dark:text-blush-300">{value}</span>
+  );
 }
 
 function EyebrowGlyph({ label, vertical = false }: { label: string; vertical?: boolean }) {

@@ -387,6 +387,25 @@ db.exec(`
      AND couple_id IN (SELECT id FROM couples WHERE rsvp_collects_meal = 0)
 `);
 
+// Logistics assignments live on the guest row. One accommodation + one
+// transfer per guest, both nullable. We index on the foreign-key columns so
+// the LogisticsPage can pull "guests assigned to this accommodation" with a
+// single seek instead of scanning every guest in the couple. Indexes live in
+// db.ts (not schema.sql) so they apply even when the column was added on a
+// pre-existing prod DB — same pattern as supplier_votes.couple_id.
+addColumnIfMissing(
+  "guests",
+  "accommodation_id",
+  "accommodation_id INTEGER REFERENCES accommodations(id) ON DELETE SET NULL",
+);
+addColumnIfMissing(
+  "guests",
+  "transfer_id",
+  "transfer_id INTEGER REFERENCES transfers(id) ON DELETE SET NULL",
+);
+db.exec("CREATE INDEX IF NOT EXISTS idx_guests_accommodation ON guests(accommodation_id)");
+db.exec("CREATE INDEX IF NOT EXISTS idx_guests_transfer ON guests(transfer_id)");
+
 // `auto_created = 1` marks the household-of-one that `guests.create` spawns
 // implicitly when the caller passes no `household_id` and no
 // `new_household_label`. Distinguishes "the user typed a guest name and a

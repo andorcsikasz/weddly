@@ -1216,6 +1216,20 @@ export interface LocaleMessages {
     rsvp_offers_accommodation_short: string;
     rsvp_collects_meal_label: string;
     rsvp_collects_meal_help: string;
+    meals_button: string;
+    meals_title: string;
+    meals_help: string;
+    meals_total_yes: string;
+    meals_section_meals: string;
+    meals_section_dietary: string;
+    meals_pending_label: string;
+    meals_pending_help_one: string;
+    meals_pending_help_other: string;
+    meals_no_yes_yet: string;
+    meals_copy_text: string;
+    meals_copy_success: string;
+    meals_summary_header: string;
+    meals_close: string;
   };
   budget: {
     title: string;
@@ -1742,6 +1756,50 @@ export interface LocaleMessages {
       hair_makeup: string;
       stationery: string;
       transport: string;
+    };
+    /** Side-by-side comparison: couples tick a few suppliers and the
+     *  dialog shows price/services next to each other, with verdicts
+     *  tailored to the couple's known params (guest count, budget). */
+    compare: {
+      /** aria + title on the per-card Compare toggle. */
+      add_aria: string;
+      remove_aria: string;
+      /** Floating bottom bar label. `{n}` is selected count. */
+      floating_label: string;
+      floating_open: string;
+      floating_clear: string;
+      /** Tooltip when n < 2 — need at least 2 to compare. */
+      floating_min_hint: string;
+      /** Dialog. */
+      dialog_title: string;
+      dialog_intro: string;
+      dialog_close_aria: string;
+      /** Row labels. */
+      row_quote: string;
+      row_price_band: string;
+      row_capacity: string;
+      row_city: string;
+      row_votes: string;
+      row_contact: string;
+      row_about: string;
+      /** Per-cell helpers. `{amount}` formatted HUF, `{n}` is a count. */
+      quote_none: string;
+      quote_vs_budget_under: string;
+      quote_vs_budget_over: string;
+      quote_no_budget: string;
+      capacity_fits: string;
+      capacity_too_small: string;
+      capacity_too_large: string;
+      capacity_unknown: string;
+      capacity_no_target: string;
+      same_city: string;
+      different_city: string;
+      contact_website: string;
+      contact_email: string;
+      contact_phone: string;
+      contact_none: string;
+      /** Per-column actions on the comparison card header. */
+      remove_column: string;
     };
   };
   admin: {

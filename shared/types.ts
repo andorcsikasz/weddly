@@ -46,6 +46,22 @@ export interface AdminUserView {
    *  in `verifySessionToken`. Null if the user hasn't loaded the app since
    *  the column was added. */
   last_seen_at: UnixMs | null;
+  /** The user's open moderation flag, if any. Null when no flag exists or
+   *  the latest flag has been resolved. Drives the flag badge + countdown
+   *  on AdminUsersPage. */
+  active_flag: UserFlag | null;
+}
+
+/** Admin-side projection of `user_flags`. Internal columns
+ *  (resolved_by_user_id, resolution_note, …) stay on the server. */
+export interface UserFlag {
+  id: number;
+  user_id: number;
+  reason: string;
+  /** Unix ms of the auto-purge deadline. Compare to Date.now() for the
+   *  "Xd left" countdown. */
+  scheduled_delete_at: UnixMs;
+  created_at: UnixMs;
 }
 
 export interface AdminCoupleView {

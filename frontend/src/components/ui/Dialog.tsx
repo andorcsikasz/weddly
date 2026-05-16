@@ -40,9 +40,10 @@ type DialogProps = {
   /** When true, clicking the backdrop closes the dialog. Off for destructive
    * confirm flows where accidental dismiss could lose context. */
   closeOnBackdrop?: boolean;
-  /** Width preset. Defaults to "sm" (max-w-md) — use "lg" for embedded
-   * previews like PDFs. */
-  size?: "sm" | "lg";
+  /** Width preset. Defaults to "sm" (max-w-md). "lg" (max-w-3xl) suits
+   * embedded previews like PDFs; "xl" (max-w-5xl) makes room for wide
+   * grids like supplier comparisons. */
+  size?: "sm" | "lg" | "xl";
 };
 
 /** Portal-mounted accessible dialog. Manages ESC, focus restore, and scroll
@@ -153,7 +154,7 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={describedById}
-        className={`card relative flex max-h-[90vh] w-full flex-col ${size === "lg" ? "max-w-3xl" : "max-w-md"} rounded-b-none rounded-t-2xl p-0 shadow-pop sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
+        className={`card relative flex max-h-[90vh] w-full flex-col ${size === "xl" ? "max-w-5xl" : size === "lg" ? "max-w-3xl" : "max-w-md"} rounded-b-none rounded-t-2xl p-0 shadow-pop sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
       >
         <div className="flex shrink-0 items-start gap-4 px-6 pt-6">
           <h2 id={titleId} className="flex-1 text-xl">
