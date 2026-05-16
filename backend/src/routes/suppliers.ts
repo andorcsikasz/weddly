@@ -2,7 +2,12 @@
 // user-submitted entries, then overlays per-supplier vote tallies + the
 // caller's own vote. Anonymous callers get votes_score but user_vote = 0.
 
-import type { DirectorySupplier, DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
+import type {
+  DirectorySupplier,
+  DirectorySupplierBase,
+  SupplierCategory,
+  SupplierEventInput,
+} from "@shared/suppliers";
 import {
   listActiveCommunitySuppliers,
   toDirectorySupplierBase,
@@ -10,9 +15,11 @@ import {
 import { getCoupleForUser } from "../domain/couples";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
+import { recordSupplierEvents } from "../domain/supplier_views";
 import { db } from "../db";
 import { getUserById } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
+import { rateLimit } from "../lib/rate_limit";
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
   "venue",
@@ -123,8 +130,35 @@ async function handleVote(ctx: Ctx): Promise<Response> {
   });
 }
 
+interface EventsBody {
+  events?: unknown;
+}
+
+/** Batched ingest for directory analytics. Anonymous-tolerant — a logged-out
+ *  visitor still counts toward views. We rate-limit per IP so a single
+ *  client can't flood the table; the cap is generous (60 batches/min) since
+ *  the frontend sends one batch per page-load. */
+async function handleRecordEvents(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "suppliers.events", { capacity: 60, refillRate: 1 });
+  const body = await readJson<EventsBody>(ctx.req).catch(() => ({}) as EventsBody);
+  if (!Array.isArray(body.events)) {
+    throw new HttpError(400, "events must be an array");
+  }
+  if (body.events.length > 200) {
+    throw new HttpError(400, "events batch too large (max 200)");
+  }
+  const coupleId = ctx.userId ? (getCoupleForUser(ctx.userId)?.id ?? null) : null;
+  const written = recordSupplierEvents(
+    body.events as SupplierEventInput[],
+    ctx.userId ?? null,
+    coupleId,
+  );
+  return json({ recorded: written });
+}
+
 export function registerSupplierRoutes(router: Router) {
   router.get("/api/suppliers", handleList);
+  router.post("/api/suppliers/events", handleRecordEvents);
   router.put("/api/suppliers/:supplier_id/vote", handleVote, true);
   // Silence the unused-import warning for VALID_CATEGORIES; it's left here
   // so a future "validate cat param" path is one line away.
