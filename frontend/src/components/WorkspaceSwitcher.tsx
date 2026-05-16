@@ -80,7 +80,7 @@ export function WorkspaceSwitcher() {
         to="/app/profile#workspaces"
         aria-label={t("workspace.create_link")}
         title={t("workspace.create_link")}
-        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+        className="inline-flex h-7 w-7 items-center justify-center text-ink-700 transition-colors hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
       >
         <Plus size={14} aria-hidden="true" />
       </Link>
