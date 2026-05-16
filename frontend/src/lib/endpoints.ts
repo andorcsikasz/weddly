@@ -3,6 +3,7 @@
 import type {
   Accommodation,
   AdminCoupleView,
+  AdminSidebarBadges,
   AdminUserView,
   AuthSession,
   BudgetCategory,
@@ -707,6 +708,10 @@ export const adminUserApi = {
   /** One-shot bulk re-purge of every couple flagged `status="deleting"`. */
   purgeDeleting: () =>
     apiFetch<{ purged: number }>("POST", "/api/admin/couples/purge-deleting", {}),
+  /** Unread-style counts for the admin nav rail. AppShell polls this
+   *  every ~30s while the admin is signed in and renders a small red
+   *  badge next to each section with count > 0. */
+  sidebarBadges: () => apiFetch<AdminSidebarBadges>("GET", "/api/admin/sidebar-badges"),
 };
 
 export const vendorWaitlistApi = {

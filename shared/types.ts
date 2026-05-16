@@ -75,6 +75,17 @@ export interface AdminUserActivity {
   prior_flag_count: number;
 }
 
+/** Unread-style counts the admin sidebar shows as a small red index next
+ *  to each section. Polled every ~30s by AppShell while an admin is
+ *  signed in. Each value is the count of rows that need attention in
+ *  that section — see `handleSidebarBadges` for the exact predicate. */
+export interface AdminSidebarBadges {
+  suppliers: number;
+  users: number;
+  vendor_waitlist: number;
+  feedback: number;
+}
+
 /** Admin-side projection of `user_flags`. Internal columns
  *  (resolved_by_user_id, resolution_note, …) stay on the server. */
 export interface UserFlag {

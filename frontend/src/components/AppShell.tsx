@@ -26,8 +26,9 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
-import { planningApi } from "../lib/endpoints";
+import { adminUserApi, planningApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { ProfileMenu } from "./ProfileMenu";
@@ -128,18 +129,26 @@ const ITEMS: NavItem[] = [
 /** Admin nav — replaces the couple-facing rail when the user has flipped
  *  into admin view via the ProfileMenu. Distinct purple styling + striped
  *  texture so admin surfaces read as visually separate from couple pages. */
-const ADMIN_ITEMS: NavItem[] = [
+/** Maps each admin nav row to the matching `AdminSidebarBadges` key.
+ *  Items without a badgeKey never show a red index (e.g. Categories —
+ *  admin-edited content with no inbox). */
+type AdminBadgeKey = "suppliers" | "users" | "vendor_waitlist" | "feedback";
+type AdminNavItem = NavItem & { badgeKey?: AdminBadgeKey };
+
+const ADMIN_ITEMS: AdminNavItem[] = [
   {
     to: "/app/admin/suppliers",
     labelKey: "admin.nav_suppliers",
     tabKey: "admin.nav_suppliers",
     icon: <ShieldCheck size={18} />,
+    badgeKey: "suppliers",
   },
   {
     to: "/app/admin/users",
     labelKey: "admin.nav_users",
     tabKey: "admin.nav_users",
     icon: <UserCog size={18} />,
+    badgeKey: "users",
   },
   {
     to: "/app/admin/categories",
@@ -152,12 +161,14 @@ const ADMIN_ITEMS: NavItem[] = [
     labelKey: "admin.nav_waitlist",
     tabKey: "admin.nav_waitlist",
     icon: <Inbox size={18} />,
+    badgeKey: "vendor_waitlist",
   },
   {
     to: "/app/admin/feedback",
     labelKey: "admin.nav_feedback",
     tabKey: "admin.nav_feedback",
     icon: <MessageCircle size={18} />,
+    badgeKey: "feedback",
   },
 ];
 
@@ -179,6 +190,36 @@ export function AppShell({ children }: { children: ReactNode }) {
   // the user → null transition (sign-out), not on the initial null-loading
   // pass that happens before /api/auth/me resolves.
   const prevUserId = useRef<number | null>(null);
+
+  // ── Admin sidebar badges ──────────────────────────────────────────────
+  // Poll the aggregate-counts endpoint every 30s while an admin is signed
+  // in. Powers the small red index next to each admin nav item — see
+  // ADMIN_ITEMS' `badgeKey` mapping. Skipped entirely for non-admin users
+  // so no needless requests fire on the couple-facing rail.
+  const [adminBadges, setAdminBadges] = useState<AdminSidebarBadges | null>(null);
+  useEffect(() => {
+    if (!user?.is_admin) {
+      setAdminBadges(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchBadges = () => {
+      adminUserApi
+        .sidebarBadges()
+        .then((b) => {
+          if (!cancelled) setAdminBadges(b);
+        })
+        .catch(() => {
+          /* badge is non-critical — fail silently */
+        });
+    };
+    fetchBadges();
+    const interval = setInterval(fetchBadges, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [user?.is_admin]);
 
   // ── Warm-dark mode toggle ────────────────────────────────────────────
   // Theme preference is shared with PublicShell via `localStorage["weddly.theme"]`,
@@ -358,11 +399,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <ShieldCheck size={11} aria-hidden="true" />
                 {t("admin.nav_label")}
               </div>
-              {displayItems.map((item) => (
-                <AdminSideLink key={item.to} to={item.to} icon={item.icon}>
-                  {t(item.labelKey)}
-                </AdminSideLink>
-              ))}
+              {displayItems.map((item) => {
+                const badgeKey = (item as AdminNavItem).badgeKey;
+                const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
+                return (
+                  <AdminSideLink
+                    key={item.to}
+                    to={item.to}
+                    icon={item.icon}
+                    badgeCount={badgeCount}
+                  >
+                    {t(item.labelKey)}
+                  </AdminSideLink>
+                );
+              })}
             </nav>
           ) : (
             <nav className="sticky top-20 flex flex-col gap-1">
@@ -393,16 +443,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           {displayItems
             .filter((item) => item.tabKey)
             .slice(0, inAdminView ? 5 : 4)
-            .map((item) => (
-              <BottomLink
-                key={item.to}
-                to={item.to}
-                icon={item.icon}
-                variant={inAdminView ? "admin" : "default"}
-              >
-                {t(item.tabKey ?? item.labelKey)}
-              </BottomLink>
-            ))}
+            .map((item) => {
+              const badgeKey = inAdminView ? (item as AdminNavItem).badgeKey : undefined;
+              const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
+              return (
+                <BottomLink
+                  key={item.to}
+                  to={item.to}
+                  icon={item.icon}
+                  variant={inAdminView ? "admin" : "default"}
+                  badgeCount={badgeCount}
+                >
+                  {t(item.tabKey ?? item.labelKey)}
+                </BottomLink>
+              );
+            })}
           {!inAdminView && (
             <button
               type="button"
@@ -470,10 +525,14 @@ function AdminSideLink({
   to,
   icon,
   children,
+  badgeCount,
 }: {
   to: string;
   icon: ReactNode;
   children: ReactNode;
+  /** Unread-style count rendered as a small red index on the right of the
+   *  row. Hidden when zero. Capped at 99 to keep the pill from blowing up. */
+  badgeCount?: number;
 }) {
   return (
     <NavLink
@@ -487,8 +546,24 @@ function AdminSideLink({
       }
     >
       {icon}
-      <span>{children}</span>
+      <span className="flex-1">{children}</span>
+      {badgeCount && badgeCount > 0 ? <SidebarBadge count={badgeCount} /> : null}
     </NavLink>
+  );
+}
+
+/** Small red unread-style index. Rendered on admin nav rows (desktop +
+ *  mobile) when the matching aggregate count is > 0. Capped at 99+ so
+ *  the pill doesn't grow unbounded. */
+function SidebarBadge({ count }: { count: number }) {
+  const display = count > 99 ? "99+" : String(count);
+  return (
+    <span
+      aria-label={`${count} new`}
+      className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-blush-600 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white"
+    >
+      {display}
+    </span>
   );
 }
 
@@ -578,11 +653,15 @@ function BottomLink({
   icon,
   children,
   variant = "default",
+  badgeCount,
 }: {
   to: string;
   icon: ReactNode;
   children: ReactNode;
   variant?: "default" | "admin";
+  /** Same red index as the desktop AdminSideLink. Anchors top-right of
+   *  the icon so it sits above the label like a notification dot. */
+  badgeCount?: number;
 }) {
   const active = variant === "admin" ? "text-violet-950" : "text-ink-900";
   const idle = variant === "admin" ? "text-ink-500" : "text-ink-500";
@@ -596,7 +675,17 @@ function BottomLink({
         }`
       }
     >
-      {icon}
+      <span className="relative inline-flex">
+        {icon}
+        {badgeCount && badgeCount > 0 ? (
+          <span
+            aria-label={`${badgeCount} new`}
+            className="absolute -right-2 -top-2 inline-flex min-w-[16px] items-center justify-center rounded-full bg-blush-600 px-1 py-0.5 text-[9px] font-semibold leading-none text-white"
+          >
+            {badgeCount > 9 ? "9+" : badgeCount}
+          </span>
+        ) : null}
+      </span>
       <span className="truncate">{children}</span>
     </NavLink>
   );

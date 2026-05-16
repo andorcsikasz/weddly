@@ -396,9 +396,49 @@ async function handleUnflagUser(ctx: Ctx): Promise<Response> {
   return json({ user: view, cleared: resolved !== null });
 }
 
+/**
+ * Sidebar unread counts. The admin nav rail (AppShell) polls this every
+ * 30s and shows a small red badge next to each section that has
+ * something needing the admin's attention:
+ *
+ *   - suppliers       → community_suppliers awaiting_review (moderation queue)
+ *   - users           → user_flags resolved_at IS NULL (live flags)
+ *   - vendor_waitlist → vendor_waitlist status='new' (the inbox)
+ *   - feedback        → feedback_submissions status='new'
+ *
+ * Each count is the result of one indexed COUNT(*) query — all four
+ * combined take a single-digit ms even with thousands of rows. Returns
+ * the shape verbatim from the shared `AdminSidebarBadges` type.
+ */
+function handleSidebarBadges(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  const suppliers = (
+    db
+      .prepare("SELECT COUNT(*) AS n FROM community_suppliers WHERE status = 'awaiting_review'")
+      .get() as { n: number }
+  ).n;
+  const users = (
+    db.prepare("SELECT COUNT(*) AS n FROM user_flags WHERE resolved_at IS NULL").get() as {
+      n: number;
+    }
+  ).n;
+  const vendor_waitlist = (
+    db.prepare("SELECT COUNT(*) AS n FROM vendor_waitlist WHERE status = 'new'").get() as {
+      n: number;
+    }
+  ).n;
+  const feedback = (
+    db.prepare("SELECT COUNT(*) AS n FROM feedback_submissions WHERE status = 'new'").get() as {
+      n: number;
+    }
+  ).n;
+  return json({ suppliers, users, vendor_waitlist, feedback });
+}
+
 export function registerAdminUserRoutes(router: Router) {
   router.get("/api/admin/users", handleListUsers, true);
   router.get("/api/admin/couples", handleListCouples, true);
+  router.get("/api/admin/sidebar-badges", handleSidebarBadges, true);
   router.post("/api/admin/users/:id/resend-verify", handleResendVerify, true);
   router.delete("/api/admin/users/:id", handleDeleteUser, true);
   router.post("/api/admin/users/:id/flag", handleFlagUser, true);
