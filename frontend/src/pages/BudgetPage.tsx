@@ -124,6 +124,10 @@ export default function BudgetPage() {
   /** Line id to flash with a blush ring after a `#top-overage` deep-link.
    *  Mirrors the highlight pattern used on SuppliersPage post-submit. */
   const [highlightLineId, setHighlightLineId] = useState<number | null>(null);
+  /** Most-recently "ez nem kell"-d budget line, kept in memory so the Top‑3
+   *  card can offer an inline undo. Cleared by a timer or when the user
+   *  skips another line. Not persisted — refreshing the page drops it. */
+  const [pendingUndo, setPendingUndo] = useState<{ line: BudgetLine; timer: number } | null>(null);
 
   async function refresh() {
     const [linesR, snapsR, coupleR] = await Promise.all([
@@ -452,6 +456,68 @@ export default function BudgetPage() {
     [couple?.frozen_categories],
   );
 
+  // Three heaviest planned lines the couple can actually act on — frozen
+  // categories are off-limits (planned is pinned), DIY-supplier-mirrored
+  // rows are owned by /app/suppliers, and the honeymoon roll-up belongs to
+  // /app/honeymoon. Zero-planned rows would be noise. Stable across
+  // refreshes; recomputed only when `lines` or frozen state changes.
+  const topMovers = useMemo<BudgetLine[]>(() => {
+    return [...lines]
+      .filter(
+        (l) =>
+          l.planned_huf > 0 &&
+          l.couple_supplier_id === null &&
+          l.category !== "honeymoon" &&
+          !frozenCategoriesSet.has(l.category),
+      )
+      .sort((a, b) => b.planned_huf - a.planned_huf)
+      .slice(0, 3);
+  }, [lines, frozenCategoriesSet]);
+
+  // One-tap "ez nem kell" — optimistic delete with a 10s in-memory undo
+  // window. On 409/409-like errors the local state is rolled back.
+  async function skipLine(line: BudgetLine) {
+    const prevLines = lines;
+    setLines((cur) => cur.filter((l) => l.id !== line.id));
+    if (pendingUndo) window.clearTimeout(pendingUndo.timer);
+    const timer = window.setTimeout(() => setPendingUndo(null), 10_000);
+    setPendingUndo({ line, timer });
+    try {
+      await budgetApi.removeLine(line.id);
+      publish("budget:changed");
+    } catch (e) {
+      window.clearTimeout(timer);
+      setPendingUndo(null);
+      setLines(prevLines);
+      toast.error(e instanceof ApiError ? e.message : t("budget.save_failed_retry"));
+    }
+  }
+
+  // Re-create the stashed line via the standard POST. The new row gets a
+  // fresh id + timestamps; the original id is gone. Acceptable: this is a
+  // user-initiated reverse-of-a-mistake, not an edit-trail concern.
+  async function undoSkip() {
+    if (!pendingUndo) return;
+    const { line, timer } = pendingUndo;
+    window.clearTimeout(timer);
+    setPendingUndo(null);
+    try {
+      const r = await budgetApi.createLine({
+        category: line.category,
+        label: line.label,
+        planned_huf: line.planned_huf,
+        actual_huf: line.actual_huf,
+        notes: line.notes,
+        per_guest: line.per_guest,
+        icon: line.icon,
+      });
+      setLines((cur) => [...cur, r.line]);
+      publish("budget:changed");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("budget.save_failed_retry"));
+    }
+  }
+
   async function removeLine(id: number) {
     const ok = await confirm({
       title: t("common.confirm_delete_title"),
@@ -657,6 +723,64 @@ export default function BudgetPage() {
         onEditCustomRowPlanned={setCustomRowPlanned}
         onRemoveCustomRow={removeCustomRow}
       />
+
+      {topMovers.length > 0 && (
+        <section aria-labelledby="top-movers-title" className="mt-8">
+          <div className="mb-3">
+            <h2 id="top-movers-title">{t("budget.top_movers_title")}</h2>
+            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+              {t("budget.top_movers_sub")}
+            </p>
+          </div>
+          <div className="card overflow-hidden p-0">
+            <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+              {topMovers.map((line, idx) => (
+                <li key={line.id} className="flex items-center gap-3 px-4 py-3">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-paper-100 text-xs font-semibold tabular-nums text-ink-700 dark:bg-umber-700 dark:text-umber-100"
+                  >
+                    {idx + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-ink-800 dark:text-umber-100">
+                      {line.label}
+                    </div>
+                    <div className="text-xs text-ink-500 dark:text-umber-300">
+                      {t(`budget.cat.${line.category}`)}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-sm font-semibold tabular-nums text-ink-800 dark:text-umber-100">
+                    {formatMoney(line.planned_huf, currency, locale)}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-ghost btn-sm shrink-0 whitespace-nowrap text-blush-700 dark:text-blush-300"
+                    onClick={() => void skipLine(line)}
+                    aria-label={t("budget.top_movers_skip_aria", { label: line.label })}
+                  >
+                    {t("budget.top_movers_skip")}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {pendingUndo && (
+              <div className="flex items-center justify-between gap-3 border-t border-paper-200 bg-paper-50 px-4 py-2 text-sm dark:border-umber-700 dark:bg-umber-800/40">
+                <span className="min-w-0 truncate text-ink-600 dark:text-umber-200">
+                  {t("budget.top_movers_skipped", { label: pendingUndo.line.label })}
+                </span>
+                <button
+                  type="button"
+                  className="shrink-0 text-sm font-medium text-blush-700 hover:underline dark:text-blush-300"
+                  onClick={() => void undoSkip()}
+                >
+                  {t("budget.top_movers_undo")}
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <section id="top-overage" className="mt-8 scroll-mt-24">
         <div className="mb-3">

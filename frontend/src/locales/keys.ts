@@ -1270,6 +1270,17 @@ export interface LocaleMessages {
     cost_planning_baseline_note: string;
     /** Standalone "vendég" / "guests" label rendered under the big count tile. */
     cost_planning_unit_label: string;
+    /** Headline of the Top‑3 "what's pulling the budget up" card. */
+    top_movers_title: string;
+    top_movers_sub: string;
+    /** Per-row "ez nem kell" / "don't need this" button. */
+    top_movers_skip: string;
+    /** Aria-label for the skip button — has {label} placeholder. */
+    top_movers_skip_aria: string;
+    /** Inline banner shown after a skip, with the dropped line label. */
+    top_movers_skipped: string;
+    /** Inline "undo" link inside the banner. */
+    top_movers_undo: string;
     lines_title: string;
     lines_sub: string;
     lines_empty: string;

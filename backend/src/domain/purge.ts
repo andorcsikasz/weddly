@@ -12,6 +12,7 @@ import { addAuditLog } from "../lib/audit";
 import { log } from "../lib/logger";
 import { sweepStaleRateLimitBuckets } from "../lib/rate_limit";
 import { sendKind } from "./emails";
+import { listFlagsDueForPurge, markFlagPurged } from "./user_flags";
 
 export function purgeOneCouple(
   coupleId: number,

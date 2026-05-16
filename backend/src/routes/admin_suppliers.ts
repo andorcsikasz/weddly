@@ -15,6 +15,7 @@ import {
   updateAdminNotes,
 } from "../domain/community_suppliers";
 import { enrichSupplier } from "../domain/supplier_enrich";
+import { listDirectoryForAdmin, parseDirectoryFilters } from "../domain/supplier_views";
 import { requireAdmin } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -229,8 +230,114 @@ function handleDelete(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+// ── Directory view: full curated + community list with visit analytics ─────
+
+function handleDirectory(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  const filters = parseDirectoryFilters(ctx.url.searchParams);
+  const rows = listDirectoryForAdmin(filters);
+  return json({ suppliers: rows, filters });
+}
+
+/** RFC 4180 CSV cell: wrap in quotes and double internal quotes whenever the
+ *  value contains a comma, quote, or line break. Bare numbers/empties pass
+ *  through unquoted to keep the file diff-friendly. */
+function csvCell(v: string | number | null | undefined): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  if (s.length === 0) return "";
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function isoDate(unixMs: number | null): string {
+  if (unixMs === null || !Number.isFinite(unixMs)) return "";
+  return new Date(unixMs).toISOString();
+}
+
+function handleDirectoryCsv(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const filters = parseDirectoryFilters(ctx.url.searchParams);
+  const rows = listDirectoryForAdmin(filters);
+
+  const headers = [
+    "id",
+    "source",
+    "status",
+    "category",
+    "name",
+    "city",
+    "address",
+    "website",
+    "contact_email",
+    "contact_phone",
+    "price_band",
+    "submitter_email",
+    "created_at",
+    "views_total",
+    "views_30d",
+    "views_7d",
+    "website_clicks_total",
+    "website_clicks_30d",
+    "phone_clicks_total",
+    "last_event_at",
+  ];
+  const lines = [headers.join(",")];
+  for (const r of rows) {
+    lines.push(
+      [
+        csvCell(r.id),
+        csvCell(r.source),
+        csvCell(r.status),
+        csvCell(r.category),
+        csvCell(r.name),
+        csvCell(r.city),
+        csvCell(r.address),
+        csvCell(r.website),
+        csvCell(r.contact_email),
+        csvCell(r.contact_phone),
+        csvCell(r.price_band),
+        csvCell(r.submitter_email),
+        csvCell(isoDate(r.created_at)),
+        csvCell(r.analytics.views_total),
+        csvCell(r.analytics.views_30d),
+        csvCell(r.analytics.views_7d),
+        csvCell(r.analytics.website_clicks_total),
+        csvCell(r.analytics.website_clicks_30d),
+        csvCell(r.analytics.phone_clicks_total),
+        csvCell(isoDate(r.analytics.last_event_at)),
+      ].join(","),
+    );
+  }
+  // UTF-8 BOM + CRLF so Excel opens Hungarian accents correctly. Same trick
+  // the guest CSV export uses (routes/guests.ts).
+  const csv = `﻿${lines.join("\r\n")}\r\n`;
+  const body = new TextEncoder().encode(csv);
+  const stamp = new Date().toISOString().slice(0, 10);
+  const filename = `weddly-suppliers-${stamp}.csv`;
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.directory.csv_export",
+    target_kind: "supplier_directory",
+    target_id: null,
+    after: { count: rows.length, filters },
+  });
+
+  return new Response(body, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
 export function registerAdminSupplierRoutes(router: Router) {
   router.get("/api/admin/suppliers", handleList, true);
+  router.get("/api/admin/suppliers/directory", handleDirectory, true);
+  router.get("/api/admin/suppliers/directory.csv", handleDirectoryCsv, true);
   router.get("/api/admin/suppliers/:id/reports", handleListReports, true);
   router.post("/api/admin/suppliers/:id/approve", handleApprove, true);
   router.post("/api/admin/suppliers/:id/enrich", handleEnrich, true);

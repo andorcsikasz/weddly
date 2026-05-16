@@ -385,6 +385,15 @@ export default function SuppliersPage() {
         // start on the same value.
         if (couple.couple) hydrateCostPlanningCount(couple.couple);
         if (id !== null) setSelectionState(readSelection(id));
+        // One-shot view ping per mount: tell the analytics ingest which
+        // directory cards this session actually loaded. The admin directory
+        // view aggregates these into total/30d/7d windows. We swallow errors
+        // — the page renders fine even if the ingest is down.
+        if (dir.suppliers.length > 0) {
+          supplierApi
+            .recordEvents(dir.suppliers.map((s) => ({ supplier_id: s.id, type: "view" })))
+            .catch(() => undefined);
+        }
       })
       .catch(() => undefined);
     // Per-supplier quotes + category budgets feed the comparison dialog.
@@ -1191,6 +1200,7 @@ export default function SuppliersPage() {
                       rel="noreferrer noopener"
                       className="btn-outline btn-sm"
                       aria-label={t("suppliers.visit_website")}
+                      onClick={() => trackSupplierClick(s.id, "website_click")}
                     >
                       <span className="hidden md:inline">{t("suppliers.visit_website")}</span>
                       <span className="md:hidden">→</span>
@@ -1200,6 +1210,7 @@ export default function SuppliersPage() {
                         href={`tel:${s.contact_phone}`}
                         className="btn-outline btn-sm"
                         aria-label={s.contact_phone}
+                        onClick={() => trackSupplierClick(s.id, "phone_click")}
                       >
                         <Phone size={14} aria-hidden />
                         <span className="hidden lg:inline">{s.contact_phone}</span>

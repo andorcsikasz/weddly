@@ -1,6 +1,7 @@
 // One typed wrapper per HTTP call. Components import these — never `fetch` directly.
 
 import type {
+  Accommodation,
   AdminCoupleView,
   AdminUserView,
   AuthSession,
@@ -32,6 +33,9 @@ import type {
   SeatingConflict,
   SeatingTable,
   TableShape,
+  Transfer,
+  UpsertAccommodationInput,
+  UpsertTransferInput,
   User,
   WeddingDateGoal,
   WeddingStyleTag,
@@ -56,7 +60,13 @@ import type {
   VendorWaitlistEntry,
 } from "@shared/vendor_waitlist";
 import type { CouplePick } from "@shared/picks";
-import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
+import type {
+  AdminDirectoryFilters,
+  DirectorySupplier,
+  SupplierCategory,
+  SupplierDirectoryAdminRow,
+  SupplierEventInput,
+} from "@shared/suppliers";
 import type {
   AdminSupplierCategory,
   AdminSupplierGroup,
@@ -501,6 +511,34 @@ export const seatingApi = {
   removeConflict: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/seating/conflicts/${id}`),
 };
 
+/** Logistics: lodgings the couple offers their guests. Drag-and-drop assignment
+ *  on /app/logistics flips `guests.accommodation_id` via `assign`. */
+export const accommodationApi = {
+  list: () =>
+    apiFetch<{ accommodations: Accommodation[] }>("GET", "/api/accommodations"),
+  create: (body: UpsertAccommodationInput) =>
+    apiFetch<{ accommodation: Accommodation }>("POST", "/api/accommodations", body),
+  update: (id: number, body: Partial<UpsertAccommodationInput>) =>
+    apiFetch<{ accommodation: Accommodation }>("PATCH", `/api/accommodations/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/accommodations/${id}`),
+  /** Assign a guest to an accommodation (or pass null to unassign). */
+  assign: (body: { guest_id: number; accommodation_id: number | null }) =>
+    apiFetch<{ ok: true }>("POST", "/api/accommodations/assign", body),
+};
+
+/** Logistics: transfer trips. v1 is "basic" — flat list, label + optional
+ *  direction/time/capacity. */
+export const transferApi = {
+  list: () => apiFetch<{ transfers: Transfer[] }>("GET", "/api/transfers"),
+  create: (body: UpsertTransferInput) =>
+    apiFetch<{ transfer: Transfer }>("POST", "/api/transfers", body),
+  update: (id: number, body: Partial<UpsertTransferInput>) =>
+    apiFetch<{ transfer: Transfer }>("PATCH", `/api/transfers/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/transfers/${id}`),
+  assign: (body: { guest_id: number; transfer_id: number | null }) =>
+    apiFetch<{ ok: true }>("POST", "/api/transfers/assign", body),
+};
+
 export const pauseApi = {
   status: () =>
     apiFetch<{ couple_status: CoupleStatus; pause_request: CouplePauseRequest | null }>(
@@ -599,6 +637,11 @@ export const supplierApi = {
       `/api/suppliers/community/verify/${encodeURIComponent(token)}`,
       {},
     ),
+  /** Best-effort visit analytics. Anonymous-tolerant; the backend rate-limits
+   *  per IP. Caller passes a batch of events (page-load view + click-throughs)
+   *  so we make one POST per page instead of one per row. */
+  recordEvents: (events: SupplierEventInput[]) =>
+    apiFetch<{ recorded: number }>("POST", "/api/suppliers/events", { events }),
 };
 
 export const coupleSupplierApi = {
@@ -756,7 +799,43 @@ export const adminSupplierApi = {
       { notes },
     ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/suppliers/${id}`),
+  /** Full directory (curated + community) with per-supplier visit analytics.
+   *  Filters narrow the row set; analytics counters always span total/30d/7d. */
+  listDirectory: (filters: AdminDirectoryFilters) =>
+    apiFetch<{ suppliers: SupplierDirectoryAdminRow[]; filters: AdminDirectoryFilters }>(
+      "GET",
+      `/api/admin/suppliers/directory${buildDirectoryQuery(filters)}`,
+    ),
+  /** Streams the same filtered list as a CSV download. We hit `fetch` directly
+   *  (not apiFetch) so the response stays as a Blob the caller can save. */
+  exportDirectoryCsv: async (filters: AdminDirectoryFilters): Promise<Blob> => {
+    const token = getToken();
+    const res = await fetch(`/api/admin/suppliers/directory.csv${buildDirectoryQuery(filters)}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) throw new Error(`CSV fetch failed: ${res.status}`);
+    return res.blob();
+  },
 };
+
+/** Serialise filters into a stable querystring. Drops empty / "all" values so
+ *  the URL stays clean and the server's parser doesn't have to special-case
+ *  them. Returns `""` when nothing's set so the path stays valid. */
+function buildDirectoryQuery(f: AdminDirectoryFilters): string {
+  const p = new URLSearchParams();
+  if (f.source && f.source !== "all") p.set("source", f.source);
+  if (f.status && f.status !== "all") p.set("status", f.status);
+  if (f.category && f.category !== "all") p.set("category", f.category);
+  if (f.city && f.city.trim().length > 0) p.set("city", f.city.trim());
+  if (f.q && f.q.trim().length > 0) p.set("q", f.q.trim());
+  if (typeof f.min_views === "number" && f.min_views > 0) {
+    p.set("min_views", String(f.min_views));
+  }
+  if (typeof f.from === "number" && f.from) p.set("from", String(f.from));
+  if (typeof f.to === "number" && f.to) p.set("to", String(f.to));
+  const s = p.toString();
+  return s.length > 0 ? `?${s}` : "";
+}
 
 /** Auth-protected PDF download as a Blob (so the caller can save with any
  *  filename). Accepts an optional `AbortSignal` so the caller can cancel a
