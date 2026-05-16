@@ -108,11 +108,11 @@ export default function LandingPage() {
           rest between the loud hero and the dark stats below. */}
       <section className="stationery-light border-y border-paper-300 dark:border-umber-700">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4 sm:px-6">
-          <span className="hidden flex-1 font-serif text-sm italic text-blush-600 sm:block">
+          <span className="hidden flex-1 font-serif text-sm italic text-blush-600 dark:text-blush-300 sm:block">
             Est. MMXXVI
           </span>
           <Wordmark size="lg" className="mx-auto text-paper-400 dark:text-umber-600 sm:mx-0" />
-          <span className="hidden flex-1 text-right font-serif text-sm italic text-blush-600 sm:block">
+          <span className="hidden flex-1 text-right font-serif text-sm italic text-blush-600 dark:text-blush-300 sm:block">
             Budapest · Paper letters
           </span>
         </div>

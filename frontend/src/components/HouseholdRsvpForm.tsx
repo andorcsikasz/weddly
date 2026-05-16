@@ -55,64 +55,24 @@ const STATUSES = ["yes", "no", "maybe"] as const satisfies readonly RsvpStatus[]
 
 // Semantic tint per RSVP choice. The colour layer is additive to the label —
 // glyph-free buttons must still be legible for colour-deficient users — but
-// green/red/amber lets a sighted guest pick the right pill at a glance.
-// Mirrors the SEGMENT_TONE scheme in GuestsPage; amber is used for "maybe"
-// here (the guest's own deliberate choice) rather than slate, so it reads
-// as "uncertain" instead of "neutral/disabled".
+// green/red lets a sighted guest pick the right pill at a glance. "Maybe"
+// stays neutral on purpose — it represents indecision, so it shouldn't carry
+// the same affirmative cue as a committed yes/no.
 const STATUS_TONE_ACTIVE: Record<(typeof STATUSES)[number], string> = {
   yes: "border-2 border-emerald-600 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-umber-900",
   no: "border-2 border-rose-700 bg-rose-700 text-white dark:border-rose-400 dark:bg-rose-500 dark:text-umber-900",
   maybe:
-    "border-2 border-amber-600 bg-amber-500 text-umber-900 dark:border-amber-400 dark:bg-amber-400 dark:text-umber-900",
+    "border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900",
 };
 
 const STATUS_TONE_IDLE: Record<(typeof STATUSES)[number], string> = {
   yes: "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:border-emerald-500 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:border-emerald-400/70",
   no: "border border-rose-300 bg-rose-50 text-rose-800 hover:border-rose-500 dark:border-rose-400/40 dark:bg-rose-400/10 dark:text-rose-300 dark:hover:border-rose-400/70",
   maybe:
-    "border border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-500 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:border-amber-400/70",
-};
-
-// Semantic tint per allergen family — restores the color cue the chips
-// used to carry so guests can scan the row at a glance. Dairy gets the
-// blue/cyan family (milk + ice); wheat/nuts share the warm amber/orange
-// family; egg uses yellow (yolk); seafood uses cyan (sea). The dairy
-// chips are differentiated by icon, not colour — both lactose and
-// milk-protein read as a "milk" cue.
-type DietaryTone = "dairy" | "wheat" | "nut" | "egg" | "seafood";
-
-const DIETARY_TONE_ACTIVE: Record<DietaryTone, string> = {
-  dairy:
-    "border-2 border-sky-600 bg-sky-600 text-white dark:border-sky-400 dark:bg-sky-500 dark:text-umber-900",
-  wheat:
-    "border-2 border-amber-600 bg-amber-600 text-white dark:border-amber-400 dark:bg-amber-500 dark:text-umber-900",
-  nut: "border-2 border-orange-700 bg-orange-700 text-white dark:border-orange-400 dark:bg-orange-500 dark:text-umber-900",
-  egg: "border-2 border-yellow-500 bg-yellow-500 text-umber-900 dark:border-yellow-400 dark:bg-yellow-400 dark:text-umber-900",
-  seafood:
-    "border-2 border-cyan-700 bg-cyan-700 text-white dark:border-cyan-400 dark:bg-cyan-500 dark:text-umber-900",
-};
-
-const DIETARY_TONE_IDLE: Record<DietaryTone, string> = {
-  dairy:
-    "border border-sky-300 bg-sky-50 text-sky-800 hover:border-sky-500 dark:border-sky-400/40 dark:bg-sky-400/10 dark:text-sky-300 dark:hover:border-sky-400/70",
-  wheat:
-    "border border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-500 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:border-amber-400/70",
-  nut: "border border-orange-300 bg-orange-50 text-orange-800 hover:border-orange-500 dark:border-orange-400/40 dark:bg-orange-400/10 dark:text-orange-300 dark:hover:border-orange-400/70",
-  egg: "border border-yellow-300 bg-yellow-50 text-yellow-800 hover:border-yellow-500 dark:border-yellow-400/40 dark:bg-yellow-400/10 dark:text-yellow-300 dark:hover:border-yellow-400/70",
-  seafood:
-    "border border-cyan-300 bg-cyan-50 text-cyan-800 hover:border-cyan-500 dark:border-cyan-400/40 dark:bg-cyan-400/10 dark:text-cyan-300 dark:hover:border-cyan-400/70",
+    "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600",
 };
 
 type DietaryTag = "lactose" | "milk_protein" | "gluten" | "nut" | "egg" | "fish_shellfish";
-
-const DIETARY_TAG_TONE: Record<DietaryTag, DietaryTone> = {
-  milk_protein: "dairy",
-  lactose: "dairy",
-  gluten: "wheat",
-  nut: "nut",
-  egg: "egg",
-  fish_shellfish: "seafood",
-};
 
 /** Lactose gets the literal milk-glass icon — the most recognisable dairy
  *  signifier. Milk-protein layers an Atom on top to flag "the milk allergen
@@ -767,7 +727,7 @@ export function HouseholdRsvpForm({
                   <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
                     {t("rsvp.dietary_section_title")}
                   </p>
-                  <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 [&>button]:w-full [&>button]:justify-center">
+                  <div className="grid grid-cols-6 gap-1.5 [&>button]:w-full">
                     {(
                       ["milk_protein", "lactose", "gluten", "nut", "egg", "fish_shellfish"] as const
                     ).map((tag) => (
@@ -777,7 +737,7 @@ export function HouseholdRsvpForm({
                         onClick={() => toggleDietaryTag(d.id, tag)}
                         icon={<DietaryTagIcon tag={tag} />}
                         label={t(`rsvp.tag_${tag}`)}
-                        tone={DIETARY_TAG_TONE[tag]}
+                        iconOnly
                       />
                     ))}
                   </div>
@@ -932,7 +892,7 @@ function Chip({
   label,
   controlsId,
   expanded,
-  tone,
+  iconOnly,
 }: {
   on: boolean;
   onClick: () => void;
@@ -943,14 +903,17 @@ function Chip({
    *  readers can announce the relationship. */
   controlsId?: string;
   expanded?: boolean;
-  /** Optional per-allergen colour family. Omit for neutral chips (+1, baby). */
-  tone?: DietaryTone;
+  /** Hide the visible label and render the chip as a square icon button.
+   *  Used for allergen chips, where the icon is the primary signifier and
+   *  the label remains available to assistive tech via aria-label. */
+  iconOnly?: boolean;
 }) {
-  const base = "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors";
-  const neutral = on
+  const shape = iconOnly
+    ? "inline-flex aspect-square items-center justify-center rounded-xl p-2 text-xs transition-colors"
+    : "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors";
+  const palette = on
     ? "border-2 border-ink-700 bg-ink-700 font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
     : "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600";
-  const toned = tone ? (on ? DIETARY_TONE_ACTIVE[tone] : DIETARY_TONE_IDLE[tone]) : neutral;
   return (
     <button
       type="button"
@@ -958,11 +921,13 @@ function Chip({
       aria-checked={on}
       aria-controls={controlsId}
       aria-expanded={controlsId !== undefined ? expanded === true : undefined}
+      aria-label={iconOnly ? label : undefined}
+      title={iconOnly ? label : undefined}
       onClick={onClick}
-      className={`${base} ${tone && on ? "font-medium" : ""} ${toned}`}
+      className={`${shape} ${palette}`}
     >
       {icon}
-      <span>{label}</span>
+      {!iconOnly && <span>{label}</span>}
     </button>
   );
 }
@@ -1053,7 +1018,7 @@ function AttachedDietary({
           })}
         </div>
       )}
-      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 [&>button]:w-full [&>button]:justify-center">
+      <div className="grid grid-cols-6 gap-1.5 [&>button]:w-full">
         {(["milk_protein", "lactose", "gluten", "nut", "egg", "fish_shellfish"] as const).map(
           (tag) => (
             <Chip
@@ -1062,7 +1027,7 @@ function AttachedDietary({
               onClick={() => onToggleTag(tag)}
               icon={<DietaryTagIcon tag={tag} />}
               label={t(`rsvp.tag_${tag}`)}
-              tone={DIETARY_TAG_TONE[tag]}
+              iconOnly
             />
           ),
         )}

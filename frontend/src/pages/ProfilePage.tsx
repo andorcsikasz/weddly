@@ -651,7 +651,7 @@ export default function ProfilePage() {
                 )}
               </form>
             ) : (
-              <p className="mt-1 font-serif text-2xl font-semibold tabular-nums tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+              <p className="mt-1 text-lg font-medium tabular-nums tracking-tight text-ink-900 dark:text-paper-50">
                 {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "—"}
               </p>
             )}
@@ -731,7 +731,7 @@ export default function ProfilePage() {
                 )}
               </form>
             ) : (
-              <p className="mt-1 font-serif text-2xl font-semibold tabular-nums tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+              <p className="mt-1 text-lg font-medium tabular-nums tracking-tight text-ink-900 dark:text-paper-50">
                 {formatMoney(totalPaidHuf, currency, locale)}
               </p>
             )}

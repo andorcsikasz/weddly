@@ -329,7 +329,25 @@ async function runOneUser(i: number): Promise<void> {
     });
   }
 
-  // 11. Dashboard-style reads (the ones that suffer first as data grows)
+  // 11. Per-household RSVP toggles (added May 2026, commit 3f1e3d8). The
+  // public RSVP form's "needs accommodation?" + "collect meal choices?"
+  // questions migrated from couple-level to per-household. Touch the first
+  // household so a regression in the new write path shows up here instead
+  // of silently in a couple's prod data.
+  if (householdIds.length > 0) {
+    await req(
+      "households.rsvp_toggle",
+      "PATCH",
+      `/api/households/${householdIds[0]}`,
+      {
+        token,
+        ip,
+        body: { rsvp_offers_accommodation: true, rsvp_collects_meal: false },
+      },
+    );
+  }
+
+  // 12. Dashboard-style reads (the ones that suffer first as data grows)
   await req("couples.activity", "GET", "/api/couples/activity", { token, ip });
   await req("guests.list", "GET", "/api/guests", { token, ip });
   await req("budget.list", "GET", "/api/budget/lines", { token, ip });
@@ -337,8 +355,13 @@ async function runOneUser(i: number): Promise<void> {
   await req("schedule.list", "GET", "/api/schedule", { token, ip });
   await req("planning.list", "GET", "/api/planning", { token, ip });
   await req("households.list", "GET", "/api/households", { token, ip });
+  // Multi-workspace listing (added May 2026, commit c3ead84). Every user has
+  // exactly one workspace in this synthetic load so the response is short,
+  // but the endpoint still goes through the couple_members junction join
+  // that pre-existing couple lookups bypassed — useful regression sentinel.
+  await req("workspaces.list", "GET", "/api/users/me/couples", { token, ip });
 
-  // 12. Logout
+  // 13. Logout
   await req("auth.logout", "POST", "/api/auth/logout", { token, ip, body: {} });
 }
 
@@ -397,6 +420,7 @@ const STEP_ORDER = [
   "budget.create_line",
   "planning.create",
   "schedule.create",
+  "households.rsvp_toggle",
   "couples.activity",
   "guests.list",
   "budget.list",
@@ -404,6 +428,7 @@ const STEP_ORDER = [
   "schedule.list",
   "planning.list",
   "households.list",
+  "workspaces.list",
   "auth.logout",
 ];
 

@@ -59,7 +59,7 @@ export function WatermarkNumeral({
   return (
     <span
       aria-hidden="true"
-      className={`pointer-events-none absolute select-none font-serif italic leading-none text-paper-200 text-[16rem] sm:text-[20rem] lg:text-[24rem] ${watermarkPositionClasses[position]} ${className}`}
+      className={`pointer-events-none absolute select-none font-serif italic leading-none text-paper-200 dark:text-umber-800 text-[16rem] sm:text-[20rem] lg:text-[24rem] ${watermarkPositionClasses[position]} ${className}`}
     >
       {value}
     </span>
@@ -80,12 +80,12 @@ type PullQuoteProps = {
 export function PullQuote({ quote, attribution, className = "" }: PullQuoteProps) {
   return (
     <blockquote className={`mx-auto flex flex-col items-center text-center ${className}`}>
-      <span className="block h-px w-32 bg-paper-400" aria-hidden="true" />
-      <p className="mt-8 max-w-4xl font-serif text-4xl italic leading-[1.15] text-ink-900 sm:text-5xl lg:text-6xl">
+      <span className="block h-px w-32 bg-paper-400 dark:bg-umber-600" aria-hidden="true" />
+      <p className="mt-8 max-w-4xl font-serif text-4xl italic leading-[1.15] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
         {quote}
       </p>
       {attribution ? (
-        <footer className="mt-8 text-xs font-medium uppercase tracking-[0.32em] text-ink-500 sm:text-sm">
+        <footer className="mt-8 text-xs font-medium uppercase tracking-[0.32em] text-ink-500 dark:text-umber-300 sm:text-sm">
           {attribution}
         </footer>
       ) : null}
@@ -122,7 +122,7 @@ export function TwoLineHeadline({
 }: TwoLineHeadlineProps) {
   return (
     <h2
-      className={`font-serif leading-[1.05] tracking-tight text-ink-900 ${headlineSizeClasses[size]} ${className}`}
+      className={`font-serif leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 ${headlineSizeClasses[size]} ${className}`}
     >
       <span className="block">{line1}</span>
       <span className="block italic">{line2}</span>
@@ -153,10 +153,10 @@ export function DropCap({ children, className = "" }: DropCapProps) {
   const first = text.slice(0, 1);
   const rest = text.slice(1);
   return (
-    <p className={`text-base leading-relaxed text-ink-700 sm:text-lg ${className}`}>
+    <p className={`text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg ${className}`}>
       <span
         aria-hidden="true"
-        className="float-left mr-3 mt-1 font-serif text-7xl leading-none text-blush-700 sm:text-8xl"
+        className="float-left mr-3 mt-1 font-serif text-7xl leading-none text-blush-700 dark:text-blush-300 sm:text-8xl"
       >
         {first}
       </span>
@@ -179,7 +179,7 @@ type MarqueeProps = {
 export function Marquee({ items, className = "" }: MarqueeProps) {
   return (
     <div
-      className={`overflow-hidden whitespace-nowrap text-center font-serif text-sm italic text-paper-500 sm:text-base ${className}`}
+      className={`overflow-hidden whitespace-nowrap text-center font-serif text-sm italic text-paper-500 dark:text-umber-300 sm:text-base ${className}`}
     >
       {items.join(" · ")}
     </div>
@@ -214,7 +214,7 @@ export function SectionLabel({
     return (
       <span className={`inline-flex flex-col items-center gap-3 ${className}`}>
         <NumeralGlyph value={num} />
-        <span className="h-10 w-px bg-paper-400" aria-hidden="true" />
+        <span className="h-10 w-px bg-paper-400 dark:bg-umber-600" aria-hidden="true" />
         <EyebrowGlyph label={label} vertical />
       </span>
     );
@@ -222,7 +222,7 @@ export function SectionLabel({
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
       <NumeralGlyph value={num} />
-      <span className="h-px w-8 bg-paper-400" aria-hidden="true" />
+      <span className="h-px w-8 bg-paper-400 dark:bg-umber-600" aria-hidden="true" />
       <EyebrowGlyph label={label} />
     </span>
   );
@@ -231,13 +231,13 @@ export function SectionLabel({
 // ─────────────────────────── internal helpers ───────────────────────────
 
 function NumeralGlyph({ value }: { value: string }): ReactNode {
-  return <span className="font-serif text-base italic text-blush-700">{value}</span>;
+  return <span className="font-serif text-base italic text-blush-700 dark:text-blush-300">{value}</span>;
 }
 
 function EyebrowGlyph({ label, vertical = false }: { label: string; vertical?: boolean }) {
   return (
     <span
-      className={`text-xs font-semibold uppercase tracking-[0.25em] text-ink-700 ${
+      className={`text-xs font-semibold uppercase tracking-[0.25em] text-ink-700 dark:text-paper-100 ${
         vertical ? "[writing-mode:vertical-rl] rotate-180" : ""
       }`}
     >
