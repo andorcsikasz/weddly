@@ -76,8 +76,13 @@ const TASK_TITLE_TO_GROUP = (() => {
 
 type TaskGroupOrOther = TaskTemplateGroupId | "other";
 
-function taskGroupOf(title: string): TaskGroupOrOther {
-  return TASK_TITLE_TO_GROUP.get(title) ?? "other";
+/** Resolve which list a task belongs to. Explicit `topic` on the row wins
+ *  (newer rows tagged by the wand / editor); title-lookup against the wand
+ *  templates is the fallback for rows that pre-date the topic column. Free-
+ *  form titles with no template match fall through to "other". */
+function taskGroupOf(item: PlanningItem): TaskGroupOrOther {
+  if (item.topic === "wedding" || item.topic === "honeymoon") return item.topic;
+  return TASK_TITLE_TO_GROUP.get(item.title) ?? "other";
 }
 
 /** i18n key for the section header above each task group. The bare "Egyéb"
@@ -159,7 +164,7 @@ export default function PlanningPage() {
       honeymoon: [],
       other: [],
     };
-    for (const i of scoped) byGroup[taskGroupOf(i.title)].push(i);
+    for (const i of scoped) byGroup[taskGroupOf(i)].push(i);
     const order: TaskGroupOrOther[] = ["wedding", "honeymoon", "other"];
     return order
       .map((g) => ({ group: g, items: byGroup[g] }))
@@ -252,11 +257,11 @@ export default function PlanningPage() {
    *  rendered as separate to-do lists, so a wedding row can never move past
    *  the first honeymoon row and vice versa. Ideas use kind-wide scope. */
   async function onMove(item: PlanningItem, direction: "up" | "down") {
-    const itemGroup = item.kind === "task" ? taskGroupOf(item.title) : null;
+    const itemGroup = item.kind === "task" ? taskGroupOf(item) : null;
     const list = items
       .filter((i) => {
         if (i.kind !== item.kind) return false;
-        if (item.kind === "task") return taskGroupOf(i.title) === itemGroup;
+        if (item.kind === "task") return taskGroupOf(i) === itemGroup;
         return true;
       })
       .sort((a, b) => {
