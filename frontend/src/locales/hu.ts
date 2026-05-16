@@ -1085,6 +1085,14 @@ const hu: LocaleMessages = {
     download_template: "Sablon letöltése",
     guest_section_divider: "Innentől a vendég tölti ki",
     hosts_badge: "A pár",
+    rsvp_settings_title: "RSVP beállítások",
+    rsvp_settings_help: "Ezek a kérdések csak ennél a háztartásnál jelennek meg.",
+    rsvp_offers_accommodation_label: "Szállásajánlat az RSVP-ben",
+    rsvp_offers_accommodation_help:
+      "Ha bekapcsolod, ennek a háztartásnak a tagjai jelezhetik a válaszadáskor, hogy kérnek-e szállást.",
+    rsvp_collects_meal_label: "Menüválasztás az RSVP-ben",
+    rsvp_collects_meal_help:
+      "Ha bekapcsolod, ennek a háztartásnak a tagjai a válaszadáskor megadhatják a fogásukat (hús, hal, vega, vegán, gyerek, nem kér). Buffé esetén kapcsold ki.",
     household_label: "Háztartás",
     household_assign_help: "Akik együtt válaszolnak, közös 4 jegyű kódot kapnak.",
     household_new: "Új háztartás",
@@ -2096,9 +2104,13 @@ const hu: LocaleMessages = {
     workspaces_switch: "Megnyitás",
     workspaces_role_owner: "Tulajdonos",
     workspaces_role_partner: "Partner",
-    workspaces_create_title: "Új esemény-munkaterület",
+    workspaces_create_title: "Új esemény",
     workspaces_create_body:
-      "Önálló vendéglistával, költségvetéssel, ültetéssel — minden esemény külön él. Az aktuálisan nyitott munkaterületről átvehetsz vendégeket: friss RSVP-kódokkal, alaphelyzetbe állított visszajelzéssel kerülnek át.",
+      "Minden eseménynek saját vendéglistája, költségvetése és ülésrendje van — a vőlegény és menyasszony neve a jelenlegi munkaterületről öröklődik. Tetszés szerint átmásolhatod a vendégeket a jelenleg aktív eseményből; új RSVP kódot kapnak, a válaszok pedig alapértelmezetten függőre állnak.",
+    workspaces_create_event_label: "Esemény neve",
+    workspaces_create_event_placeholder:
+      "Pl. Polgári szertartás, Családi vacsora, Baráti afterparty",
+    workspaces_create_event_required: "Add meg az esemény nevét",
     workspaces_create_date_label: "Dátum (opcionális)",
     workspaces_create_submit: "Létrehozás",
     workspaces_create_done: "{name} létrehozva.",

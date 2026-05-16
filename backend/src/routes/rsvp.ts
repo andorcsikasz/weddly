@@ -103,8 +103,12 @@ function buildView(couple: CoupleRow, household: HouseholdRow): PublicCheckinVie
     household_code: household.code,
     household_label: household.label,
     members,
-    rsvp_offers_accommodation: Boolean(couple.rsvp_offers_accommodation),
-    rsvp_collects_meal: Boolean(couple.rsvp_collects_meal),
+    // The RSVP toggles moved from the couple to the household in May 2026 so
+    // each party can carry its own decision. Existing couple-level columns
+    // are retained server-side for back-compat (schema additive) but no
+    // longer flow into the public view.
+    rsvp_offers_accommodation: household.rsvp_offers_accommodation === 1,
+    rsvp_collects_meal: household.rsvp_collects_meal === 1,
   };
 }
 

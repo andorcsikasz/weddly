@@ -256,6 +256,24 @@ export default function GuestsPage() {
     }
   }
 
+  /** Per-household RSVP toggle switcher. Replaces the old couple-level
+   *  Profile-page panel: each household now decides for itself whether the
+   *  public RSVP form surfaces the "needs accommodation?" question and/or
+   *  the meal-choice icon row. Sends one field at a time so each PATCH
+   *  produces a clean per-field audit entry. */
+  async function onChangeHouseholdRsvpToggle(
+    id: number,
+    field: "rsvp_offers_accommodation" | "rsvp_collects_meal",
+    next: boolean,
+  ) {
+    try {
+      await householdApi.update(id, { [field]: next });
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   async function onCycleInviteState(g: Guest) {
     // 3-state cycle: not-invited → invited → delivered → not-invited.
     // Encode the *target* as a (invited, delivered) pair on the wire so the
@@ -549,6 +567,7 @@ export default function GuestsPage() {
               onDeleteHousehold={() => onDeleteHousehold(hh)}
               onRenameHousehold={onRenameHousehold}
               onChangeGroup={onChangeHouseholdGroup}
+              onChangeRsvpToggle={onChangeHouseholdRsvpToggle}
               onCycleInviteState={onCycleInviteState}
               onPrintPlaceCard={onPrintPlaceCard}
             />
@@ -755,6 +774,7 @@ function HouseholdCard({
   onDeleteHousehold,
   onRenameHousehold,
   onChangeGroup,
+  onChangeRsvpToggle,
   onCycleInviteState,
   onPrintPlaceCard,
 }: {
@@ -769,6 +789,11 @@ function HouseholdCard({
   onDeleteHousehold: () => void;
   onRenameHousehold: (id: number, label: string) => Promise<void>;
   onChangeGroup: (id: number, groupTag: GuestGroupTag) => Promise<void>;
+  onChangeRsvpToggle: (
+    id: number,
+    field: "rsvp_offers_accommodation" | "rsvp_collects_meal",
+    next: boolean,
+  ) => Promise<void>;
   onCycleInviteState: (g: Guest) => void;
   onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
@@ -923,6 +948,53 @@ function HouseholdCard({
           </button>
         </div>
       </header>
+
+      {!collapsed && !isHosts && (
+        /* Per-household RSVP settings panel. Lives between the header border
+           and the members list so the toggles read as "settings for this
+           household" rather than "settings for this guest". Hidden on the
+           hosts' own card — the bride/groom don't RSVP themselves. */
+        <div className="border-b border-paper-200 bg-paper-50/60 px-4 py-3 dark:border-umber-700 dark:bg-umber-800/40">
+          <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("guests.rsvp_settings_title")}
+          </p>
+          <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+            {t("guests.rsvp_settings_help")}
+          </p>
+          <label className="mt-3 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-100">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={household.rsvp_offers_accommodation}
+              onChange={(e) =>
+                void onChangeRsvpToggle(household.id, "rsvp_offers_accommodation", e.target.checked)
+              }
+            />
+            <span>
+              <span className="font-medium">{t("guests.rsvp_offers_accommodation_label")}</span>
+              <span className="block text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.rsvp_offers_accommodation_help")}
+              </span>
+            </span>
+          </label>
+          <label className="mt-3 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-100">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={household.rsvp_collects_meal}
+              onChange={(e) =>
+                void onChangeRsvpToggle(household.id, "rsvp_collects_meal", e.target.checked)
+              }
+            />
+            <span>
+              <span className="font-medium">{t("guests.rsvp_collects_meal_label")}</span>
+              <span className="block text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.rsvp_collects_meal_help")}
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
 
       {!collapsed && (
         <ul className="divide-y divide-paper-200 dark:divide-umber-700">
@@ -1444,9 +1516,11 @@ function GuestDrawer({
    *  households (by label) and existing guests (by name) — clicking a hit
    *  switches the mode to "existing" and attaches the new guest there. */
   guests: Guest[];
-  /** The current couple workspace. Read to decide whether to render the
-   *  "needs accommodation?" checkbox — hidden when the couple hasn't opted
-   *  in via the Profile-page toggle. Null briefly during initial load. */
+  /** The current couple workspace. The "needs accommodation?" checkbox is
+   *  now gated by the selected household's `rsvp_offers_accommodation`
+   *  flag (the toggle moved off `couples` in May 2026), but we keep the
+   *  prop so future drawer surfaces can still read couple-scoped fields
+   *  without a refactor. Null briefly during initial load. */
   couple: Couple | null;
   onClose: () => void;
   onSaved: () => void;
@@ -1906,7 +1980,15 @@ function GuestDrawer({
                 />
               </div>
 
-              {couple?.rsvp_offers_accommodation && (
+              {/* Per-household opt-in for the accommodation field. The
+                  toggle moved off `couples` in May 2026; we now resolve it
+                  from the guest's selected household (existing-mode), or
+                  default to off for a brand-new household that hasn't been
+                  saved yet (the user can flip the toggle on the household
+                  card after creation if they want this column populated). */}
+              {(householdMode === "existing" &&
+                households.find((h) => h.id === householdId)?.rsvp_offers_accommodation) ===
+                true && (
                 <label className="mb-3 flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
                   <input
                     type="checkbox"

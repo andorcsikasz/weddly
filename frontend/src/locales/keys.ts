@@ -1189,6 +1189,15 @@ export interface LocaleMessages {
     download_template: string;
     guest_section_divider: string;
     hosts_badge: string;
+    /** Per-household RSVP settings panel (replaces the legacy Profile-page
+     *  pair). Renders inside each expanded household card on /app/guests so
+     *  every party can decide which RSVP questions surface for them. */
+    rsvp_settings_title: string;
+    rsvp_settings_help: string;
+    rsvp_offers_accommodation_label: string;
+    rsvp_offers_accommodation_help: string;
+    rsvp_collects_meal_label: string;
+    rsvp_collects_meal_help: string;
   };
   budget: {
     title: string;
@@ -2287,6 +2296,9 @@ export interface LocaleMessages {
     workspaces_role_partner: string;
     workspaces_create_title: string;
     workspaces_create_body: string;
+    workspaces_create_event_label: string;
+    workspaces_create_event_placeholder: string;
+    workspaces_create_event_required: string;
     workspaces_create_date_label: string;
     workspaces_create_submit: string;
     workspaces_create_done: string;

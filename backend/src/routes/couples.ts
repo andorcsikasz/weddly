@@ -1790,6 +1790,10 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "household.update",
   "household.delete",
   "household.regen_code",
+  // Per-household RSVP toggles migrated off the couple-level pair in May
+  // 2026 (couple.rsvp_*_update still listed above for legacy entries).
+  "household.rsvp_offers_accommodation_update",
+  "household.rsvp_collects_meal_update",
   // Budget
   "budget.line_create",
   "budget.line_update",
@@ -1951,15 +1955,8 @@ async function handleSwitchActiveCouple(ctx: Ctx): Promise<Response> {
 }
 
 interface CreateAdditionalCoupleBody {
-  bride_name?: unknown;
-  groom_name?: unknown;
-  display_name?: unknown;
+  event_name?: unknown;
   wedding_date_goal?: unknown;
-  guest_count_goal?: unknown;
-  budget_goal?: unknown;
-  ceremony_kind?: unknown;
-  currency?: unknown;
-  style_tags?: unknown;
   /** Source workspace to seed guests + households from. Optional. The
    *  caller must already be a member of this couple — verified server-
    *  side so a malicious client can't bulk-clone someone else's list. */
@@ -1991,13 +1988,37 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
     });
   }
 
-  const { brideName, groomName, displayName } = parseNames(body);
-  const dateGoal = parseWeddingDateGoal(body);
-  const guestGoal = parseGuestCountGoal(body);
-  const budgetGoal = parseBudgetGoal(body);
-  const styleTags = parseStyleTags(body.style_tags);
-  const currency: Currency = parseCurrency(body.currency) ?? "HUF";
-  const ceremonyKind = parseCeremonyKind(body.ceremony_kind);
+  // All events for ONE wedding share the same bride/groom — the additional
+  // workspace exists to model multiple events (civil + religious + dinner +
+  // afterparty etc.), not multiple couples. We inherit names from the
+  // caller's current couple and only ask for the event label.
+  if (typeof body.event_name !== "string") {
+    throw new HttpError(400, "event_name required");
+  }
+  const eventName = body.event_name.trim();
+  if (eventName.length < 1 || eventName.length > 100) {
+    throw new HttpError(400, "event_name must be 1–100 chars");
+  }
+  const currentCouple = getCoupleForUser(userId);
+  if (!currentCouple) {
+    throw new HttpError(400, "No active workspace to inherit names from", {
+      code: "no_active_workspace",
+    });
+  }
+  const brideName = currentCouple.bride_name;
+  const groomName = currentCouple.groom_name;
+  const displayName = eventName;
+  const dateGoal = parseWeddingDateGoal(body as OnboardBody);
+  const guestGoal: GuestCountGoal = { kind: "tbd", exact: null, min: null, max: null };
+  const budgetGoal: BudgetGoal = {
+    kind: "tbd",
+    exact_huf: null,
+    min_huf: null,
+    max_huf: null,
+  };
+  const styleTags: WeddingStyleTag[] = [];
+  const currency: Currency = "HUF";
+  const ceremonyKind: CeremonyKind | null = null;
 
   // Optional seed validation. Membership check protects against a malicious
   // client pointing at someone else's couple_id; the seed helper itself

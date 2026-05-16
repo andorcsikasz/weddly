@@ -417,6 +417,17 @@ export interface Household {
    *  hides the slug / code / share-link metadata — the hosts don't need to
    *  check themselves in. */
   is_couple_household: boolean;
+  /** Per-household opt-in for the "needs accommodation?" question on the
+   *  public RSVP form. Default `false`. Replaces the older couple-level
+   *  toggle so each party can carry its own decision (e.g. the venue-block
+   *  guests get the question, the locals don't). The legacy
+   *  `Couple.rsvp_offers_accommodation` column still exists but no longer
+   *  drives the public form. */
+  rsvp_offers_accommodation: boolean;
+  /** Per-household opt-out for the meal-choice icon row on the public RSVP
+   *  form. Default `true`. Per-member `meal_choice` values are preserved
+   *  server side, so flipping off → on re-surfaces them. */
+  rsvp_collects_meal: boolean;
   /** True when `guests.create` spawned this household implicitly (no
    *  `household_id` and no `new_household_label` on the request body).
    *  Lets the household tab optionally hide stub singletons via
@@ -446,14 +457,14 @@ export interface PublicCheckinView {
   household_code: string;
   household_label: string;
   members: HouseholdMember[];
-  /** Mirrors `Couple.rsvp_offers_accommodation`. When false, the form hides
-   *  the "needs accommodation?" checkbox so couples who don't offer it
-   *  don't surface an irrelevant question to their guests. */
+  /** Mirrors `Household.rsvp_offers_accommodation` (per-household since the
+   *  toggle moved off `couples`). When false, the form hides the "needs
+   *  accommodation?" checkbox for this specific household. */
   rsvp_offers_accommodation: boolean;
-  /** Mirrors `Couple.rsvp_collects_meal`. When false, the meal-icon row
-   *  (meat/fish/veg/vegan/child/none) is hidden on the public form — useful
-   *  for buffet weddings or couples that simply don't want to pre-collect a
-   *  menu choice. Dietary chips below stay visible either way. */
+  /** Mirrors `Household.rsvp_collects_meal`. When false, the meal-icon row
+   *  (meat/fish/veg/vegan/child/none) is hidden on the public form for this
+   *  household — useful for buffet weddings or households whose menu is
+   *  fixed. Dietary chips below stay visible either way. */
   rsvp_collects_meal: boolean;
 }
 

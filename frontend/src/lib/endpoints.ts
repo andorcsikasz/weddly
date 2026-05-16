@@ -143,19 +143,16 @@ export const coupleApi = {
     apiFetch<{ couple: Couple }>("POST", "/api/users/me/active-couple", {
       couple_id: coupleId,
     }),
-  /** Create Bravo / Charlie for an already-onboarded user. `seed_*` lets
-   *  the caller copy a subset of Alpha's guests + their households into
-   *  the new workspace; everything else (budget lines, seating, schedule)
-   *  starts fresh. */
+  /** Create Bravo / Charlie for an already-onboarded user. Bride/groom are
+   *  inherited from the caller's current workspace — every event for one
+   *  wedding shares the same couple — so the caller only specifies an
+   *  event name (e.g. "Polgári szertartás", "Családi vacsora") and an
+   *  optional date. `seed_*` lets the caller copy a subset of the current
+   *  workspace's guests + their households into the new one; everything
+   *  else (budget lines, seating, schedule) starts fresh. */
   createAdditional: (body: {
-    bride_name: string;
-    groom_name: string;
+    event_name: string;
     wedding_date_goal: WeddingDateGoal;
-    guest_count_goal: GuestCountGoal;
-    budget_goal: BudgetGoal;
-    ceremony_kind?: CeremonyKind | null;
-    currency?: Currency;
-    style_tags: WeddingStyleTag[];
     seed_from_couple_id?: number | null;
     seed_guest_ids?: number[];
   }) =>
@@ -377,7 +374,16 @@ export const householdApi = {
     apiFetch<{ household: Household }>("POST", "/api/households", body),
   update: (
     id: number,
-    body: { label?: string; notes?: string | null; group_tag?: GuestGroupTag },
+    body: {
+      label?: string;
+      notes?: string | null;
+      group_tag?: GuestGroupTag;
+      /** Per-household opt-in for the public RSVP "needs accommodation?"
+       *  question. Migrated off the couple-level toggle in May 2026. */
+      rsvp_offers_accommodation?: boolean;
+      /** Per-household opt-out for the public RSVP meal-choice icon row. */
+      rsvp_collects_meal?: boolean;
+    },
   ) => apiFetch<{ household: Household }>("PATCH", `/api/households/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/households/${id}`),
   regenerateCode: (id: number) =>

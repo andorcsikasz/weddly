@@ -20,6 +20,14 @@ export interface HouseholdRow {
   label: string;
   notes: string | null;
   group_tag: string;
+  /** Per-household opt-in for the public RSVP "needs accommodation?"
+   *  question. Stored 0/1; mapped to boolean in `toHousehold`. Migrated off
+   *  the couple-level column in May 2026 so each household carries its own
+   *  decision. */
+  rsvp_offers_accommodation: number;
+  /** Per-household opt-out for the meal-choice icon row on the public RSVP
+   *  form. Default 1 (collect). */
+  rsvp_collects_meal: number;
   /** 1 when this row was spawned implicitly by `guests.create` (no
    *  `household_id` and no `new_household_label` on the request body), 0
    *  when the user deliberately created it via the households route or
@@ -185,6 +193,8 @@ export function toHousehold(
     member_ids: members.map((m) => m.id),
     group_tag: isGuestGroupTag(row.group_tag) ? row.group_tag : "other",
     is_couple_household: isCouple,
+    rsvp_offers_accommodation: row.rsvp_offers_accommodation === 1,
+    rsvp_collects_meal: row.rsvp_collects_meal === 1,
     auto_created: row.auto_created === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,

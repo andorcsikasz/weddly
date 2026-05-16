@@ -339,6 +339,45 @@ db.exec(`
      AND EXISTS (SELECT 1 FROM guests WHERE household_id = households.id)
 `);
 
+// Per-household opt-in for the "needs accommodation?" RSVP question and the
+// meal-choice icon row. These started life on `couples` (one global toggle
+// per workspace) but moved to the household so each party can carry its own
+// decision — e.g. the venue-block guests get the accommodation question, the
+// locals don't. The couple-level columns + PATCH still exist for back-compat
+// (schema additive; never drop). Defaults match the original couple-level
+// defaults so a fresh household behaves the same as the legacy global.
+addColumnIfMissing(
+  "households",
+  "rsvp_offers_accommodation",
+  "rsvp_offers_accommodation INTEGER NOT NULL DEFAULT 0",
+);
+addColumnIfMissing(
+  "households",
+  "rsvp_collects_meal",
+  "rsvp_collects_meal INTEGER NOT NULL DEFAULT 1",
+);
+// One-time backfill — when these per-household columns were first added,
+// pull the couple-level setting forward so existing weddings don't silently
+// lose their pre-set values. `addColumnIfMissing` only adds the column once
+// (idempotent), and the backfill below is keyed off the column default so a
+// subsequent boot finds every row already at the matching value and these
+// UPDATEs are no-ops. Households whose couple has accommodation ON: flip the
+// household ON (the per-household column was just initialised to 0).
+db.exec(`
+  UPDATE households
+     SET rsvp_offers_accommodation = 1
+   WHERE rsvp_offers_accommodation = 0
+     AND couple_id IN (SELECT id FROM couples WHERE rsvp_offers_accommodation = 1)
+`);
+// Households whose couple has meal collection OFF: flip the household OFF
+// (the per-household column was just initialised to 1).
+db.exec(`
+  UPDATE households
+     SET rsvp_collects_meal = 0
+   WHERE rsvp_collects_meal = 1
+     AND couple_id IN (SELECT id FROM couples WHERE rsvp_collects_meal = 0)
+`);
+
 // `auto_created = 1` marks the household-of-one that `guests.create` spawns
 // implicitly when the caller passes no `household_id` and no
 // `new_household_label`. Distinguishes "the user typed a guest name and a

@@ -53,6 +53,28 @@ interface UpsertBody {
   label?: unknown;
   notes?: unknown;
   group_tag?: unknown;
+  rsvp_offers_accommodation?: unknown;
+  rsvp_collects_meal?: unknown;
+}
+
+/** Per-household opt-in for the public RSVP "needs accommodation?" question.
+ *  Strict-boolean: rejects strings / numbers / null so a typoed payload
+ *  surfaces as a 400 instead of silently coercing to `false`. Mirrors the
+ *  couple-level parser in `routes/couples.ts`. */
+function parseRsvpOffersAccommodation(raw: unknown): boolean {
+  if (typeof raw !== "boolean") {
+    throw new HttpError(400, "rsvp_offers_accommodation must be a boolean");
+  }
+  return raw;
+}
+
+/** Per-household opt-out for the meal-choice icon row. Same strict-boolean
+ *  contract as the accommodation parser above. */
+function parseRsvpCollectsMeal(raw: unknown): boolean {
+  if (typeof raw !== "boolean") {
+    throw new HttpError(400, "rsvp_collects_meal must be a boolean");
+  }
+  return raw;
 }
 
 function parseGroupTag(raw: unknown): GuestGroupTag {
@@ -118,11 +140,32 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     body.group_tag !== undefined
       ? parseGroupTag(body.group_tag)
       : (existing.group_tag as GuestGroupTag);
+  // Per-household RSVP toggles. Each one is parsed in isolation so that a
+  // single PATCH body can touch any subset of them, and each fires its own
+  // audit entry below so the activity feed reads cleanly. A no-op write
+  // (value unchanged) still flows through `UPDATE households SET … updated_at`
+  // — that's consistent with how label/notes already behave on this route.
+  const prevAccom = existing.rsvp_offers_accommodation === 1;
+  const nextAccom =
+    body.rsvp_offers_accommodation !== undefined
+      ? parseRsvpOffersAccommodation(body.rsvp_offers_accommodation)
+      : prevAccom;
+  const prevMeal = existing.rsvp_collects_meal === 1;
+  const nextMeal =
+    body.rsvp_collects_meal !== undefined
+      ? parseRsvpCollectsMeal(body.rsvp_collects_meal)
+      : prevMeal;
 
   const ts = now();
   db.prepare(
-    "UPDATE households SET label = ?, notes = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
-  ).run(label, notes, ts, id, couple.id);
+    `UPDATE households SET
+        label = ?,
+        notes = ?,
+        rsvp_offers_accommodation = ?,
+        rsvp_collects_meal = ?,
+        updated_at = ?
+       WHERE id = ? AND couple_id = ?`,
+  ).run(label, notes, nextAccom ? 1 : 0, nextMeal ? 1 : 0, ts, id, couple.id);
 
   // setHouseholdGroupTag also propagates to member guests, so we only call it
   // when the group_tag actually changes — keeps audit + updated_at noise down.
@@ -139,6 +182,31 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     before: { label: existing.label, notes: existing.notes, group_tag: existing.group_tag },
     after: { label, notes, group_tag: nextGroupTag },
   });
+  // Per-field audit entries for the RSVP toggles — only when the value
+  // actually changed. Keeps the activity feed quiet for unrelated PATCHes
+  // (e.g. a label rename) and mirrors how the couple-level versions log.
+  if (nextAccom !== prevAccom) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "household.rsvp_offers_accommodation_update",
+      target_kind: "household",
+      target_id: id,
+      before: { rsvp_offers_accommodation: prevAccom },
+      after: { rsvp_offers_accommodation: nextAccom },
+    });
+  }
+  if (nextMeal !== prevMeal) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "household.rsvp_collects_meal_update",
+      target_kind: "household",
+      target_id: id,
+      before: { rsvp_collects_meal: prevMeal },
+      after: { rsvp_collects_meal: nextMeal },
+    });
+  }
   return json({ household: viewOf({ id }, couple) });
 }
 
