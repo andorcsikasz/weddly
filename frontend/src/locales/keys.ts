@@ -2326,6 +2326,10 @@ export interface LocaleMessages {
     workspaces_create_seed_select_all: string;
     workspaces_create_seed_unselect_all: string;
     workspaces_create_seed_no_household: string;
+    workspaces_edit: string;
+    workspaces_edit_title: string;
+    workspaces_edit_save: string;
+    workspaces_edit_done: string;
     payments_title: string;
     payments_body: string;
     /** "Wedding RSVP" settings card on /app/profile. Today it carries a

@@ -120,6 +120,7 @@ export interface CoupleMembershipView {
   display_name: string;
   bride_name: string;
   groom_name: string;
+  wedding_date: string | null;
   status: CoupleStatus;
   role: "owner" | "partner";
   joined_at: number;
@@ -173,6 +174,7 @@ export const coupleApi = {
   update: (body: {
     bride_name?: string;
     groom_name?: string;
+    display_name?: string;
     wedding_date_goal?: WeddingDateGoal;
     guest_count_goal?: GuestCountGoal;
     budget_goal?: BudgetGoal;

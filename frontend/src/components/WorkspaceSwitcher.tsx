@@ -14,10 +14,11 @@ import { ChevronDown, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { type CoupleMembershipView, coupleApi } from "../lib/endpoints";
+import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 export function WorkspaceSwitcher() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const [open, setOpen] = useState(false);
   const [memberships, setMemberships] = useState<CoupleMembershipView[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -144,7 +145,14 @@ export function WorkspaceSwitcher() {
                         : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700/60"
                     }`}
                   >
-                    <span className="min-w-0 flex-1 truncate">{m.display_name}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{m.display_name}</span>
+                      {m.wedding_date ? (
+                        <span className="block truncate text-xs text-ink-500 dark:text-umber-300">
+                          {formatDate(m.wedding_date, locale)}
+                        </span>
+                      ) : null}
+                    </span>
                     {isSwitching ? (
                       <span className="text-xs text-ink-500 dark:text-umber-300">
                         {t("common.loading")}

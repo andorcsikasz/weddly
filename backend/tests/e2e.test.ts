@@ -8559,11 +8559,23 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
     expect(list1.data.couples).toHaveLength(1);
     expect(list1.data.couples[0]!.role).toBe("owner");
 
+    // Capture Alpha's bride/groom BEFORE spawning Bravo so we can assert
+    // the new workspace inherits them verbatim (note: bootstrapCouple uses
+    // the legacy `display_name` onboarding path, so both fields are
+    // typically empty strings — the equality check still proves inheritance).
+    const alphaCurrent = await req<{
+      couple: { bride_name: string; groom_name: string };
+    }>("GET", "/api/couples/current", undefined, { token });
+    expect(alphaCurrent.status).toBe(200);
+    const alpha = alphaCurrent.data.couple;
+
     // Create Bravo. The user becomes its owner and `users.couple_id`
     // auto-switches so the next /current resolves there. The endpoint
     // inherits bride/groom from the active couple — only the event_name
     // (the workspace label) needs to come from the caller.
-    const create = await req<{ couple: { id: number; display_name: string } }>(
+    const create = await req<{
+      couple: { id: number; display_name: string; bride_name: string; groom_name: string };
+    }>(
       "POST",
       "/api/couples",
       {
@@ -8579,6 +8591,9 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
       { token },
     );
     expect(create.status).toBe(201);
+    expect(create.data.couple.bride_name).toBe(alpha.bride_name);
+    expect(create.data.couple.groom_name).toBe(alpha.groom_name);
+    expect(create.data.couple.display_name).toBe("Lakodalom");
     const bravoId = create.data.couple.id;
     expect(bravoId).not.toBe(alphaId);
 
@@ -8780,5 +8795,120 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
       { token: tokenB },
     );
     expect(r.status).toBe(403);
+  });
+
+  test("rejects create when event_name is missing or empty", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("multi-validate@weddly.test");
+
+    // Missing event_name entirely.
+    const noName = await req(
+      "POST",
+      "/api/couples",
+      {
+        wedding_date_goal: {
+          kind: "tbd",
+          exact_date: null,
+          target_year: null,
+          target_month: null,
+          target_season: null,
+        },
+      },
+      { token },
+    );
+    expect(noName.status).toBe(400);
+
+    // Whitespace-only — trims to "" which violates the 1–100 char rule.
+    const blank = await req(
+      "POST",
+      "/api/couples",
+      {
+        event_name: "   ",
+        wedding_date_goal: {
+          kind: "tbd",
+          exact_date: null,
+          target_year: null,
+          target_month: null,
+          target_season: null,
+        },
+      },
+      { token },
+    );
+    expect(blank.status).toBe(400);
+
+    // 101 chars — one past the cap.
+    const tooLong = await req(
+      "POST",
+      "/api/couples",
+      {
+        event_name: "x".repeat(101),
+        wedding_date_goal: {
+          kind: "tbd",
+          exact_date: null,
+          target_year: null,
+          target_month: null,
+          target_season: null,
+        },
+      },
+      { token },
+    );
+    expect(tooLong.status).toBe(400);
+  });
+
+  test("PATCH /api/couples/current renames an event workspace via display_name", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("multi-rename@weddly.test");
+
+    // Spin up a fresh event workspace whose label we'll rename.
+    const create = await req<{ couple: { id: number; display_name: string } }>(
+      "POST",
+      "/api/couples",
+      {
+        event_name: "Eredeti név",
+        wedding_date_goal: {
+          kind: "tbd",
+          exact_date: null,
+          target_year: null,
+          target_month: null,
+          target_season: null,
+        },
+      },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.couple.display_name).toBe("Eredeti név");
+    const eventId = create.data.couple.id;
+    expect(eventId).not.toBe(alphaId);
+
+    // The new workspace is auto-active — PATCH /current targets it.
+    const renamed = await req<{ couple: { id: number; display_name: string } }>(
+      "PATCH",
+      "/api/couples/current",
+      { display_name: "Új név" },
+      { token },
+    );
+    expect(renamed.status).toBe(200);
+    expect(renamed.data.couple.id).toBe(eventId);
+    expect(renamed.data.couple.display_name).toBe("Új név");
+
+    // GET confirms persistence.
+    const refetched = await req<{ couple: { id: number; display_name: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(refetched.status).toBe(200);
+    expect(refetched.data.couple.display_name).toBe("Új név");
+
+    // Audit log captures the rename as a dedicated action.
+    const audits = db
+      .prepare(
+        "SELECT action, before_json, after_json FROM audit_log WHERE couple_id = ? AND action = 'couple.display_name_update' ORDER BY id DESC",
+      )
+      .all(eventId) as { action: string; before_json: string | null; after_json: string | null }[];
+    expect(audits.length).toBe(1);
+    expect(JSON.parse(audits[0]!.before_json!)).toEqual({ display_name: "Eredeti név" });
+    expect(JSON.parse(audits[0]!.after_json!)).toEqual({ display_name: "Új név" });
   });
 });

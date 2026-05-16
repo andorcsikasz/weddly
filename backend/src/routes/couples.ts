@@ -1136,6 +1136,32 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     nextGroom = newGroom;
   }
 
+  // Standalone display_name rename — used by event workspaces (civil /
+  // religious / dinner / afterparty) to relabel themselves without
+  // touching bride/groom. The bride/groom path above already derives
+  // display_name as `${bride} & ${groom}`, so when both clusters arrive
+  // in the same PATCH we deliberately IGNORE the display_name override
+  // (the bride/groom rename always wins to keep the derivation honest).
+  if (
+    body.display_name !== undefined &&
+    body.bride_name === undefined &&
+    body.groom_name === undefined
+  ) {
+    if (typeof body.display_name !== "string") {
+      throw new HttpError(400, "display_name must be 1–100 chars");
+    }
+    const newDisplayName = body.display_name.trim();
+    if (newDisplayName.length < 1 || newDisplayName.length > 100) {
+      throw new HttpError(400, "display_name must be 1–100 chars");
+    }
+    updates.push({ col: "display_name", val: newDisplayName });
+    auditEntries.push({
+      action: "couple.display_name_update",
+      before: { display_name: couple.display_name },
+      after: { display_name: newDisplayName },
+    });
+  }
+
   if (body.wedding_date_goal !== undefined || body.wedding_date !== undefined) {
     const goal = parseWeddingDateGoal(body as OnboardBody);
     // Stash the prior `wedding_date` if (and only if) the exact date is

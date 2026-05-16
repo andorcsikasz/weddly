@@ -27,6 +27,7 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
   const toast = useToast();
   const [memberships, setMemberships] = useState<CoupleMembershipView[]>([]);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   async function refresh() {
     try {
@@ -42,6 +43,7 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
   }, []);
 
   const atCap = memberships.filter((m) => m.status !== "deleting").length >= 3;
+  const activeMembership = memberships.find((m) => m.couple_id === activeCoupleId) ?? null;
 
   return (
     <section id="workspaces" className="card mt-6">
@@ -83,10 +85,19 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
                   </p>
                 </div>
                 {isActive ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-0.5 text-[10px] uppercase tracking-wide text-paper-50 dark:bg-paper-50 dark:text-ink-900">
-                    <Check size={10} aria-hidden="true" />
-                    {t("workspace.active_marker")}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                      onClick={() => setEditing(true)}
+                    >
+                      {t("profile.workspaces_edit")}
+                    </button>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-0.5 text-[10px] uppercase tracking-wide text-paper-50 dark:bg-paper-50 dark:text-ink-900">
+                      <Check size={10} aria-hidden="true" />
+                      {t("workspace.active_marker")}
+                    </span>
+                  </div>
                 ) : (
                   <button
                     type="button"
@@ -119,7 +130,130 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
           }}
         />
       )}
+
+      {editing && activeMembership && (
+        <EditWorkspaceDialog
+          initialName={activeMembership.display_name}
+          initialDate={activeMembership.wedding_date}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            refresh();
+          }}
+        />
+      )}
     </section>
+  );
+}
+
+function EditWorkspaceDialog({
+  initialName,
+  initialDate,
+  onClose,
+  onSaved,
+}: {
+  initialName: string;
+  initialDate: string | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const [eventName, setEventName] = useState(initialName);
+  const [weddingDate, setWeddingDate] = useState(initialDate ?? "");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const name = eventName.trim();
+    if (!name || name.length > 100) {
+      toast.error(t("profile.workspaces_create_event_required"));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const wedding_date_goal =
+        weddingDate && /^\d{4}-\d{2}-\d{2}$/.test(weddingDate)
+          ? {
+              kind: "exact" as const,
+              exact_date: weddingDate,
+              target_year: Number(weddingDate.slice(0, 4)),
+              target_month: Number(weddingDate.slice(5, 7)),
+              target_season: null,
+            }
+          : {
+              kind: "tbd" as const,
+              exact_date: null,
+              target_year: null,
+              target_month: null,
+              target_season: null,
+            };
+      await coupleApi.update({
+        display_name: name,
+        wedding_date_goal,
+      });
+      toast.success(t("profile.workspaces_edit_done"));
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      title={t("profile.workspaces_edit_title")}
+      role="dialog"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
+            {t("common.cancel")}
+          </button>
+          <button
+            type="submit"
+            form="edit-workspace-form"
+            className="btn-primary"
+            disabled={submitting}
+          >
+            {submitting ? t("common.saving") : t("profile.workspaces_edit_save")}
+          </button>
+        </>
+      }
+    >
+      <form id="edit-workspace-form" onSubmit={submit} className="space-y-4">
+        <div>
+          <label htmlFor="ew-event" className="field-label">
+            {t("profile.workspaces_create_event_label")}
+          </label>
+          <input
+            id="ew-event"
+            type="text"
+            className="input"
+            value={eventName}
+            onChange={(e) => setEventName(e.target.value)}
+            placeholder={t("profile.workspaces_create_event_placeholder")}
+            maxLength={100}
+            autoFocus
+            disabled={submitting}
+          />
+        </div>
+        <div>
+          <label htmlFor="ew-date" className="field-label">
+            {t("profile.workspaces_create_date_label")}
+          </label>
+          <input
+            id="ew-date"
+            type="date"
+            className="input"
+            value={weddingDate}
+            onChange={(e) => setWeddingDate(e.target.value)}
+            disabled={submitting}
+          />
+        </div>
+      </form>
+    </Dialog>
   );
 }
 

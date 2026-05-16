@@ -263,6 +263,7 @@ export interface CoupleMembershipView {
   display_name: string;
   bride_name: string;
   groom_name: string;
+  wedding_date: string | null;
   status: CoupleStatus;
   role: CoupleMemberRole;
   joined_at: number;
@@ -274,8 +275,8 @@ export interface CoupleMembershipView {
 export function listCouplesForUser(userId: number): CoupleMembershipView[] {
   const rows = db
     .prepare(
-      `SELECT cm.couple_id, c.display_name, c.bride_name, c.groom_name, c.status,
-              cm.role, cm.created_at AS joined_at
+      `SELECT cm.couple_id, c.display_name, c.bride_name, c.groom_name, c.wedding_date,
+              c.status, cm.role, cm.created_at AS joined_at
          FROM couple_members cm
          JOIN couples c ON c.id = cm.couple_id
         WHERE cm.user_id = ?
@@ -286,6 +287,7 @@ export function listCouplesForUser(userId: number): CoupleMembershipView[] {
     display_name: string;
     bride_name: string;
     groom_name: string;
+    wedding_date: string | null;
     status: string;
     role: string;
     joined_at: number;
@@ -295,6 +297,7 @@ export function listCouplesForUser(userId: number): CoupleMembershipView[] {
     display_name: r.display_name,
     bride_name: r.bride_name,
     groom_name: r.groom_name,
+    wedding_date: r.wedding_date,
     status: VALID_COUPLE_STATUSES.has(r.status as CoupleStatus)
       ? (r.status as CoupleStatus)
       : "active",
