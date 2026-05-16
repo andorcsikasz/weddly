@@ -1382,6 +1382,8 @@ const en: LocaleMessages = {
     sub: "Curated list. Reach out directly — v2 will let you book here.",
     contact_email: "Email",
     visit_website: "Website",
+    no_phone: "No phone on file",
+    no_email: "No email on file",
     filter_all: "All",
     chain_help: "Book in a logical order — from venue down to the final details.",
     community_pill: "Community",

@@ -1,9 +1,10 @@
 // Header chip + dropdown listing every workspace the current user belongs
 // to (Alpha / Bravo / Charlie). Rendered next to the wordmark in AppShell,
 // only when signed in AND the user has at least one workspace. With a
-// single workspace we still show the chip so the user can discover the
-// "Új esemény" affordance via the dropdown footer; with two or three it
-// becomes a true switcher.
+// single workspace the chip collapses to a bare "+" affordance — the
+// active name is already the page hero so repeating it is noise; only
+// once Bravo exists does naming the active event start to earn its
+// pixels.
 //
 // Switching = POST /api/users/me/active-couple → hard reload, since every
 // page reads couple-scoped data on mount and stitching the in-memory
@@ -66,7 +67,24 @@ export function WorkspaceSwitcher() {
 
   const active = memberships.find((m) => m.couple_id === activeId) ?? memberships[0];
   if (!active) return null;
-  const hasMultiple = memberships.length > 1;
+
+  // Single-workspace shortcut: skip the chip+dropdown entirely and render
+  // a tiny "+" link straight to the profile's workspaces section. The
+  // active name is redundant with the page hero ("Andor & Sári") that
+  // already lives one row below, and the dropdown would be a one-item
+  // menu with a footer link — pure friction.
+  if (memberships.length === 1) {
+    return (
+      <Link
+        to="/app/profile#workspaces"
+        aria-label={t("workspace.create_link")}
+        title={t("workspace.create_link")}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+      >
+        <Plus size={14} aria-hidden="true" />
+      </Link>
+    );
+  }
 
   async function pickWorkspace(id: number) {
     if (id === activeId) {
@@ -97,13 +115,11 @@ export function WorkspaceSwitcher() {
         title={t("workspace.switcher_aria")}
       >
         <span className="max-w-[10rem] truncate font-medium">{active.display_name}</span>
-        {hasMultiple && (
-          <ChevronDown
-            size={14}
-            aria-hidden="true"
-            className={`transition-transform ${open ? "rotate-180" : ""}`}
-          />
-        )}
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className={`transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
       {open && (
         <div

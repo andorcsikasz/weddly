@@ -823,6 +823,14 @@ export interface LocaleMessages {
     /** Cross-link from the Tasks tab toolbar to the /app/timeline Gantt view. */
     timeline_link: string;
     timeline_link_hint: string;
+    /** SOS / important flag button + filter pills above the task list. */
+    priority_filter_aria: string;
+    priority_filter_all: string;
+    priority_filter_important: string;
+    priority_filter_sos: string;
+    priority_set_important: string;
+    priority_set_sos: string;
+    priority_clear: string;
     /** Task tab wand button + dialog. */
     task_template_button: string;
     task_template_button_hint: string;
@@ -1503,6 +1511,10 @@ export interface LocaleMessages {
     sub: string;
     contact_email: string;
     visit_website: string;
+    /** Tooltips on the muted Phone/Mail chips in the Timeline point-of-contact
+     *  card when the supplier has no contact data on file. */
+    no_phone: string;
+    no_email: string;
     filter_all: string;
     chain_help: string;
     community_pill: string;

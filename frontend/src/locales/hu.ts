@@ -788,6 +788,13 @@ const hu: LocaleMessages = {
     idea_suggested_by: "— {name} javasolta",
     timeline_link: "Idővonal",
     timeline_link_hint: "Nyisd meg a feladatok Gantt-nézetét",
+    priority_filter_aria: "Prioritás szűrő",
+    priority_filter_all: "Mind",
+    priority_filter_important: "Fontos",
+    priority_filter_sos: "SOS",
+    priority_set_important: "Jelöld fontosnak (!)",
+    priority_set_sos: "Jelöld SOS-nek (!!)",
+    priority_clear: "Prioritás levétele",
     // Task tab wand (varázspálca) + dialog.
     task_template_button: "Sablon feladatok",
     task_template_button_hint:
@@ -1391,6 +1398,8 @@ const hu: LocaleMessages = {
     sub: "Válogatott lista. Lépj kapcsolatba közvetlenül; v2-ben rendelhetsz innen.",
     contact_email: "E-mail",
     visit_website: "Weboldal",
+    no_phone: "Nincs megadva telefonszám",
+    no_email: "Nincs megadva email-cím",
     filter_all: "Mind",
     chain_help: "Foglalás logikus sorrendben — a helyszíntől az utolsó részletekig.",
     community_pill: "Közösségi",

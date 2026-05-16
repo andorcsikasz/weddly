@@ -413,39 +413,55 @@ function PocRow({
         <p className="mt-0.5 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
           {t(`suppliers.cat.${category}`)}
         </p>
-        {supplier && (supplier.phone || supplier.email || supplier.website) && (
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-700 dark:text-paper-100">
-            {supplier.phone && (
-              <a
-                href={`tel:${supplier.phone.replace(/\s+/g, "")}`}
-                className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
-              >
-                <Phone size={11} aria-hidden="true" />
-                <span>{supplier.phone}</span>
-              </a>
-            )}
-            {supplier.email && (
-              <a
-                href={`mailto:${supplier.email}`}
-                className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
-              >
-                <Mail size={11} aria-hidden="true" />
-                <span className="truncate max-w-[140px]">{supplier.email}</span>
-              </a>
-            )}
-            {supplier.website && (
-              <a
-                href={supplier.website}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
-              >
-                <Globe size={11} aria-hidden="true" />
-                <span>{t("suppliers.visit_website")}</span>
-              </a>
-            )}
-          </div>
-        )}
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-700 dark:text-paper-100">
+          {supplier?.phone ? (
+            <a
+              href={`tel:${supplier.phone.replace(/\s+/g, "")}`}
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+            >
+              <Phone size={11} aria-hidden="true" />
+              <span>{supplier.phone}</span>
+            </a>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100/60 px-2 py-0.5 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
+              aria-label={t("suppliers.no_phone")}
+              title={t("suppliers.no_phone")}
+            >
+              <Phone size={11} aria-hidden="true" />
+              <span>—</span>
+            </span>
+          )}
+          {supplier?.email ? (
+            <a
+              href={`mailto:${supplier.email}`}
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+            >
+              <Mail size={11} aria-hidden="true" />
+              <span className="truncate max-w-[140px]">{supplier.email}</span>
+            </a>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100/60 px-2 py-0.5 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
+              aria-label={t("suppliers.no_email")}
+              title={t("suppliers.no_email")}
+            >
+              <Mail size={11} aria-hidden="true" />
+              <span>—</span>
+            </span>
+          )}
+          {supplier?.website && (
+            <a
+              href={supplier.website}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+            >
+              <Globe size={11} aria-hidden="true" />
+              <span>{t("suppliers.visit_website")}</span>
+            </a>
+          )}
+        </div>
       </div>
     </li>
   );

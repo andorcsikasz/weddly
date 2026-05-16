@@ -5251,29 +5251,12 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
 
   test("rsvp_collects_meal defaults on; toggles round-trip + flow through to PublicCheckinView", async () => {
     wipeAll();
-    const { token, slug } = await bootstrapCouple("rsvp-meal@weddly.test");
-
-    // Seed one household + one guest so the public checkin lookup returns a view.
-    const hh = await req<{ household: { id: number; code: string } }>(
-      "POST",
-      "/api/households",
-      { label: "Test family", group_tag: "his_family" },
-      { token },
-    );
-    expect(hh.status).toBe(200);
-    const householdId = hh.data.household.id;
-    const code = hh.data.household.code;
-    await req(
-      "POST",
-      "/api/guests",
-      { full_name: "Pál Test", household_id: householdId, rsvp_status: "pending" },
-      { token },
-    );
+    const { token } = await bootstrapCouple("rsvp-meal@weddly.test");
 
     // Default state after onboarding: ON. Schema-level default of 1 is the
     // contract — most weddings serve a plated menu and existing couples
     // shouldn't lose the meal row on upgrade.
-    const initial = await req<{ couple: { rsvp_collects_meal: boolean } }>(
+    const initial = await req<{ couple: { rsvp_collects_meal: boolean; slug: string } }>(
       "GET",
       "/api/couples/current",
       undefined,
@@ -5281,16 +5264,26 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     );
     expect(initial.status).toBe(200);
     expect(initial.data.couple.rsvp_collects_meal).toBe(true);
+    const slug = initial.data.couple.slug;
 
-    // Public checkin lookup mirrors the couple-level flag — buffet couples
-    // hide the meal row on the guest-facing form.
-    const pubOn = await req<{ view: { rsvp_collects_meal: boolean } }>(
+    // Seed one household so the public lookup has something to resolve.
+    const hh = await req<{ household: { id: number; code: string } }>(
       "POST",
-      "/api/rsvp/checkin/lookup",
-      { couple_slug: slug, household_code: code },
+      "/api/households",
+      { label: "Test family" },
+      { token },
+    );
+    expect(hh.status).toBe(201);
+    const code = hh.data.household.code;
+
+    // Public lookup mirrors the couple-level flag — buffet couples can hide
+    // the meal row on the guest-facing form simply by flipping the toggle.
+    const pubOn = await req<{ rsvp: { rsvp_collects_meal: boolean } }>(
+      "GET",
+      `/api/rsvp/lookup?couple=${slug}&code=${code}`,
     );
     expect(pubOn.status).toBe(200);
-    expect(pubOn.data.view.rsvp_collects_meal).toBe(true);
+    expect(pubOn.data.rsvp.rsvp_collects_meal).toBe(true);
 
     // Flip off.
     const off = await req<{ couple: { rsvp_collects_meal: boolean } }>(
@@ -5312,13 +5305,12 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     expect(after.data.couple.rsvp_collects_meal).toBe(false);
 
     // And the public-facing view tracks it too.
-    const pubOff = await req<{ view: { rsvp_collects_meal: boolean } }>(
-      "POST",
-      "/api/rsvp/checkin/lookup",
-      { couple_slug: slug, household_code: code },
+    const pubOff = await req<{ rsvp: { rsvp_collects_meal: boolean } }>(
+      "GET",
+      `/api/rsvp/lookup?couple=${slug}&code=${code}`,
     );
     expect(pubOff.status).toBe(200);
-    expect(pubOff.data.view.rsvp_collects_meal).toBe(false);
+    expect(pubOff.data.rsvp.rsvp_collects_meal).toBe(false);
 
     // Flip back on.
     const on = await req<{ couple: { rsvp_collects_meal: boolean } }>(

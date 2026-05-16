@@ -14,6 +14,7 @@ import {
   ChevronUp,
   Circle,
   Dices,
+  Flag,
   GanttChartSquare,
   Lightbulb,
   Plus,
@@ -21,7 +22,16 @@ import {
   User,
   Wand2,
 } from "lucide-react";
-import { Fragment, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
@@ -418,6 +428,50 @@ export default function PlanningPage() {
           onCreate={onCreate}
         />
 
+        {activeKind === "task" && (taskPriorityCounts.p1plus > 0 || priorityFilter !== 0) && (
+          <div
+            role="radiogroup"
+            aria-label={t("planning.priority_filter_aria")}
+            className="mt-4 flex flex-wrap items-center gap-2 text-xs"
+          >
+            <PriorityFilterPill
+              active={priorityFilter === 0}
+              onClick={() => setPriorityFilter(0)}
+              label={t("planning.priority_filter_all")}
+            />
+            <PriorityFilterPill
+              active={priorityFilter === 1}
+              onClick={() => setPriorityFilter(1)}
+              label={
+                <>
+                  <span className="font-bold text-blush-700 dark:text-blush-300">!</span>
+                  <span>{t("planning.priority_filter_important")}</span>
+                  {taskPriorityCounts.p1plus > 0 && (
+                    <span className="text-ink-400 dark:text-umber-300">
+                      ({taskPriorityCounts.p1plus})
+                    </span>
+                  )}
+                </>
+              }
+            />
+            <PriorityFilterPill
+              active={priorityFilter === 2}
+              onClick={() => setPriorityFilter(2)}
+              label={
+                <>
+                  <span className="font-bold text-blush-700 dark:text-blush-300">!!</span>
+                  <span>{t("planning.priority_filter_sos")}</span>
+                  {taskPriorityCounts.p2 > 0 && (
+                    <span className="text-ink-400 dark:text-umber-300">
+                      ({taskPriorityCounts.p2})
+                    </span>
+                  )}
+                </>
+              }
+            />
+          </div>
+        )}
+
         {loading ? (
           <PlanningListSkeleton kind={activeKind} />
         ) : scoped.length === 0 ? (
@@ -451,6 +505,7 @@ export default function PlanningPage() {
                     canMoveDown={idx < scoped.length - 1}
                     onToggleDone={() => onToggleDone(item)}
                     onPatch={(patch) => onPatch(item, patch)}
+                    onCyclePriority={() => onCyclePriority(item)}
                     onMove={(direction) => onMove(item, direction)}
                     onDelete={() => onDelete(item)}
                   />
@@ -991,6 +1046,7 @@ function PlanningRow({
   canMoveDown,
   onToggleDone,
   onPatch,
+  onCyclePriority,
   onMove,
   onDelete,
 }: {
@@ -1002,6 +1058,9 @@ function PlanningRow({
   canMoveDown: boolean;
   onToggleDone: () => void;
   onPatch: (patch: Partial<PlanningItem>) => void;
+  /** Cycle priority 0 → 1 → 2 → 0. Wired only on the tasks tab — the parent
+   *  call is a no-op for ideas, so we still render the button uniformly. */
+  onCyclePriority: () => void;
   onMove: (direction: "up" | "down") => void;
   onDelete: () => void;
 }) {
@@ -1044,18 +1103,21 @@ function PlanningRow({
       }`}
     >
       {item.kind === "task" && (
-        <button
-          type="button"
-          onClick={onToggleDone}
-          aria-label={item.done ? t("planning.mark_undone") : t("planning.mark_done")}
-          className="shrink-0 text-ink-500 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
-        >
-          {item.done ? (
-            <CheckCircle2 size={18} className="text-sage-700 dark:text-sage-300" />
-          ) : (
-            <Circle size={18} />
-          )}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={onToggleDone}
+            aria-label={item.done ? t("planning.mark_undone") : t("planning.mark_done")}
+            className="shrink-0 text-ink-500 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+          >
+            {item.done ? (
+              <CheckCircle2 size={18} className="text-sage-700 dark:text-sage-300" />
+            ) : (
+              <Circle size={18} />
+            )}
+          </button>
+          <PriorityFlagButton priority={(item.priority ?? 0) as 0 | 1 | 2} onCycle={onCyclePriority} />
+        </>
       )}
       {item.kind === "idea" && (
         <Lightbulb
@@ -1277,5 +1339,74 @@ function EmptyState({ kind }: { kind: PlanningTabKind }) {
       <Icon size={28} className="mx-auto text-ink-400 dark:text-umber-300" aria-hidden="true" />
       <p className="mt-3 text-sm text-ink-700 dark:text-paper-100">{t(`planning.empty_${kind}`)}</p>
     </div>
+  );
+}
+
+/** Single button that cycles a task's priority flag 0 → 1 → 2 → 0. Empty
+ *  state is a faint outline icon; lit state is a red pill carrying "!" or
+ *  "!!". Wider on the SOS state so the pair of glyphs doesn't crowd. */
+function PriorityFlagButton({
+  priority,
+  onCycle,
+}: {
+  priority: 0 | 1 | 2;
+  onCycle: () => void;
+}) {
+  const { t } = useT();
+  const label =
+    priority === 0
+      ? t("planning.priority_set_important")
+      : priority === 1
+        ? t("planning.priority_set_sos")
+        : t("planning.priority_clear");
+  if (priority === 0) {
+    return (
+      <button
+        type="button"
+        onClick={onCycle}
+        aria-label={label}
+        title={label}
+        className="shrink-0 text-ink-300 transition-colors hover:text-blush-600 dark:text-umber-300 dark:hover:text-blush-300"
+      >
+        <Flag size={16} aria-hidden="true" />
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onCycle}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-6 shrink-0 items-center justify-center rounded-full bg-blush-100 px-2 text-xs font-bold text-blush-700 transition-colors hover:bg-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:hover:bg-blush-400/25"
+    >
+      {priority === 1 ? "!" : "!!"}
+    </button>
+  );
+}
+
+function PriorityFilterPill({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-colors ${
+        active
+          ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+          : "bg-paper-100 text-ink-700 hover:bg-paper-200 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-600"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
