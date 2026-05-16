@@ -2070,6 +2070,29 @@ const hu: LocaleMessages = {
     budget_currency_confirm_body:
       "Biztos, hogy más pénznemben szeretnéd a továbbiakban vezetni a költségeket? Ez csak a megjelenítést váltja — a már bevitt összegeket nem számoljuk át árfolyam szerint, ugyanazok a számok jelennek meg az új szimbólummal.",
     budget_currency_confirm_yes: "Igen, váltsunk",
+    workspaces_title: "Esemény-munkaterületek",
+    workspaces_body:
+      "Több esemény (polgári, lakodalom, másnapi brunch)? Külön munkaterület mindegyiknek. Vendéglista és háztartások átvehetők az aktív munkaterületről.",
+    workspaces_add: "Új esemény",
+    workspaces_cap_reached: "Maximum három munkaterület — törölj egyet, vagy archiváld.",
+    workspaces_empty: "Még nincs munkaterületed.",
+    workspaces_switch: "Megnyitás",
+    workspaces_role_owner: "Tulajdonos",
+    workspaces_role_partner: "Partner",
+    workspaces_create_title: "Új esemény-munkaterület",
+    workspaces_create_body:
+      "Önálló vendéglistával, költségvetéssel, ültetéssel — minden esemény külön él. Az aktuálisan nyitott munkaterületről átvehetsz vendégeket: friss RSVP-kódokkal, alaphelyzetbe állított visszajelzéssel kerülnek át.",
+    workspaces_create_date_label: "Dátum (opcionális)",
+    workspaces_create_submit: "Létrehozás",
+    workspaces_create_done: "{name} létrehozva.",
+    workspaces_create_names_required: "Adj nevet a párnak.",
+    workspaces_create_seed_toggle: "Vendéglista átvétele",
+    workspaces_create_seed_hint:
+      "Másold át az aktív munkaterület vendégeit és háztartásait — kipipálhatod, kit hívsz erre az eseményre.",
+    workspaces_create_seed_summary: "{selected} / {total} vendég kiválasztva",
+    workspaces_create_seed_select_all: "Mindet",
+    workspaces_create_seed_unselect_all: "Egyiket sem",
+    workspaces_create_seed_no_household: "Háztartás nélkül",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
     rsvp_title: "RSVP beállítások",
@@ -2281,6 +2304,11 @@ const hu: LocaleMessages = {
     request_failed: "A kérés nem ment át. Ellenőrizd a kapcsolatot és próbáld újra.",
     request_timeout: "Túl sokáig tartott. Próbáld újra.",
     retry: "Újra",
+  },
+  workspace: {
+    switcher_aria: "Munkaterület váltása",
+    active_marker: "Aktív",
+    create_link: "Új esemény-munkaterület",
   },
 };
 

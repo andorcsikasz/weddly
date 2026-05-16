@@ -8591,7 +8591,13 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
       {
         bride_name: "Anna",
         groom_name: "Bence",
-        wedding_date_goal: { kind: "tbd", exact_date: null, target_year: null, target_month: null, target_season: null },
+        wedding_date_goal: {
+          kind: "tbd",
+          exact_date: null,
+          target_year: null,
+          target_month: null,
+          target_season: null,
+        },
         guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
         budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
         style_tags: [],
@@ -8608,12 +8614,9 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
     // Read Bravo's guests + household. Fresh ids, fresh invite codes,
     // RSVP back to 'pending', household-of-the-bride row is also present
     // (added by ensurePartnerGuests during create).
-    const guests = await req<{ guests: { id: number; full_name: string; invite_code: string; rsvp_status: string }[] }>(
-      "GET",
-      "/api/guests",
-      undefined,
-      { token },
-    );
+    const guests = await req<{
+      guests: { id: number; full_name: string; invite_code: string; rsvp_status: string }[];
+    }>("GET", "/api/guests", undefined, { token });
     // Bravo is the active workspace, so listGuests returns its guests.
     const seeded = guests.data.guests.filter((g) =>
       ["Aunt Klári", "Uncle Béla"].includes(g.full_name),
@@ -8650,7 +8653,12 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
     );
     expect(r.status).toBe(403);
     // And A can still switch to A (idempotent).
-    const r2 = await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token: tokenA });
+    const r2 = await req(
+      "POST",
+      "/api/users/me/active-couple",
+      { couple_id: alphaId },
+      { token: tokenA },
+    );
     expect(r2.status).toBe(200);
   });
 
@@ -8665,7 +8673,13 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
         {
           bride_name: "A",
           groom_name: label,
-          wedding_date_goal: { kind: "tbd", exact_date: null, target_year: null, target_month: null, target_season: null },
+          wedding_date_goal: {
+            kind: "tbd",
+            exact_date: null,
+            target_year: null,
+            target_month: null,
+            target_season: null,
+          },
           guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
           budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
           style_tags: [],
@@ -8692,7 +8706,13 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
       {
         bride_name: "Bea",
         groom_name: "Don",
-        wedding_date_goal: { kind: "tbd", exact_date: null, target_year: null, target_month: null, target_season: null },
+        wedding_date_goal: {
+          kind: "tbd",
+          exact_date: null,
+          target_year: null,
+          target_month: null,
+          target_season: null,
+        },
         guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
         budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
         style_tags: [],

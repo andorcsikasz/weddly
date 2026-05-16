@@ -2246,6 +2246,28 @@ export interface LocaleMessages {
     budget_currency_confirm_title: string;
     budget_currency_confirm_body: string;
     budget_currency_confirm_yes: string;
+    /** Profile "Workspaces" panel — lists Alpha / Bravo / Charlie and
+     *  hosts the "Új esemény" CTA + create modal. */
+    workspaces_title: string;
+    workspaces_body: string;
+    workspaces_add: string;
+    workspaces_cap_reached: string;
+    workspaces_empty: string;
+    workspaces_switch: string;
+    workspaces_role_owner: string;
+    workspaces_role_partner: string;
+    workspaces_create_title: string;
+    workspaces_create_body: string;
+    workspaces_create_date_label: string;
+    workspaces_create_submit: string;
+    workspaces_create_done: string;
+    workspaces_create_names_required: string;
+    workspaces_create_seed_toggle: string;
+    workspaces_create_seed_hint: string;
+    workspaces_create_seed_summary: string;
+    workspaces_create_seed_select_all: string;
+    workspaces_create_seed_unselect_all: string;
+    workspaces_create_seed_no_household: string;
     payments_title: string;
     payments_body: string;
     /** "Wedding RSVP" settings card on /app/profile. Today it carries a
@@ -2447,5 +2469,12 @@ export interface LocaleMessages {
     request_failed: string;
     request_timeout: string;
     retry: string;
+  };
+  /** Workspace-switcher chip in the AppShell header. Strings shared
+   *  with the Profile "Workspaces" panel where appropriate. */
+  workspace: {
+    switcher_aria: string;
+    active_marker: string;
+    create_link: string;
   };
 }

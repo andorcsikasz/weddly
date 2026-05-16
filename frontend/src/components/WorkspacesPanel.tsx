@@ -11,12 +11,7 @@ import type { Guest, Household } from "@shared/types";
 import { Check, Plus } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { ApiError } from "../lib/api";
-import {
-  type CoupleMembershipView,
-  coupleApi,
-  guestApi,
-  householdApi,
-} from "../lib/endpoints";
+import { type CoupleMembershipView, coupleApi, guestApi, householdApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { Dialog, useToast } from "./ui";
 
@@ -101,9 +96,7 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
                         await coupleApi.switchActive(m.couple_id);
                         window.location.assign("/app");
                       } catch (e) {
-                        toast.error(
-                          e instanceof ApiError ? e.message : t("common.error_generic"),
-                        );
+                        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
                       }
                     }}
                   >
@@ -267,12 +260,7 @@ function CreateWorkspaceDialog({
       onClose={onClose}
       footer={
         <>
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={onClose}
-            disabled={submitting}
-          >
+          <button type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
             {t("common.cancel")}
           </button>
           <button
@@ -293,7 +281,7 @@ function CreateWorkspaceDialog({
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="cw-bride" className="field-label">
-              {t("onboarding.bride_label")}
+              {t("onboarding.bride_name_label")}
             </label>
             <input
               id="cw-bride"
@@ -308,7 +296,7 @@ function CreateWorkspaceDialog({
           </div>
           <div>
             <label htmlFor="cw-groom" className="field-label">
-              {t("onboarding.groom_label")}
+              {t("onboarding.groom_name_label")}
             </label>
             <input
               id="cw-groom"
@@ -381,7 +369,8 @@ function CreateWorkspaceDialog({
               {grouped.map(({ household, members }) => {
                 const memberIds = members.map((m) => m.id);
                 const allSelected = memberIds.every((id) => selectedGuestIds.has(id));
-                const someSelected = !allSelected && memberIds.some((id) => selectedGuestIds.has(id));
+                const someSelected =
+                  !allSelected && memberIds.some((id) => selectedGuestIds.has(id));
                 return (
                   <li key={household?.id ?? "no-hh"} className="text-sm">
                     <label className="flex items-center gap-2 font-medium text-ink-800 dark:text-paper-100">
@@ -393,7 +382,9 @@ function CreateWorkspaceDialog({
                         }}
                         onChange={() => toggleHousehold(memberIds)}
                       />
-                      <span>{household?.label ?? t("profile.workspaces_create_seed_no_household")}</span>
+                      <span>
+                        {household?.label ?? t("profile.workspaces_create_seed_no_household")}
+                      </span>
                     </label>
                     <ul className="mt-1 ml-6 space-y-0.5">
                       {members.map((m) => (

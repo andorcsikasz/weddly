@@ -2053,6 +2053,30 @@ const en: LocaleMessages = {
     budget_currency_confirm_body:
       "Sure you want to track costs in a different currency going forward? This only switches the symbol — existing amounts are NOT converted by FX rate, the same numbers will display under the new symbol.",
     budget_currency_confirm_yes: "Yes, switch",
+    workspaces_title: "Event workspaces",
+    workspaces_body:
+      "Hosting multiple events (civil, reception, day-after brunch)? Spin up a separate workspace per event. Guests + households can carry over from your active workspace.",
+    workspaces_add: "New event",
+    workspaces_cap_reached:
+      "Maximum of three workspaces — delete or archive one to free up a slot.",
+    workspaces_empty: "No workspaces yet.",
+    workspaces_switch: "Open",
+    workspaces_role_owner: "Owner",
+    workspaces_role_partner: "Partner",
+    workspaces_create_title: "New event workspace",
+    workspaces_create_body:
+      "Independent guest list, budget, and seating — each event lives on its own. Optionally copy guests + households from the workspace you're currently in; they come over with fresh RSVP codes and the answers reset to pending.",
+    workspaces_create_date_label: "Date (optional)",
+    workspaces_create_submit: "Create",
+    workspaces_create_done: "{name} created.",
+    workspaces_create_names_required: "Give the couple a name.",
+    workspaces_create_seed_toggle: "Copy guests from current workspace",
+    workspaces_create_seed_hint:
+      "Imports guests and their households from the workspace you're in — tick which ones are invited to this event.",
+    workspaces_create_seed_summary: "{selected} of {total} selected",
+    workspaces_create_seed_select_all: "All",
+    workspaces_create_seed_unselect_all: "None",
+    workspaces_create_seed_no_household: "No household",
     payments_title: "Payments",
     payments_body: "Payment history and billing settings will appear here soon.",
     rsvp_title: "RSVP settings",
@@ -2263,6 +2287,11 @@ const en: LocaleMessages = {
     request_failed: "The request didn't go through. Check your connection and try again.",
     request_timeout: "That took too long. Try again.",
     retry: "Retry",
+  },
+  workspace: {
+    switcher_aria: "Switch workspace",
+    active_marker: "Active",
+    create_link: "New event workspace",
   },
 };
 
