@@ -1,0 +1,245 @@
+// Directory visit analytics. Records public-side card views + outbound clicks
+// keyed by the public supplier id (curated slug or "c{N}"). The admin
+// directory view aggregates total / 30-day / 7-day windows; we don't bother
+// with finer buckets until the metric matters.
+
+import type {
+  AdminDirectoryFilters,
+  SupplierAnalytics,
+  SupplierCategory,
+  SupplierDirectoryAdminRow,
+  SupplierEventInput,
+  SupplierEventType,
+} from "@shared/suppliers";
+import { db, now } from "../db";
+import {
+  type CommunitySupplierRowWithEmail,
+  listAllForAdmin,
+  toDirectorySupplierBase,
+} from "./community_suppliers";
+import { DIRECTORY } from "./suppliers_data";
+
+const VALID_EVENT_TYPES: ReadonlySet<SupplierEventType> = new Set([
+  "view",
+  "website_click",
+  "phone_click",
+]);
+
+/** Insert a batch of events. Silently drops entries with an unknown supplier
+ *  id or event type so a malformed client payload can't poison the table.
+ *  Returns the number of rows persisted. */
+export function recordSupplierEvents(
+  events: SupplierEventInput[],
+  userId: number | null,
+  coupleId: number | null,
+): number {
+  if (events.length === 0) return 0;
+
+  const validIds = knownSupplierIds();
+  const ts = now();
+  const insert = db.prepare(
+    `INSERT INTO supplier_events (supplier_id, event_type, user_id, couple_id, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+  );
+  let written = 0;
+  const tx = db.transaction((rows: SupplierEventInput[]) => {
+    for (const e of rows) {
+      if (!e || typeof e.supplier_id !== "string" || typeof e.type !== "string") continue;
+      if (!VALID_EVENT_TYPES.has(e.type)) continue;
+      if (!validIds.has(e.supplier_id)) continue;
+      insert.run(e.supplier_id, e.type, userId, coupleId, ts);
+      written++;
+    }
+  });
+  tx(events);
+  return written;
+}
+
+/** Returns the set of public supplier ids the directory currently exposes —
+ *  every curated slug + the id ("c{N}") of every community supplier the DB
+ *  knows about (any status; an admin-hidden row still gets to keep its
+ *  history). Recomputed per call; the admin list is small enough that we
+ *  don't bother caching. */
+function knownSupplierIds(): Set<string> {
+  const ids = new Set<string>(DIRECTORY.map((s) => s.id));
+  const rows = db.prepare("SELECT id FROM community_suppliers").all() as { id: number }[];
+  for (const r of rows) ids.add(`c${r.id}`);
+  return ids;
+}
+
+/** Per-supplier analytics keyed by public supplier id. Three windows
+ *  (lifetime, 30d, 7d) plus per-type subtotals + the most recent event
+ *  timestamp. One scan over `supplier_events`; safe up to a few hundred
+ *  thousand rows on the embedded SQLite. */
+export function aggregateAnalytics(): Map<string, SupplierAnalytics> {
+  const out = new Map<string, SupplierAnalytics>();
+  const ts = now();
+  const cut30 = ts - 30 * 24 * 60 * 60 * 1000;
+  const cut7 = ts - 7 * 24 * 60 * 60 * 1000;
+  const rows = db
+    .prepare(
+      `SELECT supplier_id, event_type, created_at
+         FROM supplier_events`,
+    )
+    .all() as { supplier_id: string; event_type: string; created_at: number }[];
+  for (const r of rows) {
+    const a = out.get(r.supplier_id) ?? emptyAnalytics();
+    if (r.event_type === "view") {
+      a.views_total++;
+      if (r.created_at >= cut30) a.views_30d++;
+      if (r.created_at >= cut7) a.views_7d++;
+    } else if (r.event_type === "website_click") {
+      a.website_clicks_total++;
+      if (r.created_at >= cut30) a.website_clicks_30d++;
+    } else if (r.event_type === "phone_click") {
+      a.phone_clicks_total++;
+    }
+    if (a.last_event_at === null || r.created_at > a.last_event_at) {
+      a.last_event_at = r.created_at;
+    }
+    out.set(r.supplier_id, a);
+  }
+  return out;
+}
+
+function emptyAnalytics(): SupplierAnalytics {
+  return {
+    views_total: 0,
+    views_30d: 0,
+    views_7d: 0,
+    website_clicks_total: 0,
+    website_clicks_30d: 0,
+    phone_clicks_total: 0,
+    last_event_at: null,
+  };
+}
+
+/** Build the full admin directory list: curated entries + every community
+ *  row (any status), each annotated with its analytics block. Filters narrow
+ *  the row set; analytics counters are NOT re-scoped by the date filter
+ *  (those windows are fixed lifetime/30d/7d so the admin always sees them
+ *  consistently regardless of the row filter). */
+export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierDirectoryAdminRow[] {
+  const analytics = aggregateAnalytics();
+  const rows: SupplierDirectoryAdminRow[] = [];
+
+  // Curated half — code-resident, status is always 'active'.
+  for (const s of DIRECTORY) {
+    rows.push({
+      id: s.id,
+      community_id: null,
+      source: "curated",
+      name: s.name,
+      category: s.category,
+      city: s.city,
+      address: s.address,
+      website: s.website,
+      contact_email: s.contact_email,
+      contact_phone: s.contact_phone,
+      price_band: s.price_band,
+      status: "active",
+      submitter_email: null,
+      created_at: null,
+      analytics: analytics.get(s.id) ?? emptyAnalytics(),
+    });
+  }
+
+  // Community half — DB rows, every status (admins want to see hidden ones
+  // here too so the table doubles as a complete inventory).
+  const community: CommunitySupplierRowWithEmail[] = listAllForAdmin();
+  for (const c of community) {
+    const base = toDirectorySupplierBase(c);
+    const publicId = `c${c.id}`;
+    rows.push({
+      id: publicId,
+      community_id: c.id,
+      source: "community",
+      name: base.name,
+      category: base.category,
+      city: base.city,
+      address: base.address,
+      website: base.website,
+      // Privacy carve-out: the public DTO suppresses contact_email, but the
+      // admin directory deliberately surfaces it — moderators triage with
+      // the real address visible.
+      contact_email: c.contact_email,
+      contact_phone: base.contact_phone,
+      price_band: base.price_band,
+      status: (c.status as SupplierDirectoryAdminRow["status"]) ?? "active",
+      submitter_email: c.submitter_email,
+      created_at: c.created_at,
+      analytics: analytics.get(publicId) ?? emptyAnalytics(),
+    });
+  }
+
+  return rows.filter((row) => matches(row, filters));
+}
+
+function matches(row: SupplierDirectoryAdminRow, f: AdminDirectoryFilters): boolean {
+  if (f.source && f.source !== "all" && row.source !== f.source) return false;
+  if (f.status && f.status !== "all" && row.status !== f.status) return false;
+  if (f.category && f.category !== "all" && row.category !== f.category) return false;
+  if (f.city && f.city.trim().length > 0) {
+    if (!row.city.toLowerCase().includes(f.city.trim().toLowerCase())) return false;
+  }
+  if (f.q && f.q.trim().length > 0) {
+    const needle = f.q.trim().toLowerCase();
+    const hay = `${row.name} ${row.city} ${row.website}`.toLowerCase();
+    if (!hay.includes(needle)) return false;
+  }
+  if (typeof f.min_views === "number" && f.min_views > 0) {
+    if (row.analytics.views_total < f.min_views) return false;
+  }
+  // Date window applies to `created_at` for community rows. Curated rows have
+  // no submission date; we exclude them when a date window is set so the
+  // filter behaves as advertised ("submissions in this period").
+  const hasFrom = typeof f.from === "number" && f.from !== null;
+  const hasTo = typeof f.to === "number" && f.to !== null;
+  if (hasFrom || hasTo) {
+    if (row.created_at === null) return false;
+    if (hasFrom && row.created_at < (f.from as number)) return false;
+    if (hasTo && row.created_at > (f.to as number)) return false;
+  }
+  return true;
+}
+
+/** Parses + clamps the filter querystring shared between the JSON list + the
+ *  CSV export endpoints. Unknown values fall back to "all"; numeric fields
+ *  are coerced to finite ints or dropped. */
+export function parseDirectoryFilters(params: URLSearchParams): AdminDirectoryFilters {
+  const out: AdminDirectoryFilters = {};
+  const source = params.get("source");
+  if (source === "curated" || source === "community" || source === "all") out.source = source;
+  const status = params.get("status");
+  if (
+    status === "active" ||
+    status === "pending" ||
+    status === "awaiting_review" ||
+    status === "hidden" ||
+    status === "all"
+  ) {
+    out.status = status;
+  }
+  const category = params.get("category");
+  if (category) out.category = category as SupplierCategory | "all";
+  const city = params.get("city");
+  if (city) out.city = city;
+  const q = params.get("q");
+  if (q) out.q = q;
+  const minViews = params.get("min_views");
+  if (minViews !== null) {
+    const n = Number(minViews);
+    if (Number.isFinite(n) && n >= 0) out.min_views = Math.floor(n);
+  }
+  const from = params.get("from");
+  if (from !== null) {
+    const n = Number(from);
+    if (Number.isFinite(n) && n > 0) out.from = n;
+  }
+  const to = params.get("to");
+  if (to !== null) {
+    const n = Number(to);
+    if (Number.isFinite(n) && n > 0) out.to = n;
+  }
+  return out;
+}

@@ -101,3 +101,69 @@ export interface DirectorySupplier extends DirectorySupplierBase {
   /** The logged-in user's own vote on this entry. 0 if anonymous or no vote yet. */
   user_vote: -1 | 0 | 1;
 }
+
+// ─── Visit analytics ────────────────────────────────────────────────────────
+
+/** Public-side telemetry events the admin directory aggregates. Kept
+ *  intentionally small — three signals cover "did someone see this card"
+ *  (view), "did they click through to the supplier's site" (website_click)
+ *  and "did they pick up the phone" (phone_click). */
+export type SupplierEventType = "view" | "website_click" | "phone_click";
+
+export interface SupplierEventInput {
+  supplier_id: string;
+  type: SupplierEventType;
+}
+
+/** Per-supplier counters surfaced in the admin directory list. Total and the
+ *  two trailing windows are denormalised so the table renders without a
+ *  client-side aggregation step. `last_event_at` is the most recent of any
+ *  type — useful for spotting suppliers nobody's looked at in months. */
+export interface SupplierAnalytics {
+  views_total: number;
+  views_30d: number;
+  views_7d: number;
+  website_clicks_total: number;
+  website_clicks_30d: number;
+  phone_clicks_total: number;
+  last_event_at: number | null;
+}
+
+/** Admin directory row — curated + community merged into one shape. For
+ *  community rows, `id` is the public string id (`c{N}`) and `community_id`
+ *  is the numeric DB id (so the admin page can deep-link into the existing
+ *  moderation actions). Curated rows have `community_id = null` and the
+ *  status is always `"active"`. */
+export interface SupplierDirectoryAdminRow {
+  id: string;
+  community_id: number | null;
+  source: "curated" | "community";
+  name: string;
+  category: SupplierCategory;
+  city: string;
+  address: string | null;
+  website: string;
+  contact_email: string | null;
+  contact_phone: string | null;
+  price_band: 1 | 2 | 3 | 4 | 5 | null;
+  status: "active" | "pending" | "awaiting_review" | "hidden";
+  submitter_email: string | null;
+  created_at: number | null;
+  analytics: SupplierAnalytics;
+}
+
+/** Query parameters accepted by the admin directory list + CSV export. All
+ *  optional; missing fields mean "no filter on this dimension". `from`/`to`
+ *  are Unix-ms window boundaries; analytics counters inside the response
+ *  remain total/30d/7d regardless (the date filter narrows the row set, not
+ *  the metric windows). */
+export interface AdminDirectoryFilters {
+  source?: "curated" | "community" | "all";
+  status?: "active" | "pending" | "awaiting_review" | "hidden" | "all";
+  category?: SupplierCategory | "all";
+  city?: string;
+  q?: string;
+  min_views?: number;
+  from?: number | null;
+  to?: number | null;
+}

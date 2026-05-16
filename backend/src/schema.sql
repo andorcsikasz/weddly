@@ -649,3 +649,22 @@ CREATE TABLE IF NOT EXISTS transfers (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_transfers_couple ON transfers(couple_id);
+
+-- Directory visit analytics. One row per recorded event (page-view of a
+-- supplier card, click on its website link, click on its phone number).
+-- `supplier_id` is the public string id — curated slugs like "etyeki-kuria"
+-- or community ids like "c123". No FK because curated suppliers live in code.
+-- `user_id` and `couple_id` are nullable so anonymous visits still count.
+-- Aggregated by the admin directory view to show per-supplier reach.
+CREATE TABLE IF NOT EXISTS supplier_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,                                    -- 'view' | 'website_click' | 'phone_click'
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  couple_id INTEGER REFERENCES couples(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_events_supplier
+  ON supplier_events(supplier_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_supplier_events_type
+  ON supplier_events(event_type, created_at DESC);
