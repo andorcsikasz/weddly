@@ -1937,6 +1937,8 @@ const en: LocaleMessages = {
     offline_drained_other: "{n} responses delivered.",
     kiosk_banner: "Kiosk mode — tap and hold the corner to exit.",
     kiosk_enter: "Turn on kiosk mode",
+    kiosk_enter_help:
+      "Handing a shared tablet to guests? Kiosk mode locks the page so they can check themselves in without navigating away or editing the form. To exit: hold the bottom-right corner, or press Shift+K.",
     kiosk_exit_hold: "Hold to exit kiosk (Shift+K also works)",
     kiosk_exit_confirmed: "Kiosk mode off.",
   },

@@ -1950,6 +1950,8 @@ const hu: LocaleMessages = {
     offline_drained_other: "{n} visszajelzés sikeresen elküldve.",
     kiosk_banner: "Kiosk mód — érintsd és tartsd lenyomva a sarokban a kilépéshez.",
     kiosk_enter: "Kiosk mód be",
+    kiosk_enter_help:
+      "Egy közös tabletet adsz át a vendégeknek? A kiosk mód zárolja az oldalt, hogy maguk jelentkezhessenek be, anélkül hogy elnavigálnának vagy beleszerkesztenének. Kilépés: tartsd a jobb alsó sarkot, vagy Shift+K.",
     kiosk_exit_hold: "Tartsd lenyomva a kilépéshez (Shift+K is működik)",
     kiosk_exit_confirmed: "Kiosk mód kikapcsolva.",
   },

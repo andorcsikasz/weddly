@@ -355,13 +355,27 @@ export default function RsvpCheckinPage() {
         <KioskExitHotspot onExit={exitKiosk} label={t("rsvp.kiosk_exit_hold")} />
       ) : (
         <div className="mt-10 text-center">
-          <button
-            type="button"
-            className="btn-ghost btn-sm text-ink-500 hover:text-ink-800"
-            onClick={enterKiosk}
-          >
-            {t("rsvp.kiosk_enter")}
-          </button>
+          {/* Most couples don't know what "kiosk mode" means without context —
+              the hover/focus tooltip below explains why they'd flip it
+              (greeter at the wedding hands a tablet to guests) so they don't
+              accidentally lock themselves out of their own /rsvp. */}
+          <div className="group relative inline-block">
+            <button
+              type="button"
+              className="btn-ghost btn-sm text-ink-500 hover:text-ink-800"
+              onClick={enterKiosk}
+              aria-describedby="kiosk-enter-help"
+            >
+              {t("rsvp.kiosk_enter")}
+            </button>
+            <span
+              id="kiosk-enter-help"
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-72 -translate-x-1/2 rounded-lg bg-ink-800 px-3 py-2 text-left text-xs leading-snug text-paper-100 opacity-0 shadow-pop transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+            >
+              {t("rsvp.kiosk_enter_help")}
+            </span>
+          </div>
         </div>
       )}
     </FullPage>

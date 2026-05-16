@@ -2111,6 +2111,11 @@ export interface LocaleMessages {
      *  mode so a borrowed phone is one mis-tap from /app. */
     kiosk_banner: string;
     kiosk_enter: string;
+    /** Hover/focus tooltip on the "Turn on kiosk mode" toggle at the foot of
+     *  the public /rsvp page. Explains what locking the page is for (a
+     *  greeter handing a tablet to guests) so couples don't have to guess
+     *  before flipping it. */
+    kiosk_enter_help: string;
     kiosk_exit_hold: string;
     kiosk_exit_confirmed: string;
   };
