@@ -53,23 +53,24 @@ const MEAL_ICONS: Record<MealChoice, typeof Beef> = {
 // validation forces them to commit before the server is called.)
 const STATUSES = ["yes", "no", "maybe"] as const satisfies readonly RsvpStatus[];
 
-// Semantic tint per RSVP choice. The colour layer is additive to the label —
-// glyph-free buttons must still be legible for colour-deficient users — but
-// green/red lets a sighted guest pick the right pill at a glance. "Maybe"
-// stays neutral on purpose — it represents indecision, so it shouldn't carry
-// the same affirmative cue as a committed yes/no.
+// Colour only carries the *selected* choice. Idle pills are neutral paper so
+// the surface stays calm; the strong dark fill on the chosen pill is what does
+// the talking. Saturated emerald/rose ACTIVE for sighted guests; the bold
+// fill + paper text combo also meets contrast for colour-deficient users.
 const STATUS_TONE_ACTIVE: Record<(typeof STATUSES)[number], string> = {
-  yes: "border-2 border-emerald-600 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-umber-900",
-  no: "border-2 border-rose-700 bg-rose-700 text-white dark:border-rose-400 dark:bg-rose-500 dark:text-umber-900",
+  yes: "border-2 border-emerald-800 bg-emerald-800 text-white dark:border-emerald-500 dark:bg-emerald-600 dark:text-paper-50",
+  no: "border-2 border-rose-800 bg-rose-800 text-white dark:border-rose-500 dark:bg-rose-600 dark:text-paper-50",
   maybe:
-    "border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900",
+    "border-2 border-ink-800 bg-ink-800 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900",
 };
 
+const IDLE_NEUTRAL =
+  "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600";
+
 const STATUS_TONE_IDLE: Record<(typeof STATUSES)[number], string> = {
-  yes: "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:border-emerald-500 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:border-emerald-400/70",
-  no: "border border-rose-300 bg-rose-50 text-rose-800 hover:border-rose-500 dark:border-rose-400/40 dark:bg-rose-400/10 dark:text-rose-300 dark:hover:border-rose-400/70",
-  maybe:
-    "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600",
+  yes: IDLE_NEUTRAL,
+  no: IDLE_NEUTRAL,
+  maybe: IDLE_NEUTRAL,
 };
 
 type DietaryTag = "lactose" | "milk_protein" | "gluten" | "nut" | "egg" | "fish_shellfish";
