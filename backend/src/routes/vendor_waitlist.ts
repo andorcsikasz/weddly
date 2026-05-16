@@ -80,6 +80,7 @@ interface SubmitBody {
   email?: unknown;
   category?: unknown;
   location?: unknown;
+  website?: unknown;
   message?: unknown;
 }
 
@@ -120,6 +121,30 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     }
   }
 
+  // Optional. Accept a bare hostname ("example.com") by auto-prefixing
+  // "https://" so the field is forgiving — vendors paste from a browser bar.
+  // We still parse it through `new URL` to reject "asdf" and similar garbage.
+  let website: string | null = null;
+  if (body.website != null && body.website !== "") {
+    const raw = trimStr(body.website);
+    if (raw) {
+      if (raw.length > 300) throw new HttpError(400, "website too long (max 300)");
+      const candidate =
+        raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
+      let parsed: URL;
+      try {
+        parsed = new URL(candidate);
+      } catch {
+        throw new HttpError(400, "website is not a valid URL");
+      }
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new HttpError(400, "website protocol must be http or https");
+      }
+      if (!parsed.hostname) throw new HttpError(400, "website hostname required");
+      website = candidate;
+    }
+  }
+
   let message: string | null = null;
   if (body.message != null && body.message !== "") {
     const m = trimStr(body.message);
@@ -129,7 +154,14 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     }
   }
 
-  const row = insertVendorWaitlist({ business_name, email, category, location, message });
+  const row = insertVendorWaitlist({
+    business_name,
+    email,
+    category,
+    location,
+    website,
+    message,
+  });
   addAuditLog({
     actor_user_id: null,
     couple_id: null,

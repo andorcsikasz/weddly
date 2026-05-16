@@ -193,6 +193,11 @@ addColumnIfMissing("vendor_waitlist", "notes", "notes TEXT");
 addColumnIfMissing("vendor_waitlist", "sent_subject", "sent_subject TEXT");
 addColumnIfMissing("vendor_waitlist", "sent_body", "sent_body TEXT");
 
+// Optional website on the public vendor waitlist form. Vendors paste their
+// portfolio / Instagram / business homepage so the admin can vet without
+// having to google the name.
+addColumnIfMissing("vendor_waitlist", "website", "website TEXT");
+
 // `couple_supplier_id` back-reference on auto-synced budget lines. When a
 // DIY supplier entry on /app/suppliers has a price, the backend creates a
 // matching `budget_lines` row stamped with this id. The frontend renders

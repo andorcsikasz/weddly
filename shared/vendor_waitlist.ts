@@ -19,6 +19,7 @@ export interface SubmitVendorWaitlistInput {
   email: string;
   category: SupplierCategory;
   location: string | null;
+  website: string | null;
   message: string | null;
 }
 
@@ -31,6 +32,7 @@ export interface VendorWaitlistEntry {
   email: string;
   category: string;
   location: string | null;
+  website: string | null;
   message: string | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
@@ -46,6 +48,7 @@ export interface VendorWaitlistAdminView {
   email: string;
   category: string;
   location: string | null;
+  website: string | null;
   message: string | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
