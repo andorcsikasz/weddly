@@ -187,6 +187,12 @@ interface MemberDraft {
   /** Non-null only for members the form considers a "+1 placeholder" (auto-
    *  named, e.g. "Anna +1"). Editing is allowed so guests can rename them. */
   is_plus_one: boolean;
+  /** Has the guest actively clicked a status pill in THIS session? On first
+   *  render this is false even when the server already has a status — the
+   *  pills render neutral and the meal/dietary block stays hidden until the
+   *  guest re-confirms. Forces an active acknowledgement on every visit so
+   *  returning users can't accidentally re-submit a stale answer. */
+  interacted: boolean;
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary_tags: Set<DietaryTag>;
@@ -214,6 +220,7 @@ function fromMember(m: HouseholdMember): MemberDraft {
     id: m.id,
     full_name: m.full_name,
     is_plus_one: looksLikePlusOnePlaceholder(m.full_name),
+    interacted: false,
     rsvp_status: m.rsvp_status,
     meal_choice: m.meal_choice,
     dietary_tags: tags,
@@ -427,7 +434,10 @@ export function HouseholdRsvpForm({
   }
 
   async function pickStatus(d: MemberDraft, next: RsvpStatus) {
-    if (next === d.rsvp_status) return;
+    // Allow re-confirming the same status on the FIRST click in this session
+    // (interacted flips false → true). Subsequent same-status clicks are a
+    // no-op so the user can't accidentally toggle.
+    if (next === d.rsvp_status && d.interacted) return;
     // Confirm before discarding "going" toggles when the user moves away
     // from "yes" — we don't actually clear (toSubmit keeps everything), but
     // we want the user to be aware the answer is changing.
@@ -440,7 +450,7 @@ export function HouseholdRsvpForm({
       });
       if (!ok) return;
     }
-    updateMember(d.id, { rsvp_status: next });
+    updateMember(d.id, { rsvp_status: next, interacted: true });
   }
 
   function collectAddedMembers(list: MemberDraft[]): CheckinAddedMember[] {
@@ -475,7 +485,10 @@ export function HouseholdRsvpForm({
 
   /** Pre-flight validation. Returns null on success, or an error message. */
   function validate(list: MemberDraft[]): string | null {
-    const anyPending = list.some((d) => d.rsvp_status === "pending");
+    // `!interacted` is treated the same as `pending` — the guest has to
+    // actively click a pill in this session before we'll submit, even when
+    // the server already had a stored status for that member.
+    const anyPending = list.some((d) => !d.interacted || d.rsvp_status === "pending");
     if (anyPending) return t("rsvp.error_status_required");
     for (const d of list) {
       if (d.rsvp_status !== "yes") continue;
@@ -571,7 +584,11 @@ export function HouseholdRsvpForm({
 
   // Pre-submit summary so guests don't accidentally fire off a partial RSVP
   // ("3 ready · 1 still pending"). Skipped entirely when everyone has picked.
-  const readyCount = drafts.filter((d) => d.rsvp_status !== "pending").length;
+  // `interacted` is what counts as "ready" — even a server-side "yes" needs
+  // an explicit click in this session before we treat the row as committed.
+  const readyCount = drafts.filter(
+    (d) => d.interacted && d.rsvp_status !== "pending",
+  ).length;
   const pendingCount = drafts.length - readyCount;
 
   return (
@@ -654,23 +671,26 @@ export function HouseholdRsvpForm({
               aria-label={t("rsvp.status_for_name", { name: d.full_name })}
               className="grid gap-2 grid-cols-1 sm:grid-cols-3"
             >
-              {STATUSES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  role="radio"
-                  aria-checked={d.rsvp_status === s}
-                  onClick={() => void pickStatus(d, s)}
-                  className={`rounded-xl px-3 py-2 text-sm font-medium ${
-                    d.rsvp_status === s ? STATUS_TONE_ACTIVE[s] : STATUS_TONE_IDLE[s]
-                  }`}
-                >
-                  {t(`rsvp.pick_${s}`)}
-                </button>
-              ))}
+              {STATUSES.map((s) => {
+                const selected = d.interacted && d.rsvp_status === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => void pickStatus(d, s)}
+                    className={`rounded-xl px-3 py-2 text-sm font-medium ${
+                      selected ? STATUS_TONE_ACTIVE[s] : STATUS_TONE_IDLE[s]
+                    }`}
+                  >
+                    {t(`rsvp.pick_${s}`)}
+                  </button>
+                );
+              })}
             </div>
 
-            {d.rsvp_status === "yes" && (
+            {d.interacted && d.rsvp_status === "yes" && (
               <div className="space-y-3">
                 {/* Meal choice — radio-like icon row. Mutually exclusive;
                     clicking the active one clears it. Gated on
