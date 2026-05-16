@@ -59,7 +59,7 @@ export function EucalyptusStem({ className, flip = false }: Common & { flip?: bo
       transform={flip ? "scale(-1, 1)" : undefined}
     >
       {/* Stem */}
-      <g className="text-ink-700">
+      <g className="text-ink-700 dark:text-paper-200">
         <path
           d="M 10 80 Q 150 10 290 70"
           fill="none"
@@ -69,7 +69,7 @@ export function EucalyptusStem({ className, flip = false }: Common & { flip?: bo
         />
       </g>
       {/* Tiny leaf-stem twigs */}
-      <g className="text-ink-700">
+      <g className="text-ink-700 dark:text-paper-200">
         {leaves.map((leaf, i) => {
           const { x, y } = pointAt(leaf.t);
           const dx = Math.cos((leaf.rot * Math.PI) / 180) * 6;
@@ -89,7 +89,7 @@ export function EucalyptusStem({ className, flip = false }: Common & { flip?: bo
         })}
       </g>
       {/* Leaves — soft fill */}
-      <g className="text-paper-400">
+      <g className="text-paper-400 dark:text-umber-400">
         {leaves.map((leaf, i) => {
           const { x, y } = pointAt(leaf.t);
           const lx = x + Math.cos((leaf.rot * Math.PI) / 180) * (leaf.rx + 4);
@@ -108,7 +108,7 @@ export function EucalyptusStem({ className, flip = false }: Common & { flip?: bo
         })}
       </g>
       {/* Leaf vein hint — single curved line for hand-drawn feel */}
-      <g className="text-ink-700">
+      <g className="text-ink-700 dark:text-paper-200">
         {leaves.map((leaf, i) => {
           const { x, y } = pointAt(leaf.t);
           const lx = x + Math.cos((leaf.rot * Math.PI) / 180) * (leaf.rx + 4);
@@ -148,7 +148,7 @@ export function FloralSpray({ className }: Common) {
   return (
     <svg viewBox="0 0 200 260" aria-hidden="true" className={className}>
       {/* Stems gathering toward a tie point at (100, 200) */}
-      <g className="text-ink-700">
+      <g className="text-ink-700 dark:text-paper-200">
         <path
           d="M 70 70 C 78 110, 88 160, 100 200"
           fill="none"
@@ -173,7 +173,7 @@ export function FloralSpray({ className }: Common) {
       </g>
 
       {/* Side leaves */}
-      <g className="text-paper-400">
+      <g className="text-paper-400 dark:text-umber-400">
         <path
           d="M 100 200 C 70 180, 50 160, 38 130 C 56 142, 78 158, 100 200 Z"
           fill="currentColor"
@@ -183,7 +183,7 @@ export function FloralSpray({ className }: Common) {
           fill="currentColor"
         />
       </g>
-      <g className="text-ink-700">
+      <g className="text-ink-700 dark:text-paper-200">
         <path
           d="M 100 200 C 78 180, 60 160, 42 134"
           fill="none"
@@ -311,7 +311,7 @@ export function ArchSilhouette({ className }: Common) {
   return (
     <svg viewBox="0 0 600 220" aria-hidden="true" className={className}>
       {/* Two arch stems — symmetric, meeting at (300, 18) */}
-      <g className="text-ink-700">
+      <g className="text-ink-700 dark:text-paper-200">
         <path
           d="M 60 210 C 60 140, 100 70, 300 18"
           fill="none"
@@ -329,7 +329,7 @@ export function ArchSilhouette({ className }: Common) {
       </g>
 
       {/* Foliage clusters along left stem */}
-      <g className="text-paper-400">
+      <g className="text-paper-400 dark:text-umber-400">
         {[
           [86, 170, -25],
           [78, 140, -35],
@@ -349,7 +349,7 @@ export function ArchSilhouette({ className }: Common) {
         ))}
       </g>
       {/* Foliage clusters along right stem */}
-      <g className="text-paper-400">
+      <g className="text-paper-400 dark:text-umber-400">
         {[
           [514, 170, 25],
           [522, 140, 35],
@@ -370,7 +370,7 @@ export function ArchSilhouette({ className }: Common) {
       </g>
 
       {/* Hanging foliage strands from the crown */}
-      <g className="text-ink-700">
+      <g className="text-ink-700 dark:text-paper-200">
         {hangs.map((h, i) => (
           <path
             key={`hang-stem-${i}-${h.x}`}
@@ -382,7 +382,7 @@ export function ArchSilhouette({ className }: Common) {
           />
         ))}
       </g>
-      <g className="text-paper-400">
+      <g className="text-paper-400 dark:text-umber-400">
         {hangs.flatMap((h, i) =>
           [0.3, 0.55, 0.8].map((t, j) => (
             <ellipse
@@ -411,7 +411,7 @@ export function ArchSilhouette({ className }: Common) {
       </g>
 
       {/* Ground line — soft suggestion */}
-      <g className="text-paper-400">
+      <g className="text-paper-400 dark:text-umber-400">
         <path
           d="M 30 212 C 200 208, 400 216, 570 210"
           fill="none"
@@ -454,7 +454,7 @@ export function BotanicalCorner({
     <svg viewBox="0 0 160 160" aria-hidden="true" className={className}>
       <g transform={transform}>
         {/* Main curved stem from corner inward */}
-        <g className="text-ink-700">
+        <g className="text-ink-700 dark:text-paper-200">
           <path
             d="M 8 8 C 30 30, 56 52, 88 70 C 110 82, 124 96, 130 116"
             fill="none"
@@ -465,7 +465,7 @@ export function BotanicalCorner({
         </g>
 
         {/* Side branch */}
-        <g className="text-ink-700">
+        <g className="text-ink-700 dark:text-paper-200">
           <path
             d="M 56 50 C 64 38, 72 30, 86 26"
             fill="none"
@@ -476,10 +476,10 @@ export function BotanicalCorner({
         </g>
 
         {/* Leaf 1 — pointed almond shape (top of side branch) */}
-        <g className="text-paper-400">
+        <g className="text-paper-400 dark:text-umber-400">
           <path d="M 86 26 C 96 18, 110 16, 116 22 C 110 28, 98 32, 86 26 Z" fill="currentColor" />
         </g>
-        <g className="text-ink-700">
+        <g className="text-ink-700 dark:text-paper-200">
           <path
             d="M 88 26 C 98 24, 108 24, 114 24"
             fill="none"
@@ -491,13 +491,13 @@ export function BotanicalCorner({
         </g>
 
         {/* Leaf 2 — mid-stem, larger */}
-        <g className="text-paper-400">
+        <g className="text-paper-400 dark:text-umber-400">
           <path
             d="M 88 70 C 100 58, 118 56, 130 64 C 122 76, 102 80, 88 70 Z"
             fill="currentColor"
           />
         </g>
-        <g className="text-ink-700">
+        <g className="text-ink-700 dark:text-paper-200">
           <path
             d="M 90 70 C 104 66, 120 66, 128 66"
             fill="none"
@@ -509,7 +509,7 @@ export function BotanicalCorner({
         </g>
 
         {/* Leaf 3 — at the tip, pointing out */}
-        <g className="text-paper-400">
+        <g className="text-paper-400 dark:text-umber-400">
           <path
             d="M 130 116 C 140 112, 150 116, 152 128 C 144 130, 134 126, 130 116 Z"
             fill="currentColor"

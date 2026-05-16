@@ -124,13 +124,13 @@ export default function LandingPage() {
           paper hairline pattern used elsewhere on the page. */}
       <section className="stationery-dark text-paper-100">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
-          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.32em] text-paper-300 dark:text-umber-600 sm:mb-8">
+          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.32em] text-paper-300 sm:mb-8">
             {t("landing.stats_eyebrow")}
           </p>
           <p className="font-serif text-6xl leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-8xl lg:text-9xl">
             {t("landing.stats_a_value")}
           </p>
-          <p className="mt-5 font-serif text-xl text-paper-300 dark:text-umber-600 sm:mt-6 sm:text-3xl">
+          <p className="mt-5 font-serif text-xl text-paper-300 sm:mt-6 sm:text-3xl">
             {t("landing.stats_a_label")}
           </p>
         </div>
@@ -283,7 +283,7 @@ export default function LandingPage() {
           className="pointer-events-none absolute bottom-12 right-4 h-24 w-24 text-paper-300 dark:text-umber-600 sm:h-40 sm:w-40 lg:right-12"
         />
         <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-24">
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.why_eyebrow")}
           </p>
           <PullQuote quote={t("landing.why_title")} className="mt-8" />
@@ -328,7 +328,7 @@ export default function LandingPage() {
       <section className="relative bg-paper-100/60 dark:bg-umber-900/60">
         <MarginNumeral value="08" />
         <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.testimonials_eyebrow")}
           </p>
           <FeaturedTestimonial
@@ -402,7 +402,7 @@ export default function LandingPage() {
           </div>
           <div className="relative mx-auto mt-10 max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-8 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
                 {t("landing.stats_eyebrow")}
               </p>
               <div className="mt-3 flex items-end gap-3">
@@ -521,7 +521,7 @@ function PhaseStep({
           anchor for each phase. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-1 -top-8 select-none font-serif text-5xl italic leading-none text-blush-200 sm:-left-2 sm:-top-10 sm:text-7xl lg:-top-12 lg:text-8xl"
+        className="pointer-events-none absolute -left-1 -top-8 select-none font-serif text-5xl italic leading-none text-blush-200 dark:text-umber-700 sm:-left-2 sm:-top-10 sm:text-7xl lg:-top-12 lg:text-8xl"
       >
         0{n}
       </span>
