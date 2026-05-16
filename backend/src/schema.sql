@@ -168,6 +168,10 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_couple ON audit_log(couple_id);
 CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_log(actor_user_id);
+-- Activity feed walks newest-first within a couple (ORDER BY id DESC LIMIT 60).
+-- The composite (couple_id, id DESC) lets the planner walk the index in order
+-- instead of scanning every audit row for the couple and re-sorting.
+CREATE INDEX IF NOT EXISTS idx_audit_couple_id_desc ON audit_log(couple_id, id DESC);
 
 -- Pause-to-delete: either partner can request, 30-day window, either can cancel.
 CREATE TABLE IF NOT EXISTS couple_pause_requests (

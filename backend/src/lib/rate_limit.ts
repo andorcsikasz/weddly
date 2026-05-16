@@ -47,3 +47,13 @@ export function rateLimit(clientIp: string | null, endpoint: string, cfg: Bucket
 
 /** Tight bucket for auth endpoints — ~5 tries/min/IP, refills 1/12s. */
 export const AUTH_BUCKET: BucketConfig = { capacity: 5, refillRate: 1 / 12 };
+
+/** Delete buckets that haven't been touched in 24h. After that long every
+ *  bucket has refilled to capacity, so dropping the row is equivalent to the
+ *  cold-start state — but the table stops growing unbounded as random IPs hit
+ *  auth endpoints once and never return. */
+export function sweepStaleRateLimitBuckets(): { deleted: number } {
+  const cutoff = now() - 24 * 60 * 60 * 1000;
+  const r = db.prepare("DELETE FROM rate_limit_buckets WHERE updated_at < ?").run(cutoff);
+  return { deleted: Number(r.changes) };
+}

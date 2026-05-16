@@ -133,9 +133,14 @@ const FRONTEND_DIST = join(import.meta.dir, "..", "..", "frontend", "dist");
 const FRONTEND_INDEX = join(FRONTEND_DIST, "index.html");
 
 function clientIpFrom(req: Request): string | null {
-  // Test override first — keeps parallel test cases from sharing a rate-limit bucket.
-  const testIp = req.headers.get("x-test-client-ip");
-  if (testIp) return testIp;
+  // Test override: parallel test cases (and the load harness) need a unique IP
+  // per simulated user so they don't fight over one 5-token auth bucket.
+  // NEVER honoured in production — otherwise any client could rotate this
+  // header per request and bypass every per-IP auth rate limit.
+  if (!IS_PROD) {
+    const testIp = req.headers.get("x-test-client-ip");
+    if (testIp) return testIp;
+  }
   const xff = req.headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0]?.trim() ?? null;
   return req.headers.get("x-real-ip");
