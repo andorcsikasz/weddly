@@ -787,6 +787,13 @@ const en: LocaleMessages = {
     idea_suggested_by: "— suggested by {name}",
     timeline_link: "Timeline",
     timeline_link_hint: "Open the Gantt view of your tasks",
+    priority_filter_aria: "Priority filter",
+    priority_filter_all: "All",
+    priority_filter_important: "Important",
+    priority_filter_sos: "SOS",
+    priority_set_important: "Mark as important (!)",
+    priority_set_sos: "Mark as SOS (!!)",
+    priority_clear: "Clear priority",
     // Task tab wand + dialog.
     task_template_button: "Task template",
     task_template_button_hint:
