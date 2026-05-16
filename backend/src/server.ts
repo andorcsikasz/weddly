@@ -22,6 +22,7 @@ import {
 import { log, makeLogger } from "./lib/logger";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
+import { registerAccommodationRoutes } from "./routes/accommodations";
 import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
 import { registerAdminUserRoutes } from "./routes/admin_users";
 import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";

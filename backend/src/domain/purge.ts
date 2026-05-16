@@ -214,7 +214,11 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
 /** Run the purge for any couples whose scheduled_delete_at has passed.
  *  Also tidies the rate_limit_buckets table on the same tick — both are
  *  cheap, scheduled housekeeping. */
-export function runPurgeSweep(): { purged: number; ratelimit_buckets_deleted: number } {
+export function runPurgeSweep(): {
+  purged: number;
+  flagged_purged: number;
+  ratelimit_buckets_deleted: number;
+} {
   const ts = now();
   const due = db
     .prepare(
@@ -230,13 +234,41 @@ export function runPurgeSweep(): { purged: number; ratelimit_buckets_deleted: nu
     }
   }
 
+  // Admin moderation flags — every flag past its deadline is treated like
+  // an admin-initiated delete: the recipient gets the `account_admin_purged`
+  // email and the flag is marked resolved with a synthetic note so it
+  // doesn't fire again on the next tick.
+  const flagsDue = listFlagsDueForPurge();
+  let flaggedPurged = 0;
+  for (const flag of flagsDue) {
+    try {
+      purgeOneUser(flag.user_id, { adminInitiated: true });
+      markFlagPurged(flag.id);
+      addAuditLog({
+        actor_user_id: null,
+        couple_id: null,
+        action: "user.flag_auto_purge",
+        target_kind: "user",
+        target_id: flag.user_id,
+        note: `auto-purge at flag deadline (flag ${flag.id})`,
+      });
+      flaggedPurged += 1;
+    } catch (e) {
+      log.error("purge.flag_failed", e, { flagId: flag.id, userId: flag.user_id });
+    }
+  }
+
   let ratelimitDeleted = 0;
   try {
     ratelimitDeleted = sweepStaleRateLimitBuckets().deleted;
   } catch (e) {
     log.error("purge.ratelimit_sweep_failed", e);
   }
-  return { purged: due.length, ratelimit_buckets_deleted: ratelimitDeleted };
+  return {
+    purged: due.length,
+    flagged_purged: flaggedPurged,
+    ratelimit_buckets_deleted: ratelimitDeleted,
+  };
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;
