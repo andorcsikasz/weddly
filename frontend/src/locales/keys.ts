@@ -724,6 +724,10 @@ export interface LocaleMessages {
     form_location_label: string;
     form_location_placeholder: string;
     form_location_help: string;
+    form_website_label: string;
+    form_website_placeholder: string;
+    form_website_help: string;
+    form_err_website: string;
     form_submit: string;
     form_submitting: string;
     form_success_title: string;
