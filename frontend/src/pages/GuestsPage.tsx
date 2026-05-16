@@ -1393,12 +1393,12 @@ function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string
       {fish && <Fish size={14} aria-label={t("guests.meal_fish")} />}
       {tags.has("milk_protein") && (
         <span title={t("rsvp.tag_milk_protein")} className="inline-flex">
-          <Milk size={14} aria-label={t("rsvp.tag_milk_protein")} />
+          <Droplets size={14} aria-label={t("rsvp.tag_milk_protein")} />
         </span>
       )}
       {tags.has("lactose") && (
         <span title={t("rsvp.tag_lactose")} className="inline-flex">
-          <Droplets size={14} aria-label={t("rsvp.tag_lactose")} />
+          <Milk size={14} aria-label={t("rsvp.tag_lactose")} />
         </span>
       )}
       {tags.has("gluten") && (
@@ -1863,13 +1863,13 @@ function GuestDrawer({
                   <DietaryChip
                     on={dietaryTags.has("milk_protein")}
                     onClick={() => toggleSetMember(setDietaryTags, "milk_protein")}
-                    icon={<Milk size={14} aria-hidden />}
+                    icon={<Droplets size={14} aria-hidden />}
                     label={t("rsvp.tag_milk_protein")}
                   />
                   <DietaryChip
                     on={dietaryTags.has("lactose")}
                     onClick={() => toggleSetMember(setDietaryTags, "lactose")}
-                    icon={<Droplets size={14} aria-hidden />}
+                    icon={<Milk size={14} aria-hidden />}
                     label={t("rsvp.tag_lactose")}
                   />
                   <DietaryChip

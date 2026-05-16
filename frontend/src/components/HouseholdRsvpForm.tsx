@@ -664,21 +664,21 @@ export function HouseholdRsvpForm({
                 {/* Allergen chips — multi-select. Icon-only modifiers on
                     top of the meal choice; replace the old free-text
                     "Egyéb / allergia" input. */}
-                {/* Allergen chips — Milk icon is reserved for milk-protein
-                    (the actual dairy allergen, distinct from lactose
-                    intolerance); lactose uses Droplets so the two read as
+                {/* Allergen chips — the milk-carton glyph goes on lactose
+                    (the more recognisable dairy intolerance for most
+                    guests); milk-protein gets Droplets so the two read as
                     unambiguously different at a glance. */}
                 <div className="flex flex-wrap gap-1.5">
                   <Chip
                     on={d.dietary_tags.has("milk_protein")}
                     onClick={() => toggleDietaryTag(d.id, "milk_protein")}
-                    icon={<Milk size={14} aria-hidden />}
+                    icon={<Droplets size={14} aria-hidden />}
                     label={t("rsvp.tag_milk_protein")}
                   />
                   <Chip
                     on={d.dietary_tags.has("lactose")}
                     onClick={() => toggleDietaryTag(d.id, "lactose")}
-                    icon={<Droplets size={14} aria-hidden />}
+                    icon={<Milk size={14} aria-hidden />}
                     label={t("rsvp.tag_lactose")}
                   />
                   <Chip
