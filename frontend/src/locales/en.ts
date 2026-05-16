@@ -445,6 +445,18 @@ const en: LocaleMessages = {
       "You're already part of another workspace. Sign out and use a different account to accept this invite.",
     couple_full: "This workspace already has two people. Ask the inviter to cancel and resend.",
     couple_gone: "This workspace no longer exists.",
+    merge_banner_body:
+      "{inviter} already started the {couple} wedding workspace and invited you in. Want to join?",
+    merge_banner_warning:
+      "Joining permanently deletes your current workspace — guests, budget, seating, everything. This can't be undone.",
+    merge_banner_cta: "Join & delete my current workspace",
+    merge_confirm_title: "Confirm workspace merge",
+    merge_confirm_label: "Type MERGE to confirm",
+    merge_confirm_help: "Type the word MERGE in capitals to confirm.",
+    merge_confirm_button: "Join",
+    merge_confirm_mismatch: "Doesn't match — type MERGE.",
+    merge_running: "Merging…",
+    merge_success: "You're in — welcome to the new workspace.",
   },
   landing: {
     hero_title: "Your whole wedding, in one shared workspace.",

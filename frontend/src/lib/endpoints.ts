@@ -176,6 +176,25 @@ export const coupleApi = {
     ),
   acceptInvite: (token: string) =>
     apiFetch<{ couple: Couple }>("POST", `/api/invites/${encodeURIComponent(token)}/accept`, {}),
+  /** Accept-and-merge: purges the current user's solo workspace, then links
+   *  them as partner B on the inviting couple. Server requires the literal
+   *  string `"MERGE"` as the confirm token. */
+  acceptInviteMerge: (token: string) =>
+    apiFetch<{ couple: Couple }>("POST", `/api/invites/${encodeURIComponent(token)}/accept-merge`, {
+      confirm: "MERGE",
+    }),
+  /** Lists pending invites addressed to the current user's email — drives
+   *  the dashboard "your partner already started a workspace" banner. */
+  incomingInvites: () =>
+    apiFetch<{
+      invites: Array<{
+        token: string;
+        couple_display_name: string;
+        inviter_name: string;
+        inviter_email: string;
+        expires_at: number;
+      }>;
+    }>("GET", "/api/invites/incoming"),
 };
 
 export interface GuestUpsert extends Partial<Guest> {

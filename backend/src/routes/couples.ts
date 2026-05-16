@@ -30,6 +30,7 @@ import { recordExport } from "../domain/exports";
 import { generateInviteToken } from "../domain/invite_codes";
 import { ensurePartnerGuests, listGuestsByCouple, renamePartnerGuest } from "../domain/guests";
 import { renderSeatingChartPdf } from "../domain/pdf";
+import { purgeOneCouple } from "../domain/purge";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
 import { getUserById, toUser, type UserRow } from "../domain/users";
 import {
@@ -748,6 +749,160 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   });
 
   const refreshed = getCoupleById(couple.id) as CoupleRow;
+  return json({ couple: toCouple(refreshed) });
+}
+
+/** Lists every pending partner-invite addressed to the current user's
+ *  email (`couple_invites.invited_email`, case-insensitive). Powers the
+ *  dashboard banner that surfaces "your partner has already started a
+ *  workspace and invited you" when both partners signed up separately.
+ *  Returns the invite metadata plus the inviting couple's display name
+ *  so the UI can render "Join {partner}'s wedding". */
+function handleListIncomingInvites(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const user = getUserById(userId);
+  if (!user) throw new HttpError(404, "User not found");
+  const email = (user.email ?? "").trim().toLowerCase();
+  if (!email) return json({ invites: [] });
+
+  const ts = now();
+  const rows = db
+    .prepare(
+      `SELECT ci.id, ci.token, ci.couple_id, ci.invited_email,
+              ci.invited_by_user_id, ci.consumed_at, ci.expires_at, ci.created_at,
+              c.display_name AS couple_display_name,
+              c.partner_b_id AS couple_partner_b_id,
+              u.full_name    AS inviter_name,
+              u.email        AS inviter_email
+         FROM couple_invites ci
+         JOIN couples c ON c.id = ci.couple_id
+         JOIN users   u ON u.id = ci.invited_by_user_id
+        WHERE ci.consumed_at IS NULL
+          AND ci.expires_at > ?
+          AND ci.invited_email IS NOT NULL
+          AND LOWER(ci.invited_email) = ?
+        ORDER BY ci.created_at DESC`,
+    )
+    .all(ts, email) as Array<{
+    id: number;
+    token: string;
+    couple_id: number;
+    invited_email: string | null;
+    invited_by_user_id: number;
+    consumed_at: number | null;
+    expires_at: number;
+    created_at: number;
+    couple_display_name: string;
+    couple_partner_b_id: number | null;
+    inviter_name: string;
+    inviter_email: string;
+  }>;
+
+  // Hide invites for couples that already have partner B linked — accepting
+  // such an invite would 409 server-side, no point surfacing it.
+  const invites = rows
+    .filter((r) => r.couple_partner_b_id == null)
+    .map((r) => ({
+      token: r.token,
+      couple_display_name: r.couple_display_name,
+      inviter_name: r.inviter_name,
+      inviter_email: r.inviter_email,
+      expires_at: r.expires_at,
+    }));
+  return json({ invites });
+}
+
+/** Accepts an invite while atomically purging the current user's solo
+ *  workspace. Use when both partners signed up separately and only one of
+ *  them will keep their workspace going forward. Gated by a typed-phrase
+ *  confirm on the client side and a server-side re-check: if the user's
+ *  current couple has a partner B, refuse (we'd be deleting data the
+ *  other partner depends on). */
+async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const token = ctx.params.token;
+  if (!token) throw new HttpError(400, "Missing token");
+
+  const body = await readJson<{ confirm?: unknown }>(ctx.req);
+  // Belt-and-braces — the UI already gates submission on the typed phrase,
+  // but a stray request without it gets a 400 here rather than silently
+  // purging the user's workspace.
+  if (body.confirm !== "MERGE") {
+    throw new HttpError(400, "Missing or invalid `confirm` token (expected 'MERGE')");
+  }
+
+  const row = db.prepare("SELECT * FROM couple_invites WHERE token = ?").get(token) as
+    | InviteRow
+    | undefined;
+  if (!row) throw new HttpError(404, "Invite not found");
+  if (row.consumed_at) throw new HttpError(410, "Invite already used");
+  if (row.expires_at < now()) throw new HttpError(410, "Invite expired");
+
+  const userCouple = getCoupleForUser(userId);
+  if (!userCouple) {
+    // No solo workspace to merge — caller should use the plain /accept path.
+    throw new HttpError(409, "No workspace to merge", { code: "no_source_couple" });
+  }
+  if (userCouple.id === row.couple_id) {
+    throw new HttpError(409, "Already in this couple", { code: "already_in_this_couple" });
+  }
+  // Refuse if the user's current workspace has a second partner — wiping it
+  // would destroy data the other partner relies on. They'd need to pause-
+  // delete via the regular flow first.
+  if (userCouple.partner_b_id != null) {
+    throw new HttpError(409, "Source workspace has a second partner", {
+      code: "source_has_partner_b",
+    });
+  }
+
+  const target = getCoupleById(row.couple_id);
+  if (!target) throw new HttpError(404, "Target couple no longer exists");
+  if (target.partner_b_id) {
+    throw new HttpError(409, "Partner B already linked", { code: "couple_full" });
+  }
+  if (target.status === "deleting") {
+    throw new HttpError(409, "Target workspace is being deleted", { code: "target_deleting" });
+  }
+
+  const sourceCoupleId = userCouple.id;
+
+  // Sequence matters:
+  //   1. Detach the user from the source couple BEFORE the purge — `purgeOneCouple`
+  //      flips status='deleting' and scrubs every member's PII; if we leave the
+  //      user attached they'd lose their email + name even though they're still
+  //      using the product on a different workspace.
+  //   2. Purge the source workspace (silent — no "data gone" email; the user
+  //      consciously initiated the merge and will see the new workspace
+  //      immediately).
+  //   3. Link the user as partner B on the target and consume the invite.
+  const ts = now();
+  db.prepare("UPDATE users SET couple_id = NULL, updated_at = ? WHERE id = ?").run(ts, userId);
+  purgeOneCouple(sourceCoupleId, { silent: true });
+
+  db.prepare("UPDATE couples SET partner_b_id = ?, updated_at = ? WHERE id = ?").run(
+    userId,
+    ts,
+    target.id,
+  );
+  db.prepare("UPDATE users SET couple_id = ?, role = 'partner', updated_at = ? WHERE id = ?").run(
+    target.id,
+    ts,
+    userId,
+  );
+  db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: target.id,
+    action: "invite.accept_merge",
+    target_kind: "couple",
+    target_id: target.id,
+    note: `merged partner_b from source couple ${sourceCoupleId} via invite ${row.id}`,
+    before: { source_couple_id: sourceCoupleId },
+    after: { target_couple_id: target.id },
+  });
+
+  const refreshed = getCoupleById(target.id) as CoupleRow;
   return json({ couple: toCouple(refreshed) });
 }
 
@@ -1613,6 +1768,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "invite.create",
   "invite.cancel",
   "invite.accept",
+  "invite.accept_merge",
   // Cost rows + suppliers attached to the couple
   "supplier_cost.upsert",
   "supplier.community.create",
@@ -1689,8 +1845,13 @@ export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/invites", handleCreateInvite, true);
   router.get("/api/couples/invites/current", handleGetCurrentInvite, true);
   router.post("/api/couples/invites/cancel", handleCancelInvite, true);
+  // Register the static `/incoming` path BEFORE the `/:token` pattern so
+  // the router matches it as a literal instead of treating "incoming" as a
+  // token value (which would 404 on lookup).
+  router.get("/api/invites/incoming", handleListIncomingInvites, true);
   router.get("/api/invites/:token", handleGetInvite); // public — pre-signup
   router.post("/api/invites/:token/accept", handleAcceptInvite, true);
+  router.post("/api/invites/:token/accept-merge", handleAcceptInviteMerge, true);
   router.post("/api/couples/current/archive", handleArchive, true);
   router.post("/api/couples/current/notify-date-change", handleNotifyDateChange, true);
   router.post("/api/couples/current/dismiss-date-change", handleDismissDateChange, true);

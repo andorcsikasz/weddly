@@ -10,34 +10,46 @@
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { log } from "../lib/logger";
+import { sweepStaleRateLimitBuckets } from "../lib/rate_limit";
 import { sendKind } from "./emails";
 
-export function purgeOneCouple(coupleId: number, options: { adminInitiated?: boolean } = {}): void {
+export function purgeOneCouple(
+  coupleId: number,
+  options: { adminInitiated?: boolean; silent?: boolean } = {},
+): void {
   const ts = now();
   const adminInitiated = options.adminInitiated === true;
+  const silent = options.silent === true;
 
   // Send the "your data is gone" notice BEFORE we scrub the user table —
   // afterwards the email column is rewritten to `deleted-…@purged.local`
   // and the addresses are unrecoverable. Fire-and-forget: failure to mail
   // must not abort the destructive sweep.
-  const couple = db.prepare("SELECT display_name FROM couples WHERE id = ?").get(coupleId) as
-    | { display_name: string }
-    | undefined;
-  const coupleDisplayName = couple?.display_name?.trim() || "your wedding";
-  const usersToNotify = (
-    db
-      .prepare("SELECT id, email, full_name FROM users WHERE couple_id = ?")
-      .all(coupleId) as Array<{ id: number; email: string; full_name: string }>
-  ).filter((u) => u.email && !u.email.endsWith("@purged.local"));
-  for (const u of usersToNotify) {
-    const target = {
-      user: { id: u.id, email: u.email, full_name: u.full_name },
-      couple_id: coupleId,
-    };
-    if (adminInitiated) {
-      void sendKind("account_admin_purged", { coupleDisplayName }, target);
-    } else {
-      void sendKind("account_purged", { coupleDisplayName }, target);
+  //
+  // `silent: true` skips the email entirely. Used by the partner-merge
+  // flow: the user is consciously discarding their solo workspace to
+  // join their partner's, so a "your data is gone" email would just
+  // confuse — they're not losing access, they're moving.
+  if (!silent) {
+    const couple = db.prepare("SELECT display_name FROM couples WHERE id = ?").get(coupleId) as
+      | { display_name: string }
+      | undefined;
+    const coupleDisplayName = couple?.display_name?.trim() || "your wedding";
+    const usersToNotify = (
+      db
+        .prepare("SELECT id, email, full_name FROM users WHERE couple_id = ?")
+        .all(coupleId) as Array<{ id: number; email: string; full_name: string }>
+    ).filter((u) => u.email && !u.email.endsWith("@purged.local"));
+    for (const u of usersToNotify) {
+      const target = {
+        user: { id: u.id, email: u.email, full_name: u.full_name },
+        couple_id: coupleId,
+      };
+      if (adminInitiated) {
+        void sendKind("account_admin_purged", { coupleDisplayName }, target);
+      } else {
+        void sendKind("account_purged", { coupleDisplayName }, target);
+      }
     }
   }
 
@@ -199,8 +211,10 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
   });
 }
 
-/** Run the purge for any couples whose scheduled_delete_at has passed. */
-export function runPurgeSweep(): { purged: number } {
+/** Run the purge for any couples whose scheduled_delete_at has passed.
+ *  Also tidies the rate_limit_buckets table on the same tick — both are
+ *  cheap, scheduled housekeeping. */
+export function runPurgeSweep(): { purged: number; ratelimit_buckets_deleted: number } {
   const ts = now();
   const due = db
     .prepare(
@@ -215,7 +229,14 @@ export function runPurgeSweep(): { purged: number } {
       log.error("purge.couple_failed", e, { couple_id });
     }
   }
-  return { purged: due.length };
+
+  let ratelimitDeleted = 0;
+  try {
+    ratelimitDeleted = sweepStaleRateLimitBuckets().deleted;
+  } catch (e) {
+    log.error("purge.ratelimit_sweep_failed", e);
+  }
+  return { purged: due.length, ratelimit_buckets_deleted: ratelimitDeleted };
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -226,7 +247,7 @@ export function startPurgeWorker(): void {
   // Run once at boot so a long downtime catches up immediately.
   try {
     const r = runPurgeSweep();
-    if (r.purged > 0) log.info("purge.boot_sweep", { purged: r.purged });
+    if (r.purged > 0 || r.ratelimit_buckets_deleted > 0) log.info("purge.boot_sweep", r);
   } catch (e) {
     log.error("purge.boot_sweep_failed", e);
   }
@@ -234,7 +255,7 @@ export function startPurgeWorker(): void {
     () => {
       try {
         const r = runPurgeSweep();
-        if (r.purged > 0) log.info("purge.hourly_sweep", { purged: r.purged });
+        if (r.purged > 0 || r.ratelimit_buckets_deleted > 0) log.info("purge.hourly_sweep", r);
       } catch (e) {
         log.error("purge.hourly_sweep_failed", e);
       }

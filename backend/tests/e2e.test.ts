@@ -644,6 +644,116 @@ describe("onboarding + invites", () => {
     expect(full.data.detail?.code).toBe("couple_full");
   });
 
+  test("accept-merge: lists the invite, then purges the solo workspace and links partner B", async () => {
+    wipeAll();
+    // Inviter has their own workspace and emails partner B.
+    const { token: aToken } = await bootstrapCouple("partner-a@weddly.test");
+    const inv = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "partner-b@weddly.test" },
+      { token: aToken },
+    );
+    expect(inv.status).toBe(201);
+
+    // Partner B doesn't see the invite link — they sign up independently and
+    // onboard their own (now-doomed) solo workspace.
+    const { token: bToken, coupleId: bCoupleId } = await bootstrapCouple("partner-b@weddly.test");
+
+    // /api/invites/incoming surfaces the inviter's invite for partner B.
+    const incoming = await req<{
+      invites: Array<{ token: string; couple_display_name: string; inviter_name: string }>;
+    }>("GET", "/api/invites/incoming", undefined, { token: bToken });
+    expect(incoming.status).toBe(200);
+    expect(incoming.data.invites.length).toBe(1);
+    expect(incoming.data.invites[0]?.token).toBe(inv.data.invite.token);
+
+    // Missing `confirm: "MERGE"` → 400.
+    const badConfirm = await req(
+      "POST",
+      `/api/invites/${inv.data.invite.token}/accept-merge`,
+      {},
+      { token: bToken },
+    );
+    expect(badConfirm.status).toBe(400);
+
+    // Happy path — partner B merges into A's couple.
+    const merge = await req<{ couple: { id: number; partner_b_id: number | null } }>(
+      "POST",
+      `/api/invites/${inv.data.invite.token}/accept-merge`,
+      { confirm: "MERGE" },
+      { token: bToken },
+    );
+    expect(merge.status).toBe(200);
+    expect(merge.data.couple.partner_b_id).toBeGreaterThan(0);
+
+    // B's old solo workspace is now in the `deleting` tombstone state.
+    const oldCouple = db.prepare("SELECT status FROM couples WHERE id = ?").get(bCoupleId) as {
+      status: string;
+    };
+    expect(oldCouple.status).toBe("deleting");
+
+    // B's /current now resolves to A's couple.
+    const bAfter = await req<{ couple: { id: number } }>("GET", "/api/couples/current", undefined, {
+      token: bToken,
+    });
+    expect(bAfter.data.couple.id).toBe(merge.data.couple.id);
+
+    // Audit row written for the merge.
+    const audit = db
+      .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'invite.accept_merge'")
+      .get() as { n: number };
+    expect(audit.n).toBe(1);
+  });
+
+  test("accept-merge: refuses when source workspace already has partner B", async () => {
+    wipeAll();
+    // Solo inviter (couple_a) — no partner B yet, free to add anyone.
+    const { token: aToken } = await bootstrapCouple("solo-inviter@weddly.test");
+
+    // Full couple (couple_b) — both partners linked. The full-couple's
+    // partner A is the one we'll attempt to merge into couple_a.
+    const { token: twoAToken } = await bootstrapCouple("two-a@weddly.test");
+    const innerInv = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "two-b@weddly.test" },
+      { token: twoAToken },
+    );
+    expect(innerInv.status).toBe(201);
+    const twoBReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "two-b@weddly.test",
+      password: "supersafe123",
+      full_name: "Two B",
+    });
+    const linkUp = await req(
+      "POST",
+      `/api/invites/${innerInv.data.invite.token}/accept`,
+      {},
+      { token: twoBReg.data.token },
+    );
+    expect(linkUp.status).toBe(200);
+
+    // Solo inviter invites two-a (who has partner B). Merge must refuse —
+    // wiping couple_b would delete data partner B still uses.
+    const outsideInv = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "two-a@weddly.test" },
+      { token: aToken },
+    );
+    expect(outsideInv.status).toBe(201);
+
+    const refused = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/invites/${outsideInv.data.invite.token}/accept-merge`,
+      { confirm: "MERGE" },
+      { token: twoAToken },
+    );
+    expect(refused.status).toBe(409);
+    expect(refused.data.detail?.code).toBe("source_has_partner_b");
+  });
+
   test("get-current returns null couple before onboarding", async () => {
     wipeAll();
     const u = await req<{ token: string }>("POST", "/api/auth/register", {

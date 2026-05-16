@@ -445,6 +445,18 @@ const hu: LocaleMessages = {
     couple_full:
       "Ehhez a munkaterülethez már ketten csatlakoztak. Kérd meg a meghívót, hogy vonja vissza és küldje újra.",
     couple_gone: "Ez a munkaterület már nem létezik.",
+    merge_banner_body:
+      "{inviter} már elindította a(z) {couple} esküvőtervezőt és meghívott ide. Csatlakozol hozzá?",
+    merge_banner_warning:
+      "Ha csatlakozol, a jelenlegi munkaterületed (vendéglista, költségvetés, ülésrend, minden) véglegesen törlődik. Ez visszavonhatatlan.",
+    merge_banner_cta: "Csatlakozom és törlöm a jelenlegit",
+    merge_confirm_title: "Munkaterület-összevonás megerősítése",
+    merge_confirm_label: "Gépeld be: MERGE",
+    merge_confirm_help: "A megerősítéshez gépeld be nagybetűvel: MERGE",
+    merge_confirm_button: "Csatlakozás",
+    merge_confirm_mismatch: "Nem egyezik — gépeld be: MERGE",
+    merge_running: "Összevonás…",
+    merge_success: "Csatlakoztál — üdv az új munkaterületen.",
   },
   landing: {
     hero_title: "Az egész esküvőtök, egyetlen közös felületen.",
@@ -1270,6 +1282,12 @@ const hu: LocaleMessages = {
     no_tables: "Még nincsenek asztalok",
     add_first_table: "Adj hozzá egyet a kezdéshez.",
     drag_help: "Húzd a vendégeket az ülőhelyekre.",
+    household_linked_aria: "{n} fős háztartás összekapcsolva",
+    household_unlink: "Háztartás szétválasztása",
+    household_relink: "Visszakapcsolás a háztartáshoz",
+    household_placed_all: "{n} vendég leültetve · {table}",
+    household_placed_partial: "{n}/{m} vendég leültetve — a többiek a nem ültetettek között maradtak.",
+    household_no_room: "Nincs szabad hely ezen az asztalon — szabadíts fel székeket vagy válassz másik asztalt.",
     conflicts_title: "Konfliktusok",
     no_conflicts: "Nincs jelölt konfliktus.",
     conflict_split: "ne kerüljenek egymás mellé",

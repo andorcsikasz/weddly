@@ -469,6 +469,21 @@ export interface LocaleMessages {
     already_in_other_couple: string;
     couple_full: string;
     couple_gone: string;
+    /** Dashboard banner shown when the user has a solo workspace AND there's
+     *  a pending partner-invite addressed to their email. Accepting it via
+     *  the merge flow purges their solo workspace and links them as partner
+     *  B on the inviting couple — irreversible, so the confirm modal asks
+     *  the user to type "MERGE" verbatim. */
+    merge_banner_body: string;
+    merge_banner_warning: string;
+    merge_banner_cta: string;
+    merge_confirm_title: string;
+    merge_confirm_label: string;
+    merge_confirm_help: string;
+    merge_confirm_button: string;
+    merge_confirm_mismatch: string;
+    merge_running: string;
+    merge_success: string;
   };
   landing: {
     hero_title: string;

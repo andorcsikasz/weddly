@@ -39,6 +39,7 @@ import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "r
 import { Link, Navigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
+import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -724,6 +725,10 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
+      {/* Surfaces when both partners signed up separately. Hidden unless
+       *  there's a pending partner-invite addressed to this user's email;
+       *  joining purges the user's solo workspace (typed-phrase confirm). */}
+      {!couple.partner_b_id && <PartnerMergeBanner onAccepted={() => window.location.reload()} />}
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-serif text-4xl">{couple.display_name}</h1>
