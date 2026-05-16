@@ -4,7 +4,14 @@
 // proxy). Cost cards mirror `budget_lines` rows in the `honeymoon` category,
 // so a slider drag here shows up on /app/budget and vice versa.
 
-import type { BudgetLine, Couple, Currency, FlightEstimate, PlaceSuggestion } from "@shared/types";
+import type {
+  BudgetLine,
+  Couple,
+  Currency,
+  FlightEstimate,
+  PlaceSuggestion,
+  PlanningItem,
+} from "@shared/types";
 import {
   BedDouble,
   Calendar,
@@ -33,7 +40,7 @@ import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { budgetApi, coupleApi, honeymoonApi, placesApi } from "../lib/endpoints";
+import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { publish, subscribe } from "../lib/sync";

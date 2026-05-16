@@ -5253,31 +5253,29 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     wipeAll();
     const { token } = await bootstrapCouple("rsvp-meal@weddly.test");
 
-    // Default state after onboarding: ON. Schema-level default of 1 is the
-    // contract — most weddings serve a plated menu and existing couples
-    // shouldn't lose the meal row on upgrade.
-    const initial = await req<{ couple: { rsvp_collects_meal: boolean; slug: string } }>(
+    // The toggle moved from the couple to the household in May 2026 so each
+    // party can carry its own decision. Couple-level column is retained for
+    // back-compat but no longer flows into the public view.
+    const initial = await req<{ couple: { slug: string } }>(
       "GET",
       "/api/couples/current",
       undefined,
       { token },
     );
-    expect(initial.status).toBe(200);
-    expect(initial.data.couple.rsvp_collects_meal).toBe(true);
     const slug = initial.data.couple.slug;
 
-    // Seed one household so the public lookup has something to resolve.
-    const hh = await req<{ household: { id: number; code: string } }>(
-      "POST",
-      "/api/households",
-      { label: "Test family" },
-      { token },
-    );
+    // Default state after household creation: ON. Schema-level default of 1
+    // is the contract — most weddings serve a plated menu and existing
+    // households shouldn't lose the meal row on upgrade.
+    const hh = await req<{
+      household: { id: number; code: string; rsvp_collects_meal: boolean };
+    }>("POST", "/api/households", { label: "Test family" }, { token });
     expect(hh.status).toBe(201);
+    expect(hh.data.household.rsvp_collects_meal).toBe(true);
+    const hhId = hh.data.household.id;
     const code = hh.data.household.code;
 
-    // Public lookup mirrors the couple-level flag — buffet couples can hide
-    // the meal row on the guest-facing form simply by flipping the toggle.
+    // Public lookup mirrors the household-level flag.
     const pubOn = await req<{ rsvp: { rsvp_collects_meal: boolean } }>(
       "GET",
       `/api/rsvp/lookup?couple=${slug}&code=${code}`,
@@ -5285,26 +5283,17 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     expect(pubOn.status).toBe(200);
     expect(pubOn.data.rsvp.rsvp_collects_meal).toBe(true);
 
-    // Flip off.
-    const off = await req<{ couple: { rsvp_collects_meal: boolean } }>(
+    // Flip off on this household.
+    const off = await req<{ household: { rsvp_collects_meal: boolean } }>(
       "PATCH",
-      "/api/couples/current",
+      `/api/households/${hhId}`,
       { rsvp_collects_meal: false },
       { token },
     );
     expect(off.status).toBe(200);
-    expect(off.data.couple.rsvp_collects_meal).toBe(false);
+    expect(off.data.household.rsvp_collects_meal).toBe(false);
 
-    // GET reflects the new value.
-    const after = await req<{ couple: { rsvp_collects_meal: boolean } }>(
-      "GET",
-      "/api/couples/current",
-      undefined,
-      { token },
-    );
-    expect(after.data.couple.rsvp_collects_meal).toBe(false);
-
-    // And the public-facing view tracks it too.
+    // Public-facing view tracks the per-household value.
     const pubOff = await req<{ rsvp: { rsvp_collects_meal: boolean } }>(
       "GET",
       `/api/rsvp/lookup?couple=${slug}&code=${code}`,
@@ -5313,20 +5302,19 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     expect(pubOff.data.rsvp.rsvp_collects_meal).toBe(false);
 
     // Flip back on.
-    const on = await req<{ couple: { rsvp_collects_meal: boolean } }>(
+    const on = await req<{ household: { rsvp_collects_meal: boolean } }>(
       "PATCH",
-      "/api/couples/current",
+      `/api/households/${hhId}`,
       { rsvp_collects_meal: true },
       { token },
     );
     expect(on.status).toBe(200);
-    expect(on.data.couple.rsvp_collects_meal).toBe(true);
+    expect(on.data.household.rsvp_collects_meal).toBe(true);
 
-    // Non-boolean payload rejected — same strict contract as the
-    // accommodation toggle above.
+    // Non-boolean payload rejected.
     const bad = await req(
       "PATCH",
-      "/api/couples/current",
+      `/api/households/${hhId}`,
       { rsvp_collects_meal: "yes" },
       { token },
     );
@@ -8572,13 +8560,14 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
     expect(list1.data.couples[0]!.role).toBe("owner");
 
     // Create Bravo. The user becomes its owner and `users.couple_id`
-    // auto-switches so the next /current resolves there.
+    // auto-switches so the next /current resolves there. The endpoint
+    // inherits bride/groom from the active couple — only the event_name
+    // (the workspace label) needs to come from the caller.
     const create = await req<{ couple: { id: number; display_name: string } }>(
       "POST",
       "/api/couples",
       {
-        bride_name: "Anna",
-        groom_name: "Bence",
+        event_name: "Lakodalom",
         wedding_date_goal: {
           kind: "exact",
           exact_date: "2026-10-10",
@@ -8586,9 +8575,6 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
           target_month: 10,
           target_season: null,
         },
-        guest_count_goal: { kind: "exact", exact: 40, min: null, max: null },
-        budget_goal: { kind: "exact", exact_huf: 2_000_000, min_huf: null, max_huf: null },
-        style_tags: [],
       },
       { token },
     );
@@ -8673,8 +8659,7 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
       "POST",
       "/api/couples",
       {
-        bride_name: "Anna",
-        groom_name: "Bence",
+        event_name: "After-party",
         wedding_date_goal: {
           kind: "tbd",
           exact_date: null,
@@ -8682,9 +8667,6 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
           target_month: null,
           target_season: null,
         },
-        guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
-        budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
-        style_tags: [],
         seed_from_couple_id: alphaId,
         seed_guest_ids: [g1.data.guest.id, g2.data.guest.id],
       },
@@ -8755,8 +8737,7 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
         "POST",
         "/api/couples",
         {
-          bride_name: "A",
-          groom_name: label,
+          event_name: label,
           wedding_date_goal: {
             kind: "tbd",
             exact_date: null,
@@ -8764,9 +8745,6 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
             target_month: null,
             target_season: null,
           },
-          guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
-          budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
-          style_tags: [],
         },
         { token },
       );
@@ -8788,8 +8766,7 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
       "POST",
       "/api/couples",
       {
-        bride_name: "Bea",
-        groom_name: "Don",
+        event_name: "Másnap",
         wedding_date_goal: {
           kind: "tbd",
           exact_date: null,
@@ -8797,9 +8774,6 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
           target_month: null,
           target_season: null,
         },
-        guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
-        budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
-        style_tags: [],
         seed_from_couple_id: alphaId,
         seed_guest_ids: [999_999],
       },

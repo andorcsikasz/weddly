@@ -1,7 +1,7 @@
 // Planning items CRUD. Backs /app/planning's three tabs (tasks / ideas /
 // schedule). Couple-scoped; every endpoint requires auth.
 
-import type { PlanningKind } from "@shared/types";
+import type { PlanningKind, PlanningTopic } from "@shared/types";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
@@ -9,6 +9,7 @@ import {
   getPlanningItemJoined,
   getPlanningItemScoped,
   isPlanningKind,
+  isPlanningTopic,
   listPlanningItemsByCouple,
   toPlanningItem,
 } from "../domain/planning";
@@ -27,6 +28,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 interface UpsertBody {
   kind?: unknown;
+  topic?: unknown;
   title?: unknown;
   body?: unknown;
   done?: unknown;
@@ -37,6 +39,17 @@ interface UpsertBody {
   supplier_id?: unknown;
   priority?: unknown;
   position?: unknown;
+}
+
+function parseTopic(raw: unknown): PlanningTopic | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "topic must be a string");
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (!isPlanningTopic(trimmed)) {
+    throw new HttpError(400, "topic must be 'wedding' or 'honeymoon'");
+  }
+  return trimmed;
 }
 
 function parseTitle(raw: unknown): string {
@@ -165,18 +178,20 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   // Other kinds leave it null (the schedule/task author isn't surfaced).
   const suggestedBy = kind === "idea" ? userId : null;
   const position = parsePosition(body.position, 0);
+  const topic = parseTopic(body.topic);
   const ts = now();
 
   const result = db
     .prepare(
       `INSERT INTO planning_items
-        (couple_id, kind, title, body, done, due_date, scheduled_time, assignee,
+        (couple_id, kind, topic, title, body, done, due_date, scheduled_time, assignee,
          suggested_by_user_id, start_date, supplier_id, priority, position, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
       kind,
+      topic,
       title,
       bodyText,
       done,

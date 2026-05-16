@@ -325,7 +325,12 @@ export default function PlanningPage() {
    *  pushes successes into state, surfaces the count via toast. Used by all
    *  three wand variants + the dice "add this one" CTA. */
   async function bulkCreate(
-    entries: { title: string; body?: string | null; assignee?: string | null }[],
+    entries: {
+      title: string;
+      body?: string | null;
+      assignee?: string | null;
+      topic?: "wedding" | "honeymoon" | null;
+    }[],
     kind: PlanningKind,
     successKey: string,
   ): Promise<number> {
@@ -350,12 +355,30 @@ export default function PlanningPage() {
 
   async function onApplyTaskTemplate(selected: Set<number>, defaultAssignee: string) {
     const trimmed = defaultAssignee.trim();
+    // Resolve each selected flat-index back to the group it belongs to so
+    // honeymoon-group items get persisted with topic: "honeymoon" — the
+    // honeymoon page filters tasks by that topic. Wedding-group items get
+    // an explicit "wedding" stamp so the surface filter on /app/tervezés
+    // can pivot symmetrically later if needed.
+    const groupBounds: { id: "wedding" | "honeymoon"; start: number; end: number }[] = [];
+    {
+      let offset = 0;
+      for (const g of TASK_TEMPLATE_GROUPS) {
+        groupBounds.push({ id: g.id, start: offset, end: offset + g.items.length });
+        offset += g.items.length;
+      }
+    }
+    function topicForIndex(idx: number): "wedding" | "honeymoon" {
+      const b = groupBounds.find((g) => idx >= g.start && idx < g.end);
+      return b?.id ?? "wedding";
+    }
     const entries = TASK_TEMPLATE.flatMap((tmpl, idx) =>
       selected.has(idx)
         ? [
             {
               title: localizeText(tmpl.title, locale),
               assignee: trimmed || null,
+              topic: topicForIndex(idx),
             },
           ]
         : [],

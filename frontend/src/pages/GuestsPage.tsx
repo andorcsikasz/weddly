@@ -1380,6 +1380,65 @@ const DIETARY_TOKEN: Record<DietaryTag, string> = {
   fish_shellfish: "hal-tengeri-allergia",
 };
 
+// Semantic colour family per allergen — kept in lock-step with the public
+// RSVP form's DIETARY_TONE tables. Lactose + milk-protein share the dairy
+// (sky) palette and are differentiated by icon: plain Milk for lactose,
+// Milk + Atom composite for milk-protein.
+type DietaryTone = "dairy" | "wheat" | "nut" | "egg" | "seafood";
+
+const DIETARY_TAG_TONE: Record<DietaryTag, DietaryTone> = {
+  milk_protein: "dairy",
+  lactose: "dairy",
+  gluten: "wheat",
+  nut: "nut",
+  egg: "egg",
+  fish_shellfish: "seafood",
+};
+
+const DIETARY_TONE_ACTIVE: Record<DietaryTone, string> = {
+  dairy:
+    "border-2 border-sky-600 bg-sky-600 text-white dark:border-sky-400 dark:bg-sky-500 dark:text-umber-900",
+  wheat:
+    "border-2 border-amber-600 bg-amber-600 text-white dark:border-amber-400 dark:bg-amber-500 dark:text-umber-900",
+  nut: "border-2 border-orange-700 bg-orange-700 text-white dark:border-orange-400 dark:bg-orange-500 dark:text-umber-900",
+  egg: "border-2 border-yellow-500 bg-yellow-500 text-umber-900 dark:border-yellow-400 dark:bg-yellow-400 dark:text-umber-900",
+  seafood:
+    "border-2 border-cyan-700 bg-cyan-700 text-white dark:border-cyan-400 dark:bg-cyan-500 dark:text-umber-900",
+};
+
+const DIETARY_TONE_IDLE: Record<DietaryTone, string> = {
+  dairy:
+    "border border-sky-300 bg-sky-50 text-sky-800 hover:border-sky-500 dark:border-sky-400/40 dark:bg-sky-400/10 dark:text-sky-300 dark:hover:border-sky-400/70",
+  wheat:
+    "border border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-500 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:border-amber-400/70",
+  nut: "border border-orange-300 bg-orange-50 text-orange-800 hover:border-orange-500 dark:border-orange-400/40 dark:bg-orange-400/10 dark:text-orange-300 dark:hover:border-orange-400/70",
+  egg: "border border-yellow-300 bg-yellow-50 text-yellow-800 hover:border-yellow-500 dark:border-yellow-400/40 dark:bg-yellow-400/10 dark:text-yellow-300 dark:hover:border-yellow-400/70",
+  seafood:
+    "border border-cyan-300 bg-cyan-50 text-cyan-800 hover:border-cyan-500 dark:border-cyan-400/40 dark:bg-cyan-400/10 dark:text-cyan-300 dark:hover:border-cyan-400/70",
+};
+
+function DietaryTagIcon({ tag }: { tag: DietaryTag }) {
+  switch (tag) {
+    case "milk_protein":
+      return (
+        <span className="inline-flex shrink-0 items-center">
+          <Milk size={14} aria-hidden />
+          <Atom size={10} aria-hidden className="-ml-1 self-start" />
+        </span>
+      );
+    case "lactose":
+      return <Milk size={14} aria-hidden />;
+    case "gluten":
+      return <Wheat size={14} aria-hidden />;
+    case "nut":
+      return <Nut size={14} aria-hidden />;
+    case "egg":
+      return <Egg size={14} aria-hidden />;
+    case "fish_shellfish":
+      return <Shell size={14} aria-hidden />;
+  }
+}
+
 function buildDietary(tags: Set<DietaryTag>, free: string): string | null {
   const parts: string[] = [];
   for (const tag of DIETARY_TAG_KEYS) {
@@ -1464,8 +1523,9 @@ function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string
       )}
       {fish && <Fish size={14} aria-label={t("guests.meal_fish")} />}
       {tags.has("milk_protein") && (
-        <span title={t("rsvp.tag_milk_protein")} className="inline-flex">
-          <Droplets size={14} aria-label={t("rsvp.tag_milk_protein")} />
+        <span title={t("rsvp.tag_milk_protein")} className="inline-flex items-center">
+          <Milk size={14} aria-label={t("rsvp.tag_milk_protein")} />
+          <Atom size={10} aria-hidden className="-ml-1 self-start" />
         </span>
       )}
       {tags.has("lactose") && (
@@ -1934,42 +1994,18 @@ function GuestDrawer({
               <div className="mb-3">
                 <label className="field-label">{t("guests.allergies")}</label>
                 <div className="mb-2 flex flex-wrap gap-1.5">
-                  <DietaryChip
-                    on={dietaryTags.has("milk_protein")}
-                    onClick={() => toggleSetMember(setDietaryTags, "milk_protein")}
-                    icon={<Droplets size={14} aria-hidden />}
-                    label={t("rsvp.tag_milk_protein")}
-                  />
-                  <DietaryChip
-                    on={dietaryTags.has("lactose")}
-                    onClick={() => toggleSetMember(setDietaryTags, "lactose")}
-                    icon={<Milk size={14} aria-hidden />}
-                    label={t("rsvp.tag_lactose")}
-                  />
-                  <DietaryChip
-                    on={dietaryTags.has("gluten")}
-                    onClick={() => toggleSetMember(setDietaryTags, "gluten")}
-                    icon={<Wheat size={14} aria-hidden />}
-                    label={t("rsvp.tag_gluten")}
-                  />
-                  <DietaryChip
-                    on={dietaryTags.has("nut")}
-                    onClick={() => toggleSetMember(setDietaryTags, "nut")}
-                    icon={<Nut size={14} aria-hidden />}
-                    label={t("rsvp.tag_nut")}
-                  />
-                  <DietaryChip
-                    on={dietaryTags.has("egg")}
-                    onClick={() => toggleSetMember(setDietaryTags, "egg")}
-                    icon={<Egg size={14} aria-hidden />}
-                    label={t("rsvp.tag_egg")}
-                  />
-                  <DietaryChip
-                    on={dietaryTags.has("fish_shellfish")}
-                    onClick={() => toggleSetMember(setDietaryTags, "fish_shellfish")}
-                    icon={<Shell size={14} aria-hidden />}
-                    label={t("rsvp.tag_fish_shellfish")}
-                  />
+                  {(
+                    ["milk_protein", "lactose", "gluten", "nut", "egg", "fish_shellfish"] as const
+                  ).map((tag) => (
+                    <DietaryChip
+                      key={tag}
+                      on={dietaryTags.has(tag)}
+                      onClick={() => toggleSetMember(setDietaryTags, tag)}
+                      icon={<DietaryTagIcon tag={tag} />}
+                      label={t(`rsvp.tag_${tag}`)}
+                      tone={DIETARY_TAG_TONE[tag]}
+                    />
+                  ))}
                 </div>
                 <input
                   className="input"
@@ -2247,23 +2283,27 @@ function DietaryChip({
   onClick,
   icon,
   label,
+  tone,
 }: {
   on: boolean;
   onClick: () => void;
   icon: ReactNode;
   label: string;
+  /** Optional semantic colour family — see DIETARY_TAG_TONE. */
+  tone?: DietaryTone;
 }) {
+  const base = "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors";
+  const neutral = on
+    ? "border-2 border-ink-700 bg-ink-700 font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+    : "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600";
+  const toned = tone ? (on ? DIETARY_TONE_ACTIVE[tone] : DIETARY_TONE_IDLE[tone]) : neutral;
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={on}
       onClick={onClick}
-      className={
-        on
-          ? "inline-flex items-center gap-1.5 rounded-full border-2 border-ink-700 bg-ink-700 px-3 py-1 text-xs font-medium text-paper-100 transition-colors dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-          : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition-colors hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-      }
+      className={`${base} ${tone && on ? "font-medium" : ""} ${toned}`}
     >
       {icon}
       <span>{label}</span>

@@ -341,6 +341,10 @@ export const userApi = {
 
 export interface PlanningItemCreate {
   kind: "task" | "idea" | "schedule";
+  /** Sub-topic the item belongs to. Omit / pass null to keep it "wedding"
+   *  by default. Wand items stamped at the planning page's task-template
+   *  apply step. */
+  topic?: "wedding" | "honeymoon" | null;
   title: string;
   body?: string | null;
   done?: boolean;

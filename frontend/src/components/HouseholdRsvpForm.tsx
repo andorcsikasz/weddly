@@ -769,14 +769,7 @@ export function HouseholdRsvpForm({
                   </p>
                   <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 [&>button]:w-full [&>button]:justify-center">
                     {(
-                      [
-                        "milk_protein",
-                        "lactose",
-                        "gluten",
-                        "nut",
-                        "egg",
-                        "fish_shellfish",
-                      ] as const
+                      ["milk_protein", "lactose", "gluten", "nut", "egg", "fish_shellfish"] as const
                     ).map((tag) => (
                       <Chip
                         key={tag}
