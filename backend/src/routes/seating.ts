@@ -243,6 +243,13 @@ function parseTableBody(body: UpsertTableBody) {
     label,
     shape,
     seats,
+    /** The seats value the client actually asked for, before the geometry
+     *  cap shrank it. Equals `seats` in the common case; differs when the
+     *  request would overflow the chair-pitch budget of the table footprint.
+     *  Routes use this to surface a `seats_clamped` signal so the UI can
+     *  toast a "fits N chairs, not M" message instead of silently swallowing
+     *  the mismatch. */
+    seats_requested: seatsRequested,
     x_mm: Math.round(xRaw),
     y_mm: Math.round(yRaw),
     width_mm: width,
@@ -291,7 +298,13 @@ async function handleCreateTable(ctx: Ctx): Promise<Response> {
     after: parsed,
   });
   const row = db.prepare("SELECT * FROM seating_tables WHERE id = ?").get(id) as TableRow;
-  return json({ table: toTable(row) }, { status: 201 });
+  // Surface the clamp diagnostic only when it fires — keeps the common-case
+  // response identical to the pre-existing shape.
+  const clamped = parsed.seats < parsed.seats_requested;
+  const envelope = clamped
+    ? { table: toTable(row), seats_clamped: true, seats_requested: parsed.seats_requested }
+    : { table: toTable(row) };
+  return json(envelope, { status: 201 });
 }
 
 /** PATCH /api/seating/tables/:id — partial update with optimistic concurrency.
@@ -405,7 +418,15 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
     after: parsed,
   });
   const row = db.prepare("SELECT * FROM seating_tables WHERE id = ?").get(id) as TableRow;
-  return json({ table: toTable(row) });
+  // Mirror the create handler: only emit the clamp diagnostic when the cap
+  // actually shrank the request. A PATCH that didn't touch `seats` (so the
+  // merged value equals the stored one) never trips this branch — `merged`
+  // carries `existing.seats` forward and `seats_requested` matches.
+  const clamped = parsed.seats < parsed.seats_requested;
+  const envelope = clamped
+    ? { table: toTable(row), seats_clamped: true, seats_requested: parsed.seats_requested }
+    : { table: toTable(row) };
+  return json(envelope);
 }
 
 function handleDeleteTable(ctx: Ctx): Response {

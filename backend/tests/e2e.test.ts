@@ -1518,18 +1518,16 @@ describe("households + airport check-in", () => {
       { token },
     );
     expect(filtered.status).toBe(200);
-    expect(filtered.data.households.map((h) => h.label).sort()).toEqual(["Friends", "Smith family"]);
+    expect(filtered.data.households.map((h) => h.label).sort()).toEqual([
+      "Friends",
+      "Smith family",
+    ]);
 
     // Move a second guest into the auto-spawned household — the filter must
     // stop hiding it (it represents a real party now, even though the row was
     // bootstrapped from a name).
     const stub = byLabel.get("Stub Singleton")!;
-    await req(
-      "POST",
-      "/api/guests",
-      { full_name: "Plus one", household_id: stub.id },
-      { token },
-    );
+    await req("POST", "/api/guests", { full_name: "Plus one", household_id: stub.id }, { token });
     const refiltered = await req<{ households: H[] }>(
       "GET",
       "/api/households?exclude_auto_singletons=1",
@@ -2174,6 +2172,39 @@ describe("seating", () => {
       { token },
     );
     expect(badDim.status).toBe(400);
+
+    // Seats clamp diagnostic: ask for 8 seats on a default round Ø 1500 (only
+    // fits 5 chairs at the 80cm pitch). The response should still 201 with the
+    // clamped value AND include `seats_clamped + seats_requested` so the UI
+    // can surface "fits 5 chairs, not 8" instead of silently swallowing it.
+    const clampedCreate = await req<{
+      table: { id: number; seats: number };
+      seats_clamped?: boolean;
+      seats_requested?: number;
+    }>(
+      "POST",
+      "/api/seating/tables",
+      { label: "Asztal 2", shape: "round", seats: 8, x_mm: 100, y_mm: 100 },
+      { token },
+    );
+    expect(clampedCreate.status).toBe(201);
+    expect(clampedCreate.data.table.seats).toBe(5); // floor(π·1500 / 800)
+    expect(clampedCreate.data.seats_clamped).toBe(true);
+    expect(clampedCreate.data.seats_requested).toBe(8);
+
+    // Asking for exactly the cap leaves the envelope clean (no diagnostic).
+    const exactCreate = await req<{
+      table: { seats: number };
+      seats_clamped?: boolean;
+    }>(
+      "POST",
+      "/api/seating/tables",
+      { label: "Asztal 3", shape: "round", seats: 5, x_mm: 200, y_mm: 200 },
+      { token },
+    );
+    expect(exactCreate.status).toBe(201);
+    expect(exactCreate.data.table.seats).toBe(5);
+    expect(exactCreate.data.seats_clamped).toBeUndefined();
 
     const a1 = await req(
       "POST",
