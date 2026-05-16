@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { SupplierDirectoryView } from "../components/admin/SupplierDirectoryView";
+import { SegmentedControl, Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -72,8 +73,38 @@ function formatDateTime(unixMs: number | null, locale: string): string {
 type StatusFilter = "all" | "pending" | "awaiting_review" | "active" | "hidden";
 
 export default function AdminSuppliersPage() {
-  const { t, locale } = useT();
+  const { t } = useT();
   useDocumentMeta("seo.admin_suppliers_title", "seo.admin_suppliers_description");
+  // Two views share this page: the moderation card list (existing community
+  // moderation flow) and the full directory analytics view (curated +
+  // community merged with visit counters + CSV export).
+  const [view, setView] = useState<"moderation" | "directory">("moderation");
+
+  return (
+    <AppShell>
+      <header className="mb-6">
+        <h1>{t("admin.suppliers_title")}</h1>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.suppliers_sub")}</p>
+        <div className="mt-3">
+          <SegmentedControl
+            ariaLabel={t("admin.suppliers_title")}
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "moderation", label: t("admin.suppliers_view_moderation") },
+              { value: "directory", label: t("admin.suppliers_view_directory") },
+            ]}
+          />
+        </div>
+      </header>
+
+      {view === "directory" ? <SupplierDirectoryView /> : <ModerationView />}
+    </AppShell>
+  );
+}
+
+function ModerationView() {
+  const { t, locale } = useT();
   const confirm = useConfirm();
   const promptEntry = useEntryPrompt();
   const toast = useToast();
@@ -81,6 +112,7 @@ export default function AdminSuppliersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [enriching, setEnriching] = useState<number | null>(null);
 
   useEffect(() => {
     adminSupplierApi
@@ -114,7 +146,7 @@ export default function AdminSuppliersPage() {
   // Reset selection when filter changes — selected ids might no longer be visible.
   useEffect(() => {
     setSelected(new Set());
-  }, [filter]);
+  }, [filter, setSelected]);
 
   function toggleRow(id: number) {
     setSelected((cur) => {
@@ -174,7 +206,6 @@ export default function AdminSuppliersPage() {
     }
   }
 
-  const [enriching, setEnriching] = useState<number | null>(null);
   async function onEnrich(supplier: CommunitySupplierAdminView) {
     setEnriching(supplier.id);
     try {
@@ -266,12 +297,7 @@ export default function AdminSuppliersPage() {
   const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
 
   return (
-    <AppShell>
-      <header className="mb-6">
-        <h1>{t("admin.suppliers_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.suppliers_sub")}</p>
-      </header>
-
+    <>
       {/* Status filter chips. */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -395,7 +421,7 @@ export default function AdminSuppliersPage() {
           ))}
         </div>
       )}
-    </AppShell>
+    </>
   );
 }
 

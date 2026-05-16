@@ -43,6 +43,8 @@ export interface LocaleMessages {
     budget_description: string;
     seating_title: string;
     seating_description: string;
+    logistics_title: string;
+    logistics_description: string;
     planning_title: string;
     planning_description: string;
     admin_suppliers_title: string;
