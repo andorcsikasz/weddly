@@ -1099,6 +1099,7 @@ const en: LocaleMessages = {
     rsvp_offers_accommodation_label: "Offer accommodation in RSVP",
     rsvp_offers_accommodation_help:
       "When enabled, members of this household can flag if they need accommodation when responding.",
+    rsvp_offers_accommodation_short: "Ask for accommodation",
     rsvp_collects_meal_label: "Collect meal choice in RSVP",
     rsvp_collects_meal_help:
       "When enabled, members of this household pick their meal (meat, fish, vegetarian, vegan, child, none) when responding. Turn off for buffet weddings.",

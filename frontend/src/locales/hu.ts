@@ -1102,6 +1102,7 @@ const hu: LocaleMessages = {
     rsvp_offers_accommodation_label: "Szállásajánlat az RSVP-ben",
     rsvp_offers_accommodation_help:
       "Ha bekapcsolod, ennek a háztartásnak a tagjai jelezhetik a válaszadáskor, hogy kérnek-e szállást.",
+    rsvp_offers_accommodation_short: "Szállás kérése",
     rsvp_collects_meal_label: "Menüválasztás az RSVP-ben",
     rsvp_collects_meal_help:
       "Ha bekapcsolod, ennek a háztartásnak a tagjai a válaszadáskor megadhatják a fogásukat (hús, hal, vega, vegán, gyerek, nem kér). Buffé esetén kapcsold ki.",

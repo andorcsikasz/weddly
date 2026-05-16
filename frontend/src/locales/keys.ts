@@ -1213,6 +1213,7 @@ export interface LocaleMessages {
     rsvp_settings_help: string;
     rsvp_offers_accommodation_label: string;
     rsvp_offers_accommodation_help: string;
+    rsvp_offers_accommodation_short: string;
     rsvp_collects_meal_label: string;
     rsvp_collects_meal_help: string;
   };

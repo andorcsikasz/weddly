@@ -15,6 +15,7 @@ import type {
 import {
   Baby,
   Ban,
+  Bed,
   Beef,
   Briefcase,
   Check,
@@ -965,22 +966,6 @@ function HouseholdCard({
             <input
               type="checkbox"
               className="mt-0.5"
-              checked={household.rsvp_offers_accommodation}
-              onChange={(e) =>
-                void onChangeRsvpToggle(household.id, "rsvp_offers_accommodation", e.target.checked)
-              }
-            />
-            <span>
-              <span className="font-medium">{t("guests.rsvp_offers_accommodation_label")}</span>
-              <span className="block text-xs text-ink-500 dark:text-umber-300">
-                {t("guests.rsvp_offers_accommodation_help")}
-              </span>
-            </span>
-          </label>
-          <label className="mt-3 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-100">
-            <input
-              type="checkbox"
-              className="mt-0.5"
               checked={household.rsvp_collects_meal}
               onChange={(e) =>
                 void onChangeRsvpToggle(household.id, "rsvp_collects_meal", e.target.checked)
@@ -992,6 +977,20 @@ function HouseholdCard({
                 {t("guests.rsvp_collects_meal_help")}
               </span>
             </span>
+          </label>
+          <label
+            className="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-ink-600 dark:text-umber-200"
+            title={t("guests.rsvp_offers_accommodation_help")}
+          >
+            <input
+              type="checkbox"
+              checked={household.rsvp_offers_accommodation}
+              onChange={(e) =>
+                void onChangeRsvpToggle(household.id, "rsvp_offers_accommodation", e.target.checked)
+              }
+            />
+            <Bed size={13} aria-hidden />
+            <span>{t("guests.rsvp_offers_accommodation_short")}</span>
           </label>
         </div>
       )}
