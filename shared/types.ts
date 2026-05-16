@@ -411,6 +411,11 @@ export interface Guest {
    *  guest. Strictly stronger than `invited_at` — the 3-state chip cycles
    *  not-invited → invited → delivered. `null` = not delivered yet. */
   invitation_delivered_at: UnixMs | null;
+  /** Logistics: lodging this guest is assigned to. Null = not yet assigned.
+   *  Edited via the /app/logistics drag-and-drop board. */
+  accommodation_id: number | null;
+  /** Logistics: transfer trip this guest is on. Null = not yet assigned. */
+  transfer_id: number | null;
   created_at: UnixMs;
   updated_at: UnixMs;
 }
@@ -621,6 +626,59 @@ export interface SeatingConflict {
   kind: ConflictKind;
   note: string | null;
   created_at: UnixMs;
+}
+
+// ─── Logistics: accommodation + transfer ────────────────────────────────────
+
+/** One bookable lodging unit (a hotel room, apartment, "Mama háza"). Guests
+ *  link via `Guest.accommodation_id`. `capacity` is advisory — the UI surfaces
+ *  overflow as a warning but doesn't block assignment. `price_huf` is the
+ *  total for the unit, not per-guest. */
+export interface Accommodation {
+  id: number;
+  couple_id: number;
+  name: string;
+  address: string | null;
+  capacity: number;
+  price_huf: Huf | null;
+  link: string | null;
+  contact: string | null;
+  notes: string | null;
+  created_at: UnixMs;
+  updated_at: UnixMs;
+}
+
+export interface UpsertAccommodationInput {
+  name: string;
+  address?: string | null;
+  capacity?: number;
+  price_huf?: Huf | null;
+  link?: string | null;
+  contact?: string | null;
+  notes?: string | null;
+}
+
+/** One transfer trip. v1 is "basic": label + free-form direction +
+ *  optional local-time departure + advisory capacity. */
+export interface Transfer {
+  id: number;
+  couple_id: number;
+  label: string;
+  direction: string | null;
+  /** ISO local "YYYY-MM-DDTHH:MM" (no timezone — wedding-local). */
+  depart_at: string | null;
+  capacity: number | null;
+  notes: string | null;
+  created_at: UnixMs;
+  updated_at: UnixMs;
+}
+
+export interface UpsertTransferInput {
+  label: string;
+  direction?: string | null;
+  depart_at?: string | null;
+  capacity?: number | null;
+  notes?: string | null;
 }
 
 // ─── Audit ──────────────────────────────────────────────────────────────────
