@@ -1735,6 +1735,11 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.notify_date_change",
   "couple.dismiss_date_change",
   "couple.onboard",
+  // Multi-workspace surface: showing up in the activity feed when a
+  // second/third event is created or when partner B switches between
+  // them gives both partners a paper trail of "yes Anna spun up Bravo".
+  "couple.create_additional",
+  "user.switch_workspace",
   "couple.export",
   // Loop C₁: per-field splits so partner B sees "Anna changed the budget cap"
   // rather than a generic "frissítette a beállításokat".

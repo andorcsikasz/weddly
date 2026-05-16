@@ -8471,3 +8471,236 @@ describe("loop C₁: audit-log granularity split on couple.update", () => {
     expect(audits[0]!.action).toBe("couple.update");
   });
 });
+
+describe("multi-workspace: Alpha / Bravo / Charlie", () => {
+  test("list + create + switch happy path", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("multi-a@weddly.test");
+
+    // Alpha is the only workspace at first and it's the active one.
+    const list1 = await req<{
+      current_couple_id: number;
+      couples: { couple_id: number; role: string }[];
+    }>("GET", "/api/users/me/couples", undefined, { token });
+    expect(list1.status).toBe(200);
+    expect(list1.data.current_couple_id).toBe(alphaId);
+    expect(list1.data.couples).toHaveLength(1);
+    expect(list1.data.couples[0]!.role).toBe("owner");
+
+    // Create Bravo. The user becomes its owner and `users.couple_id`
+    // auto-switches so the next /current resolves there.
+    const create = await req<{ couple: { id: number; display_name: string } }>(
+      "POST",
+      "/api/couples",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: {
+          kind: "exact",
+          exact_date: "2026-10-10",
+          target_year: 2026,
+          target_month: 10,
+          target_season: null,
+        },
+        guest_count_goal: { kind: "exact", exact: 40, min: null, max: null },
+        budget_goal: { kind: "exact", exact_huf: 2_000_000, min_huf: null, max_huf: null },
+        style_tags: [],
+      },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    const bravoId = create.data.couple.id;
+    expect(bravoId).not.toBe(alphaId);
+
+    // Active pointer is now Bravo.
+    const current = await req<{ couple: { id: number } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(current.data.couple.id).toBe(bravoId);
+
+    // Switch back to Alpha.
+    const switchBack = await req<{ couple: { id: number } }>(
+      "POST",
+      "/api/users/me/active-couple",
+      { couple_id: alphaId },
+      { token },
+    );
+    expect(switchBack.status).toBe(200);
+    expect(switchBack.data.couple.id).toBe(alphaId);
+    const current2 = await req<{ couple: { id: number } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(current2.data.couple.id).toBe(alphaId);
+
+    // Both workspaces are listed.
+    const list2 = await req<{ couples: { couple_id: number }[] }>(
+      "GET",
+      "/api/users/me/couples",
+      undefined,
+      { token },
+    );
+    expect(list2.data.couples.map((c) => c.couple_id).sort((a, b) => a - b)).toEqual(
+      [alphaId, bravoId].sort((a, b) => a - b),
+    );
+  });
+
+  test("create with seed copies guests + households (fresh codes + reset RSVP)", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("multi-seed@weddly.test");
+
+    // Set up a household with two guests on Alpha, both already RSVP'd yes.
+    const hh = await req<{ household: { id: number; code: string } }>(
+      "POST",
+      "/api/households",
+      { label: "Anna's family" },
+      { token },
+    );
+    expect(hh.status).toBe(201);
+    const hhId = hh.data.household.id;
+    const alphaHhCode = hh.data.household.code;
+
+    const g1 = await req<{ guest: { id: number; invite_code: string; rsvp_status: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Aunt Klári", rsvp_status: "yes", household_id: hhId },
+      { token },
+    );
+    const g2 = await req<{ guest: { id: number; invite_code: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Uncle Béla", rsvp_status: "yes", household_id: hhId },
+      { token },
+    );
+    expect(g1.status).toBe(201);
+    expect(g2.status).toBe(201);
+
+    // Create Bravo and ask it to seed BOTH guests + (implicitly) the
+    // household they sit in.
+    const create = await req<{
+      couple: { id: number };
+      seeded: { households_copied: number; guests_copied: number };
+    }>(
+      "POST",
+      "/api/couples",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: { kind: "tbd", exact_date: null, target_year: null, target_month: null, target_season: null },
+        guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
+        budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
+        style_tags: [],
+        seed_from_couple_id: alphaId,
+        seed_guest_ids: [g1.data.guest.id, g2.data.guest.id],
+      },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.seeded.households_copied).toBe(1);
+    expect(create.data.seeded.guests_copied).toBe(2);
+    const bravoId = create.data.couple.id;
+
+    // Read Bravo's guests + household. Fresh ids, fresh invite codes,
+    // RSVP back to 'pending', household-of-the-bride row is also present
+    // (added by ensurePartnerGuests during create).
+    const guests = await req<{ guests: { id: number; full_name: string; invite_code: string; rsvp_status: string }[] }>(
+      "GET",
+      "/api/guests",
+      undefined,
+      { token },
+    );
+    // Bravo is the active workspace, so listGuests returns its guests.
+    const seeded = guests.data.guests.filter((g) =>
+      ["Aunt Klári", "Uncle Béla"].includes(g.full_name),
+    );
+    expect(seeded).toHaveLength(2);
+    for (const g of seeded) {
+      expect(g.rsvp_status).toBe("pending");
+      expect(g.invite_code).not.toBe(g1.data.guest.invite_code);
+      expect(g.invite_code).not.toBe(g2.data.guest.invite_code);
+    }
+
+    const households = await req<{ households: { id: number; code: string; label: string }[] }>(
+      "GET",
+      "/api/households",
+      undefined,
+      { token },
+    );
+    const seededHh = households.data.households.find((h) => h.label === "Anna's family");
+    expect(seededHh).toBeDefined();
+    expect(seededHh!.code).not.toBe(alphaHhCode);
+  });
+
+  test("switch refuses non-member workspace", async () => {
+    wipeAll();
+    const { token: tokenA, coupleId: alphaId } = await bootstrapCouple("multi-deny-a@weddly.test");
+    const { token: tokenB } = await bootstrapCouple("multi-deny-b@weddly.test");
+
+    // User B has never been a member of A's couple — switching MUST 403.
+    const r = await req(
+      "POST",
+      "/api/users/me/active-couple",
+      { couple_id: alphaId },
+      { token: tokenB },
+    );
+    expect(r.status).toBe(403);
+    // And A can still switch to A (idempotent).
+    const r2 = await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token: tokenA });
+    expect(r2.status).toBe(200);
+  });
+
+  test("create caps at 3 workspaces (Alpha + Bravo + Charlie)", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("multi-cap@weddly.test");
+
+    async function spawn(label: string) {
+      return req(
+        "POST",
+        "/api/couples",
+        {
+          bride_name: "A",
+          groom_name: label,
+          wedding_date_goal: { kind: "tbd", exact_date: null, target_year: null, target_month: null, target_season: null },
+          guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
+          budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
+          style_tags: [],
+        },
+        { token },
+      );
+    }
+
+    expect((await spawn("Bravo")).status).toBe(201);
+    expect((await spawn("Charlie")).status).toBe(201);
+    const fourth = await spawn("Delta");
+    expect(fourth.status).toBe(409);
+  });
+
+  test("seeding from non-member couple is forbidden", async () => {
+    wipeAll();
+    const { coupleId: alphaId } = await bootstrapCouple("multi-cross-a@weddly.test");
+    const { token: tokenB } = await bootstrapCouple("multi-cross-b@weddly.test");
+
+    // B tries to seed from A's couple — would be a privacy leak.
+    const r = await req(
+      "POST",
+      "/api/couples",
+      {
+        bride_name: "Bea",
+        groom_name: "Don",
+        wedding_date_goal: { kind: "tbd", exact_date: null, target_year: null, target_month: null, target_season: null },
+        guest_count_goal: { kind: "tbd", exact: null, min: null, max: null },
+        budget_goal: { kind: "tbd", exact_huf: null, min_huf: null, max_huf: null },
+        style_tags: [],
+        seed_from_couple_id: alphaId,
+        seed_guest_ids: [999_999],
+      },
+      { token: tokenB },
+    );
+    expect(r.status).toBe(403);
+  });
+});
