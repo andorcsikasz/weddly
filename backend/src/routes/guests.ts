@@ -180,11 +180,20 @@ function resolveHouseholdForCreate(
   }
   // Either an explicit "new household with label X" intent, or implicit
   // household-of-one named after the guest. The new household is created with
-  // the guest's chosen group_tag.
+  // the guest's chosen group_tag. We tag the implicit case as `auto_created`
+  // so the household tab can optionally hide stub singletons — an explicit
+  // `new_household_label` means the user deliberately created the row and
+  // expects to see it in the household list.
   const labelRaw =
     typeof body.new_household_label === "string" ? body.new_household_label.trim() : "";
+  const autoCreated = labelRaw === "";
   const label = labelRaw || guestName;
-  const created = createHousehold({ couple_id: coupleId, label, group_tag: guestGroupTag });
+  const created = createHousehold({
+    couple_id: coupleId,
+    label,
+    group_tag: guestGroupTag,
+    auto_created: autoCreated,
+  });
   return { id: created.id, group_tag: guestGroupTag };
 }
 

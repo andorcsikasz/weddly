@@ -37,7 +37,7 @@ import {
   writeCostPlanningCount,
 } from "../lib/cost_planning";
 import { budgetApi, coupleApi } from "../lib/endpoints";
-import { formatMoney, formatNumber } from "../lib/format";
+import { formatMoney, formatNumber, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
@@ -103,14 +103,6 @@ function slugifyName(raw: string): string {
     .replace(/[^a-zA-Z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return cleaned.length > 0 ? cleaned : "wedding";
-}
-
-function todayIso(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }
 
 export default function BudgetPage() {

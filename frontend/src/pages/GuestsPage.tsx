@@ -1454,6 +1454,21 @@ function GuestDrawer({
   const { t } = useT();
   const guest = init.guest;
 
+  // Default-collapse the "filled by the guest via RSVP" block for new guests
+  // so the couple doesn't feel obligated to fill in answers that belong to the
+  // guest's own RSVP submission. Expand it automatically when editing an
+  // existing guest who already has any of these fields populated, so the
+  // couple sees what's already there without an extra click.
+  const guestSectionHasData =
+    guest != null &&
+    (guest.rsvp_status !== "pending" ||
+      guest.meal_choice !== null ||
+      (guest.dietary !== null && guest.dietary.trim() !== "") ||
+      guest.accommodation_needed ||
+      (guest.song_request !== null && guest.song_request.trim() !== "") ||
+      (guest.notes !== null && guest.notes.trim() !== ""));
+  const [rsvpSectionExpanded, setRsvpSectionExpanded] = useState(guestSectionHasData);
+
   const [form, setForm] = useState<Partial<Guest>>(
     guest ?? {
       full_name: "",
@@ -1782,119 +1797,139 @@ function GuestDrawer({
               household) vs "the guest's own answers" (below: RSVP, meal,
               dietary, etc.) — the couple can pre-fill these too, but the
               public RSVP form is the canonical author. */}
-          <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          <button
+            type="button"
+            onClick={() => setRsvpSectionExpanded((v) => !v)}
+            aria-expanded={rsvpSectionExpanded}
+            aria-controls="guest-section-by-rsvp"
+            className="my-4 flex w-full items-center gap-3 text-xs uppercase tracking-wider text-ink-500 transition-colors hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+          >
             <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-            <span>{t("guests.guest_section_divider")}</span>
+            <span className="inline-flex items-center gap-1.5">
+              {t("guests.guest_section_divider")}
+              <ChevronDown
+                size={14}
+                aria-hidden
+                className={
+                  rsvpSectionExpanded ? "transition-transform" : "-rotate-90 transition-transform"
+                }
+              />
+            </span>
             <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-          </div>
+          </button>
 
-          <div className="mb-3">
-            <label className="field-label">{t("guests.rsvp")}</label>
-            <div className="grid grid-cols-4 gap-2">
-              {RSVPS.map((s) => (
-                <SegmentButton
-                  key={s}
-                  active={(form.rsvp_status ?? "pending") === s}
-                  onClick={() => setForm({ ...form, rsvp_status: s })}
-                  icon={<RsvpGlyph status={s} />}
-                  label={t(`guests.rsvp_${s}`)}
-                  compact
+          {rsvpSectionExpanded && (
+            <div id="guest-section-by-rsvp">
+              <div className="mb-3">
+                <label className="field-label">{t("guests.rsvp")}</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {RSVPS.map((s) => (
+                    <SegmentButton
+                      key={s}
+                      active={(form.rsvp_status ?? "pending") === s}
+                      onClick={() => setForm({ ...form, rsvp_status: s })}
+                      icon={<RsvpGlyph status={s} />}
+                      label={t(`guests.rsvp_${s}`)}
+                      compact
+                      tone={s}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="field-label">{t("guests.meal")}</label>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                  {MEALS.map((m) => (
+                    <SegmentButton
+                      key={m}
+                      active={form.meal_choice === m}
+                      // Re-clicking the active option clears it so the user can
+                      // return to "no preference" without a dedicated null button.
+                      onClick={() =>
+                        setForm({ ...form, meal_choice: form.meal_choice === m ? null : m })
+                      }
+                      icon={<MealIcon meal={m} />}
+                      label={t(`guests.meal_${m}`)}
+                      compact
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="field-label">{t("guests.allergies")}</label>
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  <DietaryChip
+                    on={dietaryTags.has("milk_protein")}
+                    onClick={() => toggleSetMember(setDietaryTags, "milk_protein")}
+                    icon={<Milk size={14} aria-hidden />}
+                    label={t("rsvp.tag_milk_protein")}
+                  />
+                  <DietaryChip
+                    on={dietaryTags.has("lactose")}
+                    onClick={() => toggleSetMember(setDietaryTags, "lactose")}
+                    icon={<Droplets size={14} aria-hidden />}
+                    label={t("rsvp.tag_lactose")}
+                  />
+                  <DietaryChip
+                    on={dietaryTags.has("gluten")}
+                    onClick={() => toggleSetMember(setDietaryTags, "gluten")}
+                    icon={<Wheat size={14} aria-hidden />}
+                    label={t("rsvp.tag_gluten")}
+                  />
+                  <DietaryChip
+                    on={dietaryTags.has("nut")}
+                    onClick={() => toggleSetMember(setDietaryTags, "nut")}
+                    icon={<Nut size={14} aria-hidden />}
+                    label={t("rsvp.tag_nut")}
+                  />
+                  <DietaryChip
+                    on={dietaryTags.has("egg")}
+                    onClick={() => toggleSetMember(setDietaryTags, "egg")}
+                    icon={<Egg size={14} aria-hidden />}
+                    label={t("rsvp.tag_egg")}
+                  />
+                  <DietaryChip
+                    on={dietaryTags.has("fish_shellfish")}
+                    onClick={() => toggleSetMember(setDietaryTags, "fish_shellfish")}
+                    icon={<Shell size={14} aria-hidden />}
+                    label={t("rsvp.tag_fish_shellfish")}
+                  />
+                </div>
+                <input
+                  className="input"
+                  type="text"
+                  value={dietaryFree}
+                  onChange={(e) => setDietaryFree(e.target.value)}
+                  placeholder={t("guests.allergies_placeholder")}
                 />
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div className="mb-3">
-            <label className="field-label">{t("guests.meal")}</label>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {MEALS.map((m) => (
-                <SegmentButton
-                  key={m}
-                  active={form.meal_choice === m}
-                  // Re-clicking the active option clears it so the user can
-                  // return to "no preference" without a dedicated null button.
-                  onClick={() =>
-                    setForm({ ...form, meal_choice: form.meal_choice === m ? null : m })
-                  }
-                  icon={<MealIcon meal={m} />}
-                  label={t(`guests.meal_${m}`)}
-                  compact
-                />
-              ))}
-            </div>
-          </div>
+              {couple?.rsvp_offers_accommodation && (
+                <label className="mb-3 flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(form.accommodation_needed)}
+                    onChange={(e) => setForm({ ...form, accommodation_needed: e.target.checked })}
+                  />
+                  {t("guests.accommodation")}
+                </label>
+              )}
 
-          <div className="mb-3">
-            <label className="field-label">{t("guests.allergies")}</label>
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              <DietaryChip
-                on={dietaryTags.has("milk_protein")}
-                onClick={() => toggleSetMember(setDietaryTags, "milk_protein")}
-                icon={<Milk size={14} aria-hidden />}
-                label={t("rsvp.tag_milk_protein")}
-              />
-              <DietaryChip
-                on={dietaryTags.has("lactose")}
-                onClick={() => toggleSetMember(setDietaryTags, "lactose")}
-                icon={<Droplets size={14} aria-hidden />}
-                label={t("rsvp.tag_lactose")}
-              />
-              <DietaryChip
-                on={dietaryTags.has("gluten")}
-                onClick={() => toggleSetMember(setDietaryTags, "gluten")}
-                icon={<Wheat size={14} aria-hidden />}
-                label={t("rsvp.tag_gluten")}
-              />
-              <DietaryChip
-                on={dietaryTags.has("nut")}
-                onClick={() => toggleSetMember(setDietaryTags, "nut")}
-                icon={<Nut size={14} aria-hidden />}
-                label={t("rsvp.tag_nut")}
-              />
-              <DietaryChip
-                on={dietaryTags.has("egg")}
-                onClick={() => toggleSetMember(setDietaryTags, "egg")}
-                icon={<Egg size={14} aria-hidden />}
-                label={t("rsvp.tag_egg")}
-              />
-              <DietaryChip
-                on={dietaryTags.has("fish_shellfish")}
-                onClick={() => toggleSetMember(setDietaryTags, "fish_shellfish")}
-                icon={<Shell size={14} aria-hidden />}
-                label={t("rsvp.tag_fish_shellfish")}
+              <div className="mb-3">
+                <label className="field-label">{t("guests.song_request")}</label>
+                <SongRequestList entries={songs} onChange={setSongs} />
+              </div>
+
+              <Field
+                label={t("guests.notes")}
+                value={form.notes ?? ""}
+                onChange={(v) => setForm({ ...form, notes: v || null })}
+                textarea
               />
             </div>
-            <input
-              className="input"
-              type="text"
-              value={dietaryFree}
-              onChange={(e) => setDietaryFree(e.target.value)}
-              placeholder={t("guests.allergies_placeholder")}
-            />
-          </div>
-
-          {couple?.rsvp_offers_accommodation && (
-            <label className="mb-3 flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
-              <input
-                type="checkbox"
-                checked={Boolean(form.accommodation_needed)}
-                onChange={(e) => setForm({ ...form, accommodation_needed: e.target.checked })}
-              />
-              {t("guests.accommodation")}
-            </label>
           )}
-
-          <div className="mb-3">
-            <label className="field-label">{t("guests.song_request")}</label>
-            <SongRequestList entries={songs} onChange={setSongs} />
-          </div>
-
-          <Field
-            label={t("guests.notes")}
-            value={form.notes ?? ""}
-            onChange={(v) => setForm({ ...form, notes: v || null })}
-            textarea
-          />
 
           {error && <p className="field-error">{error}</p>}
         </div>
@@ -1958,6 +1993,34 @@ function Field({
 // rsvp / meal so the drawer reads consistently — only the icon + label
 // change. `compact` switches the padding & font for narrow chips like the
 // 4-up RSVP row.
+/** Optional semantic tint for option buttons. RSVP states get one each so
+ *  the four buttons are distinguishable at a glance even when none is the
+ *  selected one — the glyphs already disambiguate for colour-deficient
+ *  users, so the tint is additive information, not the sole signal. */
+type SegmentTone = "default" | "yes" | "no" | "maybe" | "pending";
+
+const SEGMENT_TONE_ACTIVE: Record<SegmentTone, string> = {
+  default:
+    "border-2 border-ink-700 bg-ink-700 font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900",
+  yes: "border-2 border-emerald-600 bg-emerald-600 font-medium text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-umber-900",
+  no: "border-2 border-rose-700 bg-rose-700 font-medium text-white dark:border-rose-400 dark:bg-rose-500 dark:text-umber-900",
+  maybe:
+    "border-2 border-slate-600 bg-slate-600 font-medium text-white dark:border-slate-400 dark:bg-slate-400 dark:text-umber-900",
+  pending:
+    "border-2 border-amber-600 bg-amber-500 font-medium text-umber-900 dark:border-amber-400 dark:bg-amber-400 dark:text-umber-900",
+};
+
+const SEGMENT_TONE_IDLE: Record<SegmentTone, string> = {
+  default:
+    "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600",
+  yes: "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:border-emerald-500 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:border-emerald-400/70",
+  no: "border border-rose-300 bg-rose-50 text-rose-800 hover:border-rose-500 dark:border-rose-400/40 dark:bg-rose-400/10 dark:text-rose-300 dark:hover:border-rose-400/70",
+  maybe:
+    "border border-slate-300 bg-slate-50 text-slate-700 hover:border-slate-500 dark:border-slate-400/40 dark:bg-slate-400/10 dark:text-slate-300 dark:hover:border-slate-400/70",
+  pending:
+    "border border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-500 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:border-amber-400/70",
+};
+
 function SegmentButton({
   active,
   onClick,
@@ -1966,6 +2029,7 @@ function SegmentButton({
   disabled,
   compact,
   iconOnly,
+  tone = "default",
 }: {
   active: boolean;
   onClick: () => void;
@@ -1977,12 +2041,11 @@ function SegmentButton({
    *  by the group-tag picker where 7 options would never fit horizontally
    *  with text on mobile. */
   iconOnly?: boolean;
+  tone?: SegmentTone;
 }) {
   const pad = iconOnly ? "px-2 py-2" : compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm";
   const base = `flex items-center justify-center gap-1.5 rounded-xl ${pad} transition-colors`;
-  const tone = active
-    ? "border-2 border-ink-700 bg-ink-700 font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-    : "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600";
+  const toneCls = active ? SEGMENT_TONE_ACTIVE[tone] : SEGMENT_TONE_IDLE[tone];
   return (
     <button
       type="button"
@@ -1991,7 +2054,7 @@ function SegmentButton({
       aria-pressed={active}
       aria-label={iconOnly ? label : undefined}
       title={iconOnly ? label : undefined}
-      className={`${base} ${tone} disabled:cursor-not-allowed disabled:opacity-50`}
+      className={`${base} ${toneCls} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {icon}
       {!iconOnly && <span className="truncate">{label}</span>}
@@ -2148,6 +2211,21 @@ function makeSongKey(): string {
   return `s_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Collapse a doubled protocol prefix in a pasted URL. The link input is
+ *  pre-seeded with "https://" when the user clicks the chain icon, so pasting
+ *  a full URL ("https://www.youtube.com/...") used to produce
+ *  "https://https://www.youtube.com/...". Match two or more consecutive
+ *  http(s):// prefixes and keep only the LAST one — that way pasting an
+ *  `http://...` URL into a `https://`-seeded field correctly downgrades to
+ *  the user's intended protocol. Partial typing like "https://h" is left
+ *  alone (regex requires two FULL prefixes). */
+function normalizeSongUrl(raw: string): string {
+  return raw.replace(/^(?:https?:\/\/){2,}/i, (m) => {
+    const matches = m.match(/https?:\/\//gi);
+    return matches ? (matches[matches.length - 1] as string) : m;
+  });
+}
+
 function SongRequestList({
   entries,
   onChange,
@@ -2233,7 +2311,7 @@ function SongRequestList({
                   className="input flex-1 border-0 bg-transparent px-1 py-1 font-mono text-xs focus:ring-0"
                   type="url"
                   value={row.url}
-                  onChange={(e) => update(i, { url: e.target.value })}
+                  onChange={(e) => update(i, { url: normalizeSongUrl(e.target.value) })}
                   placeholder="https://"
                 />
               </div>

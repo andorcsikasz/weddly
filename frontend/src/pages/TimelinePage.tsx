@@ -31,9 +31,10 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
-import { Skeleton, useToast } from "../components/ui";
+import { type SegmentedOption, SegmentedControl, Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
+import { maxIsoDate, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -134,6 +135,36 @@ function startOfWeekMon(d: Date): Date {
   return addDays(startOfDay(d), -dow);
 }
 
+function startOfQuarter(d: Date): Date {
+  const q = Math.floor(d.getMonth() / 3);
+  return new Date(d.getFullYear(), q * 3, 1);
+}
+
+function startOfNextQuarter(d: Date): Date {
+  const q = Math.floor(d.getMonth() / 3);
+  return new Date(d.getFullYear(), q * 3 + 3, 1);
+}
+
+function startOfHalf(d: Date): Date {
+  const h = Math.floor(d.getMonth() / 6);
+  return new Date(d.getFullYear(), h * 6, 1);
+}
+
+function startOfNextHalf(d: Date): Date {
+  const h = Math.floor(d.getMonth() / 6);
+  return new Date(d.getFullYear(), h * 6 + 6, 1);
+}
+
+type ChartMode = "week" | "month" | "quarter" | "half";
+
+const CHART_MODE_STORAGE_KEY = "weddly.timeline.mode";
+
+function readStoredMode(): ChartMode | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(CHART_MODE_STORAGE_KEY);
+  return raw === "week" || raw === "month" || raw === "quarter" || raw === "half" ? raw : null;
+}
+
 export default function TimelinePage() {
   const { t, locale } = useT();
   useDocumentMeta("timeline.seo_title", "timeline.seo_description");
@@ -145,6 +176,13 @@ export default function TimelinePage() {
   const [picks, setPicks] = useState<CouplePick[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<PlanningItem | null>(null);
+  const [chartMode, setChartMode] = useState<ChartMode>(() => readStoredMode() ?? "month");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(CHART_MODE_STORAGE_KEY, chartMode);
+    }
+  }, [chartMode]);
 
   useEffect(() => {
     Promise.all([planningApi.list(), supplierApi.list(), coupleSupplierApi.list(), picksApi.list()])
@@ -251,6 +289,8 @@ export default function TimelinePage() {
           loading={loading}
           tasks={datedTasks}
           supplierById={supplierById}
+          mode={chartMode}
+          onModeChange={setChartMode}
           onOpenTask={(item) => setEditing(item)}
           onSupplierChipClick={scrollToPoc}
         />
@@ -399,8 +439,7 @@ interface ChartGeometry {
   start: Date;
   end: Date;
   totalDays: number;
-  /** "week" → ~24px per day, ~168px per week column; "month" → derived from totalDays. */
-  mode: "week" | "month";
+  mode: ChartMode;
   /** Width of one day in px — drives bar layout + min-width so horizontal
    *  scroll on mobile keeps the bars at a tappable density. */
   dayWidth: number;
@@ -408,7 +447,20 @@ interface ChartGeometry {
   ticks: { date: Date; label: string }[];
 }
 
-function buildGeometry(tasks: PlanningItem[], locale: "hu" | "en"): ChartGeometry | null {
+/** Pixels per day at each zoom level. Tuned so a typical 1-row task stays
+ *  comfortably wide while a year-long plan remains scroll-friendly. */
+const DAY_WIDTH: Record<ChartMode, number> = {
+  week: 24,
+  month: 7,
+  quarter: 2.5,
+  half: 1.25,
+};
+
+function buildGeometry(
+  tasks: PlanningItem[],
+  locale: "hu" | "en",
+  mode: ChartMode,
+): ChartGeometry | null {
   const dates: Date[] = [];
   for (const t of tasks) {
     const s = parseISODate(t.start_date);
@@ -424,37 +476,52 @@ function buildGeometry(tasks: PlanningItem[], locale: "hu" | "en"): ChartGeometr
     if (d < minD) minD = d;
     if (d > maxD) maxD = d;
   }
-  // Snap outward to month boundaries so the axis tick labels land cleanly.
-  const start = startOfMonth(minD);
-  const end = addDays(startOfNextMonth(maxD), -1);
+  // Snap outward to the mode's natural boundary so axis ticks land cleanly.
+  let start: Date;
+  let end: Date;
+  if (mode === "half") {
+    start = startOfHalf(minD);
+    end = addDays(startOfNextHalf(maxD), -1);
+  } else if (mode === "quarter") {
+    start = startOfQuarter(minD);
+    end = addDays(startOfNextQuarter(maxD), -1);
+  } else {
+    start = startOfMonth(minD);
+    end = addDays(startOfNextMonth(maxD), -1);
+  }
   const totalDays = diffDays(start, end) + 1;
-  const mode: "week" | "month" = totalDays <= 90 ? "week" : "month";
-  // Day-cell strategy: week mode keeps a chunky 24 px/day (cells stay
-  // tappable on mobile); month mode compresses to 80 px per month so a
-  // year-long plan still fits with horizontal scroll.
-  const dayWidth = mode === "week" ? 24 : Math.max(3, 80 / 30);
+  const dayWidth = DAY_WIDTH[mode];
 
   const ticks: { date: Date; label: string }[] = [];
+  const intl = locale === "hu" ? "hu-HU" : "en-US";
   if (mode === "week") {
     let cur = startOfWeekMon(start);
     if (cur < start) cur = addDays(cur, 7);
-    const monthFmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
-      month: "short",
-      day: "numeric",
-    });
+    const fmt = new Intl.DateTimeFormat(intl, { month: "short", day: "numeric" });
     while (cur <= end) {
-      ticks.push({ date: cur, label: monthFmt.format(cur) });
+      ticks.push({ date: cur, label: fmt.format(cur) });
       cur = addDays(cur, 7);
     }
-  } else {
+  } else if (mode === "month") {
     let cur = startOfMonth(start);
-    const monthFmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
-      month: "short",
-      year: "numeric",
-    });
+    const fmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
     while (cur <= end) {
-      ticks.push({ date: cur, label: monthFmt.format(cur) });
+      ticks.push({ date: cur, label: fmt.format(cur) });
       cur = startOfNextMonth(cur);
+    }
+  } else if (mode === "quarter") {
+    let cur = startOfQuarter(start);
+    const fmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
+    while (cur <= end) {
+      ticks.push({ date: cur, label: fmt.format(cur) });
+      cur = startOfNextQuarter(cur);
+    }
+  } else {
+    let cur = startOfHalf(start);
+    const fmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
+    while (cur <= end) {
+      ticks.push({ date: cur, label: fmt.format(cur) });
+      cur = startOfNextHalf(cur);
     }
   }
 
@@ -465,17 +532,28 @@ function ChartCard({
   loading,
   tasks,
   supplierById,
+  mode,
+  onModeChange,
   onOpenTask,
   onSupplierChipClick,
 }: {
   loading: boolean;
   tasks: PlanningItem[];
   supplierById: Map<string, ResolvedSupplier>;
+  mode: ChartMode;
+  onModeChange: (mode: ChartMode) => void;
   onOpenTask: (item: PlanningItem) => void;
   onSupplierChipClick: (supplierId: string) => void;
 }) {
   const { t, locale } = useT();
-  const geometry = useMemo(() => buildGeometry(tasks, locale), [tasks, locale]);
+  const geometry = useMemo(() => buildGeometry(tasks, locale, mode), [tasks, locale, mode]);
+
+  const modeOptions: ReadonlyArray<SegmentedOption<ChartMode>> = [
+    { value: "week", label: t("timeline.view_week") },
+    { value: "month", label: t("timeline.view_month") },
+    { value: "quarter", label: t("timeline.view_quarter") },
+    { value: "half", label: t("timeline.view_half") },
+  ];
 
   // Sort by start_date so the chart reads top-down chronologically.
   const ordered = useMemo(() => {
@@ -500,10 +578,16 @@ function ChartCard({
 
   return (
     <section className="card p-0">
-      <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
           {t("timeline.chart_title")}
         </h2>
+        <SegmentedControl<ChartMode>
+          ariaLabel={t("timeline.view_aria")}
+          value={mode}
+          options={modeOptions}
+          onChange={onModeChange}
+        />
       </header>
       {loading ? (
         <div className="space-y-2 p-5" aria-hidden="true">
@@ -589,7 +673,9 @@ function GanttRow({
   const clampedEnd = end > geometry.end ? geometry.end : end;
   const left = diffDays(geometry.start, clampedStart) * geometry.dayWidth;
   const widthDays = diffDays(clampedStart, clampedEnd) + 1;
-  const width = Math.max(geometry.dayWidth, widthDays * geometry.dayWidth);
+  // Min bar width keeps short tasks tappable at low-zoom modes where one day
+  // is just 1–3px — otherwise a 1-day item would be invisible.
+  const width = Math.max(24, widthDays * geometry.dayWidth);
 
   const supplier = item.supplier_id ? (supplierById.get(item.supplier_id) ?? null) : null;
   const done = item.done;
@@ -813,8 +899,11 @@ function TimelineEditDialog({
                 ref={initialFocusRef}
                 type="date"
                 value={startDate}
+                min={todayIso()}
                 onChange={(e) => {
-                  setStartDate(e.target.value);
+                  const newStart = e.target.value;
+                  setStartDate(newStart);
+                  if (dueDate && dueDate < newStart) setDueDate(newStart);
                   if (error) setError(null);
                 }}
                 className="input w-full"
@@ -827,6 +916,7 @@ function TimelineEditDialog({
               <input
                 type="date"
                 value={dueDate}
+                min={maxIsoDate(startDate || todayIso(), todayIso())}
                 onChange={(e) => {
                   setDueDate(e.target.value);
                   if (error) setError(null);

@@ -36,7 +36,10 @@ function handleList(ctx: Ctx): Response {
   const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
-  const rows = listHouseholdsByCouple(couple.id);
+  // Opt-in filter so the household tab can hide stub singletons spawned by
+  // name-only guest entries. Defaults to false to keep the legacy contract.
+  const excludeAutoSingletons = ctx.url.searchParams.get("exclude_auto_singletons") === "1";
+  const rows = listHouseholdsByCouple(couple.id, { excludeAutoSingletons });
   const items: Household[] = rows.map((r) =>
     toHousehold(r, listMembers(r.id), {
       brideName: couple.bride_name,

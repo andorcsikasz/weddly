@@ -20,6 +20,11 @@ export interface HouseholdRow {
   label: string;
   notes: string | null;
   group_tag: string;
+  /** 1 when this row was spawned implicitly by `guests.create` (no
+   *  `household_id` and no `new_household_label` on the request body), 0
+   *  when the user deliberately created it via the households route or
+   *  with an explicit `new_household_label`. */
+  auto_created: number;
   created_at: number;
   updated_at: number;
 }
@@ -40,15 +45,31 @@ export function getHouseholdByCoupleAndCode(coupleId: number, code: string): Hou
   );
 }
 
-export function listHouseholdsByCouple(coupleId: number): HouseholdRow[] {
+export function listHouseholdsByCouple(
+  coupleId: number,
+  opts: { excludeAutoSingletons?: boolean } = {},
+): HouseholdRow[] {
   // Host household (the bride + groom's own dedicated 2-person home) always
   // sorts to the top of /app/guests. Everything else falls back to creation
   // order so existing arrangements stay stable.
+  //
+  // `excludeAutoSingletons` hides households that were spawned implicitly
+  // (`auto_created = 1`) and still contain a single member — the typical
+  // "user typed a guest name, a stub household tagged along" case. We keep
+  // the row visible the moment a second guest joins, since at that point it
+  // represents a real party, just one that was bootstrapped from a name.
+  const filter = opts.excludeAutoSingletons
+    ? `AND NOT (
+         h.auto_created = 1
+         AND (SELECT COUNT(*) FROM guests g WHERE g.household_id = h.id) <= 1
+       )`
+    : "";
   return db
     .prepare(
       `SELECT h.*
          FROM households h
         WHERE h.couple_id = ?
+        ${filter}
         ORDER BY (
           CASE WHEN EXISTS (
             SELECT 1 FROM guests g
@@ -81,15 +102,29 @@ export function createHousehold(input: {
   label: string;
   notes?: string | null;
   group_tag?: GuestGroupTag;
+  /** Caller's intent indicator. `guests.create` passes true when spawning
+   *  an implicit household-of-one for a name-only guest entry; the
+   *  households CRUD route + explicit `new_household_label` paths pass
+   *  false (or omit, defaulting false). */
+  auto_created?: boolean;
 }): HouseholdRow {
   const ts = now();
   const code = uniqueHouseholdCode(input.couple_id);
   const groupTag: GuestGroupTag = input.group_tag ?? "other";
   const result = db
     .prepare(
-      "INSERT INTO households (couple_id, code, label, notes, group_tag, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
-    .run(input.couple_id, code, input.label, input.notes ?? null, groupTag, ts, ts);
+    .run(
+      input.couple_id,
+      code,
+      input.label,
+      input.notes ?? null,
+      groupTag,
+      input.auto_created ? 1 : 0,
+      ts,
+      ts,
+    );
   const id = Number(result.lastInsertRowid);
   const row = getHouseholdById(id, input.couple_id);
   if (!row) throw new Error("createHousehold: insert succeeded but row missing");
@@ -150,6 +185,7 @@ export function toHousehold(
     member_ids: members.map((m) => m.id),
     group_tag: isGuestGroupTag(row.group_tag) ? row.group_tag : "other",
     is_couple_household: isCouple,
+    auto_created: row.auto_created === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

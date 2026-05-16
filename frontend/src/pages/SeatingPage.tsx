@@ -16,6 +16,7 @@ import {
   Crown,
   HelpCircle,
   LayoutGrid,
+  Link2,
   Minus,
   Pencil,
   Plus,
@@ -25,6 +26,7 @@ import {
   Square,
   Trash2,
   Undo2,
+  Unlink2,
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
@@ -39,7 +41,14 @@ import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 const SHAPES: TableShape[] = ["round", "long", "square", "head"];
 
 interface DragData {
+  /** Primary guest being dragged — also the head of a linked-household
+   *  drag, in which case `guestIds` lists every member that should be
+   *  placed (including this one) in seat order from the drop target. */
   guestId: number;
+  /** Set when a *linked* household member is dragged. Drop handlers walk
+   *  forward from the target seat and place each id in the next free seat,
+   *  skipping occupied ones. When absent the drop is a single-guest move. */
+  guestIds?: number[];
 }
 
 interface PdfPreview {
@@ -88,6 +97,14 @@ export default function SeatingPage() {
   const [coarsePointer, setCoarsePointer] = useState(false);
   const [tapModeUser, setTapModeUser] = useState(false);
   const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
+  // Tap-mode group selection: when set, a whole household is the active
+  // "drop payload" and the next seat tap fills consecutive seats with all
+  // its unassigned members. Mutually exclusive with selectedGuestId.
+  const [selectedHouseholdId, setSelectedHouseholdId] = useState<number | null>(null);
+  // Per-session unlink toggle. Linked-by-default households (multi-member)
+  // whose id appears here render flat in the unassigned panel so each
+  // member can be placed individually. Reset on page reload.
+  const [unlinkedHouseholds, setUnlinkedHouseholds] = useState<Set<number>>(new Set());
   const tapMode = coarsePointer || tapModeUser;
   // Undo stack. Bounded by UNDO_STACK_LIMIT — we drop the oldest action when
   // it overflows so the stack stays small and predictable.
@@ -225,6 +242,38 @@ export default function SeatingPage() {
     () => guests.filter((g) => !seatedIds.has(g.id) && partnerRole(g) === null),
     [guests, seatedIds, partnerRole],
   );
+  // Build the render order for the unassigned panel: a household with 2+
+  // unassigned members (and not unlinked this session) becomes a single
+  // group card; everyone else falls through as a flat row. Order matches
+  // first-appearance in the unassigned array so a guest's slot doesn't
+  // jump around when their household card collapses.
+  type UnassignedEntry =
+    | { kind: "single"; guest: Guest }
+    | { kind: "household"; householdId: number; guests: Guest[] };
+  const unassignedEntries = useMemo<UnassignedEntry[]>(() => {
+    const byHousehold = new Map<number, Guest[]>();
+    for (const g of unassigned) {
+      if (g.household_id == null) continue;
+      const arr = byHousehold.get(g.household_id) ?? [];
+      arr.push(g);
+      byHousehold.set(g.household_id, arr);
+    }
+    const emitted = new Set<number>();
+    const out: UnassignedEntry[] = [];
+    for (const g of unassigned) {
+      const hid = g.household_id;
+      if (hid != null && !emitted.has(hid)) {
+        const siblings = byHousehold.get(hid) ?? [];
+        if (siblings.length >= 2 && !unlinkedHouseholds.has(hid)) {
+          out.push({ kind: "household", householdId: hid, guests: siblings });
+          emitted.add(hid);
+          continue;
+        }
+      }
+      out.push({ kind: "single", guest: g });
+    }
+    return out;
+  }, [unassigned, unlinkedHouseholds]);
   // Per-table set of seat indices currently occupied by a baby guest. The
   // canvas chair render reads this to overlay a Baby icon — different from
   // the baby_seats flag (which marks a chair as "needs a high-chair"
@@ -510,6 +559,98 @@ export default function SeatingPage() {
     [findAssignmentAtSeat, findAssignmentForGuest, guestById, assignGuest],
   );
 
+  // Linked-household batch placement. Walks forward from the target seat
+  // (and wraps to the start of the same table if needed) placing each id
+  // in the next FREE seat. Skips occupied ones rather than swapping —
+  // a swap would yank an unrelated guest off the table, surprising the
+  // user. If we run out of free seats before placing everyone, the
+  // overflow stays in unassigned and a toast reports the partial result.
+  // The whole batch shares ONE undo entry so Cmd-Z restores all members.
+  const placeHouseholdAtSeat = useCallback(
+    async (tableId: number, startSeatIndex: number, guestIds: number[]) => {
+      const table = tables.find((tb) => tb.id === tableId);
+      if (!table || guestIds.length === 0) return;
+      // Snapshot prior assignments so the batch undo can reverse them all
+      // at once instead of relying on individual per-guest undo entries.
+      const priors = new Map<number, SeatAssignment | null>();
+      for (const id of guestIds) priors.set(id, findAssignmentForGuest(id));
+      // Build the seat-order ring starting at startSeatIndex.
+      const ring: number[] = [];
+      for (let k = 0; k < table.seats; k++) ring.push((startSeatIndex + k) % table.seats);
+      // Resolve target seats. Track occupancy from a live mutable copy
+      // since each placement claims a seat for subsequent ones.
+      const occupiedNow = new Set<number>();
+      for (const a of assignments) {
+        if (a.table_id !== tableId) continue;
+        // A member that's already on this table can vacate its seat for the
+        // batch — we'll reassign it via the placement below.
+        if (guestIds.includes(a.guest_id)) continue;
+        occupiedNow.add(a.seat_index);
+      }
+      const placements: { guestId: number; seatIndex: number }[] = [];
+      let cursor = 0;
+      for (const id of guestIds) {
+        while (cursor < ring.length && occupiedNow.has(ring[cursor]!)) cursor++;
+        if (cursor >= ring.length) break;
+        placements.push({ guestId: id, seatIndex: ring[cursor]! });
+        occupiedNow.add(ring[cursor]!);
+        cursor++;
+      }
+      if (placements.length === 0) {
+        toast.error(t("seating.household_no_room"));
+        return;
+      }
+      try {
+        for (const p of placements) {
+          await seatingApi.assign({
+            table_id: tableId,
+            seat_index: p.seatIndex,
+            guest_id: p.guestId,
+          });
+        }
+      } catch {
+        toast.error(t("seating.save_failed"));
+        await refresh();
+        return;
+      }
+      pushUndo({
+        label: t("seating.undo_label"),
+        undo: async () => {
+          // Reverse in opposite order so each seat is freed before the
+          // next id is restored (avoids transient conflicts on the wire).
+          for (const p of [...placements].reverse()) {
+            const prev = priors.get(p.guestId);
+            if (prev) {
+              await seatingApi.assign({
+                table_id: prev.table_id,
+                seat_index: prev.seat_index,
+                guest_id: p.guestId,
+              });
+            } else {
+              await seatingApi.unassign(p.guestId);
+            }
+          }
+        },
+      });
+      if (placements.length < guestIds.length) {
+        toast.success(
+          t("seating.household_placed_partial")
+            .replace("{n}", String(placements.length))
+            .replace("{m}", String(guestIds.length)),
+        );
+      } else {
+        announceUndoable(
+          t("seating.household_placed_all")
+            .replace("{n}", String(placements.length))
+            .replace("{table}", table.label),
+        );
+      }
+      publish("seating:changed");
+      await refresh();
+    },
+    [tables, assignments, findAssignmentForGuest, pushUndo, announceUndoable, t, toast],
+  );
+
   async function addTable() {
     // Auto-name: scan existing labels for "<prefix> <n>" matches and pick
     // max(n)+1. Falls back to tables.length+1 if no numbered labels exist.
@@ -776,6 +917,13 @@ export default function SeatingPage() {
     e.preventDefault();
     const data = readDragData(e);
     if (!data) return;
+    // Linked-household drop: place the whole party consecutively from the
+    // target seat. Single-guest drops fall through to the conflict-aware
+    // requestAssign path.
+    if (data.guestIds && data.guestIds.length > 1) {
+      await placeHouseholdAtSeat(tableId, seatIndex, data.guestIds);
+      return;
+    }
     await requestAssign(tableId, seatIndex, data.guestId);
   }
 
@@ -783,7 +931,12 @@ export default function SeatingPage() {
     e.preventDefault();
     const data = readDragData(e);
     if (!data) return;
-    await unassignGuest(data.guestId);
+    // Linked-household drop on the unassigned panel unseat every member at
+    // once. Single-guest drop unseats just that guest.
+    const ids = data.guestIds && data.guestIds.length > 0 ? data.guestIds : [data.guestId];
+    for (const id of ids) {
+      await unassignGuest(id, { silentUndo: true });
+    }
   }
 
   // Two-step download: fetch the PDF, show it in an in-page preview dialog,
@@ -868,12 +1021,29 @@ export default function SeatingPage() {
   }
 
   // Tap-to-place handlers ────────────────────────────────────────────────────
+  // Tapping a single guest tile clears any household selection (and vice
+  // versa) — only one payload is "armed" at a time so the next seat tap is
+  // unambiguous.
   const handleTapGuest = useCallback((guest: Guest) => {
+    setSelectedHouseholdId(null);
     setSelectedGuestId((cur) => (cur === guest.id ? null : guest.id));
+  }, []);
+
+  const handleTapHousehold = useCallback((householdId: number) => {
+    setSelectedGuestId(null);
+    setSelectedHouseholdId((cur) => (cur === householdId ? null : householdId));
   }, []);
 
   const handleTapSeat = useCallback(
     async (tableId: number, seatIndex: number) => {
+      if (selectedHouseholdId !== null) {
+        const ids = unassigned
+          .filter((g) => g.household_id === selectedHouseholdId)
+          .map((g) => g.id);
+        setSelectedHouseholdId(null);
+        if (ids.length > 0) await placeHouseholdAtSeat(tableId, seatIndex, ids);
+        return;
+      }
       if (selectedGuestId === null) {
         // No guest selected — second-tap on an occupied seat selects that
         // guest so the user can move them with a single follow-up tap.
@@ -885,7 +1055,14 @@ export default function SeatingPage() {
       setSelectedGuestId(null);
       await requestAssign(tableId, seatIndex, guestId);
     },
-    [selectedGuestId, findAssignmentAtSeat, requestAssign],
+    [
+      selectedGuestId,
+      selectedHouseholdId,
+      unassigned,
+      findAssignmentAtSeat,
+      requestAssign,
+      placeHouseholdAtSeat,
+    ],
   );
 
   // Global keyboard handlers: Cmd/Ctrl+Z undo, Shift+Cmd/Ctrl+Z reserved for
@@ -1204,17 +1381,60 @@ export default function SeatingPage() {
                   </li>
                 ),
               )}
-              {unassigned.map((g) => (
-                <li key={g.id}>
-                  <DraggableGuest
-                    guest={g}
-                    tapMode={tapMode}
-                    selected={selectedGuestId === g.id}
-                    onTap={handleTapGuest}
-                    partnerRole={partnerRole(g)}
-                  />
-                </li>
-              ))}
+              {unassignedEntries.map((entry) =>
+                entry.kind === "household" ? (
+                  <li key={`h${entry.householdId}`}>
+                    <HouseholdGroup
+                      householdId={entry.householdId}
+                      guests={entry.guests}
+                      tapMode={tapMode}
+                      selected={selectedHouseholdId === entry.householdId}
+                      onTap={handleTapHousehold}
+                      onUnlink={(id) =>
+                        setUnlinkedHouseholds((prev) => {
+                          const next = new Set(prev);
+                          next.add(id);
+                          return next;
+                        })
+                      }
+                      unlinkLabel={t("seating.household_unlink")}
+                      ariaLabel={t("seating.household_linked_aria").replace(
+                        "{n}",
+                        String(entry.guests.length),
+                      )}
+                    />
+                  </li>
+                ) : (
+                  <li key={entry.guest.id}>
+                    <DraggableGuest
+                      guest={entry.guest}
+                      tapMode={tapMode}
+                      selected={selectedGuestId === entry.guest.id}
+                      onTap={handleTapGuest}
+                      partnerRole={partnerRole(entry.guest)}
+                      // Re-link affordance for previously-unlinked households:
+                      // any solo row whose household has >= 2 unassigned
+                      // members and was unlinked this session shows the icon.
+                      relinkable={
+                        entry.guest.household_id != null &&
+                        unlinkedHouseholds.has(entry.guest.household_id) &&
+                        unassigned.filter((g) => g.household_id === entry.guest.household_id)
+                          .length >= 2
+                      }
+                      onRelink={() =>
+                        entry.guest.household_id != null &&
+                        setUnlinkedHouseholds((prev) => {
+                          if (!prev.has(entry.guest.household_id!)) return prev;
+                          const next = new Set(prev);
+                          next.delete(entry.guest.household_id!);
+                          return next;
+                        })
+                      }
+                      relinkLabel={t("seating.household_relink")}
+                    />
+                  </li>
+                ),
+              )}
             </ul>
           )}
         </aside>
@@ -2234,6 +2454,10 @@ function DraggableGuest({
   selected,
   onTap,
   partnerRole,
+  groupIds,
+  relinkable,
+  onRelink,
+  relinkLabel,
 }: {
   guest: Guest;
   compact?: boolean;
@@ -2244,9 +2468,20 @@ function DraggableGuest({
   onTap?: (guest: Guest) => void;
   /** Pin a Crown icon next to bride / groom matches in the unassigned list. */
   partnerRole?: "bride" | "groom" | null;
+  /** When provided, the drag payload includes every id in this array so a
+   *  drop on a seat fills consecutive seats with the whole household. */
+  groupIds?: number[];
+  /** True when this single row belongs to a household the user previously
+   *  unlinked this session — we show a small Link2 affordance to undo it. */
+  relinkable?: boolean;
+  onRelink?: () => void;
+  relinkLabel?: string;
 }) {
   function onDragStart(e: DragEvent) {
-    const data: DragData = { guestId: guest.id };
+    const data: DragData =
+      groupIds && groupIds.length > 1
+        ? { guestId: guest.id, guestIds: groupIds }
+        : { guestId: guest.id };
     e.dataTransfer.setData("application/x-weddly-guest", JSON.stringify(data));
     e.dataTransfer.effectAllowed = "move";
     onDragStartCb?.();
@@ -2313,6 +2548,109 @@ function DraggableGuest({
         />
       )}
       {guest.full_name}
+      {relinkable && onRelink && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRelink();
+          }}
+          aria-label={relinkLabel ?? "Re-link household"}
+          title={relinkLabel}
+          className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+        >
+          <Link2 size={12} aria-hidden />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Linked-household card. Renders members stacked with a soft blush rail on
+// the left so the eye reads them as one party. Any member's drag carries
+// the full member-id list — dropping it on a seat fills consecutive seats.
+// Tap-mode: the whole card is the "armed" payload; tapping it selects the
+// group, then tapping a seat places everyone starting there.
+//
+// The top-right Unlink2 icon breaks the visual link AND the joint payload
+// for the rest of the session — useful when a household genuinely wants to
+// sit apart, e.g. a parent at the head table while the rest sit elsewhere.
+function HouseholdGroup({
+  householdId,
+  guests,
+  tapMode,
+  selected,
+  onTap,
+  onUnlink,
+  unlinkLabel,
+  ariaLabel,
+}: {
+  householdId: number;
+  guests: Guest[];
+  tapMode?: boolean;
+  selected?: boolean;
+  onTap: (householdId: number) => void;
+  onUnlink: (householdId: number) => void;
+  unlinkLabel: string;
+  ariaLabel: string;
+}) {
+  const groupIds = guests.map((g) => g.id);
+  return (
+    <div
+      className={`relative rounded-lg border pl-3 pr-2 py-2 transition-colors ${
+        selected
+          ? "border-blush-500 bg-blush-50 ring-2 ring-blush-400 dark:border-blush-400 dark:bg-blush-400/15"
+          : "border-paper-300 bg-paper-50 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+      }`}
+      role="group"
+      aria-label={ariaLabel}
+    >
+      {/* Vertical rail visually connects the members — the whole purpose
+          of the card. blush-400 to feel warm; sits flush to the inner
+          padding edge so individual member rows still get whitespace. */}
+      <span
+        aria-hidden
+        className="absolute left-1.5 top-2 bottom-2 w-0.5 rounded-full bg-blush-400 dark:bg-blush-400/70"
+      />
+      <div className="flex items-start justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => onTap(householdId)}
+          // Tap-mode wants the whole header to behave like a selector.
+          // In drag-mode it's still tappable as a deselect/select toggle,
+          // but the primary affordance is the member rows below (each
+          // of which is independently draggable + carries the group payload).
+          className="-ml-1 inline-flex items-center gap-1 rounded px-1 text-[11px] font-semibold uppercase tracking-wider text-ink-500 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:text-paper-100 dark:focus-visible:ring-umber-300"
+          aria-pressed={selected || undefined}
+        >
+          <Link2 size={12} aria-hidden className="text-blush-600 dark:text-blush-300" />
+          {guests.length}
+        </button>
+        <button
+          type="button"
+          onClick={() => onUnlink(householdId)}
+          aria-label={unlinkLabel}
+          title={unlinkLabel}
+          className="inline-flex h-6 w-6 items-center justify-center rounded text-ink-400 hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100 dark:focus-visible:ring-umber-300"
+        >
+          <Unlink2 size={12} aria-hidden />
+        </button>
+      </div>
+      <ul className="mt-1 space-y-1">
+        {guests.map((g) => (
+          <li key={g.id}>
+            <DraggableGuest
+              guest={g}
+              tapMode={tapMode}
+              // Group selection: every member highlights when the household is
+              // tap-armed so the user can see the whole batch they queued.
+              selected={selected}
+              onTap={() => onTap(householdId)}
+              groupIds={groupIds}
+            />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

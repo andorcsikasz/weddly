@@ -1469,6 +1469,80 @@ describe("households + airport check-in", () => {
     expect(solo.member_ids.length).toBe(1);
   });
 
+  test("auto_created flag + exclude_auto_singletons filter", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("auto-hh@weddly.test");
+
+    // 1. Implicit singleton (name only, no household_id, no new_household_label).
+    //    Should be flagged auto_created = true.
+    await req("POST", "/api/guests", { full_name: "Stub Singleton" }, { token });
+
+    // 2. Explicit household via POST /api/households — deliberate, never auto.
+    await req(
+      "POST",
+      "/api/households",
+      { label: "Smith family", group_tag: "her_family" },
+      { token },
+    );
+
+    // 3. Explicit household-with-label via the guest endpoint — also deliberate.
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Friend One", new_household_label: "Friends" },
+      { token },
+    );
+
+    interface H {
+      id: number;
+      label: string;
+      auto_created: boolean;
+      member_ids: number[];
+    }
+
+    // Default list: all three rows visible, with auto_created reflecting intent.
+    const all = await req<{ households: H[] }>("GET", "/api/households", undefined, { token });
+    expect(all.status).toBe(200);
+    expect(all.data.households.length).toBe(3);
+    const byLabel = new Map(all.data.households.map((h) => [h.label, h]));
+    expect(byLabel.get("Stub Singleton")!.auto_created).toBe(true);
+    expect(byLabel.get("Smith family")!.auto_created).toBe(false);
+    expect(byLabel.get("Friends")!.auto_created).toBe(false);
+
+    // With the filter, the implicit singleton drops out — but only because it
+    // still holds exactly one member. The other two stay.
+    const filtered = await req<{ households: H[] }>(
+      "GET",
+      "/api/households?exclude_auto_singletons=1",
+      undefined,
+      { token },
+    );
+    expect(filtered.status).toBe(200);
+    expect(filtered.data.households.map((h) => h.label).sort()).toEqual(["Friends", "Smith family"]);
+
+    // Move a second guest into the auto-spawned household — the filter must
+    // stop hiding it (it represents a real party now, even though the row was
+    // bootstrapped from a name).
+    const stub = byLabel.get("Stub Singleton")!;
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Plus one", household_id: stub.id },
+      { token },
+    );
+    const refiltered = await req<{ households: H[] }>(
+      "GET",
+      "/api/households?exclude_auto_singletons=1",
+      undefined,
+      { token },
+    );
+    expect(refiltered.data.households.map((h) => h.label).sort()).toEqual([
+      "Friends",
+      "Smith family",
+      "Stub Singleton",
+    ]);
+  });
+
   test("onboarding with bride+groom split seeds them as guests in the couple household", async () => {
     wipeAll();
     const reg = await req<{ token: string }>("POST", "/api/auth/register", {

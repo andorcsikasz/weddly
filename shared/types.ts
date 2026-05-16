@@ -411,6 +411,11 @@ export interface Household {
    *  hides the slug / code / share-link metadata — the hosts don't need to
    *  check themselves in. */
   is_couple_household: boolean;
+  /** True when `guests.create` spawned this household implicitly (no
+   *  `household_id` and no `new_household_label` on the request body).
+   *  Lets the household tab optionally hide stub singletons via
+   *  `GET /api/households?exclude_auto_singletons=1`. */
+  auto_created: boolean;
   created_at: UnixMs;
   updated_at: UnixMs;
 }

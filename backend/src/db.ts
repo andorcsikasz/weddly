@@ -322,6 +322,15 @@ db.exec(`
      AND EXISTS (SELECT 1 FROM guests WHERE household_id = households.id)
 `);
 
+// `auto_created = 1` marks the household-of-one that `guests.create` spawns
+// implicitly when the caller passes no `household_id` and no
+// `new_household_label`. Distinguishes "the user typed a guest name and a
+// stub household tagged along" from "the user deliberately created a
+// household with a label". Lets /api/households?exclude_auto_singletons=1
+// hide the implicit singletons from the household tab. Default 0 so every
+// historical row stays in the visible set.
+addColumnIfMissing("households", "auto_created", "auto_created INTEGER NOT NULL DEFAULT 0");
+
 export function now(): number {
   return Date.now();
 }

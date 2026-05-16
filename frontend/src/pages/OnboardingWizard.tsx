@@ -30,6 +30,7 @@ import {
   formatMoneyRange,
   formatNumber,
   formatWeddingDateGoal,
+  todayIso,
 } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -497,6 +498,7 @@ export default function OnboardingWizard() {
                   <input
                     id="wedding_date"
                     type="date"
+                    min={todayIso()}
                     className="input"
                     value={form.date_exact}
                     onChange={(e) => update("date_exact", e.target.value)}

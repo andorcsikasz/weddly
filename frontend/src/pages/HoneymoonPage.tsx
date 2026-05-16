@@ -34,7 +34,7 @@ import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { budgetApi, coupleApi, honeymoonApi, placesApi } from "../lib/endpoints";
-import { formatMoney } from "../lib/format";
+import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { publish, subscribe } from "../lib/sync";
 
@@ -587,12 +587,15 @@ function DaysTile({
               type="date"
               className="input mt-1 h-9 min-h-0 py-1 text-sm"
               value={draftStart}
+              min={todayIso()}
               onChange={(e) => {
                 const v = e.target.value;
                 setDraftStart(v);
                 // Keep the range valid: if the new depart is past the
-                // current return, pull the return forward to match.
-                if (v && draftEnd && draftEnd < v) setDraftEnd(v);
+                // current return, pull the return forward to match. Also
+                // make sure the return never lands in the past.
+                const floor = maxIsoDate(v || todayIso(), todayIso());
+                if (draftEnd && draftEnd < floor) setDraftEnd(floor);
               }}
               autoFocus
             />
@@ -606,7 +609,7 @@ function DaysTile({
               className="input mt-1 h-9 min-h-0 py-1 text-sm"
               value={draftEnd}
               onChange={(e) => setDraftEnd(e.target.value)}
-              min={draftStart || undefined}
+              min={maxIsoDate(draftStart || todayIso(), todayIso())}
             />
           </label>
         </div>

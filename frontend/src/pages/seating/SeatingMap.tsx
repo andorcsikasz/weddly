@@ -23,10 +23,6 @@ const DEFAULT_ROOM_H_MM = 9_000;
 const MIN_ROOM_MM = 3_000;
 const MAX_ROOM_MM = 50_000;
 const GRID_STEP_MM = 500; // 50-cm grid lines — fine enough to plan furniture against
-// Fixed pixel scale used in the expanded fullscreen overlay. ~80 px/m matches
-// what the 12×12 m default room looks like in a 90 vh modal on a typical
-// laptop, and lets bigger rooms scroll instead of squashing chairs/labels.
-const EXPANDED_PX_PER_MM = 0.08;
 
 const MIN_DIM_MM = 100;
 const MAX_DIM_MM = 10_000;
@@ -394,103 +390,83 @@ export function SeatingMap({
           </button>
         </div>
       </header>
-      {/* Two layers in expanded mode so scroll WORKS at every room size:
-            - Outer: relative + overflow-auto, fills the 90vh card body.
-            - Inner: min-w/h-full so it grows to viewport when the SVG is
-              smaller (and flex centring kicks in), or to the SVG's natural
-              pixel size when the SVG is bigger (so the overflow lands
-              inside the scrollable area instead of being clipped off the
-              top/bottom by a plain `justify-center`). */}
-      <div
-        className={`relative bg-paper-50 dark:bg-umber-900 ${
-          expanded ? "flex-1 overflow-auto" : ""
-        }`}
-      >
-        <div
-          className={
-            expanded ? "flex min-h-full min-w-full items-center justify-center p-4" : "contents"
-          }
+      {/* Expanded mode auto-fits the whole floor plan into the 90vh × 90vw
+            overlay via the SVG's viewBox — the full room is always visible,
+            no scrolling. Inline mode keeps the fixed 60vh frame. */}
+      <div className={`relative bg-paper-50 dark:bg-umber-900 ${expanded ? "flex-1 p-4" : ""}`}>
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
+          preserveAspectRatio="xMidYMid meet"
+          className={`block select-none touch-none focus:outline-none ${
+            expanded ? "h-full w-full" : "h-[60vh] max-h-[640px] w-full"
+          }`}
+          onPointerMove={moveDrag}
+          onPointerUp={endDrag}
+          onPointerLeave={endDrag}
+          onKeyDown={handleKey}
+          // Click on empty area to deselect.
+          onClick={(e) => {
+            if (e.target === svgRef.current) onSelect(null);
+          }}
+          aria-label={t("seating.map_title")}
+          role="img"
+          tabIndex={0}
         >
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
-            // Inline: fits the 60vh frame via CSS so the SVG stays responsive
-            // to the parent card. Expanded: renders at a fixed pixel scale
-            // (~80 px/m) so chairs + labels stay readable; the wrapper scrolls
-            // when the room is bigger than the 90 vw × 90 vh overlay can hold.
-            width={expanded ? ROOM_W_MM * EXPANDED_PX_PER_MM : undefined}
-            height={expanded ? ROOM_H_MM * EXPANDED_PX_PER_MM : undefined}
-            style={expanded ? { flexShrink: 0 } : undefined}
-            className={`block select-none touch-none focus:outline-none ${
-              expanded ? "" : "h-[60vh] max-h-[640px] w-full"
-            }`}
-            onPointerMove={moveDrag}
-            onPointerUp={endDrag}
-            onPointerLeave={endDrag}
-            onKeyDown={handleKey}
-            // Click on empty area to deselect.
-            onClick={(e) => {
-              if (e.target === svgRef.current) onSelect(null);
-            }}
-            aria-label={t("seating.map_title")}
-            role="img"
-            tabIndex={0}
-          >
-            <defs>
-              {/* Diagonal stripe used to highlight a table when the unassigned
+          <defs>
+            {/* Diagonal stripe used to highlight a table when the unassigned
                 panel is the active drop target. Defined once at the SVG root
                 so any fill="url(#seat-drop-stripe)" can reference it. */}
-              <pattern
-                id="seat-drop-stripe"
-                patternUnits="userSpaceOnUse"
-                width={120}
-                height={120}
-                patternTransform="rotate(45)"
-              >
-                <rect width={120} height={120} className="fill-blush-50" />
-                <line x1={0} y1={0} x2={0} y2={120} className="stroke-blush-200" strokeWidth={40} />
-              </pattern>
-            </defs>
-            <Grid widthMm={ROOM_W_MM} heightMm={ROOM_H_MM} />
-            {unassignedHighlight && (
-              <rect
-                x={0}
-                y={0}
-                width={ROOM_W_MM}
-                height={ROOM_H_MM}
-                fill="url(#seat-drop-stripe)"
-                opacity={0.4}
-                style={{ pointerEvents: "none" }}
+            <pattern
+              id="seat-drop-stripe"
+              patternUnits="userSpaceOnUse"
+              width={120}
+              height={120}
+              patternTransform="rotate(45)"
+            >
+              <rect width={120} height={120} className="fill-blush-50" />
+              <line x1={0} y1={0} x2={0} y2={120} className="stroke-blush-200" strokeWidth={40} />
+            </pattern>
+          </defs>
+          <Grid widthMm={ROOM_W_MM} heightMm={ROOM_H_MM} />
+          {unassignedHighlight && (
+            <rect
+              x={0}
+              y={0}
+              width={ROOM_W_MM}
+              height={ROOM_H_MM}
+              fill="url(#seat-drop-stripe)"
+              opacity={0.4}
+              style={{ pointerEvents: "none" }}
+            />
+          )}
+          {tables.map((table) => {
+            const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
+            const dims = localDims.get(table.id) ?? {
+              width_mm: table.width_mm,
+              length_mm: table.length_mm,
+            };
+            // Build a synthetic table with the live local dimensions so the
+            // shape redraws under the cursor during a resize drag.
+            const liveTable: SeatingTable = { ...table, ...dims };
+            const filled = seatsByTable.get(table.id)?.length ?? 0;
+            return (
+              <TableShape
+                key={table.id}
+                table={liveTable}
+                cx={pos.x}
+                cy={pos.y}
+                filledSeats={filled}
+                babySeatedSet={babySeatsByTable?.get(table.id)}
+                isSelected={selectedId === table.id}
+                onPointerDown={(e) => startMove(e, table)}
+                onHandlePointerDown={(e, h) => startResize(e, table, h)}
+                onSeatsDelta={(delta) => onSeatsChange(table.id, delta)}
+                t={t}
               />
-            )}
-            {tables.map((table) => {
-              const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
-              const dims = localDims.get(table.id) ?? {
-                width_mm: table.width_mm,
-                length_mm: table.length_mm,
-              };
-              // Build a synthetic table with the live local dimensions so the
-              // shape redraws under the cursor during a resize drag.
-              const liveTable: SeatingTable = { ...table, ...dims };
-              const filled = seatsByTable.get(table.id)?.length ?? 0;
-              return (
-                <TableShape
-                  key={table.id}
-                  table={liveTable}
-                  cx={pos.x}
-                  cy={pos.y}
-                  filledSeats={filled}
-                  babySeatedSet={babySeatsByTable?.get(table.id)}
-                  isSelected={selectedId === table.id}
-                  onPointerDown={(e) => startMove(e, table)}
-                  onHandlePointerDown={(e, h) => startResize(e, table, h)}
-                  onSeatsDelta={(delta) => onSeatsChange(table.id, delta)}
-                  t={t}
-                />
-              );
-            })}
-          </svg>
-        </div>
+            );
+          })}
+        </svg>
       </div>
     </>
   );

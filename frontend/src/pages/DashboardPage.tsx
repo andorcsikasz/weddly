@@ -67,6 +67,7 @@ import {
   formatMoney,
   formatNumber,
   formatWeddingDateGoal,
+  todayIso,
 } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -825,6 +826,7 @@ export default function DashboardPage() {
         <p className="mb-3">{t("dashboard.set_date_dialog_body")}</p>
         <input
           type="date"
+          min={todayIso()}
           value={datePickerDraft}
           disabled={datePickerSaving}
           onChange={(e) => setDatePickerDraft(e.target.value)}
@@ -1598,6 +1600,7 @@ function DaysToGoTile({
       {editing ? (
         <input
           type="date"
+          min={todayIso()}
           autoFocus
           defaultValue={goal.exact_date ?? ""}
           disabled={saving}
@@ -1802,6 +1805,7 @@ function EditableWeddingDate({
     return (
       <input
         type="date"
+        min={todayIso()}
         autoFocus
         defaultValue={goal.exact_date ?? ""}
         disabled={saving}

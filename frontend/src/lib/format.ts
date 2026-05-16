@@ -132,6 +132,23 @@ export function formatHufRange(
   return formatMoneyRange(min, max, "HUF", locale);
 }
 
+/** Today's date in `YYYY-MM-DD`. Use as the `min` attribute on every date
+ *  input the couple uses to plan the future (wedding date, task due dates,
+ *  honeymoon window, …) — picking a past date is always nonsense for these. */
+export function todayIso(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Pick the later of two `YYYY-MM-DD` strings. Used to compose a `min`
+ *  attribute that's the stricter of "today" and "the start date". */
+export function maxIsoDate(a: string, b: string): string {
+  return a > b ? a : b;
+}
+
 export function formatDate(ymd: string | null, locale: Locale = "hu"): string {
   if (!ymd) return "";
   const d = new Date(`${ymd}T00:00:00`);
