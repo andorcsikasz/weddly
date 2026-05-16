@@ -97,10 +97,22 @@ export interface LocaleMessages {
     view_half: string;
     /** Tooltip + aria for the Maximize2 button that opens the chart full-screen. */
     expand_label: string;
-    /** Calendar-style nav cluster (Day/Week/Month modes only). */
+    /** Calendar + Gantt nav cluster (every mode supports today/prev/next nav). */
     today_button: string;
     prev_label: string;
     next_label: string;
+    /** Sticky task-name column header in the 3M / 6M Gantt. */
+    task_column: string;
+    /** Tooltip on the wedding-day vertical marker in the 3M / 6M Gantt. */
+    wedding_marker: string;
+    /** Shown in the task gutter when no tasks fall inside the visible Gantt window. */
+    window_empty: string;
+    /** "+N earlier" / "+N later" pluralized hints under the gutter when tasks
+     *  sit before or after the visible Gantt window. */
+    outside_before_one: string;
+    outside_before_other: string;
+    outside_after_one: string;
+    outside_after_other: string;
     seo_title: string;
     seo_description: string;
   };

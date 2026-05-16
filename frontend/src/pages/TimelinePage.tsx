@@ -41,10 +41,11 @@ import { createPortal } from "react-dom";
 import { AppShell } from "../components/AppShell";
 import { Skeleton, useToast } from "../components/ui";
 import DayView from "./timeline/DayView";
+import GanttView from "./timeline/GanttView";
 import MonthView from "./timeline/MonthView";
 import WeekView from "./timeline/WeekView";
 import { ApiError } from "../lib/api";
-import { coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
+import { coupleApi, coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
 import { maxIsoDate, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -137,45 +138,7 @@ function diffDays(a: Date, b: Date): number {
   return Math.round(ms / 86_400_000);
 }
 
-function startOfMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-function startOfNextMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth() + 1, 1);
-}
-
-function startOfWeekMon(d: Date): Date {
-  // Monday-anchored week. JS's getDay() is 0=Sun .. 6=Sat; map to 0=Mon .. 6=Sun.
-  const dow = (d.getDay() + 6) % 7;
-  return addDays(startOfDay(d), -dow);
-}
-
-function startOfQuarter(d: Date): Date {
-  const q = Math.floor(d.getMonth() / 3);
-  return new Date(d.getFullYear(), q * 3, 1);
-}
-
-function startOfNextQuarter(d: Date): Date {
-  const q = Math.floor(d.getMonth() / 3);
-  return new Date(d.getFullYear(), q * 3 + 3, 1);
-}
-
-function startOfHalf(d: Date): Date {
-  const h = Math.floor(d.getMonth() / 6);
-  return new Date(d.getFullYear(), h * 6, 1);
-}
-
-function startOfNextHalf(d: Date): Date {
-  const h = Math.floor(d.getMonth() / 6);
-  return new Date(d.getFullYear(), h * 6 + 6, 1);
-}
-
 type ChartMode = "day" | "week" | "month" | "quarter" | "half";
-
-/** Calendar-style modes use a focal currentDate + prev/next nav. Gantt-style
- *  modes auto-fit the visible task range and ignore currentDate. */
-const CALENDAR_MODES: ReadonlySet<ChartMode> = new Set(["day", "week", "month"]);
 
 const CHART_MODE_STORAGE_KEY = "weddly.timeline.mode";
 
@@ -196,6 +159,7 @@ export default function TimelinePage() {
   const [directory, setDirectory] = useState<DirectorySupplier[]>([]);
   const [diy, setDiy] = useState<CoupleSupplier[]>([]);
   const [picks, setPicks] = useState<CouplePick[]>([]);
+  const [weddingDate, setWeddingDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<PlanningItem | null>(null);
   const [chartMode, setChartMode] = useState<ChartMode>(() => readStoredMode() ?? "month");
@@ -208,12 +172,19 @@ export default function TimelinePage() {
   }, [chartMode]);
 
   useEffect(() => {
-    Promise.all([planningApi.list(), supplierApi.list(), coupleSupplierApi.list(), picksApi.list()])
-      .then(([planning, dir, mine, pp]) => {
+    Promise.all([
+      planningApi.list(),
+      supplierApi.list(),
+      coupleSupplierApi.list(),
+      picksApi.list(),
+      coupleApi.current(),
+    ])
+      .then(([planning, dir, mine, pp, couple]) => {
         setItems(planning.items);
         setDirectory(dir.suppliers);
         setDiy(mine.suppliers);
         setPicks(pp.picks);
+        setWeddingDate(parseISODate(couple.couple?.wedding_date ?? null));
       })
       .catch((e) => {
         toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -312,6 +283,7 @@ export default function TimelinePage() {
           loading={loading}
           tasks={datedTasks}
           supplierById={supplierById}
+          weddingDate={weddingDate}
           mode={chartMode}
           onModeChange={setChartMode}
           currentDate={currentDate}
@@ -476,100 +448,11 @@ function PocRow({
   );
 }
 
-interface ChartGeometry {
-  start: Date;
-  end: Date;
-  totalDays: number;
-  mode: ChartMode;
-  /** Width of one day in px — drives bar layout + min-width so horizontal
-   *  scroll on mobile keeps the bars at a tappable density. */
-  dayWidth: number;
-  /** Tick mark positions, derived from `mode`. */
-  ticks: { date: Date; label: string }[];
-}
-
-/** Pixels per day at each Gantt zoom level. Tuned so a typical 1-row task
- *  stays comfortably wide while a year-long plan remains scroll-friendly.
- *  `day`/`week`/`month` don't render via the Gantt; the records exist only
- *  to keep `Record<ChartMode, …>` exhaustive. */
-const DAY_WIDTH: Record<ChartMode, number> = {
-  day: 24,
-  week: 24,
-  month: 7,
-  quarter: 2.5,
-  half: 1.25,
-};
-
-function buildGeometry(
-  tasks: PlanningItem[],
-  locale: "hu" | "en",
-  mode: ChartMode,
-): ChartGeometry | null {
-  const dates: Date[] = [];
-  for (const t of tasks) {
-    const s = parseISODate(t.start_date);
-    const e = parseISODate(t.due_date);
-    if (s && e) {
-      dates.push(s, e);
-    }
-  }
-  if (dates.length === 0) return null;
-  let minD = dates[0] as Date;
-  let maxD = dates[0] as Date;
-  for (const d of dates) {
-    if (d < minD) minD = d;
-    if (d > maxD) maxD = d;
-  }
-  // Snap outward to the mode's natural boundary so axis ticks land cleanly.
-  let start: Date;
-  let end: Date;
-  if (mode === "half") {
-    start = startOfHalf(minD);
-    end = addDays(startOfNextHalf(maxD), -1);
-  } else if (mode === "quarter") {
-    start = startOfQuarter(minD);
-    end = addDays(startOfNextQuarter(maxD), -1);
-  } else {
-    start = startOfMonth(minD);
-    end = addDays(startOfNextMonth(maxD), -1);
-  }
-  const totalDays = diffDays(start, end) + 1;
-  const dayWidth = DAY_WIDTH[mode];
-
-  const ticks: { date: Date; label: string }[] = [];
-  const intl = locale === "hu" ? "hu-HU" : "en-US";
-  if (mode === "week") {
-    let cur = startOfWeekMon(start);
-    if (cur < start) cur = addDays(cur, 7);
-    const fmt = new Intl.DateTimeFormat(intl, { month: "short", day: "numeric" });
-    while (cur <= end) {
-      ticks.push({ date: cur, label: fmt.format(cur) });
-      cur = addDays(cur, 7);
-    }
-  } else {
-    // month / quarter / half all tick per-month so the axis stays read-as-
-    // calendar. The year is only printed when it changes (January or the
-    // first visible tick) — at 3M / 6M scale we don't have room to repeat
-    // "Apr 2026" / "Jul 2026" twelve times across the chart.
-    let cur = startOfMonth(start);
-    const monthFmt = new Intl.DateTimeFormat(intl, { month: "short" });
-    const monthYearFmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
-    let lastYear: number | null = null;
-    while (cur <= end) {
-      const showYear = lastYear === null || cur.getFullYear() !== lastYear;
-      ticks.push({ date: cur, label: showYear ? monthYearFmt.format(cur) : monthFmt.format(cur) });
-      lastYear = cur.getFullYear();
-      cur = startOfNextMonth(cur);
-    }
-  }
-
-  return { start, end, totalDays, mode, dayWidth, ticks };
-}
-
 function ChartCard({
   loading,
   tasks,
   supplierById,
+  weddingDate,
   mode,
   onModeChange,
   currentDate,
@@ -580,6 +463,7 @@ function ChartCard({
   loading: boolean;
   tasks: PlanningItem[];
   supplierById: Map<string, ResolvedSupplier>;
+  weddingDate: Date | null;
   mode: ChartMode;
   onModeChange: (mode: ChartMode) => void;
   currentDate: Date;
@@ -589,29 +473,10 @@ function ChartCard({
 }) {
   const { t, locale } = useT();
   const [expanded, setExpanded] = useState(false);
-  const isCalendar = CALENDAR_MODES.has(mode);
-  const geometry = useMemo(
-    () => (isCalendar ? null : buildGeometry(tasks, locale, mode)),
-    [tasks, locale, mode, isCalendar],
-  );
-
-  const ordered = useMemo(() => {
-    return [...tasks].sort((a, b) => {
-      const sa = a.start_date ?? "";
-      const sb = b.start_date ?? "";
-      if (sa !== sb) return sa.localeCompare(sb);
-      return (a.due_date ?? "").localeCompare(b.due_date ?? "");
-    });
-  }, [tasks]);
 
   const today = useMemo(() => startOfDay(new Date()), []);
-  const todayOffsetDays =
-    geometry && today >= geometry.start && today <= geometry.end
-      ? diffDays(geometry.start, today)
-      : null;
 
-  // Nav handlers — only meaningful for calendar modes; Gantt views auto-fit
-  // the task date range and ignore currentDate.
+  // Step the focal date by one unit of the current mode.
   function navStep(direction: -1 | 1) {
     if (mode === "day") onCurrentDateChange(addDays(currentDate, direction));
     else if (mode === "week") onCurrentDateChange(addDays(currentDate, direction * 7));
@@ -619,13 +484,20 @@ function ChartCard({
       onCurrentDateChange(
         new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1),
       );
+    else if (mode === "quarter")
+      onCurrentDateChange(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() + direction * 3, 1),
+      );
+    else if (mode === "half")
+      onCurrentDateChange(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() + direction * 6, 1),
+      );
   }
   function navToday() {
     onCurrentDateChange(today);
   }
 
   const title = useMemo(() => {
-    if (!isCalendar) return t("timeline.chart_title");
     const intl = locale === "hu" ? "hu-HU" : "en-US";
     if (mode === "day") {
       return new Intl.DateTimeFormat(intl, {
@@ -635,16 +507,17 @@ function ChartCard({
         weekday: "long",
       }).format(currentDate);
     }
-    if (mode === "week") {
-      const month = new Intl.DateTimeFormat(intl, {
-        year: "numeric",
-        month: "long",
-      }).format(currentDate);
-      return month;
+    if (mode === "week" || mode === "month") {
+      return new Intl.DateTimeFormat(intl, { year: "numeric", month: "long" }).format(currentDate);
     }
-    // month
-    return new Intl.DateTimeFormat(intl, { year: "numeric", month: "long" }).format(currentDate);
-  }, [mode, currentDate, locale, isCalendar, t]);
+    // quarter / half — show the inclusive range "ápr.–jún. 2026" / etc.
+    const monthCount = mode === "quarter" ? 3 : 6;
+    const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + monthCount - 1, 1);
+    const startFmt = new Intl.DateTimeFormat(intl, { month: "short" }).format(start);
+    const endFmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" }).format(end);
+    return `${startFmt} – ${endFmt}`;
+  }, [mode, currentDate, locale]);
 
   function renderToolbar(opts: { showExpand: boolean }) {
     return (
@@ -665,7 +538,7 @@ function ChartCard({
     );
   }
 
-  const navCluster = isCalendar ? (
+  const navCluster = (
     <div className="flex items-center gap-1">
       <button
         type="button"
@@ -693,7 +566,7 @@ function ChartCard({
         <ChevronRight size={16} aria-hidden="true" />
       </button>
     </div>
-  ) : null;
+  );
 
   // Loading state — shared across all modes so we don't double-render skeletons.
   const loadingBody = loading ? (
@@ -739,22 +612,25 @@ function ChartCard({
         />
       );
     }
+    // quarter / half
     return (
-      <ChartBody
-        loading={false}
-        geometry={geometry}
-        ordered={ordered}
-        todayOffsetDays={todayOffsetDays}
-        supplierById={supplierById}
+      <GanttView
+        currentDate={currentDate}
+        today={today}
+        weddingDate={weddingDate}
+        tasks={tasks}
+        supplierById={supplierById as unknown as Map<string, ViewSupplier>}
+        mode={mode}
         onOpenTask={onOpenTask}
         onSupplierChipClick={onSupplierChipClick}
       />
     );
   }
 
-  // Calendar views fill the card; Gantt grows with content. Pin a min-height
-  // for calendar so the hour grid + week rows have room to breathe.
-  const inlineHeightClass = isCalendar ? "h-[70vh] min-h-[520px]" : "";
+  // Every mode now fills a fixed card height so the body never collapses to
+  // a thin strip when the couple has few tasks (the old auto-fit Gantt left
+  // blank space below the bars; the new one fills the card with structure).
+  const inlineHeightClass = "h-[70vh] min-h-[520px]";
 
   return (
     <>
@@ -762,15 +638,7 @@ function ChartCard({
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
           <div className="flex flex-wrap items-center gap-3">
             {navCluster}
-            <h2
-              className={
-                isCalendar
-                  ? "text-base font-semibold text-ink-900 dark:text-paper-50"
-                  : "text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100"
-              }
-            >
-              {title}
-            </h2>
+            <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">{title}</h2>
           </div>
           {renderToolbar({ showExpand: true })}
         </header>
@@ -857,95 +725,6 @@ function ChartModeSwitch({
   );
 }
 
-function ChartBody({
-  loading,
-  geometry,
-  ordered,
-  todayOffsetDays,
-  supplierById,
-  onOpenTask,
-  onSupplierChipClick,
-}: {
-  loading: boolean;
-  geometry: ChartGeometry | null;
-  ordered: PlanningItem[];
-  todayOffsetDays: number | null;
-  supplierById: Map<string, ResolvedSupplier>;
-  onOpenTask: (item: PlanningItem) => void;
-  onSupplierChipClick: (supplierId: string) => void;
-}) {
-  const { t } = useT();
-  // Reserved gutter on the left of each row for the task title so short bars
-  // still show their label. Bars never overlap the gutter — they start
-  // immediately after it on the same row.
-  const chartMinWidth = geometry ? geometry.totalDays * geometry.dayWidth : 0;
-
-  if (loading) {
-    return (
-      <div className="h-full space-y-2 p-5" aria-hidden="true">
-        {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} variant="block" height={28} width="80%" rounded="md" />
-        ))}
-      </div>
-    );
-  }
-  if (!geometry || ordered.length === 0) {
-    return (
-      <p className="h-full px-5 py-6 text-sm text-ink-600 dark:text-umber-200">
-        {t("timeline.no_dates_empty")}
-      </p>
-    );
-  }
-  return (
-    <div className="h-full overflow-x-auto overflow-y-auto px-5 py-4">
-      <div style={{ minWidth: chartMinWidth }} className="relative">
-        <div
-          className="relative mb-2 h-6 border-b border-paper-300 dark:border-umber-700"
-          aria-hidden="true"
-        >
-          {geometry.ticks.map((tick) => {
-            const offset = diffDays(geometry.start, tick.date) * geometry.dayWidth;
-            return (
-              <div
-                key={tick.date.toISOString()}
-                className="absolute top-0 h-full"
-                style={{ left: offset }}
-              >
-                <div className="absolute left-0 top-0 h-full w-px bg-paper-300 dark:bg-umber-700" />
-                <span className="absolute left-1 top-0 whitespace-nowrap text-[11px] text-ink-500 dark:text-umber-300">
-                  {tick.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="relative space-y-1">
-          {ordered.map((item) => (
-            <GanttRow
-              key={item.id}
-              item={item}
-              geometry={geometry}
-              supplierById={supplierById}
-              onClick={() => onOpenTask(item)}
-              onSupplierChipClick={onSupplierChipClick}
-            />
-          ))}
-
-          {todayOffsetDays !== null && (
-            <div
-              className="pointer-events-none absolute top-0 bottom-0 border-l-2 border-blush-500"
-              style={{ left: todayOffsetDays * geometry.dayWidth }}
-              aria-label={t("timeline.today_label")}
-              title={t("timeline.today_label")}
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /** Full-viewport (90vw × 90vh) overlay that re-mounts the same chart body
  *  with more horizontal real estate so a year-long plan fits without the
  *  usual sidebar+header chrome eating into the canvas. Escape + backdrop
@@ -1013,75 +792,6 @@ function ExpandedChart({
       </div>
     </div>,
     document.body,
-  );
-}
-
-function GanttRow({
-  item,
-  geometry,
-  supplierById,
-  onClick,
-  onSupplierChipClick,
-}: {
-  item: PlanningItem;
-  geometry: ChartGeometry;
-  supplierById: Map<string, ResolvedSupplier>;
-  onClick: () => void;
-  onSupplierChipClick: (supplierId: string) => void;
-}) {
-  const start = parseISODate(item.start_date);
-  const end = parseISODate(item.due_date);
-  if (!start || !end) return null;
-
-  const clampedStart = start < geometry.start ? geometry.start : start;
-  const clampedEnd = end > geometry.end ? geometry.end : end;
-  const left = diffDays(geometry.start, clampedStart) * geometry.dayWidth;
-  const widthDays = diffDays(clampedStart, clampedEnd) + 1;
-  // Min bar width keeps short tasks tappable at low-zoom modes where one day
-  // is just 1–3px — otherwise a 1-day item would be invisible.
-  const width = Math.max(24, widthDays * geometry.dayWidth);
-
-  const supplier = item.supplier_id ? (supplierById.get(item.supplier_id) ?? null) : null;
-  const done = item.done;
-
-  const barClasses = done
-    ? "bg-sage-300 dark:bg-sage-400/30 text-sage-900 dark:text-paper-50"
-    : "bg-blush-300 dark:bg-blush-400/30 text-ink-900 dark:text-paper-50";
-
-  return (
-    <div className="relative h-7" style={{ marginBottom: 4 }}>
-      <button
-        type="button"
-        onClick={onClick}
-        className={`absolute top-0 flex h-7 items-center gap-2 rounded-md px-2 text-xs shadow-soft transition-colors ${barClasses} hover:brightness-95`}
-        style={{ left, width }}
-        title={item.title}
-      >
-        <span className={`min-w-0 flex-1 truncate text-left ${done ? "line-through" : ""}`}>
-          {item.title}
-        </span>
-        {supplier && (
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSupplierChipClick(supplier.id);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.stopPropagation();
-                onSupplierChipClick(supplier.id);
-              }
-            }}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-paper-100/80 px-1.5 py-0.5 text-[10px] text-ink-800 hover:bg-paper-100 dark:bg-umber-900/60 dark:text-paper-100 dark:hover:bg-umber-900/80"
-          >
-            {supplier.name}
-          </span>
-        )}
-      </button>
-    </div>
   );
 }
 
