@@ -15,7 +15,6 @@ import type {
 import {
   Baby,
   Ban,
-  Bed,
   Beef,
   Briefcase,
   Check,
@@ -263,15 +262,19 @@ export default function GuestsPage() {
   /** Per-household RSVP toggle switcher. Replaces the old couple-level
    *  Profile-page panel: each household now decides for itself whether the
    *  public RSVP form surfaces the "needs accommodation?" question and/or
-   *  the meal-choice icon row. Sends one field at a time so each PATCH
-   *  produces a clean per-field audit entry. */
-  async function onChangeHouseholdRsvpToggle(
-    id: number,
+   *  the meal-choice icon row. Bulk-fans-out one PATCH per household so the
+   *  per-field audit log entries stay clean (no opaque "applied to N rows"
+   *  blob); the toggles in the meals dialog flip every household in unison.
+   *  Per-household nuance was removed when the panel moved out of the
+   *  household card — couples rarely want a different RSVP form per family. */
+  async function onBulkRsvpToggle(
     field: "rsvp_offers_accommodation" | "rsvp_collects_meal",
     next: boolean,
   ) {
     try {
-      await householdApi.update(id, { [field]: next });
+      await Promise.all(
+        households.map((h) => householdApi.update(h.id, { [field]: next })),
+      );
       refresh();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -579,7 +582,6 @@ export default function GuestsPage() {
               onDeleteHousehold={() => onDeleteHousehold(hh)}
               onRenameHousehold={onRenameHousehold}
               onChangeGroup={onChangeHouseholdGroup}
-              onChangeRsvpToggle={onChangeHouseholdRsvpToggle}
               onCycleInviteState={onCycleInviteState}
               onPrintPlaceCard={onPrintPlaceCard}
             />
@@ -641,7 +643,14 @@ export default function GuestsPage() {
         <CopyFallbackDialog url={copyFallback} onClose={() => setCopyFallback(null)} />
       )}
 
-      {mealsOpen && <MealsDialog guests={guests} onClose={() => setMealsOpen(false)} />}
+      {mealsOpen && (
+        <MealsDialog
+          guests={guests}
+          households={households}
+          onBulkRsvpToggle={onBulkRsvpToggle}
+          onClose={() => setMealsOpen(false)}
+        />
+      )}
 
       {editing && (
         <GuestDrawer
@@ -651,8 +660,16 @@ export default function GuestsPage() {
           couple={couple}
           onClose={() => setEditing(null)}
           onSaved={() => {
+            // Auto-open the meals dialog the very first time the couple adds
+            // a guest — that's where the bulk "ask for meals / accommodation
+            // in the RSVP" toggles live now, and most couples otherwise
+            // never realise the feature is there. Only triggers on ADD
+            // (editing.guest === null) and only when there were no guests
+            // before this save, so subsequent edits don't keep nagging.
+            const isFirstAdd = editing?.guest === null && guests.length === 0;
             setEditing(null);
             refresh();
+            if (isFirstAdd) setMealsOpen(true);
           }}
         />
       )}
@@ -788,7 +805,6 @@ function HouseholdCard({
   onDeleteHousehold,
   onRenameHousehold,
   onChangeGroup,
-  onChangeRsvpToggle,
   onCycleInviteState,
   onPrintPlaceCard,
 }: {
@@ -803,11 +819,6 @@ function HouseholdCard({
   onDeleteHousehold: () => void;
   onRenameHousehold: (id: number, label: string) => Promise<void>;
   onChangeGroup: (id: number, groupTag: GuestGroupTag) => Promise<void>;
-  onChangeRsvpToggle: (
-    id: number,
-    field: "rsvp_offers_accommodation" | "rsvp_collects_meal",
-    next: boolean,
-  ) => Promise<void>;
   onCycleInviteState: (g: Guest) => void;
   onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
@@ -962,51 +973,6 @@ function HouseholdCard({
           </button>
         </div>
       </header>
-
-      {!collapsed && !isHosts && (
-        /* Per-household RSVP settings panel. Lives between the header border
-           and the members list so the toggles read as "settings for this
-           household" rather than "settings for this guest". Hidden on the
-           hosts' own card — the bride/groom don't RSVP themselves. */
-        <div className="border-b border-paper-200 bg-paper-50/60 px-4 py-3 dark:border-umber-700 dark:bg-umber-800/40">
-          <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-            {t("guests.rsvp_settings_title")}
-          </p>
-          <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-            {t("guests.rsvp_settings_help")}
-          </p>
-          <label className="mt-3 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-100">
-            <input
-              type="checkbox"
-              className="mt-0.5"
-              checked={household.rsvp_collects_meal}
-              onChange={(e) =>
-                void onChangeRsvpToggle(household.id, "rsvp_collects_meal", e.target.checked)
-              }
-            />
-            <span>
-              <span className="font-medium">{t("guests.rsvp_collects_meal_label")}</span>
-              <span className="block text-xs text-ink-500 dark:text-umber-300">
-                {t("guests.rsvp_collects_meal_help")}
-              </span>
-            </span>
-          </label>
-          <label
-            className="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs text-ink-600 dark:text-umber-200"
-            title={t("guests.rsvp_offers_accommodation_help")}
-          >
-            <input
-              type="checkbox"
-              checked={household.rsvp_offers_accommodation}
-              onChange={(e) =>
-                void onChangeRsvpToggle(household.id, "rsvp_offers_accommodation", e.target.checked)
-              }
-            />
-            <Bed size={13} aria-hidden />
-            <span>{t("guests.rsvp_offers_accommodation_short")}</span>
-          </label>
-        </div>
-      )}
 
       {!collapsed && (
         <ul className="divide-y divide-paper-200 dark:divide-umber-700">
@@ -2472,9 +2438,33 @@ function SongRequestList({
  *  they don't get a wedding-menu plate. */
 const MEAL_ORDER: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
 
-function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void }) {
+function MealsDialog({
+  guests,
+  households,
+  onBulkRsvpToggle,
+  onClose,
+}: {
+  guests: Guest[];
+  households: Household[];
+  /** Flips the named flag on every household in one fan-out. The
+   *  derived `mealOn` / `accommodationOn` below reflect "ALL households
+   *  have this on?" — mixed state renders as off, since toggling once
+   *  will pull every household into a consistent state anyway. */
+  onBulkRsvpToggle: (
+    field: "rsvp_offers_accommodation" | "rsvp_collects_meal",
+    next: boolean,
+  ) => Promise<void>;
+  onClose: () => void;
+}) {
   const { t } = useT();
   const toast = useToast();
+  // Bulk RSVP-form toggles — "ON" only when every household has the flag,
+  // matching the conservative read: a single household opting out should
+  // show the master toggle as off so flipping it on doesn't silently
+  // overwrite that household's opt-out without the user noticing.
+  const mealOn = households.length > 0 && households.every((h) => h.rsvp_collects_meal);
+  const accommodationOn =
+    households.length > 0 && households.every((h) => h.rsvp_offers_accommodation);
 
   const stats = useMemo(() => {
     const mealCounts: Record<MealChoice, number> = {
@@ -2565,16 +2555,64 @@ function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void
         </div>
       }
     >
-      {stats.totalYes === 0 ? (
-        <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_no_yes_yet")}</p>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_help")}</p>
-            <p className="text-sm font-medium text-ink-800 dark:text-paper-100">
-              {t("guests.meals_total_yes", { count: stats.totalYes })}
-            </p>
-          </div>
+      <div className="space-y-6">
+        {/* Bulk RSVP-form settings — lifted out of the per-household card
+            so couples set "do we ask for meals / accommodation?" once for
+            the whole guest list. Disabled when there are no households
+            yet (nothing to PATCH) so the toggles can't desync. */}
+        <section className="rounded-lg border border-paper-200 bg-paper-50/60 px-4 py-3 dark:border-umber-700 dark:bg-umber-800/40">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("guests.rsvp_settings_title")}
+          </h3>
+          <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+            {t("guests.rsvp_settings_help")}
+          </p>
+          <label className="mt-3 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-100">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={mealOn}
+              disabled={households.length === 0}
+              onChange={(e) => void onBulkRsvpToggle("rsvp_collects_meal", e.target.checked)}
+            />
+            <span>
+              <span className="font-medium">{t("guests.rsvp_collects_meal_label")}</span>
+              <span className="block text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.rsvp_collects_meal_help")}
+              </span>
+            </span>
+          </label>
+          <label className="mt-3 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-100">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={accommodationOn}
+              disabled={households.length === 0}
+              onChange={(e) =>
+                void onBulkRsvpToggle("rsvp_offers_accommodation", e.target.checked)
+              }
+            />
+            <span>
+              <span className="font-medium">{t("guests.rsvp_offers_accommodation_label")}</span>
+              <span className="block text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.rsvp_offers_accommodation_help")}
+              </span>
+            </span>
+          </label>
+        </section>
+
+        {stats.totalYes === 0 ? (
+          <p className="text-sm text-ink-600 dark:text-umber-200">
+            {t("guests.meals_no_yes_yet")}
+          </p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_help")}</p>
+              <p className="text-sm font-medium text-ink-800 dark:text-paper-100">
+                {t("guests.meals_total_yes", { count: stats.totalYes })}
+              </p>
+            </div>
 
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
@@ -2614,8 +2652,9 @@ function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void
               ))}
             </ul>
           </section>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </Dialog>
   );
 }

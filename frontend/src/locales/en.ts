@@ -1099,14 +1099,14 @@ const en: LocaleMessages = {
     guest_section_divider: "Filled by the guest via RSVP",
     hosts_badge: "The couple",
     rsvp_settings_title: "RSVP settings",
-    rsvp_settings_help: "These questions appear only for this household.",
+    rsvp_settings_help: "These settings apply to every guest's RSVP.",
     rsvp_offers_accommodation_label: "Offer accommodation in RSVP",
     rsvp_offers_accommodation_help:
-      "When enabled, members of this household can flag if they need accommodation when responding.",
+      "When enabled, guests can flag if they need accommodation when responding.",
     rsvp_offers_accommodation_short: "Ask for accommodation",
     rsvp_collects_meal_label: "Collect meal choice in RSVP",
     rsvp_collects_meal_help:
-      "When enabled, members of this household pick their meal (meat, fish, vegetarian, vegan, child, none) when responding. Turn off for buffet weddings.",
+      "When enabled, guests pick their meal (meat, fish, vegetarian, vegan, child, none) when responding. Turn off for buffet weddings.",
     meals_button: "Meals",
     meals_title: "Meals & dietary needs",
     meals_help: "Only counts guests who accepted with a yes.",
