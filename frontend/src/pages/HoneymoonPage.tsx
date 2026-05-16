@@ -220,12 +220,37 @@ export default function HoneymoonPage() {
   // server-side cache (12 h) keeps the upstream API call rare. `null` while
   // loading, on miss, or when Amadeus isn't configured — the card just hides.
   const [flightEstimate, setFlightEstimate] = useState<FlightEstimate | null>(null);
+  // Honeymoon-topic todos pulled from /api/planning. The planning page is
+  // the source of truth; we mirror the rows here so couples can tick items
+  // off without leaving /app/honeymoon. Tasks with topic === null are
+  // treated as wedding-scoped and filtered out.
+  const [honeymoonTasks, setHoneymoonTasks] = useState<PlanningItem[]>([]);
 
   async function refresh() {
-    const [c, l] = await Promise.all([coupleApi.current(), budgetApi.listLines()]);
+    const [c, l, p] = await Promise.all([
+      coupleApi.current(),
+      budgetApi.listLines(),
+      planningApi.list().catch(() => ({ items: [] as PlanningItem[] })),
+    ]);
     setCouple(c.couple);
     setLines(l.lines);
+    setHoneymoonTasks(p.items.filter((i) => i.kind === "task" && i.topic === "honeymoon"));
     setLoaded(true);
+  }
+
+  async function toggleTaskDone(item: PlanningItem) {
+    const nextDone = !item.done;
+    // Optimistic flip — the planning page does the same, and refresh()
+    // brings the canonical state back on the next paint.
+    setHoneymoonTasks((prev) => prev.map((i) => (i.id === item.id ? { ...i, done: nextDone } : i)));
+    try {
+      await planningApi.update(item.id, { done: nextDone });
+    } catch (e) {
+      setHoneymoonTasks((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, done: item.done } : i)),
+      );
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
   }
 
   useEffect(() => {
@@ -495,6 +520,8 @@ export default function HoneymoonPage() {
           </div>
         )}
       </section>
+
+      <HoneymoonTodoSection items={honeymoonTasks} onToggle={toggleTaskDone} />
     </AppShell>
   );
 }
@@ -1188,6 +1215,90 @@ function FlightEstimateCard({
           {t("honeymoon.flight_estimate_attribution", { updated })}
         </p>
       </div>
+    </section>
+  );
+}
+
+/** Honeymoon-scoped todo checklist. Mirrors the rows on /app/tervezés
+ *  filtered to topic === "honeymoon", so couples can tick items off
+ *  without leaving the trip page. The header links over to the planning
+ *  page where the wand lives and where items can be renamed, reordered,
+ *  or deleted. Empty state CTA points to the same place. */
+function HoneymoonTodoSection({
+  items,
+  onToggle,
+}: {
+  items: PlanningItem[];
+  onToggle: (item: PlanningItem) => Promise<void>;
+}) {
+  const { t } = useT();
+  const done = items.filter((i) => i.done).length;
+  return (
+    <section className="mt-8">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2>{t("honeymoon.todo_title")}</h2>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+            {items.length > 0
+              ? t("honeymoon.todo_sub_count", { done, total: items.length })
+              : t("honeymoon.todo_sub_empty")}
+          </p>
+        </div>
+        <Link
+          to="/app/planning"
+          className="text-sm text-ink-700 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+        >
+          {t("honeymoon.todo_manage_link")}
+        </Link>
+      </div>
+      {items.length === 0 ? (
+        <div className="card text-sm text-ink-700 dark:text-paper-100">
+          <p>{t("honeymoon.todo_empty_body")}</p>
+          <Link to="/app/planning" className="btn-outline btn-sm mt-3 inline-flex">
+            {t("honeymoon.todo_empty_cta")}
+          </Link>
+        </div>
+      ) : (
+        <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-paper-50 dark:hover:bg-umber-700/40"
+            >
+              <button
+                type="button"
+                onClick={() => onToggle(item)}
+                aria-pressed={item.done}
+                aria-label={
+                  item.done ? t("honeymoon.todo_uncheck_aria") : t("honeymoon.todo_check_aria")
+                }
+                className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
+                  item.done
+                    ? "border-sage-500 bg-sage-500 text-white dark:border-sage-400 dark:bg-sage-400 dark:text-umber-900"
+                    : "border-paper-300 bg-paper-50 text-transparent hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800"
+                }`}
+              >
+                <Check size={14} aria-hidden="true" />
+              </button>
+              <p
+                className={`min-w-0 flex-1 truncate text-sm ${
+                  item.done
+                    ? "text-ink-400 line-through dark:text-umber-300"
+                    : "text-ink-900 dark:text-paper-50"
+                }`}
+                title={item.title}
+              >
+                {item.title}
+              </p>
+              {item.assignee && (
+                <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
+                  {item.assignee}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

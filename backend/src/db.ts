@@ -142,9 +142,7 @@ addColumnIfMissing("planning_items", "topic", "topic TEXT");
 // The honeymoon page filters tasks by (couple_id, kind='task', topic='honeymoon');
 // the composite index lets that query short-circuit instead of scanning the
 // per-couple slice and filtering in memory.
-db.exec(
-  "CREATE INDEX IF NOT EXISTS idx_planning_topic ON planning_items(couple_id, kind, topic)",
-);
+db.exec("CREATE INDEX IF NOT EXISTS idx_planning_topic ON planning_items(couple_id, kind, topic)");
 
 // Global slug uniqueness — couples.slug paired with the 4-digit household
 // code is the public RSVP credential, so two weddings must never share a

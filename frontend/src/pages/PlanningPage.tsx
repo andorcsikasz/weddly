@@ -22,15 +22,7 @@ import {
   User,
   Wand2,
 } from "lucide-react";
-import {
-  type FormEvent,
-  type ReactNode,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
@@ -166,9 +158,7 @@ export default function PlanningPage() {
     };
     for (const i of scoped) byGroup[taskGroupOf(i)].push(i);
     const order: TaskGroupOrOther[] = ["wedding", "honeymoon", "other"];
-    return order
-      .map((g) => ({ group: g, items: byGroup[g] }))
-      .filter((s) => s.items.length > 0);
+    return order.map((g) => ({ group: g, items: byGroup[g] })).filter((s) => s.items.length > 0);
   }, [activeKind, scoped]);
 
   /** Counts per priority level for the filter-pill badges. Computed once

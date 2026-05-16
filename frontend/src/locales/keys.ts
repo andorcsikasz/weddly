@@ -910,6 +910,18 @@ export interface LocaleMessages {
     flight_estimate_basis: string;
     flight_estimate_empty: string;
     flight_estimate_attribution: string;
+    /** Honeymoon-scoped todo checklist that mirrors planning_items
+     *  filtered by topic='honeymoon'. `todo_sub_count` receives
+     *  `{done}` + `{total}` numbers; the empty body + CTA point to
+     *  /app/tervezés where the wand can stamp the honeymoon group. */
+    todo_title: string;
+    todo_sub_count: string;
+    todo_sub_empty: string;
+    todo_manage_link: string;
+    todo_empty_body: string;
+    todo_empty_cta: string;
+    todo_check_aria: string;
+    todo_uncheck_aria: string;
     /** Header tiles (days / destination / budget). */
     tile_days: string;
     tile_destination: string;
