@@ -19,6 +19,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { WorkspacesPanel } from "../components/WorkspacesPanel";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import {
@@ -559,6 +560,8 @@ export default function ProfilePage() {
           </p>
         )}
       </section>
+
+      <WorkspacesPanel activeCoupleId={couple?.id ?? null} />
 
       <section className="card mt-6">
         {/* Header row: title left, currency picker right. The picker stays
