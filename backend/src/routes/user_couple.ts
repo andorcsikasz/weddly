@@ -4,7 +4,7 @@
 
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { getCoupleForUser } from "../domain/couples";
+import { getCoupleForUser, removeCoupleMember } from "../domain/couples";
 import { getUserById } from "../domain/users";
 import { type Ctx, HttpError, json, requireVerifiedAuth, type Router } from "../lib/http";
 
@@ -41,6 +41,10 @@ async function handleLeaveCouple(ctx: Ctx): Promise<Response> {
       ts,
       couple.id,
     );
+    // Drop the membership so the workspace stops appearing in this user's
+    // switcher. (Couple-side ON DELETE CASCADE handles the inverse: when a
+    // couple is purged, every member row goes with it.)
+    removeCoupleMember(couple.id, userId);
   });
   tx();
 

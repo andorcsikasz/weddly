@@ -331,6 +331,43 @@ db.exec(`
 // historical row stays in the visible set.
 addColumnIfMissing("households", "auto_created", "auto_created INTEGER NOT NULL DEFAULT 0");
 
+// Multi-workspace membership: a user can belong to several couple
+// workspaces (Alpha / Bravo / Charlie for a wedding with multiple events).
+// `users.couple_id` continues to mean "the workspace this user is currently
+// viewing" — every couple-scoped query stays unchanged. This table tracks
+// the full set so the profile can list every workspace and the header can
+// offer a switcher. (couple_id, user_id) is unique per pair; role mirrors
+// `users.role` at the time of membership (owner / partner). created_at is
+// the moment the user joined that specific workspace.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS couple_members (
+    couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'owner',
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (couple_id, user_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_couple_members_user ON couple_members(user_id);
+`);
+
+// Backfill: every existing (couple, partner_a_id|partner_b_id) pair becomes
+// a couple_members row. INSERT OR IGNORE means a re-boot is a no-op. We
+// stamp created_at = couples.created_at so the membership clock matches the
+// workspace clock for legacy data. The role mirrors users.role at the time
+// of the backfill so an admin partner_a still reads as 'owner'.
+db.exec(`
+  INSERT OR IGNORE INTO couple_members (couple_id, user_id, role, created_at)
+    SELECT c.id, c.partner_a_id, COALESCE(u.role, 'owner'), c.created_at
+      FROM couples c
+      JOIN users u ON u.id = c.partner_a_id
+     WHERE c.partner_a_id IS NOT NULL;
+  INSERT OR IGNORE INTO couple_members (couple_id, user_id, role, created_at)
+    SELECT c.id, c.partner_b_id, COALESCE(u.role, 'partner'), c.created_at
+      FROM couples c
+      JOIN users u ON u.id = c.partner_b_id
+     WHERE c.partner_b_id IS NOT NULL;
+`);
+
 export function now(): number {
   return Date.now();
 }

@@ -211,12 +211,92 @@ export function getCoupleById(id: number): CoupleRow | null {
   );
 }
 
-/** The workspace a user belongs to. Returns null until they finish onboarding
- *  (or accept a partner-B invite). */
+/** The workspace a user is currently viewing — same semantics as before.
+ *  `users.couple_id` continues to be the "active workspace" pointer; the
+ *  full membership set lives in `couple_members` (see helpers below). */
 export function getCoupleForUser(userId: number): CoupleRow | null {
   const row = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(userId) as
     | { couple_id: number | null }
     | undefined;
   if (!row?.couple_id) return null;
   return getCoupleById(row.couple_id);
+}
+
+/** Membership role on a specific workspace. Mirrors users.role but scoped
+ *  per couple — a user might be owner on Alpha and partner on Bravo. */
+export type CoupleMemberRole = "owner" | "partner";
+
+/** Add a (couple, user) membership row. Idempotent — re-inserting with the
+ *  same pair is a no-op. Call after every flow that links a user to a
+ *  couple: onboard, accept_invite, accept_invite_merge, and the new
+ *  POST /api/couples ("create a second event") endpoint. */
+export function addCoupleMember(coupleId: number, userId: number, role: CoupleMemberRole): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO couple_members (couple_id, user_id, role, created_at)
+     VALUES (?, ?, ?, ?)`,
+  ).run(coupleId, userId, role, Date.now());
+}
+
+/** Drop a (couple, user) membership row. Idempotent. Called from the
+ *  "leave couple" flow and indirectly via ON DELETE CASCADE when a couple
+ *  is purged. */
+export function removeCoupleMember(coupleId: number, userId: number): void {
+  db.prepare("DELETE FROM couple_members WHERE couple_id = ? AND user_id = ?").run(
+    coupleId,
+    userId,
+  );
+}
+
+/** True when the user has a membership row on this couple — protects the
+ *  switch-active and create-event endpoints from cross-couple access. */
+export function isCoupleMember(coupleId: number, userId: number): boolean {
+  const row = db
+    .prepare("SELECT 1 AS ok FROM couple_members WHERE couple_id = ? AND user_id = ? LIMIT 1")
+    .get(coupleId, userId) as { ok: number } | undefined;
+  return !!row;
+}
+
+export interface CoupleMembershipView {
+  couple_id: number;
+  display_name: string;
+  bride_name: string;
+  groom_name: string;
+  status: CoupleStatus;
+  role: CoupleMemberRole;
+  joined_at: number;
+}
+
+/** Every workspace this user belongs to. Used by the header switcher and
+ *  the profile's "Esemény-munkaterületek" panel. Ordered oldest-first so
+ *  Alpha (the user's original workspace) reads as the natural anchor. */
+export function listCouplesForUser(userId: number): CoupleMembershipView[] {
+  const rows = db
+    .prepare(
+      `SELECT cm.couple_id, c.display_name, c.bride_name, c.groom_name, c.status,
+              cm.role, cm.created_at AS joined_at
+         FROM couple_members cm
+         JOIN couples c ON c.id = cm.couple_id
+        WHERE cm.user_id = ?
+        ORDER BY cm.created_at ASC, cm.couple_id ASC`,
+    )
+    .all(userId) as {
+    couple_id: number;
+    display_name: string;
+    bride_name: string;
+    groom_name: string;
+    status: string;
+    role: string;
+    joined_at: number;
+  }[];
+  return rows.map((r) => ({
+    couple_id: r.couple_id,
+    display_name: r.display_name,
+    bride_name: r.bride_name,
+    groom_name: r.groom_name,
+    status: VALID_COUPLE_STATUSES.has(r.status as CoupleStatus)
+      ? (r.status as CoupleStatus)
+      : "active",
+    role: r.role === "owner" ? "owner" : "partner",
+    joined_at: r.joined_at,
+  }));
 }

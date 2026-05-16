@@ -24,7 +24,16 @@ import {
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { type CoupleRow, getCoupleById, getCoupleForUser, toCouple } from "../domain/couples";
+import {
+  addCoupleMember,
+  type CoupleRow,
+  getCoupleById,
+  getCoupleForUser,
+  isCoupleMember,
+  listCouplesForUser,
+  removeCoupleMember,
+  toCouple,
+} from "../domain/couples";
 import { sendKind } from "../domain/emails";
 import { recordExport } from "../domain/exports";
 import { generateInviteToken } from "../domain/invite_codes";
@@ -485,6 +494,10 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
     ts,
     userId,
   );
+  // Record the membership in the multi-workspace junction. `users.couple_id`
+  // remains "the active workspace"; couple_members tracks the full set so
+  // the user can spin up a second event later (Alpha → Bravo / Charlie).
+  addCoupleMember(coupleId, userId, "owner");
 
   // Range budgets seed lines off the midpoint; TBD seeds nothing.
   const seedHuf = representativeBudgetHuf(budgetGoal);
@@ -737,6 +750,7 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
     ts,
     userId,
   );
+  addCoupleMember(couple.id, userId, "partner");
   db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
 
   addAuditLog({
@@ -889,6 +903,7 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
     ts,
     userId,
   );
+  addCoupleMember(target.id, userId, "partner");
   db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
 
   addAuditLog({
