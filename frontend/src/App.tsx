@@ -32,6 +32,7 @@ import MediaPage from "./pages/MediaPage";
 import MoodboardPage from "./pages/MoodboardPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import TermsPage from "./pages/TermsPage";
+import TimelinePage from "./pages/TimelinePage";
 import VendorsPage from "./pages/VendorsPage";
 import ChangeEmailPage from "./pages/ChangeEmailPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
@@ -255,6 +256,16 @@ export default function App() {
           <Page>
             <RequireAuth>
               <SchedulePage />
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/timeline"
+        element={
+          <Page>
+            <RequireAuth>
+              <TimelinePage />
             </RequireAuth>
           </Page>
         }

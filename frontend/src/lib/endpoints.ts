@@ -283,6 +283,10 @@ export interface PlanningItemCreate {
   scheduled_time?: string | null;
   /** Tasks only — free-text owner. */
   assignee?: string | null;
+  /** Tasks only — ISO YYYY-MM-DD start of the Gantt range. */
+  start_date?: string | null;
+  /** Tasks only — public supplier id from `couple_picks.supplier_id`. */
+  supplier_id?: string | null;
   position?: number;
 }
 

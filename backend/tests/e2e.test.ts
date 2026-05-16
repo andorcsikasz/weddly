@@ -7699,6 +7699,91 @@ describe("planning: assignee + suggested_by_name", () => {
     expect(sched.data.item.assignee).toBeNull();
     expect(sched.data.item.suggested_by_name).toBeNull();
   });
+
+  test("task roundtrips start_date + supplier_id; PATCH can clear + re-set", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("plan-gantt@weddly.test");
+
+    const created = await req<{
+      item: { id: number; start_date: string | null; supplier_id: string | null };
+    }>(
+      "POST",
+      "/api/planning",
+      {
+        kind: "task",
+        title: "Virágokat egyeztetni",
+        start_date: "2026-06-01",
+        supplier_id: "florist-anna",
+      },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    expect(created.data.item.start_date).toBe("2026-06-01");
+    expect(created.data.item.supplier_id).toBe("florist-anna");
+
+    const id = created.data.item.id;
+
+    // PATCH clears both via explicit null.
+    const cleared = await req<{
+      item: { start_date: string | null; supplier_id: string | null };
+    }>("PATCH", `/api/planning/${id}`, { start_date: null, supplier_id: null }, { token });
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.item.start_date).toBeNull();
+    expect(cleared.data.item.supplier_id).toBeNull();
+
+    // PATCH re-sets both.
+    const reset = await req<{
+      item: { start_date: string | null; supplier_id: string | null };
+    }>("PATCH", `/api/planning/${id}`, { start_date: "2026-07-15", supplier_id: "c12" }, { token });
+    expect(reset.data.item.start_date).toBe("2026-07-15");
+    expect(reset.data.item.supplier_id).toBe("c12");
+  });
+
+  test("idea-kind create with start_date + supplier_id silently nulls both", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("plan-gantt-idea@weddly.test");
+
+    const idea = await req<{
+      item: { start_date: string | null; supplier_id: string | null };
+    }>(
+      "POST",
+      "/api/planning",
+      {
+        kind: "idea",
+        title: "Polaroid fal",
+        start_date: "2026-06-01",
+        supplier_id: "florist-anna",
+      },
+      { token },
+    );
+    expect(idea.status).toBe(201);
+    expect(idea.data.item.start_date).toBeNull();
+    expect(idea.data.item.supplier_id).toBeNull();
+  });
+
+  test("invalid start_date is rejected with 400", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("plan-gantt-bad@weddly.test");
+
+    // Shape mismatch (DATE_RE is shape-only, so "2026-13-01" sneaks through —
+    // mirror the parseDueDate loose-validation contract).
+    const malformed = await req(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Bad date", start_date: "2026/06/01" },
+      { token },
+    );
+    expect(malformed.status).toBe(400);
+
+    // Wrong type.
+    const wrongType = await req(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Bad date", start_date: 20260601 },
+      { token },
+    );
+    expect(wrongType.status).toBe(400);
+  });
 });
 
 describe("places search (Nominatim proxy)", () => {

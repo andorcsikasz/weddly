@@ -4,6 +4,7 @@ import {
   Camera,
   ChefHat,
   ClipboardList,
+  GanttChartSquare,
   Heart,
   Image as ImageIcon,
   Inbox,
@@ -67,6 +68,14 @@ const ITEMS: NavItem[] = [
     to: "/app/planning",
     labelKey: "nav.planning",
     icon: <ClipboardList size={18} />,
+  },
+  // Gantt-style task timeline + supplier point-of-contact panel — desktop
+  // sidebar only. Sits between planning (define tasks) and schedule (lay
+  // out the wedding day) so the booking → schedule flow reads top-down.
+  {
+    to: "/app/timeline",
+    labelKey: "nav.timeline",
+    icon: <GanttChartSquare size={18} />,
   },
   // Day-of run-of-show — desktop sidebar only. The page also surfaces on the
   // dashboard via the day-of mode when daysUntil <= 1.

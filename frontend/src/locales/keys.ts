@@ -64,6 +64,31 @@ export interface LocaleMessages {
     schedule_title: string;
     schedule_description: string;
   };
+  /** Gantt-style task timeline + point-of-contact panel. */
+  timeline: {
+    title: string;
+    sub: string;
+    /** Card titles for the supplier contact panel + the chart itself. */
+    poc_title: string;
+    poc_empty: string;
+    chart_title: string;
+    /** "Tasks without dates" fallback list below the chart. */
+    no_dates_title: string;
+    no_dates_empty: string;
+    no_dates_empty_all: string;
+    set_dates: string;
+    /** Edit drawer. */
+    edit_title: string;
+    field_start_date: string;
+    field_due_date: string;
+    field_supplier: string;
+    supplier_none: string;
+    /** Tooltip label on the vertical "today" marker. */
+    today_label: string;
+    error_dates: string;
+    seo_title: string;
+    seo_description: string;
+  };
   a11y: {
     /** Generic close button label (dialogs, sheets). */
     close: string;
@@ -690,6 +715,8 @@ export interface LocaleMessages {
     suppliers: string;
     /** Free-form planning surface (tasks / ideas / wedding-day schedule). */
     planning: string;
+    /** Gantt-style timeline + point-of-contact panel — sidebar only. */
+    timeline: string;
     /** Post-wedding follow-up surfaces — honeymoon planning + photo share. */
     honeymoon: string;
     /** Pre-wedding inspiration — embeds a Pinterest board the couple links. */

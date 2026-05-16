@@ -1,0 +1,911 @@
+// Gantt-style timeline for planning_items.kind === "task" with start_date +
+// due_date set, side-by-side with a "Kapcsolattartók" panel that lists the
+// couple's picked suppliers (curated, community, and DIY) so an urgent task
+// has the phone number one click away. Click a bar → date drawer; click a
+// supplier chip on a bar → scroll to that supplier in the contact panel.
+
+import type { CoupleSupplier } from "@shared/couple_suppliers";
+import type { CouplePick } from "@shared/picks";
+import type { DirectorySupplier, DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
+import type { PlanningItem } from "@shared/types";
+import {
+  BedDouble,
+  Brush,
+  Building2,
+  Bus,
+  Cake,
+  Camera,
+  ChefHat,
+  Disc3,
+  Flower2,
+  Globe,
+  Lightbulb,
+  Mail,
+  PartyPopper,
+  Phone,
+  Shirt,
+  StickyNote,
+  Wine,
+  X,
+} from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { AppShell } from "../components/AppShell";
+import { Skeleton, useToast } from "../components/ui";
+import { ApiError } from "../lib/api";
+import { coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
+import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
+
+type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
+
+const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
+  venue: Building2,
+  accommodation: BedDouble,
+  catering: ChefHat,
+  cake_dessert: Cake,
+  bar_drinks: Wine,
+  decor_floral: Flower2,
+  lighting: Lightbulb,
+  music_dj: Disc3,
+  photo_video: Camera,
+  entertainment: PartyPopper,
+  attire: Shirt,
+  hair_makeup: Brush,
+  stationery: StickyNote,
+  transport: Bus,
+};
+
+/** Lightweight directory-shape for the contact panel. Covers curated +
+ *  community (`DirectorySupplier`) plus DIY (`CoupleSupplier`) entries
+ *  without forcing the consumer to discriminate on `source` everywhere. */
+interface ResolvedSupplier {
+  id: string;
+  name: string;
+  category: SupplierCategory;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+}
+
+function fromDirectory(s: DirectorySupplierBase): ResolvedSupplier {
+  return {
+    id: s.id,
+    name: s.name,
+    category: s.category,
+    phone: s.contact_phone,
+    email: s.contact_email,
+    website: s.website || null,
+  };
+}
+
+function fromDiy(s: CoupleSupplier): ResolvedSupplier {
+  return {
+    id: s.id,
+    name: s.name,
+    category: s.category,
+    phone: null,
+    email: null,
+    website: null,
+  };
+}
+
+/** Parse a YYYY-MM-DD literal into a Date at local midnight. Returns null on
+ *  any malformed input so callers can filter rows. Avoids `new Date(str)`
+ *  which has Safari-specific ISO quirks. */
+function parseISODate(s: string | null): Date | null {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null;
+  const dt = new Date(y, mo - 1, d);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function addDays(d: Date, n: number): Date {
+  const next = new Date(d);
+  next.setDate(next.getDate() + n);
+  return next;
+}
+
+function diffDays(a: Date, b: Date): number {
+  const ms = startOfDay(b).getTime() - startOfDay(a).getTime();
+  return Math.round(ms / 86_400_000);
+}
+
+function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function startOfNextMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+}
+
+function startOfWeekMon(d: Date): Date {
+  // Monday-anchored week. JS's getDay() is 0=Sun .. 6=Sat; map to 0=Mon .. 6=Sun.
+  const dow = (d.getDay() + 6) % 7;
+  return addDays(startOfDay(d), -dow);
+}
+
+export default function TimelinePage() {
+  const { t, locale } = useT();
+  useDocumentMeta("timeline.seo_title", "timeline.seo_description");
+  const toast = useToast();
+
+  const [items, setItems] = useState<PlanningItem[]>([]);
+  const [directory, setDirectory] = useState<DirectorySupplier[]>([]);
+  const [diy, setDiy] = useState<CoupleSupplier[]>([]);
+  const [picks, setPicks] = useState<CouplePick[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<PlanningItem | null>(null);
+
+  useEffect(() => {
+    Promise.all([planningApi.list(), supplierApi.list(), coupleSupplierApi.list(), picksApi.list()])
+      .then(([planning, dir, mine, pp]) => {
+        setItems(planning.items);
+        setDirectory(dir.suppliers);
+        setDiy(mine.suppliers);
+        setPicks(pp.picks);
+      })
+      .catch((e) => {
+        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      })
+      .finally(() => setLoading(false));
+  }, [t, toast]);
+
+  // id → ResolvedSupplier lookup across curated + community + DIY. Picks
+  // reference these by public string id; DIY entries don't surface via
+  // /api/suppliers so we merge their private list in here.
+  const supplierById = useMemo(() => {
+    const map = new Map<string, ResolvedSupplier>();
+    for (const s of directory) map.set(s.id, fromDirectory(s));
+    for (const s of diy) map.set(s.id, fromDiy(s));
+    return map;
+  }, [directory, diy]);
+
+  // Picks resolved to ResolvedSupplier + the picks themselves (some ids may
+  // point at suppliers we couldn't resolve — e.g. a curated entry retired
+  // after the pick was made — surface a name-less placeholder instead of
+  // dropping the row so the couple still sees the orphan and can fix it).
+  const pocList = useMemo(() => {
+    return picks.map((p) => {
+      const resolved = supplierById.get(p.supplier_id);
+      return { pick: p, supplier: resolved ?? null };
+    });
+  }, [picks, supplierById]);
+
+  // Task rows considered for the Gantt — kind===task is the only kind with
+  // date fields in the contract.
+  const tasks = useMemo(() => items.filter((i) => i.kind === "task"), [items]);
+
+  const datedTasks = useMemo(
+    () => tasks.filter((t) => t.start_date !== null && t.due_date !== null),
+    [tasks],
+  );
+  const undatedTasks = useMemo(
+    () => tasks.filter((t) => t.start_date === null || t.due_date === null),
+    [tasks],
+  );
+
+  const assigneeSuggestions = useMemo(() => {
+    const seen = new Set<string>();
+    for (const i of tasks) if (i.assignee && !seen.has(i.assignee)) seen.add(i.assignee);
+    return [...seen].sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
+  }, [tasks, locale]);
+
+  async function onSave(
+    id: number,
+    patch: {
+      start_date: string | null;
+      due_date: string | null;
+      assignee: string | null;
+      supplier_id: string | null;
+      done: boolean;
+    },
+  ): Promise<boolean> {
+    const prev = items.find((i) => i.id === id);
+    if (!prev) return false;
+    setItems((list) =>
+      list.map((i) => (i.id === id ? { ...i, ...patch, updated_at: Date.now() } : i)),
+    );
+    try {
+      const r = await planningApi.update(id, patch);
+      setItems((list) => list.map((i) => (i.id === id ? r.item : i)));
+      return true;
+    } catch (e) {
+      setItems((list) => list.map((i) => (i.id === id ? prev : i)));
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      return false;
+    }
+  }
+
+  function scrollToPoc(supplierId: string) {
+    const el = document.getElementById(`poc-${supplierId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Brief outline pulse so the user notices where the scroll landed.
+    el.classList.add("ring-2", "ring-blush-400");
+    window.setTimeout(() => el.classList.remove("ring-2", "ring-blush-400"), 1600);
+  }
+
+  return (
+    <AppShell>
+      <div className="space-y-6">
+        <header>
+          <h1 className="text-3xl font-serif text-ink-900 dark:text-paper-50">
+            {t("timeline.title")}
+          </h1>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("timeline.sub")}</p>
+        </header>
+
+        <PocCard items={pocList} loading={loading} locale={locale} />
+
+        <ChartCard
+          loading={loading}
+          tasks={datedTasks}
+          supplierById={supplierById}
+          onOpenTask={(item) => setEditing(item)}
+          onSupplierChipClick={scrollToPoc}
+        />
+
+        <UndatedCard
+          loading={loading}
+          tasks={undatedTasks}
+          supplierById={supplierById}
+          hasAnyTasks={tasks.length > 0}
+          onOpenTask={(item) => setEditing(item)}
+        />
+      </div>
+
+      {editing && (
+        <TimelineEditDialog
+          item={editing}
+          pocList={pocList}
+          assigneeSuggestions={assigneeSuggestions}
+          onClose={() => setEditing(null)}
+          onSave={async (patch) => {
+            const ok = await onSave(editing.id, patch);
+            if (ok) setEditing(null);
+          }}
+        />
+      )}
+    </AppShell>
+  );
+}
+
+function PocCard({
+  items,
+  loading,
+  locale,
+}: {
+  items: { pick: CouplePick; supplier: ResolvedSupplier | null }[];
+  loading: boolean;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+
+  return (
+    <section className="card p-0">
+      <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
+          {t("timeline.poc_title")}
+        </h2>
+      </header>
+      {loading ? (
+        <ul className="divide-y divide-paper-200 p-0 dark:divide-umber-700" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="flex items-center gap-3 px-5 py-3">
+              <Skeleton variant="circle" width={28} />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton variant="block" width="40%" height={14} rounded="md" />
+                <Skeleton variant="block" width="60%" height={11} rounded="md" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : items.length === 0 ? (
+        <p className="px-5 py-6 text-sm text-ink-600 dark:text-umber-200">
+          {t("timeline.poc_empty")}
+        </p>
+      ) : (
+        // Below 768px collapse into a horizontal-scroll strip so each contact
+        // card stays usable on phones without forcing a long vertical list.
+        <ul className="flex gap-3 overflow-x-auto px-5 py-4 sm:flex-col sm:gap-0 sm:divide-y sm:divide-paper-200 sm:overflow-visible sm:px-0 sm:py-0 dark:sm:divide-umber-700">
+          {items.map(({ pick, supplier }) => (
+            <PocRow key={pick.supplier_id} pick={pick} supplier={supplier} locale={locale} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function PocRow({
+  pick,
+  supplier,
+  locale,
+}: {
+  pick: CouplePick;
+  supplier: ResolvedSupplier | null;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const Icon = supplier ? CATEGORY_ICON[supplier.category] : Building2;
+  const category = supplier?.category ?? (pick.supplier_id as SupplierCategory);
+  const displayName =
+    supplier?.name ?? (locale === "hu" ? "Ismeretlen kapcsolattartó" : "Unknown supplier");
+
+  return (
+    <li
+      id={`poc-${pick.supplier_id}`}
+      className="flex w-64 shrink-0 items-start gap-3 rounded-2xl border border-paper-300 px-3 py-3 transition-colors sm:w-auto sm:rounded-none sm:border-0 sm:px-5 dark:border-umber-700"
+    >
+      <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+        <Icon size={16} aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
+          {displayName}
+        </p>
+        <p className="mt-0.5 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {t(`suppliers.cat.${category}`)}
+        </p>
+        {supplier && (supplier.phone || supplier.email || supplier.website) && (
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-700 dark:text-paper-100">
+            {supplier.phone && (
+              <a
+                href={`tel:${supplier.phone.replace(/\s+/g, "")}`}
+                className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+              >
+                <Phone size={11} aria-hidden="true" />
+                <span>{supplier.phone}</span>
+              </a>
+            )}
+            {supplier.email && (
+              <a
+                href={`mailto:${supplier.email}`}
+                className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+              >
+                <Mail size={11} aria-hidden="true" />
+                <span className="truncate max-w-[140px]">{supplier.email}</span>
+              </a>
+            )}
+            {supplier.website && (
+              <a
+                href={supplier.website}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+              >
+                <Globe size={11} aria-hidden="true" />
+                <span>{t("suppliers.visit_website")}</span>
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+interface ChartGeometry {
+  start: Date;
+  end: Date;
+  totalDays: number;
+  /** "week" → ~24px per day, ~168px per week column; "month" → derived from totalDays. */
+  mode: "week" | "month";
+  /** Width of one day in px — drives bar layout + min-width so horizontal
+   *  scroll on mobile keeps the bars at a tappable density. */
+  dayWidth: number;
+  /** Tick mark positions, derived from `mode`. */
+  ticks: { date: Date; label: string }[];
+}
+
+function buildGeometry(tasks: PlanningItem[], locale: "hu" | "en"): ChartGeometry | null {
+  const dates: Date[] = [];
+  for (const t of tasks) {
+    const s = parseISODate(t.start_date);
+    const e = parseISODate(t.due_date);
+    if (s && e) {
+      dates.push(s, e);
+    }
+  }
+  if (dates.length === 0) return null;
+  let minD = dates[0] as Date;
+  let maxD = dates[0] as Date;
+  for (const d of dates) {
+    if (d < minD) minD = d;
+    if (d > maxD) maxD = d;
+  }
+  // Snap outward to month boundaries so the axis tick labels land cleanly.
+  const start = startOfMonth(minD);
+  const end = addDays(startOfNextMonth(maxD), -1);
+  const totalDays = diffDays(start, end) + 1;
+  const mode: "week" | "month" = totalDays <= 90 ? "week" : "month";
+  // Day-cell strategy: week mode keeps a chunky 24 px/day (cells stay
+  // tappable on mobile); month mode compresses to 80 px per month so a
+  // year-long plan still fits with horizontal scroll.
+  const dayWidth = mode === "week" ? 24 : Math.max(3, 80 / 30);
+
+  const ticks: { date: Date; label: string }[] = [];
+  if (mode === "week") {
+    let cur = startOfWeekMon(start);
+    if (cur < start) cur = addDays(cur, 7);
+    const monthFmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    while (cur <= end) {
+      ticks.push({ date: cur, label: monthFmt.format(cur) });
+      cur = addDays(cur, 7);
+    }
+  } else {
+    let cur = startOfMonth(start);
+    const monthFmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      month: "short",
+      year: "numeric",
+    });
+    while (cur <= end) {
+      ticks.push({ date: cur, label: monthFmt.format(cur) });
+      cur = startOfNextMonth(cur);
+    }
+  }
+
+  return { start, end, totalDays, mode, dayWidth, ticks };
+}
+
+function ChartCard({
+  loading,
+  tasks,
+  supplierById,
+  onOpenTask,
+  onSupplierChipClick,
+}: {
+  loading: boolean;
+  tasks: PlanningItem[];
+  supplierById: Map<string, ResolvedSupplier>;
+  onOpenTask: (item: PlanningItem) => void;
+  onSupplierChipClick: (supplierId: string) => void;
+}) {
+  const { t, locale } = useT();
+  const geometry = useMemo(() => buildGeometry(tasks, locale), [tasks, locale]);
+
+  // Sort by start_date so the chart reads top-down chronologically.
+  const ordered = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      const sa = a.start_date ?? "";
+      const sb = b.start_date ?? "";
+      if (sa !== sb) return sa.localeCompare(sb);
+      return (a.due_date ?? "").localeCompare(b.due_date ?? "");
+    });
+  }, [tasks]);
+
+  const today = startOfDay(new Date());
+  const todayOffsetDays =
+    geometry && today >= geometry.start && today <= geometry.end
+      ? diffDays(geometry.start, today)
+      : null;
+
+  // Reserved gutter on the left of each row for the task title so short bars
+  // still show their label. Bars never overlap the gutter — they start
+  // immediately after it on the same row.
+  const chartMinWidth = geometry ? geometry.totalDays * geometry.dayWidth : 0;
+
+  return (
+    <section className="card p-0">
+      <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
+          {t("timeline.chart_title")}
+        </h2>
+      </header>
+      {loading ? (
+        <div className="space-y-2 p-5" aria-hidden="true">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="block" height={28} width="80%" rounded="md" />
+          ))}
+        </div>
+      ) : !geometry || ordered.length === 0 ? (
+        <p className="px-5 py-6 text-sm text-ink-600 dark:text-umber-200">
+          {t("timeline.no_dates_empty")}
+        </p>
+      ) : (
+        <div className="overflow-x-auto px-5 py-4">
+          <div style={{ minWidth: chartMinWidth }} className="relative">
+            {/* Date axis */}
+            <div
+              className="relative mb-2 h-6 border-b border-paper-300 dark:border-umber-700"
+              aria-hidden="true"
+            >
+              {geometry.ticks.map((tick) => {
+                const offset = diffDays(geometry.start, tick.date) * geometry.dayWidth;
+                return (
+                  <div
+                    key={tick.date.toISOString()}
+                    className="absolute top-0 h-full"
+                    style={{ left: offset }}
+                  >
+                    <div className="absolute left-0 top-0 h-full w-px bg-paper-300 dark:bg-umber-700" />
+                    <span className="absolute left-1 top-0 whitespace-nowrap text-[11px] text-ink-500 dark:text-umber-300">
+                      {tick.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="relative space-y-1">
+              {ordered.map((item) => (
+                <GanttRow
+                  key={item.id}
+                  item={item}
+                  geometry={geometry}
+                  supplierById={supplierById}
+                  onClick={() => onOpenTask(item)}
+                  onSupplierChipClick={onSupplierChipClick}
+                />
+              ))}
+
+              {todayOffsetDays !== null && (
+                <div
+                  className="pointer-events-none absolute top-0 bottom-0 border-l-2 border-blush-500"
+                  style={{ left: todayOffsetDays * geometry.dayWidth }}
+                  aria-label={t("timeline.today_label")}
+                  title={t("timeline.today_label")}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GanttRow({
+  item,
+  geometry,
+  supplierById,
+  onClick,
+  onSupplierChipClick,
+}: {
+  item: PlanningItem;
+  geometry: ChartGeometry;
+  supplierById: Map<string, ResolvedSupplier>;
+  onClick: () => void;
+  onSupplierChipClick: (supplierId: string) => void;
+}) {
+  const start = parseISODate(item.start_date);
+  const end = parseISODate(item.due_date);
+  if (!start || !end) return null;
+
+  const clampedStart = start < geometry.start ? geometry.start : start;
+  const clampedEnd = end > geometry.end ? geometry.end : end;
+  const left = diffDays(geometry.start, clampedStart) * geometry.dayWidth;
+  const widthDays = diffDays(clampedStart, clampedEnd) + 1;
+  const width = Math.max(geometry.dayWidth, widthDays * geometry.dayWidth);
+
+  const supplier = item.supplier_id ? (supplierById.get(item.supplier_id) ?? null) : null;
+  const done = item.done;
+
+  const barClasses = done
+    ? "bg-sage-300 dark:bg-sage-400/30 text-sage-900 dark:text-paper-50"
+    : "bg-blush-300 dark:bg-blush-400/30 text-ink-900 dark:text-paper-50";
+
+  return (
+    <div className="relative h-7" style={{ marginBottom: 4 }}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`absolute top-0 flex h-7 items-center gap-2 rounded-md px-2 text-xs shadow-soft transition-colors ${barClasses} hover:brightness-95`}
+        style={{ left, width }}
+        title={item.title}
+      >
+        <span className={`min-w-0 flex-1 truncate text-left ${done ? "line-through" : ""}`}>
+          {item.title}
+        </span>
+        {supplier && (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSupplierChipClick(supplier.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                onSupplierChipClick(supplier.id);
+              }
+            }}
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-paper-100/80 px-1.5 py-0.5 text-[10px] text-ink-800 hover:bg-paper-100 dark:bg-umber-900/60 dark:text-paper-100 dark:hover:bg-umber-900/80"
+          >
+            {supplier.name}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+}
+
+function UndatedCard({
+  loading,
+  tasks,
+  supplierById,
+  hasAnyTasks,
+  onOpenTask,
+}: {
+  loading: boolean;
+  tasks: PlanningItem[];
+  supplierById: Map<string, ResolvedSupplier>;
+  hasAnyTasks: boolean;
+  onOpenTask: (item: PlanningItem) => void;
+}) {
+  const { t } = useT();
+
+  return (
+    <section className="card p-0">
+      <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
+          {t("timeline.no_dates_title")}
+        </h2>
+      </header>
+      {loading ? (
+        <div className="space-y-2 p-5" aria-hidden="true">
+          {[0, 1].map((i) => (
+            <Skeleton key={i} variant="block" height={36} width="80%" rounded="md" />
+          ))}
+        </div>
+      ) : tasks.length === 0 ? (
+        <p className="px-5 py-6 text-sm text-ink-600 dark:text-umber-200">
+          {hasAnyTasks ? t("timeline.no_dates_empty") : t("timeline.no_dates_empty_all")}
+        </p>
+      ) : (
+        <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+          {tasks.map((item) => {
+            const supplier = item.supplier_id ? (supplierById.get(item.supplier_id) ?? null) : null;
+            return (
+              <li key={item.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                <span
+                  className={`min-w-0 flex-1 truncate text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
+                >
+                  {item.title}
+                </span>
+                {item.assignee && (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+                    {item.assignee}
+                  </span>
+                )}
+                {supplier && (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-paper-200 px-2 py-0.5 text-[11px] text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+                    {supplier.name}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onOpenTask(item)}
+                  className="btn-ghost btn-sm shrink-0"
+                >
+                  {t("timeline.set_dates")}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function TimelineEditDialog({
+  item,
+  pocList,
+  assigneeSuggestions,
+  onClose,
+  onSave,
+}: {
+  item: PlanningItem;
+  pocList: { pick: CouplePick; supplier: ResolvedSupplier | null }[];
+  assigneeSuggestions: string[];
+  onClose: () => void;
+  onSave: (patch: {
+    start_date: string | null;
+    due_date: string | null;
+    assignee: string | null;
+    supplier_id: string | null;
+    done: boolean;
+  }) => Promise<void>;
+}) {
+  const { t } = useT();
+  const [startDate, setStartDate] = useState(item.start_date ?? "");
+  const [dueDate, setDueDate] = useState(item.due_date ?? "");
+  const [assignee, setAssignee] = useState(item.assignee ?? "");
+  const [supplierId, setSupplierId] = useState(item.supplier_id ?? "");
+  const [done, setDone] = useState(item.done);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const initialFocusRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    initialFocusRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (!submitting) onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose, submitting]);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const s = startDate.trim() || null;
+    const d = dueDate.trim() || null;
+    if (s && d && s > d) {
+      setError(t("timeline.error_dates"));
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
+    try {
+      await onSave({
+        start_date: s,
+        due_date: d,
+        assignee: assignee.trim() || null,
+        supplier_id: supplierId || null,
+        done,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const assigneeListId = "timeline-assignee-list";
+
+  return (
+    <div
+      className="fixed inset-0 z-30 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !submitting) onClose();
+      }}
+    >
+      <form
+        onSubmit={onSubmit}
+        className="flex w-full max-w-lg max-h-[90vh] flex-col overflow-hidden rounded-t-2xl bg-paper-50 shadow-pop sm:rounded-2xl dark:bg-umber-800"
+      >
+        <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4 dark:border-umber-700">
+          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+            {t("timeline.edit_title")}
+          </h2>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label={t("common.cancel")}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-ink-900 dark:text-paper-50">{item.title}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("timeline.field_start_date")}
+              </span>
+              <input
+                ref={initialFocusRef}
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  if (error) setError(null);
+                }}
+                className="input w-full"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("timeline.field_due_date")}
+              </span>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => {
+                  setDueDate(e.target.value);
+                  if (error) setError(null);
+                }}
+                className="input w-full"
+              />
+            </label>
+          </div>
+          {error && <p className="text-xs text-blush-700 dark:text-blush-300">{error}</p>}
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {t("planning.assignee_label")}
+            </span>
+            <input
+              type="text"
+              value={assignee}
+              onChange={(e) => setAssignee(e.target.value)}
+              list={assigneeSuggestions.length > 0 ? assigneeListId : undefined}
+              placeholder={t("planning.assignee_placeholder")}
+              maxLength={80}
+              className="input w-full"
+            />
+            {assigneeSuggestions.length > 0 && (
+              <datalist id={assigneeListId}>
+                {assigneeSuggestions.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+            )}
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {t("timeline.field_supplier")}
+            </span>
+            <select
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className="input w-full"
+            >
+              <option value="">{t("timeline.supplier_none")}</option>
+              {pocList.map(({ pick, supplier }) => {
+                const label = supplier
+                  ? `${supplier.name} — ${t(`suppliers.cat.${supplier.category}`)}`
+                  : pick.supplier_id;
+                return (
+                  <option key={pick.supplier_id} value={pick.supplier_id}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+            <input
+              type="checkbox"
+              checked={done}
+              onChange={(e) => setDone(e.target.checked)}
+              className="h-4 w-4 cursor-pointer rounded border-paper-300 text-ink-900 dark:border-umber-600"
+            />
+            <span>{t("planning.mark_done")}</span>
+          </label>
+        </div>
+        <div className="flex gap-2 border-t border-paper-200 px-6 py-4 dark:border-umber-700">
+          <button
+            type="button"
+            className="btn-ghost flex-1"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            {t("common.cancel")}
+          </button>
+          <button type="submit" className="btn-primary flex-1" disabled={submitting}>
+            {submitting ? t("common.saving") : t("common.save")}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

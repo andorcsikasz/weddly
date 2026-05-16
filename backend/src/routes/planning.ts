@@ -18,6 +18,7 @@ import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router }
 const MAX_TITLE = 200;
 const MAX_BODY = 5000;
 const MAX_ASSIGNEE = 80;
+const MAX_SUPPLIER_ID = 64;
 // HH:MM, 00:00..23:59. Anchored regex — no leading/trailing whitespace.
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 // YYYY-MM-DD. Loose check; we don't validate calendar validity (Feb 30 sneaks
@@ -32,6 +33,8 @@ interface UpsertBody {
   due_date?: unknown;
   scheduled_time?: unknown;
   assignee?: unknown;
+  start_date?: unknown;
+  supplier_id?: unknown;
   position?: unknown;
 }
 
@@ -69,6 +72,26 @@ function parseDueDate(raw: unknown): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (!DATE_RE.test(trimmed)) throw new HttpError(400, "due_date must be YYYY-MM-DD");
+  return trimmed;
+}
+
+function parseStartDate(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "start_date must be YYYY-MM-DD");
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (!DATE_RE.test(trimmed)) throw new HttpError(400, "start_date must be YYYY-MM-DD");
+  return trimmed;
+}
+
+function parseSupplierId(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "supplier_id must be a string");
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > MAX_SUPPLIER_ID) {
+    throw new HttpError(400, `supplier_id too long (max ${MAX_SUPPLIER_ID})`);
+  }
   return trimmed;
 }
 
@@ -120,6 +143,10 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const dueDate = kind === "task" ? parseDueDate(body.due_date) : null;
   const scheduledTime = kind === "schedule" ? parseScheduledTime(body.scheduled_time) : null;
   const assignee = kind === "task" ? parseAssignee(body.assignee) : null;
+  // Gantt fields are tasks-only. Mirror the assignee branch: silently null on
+  // idea/schedule rather than 400'ing a misdirected payload.
+  const startDate = kind === "task" ? parseStartDate(body.start_date) : null;
+  const supplierId = kind === "task" ? parseSupplierId(body.supplier_id) : null;
   // Ideas auto-stamp the authoring partner so "— Anna javasolta" can render
   // on every idea row, even ones created through the wand / dice helpers.
   // Other kinds leave it null (the schedule/task author isn't surfaced).
@@ -131,8 +158,8 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     .prepare(
       `INSERT INTO planning_items
         (couple_id, kind, title, body, done, due_date, scheduled_time, assignee,
-         suggested_by_user_id, position, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         suggested_by_user_id, start_date, supplier_id, position, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -144,6 +171,8 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       scheduledTime,
       assignee,
       suggestedBy,
+      startDate,
+      supplierId,
       position,
       ts,
       ts,
@@ -199,15 +228,40 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
       : existing.kind === "task"
         ? parseAssignee(body.assignee)
         : null;
+  const startDate =
+    body.start_date === undefined
+      ? existing.start_date
+      : existing.kind === "task"
+        ? parseStartDate(body.start_date)
+        : null;
+  const supplierId =
+    body.supplier_id === undefined
+      ? existing.supplier_id
+      : existing.kind === "task"
+        ? parseSupplierId(body.supplier_id)
+        : null;
   const position = parsePosition(body.position, existing.position);
   const ts = now();
 
   db.prepare(
     `UPDATE planning_items SET
         title = ?, body = ?, done = ?, due_date = ?, scheduled_time = ?,
-        assignee = ?, position = ?, updated_at = ?
+        assignee = ?, start_date = ?, supplier_id = ?, position = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
-  ).run(title, bodyText, done, dueDate, scheduledTime, assignee, position, ts, id, couple.id);
+  ).run(
+    title,
+    bodyText,
+    done,
+    dueDate,
+    scheduledTime,
+    assignee,
+    startDate,
+    supplierId,
+    position,
+    ts,
+    id,
+    couple.id,
+  );
 
   addAuditLog({
     actor_user_id: userId,

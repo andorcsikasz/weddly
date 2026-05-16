@@ -123,6 +123,14 @@ addColumnIfMissing(
   "suggested_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL",
 );
 
+// Gantt-range support on planning tasks. `start_date` pairs with the existing
+// `due_date` (= "task ends here") to form a date range; `supplier_id` is a
+// free reference to `couple_picks.supplier_id` (curated slug / "c{N}" /
+// DIY hex). We deliberately do NOT enforce a FK — picks have no PK on
+// supplier_id alone, and a task may outlive a supplier un-pick.
+addColumnIfMissing("planning_items", "start_date", "start_date TEXT");
+addColumnIfMissing("planning_items", "supplier_id", "supplier_id TEXT");
+
 // Global slug uniqueness — couples.slug paired with the 4-digit household
 // code is the public RSVP credential, so two weddings must never share a
 // slug. Application code (uniqueCoupleSlug + PATCH /api/couples/slug)

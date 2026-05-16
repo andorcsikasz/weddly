@@ -23,6 +23,8 @@ export interface PlanningItemRow {
   scheduled_time: string | null;
   assignee: string | null;
   suggested_by_user_id: number | null;
+  start_date: string | null;
+  supplier_id: string | null;
   position: number;
   created_at: number;
   updated_at: number;
@@ -49,6 +51,8 @@ export function toPlanningItem(row: PlanningItemJoinedRow): PlanningItem {
     assignee: row.assignee,
     suggested_by_user_id: row.suggested_by_user_id,
     suggested_by_name: row.suggested_by_name,
+    start_date: row.start_date,
+    supplier_id: row.supplier_id,
     position: row.position,
     created_at: row.created_at,
     updated_at: row.updated_at,

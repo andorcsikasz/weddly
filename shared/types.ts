@@ -712,6 +712,11 @@ export interface PlanningItem {
    *  offers the union of existing assignees as a datalist so re-typing stays
    *  minimal. */
   assignee: string | null;
+  /** Tasks only — ISO YYYY-MM-DD. Pair with `due_date` for a Gantt-range view. */
+  start_date: string | null;
+  /** Tasks only — public supplier id (matches `couple_picks.supplier_id`).
+   *  Free reference; we don't enforce that the supplier is still picked. */
+  supplier_id: string | null;
   /** Ideas only — id of the partner who logged the idea. Auto-stamped at
    *  create time. NULL only for legacy rows or items whose author was deleted. */
   suggested_by_user_id: number | null;
