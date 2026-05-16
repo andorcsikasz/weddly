@@ -635,7 +635,7 @@ export default function ProfilePage() {
                     value={capInput}
                     onChange={(ev) => setCapInput(ev.target.value)}
                     placeholder={t("profile.budget_cap_placeholder")}
-                    className="input h-8 w-32 py-0 text-right text-sm tabular-nums"
+                    className="input h-11 w-32 py-0 text-right text-base tabular-nums sm:h-8 sm:text-sm"
                     autoFocus
                     disabled={savingCap}
                   />
@@ -643,14 +643,14 @@ export default function ProfilePage() {
                 </div>
                 <button
                   type="submit"
-                  className="btn-sm btn-primary !px-3 !py-1 !text-xs"
+                  className="btn-sm btn-primary !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
                   disabled={savingCap}
                 >
                   {savingCap ? t("common.saving") : t("common.save")}
                 </button>
                 <button
                   type="button"
-                  className="btn-sm btn-outline !px-3 !py-1 !text-xs"
+                  className="btn-sm btn-outline !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
                   onClick={() => {
                     setEditingCap(false);
                     setCapError(null);
@@ -700,7 +700,7 @@ export default function ProfilePage() {
                   value={paymentLabel}
                   onChange={(ev) => setPaymentLabel(ev.target.value)}
                   placeholder={t("profile.budget_payment_label_placeholder")}
-                  className="input h-8 flex-1 min-w-[8rem] py-0 text-sm"
+                  className="input h-11 flex-1 min-w-[8rem] py-0 text-base sm:h-8 sm:text-sm"
                   maxLength={200}
                   autoFocus
                   disabled={savingPayment}
@@ -714,21 +714,21 @@ export default function ProfilePage() {
                     value={paymentAmount}
                     onChange={(ev) => setPaymentAmount(ev.target.value)}
                     placeholder={t("profile.budget_payment_amount_placeholder")}
-                    className="input h-8 w-28 py-0 text-right text-sm tabular-nums"
+                    className="input h-11 w-28 py-0 text-right text-base tabular-nums sm:h-8 sm:text-sm"
                     disabled={savingPayment}
                   />
                   <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
                 </div>
                 <button
                   type="submit"
-                  className="btn-sm btn-primary !px-3 !py-1 !text-xs"
+                  className="btn-sm btn-primary !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
                   disabled={savingPayment}
                 >
                   {savingPayment ? t("common.saving") : t("profile.budget_payment_save")}
                 </button>
                 <button
                   type="button"
-                  className="btn-sm btn-outline !px-3 !py-1 !text-xs"
+                  className="btn-sm btn-outline !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
                   onClick={() => {
                     setAddingPayment(false);
                     setPaymentLabel("");

@@ -732,7 +732,7 @@ export default function DashboardPage() {
       {!couple.partner_b_id && <PartnerMergeBanner onAccepted={() => window.location.reload()} />}
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-serif text-4xl">{couple.display_name}</h1>
+          <h1 className="font-serif text-3xl sm:text-4xl">{couple.display_name}</h1>
           <EditableWeddingDate goal={couple.wedding_date_goal} onSave={saveWeddingDate} />
         </div>
         <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -1514,7 +1514,7 @@ function BudgetKpiTile({
               else if (e.key === "Escape") setEditing(false);
             }}
             aria-label={t("dashboard.kpi_budget_edit_aria")}
-            className="stat-num w-32 rounded border border-blush-500 bg-white px-1 py-0.5 text-center text-xs font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 dark:bg-umber-800 dark:text-paper-50"
+            className="stat-num w-32 rounded border border-blush-500 bg-white px-1 py-1 text-center text-base font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 sm:py-0.5 sm:text-xs dark:bg-umber-800 dark:text-paper-50"
           />
         ) : (
           <>
@@ -1611,7 +1611,7 @@ function DaysToGoTile({
           onKeyDown={(e) => {
             if (e.key === "Escape") setEditing(false);
           }}
-          className="mt-2 w-full rounded border border-blush-500 bg-white px-2 py-1 text-center text-sm font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 dark:bg-umber-800 dark:text-paper-50"
+          className="mt-2 w-full rounded border border-blush-500 bg-white px-2 py-2 text-center text-base font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 sm:py-1 sm:text-sm dark:bg-umber-800 dark:text-paper-50"
         />
       ) : (
         <button

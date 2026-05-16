@@ -182,7 +182,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={api}>
       {children}
       {createPortal(
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 p-4 safe-bottom sm:bottom-4 sm:right-4 sm:left-auto sm:items-end">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 p-4 pb-20 safe-bottom lg:pb-4 sm:bottom-4 sm:right-4 sm:left-auto sm:items-end">
           {/* Polite region: success + info. Additions only — removals are
               not announced because they'd duplicate the original message. */}
           <div role="status" aria-live="polite" aria-relevant="additions" className="contents">

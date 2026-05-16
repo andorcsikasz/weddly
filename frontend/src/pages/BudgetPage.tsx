@@ -1100,7 +1100,7 @@ function AddCustomRowTr({
               else if (e.key === "Escape") reset();
             }}
             aria-label={t("budget.custom_row_label_placeholder")}
-            className="input h-9 min-h-0 flex-1 py-1 text-sm sm:flex-none sm:basis-56"
+            className="input h-11 min-h-0 flex-1 py-1 text-base sm:h-9 sm:flex-none sm:basis-56 sm:text-sm"
           />
           <input
             type="text"
@@ -1118,7 +1118,7 @@ function AddCustomRowTr({
               else if (e.key === "Escape") reset();
             }}
             aria-label={t("budget.custom_row_amount_placeholder")}
-            className="input h-9 min-h-0 flex-1 py-1 text-right text-sm tabular-nums sm:flex-none sm:basis-32"
+            className="input h-11 min-h-0 flex-1 py-1 text-right text-base tabular-nums sm:h-9 sm:flex-none sm:basis-32 sm:text-sm"
           />
           <button
             type="button"
@@ -1160,7 +1160,7 @@ function AddCustomRowTr({
                 onClick={() => setIconSlug(selected ? null : slug)}
                 title={t(`budget.custom_row_icon_choice.${slug}` as const)}
                 aria-label={t(`budget.custom_row_icon_choice.${slug}` as const)}
-                className={`inline-flex h-7 w-7 items-center justify-center rounded-md border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 ${
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-md border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 sm:h-7 sm:w-7 ${
                   selected
                     ? "border-blush-500 bg-blush-50 text-blush-700 dark:border-blush-400/60 dark:bg-blush-400/15 dark:text-blush-300"
                     : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"

@@ -2193,7 +2193,7 @@ function SuffixedInput({
         max={max}
         step={step}
         aria-label={ariaLabel}
-        className="input py-1.5 pr-9 text-sm"
+        className="input py-1.5 pr-9 text-base sm:text-sm"
         defaultValue={defaultValue}
         key={inputKey}
         onBlur={(e) => {

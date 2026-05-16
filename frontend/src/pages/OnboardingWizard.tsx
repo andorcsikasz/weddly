@@ -665,7 +665,7 @@ export default function OnboardingWizard() {
                         role="radio"
                         aria-checked={active}
                         onClick={() => update("currency", c)}
-                        className={`px-3 py-1 text-xs font-medium transition-colors ${
+                        className={`min-h-[44px] px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs ${
                           active
                             ? "bg-ink-900 text-paper-50"
                             : "bg-paper-50 text-ink-600 hover:bg-paper-100"

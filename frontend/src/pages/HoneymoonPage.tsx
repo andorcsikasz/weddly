@@ -619,7 +619,7 @@ function DaysTile({
             </span>
             <input
               type="date"
-              className="input mt-1 h-9 min-h-0 py-1 text-sm"
+              className="input mt-1 h-11 min-h-0 py-1 text-base sm:h-9 sm:text-sm"
               value={draftStart}
               min={todayIso()}
               onChange={(e) => {
@@ -640,7 +640,7 @@ function DaysTile({
             </span>
             <input
               type="date"
-              className="input mt-1 h-9 min-h-0 py-1 text-sm"
+              className="input mt-1 h-11 min-h-0 py-1 text-base sm:h-9 sm:text-sm"
               value={draftEnd}
               onChange={(e) => setDraftEnd(e.target.value)}
               min={maxIsoDate(draftStart || todayIso(), todayIso())}

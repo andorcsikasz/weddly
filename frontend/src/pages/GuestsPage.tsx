@@ -1190,7 +1190,7 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
       title={`${label} — ${nextHint}`}
       aria-label={`${label}. ${nextHint}`}
       aria-pressed={state !== "not_invited"}
-      className={`inline-flex h-6 w-9 shrink-0 items-center justify-center rounded-full border text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${cls}`}
+      className={`inline-flex h-8 w-12 shrink-0 items-center justify-center rounded-full border text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 sm:h-6 sm:w-9 ${cls}`}
     >
       {state === "delivered" ? (
         <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" />
@@ -1236,7 +1236,7 @@ function HouseholdLabelEditor({
       <div className="flex items-baseline gap-2">
         <input
           autoFocus
-          className="input flex-1 text-sm font-medium"
+          className="input flex-1 text-base font-medium sm:text-sm"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
@@ -2406,7 +2406,7 @@ function SongRequestList({
                   className="shrink-0 text-ink-400 dark:text-umber-300"
                 />
                 <input
-                  className="input flex-1 border-0 bg-transparent px-1 py-1 font-mono text-xs focus:ring-0"
+                  className="input flex-1 border-0 bg-transparent px-1 py-1 font-mono text-base focus:ring-0 sm:text-xs"
                   type="url"
                   value={row.url}
                   onChange={(e) => update(i, { url: normalizeSongUrl(e.target.value) })}
@@ -2778,7 +2778,7 @@ function CopyFallbackDialog({ url, onClose }: { url: string; onClose: () => void
         <input
           readOnly
           value={url}
-          className="input font-mono text-sm"
+          className="input font-mono text-base sm:text-sm"
           onFocus={(e) => e.currentTarget.select()}
         />
       </div>

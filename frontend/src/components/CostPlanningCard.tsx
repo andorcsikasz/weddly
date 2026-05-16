@@ -1154,7 +1154,7 @@ function AddCustomRow({
             else if (e.key === "Escape") reset();
           }}
           aria-label={t("budget.custom_row_label_placeholder")}
-          className="input h-9 min-h-0 flex-1 py-1 text-sm sm:flex-none sm:basis-44"
+          className="input h-11 min-h-0 flex-1 py-1 text-base sm:h-9 sm:flex-none sm:basis-44 sm:text-sm"
         />
         <input
           type="text"
@@ -1172,7 +1172,7 @@ function AddCustomRow({
             else if (e.key === "Escape") reset();
           }}
           aria-label={t("budget.custom_row_amount_placeholder")}
-          className="input h-9 min-h-0 flex-1 py-1 text-right text-sm tabular-nums sm:flex-none sm:basis-32"
+          className="input h-11 min-h-0 flex-1 py-1 text-right text-base tabular-nums sm:h-9 sm:flex-none sm:basis-32 sm:text-sm"
         />
         <button
           type="button"
