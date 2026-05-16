@@ -300,3 +300,179 @@ export function listCouplesForUser(userId: number): CoupleMembershipView[] {
     joined_at: r.joined_at,
   }));
 }
+
+interface GuestSeedRow {
+  id: number;
+  household_id: number | null;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  group_tag: string;
+  kind: string;
+  plus_one_name: string | null;
+  plus_one_meal: string | null;
+  dietary: string | null;
+  notes: string | null;
+  accommodation_needed: number;
+  song_request: string | null;
+}
+
+interface HouseholdSeedRow {
+  id: number;
+  label: string;
+  notes: string | null;
+  group_tag: string;
+}
+
+/** Copy a subset of guests (and the households they belong to) from one
+ *  couple workspace into another. Used by `POST /api/couples` so the user
+ *  can spin up Bravo / Charlie seeded with whoever from Alpha is also
+ *  coming to the second event. Caller must validate the user is a member
+ *  of both couples before calling this. Returns the count of new rows.
+ *
+ *  Reset on copy: rsvp_status flips back to 'pending', invited_at /
+ *  invitation_delivered_at clear, partner_role clears (the bride/groom on
+ *  Alpha are not auto-partners on Bravo — the new workspace will spawn
+ *  its own host guest rows via `ensurePartnerGuests`). Every guest gets a
+ *  fresh invite_code; every household gets a fresh 4-digit code. */
+export function seedCoupleFromCouple(
+  srcCoupleId: number,
+  dstCoupleId: number,
+  guestIds: readonly number[],
+): { households_copied: number; guests_copied: number } {
+  if (guestIds.length === 0) return { households_copied: 0, guests_copied: 0 };
+
+  // Defence-in-depth: the route already verifies both memberships, but
+  // refusing same-couple copies here protects against an accidental
+  // self-seed via a typoed src_couple_id.
+  if (srcCoupleId === dstCoupleId) {
+    throw new Error("seedCoupleFromCouple: src and dst must differ");
+  }
+
+  // Pull every requested guest in one round-trip, scoped to src. Anything
+  // missing from the result was either deleted or never belonged to src —
+  // we silently ignore it rather than 404 the whole copy so partial
+  // failure (e.g. a stale checkbox) doesn't kill the operation.
+  const placeholders = guestIds.map(() => "?").join(",");
+  const guests = db
+    .prepare(
+      `SELECT id, household_id, full_name, email, phone, group_tag, kind,
+              plus_one_name, plus_one_meal, dietary, notes,
+              accommodation_needed, song_request
+         FROM guests
+        WHERE couple_id = ? AND id IN (${placeholders})
+          AND partner_role IS NULL`,
+    )
+    .all(srcCoupleId, ...guestIds) as GuestSeedRow[];
+
+  if (guests.length === 0) return { households_copied: 0, guests_copied: 0 };
+
+  // Unique src household ids referenced by the selected guests. Guests
+  // with no household end up household-less in dst too (the
+  // ensurePartnerGuests pass in the route will give them a home later if
+  // the caller didn't pre-create one).
+  const srcHouseholdIds = Array.from(
+    new Set(guests.map((g) => g.household_id).filter((v): v is number => v !== null)),
+  );
+  let households: HouseholdSeedRow[] = [];
+  if (srcHouseholdIds.length > 0) {
+    const hhPlaceholders = srcHouseholdIds.map(() => "?").join(",");
+    households = db
+      .prepare(
+        `SELECT id, label, notes, group_tag
+           FROM households
+          WHERE couple_id = ? AND id IN (${hhPlaceholders})`,
+      )
+      .all(srcCoupleId, ...srcHouseholdIds) as HouseholdSeedRow[];
+  }
+
+  const ts = Date.now();
+  const tx = db.transaction(() => {
+    // Map old household id → new household id so guest INSERTs can resolve
+    // their FK. Each dst household gets a freshly minted 4-digit code so
+    // the public RSVP credential stays per-workspace.
+    const hhIdMap = new Map<number, number>();
+    const insertHousehold = db.prepare(
+      `INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+    );
+    const codeCheck = db.prepare(
+      "SELECT 1 FROM households WHERE couple_id = ? AND code = ? LIMIT 1",
+    );
+    function uniqueHouseholdCode(): string {
+      // Inline copy of domain/households.uniqueHouseholdCode — that helper
+      // takes a different signature shape than what we need here and a
+      // 50-attempt cap is plenty given the 9000-code namespace.
+      for (let attempt = 0; attempt < 50; attempt++) {
+        const code = String(1000 + Math.floor(Math.random() * 9000));
+        if (!codeCheck.get(dstCoupleId, code)) return code;
+      }
+      throw new Error(`Could not generate a unique household code for couple ${dstCoupleId}`);
+    }
+    for (const hh of households) {
+      const code = uniqueHouseholdCode();
+      const r = insertHousehold.run(
+        dstCoupleId,
+        code,
+        hh.label,
+        hh.notes,
+        hh.group_tag ?? "other",
+        ts,
+        ts,
+      );
+      hhIdMap.set(hh.id, Number(r.lastInsertRowid));
+    }
+
+    const inviteCheck = db.prepare("SELECT 1 FROM guests WHERE invite_code = ? LIMIT 1");
+    function uniqueInviteCode(): string {
+      // Mirrors domain/invite_codes.generateInviteCode + the uniqueness
+      // loop in domain/guests.uniqueInviteCode. Inline so this helper has
+      // no cross-domain imports.
+      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      for (let attempt = 0; attempt < 50; attempt++) {
+        let code = "";
+        for (let i = 0; i < 8; i++) {
+          code += alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+        if (!inviteCheck.get(code)) return code;
+      }
+      throw new Error("Could not generate a unique guest invite_code");
+    }
+
+    const insertGuest = db.prepare(
+      `INSERT INTO guests
+         (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
+          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
+          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
+          household_id, partner_role, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending',
+               NULL, ?, ?, ?, ?,
+               ?, ?, NULL, NULL, NULL,
+               ?, NULL, ?, ?)`,
+    );
+    for (const g of guests) {
+      const mappedHhId = g.household_id !== null ? (hhIdMap.get(g.household_id) ?? null) : null;
+      insertGuest.run(
+        dstCoupleId,
+        g.full_name,
+        g.email,
+        g.phone,
+        g.group_tag,
+        uniqueInviteCode(),
+        g.kind,
+        g.dietary,
+        g.plus_one_name,
+        g.plus_one_meal,
+        g.accommodation_needed,
+        g.song_request,
+        g.notes,
+        mappedHhId,
+        ts,
+        ts,
+      );
+    }
+  });
+  tx();
+
+  return { households_copied: households.length, guests_copied: guests.length };
+}

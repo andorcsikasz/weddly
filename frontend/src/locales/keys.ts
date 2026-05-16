@@ -92,6 +92,8 @@ export interface LocaleMessages {
     view_month: string;
     view_quarter: string;
     view_half: string;
+    /** Tooltip + aria for the Maximize2 button that opens the chart full-screen. */
+    expand_label: string;
     seo_title: string;
     seo_description: string;
   };

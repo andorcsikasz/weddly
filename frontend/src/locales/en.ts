@@ -859,6 +859,7 @@ const en: LocaleMessages = {
     view_month: "Monthly",
     view_quarter: "Quarterly",
     view_half: "Half-year",
+    expand_label: "Expand chart",
     seo_title: "Timeline — Weddly",
     seo_description: "Your wedding tasks as a Gantt chart with quick supplier contacts.",
   },

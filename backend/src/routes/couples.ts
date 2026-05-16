@@ -32,6 +32,7 @@ import {
   isCoupleMember,
   listCouplesForUser,
   removeCoupleMember,
+  seedCoupleFromCouple,
   toCouple,
 } from "../domain/couples";
 import { sendKind } from "../domain/emails";
@@ -1850,13 +1851,262 @@ function handleGetActivity(ctx: Ctx): Response {
   return json({ entries });
 }
 
+/* ─── Multi-workspace: Alpha / Bravo / Charlie ───────────────────────────
+ *
+ * `users.couple_id` keeps meaning "the workspace I'm currently viewing".
+ * The full set lives in `couple_members`; these three endpoints let the
+ * frontend list it, switch the active pointer, and spin up a second
+ * event seeded from the first.
+ */
+
+interface ListMyCouplesResponse {
+  current_couple_id: number | null;
+  couples: ReturnType<typeof listCouplesForUser>;
+}
+
+function handleListMyCouples(ctx: Ctx): Response {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const couples = listCouplesForUser(userId);
+  const current = getCoupleForUser(userId);
+  const payload: ListMyCouplesResponse = {
+    current_couple_id: current?.id ?? null,
+    couples,
+  };
+  return json(payload);
+}
+
+interface SwitchActiveCoupleBody {
+  couple_id?: unknown;
+}
+
+/** POST /api/users/me/active-couple — flip the user's `users.couple_id`
+ *  pointer to a different workspace they're a member of. Same UPDATE
+ *  pattern as `handleAcceptInviteMerge`, but here it's idempotent and
+ *  cheap (no purges, no FK rewiring) so it can fire on every click of
+ *  the header switcher. Audit row makes the switch visible on the
+ *  target workspace's activity feed. */
+async function handleSwitchActiveCouple(ctx: Ctx): Promise<Response> {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const body = await readJson<SwitchActiveCoupleBody>(ctx.req);
+  const targetId = Number(body.couple_id);
+  if (!Number.isFinite(targetId) || targetId <= 0) {
+    throw new HttpError(400, "couple_id required");
+  }
+  if (!isCoupleMember(targetId, userId)) {
+    throw new HttpError(403, "Not a member of this workspace", { code: "not_a_member" });
+  }
+  const target = getCoupleById(targetId);
+  if (!target) throw new HttpError(404, "Workspace not found");
+  if (target.status === "deleting") {
+    throw new HttpError(409, "Workspace is being deleted", { code: "target_deleting" });
+  }
+
+  const ts = now();
+  db.prepare("UPDATE users SET couple_id = ?, updated_at = ? WHERE id = ?").run(
+    targetId,
+    ts,
+    userId,
+  );
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: targetId,
+    action: "user.switch_workspace",
+    target_kind: "couple",
+    target_id: targetId,
+    note: `active workspace → ${targetId}`,
+  });
+  return json({ couple: toCouple(target) });
+}
+
+interface CreateAdditionalCoupleBody {
+  bride_name?: unknown;
+  groom_name?: unknown;
+  display_name?: unknown;
+  wedding_date_goal?: unknown;
+  guest_count_goal?: unknown;
+  budget_goal?: unknown;
+  ceremony_kind?: unknown;
+  currency?: unknown;
+  style_tags?: unknown;
+  /** Source workspace to seed guests + households from. Optional. The
+   *  caller must already be a member of this couple — verified server-
+   *  side so a malicious client can't bulk-clone someone else's list. */
+  seed_from_couple_id?: unknown;
+  /** Guest ids inside the source workspace that should be copied across.
+   *  Empty / omitted = no seed. Households of these guests come along
+   *  automatically. */
+  seed_guest_ids?: unknown;
+}
+
+/** POST /api/couples — create a SECOND (or third) workspace for an
+ *  already-onboarded user. Distinct from /api/couples/onboard which is
+ *  the first-time gate. The user becomes owner of the new workspace and
+ *  their `users.couple_id` auto-switches to it (the caller obviously
+ *  wants to look at what they just created; the header switcher will
+ *  show the old workspace alongside the new one). */
+async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const body = await readJson<CreateAdditionalCoupleBody>(ctx.req);
+
+  // The existing workspace count caps at 3 (Alpha / Bravo / Charlie). Most
+  // weddings need at most 2-3 events; the UI is built around three pills.
+  // Extending later means lifting this cap + revisiting the switcher
+  // layout, both deferred.
+  const existing = listCouplesForUser(userId).filter((c) => c.status !== "deleting").length;
+  if (existing >= 3) {
+    throw new HttpError(409, "You already have the maximum of 3 workspaces", {
+      code: "max_workspaces",
+    });
+  }
+
+  const { brideName, groomName, displayName } = parseNames(body);
+  const dateGoal = parseWeddingDateGoal(body);
+  const guestGoal = parseGuestCountGoal(body);
+  const budgetGoal = parseBudgetGoal(body);
+  const styleTags = parseStyleTags(body.style_tags);
+  const currency: Currency = parseCurrency(body.currency) ?? "HUF";
+  const ceremonyKind = parseCeremonyKind(body.ceremony_kind);
+
+  // Optional seed validation. Membership check protects against a malicious
+  // client pointing at someone else's couple_id; the seed helper itself
+  // does another defensive guard on src ≠ dst.
+  let seedFrom: number | null = null;
+  let seedGuestIds: number[] = [];
+  if (body.seed_from_couple_id !== undefined && body.seed_from_couple_id !== null) {
+    const srcId = Number(body.seed_from_couple_id);
+    if (!Number.isFinite(srcId) || srcId <= 0) {
+      throw new HttpError(400, "seed_from_couple_id must be a positive integer");
+    }
+    if (!isCoupleMember(srcId, userId)) {
+      throw new HttpError(403, "Not a member of the source workspace", { code: "not_a_member" });
+    }
+    seedFrom = srcId;
+    if (Array.isArray(body.seed_guest_ids)) {
+      seedGuestIds = body.seed_guest_ids
+        .map((v) => Number(v))
+        .filter((n) => Number.isFinite(n) && n > 0);
+    }
+  }
+
+  const ts = now();
+  const result = db
+    .prepare(
+      `INSERT INTO couples
+        (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
+         wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season,
+         target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
+         budget_ceiling_huf, budget_kind, budget_ceiling_min_huf, budget_ceiling_max_huf,
+         location_lat, location_lng, location_radius_km,
+         style_tags_json, currency, status, created_at, updated_at, onboarded_at)
+       VALUES (?, NULL, ?, ?, ?,
+               ?, ?, ?, ?, ?,
+               ?, ?, ?, ?,
+               ?, ?, ?, ?,
+               NULL, NULL, NULL,
+               ?, ?, 'active', ?, ?, ?)`,
+    )
+    .run(
+      userId,
+      displayName,
+      brideName,
+      groomName,
+      dateGoal.exact_date,
+      dateGoal.kind,
+      dateGoal.target_year,
+      dateGoal.target_month,
+      dateGoal.target_season,
+      guestGoal.exact,
+      guestGoal.kind,
+      guestGoal.min,
+      guestGoal.max,
+      budgetGoal.exact_huf,
+      budgetGoal.kind,
+      budgetGoal.min_huf,
+      budgetGoal.max_huf,
+      JSON.stringify(styleTags),
+      currency,
+      ts,
+      ts,
+      ts,
+    );
+  const coupleId = Number(result.lastInsertRowid);
+  const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), coupleId);
+  db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(slug, ts, coupleId);
+
+  if (ceremonyKind) {
+    db.prepare("UPDATE couples SET ceremony_kind = ?, updated_at = ? WHERE id = ?").run(
+      ceremonyKind,
+      ts,
+      coupleId,
+    );
+  }
+
+  // Spawn the bride/groom host-guest rows for the new workspace before
+  // seeding others, so the dedicated host household has the lowest ids
+  // (matches Alpha's ordering convention).
+  ensurePartnerGuests({ coupleId, brideName, groomName });
+
+  // Seed budget lines off the new workspace's own goal — Bravo / Charlie
+  // start with a fresh budget that the user can scale independently.
+  const seedHuf = representativeBudgetHuf(budgetGoal);
+  if (seedHuf > 0) seedBudgetLines(coupleId, seedHuf);
+
+  // Apply the optional guest+household import. Skipped silently when the
+  // caller didn't ask for it or selected nothing.
+  let seedSummary = { households_copied: 0, guests_copied: 0 };
+  if (seedFrom !== null && seedGuestIds.length > 0) {
+    seedSummary = seedCoupleFromCouple(seedFrom, coupleId, seedGuestIds);
+  }
+
+  // Membership + auto-switch. The new workspace becomes the user's active
+  // pointer so the next /api/couples/current resolves there immediately.
+  addCoupleMember(coupleId, userId, "owner");
+  db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
+    coupleId,
+    ts,
+    userId,
+  );
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "couple.create_additional",
+    target_kind: "couple",
+    target_id: coupleId,
+    after: {
+      display_name: displayName,
+      bride_name: brideName,
+      groom_name: groomName,
+      wedding_date_goal: dateGoal,
+      guest_count_goal: guestGoal,
+      budget_goal: budgetGoal,
+      seed_from_couple_id: seedFrom,
+      seed_households_copied: seedSummary.households_copied,
+      seed_guests_copied: seedSummary.guests_copied,
+    },
+  });
+
+  const row = getCoupleById(coupleId);
+  if (!row) throw new HttpError(500, "Couple vanished after insert");
+  return json(
+    {
+      couple: toCouple(row),
+      seeded: seedSummary,
+    },
+    { status: 201 },
+  );
+}
+
 export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/onboard", handleOnboard, true);
+  router.post("/api/couples", handleCreateAdditionalCouple, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
   router.get("/api/couples/partner", handleGetPartner, true);
   router.get("/api/couples/activity", handleGetActivity, true);
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
+  router.get("/api/users/me/couples", handleListMyCouples, true);
+  router.post("/api/users/me/active-couple", handleSwitchActiveCouple, true);
   router.post("/api/couples/invites", handleCreateInvite, true);
   router.get("/api/couples/invites/current", handleGetCurrentInvite, true);
   router.post("/api/couples/invites/cancel", handleCancelInvite, true);

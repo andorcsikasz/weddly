@@ -26,6 +26,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { planningApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { ProfileMenu } from "./ProfileMenu";
@@ -244,7 +245,32 @@ export function AppShell({ children }: { children: ReactNode }) {
   // admin rail when the user is actually an admin — otherwise a stray
   // /app/admin URL would render the admin chrome around a redirect.
   const inAdminView = user?.is_admin === true && location.pathname.startsWith("/app/admin");
-  const displayItems = inAdminView ? ADMIN_ITEMS : ITEMS;
+
+  // Timeline link is hidden until the couple has at least one task — with
+  // zero planning_items the page is empty chrome. Refetch on each pathname
+  // change so the link appears once the user adds their first task on
+  // /app/planning without forcing a page reload. Default to `true` while
+  // loading so the link doesn't pop in for established couples.
+  const [hasAnyTask, setHasAnyTask] = useState(true);
+  useEffect(() => {
+    if (!user || inAdminView) return;
+    let cancelled = false;
+    planningApi
+      .list()
+      .then((r) => {
+        if (cancelled) return;
+        setHasAnyTask(r.items.some((i) => i.kind === "task"));
+      })
+      .catch(() => {
+        /* network/auth blip — keep the link visible rather than punish the user */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, inAdminView, location.pathname]);
+
+  const coupleItems = hasAnyTask ? ITEMS : ITEMS.filter((i) => i.to !== "/app/timeline");
+  const displayItems = inAdminView ? ADMIN_ITEMS : coupleItems;
 
   return (
     <div className="min-h-full">
@@ -379,7 +405,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {moreOpen && (
         <MoreSheet
-          items={ITEMS.filter((item) => !item.tabKey)}
+          items={coupleItems.filter((item) => !item.tabKey)}
           title={t("nav.more_sheet_title")}
           closeLabel={t("a11y.close")}
           onClose={() => setMoreOpen(false)}

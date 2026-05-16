@@ -21,6 +21,7 @@ import {
   Globe,
   Lightbulb,
   Mail,
+  Maximize2,
   PartyPopper,
   Phone,
   Shirt,
@@ -28,10 +29,11 @@ import {
   Wine,
   X,
 } from "lucide-react";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType, ReactNode, SVGProps } from "react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AppShell } from "../components/AppShell";
-import { type SegmentedOption, SegmentedControl, Skeleton, useToast } from "../components/ui";
+import { Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
 import { maxIsoDate, todayIso } from "../lib/format";
@@ -546,14 +548,8 @@ function ChartCard({
   onSupplierChipClick: (supplierId: string) => void;
 }) {
   const { t, locale } = useT();
+  const [expanded, setExpanded] = useState(false);
   const geometry = useMemo(() => buildGeometry(tasks, locale, mode), [tasks, locale, mode]);
-
-  const modeOptions: ReadonlyArray<SegmentedOption<ChartMode>> = [
-    { value: "week", label: t("timeline.view_week") },
-    { value: "month", label: t("timeline.view_month") },
-    { value: "quarter", label: t("timeline.view_quarter") },
-    { value: "half", label: t("timeline.view_half") },
-  ];
 
   // Sort by start_date so the chart reads top-down chronologically.
   const ordered = useMemo(() => {
@@ -571,84 +567,265 @@ function ChartCard({
       ? diffDays(geometry.start, today)
       : null;
 
+  const toolbar = (
+    <div className="flex items-center gap-1">
+      <ChartModeSwitch mode={mode} onModeChange={onModeChange} />
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+        aria-label={t("timeline.expand_label")}
+        title={t("timeline.expand_label")}
+      >
+        <Maximize2 size={16} aria-hidden="true" />
+      </button>
+    </div>
+  );
+
+  const body = (
+    <ChartBody
+      loading={loading}
+      geometry={geometry}
+      ordered={ordered}
+      todayOffsetDays={todayOffsetDays}
+      supplierById={supplierById}
+      onOpenTask={onOpenTask}
+      onSupplierChipClick={onSupplierChipClick}
+    />
+  );
+
+  return (
+    <>
+      <section className="card p-0">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
+            {t("timeline.chart_title")}
+          </h2>
+          {toolbar}
+        </header>
+        {body}
+      </section>
+      {expanded && (
+        <ExpandedChart
+          title={t("timeline.chart_title")}
+          closeLabel={t("a11y.close")}
+          onClose={() => setExpanded(false)}
+          toolbar={
+            <ChartModeSwitch mode={mode} onModeChange={onModeChange} />
+          }
+        >
+          {body}
+        </ExpandedChart>
+      )}
+    </>
+  );
+}
+
+/** Inline mode selector — minimal text buttons, no pill background, so the
+ *  chart header reads as part of the card chrome instead of a control bar.
+ *  Labels use the standard chart-app shorthand (1W / 1M / 3M / 6M) so the
+ *  control stays compact in both locales; the full label is on the title. */
+function ChartModeSwitch({
+  mode,
+  onModeChange,
+}: {
+  mode: ChartMode;
+  onModeChange: (mode: ChartMode) => void;
+}) {
+  const { t } = useT();
+  const options: ReadonlyArray<{ value: ChartMode; short: string; full: string }> = [
+    { value: "week", short: "1W", full: t("timeline.view_week") },
+    { value: "month", short: "1M", full: t("timeline.view_month") },
+    { value: "quarter", short: "3M", full: t("timeline.view_quarter") },
+    { value: "half", short: "6M", full: t("timeline.view_half") },
+  ];
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t("timeline.view_aria")}
+      className="flex items-center gap-0.5 text-sm tabular-nums"
+    >
+      {options.map((opt) => {
+        const active = opt.value === mode;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={opt.full}
+            title={opt.full}
+            onClick={() => onModeChange(opt.value)}
+            className={`min-h-tap rounded-md px-2 py-1 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
+              active
+                ? "text-ink-900 dark:text-paper-50"
+                : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-200"
+            }`}
+          >
+            {opt.short}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ChartBody({
+  loading,
+  geometry,
+  ordered,
+  todayOffsetDays,
+  supplierById,
+  onOpenTask,
+  onSupplierChipClick,
+}: {
+  loading: boolean;
+  geometry: ChartGeometry | null;
+  ordered: PlanningItem[];
+  todayOffsetDays: number | null;
+  supplierById: Map<string, ResolvedSupplier>;
+  onOpenTask: (item: PlanningItem) => void;
+  onSupplierChipClick: (supplierId: string) => void;
+}) {
+  const { t } = useT();
   // Reserved gutter on the left of each row for the task title so short bars
   // still show their label. Bars never overlap the gutter — they start
   // immediately after it on the same row.
   const chartMinWidth = geometry ? geometry.totalDays * geometry.dayWidth : 0;
 
+  if (loading) {
+    return (
+      <div className="h-full space-y-2 p-5" aria-hidden="true">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} variant="block" height={28} width="80%" rounded="md" />
+        ))}
+      </div>
+    );
+  }
+  if (!geometry || ordered.length === 0) {
+    return (
+      <p className="h-full px-5 py-6 text-sm text-ink-600 dark:text-umber-200">
+        {t("timeline.no_dates_empty")}
+      </p>
+    );
+  }
   return (
-    <section className="card p-0">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
-          {t("timeline.chart_title")}
-        </h2>
-        <SegmentedControl<ChartMode>
-          ariaLabel={t("timeline.view_aria")}
-          value={mode}
-          options={modeOptions}
-          onChange={onModeChange}
-        />
-      </header>
-      {loading ? (
-        <div className="space-y-2 p-5" aria-hidden="true">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="block" height={28} width="80%" rounded="md" />
+    <div className="h-full overflow-x-auto overflow-y-auto px-5 py-4">
+      <div style={{ minWidth: chartMinWidth }} className="relative">
+        <div
+          className="relative mb-2 h-6 border-b border-paper-300 dark:border-umber-700"
+          aria-hidden="true"
+        >
+          {geometry.ticks.map((tick) => {
+            const offset = diffDays(geometry.start, tick.date) * geometry.dayWidth;
+            return (
+              <div
+                key={tick.date.toISOString()}
+                className="absolute top-0 h-full"
+                style={{ left: offset }}
+              >
+                <div className="absolute left-0 top-0 h-full w-px bg-paper-300 dark:bg-umber-700" />
+                <span className="absolute left-1 top-0 whitespace-nowrap text-[11px] text-ink-500 dark:text-umber-300">
+                  {tick.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="relative space-y-1">
+          {ordered.map((item) => (
+            <GanttRow
+              key={item.id}
+              item={item}
+              geometry={geometry}
+              supplierById={supplierById}
+              onClick={() => onOpenTask(item)}
+              onSupplierChipClick={onSupplierChipClick}
+            />
           ))}
-        </div>
-      ) : !geometry || ordered.length === 0 ? (
-        <p className="px-5 py-6 text-sm text-ink-600 dark:text-umber-200">
-          {t("timeline.no_dates_empty")}
-        </p>
-      ) : (
-        <div className="overflow-x-auto px-5 py-4">
-          <div style={{ minWidth: chartMinWidth }} className="relative">
-            {/* Date axis */}
+
+          {todayOffsetDays !== null && (
             <div
-              className="relative mb-2 h-6 border-b border-paper-300 dark:border-umber-700"
-              aria-hidden="true"
-            >
-              {geometry.ticks.map((tick) => {
-                const offset = diffDays(geometry.start, tick.date) * geometry.dayWidth;
-                return (
-                  <div
-                    key={tick.date.toISOString()}
-                    className="absolute top-0 h-full"
-                    style={{ left: offset }}
-                  >
-                    <div className="absolute left-0 top-0 h-full w-px bg-paper-300 dark:bg-umber-700" />
-                    <span className="absolute left-1 top-0 whitespace-nowrap text-[11px] text-ink-500 dark:text-umber-300">
-                      {tick.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="relative space-y-1">
-              {ordered.map((item) => (
-                <GanttRow
-                  key={item.id}
-                  item={item}
-                  geometry={geometry}
-                  supplierById={supplierById}
-                  onClick={() => onOpenTask(item)}
-                  onSupplierChipClick={onSupplierChipClick}
-                />
-              ))}
-
-              {todayOffsetDays !== null && (
-                <div
-                  className="pointer-events-none absolute top-0 bottom-0 border-l-2 border-blush-500"
-                  style={{ left: todayOffsetDays * geometry.dayWidth }}
-                  aria-label={t("timeline.today_label")}
-                  title={t("timeline.today_label")}
-                />
-              )}
-            </div>
-          </div>
+              className="pointer-events-none absolute top-0 bottom-0 border-l-2 border-blush-500"
+              style={{ left: todayOffsetDays * geometry.dayWidth }}
+              aria-label={t("timeline.today_label")}
+              title={t("timeline.today_label")}
+            />
+          )}
         </div>
-      )}
-    </section>
+      </div>
+    </div>
+  );
+}
+
+/** Full-viewport (90vw × 90vh) overlay that re-mounts the same chart body
+ *  with more horizontal real estate so a year-long plan fits without the
+ *  usual sidebar+header chrome eating into the canvas. Escape + backdrop
+ *  click + the close button all dismiss. */
+function ExpandedChart({
+  title,
+  closeLabel,
+  onClose,
+  toolbar,
+  children,
+}: {
+  title: string;
+  closeLabel: string;
+  onClose: () => void;
+  toolbar: ReactNode;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/50 p-4 backdrop-blur-sm"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="card relative flex h-[90vh] w-[90vw] max-w-[1800px] flex-col overflow-hidden p-0 shadow-pop dark:bg-umber-800 dark:border-umber-700"
+      >
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
+            {title}
+          </h2>
+          <div className="flex items-center gap-1">
+            {toolbar}
+            <button
+              type="button"
+              onClick={onClose}
+              className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+              aria-label={closeLabel}
+              title={closeLabel}
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
+        </header>
+        <div className="flex-1 min-h-0">{children}</div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

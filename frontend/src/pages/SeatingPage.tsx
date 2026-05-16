@@ -1390,13 +1390,17 @@ export default function SeatingPage() {
                       tapMode={tapMode}
                       selected={selectedHouseholdId === entry.householdId}
                       onTap={handleTapHousehold}
-                      onUnlink={(id) =>
+                      onUnlink={(id) => {
                         setUnlinkedHouseholds((prev) => {
                           const next = new Set(prev);
                           next.add(id);
                           return next;
-                        })
-                      }
+                        });
+                        // Stale tap-mode selection would still target the
+                        // disbanded household — clear it so the next seat
+                        // tap follows the user's new mental model.
+                        setSelectedHouseholdId((cur) => (cur === id ? null : cur));
+                      }}
                       unlinkLabel={t("seating.household_unlink")}
                       ariaLabel={t("seating.household_linked_aria").replace(
                         "{n}",

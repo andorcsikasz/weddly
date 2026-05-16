@@ -860,6 +860,7 @@ const hu: LocaleMessages = {
     view_month: "Havi",
     view_quarter: "Negyedéves",
     view_half: "Féléves",
+    expand_label: "Nagyobb nézet",
     seo_title: "Idővonal — Weddly",
     seo_description: "Esküvői feladataid Gantt-nézetben + kapcsolattartók.",
   },
@@ -1293,8 +1294,10 @@ const hu: LocaleMessages = {
     household_unlink: "Háztartás szétválasztása",
     household_relink: "Visszakapcsolás a háztartáshoz",
     household_placed_all: "{n} vendég leültetve · {table}",
-    household_placed_partial: "{n}/{m} vendég leültetve — a többiek a nem ültetettek között maradtak.",
-    household_no_room: "Nincs szabad hely ezen az asztalon — szabadíts fel székeket vagy válassz másik asztalt.",
+    household_placed_partial:
+      "{n}/{m} vendég leültetve — a többiek a nem ültetettek között maradtak.",
+    household_no_room:
+      "Nincs szabad hely ezen az asztalon — szabadíts fel székeket vagy válassz másik asztalt.",
     conflicts_title: "Konfliktusok",
     no_conflicts: "Nincs jelölt konfliktus.",
     conflict_split: "ne kerüljenek egymás mellé",
