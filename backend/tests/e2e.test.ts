@@ -6001,6 +6001,7 @@ describe("vendor waitlist", () => {
     email: string;
     category: string;
     location: string | null;
+    website: string | null;
     message: string | null;
     status: "new" | "under_review" | "accepted" | "rejected";
     outcome_at?: number | null;
@@ -6080,6 +6081,65 @@ describe("vendor waitlist", () => {
       location: "x".repeat(501),
     });
     expect(bad4.status).toBe(400);
+    // Website is optional; gibberish without a host fails URL parsing.
+    const bad5 = await req("POST", "/api/vendors/waitlist", {
+      business_name: "A",
+      email: "x@y.z",
+      category: "venue",
+      website: "not a url",
+    });
+    expect(bad5.status).toBe(400);
+  });
+
+  test("optional website round-trips and auto-prefixes bare hosts", async () => {
+    wipeAll();
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(adminReg.status).toBe(201);
+
+    // Bare host gets https:// auto-prefixed.
+    const bare = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "Bare Host Studio",
+      email: "bare@example.test",
+      category: "photo_video",
+      website: "example.com",
+    });
+    expect(bare.status).toBe(201);
+    expect(bare.data.entry.website).toBe("https://example.com");
+
+    // Explicit http:// is preserved.
+    const full = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "Full URL Studio",
+      email: "full@example.test",
+      category: "photo_video",
+      website: "http://portfolio.example/work",
+    });
+    expect(full.status).toBe(201);
+    expect(full.data.entry.website).toBe("http://portfolio.example/work");
+
+    // Empty + missing fields both end up null on the row.
+    const empty = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "No Site Studio",
+      email: "none@example.test",
+      category: "photo_video",
+      website: "",
+    });
+    expect(empty.status).toBe(201);
+    expect(empty.data.entry.website).toBeNull();
+
+    // Admin list surfaces website on the wire payload too.
+    const list = await req<{ entries: Entry[] }>(
+      "GET",
+      "/api/admin/vendor-waitlist",
+      undefined,
+      { token: adminReg.data.token },
+    );
+    expect(list.status).toBe(200);
+    const websites = list.data.entries.map((e) => e.website).sort();
+    expect(websites).toEqual(["http://portfolio.example/work", "https://example.com", null]);
   });
 
   test("admin endpoints reject non-admin + anon", async () => {

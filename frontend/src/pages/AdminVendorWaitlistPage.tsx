@@ -13,7 +13,7 @@ import type {
   VendorWaitlistStatus,
 } from "@shared/vendor_waitlist";
 import { buildEmailDraft } from "@shared/vendor_waitlist";
-import { Mail, MessageSquare, RotateCcw } from "lucide-react";
+import { ExternalLink, Mail, MessageSquare, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
@@ -274,6 +274,16 @@ function EntryCard({
           </a>
           {entry.location && (
             <p className="mt-1 text-xs text-ink-600 dark:text-umber-200">{entry.location}</p>
+          )}
+          {entry.website && (
+            <a
+              href={entry.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-0.5 inline-flex max-w-full items-center gap-1 truncate text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+            >
+              <ExternalLink size={12} aria-hidden /> {entry.website}
+            </a>
           )}
         </div>
         <StatusPill status={entry.status} label={t(STATUS_KEY[entry.status])} />
