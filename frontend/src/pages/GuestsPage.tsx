@@ -2509,6 +2509,12 @@ function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void
     return { mealCounts, dietaryCounts, pending, totalYes };
   }, [guests]);
 
+  // Per-section max — drives the relative bar heights so a section with
+  // counts like {1, 0, 0, 0, 0, 0} still shows a full-height bar for "1"
+  // (and the empty bars stay empty). Falls back to 0 when nothing's set.
+  const mealMax = Math.max(0, ...MEAL_ORDER.map((m) => stats.mealCounts[m]));
+  const dietaryMax = Math.max(0, ...DIETARY_TAG_KEYS.map((tag) => stats.dietaryCounts[tag]));
+
   async function copySummary() {
     const lines: string[] = [];
     lines.push(t("guests.meals_summary_header"));
@@ -2541,7 +2547,7 @@ function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void
       title={t("guests.meals_title")}
       role="dialog"
       onClose={onClose}
-      size="lg"
+      size="xl"
       closeOnBackdrop
       footer={
         <div className="flex w-full flex-wrap items-center justify-end gap-2">
@@ -2574,13 +2580,14 @@ function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
               {t("guests.meals_section_meals")}
             </h3>
-            <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <ul className="mt-3 grid grid-cols-6 gap-3">
               {MEAL_ORDER.map((m) => (
-                <MealStatRow
+                <MealStatBar
                   key={m}
                   icon={<MealIcon meal={m} />}
                   label={t(`guests.meal_${m}`)}
                   count={stats.mealCounts[m]}
+                  max={mealMax}
                 />
               ))}
             </ul>
@@ -2595,13 +2602,14 @@ function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
               {t("guests.meals_section_dietary")}
             </h3>
-            <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <ul className="mt-3 grid grid-cols-6 gap-3">
               {DIETARY_TAG_KEYS.map((tag) => (
-                <MealStatRow
+                <MealStatBar
                   key={tag}
                   icon={<DietaryTagIcon tag={tag} />}
                   label={t(`rsvp.tag_${tag}`)}
                   count={stats.dietaryCounts[tag]}
+                  max={dietaryMax}
                 />
               ))}
             </ul>
@@ -2612,32 +2620,61 @@ function MealsDialog({ guests, onClose }: { guests: Guest[]; onClose: () => void
   );
 }
 
-function MealStatRow({ icon, label, count }: { icon: ReactNode; label: string; count: number }) {
+function MealStatBar({
+  icon,
+  label,
+  count,
+  max,
+}: {
+  icon: ReactNode;
+  label: string;
+  count: number;
+  /** Section max — heights are scaled relative to this so the tallest bar
+   *  in a section always fills the track. 0 means "no data anywhere in
+   *  this section" → render every bar as empty. */
+  max: number;
+}) {
   const dim = count === 0;
+  // 4% floor for any non-zero count so a "1" next to a "20" still shows
+  // a visible nub instead of disappearing entirely.
+  const heightPct = max > 0 ? Math.max((count / max) * 100, count > 0 ? 4 : 0) : 0;
   return (
     <li
-      className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors ${
+      className={`flex flex-col items-center gap-2 rounded-lg border px-2 py-3 transition-colors ${
         dim
           ? "border-paper-200 bg-paper-50/60 dark:border-umber-700/60 dark:bg-umber-800/40"
           : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
       }`}
     >
       <span
-        className={`flex items-center gap-2 text-sm ${
-          dim
-            ? "text-ink-400 dark:text-umber-300"
-            : "text-ink-700 dark:text-paper-100"
-        }`}
-      >
-        <span aria-hidden>{icon}</span>
-        {label}
-      </span>
-      <span
-        className={`font-mono text-lg font-semibold tabular-nums ${
+        className={`font-mono text-2xl font-semibold tabular-nums ${
           dim ? "text-ink-400 dark:text-umber-400" : "text-ink-900 dark:text-paper-50"
         }`}
       >
         {count}
+      </span>
+      <div
+        className="relative flex h-24 w-6 items-end overflow-hidden rounded bg-paper-200 dark:bg-umber-900/60"
+        role="presentation"
+      >
+        <div
+          aria-hidden
+          className="w-full rounded bg-ink-700 transition-[height] dark:bg-paper-100"
+          style={{ height: `${heightPct}%` }}
+        />
+      </div>
+      <span
+        aria-hidden
+        className={dim ? "text-ink-400 dark:text-umber-400" : "text-ink-700 dark:text-paper-100"}
+      >
+        {icon}
+      </span>
+      <span
+        className={`text-center text-xs leading-tight ${
+          dim ? "text-ink-400 dark:text-umber-300" : "text-ink-700 dark:text-paper-100"
+        }`}
+      >
+        {label}
       </span>
     </li>
   );
