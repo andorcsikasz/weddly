@@ -1161,7 +1161,12 @@ export default function SuppliersPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="truncate text-sm font-semibold">{s.name}</h3>
                       {s.source === "community" && (
-                        <span className="hidden shrink-0 rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200 sm:inline-flex">
+                        <span
+                          className="hidden shrink-0 items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300 sm:inline-flex"
+                          title={t("suppliers.community_pill_tooltip")}
+                          aria-label={t("suppliers.community_pill_tooltip")}
+                        >
+                          <Users size={10} aria-hidden />
                           {t("suppliers.community_pill")}
                         </span>
                       )}
@@ -1396,7 +1401,12 @@ export default function SuppliersPage() {
                         </>
                       )}
                       {s.source === "community" && (
-                        <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200">
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
+                          title={t("suppliers.community_pill_tooltip")}
+                          aria-label={t("suppliers.community_pill_tooltip")}
+                        >
+                          <Users size={10} aria-hidden />
                           {t("suppliers.community_pill")}
                         </span>
                       )}
@@ -1528,7 +1538,7 @@ export default function SuppliersPage() {
       />
       {compareIds.length > 0 && (
         <div
-          className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 sm:bottom-6"
+          className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex justify-center px-4 lg:bottom-6"
           aria-live="polite"
         >
           <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-paper-300 bg-paper-50/95 px-2 py-2 shadow-lg backdrop-blur dark:border-umber-700 dark:bg-umber-800/95">

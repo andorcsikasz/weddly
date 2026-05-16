@@ -1490,6 +1490,16 @@ export interface LocaleMessages {
     transfer_depart_at: string;
     transfer_capacity: string;
     transfer_assigned: string;
+    /** Tap-to-assign mode — mirrors SeatingPage so touch users don't need DnD. */
+    tap_mode_on: string;
+    tap_mode_off: string;
+    tap_select_help: string;
+    tap_place_hint: string;
+    tap_unassign_hint: string;
+    /** Full-cap / over-cap blocked toast when a tap target can't take more. */
+    full_blocked: string;
+    /** Partial placement toast when a household drag/tap exceeds free seats. */
+    partial_placed: string;
   };
   seating: {
     title: string;
@@ -1637,6 +1647,7 @@ export interface LocaleMessages {
     filter_all: string;
     chain_help: string;
     community_pill: string;
+    community_pill_tooltip: string;
     drop_your_own: string;
     /** "Csinálom magam" / DIY flow — couple-private supplier entries. */
     diy_pill: string;

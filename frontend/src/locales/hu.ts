@@ -1509,6 +1509,8 @@ const hu: LocaleMessages = {
     filter_all: "Mind",
     chain_help: "Foglalás logikus sorrendben — a helyszíntől az utolsó részletekig.",
     community_pill: "Közösségi",
+    community_pill_tooltip:
+      "A Weddly közösség tagja ajánlotta — egy pár vagy maga a szolgáltató küldte be.",
     drop_your_own: "Tipp leadása",
     diy_pill: "Saját",
     diy_button: "Csinálom magam",

@@ -1497,6 +1497,8 @@ const en: LocaleMessages = {
     filter_all: "All",
     chain_help: "Book in a logical order — from venue down to the final details.",
     community_pill: "Community",
+    community_pill_tooltip:
+      "Submitted by a Weddly community member — a couple or the supplier themselves.",
     drop_your_own: "Drop your own",
     diy_pill: "Yours",
     diy_button: "I'll do it myself",
