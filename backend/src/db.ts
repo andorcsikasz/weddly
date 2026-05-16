@@ -130,6 +130,10 @@ addColumnIfMissing(
 // supplier_id alone, and a task may outlive a supplier un-pick.
 addColumnIfMissing("planning_items", "start_date", "start_date TEXT");
 addColumnIfMissing("planning_items", "supplier_id", "supplier_id TEXT");
+// SOS / important flag on tasks. 0 = no flag, 1 = "!" (important), 2 = "!!"
+// (SOS). NOT NULL with default 0 so existing rows pre-fill without needing
+// a migration sweep, and validation can treat it as a plain number.
+addColumnIfMissing("planning_items", "priority", "priority INTEGER NOT NULL DEFAULT 0");
 
 // Global slug uniqueness — couples.slug paired with the 4-digit household
 // code is the public RSVP credential, so two weddings must never share a
@@ -299,6 +303,19 @@ addColumnIfMissing(
   "couples",
   "rsvp_offers_accommodation",
   "rsvp_offers_accommodation INTEGER NOT NULL DEFAULT 0",
+);
+
+// Opt-out toggle for the meal-choice row on the public RSVP form. Most
+// weddings serve a plated menu so the icon row of meat/fish/veg/vegan/child/
+// none is useful, and existing couples shouldn't lose it on upgrade — hence
+// the DEFAULT 1. When a couple flips it off from the Profile page (e.g. a
+// buffet wedding), the meal-icon row is hidden on the public form. The
+// per-member `meal_choice` value isn't touched server-side; if the toggle
+// flips back on later, prior selections re-appear.
+addColumnIfMissing(
+  "couples",
+  "rsvp_collects_meal",
+  "rsvp_collects_meal INTEGER NOT NULL DEFAULT 1",
 );
 
 // Household-level group tag — one source of truth for the whole party (his

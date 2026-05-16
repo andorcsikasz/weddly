@@ -187,6 +187,7 @@ export const coupleApi = {
     frozen_categories?: BudgetCategory[];
     currency?: Currency;
     rsvp_offers_accommodation?: boolean;
+    rsvp_collects_meal?: boolean;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
@@ -354,6 +355,8 @@ export interface PlanningItemCreate {
   start_date?: string | null;
   /** Tasks only — public supplier id from `couple_picks.supplier_id`. */
   supplier_id?: string | null;
+  /** Tasks only — SOS / important flag. 0 = none, 1 = "!", 2 = "!!". */
+  priority?: 0 | 1 | 2;
   position?: number;
 }
 

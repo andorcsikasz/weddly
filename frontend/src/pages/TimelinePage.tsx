@@ -16,6 +16,8 @@ import {
   Cake,
   Camera,
   ChefHat,
+  ChevronLeft,
+  ChevronRight,
   Disc3,
   Flower2,
   Globe,
@@ -34,6 +36,9 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AppShell } from "../components/AppShell";
 import { Skeleton, useToast } from "../components/ui";
+import DayView from "./timeline/DayView";
+import MonthView from "./timeline/MonthView";
+import WeekView from "./timeline/WeekView";
 import { ApiError } from "../lib/api";
 import { coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
 import { maxIsoDate, todayIso } from "../lib/format";
@@ -157,14 +162,20 @@ function startOfNextHalf(d: Date): Date {
   return new Date(d.getFullYear(), h * 6 + 6, 1);
 }
 
-type ChartMode = "week" | "month" | "quarter" | "half";
+type ChartMode = "day" | "week" | "month" | "quarter" | "half";
+
+/** Calendar-style modes use a focal currentDate + prev/next nav. Gantt-style
+ *  modes auto-fit the visible task range and ignore currentDate. */
+const CALENDAR_MODES: ReadonlySet<ChartMode> = new Set(["day", "week", "month"]);
 
 const CHART_MODE_STORAGE_KEY = "weddly.timeline.mode";
 
 function readStoredMode(): ChartMode | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(CHART_MODE_STORAGE_KEY);
-  return raw === "week" || raw === "month" || raw === "quarter" || raw === "half" ? raw : null;
+  return raw === "day" || raw === "week" || raw === "month" || raw === "quarter" || raw === "half"
+    ? raw
+    : null;
 }
 
 export default function TimelinePage() {
@@ -179,6 +190,7 @@ export default function TimelinePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<PlanningItem | null>(null);
   const [chartMode, setChartMode] = useState<ChartMode>(() => readStoredMode() ?? "month");
+  const [currentDate, setCurrentDate] = useState<Date>(() => startOfDay(new Date()));
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -293,6 +305,8 @@ export default function TimelinePage() {
           supplierById={supplierById}
           mode={chartMode}
           onModeChange={setChartMode}
+          currentDate={currentDate}
+          onCurrentDateChange={setCurrentDate}
           onOpenTask={(item) => setEditing(item)}
           onSupplierChipClick={scrollToPoc}
         />
@@ -449,9 +463,12 @@ interface ChartGeometry {
   ticks: { date: Date; label: string }[];
 }
 
-/** Pixels per day at each zoom level. Tuned so a typical 1-row task stays
- *  comfortably wide while a year-long plan remains scroll-friendly. */
+/** Pixels per day at each Gantt zoom level. Tuned so a typical 1-row task
+ *  stays comfortably wide while a year-long plan remains scroll-friendly.
+ *  `day`/`week`/`month` don't render via the Gantt; the records exist only
+ *  to keep `Record<ChartMode, …>` exhaustive. */
 const DAY_WIDTH: Record<ChartMode, number> = {
+  day: 24,
   week: 24,
   month: 7,
   quarter: 2.5,
@@ -536,6 +553,8 @@ function ChartCard({
   supplierById,
   mode,
   onModeChange,
+  currentDate,
+  onCurrentDateChange,
   onOpenTask,
   onSupplierChipClick,
 }: {
@@ -544,14 +563,19 @@ function ChartCard({
   supplierById: Map<string, ResolvedSupplier>;
   mode: ChartMode;
   onModeChange: (mode: ChartMode) => void;
+  currentDate: Date;
+  onCurrentDateChange: (next: Date) => void;
   onOpenTask: (item: PlanningItem) => void;
   onSupplierChipClick: (supplierId: string) => void;
 }) {
   const { t, locale } = useT();
   const [expanded, setExpanded] = useState(false);
-  const geometry = useMemo(() => buildGeometry(tasks, locale, mode), [tasks, locale, mode]);
+  const isCalendar = CALENDAR_MODES.has(mode);
+  const geometry = useMemo(
+    () => (isCalendar ? null : buildGeometry(tasks, locale, mode)),
+    [tasks, locale, mode, isCalendar],
+  );
 
-  // Sort by start_date so the chart reads top-down chronologically.
   const ordered = useMemo(() => {
     return [...tasks].sort((a, b) => {
       const sa = a.start_date ?? "";
@@ -561,64 +585,207 @@ function ChartCard({
     });
   }, [tasks]);
 
-  const today = startOfDay(new Date());
+  const today = useMemo(() => startOfDay(new Date()), []);
   const todayOffsetDays =
     geometry && today >= geometry.start && today <= geometry.end
       ? diffDays(geometry.start, today)
       : null;
 
-  const toolbar = (
+  // Nav handlers — only meaningful for calendar modes; Gantt views auto-fit
+  // the task date range and ignore currentDate.
+  function navStep(direction: -1 | 1) {
+    if (mode === "day") onCurrentDateChange(addDays(currentDate, direction));
+    else if (mode === "week") onCurrentDateChange(addDays(currentDate, direction * 7));
+    else if (mode === "month")
+      onCurrentDateChange(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1),
+      );
+  }
+  function navToday() {
+    onCurrentDateChange(today);
+  }
+
+  const title = useMemo(() => {
+    if (!isCalendar) return t("timeline.chart_title");
+    const intl = locale === "hu" ? "hu-HU" : "en-US";
+    if (mode === "day") {
+      return new Intl.DateTimeFormat(intl, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "long",
+      }).format(currentDate);
+    }
+    if (mode === "week") {
+      const month = new Intl.DateTimeFormat(intl, {
+        year: "numeric",
+        month: "long",
+      }).format(currentDate);
+      return month;
+    }
+    // month
+    return new Intl.DateTimeFormat(intl, { year: "numeric", month: "long" }).format(currentDate);
+  }, [mode, currentDate, locale, isCalendar, t]);
+
+  function renderToolbar(opts: { showExpand: boolean }) {
+    return (
+      <div className="flex items-center gap-1">
+        <ChartModeSwitch mode={mode} onModeChange={onModeChange} />
+        {opts.showExpand && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+            aria-label={t("timeline.expand_label")}
+            title={t("timeline.expand_label")}
+          >
+            <Maximize2 size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const navCluster = isCalendar ? (
     <div className="flex items-center gap-1">
-      <ChartModeSwitch mode={mode} onModeChange={onModeChange} />
       <button
         type="button"
-        onClick={() => setExpanded(true)}
-        className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-        aria-label={t("timeline.expand_label")}
-        title={t("timeline.expand_label")}
+        onClick={navToday}
+        className="rounded-full border border-paper-300 px-3 py-1 text-xs font-medium text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-paper-100 dark:hover:bg-umber-700"
       >
-        <Maximize2 size={16} aria-hidden="true" />
+        {t("timeline.today_button")}
+      </button>
+      <button
+        type="button"
+        onClick={() => navStep(-1)}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+        aria-label={t("timeline.prev_label")}
+        title={t("timeline.prev_label")}
+      >
+        <ChevronLeft size={16} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={() => navStep(1)}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+        aria-label={t("timeline.next_label")}
+        title={t("timeline.next_label")}
+      >
+        <ChevronRight size={16} aria-hidden="true" />
       </button>
     </div>
-  );
+  ) : null;
 
-  const body = (
-    <ChartBody
-      loading={loading}
-      geometry={geometry}
-      ordered={ordered}
-      todayOffsetDays={todayOffsetDays}
-      supplierById={supplierById}
-      onOpenTask={onOpenTask}
-      onSupplierChipClick={onSupplierChipClick}
-    />
-  );
+  // Loading state — shared across all modes so we don't double-render skeletons.
+  const loadingBody = loading ? (
+    <div className="h-full space-y-2 p-5" aria-hidden="true">
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton key={i} variant="block" height={28} width="80%" rounded="md" />
+      ))}
+    </div>
+  ) : null;
+
+  function renderBody() {
+    if (loadingBody) return loadingBody;
+    if (mode === "day") {
+      return (
+        <DayView
+          currentDate={currentDate}
+          today={today}
+          tasks={tasks}
+          supplierById={supplierById as unknown as Map<string, ViewSupplier>}
+          onOpenTask={onOpenTask}
+        />
+      );
+    }
+    if (mode === "week") {
+      return (
+        <WeekView
+          currentDate={currentDate}
+          today={today}
+          tasks={tasks}
+          supplierById={supplierById as unknown as Map<string, ViewSupplier>}
+          onOpenTask={onOpenTask}
+        />
+      );
+    }
+    if (mode === "month") {
+      return (
+        <MonthView
+          currentDate={currentDate}
+          today={today}
+          tasks={tasks}
+          supplierById={supplierById as unknown as Map<string, ViewSupplier>}
+          onOpenTask={onOpenTask}
+        />
+      );
+    }
+    return (
+      <ChartBody
+        loading={false}
+        geometry={geometry}
+        ordered={ordered}
+        todayOffsetDays={todayOffsetDays}
+        supplierById={supplierById}
+        onOpenTask={onOpenTask}
+        onSupplierChipClick={onSupplierChipClick}
+      />
+    );
+  }
+
+  // Calendar views fill the card; Gantt grows with content. Pin a min-height
+  // for calendar so the hour grid + week rows have room to breathe.
+  const inlineHeightClass = isCalendar ? "h-[70vh] min-h-[520px]" : "";
 
   return (
     <>
-      <section className="card p-0">
+      <section className={`card flex flex-col p-0 ${inlineHeightClass}`}>
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
-            {t("timeline.chart_title")}
-          </h2>
-          {toolbar}
+          <div className="flex flex-wrap items-center gap-3">
+            {navCluster}
+            <h2
+              className={
+                isCalendar
+                  ? "text-base font-semibold text-ink-900 dark:text-paper-50"
+                  : "text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100"
+              }
+            >
+              {title}
+            </h2>
+          </div>
+          {renderToolbar({ showExpand: true })}
         </header>
-        {body}
+        <div className="min-h-0 flex-1">{renderBody()}</div>
       </section>
       {expanded && (
         <ExpandedChart
-          title={t("timeline.chart_title")}
+          title={title}
           closeLabel={t("a11y.close")}
           onClose={() => setExpanded(false)}
           toolbar={
-            <ChartModeSwitch mode={mode} onModeChange={onModeChange} />
+            <div className="flex items-center gap-3">
+              {navCluster}
+              {renderToolbar({ showExpand: false })}
+            </div>
           }
         >
-          {body}
+          {renderBody()}
         </ExpandedChart>
       )}
     </>
   );
+}
+
+/** Structural shape the view components consume — they declare a local
+ *  ResolvedSupplier with `category: string`, so we widen via assertion at the
+ *  call site to avoid forcing the views to import a shared union. */
+interface ViewSupplier {
+  id: string;
+  name: string;
+  category: string;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
 }
 
 /** Inline mode selector — minimal text buttons, no pill background, so the
@@ -634,6 +801,7 @@ function ChartModeSwitch({
 }) {
   const { t } = useT();
   const options: ReadonlyArray<{ value: ChartMode; short: string; full: string }> = [
+    { value: "day", short: "1D", full: t("timeline.view_day") },
     { value: "week", short: "1W", full: t("timeline.view_week") },
     { value: "month", short: "1M", full: t("timeline.view_month") },
     { value: "quarter", short: "3M", full: t("timeline.view_quarter") },

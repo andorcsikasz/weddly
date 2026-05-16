@@ -5249,6 +5249,98 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     expect(bad.status).toBe(400);
   });
 
+  test("rsvp_collects_meal defaults on; toggles round-trip + flow through to PublicCheckinView", async () => {
+    wipeAll();
+    const { token, slug } = await bootstrapCouple("rsvp-meal@weddly.test");
+
+    // Seed one household + one guest so the public checkin lookup returns a view.
+    const hh = await req<{ household: { id: number; code: string } }>(
+      "POST",
+      "/api/households",
+      { label: "Test family", group_tag: "his_family" },
+      { token },
+    );
+    expect(hh.status).toBe(200);
+    const householdId = hh.data.household.id;
+    const code = hh.data.household.code;
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Pál Test", household_id: householdId, rsvp_status: "pending" },
+      { token },
+    );
+
+    // Default state after onboarding: ON. Schema-level default of 1 is the
+    // contract — most weddings serve a plated menu and existing couples
+    // shouldn't lose the meal row on upgrade.
+    const initial = await req<{ couple: { rsvp_collects_meal: boolean } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(initial.status).toBe(200);
+    expect(initial.data.couple.rsvp_collects_meal).toBe(true);
+
+    // Public checkin lookup mirrors the couple-level flag — buffet couples
+    // hide the meal row on the guest-facing form.
+    const pubOn = await req<{ view: { rsvp_collects_meal: boolean } }>(
+      "POST",
+      "/api/rsvp/checkin/lookup",
+      { couple_slug: slug, household_code: code },
+    );
+    expect(pubOn.status).toBe(200);
+    expect(pubOn.data.view.rsvp_collects_meal).toBe(true);
+
+    // Flip off.
+    const off = await req<{ couple: { rsvp_collects_meal: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { rsvp_collects_meal: false },
+      { token },
+    );
+    expect(off.status).toBe(200);
+    expect(off.data.couple.rsvp_collects_meal).toBe(false);
+
+    // GET reflects the new value.
+    const after = await req<{ couple: { rsvp_collects_meal: boolean } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(after.data.couple.rsvp_collects_meal).toBe(false);
+
+    // And the public-facing view tracks it too.
+    const pubOff = await req<{ view: { rsvp_collects_meal: boolean } }>(
+      "POST",
+      "/api/rsvp/checkin/lookup",
+      { couple_slug: slug, household_code: code },
+    );
+    expect(pubOff.status).toBe(200);
+    expect(pubOff.data.view.rsvp_collects_meal).toBe(false);
+
+    // Flip back on.
+    const on = await req<{ couple: { rsvp_collects_meal: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { rsvp_collects_meal: true },
+      { token },
+    );
+    expect(on.status).toBe(200);
+    expect(on.data.couple.rsvp_collects_meal).toBe(true);
+
+    // Non-boolean payload rejected — same strict contract as the
+    // accommodation toggle above.
+    const bad = await req(
+      "PATCH",
+      "/api/couples/current",
+      { rsvp_collects_meal: "yes" },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
   test("is_kids_table flag persists on create + update", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("kids@weddly.test");

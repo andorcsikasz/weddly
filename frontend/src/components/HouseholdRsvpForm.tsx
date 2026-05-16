@@ -51,7 +51,27 @@ const MEAL_ICONS: Record<MealChoice, typeof Beef> = {
 // "pending" is intentionally excluded — submission requires a definite answer.
 // (The default state is still "pending" for un-engaged members; submit
 // validation forces them to commit before the server is called.)
-const STATUSES: RsvpStatus[] = ["yes", "no", "maybe"];
+const STATUSES = ["yes", "no", "maybe"] as const satisfies readonly RsvpStatus[];
+
+// Semantic tint per RSVP choice. The colour layer is additive to the label —
+// glyph-free buttons must still be legible for colour-deficient users — but
+// green/red/amber lets a sighted guest pick the right pill at a glance.
+// Mirrors the SEGMENT_TONE scheme in GuestsPage; amber is used for "maybe"
+// here (the guest's own deliberate choice) rather than slate, so it reads
+// as "uncertain" instead of "neutral/disabled".
+const STATUS_TONE_ACTIVE: Record<(typeof STATUSES)[number], string> = {
+  yes: "border-2 border-emerald-600 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-umber-900",
+  no: "border-2 border-rose-700 bg-rose-700 text-white dark:border-rose-400 dark:bg-rose-500 dark:text-umber-900",
+  maybe:
+    "border-2 border-amber-600 bg-amber-500 text-umber-900 dark:border-amber-400 dark:bg-amber-400 dark:text-umber-900",
+};
+
+const STATUS_TONE_IDLE: Record<(typeof STATUSES)[number], string> = {
+  yes: "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:border-emerald-500 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:border-emerald-400/70",
+  no: "border border-rose-300 bg-rose-50 text-rose-800 hover:border-rose-500 dark:border-rose-400/40 dark:bg-rose-400/10 dark:text-rose-300 dark:hover:border-rose-400/70",
+  maybe:
+    "border border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-500 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:border-amber-400/70",
+};
 
 type DietaryTag = "lactose" | "milk_protein" | "gluten" | "nut" | "egg" | "fish_shellfish";
 
@@ -615,11 +635,9 @@ export function HouseholdRsvpForm({
                   role="radio"
                   aria-checked={d.rsvp_status === s}
                   onClick={() => void pickStatus(d, s)}
-                  className={
-                    d.rsvp_status === s
-                      ? "rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-sm font-medium text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                      : "rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-                  }
+                  className={`rounded-xl px-3 py-2 text-sm font-medium ${
+                    d.rsvp_status === s ? STATUS_TONE_ACTIVE[s] : STATUS_TONE_IDLE[s]
+                  }`}
                 >
                   {t(`rsvp.pick_${s}`)}
                 </button>
@@ -629,82 +647,101 @@ export function HouseholdRsvpForm({
             {d.rsvp_status === "yes" && (
               <div className="space-y-3">
                 {/* Meal choice — radio-like icon row. Mutually exclusive;
-                    clicking the active one clears it. Replaces the old
-                    dropdown so guests pick by glance. */}
-                <div
-                  role="radiogroup"
-                  aria-label={t("rsvp.meal")}
-                  className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
-                >
-                  {MEALS.map((m) => {
-                    const Icon = MEAL_ICONS[m];
-                    const active = d.meal_choice === m;
-                    const label = t(`guests.meal_${m}`);
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        aria-label={label}
-                        title={label}
-                        onClick={() => updateMember(d.id, { meal_choice: active ? null : m })}
-                        className={
-                          active
-                            ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                            : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-                        }
-                      >
-                        <Icon size={22} aria-hidden />
-                      </button>
-                    );
-                  })}
-                </div>
+                    clicking the active one clears it. Gated on
+                    `rsvp_collects_meal` so buffet couples can hide it from
+                    the workspace settings. The serif header + the divider
+                    below separate this from the dietary chips, which were
+                    previously visually indistinguishable. */}
+                {view.rsvp_collects_meal && (
+                  <div>
+                    <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                      {t("rsvp.meal_section_title")}
+                    </p>
+                    <div
+                      role="radiogroup"
+                      aria-label={t("rsvp.meal")}
+                      className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
+                    >
+                      {MEALS.map((m) => {
+                        const Icon = MEAL_ICONS[m];
+                        const active = d.meal_choice === m;
+                        const label = t(`guests.meal_${m}`);
+                        return (
+                          <button
+                            key={m}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            aria-label={label}
+                            title={label}
+                            onClick={() => updateMember(d.id, { meal_choice: active ? null : m })}
+                            className={
+                              active
+                                ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                                : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                            }
+                          >
+                            <Icon size={22} aria-hidden />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
-                {/* Allergen chips — multi-select. Icon-only modifiers on
-                    top of the meal choice; replace the old free-text
-                    "Egyéb / allergia" input. */}
-                {/* Allergen chips — the milk-carton glyph goes on lactose
-                    (the more recognisable dairy intolerance for most
-                    guests); milk-protein gets Droplets so the two read as
-                    unambiguously different at a glance. */}
-                <div className="flex flex-wrap gap-1.5">
-                  <Chip
-                    on={d.dietary_tags.has("milk_protein")}
-                    onClick={() => toggleDietaryTag(d.id, "milk_protein")}
-                    icon={<Droplets size={14} aria-hidden />}
-                    label={t("rsvp.tag_milk_protein")}
-                  />
-                  <Chip
-                    on={d.dietary_tags.has("lactose")}
-                    onClick={() => toggleDietaryTag(d.id, "lactose")}
-                    icon={<Milk size={14} aria-hidden />}
-                    label={t("rsvp.tag_lactose")}
-                  />
-                  <Chip
-                    on={d.dietary_tags.has("gluten")}
-                    onClick={() => toggleDietaryTag(d.id, "gluten")}
-                    icon={<Wheat size={14} aria-hidden />}
-                    label={t("rsvp.tag_gluten")}
-                  />
-                  <Chip
-                    on={d.dietary_tags.has("nut")}
-                    onClick={() => toggleDietaryTag(d.id, "nut")}
-                    icon={<Nut size={14} aria-hidden />}
-                    label={t("rsvp.tag_nut")}
-                  />
-                  <Chip
-                    on={d.dietary_tags.has("egg")}
-                    onClick={() => toggleDietaryTag(d.id, "egg")}
-                    icon={<Egg size={14} aria-hidden />}
-                    label={t("rsvp.tag_egg")}
-                  />
-                  <Chip
-                    on={d.dietary_tags.has("fish_shellfish")}
-                    onClick={() => toggleDietaryTag(d.id, "fish_shellfish")}
-                    icon={<Shell size={14} aria-hidden />}
-                    label={t("rsvp.tag_fish_shellfish")}
-                  />
+                {/* Dietary chips — multi-select allergen flags. The
+                    milk-carton glyph goes on lactose (the more recognisable
+                    dairy intolerance for most guests); milk-protein gets
+                    Droplets so the two read as unambiguously different.
+                    Forced to a 6-column grid at sm+ so all six fit in one
+                    row — the labels were shortened (`tag_fish_shellfish` →
+                    "Tenger" / "Seafood") to make that possible. Below sm,
+                    a 3-column grid keeps two rows max instead of the old
+                    flex-wrap that produced three. */}
+                <div
+                  className={`${view.rsvp_collects_meal ? "border-t border-paper-200 pt-3 dark:border-umber-700" : ""}`}
+                >
+                  <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                    {t("rsvp.dietary_section_title")}
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 [&>button]:w-full [&>button]:justify-center">
+                    <Chip
+                      on={d.dietary_tags.has("milk_protein")}
+                      onClick={() => toggleDietaryTag(d.id, "milk_protein")}
+                      icon={<Droplets size={14} aria-hidden />}
+                      label={t("rsvp.tag_milk_protein")}
+                    />
+                    <Chip
+                      on={d.dietary_tags.has("lactose")}
+                      onClick={() => toggleDietaryTag(d.id, "lactose")}
+                      icon={<Milk size={14} aria-hidden />}
+                      label={t("rsvp.tag_lactose")}
+                    />
+                    <Chip
+                      on={d.dietary_tags.has("gluten")}
+                      onClick={() => toggleDietaryTag(d.id, "gluten")}
+                      icon={<Wheat size={14} aria-hidden />}
+                      label={t("rsvp.tag_gluten")}
+                    />
+                    <Chip
+                      on={d.dietary_tags.has("nut")}
+                      onClick={() => toggleDietaryTag(d.id, "nut")}
+                      icon={<Nut size={14} aria-hidden />}
+                      label={t("rsvp.tag_nut")}
+                    />
+                    <Chip
+                      on={d.dietary_tags.has("egg")}
+                      onClick={() => toggleDietaryTag(d.id, "egg")}
+                      icon={<Egg size={14} aria-hidden />}
+                      label={t("rsvp.tag_egg")}
+                    />
+                    <Chip
+                      on={d.dietary_tags.has("fish_shellfish")}
+                      onClick={() => toggleDietaryTag(d.id, "fish_shellfish")}
+                      icon={<Shell size={14} aria-hidden />}
+                      label={t("rsvp.tag_fish_shellfish")}
+                    />
+                  </div>
                 </div>
 
                 {view.rsvp_offers_accommodation && (
@@ -768,6 +805,7 @@ export function HouseholdRsvpForm({
                           patchAttached(d.id, "plus_one", { meal_choice: meal })
                         }
                         onToggleTag={(tag) => toggleAttachedDietaryTag(d.id, "plus_one", tag)}
+                        showMeal={view.rsvp_collects_meal}
                       />
                     </div>
                   )}
@@ -972,7 +1010,7 @@ function AttachedDietary({
           })}
         </div>
       )}
-      <div className="flex flex-wrap gap-1.5">
+      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 [&>button]:w-full [&>button]:justify-center">
         <Chip
           on={member.dietary_tags.has("milk_protein")}
           onClick={() => onToggleTag("milk_protein")}

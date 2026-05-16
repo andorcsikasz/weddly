@@ -104,6 +104,7 @@ function buildView(couple: CoupleRow, household: HouseholdRow): PublicCheckinVie
     household_label: household.label,
     members,
     rsvp_offers_accommodation: Boolean(couple.rsvp_offers_accommodation),
+    rsvp_collects_meal: Boolean(couple.rsvp_collects_meal),
   };
 }
 

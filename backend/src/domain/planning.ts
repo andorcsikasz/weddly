@@ -25,6 +25,8 @@ export interface PlanningItemRow {
   suggested_by_user_id: number | null;
   start_date: string | null;
   supplier_id: string | null;
+  /** 0 = no flag, 1 = important ("!"), 2 = SOS ("!!"). Tasks only. */
+  priority: number;
   position: number;
   created_at: number;
   updated_at: number;
@@ -53,6 +55,7 @@ export function toPlanningItem(row: PlanningItemJoinedRow): PlanningItem {
     suggested_by_name: row.suggested_by_name,
     start_date: row.start_date,
     supplier_id: row.supplier_id,
+    priority: row.priority === 1 || row.priority === 2 ? (row.priority as 1 | 2) : 0,
     position: row.position,
     created_at: row.created_at,
     updated_at: row.updated_at,

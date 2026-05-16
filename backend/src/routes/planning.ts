@@ -35,6 +35,7 @@ interface UpsertBody {
   assignee?: unknown;
   start_date?: unknown;
   supplier_id?: unknown;
+  priority?: unknown;
   position?: unknown;
 }
 
@@ -95,6 +96,17 @@ function parseSupplierId(raw: unknown): string | null {
   return trimmed;
 }
 
+/** SOS / important flag. 0 = none, 1 = "!", 2 = "!!". Anything else is a
+ *  client bug and gets rejected. Booleans and strings are NOT coerced — pass
+ *  a number. */
+function parsePriority(raw: unknown): 0 | 1 | 2 {
+  if (raw === null || raw === undefined) return 0;
+  if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 0 || raw > 2) {
+    throw new HttpError(400, "priority must be 0, 1, or 2");
+  }
+  return raw as 0 | 1 | 2;
+}
+
 function parseScheduledTime(raw: unknown): string | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== "string") throw new HttpError(400, "scheduled_time must be HH:MM");
@@ -147,6 +159,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   // idea/schedule rather than 400'ing a misdirected payload.
   const startDate = kind === "task" ? parseStartDate(body.start_date) : null;
   const supplierId = kind === "task" ? parseSupplierId(body.supplier_id) : null;
+  const priority = kind === "task" ? parsePriority(body.priority) : 0;
   // Ideas auto-stamp the authoring partner so "— Anna javasolta" can render
   // on every idea row, even ones created through the wand / dice helpers.
   // Other kinds leave it null (the schedule/task author isn't surfaced).
@@ -158,8 +171,8 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     .prepare(
       `INSERT INTO planning_items
         (couple_id, kind, title, body, done, due_date, scheduled_time, assignee,
-         suggested_by_user_id, start_date, supplier_id, position, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         suggested_by_user_id, start_date, supplier_id, priority, position, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -173,6 +186,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       suggestedBy,
       startDate,
       supplierId,
+      priority,
       position,
       ts,
       ts,
@@ -240,13 +254,19 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
       : existing.kind === "task"
         ? parseSupplierId(body.supplier_id)
         : null;
+  const priority =
+    body.priority === undefined
+      ? existing.priority
+      : existing.kind === "task"
+        ? parsePriority(body.priority)
+        : 0;
   const position = parsePosition(body.position, existing.position);
   const ts = now();
 
   db.prepare(
     `UPDATE planning_items SET
         title = ?, body = ?, done = ?, due_date = ?, scheduled_time = ?,
-        assignee = ?, start_date = ?, supplier_id = ?, position = ?, updated_at = ?
+        assignee = ?, start_date = ?, supplier_id = ?, priority = ?, position = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
   ).run(
     title,
@@ -257,6 +277,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     assignee,
     startDate,
     supplierId,
+    priority,
     position,
     ts,
     id,

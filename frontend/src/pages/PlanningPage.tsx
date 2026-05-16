@@ -84,6 +84,13 @@ export default function PlanningPage() {
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
   const [bulkApplying, setBulkApplying] = useState(false);
+  // Priority filter for the tasks tab: 0 = show everything, 1 = important +
+  // SOS only (priority >= 1), 2 = SOS only (priority === 2). Reset on tab
+  // switch via the effect below so it doesn't quietly hide ideas.
+  const [priorityFilter, setPriorityFilter] = useState<0 | 1 | 2>(0);
+  useEffect(() => {
+    if (activeKind !== "task") setPriorityFilter(0);
+  }, [activeKind]);
 
   async function refresh() {
     try {
@@ -101,17 +108,36 @@ export default function PlanningPage() {
 
   // Display order: (position ASC, created_at ASC) — matches the backend's
   // canonical sort so the list looks identical on first paint and after
-  // local reorder PATCHes.
+  // local reorder PATCHes. Priority filter is applied AFTER the sort so the
+  // remaining rows keep their relative order.
   const scoped = useMemo(
     () =>
       items
         .filter((i) => i.kind === activeKind)
+        .filter(
+          (i) => i.kind !== "task" || priorityFilter === 0 || (i.priority ?? 0) >= priorityFilter,
+        )
         .sort((a, b) => {
           if (a.position !== b.position) return a.position - b.position;
           return a.created_at - b.created_at;
         }),
-    [items, activeKind],
+    [items, activeKind, priorityFilter],
   );
+
+  /** Counts per priority level for the filter-pill badges. Computed once
+   *  per items/tab change so the pill labels stay in sync as the user
+   *  cycles priority levels on individual rows. */
+  const taskPriorityCounts = useMemo(() => {
+    let p1plus = 0;
+    let p2 = 0;
+    for (const i of items) {
+      if (i.kind !== "task") continue;
+      const p = i.priority ?? 0;
+      if (p >= 1) p1plus++;
+      if (p === 2) p2++;
+    }
+    return { p1plus, p2 };
+  }, [items]);
 
   async function onCreate(input: {
     title: string;
@@ -155,6 +181,21 @@ export default function PlanningPage() {
       await planningApi.update(item.id, patch);
     } catch (e) {
       setItems((list) => list.map((i) => (i.id === item.id ? prev : i)));
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  /** Cycle the priority flag on a task row: 0 → 1 → 2 → 0. Optimistic, with
+   *  a rollback toast on failure. Tasks-only; ideas don't carry priority. */
+  async function onCyclePriority(item: PlanningItem) {
+    if (item.kind !== "task") return;
+    const current = (item.priority ?? 0) as 0 | 1 | 2;
+    const next: 0 | 1 | 2 = current === 0 ? 1 : current === 1 ? 2 : 0;
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, priority: next } : i)));
+    try {
+      await planningApi.update(item.id, { priority: next });
+    } catch (e) {
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, priority: current } : i)));
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     }
   }

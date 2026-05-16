@@ -510,6 +510,19 @@ export default function ProfilePage() {
     }
   }
 
+  /** Flip the "collect meal choice in RSVP?" toggle. When off, the meal-icon
+   *  row on the public form is hidden — useful for buffet weddings. Existing
+   *  per-guest `meal_choice` values are preserved server side. */
+  async function saveRsvpCollectsMeal(next: boolean) {
+    if (!couple || couple.rsvp_collects_meal === next) return;
+    try {
+      const r = await coupleApi.update({ rsvp_collects_meal: next });
+      setCouple(r.couple);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+    }
+  }
+
   return (
     <AppShell>
       <h1>{t("profile.title")}</h1>
@@ -768,6 +781,21 @@ export default function ProfilePage() {
             <span className="font-medium">{t("profile.rsvp_offers_accommodation_label")}</span>
             <span className="block text-xs text-ink-500 dark:text-umber-300">
               {t("profile.rsvp_offers_accommodation_help")}
+            </span>
+          </span>
+        </label>
+        <label className="mt-3 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-100">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={Boolean(couple?.rsvp_collects_meal)}
+            onChange={(e) => void saveRsvpCollectsMeal(e.target.checked)}
+            disabled={!couple}
+          />
+          <span>
+            <span className="font-medium">{t("profile.rsvp_collects_meal_label")}</span>
+            <span className="block text-xs text-ink-500 dark:text-umber-300">
+              {t("profile.rsvp_collects_meal_help")}
             </span>
           </span>
         </label>

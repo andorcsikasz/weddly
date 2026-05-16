@@ -193,6 +193,12 @@ export interface Couple {
    *  Profile page surfaces a checkbox on both surfaces; existing per-guest
    *  `Guest.accommodation_needed` values stay in the DB either way. */
   rsvp_offers_accommodation: boolean;
+  /** Opt-out toggle for the meal-choice icon row on the public RSVP form.
+   *  Default `true` — most weddings serve a plated menu. Buffet/no-menu
+   *  couples flip it off from the Profile page and the meal row vanishes on
+   *  the public form. Per-member `meal_choice` values are preserved server
+   *  side, so flipping it back on re-surfaces them. */
+  rsvp_collects_meal: boolean;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`
@@ -444,6 +450,11 @@ export interface PublicCheckinView {
    *  the "needs accommodation?" checkbox so couples who don't offer it
    *  don't surface an irrelevant question to their guests. */
   rsvp_offers_accommodation: boolean;
+  /** Mirrors `Couple.rsvp_collects_meal`. When false, the meal-icon row
+   *  (meat/fish/veg/vegan/child/none) is hidden on the public form — useful
+   *  for buffet weddings or couples that simply don't want to pre-collect a
+   *  menu choice. Dietary chips below stay visible either way. */
+  rsvp_collects_meal: boolean;
 }
 
 /** Submit shape for the household check-in. The credential pair (slug+code)
@@ -722,6 +733,11 @@ export interface PlanningItem {
   /** Tasks only — public supplier id (matches `couple_picks.supplier_id`).
    *  Free reference; we don't enforce that the supplier is still picked. */
   supplier_id: string | null;
+  /** Tasks only — SOS / important flag. 0 = no flag, 1 = "!" (important),
+   *  2 = "!!" (SOS). Drives the red exclamation badge + the filter pills
+   *  above the task list. Stored as a plain integer because the cycle goes
+   *  0 → 1 → 2 → 0 on a single button click. */
+  priority: 0 | 1 | 2;
   /** Ideas only — id of the partner who logged the idea. Auto-stamped at
    *  create time. NULL only for legacy rows or items whose author was deleted. */
   suggested_by_user_id: number | null;

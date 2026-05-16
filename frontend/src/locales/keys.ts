@@ -86,14 +86,19 @@ export interface LocaleMessages {
     /** Tooltip label on the vertical "today" marker. */
     today_label: string;
     error_dates: string;
-    /** Labels for the zoom selector (week / month / quarter / half-year). */
+    /** Labels for the zoom selector (day / week / month / quarter / half-year). */
     view_aria: string;
+    view_day: string;
     view_week: string;
     view_month: string;
     view_quarter: string;
     view_half: string;
     /** Tooltip + aria for the Maximize2 button that opens the chart full-screen. */
     expand_label: string;
+    /** Calendar-style nav cluster (Day/Week/Month modes only). */
+    today_button: string;
+    prev_label: string;
+    next_label: string;
     seo_title: string;
     seo_description: string;
   };
@@ -2059,6 +2064,13 @@ export interface LocaleMessages {
     tag_fish_shellfish: string;
     tag_plus_one: string;
     tag_baby: string;
+    /** Section labels on the public RSVP form. The icon-only meal grid and the
+     *  text-chip dietary grid were sitting next to each other without a header,
+     *  so guests were mis-reading "Vega" (vegetarian meal) as an allergy chip.
+     *  Two short serif headers separate them. Only rendered when the couple
+     *  has the corresponding RSVP feature enabled. */
+    meal_section_title: string;
+    dietary_section_title: string;
     /** Header above the +1/baby chip row so guests don't conflate "bringing
      *  someone" with a dietary attribute. */
     additions_section_title: string;
@@ -2277,6 +2289,8 @@ export interface LocaleMessages {
     rsvp_body: string;
     rsvp_offers_accommodation_label: string;
     rsvp_offers_accommodation_help: string;
+    rsvp_collects_meal_label: string;
+    rsvp_collects_meal_help: string;
     /** Security section — change-password form lives here. Collapsible:
      *  `security_summary` is the one-line teaser shown when the section is
      *  closed; the in-form sub-headings live in `security_pw_heading` and

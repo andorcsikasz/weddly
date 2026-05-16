@@ -114,6 +114,10 @@ interface OnboardBody {
    *  checkbox on each member; when false (the default) the question is
    *  hidden on both the public form and the in-app guest drawer. */
   rsvp_offers_accommodation?: unknown;
+  /** Boolean — when true (the default), the public RSVP form renders the
+   *  meal-icon row (meat/fish/veg/vegan/child/none). When false the row is
+   *  hidden — buffet weddings or couples who collect menu choices offline. */
+  rsvp_collects_meal?: unknown;
 }
 
 const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
@@ -1027,6 +1031,15 @@ function parseRsvpOffersAccommodation(raw: unknown): boolean {
   return raw;
 }
 
+/** Opt-out toggle for the RSVP meal-choice icon row. Same strict-boolean
+ *  contract as the accommodation parser above — only `true`/`false` accepted. */
+function parseRsvpCollectsMeal(raw: unknown): boolean {
+  if (typeof raw !== "boolean") {
+    throw new HttpError(400, "rsvp_collects_meal must be a boolean");
+  }
+  return raw;
+}
+
 /** Cost-planning scenario count: integer 1..2000, or null to clear. */
 function parsePlanningCount(raw: unknown): number | null {
   if (raw === null || raw === undefined || raw === "") return null;
@@ -1280,6 +1293,19 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.rsvp_offers_accommodation_update",
         before: { rsvp_offers_accommodation: prev },
         after: { rsvp_offers_accommodation: next },
+      });
+    }
+  }
+
+  if (body.rsvp_collects_meal !== undefined) {
+    const next = parseRsvpCollectsMeal(body.rsvp_collects_meal);
+    const prev = Boolean(couple.rsvp_collects_meal);
+    if (next !== prev) {
+      updates.push({ col: "rsvp_collects_meal", val: next ? 1 : 0 });
+      auditEntries.push({
+        action: "couple.rsvp_collects_meal_update",
+        before: { rsvp_collects_meal: prev },
+        after: { rsvp_collects_meal: next },
       });
     }
   }
@@ -1752,6 +1778,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.frozen_categories_update",
   "couple.guest_count_update",
   "couple.rsvp_offers_accommodation_update",
+  "couple.rsvp_collects_meal_update",
   // Guests
   "guest.create",
   "guest.update",
