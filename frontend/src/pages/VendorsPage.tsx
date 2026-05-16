@@ -113,6 +113,7 @@ function WaitlistContact() {
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState<SupplierCategory | "">("");
   const [location, setLocation] = useState("");
+  const [website, setWebsite] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -126,6 +127,7 @@ function WaitlistContact() {
     const name = businessName.trim();
     const emailTrim = email.trim();
     const loc = location.trim();
+    const site = website.trim();
     const msg = message.trim();
     if (!name) return setErrorMsg(t("vendors.form_err_required"));
     if (!emailTrim || !isLikelyEmail(emailTrim)) {
@@ -140,6 +142,7 @@ function WaitlistContact() {
         email: emailTrim,
         category,
         location: loc ? loc : null,
+        website: site ? site : null,
         message: msg ? msg : null,
       });
       setSubmitted(true);
@@ -237,6 +240,22 @@ function WaitlistContact() {
             placeholder={t("vendors.form_location_placeholder")}
           />
           <p className="field-help">{t("vendors.form_location_help")}</p>
+        </div>
+        <div>
+          <label htmlFor="vendor-website" className="field-label">
+            {t("vendors.form_website_label")}
+          </label>
+          <input
+            id="vendor-website"
+            className="input"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            maxLength={300}
+            placeholder={t("vendors.form_website_placeholder")}
+            inputMode="url"
+            autoComplete="url"
+          />
+          <p className="field-help">{t("vendors.form_website_help")}</p>
         </div>
         <div>
           <label htmlFor="vendor-message" className="field-label">
