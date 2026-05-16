@@ -7,12 +7,14 @@
 
 import type { PlanningItem, PlanningKind } from "@shared/types";
 import {
+  ArrowRight,
   Calendar,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
   Circle,
   Dices,
+  GanttChartSquare,
   Lightbulb,
   Plus,
   Trash2,
@@ -20,10 +22,12 @@ import {
   Wand2,
 } from "lucide-react";
 import { Fragment, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { planningApi } from "../lib/endpoints";
+import { todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import {
   DICE_CREATIVE_IDEAS,
@@ -317,24 +321,38 @@ export default function PlanningPage() {
           })}
         </nav>
 
-        <div className="mb-3 flex flex-wrap justify-end gap-2">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           {activeKind === "task" && (
-            <button
-              type="button"
-              onClick={() => setTaskWandOpen(true)}
-              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
-              title={t("planning.task_template_button_hint")}
-            >
-              <Wand2 size={14} aria-hidden="true" />
-              <span>{t("planning.task_template_button")}</span>
-            </button>
+            <>
+              {/* Discoverability: surface the timeline view from the same row
+               *  as the wand. mr-auto pushes the wand button to the right
+               *  edge so the cross-page link stays visually anchored left. */}
+              <Link
+                to="/app/timeline"
+                className="btn-outline btn-sm mr-auto inline-flex items-center gap-1.5"
+                title={t("planning.timeline_link_hint")}
+              >
+                <GanttChartSquare size={14} aria-hidden="true" />
+                <span>{t("planning.timeline_link")}</span>
+                <ArrowRight size={12} aria-hidden="true" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setTaskWandOpen(true)}
+                className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+                title={t("planning.task_template_button_hint")}
+              >
+                <Wand2 size={14} aria-hidden="true" />
+                <span>{t("planning.task_template_button")}</span>
+              </button>
+            </>
           )}
           {activeKind === "idea" && (
             <>
               <button
                 type="button"
                 onClick={() => setIdeaWandOpen(true)}
-                className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+                className="btn-ghost btn-sm ml-auto inline-flex items-center gap-1.5"
                 title={t("planning.idea_template_button_hint")}
               >
                 <Wand2 size={14} aria-hidden="true" />
@@ -908,6 +926,7 @@ function QuickAddForm({
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
+            min={todayIso()}
             aria-label={t("planning.due_date_label")}
             className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
           />

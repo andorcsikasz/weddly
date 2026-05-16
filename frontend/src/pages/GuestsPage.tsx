@@ -810,14 +810,17 @@ function HouseholdCard({
       <header
         className={`flex flex-wrap items-center justify-between gap-3 ${isHosts ? "stationery" : "bg-paper-100/60 dark:bg-umber-700/60"} px-4 py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
-        {/* Metadata columns: label · slug · code · invited (+ delivered).
-            Fixed-width tracks with `md:col-start-*` force every field to
-            the same x across cards so the eye scans down the column. On
-            mobile the grid collapses to a single stacked column. The
-            couple's own household (bride + groom) renders just the label —
-            slug / code / invited cells are skipped because the hosts don't
-            check themselves in. */}
-        <div className="grid min-w-0 flex-1 items-baseline gap-x-6 gap-y-1 text-xs text-ink-600 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_8rem_5.5rem_auto]">
+        {/* Metadata columns: label · group chip · slug · code · invited
+            (+ delivered). Fixed-width tracks with `md:col-start-*` force
+            every field to the same x across cards so the eye scans down
+            the column — including the group chip ("Bride's family" /
+            "Groom's family" / …), which used to ride inline after a
+            variable-width label. On mobile the grid collapses to a
+            single stacked column. The couple's own household (bride +
+            groom) renders just the label — chip / slug / code / invited
+            cells are skipped because the hosts don't check themselves
+            in. */}
+        <div className="grid min-w-0 flex-1 items-baseline gap-x-6 gap-y-1 text-xs text-ink-600 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_minmax(0,13rem)_8rem_5.5rem_auto]">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <HouseholdLabelEditor
               household={household}
@@ -830,23 +833,25 @@ function HouseholdCard({
                 {t("guests.hosts_badge")}
               </span>
             )}
-            {!isHosts && (
+          </div>
+          {!isHosts && (
+            <div className="min-w-0 max-w-full md:col-start-2">
               <HouseholdGroupChip
                 value={household.group_tag}
                 onChange={(g) => onChangeGroup(household.id, g)}
               />
-            )}
-          </div>
+            </div>
+          )}
           {!isHosts && coupleSlug && (
-            <span className="font-mono uppercase md:col-start-2">{coupleSlug}</span>
+            <span className="font-mono uppercase md:col-start-3">{coupleSlug}</span>
           )}
           {!isHosts && (
-            <span className="font-mono text-base text-ink-900 tracking-[0.3em] dark:text-paper-50 md:col-start-3">
+            <span className="font-mono text-base text-ink-900 tracking-[0.3em] dark:text-paper-50 md:col-start-4">
               {household.code}
             </span>
           )}
           {!isHosts && members.length > 0 && (
-            <span className="flex items-baseline gap-3 md:col-start-4">
+            <span className="flex items-baseline gap-3 md:col-start-5">
               <span
                 className={
                   invitedCount === members.length

@@ -86,6 +86,12 @@ export interface LocaleMessages {
     /** Tooltip label on the vertical "today" marker. */
     today_label: string;
     error_dates: string;
+    /** Labels for the zoom selector (week / month / quarter / half-year). */
+    view_aria: string;
+    view_week: string;
+    view_month: string;
+    view_quarter: string;
+    view_half: string;
     seo_title: string;
     seo_description: string;
   };
@@ -807,6 +813,9 @@ export interface LocaleMessages {
     assignee_add: string;
     assignee_edit_hint: string;
     idea_suggested_by: string;
+    /** Cross-link from the Tasks tab toolbar to the /app/timeline Gantt view. */
+    timeline_link: string;
+    timeline_link_hint: string;
     /** Task tab wand button + dialog. */
     task_template_button: string;
     task_template_button_hint: string;
@@ -1378,6 +1387,15 @@ export interface LocaleMessages {
     no_tables: string;
     add_first_table: string;
     drag_help: string;
+    /** Household-aware seating affordances: the badge that marks a guest as
+     *  part of a linked household, the unlink/relink toggles, and the
+     *  toast copy after dropping a multi-member household onto a table. */
+    household_linked_aria: string;
+    household_unlink: string;
+    household_relink: string;
+    household_placed_all: string;
+    household_placed_partial: string;
+    household_no_room: string;
     conflicts_title: string;
     no_conflicts: string;
     conflict_split: string;

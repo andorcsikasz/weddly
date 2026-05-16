@@ -786,6 +786,8 @@ const hu: LocaleMessages = {
     assignee_add: "Felelős",
     assignee_edit_hint: "Kattints a felelős átírásához",
     idea_suggested_by: "— {name} javasolta",
+    timeline_link: "Idővonal",
+    timeline_link_hint: "Nyisd meg a feladatok Gantt-nézetét",
     // Task tab wand (varázspálca) + dialog.
     task_template_button: "Sablon feladatok",
     task_template_button_hint:
@@ -853,6 +855,11 @@ const hu: LocaleMessages = {
     supplier_none: "(nincs)",
     today_label: "Ma",
     error_dates: "A kezdés nem lehet a befejezés után.",
+    view_aria: "Nézet sűrűsége",
+    view_week: "Heti",
+    view_month: "Havi",
+    view_quarter: "Negyedéves",
+    view_half: "Féléves",
     seo_title: "Idővonal — Weddly",
     seo_description: "Esküvői feladataid Gantt-nézetben + kapcsolattartók.",
   },
