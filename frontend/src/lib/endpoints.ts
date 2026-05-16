@@ -113,8 +113,56 @@ export interface OnboardInput {
   style_tags: WeddingStyleTag[];
 }
 
+/** One workspace summary as returned by `/api/users/me/couples`. Shared
+ *  between the header switcher and the Profile workspaces panel. */
+export interface CoupleMembershipView {
+  couple_id: number;
+  display_name: string;
+  bride_name: string;
+  groom_name: string;
+  status: CoupleStatus;
+  role: "owner" | "partner";
+  joined_at: number;
+}
+
 export const coupleApi = {
   current: () => apiFetch<{ couple: Couple | null }>("GET", "/api/couples/current"),
+  /** Every workspace this user is a member of (Alpha / Bravo / Charlie).
+   *  `current_couple_id` matches whichever is active right now — same value
+   *  the next `current()` call would resolve to. */
+  listMine: () =>
+    apiFetch<{ current_couple_id: number | null; couples: CoupleMembershipView[] }>(
+      "GET",
+      "/api/users/me/couples",
+    ),
+  /** Flip `users.couple_id` to a different workspace the caller is a
+   *  member of. Idempotent. The frontend follows up with a hard reload
+   *  since every page reads couple-scoped data on mount and rebuilding
+   *  the in-memory state piecemeal is fragile. */
+  switchActive: (coupleId: number) =>
+    apiFetch<{ couple: Couple }>("POST", "/api/users/me/active-couple", {
+      couple_id: coupleId,
+    }),
+  /** Create Bravo / Charlie for an already-onboarded user. `seed_*` lets
+   *  the caller copy a subset of Alpha's guests + their households into
+   *  the new workspace; everything else (budget lines, seating, schedule)
+   *  starts fresh. */
+  createAdditional: (body: {
+    bride_name: string;
+    groom_name: string;
+    wedding_date_goal: WeddingDateGoal;
+    guest_count_goal: GuestCountGoal;
+    budget_goal: BudgetGoal;
+    ceremony_kind?: CeremonyKind | null;
+    currency?: Currency;
+    style_tags: WeddingStyleTag[];
+    seed_from_couple_id?: number | null;
+    seed_guest_ids?: number[];
+  }) =>
+    apiFetch<{
+      couple: Couple;
+      seeded: { households_copied: number; guests_copied: number };
+    }>("POST", "/api/couples", body),
   partner: () => apiFetch<{ partner: CouplePartnerView | null }>("GET", "/api/couples/partner"),
   /** Last 14 days of partner-visible activity (saves, uploads, deletes,
    *  RSVPs, exports). Used by the Profile "activity" panel. */

@@ -31,6 +31,7 @@ import { useT } from "../lib/i18n";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 type NavItem = { to: string; labelKey: string; tabKey?: string; icon: ReactNode };
 
@@ -286,12 +287,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               users don't get punted to the marketing landing (which reads as
               "I got logged out"). Signed-out viewers (rare here, but safe)
               still get /. */}
-          <Link
-            to={user ? "/app" : "/"}
-            className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
-          >
-            <Wordmark size="sm" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to={user ? "/app" : "/"}
+              className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+            >
+              <Wordmark size="sm" />
+            </Link>
+            {/* Workspace chip sits inline with the wordmark so the active
+             *  event (Anna & Bence) is the second thing the user reads
+             *  after the brand. Hidden when signed-out. */}
+            {user && <WorkspaceSwitcher />}
+          </div>
           {/* Header icon row — every button is a 44×44 square so tap targets
               line up with the avatar pill and stay HIG-compliant on mobile.
               gap-1 is plenty between square buttons; gap-2 made the row
