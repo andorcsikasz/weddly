@@ -161,7 +161,7 @@ export function PhasePlanArt({ className }: Common) {
 export function PhaseSuppliersArt({ className }: Common) {
   return (
     <svg viewBox="0 0 80 80" aria-hidden="true" className={className}>
-      <g className="text-paper-300">
+      <g className="text-paper-300 dark:text-umber-400">
         <path
           d="M 40 64 Q 32 56 28 50"
           fill="none"
@@ -317,7 +317,7 @@ export function PhaseAftermathArt({ className }: Common) {
           transform="rotate(-15 21 61)"
         />
       </g>
-      <g className="text-ink-300">
+      <g className="text-ink-300 dark:text-umber-400">
         <rect
           x="64"
           y="56"
