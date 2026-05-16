@@ -227,8 +227,11 @@ export default function GanttView({
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header — task-column spacer + year ribbon + month labels.
           Stays outside the scrollable body so it never disappears as the
-          couple scrolls a long task list. */}
-      <div className="flex shrink-0 border-b border-paper-300 dark:border-umber-700">
+          couple scrolls a long task list. `relative z-30` so the marker
+          badges we straddle across the header's bottom border (today pill
+          + wedding heart) stack above the body's bars instead of being
+          clipped by the body's `overflow-y-auto`. */}
+      <div className="relative z-30 flex shrink-0 border-b border-paper-300 dark:border-umber-700">
         <div
           className="shrink-0 border-r border-paper-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:border-umber-700 dark:text-umber-300"
           style={{ width: TASK_GUTTER_WIDTH }}
@@ -264,6 +267,31 @@ export default function GanttView({
               </div>
             ))}
           </div>
+
+          {/* Marker badges live in the header (which the body's
+              `overflow-y-auto` doesn't clip) and straddle its bottom border
+              via `bottom-0 translate-y-1/2`. The vertical lines themselves
+              stay in the body so they run top-to-bottom of the chart. */}
+          {weddingLeftPct !== null && (
+            <span
+              className="pointer-events-none absolute bottom-0 inline-flex h-5 w-5 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-sage-500 text-paper-50 shadow-soft"
+              style={{ left: `${weddingLeftPct}%` }}
+              aria-label={t("timeline.wedding_marker")}
+              title={t("timeline.wedding_marker")}
+            >
+              <Heart size={11} aria-hidden="true" fill="currentColor" />
+            </span>
+          )}
+          {todayLeftPct !== null && (
+            <span
+              className="pointer-events-none absolute bottom-0 -translate-x-1/2 translate-y-1/2 whitespace-nowrap rounded-full bg-blush-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-paper-50 shadow-soft"
+              style={{ left: `${todayLeftPct}%` }}
+              aria-label={t("timeline.today_label")}
+              title={t("timeline.today_label")}
+            >
+              {t("timeline.today_label")}
+            </span>
+          )}
         </div>
       </div>
 
@@ -359,35 +387,24 @@ export default function GanttView({
               ),
             )}
 
-            {/* Wedding-day marker — sage to set it apart from today's blush. */}
+            {/* Wedding-day vertical (sage). The badge sits in the header
+                so this is just the line — `-translate-x-1/2` centres a 1px
+                line on the percent-based x position. */}
             {weddingLeftPct !== null && (
               <div
-                className="pointer-events-none absolute inset-y-0 z-[1] w-px bg-sage-500/70"
+                className="pointer-events-none absolute inset-y-0 z-[1] w-px -translate-x-1/2 bg-sage-500/70"
                 style={{ left: `${weddingLeftPct}%` }}
-                aria-label={t("timeline.wedding_marker")}
-                title={t("timeline.wedding_marker")}
-              >
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sage-500 text-paper-50 shadow-soft">
-                    <Heart size={11} aria-hidden="true" fill="currentColor" />
-                  </span>
-                </span>
-              </div>
+                aria-hidden="true"
+              />
             )}
 
-            {/* Today marker */}
+            {/* Today vertical (blush). Badge is in the header. */}
             {todayLeftPct !== null && (
               <div
-                className="pointer-events-none absolute inset-y-0 z-[1]"
+                className="pointer-events-none absolute inset-y-0 z-[1] w-0.5 -translate-x-1/2 bg-blush-500"
                 style={{ left: `${todayLeftPct}%` }}
-                aria-label={t("timeline.today_label")}
-                title={t("timeline.today_label")}
-              >
-                <div className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-blush-500" />
-                <span className="absolute -top-2 left-1 rounded-full bg-blush-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-paper-50">
-                  {t("timeline.today_label")}
-                </span>
-              </div>
+                aria-hidden="true"
+              />
             )}
 
             {/* Rows — borders + bars. Rows are transparent so the month bands
