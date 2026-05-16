@@ -738,6 +738,8 @@ export interface LocaleMessages {
     guests: string;
     budget: string;
     seating: string;
+    /** Accommodation + transfer assignment — sidebar only, sits after seating. */
+    logistics: string;
     /** Day-of run-of-show timeline page — sidebar only. */
     schedule: string;
     suppliers: string;
@@ -1954,6 +1956,26 @@ export interface LocaleMessages {
     badge_admin: string;
     badge_suspended: string;
     badge_unverified: string;
+    /** Moderation flag — admin manually flags an account with a reason, the
+     *  user is emailed and gets 7 days to reply, and the hourly sweep
+     *  auto-purges past the deadline unless the admin clears the flag. */
+    flag_badge_days_left: string;
+    flag_user_button: string;
+    flag_user_title: string;
+    flag_user_label: string;
+    flag_user_placeholder: string;
+    flag_user_help: string;
+    flag_user_send: string;
+    flag_user_too_short: string;
+    flag_user_success: string;
+    flag_cannot_self: string;
+    unflag_user_button: string;
+    unflag_user_title: string;
+    unflag_user_label: string;
+    unflag_user_placeholder: string;
+    unflag_user_help: string;
+    unflag_user_clear: string;
+    unflag_user_success: string;
     /** Per-row admin actions for users. */
     resend_verify: string;
     resend_verify_sent: string;
@@ -2058,6 +2080,52 @@ export interface LocaleMessages {
     suppliers_card_field_notes_dirty: string;
     suppliers_card_notes_save_success: string;
     suppliers_card_empty_value: string;
+    /** /app/admin/suppliers — directory view toggle (moderation vs analytics). */
+    suppliers_view_moderation: string;
+    suppliers_view_directory: string;
+    /** Directory view: full curated + community list with visit analytics. */
+    directory_title: string;
+    directory_sub: string;
+    directory_loading: string;
+    directory_empty: string;
+    directory_export_csv: string;
+    directory_export_started: string;
+    directory_export_failed: string;
+    directory_total_count: string;
+    directory_reset_filters: string;
+    /** Filters. */
+    directory_filter_source_label: string;
+    directory_filter_source_all: string;
+    directory_filter_source_curated: string;
+    directory_filter_source_community: string;
+    directory_filter_status_label: string;
+    directory_filter_category_label: string;
+    directory_filter_category_all: string;
+    directory_filter_city_label: string;
+    directory_filter_city_placeholder: string;
+    directory_filter_search_label: string;
+    directory_filter_search_placeholder: string;
+    directory_filter_min_views_label: string;
+    directory_filter_from_label: string;
+    directory_filter_to_label: string;
+    /** Table column headers. */
+    directory_col_name: string;
+    directory_col_source: string;
+    directory_col_status: string;
+    directory_col_category: string;
+    directory_col_city: string;
+    directory_col_views_total: string;
+    directory_col_views_30d: string;
+    directory_col_views_7d: string;
+    directory_col_clicks_total: string;
+    directory_col_clicks_30d: string;
+    directory_col_phone_clicks: string;
+    directory_col_last_event: string;
+    directory_col_created: string;
+    /** Source-of-truth pills. */
+    directory_source_curated: string;
+    directory_source_community: string;
+    directory_last_event_never: string;
     /** /app/admin/feedback page — triage of Visszajelzés submissions. */
     nav_feedback: string;
     feedback_title: string;

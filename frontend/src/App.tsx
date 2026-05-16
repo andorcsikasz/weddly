@@ -15,6 +15,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import GuestsPage from "./pages/GuestsPage";
 import InvitePage from "./pages/InvitePage";
 import LandingPage from "./pages/LandingPage";
+import LogisticsPage from "./pages/LogisticsPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OnboardingWizard from "./pages/OnboardingWizard";
@@ -246,6 +247,16 @@ export default function App() {
           <Page>
             <RequireAuth>
               <SeatingPage />
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/logistics"
+        element={
+          <Page>
+            <RequireAuth>
+              <LogisticsPage />
             </RequireAuth>
           </Page>
         }

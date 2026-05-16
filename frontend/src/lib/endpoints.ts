@@ -691,6 +691,20 @@ export const adminUserApi = {
       {},
     ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/users/${id}`),
+  /** Moderation flag — emails the user with the reason and starts the
+   *  7-day auto-purge countdown. Returns the updated admin view (with
+   *  `active_flag` populated) so the row re-renders without a refetch. */
+  flag: (id: number, reason: string) =>
+    apiFetch<{ user: AdminUserView | null }>("POST", `/api/admin/users/${id}/flag`, { reason }),
+  /** Clear the user's open flag. The optional `note` records the
+   *  resolution in the audit row (e.g. "user replied — concern addressed").
+   *  Idempotent: returns `cleared: false` when no flag was open. */
+  unflag: (id: number, note?: string) =>
+    apiFetch<{ user: AdminUserView | null; cleared: boolean }>(
+      "POST",
+      `/api/admin/users/${id}/unflag`,
+      { note: note ?? "" },
+    ),
   /** One-shot bulk re-purge of every couple flagged `status="deleting"`. */
   purgeDeleting: () =>
     apiFetch<{ purged: number }>("POST", "/api/admin/couples/purge-deleting", {}),

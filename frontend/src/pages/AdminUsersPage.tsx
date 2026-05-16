@@ -1,5 +1,5 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
-import { Check, Mail, Trash2 } from "lucide-react";
+import { Check, Flag, FlagOff, Mail, Trash2 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -168,6 +168,57 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function onFlag(u: AdminUserView) {
+    if (currentAdmin && u.id === currentAdmin.id) {
+      toast.error(t("admin.flag_cannot_self"));
+      return;
+    }
+    const reason = await promptEntry({
+      title: t("admin.flag_user_title"),
+      label: t("admin.flag_user_label"),
+      placeholder: t("admin.flag_user_placeholder"),
+      helperText: t("admin.flag_user_help"),
+      confirmLabel: t("admin.flag_user_send"),
+      cancelLabel: t("common.cancel"),
+      validate: (v) => (v.trim().length >= 4 ? null : t("admin.flag_user_too_short")),
+    });
+    if (reason === null) return;
+    setPendingId(u.id);
+    try {
+      const r = await adminUserApi.flag(u.id, reason.trim());
+      if (r.user) setUsers((cur) => cur.map((x) => (x.id === u.id ? r.user! : x)));
+      toast.success(t("admin.flag_user_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function onUnflag(u: AdminUserView) {
+    const note = await promptEntry({
+      title: t("admin.unflag_user_title"),
+      label: t("admin.unflag_user_label"),
+      placeholder: t("admin.unflag_user_placeholder"),
+      helperText: t("admin.unflag_user_help"),
+      confirmLabel: t("admin.unflag_user_clear"),
+      cancelLabel: t("common.cancel"),
+      // Note is optional — accept empty.
+      validate: () => null,
+    });
+    if (note === null) return;
+    setPendingId(u.id);
+    try {
+      const r = await adminUserApi.unflag(u.id, note.trim());
+      if (r.user) setUsers((cur) => cur.map((x) => (x.id === u.id ? r.user! : x)));
+      toast.success(t("admin.unflag_user_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   async function onPurgeDeleting() {
     if (deletingCount === 0) return;
     const ok = await confirm({
@@ -195,6 +246,13 @@ export default function AdminUsersPage() {
   function renderUserCell(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
     const isSelf = currentAdmin?.id === u.id;
     const isPending = pendingId === u.id;
+    const flag = u.active_flag;
+    // Days-remaining countdown for the flag badge. Min 0 — we never display
+    // a negative count; once the deadline passes the hourly sweep removes
+    // the row entirely on the next tick.
+    const flagDaysLeft = flag
+      ? Math.max(0, Math.ceil((flag.scheduled_delete_at - Date.now()) / (24 * 60 * 60 * 1000)))
+      : 0;
     return (
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -205,6 +263,15 @@ export default function AdminUsersPage() {
             <Badge tone="violet-soft">{t("admin.badge_suspended")}</Badge>
           )}
           {!u.verified_email && <Badge tone="muted">{t("admin.badge_unverified")}</Badge>}
+          {flag && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-blush-300 bg-blush-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blush-800 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-200"
+              title={flag.reason}
+            >
+              <Flag size={11} aria-hidden />
+              {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
+            </span>
+          )}
           {opts.showLastActive && (
             <span className="text-[11px] italic text-ink-500 dark:text-umber-300">
               {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
@@ -232,6 +299,30 @@ export default function AdminUsersPage() {
                 <Mail size={14} />
               </button>
             ))}
+          {!isSelf && !flag && (
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() => onFlag(u)}
+              disabled={isPending}
+              title={t("admin.flag_user_button")}
+              aria-label={t("admin.flag_user_button")}
+            >
+              <Flag size={14} />
+            </button>
+          )}
+          {!isSelf && flag && (
+            <button
+              type="button"
+              className="btn-ghost btn-sm text-blush-800 dark:text-blush-300"
+              onClick={() => onUnflag(u)}
+              disabled={isPending}
+              title={t("admin.unflag_user_button")}
+              aria-label={t("admin.unflag_user_button")}
+            >
+              <FlagOff size={14} />
+            </button>
+          )}
           {!isSelf && (
             <button
               type="button"

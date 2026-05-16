@@ -122,6 +122,12 @@ function normalize(s: string): string {
     .toLowerCase();
 }
 
+/** Fire-and-forget click ping for the admin directory analytics. Errors are
+ *  swallowed — the navigation must not be blocked if the ingest is down. */
+function trackSupplierClick(supplierId: string, type: "website_click" | "phone_click"): void {
+  supplierApi.recordEvents([{ supplier_id: supplierId, type }]).catch(() => undefined);
+}
+
 const SAVED_LS_KEY = "weddly.suppliers.saved";
 
 function readSaved(): Set<string> {
@@ -1402,11 +1408,16 @@ export default function SuppliersPage() {
                       target="_blank"
                       rel="noreferrer noopener"
                       className="btn-outline btn-sm"
+                      onClick={() => trackSupplierClick(s.id, "website_click")}
                     >
                       {t("suppliers.visit_website")}
                     </a>
                     {s.contact_phone && (
-                      <a href={`tel:${s.contact_phone}`} className="btn-outline btn-sm">
+                      <a
+                        href={`tel:${s.contact_phone}`}
+                        className="btn-outline btn-sm"
+                        onClick={() => trackSupplierClick(s.id, "phone_click")}
+                      >
                         <Phone size={14} /> {s.contact_phone}
                       </a>
                     )}

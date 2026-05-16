@@ -1,5 +1,6 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
 import {
+  Bed,
   CalendarClock,
   Camera,
   ChefHat,
@@ -93,6 +94,15 @@ const ITEMS: NavItem[] = [
     to: "/app/seating",
     labelKey: "nav.seating",
     icon: <ChefHat size={18} />,
+  },
+  // Logistics — accommodation + transfer assignment. Sits right after seating
+  // because the workflow is similar (drag guests onto units) and the data it
+  // reads (guest list, partner_role) is shared. Desktop-only sidebar like the
+  // other late-stage flows; mobile bottom nav stays at the core five.
+  {
+    to: "/app/logistics",
+    labelKey: "nav.logistics",
+    icon: <Bed size={18} />,
   },
   // Post-wedding "follow-up" entries — desktop sidebar only; bottom mobile
   // nav stays at 5 items via `slice(0, 5)` further down.
