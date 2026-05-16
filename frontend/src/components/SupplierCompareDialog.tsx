@@ -38,10 +38,7 @@ type Props = {
 };
 
 /** Resolve a supplier id back to the directory entry, ignoring DIY rows. */
-function resolveSupplier(
-  id: string,
-  items: DirectorySupplier[],
-): DirectorySupplier | null {
+function resolveSupplier(id: string, items: DirectorySupplier[]): DirectorySupplier | null {
   return items.find((s) => s.id === id) ?? null;
 }
 
@@ -152,29 +149,11 @@ function quoteCell(
 
 function VerdictIcon({ kind }: { kind: "ok" | "warn" | "info" | "none" }) {
   if (kind === "ok")
-    return (
-      <Check
-        size={14}
-        aria-hidden
-        className="text-sage-600 dark:text-sage-300"
-      />
-    );
+    return <Check size={14} aria-hidden className="text-sage-600 dark:text-sage-300" />;
   if (kind === "warn")
-    return (
-      <X
-        size={14}
-        aria-hidden
-        className="text-blush-600 dark:text-blush-300"
-      />
-    );
+    return <X size={14} aria-hidden className="text-blush-600 dark:text-blush-300" />;
   if (kind === "info")
-    return (
-      <ScanEye
-        size={14}
-        aria-hidden
-        className="text-ink-400 dark:text-umber-300"
-      />
-    );
+    return <ScanEye size={14} aria-hidden className="text-ink-400 dark:text-umber-300" />;
   return null;
 }
 

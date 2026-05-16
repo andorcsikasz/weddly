@@ -1428,6 +1428,53 @@ export interface LocaleMessages {
      *  `{amount}` (per-guest actual) and `{confirmed}` (yes-RSVP count). */
     per_guest_actual: string;
   };
+  /** /app/logistics — drag-and-drop accommodation + transfer assignment. */
+  logistics: {
+    title: string;
+    sub: string;
+    tabs_aria: string;
+    tab_accommodation: string;
+    tab_transfer: string;
+    add_accommodation: string;
+    add_transfer: string;
+    edit_accommodation: string;
+    edit_transfer: string;
+    sidebar_title: string;
+    sidebar_help_accommodation: string;
+    sidebar_help_transfer: string;
+    sidebar_empty: string;
+    drop_guest_here: string;
+    no_accommodations: string;
+    no_accommodations_hint: string;
+    no_transfers: string;
+    no_transfers_hint: string;
+    name: string;
+    address: string;
+    capacity: string;
+    price_huf: string;
+    link: string;
+    contact: string;
+    contact_placeholder: string;
+    notes: string;
+    name_required: string;
+    label_required: string;
+    capacity_invalid: string;
+    price_invalid: string;
+    save_failed: string;
+    accommodation_deleted: string;
+    transfer_deleted: string;
+    delete_accommodation_title: string;
+    delete_accommodation_body: string;
+    delete_transfer_title: string;
+    delete_transfer_body: string;
+    transfer_label: string;
+    transfer_label_placeholder: string;
+    transfer_direction: string;
+    transfer_direction_placeholder: string;
+    transfer_depart_at: string;
+    transfer_capacity: string;
+    transfer_assigned: string;
+  };
   seating: {
     title: string;
     sub: string;

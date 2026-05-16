@@ -4220,6 +4220,189 @@ describe("admin users + couples directory", () => {
     expect(purgeMail?.subject).toContain("Esküvői munkaterületed törölve");
   });
 
+  test("admin flag: stores the flag, emails the user, surfaces on AdminUserView", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "flagged@weddly.test",
+      password: "supersafe123",
+      full_name: "Flagged",
+    });
+    const targetId = reg.data.user.id;
+
+    // Capture mailer.dev_print writes during the flag so we can assert the
+    // notice actually fired (and went to the right address).
+    const captured: { subject: string; to: string; text: string }[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      const first = args[0];
+      if (typeof first === "string" && first.includes('"mailer.dev_print"')) {
+        try {
+          const parsed = JSON.parse(first) as {
+            msg: string;
+            subject?: string;
+            to?: string;
+            text?: string;
+          };
+          if (parsed.msg === "mailer.dev_print") {
+            captured.push({
+              subject: parsed.subject ?? "",
+              to: parsed.to ?? "",
+              text: parsed.text ?? "",
+            });
+          }
+        } catch {
+          // not our JSON
+        }
+      }
+      origLog(...args);
+    };
+    try {
+      const flag = await req<{
+        user: AdminUser & { active_flag: { reason: string; scheduled_delete_at: number } | null };
+      }>(
+        "POST",
+        `/api/admin/users/${targetId}/flag`,
+        { reason: "Spammed the supplier waitlist 3× in a row." },
+        { token: adminToken },
+      );
+      expect(flag.status).toBe(200);
+      expect(flag.data.user.active_flag?.reason).toBe("Spammed the supplier waitlist 3× in a row.");
+      expect(flag.data.user.active_flag?.scheduled_delete_at).toBeGreaterThan(Date.now());
+    } finally {
+      console.log = origLog;
+    }
+
+    const flagMail = captured.find((c) => c.to === "flagged@weddly.test");
+    expect(flagMail).toBeDefined();
+    expect(flagMail?.subject).toContain("Fiókod ellenőrzés alatt");
+    expect(flagMail?.text).toContain("Spammed the supplier waitlist 3× in a row.");
+
+    // Listing surfaces the active flag.
+    const list = await req<{ users: (AdminUser & { active_flag: unknown })[] }>(
+      "GET",
+      "/api/admin/users",
+      undefined,
+      { token: adminToken },
+    );
+    const target = list.data.users.find((u) => u.id === targetId);
+    expect(target?.active_flag).toBeTruthy();
+  });
+
+  test("admin flag: refuses to stack two open flags on the same user", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "stack@weddly.test",
+      password: "supersafe123",
+      full_name: "Stack",
+    });
+    const first = await req(
+      "POST",
+      `/api/admin/users/${reg.data.user.id}/flag`,
+      { reason: "first concern" },
+      { token: adminToken },
+    );
+    expect(first.status).toBe(200);
+    const second = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/admin/users/${reg.data.user.id}/flag`,
+      { reason: "second concern" },
+      { token: adminToken },
+    );
+    expect(second.status).toBe(409);
+    expect(second.data.detail?.code).toBe("already_flagged");
+  });
+
+  test("admin unflag: clears the active flag (idempotent)", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "unflag@weddly.test",
+      password: "supersafe123",
+      full_name: "Unflag",
+    });
+    await req(
+      "POST",
+      `/api/admin/users/${reg.data.user.id}/flag`,
+      { reason: "needs review" },
+      { token: adminToken },
+    );
+
+    const clear = await req<{ cleared: boolean }>(
+      "POST",
+      `/api/admin/users/${reg.data.user.id}/unflag`,
+      { note: "explained over email" },
+      { token: adminToken },
+    );
+    expect(clear.status).toBe(200);
+    expect(clear.data.cleared).toBe(true);
+
+    // Idempotent — second unflag returns cleared:false.
+    const noop = await req<{ cleared: boolean }>(
+      "POST",
+      `/api/admin/users/${reg.data.user.id}/unflag`,
+      { note: "" },
+      { token: adminToken },
+    );
+    expect(noop.data.cleared).toBe(false);
+  });
+
+  test("admin flag: hourly sweep auto-purges past-deadline flags", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "doomed-flag@weddly.test",
+      password: "supersafe123",
+      full_name: "Doomed",
+    });
+    const userId = reg.data.user.id;
+
+    // Shrink the grace window so the flag we just created is already past.
+    const { setUserFlagWindowMsForTest } = await import("../src/domain/user_flags");
+    setUserFlagWindowMsForTest(-1000); // window already elapsed
+    try {
+      const flag = await req(
+        "POST",
+        `/api/admin/users/${userId}/flag`,
+        { reason: "no reply expected" },
+        { token: adminToken },
+      );
+      expect(flag.status).toBe(200);
+    } finally {
+      setUserFlagWindowMsForTest(null);
+    }
+
+    const { runPurgeSweep } = await import("../src/domain/purge");
+    const result = runPurgeSweep();
+    expect(result.flagged_purged).toBeGreaterThanOrEqual(1);
+
+    // User's email is now scrubbed.
+    const list = await req<{ users: AdminUser[] }>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
+    const scrubbed = list.data.users.find((u) => u.id === userId);
+    expect(scrubbed?.email.endsWith("@purged.local")).toBe(true);
+  });
+
+  test("admin flag: non-admin gets 403", async () => {
+    wipeAll();
+    await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("nonadmin-flag@weddly.test");
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "victim@weddly.test",
+      password: "supersafe123",
+      full_name: "Victim",
+    });
+    const r = await req(
+      "POST",
+      `/api/admin/users/${reg.data.user.id}/flag`,
+      { reason: "shouldn't work" },
+      { token: coupleToken },
+    );
+    expect(r.status).toBe(403);
+  });
+
   test("admin delete: target with couple_id purges the whole workspace", async () => {
     wipeAll();
     const adminToken = await registerAdmin();

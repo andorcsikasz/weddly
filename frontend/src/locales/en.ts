@@ -1352,11 +1352,9 @@ const en: LocaleMessages = {
     accommodation_deleted: "Accommodation deleted.",
     transfer_deleted: "Transfer deleted.",
     delete_accommodation_title: "Delete accommodation?",
-    delete_accommodation_body:
-      "“{name}” will be removed. Any assigned guests become unassigned.",
+    delete_accommodation_body: "“{name}” will be removed. Any assigned guests become unassigned.",
     delete_transfer_title: "Delete transfer?",
-    delete_transfer_body:
-      "“{label}” will be removed. Any assigned guests become unassigned.",
+    delete_transfer_body: "“{label}” will be removed. Any assigned guests become unassigned.",
     transfer_label: "Label",
     transfer_label_placeholder: "e.g. Airport pickup",
     transfer_direction: "Direction",
@@ -1693,7 +1691,8 @@ const en: LocaleMessages = {
       floating_clear: "Clear",
       floating_min_hint: "Pick at least 2 suppliers to compare.",
       dialog_title: "Compare suppliers",
-      dialog_intro: "Numbers are dialled in to your data — guest count, budget — so the trade-offs are obvious at a glance.",
+      dialog_intro:
+        "Numbers are dialled in to your data — guest count, budget — so the trade-offs are obvious at a glance.",
       dialog_close_aria: "Close",
       row_quote: "Your quote",
       row_price_band: "Price level",

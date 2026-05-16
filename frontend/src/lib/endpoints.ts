@@ -514,8 +514,7 @@ export const seatingApi = {
 /** Logistics: lodgings the couple offers their guests. Drag-and-drop assignment
  *  on /app/logistics flips `guests.accommodation_id` via `assign`. */
 export const accommodationApi = {
-  list: () =>
-    apiFetch<{ accommodations: Accommodation[] }>("GET", "/api/accommodations"),
+  list: () => apiFetch<{ accommodations: Accommodation[] }>("GET", "/api/accommodations"),
   create: (body: UpsertAccommodationInput) =>
     apiFetch<{ accommodation: Accommodation }>("POST", "/api/accommodations", body),
   update: (id: number, body: Partial<UpsertAccommodationInput>) =>

@@ -272,9 +272,7 @@ export default function GuestsPage() {
     next: boolean,
   ) {
     try {
-      await Promise.all(
-        households.map((h) => householdApi.update(h.id, { [field]: next })),
-      );
+      await Promise.all(households.map((h) => householdApi.update(h.id, { [field]: next })));
       refresh();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -2588,9 +2586,7 @@ function MealsDialog({
               className="mt-0.5"
               checked={accommodationOn}
               disabled={households.length === 0}
-              onChange={(e) =>
-                void onBulkRsvpToggle("rsvp_offers_accommodation", e.target.checked)
-              }
+              onChange={(e) => void onBulkRsvpToggle("rsvp_offers_accommodation", e.target.checked)}
             />
             <span>
               <span className="font-medium">{t("guests.rsvp_offers_accommodation_label")}</span>
@@ -2602,9 +2598,7 @@ function MealsDialog({
         </section>
 
         {stats.totalYes === 0 ? (
-          <p className="text-sm text-ink-600 dark:text-umber-200">
-            {t("guests.meals_no_yes_yet")}
-          </p>
+          <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_no_yes_yet")}</p>
         ) : (
           <>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -2614,44 +2608,44 @@ function MealsDialog({
               </p>
             </div>
 
-          <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
-              {t("guests.meals_section_meals")}
-            </h3>
-            <ul className="mt-3 grid grid-cols-6 gap-3">
-              {MEAL_ORDER.map((m) => (
-                <MealStatBar
-                  key={m}
-                  icon={<MealIcon meal={m} />}
-                  label={t(`guests.meal_${m}`)}
-                  count={stats.mealCounts[m]}
-                  max={mealMax}
-                />
-              ))}
-            </ul>
-            {stats.pending > 0 && (
-              <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
-                {t("guests.meals_pending_help", { count: stats.pending })}
-              </p>
-            )}
-          </section>
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("guests.meals_section_meals")}
+              </h3>
+              <ul className="mt-3 grid grid-cols-6 gap-3">
+                {MEAL_ORDER.map((m) => (
+                  <MealStatBar
+                    key={m}
+                    icon={<MealIcon meal={m} />}
+                    label={t(`guests.meal_${m}`)}
+                    count={stats.mealCounts[m]}
+                    max={mealMax}
+                  />
+                ))}
+              </ul>
+              {stats.pending > 0 && (
+                <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+                  {t("guests.meals_pending_help", { count: stats.pending })}
+                </p>
+              )}
+            </section>
 
-          <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
-              {t("guests.meals_section_dietary")}
-            </h3>
-            <ul className="mt-3 grid grid-cols-6 gap-3">
-              {DIETARY_TAG_KEYS.map((tag) => (
-                <MealStatBar
-                  key={tag}
-                  icon={<DietaryTagIcon tag={tag} />}
-                  label={t(`rsvp.tag_${tag}`)}
-                  count={stats.dietaryCounts[tag]}
-                  max={dietaryMax}
-                />
-              ))}
-            </ul>
-          </section>
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("guests.meals_section_dietary")}
+              </h3>
+              <ul className="mt-3 grid grid-cols-6 gap-3">
+                {DIETARY_TAG_KEYS.map((tag) => (
+                  <MealStatBar
+                    key={tag}
+                    icon={<DietaryTagIcon tag={tag} />}
+                    label={t(`rsvp.tag_${tag}`)}
+                    count={stats.dietaryCounts[tag]}
+                    max={dietaryMax}
+                  />
+                ))}
+              </ul>
+            </section>
           </>
         )}
       </div>

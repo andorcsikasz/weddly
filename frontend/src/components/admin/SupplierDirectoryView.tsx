@@ -139,7 +139,10 @@ export function SupplierDirectoryView() {
     return copy;
   }, [rows, sort, locale]);
 
-  function setFilter<K extends keyof AdminDirectoryFilters>(key: K, value: AdminDirectoryFilters[K]) {
+  function setFilter<K extends keyof AdminDirectoryFilters>(
+    key: K,
+    value: AdminDirectoryFilters[K],
+  ) {
     setFilters((cur) => ({ ...cur, [key]: value }));
   }
 
@@ -558,7 +561,9 @@ function SourcePill({
       ? "border-violet-700 bg-violet-100 text-violet-900 dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200"
       : "border-paper-300 bg-paper-100 text-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100";
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}
+    >
       {t(`admin.directory_source_${source}`)}
     </span>
   );

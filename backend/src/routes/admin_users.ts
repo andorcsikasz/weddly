@@ -229,7 +229,9 @@ async function handleFlagUser(ctx: Ctx): Promise<Response> {
 
   const target = db
     .prepare("SELECT id, email, full_name, couple_id FROM users WHERE id = ?")
-    .get(userId) as { id: number; email: string; full_name: string; couple_id: number | null } | undefined;
+    .get(userId) as
+    | { id: number; email: string; full_name: string; couple_id: number | null }
+    | undefined;
   if (!target) throw new HttpError(404, "User not found");
   if (target.email.endsWith("@purged.local")) {
     throw new HttpError(400, "Cannot flag a purged user");

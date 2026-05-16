@@ -148,11 +148,7 @@ export function insertTransfer(coupleId: number, parsed: ParsedTransfer): Transf
   return db.prepare("SELECT * FROM transfers WHERE id = ?").get(id) as TransferRow;
 }
 
-export function updateTransfer(
-  id: number,
-  coupleId: number,
-  parsed: ParsedTransfer,
-): TransferRow {
+export function updateTransfer(id: number, coupleId: number, parsed: ParsedTransfer): TransferRow {
   const ts = now();
   db.prepare(
     `UPDATE transfers SET

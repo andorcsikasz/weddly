@@ -123,8 +123,9 @@ async function handleAssign(ctx: Ctx): Promise<Response> {
     targetId = transfer.id;
   }
 
-  db.prepare("UPDATE guests SET transfer_id = ?, updated_at = ? WHERE id = ? AND couple_id = ?")
-    .run(targetId, now(), guestId, couple.id);
+  db.prepare(
+    "UPDATE guests SET transfer_id = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+  ).run(targetId, now(), guestId, couple.id);
 
   addAuditLog({
     actor_user_id: userId,

@@ -134,22 +134,16 @@ export function parseAccommodationPatch(
 
 export function listAccommodations(coupleId: number): Accommodation[] {
   const rows = db
-    .prepare(
-      "SELECT * FROM accommodations WHERE couple_id = ? ORDER BY created_at ASC, id ASC",
-    )
+    .prepare("SELECT * FROM accommodations WHERE couple_id = ? ORDER BY created_at ASC, id ASC")
     .all(coupleId) as AccommodationRow[];
   return rows.map(toAccommodation);
 }
 
-export function getAccommodationScoped(
-  id: number,
-  coupleId: number,
-): AccommodationRow | null {
+export function getAccommodationScoped(id: number, coupleId: number): AccommodationRow | null {
   return (
-    (db.prepare("SELECT * FROM accommodations WHERE id = ? AND couple_id = ?").get(
-      id,
-      coupleId,
-    ) as AccommodationRow | undefined) ?? null
+    (db.prepare("SELECT * FROM accommodations WHERE id = ? AND couple_id = ?").get(id, coupleId) as
+      | AccommodationRow
+      | undefined) ?? null
   );
 }
 

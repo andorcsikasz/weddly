@@ -1530,9 +1530,7 @@ export default function SuppliersPage() {
               type="button"
               onClick={() => setCompareOpen(true)}
               disabled={compareIds.length < 2}
-              title={
-                compareIds.length < 2 ? t("suppliers.compare.floating_min_hint") : undefined
-              }
+              title={compareIds.length < 2 ? t("suppliers.compare.floating_min_hint") : undefined}
               className="inline-flex h-8 items-center gap-1 rounded-full bg-ink-700 px-3 text-xs font-medium text-paper-100 transition hover:bg-ink-900 disabled:cursor-not-allowed disabled:bg-ink-300 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-100 dark:disabled:bg-umber-600 dark:disabled:text-umber-400"
             >
               {t("suppliers.compare.floating_open")}

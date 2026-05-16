@@ -1229,7 +1229,8 @@ const hu: LocaleMessages = {
     cost_planning_baseline_note: "{n} vendég",
     cost_planning_unit_label: "vendég",
     top_movers_title: "Mi húzza fel a kasszát?",
-    top_movers_sub: "A három legdrágább tételed. Egy koppintással elengeded azt, amire nincs szükség.",
+    top_movers_sub:
+      "A három legdrágább tételed. Egy koppintással elengeded azt, amire nincs szükség.",
     top_movers_skip: "Ez nem kell",
     top_movers_skip_aria: "„{label}” elengedése a költségvetésből",
     top_movers_skipped: "„{label}” elengedve",
@@ -1703,7 +1704,8 @@ const hu: LocaleMessages = {
       floating_clear: "Törlés",
       floating_min_hint: "Legalább 2 szolgáltatót válassz az összehasonlításhoz.",
       dialog_title: "Szolgáltatók összehasonlítása",
-      dialog_intro: "A számok a ti adataitokra szabva — vendégszám, budget — így rögtön látszik, hol éri meg többet fizetni.",
+      dialog_intro:
+        "A számok a ti adataitokra szabva — vendégszám, budget — így rögtön látszik, hol éri meg többet fizetni.",
       dialog_close_aria: "Bezárás",
       row_quote: "Ti ajánlatotok",
       row_price_band: "Árszint",

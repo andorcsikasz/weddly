@@ -586,9 +586,7 @@ export function HouseholdRsvpForm({
   // ("3 ready · 1 still pending"). Skipped entirely when everyone has picked.
   // `interacted` is what counts as "ready" — even a server-side "yes" needs
   // an explicit click in this session before we treat the row as committed.
-  const readyCount = drafts.filter(
-    (d) => d.interacted && d.rsvp_status !== "pending",
-  ).length;
+  const readyCount = drafts.filter((d) => d.interacted && d.rsvp_status !== "pending").length;
   const pendingCount = drafts.length - readyCount;
 
   return (

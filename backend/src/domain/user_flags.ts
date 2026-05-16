@@ -96,9 +96,7 @@ export function getActiveFlagForUser(userId: number): UserFlagRow | null {
  *  reads when rendering the page (one query per listing). */
 export function activeFlagsByUserId(): Map<number, UserFlagRow> {
   const rows = db
-    .prepare(
-      "SELECT * FROM user_flags WHERE resolved_at IS NULL ORDER BY created_at DESC",
-    )
+    .prepare("SELECT * FROM user_flags WHERE resolved_at IS NULL ORDER BY created_at DESC")
     .all() as UserFlagRow[];
   const out = new Map<number, UserFlagRow>();
   for (const r of rows) {
