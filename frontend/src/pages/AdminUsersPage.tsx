@@ -192,7 +192,7 @@ export default function AdminUsersPage() {
     }
   }
 
-  function renderUserCell(u: AdminUserView) {
+  function renderUserCell(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
     const isSelf = currentAdmin?.id === u.id;
     const isPending = pendingId === u.id;
     return (
@@ -205,9 +205,11 @@ export default function AdminUsersPage() {
             <Badge tone="violet-soft">{t("admin.badge_suspended")}</Badge>
           )}
           {!u.verified_email && <Badge tone="muted">{t("admin.badge_unverified")}</Badge>}
-          <span className="text-[11px] italic text-ink-500 dark:text-umber-300">
-            {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
-          </span>
+          {opts.showLastActive && (
+            <span className="text-[11px] italic text-ink-500 dark:text-umber-300">
+              {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
+            </span>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {!u.verified_email &&
@@ -372,7 +374,7 @@ export default function AdminUsersPage() {
                   <div>{t("admin.table_workspace_created")}</div>
                   <div>{t("admin.table_workspace_last_active")}</div>
                 </div>
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   {visibleCouples.map((c) => {
                     // Server returns partners scrubbed of users we already
                     // know are missing (rare race); fall back to userById
@@ -385,9 +387,9 @@ export default function AdminUsersPage() {
                     return (
                       <li
                         key={c.id}
-                        className="rounded-2xl border-2 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-800 px-5 py-4 shadow-soft"
+                        className="rounded-2xl border-2 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-800 px-5 py-2.5 shadow-soft"
                       >
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
+                        <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
                           <div className="whitespace-nowrap">
                             <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                               {workspaceId(c)}
@@ -412,7 +414,7 @@ export default function AdminUsersPage() {
                             ) : (
                               <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
                                 {members.map((u) => (
-                                  <li key={u.id} className="py-1.5 first:pt-0 last:pb-0">
+                                  <li key={u.id} className="py-1 first:pt-0 last:pb-0">
                                     {renderUserCell(u)}
                                   </li>
                                 ))}
@@ -463,7 +465,7 @@ export default function AdminUsersPage() {
                     {orphans.map((u) => (
                       <tr key={u.id} className="border-t border-paper-200 dark:border-umber-700">
                         <td className="px-3 py-2" colSpan={2}>
-                          {renderUserCell(u)}
+                          {renderUserCell(u, { showLastActive: true })}
                         </td>
                       </tr>
                     ))}

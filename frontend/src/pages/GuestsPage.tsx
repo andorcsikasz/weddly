@@ -808,7 +808,7 @@ function HouseholdCard({
       className={`card overflow-hidden p-0 ${isHosts ? "!border-blush-300 dark:!border-blush-500/40" : ""}`}
     >
       <header
-        className={`flex flex-wrap items-center justify-between gap-3 ${isHosts ? "stationery-blush" : "bg-paper-100/60 dark:bg-umber-700/60"} px-4 py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
+        className={`flex flex-wrap items-center justify-between gap-3 ${isHosts ? "stationery" : "bg-paper-100/60 dark:bg-umber-700/60"} px-4 py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
         {/* Metadata columns: label · slug · code · invited (+ delivered).
             Fixed-width tracks with `md:col-start-*` force every field to
