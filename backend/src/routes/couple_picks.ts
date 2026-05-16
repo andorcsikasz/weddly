@@ -19,17 +19,22 @@ import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router }
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
   "venue",
   "accommodation",
+  "tent_pavilion",
   "catering",
   "cake_dessert",
   "bar_drinks",
   "decor_floral",
   "lighting",
   "music_dj",
+  "sound_tech",
   "photo_video",
   "entertainment",
   "attire",
   "hair_makeup",
+  "nails",
+  "rings",
   "stationery",
+  "wedding_website",
   "transport",
 ]);
 

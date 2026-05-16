@@ -29,12 +29,17 @@ const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   decor_floral: "Dekoráció & virág",
   lighting: "Világítás",
   music_dj: "Zene & DJ",
+  sound_tech: "Hangtechnika",
   photo_video: "Fotó & videó",
   entertainment: "Animáció & program",
   attire: "Ruha",
   hair_makeup: "Smink & haj",
+  nails: "Köröm",
   stationery: "Papír & nyomtatvány",
   transport: "Transzfer",
+  rings: "Karikagyűrűk",
+  tent_pavilion: "Sátor & pavilon",
+  wedding_website: "Esküvői honlap",
 };
 
 /** Convenience: resolve a row's free-text `category` slug to a localized HU

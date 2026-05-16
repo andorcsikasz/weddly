@@ -288,6 +288,12 @@ const SEED: SeedGroup[] = [
         label_en: "Accommodation",
         budget: "other",
       },
+      {
+        slug: "tent_pavilion",
+        label_hu: "Sátor & pavilon",
+        label_en: "Tent & pavilion",
+        budget: "venue",
+      },
     ],
   },
   {
@@ -326,6 +332,12 @@ const SEED: SeedGroup[] = [
     categories: [
       { slug: "music_dj", label_hu: "Zene & DJ", label_en: "Music & DJ", budget: "music_dj" },
       {
+        slug: "sound_tech",
+        label_hu: "Hangtechnika",
+        label_en: "Sound & AV tech",
+        budget: "music_dj",
+      },
+      {
         slug: "photo_video",
         label_hu: "Fotó & videó",
         label_en: "Photo & video",
@@ -351,6 +363,8 @@ const SEED: SeedGroup[] = [
         label_en: "Hair & makeup",
         budget: "hair_makeup",
       },
+      { slug: "nails", label_hu: "Köröm", label_en: "Nails", budget: "hair_makeup" },
+      { slug: "rings", label_hu: "Jegygyűrű", label_en: "Wedding rings", budget: "rings" },
     ],
   },
   {
@@ -364,32 +378,50 @@ const SEED: SeedGroup[] = [
         label_en: "Stationery",
         budget: "stationery",
       },
+      {
+        slug: "wedding_website",
+        label_hu: "Esküvői weboldal",
+        label_en: "Wedding website",
+        budget: "stationery",
+      },
       { slug: "transport", label_hu: "Transzfer", label_en: "Transport", budget: "transport" },
     ],
   },
 ];
 
-/** Idempotent — only seeds when both tables are empty. Safe to call on
- *  every boot. */
+/** Idempotent. On an empty DB it lays down the full SEED. On an existing DB
+ *  it only inserts missing seed groups/categories (matched by slug) — never
+ *  modifies or deletes admin-edited rows. This lets us add new entries to
+ *  SEED and have them appear in prod on next boot without a manual migration,
+ *  while still respecting any renames the admin has done. Safe on every boot. */
 export function seedSupplierTaxonomy(): void {
-  const groupCount = db.prepare("SELECT COUNT(*) AS c FROM supplier_groups").get() as { c: number };
-  const catCount = db.prepare("SELECT COUNT(*) AS c FROM supplier_categories").get() as {
-    c: number;
-  };
-  if (groupCount.c > 0 || catCount.c > 0) return;
-
   const ts = now();
-  let groupOrder = 10;
+  const existingGroups = listGroups();
+  const groupIdBySlug = new Map<string, number>();
+  for (const g of existingGroups) groupIdBySlug.set(g.slug, g.id);
+
+  let groupOrder = existingGroups.reduce((m, g) => Math.max(m, g.sort_order), 0) + 10;
   for (const g of SEED) {
-    const groupRes = db
-      .prepare(
-        `INSERT INTO supplier_groups (slug, label_hu, label_en, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .run(g.slug, g.label_hu, g.label_en, groupOrder, ts, ts);
-    const groupId = Number(groupRes.lastInsertRowid);
-    let catOrder = 10;
+    let groupId = groupIdBySlug.get(g.slug);
+    if (groupId === undefined) {
+      const groupRes = db
+        .prepare(
+          `INSERT INTO supplier_groups (slug, label_hu, label_en, sort_order, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        )
+        .run(g.slug, g.label_hu, g.label_en, groupOrder, ts, ts);
+      groupId = Number(groupRes.lastInsertRowid);
+      groupIdBySlug.set(g.slug, groupId);
+      groupOrder += 10;
+    }
+
+    const existingCats = db
+      .prepare("SELECT slug, sort_order FROM supplier_categories WHERE group_id = ?")
+      .all(groupId) as { slug: string; sort_order: number }[];
+    const existingSlugs = new Set(existingCats.map((c) => c.slug));
+    let catOrder = existingCats.reduce((m, c) => Math.max(m, c.sort_order), 0) + 10;
     for (const c of g.categories) {
+      if (existingSlugs.has(c.slug)) continue;
       db.prepare(
         `INSERT INTO supplier_categories
            (group_id, slug, label_hu, label_en, budget_category, sort_order, created_at, updated_at)
@@ -397,6 +429,5 @@ export function seedSupplierTaxonomy(): void {
       ).run(groupId, c.slug, c.label_hu, c.label_en, c.budget, catOrder, ts, ts);
       catOrder += 10;
     }
-    groupOrder += 10;
   }
 }

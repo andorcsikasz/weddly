@@ -4403,6 +4403,84 @@ describe("admin users + couples directory", () => {
     expect(r.status).toBe(403);
   });
 
+  test("admin activity counters: surfaces supplier-tip + feedback counts per user", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "contributor@weddly.test",
+      password: "supersafe123",
+      full_name: "Contributor",
+    });
+    const contributorId = reg.data.user.id;
+    const ts = Date.now();
+
+    // Seed two supplier tips for this user. Direct INSERTs avoid exercising
+    // the full /vendors flow just to populate the counter.
+    db.prepare(
+      `INSERT INTO community_suppliers
+         (submitter_user_id, category, name, city, website, blurb, price_band, status, created_at, updated_at)
+       VALUES (?, 'venue', 'Tip A', 'Budapest', 'https://a.test', 'short blurb', 3, 'active', ?, ?)`,
+    ).run(contributorId, ts - 60_000, ts - 60_000);
+    db.prepare(
+      `INSERT INTO community_suppliers
+         (submitter_user_id, category, name, city, website, blurb, price_band, status, created_at, updated_at)
+       VALUES (?, 'catering', 'Tip B', 'Pécs', 'https://b.test', 'short blurb', 2, 'active', ?, ?)`,
+    ).run(contributorId, ts - 30_000, ts - 30_000);
+
+    // One feedback submission.
+    db.prepare(
+      `INSERT INTO feedback_submissions (user_id, message, from_email, created_at)
+       VALUES (?, 'love the app', 'contributor@weddly.test', ?)`,
+    ).run(contributorId, ts - 15_000);
+
+    interface ActivityShape {
+      supplier_tip_count: number;
+      supplier_tip_last_at: number | null;
+      feedback_count: number;
+      feedback_last_at: number | null;
+      prior_flag_count: number;
+    }
+    type AdminUserWithActivity = AdminUser & { activity: ActivityShape };
+    const list = await req<{ users: AdminUserWithActivity[] }>(
+      "GET",
+      "/api/admin/users",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.status).toBe(200);
+    const target = list.data.users.find((u) => u.id === contributorId);
+    expect(target).toBeDefined();
+    expect(target?.activity.supplier_tip_count).toBe(2);
+    expect(target?.activity.supplier_tip_last_at).toBe(ts - 30_000);
+    expect(target?.activity.feedback_count).toBe(1);
+    expect(target?.activity.feedback_last_at).toBe(ts - 15_000);
+    expect(target?.activity.prior_flag_count).toBe(0);
+
+    // Resolved flag bumps prior_flag_count.
+    const f = await req(
+      "POST",
+      `/api/admin/users/${contributorId}/flag`,
+      { reason: "test concern" },
+      { token: adminToken },
+    );
+    expect(f.status).toBe(200);
+    await req(
+      "POST",
+      `/api/admin/users/${contributorId}/unflag`,
+      { note: "resolved over email" },
+      { token: adminToken },
+    );
+
+    const list2 = await req<{ users: AdminUserWithActivity[] }>(
+      "GET",
+      "/api/admin/users",
+      undefined,
+      { token: adminToken },
+    );
+    const target2 = list2.data.users.find((u) => u.id === contributorId);
+    expect(target2?.activity.prior_flag_count).toBe(1);
+  });
+
   test("admin delete: target with couple_id purges the whole workspace", async () => {
     wipeAll();
     const adminToken = await registerAdmin();
@@ -4545,16 +4623,20 @@ describe("supplier taxonomy (admin-editable groups + categories)", () => {
     return r.data.token;
   }
 
-  test("public GET /api/supplier-categories returns the seeded 6 groups / 14 categories", async () => {
+  test("public GET /api/supplier-categories returns the seeded 6 groups / 19 categories", async () => {
     wipeAll();
     const r = await req<TaxonomyResponse>("GET", "/api/supplier-categories");
     expect(r.status).toBe(200);
     expect(r.data.groups.length).toBe(6);
     const allCats = r.data.groups.flatMap((g) => g.categories);
-    expect(allCats.length).toBe(14);
+    expect(allCats.length).toBe(19);
     const venueGroup = r.data.groups.find((g) => g.slug === "venue_stay");
     expect(venueGroup?.label_hu).toBe("Helyszín & szállás");
-    expect(venueGroup?.categories.map((c) => c.slug)).toEqual(["venue", "accommodation"]);
+    expect(venueGroup?.categories.map((c) => c.slug)).toEqual([
+      "venue",
+      "accommodation",
+      "tent_pavilion",
+    ]);
   });
 
   test("admin can create + update + delete a new group", async () => {

@@ -4,17 +4,22 @@
 export type SupplierCategory =
   | "venue"
   | "accommodation"
+  | "tent_pavilion"
   | "catering"
   | "cake_dessert"
   | "bar_drinks"
   | "decor_floral"
   | "lighting"
   | "music_dj"
+  | "sound_tech"
   | "photo_video"
   | "entertainment"
   | "attire"
   | "hair_makeup"
+  | "nails"
+  | "rings"
   | "stationery"
+  | "wedding_website"
   | "transport";
 
 export type SupplierGroup =
@@ -39,17 +44,22 @@ export interface SupplierGroupDef {
 export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   venue: "venue",
   accommodation: "other",
+  tent_pavilion: "venue",
   catering: "catering",
   cake_dessert: "cake_dessert",
   bar_drinks: "drinks",
   decor_floral: "decor_floral",
   lighting: "decor_floral",
   music_dj: "music_dj",
+  sound_tech: "music_dj",
   photo_video: "photo_video",
   entertainment: "music_dj",
   attire: "attire",
   hair_makeup: "hair_makeup",
+  nails: "hair_makeup",
+  rings: "rings",
   stationery: "stationery",
+  wedding_website: "stationery",
   transport: "transport",
 };
 
@@ -57,12 +67,12 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
 // first, then food, then look & feel, then experience, then personal style,
 // then the remaining details.
 export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
-  { id: "venue_stay", categories: ["venue", "accommodation"] },
+  { id: "venue_stay", categories: ["venue", "accommodation", "tent_pavilion"] },
   { id: "food_drink", categories: ["catering", "cake_dessert", "bar_drinks"] },
   { id: "atmosphere", categories: ["decor_floral", "lighting"] },
-  { id: "experience", categories: ["music_dj", "photo_video", "entertainment"] },
-  { id: "style", categories: ["attire", "hair_makeup"] },
-  { id: "details", categories: ["stationery", "transport"] },
+  { id: "experience", categories: ["music_dj", "sound_tech", "photo_video", "entertainment"] },
+  { id: "style", categories: ["attire", "hair_makeup", "nails", "rings"] },
+  { id: "details", categories: ["stationery", "wedding_website", "transport"] },
 ];
 
 /** Shape of a directory entry without the per-request overlay (votes). Used

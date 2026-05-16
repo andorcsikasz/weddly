@@ -1806,17 +1806,22 @@ export interface LocaleMessages {
     cat: {
       venue: string;
       accommodation: string;
+      tent_pavilion: string;
       catering: string;
       cake_dessert: string;
       bar_drinks: string;
       decor_floral: string;
       lighting: string;
       music_dj: string;
+      sound_tech: string;
       photo_video: string;
       entertainment: string;
       attire: string;
       hair_makeup: string;
+      nails: string;
+      rings: string;
       stationery: string;
+      wedding_website: string;
       transport: string;
     };
     /** Side-by-side comparison: couples tick a few suppliers and the
@@ -2009,6 +2014,14 @@ export interface LocaleMessages {
      *  user is emailed and gets 7 days to reply, and the hourly sweep
      *  auto-purges past the deadline unless the admin clears the flag. */
     flag_badge_days_left: string;
+    /** Compact activity chips shown next to each user row — tip count,
+     *  feedback count, prior-flag count. Tooltip variants include the
+     *  "X ago" relative timestamp. */
+    activity_supplier_tips: string;
+    activity_supplier_tips_tooltip: string;
+    activity_feedback: string;
+    activity_feedback_tooltip: string;
+    activity_prior_flags_tooltip: string;
     flag_user_button: string;
     flag_user_title: string;
     flag_user_label: string;
