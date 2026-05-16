@@ -262,14 +262,20 @@ export default function SeatingPage() {
     const out: UnassignedEntry[] = [];
     for (const g of unassigned) {
       const hid = g.household_id;
-      if (hid != null && !emitted.has(hid)) {
+      if (hid != null) {
         const siblings = byHousehold.get(hid) ?? [];
-        if (siblings.length >= 2 && !unlinkedHouseholds.has(hid)) {
+        const isLinkedGroup = siblings.length >= 2 && !unlinkedHouseholds.has(hid);
+        if (isLinkedGroup) {
+          // First sibling materialises the card; subsequent siblings are
+          // already represented inside it, so skip them entirely (they
+          // would otherwise duplicate as flat rows below the card).
+          if (emitted.has(hid)) continue;
           out.push({ kind: "household", householdId: hid, guests: siblings });
           emitted.add(hid);
           continue;
         }
       }
+      // Solo household, unlinked household, or household-less guest.
       out.push({ kind: "single", guest: g });
     }
     return out;
