@@ -357,11 +357,15 @@
     );
   }
   html.dark .stationery-dark {
-    background-color: theme("colors.umber.950");
+    /* One shade lighter than the page (`html.dark` → umber-900) so the
+     * dark-blue hero tiles read as raised cards instead of merging into the
+     * background. The hairline opacity is bumped a touch so the diagonal
+     * texture still shows through the slightly brighter surface. */
+    background-color: theme("colors.umber.800");
     background-image: repeating-linear-gradient(
       45deg,
-      rgba(246, 242, 231, 0.05) 0,
-      rgba(246, 242, 231, 0.05) 1px,
+      rgba(246, 242, 231, 0.06) 0,
+      rgba(246, 242, 231, 0.06) 1px,
       transparent 1px,
       transparent 8px
     );
