@@ -13,7 +13,7 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { type CoupleMembershipView, coupleApi, guestApi, householdApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
-import { Dialog, useToast } from "./ui";
+import { Dialog, useEntryPrompt, useToast } from "./ui";
 
 interface Props {
   /** Couple_id currently active — surfaces as the seed-from source when
@@ -25,6 +25,7 @@ interface Props {
 export function WorkspacesPanel({ activeCoupleId }: Props) {
   const { t } = useT();
   const toast = useToast();
+  const promptEntry = useEntryPrompt();
   const [memberships, setMemberships] = useState<CoupleMembershipView[]>([]);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -74,7 +75,7 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
     }, 4000);
   }
 
-  async function clickDelete(coupleId: number) {
+  async function clickDelete(coupleId: number, displayName: string) {
     // Click against a DIFFERENT armed button → reset to that workspace
     // (so the user can switch their attention without juggling state).
     if (armedDeleteId !== coupleId) {
@@ -88,9 +89,27 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
       disarmLater();
       return;
     }
-    // Stage 2 → fire. The button just went "Tényleg?" on the previous
-    // click; this third click is the destructive one.
+    // Stage 2 → the third click is intent-to-delete; before we actually
+    // fire the DELETE we surface a typed-phrase modal so the user has to
+    // re-type the workspace name. Matches the pause-to-delete-account
+    // gate further down the Profile page: a typed phrase forces a
+    // conscious confirmation, not just three quick taps.
     if (disarmTimer.current !== null) clearTimeout(disarmTimer.current);
+    setArmedDeleteId(null);
+    setArmedDeleteStage(0);
+    const entered = await promptEntry({
+      title: t("profile.workspaces_delete_confirm_title"),
+      label: t("profile.workspaces_delete_confirm_label", { name: displayName }),
+      helperText: t("profile.workspaces_delete_confirm_help"),
+      placeholder: displayName,
+      confirmLabel: t("profile.workspaces_delete_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+      validate: (v) =>
+        v.trim() === displayName
+          ? null
+          : t("profile.workspaces_delete_confirm_mismatch", { name: displayName }),
+    });
+    if (entered === null) return;
     setDeletingId(coupleId);
     try {
       await coupleApi.deleteWorkspace(coupleId);
@@ -104,8 +123,6 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setDeletingId(null);
-      setArmedDeleteId(null);
-      setArmedDeleteStage(0);
     }
   }
 
@@ -212,7 +229,7 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
                           ? "text-blush-700 hover:text-blush-800 dark:text-blush-300 dark:hover:text-blush-200"
                           : "text-ink-400 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
                       }`}
-                      onClick={() => clickDelete(m.couple_id)}
+                      onClick={() => clickDelete(m.couple_id, m.display_name)}
                       disabled={isDeletingThis}
                       aria-label={t("profile.workspaces_delete")}
                     >

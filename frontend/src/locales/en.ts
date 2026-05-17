@@ -2389,6 +2389,12 @@ const en: LocaleMessages = {
     workspaces_delete_arm2: "Really?",
     workspaces_delete_done: "Event deleted",
     workspaces_primary_marker: "Primary",
+    workspaces_delete_confirm_title: "Delete event workspace",
+    workspaces_delete_confirm_label: "Type the workspace name: {name}",
+    workspaces_delete_confirm_help:
+      "Permanently deletes the guest list, seating, budget, and everything else inside this workspace. Cannot be undone.",
+    workspaces_delete_confirm_yes: "Yes, delete it",
+    workspaces_delete_confirm_mismatch: "It must match exactly: {name}",
     payments_title: "Payments",
     payments_body: "Payment history and billing settings will appear here soon.",
     display_title: "Display",

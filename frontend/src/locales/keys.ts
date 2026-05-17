@@ -2641,6 +2641,15 @@ export interface LocaleMessages {
     workspaces_delete_arm1: string;
     workspaces_delete_arm2: string;
     workspaces_delete_done: string;
+    /** Typed-phrase modal that opens after the 3-click ratchet. The user
+     *  must re-type the workspace name to confirm — same gate pattern
+     *  as the pause-to-delete-account flow further down. `{name}` is the
+     *  workspace's display_name. */
+    workspaces_delete_confirm_title: string;
+    workspaces_delete_confirm_label: string;
+    workspaces_delete_confirm_help: string;
+    workspaces_delete_confirm_yes: string;
+    workspaces_delete_confirm_mismatch: string;
     /** Tiny pill on the first row of the workspaces list — marks the
      *  user's original onboarding workspace as the primary so the
      *  missing delete button reads as intentional, not buggy. */

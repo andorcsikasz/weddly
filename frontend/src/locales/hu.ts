@@ -2412,6 +2412,12 @@ const hu: LocaleMessages = {
     workspaces_delete_arm2: "Tényleg?",
     workspaces_delete_done: "Esemény törölve",
     workspaces_primary_marker: "Fő",
+    workspaces_delete_confirm_title: "Esemény-munkaterület törlése",
+    workspaces_delete_confirm_label: "Írd be a munkaterület nevét: {name}",
+    workspaces_delete_confirm_help:
+      "Ez véglegesen törli a vendéglistát, ültetést, költségvetést és minden, ehhez a munkaterülethez tartozó adatot. A művelet nem visszavonható.",
+    workspaces_delete_confirm_yes: "Igen, törlöm",
+    workspaces_delete_confirm_mismatch: "Egyezzen a beírt szöveg pontosan: {name}",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
     display_title: "Megjelenítés",
