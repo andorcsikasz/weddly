@@ -720,11 +720,17 @@ function DestinationTile({
           aria-label={t("honeymoon.edit_destination")}
         >
           {value ? (
+            // The destination string is often Nominatim's full breadcrumb
+            // ("Málaga, Málaga-Costa del Sol, Malaga, Andalúzia, Spanyolország") —
+            // crop the displayed text to the first comma-separated segment so
+            // the tile shows the headline (city / venue) only. The full
+            // string stays in `value` (and the title tooltip) and is what the
+            // autocomplete pre-fills when the user clicks to edit.
             <span
               className="line-clamp-2 font-serif text-xl font-semibold text-paper-50 sm:text-2xl"
               title={value}
             >
-              {value}
+              {(value.split(",")[0] ?? value).trim() || value}
             </span>
           ) : (
             <span className="text-sm text-paper-200">
