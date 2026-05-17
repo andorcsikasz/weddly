@@ -1381,6 +1381,12 @@ const en: LocaleMessages = {
     tap_unassign_hint: "Tap the × on a guest chip to unassign.",
     full_blocked: "“{name}” is full — free a slot first.",
     partial_placed: "Placed {placed}/{total} guests with “{name}”.",
+    bride_label: "Bride",
+    groom_label: "Groom",
+    partner_placeholder_hint: "Add to the guest list to assign them.",
+    household_unlink: "Separate household",
+    household_relink: "Re-link to household",
+    household_linked_aria: "{n}-member household, linked",
   },
   seating: {
     title: "Seating",

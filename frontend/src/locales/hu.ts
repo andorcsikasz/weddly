@@ -1388,6 +1388,12 @@ const hu: LocaleMessages = {
     tap_unassign_hint: "Koppints az X-re a vendég felszabadításához.",
     full_blocked: "„{name}” megtelt — szabadíts fel egy helyet előbb.",
     partial_placed: "{placed}/{total} vendég bekerült „{name}” mellé.",
+    bride_label: "Menyasszony",
+    groom_label: "Vőlegény",
+    partner_placeholder_hint: "Add a vendéglistához, hogy be tudd osztani.",
+    household_unlink: "Háztartás szétválasztása",
+    household_relink: "Visszakapcsolás a háztartáshoz",
+    household_linked_aria: "{n} fős háztartás összekapcsolva",
   },
   seating: {
     title: "Ültetési rend",

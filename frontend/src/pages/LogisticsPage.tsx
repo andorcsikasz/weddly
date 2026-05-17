@@ -19,6 +19,7 @@
 
 import type {
   Accommodation,
+  Couple,
   Guest,
   Transfer,
   UpsertAccommodationInput,
@@ -27,6 +28,7 @@ import type {
 import {
   Bed,
   Bus,
+  Crown,
   ExternalLink,
   Link2,
   MapPin,
@@ -43,7 +45,7 @@ import { type DragEvent, type FormEvent, useCallback, useEffect, useMemo, useSta
 import { AppShell } from "../components/AppShell";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { accommodationApi, guestApi, transferApi } from "../lib/endpoints";
+import { accommodationApi, coupleApi, guestApi, transferApi } from "../lib/endpoints";
 import { formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -69,6 +71,9 @@ export default function LogisticsPage() {
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
+  // The couple — fetched alongside so we can pin the host pair at the top of
+  // the unassigned sidebar (matched by `partner_role`, mirroring SeatingPage).
+  const [couple, setCouple] = useState<Couple | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingAccommodation, setEditingAccommodation] = useState<Accommodation | "new" | null>(
     null,
@@ -100,14 +105,16 @@ export default function LogisticsPage() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [acc, tr, gs] = await Promise.all([
+    const [acc, tr, gs, c] = await Promise.all([
       accommodationApi.list(),
       transferApi.list(),
       guestApi.list(),
+      coupleApi.current(),
     ]);
     setAccommodations(acc.accommodations);
     setTransfers(tr.transfers);
     setGuests(gs.guests);
+    setCouple(c.couple);
   }, []);
 
   useEffect(() => {
@@ -141,11 +148,44 @@ export default function LogisticsPage() {
     return out;
   }, [guests]);
 
+  // Pinned partner-role rows at the top of the sidebar — matches SeatingPage.
+  // Three render states per role: missing guest row → PartnerSlotPlaceholder,
+  // present + unassigned → DraggableGuestRow with a Crown, present + already
+  // assigned → omit the slot entirely (the chip on the destination is the
+  // load-bearing visual at that point).
+  type PartnerSlot = {
+    role: "bride" | "groom";
+    name: string;
+    guest: Guest | null;
+  };
+  const partnerSlots = useMemo<PartnerSlot[]>(() => {
+    if (!couple) return [];
+    const isAssigned = (g: Guest): boolean =>
+      tab === "accommodation" ? g.accommodation_id != null : g.transfer_id != null;
+    const findByRole = (role: "bride" | "groom"): Guest | null =>
+      guests.find((g) => g.partner_role === role) ?? null;
+    const brideName = couple.bride_name?.trim() || t("logistics.bride_label");
+    const groomName = couple.groom_name?.trim() || t("logistics.groom_label");
+    const buildSlot = (role: "bride" | "groom", name: string): PartnerSlot | null => {
+      const g = findByRole(role);
+      if (g && isAssigned(g)) return null;
+      return { role, name, guest: g };
+    };
+    return [buildSlot("bride", brideName), buildSlot("groom", groomName)].filter(
+      (s): s is PartnerSlot => s !== null,
+    );
+  }, [couple, guests, tab, t]);
+
+  // Partner rows are rendered separately above the household groups, so drop
+  // them from the general unassigned list to avoid the duplicate render the
+  // user noticed (Andor + Sári appearing both pinned + in the flat list).
   const unassigned = useMemo(
     () =>
-      guests.filter((g) =>
-        tab === "accommodation" ? g.accommodation_id == null : g.transfer_id == null,
-      ),
+      guests.filter((g) => {
+        const stillUnassigned =
+          tab === "accommodation" ? g.accommodation_id == null : g.transfer_id == null;
+        return stillUnassigned && g.partner_role === null;
+      }),
     [guests, tab],
   );
   type UnassignedEntry =
@@ -539,12 +579,34 @@ export default function LogisticsPage() {
               {tapModeUser ? t("logistics.tap_mode_off") : t("logistics.tap_mode_on")}
             </button>
           )}
-          {unassignedEntries.length === 0 ? (
+          {unassignedEntries.length === 0 && partnerSlots.length === 0 ? (
             <p className="mt-4 text-sm text-ink-600 dark:text-umber-200">
               {t("logistics.sidebar_empty")}
             </p>
           ) : (
             <ul className="mt-3 max-h-[60vh] space-y-1 overflow-y-auto">
+              {partnerSlots.map((slot) =>
+                slot.guest ? (
+                  <li key={slot.role}>
+                    <DraggableGuestRow
+                      guest={slot.guest}
+                      onDragStart={onDragStart}
+                      tapMode={tapMode}
+                      selected={selectedGuestId === slot.guest.id}
+                      onTap={() => slot.guest && handleTapGuest(slot.guest)}
+                      partnerRole={slot.role}
+                    />
+                  </li>
+                ) : (
+                  <li key={slot.role}>
+                    <PartnerSlotPlaceholder
+                      role={slot.role}
+                      name={slot.name}
+                      hint={t("logistics.partner_placeholder_hint")}
+                    />
+                  </li>
+                ),
+              )}
               {unassignedEntries.map((entry) =>
                 entry.kind === "household" ? (
                   <li key={`h${entry.householdId}`}>
@@ -686,6 +748,7 @@ function DraggableGuestRow({
   relinkable = false,
   onRelink,
   relinkLabel,
+  partnerRole,
 }: {
   guest: Guest;
   onDragStart: (e: DragEvent<HTMLElement>, guestId: number, groupIds?: number[]) => void;
@@ -697,6 +760,9 @@ function DraggableGuestRow({
   relinkable?: boolean;
   onRelink?: () => void;
   relinkLabel?: string;
+  /** Set on the pinned bride/groom rows so the leading icon flips from
+   *  a generic user silhouette to the host Crown. */
+  partnerRole?: "bride" | "groom" | null;
 }) {
   return (
     <div
@@ -716,7 +782,15 @@ function DraggableGuestRow({
         compact ? "py-1" : ""
       }`}
     >
-      <User size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
+      {partnerRole ? (
+        <Crown
+          size={14}
+          className="shrink-0 text-blush-600 dark:text-blush-300"
+          aria-hidden
+        />
+      ) : (
+        <User size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
+      )}
       <span className="flex-1 truncate">{guest.full_name}</span>
       {relinkable && onRelink && relinkLabel && (
         <button
@@ -729,6 +803,34 @@ function DraggableGuestRow({
           <Link2 size={12} aria-hidden />
         </button>
       )}
+    </div>
+  );
+}
+
+/** Pinned slot for a bride / groom when no matching guest row exists yet.
+ *  Not draggable — purely a placeholder that keeps the reserved spot visible
+ *  at the top of the sidebar so the couple sees "this is where I'll go"
+ *  before they (or their partner) are added to the guest list. */
+function PartnerSlotPlaceholder({
+  role,
+  name,
+  hint,
+}: {
+  role: "bride" | "groom";
+  name: string;
+  hint: string;
+}) {
+  return (
+    <div
+      className="flex items-start gap-2 rounded-lg border border-dashed border-blush-300 bg-blush-50/70 px-2 py-1.5 dark:border-blush-400/40 dark:bg-blush-400/15"
+      role="presentation"
+      aria-label={`${role}: ${name}`}
+    >
+      <Crown size={14} aria-hidden className="mt-0.5 text-blush-600 dark:text-blush-300" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">{name}</p>
+        <p className="text-[11px] text-ink-500 dark:text-umber-300">{hint}</p>
+      </div>
     </div>
   );
 }
