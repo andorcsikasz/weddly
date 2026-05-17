@@ -118,16 +118,19 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
             {t("profile.workspaces_body")}
           </p>
         </div>
-        <button
-          type="button"
-          className="btn-outline btn-sm inline-flex items-center gap-1.5"
-          onClick={() => setCreating(true)}
-          disabled={atCap}
-          title={atCap ? t("profile.workspaces_cap_reached") : undefined}
-        >
-          <Plus size={14} aria-hidden="true" />
-          {t("profile.workspaces_add")}
-        </button>
+        {/* Hide the "Új esemény" affordance once the user is at the
+         *  3-workspace cap — a disabled button reads as "broken"; better
+         *  to simply remove the entry point until they free a slot. */}
+        {!atCap && (
+          <button
+            type="button"
+            className="btn-outline btn-sm inline-flex items-center gap-1.5"
+            onClick={() => setCreating(true)}
+          >
+            <Plus size={14} aria-hidden="true" />
+            {t("profile.workspaces_add")}
+          </button>
+        )}
       </div>
 
       <ul className="mt-3 divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">

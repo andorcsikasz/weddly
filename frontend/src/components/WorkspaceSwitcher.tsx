@@ -68,6 +68,11 @@ export function WorkspaceSwitcher() {
 
   const active = memberships.find((m) => m.couple_id === activeId) ?? memberships[0];
   if (!active) return null;
+  // Matches the server-side cap in handleCreateAdditionalCouple: once the
+  // user has 3 live workspaces, the create entry point disappears here too
+  // (the Profile panel does the same). A disabled link would read as
+  // "broken"; better to remove the affordance until they free a slot.
+  const atCap = memberships.filter((m) => m.status !== "deleting").length >= 3;
 
   // Single-workspace shortcut: skip the chip+dropdown entirely and render
   // a tiny "+" link straight to the profile's workspaces section. The
@@ -167,16 +172,18 @@ export function WorkspaceSwitcher() {
               );
             })}
           </ul>
-          <div className="border-t border-paper-200 dark:border-umber-700">
-            <Link
-              to="/app/profile#workspaces"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-ink-700 transition-colors hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700/60"
-            >
-              <Plus size={14} aria-hidden="true" />
-              <span>{t("workspace.create_link")}</span>
-            </Link>
-          </div>
+          {!atCap && (
+            <div className="border-t border-paper-200 dark:border-umber-700">
+              <Link
+                to="/app/profile#workspaces"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-ink-700 transition-colors hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700/60"
+              >
+                <Plus size={14} aria-hidden="true" />
+                <span>{t("workspace.create_link")}</span>
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
