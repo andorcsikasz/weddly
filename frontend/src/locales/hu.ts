@@ -17,6 +17,8 @@ const hu: LocaleMessages = {
     confirm_delete_title: "Biztos törölhető?",
     confirm_delete_body: "Ezt a műveletet nem lehet visszavonni.",
     confirm_delete: "Igen, töröld",
+    increment: "Növelés",
+    decrement: "Csökkentés",
   },
   app: {
     name: "Wēddly",
@@ -1940,6 +1942,7 @@ const hu: LocaleMessages = {
     waitlist_card_decided: "Eldöntve",
     waitlist_card_message_label: "Üzenet",
     waitlist_card_notes_label: "Belső jegyzet",
+    waitlist_card_more_label: "Részletek",
     waitlist_card_sent_label: "Kiküldött válasz",
     waitlist_card_portfolio_label: "Portfólió",
     waitlist_card_instagram_label: "Instagram",

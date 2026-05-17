@@ -17,6 +17,9 @@ export interface LocaleMessages {
     confirm_delete_title: string;
     confirm_delete_body: string;
     confirm_delete: string;
+    /** Aria-labels for stepper +/− buttons. */
+    increment: string;
+    decrement: string;
   };
   app: {
     name: string;
@@ -2095,6 +2098,9 @@ export interface LocaleMessages {
     waitlist_card_decided: string;
     waitlist_card_message_label: string;
     waitlist_card_notes_label: string;
+    /** "More" summary label on the collapsed-by-default detail section
+     *  of the compressed vendor-waitlist card. */
+    waitlist_card_more_label: string;
     waitlist_card_sent_label: string;
     waitlist_card_portfolio_label: string;
     waitlist_card_instagram_label: string;
