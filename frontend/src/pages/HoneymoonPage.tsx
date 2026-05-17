@@ -606,7 +606,7 @@ function DaysTile({
     <div ref={wrapperRef} className="card-hover stationery-dark relative !p-5">
       <div className="flex items-center gap-2 text-paper-200">
         <Calendar size={14} aria-hidden="true" />
-        <span className="text-xs font-medium uppercase tracking-wide">
+        <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_days")}
         </span>
       </div>
@@ -695,10 +695,10 @@ function DestinationTile({
   const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="card-hover stationery-dark relative !p-5">
+    <div className="card-hover stationery-dark relative flex h-full flex-col justify-center !p-5">
       <div className="flex items-center gap-2 text-paper-200">
         <MapPin size={14} aria-hidden="true" />
-        <span className="text-xs font-medium uppercase tracking-wide">
+        <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_destination")}
         </span>
       </div>
@@ -963,7 +963,7 @@ function BudgetSummaryTile({
     >
       <div className="flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
-        <span className="text-xs font-medium uppercase tracking-wide">
+        <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_budget")}
         </span>
       </div>
