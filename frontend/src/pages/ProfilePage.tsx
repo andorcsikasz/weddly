@@ -22,6 +22,7 @@ import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { useDensity } from "../lib/density";
 import {
   authApi,
   budgetApi,
@@ -77,6 +78,7 @@ function saveBlob(blob: Blob, filename: string) {
 
 export default function ProfilePage() {
   const { t, locale } = useT();
+  const [density, setDensity] = useDensity();
   useDocumentMeta("seo.profile_title", "seo.profile_description");
   const promptEntry = useEntryPrompt();
   const confirm = useConfirm();
@@ -752,6 +754,44 @@ export default function ProfilePage() {
             )}
           </li>
         </ul>
+      </section>
+
+      <section className="card mt-6">
+        <h2 className="text-lg">{t("profile.display_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.display_body")}</p>
+        <fieldset className="mt-4">
+          <legend className="field-label">{t("profile.density_label")}</legend>
+          <div
+            role="radiogroup"
+            aria-label={t("profile.density_label")}
+            className="grid gap-2 sm:grid-cols-2"
+          >
+            {(["compact", "comfortable"] as const).map((value) => {
+              const active = density === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setDensity(value)}
+                  className={`flex flex-col items-start gap-1 rounded-xl border px-3 py-3 text-left transition-colors ${
+                    active
+                      ? "border-ink-700 bg-ink-700/5 dark:border-paper-100 dark:bg-paper-100/10"
+                      : "border-paper-300 hover:border-ink-400 dark:border-umber-700 dark:hover:border-umber-600"
+                  }`}
+                >
+                  <span className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                    {t(`profile.density_${value}` as const)}
+                  </span>
+                  <span className="text-xs text-ink-500 dark:text-umber-300">
+                    {t(`profile.density_${value}_help` as const)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
       </section>
 
       <section className="card mt-6">

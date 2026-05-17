@@ -1171,6 +1171,15 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
       : state === "invited"
         ? t("guests.invite_state_invited")
         : t("guests.invite_state_not_invited");
+  // Sub-6-char label for the mobile chip body. Icons-only is fine at sm+
+  // where the tooltip is reachable; on touch widths we surface the state in
+  // text so a glance answers "did we send this one yet?".
+  const shortLabel =
+    state === "delivered"
+      ? t("guests.delivered_short")
+      : state === "invited"
+        ? t("guests.invited_short")
+        : t("guests.invite_state_not_invited_short");
   const nextHint =
     next === "delivered"
       ? t("guests.invite_state_cycle_to_delivered")
@@ -1190,14 +1199,20 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
       title={`${label} — ${nextHint}`}
       aria-label={`${label}. ${nextHint}`}
       aria-pressed={state !== "not_invited"}
-      className={`inline-flex h-8 w-12 shrink-0 items-center justify-center rounded-full border text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 sm:h-6 sm:w-9 ${cls}`}
+      className={`inline-flex h-8 min-w-[3.5rem] shrink-0 items-center justify-center rounded-full border px-2 text-[11px] font-medium uppercase tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 sm:h-6 sm:min-w-0 sm:w-9 sm:px-0 sm:text-xs ${cls}`}
     >
+      {/* Mobile: visible short label, icon kept screen-reader-only.
+          sm+: icon-only — the title attribute carries the meaning on hover. */}
+      <span className="sm:sr-only">{shortLabel}</span>
       {state === "delivered" ? (
-        <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" />
+        <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" className="hidden sm:inline" />
       ) : state === "invited" ? (
-        <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+        <Check size={14} strokeWidth={2.5} aria-hidden="true" className="hidden sm:inline" />
       ) : (
-        <span aria-hidden="true" className="block h-1.5 w-1.5 rounded-full bg-current opacity-50" />
+        <span
+          aria-hidden="true"
+          className="hidden h-1.5 w-1.5 rounded-full bg-current opacity-50 sm:block"
+        />
       )}
     </button>
   );

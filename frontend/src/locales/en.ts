@@ -1177,6 +1177,7 @@ const en: LocaleMessages = {
     invite_state_not_invited: "Not invited yet",
     invite_state_invited: "Invited",
     invite_state_delivered: "Invitation delivered",
+    invite_state_not_invited_short: "—",
     invite_state_cycle_to_invited: "Click to mark as invited",
     invite_state_cycle_to_delivered: "Click once the invitation is handed over",
     invite_state_cycle_to_clear: "Click to clear",
