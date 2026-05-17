@@ -508,20 +508,10 @@ export default function ProfilePage() {
         {partner ? (
           <>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <CoupleMonogramPair
-                partner={{
-                  full_name: partner.full_name ?? "",
-                  email: partner.email ?? "",
-                  // Cards where the partner hasn't accepted yet (status=invited)
-                  // render a dimmed disc — no name means no real initials, just
-                  // an "?". The user-facing avatar stays at full opacity so the
-                  // pair still reads as "you + someone".
-                  joined: partner.status === "joined" || partner.status === "active",
-                }}
-                self={{
-                  full_name: authUser?.full_name ?? "",
-                  email: authUser?.email ?? "",
-                }}
+              <PartnerMonogram
+                fullName={partner.full_name ?? ""}
+                email={partner.email ?? ""}
+                joined={partner.status === "joined" || partner.status === "active"}
               />
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-ink-900 dark:text-paper-50">
@@ -1022,38 +1012,32 @@ export default function ProfilePage() {
   );
 }
 
-/** Two overlapping initial-discs above the partner card — partner on the
- *  left in blush, signed-in user on the right in ink, both at the same
- *  size with a paper-coloured ring forming the seam. The colour pair is
- *  fixed (mirrors the header ProfileMenu avatar), not user-selectable:
- *  the wedding workspace has exactly two people and the brand tokens
- *  already differentiate them. */
-function CoupleMonogramPair({
-  partner,
-  self,
+/** Single initial-disc above the partner card — just the invited
+ *  partner's monogram in blush, no self-overlap. The signed-in user's
+ *  avatar already lives in the header ProfileMenu chip; doubling up on
+ *  the card just made the row read as "two strangers" rather than "the
+ *  person we invited". Dimmed when status='invited' (no real initials
+ *  yet — the disc still anchors the row). */
+function PartnerMonogram({
+  fullName,
+  email,
+  joined,
 }: {
-  partner: { full_name: string; email: string; joined: boolean };
-  self: { full_name: string; email: string };
+  fullName: string;
+  email: string;
+  joined: boolean;
 }) {
-  const partnerInitials = getInitials(partner.full_name, partner.email);
-  const selfInitials = getInitials(self.full_name, self.email);
+  const initials = getInitials(fullName, email);
   return (
-    <div aria-hidden="true" className="flex items-center">
-      <span
-        title={partner.full_name || partner.email}
-        className={`flex h-12 w-12 items-center justify-center rounded-full bg-blush-700 text-sm font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-blush-500 dark:ring-umber-800 ${
-          partner.joined ? "" : "opacity-60"
-        }`}
-      >
-        {partnerInitials}
-      </span>
-      <span
-        title={self.full_name || self.email}
-        className="-ml-3 flex h-12 w-12 items-center justify-center rounded-full bg-ink-800 text-sm font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-umber-600 dark:text-paper-50 dark:ring-umber-800"
-      >
-        {selfInitials}
-      </span>
-    </div>
+    <span
+      aria-hidden="true"
+      title={fullName || email}
+      className={`flex h-12 w-12 items-center justify-center rounded-full bg-blush-700 text-sm font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-blush-500 dark:ring-umber-800 ${
+        joined ? "" : "opacity-60"
+      }`}
+    >
+      {initials}
+    </span>
   );
 }
 
