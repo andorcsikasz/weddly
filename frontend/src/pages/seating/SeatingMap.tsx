@@ -158,10 +158,16 @@ export function SeatingMap({
     if (arr) arr.push(a);
   }
 
-  // Would moving `movingId` to (x, y) overlap any other table at its current
-  // (local or persisted) position + dims? Used to reject drags/nudges that
-  // would stack tables, with an axis-slide fallback so the user can graze
-  // along an edge instead of getting stuck.
+  // Would moving `movingId` to (x, y) violate the table-spacing rule against
+  // any other table? Footprints are inflated by TABLE_KEEPOUT_MM so two
+  // non-overlapping footprints guarantee a walkable aisle between chairs.
+  //
+  // Pre-existing tight layouts (or those that became tight after the rule
+  // tightened) would otherwise lock the moving table in place because every
+  // small move would still overlap a neighbour. So we treat the current
+  // position as a baseline: a move is allowed if it (a) introduces no NEW
+  // violation against a table that wasn't already too close, and (b) for
+  // tables already in violation, doesn't pull centre-to-centre any closer.
   function wouldCollide(movingId: number, x: number, y: number): boolean {
     const moving = tables.find((tb) => tb.id === movingId);
     if (!moving) return false;
@@ -169,7 +175,10 @@ export function SeatingMap({
       width_mm: moving.width_mm,
       length_mm: moving.length_mm,
     };
-    const a = footprintOf(moving.shape, moving.rotation_deg ?? 0, { x, y }, movingDims);
+    const oldPos = localPos.get(movingId) ?? { x: moving.x_mm, y: moving.y_mm };
+    const rot = moving.rotation_deg ?? 0;
+    const aNew = footprintOf(moving.shape, rot, { x, y }, movingDims);
+    const aOld = footprintOf(moving.shape, rot, oldPos, movingDims);
     for (const other of tables) {
       if (other.id === movingId) continue;
       const pos = localPos.get(other.id) ?? { x: other.x_mm, y: other.y_mm };
@@ -178,7 +187,16 @@ export function SeatingMap({
         length_mm: other.length_mm,
       };
       const b = footprintOf(other.shape, other.rotation_deg ?? 0, pos, dims);
-      if (footprintsCollide(a, b)) return true;
+      if (!footprintsCollide(aNew, b)) continue;
+      // New position is in violation with this neighbour. Allow it only if
+      // the old position was also in violation AND the move increases the
+      // centre-to-centre distance (never let the user shove tables closer).
+      if (!footprintsCollide(aOld, b)) return true;
+      const dxOld = oldPos.x - pos.x;
+      const dyOld = oldPos.y - pos.y;
+      const dxNew = x - pos.x;
+      const dyNew = y - pos.y;
+      if (dxNew * dxNew + dyNew * dyNew < dxOld * dxOld + dyOld * dyOld) return true;
     }
     return false;
   }
