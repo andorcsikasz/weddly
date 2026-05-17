@@ -69,7 +69,6 @@ export function KeyboardShortcutsSheet({
                   <span className="text-ink-700 dark:text-paper-100">{t(it.descKey)}</span>
                   <span className="flex shrink-0 items-center gap-1">
                     {it.keys.map((k, idx) => (
-                      // biome-ignore lint/suspicious/noArrayIndexKey: ordered static keycap row
                       <kbd
                         key={`${k}-${idx}`}
                         className="inline-flex min-w-[1.75rem] items-center justify-center rounded-md border border-paper-300 bg-paper-100 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-ink-800 shadow-sm dark:border-umber-600 dark:bg-umber-700 dark:text-paper-100"
