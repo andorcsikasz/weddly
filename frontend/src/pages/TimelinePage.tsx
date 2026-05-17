@@ -18,6 +18,7 @@ import {
   ChefHat,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   Disc3,
   Flower2,
   Gem,
@@ -35,6 +36,7 @@ import {
   Wine,
   X,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -271,9 +273,19 @@ export default function TimelinePage() {
     <AppShell>
       <div className="space-y-6">
         <header>
-          <h1 className="text-3xl font-serif text-ink-900 sm:text-4xl dark:text-paper-50">
-            {t("timeline.title")}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-serif text-ink-900 sm:text-4xl dark:text-paper-50">
+              {t("timeline.title")}
+            </h1>
+            <Link
+              to="/app/planning"
+              aria-label={t("planning.title")}
+              title={t("planning.title")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+            >
+              <ClipboardList size={18} aria-hidden="true" />
+            </Link>
+          </div>
           <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("timeline.sub")}</p>
         </header>
 
