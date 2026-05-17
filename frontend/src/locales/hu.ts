@@ -573,6 +573,7 @@ const hu: LocaleMessages = {
     footer_legal_terms: "Felhasználási feltételek",
     footer_legal_privacy: "Adatvédelem",
     footer_legal_about: "Rólunk",
+    footer_legal_imprint: "Impresszum",
     footer_about_link: "Rólunk",
     footer_band_text: "Vendég vagy?",
     footer_band_cta: "Meghívókód megadása",
@@ -2011,9 +2012,29 @@ const hu: LocaleMessages = {
     flag_user_help:
       "A felhasználó kap egy emailt az indokkal, és 7 napja van válaszolni, mielőtt a rendszer automatikusan törli.",
     flag_user_send: "Megjelölés és értesítés",
+    flag_user_sending: "Küldés…",
     flag_user_too_short: "Adj meg legalább 4 karakteres indokot.",
     flag_user_success: "Felhasználó megjelölve és értesítve.",
     flag_cannot_self: "Saját magadat nem jelölheted meg.",
+    flag_user_templates_help: "Válassz egy sablont, vagy írd kézzel az indokot.",
+    flag_tpl_spam_label: "Spam",
+    flag_tpl_spam_body:
+      "Nagy mennyiségű spam vagy automatizáltnak tűnő tartalmat észleltünk a fiókodban. Kérjük, magyarázd el a helyzetet, különben 7 napon belül töröljük a fiókodat.",
+    flag_tpl_fake_label: "Hamis adatok",
+    flag_tpl_fake_body:
+      "Úgy tűnik, hogy a fiókhoz tartozó adatok nem valósak (pl. szolgáltatói tippek, e-mail cím vagy név). Kérjük, igazold a fiókod hitelességét, különben 7 napon belül törlésre kerül.",
+    flag_tpl_duplicate_label: "Duplikált fiók",
+    flag_tpl_duplicate_body:
+      "A rendszerünk szerint már van egy másik aktív fiókod ugyanezen az e-mail címen vagy hasonló adatokkal. Kérjük, jelezd, melyiket szeretnéd megtartani — különben 7 napon belül a duplikátumot töröljük.",
+    flag_tpl_vendor_abuse_label: "Visszaélés a /vendors űrlappal",
+    flag_tpl_vendor_abuse_body:
+      "Visszaélést észleltünk a szolgáltatói űrlap használata során (ismétlődő beküldések, nem-valós szolgáltatások, vagy szabálytalan tartalom). Kérjük, magyarázd el, különben 7 napon belül töröljük a fiókodat.",
+    flag_tpl_offensive_label: "Sértő tartalom",
+    flag_tpl_offensive_body:
+      "A fiókodhoz tartozó tartalom (név, profil, beküldött szolgáltatói tipp vagy visszajelzés) sértő vagy nem felel meg a közösségi normáknak. Kérjük, írj nekünk, különben 7 napon belül töröljük a fiókodat.",
+    flag_tpl_reported_label: "Mások jelentették",
+    flag_tpl_reported_body:
+      "Más felhasználók jelentést tettek a fiókod tevékenységével kapcsolatban. A részletek tisztázása érdekében válaszolj erre az e-mailre — különben 7 napon belül töröljük a fiókodat.",
     unflag_user_button: "Megjelölés feloldása",
     unflag_user_title: "Megjelölés feloldása",
     unflag_user_label: "Megjegyzés (opcionális)",
@@ -2567,6 +2588,7 @@ const hu: LocaleMessages = {
     draft_banner_label: "Nyílt béta — még nincs jogi átvilágítás",
     draft_banner_body:
       "Ez a szöveg őszintén leírja, mit csinál ma a Weddly, de még nem fésülte át ügyvéd. Az 1.0 indulása előtt magyar jogász átnézi és véglegesíti.",
+    version_label: "Verzió",
   },
   privacy: {
     seo_title: "Adatvédelmi szabályzat — Wēddly",

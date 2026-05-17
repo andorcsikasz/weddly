@@ -616,6 +616,7 @@ export interface LocaleMessages {
     footer_legal_terms: string;
     footer_legal_privacy: string;
     footer_legal_about: string;
+    footer_legal_imprint: string;
     /** Replaces the second vendor-direction link in the For-vendors footer
      *  column (the original `footer_vendors_about` also pointed at
      *  /vendors, creating a duplicate). Now links to /about. */
@@ -2174,9 +2175,26 @@ export interface LocaleMessages {
     flag_user_placeholder: string;
     flag_user_help: string;
     flag_user_send: string;
+    flag_user_sending: string;
     flag_user_too_short: string;
     flag_user_success: string;
     flag_cannot_self: string;
+    /** Template chips above the textarea in FlagUserDialog. Picking one
+     *  drops `flag_tpl_<key>_body` into the editable textarea; the admin
+     *  can still tweak the wording before sending. */
+    flag_user_templates_help: string;
+    flag_tpl_spam_label: string;
+    flag_tpl_spam_body: string;
+    flag_tpl_fake_label: string;
+    flag_tpl_fake_body: string;
+    flag_tpl_duplicate_label: string;
+    flag_tpl_duplicate_body: string;
+    flag_tpl_vendor_abuse_label: string;
+    flag_tpl_vendor_abuse_body: string;
+    flag_tpl_offensive_label: string;
+    flag_tpl_offensive_body: string;
+    flag_tpl_reported_label: string;
+    flag_tpl_reported_body: string;
     unflag_user_button: string;
     unflag_user_title: string;
     unflag_user_label: string;
@@ -2822,6 +2840,11 @@ export interface LocaleMessages {
   legal: {
     draft_banner_label: string;
     draft_banner_body: string;
+    /** "Verzió" / "Version" — rendered next to the "Last updated" eyebrow
+     *  on Privacy + Terms so a user can name the exact document version
+     *  they accepted at signup. The value itself comes from
+     *  `shared/legal.ts`. */
+    version_label: string;
   };
   privacy: {
     seo_title: string;
@@ -2881,6 +2904,33 @@ export interface LocaleMessages {
     contact_title: string;
     contact_body: string;
     en_section_label: string;
+  };
+  /** /impresszum — Hungarian Ektv. §4 imprint page. Lists operator
+   *  identity + contact + hosting provider. During the open beta the
+   *  operator is a natural person; the values here update when we
+   *  register commercially (EV / Kft.). */
+  imprint: {
+    seo_title: string;
+    seo_description: string;
+    page_title: string;
+    last_updated_label: string;
+    last_updated_date: string;
+    intro: string;
+    operator_title: string;
+    operator_name_label: string;
+    operator_name_value: string;
+    operator_status_label: string;
+    operator_status_value: string;
+    operator_country_label: string;
+    operator_country_value: string;
+    operator_email_label: string;
+    operator_email_value: string;
+    controller_title: string;
+    controller_body: string;
+    hosting_title: string;
+    hosting_body: string;
+    complaints_title: string;
+    complaints_body: string;
   };
   /** /about — who built Weddly. Founder name is intentionally a
    *  placeholder string so a human can fill it in before launch. */

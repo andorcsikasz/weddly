@@ -573,6 +573,7 @@ const en: LocaleMessages = {
     footer_legal_terms: "Terms",
     footer_legal_privacy: "Privacy",
     footer_legal_about: "About",
+    footer_legal_imprint: "Imprint",
     footer_about_link: "About",
     footer_band_text: "A guest?",
     footer_band_cta: "Enter your invite code",
@@ -1995,9 +1996,29 @@ const en: LocaleMessages = {
     flag_user_help:
       "The user gets an email with the reason and 7 days to reply before the auto-purge kicks in.",
     flag_user_send: "Flag and notify",
+    flag_user_sending: "Sending…",
     flag_user_too_short: "Reason must be at least 4 characters.",
     flag_user_success: "User flagged and notified.",
     flag_cannot_self: "You can't flag your own account.",
+    flag_user_templates_help: "Pick a template, or type your own reason.",
+    flag_tpl_spam_label: "Spam",
+    flag_tpl_spam_body:
+      "We've detected significant spam or automated-looking activity on your account. Please explain what's going on, or your account will be deleted in 7 days.",
+    flag_tpl_fake_label: "Fake data",
+    flag_tpl_fake_body:
+      "The account looks like it contains non-genuine data (supplier tips, email, or name). Please confirm your account is real, or it will be deleted in 7 days.",
+    flag_tpl_duplicate_label: "Duplicate account",
+    flag_tpl_duplicate_body:
+      "Our system shows you already have another active account with the same email or similar details. Please let us know which one to keep — otherwise the duplicate will be deleted in 7 days.",
+    flag_tpl_vendor_abuse_label: "/vendors form abuse",
+    flag_tpl_vendor_abuse_body:
+      "We've noticed abuse of the supplier-submission form on your account (repeated submissions, non-real businesses, or off-topic content). Please explain, or your account will be deleted in 7 days.",
+    flag_tpl_offensive_label: "Offensive content",
+    flag_tpl_offensive_body:
+      "Content on your account (name, profile, submitted tip or feedback) is offensive or violates our community norms. Please reply with context, or your account will be deleted in 7 days.",
+    flag_tpl_reported_label: "Reported by others",
+    flag_tpl_reported_body:
+      "Other users have reported activity on your account. Please reply to this email so we can sort it out — otherwise the account will be deleted in 7 days.",
     unflag_user_button: "Clear flag",
     unflag_user_title: "Clear flag",
     unflag_user_label: "Note (optional)",
@@ -2543,6 +2564,7 @@ const en: LocaleMessages = {
     draft_banner_label: "Open beta — pending legal review",
     draft_banner_body:
       "This text honestly describes what Weddly does today, but it hasn't been reviewed by a lawyer yet. A Hungarian lawyer will review and finalise it before the 1.0 launch.",
+    version_label: "Version",
   },
   privacy: {
     seo_title: "Privacy policy — Weddly",

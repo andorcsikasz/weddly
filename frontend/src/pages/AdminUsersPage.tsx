@@ -2,6 +2,7 @@ import type { AdminCoupleView, AdminUserView } from "@shared/types";
 import { Check, Flag, FlagOff, Lightbulb, Mail, MessageCircle, Trash2 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { FlagUserDialog } from "../components/FlagUserDialog";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -168,29 +169,35 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function onFlag(u: AdminUserView) {
+  // The flag flow uses a dedicated dialog (template chips + textarea)
+  // instead of the generic single-input prompt, so we manage the open
+  // state + target here. `flagTarget` is the AdminUserView we're acting
+  // on; `flagPending` flips while the request is in flight.
+  const [flagTarget, setFlagTarget] = useState<AdminUserView | null>(null);
+  const [flagPending, setFlagPending] = useState(false);
+
+  function onFlag(u: AdminUserView) {
     if (currentAdmin && u.id === currentAdmin.id) {
       toast.error(t("admin.flag_cannot_self"));
       return;
     }
-    const reason = await promptEntry({
-      title: t("admin.flag_user_title"),
-      label: t("admin.flag_user_label"),
-      placeholder: t("admin.flag_user_placeholder"),
-      helperText: t("admin.flag_user_help"),
-      confirmLabel: t("admin.flag_user_send"),
-      cancelLabel: t("common.cancel"),
-      validate: (v) => (v.trim().length >= 4 ? null : t("admin.flag_user_too_short")),
-    });
-    if (reason === null) return;
-    setPendingId(u.id);
+    setFlagTarget(u);
+  }
+
+  async function onFlagConfirm(reason: string) {
+    if (!flagTarget) return;
+    const target = flagTarget;
+    setFlagPending(true);
+    setPendingId(target.id);
     try {
-      const r = await adminUserApi.flag(u.id, reason.trim());
-      if (r.user) setUsers((cur) => cur.map((x) => (x.id === u.id ? r.user! : x)));
+      const r = await adminUserApi.flag(target.id, reason);
+      if (r.user) setUsers((cur) => cur.map((x) => (x.id === target.id ? r.user! : x)));
       toast.success(t("admin.flag_user_success"));
+      setFlagTarget(null);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
+      setFlagPending(false);
       setPendingId(null);
     }
   }
@@ -605,6 +612,15 @@ export default function AdminUsersPage() {
           </section>
         </>
       )}
+      <FlagUserDialog
+        open={flagTarget !== null}
+        targetEmail={flagTarget?.email ?? ""}
+        pending={flagPending}
+        onClose={() => {
+          if (!flagPending) setFlagTarget(null);
+        }}
+        onConfirm={onFlagConfirm}
+      />
     </AppShell>
   );
 }
