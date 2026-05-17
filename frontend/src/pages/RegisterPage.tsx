@@ -1,3 +1,4 @@
+import { PRIVACY_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { Mail } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
@@ -57,6 +58,7 @@ export default function RegisterPage() {
         email: email.trim(),
         password,
         full_name: fullName.trim(),
+        privacy_version: PRIVACY_VERSION,
       });
       // Hold the session in transient state ONLY — we do NOT persist the
       // token to localStorage yet. If we did, hitting BACK from the
@@ -214,7 +216,12 @@ export default function RegisterPage() {
               />
               <span className="flex-1 leading-snug">
                 {t("register.privacy_consent_prefix")}
-                <Link to="/privacy" className="underline hover:text-ink-900" target="_blank" rel="noopener">
+                <Link
+                  to="/privacy"
+                  className="underline hover:text-ink-900"
+                  target="_blank"
+                  rel="noopener"
+                >
                   {t("register.privacy_consent_link")}
                 </Link>
                 {t("register.privacy_consent_suffix")}

@@ -1,11 +1,13 @@
 // Register / login / logout / me. Issues opaque session tokens.
 
+import { PRIVACY_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { hashPassword, verifyPassword } from "../auth/password";
 import { extractToken, issueSession, revokeSession } from "../auth/session";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
+import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
@@ -16,6 +18,10 @@ interface RegisterBody {
   email?: unknown;
   password?: unknown;
   full_name?: unknown;
+  /** Required: the privacy-policy version the user clicked through. Must
+   *  match the server's current PRIVACY_VERSION — refusing stale clients
+   *  keeps the ledger honest. */
+  privacy_version?: unknown;
 }
 
 interface LoginBody {
@@ -55,6 +61,13 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   const email = parseEmail(body.email);
   const password = parsePassword(body.password);
   const fullName = parseFullName(body.full_name);
+  // GDPR Art. 7(1) — refuse the request if the client didn't pass the
+  // current policy version. The frontend bakes the constant into the
+  // payload; an old cached SPA hitting a server with a bumped policy
+  // forces a hard refresh rather than silently logging a stale consent.
+  if (body.privacy_version !== PRIVACY_VERSION) {
+    throw new HttpError(400, "Privacy policy version is out of date — please refresh the page");
+  }
 
   if (getUserByEmail(email)) throw new HttpError(409, "Email already registered");
 
@@ -67,6 +80,16 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     )
     .run(email, passwordHash, fullName, ts, ts);
   const userId = Number(result.lastInsertRowid);
+
+  recordConsent({
+    subjectUserId: userId,
+    subjectKind: "user",
+    subjectRef: null,
+    document: "privacy",
+    version: PRIVACY_VERSION,
+    ip: ctx.clientIp,
+    userAgent: ctx.req.headers.get("user-agent"),
+  });
 
   addAuditLog({
     actor_user_id: userId,

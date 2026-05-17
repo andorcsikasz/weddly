@@ -11,7 +11,6 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  register: (email: string, password: string, fullName: string) => Promise<User>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   /** Accept an external session (e.g. after invite-accept) without bouncing through /api/auth/me. */
@@ -78,13 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return session.user;
   }, []);
 
-  const register = useCallback(async (email: string, password: string, fullName: string) => {
-    const session = await authApi.register({ email, password, full_name: fullName });
-    persistToken(session.token);
-    setUser(session.user);
-    return session.user;
-  }, []);
-
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
@@ -102,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refresh, setSession }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refresh, setSession }}>
       {children}
       <SessionExpiredDialog
         open={sessionExpired}

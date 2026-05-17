@@ -81,8 +81,12 @@ import type {
 import { apiFetch, getToken } from "./api";
 
 export const authApi = {
-  register: (body: { email: string; password: string; full_name: string }) =>
-    apiFetch<AuthSession>("POST", "/api/auth/register", body),
+  register: (body: {
+    email: string;
+    password: string;
+    full_name: string;
+    privacy_version: string;
+  }) => apiFetch<AuthSession>("POST", "/api/auth/register", body),
   login: (body: { email: string; password: string }) =>
     apiFetch<AuthSession>("POST", "/api/auth/login", body),
   logout: () => apiFetch<{ ok: true }>("POST", "/api/auth/logout"),

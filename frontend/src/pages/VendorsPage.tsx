@@ -1,3 +1,4 @@
+import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import { SUPPLIER_GROUPS, type SupplierCategory, type SupplierGroup } from "@shared/suppliers";
 import {
   ArrowLeft,
@@ -320,6 +321,8 @@ function WaitlistContact() {
         message: msg ? msg : null,
         portfolio_links: trimmedLinks,
         instagram_handle: ig ? ig : null,
+        privacy_version: PRIVACY_VERSION,
+        vendor_beta_notice_version: VENDOR_BETA_NOTICE_VERSION,
       });
       setSubmitted(true);
     } catch (err) {

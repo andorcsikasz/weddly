@@ -1,3 +1,4 @@
+import { TERMS_VERSION } from "@shared/legal";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import en from "../locales/en";
@@ -27,6 +28,8 @@ export default function TermsPage() {
           title={t("terms.page_title")}
           updatedLabel={t("terms.last_updated_label")}
           updatedDate={t("terms.last_updated_date")}
+          version={TERMS_VERSION}
+          versionLabel={t("legal.version_label")}
         />
         <LegalDraftBanner />
         <TermsBodyForLocale strings={hu.terms} sectionLocale="hu" />

@@ -31,6 +31,7 @@ import RsvpPage from "./pages/RsvpPage";
 import SchedulePage from "./pages/SchedulePage";
 import SeatingPage from "./pages/SeatingPage";
 import HoneymoonPage from "./pages/HoneymoonPage";
+import ImprintPage from "./pages/ImprintPage";
 import MediaPage from "./pages/MediaPage";
 import MoodboardPage from "./pages/MoodboardPage";
 import SuppliersPage from "./pages/SuppliersPage";
@@ -116,6 +117,24 @@ export default function App() {
         element={
           <Page>
             <AboutPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/impresszum"
+        element={
+          <Page>
+            <ImprintPage />
+          </Page>
+        }
+      />
+      {/* English alias — same component, different URL. Lets EN users
+          find the page when they search for "imprint". */}
+      <Route
+        path="/imprint"
+        element={
+          <Page>
+            <ImprintPage />
           </Page>
         }
       />

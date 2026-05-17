@@ -5,9 +5,11 @@
 // / rejected — each sending a template email via /decide. The admin can
 // re-open a decided entry back to the inbox via /reopen.
 
+import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import type { SupplierCategory } from "@shared/suppliers";
 import type { VendorWaitlistOutcome } from "@shared/vendor_waitlist";
 import { CONFIG } from "../config";
+import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails/send";
 import { requireAdmin } from "../domain/users";
 import {
@@ -84,6 +86,12 @@ interface SubmitBody {
   message?: unknown;
   portfolio_links?: unknown;
   instagram_handle?: unknown;
+  /** GDPR-style consent: privacy policy + the free-beta / future-paid
+   *  disclosure. Both required — the public form blocks submit until the
+   *  checkbox is ticked, and the server records both as separate ledger
+   *  rows so we can demonstrate the vendor saw the monetisation notice. */
+  privacy_version?: unknown;
+  vendor_beta_notice_version?: unknown;
 }
 
 function trimStr(v: unknown): string {
@@ -130,6 +138,13 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "vendor_waitlist", { capacity: 5, refillRate: 1 / 720 });
 
   const body = await readJson<SubmitBody>(ctx.req);
+
+  if (body.privacy_version !== PRIVACY_VERSION) {
+    throw new HttpError(400, "Privacy policy version is out of date — please refresh the page");
+  }
+  if (body.vendor_beta_notice_version !== VENDOR_BETA_NOTICE_VERSION) {
+    throw new HttpError(400, "Beta notice version is out of date — please refresh the page");
+  }
 
   const business_name = trimStr(body.business_name);
   if (!business_name) throw new HttpError(400, "business_name required");
@@ -225,6 +240,32 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     portfolio_links: portfolioLinks,
     instagram_handle: instagramHandle,
   });
+
+  // One ledger row per accepted document. The IP / UA matches across both
+  // because they came in the same submit click — keeps the audit trail
+  // honest about which moment the vendor consented.
+  const ip = ctx.clientIp;
+  const userAgent = ctx.req.headers.get("user-agent");
+  const subjectRef = String(row.id);
+  recordConsent({
+    subjectUserId: null,
+    subjectKind: "vendor_waitlist",
+    subjectRef,
+    document: "privacy",
+    version: PRIVACY_VERSION,
+    ip,
+    userAgent,
+  });
+  recordConsent({
+    subjectUserId: null,
+    subjectKind: "vendor_waitlist",
+    subjectRef,
+    document: "vendor_beta_notice",
+    version: VENDOR_BETA_NOTICE_VERSION,
+    ip,
+    userAgent,
+  });
+
   addAuditLog({
     actor_user_id: null,
     couple_id: null,

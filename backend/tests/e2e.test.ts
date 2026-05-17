@@ -1,6 +1,7 @@
 import "./setup";
 
 import { describe, expect, test } from "bun:test";
+import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import { db, now } from "../src/db";
 import { runEmailSweep } from "../src/domain/emails/worker";
 import { runPurgeSweep } from "../src/domain/purge";
@@ -32,14 +33,41 @@ async function req<T = unknown>(
   };
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
 
+  // Backfill the GDPR consent-version fields so we don't have to thread
+  // them through every register / waitlist call site. A real client
+  // (RegisterPage, VendorsPage) bakes these in from `shared/legal.ts`;
+  // the test helper mimics that. Tests that deliberately probe the
+  // "missing version" path still pass `null` explicitly.
+  const finalBody = withConsentVersions(method, path, body);
+
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: finalBody === undefined ? undefined : JSON.stringify(finalBody),
   });
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   return { status: res.status, data: data as T };
+}
+
+function withConsentVersions(method: string, path: string, body: unknown): unknown {
+  if (method !== "POST" || body === undefined || body === null || typeof body !== "object") {
+    return body;
+  }
+  const obj = body as Record<string, unknown>;
+  if (path === "/api/auth/register") {
+    return "privacy_version" in obj ? obj : { ...obj, privacy_version: PRIVACY_VERSION };
+  }
+  if (path === "/api/vendors/waitlist") {
+    return {
+      ...("privacy_version" in obj ? {} : { privacy_version: PRIVACY_VERSION }),
+      ...("vendor_beta_notice_version" in obj
+        ? {}
+        : { vendor_beta_notice_version: VENDOR_BETA_NOTICE_VERSION }),
+      ...obj,
+    };
+  }
+  return body;
 }
 
 function wipeAll() {

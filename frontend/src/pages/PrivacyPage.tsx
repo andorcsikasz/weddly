@@ -1,3 +1,4 @@
+import { PRIVACY_VERSION } from "@shared/legal";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -27,6 +28,8 @@ export default function PrivacyPage() {
           title={t("privacy.page_title")}
           updatedLabel={t("privacy.last_updated_label")}
           updatedDate={t("privacy.last_updated_date")}
+          version={PRIVACY_VERSION}
+          versionLabel={t("legal.version_label")}
         />
         <LegalDraftBanner />
         <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" />
@@ -46,15 +49,22 @@ export function LegalHeader({
   title,
   updatedLabel,
   updatedDate,
+  version,
+  versionLabel,
 }: {
   title: string;
   updatedLabel: string;
   updatedDate: string;
+  /** Document version stamp (e.g. "2026-05-18") — rendered so a user can
+   *  point at the exact policy text they accepted on signup. */
+  version?: string;
+  versionLabel?: string;
 }) {
   return (
     <header className="border-b border-paper-300 pb-8">
       <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
         {updatedLabel}: {updatedDate}
+        {version && versionLabel ? ` · ${versionLabel}: ${version}` : ""}
       </p>
       <h1 className="mt-3 font-serif text-4xl leading-[1.05] text-ink-900 sm:text-5xl">{title}</h1>
     </header>

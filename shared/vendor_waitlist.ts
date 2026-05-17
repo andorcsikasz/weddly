@@ -27,6 +27,10 @@ export interface SubmitVendorWaitlistInput {
   portfolio_links: string[];
   /** Bare Instagram handle (no leading '@'). Optional. */
   instagram_handle: string | null;
+  /** Versions of the policy / disclosure docs the vendor clicked through.
+   *  Must match the server's current constants — see `shared/legal.ts`. */
+  privacy_version: string;
+  vendor_beta_notice_version: string;
 }
 
 /** Public-form return shape — the same shape the admin list returns, minus

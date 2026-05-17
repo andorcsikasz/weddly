@@ -671,6 +671,28 @@ CREATE INDEX IF NOT EXISTS idx_supplier_events_supplier
 CREATE INDEX IF NOT EXISTS idx_supplier_events_type
   ON supplier_events(event_type, created_at DESC);
 
+-- Append-only ledger proving GDPR Art. 7(1) "demonstrable consent". One row
+-- per click-acceptance of a policy document. `subject_user_id` is nullable
+-- because pre-auth surfaces (vendor waitlist, future newsletter) capture
+-- consent too — `subject_kind` + `subject_ref` (e.g. 'vendor_waitlist' +
+-- the row id, stringified) identify the actor in those cases. Never UPDATE
+-- or DELETE: a withdrawal lands as a new row with `document` = '<doc>_revoked'.
+CREATE TABLE IF NOT EXISTS user_consents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subject_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  subject_kind TEXT NOT NULL,                                  -- 'user' | 'vendor_waitlist'
+  subject_ref TEXT,                                            -- e.g. waitlist row id when subject_kind != 'user'
+  document TEXT NOT NULL,                                      -- 'privacy' | 'terms' | 'vendor_beta_notice'
+  version TEXT NOT NULL,                                       -- e.g. '2026-05-18'
+  ip TEXT,
+  user_agent TEXT,
+  accepted_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_user_consents_subject
+  ON user_consents(subject_kind, subject_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_consents_document
+  ON user_consents(document, version);
+
 -- Per-admin "I looked at this section" watermark. Instagram-style: the
 -- sidebar red badge counts only rows newer than the admin's `seen_at`
 -- for that section, so opening the page clears the dot. PK is composite
