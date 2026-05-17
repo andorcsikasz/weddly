@@ -716,7 +716,7 @@ function DestinationTile({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-2 block w-full text-left"
+          className="mt-2 block w-full text-center"
           aria-label={t("honeymoon.edit_destination")}
         >
           {value ? (
