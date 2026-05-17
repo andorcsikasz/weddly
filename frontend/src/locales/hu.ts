@@ -2596,7 +2596,7 @@ const hu: LocaleMessages = {
       "Hogyan kezeli a Wēddly az adataitokat: gyűjtött kategóriák, megőrzés, GDPR jogok, sütik és külső szolgáltatók.",
     page_title: "Adatvédelmi szabályzat",
     last_updated_label: "Utolsó frissítés",
-    last_updated_date: "2026-05-11",
+    last_updated_date: "2026-05-18",
     intro:
       "Ez az oldal bemutatja, milyen adatokat gyűjt a Wēddly, miért gyűjtjük, meddig őrizzük meg, és mit kérhettek velük kapcsolatban. Egy kis, nyílt bétás termék vagyunk — ezért igyekszünk a szabályzatot rövidnek és pontosnak tartani.",
     controller_title: "Az adataitok kezelője",
@@ -2656,7 +2656,7 @@ const hu: LocaleMessages = {
       "A Wēddly rövid, nyílt bétás felhasználási feltételei: ingyenes használat, nincs SLA, magyar jog vonatkozik rá.",
     page_title: "Felhasználási feltételek",
     last_updated_label: "Utolsó frissítés",
-    last_updated_date: "2026-05-11",
+    last_updated_date: "2026-05-18",
     intro:
       "A Wēddly nyílt béta. Ezeket a feltételeket szándékosan rövidre fogtuk — amint elhagyjuk a bétát, bővebb verziót publikálunk, és előtte mindenkinek küldünk e-mailt.",
     beta_title: "Nyílt béta",
@@ -2674,6 +2674,35 @@ const hu: LocaleMessages = {
     contact_title: "Kérdés van?",
     contact_body: "Írjatok a hello@weddly.xyz címre.",
     en_section_label: "English",
+  },
+  imprint: {
+    seo_title: "Impresszum — Wēddly",
+    seo_description:
+      "Az elektronikus kereskedelmi szolgáltatásokról szóló 2001. évi CVIII. törvény (Ektv.) 4. §-a szerinti kötelező tájékoztatás a Wēddly üzemeltetőjéről.",
+    page_title: "Impresszum",
+    last_updated_label: "Frissítve",
+    last_updated_date: "2026-05-18",
+    intro:
+      "Az alábbi adatok az elektronikus kereskedelmi szolgáltatások, valamint az információs társadalommal összefüggő szolgáltatások egyes kérdéseiről szóló 2001. évi CVIII. törvény (Ektv.) 4. §-a szerinti kötelező tájékoztatást tartalmazzák. A Wēddly jelenleg nyílt bétaként, magánszemély által, díjmentesen üzemeltetett szolgáltatás. A béta lezárása után az itt szereplő adatokat a vállalkozási forma (egyéni vállalkozó vagy gazdasági társaság) bejegyzéséhez igazítjuk.",
+    operator_title: "Üzemeltető",
+    operator_name_label: "Név",
+    operator_name_value: "Csíkász Andor",
+    operator_status_label: "Jogi forma",
+    operator_status_value:
+      "Magánszemély (gazdasági társaságként, illetve egyéni vállalkozóként a béta alatt nincs bejegyezve)",
+    operator_country_label: "Ország",
+    operator_country_value: "Magyarország",
+    operator_email_label: "Kapcsolat",
+    operator_email_value: "andor.csikasz@gmail.com",
+    controller_title: "Adatkezelő",
+    controller_body:
+      "Az általános adatvédelmi rendelet (GDPR) értelmében vett adatkezelő az üzemeltető, azaz Csíkász Andor. Az adatkezelés részleteit az Adatvédelmi szabályzat tartalmazza.",
+    hosting_title: "Tárhelyszolgáltató",
+    hosting_body:
+      "A szolgáltatást a Railway Corp. (548 Market St PMB 78118, San Francisco, CA 94104, USA — railway.com) szervereire telepítjük. A tárhelyszolgáltató az általunk feltöltött adatokat továbbítja, de nem fér hozzá a felhasználói tartalmakhoz a saját rendszerén kívüli célokra.",
+    complaints_title: "Panasz és jogorvoslat",
+    complaints_body:
+      "Panasszal vagy adatvédelmi kéréssel első körben fordulj hozzánk a fenti e-mail címen — emberek olvassák, igyekszünk gyorsan válaszolni. Ha úgy érzed, hogy az adataid kezelése jogszabálysértő, panaszt tehetsz a Nemzeti Adatvédelmi és Információszabadság Hatóságnál (NAIH — 1055 Budapest, Falk Miksa utca 9-11.; ugyfelszolgalat@naih.hu; naih.hu), vagy bírósághoz fordulhatsz.",
   },
   about: {
     seo_title: "Rólunk — Wēddly",

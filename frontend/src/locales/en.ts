@@ -2572,7 +2572,7 @@ const en: LocaleMessages = {
       "How Weddly handles your data: categories collected, retention, GDPR rights, cookies and third-party services.",
     page_title: "Privacy policy",
     last_updated_label: "Last updated",
-    last_updated_date: "2026-05-11",
+    last_updated_date: "2026-05-18",
     intro:
       "This page explains what data Weddly collects, why we collect it, how long we keep it, and what you can ask us to do with it. We're a small open-beta product — so we try to keep the policy short and accurate.",
     controller_title: "Who controls your data",
@@ -2631,7 +2631,7 @@ const en: LocaleMessages = {
       "The short open-beta terms of service for Weddly: free to use, no SLA, hosted in Hungary.",
     page_title: "Terms of service",
     last_updated_label: "Last updated",
-    last_updated_date: "2026-05-11",
+    last_updated_date: "2026-05-18",
     intro:
       "Weddly is an open beta. These terms are deliberately short — once we leave beta we'll publish a fuller version and email everyone first.",
     beta_title: "Open beta",
@@ -2649,6 +2649,35 @@ const en: LocaleMessages = {
     contact_title: "Questions?",
     contact_body: "Email hello@weddly.xyz.",
     en_section_label: "English",
+  },
+  imprint: {
+    seo_title: "Imprint — Weddly",
+    seo_description:
+      "Mandatory operator disclosure for Weddly under §4 of the Hungarian Ektv. (Act CVIII of 2001 on Electronic Commerce).",
+    page_title: "Imprint",
+    last_updated_label: "Updated",
+    last_updated_date: "2026-05-18",
+    intro:
+      "The information below is the mandatory disclosure required by §4 of the Hungarian Act CVIII of 2001 on certain matters of electronic commerce and information-society services (Ektv.). Weddly is currently operated as an open beta by a natural person, free of charge. After the beta ends the details on this page will be updated to reflect the legal form (sole proprietorship or company) under which we register for commercial operation.",
+    operator_title: "Operator",
+    operator_name_label: "Name",
+    operator_name_value: "Andor Csíkász",
+    operator_status_label: "Legal status",
+    operator_status_value:
+      "Natural person (not registered as a sole proprietor or company during the beta)",
+    operator_country_label: "Country",
+    operator_country_value: "Hungary",
+    operator_email_label: "Contact",
+    operator_email_value: "andor.csikasz@gmail.com",
+    controller_title: "Data controller",
+    controller_body:
+      "The data controller within the meaning of the GDPR is the operator above — Andor Csíkász. Details of the processing activities are set out in the Privacy Policy.",
+    hosting_title: "Hosting provider",
+    hosting_body:
+      "The service is deployed on infrastructure provided by Railway Corp. (548 Market St PMB 78118, San Francisco, CA 94104, USA — railway.com). The hosting provider transmits the data we upload but does not access user content for its own purposes outside its platform.",
+    complaints_title: "Complaints and remedies",
+    complaints_body:
+      "Please contact us first at the email above — real people read it and we try to respond quickly. If you believe your personal data is being processed unlawfully, you may lodge a complaint with the Hungarian Data Protection Authority (NAIH — Falk Miksa utca 9-11., 1055 Budapest; ugyfelszolgalat@naih.hu; naih.hu) or seek a judicial remedy.",
   },
   about: {
     seo_title: "About Weddly",
