@@ -12,7 +12,7 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import {
@@ -187,6 +187,22 @@ export default function BudgetPage() {
   // here persists back to the goal, so the two pages stay in lockstep.
   const bounds = couple ? guestCountBounds(couple, baseline) : { min: 50, max: 150 };
 
+  // Mirror perf-critical state into refs so the callbacks below can be
+  // identity-stable via `useCallback([])`. Without this, every headcount
+  // slider tick would change the callbacks' identity (because they close
+  // over `lines` / `effectiveCount` / etc.), defeating React.memo on the
+  // CategoryRow / CustomRow components inside CostPlanningCard.
+  const linesRef = useRef(lines);
+  const coupleRef = useRef(couple);
+  const baselineRef = useRef(baseline);
+  const effectiveCountRef = useRef(effectiveCount);
+  useEffect(() => {
+    linesRef.current = lines;
+    coupleRef.current = couple;
+    baselineRef.current = baseline;
+    effectiveCountRef.current = effectiveCount;
+  });
+
   /** Centralised error handler — turns a typed ApiError into the right
    *  toast and triggers a refresh ONLY for concurrency conflicts (so the
    *  user's other typed values stay put). Generic network failures keep
@@ -223,8 +239,9 @@ export default function BudgetPage() {
   }
 
   async function save(line: BudgetLine, key: "planned_huf" | "actual_huf", val: number) {
-    const next = lines.map((l) => (l.id === line.id ? { ...l, [key]: val } : l));
-    setLines(next);
+    // Functional updater so stale-closure callers (e.g. the useCallback'd
+    // setCustomRowPlanned) still see the latest lines.
+    setLines((prev) => prev.map((l) => (l.id === line.id ? { ...l, [key]: val } : l)));
     try {
       const r = await budgetApi.updateLine(
         line.id,
@@ -246,8 +263,7 @@ export default function BudgetPage() {
     const trimmed = notes.trim();
     const nextNotes: string | null = trimmed.length > 0 ? trimmed : null;
     if (nextNotes === line.notes) return;
-    const nextLines = lines.map((l) => (l.id === line.id ? { ...l, notes: nextNotes } : l));
-    setLines(nextLines);
+    setLines((prev) => prev.map((l) => (l.id === line.id ? { ...l, notes: nextNotes } : l)));
     try {
       const r = await budgetApi.updateLine(
         line.id,
@@ -277,7 +293,7 @@ export default function BudgetPage() {
     }
   }
 
-  async function addCustomRow(
+  const addCustomRow = useCallback(async function addCustomRow(
     label: string,
     plannedHuf: number,
     options?: { perGuest?: boolean; icon?: string | null },
@@ -296,17 +312,20 @@ export default function BudgetPage() {
     } catch (e) {
       handleSaveError(e, () => addCustomRow(label, plannedHuf, options));
     }
-  }
+  }, []);
 
-  async function setCustomRowPlanned(lineId: number, plannedHuf: number) {
-    const line = lines.find((l) => l.id === lineId);
+  const setCustomRowPlanned = useCallback(async function setCustomRowPlanned(
+    lineId: number,
+    plannedHuf: number,
+  ) {
+    const line = linesRef.current.find((l) => l.id === lineId);
     if (!line) return;
     await save(line, "planned_huf", plannedHuf);
-  }
+  }, []);
 
-  async function removeCustomRow(lineId: number) {
+  const removeCustomRow = useCallback(async function removeCustomRow(lineId: number) {
     await removeLine(lineId);
-  }
+  }, []);
 
   /** Aggregated "Egyéb" needs the same scaling math as the widget slider, but
    *  without dragging the custom rows along — they share `category === "other"`
@@ -316,37 +335,47 @@ export default function BudgetPage() {
    *  here so the two views stay in lockstep. */
   const isDefaultOtherLine = (line: BudgetLine) => line.label === "Egyéb" || line.label === "Other";
 
-  async function setAggregatedPlanned(category: BudgetCategory, newTotal: number) {
-    try {
-      const next = await applyCategoryPlanned(
-        category,
-        newTotal,
-        lines,
-        t(`budget.cat.${category}`),
-        category === "other" ? isDefaultOtherLine : undefined,
-      );
-      setLines(next);
-      publish("budget:changed");
-    } catch (e) {
-      handleSaveError(e, () => setAggregatedPlanned(category, newTotal));
-    }
-  }
+  // Wrapped in useCallback so React.memo on the CostPlanningCard rows can
+  // skip re-renders when only the headcount slider moves. `lines` and `t`
+  // are stable during a drag (only `count` changes), so the callback
+  // identity holds for the duration of the drag.
+  const setAggregatedPlanned = useCallback(
+    async function setAggregatedPlanned(category: BudgetCategory, newTotal: number) {
+      try {
+        const next = await applyCategoryPlanned(
+          category,
+          newTotal,
+          lines,
+          t(`budget.cat.${category}`),
+          category === "other" ? isDefaultOtherLine : undefined,
+        );
+        setLines(next);
+        publish("budget:changed");
+      } catch (e) {
+        handleSaveError(e, () => setAggregatedPlanned(category, newTotal));
+      }
+    },
+    [lines, t],
+  );
 
-  async function setAggregatedActual(category: BudgetCategory, newTotal: number) {
-    try {
-      const next = await applyCategoryActual(
-        category,
-        newTotal,
-        lines,
-        t(`budget.cat.${category}`),
-        category === "other" ? isDefaultOtherLine : undefined,
-      );
-      setLines(next);
-      publish("budget:changed");
-    } catch (e) {
-      handleSaveError(e, () => setAggregatedActual(category, newTotal));
-    }
-  }
+  const setAggregatedActual = useCallback(
+    async function setAggregatedActual(category: BudgetCategory, newTotal: number) {
+      try {
+        const next = await applyCategoryActual(
+          category,
+          newTotal,
+          lines,
+          t(`budget.cat.${category}`),
+          category === "other" ? isDefaultOtherLine : undefined,
+        );
+        setLines(next);
+        publish("budget:changed");
+      } catch (e) {
+        handleSaveError(e, () => setAggregatedActual(category, newTotal));
+      }
+    },
+    [lines, t],
+  );
 
   async function removeAllInCategory(category: BudgetCategory) {
     const candidates =
@@ -375,7 +404,7 @@ export default function BudgetPage() {
     }
   }
 
-  async function saveCap(newCapHuf: number) {
+  const saveCap = useCallback(async function saveCap(newCapHuf: number) {
     try {
       const r = await coupleApi.update({
         budget_goal: { kind: "exact", exact_huf: newCapHuf, min_huf: null, max_huf: null },
@@ -385,9 +414,9 @@ export default function BudgetPage() {
     } catch (e) {
       handleSaveError(e, () => saveCap(newCapHuf));
     }
-  }
+  }, []);
 
-  async function saveBounds(min: number, max: number) {
+  const saveBounds = useCallback(async function saveBounds(min: number, max: number) {
     try {
       const r = await coupleApi.update({
         // Editing the bounds promotes guest_count_goal to a range so
@@ -399,57 +428,66 @@ export default function BudgetPage() {
     } catch (e) {
       handleSaveError(e, () => saveBounds(min, max));
     }
-  }
+  }, []);
 
-  async function toggleFreeze(category: BudgetCategory) {
-    if (!couple) return;
-    const current = couple.frozen_categories ?? [];
-    const willFreeze = !current.includes(category);
-    const next = willFreeze ? [...current, category] : current.filter((c) => c !== category);
-    const factor = baseline > 0 ? effectiveCount / baseline : 1;
-    const rewriteLines = PER_GUEST_CATEGORIES.has(category) && factor !== 1;
-    const sumFor = (ls: BudgetLine[]) =>
-      ls.filter((l) => l.category === category).reduce((s, l) => s + l.planned_huf, 0);
-    try {
-      // Freeze: pin the displayed total (scaled) into planned_huf so the
-      // lock captures what the user sees. Must precede the flag flip —
-      // PATCH on a frozen line is rejected when planned_huf changes.
-      if (willFreeze && rewriteLines) {
-        const displayed = Math.round(sumFor(lines) * factor);
-        if (displayed > 0) {
-          const upd = await applyCategoryPlanned(
-            category,
-            displayed,
-            lines,
-            t(`budget.cat.${category}`),
-          );
-          setLines(upd);
+  // Reads through refs so identity stays stable across headcount-slider
+  // drags (where `effectiveCount` would otherwise change every tick).
+  const toggleFreeze = useCallback(
+    async function toggleFreeze(category: BudgetCategory) {
+      const couple = coupleRef.current;
+      if (!couple) return;
+      const lines = linesRef.current;
+      const baseline = baselineRef.current;
+      const effectiveCount = effectiveCountRef.current;
+      const current = couple.frozen_categories ?? [];
+      const willFreeze = !current.includes(category);
+      const next = willFreeze ? [...current, category] : current.filter((c) => c !== category);
+      const factor = baseline > 0 ? effectiveCount / baseline : 1;
+      const rewriteLines = PER_GUEST_CATEGORIES.has(category) && factor !== 1;
+      const sumFor = (ls: BudgetLine[]) =>
+        ls.filter((l) => l.category === category).reduce((s, l) => s + l.planned_huf, 0);
+      try {
+        // Freeze: pin the displayed total (scaled) into planned_huf so the
+        // lock captures what the user sees. Must precede the flag flip —
+        // PATCH on a frozen line is rejected when planned_huf changes.
+        if (willFreeze && rewriteLines) {
+          const displayed = Math.round(sumFor(lines) * factor);
+          if (displayed > 0) {
+            const upd = await applyCategoryPlanned(
+              category,
+              displayed,
+              lines,
+              t(`budget.cat.${category}`),
+            );
+            setLines(upd);
+          }
         }
-      }
-      const r = await coupleApi.update({ frozen_categories: next });
-      setCouple(r.couple);
-      // Unfreeze: planned_huf still holds the displayed total written on the
-      // prior freeze. Scaling is about to resume, so divide by factor to
-      // cancel it — otherwise the display jumps by × factor on unfreeze.
-      // Has to run AFTER the flag flips for the same frozen-line guard.
-      if (!willFreeze && rewriteLines) {
-        const cur = sumFor(lines);
-        if (cur > 0) {
-          const perBaseline = Math.round(cur / factor);
-          const upd = await applyCategoryPlanned(
-            category,
-            perBaseline,
-            lines,
-            t(`budget.cat.${category}`),
-          );
-          setLines(upd);
+        const r = await coupleApi.update({ frozen_categories: next });
+        setCouple(r.couple);
+        // Unfreeze: planned_huf still holds the displayed total written on the
+        // prior freeze. Scaling is about to resume, so divide by factor to
+        // cancel it — otherwise the display jumps by × factor on unfreeze.
+        // Has to run AFTER the flag flips for the same frozen-line guard.
+        if (!willFreeze && rewriteLines) {
+          const cur = sumFor(linesRef.current);
+          if (cur > 0) {
+            const perBaseline = Math.round(cur / factor);
+            const upd = await applyCategoryPlanned(
+              category,
+              perBaseline,
+              linesRef.current,
+              t(`budget.cat.${category}`),
+            );
+            setLines(upd);
+          }
         }
+        publish("budget:changed");
+      } catch (e) {
+        handleSaveError(e, () => toggleFreeze(category));
       }
-      publish("budget:changed");
-    } catch (e) {
-      handleSaveError(e, () => toggleFreeze(category));
-    }
-  }
+    },
+    [t],
+  );
 
   const frozenCategoriesSet = useMemo(
     () => new Set<BudgetCategory>(couple?.frozen_categories ?? []),
@@ -528,7 +566,7 @@ export default function BudgetPage() {
     });
     if (!ok) return;
     await budgetApi.removeLine(id);
-    setLines(lines.filter((l) => l.id !== id));
+    setLines((prev) => prev.filter((l) => l.id !== id));
   }
 
   async function saveSnapshot() {
@@ -691,6 +729,34 @@ export default function BudgetPage() {
       honeymoonAgg: count > 0 ? { planned, actual, count } : null,
     };
   }, [lines]);
+
+  // Pre-bucket lines per CATEGORIES entry so the table render is O(N) instead
+  // of O(N × 15). Previously every row did its own `lines.filter(...)` pass.
+  // `other` is special — only default-labeled "Egyéb" rows aggregate into
+  // the "other" bucket; custom rows render as their own rows below.
+  const categoryBuckets = useMemo(() => {
+    type Bucket = {
+      lines: BudgetLine[];
+      planned: number;
+      actual: number;
+      editable: boolean;
+    };
+    const map = new Map<BudgetCategory, Bucket>();
+    for (const cat of CATEGORIES) {
+      map.set(cat, { lines: [], planned: 0, actual: 0, editable: true });
+    }
+    for (const l of lines) {
+      if (l.category === "honeymoon") continue;
+      if (l.category === "other" && !(l.label === "Egyéb" || l.label === "Other")) continue;
+      const b = map.get(l.category);
+      if (!b) continue;
+      b.lines.push(l);
+      b.planned += l.planned_huf;
+      b.actual += l.actual_huf;
+      if (l.couple_supplier_id !== null) b.editable = false;
+    }
+    return map;
+  }, [lines]);
   const hasAnyTableRow = tableLines.length > 0 || honeymoonAgg !== null;
   // Pulled once near the top so every money render below — table, totals,
   // snapshot card, breakdown dialog — shares one source of truth and stays
@@ -818,19 +884,21 @@ export default function BudgetPage() {
                     />
                   );
                 }
-                const linesForCat =
-                  cat === "other"
-                    ? lines.filter((l) => l.category === "other" && isDefaultOtherLine(l))
-                    : lines.filter((l) => l.category === cat);
-                const planned = linesForCat.reduce((s, l) => s + l.planned_huf, 0);
-                const actual = linesForCat.reduce((s, l) => s + l.actual_huf, 0);
+                // Bucket is precomputed once per `lines` change — see
+                // `categoryBuckets` useMemo above. Avoids 15× O(N) filter
+                // passes on every BudgetPage re-render.
+                const bucket = categoryBuckets.get(cat);
+                const linesForCat = bucket?.lines ?? [];
+                const planned = bucket?.planned ?? 0;
+                const actual = bucket?.actual ?? 0;
                 const delta = actual - planned;
-                const isHighlighted = linesForCat.some((l) => l.id === highlightLineId);
+                const isHighlighted =
+                  highlightLineId !== null && linesForCat.some((l) => l.id === highlightLineId);
                 const isFrozen = frozenCategoriesSet.has(cat);
                 // Lines from DIY suppliers are read-only here; if a category
                 // is entirely supplier-managed the aggregate edit would fail,
                 // so disable the inputs in that case.
-                const editable = linesForCat.every((l) => l.couple_supplier_id === null);
+                const editable = bucket?.editable ?? true;
                 const canDelete = !isFrozen && linesForCat.length > 0 && editable;
                 return (
                   <tr

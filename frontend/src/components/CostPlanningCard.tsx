@@ -33,7 +33,15 @@ import {
   Wine,
   X,
 } from "lucide-react";
-import { type ComponentType, type CSSProperties, useEffect, useMemo, useState } from "react";
+import {
+  type ComponentType,
+  type CSSProperties,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import { formatMoney, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -245,26 +253,37 @@ export function CostPlanningCard({
   const [showActualOverlay, setShowActualOverlay] = useState(false);
   const factor = baseline > 0 ? count / baseline : 1;
 
-  // In-progress per-category drag values (baseline units). Lifted out of the
-  // CategoryRow because:
-  //   1. The summary total at the bottom of the card needs to reflect drags
-  //      live — otherwise totalPlanned lags behind the row sliders during a
-  //      drag.
+  // In-progress drag for ONE slider at a time. The user can only physically
+  // drag a single slider at once, so a single {key, value} slot is enough —
+  // and it sidesteps the Map allocation that the previous design did on every
+  // pointer-move event. Lifted out of the row components because:
+  //   1. The summary total at the bottom of the card needs to reflect the
+  //      drag live — otherwise totalPlanned lags behind the row slider.
   //   2. Row-local state could get stranded when the browser drops a mouseup
   //      outside the slider element; centralising lets us clear stale entries
   //      whenever `lines` rehydrates from the server.
-  const [drags, setDrags] = useState<Map<BudgetCategory, number>>(() => new Map());
-  // Parallel drag map for custom rows. Keyed by line id since custom rows are
-  // edited per-line, not per-category.
-  const [customDrags, setCustomDrags] = useState<Map<number, number>>(() => new Map());
-  // Wipe stale drag entries whenever the source-of-truth lines change. Any
+  const [categoryDrag, setCategoryDrag] = useState<{
+    category: BudgetCategory;
+    value: number;
+  } | null>(null);
+  const [customDrag, setCustomDrag] = useState<{ lineId: number; value: number } | null>(null);
+  // Wipe stale drag state whenever the source-of-truth lines change. Any
   // committed save (own or partner-via-`budget:changed`) propagates a fresh
   // `lines` array — at that point the parent's view IS the truth and any
   // lingering drag baseline would only confuse the total.
   useEffect(() => {
-    setDrags((m) => (m.size === 0 ? m : new Map()));
-    setCustomDrags((m) => (m.size === 0 ? m : new Map()));
+    setCategoryDrag(null);
+    setCustomDrag(null);
   }, [lines]);
+  // Stable callbacks the row components call on each pointer-move. Stable
+  // identity is what lets React.memo on CategoryRow / CustomRow actually
+  // skip re-renders for siblings whose values didn't change.
+  const handleCategoryDrag = useCallback((category: BudgetCategory, value: number) => {
+    setCategoryDrag({ category, value });
+  }, []);
+  const handleCustomDrag = useCallback((lineId: number, value: number) => {
+    setCustomDrag({ lineId, value });
+  }, []);
 
   // Custom rows: `category="other"` lines whose label diverges from the
   // localized default ("Egyéb" / "Other"). Identify them once so we can:
@@ -304,7 +323,8 @@ export function CostPlanningCard({
       const scales = isPerGuest && !frozen;
       // Active drag (if any) overrides the committed baseline — that's how
       // totalPlanned tracks the slider live.
-      const liveBaseline = drags.get(cat) ?? v.planned;
+      const liveBaseline =
+        categoryDrag !== null && categoryDrag.category === cat ? categoryDrag.value : v.planned;
       return {
         category: cat,
         actual: v.actual,
@@ -315,7 +335,7 @@ export function CostPlanningCard({
         frozen,
       };
     });
-  }, [aggregatableLines, factor, frozenCategories, drags]);
+  }, [aggregatableLines, factor, frozenCategories, categoryDrag]);
 
   // Live custom-row totals — same drag-aware pattern as `buckets` so the
   // panel's grand total tracks slider movement, not just commits. Per-guest
@@ -325,7 +345,8 @@ export function CostPlanningCard({
   const customDisplays = useMemo(
     () =>
       customRows.map((l) => {
-        const liveBaseline = customDrags.get(l.id) ?? l.planned_huf;
+        const liveBaseline =
+          customDrag !== null && customDrag.lineId === l.id ? customDrag.value : l.planned_huf;
         const scales = l.per_guest;
         return {
           line: l,
@@ -335,7 +356,7 @@ export function CostPlanningCard({
           scales,
         };
       }),
-    [customRows, customDrags, factor],
+    [customRows, customDrag, factor],
   );
 
   const totalPlanned =
@@ -532,13 +553,7 @@ export function CostPlanningCard({
             currency={currency}
             onEditPlanned={onEditPlanned}
             onToggleFreeze={onToggleFreeze}
-            onDrag={(baselineValue) =>
-              setDrags((m) => {
-                const next = new Map(m);
-                next.set(b.category, baselineValue);
-                return next;
-              })
-            }
+            onDrag={handleCategoryDrag}
             amountLinkTo={amountLinkTo}
             showActualOverlay={showActualOverlay && hasAnyActual}
             linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
@@ -558,13 +573,7 @@ export function CostPlanningCard({
             currency={currency}
             onEditPlanned={onEditCustomRowPlanned}
             onRemove={onRemoveCustomRow}
-            onDrag={(baselineValue) =>
-              setCustomDrags((m) => {
-                const next = new Map(m);
-                next.set(c.line.id, baselineValue);
-                return next;
-              })
-            }
+            onDrag={handleCustomDrag}
             showActualOverlay={showActualOverlay && hasAnyActual}
           />
         ))}
@@ -635,7 +644,7 @@ export function CostPlanningCard({
   );
 }
 
-function CategoryRow({
+function CategoryRowInner({
   category,
   plannedBaseline,
   actual,
@@ -674,10 +683,10 @@ function CategoryRow({
   widthAnchor: number;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
   onToggleFreeze?: (category: BudgetCategory) => void | Promise<void>;
-  /** Drag handler — fires on each slider change with the new *baseline* value.
-   *  Parent stores it in a category-keyed drag map so the panel total and any
-   *  sibling totals reflect the slider live, not on commit. */
-  onDrag?: (baselineValue: number) => void;
+  /** Drag handler — fires on each slider change with the row's category and
+   *  the new *baseline* value. Identity-stable in the parent so React.memo
+   *  on this component can skip re-renders for sibling rows. */
+  onDrag?: (category: BudgetCategory, baselineValue: number) => void;
   /** When set, the per-row amount is rendered as a Link to
    *  `${amountLinkTo}#cat-${category}` so a tap routes the user to the budget
    *  table for precise entry. Used on the dashboard. */
@@ -738,7 +747,7 @@ function CategoryRow({
   // slider currently sits.
   function applyScaledDrag(scaledNew: number) {
     const baselineNew = scaleFactor > 0 ? Math.round(scaledNew / scaleFactor) : scaledNew;
-    onDrag?.(baselineNew);
+    onDrag?.(category, baselineNew);
   }
 
   async function commit(scaledNext: number) {
@@ -933,13 +942,18 @@ function CategoryRow({
   );
 }
 
+// Memoized so a headcount-slider drag only re-renders the per-guest rows
+// whose `scaleFactor` / `count` actually moved. Fixed-cost rows (venue,
+// rings, …) skip the render entirely.
+const CategoryRow = memo(CategoryRowInner);
+
 /** Standalone budget row whose value lives in a single BudgetLine rather than
  *  an aggregated category bucket. Visually mirrors `CategoryRow` (left tile +
  *  slider rail + amount tile) so the panel reads as one continuous bar chart,
  *  but the left tile shows the user-supplied label and a remove handle, the
  *  slider edits the line's `planned_huf` directly, and there's no per-guest
  *  scaling (custom rows are treated as fixed costs). */
-function CustomRow({
+function CustomRowInner({
   line,
   liveDisplay,
   scaleFactor,
@@ -963,9 +977,10 @@ function CustomRow({
   currency: Currency;
   onEditPlanned?: (lineId: number, plannedHuf: number) => void | Promise<void>;
   onRemove?: (lineId: number) => void | Promise<void>;
-  /** Receives a value in BASELINE units (slider input is converted before
-   *  this fires) so the parent's drag map matches `line.planned_huf`. */
-  onDrag?: (baselineValue: number) => void;
+  /** Receives the row's line id + the new BASELINE value. Identity-stable in
+   *  the parent so memo on this component skips re-renders for siblings that
+   *  didn't move. */
+  onDrag?: (lineId: number, baselineValue: number) => void;
   showActualOverlay?: boolean;
 }) {
   const { t, locale } = useT();
@@ -1030,7 +1045,7 @@ function CustomRow({
           step={step}
           value={liveDisplay}
           disabled={!onEditPlanned || saving}
-          onChange={(e) => onDrag?.(toBaseline(Number(e.target.value)))}
+          onChange={(e) => onDrag?.(line.id, toBaseline(Number(e.target.value)))}
           onMouseUp={(e) => commit(Number(e.currentTarget.value))}
           onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
           onKeyUp={(e) => commit(Number(e.currentTarget.value))}
@@ -1066,6 +1081,10 @@ function CustomRow({
     </li>
   );
 }
+
+// Memoized so a single custom-row drag (or a save commit on one custom row)
+// doesn't re-render the sibling custom rows.
+const CustomRow = memo(CustomRowInner);
 
 /** "Új sor" affordance — collapsed pill by default, expands to a label +
  *  amount form on click. Commits via `onAdd` which the parent wires to a
