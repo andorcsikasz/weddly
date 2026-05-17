@@ -2176,9 +2176,74 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
   );
 }
 
+/** DELETE /api/couples/:id — destroy a SECONDARY workspace (Bravo / Charlie).
+ *  Cannot be used to nuke the primary workspace (Alpha — that's the
+ *  account-deletion flow on /app/profile) or the workspace the user is
+ *  currently viewing (force a switch first so we never trash what they're
+ *  looking at). Only `owner` role can delete; partners get 403.
+ *
+ *  Frontend pairs this with a 3-click arm pattern (Törlés → Biztos? →
+ *  Tényleg?) so the destructive call only fires after explicit intent. */
+async function handleDeleteCouple(ctx: Ctx): Promise<Response> {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const coupleId = Number(ctx.params.id);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) {
+    throw new HttpError(400, "Invalid couple id");
+  }
+  if (!isCoupleMember(coupleId, userId)) {
+    throw new HttpError(403, "Not a member of this workspace", { code: "not_a_member" });
+  }
+  // Only the workspace owner can purge it; partner-B-on-Bravo can leave
+  // via /api/users/me/leave-couple but cannot destroy the whole workspace.
+  const member = db
+    .prepare("SELECT role FROM couple_members WHERE couple_id = ? AND user_id = ?")
+    .get(coupleId, userId) as { role: string } | undefined;
+  if (!member || member.role !== "owner") {
+    throw new HttpError(403, "Only the workspace owner can delete it", { code: "not_owner" });
+  }
+  // Refuse to delete the active workspace — the frontend switcher can flip
+  // first, but we never silently swap the user's couple_id from under them.
+  const userRow = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(userId) as
+    | { couple_id: number | null }
+    | undefined;
+  if (userRow?.couple_id === coupleId) {
+    throw new HttpError(409, "Switch to a different workspace before deleting this one", {
+      code: "is_active",
+    });
+  }
+  // Refuse to delete the user's PRIMARY (Alpha) workspace — that's the
+  // account-deletion gesture and belongs on the Profile pause-to-delete
+  // flow with its full typed-phrase guard. `listCouplesForUser` returns
+  // memberships ordered by joined_at ASC, so index 0 is whichever
+  // workspace the user joined first (their onboarded couple).
+  const memberships = listCouplesForUser(userId);
+  if (memberships[0]?.couple_id === coupleId) {
+    throw new HttpError(409, "The primary workspace can't be deleted from here", {
+      code: "is_primary",
+    });
+  }
+
+  // purgeOneCouple is the same destructive sweep used by the pause-to-delete
+  // and partner-merge flows: cascade-deletes every couple-scoped row, scrubs
+  // any PII on partner-B-on-Bravo if there is one. `silent: true` skips the
+  // "your data is gone" email — the user just consciously deleted a
+  // secondary workspace they own, not their account, so the global notice
+  // would just confuse.
+  purgeOneCouple(coupleId, { silent: true });
+  // purgeOneCouple tombstones the couples row but leaves couple_members in
+  // place for audit retention. Drop every membership pointing at this
+  // workspace so it stops showing up in any user's switcher — including
+  // partner-B-on-Bravo, who shouldn't see a ghosted "Purged workspace" row
+  // after the owner deletes it. The status='deleting' filter on
+  // listCouplesForUser is the belt; this is the suspenders.
+  db.prepare("DELETE FROM couple_members WHERE couple_id = ?").run(coupleId);
+  return json({ ok: true });
+}
+
 export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/onboard", handleOnboard, true);
   router.post("/api/couples", handleCreateAdditionalCouple, true);
+  router.delete("/api/couples/:id", handleDeleteCouple, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
   router.get("/api/couples/partner", handleGetPartner, true);
   router.get("/api/couples/activity", handleGetActivity, true);

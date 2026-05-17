@@ -271,7 +271,10 @@ export interface CoupleMembershipView {
 
 /** Every workspace this user belongs to. Used by the header switcher and
  *  the profile's "Esemény-munkaterületek" panel. Ordered oldest-first so
- *  Alpha (the user's original workspace) reads as the natural anchor. */
+ *  Alpha (the user's original workspace) reads as the natural anchor.
+ *  Tombstoned (`status='deleting'`) workspaces are filtered out — the
+ *  purgeOneCouple sweep keeps the row around for audit retention but the
+ *  user-facing list shouldn't surface a "Purged workspace" entry. */
 export function listCouplesForUser(userId: number): CoupleMembershipView[] {
   const rows = db
     .prepare(
@@ -280,6 +283,7 @@ export function listCouplesForUser(userId: number): CoupleMembershipView[] {
          FROM couple_members cm
          JOIN couples c ON c.id = cm.couple_id
         WHERE cm.user_id = ?
+          AND c.status != 'deleting'
         ORDER BY cm.created_at ASC, cm.couple_id ASC`,
     )
     .all(userId) as {

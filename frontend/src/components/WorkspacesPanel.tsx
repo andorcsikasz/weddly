@@ -9,7 +9,7 @@
 
 import type { Guest, Household } from "@shared/types";
 import { Check, Plus } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { type CoupleMembershipView, coupleApi, guestApi, householdApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -28,6 +28,14 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
   const [memberships, setMemberships] = useState<CoupleMembershipView[]>([]);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
+  /** 3-click delete arming. Tracks WHICH workspace's button is mid-arm and
+   *  HOW MANY clicks have landed so far (1 = "Biztos?", 2 = "Tényleg?",
+   *  3 = fires the DELETE). A 4s timer resets the count to idle so a
+   *  half-armed button never lingers between sessions. */
+  const [armedDeleteId, setArmedDeleteId] = useState<number | null>(null);
+  const [armedDeleteStage, setArmedDeleteStage] = useState<0 | 1 | 2>(0);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const disarmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function refresh() {
     try {
@@ -42,8 +50,64 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
     refresh();
   }, []);
 
+  // Clear any pending disarm timer when the component unmounts so an in-
+  // flight setTimeout doesn't fire on an unmounted node.
+  useEffect(() => {
+    return () => {
+      if (disarmTimer.current !== null) clearTimeout(disarmTimer.current);
+    };
+  }, []);
+
   const atCap = memberships.filter((m) => m.status !== "deleting").length >= 3;
   const activeMembership = memberships.find((m) => m.couple_id === activeCoupleId) ?? null;
+  // Memberships come back joined_at ASC, so index 0 is the user's primary
+  // (Alpha). Only secondary workspaces (anyone else they're an owner of
+  // AND that isn't currently active) get a delete affordance — Alpha goes
+  // through the account-deletion flow further down the Profile page.
+  const primaryCoupleId = memberships[0]?.couple_id ?? null;
+
+  function disarmLater() {
+    if (disarmTimer.current !== null) clearTimeout(disarmTimer.current);
+    disarmTimer.current = setTimeout(() => {
+      setArmedDeleteId(null);
+      setArmedDeleteStage(0);
+    }, 4000);
+  }
+
+  async function clickDelete(coupleId: number) {
+    // Click against a DIFFERENT armed button → reset to that workspace
+    // (so the user can switch their attention without juggling state).
+    if (armedDeleteId !== coupleId) {
+      setArmedDeleteId(coupleId);
+      setArmedDeleteStage(1);
+      disarmLater();
+      return;
+    }
+    if (armedDeleteStage === 1) {
+      setArmedDeleteStage(2);
+      disarmLater();
+      return;
+    }
+    // Stage 2 → fire. The button just went "Tényleg?" on the previous
+    // click; this third click is the destructive one.
+    if (disarmTimer.current !== null) clearTimeout(disarmTimer.current);
+    setDeletingId(coupleId);
+    try {
+      await coupleApi.deleteWorkspace(coupleId);
+      toast.success(t("profile.workspaces_delete_done"));
+      // Drop the row optimistically + refetch in the background to pick
+      // up any side effects (e.g. seat/budget audit emissions purged with
+      // the workspace).
+      setMemberships((cur) => cur.filter((m) => m.couple_id !== coupleId));
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setDeletingId(null);
+      setArmedDeleteId(null);
+      setArmedDeleteStage(0);
+    }
+  }
 
   return (
     <section id="workspaces" className="card mt-6">
@@ -74,6 +138,14 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
         ) : (
           memberships.map((m) => {
             const isActive = m.couple_id === activeCoupleId;
+            const isPrimary = m.couple_id === primaryCoupleId;
+            // Delete is offered only on SECONDARY (Bravo / Charlie)
+            // workspaces the user owns and isn't currently looking at.
+            // Active workspaces force a switch-first dance; the primary
+            // belongs to the account-deletion flow further down.
+            const canDelete = !isActive && !isPrimary && m.role === "owner";
+            const isArmed = armedDeleteId === m.couple_id;
+            const isDeletingThis = deletingId === m.couple_id;
             return (
               <li key={m.couple_id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0 flex-1">
@@ -84,36 +156,61 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
                     {t(`profile.workspaces_role_${m.role}`)}
                   </p>
                 </div>
-                {isActive ? (
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
+                  {isActive ? (
+                    <>
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                        onClick={() => setEditing(true)}
+                      >
+                        {t("profile.workspaces_edit")}
+                      </button>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-0.5 text-[10px] uppercase tracking-wide text-paper-50 dark:bg-paper-50 dark:text-ink-900">
+                        <Check size={10} aria-hidden="true" />
+                        {t("workspace.active_marker")}
+                      </span>
+                    </>
+                  ) : (
                     <button
                       type="button"
                       className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
-                      onClick={() => setEditing(true)}
+                      onClick={async () => {
+                        try {
+                          await coupleApi.switchActive(m.couple_id);
+                          window.location.assign("/app");
+                        } catch (e) {
+                          toast.error(
+                            e instanceof ApiError ? e.message : t("common.error_generic"),
+                          );
+                        }
+                      }}
                     >
-                      {t("profile.workspaces_edit")}
+                      {t("profile.workspaces_switch")}
                     </button>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-0.5 text-[10px] uppercase tracking-wide text-paper-50 dark:bg-paper-50 dark:text-ink-900">
-                      <Check size={10} aria-hidden="true" />
-                      {t("workspace.active_marker")}
-                    </span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
-                    onClick={async () => {
-                      try {
-                        await coupleApi.switchActive(m.couple_id);
-                        window.location.assign("/app");
-                      } catch (e) {
-                        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-                      }
-                    }}
-                  >
-                    {t("profile.workspaces_switch")}
-                  </button>
-                )}
+                  )}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      className={`text-xs font-medium transition-colors ${
+                        isArmed
+                          ? "text-blush-700 hover:text-blush-800 dark:text-blush-300 dark:hover:text-blush-200"
+                          : "text-ink-400 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
+                      }`}
+                      onClick={() => clickDelete(m.couple_id)}
+                      disabled={isDeletingThis}
+                      aria-label={t("profile.workspaces_delete")}
+                    >
+                      {isDeletingThis
+                        ? t("common.loading")
+                        : isArmed && armedDeleteStage === 1
+                          ? t("profile.workspaces_delete_arm1")
+                          : isArmed && armedDeleteStage === 2
+                            ? t("profile.workspaces_delete_arm2")
+                            : t("profile.workspaces_delete")}
+                    </button>
+                  )}
+                </div>
               </li>
             );
           })

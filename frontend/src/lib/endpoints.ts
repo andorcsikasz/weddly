@@ -41,6 +41,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
+import type { GuestPortalView } from "@shared/guest_portal";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type {
   CommunitySupplierAdminView,
@@ -172,6 +173,12 @@ export const coupleApi = {
       couple: Couple;
       seeded: { households_copied: number; guests_copied: number };
     }>("POST", "/api/couples", body),
+  /** Destroy a SECONDARY workspace (Bravo / Charlie). 403 when the user
+   *  isn't the owner, 409 when the workspace is the active one or their
+   *  primary (Alpha). Paired with a 3-click arm pattern in the Profile
+   *  workspaces panel so a stray click can't nuke a workspace. */
+  deleteWorkspace: (coupleId: number) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/couples/${coupleId}`),
   partner: () => apiFetch<{ partner: CouplePartnerView | null }>("GET", "/api/couples/partner"),
   /** Last 14 days of partner-visible activity (saves, uploads, deletes,
    *  RSVPs, exports). Used by the Profile "activity" panel. */

@@ -9233,4 +9233,131 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
     expect(JSON.parse(audits[0]!.before_json!)).toEqual({ display_name: "Eredeti név" });
     expect(JSON.parse(audits[0]!.after_json!)).toEqual({ display_name: "Új név" });
   });
+
+  test("DELETE /api/couples/:id purges a secondary workspace + guards primary / active / non-owner", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("multi-delete@weddly.test");
+
+    // Spawn Bravo. The endpoint auto-switches the user's active pointer
+    // to the new workspace, so we'll need to flip back to Alpha before
+    // deleting it.
+    const create = await req<{ couple: { id: number } }>(
+      "POST",
+      "/api/couples",
+      {
+        event_name: "Másnap",
+        wedding_date_goal: {
+          kind: "tbd",
+          exact_date: null,
+          target_year: null,
+          target_month: null,
+          target_season: null,
+        },
+      },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    const bravoId = create.data.couple.id;
+
+    // Trying to delete Bravo while it's the active workspace must 409 —
+    // we never silently swap couple_id from under the user.
+    const blockedActive = await req("DELETE", `/api/couples/${bravoId}`, undefined, { token });
+    expect(blockedActive.status).toBe(409);
+
+    // Trying to delete Alpha (the user's PRIMARY workspace) must 409 with
+    // is_primary even when the user is its owner — that belongs to the
+    // delete-account flow with the typed-phrase guard.
+    const blockedPrimary = await req("DELETE", `/api/couples/${alphaId}`, undefined, { token });
+    expect(blockedPrimary.status).toBe(409);
+
+    // Switch back to Alpha, then deleting Bravo succeeds.
+    const switchBack = await req(
+      "POST",
+      "/api/users/me/active-couple",
+      { couple_id: alphaId },
+      { token },
+    );
+    expect(switchBack.status).toBe(200);
+    const ok = await req("DELETE", `/api/couples/${bravoId}`, undefined, { token });
+    expect(ok.status).toBe(200);
+
+    // Membership row is gone (ON DELETE CASCADE from couple_members).
+    const list = await req<{ couples: { couple_id: number }[] }>(
+      "GET",
+      "/api/users/me/couples",
+      undefined,
+      { token },
+    );
+    expect(list.data.couples.map((c) => c.couple_id)).toEqual([alphaId]);
+
+    // Re-deleting the now-gone couple → 403 (not_a_member) since the
+    // membership row was cascade-removed.
+    const reDelete = await req("DELETE", `/api/couples/${bravoId}`, undefined, { token });
+    expect(reDelete.status).toBe(403);
+  });
+
+  test("DELETE /api/couples/:id refuses non-owner partner-B", async () => {
+    wipeAll();
+    const { token: aToken, coupleId: alphaId } = await bootstrapCouple(
+      "multi-del-owner@weddly.test",
+    );
+
+    // Owner spins up Bravo so we have a deletable secondary to attack.
+    const create = await req<{ couple: { id: number } }>(
+      "POST",
+      "/api/couples",
+      {
+        event_name: "Másnap",
+        wedding_date_goal: {
+          kind: "tbd",
+          exact_date: null,
+          target_year: null,
+          target_month: null,
+          target_season: null,
+        },
+      },
+      { token: aToken },
+    );
+    expect(create.status).toBe(201);
+    const bravoId = create.data.couple.id;
+
+    // Switch back to Alpha so the active-workspace guard doesn't kick in.
+    await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token: aToken });
+
+    // Invite partner B onto Bravo (owner role for A means B will get a
+    // partner row when they accept). We use the existing invite flow
+    // pointing at Bravo's id.
+    await req("POST", "/api/users/me/active-couple", { couple_id: bravoId }, { token: aToken });
+    const invite = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "multi-del-partner@weddly.test" },
+      { token: aToken },
+    );
+    expect(invite.status).toBe(201);
+    await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token: aToken });
+
+    // Register + verify B, accept the invite onto Bravo. After accept,
+    // B's active couple = Bravo.
+    const regB = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "multi-del-partner@weddly.test",
+      password: "supersafe123",
+      full_name: "Bea",
+    });
+    expect(regB.status).toBe(201);
+    await verifyUserEmail("multi-del-partner@weddly.test");
+    const accept = await req(
+      "POST",
+      `/api/invites/${invite.data.invite.token}/accept`,
+      {},
+      { token: regB.data.token },
+    );
+    expect(accept.status).toBe(200);
+
+    // B is partner on Bravo, not owner — DELETE must 403.
+    const blocked = await req("DELETE", `/api/couples/${bravoId}`, undefined, {
+      token: regB.data.token,
+    });
+    expect(blocked.status).toBe(403);
+  });
 });

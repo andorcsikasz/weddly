@@ -2577,6 +2577,14 @@ export interface LocaleMessages {
     workspaces_edit_title: string;
     workspaces_edit_save: string;
     workspaces_edit_done: string;
+    /** 3-click arm pattern for purging a secondary workspace. The labels
+     *  ratchet from idle → "Biztos?" → "Tényleg?" → fires, with a 4s
+     *  auto-disarm if the user wanders off. Only the workspace owner
+     *  sees the button, and never on the active or primary workspace. */
+    workspaces_delete: string;
+    workspaces_delete_arm1: string;
+    workspaces_delete_arm2: string;
+    workspaces_delete_done: string;
     payments_title: string;
     payments_body: string;
     /** Display preferences — density toggle for older relatives / outdoor
