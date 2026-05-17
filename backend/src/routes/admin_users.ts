@@ -447,11 +447,23 @@ function handleSidebarBadges(ctx: Ctx): Response {
       )
       .get(seen.suppliers) as { n: number }
   ).n;
-  const users = (
+  // "Users" badge combines two unread signals: newly registered users
+  // since the admin last looked + moderation flags raised since then.
+  // Purged tombstones are excluded from the new-user count so a deleted
+  // user doesn't re-light the badge every time the sweep stamps their row.
+  const newUsers = (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM users WHERE created_at > ? AND email NOT LIKE '%@purged.local'",
+      )
+      .get(seen.users) as { n: number }
+  ).n;
+  const newFlags = (
     db
       .prepare("SELECT COUNT(*) AS n FROM user_flags WHERE resolved_at IS NULL AND created_at > ?")
       .get(seen.users) as { n: number }
   ).n;
+  const users = newUsers + newFlags;
   const vendor_waitlist = (
     db
       .prepare("SELECT COUNT(*) AS n FROM vendor_waitlist WHERE status = 'new' AND created_at > ?")
