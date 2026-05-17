@@ -385,7 +385,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {t("landing.skip_to_main")}
       </a>
       <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 xl:max-w-screen-2xl">
           {/* When signed in, the wordmark routes to the in-app dashboard so
               users don't get punted to the marketing landing (which reads as
               "I got logged out"). Signed-out viewers (rare here, but safe)
@@ -443,7 +443,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8">
+      <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8 xl:max-w-screen-2xl">
         <aside className="hidden w-56 shrink-0 lg:block">
           {inAdminView ? (
             <nav className="sticky top-20 flex flex-col gap-0.5">
