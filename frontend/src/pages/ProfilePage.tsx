@@ -999,11 +999,25 @@ function DensitySlider({
   const VALUES: Density[] = ["compact", "default", "comfortable"];
   const idx = Math.max(0, VALUES.indexOf(density));
   const pct = (idx / (VALUES.length - 1)) * 100;
+  // Type-sample sizes for the "Aa" tick labels below the track. Going
+  // text-xs → text-base → text-2xl gives the user an immediate "this is
+  // how big the small labels will read in each mode" preview without
+  // forcing them to commit a choice first.
+  const SAMPLE_CLASSES: Record<Density, string> = {
+    compact: "text-xs",
+    default: "text-base",
+    comfortable: "text-2xl",
+  };
   return (
     <div className="mt-4">
       <label htmlFor="density-slider" className="field-label">
         {t("profile.density_label")}
       </label>
+      {/* The thumb (14px) sits centred on the 6px track by default. The
+       *  inline gradient paints the filled-portion colour on the input's
+       *  background; the .range-fill class handles the height + the
+       *  thumb's vertical-centre alignment via the WebKit / Moz
+       *  pseudo-elements declared in index.css. */}
       <input
         id="density-slider"
         type="range"
@@ -1017,10 +1031,10 @@ function DensitySlider({
           if (next) setDensity(next);
         }}
         aria-valuetext={t(`profile.density_${density}` as const)}
-        className="range-fill mt-2 w-full"
+        className="range-fill mt-2 block w-full"
         style={
           {
-            background: `linear-gradient(to right, #243150 0%, #243150 ${pct}%, #efe9d9 ${pct}%, #efe9d9 100%)`,
+            background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${pct}%, var(--range-fill-remainder) ${pct}%, var(--range-fill-remainder) 100%)`,
           } as CSSProperties
         }
       />
@@ -1029,7 +1043,12 @@ function DensitySlider({
           <option key={i} value={i} />
         ))}
       </datalist>
-      <div className="mt-2 flex justify-between text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+      {/* "Aa" tick row replaces the old wordy "Tömör / Alapértelmezett /
+       *  Kényelmes" labels with a type sample at each stop's actual size.
+       *  Items align to the END of their column so the visual baseline
+       *  stays consistent regardless of glyph height (the bigger "Aa"
+       *  has more ascender / descender headroom than the smaller ones). */}
+      <div className="mt-3 grid grid-cols-3 items-end">
         {VALUES.map((value) => {
           const active = value === density;
           return (
@@ -1037,18 +1056,24 @@ function DensitySlider({
               key={value}
               type="button"
               onClick={() => setDensity(value)}
-              className={`transition-colors ${
+              aria-label={t(`profile.density_${value}` as const)}
+              title={t(`profile.density_${value}` as const)}
+              className={`flex justify-center pt-1 leading-none transition-colors ${SAMPLE_CLASSES[value]} ${
                 active
                   ? "font-semibold text-ink-900 dark:text-paper-50"
-                  : "hover:text-ink-700 dark:hover:text-paper-100"
+                  : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
               }`}
             >
-              {t(`profile.density_${value}` as const)}
+              Aa
             </button>
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
+      <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+        <span className="font-medium text-ink-700 dark:text-paper-100">
+          {t(`profile.density_${density}` as const)}
+        </span>
+        <span className="mx-1">·</span>
         {t(`profile.density_${density}_help` as const)}
       </p>
     </div>
