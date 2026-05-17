@@ -292,6 +292,16 @@ addColumnIfMissing("couple_suppliers", "paid", "paid INTEGER NOT NULL DEFAULT 0"
 // the default ("no notes yet"); empty string clears.
 addColumnIfMissing("community_suppliers", "admin_notes", "admin_notes TEXT");
 
+// Distinguishes a vendor who self-submits ('self') from a couple/user who
+// recommends a supplier they like ('user'). Drives the icon + pill on the
+// public directory cards so the trust signal matches the source. Defaults
+// to 'user' for existing rows since the legacy modal didn't ask.
+addColumnIfMissing(
+  "community_suppliers",
+  "submitter_type",
+  "submitter_type TEXT NOT NULL DEFAULT 'user'",
+);
+
 // Partner role marker on the two host guest rows that mirror
 // `couples.bride_name` / `couples.groom_name`. Server-derived: clients
 // never write it. NULL on every regular guest. Used by /app/seating to pin

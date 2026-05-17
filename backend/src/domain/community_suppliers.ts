@@ -5,6 +5,7 @@
 
 import { randomBytes } from "node:crypto";
 import type {
+  CommunitySubmitterType,
   CommunitySupplierAdminView,
   CommunitySupplierReportReason,
   CommunitySupplierStatus,
@@ -27,6 +28,7 @@ export const REPORT_AUTOHIDE_THRESHOLD = 3;
 export interface CommunitySupplierRow {
   id: number;
   submitter_user_id: number;
+  submitter_type: string;
   category: string;
   name: string;
   city: string;
@@ -43,6 +45,13 @@ export interface CommunitySupplierRow {
   admin_notes: string | null;
   created_at: number;
   updated_at: number;
+}
+
+/** Defensive narrow: legacy rows + bad data fall back to 'user' so the UI
+ *  always has a renderable enum. Centralised so route + admin view + public
+ *  mapper apply the same rule. */
+function toSubmitterType(raw: string): CommunitySubmitterType {
+  return raw === "self" ? "self" : "user";
 }
 
 export interface CommunitySupplierRowWithEmail extends CommunitySupplierRow {
@@ -81,6 +90,7 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
     contact_email: null,
     contact_phone: row.contact_phone,
     source: "community",
+    submitter_type: toSubmitterType(row.submitter_type),
     price_band: clampPriceBand(row.price_band),
   };
 }
@@ -92,6 +102,7 @@ export function toAdminView(
   return {
     id: row.id,
     category: row.category as SupplierCategory,
+    submitter_type: toSubmitterType(row.submitter_type),
     name: row.name,
     city: row.city,
     address: row.address,
@@ -194,15 +205,17 @@ export function insertCommunitySupplier(
   input: SubmitCommunitySupplierInput,
 ): number {
   const ts = now();
+  const submitterType: CommunitySubmitterType = input.submitter_type === "self" ? "self" : "user";
   const result = db
     .prepare(
       `INSERT INTO community_suppliers
-        (submitter_user_id, category, name, city, address, website, contact_email, contact_phone,
-         blurb, price_band, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+        (submitter_user_id, submitter_type, category, name, city, address, website, contact_email,
+         contact_phone, blurb, price_band, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
     )
     .run(
       submitterUserId,
+      submitterType,
       input.category,
       input.name,
       input.city,

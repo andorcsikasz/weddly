@@ -104,6 +104,10 @@ const GROUP_ICON: Record<SupplierGroup, IconCmp> = {
 function emptyForm() {
   return {
     category: "" as SupplierCategory | "",
+    /** When true, the submitter is the vendor themselves (drives the
+     *  "Szolgáltató" pill on the public card). Default false = couple
+     *  recommendation. */
+    is_self: false,
     name: "",
     city: "",
     address: "",
@@ -273,6 +277,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
     const trimmedEmail = form.contact_email.trim();
     const payload: SubmitCommunitySupplierInput = {
       category: form.category,
+      submitter_type: form.is_self ? "self" : "user",
       name: form.name.trim(),
       city: form.city.trim(),
       address: form.address.trim() ? form.address.trim() : null,
@@ -397,6 +402,26 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
               errorText={errors.name}
               placeholder="Anna's Photography"
             />
+            {/* Self-vs-recommendation switch. The boolean drives the trust
+                pill on the public card — "Szolgáltató" badge when the vendor
+                checks this, "Közösségi" otherwise. Defaults to off so the
+                couple-recommendation case stays the conservative default. */}
+            <label className="flex cursor-pointer items-start gap-2 rounded-md border border-paper-200 bg-paper-50 p-3 text-sm text-ink-700 transition-colors hover:border-blush-300 hover:bg-blush-50 dark:border-umber-700 dark:bg-umber-800/40 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/10">
+              <input
+                type="checkbox"
+                checked={form.is_self}
+                onChange={(e) => setField("is_self", e.target.checked)}
+                className="mt-0.5 h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-500 dark:border-umber-600"
+              />
+              <span className="flex-1">
+                <span className="block font-medium text-ink-800 dark:text-paper-50">
+                  {t("suppliers.submit.is_self_label")}
+                </span>
+                <span className="mt-0.5 block text-xs text-ink-500 dark:text-umber-300">
+                  {t("suppliers.submit.is_self_help")}
+                </span>
+              </span>
+            </label>
           </section>
 
           {/* WHERE — city + address. Two columns on sm+. */}

@@ -44,6 +44,7 @@ import {
   Sparkles,
   Speaker,
   Star,
+  Store,
   StickyNote,
   Tent,
   Users,
@@ -1160,7 +1161,17 @@ export default function SuppliersPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="truncate text-sm font-semibold">{s.name}</h3>
-                      {s.source === "community" && (
+                      {s.source === "community" && s.submitter_type === "self" && (
+                        <span
+                          className="hidden shrink-0 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 sm:inline-flex"
+                          title={t("suppliers.self_pill_tooltip")}
+                          aria-label={t("suppliers.self_pill_tooltip")}
+                        >
+                          <Store size={10} aria-hidden />
+                          {t("suppliers.self_pill")}
+                        </span>
+                      )}
+                      {s.source === "community" && s.submitter_type !== "self" && (
                         <span
                           className="hidden shrink-0 items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300 sm:inline-flex"
                           title={t("suppliers.community_pill_tooltip")}
@@ -1400,7 +1411,17 @@ export default function SuppliersPage() {
                           </span>
                         </>
                       )}
-                      {s.source === "community" && (
+                      {s.source === "community" && s.submitter_type === "self" && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
+                          title={t("suppliers.self_pill_tooltip")}
+                          aria-label={t("suppliers.self_pill_tooltip")}
+                        >
+                          <Store size={10} aria-hidden />
+                          {t("suppliers.self_pill")}
+                        </span>
+                      )}
+                      {s.source === "community" && s.submitter_type !== "self" && (
                         <span
                           className="inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
                           title={t("suppliers.community_pill_tooltip")}

@@ -271,6 +271,7 @@ CREATE INDEX IF NOT EXISTS idx_email_log_kind ON email_log(kind);
 CREATE TABLE IF NOT EXISTS community_suppliers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   submitter_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  submitter_type TEXT NOT NULL DEFAULT 'user',                 -- 'user' (recommendation) | 'self' (vendor)
   category TEXT NOT NULL,                                      -- one of SupplierCategory
   name TEXT NOT NULL,
   city TEXT NOT NULL,

@@ -6131,12 +6131,9 @@ describe("vendor waitlist", () => {
     expect(empty.data.entry.website).toBeNull();
 
     // Admin list surfaces website on the wire payload too.
-    const list = await req<{ entries: Entry[] }>(
-      "GET",
-      "/api/admin/vendor-waitlist",
-      undefined,
-      { token: adminReg.data.token },
-    );
+    const list = await req<{ entries: Entry[] }>("GET", "/api/admin/vendor-waitlist", undefined, {
+      token: adminReg.data.token,
+    });
     expect(list.status).toBe(200);
     const websites = list.data.entries.map((e) => e.website).sort();
     expect(websites).toEqual(["http://portfolio.example/work", "https://example.com", null]);

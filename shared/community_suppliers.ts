@@ -21,9 +21,18 @@ export type CommunitySupplierStatus = "pending" | "awaiting_review" | "active" |
  *  the spread. */
 export type PriceBand = 1 | 2 | 3 | 4 | 5;
 
+/** Distinguishes the two community-submission paths so the public card can
+ *  render the right trust signal:
+ *   - 'user' = a couple recommending a supplier they like (default)
+ *   - 'self' = the vendor themselves dropping a tip about their business */
+export type CommunitySubmitterType = "user" | "self";
+
 /** Couple-facing form payload — what the submission modal sends. */
 export interface SubmitCommunitySupplierInput {
   category: SupplierCategory;
+  /** Defaults to 'user' on the server when omitted, so the field is
+   *  back-compatible with any older callers still on the previous payload. */
+  submitter_type?: CommunitySubmitterType;
   name: string;
   city: string;
   /** Optional street address. Couples often paste this from a Google Maps
@@ -45,6 +54,7 @@ export interface SubmitCommunitySupplierInput {
 export interface CommunitySupplierAdminView {
   id: number;
   category: SupplierCategory;
+  submitter_type: CommunitySubmitterType;
   name: string;
   city: string;
   address: string | null;

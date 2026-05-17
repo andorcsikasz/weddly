@@ -61,6 +61,11 @@ const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
 
 interface SubmitBody {
   category?: unknown;
+  /** "self" when the vendor submits their own business; "user" (default) when
+   *  a couple recommends a supplier they like. Drives the trust pill on the
+   *  public card. Accepts either string for forward-compat with potential
+   *  future values. */
+  submitter_type?: unknown;
   name?: unknown;
   city?: unknown;
   address?: unknown;
@@ -156,8 +161,20 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
   }
   const price_band = pbNum as PriceBand;
 
+  // Default to 'user' for back-compat with legacy clients that don't send it.
+  // Anything other than the literal "self" / "user" is rejected so a typo
+  // doesn't silently become 'user' (which would mislabel a vendor submission).
+  let submitter_type: "user" | "self" = "user";
+  if (body.submitter_type != null) {
+    if (body.submitter_type !== "user" && body.submitter_type !== "self") {
+      throw new HttpError(400, "submitter_type must be 'user' or 'self'");
+    }
+    submitter_type = body.submitter_type;
+  }
+
   return {
     category: category as SupplierCategory,
+    submitter_type,
     name,
     city,
     address,

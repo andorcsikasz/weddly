@@ -1648,6 +1648,8 @@ export interface LocaleMessages {
     chain_help: string;
     community_pill: string;
     community_pill_tooltip: string;
+    self_pill: string;
+    self_pill_tooltip: string;
     drop_your_own: string;
     /** "Csinálom magam" / DIY flow — couple-private supplier entries. */
     diy_pill: string;
@@ -1778,6 +1780,10 @@ export interface LocaleMessages {
       magic_clear: string;
       /** Section headings on the form side. */
       section_who: string;
+      /** "I am the supplier" checkbox label + helper in the Who section.
+       *  Drives the trust pill on the public card (Szolgáltató vs Közösségi). */
+      is_self_label: string;
+      is_self_help: string;
       section_where: string;
       section_contact: string;
       section_pitch: string;
@@ -2767,5 +2773,23 @@ export interface LocaleMessages {
     switcher_aria: string;
     active_marker: string;
     create_link: string;
+  };
+  /** Desktop-only keyboard-shortcut help sheet — opens with `?` or via the
+   *  Keyboard icon button in /app's header. Hidden on touch widths. */
+  shortcuts: {
+    title: string;
+    hint: string;
+    close: string;
+    group_global: string;
+    group_seating: string;
+    group_rsvp: string;
+    global_help: string;
+    global_dismiss: string;
+    seating_new_table: string;
+    seating_move: string;
+    seating_fine: string;
+    seating_seats: string;
+    seating_delete: string;
+    rsvp_keyboard_mode: string;
   };
 }
