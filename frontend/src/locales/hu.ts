@@ -1614,7 +1614,6 @@ const hu: LocaleMessages = {
     city_all: "Összes város",
     empty_filtered: "Erre a szűrésre nincs találat. Próbálj más szót vagy várost.",
     price_legend: "Olcsóbb → Drágább",
-    actions_menu_aria: "További műveletek",
     save_aria: "Mentés",
     unsave_aria: "Mentés visszavonása",
     saved_filter: "Mentett ({n})",

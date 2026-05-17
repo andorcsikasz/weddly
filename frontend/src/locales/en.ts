@@ -1599,7 +1599,6 @@ const en: LocaleMessages = {
     city_all: "All cities",
     empty_filtered: "No suppliers match this search. Try a different word or city.",
     price_legend: "Cheaper → Pricier",
-    actions_menu_aria: "More actions",
     save_aria: "Save",
     unsave_aria: "Remove from saved",
     saved_filter: "Saved ({n})",

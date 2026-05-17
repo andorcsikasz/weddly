@@ -1753,8 +1753,6 @@ export interface LocaleMessages {
     empty_filtered: string;
     /** Price-band scale tooltip / legend. */
     price_legend: string;
-    /** Overflow menu trigger label on each supplier card. */
-    actions_menu_aria: string;
     /** Saved-supplier star + filter chip. */
     save_aria: string;
     unsave_aria: string;

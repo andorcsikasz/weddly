@@ -34,7 +34,6 @@ import {
   Lightbulb,
   Mail,
   MapPin,
-  MoreHorizontal,
   PartyPopper,
   Pencil,
   Phone,
@@ -1243,15 +1242,11 @@ export default function SuppliersPage() {
                       <span className="md:hidden">→</span>
                     </a>
                     {s.contact_phone && (
-                      <a
-                        href={`tel:${s.contact_phone}`}
-                        className="btn-outline btn-sm"
-                        aria-label={s.contact_phone}
-                        onClick={() => trackSupplierClick(s.id, "phone_click")}
-                      >
-                        <Phone size={14} aria-hidden />
-                        <span className="hidden lg:inline">{s.contact_phone}</span>
-                      </a>
+                      <PhoneReveal
+                        phone={s.contact_phone}
+                        onCall={() => trackSupplierClick(s.id, "phone_click")}
+                        iconOnly
+                      />
                     )}
                     <button
                       type="button"
@@ -1271,12 +1266,19 @@ export default function SuppliersPage() {
                         <Bookmark size={15} aria-hidden />
                       )}
                     </button>
-                    <SupplierActionsMenu
-                      isCompared={isCompared}
+                    <SaveToggle
                       isSaved={isSaved}
+                      onToggle={() => toggleSaved(s.id)}
+                      t={t}
+                    />
+                    <CompareToggle
+                      supplierId={s.id}
+                      isCompared={isCompared}
                       capReached={compareCapReached}
-                      onToggleCompare={() => toggleCompare(s.id)}
-                      onToggleSaved={() => toggleSaved(s.id)}
+                      onToggle={() => toggleCompare(s.id)}
+                      t={t}
+                    />
+                    <ReportButton
                       onReport={() =>
                         setReporting({
                           id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
@@ -1300,10 +1302,9 @@ export default function SuppliersPage() {
                     : ""
                 } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
               >
-                {/* Top-right corner: pick (visible primary chip) + overflow
-                    menu holding compare, save, and report. Collapsing the
-                    secondary actions keeps the cluster from crowding the
-                    supplier name on a 360 px viewport. */}
+                {/* Top-right corner: "save for later" toggles (pick + star).
+                    Compare and report now live in the bottom action row so
+                    every per-card action is visible at a glance. */}
                 <div className="absolute right-3 top-3 inline-flex items-center gap-1">
                   <button
                     type="button"
@@ -1323,18 +1324,9 @@ export default function SuppliersPage() {
                       <Bookmark size={15} aria-hidden />
                     )}
                   </button>
-                  <SupplierActionsMenu
-                    isCompared={isCompared}
+                  <SaveToggle
                     isSaved={isSaved}
-                    capReached={compareCapReached}
-                    onToggleCompare={() => toggleCompare(s.id)}
-                    onToggleSaved={() => toggleSaved(s.id)}
-                    onReport={() =>
-                      setReporting({
-                        id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                        name: s.name,
-                      })
-                    }
+                    onToggle={() => toggleSaved(s.id)}
                     t={t}
                   />
                 </div>
@@ -1433,13 +1425,10 @@ export default function SuppliersPage() {
                       {t("suppliers.visit_website")}
                     </a>
                     {s.contact_phone && (
-                      <a
-                        href={`tel:${s.contact_phone}`}
-                        className="btn-outline btn-sm"
-                        onClick={() => trackSupplierClick(s.id, "phone_click")}
-                      >
-                        <Phone size={14} /> {s.contact_phone}
-                      </a>
+                      <PhoneReveal
+                        phone={s.contact_phone}
+                        onCall={() => trackSupplierClick(s.id, "phone_click")}
+                      />
                     )}
                     {s.contact_email && (
                       <a
@@ -1450,6 +1439,22 @@ export default function SuppliersPage() {
                         <Mail size={14} />
                       </a>
                     )}
+                    <CompareToggle
+                      supplierId={s.id}
+                      isCompared={isCompared}
+                      capReached={compareCapReached}
+                      onToggle={() => toggleCompare(s.id)}
+                      t={t}
+                    />
+                    <ReportButton
+                      onReport={() =>
+                        setReporting({
+                          id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                          name: s.name,
+                        })
+                      }
+                      t={t}
+                    />
                   </div>
                   <div className="ml-auto flex items-center">
                     <VoteRow supplier={s} onVote={onVote} t={t} />
@@ -1709,112 +1714,94 @@ function CompareToggle({
   );
 }
 
-/** Overflow menu for a supplier card. Collapses the Save + Compare + Report
- *  actions behind a single ••• so the corner cluster stays uncrowded on
- *  mobile. The Pick chip stays outside as a visible primary affordance.
- *  Menu is anchored absolutely to the trigger; closes on outside tap + Esc. */
-function SupplierActionsMenu({
-  isCompared,
+function SaveToggle({
   isSaved,
-  capReached,
-  onToggleCompare,
-  onToggleSaved,
-  onReport,
+  onToggle,
   t,
 }: {
-  isCompared: boolean;
   isSaved: boolean;
-  capReached: boolean;
-  onToggleCompare: () => void;
-  onToggleSaved: () => void;
-  onReport: () => void;
+  onToggle: () => void;
   t: (key: string) => string;
 }) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onPointer = (e: PointerEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const compareDisabled = !isCompared && capReached;
+  const label = isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria");
   return (
-    <div ref={wrapRef} className="relative">
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={isSaved}
+      aria-label={label}
+      title={label}
+      className={
+        isSaved
+          ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-blush-700 transition hover:bg-blush-50 sm:h-7 sm:w-7 dark:text-blush-300 dark:hover:bg-blush-400/15"
+          : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
+      }
+    >
+      <Star
+        size={15}
+        aria-hidden
+        className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+      />
+    </button>
+  );
+}
+
+function ReportButton({ onReport, t }: { onReport: () => void; t: (key: string) => string }) {
+  const label = t("suppliers.report.aria_label");
+  return (
+    <button
+      type="button"
+      onClick={onReport}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+    >
+      <Flag size={14} aria-hidden />
+    </button>
+  );
+}
+
+/** Phone CTA that hides the digits behind a click. First tap reveals the
+ *  number alongside the icon and arms the tel: href; the next tap dials.
+ *  Two-step pattern keeps the card scannable without burying the contact. */
+function PhoneReveal({
+  phone,
+  onCall,
+  iconOnly,
+}: {
+  phone: string;
+  onCall: () => void;
+  /** List view's tight action cluster collapses the number even when revealed. */
+  iconOnly?: boolean;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  if (!revealed) {
+    return (
       <button
         type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={t("suppliers.actions_menu_aria")}
-        title={t("suppliers.actions_menu_aria")}
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+        onClick={(e) => {
+          e.preventDefault();
+          setRevealed(true);
+        }}
+        className="btn-outline btn-sm"
+        aria-label={phone}
+        title={phone}
       >
-        <MoreHorizontal size={16} aria-hidden />
+        <Phone size={14} aria-hidden />
       </button>
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 top-full z-10 mt-1 w-52 origin-top-right rounded-xl border border-paper-300 bg-white p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-        >
-          <button
-            type="button"
-            role="menuitem"
-            disabled={compareDisabled}
-            onClick={() => {
-              setOpen(false);
-              onToggleCompare();
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-700 hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-paper-100 dark:hover:bg-umber-700"
-          >
-            <Scale size={14} aria-hidden className="shrink-0" />
-            <span className="flex-1">
-              {isCompared ? t("suppliers.compare.remove_aria") : t("suppliers.compare.add_aria")}
-            </span>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              onToggleSaved();
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
-          >
-            <Star
-              size={14}
-              aria-hidden
-              className={`shrink-0 ${isSaved ? "fill-blush-500 text-blush-500" : ""}`}
-            />
-            <span className="flex-1">
-              {isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
-            </span>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              onReport();
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
-          >
-            <Flag size={14} aria-hidden className="shrink-0" />
-            <span className="flex-1">{t("suppliers.report.aria_label")}</span>
-          </button>
-        </div>
-      )}
-    </div>
+    );
+  }
+  return (
+    <a
+      href={`tel:${phone}`}
+      className="btn-outline btn-sm"
+      aria-label={phone}
+      onClick={onCall}
+    >
+      <Phone size={14} aria-hidden />
+      {!iconOnly && <span>{phone}</span>}
+      {iconOnly && <span className="hidden lg:inline">{phone}</span>}
+    </a>
   );
 }
 
