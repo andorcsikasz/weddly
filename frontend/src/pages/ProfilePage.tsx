@@ -15,14 +15,14 @@ import type {
 } from "@shared/types";
 import { CURRENCIES } from "@shared/types";
 import { ChevronDown } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { type CSSProperties, type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { useDensity } from "../lib/density";
+import { type Density, useDensity } from "../lib/density";
 import {
   authApi,
   budgetApi,
@@ -749,39 +749,7 @@ export default function ProfilePage() {
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.display_title")}</h2>
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.display_body")}</p>
-        <fieldset className="mt-4">
-          <legend className="field-label">{t("profile.density_label")}</legend>
-          <div
-            role="radiogroup"
-            aria-label={t("profile.density_label")}
-            className="grid gap-2 sm:grid-cols-2"
-          >
-            {(["compact", "comfortable"] as const).map((value) => {
-              const active = density === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => setDensity(value)}
-                  className={`flex flex-col items-start gap-1 rounded-xl border px-3 py-3 text-left transition-colors ${
-                    active
-                      ? "border-ink-700 bg-ink-700/5 dark:border-paper-100 dark:bg-paper-100/10"
-                      : "border-paper-300 hover:border-ink-400 dark:border-umber-700 dark:hover:border-umber-600"
-                  }`}
-                >
-                  <span className="text-sm font-medium text-ink-900 dark:text-paper-50">
-                    {t(`profile.density_${value}` as const)}
-                  </span>
-                  <span className="text-xs text-ink-500 dark:text-umber-300">
-                    {t(`profile.density_${value}_help` as const)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
+        <DensitySlider density={density} setDensity={setDensity} t={t} />
       </section>
 
       <section className="card mt-6">
@@ -1009,6 +977,81 @@ export default function ProfilePage() {
         {error && <p className="field-error mt-3">{error}</p>}
       </section>
     </AppShell>
+  );
+}
+
+/** Three-step density slider on the Profile Display card. The slider
+ *  drives a 0/1/2 index mapped onto compact / default / comfortable,
+ *  with the three labels under the track and a one-line description of
+ *  the currently-active value below. Native `<input type="range">` so
+ *  keyboard nav + screen readers come for free; we paint the filled
+ *  portion of the track with the same gradient trick the cost-planning
+ *  sliders use (`.range-fill` class + inline custom property). */
+function DensitySlider({
+  density,
+  setDensity,
+  t,
+}: {
+  density: Density;
+  setDensity: (d: Density) => void;
+  t: T;
+}) {
+  const VALUES: Density[] = ["compact", "default", "comfortable"];
+  const idx = Math.max(0, VALUES.indexOf(density));
+  const pct = (idx / (VALUES.length - 1)) * 100;
+  return (
+    <div className="mt-4">
+      <label htmlFor="density-slider" className="field-label">
+        {t("profile.density_label")}
+      </label>
+      <input
+        id="density-slider"
+        type="range"
+        min={0}
+        max={VALUES.length - 1}
+        step={1}
+        value={idx}
+        list="density-ticks"
+        onChange={(e) => {
+          const next = VALUES[Number(e.target.value)];
+          if (next) setDensity(next);
+        }}
+        aria-valuetext={t(`profile.density_${density}` as const)}
+        className="range-fill mt-2 w-full"
+        style={
+          {
+            background: `linear-gradient(to right, #243150 0%, #243150 ${pct}%, #efe9d9 ${pct}%, #efe9d9 100%)`,
+          } as CSSProperties
+        }
+      />
+      <datalist id="density-ticks">
+        {VALUES.map((_, i) => (
+          <option key={i} value={i} />
+        ))}
+      </datalist>
+      <div className="mt-2 flex justify-between text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        {VALUES.map((value) => {
+          const active = value === density;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setDensity(value)}
+              className={`transition-colors ${
+                active
+                  ? "font-semibold text-ink-900 dark:text-paper-50"
+                  : "hover:text-ink-700 dark:hover:text-paper-100"
+              }`}
+            >
+              {t(`profile.density_${value}` as const)}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
+        {t(`profile.density_${density}_help` as const)}
+      </p>
+    </div>
   );
 }
 

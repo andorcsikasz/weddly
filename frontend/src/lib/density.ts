@@ -1,36 +1,50 @@
-// Density preference — flips an `html.density-comfortable` class that the
-// CSS in index.css uses to bump the smallest utility-text classes one notch.
-// Persisted via localStorage so the choice carries across reloads, and applied
-// before React mounts (see main.tsx) to avoid a first-paint flicker.
+// Density preference — flips a class on <html> that the CSS in index.css
+// uses to bump the smallest utility-text classes one (or two) notches up.
+// Persisted via localStorage so the choice carries across reloads, and
+// applied before React mounts (see main.tsx) so the first paint never
+// flashes the wrong density.
 //
-// The two modes:
-//   • compact      — current design defaults (no class on <html>).
-//   • comfortable  — older relatives / outdoor day-of users; bumps the
-//                    `text-[10px]` and `text-[11px]` labels to readable sizes.
+// The three modes (in increasing size):
+//   • compact      — original day-1 sizing, max info-density. No class on <html>.
+//   • default      — middle ground. `html.density-default` adds +1px on
+//                    the tightest utility labels.
+//   • comfortable  — older relatives / outdoor day-of users.
+//                    `html.density-comfortable` bumps the same labels +2px.
+//
+// `default` is the resting value for new visitors — the original day-1
+// compact sizing was tight enough that one in three usability sessions
+// flagged the 10px labels as unreadable. Existing localStorage values
+// (`"compact"` / `"comfortable"`) keep working unchanged; the new middle
+// value lands the first time a user touches the slider.
 
 import { useCallback, useEffect, useState } from "react";
 
-export type Density = "compact" | "comfortable";
+export type Density = "compact" | "default" | "comfortable";
 
 const STORAGE_KEY = "weddly.density";
+const VALID: ReadonlySet<Density> = new Set(["compact", "default", "comfortable"]);
 
 export function getStoredDensity(): Density {
-  if (typeof window === "undefined") return "compact";
+  if (typeof window === "undefined") return "default";
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === "comfortable" ? "comfortable" : "compact";
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw && VALID.has(raw as Density)) return raw as Density;
+    return "default";
   } catch {
-    return "compact";
+    return "default";
   }
 }
 
-/** Add/remove the marker class on <html>. Called by `setStoredDensity` and by
- *  the early-paint bootstrap in main.tsx so the class is on before React
- *  mounts and the first frame doesn't flash the wrong density. */
+/** Add/remove the marker class on <html>. Called by `setStoredDensity` and
+ *  by the early-paint bootstrap in main.tsx so the class is on before
+ *  React mounts and the first frame doesn't flash the wrong density. The
+ *  two non-compact classes are mutually exclusive — apply at most one. */
 export function applyDensity(d: Density): void {
   if (typeof document === "undefined") return;
-  const cls = "density-comfortable";
-  if (d === "comfortable") document.documentElement.classList.add(cls);
-  else document.documentElement.classList.remove(cls);
+  const el = document.documentElement;
+  el.classList.remove("density-default", "density-comfortable");
+  if (d === "default") el.classList.add("density-default");
+  else if (d === "comfortable") el.classList.add("density-comfortable");
 }
 
 export function setStoredDensity(d: Density): void {

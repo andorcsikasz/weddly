@@ -2663,6 +2663,8 @@ export interface LocaleMessages {
     density_label: string;
     density_compact: string;
     density_compact_help: string;
+    density_default: string;
+    density_default_help: string;
     density_comfortable: string;
     density_comfortable_help: string;
     /** "Wedding RSVP" settings card on /app/profile. Today it carries a

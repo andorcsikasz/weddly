@@ -402,12 +402,23 @@
     );
   }
 
-  /* Comfortable density — bumps the smallest utility-text classes one notch
-     so cohort C (older relatives / outdoor day-of use under sun glare) can
-     read them without zooming. Default density is compact (the existing
-     design); ProfilePage exposes a toggle that flips `density-comfortable`
-     on <html>. We only retune the two arbitrary-size classes used as 10/11px
-     labels — leaving `.text-xs` and up alone preserves the visual hierarchy. */
+  /* Density — bumps the smallest utility-text classes up by one or two
+     notches so cohort C (older relatives / outdoor day-of use under sun
+     glare) can read them without zooming. Three discrete tiers driven by
+     a slider on /app/profile:
+       • compact      (no class) — original day-1 sizing.
+       • default      (+1)       — middle ground; the new resting value.
+       • comfortable  (+2)       — biggest, still inside our type scale.
+     We only retune the two arbitrary-size classes used as 10/11px labels —
+     leaving `.text-xs` and up alone preserves the visual hierarchy. */
+  html.density-default .text-\[10px\] {
+    font-size: 0.6875rem; /* 11px — one notch above 10 */
+    line-height: 0.875rem;
+  }
+  html.density-default .text-\[11px\] {
+    font-size: 0.75rem; /* 12px — Tailwind text-xs */
+    line-height: 1rem;
+  }
   html.density-comfortable .text-\[10px\] {
     font-size: 0.75rem; /* 12px — Tailwind text-xs */
     line-height: 1rem;
