@@ -60,8 +60,35 @@ function TermsBodyForLocale({
       <H2>{strings.accuracy_title}</H2>
       <p>{strings.accuracy_body}</p>
 
+      <H2>{strings.acceptable_use_title}</H2>
+      <p>{strings.acceptable_use_intro}</p>
+      <ul className="ml-5 list-disc space-y-2">
+        <li>{strings.acceptable_use_prohibited_illegal}</li>
+        <li>{strings.acceptable_use_prohibited_infringing}</li>
+        <li>{strings.acceptable_use_prohibited_hateful}</li>
+        <li>{strings.acceptable_use_prohibited_security}</li>
+        <li>{strings.acceptable_use_prohibited_spam}</li>
+      </ul>
+
+      <H2>{strings.ugc_title}</H2>
+      <p>{strings.ugc_license_body}</p>
+      <p>{strings.ugc_warranty_body}</p>
+
+      <H2>{strings.dsa_title}</H2>
+      <p>{strings.dsa_body}</p>
+      <p>{strings.dsa_contact}</p>
+
       <H2>{strings.directory_title}</H2>
       <p>{strings.directory_body}</p>
+
+      <H2>{strings.liability_title}</H2>
+      <p>{strings.liability_body}</p>
+
+      <H2>{strings.termination_title}</H2>
+      <p>{strings.termination_body}</p>
+
+      <H2>{strings.changes_title}</H2>
+      <p>{strings.changes_body}</p>
 
       <H2>{strings.law_title}</H2>
       <p>{strings.law_body}</p>

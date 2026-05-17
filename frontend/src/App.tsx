@@ -34,6 +34,7 @@ import HoneymoonPage from "./pages/HoneymoonPage";
 import ImprintPage from "./pages/ImprintPage";
 import MediaPage from "./pages/MediaPage";
 import MoodboardPage from "./pages/MoodboardPage";
+import SubscriptionTermsPage from "./pages/SubscriptionTermsPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import TermsPage from "./pages/TermsPage";
 import TimelinePage from "./pages/TimelinePage";
@@ -109,6 +110,14 @@ export default function App() {
         element={
           <Page>
             <TermsPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/terms/vendor-subscription"
+        element={
+          <Page>
+            <SubscriptionTermsPage />
           </Page>
         }
       />

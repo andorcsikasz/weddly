@@ -365,6 +365,12 @@ function PublicFooter() {
             <Link to="/impresszum" className="hover:text-ink-700 dark:hover:text-paper-100">
               {t("landing.footer_legal_imprint")}
             </Link>
+            <Link
+              to="/terms/vendor-subscription"
+              className="hover:text-ink-700 dark:hover:text-paper-100"
+            >
+              {t("landing.footer_legal_subscription")}
+            </Link>
             <Link to="/about" className="hover:text-ink-700 dark:hover:text-paper-100">
               {t("landing.footer_legal_about")}
             </Link>

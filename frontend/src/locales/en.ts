@@ -574,6 +574,7 @@ const en: LocaleMessages = {
     footer_legal_privacy: "Privacy",
     footer_legal_about: "About",
     footer_legal_imprint: "Imprint",
+    footer_legal_subscription: "Vendor terms (draft)",
     footer_about_link: "About",
     footer_band_text: "A guest?",
     footer_band_cta: "Enter your invite code",
@@ -2577,7 +2578,7 @@ const en: LocaleMessages = {
       "This page explains what data Weddly collects, why we collect it, how long we keep it, and what you can ask us to do with it. We're a small open-beta product — so we try to keep the policy short and accurate.",
     controller_title: "Who controls your data",
     controller_body:
-      "Weddly is the data controller for everything stored in your couple workspace. You can reach us at hello@weddly.xyz with any data-related question, and we'll respond within seven days.",
+      "The data controller is Andor Csíkász (a natural person, Hungary) — the operator of Weddly. Full operator details are on the Imprint page. For any data-related question, write to andor.csikasz@gmail.com or hello@weddly.xyz; we respond within seven days. Processing is governed by the GDPR (EU 2016/679) and applicable Hungarian law (Infotv. — Act CXII of 2011, Ektv. — Act CVIII of 2001, Grtv. — Act XLVIII of 2008).",
     data_categories_title: "What we collect",
     data_categories_intro:
       "We only collect the data we need to run your wedding workspace. Today that's four buckets:",
@@ -2589,6 +2590,20 @@ const en: LocaleMessages = {
       "Wedding workspace — the dates, budget categories, guest list, RSVPs, seating layout and supplier notes you add. Each change is recorded in an append-only audit log so you can see who edited what.",
     data_categories_analytics:
       "Analytics — none today. The site's CSP allows Plausible and Sentry domains so we can wire them in later, but no analytics script currently loads. If we ever turn them on, we'll update this page first.",
+    legal_bases_title: "Legal bases for processing (GDPR Art. 6)",
+    legal_bases_intro:
+      "Every processing activity we run is based on one of the legal grounds in Art. 6(1) GDPR. The ones we rely on are:",
+    legal_bases_contract:
+      "Performance of a contract (Art. 6(1)(b)) — creating and maintaining your account, storing the wedding data you enter, and sending transactional emails (verification, password reset, invites). Without these the service can't function.",
+    legal_bases_consent:
+      "Consent (Art. 6(1)(a)) — any time you tick an explicit \"I accept\" checkbox. Two cases today: accepting the privacy policy at registration, and acknowledging the privacy + future-pricing notice when joining the vendor waitlist. You can withdraw consent at any time using the same email address you registered with.",
+    legal_bases_legitimate_interest:
+      "Legitimate interest (Art. 6(1)(f)) — anti-abuse and anti-spam measures (IP-based rate limiting, the audit log), and service-related lifecycle messages (e.g. \"your wedding is in 30 days\") which you can opt out of at any time. Our interest is always balanced against your fundamental rights.",
+    legal_bases_legal_obligation:
+      "Legal obligation (Art. 6(1)(c)) — the audit log and any disclosure to authorities may be required by law (e.g. criminal procedure). Once we leave beta and start invoicing, the Hungarian Accounting Act's retention obligation (§169) will also fall under this basis (8 years).",
+    guest_data_title: "Guest and third-party data (GDPR Art. 14)",
+    guest_data_body:
+      "If you arrived on Weddly as a guest (because a couple inviting you to their wedding added you to their guest list), Art. 14 requires us to tell you where your data came from. Your name, email, phone number and any dietary information were entered by the couple inviting you — they are the data controller for that information, and Weddly acts as a processor on their behalf for hosting it. If you want your data deleted or corrected, either ask the couple directly, or email hello@weddly.xyz and we'll relay the request on your behalf.",
     retention_title: "How long we keep your data",
     retention_body:
       "Active workspaces are kept for as long as you want them. If you pause your workspace from the Profile page, we keep everything for 30 days in case you change your mind, then permanently delete it. You can cancel the pause any time before the 30 days are up.",
@@ -2596,13 +2611,45 @@ const en: LocaleMessages = {
     rights_intro:
       "If you are in the EU/EEA, you have the following rights under the GDPR. We honour all four for users everywhere, not just Europe.",
     rights_access:
-      "Access — export everything we store about you from the Profile page (one click, JSON file).",
+      "Access (Art. 15) — export everything we store about you from the Profile page (one click, JSON file).",
+    rights_rectification:
+      "Rectification (Art. 16) — you can edit your own data directly from the Profile page and every in-app surface. If something isn't editable, email hello@weddly.xyz and we'll correct it manually.",
     rights_deletion:
-      "Erasure — delete your account from the Profile page. A 30-day grace period gives you a way out; after that, we permanently wipe the workspace.",
+      "Erasure (Art. 17) — delete your account from the Profile page. A 30-day grace period gives you a way out; after that, we permanently wipe the workspace.",
     rights_portability:
-      "Portability — the same JSON export is structured so you can re-import the data elsewhere. Guest lists also export to CSV.",
+      "Portability (Art. 20) — the same JSON export is structured so you can re-import the data elsewhere. Guest lists also export to CSV.",
+    rights_objection:
+      "Objection (Art. 21) — if you believe a legitimate-interest processing activity affects your particular situation unfairly, email hello@weddly.xyz and we'll review that activity.",
+    rights_restriction:
+      "Restriction (Art. 18) — in certain cases (e.g. while accuracy is contested) you can ask us to suspend processing of the relevant data.",
+    rights_withdrawal:
+      "Withdrawing consent (Art. 7(3)) — where we rely on consent (see the legal bases above), you can withdraw it at any time. Withdrawal does not affect the lawfulness of processing already carried out on the basis of consent.",
     rights_contact:
-      "Objection / restriction — email hello@weddly.xyz and we'll handle it manually within seven days.",
+      "Any other request or complaint — email hello@weddly.xyz or andor.csikasz@gmail.com and we'll handle it manually within seven days.",
+    security_title: "Data security (GDPR Art. 32)",
+    security_body:
+      "We never see your password: it's hashed with Argon2id before storage, so even a database breach wouldn't expose it. Session identifiers are random, signed opaque tokens (not JWTs) — they can be revoked server-side and are verified with HMAC-SHA256. All network traffic is TLS-encrypted (terminated at the Railway edge). The database is SQLite mounted on a persistent volume; the hosting provider is responsible for the physical security of that volume. We keep an append-only audit log of all significant operations (never updated or deleted).",
+    children_title: "Children's data (GDPR Art. 8)",
+    children_body:
+      "Weddly is not aimed at users under 16; minors cannot register with us directly. If a couple adds children to their guest list, their data is handled under Art. 14 (see \"Guest data\" above), with the same deletion and rectification rights. If you believe we are processing the data of someone under 16 without a lawful basis, email hello@weddly.xyz and we will act without delay.",
+    transfers_title: "Transfers outside the EEA (GDPR Chapter V)",
+    transfers_body:
+      "The service runs on infrastructure provided by Railway Corp. (United States), so a portion of your data is stored on US servers. Following Schrems II (Case C-311/18), EU→US transfers are made under the EU-US Data Privacy Framework (2023 adequacy decision) and, as a supplementary safeguard, the Standard Contractual Clauses (2021/914). Railway is on the DPF certified-organisations list. For transactional email, Resend (US) likewise receives the recipient address and message body under DPF/SCC.",
+    subprocessors_title: "Subprocessors (GDPR Art. 28)",
+    subprocessors_intro:
+      "We use the following subprocessors. A written data-processing agreement is in place with each, and they may only process the data on Weddly's instructions.",
+    subprocessors_railway:
+      "Railway Corp. (USA) — application hosting; storage of the SQLite database and uploaded files. DPF/SCC for the transfer.",
+    subprocessors_resend:
+      "Resend Inc. (USA) — delivery of transactional email (registration, password reset, partner invite, RSVP receipts). DPF/SCC for the transfer.",
+    subprocessors_amadeus:
+      "Amadeus IT Group (EU) — flight price estimates for the honeymoon planner widget. Receives only the route and date you enter; no personal data.",
+    subprocessors_osm:
+      "OpenStreetMap Foundation (United Kingdom) — the Nominatim service powers location autocomplete. Sees only the typed query and the usual web-server logs (IP, User-Agent).",
+    subprocessors_pinterest:
+      "Pinterest (USA) — the moodboard widget reads a public Pinterest board's RSS feed server-side. Receives only the Pinterest URL you provide.",
+    subprocessors_sentry:
+      "Sentry (USA) — application error reporting. Not yet enabled in production; if we turn it on, we'll update this page. It would receive pseudonymised error traces without direct identifiers.",
     cookies_title: "Cookies and local storage",
     cookies_intro:
       "Weddly does not set any tracking cookies. The only browser storage we use lives in localStorage on your device, so it never reaches a third party:",
@@ -2617,7 +2664,16 @@ const en: LocaleMessages = {
       "weddly.onboarding_draft — saves your onboarding answers between steps so a refresh doesn't lose them.",
     third_parties_title: "Third parties we share data with",
     third_parties_body:
-      "Two: Resend (transactional email delivery for verification, invites and resets) receives the recipient address and the email body. Railway (our hosting provider) stores the SQLite database that holds your workspace. Both are GDPR-compliant processors and neither is allowed to use your data for anything other than running the service.",
+      "The full list is in the \"Subprocessors\" section above. We do not share your data with advertisers, data brokers or social platforms.",
+    email_compliance_title: "Email communications (Hungarian Grtv. §6, ePrivacy)",
+    email_compliance_body:
+      "We send two kinds of email. (1) Transactional: account verification, password reset, partner invite, email-change confirmation, RSVP receipts to guests, and reminders about your own upcoming wedding — sent under the contract-performance basis (Art. 6(1)(b) GDPR) and not unsubscribable while your account is active. (2) Lifecycle / product newsletter: currently none during the beta. If we introduce them later (e.g. feature announcements, tips), they will only go to recipients who explicitly opt in, in compliance with §6 of the Hungarian Grtv. Every such email will carry a one-click unsubscribe link. The sender is always identifiable (operator name + link to the imprint in the footer).",
+    automated_decisions_title: "Automated decision-making (GDPR Art. 22)",
+    automated_decisions_body:
+      "Weddly does not take decisions based solely on automated processing that would produce legal effects on you or similarly significantly affect you. The supplier ranking, the cost-planning estimator, the seating helper — they're all algorithms, but each is a suggestion you accept or override.",
+    complaint_authority_title: "Lodging a complaint with a supervisory authority (GDPR Art. 77)",
+    complaint_authority_body:
+      "If you believe we are processing your data unlawfully and contacting us hasn't resolved the issue, you can lodge a complaint with the Hungarian Data Protection Authority (NAIH — Falk Miksa utca 9-11., 1055 Budapest; ugyfelszolgalat@naih.hu; naih.hu). You may also seek a judicial remedy at the court of your habitual residence.",
     changes_title: "Changes to this policy",
     changes_body:
       "If we materially change how we handle your data, we'll email you and update the date at the top of this page. Minor wording fixes are made silently.",
@@ -2640,14 +2696,96 @@ const en: LocaleMessages = {
     accuracy_title: "Your data, your responsibility",
     accuracy_body:
       "You are responsible for the accuracy of the data you enter — guest names, contact details, budget figures, RSVP responses. We don't review or vet what you write, and we won't be liable for decisions made on the basis of typos or stale information.",
+    acceptable_use_title: "What you may not do",
+    acceptable_use_intro:
+      "Weddly is built for wedding planning. The following uses are NOT permitted:",
+    acceptable_use_prohibited_illegal:
+      "Uploading unlawful content (fraud, advertising illegal services, content that harms minors, etc.).",
+    acceptable_use_prohibited_infringing:
+      "Posting content you don't have the rights to (other people's wedding photos, third-party trademarks, plagiarised descriptions).",
+    acceptable_use_prohibited_hateful:
+      "Hate speech, harassment, threats, defamation.",
+    acceptable_use_prohibited_security:
+      "Actions that threaten the security, availability or integrity of the service (scraping, brute-force, bypassing rate limits, exploiting vulnerabilities).",
+    acceptable_use_prohibited_spam:
+      "Spam, unsolicited marketing, buying or selling guest lists to other couples.",
+    ugc_title: "User-generated content",
+    ugc_license_body:
+      "When you upload or submit content to Weddly (e.g. a community supplier listing, a moodboard URL, feedback, a guest list entry), you keep every right you already had in that content. To run the service we need a non-exclusive, royalty-free, worldwide, sublicensable licence to host, display, technically transform (resize, re-encode) and use the content within the service. The licence ends automatically when you delete the content, except where a legal obligation (e.g. the audit log) or routine backups require short-term retention.",
+    ugc_warranty_body:
+      "You warrant that everything you submit (a) is yours or you have permission to publish it, (b) does not infringe any third-party right (copyright, trademark, privacy, confidentiality), and (c) complies with the acceptable-use rules above. If any of those turn out not to hold, we may remove the content and, for serious or repeated violations, suspend or delete your account.",
+    dsa_title: "Notice and action (EU Digital Services Act)",
+    dsa_body:
+      "Regulation (EU) 2022/2065 (DSA) requires every hosting provider to operate an easy-to-use notice mechanism for illegal content. If you believe content published on Weddly (e.g. a community supplier listing) is unlawful, email dsa@weddly.xyz — or, if that address isn't live yet, hello@weddly.xyz / andor.csikasz@gmail.com — including: (1) the URL or other unambiguous locator of the content; (2) why you believe it is illegal; (3) the notifier's name and email; (4) a good-faith statement that the notice is accurate. We review every notice without undue delay and, where warranted, remove or disable access to the content; we notify both the notifier and the uploader of the decision and the reasons. Internal complaints about our decisions can be sent to the same address.",
+    dsa_contact:
+      "Single Point of Contact for authorities and users under DSA Art. 11 and 12: Andor Csíkász — andor.csikasz@gmail.com. Languages: Hungarian and English.",
     directory_title: "Supplier directory",
     directory_body:
-      "The supplier directory is provided for browsing. You may not scrape, resell or republish it. Community submissions are moderated by our team — please add suppliers you've worked with, not random listings.",
+      "The supplier directory is free to browse during the open beta. You may not scrape, resell or republish it — it is a curated collection protected by copyright. After the beta ends we will introduce a paid model for suppliers (subscription and/or featured placement); the detailed terms are set out in the Vendor Subscription Terms (ÁSZF), which are currently published as a draft. Before any fees take effect, every waitlisted supplier will receive a dedicated email with the final terms.",
+    liability_title: "Limitation of liability",
+    liability_body:
+      "Weddly is provided during the beta on an \"as is\" basis, free of charge, without any express or implied warranty (in particular: fitness for a particular purpose, uninterrupted operation, error-free behaviour). We do not limit liability that cannot be excluded under Hungarian law (intentional acts, gross negligence, harm to life, bodily integrity or health). For every other type of damage — including indirect, consequential and loss-of-profit damages — our liability is limited to the narrowest extent permitted by Hungarian law. Your statutory rights as a consumer (e.g. warranty rights) are not affected by this limitation.",
+    termination_title: "Ending the relationship",
+    termination_body:
+      "You can delete your account at any time from the Profile page; the workspace is permanently deleted after a 30-day grace period (see the Privacy Policy). We may suspend or terminate an account if it materially breaches the acceptable-use rules above, or is used unlawfully or in a way that endangers other users. We tell you the reason by email and — unless a legal or regulatory obligation prevents it — give you reasonable time to export your data.",
+    changes_title: "Changes to these terms",
+    changes_body:
+      "We update these terms from time to time. Minor wording fixes are made silently. For material changes (a new fee, a new processor, narrowing our obligations) we email you at least 14 days before the change takes effect and require you to accept the updated terms in-app — without acceptance, parts of the service won't remain accessible. When the open beta ends, every beta user will receive a separate email about the comprehensive rewrite.",
     law_title: "Governing law",
     law_body:
-      "These terms are governed by Hungarian law. If we ever disagree about something, we'll try to work it out by email first. Any dispute that needs a court is heard in Budapest.",
+      "These terms are governed by Hungarian law, together with EU data-protection and consumer-protection regulations (notably the GDPR, the DSA and EU 524/2013). We try to resolve any dispute by email first. If that fails, the court of competent jurisdiction in Hungary applies; your right to choose a forum under consumer-protection law is unaffected.",
     contact_title: "Questions?",
-    contact_body: "Email hello@weddly.xyz.",
+    contact_body: "Email hello@weddly.xyz or andor.csikasz@gmail.com.",
+    en_section_label: "English",
+  },
+  subscription_terms: {
+    seo_title: "Vendor subscription terms (draft) — Weddly",
+    seo_description:
+      "Draft of Weddly's vendor-side ÁSZF for the post-beta paid model — fees, billing, withdrawal, warranties, Hungarian law.",
+    page_title: "Vendor subscription terms (ÁSZF — draft)",
+    last_updated_label: "Draft date",
+    last_updated_date: "2026-05-18",
+    intro:
+      "This document is the draft of the General Terms and Conditions (ÁSZF) for Weddly's vendor subscription. It is not currently in force: directory listings are free during the open beta. Before the beta ends, we will finalise this document with a Hungarian lawyer, send a dedicated email to every waitlisted vendor, and require an explicit click-acceptance before any fees are charged. The text below is published so the planned terms are not a surprise.",
+    scope_title: "Scope",
+    scope_body:
+      "The operator of Weddly (Andor Csíkász / the legal entity registered after the beta ends) provides the Subscriber, under the terms set out here, with: (a) a listing in Weddly's public supplier directory, (b) a profile page with an introduction, portfolio links and contact details, (c) visibility to interested couples in search, category and location filters, (d) optional featured placements depending on the selected plan. The contract comes into existence when the Subscriber accepts the finalised ÁSZF and the payment transaction is successfully completed.",
+    fees_title: "Fees",
+    fees_body:
+      "The price list will be published as a separate \"Pricing\" annex to the finalised ÁSZF. Beta waitlist applicants receive prior notice and the option to subscribe at an early-bird rate. Pricing in effect at the start of the term applies to new subscriptions; existing subscriptions may only be repriced for the next billing cycle with at least 30 days' notice.",
+    billing_title: "Billing",
+    billing_body:
+      "The service is offered in monthly or annual prepaid cycles (Subscriber's choice). Payment is taken via Weddly's designated payment provider (Stripe or a Hungarian equivalent). For each transaction we issue a Hungarian electronic invoice in accordance with applicable tax law (Áfa Act, Accounting Act). The Subscriber is responsible for keeping billing details accurate and up to date.",
+    vat_title: "VAT",
+    vat_body:
+      "VAT applies at the rate prescribed by Hungarian law from time to time. If the operator is not a VAT-registered taxpayer when the contract takes effect (e.g. KATA, small-business exemption), prices are invoiced VAT-free and the invoice indicates this. If VAT-registered, the published prices are net prices to which VAT is added.",
+    term_title: "Term and termination",
+    term_body:
+      "The subscription runs until the end of the chosen billing cycle and — unless the Subscriber cancels at least 24 hours before the end of the cycle, in-app or via the support email — it renews automatically for the next cycle at the price in effect on renewal. Fees already paid for the running cycle are not refunded on ordinary cancellation (except where the withdrawal right below applies). Once cancellation takes effect, the public listing and any featured placements end; basic info (contact, location) may continue to appear in the directory's \"former vendors\" section only if the Subscriber explicitly requests it at the time of cancellation.",
+    withdrawal_title: "Right of withdrawal (Gov. Decree 45/2014 — consumer-type subscribers)",
+    withdrawal_body:
+      "Where the Subscriber qualifies as a consumer under Government Decree 45/2014. (II. 26.) on distance contracts (i.e. a natural person not acting in the course of a trade, business or profession — e.g. an individual musician or hairdresser running their own service), the Subscriber may withdraw from the contract without giving a reason within 14 days. The period runs from the day the contract is concluded; the model declaration can be sent to dsa@weddly.xyz / hello@weddly.xyz. If the Subscriber expressly requests that the service start during the withdrawal period (i.e. the profile become visible), they acknowledge that on exercising the right they must reimburse Weddly for the proportionate cost of performance already rendered, and that once the service has been fully performed the right of withdrawal is lost (Decree §29(1)(a)). Subscribers contracting in a business capacity (Kft., Bt., Zrt., or a sole proprietor acting in their business activity) do NOT enjoy this withdrawal right.",
+    liability_title: "Liability",
+    liability_body:
+      "The operator provides the service with the diligence reasonably expected of it but does not warrant uninterrupted or error-free operation. The liability limit mirrors the \"Limitation of liability\" section of the Terms of Service: we do not exclude liability that cannot be excluded by law (intentional acts, gross negligence, harm to life, bodily integrity or health); for every other type of damage, our liability is capped at the fees actually paid by the Subscriber for the contract year in question. Business outcomes derived from directory visibility (number of leads, bookings) are not warranted by the operator.",
+    data_title: "Data processing",
+    data_body:
+      "Personal data processed under the subscription (the vendor's introduction, contact details, portfolio materials, billing data) is governed by Weddly's Privacy Policy, with these additions: (a) the vendor's introduction and portfolio content are displayed publicly in the directory; (b) billing and accounting records are retained for 8 years under §169 of the Hungarian Accounting Act; (c) the payment provider (Stripe or equivalent) acts as an independent controller for card data — Weddly does not store card numbers.",
+    changes_title: "Changes to these terms",
+    changes_body:
+      "We may amend the ÁSZF unilaterally only for valid reasons (changes in law, pricing updates, new features, security) and only with at least 30 days' prior email notice. The Subscriber may terminate fee-free at any time before the new version takes effect. If the new version materially narrows the Subscriber's rights, it only applies to that Subscriber's contract upon their explicit click-acceptance.",
+    termination_title: "Immediate termination by the operator",
+    termination_body:
+      "The operator may terminate the contract and remove the profile with immediate effect if the Subscriber (a) materially or repeatedly breaches the Terms of Service or the ÁSZF (in particular: posting unlawful or deceptive content, repeated infringement of third-party rights), (b) fails to pay within 14 days of a written reminder, (c) uses the Weddly platform unlawfully or in a way that endangers other users' safety. The reasons for immediate termination are communicated in writing and — unless protecting our legitimate interests requires otherwise — we give reasonable time to export data.",
+    governing_law_title: "Governing law and jurisdiction",
+    governing_law_body:
+      "These terms are governed by Hungarian law (in particular the Civil Code, the Accounting Act, the VAT Act and Gov. Decree 45/2014) and the relevant EU regulations (GDPR, DSA, ePrivacy). The parties first attempt to resolve disputes by email. Failing that, the Hungarian courts have jurisdiction; Subscribers acting as consumers retain their right to bring proceedings before the court of their place of residence.",
+    odr_title: "Online dispute resolution (EU 524/2013)",
+    odr_body:
+      "Subscribers acting as consumers may also initiate online dispute resolution via the European Commission's platform: https://ec.europa.eu/consumers/odr. The platform supports alternative dispute resolution between the parties. Hungarian consumer complaints can also be brought before the Pest County Conciliation Board (https://panaszrendezes.hu).",
+    contact_title: "Contact",
+    contact_body:
+      "Questions and suggestions about this draft are welcome at andor.csikasz@gmail.com. Before the beta ends and the ÁSZF is finalised, every waitlisted vendor will receive a dedicated email.",
     en_section_label: "English",
   },
   imprint: {

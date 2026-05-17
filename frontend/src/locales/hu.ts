@@ -574,6 +574,7 @@ const hu: LocaleMessages = {
     footer_legal_privacy: "Adatvédelem",
     footer_legal_about: "Rólunk",
     footer_legal_imprint: "Impresszum",
+    footer_legal_subscription: "Szolgáltatói ÁSZF (tervezet)",
     footer_about_link: "Rólunk",
     footer_band_text: "Vendég vagy?",
     footer_band_cta: "Meghívókód megadása",
@@ -2601,7 +2602,7 @@ const hu: LocaleMessages = {
       "Ez az oldal bemutatja, milyen adatokat gyűjt a Wēddly, miért gyűjtjük, meddig őrizzük meg, és mit kérhettek velük kapcsolatban. Egy kis, nyílt bétás termék vagyunk — ezért igyekszünk a szabályzatot rövidnek és pontosnak tartani.",
     controller_title: "Az adataitok kezelője",
     controller_body:
-      "A Wēddly az adatkezelő mindenért, amit a közös workspace-etekben tároltok. Bármilyen adatkezelési kérdéssel írhattok a hello@weddly.xyz címre, és hét napon belül válaszolunk.",
+      "Az adatkezelő Csíkász Andor (magánszemély, Magyarország) — a Wēddly üzemeltetője. A teljes operátori adatok az Impresszum oldalon olvashatóak. Adatkezeléssel kapcsolatos kérdésekkel közvetlenül az andor.csikasz@gmail.com címen vagy a hello@weddly.xyz címen tudtok jelentkezni, és hét napon belül választ kaptok. Az adatkezelés a GDPR (EU 2016/679) és a vonatkozó magyar jogszabályok (Infotv. — 2011. évi CXII. tv., Ektv. — 2001. évi CVIII. tv., Grtv. — 2008. évi XLVIII. tv.) szerint történik.",
     data_categories_title: "Mit gyűjtünk",
     data_categories_intro:
       "Csak azokat az adatokat gyűjtjük, amelyek a workspace-etek működtetéséhez kellenek. Ma ez négy kategória:",
@@ -2613,6 +2614,20 @@ const hu: LocaleMessages = {
       "Esküvői workspace — a dátumok, költségvetési kategóriák, vendéglista, RSVP-k, ültetési rend és szolgáltatói jegyzetek, amiket hozzáadtok. Minden változás bekerül egy csak-hozzáfűzhető auditnaplóba, így bármikor láthatjátok, ki mit módosított.",
     data_categories_analytics:
       "Analitika — ma még semmi. A site CSP-je engedi a Plausible és Sentry domaineket, hogy később bekapcsolhassuk őket, de jelenleg egyetlen analitikai script sem fut. Ha valaha bekapcsolnánk, előbb frissítjük ezt az oldalt.",
+    legal_bases_title: "Az adatkezelés jogalapja (GDPR 6. cikk)",
+    legal_bases_intro:
+      "Minden adatkezelésünk egy konkrét jogalapra épül a GDPR 6. cikkének (1) bekezdéséből. A felhasznált jogalapok:",
+    legal_bases_contract:
+      "Szerződés teljesítése (6. cikk (1) b) — a fiókotok létrehozása, fenntartása, az általatok megadott esküvői adatok tárolása és megjelenítése, a tranzakciós e-mailek (megerősítés, jelszóvisszaállítás, meghívók) kiküldése. Ezek nélkül a szolgáltatás nem működne.",
+    legal_bases_consent:
+      "Hozzájárulás (6. cikk (1) a) — minden olyan eset, amikor kifejezetten rákattintotok egy „elfogadom” jelölőnégyzetre. Ma kettő ilyen van: a regisztrációkor az adatvédelmi szabályzat elfogadása, és a szolgáltatói várólistára való jelentkezéskor az adatvédelem + jövőbeli díjazási modell tudomásulvétele. A hozzájárulást bármikor visszavonhatjátok ugyanazon az e-mail címen, ahol megadtátok.",
+    legal_bases_legitimate_interest:
+      "Jogos érdek (6. cikk (1) f) — a visszaélések és spam elleni védelmi mechanizmusok (IP-alapú rate limit, audit napló), valamint a szolgáltatáshoz közvetlenül kapcsolódó életciklus-üzenetek (pl. „közeleg az esküvő dátuma”), amelyekről bármikor le tudtok iratkozni. A jogos érdeket minden esetben kiegyensúlyozzuk az érintett alapvető jogaival.",
+    legal_bases_legal_obligation:
+      "Jogi kötelezettség teljesítése (6. cikk (1) c) — az auditnaplót és a hatóság felé történő esetleges adatszolgáltatást jogszabály írhatja elő (pl. büntetőeljárás során). A béta lezárása után, ha számlázunk, a számviteli megőrzési kötelezettség (Számv. tv. 169. §) is ide tartozik majd (8 év).",
+    guest_data_title: "Vendégek és más harmadik felek adatai (GDPR 14. cikk)",
+    guest_data_body:
+      "Ha vendégként kerültél a Wēddly-be (mert az esküvőre meghívó pár felvitte a neved a vendéglistára), a 14. cikk értelmében értesítünk arról, honnan származnak az adataid. A nevedet, e-mail-címedet, telefonszámodat és esetleges étrendi információdat az a pár adta meg, amelyik az esküvőre meghívott — ezeket az adatokat ők kezelik önálló adatkezelőként, a Wēddly pedig a számukra ezt a tárhelyet adatfeldolgozóként biztosítja. Ha szeretnéd, hogy az adataidat töröljük vagy javítsuk: vagy közvetlenül a meghívó párnak szólj, vagy írj a hello@weddly.xyz címre, és kapcsolatba lépünk velük helyetted.",
     retention_title: "Meddig őrizzük az adataitokat",
     retention_body:
       "Az aktív workspace-eket addig őrizzük, ameddig csak szeretnétek. Ha a Profil oldalról szüneteltetitek a workspace-et, 30 napig megőrizzük az adatokat — ha meggondoljátok magatokat —, utána véglegesen törlünk mindent. A 30 napon belül bármikor visszavonhatjátok a szüneteltetést.",
@@ -2620,13 +2635,45 @@ const hu: LocaleMessages = {
     rights_intro:
       "Ha az EU/EGT területén éltek, a GDPR alapján az alábbi jogok illetnek meg titeket. Ezeket a Wēddly-nél mindenkinek biztosítjuk, nem csak az európai felhasználóknak.",
     rights_access:
-      "Hozzáférés — a Profil oldalról egy kattintással letölthetitek JSON-ban mindazt, amit rólatok tárolunk.",
+      "Hozzáférés (15. cikk) — a Profil oldalról egy kattintással letölthetitek JSON-ban mindazt, amit rólatok tárolunk.",
+    rights_rectification:
+      "Helyesbítés (16. cikk) — a profilon és minden alkalmazás-felületen közvetlenül szerkeszthetitek a saját adataitokat. Ha valami nem szerkeszthető, írjatok a hello@weddly.xyz címre, és kézzel javítjuk.",
     rights_deletion:
-      "Törlés — a Profil oldalról törölhetitek a fiókotokat. Egy 30 napos türelmi idő ad lehetőséget a meggondolásra; utána a workspace véglegesen törlődik.",
+      "Törlés (17. cikk) — a Profil oldalról törölhetitek a fiókotokat. Egy 30 napos türelmi idő ad lehetőséget a meggondolásra; utána a workspace véglegesen törlődik.",
     rights_portability:
-      "Hordozhatóság — ugyanaz a JSON export úgy van felépítve, hogy máshová is be tudjátok importálni. A vendéglista CSV-be is exportálható.",
+      "Hordozhatóság (20. cikk) — ugyanaz a JSON export úgy van felépítve, hogy máshová is be tudjátok importálni. A vendéglista CSV-be is exportálható.",
+    rights_objection:
+      "Tiltakozás (21. cikk) — ha úgy érzed, valamelyik jogos érdeken alapuló adatkezelésünk a te helyzetedet sérti, írj a hello@weddly.xyz címre, és felülvizsgáljuk az adott folyamatot.",
+    rights_restriction:
+      "Korlátozás (18. cikk) — bizonyos esetekben kérheted, hogy az adatok kezelését felfüggesszük, amíg vita van folyamatban (pl. pontatlanság miatt).",
+    rights_withdrawal:
+      "Hozzájárulás visszavonása (7. cikk (3)) — ahol kifejezett hozzájárulásra építünk (lásd a jogalapokat fent), bármikor visszavonhatod. A visszavonás nem érinti a visszavonás előtti, hozzájáruláson alapuló adatkezelés jogszerűségét.",
     rights_contact:
-      "Tiltakozás / korlátozás — írjatok a hello@weddly.xyz címre, és hét napon belül kézzel kezeljük.",
+      "Egyéb kérés vagy panasz — írjatok a hello@weddly.xyz vagy az andor.csikasz@gmail.com címre, és hét napon belül kézzel kezeljük.",
+    security_title: "Adatbiztonság (GDPR 32. cikk)",
+    security_body:
+      "A jelszavakat soha nem látjuk: Argon2id algoritmussal hashelve tároljuk őket, így még adatszivárgás esetén sem fejthetők vissza. A munkamenet-azonosítók véletlen, aláírt opak tokenek (nem JWT) — szerveroldalon visszavonhatóak, és HMAC-SHA256 ellenőrzéssel hitelesítjük őket. A hálózati forgalom végig TLS alatt megy (a Railway végződteti a TLS-t a határon). Az adatbázis SQLite, kötetre csatlakoztatva — a tárhelyszolgáltató felelős a kötet fizikai biztonságáért. Auditnaplót vezetünk minden lényeges műveletről (csak hozzáfűzhető, soha nem módosítjuk vagy töröljük).",
+    children_title: "Gyermekek adatai (GDPR 8. cikk)",
+    children_body:
+      "A Wēddly nem 16 év alatti felhasználóknak készül; közvetlenül nem regisztrálhatnak hozzánk. Ha az esküvőre meghívó pár gyerekeket is felvesz a vendéglistára, az ő adataikat a 14. cikk szerint kezeljük (ld. a „Vendégek adatai” pontot), és ugyanúgy ki kell tudni törölni, javítani őket, mint bármely más vendégadatot. Ha úgy gondolod, hogy egy 16 év alatti személy adatait jogalap nélkül kezeljük, írj a hello@weddly.xyz címre, és haladéktalanul intézkedünk.",
+    transfers_title: "Adattovábbítás az EGT-n kívülre (GDPR V. fejezet)",
+    transfers_body:
+      "A szolgáltatás infrastruktúráját a Railway Corp. (Egyesült Államok) biztosítja, így az adataitok egy része az Egyesült Államok területén kerül tárolásra. A Schrems II ítéletet (C-311/18) követően az EU–USA adattovábbítást az EU–USA adatvédelmi keretrendszer (EU-US Data Privacy Framework, 2023. évi végrehajtási határozat) és — kiegészítő garanciaként — az általános szerződési feltételek (Standard Contractual Clauses, 2021/914) alapján biztosítjuk. A Railway szerepel a DPF tanúsított szervezeteinek listáján. Tranzakciós e-mailek esetén a Resend (Egyesült Államok) szintén DPF/SCC alapján kapja meg a címzett e-mail-címét és az üzenet tartalmát.",
+    subprocessors_title: "Adatfeldolgozók (GDPR 28. cikk)",
+    subprocessors_intro:
+      "Az adatkezelési műveletekhez az alábbi adatfeldolgozókat vesszük igénybe. Mindegyikkel írásos adatfeldolgozói megállapodás van érvényben, és kizárólag a Wēddly utasításai szerint kezelhetik az adatokat.",
+    subprocessors_railway:
+      "Railway Corp. (USA) — alkalmazás-hosztolás, az SQLite adatbázis és a feltöltött fájlok tárolása. DPF/SCC adattovábbítás.",
+    subprocessors_resend:
+      "Resend Inc. (USA) — tranzakciós e-mailek (regisztráció, jelszóvisszaállítás, partnermeghívó, RSVP-megerősítés) kézbesítése. DPF/SCC adattovábbítás.",
+    subprocessors_amadeus:
+      "Amadeus IT Group (EU) — repülőjegy-becslés a nászút-tervező widgethez. Csak az általatok megadott útvonalat és dátumot kapja meg, semmilyen személyes adatot nem.",
+    subprocessors_osm:
+      "OpenStreetMap Foundation (Egyesült Királyság) — a Nominatim szolgáltatás a helységnév-keresőt szolgálja ki. Csak a beírt keresőkifejezést és a tipikus webszerver-naplókat látja (IP, User-Agent).",
+    subprocessors_pinterest:
+      "Pinterest (USA) — a hangulattábla widget egy nyilvános Pinterest board RSS-feedjét olvassa be a szerveroldalon. Csak az általatok megadott Pinterest-URL-t kapja meg.",
+    subprocessors_sentry:
+      "Sentry (USA) — alkalmazáshiba-jelentések rögzítése. Ma még nincs bekapcsolva éles üzemben; ha aktiváljuk, frissítjük ezt az oldalt. Pszeudonim hibanyomokat küldene, közvetlen azonosító nélkül.",
     cookies_title: "Sütik és localStorage",
     cookies_intro:
       "A Wēddly nem állít be követő sütit. A böngészőben tárolt adatok mind a localStorage-ban élnek a ti eszközötökön, így sosem kerülnek külső félhez:",
@@ -2642,7 +2689,16 @@ const hu: LocaleMessages = {
       "weddly.onboarding_draft — elmenti az onboarding válaszaitokat a lépések között, hogy egy frissítés ne dobja el őket.",
     third_parties_title: "Külső szolgáltatók, akikkel adatot osztunk meg",
     third_parties_body:
-      "Kettő: a Resend (a megerősítő, meghívó és visszaállító e-mailek kézbesítője) megkapja a címzett e-mail-címét és az üzenet tartalmát. A Railway (a hosztolónk) tárolja az SQLite adatbázist, amiben a workspace-etek lakik. Mindkettő GDPR-megfelelő adatfeldolgozó, és csak a szolgáltatás üzemeltetésére használhatják az adataitokat.",
+      "A teljes lista a fenti „Adatfeldolgozók” pontban olvasható. Más harmadik féllel — különösen reklámozóval, adatbrókerrel, közösségi platformmal — nem osztjuk meg az adataitokat.",
+    email_compliance_title: "E-mailes kommunikáció (Grtv. §6, ePrivacy)",
+    email_compliance_body:
+      "Két fajta e-mailt küldünk. (1) Tranzakciós: regisztráció-megerősítés, jelszóvisszaállítás, partnermeghívó, e-mailcím-csere, RSVP-megerősítés a vendégeknek, határidős előretolt értesítések a pár saját esküvőjével kapcsolatban — ezeket a szerződés teljesítése (GDPR 6. cikk (1) b) jogalapon küldjük, és nem lehet rólunk teljesen leiratkozni, amíg a fiókod aktív. (2) Életciklus / termék-hírlevél: a béta alatt jelenleg ilyet nem küldünk. Ha a jövőben bevezetjük (pl. új funkciókról, tippekről), kizárólag a magyar Grtv. 6. §-ának megfelelően, előzetes opt-in hozzájárulással küldjük majd, és minden ilyen levél tartalmaz egy egy-kattintásos leiratkozási linket. A küldő minden esetben azonosítható (üzemeltető neve + impresszum-link a láblécben).",
+    automated_decisions_title: "Automatizált döntéshozatal (GDPR 22. cikk)",
+    automated_decisions_body:
+      "A Wēddly nem hoz olyan, kizárólag automatizált feldolgozáson alapuló döntést, amely rátok nézve joghatással bírna vagy hasonlóan jelentős mértékben érintene titeket. A szolgáltatói rangsor, a costplanning becslő, az ülésrend-segédlet — mind algoritmusok ugyan, de mindegyik egy javaslat, amit ti hagytok jóvá vagy módosítotok.",
+    complaint_authority_title: "Felügyeleti hatósághoz fordulás (GDPR 77. cikk)",
+    complaint_authority_body:
+      "Ha úgy érzed, hogy az adataidat jogellenesen kezeljük, és a velünk való egyeztetés nem vezetett eredményre, panaszt nyújthatsz be a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH): 1055 Budapest, Falk Miksa utca 9-11.; ugyfelszolgalat@naih.hu; naih.hu. Bírósági jogorvoslattal is élhetsz a lakóhelyed vagy a tartózkodási helyed szerinti illetékes törvényszéken.",
     changes_title: "A szabályzat változásai",
     changes_body:
       "Ha érdemben változtatunk azon, ahogyan az adataitokat kezeljük, e-mailben értesítünk, és frissítjük a fenti dátumot. A kisebb fogalmazási javításokat csendben végezzük.",
@@ -2665,14 +2721,96 @@ const hu: LocaleMessages = {
     accuracy_title: "Az adataitokért ti feleltek",
     accuracy_body:
       "Ti feleltek a beírt adatok pontosságáért — vendégnevek, elérhetőségek, költségvetési számok, RSVP válaszok. Nem ellenőrizzük és nem szűrjük, amit írtok, és nem vállalunk felelősséget azokért a döntésekért, amik elgépelés vagy elavult adat alapján születnek.",
+    acceptable_use_title: "Mire nem használható a Wēddly",
+    acceptable_use_intro:
+      "A szolgáltatás esküvőtervezésre készült. A következőket NEM teheted a Wēddly-vel:",
+    acceptable_use_prohibited_illegal:
+      "Jogszabályba ütköző tartalom feltöltése (csalás, illegális szolgáltatás hirdetése, kiskorúak sérelmére elkövetett bárminemű tartalom, stb.).",
+    acceptable_use_prohibited_infringing:
+      "Olyan tartalom közzététele, amelyhez nincs jogod (más esküvői képei, harmadik fél által védjegyzett márkanevek, plagizált leírások).",
+    acceptable_use_prohibited_hateful:
+      "Gyűlöletbeszéd, zaklatás, fenyegetés, becsületsértés.",
+    acceptable_use_prohibited_security:
+      "A szolgáltatás biztonságának, rendelkezésre állásának vagy integritásának sértésére irányuló cselekmény (scraping, brute-force, rate-limit megkerülése, biztonsági rés kihasználása).",
+    acceptable_use_prohibited_spam:
+      "Spam, kéretlen marketing, vendéglista-vásárlás vagy -értékesítés más párokkal való megosztás céljából.",
+    ugc_title: "Felhasználói tartalom",
+    ugc_license_body:
+      "Amikor tartalmat töltesz fel vagy küldesz be a Wēddly-re (pl. közösségi szolgáltatói javaslatot, hangulattábla-URL-t, visszajelzést, vendéglista-bejegyzést), megőrzöd minden, az adott tartalomra vonatkozó jogod. Ahhoz azonban, hogy a szolgáltatást üzemeltetni tudjuk, nem kizárólagos, jogdíjmentes, világméretű, sublicenszelhető jogot adsz a Wēddly-nek a tartalom tárolására, megjelenítésére, technikai átalakítására (pl. méretezés, formátum-konverzió) és a szolgáltatás keretein belüli felhasználására. Ez a jog automatikusan megszűnik, amint a tartalmat törlöd, kivéve, ahol jogi kötelezettség (pl. auditnapló) vagy biztonsági mentés szükségessé teszi a rövid távú megőrzést.",
+    ugc_warranty_body:
+      "Szavatolod, hogy minden általad beküldött tartalom (a) a sajátod, vagy van jogod azt közzétenni, (b) nem sérti harmadik fél jogát (szerzői jog, védjegy, személyiségi jog, magántitok), és (c) megfelel a fenti elfogadható felhasználási szabályoknak. Ha kiderül, hogy nem teljesülnek, eltávolíthatjuk a tartalmat, és súlyos vagy ismétlődő esetben a fiókodat is felfüggeszthetjük vagy törölhetjük.",
+    dsa_title: "Bejelentés és intézkedés (EU Digital Services Act)",
+    dsa_body:
+      "A 2022/2065/EU rendelet (DSA) értelmében minden tárhelyszolgáltatónak könnyen elérhető bejelentési mechanizmust kell biztosítania jogszabálysértő tartalmakkal kapcsolatban. Ha úgy gondolod, hogy a Wēddly-n közzétett tartalom (pl. egy közösségi szolgáltatói bejegyzés) jogszabályt sért, küldj e-mailt a dsa@weddly.xyz címre — vagy ha az még nem aktív, a hello@weddly.xyz / andor.csikasz@gmail.com címre — az alábbi adatokkal: (1) a kifogásolt tartalom URL-je vagy egyértelmű azonosítója; (2) annak indoklása, miért tartod jogellenesnek; (3) a kapcsolattartó neve és e-mail-címe; (4) nyilatkozat arról, hogy a bejelentés jóhiszemű és pontos. A bejelentést indokolatlan késedelem nélkül megvizsgáljuk, és — ha indokolt — eltávolítjuk vagy hozzáférhetetlenné tesszük a tartalmat, a bejelentőt és a feltöltőt is értesítjük a döntésünkről és annak indokáról. A panasszal kapcsolatos belső jogorvoslatra ugyanezen az e-mail címen kerülhet sor.",
+    dsa_contact:
+      "A DSA 11. és 12. cikke szerinti egyedüli kapcsolattartó (Single Point of Contact) hatóságok és felhasználók részére: Csíkász Andor — andor.csikasz@gmail.com. Kommunikációs nyelv: magyar és angol.",
     directory_title: "Szolgáltatói katalógus",
     directory_body:
-      "A szolgáltatói katalógus böngészésre van. Nem lehet leszedni, eladni vagy újraközölni. A közösségi beküldéseket csapatunk moderálja — kérjük, csak olyan szolgáltatókat ajánljatok, akikkel ténylegesen dolgoztatok.",
+      "A szolgáltatói katalógus a nyílt béta alatt böngészésre ingyenes. Nem lehet leszedni (scraping), eladni vagy újraközölni — a katalógus szerkesztett gyűjtemény, és szerzői jogi védelem alatt áll. A béta lezárása után díjköteles modellt vezetünk be a szolgáltatók részére (előfizetés és/vagy kiemelt megjelenés), amelynek részleteit a Szolgáltatói előfizetési feltételek (ÁSZF) tartalmazzák — ez ma még tervezetként érhető el, és a végleges feltételek kihirdetése előtt minden, várólistán lévő szolgáltatónak külön e-mailt küldünk.",
+    liability_title: "Felelősség korlátozása",
+    liability_body:
+      "A Wēddly-t a béta alatt „ahogy van” („as is”) alapon biztosítjuk, ingyenesen, semmiféle kifejezett vagy hallgatólagos jótállás nélkül (különösen: meghatározott célra való alkalmasság, megszakításmentes működés, hibamentesség). A magyar jog által nem kizárható felelősségünket (szándékos károkozás, súlyos gondatlanság, élet, testi épség, egészség sérelméből eredő károk) nem korlátozzuk. Minden más kárfajta tekintetében — beleértve a közvetett, következményes, elmaradt haszon jellegű károkat — a felelősségünk a magyar jog által megengedett legszűkebb mértékre korlátozott. Fogyasztói minőségedben fennálló jogaidat (pl. szavatosság) ez a korlátozás nem érinti.",
+    termination_title: "A jogviszony megszűnése",
+    termination_body:
+      "A fiókodat bármikor törölheted a Profil oldalról; a teljes munkaterület 30 napos türelmi idő után véglegesen törlődik (ld. Adatvédelmi szabályzat). Mi pedig fenntartjuk a jogot, hogy a fenti elfogadható felhasználási szabályok lényeges megsértése, a szolgáltatás jogellenes vagy más felhasználókat veszélyeztető használata esetén a fiókot előzetes értesítéssel vagy — sürgős kockázat esetén — anélkül felfüggesszük vagy töröljük. A felfüggesztés indokát e-mailben közöljük, és — kivéve, ha jogszabály vagy hatósági kötelezés ezt megtiltja — méltányos időt biztosítunk az adatok kimentésére.",
+    changes_title: "A feltételek módosítása",
+    changes_body:
+      "Ezeket a feltételeket időről időre frissítjük. A kisebb, formai javításokat csendben átvezetjük. Lényeges változások (pl. új díj, új feldolgozó, a felelősségi körök szűkítése) esetén legalább 14 nappal a hatálybalépés előtt e-mailben értesítünk, és a regisztrációs felületen újra el kell fogadnod a frissített feltételeket — anélkül a szolgáltatás bizonyos részei nem maradnak elérhetők. A béta lezárásával együtt érkező átfogó újraírásról minden béta-felhasználónak külön levelet küldünk.",
     law_title: "Irányadó jog",
     law_body:
-      "Ezekre a feltételekre a magyar jog vonatkozik. Ha valamiben nem értenénk egyet, először e-mailben próbáljuk meg rendezni. Bírósági utat igénylő vita esetén a budapesti illetékes bíróság jár el.",
+      "Ezekre a feltételekre a magyar jog vonatkozik, az EU adatvédelmi és fogyasztóvédelmi rendeleteivel (különösen GDPR, DSA, EU 524/2013) együtt. Vita esetén először e-mailben próbáljuk meg rendezni a kérdést. Ha ez nem vezet eredményre, a Magyarország területén illetékes bíróság jár el; fogyasztói minőségedben fennálló joghatóság-választási jogodat ez a rendelkezés nem korlátozza.",
     contact_title: "Kérdés van?",
-    contact_body: "Írjatok a hello@weddly.xyz címre.",
+    contact_body: "Írjatok a hello@weddly.xyz vagy az andor.csikasz@gmail.com címre.",
+    en_section_label: "English",
+  },
+  subscription_terms: {
+    seo_title: "Szolgáltatói előfizetési feltételek (tervezet) — Wēddly",
+    seo_description:
+      "A Wēddly tervezetbeli szolgáltatói ÁSZF-je a béta után induló díjköteles modellhez — díjak, számlázás, elállás, garancia, magyar jog.",
+    page_title: "Szolgáltatói előfizetési feltételek (ÁSZF — tervezet)",
+    last_updated_label: "Tervezet dátuma",
+    last_updated_date: "2026-05-18",
+    intro:
+      "Ez a dokumentum a Wēddly szolgáltatói (vendor) előfizetésére vonatkozó Általános Szerződési Feltételek (ÁSZF) tervezete. Jelenleg nem hatályos: a nyílt béta alatt a katalógusbeli listázás díjmentes. A béta lezárása előtt magyar ügyvéddel véglegesíttetjük, minden szolgáltatónak külön e-mailben értesítést küldünk, és kifejezett, kattintásos elfogadásra van szükség, mielőtt bármilyen díj felszámításra kerülne. Az alábbi szöveg célja, hogy a tervezett feltételek ne legyenek meglepetésszerűek.",
+    scope_title: "A szerződés tárgya",
+    scope_body:
+      "A Wēddly üzemeltetője (Csíkász Andor / a béta lezárása után bejegyzett vállalkozási forma) az itt szabályozott feltételek mellett biztosítja az Előfizető számára: (a) megjelenést a Wēddly nyilvános szolgáltatói katalógusában, (b) profiloldalt, amelyen a szolgáltatás bemutatkozása, portfólió-linkek, kapcsolattartási adatok jeleníthetők meg, (c) az érdeklődő párok felé történő láthatóságot a kereső, kategória és helység szerinti szűrésekben, (d) a kiválasztott csomagtól függően kiemelt megjelenési lehetőségeket. A szerződés akkor jön létre, amikor az Előfizető elfogadja a véglegesített ÁSZF-et, és a fizetési tranzakció sikeresen lezárul.",
+    fees_title: "Díjak",
+    fees_body:
+      "A díjszabás a véglegesített csomagok szerint kerül kihirdetésre az ÁSZF lábjegyzetében, a hivatalos „Díjszabás” mellékletben. A béta-jelentkezők előzetes értesítést és lehetőséget kapnak arra, hogy bevezető áron (early-bird) szerződjenek. A díjszabás a hatálybalépéskor érvényes az új előfizetésekre; meglévő előfizetésen csak a következő számlázási cikluskor, legalább 30 napos előzetes értesítés után módosítható.",
+    billing_title: "Számlázás",
+    billing_body:
+      "A szolgáltatás havi vagy éves előre fizetéses ciklusban érhető el (az Előfizető választása szerint). A fizetést a Wēddly által kijelölt fizetési szolgáltatón (Stripe vagy hazai egyenértékű) keresztül lehet teljesíteni. A teljesítésről magyar elektronikus számlát állítunk ki a vonatkozó adójogszabályok (Áfa tv., Számv. tv.) szerint. Az Előfizető köteles biztosítani, hogy a számlázási adatok pontosak és naprakészek legyenek.",
+    vat_title: "ÁFA",
+    vat_body:
+      "Az ÁFA mértéke a magyar jog szerint érvényes mindenkori kulcs. Amennyiben a Wēddly üzemeltetője a hatálybalépéskor még nem ÁFA-alany (pl. KATA vagy alanyi adómentes kisvállalkozás), az ár ÁFA-mentesen kerül kiszámlázásra, és ennek tényét a számla feltünteti. ÁFA-bejegyzés esetén a kihirdetett árak nettó árak, amelyekre az ÁFA hozzáadódik.",
+    term_title: "Időtartam és felmondás",
+    term_body:
+      "Az előfizetés a választott számlázási ciklus végéig szól, és — ha azt az Előfizető a ciklus vége előtt legalább 24 órával nem mondja fel az alkalmazás vagy az ügyfélszolgálati e-mail útján — automatikusan megújul a következő ciklusra a megújuláskor érvényes díjszabás szerint. A folyamatban lévő ciklusra már megfizetett díj rendes felmondás esetén nem jár vissza (kivéve a lenti elállási jog gyakorlása esetén). A felmondás hatályosulásával a profilhoz kapcsolódó nyilvános megjelenés és a kiemelések megszűnnek, az alapadatok (kapcsolat, helység) a katalógus „régi szolgáltatók” szekciójában jelenhetnek meg, ha azt az Előfizető a felmondáskor kifejezetten kéri.",
+    withdrawal_title: "Elállási jog (Korm. r. 45/2014. — fogyasztó-jellegű előfizetők)",
+    withdrawal_body:
+      "Amennyiben az Előfizető a fogyasztókkal kötött szerződésekről szóló 45/2014. (II. 26.) Korm. rendelet szerinti fogyasztónak minősül (azaz természetes személy, aki nem szakmája, foglalkozása vagy üzleti tevékenysége körében jár el — pl. egyéni szolgáltatást nyújtó zenész, fodrász), az elektronikus úton kötött távollévők közötti szerződés alapján 14 napon belül indokolás nélküli elállási joggal élhet. Az elállási jog gyakorlására rendelkezésre álló határidő a szerződéskötés napjától számítódik, és az erre szolgáló mintanyilatkozat a dsa@weddly.xyz / hello@weddly.xyz címre küldve érvényesíthető. Ha az Előfizető kifejezetten kéri, hogy a szolgáltatás már az elállási határidőn belül megkezdődjön (azaz a profil láthatóvá váljon), tudomásul veszi, hogy az elállási jog gyakorlása esetén a már teljesített arányos szolgáltatás díját köteles megtéríteni a Wēddly részére, valamint hogy a szolgáltatás teljes teljesítése esetén az elállási jog megszűnik (Korm. r. 29. § (1) a) pont). Gazdasági társaság minőségben szerződő Előfizetőt (Kft., Bt., Zrt., illetve nem fogyasztói tevékenység körében szerződő egyéni vállalkozó) a fenti elállási jog NEM illeti meg.",
+    liability_title: "Felelősség",
+    liability_body:
+      "A Wēddly üzemeltetője a szolgáltatást a tőle elvárható gondossággal nyújtja, de nem szavatolja a megszakításmentes vagy hibamentes működést. A felelősség korlátozása megegyezik a Felhasználási feltételek „Felelősség” pontjában foglaltakkal: a jogszabály által nem kizárható felelősséget (szándékos károkozás, súlyos gondatlanság, élet/testi épség sérelméből eredő károk) nem korlátozzuk; minden más kárfajta tekintetében a felelősség az adott szerződéses évre az Előfizető által ténylegesen megfizetett díj összegére korlátozott. A katalógus megjelenéséből eredő üzleti várakozások (érdeklődők száma, foglalások) nem képezik az Üzemeltető szavatosságát.",
+    data_title: "Adatkezelés",
+    data_body:
+      "Az előfizetés keretében kezelt adatok (a cég vagy magánszemély szolgáltató bemutatkozó adatai, kapcsolattartási információi, portfólió-anyagok, számlázási adatok) kezelésére a Wēddly Adatvédelmi szabályzata az irányadó, az alábbi kiegészítésekkel: (a) a szolgáltató bemutatkozó és portfólió tartalmai nyilvánosan megjelennek a katalógusban; (b) a számlázási és könyvelési adatokat a magyar Számv. tv. 169. §-a alapján 8 évig megőrizzük; (c) a fizetési szolgáltató (Stripe vagy egyenértékű) önálló adatkezelőként jár el a kártyaadatok tekintetében — a Wēddly nem tárol kártyaadatot.",
+    changes_title: "Az ÁSZF módosítása",
+    changes_body:
+      "Az ÁSZF egyoldalú módosítására csak indokolt esetben (jogszabály-változás, díjszabás-módosítás, új funkció, biztonsági okok) kerülhet sor, és csak legalább 30 napos előzetes e-mailes értesítéssel. A módosítás hatályba lépéséig az Előfizető a szerződést díjmentesen felmondhatja. Ha az új ÁSZF érdemben szűkíti az Előfizető jogait, a módosítás csak az Előfizető kifejezett, kattintásos elfogadásával lép hatályba az ő szerződésére nézve.",
+    termination_title: "Az üzemeltető általi azonnali hatályú felmondás",
+    termination_body:
+      "Az Üzemeltető azonnali hatállyal jogosult a szerződést felmondani és a profilt eltávolítani, ha az Előfizető (a) súlyosan vagy ismétlődően megsérti a Felhasználási feltételeket vagy az ÁSZF-et (különösen: jogellenes vagy megtévesztő tartalom közzététele, mások jogainak ismétlődő sérelme), (b) a fizetési kötelezettségét emlékeztetést követő 14 napon belül sem teljesíti, (c) a Wēddly platformot illegálisan vagy más felhasználók biztonságát veszélyeztető módon használja. Az azonnali felmondás okát írásban közöljük, és — amennyiben az nem akadályozza a jogszerű érdekeink védelmét — méltányos időt biztosítunk az adatok kimentésére.",
+    governing_law_title: "Irányadó jog és joghatóság",
+    governing_law_body:
+      "Az ÁSZF-re a magyar jog (különösen a Polgári Törvénykönyv, a Számviteli törvény, az Áfa törvény és a Korm. r. 45/2014.) az irányadó, az EU vonatkozó rendeleteivel (GDPR, DSA, ePrivacy) együtt. Vita esetén a felek először e-mailes egyeztetést kísérelnek meg. Ha ez nem vezet eredményre, a vita eldöntésére a magyar bíróságok joghatósággal és illetékességgel rendelkeznek; fogyasztói minőségben szerződő Előfizetőt a lakóhelye szerinti törvényszék előtti perlés joga megilleti.",
+    odr_title: "Online vitarendezés (EU 524/2013)",
+    odr_body:
+      "Fogyasztói minőségben szerződő Előfizető online vitarendezést is kezdeményezhet az Európai Bizottság platformján: https://ec.europa.eu/consumers/odr. A platform a két fél megegyezésén alapuló alternatív vitarendezési eljárást támogat. Magyarországi fogyasztói panaszok továbbá a Pest Vármegyei Békéltető Testülethez nyújthatóak be (https://panaszrendezes.hu).",
+    contact_title: "Kapcsolat",
+    contact_body:
+      "A jelen tervezettel kapcsolatos kérdéseket, javaslatokat az andor.csikasz@gmail.com címre várjuk. A béta lezárása és az ÁSZF véglegesítése előtt minden várólistán lévő szolgáltatóval külön e-mailen vesszük fel a kapcsolatot.",
     en_section_label: "English",
   },
   imprint: {

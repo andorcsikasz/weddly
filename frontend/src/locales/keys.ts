@@ -617,6 +617,7 @@ export interface LocaleMessages {
     footer_legal_privacy: string;
     footer_legal_about: string;
     footer_legal_imprint: string;
+    footer_legal_subscription: string;
     /** Replaces the second vendor-direction link in the For-vendors footer
      *  column (the original `footer_vendors_about` also pointed at
      *  /vendors, creating a duplicate). Now links to /about. */
@@ -2861,14 +2862,54 @@ export interface LocaleMessages {
     data_categories_profile: string;
     data_categories_workspace: string;
     data_categories_analytics: string;
+    /** Article 6 GDPR — legal-basis-per-purpose breakdown. The four bullets
+     *  cover the bases Weddly actually relies on; we don't claim ones we
+     *  don't use (no public-interest task, no vital interest). */
+    legal_bases_title: string;
+    legal_bases_intro: string;
+    legal_bases_contract: string;
+    legal_bases_consent: string;
+    legal_bases_legitimate_interest: string;
+    legal_bases_legal_obligation: string;
+    /** Article 14 disclosure: guest data is provided by the couple, not by
+     *  the guest themselves. We need to tell guests how their data got here
+     *  even though they never registered with us. */
+    guest_data_title: string;
+    guest_data_body: string;
     retention_title: string;
     retention_body: string;
     rights_title: string;
     rights_intro: string;
     rights_access: string;
+    rights_rectification: string;
     rights_deletion: string;
     rights_portability: string;
+    rights_objection: string;
+    rights_restriction: string;
+    rights_withdrawal: string;
     rights_contact: string;
+    /** Article 32 — technical and organisational security measures. Short
+     *  factual list, not a marketing claim. */
+    security_title: string;
+    security_body: string;
+    /** Article 8 — children's data. Weddly is not aimed at under-16s; guest
+     *  lists may include minors entered by the couple. */
+    children_title: string;
+    children_body: string;
+    /** Chapter V — international transfers. Railway is US-hosted, so
+     *  Schrems II requires us to name the transfer mechanism (EU-US Data
+     *  Privacy Framework + SCCs). */
+    transfers_title: string;
+    transfers_body: string;
+    /** Article 28 — processors / subprocessors. One bullet per provider. */
+    subprocessors_title: string;
+    subprocessors_intro: string;
+    subprocessors_railway: string;
+    subprocessors_resend: string;
+    subprocessors_amadeus: string;
+    subprocessors_osm: string;
+    subprocessors_pinterest: string;
+    subprocessors_sentry: string;
     cookies_title: string;
     cookies_intro: string;
     cookies_locale: string;
@@ -2878,6 +2919,19 @@ export interface LocaleMessages {
     cookies_onboarding_draft: string;
     third_parties_title: string;
     third_parties_body: string;
+    /** Hungarian Grtv. §6 (Act XLVIII of 2008) + EU ePrivacy — electronic
+     *  direct marketing requires prior opt-in. Spelling out which mail
+     *  types we send under which legal basis. */
+    email_compliance_title: string;
+    email_compliance_body: string;
+    /** Article 22 — automated decision-making. We don't do any; saying so
+     *  pre-empts the question. */
+    automated_decisions_title: string;
+    automated_decisions_body: string;
+    /** Article 77 — right to lodge a complaint with a supervisory
+     *  authority (NAIH for Hungary). */
+    complaint_authority_title: string;
+    complaint_authority_body: string;
     changes_title: string;
     changes_body: string;
     contact_title: string;
@@ -2897,10 +2951,83 @@ export interface LocaleMessages {
     beta_body: string;
     accuracy_title: string;
     accuracy_body: string;
+    /** Acceptable-use clause — what you may not do with the service.
+     *  Stays short and concrete. */
+    acceptable_use_title: string;
+    acceptable_use_intro: string;
+    acceptable_use_prohibited_illegal: string;
+    acceptable_use_prohibited_infringing: string;
+    acceptable_use_prohibited_hateful: string;
+    acceptable_use_prohibited_security: string;
+    acceptable_use_prohibited_spam: string;
+    /** User-generated content — community supplier submissions, moodboard
+     *  pin URLs, feedback, vendor waitlist content. Need a license grant
+     *  + warranty so we can lawfully display it. */
+    ugc_title: string;
+    ugc_license_body: string;
+    ugc_warranty_body: string;
+    /** EU Digital Services Act (Regulation 2022/2065) notice & action
+     *  procedure + designated contact for authorities and users. Applies
+     *  to all hosting services regardless of size. */
+    dsa_title: string;
+    dsa_body: string;
+    dsa_contact: string;
     directory_title: string;
     directory_body: string;
+    /** Liability limitation appropriate for a free beta. */
+    liability_title: string;
+    liability_body: string;
+    /** Grounds + procedure for either side ending the relationship. */
+    termination_title: string;
+    termination_body: string;
+    /** How we change these terms going forward (notice, re-acceptance for
+     *  material changes). */
+    changes_title: string;
+    changes_body: string;
     law_title: string;
     law_body: string;
+    contact_title: string;
+    contact_body: string;
+    en_section_label: string;
+  };
+  /** /terms/vendor-subscription — DRAFT ÁSZF for the future paid vendor
+   *  tier. Lawyer-review pending; rendered with the legal `draft_banner`.
+   *  Linked from the /vendors page so the disclosure is one click from
+   *  every waitlist signup. */
+  subscription_terms: {
+    seo_title: string;
+    seo_description: string;
+    page_title: string;
+    last_updated_label: string;
+    last_updated_date: string;
+    intro: string;
+    scope_title: string;
+    scope_body: string;
+    fees_title: string;
+    fees_body: string;
+    billing_title: string;
+    billing_body: string;
+    vat_title: string;
+    vat_body: string;
+    term_title: string;
+    term_body: string;
+    /** Korm. rendelet 45/2014. (II. 26.) — 14-day withdrawal right for
+     *  consumer-type subscribers + the immediate-start waiver clause. */
+    withdrawal_title: string;
+    withdrawal_body: string;
+    liability_title: string;
+    liability_body: string;
+    data_title: string;
+    data_body: string;
+    changes_title: string;
+    changes_body: string;
+    termination_title: string;
+    termination_body: string;
+    governing_law_title: string;
+    governing_law_body: string;
+    /** EU 524/2013 — link to the online dispute resolution platform. */
+    odr_title: string;
+    odr_body: string;
     contact_title: string;
     contact_body: string;
     en_section_label: string;

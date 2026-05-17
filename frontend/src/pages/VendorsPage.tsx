@@ -397,6 +397,14 @@ function WaitlistContact() {
               {t("vendors.beta_notice_title")}
             </p>
             <p className="mt-1 leading-relaxed">{t("vendors.beta_notice_body")}</p>
+            <p className="mt-2 leading-relaxed">
+              <Link
+                to="/terms/vendor-subscription"
+                className="underline hover:text-ink-900 dark:hover:text-paper-50"
+              >
+                {t("landing.footer_legal_subscription")}
+              </Link>
+            </p>
           </div>
         </div>
 

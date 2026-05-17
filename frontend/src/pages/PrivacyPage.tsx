@@ -169,6 +169,18 @@ function PrivacyBodyForLocale({
         <li>{strings.data_categories_analytics}</li>
       </ul>
 
+      <H2>{strings.legal_bases_title}</H2>
+      <p>{strings.legal_bases_intro}</p>
+      <ul className="ml-5 list-disc space-y-2">
+        <li>{strings.legal_bases_contract}</li>
+        <li>{strings.legal_bases_consent}</li>
+        <li>{strings.legal_bases_legitimate_interest}</li>
+        <li>{strings.legal_bases_legal_obligation}</li>
+      </ul>
+
+      <H2>{strings.guest_data_title}</H2>
+      <p>{strings.guest_data_body}</p>
+
       <H2>{strings.retention_title}</H2>
       <p>{strings.retention_body}</p>
 
@@ -176,9 +188,33 @@ function PrivacyBodyForLocale({
       <p>{strings.rights_intro}</p>
       <ul className="ml-5 list-disc space-y-2">
         <li>{strings.rights_access}</li>
+        <li>{strings.rights_rectification}</li>
         <li>{strings.rights_deletion}</li>
         <li>{strings.rights_portability}</li>
+        <li>{strings.rights_objection}</li>
+        <li>{strings.rights_restriction}</li>
+        <li>{strings.rights_withdrawal}</li>
         <li>{strings.rights_contact}</li>
+      </ul>
+
+      <H2>{strings.security_title}</H2>
+      <p>{strings.security_body}</p>
+
+      <H2>{strings.children_title}</H2>
+      <p>{strings.children_body}</p>
+
+      <H2>{strings.transfers_title}</H2>
+      <p>{strings.transfers_body}</p>
+
+      <H2>{strings.subprocessors_title}</H2>
+      <p>{strings.subprocessors_intro}</p>
+      <ul className="ml-5 list-disc space-y-2">
+        <li>{strings.subprocessors_railway}</li>
+        <li>{strings.subprocessors_resend}</li>
+        <li>{strings.subprocessors_amadeus}</li>
+        <li>{strings.subprocessors_osm}</li>
+        <li>{strings.subprocessors_pinterest}</li>
+        <li>{strings.subprocessors_sentry}</li>
       </ul>
 
       <H2>{strings.cookies_title}</H2>
@@ -193,6 +229,15 @@ function PrivacyBodyForLocale({
 
       <H2>{strings.third_parties_title}</H2>
       <p>{strings.third_parties_body}</p>
+
+      <H2>{strings.email_compliance_title}</H2>
+      <p>{strings.email_compliance_body}</p>
+
+      <H2>{strings.automated_decisions_title}</H2>
+      <p>{strings.automated_decisions_body}</p>
+
+      <H2>{strings.complaint_authority_title}</H2>
+      <p>{strings.complaint_authority_body}</p>
 
       <H2>{strings.changes_title}</H2>
       <p>{strings.changes_body}</p>
