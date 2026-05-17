@@ -510,7 +510,7 @@ async function runExplore(
       break;
     }
     case "guest-csv-export": {
-      const r = await req("GET", "/api/guests/export.csv", undefined, token);
+      const r = await req("GET", "/api/guests/csv", undefined, token);
       if (r.status >= 400) record(tag, "explore:guest-csv-export", r);
       break;
     }

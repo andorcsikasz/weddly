@@ -128,18 +128,31 @@ function handleList(ctx: Ctx): Response {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
-  // Optional search + pagination. Frontend can opt in incrementally — when
-  // none of these are provided, the response is identical to v1 (full list).
+  // Optional search + pagination + group-tag filter. Frontend can opt in
+  // incrementally — when none of these are provided, the response is
+  // identical to v1 (full list).
   const q = (ctx.url.searchParams.get("q") ?? "").trim().toLowerCase();
   const limitRaw = ctx.url.searchParams.get("limit");
   const offsetRaw = ctx.url.searchParams.get("offset");
+  const groupTagRaw = ctx.url.searchParams.get("group_tag");
   const limit =
     limitRaw === null || limitRaw === "" ? null : Math.max(1, Math.min(1000, Number(limitRaw)));
   const offset = offsetRaw === null || offsetRaw === "" ? 0 : Math.max(0, Number(offsetRaw));
   if (limit !== null && !Number.isFinite(limit)) throw new HttpError(400, "limit invalid");
   if (!Number.isFinite(offset)) throw new HttpError(400, "offset invalid");
+  // Unknown group_tag → 400 rather than silently returning everything (which
+  // looks like the filter worked but didn't, the bug a 100-persona betatest
+  // pass surfaced as "query param ignored").
+  let groupTag: GuestGroupTag | null = null;
+  if (groupTagRaw !== null && groupTagRaw !== "") {
+    if (!isGuestGroupTag(groupTagRaw)) throw new HttpError(400, "group_tag invalid");
+    groupTag = groupTagRaw;
+  }
 
   let all = listGuestsByCouple(couple.id);
+  if (groupTag !== null) {
+    all = all.filter((g) => g.group_tag === groupTag);
+  }
   if (q) {
     all = all.filter((g) => {
       const name = g.full_name.toLowerCase();
@@ -152,7 +165,7 @@ function handleList(ctx: Ctx): Response {
   if (limit !== null || offset > 0) {
     guests = all.slice(offset, limit === null ? undefined : offset + limit);
   }
-  if (q || limit !== null || offset > 0) {
+  if (q || groupTag !== null || limit !== null || offset > 0) {
     return json({ guests, total });
   }
   return json({ guests });
@@ -401,6 +414,100 @@ function handleDelete(ctx: Ctx): Response {
     before: { full_name: existing.full_name },
   });
   return json({ ok: true });
+}
+
+const BULK_MAX = 200;
+
+interface BulkBody {
+  guests?: unknown;
+}
+
+/** Paste-and-go: create up to BULK_MAX guests in a single round-trip. Each
+ *  row goes through the same parseUpsert + auto-household path as the single
+ *  POST. The whole batch is wrapped in one transaction so an invalid row
+ *  rolls back the entire request — paste-flow UX never wants a half-inserted
+ *  list with no obvious place to fix the bad row. */
+async function handleBulkCreate(ctx: Ctx): Promise<Response> {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const body = await readJson<BulkBody>(ctx.req);
+  if (!Array.isArray(body.guests)) throw new HttpError(400, "guests array required");
+  if (body.guests.length === 0) throw new HttpError(400, "guests array is empty");
+  if (body.guests.length > BULK_MAX) {
+    throw new HttpError(400, `bulk limit is ${BULK_MAX} guests per request`);
+  }
+
+  // Pre-parse every row OUTSIDE the transaction so an early bad row throws
+  // before any DB work. Errors include the 1-based row index so the UI can
+  // highlight the offending line in the paste field.
+  const parsed: Array<{ parsed: ParsedGuest; body: UpsertBody }> = [];
+  for (let i = 0; i < body.guests.length; i++) {
+    const row = body.guests[i];
+    if (!row || typeof row !== "object") {
+      throw new HttpError(400, `row ${i + 1}: must be an object`);
+    }
+    try {
+      parsed.push({ parsed: parseUpsert(row as UpsertBody), body: row as UpsertBody });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new HttpError(400, `row ${i + 1}: ${msg}`);
+    }
+  }
+
+  const createdIds = db.transaction((): number[] => {
+    const ts = now();
+    const ids: number[] = [];
+    const insert = db.prepare(
+      `INSERT INTO guests
+        (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
+         meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
+         song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
+         created_at, updated_at, household_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?, ?)`,
+    );
+    for (const { parsed: p, body: b } of parsed) {
+      const household = resolveHouseholdForCreate(b, couple.id, p.full_name, p.group_tag);
+      p.group_tag = household.group_tag;
+      const result = insert.run(
+        couple.id,
+        p.full_name,
+        p.email,
+        p.phone,
+        p.group_tag,
+        uniqueInviteCode(),
+        p.kind,
+        p.rsvp_status,
+        p.meal_choice,
+        p.dietary,
+        p.plus_one_name,
+        p.plus_one_meal,
+        p.accommodation_needed,
+        p.song_request,
+        p.notes,
+        ts,
+        ts,
+        household.id,
+      );
+      ids.push(Number(result.lastInsertRowid));
+    }
+    // Single bundled audit entry per request — saves the audit table from
+    // ballooning on a paste of 200 names while still giving the activity log
+    // something to point at.
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "guest.bulk_create",
+      target_kind: "guest",
+      target_id: ids[0] ?? 0,
+      after: { count: ids.length },
+    });
+    return ids;
+  })();
+
+  const guests = createdIds.map((id) => toGuest(getGuestByIdScoped(id, couple.id) as GuestRow));
+  return json({ guests }, { status: 201 });
 }
 
 interface ImportBody {
@@ -717,6 +824,9 @@ export function registerGuestRoutes(router: Router) {
   // literal path "dietary-summary" doesn't get captured by /api/guests/:id.
   router.get("/api/guests/dietary-summary", handleDietarySummary, true);
   router.post("/api/guests", handleCreate, true);
+  // Bulk endpoint MUST be registered before the :id-parameterised routes so
+  // the literal "bulk" segment doesn't get captured as an id.
+  router.post("/api/guests/bulk", handleBulkCreate, true);
   router.patch("/api/guests/:id", handleUpdate, true);
   router.delete("/api/guests/:id", handleDelete, true);
   router.post("/api/guests/import", handleImportCsv, true);
