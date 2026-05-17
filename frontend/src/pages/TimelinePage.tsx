@@ -289,8 +289,6 @@ export default function TimelinePage() {
           <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("timeline.sub")}</p>
         </header>
 
-        <PocCard items={pocList} loading={loading} locale={locale} />
-
         <ChartCard
           loading={loading}
           tasks={datedTasks}
@@ -311,6 +309,8 @@ export default function TimelinePage() {
           hasAnyTasks={tasks.length > 0}
           onOpenTask={(item) => setEditing(item)}
         />
+
+        <PocCard items={pocList} loading={loading} locale={locale} />
       </div>
 
       {editing && (
