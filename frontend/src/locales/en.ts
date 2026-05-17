@@ -62,6 +62,9 @@ const en: LocaleMessages = {
     admin_feedback_title: "Admin · Feedback — Weddly",
     admin_feedback_description:
       "Triage Feedback dialog submissions from the landing page and in-app surfaces.",
+    admin_analytics_title: "Admin · Analytics — Weddly",
+    admin_analytics_description:
+      "Aggregate money, activity, and supplier-pick views from the Weddly admin console.",
     notfound_title: "Page not found — Weddly",
     notfound_description: "This link no longer exists, or there was a typo.",
     onboarding_title: "Get started — Weddly",
@@ -1859,6 +1862,7 @@ const en: LocaleMessages = {
     nav_users: "Users",
     nav_waitlist: "Vendor waitlist",
     nav_taxonomy: "Categories",
+    nav_analytics: "Analytics",
     taxonomy_title: "Supplier categories",
     taxonomy_sub:
       "Groups and categories that drive the supplier directory. Changes take effect immediately on /app/suppliers.",
@@ -2191,6 +2195,72 @@ const en: LocaleMessages = {
     feedback_delete_confirm_body: "Permanent — the audit log keeps the trace.",
     feedback_anon: "Anonymous",
     feedback_no_message: "(no message)",
+    analytics_title: "Analytics",
+    analytics_sub: "Read-only rollups across three lenses: money, activity, and supplier picks.",
+    analytics_retry: "Retry",
+    analytics_load_error: "Could not load analytics.",
+    analytics_section_money: "Money",
+    analytics_section_activity: "Activity",
+    analytics_section_picks: "Picks",
+    analytics_money_couples_with_budget: "Couples with a budget",
+    analytics_money_couples_with_actuals: "Couples logging actuals",
+    analytics_money_avg_budget: "Avg budget ceiling",
+    analytics_money_avg_planned: "Avg planned spend",
+    analytics_money_avg_actual: "Avg actual spend",
+    analytics_money_sub_distribution: "Median {median} · range {p25}–{p75}",
+    analytics_money_per_category_title: "Per category",
+    analytics_money_col_category: "Category",
+    analytics_money_col_avg_planned: "Avg planned",
+    analytics_money_col_avg_actual: "Avg actual",
+    analytics_money_col_couples_with_data: "Couples",
+    analytics_money_histogram_title: "Budget distribution",
+    analytics_money_histogram_no_budget: "No budget",
+    analytics_money_histogram_bucket_upper: "up to {max}",
+    analytics_activity_signups_7d: "Signups (7d)",
+    analytics_activity_active_users_7d: "Active users (7d)",
+    analytics_activity_pct_onboarded: "Onboarded rate",
+    analytics_activity_signups_sub: "All time {total}",
+    analytics_activity_active_users_sub: "Last 24h {n}",
+    analytics_activity_pct_onboarded_sub: "{onboarded} couples / {registered} signups",
+    analytics_activity_signups_daily_title: "Daily signups (14d)",
+    analytics_activity_signups_daily_sub: "Bucketed by UTC day",
+    analytics_activity_funnel_title: "Onboarding funnel",
+    analytics_activity_funnel_registered: "Registered",
+    analytics_activity_funnel_verified: "Email verified",
+    analytics_activity_funnel_onboarded: "Workspace created",
+    analytics_activity_status_title: "Couples by status",
+    analytics_activity_status_active: "Active",
+    analytics_activity_status_paused: "Paused",
+    analytics_activity_status_deleting: "Deleting",
+    analytics_activity_status_archived: "Archived",
+    analytics_activity_top_actions_title: "Top audit actions (30d)",
+    analytics_activity_col_action: "Action",
+    analytics_activity_col_count: "Count",
+    analytics_picks_total: "Total picks",
+    analytics_picks_median_per_couple: "Median picks per couple",
+    analytics_picks_total_sub: "Avg per couple {avg}",
+    analytics_picks_median_sub: "p25 {p25} · p75 {p75}",
+    analytics_picks_top_title: "Most-picked suppliers",
+    analytics_picks_col_supplier: "Supplier",
+    analytics_picks_col_category: "Category",
+    analytics_picks_col_pick_count: "Picks",
+    analytics_picks_col_source: "Source",
+    analytics_picks_coverage_title: "Category coverage",
+    analytics_picks_col_picked: "Picked",
+    analytics_picks_col_missing: "Missing",
+    analytics_picks_col_coverage_pct: "Coverage",
+    analytics_picks_source_breakdown_title: "Source breakdown",
+    analytics_source_curated: "Curated",
+    analytics_source_community: "Community",
+    analytics_source_diy: "DIY",
+    analytics_money_empty: "No couple has set a budget yet.",
+    analytics_money_per_category_empty: "No per-category data yet.",
+    analytics_money_histogram_empty: "No distribution data.",
+    analytics_activity_signups_empty: "No signups yet.",
+    analytics_activity_top_actions_empty: "No audit events in the last 30 days.",
+    analytics_picks_empty: "No couple has picked a supplier yet.",
+    analytics_picks_top_empty: "No picked suppliers yet.",
+    analytics_picks_coverage_empty: "No coverage data.",
   },
   rsvp: {
     title: "Wedding RSVP",
@@ -2596,9 +2666,9 @@ const en: LocaleMessages = {
     legal_bases_contract:
       "Performance of a contract (Art. 6(1)(b)) — creating and maintaining your account, storing the wedding data you enter, and sending transactional emails (verification, password reset, invites). Without these the service can't function.",
     legal_bases_consent:
-      "Consent (Art. 6(1)(a)) — any time you tick an explicit \"I accept\" checkbox. Two cases today: accepting the privacy policy at registration, and acknowledging the privacy + future-pricing notice when joining the vendor waitlist. You can withdraw consent at any time using the same email address you registered with.",
+      'Consent (Art. 6(1)(a)) — any time you tick an explicit "I accept" checkbox. Two cases today: accepting the privacy policy at registration, and acknowledging the privacy + future-pricing notice when joining the vendor waitlist. You can withdraw consent at any time using the same email address you registered with.',
     legal_bases_legitimate_interest:
-      "Legitimate interest (Art. 6(1)(f)) — anti-abuse and anti-spam measures (IP-based rate limiting, the audit log), and service-related lifecycle messages (e.g. \"your wedding is in 30 days\") which you can opt out of at any time. Our interest is always balanced against your fundamental rights.",
+      'Legitimate interest (Art. 6(1)(f)) — anti-abuse and anti-spam measures (IP-based rate limiting, the audit log), and service-related lifecycle messages (e.g. "your wedding is in 30 days") which you can opt out of at any time. Our interest is always balanced against your fundamental rights.',
     legal_bases_legal_obligation:
       "Legal obligation (Art. 6(1)(c)) — the audit log and any disclosure to authorities may be required by law (e.g. criminal procedure). Once we leave beta and start invoicing, the Hungarian Accounting Act's retention obligation (§169) will also fall under this basis (8 years).",
     guest_data_title: "Guest and third-party data (GDPR Art. 14)",
@@ -2631,7 +2701,7 @@ const en: LocaleMessages = {
       "We never see your password: it's hashed with Argon2id before storage, so even a database breach wouldn't expose it. Session identifiers are random, signed opaque tokens (not JWTs) — they can be revoked server-side and are verified with HMAC-SHA256. All network traffic is TLS-encrypted (terminated at the Railway edge). The database is SQLite mounted on a persistent volume; the hosting provider is responsible for the physical security of that volume. We keep an append-only audit log of all significant operations (never updated or deleted).",
     children_title: "Children's data (GDPR Art. 8)",
     children_body:
-      "Weddly is not aimed at users under 16; minors cannot register with us directly. If a couple adds children to their guest list, their data is handled under Art. 14 (see \"Guest data\" above), with the same deletion and rectification rights. If you believe we are processing the data of someone under 16 without a lawful basis, email hello@weddly.xyz and we will act without delay.",
+      'Weddly is not aimed at users under 16; minors cannot register with us directly. If a couple adds children to their guest list, their data is handled under Art. 14 (see "Guest data" above), with the same deletion and rectification rights. If you believe we are processing the data of someone under 16 without a lawful basis, email hello@weddly.xyz and we will act without delay.',
     transfers_title: "Transfers outside the EEA (GDPR Chapter V)",
     transfers_body:
       "The service runs on infrastructure provided by Railway Corp. (United States), so a portion of your data is stored on US servers. Following Schrems II (Case C-311/18), EU→US transfers are made under the EU-US Data Privacy Framework (2023 adequacy decision) and, as a supplementary safeguard, the Standard Contractual Clauses (2021/914). Railway is on the DPF certified-organisations list. For transactional email, Resend (US) likewise receives the recipient address and message body under DPF/SCC.",
@@ -2664,7 +2734,7 @@ const en: LocaleMessages = {
       "weddly.onboarding_draft — saves your onboarding answers between steps so a refresh doesn't lose them.",
     third_parties_title: "Third parties we share data with",
     third_parties_body:
-      "The full list is in the \"Subprocessors\" section above. We do not share your data with advertisers, data brokers or social platforms.",
+      'The full list is in the "Subprocessors" section above. We do not share your data with advertisers, data brokers or social platforms.',
     email_compliance_title: "Email communications (Hungarian Grtv. §6, ePrivacy)",
     email_compliance_body:
       "We send two kinds of email. (1) Transactional: account verification, password reset, partner invite, email-change confirmation, RSVP receipts to guests, and reminders about your own upcoming wedding — sent under the contract-performance basis (Art. 6(1)(b) GDPR) and not unsubscribable while your account is active. (2) Lifecycle / product newsletter: currently none during the beta. If we introduce them later (e.g. feature announcements, tips), they will only go to recipients who explicitly opt in, in compliance with §6 of the Hungarian Grtv. Every such email will carry a one-click unsubscribe link. The sender is always identifiable (operator name + link to the imprint in the footer).",
@@ -2703,8 +2773,7 @@ const en: LocaleMessages = {
       "Uploading unlawful content (fraud, advertising illegal services, content that harms minors, etc.).",
     acceptable_use_prohibited_infringing:
       "Posting content you don't have the rights to (other people's wedding photos, third-party trademarks, plagiarised descriptions).",
-    acceptable_use_prohibited_hateful:
-      "Hate speech, harassment, threats, defamation.",
+    acceptable_use_prohibited_hateful: "Hate speech, harassment, threats, defamation.",
     acceptable_use_prohibited_security:
       "Actions that threaten the security, availability or integrity of the service (scraping, brute-force, bypassing rate limits, exploiting vulnerabilities).",
     acceptable_use_prohibited_spam:
@@ -2724,7 +2793,7 @@ const en: LocaleMessages = {
       "The supplier directory is free to browse during the open beta. You may not scrape, resell or republish it — it is a curated collection protected by copyright. After the beta ends we will introduce a paid model for suppliers (subscription and/or featured placement); the detailed terms are set out in the Vendor Subscription Terms (ÁSZF), which are currently published as a draft. Before any fees take effect, every waitlisted supplier will receive a dedicated email with the final terms.",
     liability_title: "Limitation of liability",
     liability_body:
-      "Weddly is provided during the beta on an \"as is\" basis, free of charge, without any express or implied warranty (in particular: fitness for a particular purpose, uninterrupted operation, error-free behaviour). We do not limit liability that cannot be excluded under Hungarian law (intentional acts, gross negligence, harm to life, bodily integrity or health). For every other type of damage — including indirect, consequential and loss-of-profit damages — our liability is limited to the narrowest extent permitted by Hungarian law. Your statutory rights as a consumer (e.g. warranty rights) are not affected by this limitation.",
+      'Weddly is provided during the beta on an "as is" basis, free of charge, without any express or implied warranty (in particular: fitness for a particular purpose, uninterrupted operation, error-free behaviour). We do not limit liability that cannot be excluded under Hungarian law (intentional acts, gross negligence, harm to life, bodily integrity or health). For every other type of damage — including indirect, consequential and loss-of-profit damages — our liability is limited to the narrowest extent permitted by Hungarian law. Your statutory rights as a consumer (e.g. warranty rights) are not affected by this limitation.',
     termination_title: "Ending the relationship",
     termination_body:
       "You can delete your account at any time from the Profile page; the workspace is permanently deleted after a 30-day grace period (see the Privacy Policy). We may suspend or terminate an account if it materially breaches the acceptable-use rules above, or is used unlawfully or in a way that endangers other users. We tell you the reason by email and — unless a legal or regulatory obligation prevents it — give you reasonable time to export your data.",
@@ -2752,7 +2821,7 @@ const en: LocaleMessages = {
       "The operator of Weddly (Andor Csíkász / the legal entity registered after the beta ends) provides the Subscriber, under the terms set out here, with: (a) a listing in Weddly's public supplier directory, (b) a profile page with an introduction, portfolio links and contact details, (c) visibility to interested couples in search, category and location filters, (d) optional featured placements depending on the selected plan. The contract comes into existence when the Subscriber accepts the finalised ÁSZF and the payment transaction is successfully completed.",
     fees_title: "Fees",
     fees_body:
-      "The price list will be published as a separate \"Pricing\" annex to the finalised ÁSZF. Beta waitlist applicants receive prior notice and the option to subscribe at an early-bird rate. Pricing in effect at the start of the term applies to new subscriptions; existing subscriptions may only be repriced for the next billing cycle with at least 30 days' notice.",
+      'The price list will be published as a separate "Pricing" annex to the finalised ÁSZF. Beta waitlist applicants receive prior notice and the option to subscribe at an early-bird rate. Pricing in effect at the start of the term applies to new subscriptions; existing subscriptions may only be repriced for the next billing cycle with at least 30 days\' notice.',
     billing_title: "Billing",
     billing_body:
       "The service is offered in monthly or annual prepaid cycles (Subscriber's choice). Payment is taken via Weddly's designated payment provider (Stripe or a Hungarian equivalent). For each transaction we issue a Hungarian electronic invoice in accordance with applicable tax law (Áfa Act, Accounting Act). The Subscriber is responsible for keeping billing details accurate and up to date.",
@@ -2761,13 +2830,13 @@ const en: LocaleMessages = {
       "VAT applies at the rate prescribed by Hungarian law from time to time. If the operator is not a VAT-registered taxpayer when the contract takes effect (e.g. KATA, small-business exemption), prices are invoiced VAT-free and the invoice indicates this. If VAT-registered, the published prices are net prices to which VAT is added.",
     term_title: "Term and termination",
     term_body:
-      "The subscription runs until the end of the chosen billing cycle and — unless the Subscriber cancels at least 24 hours before the end of the cycle, in-app or via the support email — it renews automatically for the next cycle at the price in effect on renewal. Fees already paid for the running cycle are not refunded on ordinary cancellation (except where the withdrawal right below applies). Once cancellation takes effect, the public listing and any featured placements end; basic info (contact, location) may continue to appear in the directory's \"former vendors\" section only if the Subscriber explicitly requests it at the time of cancellation.",
+      'The subscription runs until the end of the chosen billing cycle and — unless the Subscriber cancels at least 24 hours before the end of the cycle, in-app or via the support email — it renews automatically for the next cycle at the price in effect on renewal. Fees already paid for the running cycle are not refunded on ordinary cancellation (except where the withdrawal right below applies). Once cancellation takes effect, the public listing and any featured placements end; basic info (contact, location) may continue to appear in the directory\'s "former vendors" section only if the Subscriber explicitly requests it at the time of cancellation.',
     withdrawal_title: "Right of withdrawal (Gov. Decree 45/2014 — consumer-type subscribers)",
     withdrawal_body:
       "Where the Subscriber qualifies as a consumer under Government Decree 45/2014. (II. 26.) on distance contracts (i.e. a natural person not acting in the course of a trade, business or profession — e.g. an individual musician or hairdresser running their own service), the Subscriber may withdraw from the contract without giving a reason within 14 days. The period runs from the day the contract is concluded; the model declaration can be sent to dsa@weddly.xyz / hello@weddly.xyz. If the Subscriber expressly requests that the service start during the withdrawal period (i.e. the profile become visible), they acknowledge that on exercising the right they must reimburse Weddly for the proportionate cost of performance already rendered, and that once the service has been fully performed the right of withdrawal is lost (Decree §29(1)(a)). Subscribers contracting in a business capacity (Kft., Bt., Zrt., or a sole proprietor acting in their business activity) do NOT enjoy this withdrawal right.",
     liability_title: "Liability",
     liability_body:
-      "The operator provides the service with the diligence reasonably expected of it but does not warrant uninterrupted or error-free operation. The liability limit mirrors the \"Limitation of liability\" section of the Terms of Service: we do not exclude liability that cannot be excluded by law (intentional acts, gross negligence, harm to life, bodily integrity or health); for every other type of damage, our liability is capped at the fees actually paid by the Subscriber for the contract year in question. Business outcomes derived from directory visibility (number of leads, bookings) are not warranted by the operator.",
+      'The operator provides the service with the diligence reasonably expected of it but does not warrant uninterrupted or error-free operation. The liability limit mirrors the "Limitation of liability" section of the Terms of Service: we do not exclude liability that cannot be excluded by law (intentional acts, gross negligence, harm to life, bodily integrity or health); for every other type of damage, our liability is capped at the fees actually paid by the Subscriber for the contract year in question. Business outcomes derived from directory visibility (number of leads, bookings) are not warranted by the operator.',
     data_title: "Data processing",
     data_body:
       "Personal data processed under the subscription (the vendor's introduction, contact details, portfolio materials, billing data) is governed by Weddly's Privacy Policy, with these additions: (a) the vendor's introduction and portfolio content are displayed publicly in the directory; (b) billing and accounting records are retained for 8 years under §169 of the Hungarian Accounting Act; (c) the payment provider (Stripe or equivalent) acts as an independent controller for card data — Weddly does not store card numbers.",

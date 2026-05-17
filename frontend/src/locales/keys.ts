@@ -51,6 +51,8 @@ export interface LocaleMessages {
     admin_suppliers_description: string;
     admin_feedback_title: string;
     admin_feedback_description: string;
+    admin_analytics_title: string;
+    admin_analytics_description: string;
     notfound_title: string;
     notfound_description: string;
     onboarding_title: string;
@@ -2026,6 +2028,8 @@ export interface LocaleMessages {
     nav_users: string;
     nav_waitlist: string;
     nav_taxonomy: string;
+    /** Read-only analytics dashboard — money, activity, picks rollups. */
+    nav_analytics: string;
     /** /app/admin/categories page — supplier groups + categories CRUD. */
     taxonomy_title: string;
     taxonomy_sub: string;
@@ -2381,6 +2385,93 @@ export interface LocaleMessages {
     feedback_delete_confirm_body: string;
     feedback_anon: string;
     feedback_no_message: string;
+    /** /app/admin/analytics page — three orthogonal rollups (money,
+     *  activity, picks) rendered as KPI tiles + tables + CSS bar charts.
+     *  Read-only — no actions, no per-row drilldown. */
+    analytics_title: string;
+    analytics_sub: string;
+    analytics_retry: string;
+    analytics_load_error: string;
+    /** Section headers — three `<section className="card">` blocks. */
+    analytics_section_money: string;
+    analytics_section_activity: string;
+    analytics_section_picks: string;
+    /** Money KPI tiles + sub-line. */
+    analytics_money_couples_with_budget: string;
+    analytics_money_couples_with_actuals: string;
+    analytics_money_avg_budget: string;
+    analytics_money_avg_planned: string;
+    analytics_money_avg_actual: string;
+    /** "median X · range Y–Z" sub-line under each KPI. */
+    analytics_money_sub_distribution: string;
+    /** Per-category table. */
+    analytics_money_per_category_title: string;
+    analytics_money_col_category: string;
+    analytics_money_col_avg_planned: string;
+    analytics_money_col_avg_actual: string;
+    analytics_money_col_couples_with_data: string;
+    /** Budget histogram chart. */
+    analytics_money_histogram_title: string;
+    analytics_money_histogram_no_budget: string;
+    analytics_money_histogram_bucket_upper: string;
+    /** Activity KPIs. */
+    analytics_activity_signups_7d: string;
+    analytics_activity_active_users_7d: string;
+    analytics_activity_pct_onboarded: string;
+    analytics_activity_signups_sub: string;
+    analytics_activity_active_users_sub: string;
+    analytics_activity_pct_onboarded_sub: string;
+    /** Daily signups bar chart. */
+    analytics_activity_signups_daily_title: string;
+    analytics_activity_signups_daily_sub: string;
+    /** Onboarding funnel. */
+    analytics_activity_funnel_title: string;
+    analytics_activity_funnel_registered: string;
+    analytics_activity_funnel_verified: string;
+    analytics_activity_funnel_onboarded: string;
+    /** Couples-by-status badge row. */
+    analytics_activity_status_title: string;
+    analytics_activity_status_active: string;
+    analytics_activity_status_paused: string;
+    analytics_activity_status_deleting: string;
+    analytics_activity_status_archived: string;
+    /** Top audit-log actions table. */
+    analytics_activity_top_actions_title: string;
+    analytics_activity_col_action: string;
+    analytics_activity_col_count: string;
+    /** Picks KPIs. */
+    analytics_picks_total: string;
+    analytics_picks_median_per_couple: string;
+    analytics_picks_total_sub: string;
+    analytics_picks_median_sub: string;
+    /** Top picks table. */
+    analytics_picks_top_title: string;
+    analytics_picks_col_supplier: string;
+    analytics_picks_col_category: string;
+    analytics_picks_col_pick_count: string;
+    analytics_picks_col_source: string;
+    /** Category coverage table. */
+    analytics_picks_coverage_title: string;
+    analytics_picks_col_picked: string;
+    analytics_picks_col_missing: string;
+    analytics_picks_col_coverage_pct: string;
+    /** Source breakdown stacked bar. */
+    analytics_picks_source_breakdown_title: string;
+    /** Source-of-truth badges next to top_picks rows + stacked-bar legend. */
+    analytics_source_curated: string;
+    analytics_source_community: string;
+    analytics_source_diy: string;
+    /** Empty-state copy when an aggregate has zero rows (fresh DB,
+     *  newly-launched product, etc.). Per-section because the wording shifts
+     *  ("no couples set a budget yet" vs "no picks yet"). */
+    analytics_money_empty: string;
+    analytics_money_per_category_empty: string;
+    analytics_money_histogram_empty: string;
+    analytics_activity_signups_empty: string;
+    analytics_activity_top_actions_empty: string;
+    analytics_picks_empty: string;
+    analytics_picks_top_empty: string;
+    analytics_picks_coverage_empty: string;
   };
   rsvp: {
     title: string;

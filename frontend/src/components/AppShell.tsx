@@ -12,6 +12,7 @@ import {
   Languages,
   LayoutDashboard,
   LayoutList,
+  LineChart,
   MessageCircle,
   Moon,
   MoreHorizontal,
@@ -195,6 +196,15 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     tabKey: "admin.nav_feedback",
     icon: <MessageCircle size={18} />,
     badgeKey: "feedback",
+  },
+  // Read-only analytics dashboard — no inbox, so no badge. Mounts at the
+  // tail of the admin rail so the moderation-heavy surfaces stay first.
+  // No `tabKey` so the mobile bottom-nav (max 5 slots) keeps the moderation
+  // surfaces; analytics is reachable from the desktop rail or by URL.
+  {
+    to: "/app/admin/analytics",
+    labelKey: "admin.nav_analytics",
+    icon: <LineChart size={18} />,
   },
 ];
 

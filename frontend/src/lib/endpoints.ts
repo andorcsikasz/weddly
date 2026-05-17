@@ -63,6 +63,11 @@ import type {
 } from "@shared/vendor_waitlist";
 import type { CouplePick } from "@shared/picks";
 import type {
+  AdminActivityAnalytics,
+  AdminMoneyAnalytics,
+  AdminPicksAnalytics,
+} from "@shared/admin_analytics";
+import type {
   AdminDirectoryFilters,
   DirectorySupplier,
   SupplierCategory,
@@ -765,6 +770,15 @@ export interface FeedbackInput {
 
 export const feedbackApi = {
   submit: (body: FeedbackInput) => apiFetch<{ ok: true }>("POST", "/api/feedback", body),
+};
+
+/** Read-only analytics surfaces for the admin dashboard. Three orthogonal
+ *  GET endpoints — money, activity, picks — each returns the aggregated view
+ *  in one round-trip. See `shared/admin_analytics.ts` for the response shapes. */
+export const adminAnalyticsApi = {
+  money: () => apiFetch<AdminMoneyAnalytics>("GET", "/api/admin/analytics/money"),
+  activity: () => apiFetch<AdminActivityAnalytics>("GET", "/api/admin/analytics/activity"),
+  picks: () => apiFetch<AdminPicksAnalytics>("GET", "/api/admin/analytics/picks"),
 };
 
 export const adminFeedbackApi = {

@@ -4,6 +4,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
 import AboutPage from "./pages/AboutPage";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminSuppliersPage from "./pages/AdminSuppliersPage";
@@ -445,6 +446,18 @@ export default function App() {
             <RequireAuth>
               <RequireAdmin>
                 <AdminFeedbackPage />
+              </RequireAdmin>
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/admin/analytics"
+        element={
+          <Page>
+            <RequireAuth>
+              <RequireAdmin>
+                <AdminAnalyticsPage />
               </RequireAdmin>
             </RequireAuth>
           </Page>
