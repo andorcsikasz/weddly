@@ -65,6 +65,10 @@ export interface LocaleMessages {
     forgot_password_description: string;
     schedule_title: string;
     schedule_description: string;
+    guest_portal_title: string;
+    guest_portal_description: string;
+    guest_preview_title: string;
+    guest_preview_description: string;
   };
   /** Gantt-style task timeline + point-of-contact panel. */
   timeline: {
@@ -771,6 +775,10 @@ export interface LocaleMessages {
     moodboard: string;
     media: string;
     print: string;
+    /** Read-only "for guests" surface — the couple-side preview that mirrors the public /g/:slug/:code page. */
+    guest_portal: string;
+    /** Sidebar group header that bundles the guest-facing surfaces. */
+    group_guest: string;
     /** Accessible label for the locale toggle. */
     switch_language: string;
     /** Word for the *target* language shown next to the globe. */
@@ -1016,6 +1024,54 @@ export interface LocaleMessages {
     error_private: string;
     error_empty: string;
     error_fetch: string;
+  };
+  /** Read-only "for guests" surface — the same JSX renders the public page
+   *  at /g/:slug/:code AND the couple-side preview at /app/guest-portal. */
+  guest_portal: {
+    date_tbd: string;
+    schedule_title: string;
+    schedule_empty: string;
+    /** Label appended to a time when the event lands after midnight (day +1). */
+    schedule_next_day: string;
+    location_title: string;
+    location_open_map: string;
+    location_empty: string;
+    ceremony_label: string;
+    ceremony: {
+      civil: string;
+      religious: string;
+      both: string;
+    };
+    rsvp: {
+      yes: string;
+      maybe: string;
+      no: string;
+      pending: string;
+    };
+    /** Receives `{label}` — the household's display label. */
+    household_title: string;
+    gate_title: string;
+    gate_body: string;
+    gate_cta: string;
+    not_found_title: string;
+    not_found_body: string;
+    not_found_cta: string;
+    load_error: string;
+  };
+  /** Couple-facing /app/guest-portal preview wrapper around guest_portal. */
+  guest_preview: {
+    title: string;
+    subtitle: string;
+    empty: string;
+    share_title: string;
+    share_body: string;
+    share_slug_label: string;
+    share_link_label: string;
+    share_copy_slug_aria: string;
+    share_copy_link_aria: string;
+    share_copied: string;
+    share_copy_failed: string;
+    share_no_slug: string;
   };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {
@@ -2585,6 +2641,10 @@ export interface LocaleMessages {
     workspaces_delete_arm1: string;
     workspaces_delete_arm2: string;
     workspaces_delete_done: string;
+    /** Tiny pill on the first row of the workspaces list — marks the
+     *  user's original onboarding workspace as the primary so the
+     *  missing delete button reads as intentional, not buggy. */
+    workspaces_primary_marker: string;
     payments_title: string;
     payments_body: string;
     /** Display preferences — density toggle for older relatives / outdoor

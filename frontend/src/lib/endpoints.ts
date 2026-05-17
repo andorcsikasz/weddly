@@ -469,6 +469,18 @@ export const rsvpApi = {
     apiFetch<{ rsvp: PublicRsvpView }>("POST", `/api/rsvp/${encodeURIComponent(code)}`, body),
 };
 
+export const guestPortalApi = {
+  /** Public — fetches the post-RSVP "for guests" bundle (date, ceremony,
+   *  location, schedule, household members). Returns 403 with
+   *  `detail.code === "not_rsvpd"` if no household member has RSVP'd yes
+   *  yet; the page maps that into a "please RSVP first" gate. */
+  get: (couple: string, code: string) =>
+    apiFetch<{ portal: GuestPortalView }>(
+      "GET",
+      `/api/guest/portal?couple=${encodeURIComponent(couple)}&code=${encodeURIComponent(code)}`,
+    ),
+};
+
 export interface SeatingPlan {
   tables: SeatingTable[];
   assignments: SeatAssignment[];

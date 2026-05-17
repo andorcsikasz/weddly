@@ -80,6 +80,12 @@ const hu: LocaleMessages = {
     schedule_title: "Programterv — Wēddly",
     schedule_description:
       "Az esküvő napjának menetrendje: érkezés, szertartás, vacsora, tánc — egy nyomtatható oldalon.",
+    guest_portal_title: "Esküvői infók — Wēddly",
+    guest_portal_description:
+      "A meghívótok egy helyen: a dátum, a helyszín és a menetrend — bármikor előkereshető.",
+    guest_preview_title: "Vendégoldal előnézet — Wēddly",
+    guest_preview_description:
+      "Nézzétek meg, mit látnak az igennel visszajelölt vendégek, és osszátok meg velük a linket.",
   },
   a11y: {
     close: "Bezárás",
@@ -737,6 +743,8 @@ const hu: LocaleMessages = {
     moodboard: "Moodboard",
     media: "Képek",
     print: "Nyomtatás",
+    guest_portal: "Vendégoldal",
+    group_guest: "Vendégeknek",
     switch_language: "Nyelv váltása",
     switch_to_en: "English",
     switch_to_hu: "Magyar",
@@ -987,6 +995,55 @@ const hu: LocaleMessages = {
     error_empty:
       "A tábla még üres — nincs rajta egy pin sem. Tűzz fel néhány képet a Pinteresten, aztán térj vissza ide.",
     error_fetch: "Nem tudtuk most elérni a Pinterestet. Próbáld újra pár perc múlva.",
+  },
+  guest_portal: {
+    date_tbd: "Esküvő dátuma — még pontosítás alatt",
+    schedule_title: "Menetrend",
+    schedule_empty: "A pár még nem tette közzé a menetrendet — nézzétek meg újra később.",
+    schedule_next_day: "másnap",
+    location_title: "Helyszín",
+    location_open_map: "Megnyitás térképen",
+    location_empty: "A pár még nem osztotta meg a helyszín pontos koordinátáit.",
+    ceremony_label: "Szertartás",
+    ceremony: {
+      civil: "Polgári",
+      religious: "Egyházi",
+      both: "Polgári + egyházi",
+    },
+    rsvp: {
+      yes: "Megyek",
+      maybe: "Talán",
+      no: "Nem megyek",
+      pending: "Még válaszra vár",
+    },
+    household_title: "A ti foglalásotok — {label}",
+    gate_title: "Először jelöljétek igennel a meghívást",
+    gate_body:
+      "Ez az oldal akkor nyílik meg, ha legalább egy fő igennel visszajelölt. Először töltsétek ki az RSVP-t.",
+    gate_cta: "Ugrás az RSVP-re",
+    not_found_title: "Nem találjuk a meghívást",
+    not_found_body:
+      "Ellenőrizzétek a linket, vagy használjátok az RSVP bejelentkezőt a meghívás megkereséséhez.",
+    not_found_cta: "Vissza az RSVP bejelentkezőhöz",
+    load_error: "Valami félresikerült az oldal betöltésekor. Próbáljátok újra egy perc múlva.",
+  },
+  guest_preview: {
+    title: "Vendégoldal előnézet",
+    subtitle:
+      "Csak olvasható oldal, amit az igennel visszajelölt vendégek látnak. Itt ellenőrizhetitek, jól szerepel-e a dátum, helyszín és menetrend, mielőtt megosztanátok.",
+    empty:
+      "Adjatok meg esküvői dátumot, helyszínt és menetrendpontokat, hogy az előnézet megteljen.",
+    share_title: "Megosztás a vendégekkel",
+    share_body:
+      "A vendégek a /rsvp oldalon érik el a meghívót a páros kódotokkal + a saját 4 jegyű háztartáskódjukkal. Ha igennel jelölik vissza, ők is ugyanezt látják.",
+    share_slug_label: "Páros kód",
+    share_link_label: "RSVP oldal",
+    share_copy_slug_aria: "Páros kód másolása",
+    share_copy_link_aria: "RSVP link másolása",
+    share_copied: "Vágólapra másolva",
+    share_copy_failed: "Nem sikerült másolni — másoljátok kézzel.",
+    share_no_slug:
+      "A páros kódotok akkor jelenik meg, ha a munkaterület befejezte az onboardingot.",
   },
   schedule: {
     title: "Programterv",
@@ -2354,6 +2411,7 @@ const hu: LocaleMessages = {
     workspaces_delete_arm1: "Biztos?",
     workspaces_delete_arm2: "Tényleg?",
     workspaces_delete_done: "Esemény törölve",
+    workspaces_primary_marker: "Fő",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
     display_title: "Megjelenítés",

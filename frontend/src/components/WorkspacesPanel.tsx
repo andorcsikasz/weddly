@@ -149,9 +149,21 @@ export function WorkspacesPanel({ activeCoupleId }: Props) {
             return (
               <li key={m.couple_id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-                    {m.display_name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+                      {m.display_name}
+                    </p>
+                    {/* Primary workspace gets a small "Fő" pill so the
+                     *  missing delete button reads as intentional — the
+                     *  user's original onboarding workspace stays put
+                     *  here; deleting it lives on the account-deletion
+                     *  flow further down the page. */}
+                    {isPrimary && (
+                      <span className="inline-flex items-center rounded-full border border-ink-300 px-2 py-px text-[10px] uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:text-umber-300">
+                        {t("profile.workspaces_primary_marker")}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
                     {t(`profile.workspaces_role_${m.role}`)}
                   </p>

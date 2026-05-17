@@ -12,6 +12,8 @@ import AdminVendorWaitlistPage from "./pages/AdminVendorWaitlistPage";
 import BudgetPage from "./pages/BudgetPage";
 import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import GuestPortalPage from "./pages/GuestPortalPage";
+import GuestPreviewPage from "./pages/GuestPreviewPage";
 import GuestsPage from "./pages/GuestsPage";
 import InvitePage from "./pages/InvitePage";
 import LandingPage from "./pages/LandingPage";
@@ -202,6 +204,14 @@ export default function App() {
         }
       />
       <Route
+        path="/g/:slug/:code"
+        element={
+          <Page>
+            <GuestPortalPage />
+          </Page>
+        }
+      />
+      <Route
         path="/onboarding"
         element={
           <Page>
@@ -307,6 +317,16 @@ export default function App() {
           <Page>
             <RequireAuth>
               <HoneymoonPage />
+            </RequireAuth>
+          </Page>
+        }
+      />
+      <Route
+        path="/app/guest-portal"
+        element={
+          <Page>
+            <RequireAuth>
+              <GuestPreviewPage />
             </RequireAuth>
           </Page>
         }

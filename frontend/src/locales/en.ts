@@ -80,6 +80,12 @@ const en: LocaleMessages = {
     schedule_title: "Schedule — Weddly",
     schedule_description:
       "Your wedding-day run of show: arrival, ceremony, dinner, first dance — printable in one click.",
+    guest_portal_title: "Wedding info — Weddly",
+    guest_portal_description:
+      "Your invitation in one place: the date, the venue and the run-of-show — open it any time.",
+    guest_preview_title: "Guest page preview — Weddly",
+    guest_preview_description:
+      "Preview the read-only wedding page your RSVP-yes guests see, and share the link with them.",
   },
   a11y: {
     close: "Close",
@@ -737,6 +743,8 @@ const en: LocaleMessages = {
     moodboard: "Moodboard",
     media: "Photos",
     print: "Print",
+    guest_portal: "Guest page",
+    group_guest: "For guests",
     switch_language: "Switch language",
     switch_to_en: "English",
     switch_to_hu: "Magyar",
@@ -985,6 +993,52 @@ const en: LocaleMessages = {
     error_empty:
       "This board is empty — no pins yet. Pin a few images on Pinterest, then come back here.",
     error_fetch: "We couldn't reach Pinterest just now. Please try again in a few minutes.",
+  },
+  guest_portal: {
+    date_tbd: "Wedding date — to be confirmed",
+    schedule_title: "Run of show",
+    schedule_empty: "The couple hasn't published a timeline yet — check back closer to the day.",
+    schedule_next_day: "next day",
+    location_title: "Venue",
+    location_open_map: "Open in Maps",
+    location_empty: "The couple hasn't shared a venue location yet.",
+    ceremony_label: "Ceremony",
+    ceremony: {
+      civil: "Civil",
+      religious: "Religious",
+      both: "Civil + religious",
+    },
+    rsvp: {
+      yes: "Coming",
+      maybe: "Maybe",
+      no: "Not coming",
+      pending: "Pending",
+    },
+    household_title: "Your party — {label}",
+    gate_title: "RSVP first",
+    gate_body:
+      "This page opens up once at least one of you has confirmed they're coming. Reply on the RSVP page first.",
+    gate_cta: "Go to RSVP",
+    not_found_title: "We couldn't find this invitation",
+    not_found_body: "Double-check the link or use the RSVP check-in to look up your invitation.",
+    not_found_cta: "Back to RSVP check-in",
+    load_error: "Something went wrong loading the page. Please try again in a minute.",
+  },
+  guest_preview: {
+    title: "Guest page preview",
+    subtitle:
+      "Read-only page your RSVP-yes guests see. Use it to confirm the schedule and venue read correctly before sharing.",
+    empty: "Add a wedding date, location, and schedule items to fill this preview in.",
+    share_title: "Share with guests",
+    share_body:
+      "Guests reach this page by checking in at /rsvp with your couple code + their 4-digit household code. Once they RSVP yes, they see the same view above.",
+    share_slug_label: "Couple code",
+    share_link_label: "RSVP page",
+    share_copy_slug_aria: "Copy couple code",
+    share_copy_link_aria: "Copy RSVP page link",
+    share_copied: "Copied",
+    share_copy_failed: "Couldn't copy — copy it manually.",
+    share_no_slug: "Your couple code will appear once your workspace finishes onboarding.",
   },
   schedule: {
     title: "Run of show",
@@ -2334,6 +2388,7 @@ const en: LocaleMessages = {
     workspaces_delete_arm1: "Sure?",
     workspaces_delete_arm2: "Really?",
     workspaces_delete_done: "Event deleted",
+    workspaces_primary_marker: "Primary",
     payments_title: "Payments",
     payments_body: "Payment history and billing settings will appear here soon.",
     display_title: "Display",

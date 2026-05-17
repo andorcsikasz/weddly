@@ -1430,6 +1430,118 @@ describe("rsvp", () => {
   });
 });
 
+describe("guest portal", () => {
+  test("returns 403 when household has no yes-RSVPs yet", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("portal-gate@weddly.test");
+    await req("POST", "/api/guests", { full_name: "Anna" }, { token });
+    const couple = await req<{ couple: { slug: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const list = await req<{ households: { code: string }[] }>(
+      "GET",
+      "/api/households",
+      undefined,
+      { token },
+    );
+    const code = list.data.households[0]!.code;
+
+    const r = await req<{ message?: string; detail?: { code?: string } }>(
+      "GET",
+      `/api/guest/portal?couple=${couple.data.couple.slug}&code=${code}`,
+    );
+    expect(r.status).toBe(403);
+    expect(r.data.detail?.code).toBe("not_rsvpd");
+  });
+
+  test("returns the portal bundle once at least one member RSVPs yes", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("portal-ok@weddly.test");
+    const g = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna" },
+      { token },
+    );
+    // Couple has a schedule entry so the portal returns something meaty.
+    await req(
+      "POST",
+      "/api/schedule",
+      { label: "Ceremony", starts_at_minutes: 600, location: "Buda Castle" },
+      { token },
+    );
+    const couple = await req<{ couple: { slug: string; display_name: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const hh = await req<{ households: { code: string }[] }>("GET", "/api/households", undefined, {
+      token,
+    });
+    const code = hh.data.households[0]!.code;
+
+    // Submit a yes-RSVP via the public check-in flow so the portal gate opens.
+    const sub = await req("POST", "/api/rsvp/checkin", {
+      couple_slug: couple.data.couple.slug,
+      household_code: code,
+      members: [
+        {
+          guest_id: g.data.guest.id,
+          rsvp_status: "yes",
+          meal_choice: null,
+          dietary: null,
+          accommodation_needed: false,
+          song_request: null,
+        },
+      ],
+    });
+    expect(sub.status).toBe(200);
+
+    const r = await req<{
+      portal: {
+        couple_display_name: string;
+        schedule: { label: string; starts_at_minutes: number; location: string | null }[];
+        members: { full_name: string; rsvp_status: string }[];
+      };
+    }>("GET", `/api/guest/portal?couple=${couple.data.couple.slug}&code=${code}`);
+    expect(r.status).toBe(200);
+    expect(r.data.portal.couple_display_name).toBe(couple.data.couple.display_name);
+    expect(r.data.portal.schedule.length).toBe(1);
+    expect(r.data.portal.schedule[0]!.label).toBe("Ceremony");
+    expect(r.data.portal.schedule[0]!.location).toBe("Buda Castle");
+    expect(r.data.portal.members.length).toBe(1);
+    expect(r.data.portal.members[0]!.rsvp_status).toBe("yes");
+  });
+
+  test("wrong slug or wrong code returns 404", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("portal-404@weddly.test");
+    await req("POST", "/api/guests", { full_name: "Anna" }, { token });
+    const couple = await req<{ couple: { slug: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    const hh = await req<{ households: { code: string }[] }>("GET", "/api/households", undefined, {
+      token,
+    });
+    const code = hh.data.households[0]!.code;
+
+    const badSlug = await req("GET", `/api/guest/portal?couple=NOPECODE&code=${code}`);
+    expect(badSlug.status).toBe(404);
+    const badCode = await req(
+      "GET",
+      `/api/guest/portal?couple=${couple.data.couple.slug}&code=0000`,
+    );
+    expect(badCode.status).toBe(404);
+  });
+});
+
 describe("households + airport check-in", () => {
   test("couple gets a slug at onboarding + household auto-spawned per guest", async () => {
     wipeAll();

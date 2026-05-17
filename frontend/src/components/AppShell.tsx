@@ -19,6 +19,7 @@ import {
   Plane,
   ShieldCheck,
   Sun,
+  UserCheck,
   UserCog,
   Users,
   UtensilsCrossed,
@@ -38,7 +39,20 @@ import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
-type NavItem = { to: string; labelKey: string; tabKey?: string; icon: ReactNode };
+/** `group` lets the sidebar render a visible section header before items
+ *  that aren't part of the main couple-flow rail. Today the only non-default
+ *  group is "guest" (Vendégeknek) — the page is read-only and aimed at
+ *  guests, so visually separating it from the planning surfaces helps the
+ *  couple find it without making it feel like another to-do. */
+type NavGroup = "default" | "guest";
+
+type NavItem = {
+  to: string;
+  labelKey: string;
+  tabKey?: string;
+  icon: ReactNode;
+  group?: NavGroup;
+};
 
 const ITEMS: NavItem[] = [
   {
@@ -126,6 +140,16 @@ const ITEMS: NavItem[] = [
     to: "/app/media",
     labelKey: "nav.media",
     icon: <Camera size={18} />,
+  },
+  // ── Guest-facing area ──────────────────────────────────────────────
+  // Read-only "for guests" portal preview. Sits under a separate header
+  // in the sidebar (group: "guest") because it isn't a couple-planning
+  // surface — it's what RSVP-yes guests see at /g/:slug/:code.
+  {
+    to: "/app/guest-portal",
+    labelKey: "nav.guest_portal",
+    icon: <UserCheck size={18} />,
+    group: "guest",
   },
 ];
 
@@ -458,11 +482,38 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
           ) : (
             <nav className="sticky top-20 flex flex-col gap-1">
-              {displayItems.map((item) => (
-                <SideLink key={item.to} to={item.to} icon={item.icon}>
-                  {t(item.labelKey)}
-                </SideLink>
-              ))}
+              {(() => {
+                // Render items in stable order, but inject a small section
+                // header whenever the `group` field flips. Today the only
+                // non-default group is "guest" — keeps the read-only guest
+                // portal visually separated from the planning rail above.
+                let lastGroup: NavGroup = "default";
+                return displayItems.map((item) => {
+                  const itemGroup: NavGroup = (item as NavItem).group ?? "default";
+                  const showHeader = itemGroup !== lastGroup;
+                  lastGroup = itemGroup;
+                  return (
+                    <div key={item.to}>
+                      {showHeader && itemGroup === "guest" && (
+                        <div className="mt-3 flex items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                          <span
+                            className="h-px flex-1 bg-paper-300 dark:bg-umber-700"
+                            aria-hidden
+                          />
+                          <span>{t("nav.group_guest")}</span>
+                          <span
+                            className="h-px flex-1 bg-paper-300 dark:bg-umber-700"
+                            aria-hidden
+                          />
+                        </div>
+                      )}
+                      <SideLink to={item.to} icon={item.icon}>
+                        {t(item.labelKey)}
+                      </SideLink>
+                    </div>
+                  );
+                });
+              })()}
             </nav>
           )}
         </aside>
