@@ -1266,11 +1266,7 @@ export default function SuppliersPage() {
                         <Bookmark size={15} aria-hidden />
                       )}
                     </button>
-                    <SaveToggle
-                      isSaved={isSaved}
-                      onToggle={() => toggleSaved(s.id)}
-                      t={t}
-                    />
+                    <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
                     <CompareToggle
                       supplierId={s.id}
                       isCompared={isCompared}
@@ -1324,11 +1320,7 @@ export default function SuppliersPage() {
                       <Bookmark size={15} aria-hidden />
                     )}
                   </button>
-                  <SaveToggle
-                    isSaved={isSaved}
-                    onToggle={() => toggleSaved(s.id)}
-                    t={t}
-                  />
+                  <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
                 </div>
                 {/* Single-column body: avatar + name + meta line (with price
                     band and capacity inline so the meta strip stays one line),
@@ -1737,11 +1729,7 @@ function SaveToggle({
           : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
       }
     >
-      <Star
-        size={15}
-        aria-hidden
-        className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-      />
+      <Star size={15} aria-hidden className={isSaved ? "fill-blush-500 text-blush-500" : ""} />
     </button>
   );
 }
@@ -1792,12 +1780,7 @@ function PhoneReveal({
     );
   }
   return (
-    <a
-      href={`tel:${phone}`}
-      className="btn-outline btn-sm"
-      aria-label={phone}
-      onClick={onCall}
-    >
+    <a href={`tel:${phone}`} className="btn-outline btn-sm" aria-label={phone} onClick={onCall}>
       <Phone size={14} aria-hidden />
       {!iconOnly && <span>{phone}</span>}
       {iconOnly && <span className="hidden lg:inline">{phone}</span>}

@@ -7,7 +7,7 @@
 // but only PATCHes the server on pointer-up — otherwise we'd spam the API.
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
-import { chairOffsets, maxSeatsForTable } from "@shared/seating";
+import { TABLE_KEEPOUT_MM, chairOffsets, maxSeatsForTable } from "@shared/seating";
 import { Baby, Maximize2, Minus, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -1165,16 +1165,19 @@ function clamp(v: number, lo: number, hi: number): number {
 }
 
 // ── Collision detection ───────────────────────────────────────────────
-// Pairwise check that prevents tables being dragged or nudged on top of
-// each other. Round tables are circles, everything else is an oriented
-// rectangle around its centre (length = local x-axis, width = local y-axis).
-// 1mm of bookkeeping slack so two perfectly-edge-adjacent tables don't
-// register as touching.
+// Pairwise check that prevents tables being dragged or nudged closer than
+// a realistic banquet layout allows. Round tables are circles, everything
+// else is an oriented rectangle around its centre (length = local x-axis,
+// width = local y-axis).
+//
+// Each footprint is INFLATED by `TABLE_KEEPOUT_MM` (≈ chair-back depth +
+// half an aisle) so two non-overlapping inflated footprints guarantee at
+// least `MIN_AISLE_MM` of walkable space between the tables' chair-backs.
+// Without this, the editor would happily let the user pack tables flush
+// against each other and the printed layout would be physically unworkable.
 type Footprint =
   | { kind: "circle"; cx: number; cy: number; r: number }
   | { kind: "rect"; cx: number; cy: number; halfL: number; halfW: number; rot: number };
-
-const COLLISION_SLACK_MM = 1;
 
 function footprintOf(
   shape: SeatingTable["shape"],
@@ -1183,14 +1186,14 @@ function footprintOf(
   dims: { width_mm: number; length_mm: number },
 ): Footprint {
   if (shape === "round") {
-    return { kind: "circle", cx: pos.x, cy: pos.y, r: dims.width_mm / 2 - COLLISION_SLACK_MM };
+    return { kind: "circle", cx: pos.x, cy: pos.y, r: dims.width_mm / 2 + TABLE_KEEPOUT_MM };
   }
   return {
     kind: "rect",
     cx: pos.x,
     cy: pos.y,
-    halfL: dims.length_mm / 2 - COLLISION_SLACK_MM,
-    halfW: dims.width_mm / 2 - COLLISION_SLACK_MM,
+    halfL: dims.length_mm / 2 + TABLE_KEEPOUT_MM,
+    halfW: dims.width_mm / 2 + TABLE_KEEPOUT_MM,
     rot: (rotationDeg * Math.PI) / 180,
   };
 }

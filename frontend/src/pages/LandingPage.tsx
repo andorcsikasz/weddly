@@ -60,7 +60,6 @@ export default function LandingPage() {
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
       <section className="relative overflow-hidden">
-        <MarginNumeral value="01" />
         {/* Soft watercolour wash bleeding from the right behind the
             headline — adds depth without breaking the paper aesthetic. */}
         <WatercolorBlob
@@ -141,7 +140,6 @@ export default function LandingPage() {
           bleeding behind its title; one continuous rule line at the
           numeral baseline serves as the literal timeline. */}
       <section id="phases" className="relative bg-paper-50 dark:bg-umber-900">
-        <MarginNumeral value="02" />
         <div className="mx-auto max-w-7xl px-4 pt-14 pb-12 sm:px-6 sm:pt-20 sm:pb-16">
           <SectionLabel num="—" label={t("landing.product_eyebrow")} />
           <h2 className="mt-6 max-w-3xl font-serif text-3xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
@@ -186,7 +184,6 @@ export default function LandingPage() {
           Mockup framed as a tilted polaroid with a watermark "02.1" sitting
           behind it. Copy on the left in a narrow column. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <MarginNumeral value="03" />
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
@@ -218,7 +215,6 @@ export default function LandingPage() {
           Full-bleed paper-100 surface, mockup centred above, copy below
           in two columns — the layout of a feature spread. */}
       <section className="relative bg-paper-100/70 dark:bg-umber-900/70">
-        <MarginNumeral value="04" />
         <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
           <h2 className="max-w-3xl font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.block_guests_title")}
@@ -240,7 +236,6 @@ export default function LandingPage() {
           Narrow copy column on the left, mockup blown up to bleed off
           the right edge of the viewport. */}
       <section className="relative overflow-hidden bg-white dark:bg-umber-900">
-        <MarginNumeral value="05" />
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
@@ -273,7 +268,6 @@ export default function LandingPage() {
           the four differentiation points reduce to a single keyword
           row underneath. */}
       <section className="stationery-light relative">
-        <MarginNumeral value="06" />
         <BotanicalCorner
           corner="tl"
           className="pointer-events-none absolute left-4 top-12 h-24 w-24 text-paper-300 dark:text-umber-600 sm:h-40 sm:w-40 lg:left-12"
@@ -298,7 +292,6 @@ export default function LandingPage() {
 
       {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
       <section id="suppliers" className="relative bg-white dark:bg-umber-900">
-        <MarginNumeral value="07" />
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <SectionLabel num="—" label={t("landing.phase_suppliers_title")} />
@@ -326,7 +319,6 @@ export default function LandingPage() {
       {/* ════════════════════════ 08 · Testimonials ════════════════════════
           One pull-quote dominates; two whispers underneath. */}
       <section className="relative bg-paper-100/60 dark:bg-umber-900/60">
-        <MarginNumeral value="08" />
         <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.testimonials_eyebrow")}
@@ -358,7 +350,6 @@ export default function LandingPage() {
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <MarginNumeral value="09" />
         <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
           <h2 className="font-serif text-3xl leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.audience_title")}
@@ -392,7 +383,6 @@ export default function LandingPage() {
           Stationery-textured background; price card floats with deep
           shadow. 0 Ft does the talking. */}
       <section className="relative stationery">
-        <MarginNumeral value="10" />
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <SectionLabel num="—" label={t("landing.pricing_eyebrow")} className="justify-center" />
@@ -433,7 +423,6 @@ export default function LandingPage() {
           Tight max-w-2xl, italic question-mark headline, rows as
           inflatable cards instead of dividers. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
-        <MarginNumeral value="11" />
         <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
           <h2 className="font-serif text-5xl italic leading-[0.96] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
             {t("landing.faq_title")}
@@ -478,20 +467,6 @@ export default function LandingPage() {
 }
 
 // ─────────────────────────── Building blocks ───────────────────────────
-
-/** Editorial spine: italic numeral floated absolutely in the left
- *  gutter of each major section. Visible from `lg:` up — on smaller
- *  screens the section eyebrows already carry numbering. */
-function MarginNumeral({ value }: { value: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute left-6 top-10 hidden font-serif text-sm italic text-paper-500 dark:text-umber-500 lg:block xl:left-10 xl:top-14"
-    >
-      {value}
-    </span>
-  );
-}
 
 function IconRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (

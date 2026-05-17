@@ -112,8 +112,21 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   );
 
   const token = issueSession(userId);
-  const userRow = getUserById(userId);
-  if (!userRow) throw new HttpError(500, "User vanished after insert");
+  // Skip the re-SELECT — every field is in scope from the INSERT above. The
+  // hard-coded values mirror the DEFAULTs in the INSERT statement.
+  const userRow: UserRow = {
+    id: userId,
+    email,
+    password_hash: passwordHash,
+    full_name: fullName,
+    status: "active",
+    role: "owner",
+    couple_id: null,
+    verified_email: 0,
+    created_at: ts,
+    updated_at: ts,
+    last_seen_at: null,
+  };
   const session: AuthSession = { token, user: toUser(userRow) };
   return json(session, { status: 201 });
 }

@@ -65,12 +65,12 @@ function startOfWeekMon(d: Date): Date {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-// Full day grid: every hour from 00:00 through 23:00 fits in one screenful so
-// the user never has to scroll the hour rail. Rows are equal-fraction so the
-// grid stretches to whatever vertical space the parent gives it.
+// Full day grid in 2-hour bands so the rail breathes — 24 one-hour labels
+// were too dense at typical card heights. The grid still covers the full 24h
+// day, so the "now" indicator stays anchored to raw clock time.
 const HOUR_START = 0;
-const HOUR_END = 23; // inclusive last label
-const HOUR_COUNT = HOUR_END - HOUR_START + 1; // 24
+const HOUR_SPAN = 24;
+const HOUR_STEP = 2;
 const LANE_HEIGHT_PX = 22;
 const LANE_GAP_PX = 8;
 const GUTTER_WIDTH_PX = 56;
@@ -186,10 +186,11 @@ export default function WeekView({
   const nowHour = now.getHours();
   const nowMin = now.getMinutes();
   const showNow = todayInWeek;
-  const nowTopPct = ((nowHour + nowMin / 60 - HOUR_START) / HOUR_COUNT) * 100;
+  const nowTopPct = ((nowHour + nowMin / 60 - HOUR_START) / HOUR_SPAN) * 100;
 
-  const hours: number[] = [];
-  for (let h = HOUR_START; h <= HOUR_END; h++) hours.push(h);
+  const hourLabels: number[] = [];
+  for (let h = HOUR_START; h < HOUR_START + HOUR_SPAN; h += HOUR_STEP) hourLabels.push(h);
+  const hourRows = hourLabels.length;
 
   const allDayLabel = locale === "hu" ? "egész napos" : "All-day";
   const todayAriaLabel = locale === "hu" ? "Jelenlegi idő" : "Current time";
@@ -290,9 +291,9 @@ export default function WeekView({
         className="grid min-h-0 flex-1"
         style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px repeat(7, minmax(0, 1fr))` }}
       >
-        {/* Gutter column with 24 equal hour-label cells. */}
-        <div className="grid" style={{ gridTemplateRows: `repeat(${HOUR_COUNT}, minmax(0, 1fr))` }}>
-          {hours.map((h) => (
+        {/* Gutter column — one cell per 2-hour band. */}
+        <div className="grid" style={{ gridTemplateRows: `repeat(${hourRows}, minmax(0, 1fr))` }}>
+          {hourLabels.map((h) => (
             <div
               key={h}
               className="border-t border-paper-200 pr-2 text-right text-[10px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
@@ -308,9 +309,9 @@ export default function WeekView({
           <div
             key={d.toISOString()}
             className="relative grid border-l border-paper-200 dark:border-umber-700"
-            style={{ gridTemplateRows: `repeat(${HOUR_COUNT}, minmax(0, 1fr))` }}
+            style={{ gridTemplateRows: `repeat(${hourRows}, minmax(0, 1fr))` }}
           >
-            {hours.map((h) => (
+            {hourLabels.map((h) => (
               <div key={h} className="border-t border-paper-200 dark:border-umber-700" />
             ))}
 

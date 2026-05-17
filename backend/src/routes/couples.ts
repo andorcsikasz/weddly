@@ -435,9 +435,15 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   if (existing) throw new HttpError(409, "Couple already onboarded for this user");
 
   const ts = now();
-  const result = db
-    .prepare(
-      `INSERT INTO couples
+  // Wrap the whole onboarding write set in one transaction so we get a single
+  // fsync instead of ~7 — couple INSERT + slug UPDATE + partner-guest seeding
+  // + users UPDATE + couple_members INSERT + budget-line seeding + audit log.
+  // Bun's better-sqlite3-shaped helper rolls back on any throw, so a half-
+  // baked couple row can no longer survive a mid-onboard failure either.
+  const coupleId = db.transaction((): number => {
+    const result = db
+      .prepare(
+        `INSERT INTO couples
         (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
          wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season,
          target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
@@ -450,79 +456,86 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
                ?, ?, ?, ?,
                ?, ?, ?,
                ?, ?, 'active', ?, ?, ?)`,
-    )
-    .run(
-      userId,
-      displayName,
-      brideName,
-      groomName,
-      dateGoal.exact_date,
-      dateGoal.kind,
-      dateGoal.target_year,
-      dateGoal.target_month,
-      dateGoal.target_season,
-      guestGoal.exact,
-      guestGoal.kind,
-      guestGoal.min,
-      guestGoal.max,
-      budgetGoal.exact_huf,
-      budgetGoal.kind,
-      budgetGoal.min_huf,
-      budgetGoal.max_huf,
-      locLat,
-      locLng,
-      locRadius,
-      JSON.stringify(styleTags),
-      currency,
+      )
+      .run(
+        userId,
+        displayName,
+        brideName,
+        groomName,
+        dateGoal.exact_date,
+        dateGoal.kind,
+        dateGoal.target_year,
+        dateGoal.target_month,
+        dateGoal.target_season,
+        guestGoal.exact,
+        guestGoal.kind,
+        guestGoal.min,
+        guestGoal.max,
+        budgetGoal.exact_huf,
+        budgetGoal.kind,
+        budgetGoal.min_huf,
+        budgetGoal.max_huf,
+        locLat,
+        locLng,
+        locRadius,
+        JSON.stringify(styleTags),
+        currency,
+        ts,
+        ts,
+        ts,
+      );
+    const newCoupleId = Number(result.lastInsertRowid);
+
+    // Derive the public couple slug ("ANDORSARI") right at onboarding so the
+    // RSVP check-in URL is shareable from minute zero.
+    const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), newCoupleId);
+    db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(
+      slug,
       ts,
-      ts,
-      ts,
+      newCoupleId,
     );
-  const coupleId = Number(result.lastInsertRowid);
 
-  // Derive the public couple slug ("ANDORSARI") right at onboarding so the
-  // RSVP check-in URL is shareable from minute zero.
-  const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), coupleId);
-  db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(slug, ts, coupleId);
+    // The bride and groom are guests at their own wedding — and they need to
+    // count in headcount, catering, and seating. The helper materializes them
+    // as real guest rows inside ONE shared dedicated 2-person household labelled
+    // "{bride} & {groom}", which sorts to the top of /app/guests. The helper is
+    // idempotent + shared with the boot-time backfill in init_households.ts; it
+    // also force-relocates any partner_role guest currently mixed into another
+    // household into the dedicated host home.
+    ensurePartnerGuests({ coupleId: newCoupleId, brideName, groomName });
 
-  // The bride and groom are guests at their own wedding — and they need to
-  // count in headcount, catering, and seating. The helper materializes them
-  // as real guest rows inside ONE shared dedicated 2-person household labelled
-  // "{bride} & {groom}", which sorts to the top of /app/guests. The helper is
-  // idempotent + shared with the boot-time backfill in init_households.ts; it
-  // also force-relocates any partner_role guest currently mixed into another
-  // household into the dedicated host home.
-  ensurePartnerGuests({ coupleId, brideName, groomName });
+    db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
+      newCoupleId,
+      ts,
+      userId,
+    );
+    // Record the membership in the multi-workspace junction. `users.couple_id`
+    // remains "the active workspace"; couple_members tracks the full set so
+    // the user can spin up a second event later (Alpha → Bravo / Charlie).
+    addCoupleMember(newCoupleId, userId, "owner");
 
-  db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
-    coupleId,
-    ts,
-    userId,
-  );
-  // Record the membership in the multi-workspace junction. `users.couple_id`
-  // remains "the active workspace"; couple_members tracks the full set so
-  // the user can spin up a second event later (Alpha → Bravo / Charlie).
-  addCoupleMember(coupleId, userId, "owner");
+    // Range budgets seed lines off the midpoint; TBD seeds nothing.
+    const seedHuf = representativeBudgetHuf(budgetGoal);
+    if (seedHuf > 0) seedBudgetLines(newCoupleId, seedHuf);
 
-  // Range budgets seed lines off the midpoint; TBD seeds nothing.
-  const seedHuf = representativeBudgetHuf(budgetGoal);
-  if (seedHuf > 0) seedBudgetLines(coupleId, seedHuf);
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: newCoupleId,
+      action: "couple.onboard",
+      target_kind: "couple",
+      target_id: newCoupleId,
+      after: {
+        display_name: displayName,
+        bride_name: brideName,
+        groom_name: groomName,
+        wedding_date_goal: dateGoal,
+        guest_count_goal: guestGoal,
+        budget_goal: budgetGoal,
+      },
+    });
 
-  addAuditLog({
-    actor_user_id: userId,
-    couple_id: coupleId,
-    action: "couple.onboard",
-    target_kind: "couple",
-    target_id: coupleId,
-    after: {
-      display_name: displayName,
-      bride_name: brideName,
-      groom_name: groomName,
-      wedding_date_goal: dateGoal,
-      guest_count_goal: guestGoal,
-      budget_goal: budgetGoal,
-    },
-  });
+    return newCoupleId;
+  })();
 
   const row = getCoupleById(coupleId);
   if (!row) throw new HttpError(500, "Couple vanished after insert");

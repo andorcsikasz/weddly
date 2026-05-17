@@ -1571,13 +1571,26 @@ export interface LocaleMessages {
     no_transfers: string;
     no_transfers_hint: string;
     name: string;
+    /** Specific "name of the accommodation" — replaces the bare "Név" so
+     *  couples don't think the field asks for a person's name. */
+    accommodation_name: string;
+    accommodation_name_placeholder: string;
     address: string;
+    address_placeholder: string;
     capacity: string;
+    /** Helper text under the capacity stepper. */
+    capacity_help: string;
     price_huf: string;
+    /** Currency-agnostic "Price" label — symbol shown as an input adornment. */
+    price_label: string;
+    /** Helper text under the price input. */
+    price_help: string;
     link: string;
+    link_placeholder: string;
     contact: string;
     contact_placeholder: string;
     notes: string;
+    notes_placeholder: string;
     name_required: string;
     label_required: string;
     capacity_invalid: string;

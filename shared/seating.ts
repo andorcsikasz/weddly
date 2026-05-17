@@ -11,6 +11,27 @@ import type { TableShape } from "./types";
  *  is bumping arms with their neighbour. */
 export const CHAIR_PITCH_MM = 800;
 
+/** How far a seated guest's chair-back protrudes from the table edge.
+ *  Standard banquet chairs are about 36 cm deep — that's the distance
+ *  between the table edge and the outer edge of the chair back once
+ *  someone is seated. Used both as the on-screen chair height and as the
+ *  keep-out around each table. */
+export const CHAIR_BACK_DEPTH_MM = 360;
+
+/** Minimum walkable aisle between two adjacent tables' chair-backs (in mm).
+ *  80 cm is the narrow-but-realistic minimum where one person can squeeze
+ *  past without bumping the seated guests. Banquet best-practice is
+ *  90–120 cm for waiter circulation; 80 cm is the floor we enforce in the
+ *  seating editor so the printed plan reflects a layout that actually
+ *  works in the room. */
+export const MIN_AISLE_MM = 800;
+
+/** Combined keep-out around every table: the chair-back protrusion plus
+ *  half the minimum aisle. Two tables whose inflated footprints just touch
+ *  are exactly `MIN_AISLE_MM` apart at the chair-back, which is the
+ *  smallest distance that still lets someone walk between them. */
+export const TABLE_KEEPOUT_MM = CHAIR_BACK_DEPTH_MM + MIN_AISLE_MM / 2;
+
 /** Standard banquet defaults for each shape, in millimetres. The editor
  *  snaps to these whenever the user switches shape; the backend uses them
  *  to fill in width/length when the client doesn't send any.

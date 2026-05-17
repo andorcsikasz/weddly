@@ -149,9 +149,7 @@ export function FlagUserDialog({ open, targetEmail, pending, onClose, onConfirm 
           disabled={pending}
           aria-invalid={tooShort && draft.length > 0}
         />
-        <p className="text-xs text-ink-500 dark:text-umber-300">
-          {t("admin.flag_user_help")}
-        </p>
+        <p className="text-xs text-ink-500 dark:text-umber-300">{t("admin.flag_user_help")}</p>
         {tooShort && draft.length > 0 ? (
           <p className="text-xs text-blush-700 dark:text-blush-300">
             {t("admin.flag_user_too_short")}

@@ -51,13 +51,16 @@ function diffDays(a: Date, b: Date): number {
   return Math.round(ms / 86_400_000);
 }
 
-// Full 0–23 day grid sized via flex/grid so all 24 hours fit in one screenful
-// without scroll. The parent card decides how tall the column gets.
+// Full-day grid in 2-hour bands (00, 02, …, 22). One-hour bands crammed 24
+// labels into the available vertical space and the rail looked like a wall of
+// numbers; two-hour bands halve the label count while the grid still covers
+// the full 24h day, so the "now" indicator stays positioned by raw clock time.
 const HOUR_START = 0;
-const HOUR_END = 23;
-const HOUR_COUNT = HOUR_END - HOUR_START + 1;
-const HOURS: number[] = [];
-for (let h = HOUR_START; h <= HOUR_END; h++) HOURS.push(h);
+const HOUR_SPAN = 24;
+const HOUR_STEP = 2;
+const HOUR_LABELS: number[] = [];
+for (let h = HOUR_START; h < HOUR_START + HOUR_SPAN; h += HOUR_STEP) HOUR_LABELS.push(h);
+const HOUR_ROWS = HOUR_LABELS.length;
 
 function formatHour(h: number): string {
   // 24-hour clock per spec — same in HU and EN.
@@ -126,7 +129,7 @@ export default function DayView({
   // it tracks whatever vertical space the parent gives the hour grid.
   const now = new Date();
   const nowTopPct = isToday
-    ? ((now.getHours() + now.getMinutes() / 60 - HOUR_START) / HOUR_COUNT) * 100
+    ? ((now.getHours() + now.getMinutes() / 60 - HOUR_START) / HOUR_SPAN) * 100
     : null;
 
   const emptyHint = locale === "hu" ? "Nincs feladat erre a napra" : "No tasks for this day";
@@ -187,10 +190,10 @@ export default function DayView({
       <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: "56px 1fr" }}>
         <div
           className="grid"
-          style={{ gridTemplateRows: `repeat(${HOUR_COUNT}, minmax(0, 1fr))` }}
+          style={{ gridTemplateRows: `repeat(${HOUR_ROWS}, minmax(0, 1fr))` }}
           aria-hidden="true"
         >
-          {HOURS.map((h) => (
+          {HOUR_LABELS.map((h) => (
             <div
               key={h}
               className="border-t border-paper-200 pr-2 text-right text-[10px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
@@ -203,9 +206,9 @@ export default function DayView({
         </div>
         <div
           className="relative grid"
-          style={{ gridTemplateRows: `repeat(${HOUR_COUNT}, minmax(0, 1fr))` }}
+          style={{ gridTemplateRows: `repeat(${HOUR_ROWS}, minmax(0, 1fr))` }}
         >
-          {HOURS.map((h) => (
+          {HOUR_LABELS.map((h) => (
             <div
               key={h}
               className="border-t border-paper-200 dark:border-umber-700"
