@@ -65,9 +65,12 @@ function startOfWeekMon(d: Date): Date {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const HOUR_START = 7;
-const HOUR_END = 22; // inclusive last label
-const HOUR_ROW_PX = 48;
+// Full day grid: every hour from 00:00 through 23:00 fits in one screenful so
+// the user never has to scroll the hour rail. Rows are equal-fraction so the
+// grid stretches to whatever vertical space the parent gives it.
+const HOUR_START = 0;
+const HOUR_END = 23; // inclusive last label
+const HOUR_COUNT = HOUR_END - HOUR_START + 1; // 24
 const LANE_HEIGHT_PX = 22;
 const LANE_GAP_PX = 8;
 const GUTTER_WIDTH_PX = 56;
@@ -175,15 +178,15 @@ export default function WeekView({
   const stripHeight =
     maxLane < 0 ? LANE_HEIGHT_PX + LANE_GAP_PX : (maxLane + 1) * (LANE_HEIGHT_PX + 2) + LANE_GAP_PX;
 
-  // ── "Now" indicator — visible only when today is in-week AND clock is
-  //    inside the rendered hour range. Re-derived on every render (interval
-  //    above triggers them).
+  // ── "Now" indicator — visible whenever today is in-week (the rail now
+  //    spans the full 0–23 range, so the clock is always in-range). Position
+  //    is expressed as a % of the grid height so the line tracks the row
+  //    layout no matter what container height the parent provides.
   const now = new Date();
   const nowHour = now.getHours();
   const nowMin = now.getMinutes();
-  const nowInRange = nowHour >= HOUR_START && nowHour < HOUR_END + 1; // 07:00..22:59
-  const showNow = todayInWeek && nowInRange;
-  const nowTopPx = (nowHour + nowMin / 60 - HOUR_START) * HOUR_ROW_PX;
+  const showNow = todayInWeek;
+  const nowTopPct = ((nowHour + nowMin / 60 - HOUR_START) / HOUR_COUNT) * 100;
 
   const hours: number[] = [];
   for (let h = HOUR_START; h <= HOUR_END; h++) hours.push(h);
@@ -279,57 +282,54 @@ export default function WeekView({
         </div>
       </div>
 
-      {/* ── Hour grid (scrollable) ───────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
-        <div
-          className="relative grid"
-          style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px repeat(7, minmax(0, 1fr))` }}
-        >
-          {/* Gutter column: hour labels stacked, each 48px tall. */}
-          <div>
-            {hours.map((h) => (
-              <div
-                key={h}
-                className="h-12 pr-2 text-right text-[11px] text-ink-500 dark:text-umber-300"
-                style={{ lineHeight: "1" }}
-              >
-                <span className="-translate-y-1/2 inline-block">
-                  {h.toString().padStart(2, "0")}:00
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Seven day columns, each painted with hour rules + a left border
-              that produces the vertical separators between days. */}
-          {days.map((d, i) => (
+      {/* ── Hour grid — fills the rest of the card, no scroll. The grid uses
+       *    minmax(0, 1fr) rows so the 24 hours always share whatever vertical
+       *    space the parent gives us. Hour labels sit in a parallel
+       *    1fr-per-row column so they line up with the rules exactly. ──── */}
+      <div
+        className="grid min-h-0 flex-1"
+        style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px repeat(7, minmax(0, 1fr))` }}
+      >
+        {/* Gutter column with 24 equal hour-label cells. */}
+        <div className="grid" style={{ gridTemplateRows: `repeat(${HOUR_COUNT}, minmax(0, 1fr))` }}>
+          {hours.map((h) => (
             <div
-              key={d.toISOString()}
-              className="relative border-l border-paper-200 dark:border-umber-700"
+              key={h}
+              className="border-t border-paper-200 pr-2 text-right text-[10px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
             >
-              {hours.map((h) => (
-                <div key={h} className="h-12 border-t border-paper-200 dark:border-umber-700" />
-              ))}
-
-              {/* Per-column "now" indicator — line + dot, painted only on
-                  today's column for the Google-Calendar look. */}
-              {showNow && i === todayCol && (
-                <div
-                  className="pointer-events-none absolute left-0 right-0 z-10"
-                  style={{ top: nowTopPx }}
-                  aria-label={todayAriaLabel}
-                  title={todayAriaLabel}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500"
-                  />
-                  <div className="h-0.5 w-full bg-blush-500" />
-                </div>
-              )}
+              <span className="-translate-y-1/2 inline-block">
+                {h.toString().padStart(2, "0")}:00
+              </span>
             </div>
           ))}
         </div>
+
+        {days.map((d, i) => (
+          <div
+            key={d.toISOString()}
+            className="relative grid border-l border-paper-200 dark:border-umber-700"
+            style={{ gridTemplateRows: `repeat(${HOUR_COUNT}, minmax(0, 1fr))` }}
+          >
+            {hours.map((h) => (
+              <div key={h} className="border-t border-paper-200 dark:border-umber-700" />
+            ))}
+
+            {showNow && i === todayCol && (
+              <div
+                className="pointer-events-none absolute left-0 right-0 z-10"
+                style={{ top: `${nowTopPct}%` }}
+                aria-label={todayAriaLabel}
+                title={todayAriaLabel}
+              >
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500"
+                />
+                <div className="h-0.5 w-full bg-blush-500" />
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

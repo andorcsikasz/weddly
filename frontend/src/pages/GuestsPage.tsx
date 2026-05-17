@@ -1302,16 +1302,19 @@ function KindIcon({ kind }: { kind: GuestKind }) {
   );
 }
 
-/** Inline Crown next to the bride / groom rows so the couple can spot
- *  themselves at a glance. Title doubles as tooltip + a11y label. Renders
- *  nothing for regular guests. */
+/** Inline royalty glyph next to the bride / groom rows so the couple can
+ *  spot themselves at a glance. Bride gets the Gem (kept in sync with the
+ *  `her_family` group icon — diamond for the bride side); groom keeps the
+ *  Crown. Title doubles as tooltip + a11y label. Renders nothing for
+ *  regular guests. */
 function PartnerRoleIcon({ role }: { role: "bride" | "groom" | null }) {
   const { t } = useT();
   if (!role) return null;
   const label = t(`guests.partner_role_${role}`);
+  const Icon = role === "bride" ? Gem : Crown;
   return (
     <span title={label} className="inline-flex shrink-0">
-      <Crown size={14} aria-label={label} className="text-blush-600 dark:text-blush-300" />
+      <Icon size={14} aria-label={label} className="text-blush-600 dark:text-blush-300" />
     </span>
   );
 }

@@ -51,9 +51,11 @@ function diffDays(a: Date, b: Date): number {
   return Math.round(ms / 86_400_000);
 }
 
-const HOUR_START = 7;
-const HOUR_END = 22;
-const HOUR_HEIGHT_PX = 48;
+// Full 0–23 day grid sized via flex/grid so all 24 hours fit in one screenful
+// without scroll. The parent card decides how tall the column gets.
+const HOUR_START = 0;
+const HOUR_END = 23;
+const HOUR_COUNT = HOUR_END - HOUR_START + 1;
 const HOURS: number[] = [];
 for (let h = HOUR_START; h <= HOUR_END; h++) HOURS.push(h);
 
@@ -119,17 +121,13 @@ export default function DayView({
     return rows;
   }, [tasks, dayStart, locale]);
 
-  // "Now" indicator position — only meaningful when the current view is
-  // today and local time is within the grid window.
+  // "Now" indicator position — always renders for "today" since the rail now
+  // spans the full 24h day. Position is expressed as % of the grid height so
+  // it tracks whatever vertical space the parent gives the hour grid.
   const now = new Date();
-  let nowTopPx: number | null = null;
-  if (isToday) {
-    const minutesSinceStart = (now.getHours() - HOUR_START) * 60 + now.getMinutes();
-    const totalMinutes = (HOUR_END - HOUR_START) * 60;
-    if (minutesSinceStart >= 0 && minutesSinceStart <= totalMinutes) {
-      nowTopPx = (minutesSinceStart / 60) * HOUR_HEIGHT_PX;
-    }
-  }
+  const nowTopPct = isToday
+    ? ((now.getHours() + now.getMinutes() / 60 - HOUR_START) / HOUR_COUNT) * 100
+    : null;
 
   const emptyHint = locale === "hu" ? "Nincs feladat erre a napra" : "No tasks for this day";
 
@@ -186,38 +184,45 @@ export default function DayView({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex">
-          <div className="w-14 shrink-0" aria-hidden="true">
-            {HOURS.map((h) => (
-              <div
-                key={h}
-                className="flex h-12 items-start justify-end pr-2 pt-0.5 text-[11px] text-ink-500 dark:text-umber-300"
-              >
+      <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: "56px 1fr" }}>
+        <div
+          className="grid"
+          style={{ gridTemplateRows: `repeat(${HOUR_COUNT}, minmax(0, 1fr))` }}
+          aria-hidden="true"
+        >
+          {HOURS.map((h) => (
+            <div
+              key={h}
+              className="border-t border-paper-200 pr-2 text-right text-[10px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
+            >
+              <span className="-translate-y-1/2 inline-block">
                 <time dateTime={`${h.toString().padStart(2, "0")}:00`}>{formatHour(h)}</time>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div
+          className="relative grid"
+          style={{ gridTemplateRows: `repeat(${HOUR_COUNT}, minmax(0, 1fr))` }}
+        >
+          {HOURS.map((h) => (
+            <div
+              key={h}
+              className="border-t border-paper-200 dark:border-umber-700"
+              aria-hidden="true"
+            />
+          ))}
+          {nowTopPct !== null && (
+            <div
+              className="pointer-events-none absolute inset-x-0"
+              style={{ top: `${nowTopPct}%` }}
+              aria-label={locale === "hu" ? "Most" : "Now"}
+            >
+              <div className="relative h-0.5 bg-blush-500">
+                <span className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500" />
               </div>
-            ))}
-          </div>
-          <div className="relative flex-1">
-            {HOURS.map((h) => (
-              <div
-                key={h}
-                className="h-12 border-t border-paper-200 dark:border-umber-700"
-                aria-hidden="true"
-              />
-            ))}
-            {nowTopPx !== null && (
-              <div
-                className="pointer-events-none absolute inset-x-0"
-                style={{ top: nowTopPx }}
-                aria-label={locale === "hu" ? "Most" : "Now"}
-              >
-                <div className="relative h-0.5 bg-blush-500">
-                  <span className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500" />
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

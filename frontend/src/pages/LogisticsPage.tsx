@@ -30,6 +30,7 @@ import {
   Bus,
   Crown,
   ExternalLink,
+  Gem,
   Home,
   Link2,
   MapPin,
@@ -783,7 +784,9 @@ function DraggableGuestRow({
         compact ? "py-1" : ""
       }`}
     >
-      {partnerRole ? (
+      {partnerRole === "bride" ? (
+        <Gem size={14} className="shrink-0 text-blush-600 dark:text-blush-300" aria-hidden />
+      ) : partnerRole === "groom" ? (
         <Crown size={14} className="shrink-0 text-blush-600 dark:text-blush-300" aria-hidden />
       ) : (
         <User size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
@@ -823,7 +826,11 @@ function PartnerSlotPlaceholder({
       role="presentation"
       aria-label={`${role}: ${name}`}
     >
-      <Crown size={14} aria-hidden className="mt-0.5 text-blush-600 dark:text-blush-300" />
+      {role === "bride" ? (
+        <Gem size={14} aria-hidden className="mt-0.5 text-blush-600 dark:text-blush-300" />
+      ) : (
+        <Crown size={14} aria-hidden className="mt-0.5 text-blush-600 dark:text-blush-300" />
+      )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">{name}</p>
         <p className="text-[11px] text-ink-500 dark:text-umber-300">{hint}</p>
@@ -1005,11 +1012,7 @@ function AccommodationCard({
       <header className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <h3 className="inline-flex items-center gap-1.5 truncate text-base font-semibold">
-            <Home
-              size={14}
-              aria-hidden
-              className="shrink-0 text-blush-600 dark:text-blush-300"
-            />
+            <Home size={14} aria-hidden className="shrink-0 text-blush-600 dark:text-blush-300" />
             <span className="truncate">{accommodation.name}</span>
           </h3>
           {accommodation.address && (

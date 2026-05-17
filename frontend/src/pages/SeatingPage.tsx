@@ -14,6 +14,7 @@ import {
   Circle,
   Copy,
   Crown,
+  Gem,
   HelpCircle,
   LayoutGrid,
   Link2,
@@ -2538,16 +2539,24 @@ function DraggableGuest({
         .filter(Boolean)
         .join(" ")}
     >
-      {/* Crown for bride / groom matches at the top of the unassigned list
-          so the couple can see themselves at a glance — they're the only
-          guests their workspace cares about emotionally. */}
-      {partnerRole && (
-        <Crown
-          size={compact ? 14 : 16}
-          aria-hidden
-          className="mr-1 inline-block align-text-bottom text-blush-600 dark:text-blush-300"
-        />
-      )}
+      {/* Royalty glyph for bride / groom matches at the top of the
+          unassigned list so the couple can see themselves at a glance.
+          Bride wears the Gem (mirrors the `her_family` group icon); groom
+          keeps the Crown. */}
+      {partnerRole &&
+        (partnerRole === "bride" ? (
+          <Gem
+            size={compact ? 14 : 16}
+            aria-hidden
+            className="mr-1 inline-block align-text-bottom text-blush-600 dark:text-blush-300"
+          />
+        ) : (
+          <Crown
+            size={compact ? 14 : 16}
+            aria-hidden
+            className="mr-1 inline-block align-text-bottom text-blush-600 dark:text-blush-300"
+          />
+        ))}
       {/* Baby icon for guests where kind === "baby" so couples can see at a
           glance which seats are taken by infants — they typically sit on a
           parent's lap or in a high-chair, so they don't consume a real seat
@@ -2686,7 +2695,11 @@ function PartnerSlotPlaceholder({
       role="presentation"
       aria-label={`${role}: ${name}`}
     >
-      <Crown size={14} aria-hidden className="mt-0.5 text-blush-600 dark:text-blush-300" />
+      {role === "bride" ? (
+        <Gem size={14} aria-hidden className="mt-0.5 text-blush-600 dark:text-blush-300" />
+      ) : (
+        <Crown size={14} aria-hidden className="mt-0.5 text-blush-600 dark:text-blush-300" />
+      )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">{name}</p>
         <p className="text-[11px] text-ink-500 dark:text-umber-300">{hint}</p>
