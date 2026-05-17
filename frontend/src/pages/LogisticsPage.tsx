@@ -30,6 +30,7 @@ import {
   Bus,
   Crown,
   ExternalLink,
+  Home,
   Link2,
   MapPin,
   Pencil,
@@ -482,7 +483,7 @@ export default function LogisticsPage() {
                 hint={t("logistics.no_accommodations_hint")}
               />
             ) : (
-              <ul className="grid gap-6 pt-3 sm:grid-cols-2">
+              <ul className="grid gap-3 sm:grid-cols-2">
                 {accommodations.map((a) => (
                   <li key={a.id}>
                     <AccommodationCard
@@ -966,10 +967,11 @@ function AccommodationCard({
   t: (k: string) => string;
 }) {
   const full = assigned.length >= accommodation.capacity;
-  // Top apex centered (50% 0%), roof eaves at 26% down on both sides, then
-  // straight down to the bottom corners. Apex sits at 50% so a future
-  // chimney could be added on either side of it.
-  const houseClip = "polygon(50% 0%, 100% 26%, 100% 100%, 0% 100%, 0% 26%)";
+  // Rectangular `card` again — the clip-path house silhouette read as crude
+  // at sm+ widths (the triangular roof dwarfed the body). A small Home icon
+  // next to the name keeps the "this is a lodging" cue without sacrificing
+  // the rest of the layout, and a slim blush top-rule echoes the same hue
+  // the rest of the page uses for warm accents.
   return (
     <article
       onDragOver={onDragOver}
@@ -981,115 +983,118 @@ function AccommodationCard({
         if (target.closest("button") || target.closest("a")) return;
         onTap();
       }}
-      style={{ clipPath: houseClip }}
       aria-label={accommodation.name}
-      className={`relative flex h-full min-h-[280px] flex-col bg-paper-50 shadow-soft transition-colors dark:bg-umber-800 ${
+      className={`card relative flex h-full flex-col gap-3 overflow-hidden transition-colors ${
         isDropTarget
           ? full
-            ? "ring-4 ring-rose-400/70"
-            : "ring-4 ring-blush-500"
+            ? "ring-2 ring-rose-400"
+            : "ring-2 ring-blush-500 bg-blush-50/40 dark:bg-blush-400/10"
           : full
-            ? "ring-2 ring-rose-300/60"
+            ? "ring-1 ring-rose-300/60"
             : ""
       } ${tapArmed ? "cursor-pointer ring-2 ring-blush-300 ring-dashed dark:ring-blush-400/40" : ""}`}
     >
-      {/* Roof tint — the top 28% gets a blush wash so the triangular roof
-          reads as a distinct surface from the body. */}
-      <div
+      {/* Slim blush top rule — the only chrome that hints at "lodging" now
+          that the house silhouette is gone. Sits inside the overflow-hidden
+          card so it tucks neatly against the rounded corners. */}
+      <span
         aria-hidden
-        className="absolute inset-x-0 top-0 h-[28%] bg-blush-200 dark:bg-blush-400/30"
+        className="absolute inset-x-0 top-0 h-0.5 bg-blush-300 dark:bg-blush-400/60"
       />
-      {/* Content sits inside a safe rectangle below the roof slope so titles
-          and chips never collide with the clip edges. pt-16 ≈ the roof's
-          tallest pixel + breathing room. */}
-      <div className="relative flex flex-1 flex-col gap-3 px-5 pb-5 pt-16">
-        <header className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-semibold">{accommodation.name}</h3>
-            {accommodation.address && (
-              <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-                <MapPin size={11} aria-hidden />
-                <span className="truncate">{accommodation.address}</span>
-              </p>
-            )}
-          </div>
-          <div className="flex shrink-0 gap-1">
-            <button
-              type="button"
-              onClick={onEdit}
-              className="rounded-md p-1.5 text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-              aria-label={t("common.edit")}
-              title={t("common.edit")}
-            >
-              <Pencil size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              className="rounded-md p-1.5 text-ink-500 hover:bg-paper-200 hover:text-rose-600 dark:text-umber-300 dark:hover:bg-umber-700"
-              aria-label={t("common.delete")}
-              title={t("common.delete")}
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </header>
 
-        <dl className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-600 dark:text-umber-200">
-          <div className="inline-flex items-center gap-1">
-            <Users size={11} aria-hidden />
-            <span className={full ? "font-semibold text-rose-600 dark:text-rose-400" : undefined}>
-              {assigned.length}/{accommodation.capacity}
-            </span>
-          </div>
-          {accommodation.price_huf !== null && (
-            <div>
-              <span className="font-medium">{formatHuf(accommodation.price_huf)}</span>
-            </div>
-          )}
-          {accommodation.contact && (
-            <div className="inline-flex items-center gap-1">
-              <Phone size={11} aria-hidden />
-              <span className="truncate">{accommodation.contact}</span>
-            </div>
-          )}
-          {accommodation.link && (
-            <a
-              href={accommodation.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-blush-700 hover:underline dark:text-blush-300"
-            >
-              <ExternalLink size={11} aria-hidden />
-              {t("logistics.link")}
-            </a>
-          )}
-        </dl>
-
-        <div
-          className={`min-h-[44px] flex-1 rounded-md border border-dashed p-2 ${
-            full
-              ? "border-rose-300 bg-rose-50/40 dark:border-rose-400/40 dark:bg-rose-400/10"
-              : "border-paper-300 dark:border-umber-700"
-          }`}
-        >
-          {assigned.length === 0 ? (
-            <p className="text-center text-xs text-ink-400 dark:text-umber-400">
-              {t("logistics.drop_guest_here")}
+      <header className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="inline-flex items-center gap-1.5 truncate text-base font-semibold">
+            <Home
+              size={14}
+              aria-hidden
+              className="shrink-0 text-blush-600 dark:text-blush-300"
+            />
+            <span className="truncate">{accommodation.name}</span>
+          </h3>
+          {accommodation.address && (
+            <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+              <MapPin size={11} aria-hidden />
+              <span className="truncate">{accommodation.address}</span>
             </p>
-          ) : (
-            <div className="flex flex-wrap gap-1">
-              {assigned.map((g) => (
-                <AssignedGuestChip
-                  key={g.id}
-                  guest={g}
-                  onUnassign={onUnassign}
-                  onDragStart={onDragStartGuest}
-                />
-              ))}
-            </div>
           )}
         </div>
+        <div className="flex shrink-0 gap-1">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-md p-1.5 text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            aria-label={t("common.edit")}
+            title={t("common.edit")}
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded-md p-1.5 text-ink-500 hover:bg-paper-200 hover:text-rose-600 dark:text-umber-300 dark:hover:bg-umber-700"
+            aria-label={t("common.delete")}
+            title={t("common.delete")}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </header>
+
+      <dl className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-600 dark:text-umber-200">
+        <div className="inline-flex items-center gap-1">
+          <Users size={11} aria-hidden />
+          <span className={full ? "font-semibold text-rose-600 dark:text-rose-400" : undefined}>
+            {assigned.length}/{accommodation.capacity}
+          </span>
+        </div>
+        {accommodation.price_huf !== null && (
+          <div>
+            <span className="font-medium">{formatHuf(accommodation.price_huf)}</span>
+          </div>
+        )}
+        {accommodation.contact && (
+          <div className="inline-flex items-center gap-1">
+            <Phone size={11} aria-hidden />
+            <span className="truncate">{accommodation.contact}</span>
+          </div>
+        )}
+        {accommodation.link && (
+          <a
+            href={accommodation.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-blush-700 hover:underline dark:text-blush-300"
+          >
+            <ExternalLink size={11} aria-hidden />
+            {t("logistics.link")}
+          </a>
+        )}
+      </dl>
+
+      <div
+        className={`min-h-[44px] flex-1 rounded-md border border-dashed p-2 ${
+          full
+            ? "border-rose-300 bg-rose-50/40 dark:border-rose-400/40 dark:bg-rose-400/10"
+            : "border-paper-300 dark:border-umber-700"
+        }`}
+      >
+        {assigned.length === 0 ? (
+          <p className="text-center text-xs text-ink-400 dark:text-umber-400">
+            {t("logistics.drop_guest_here")}
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {assigned.map((g) => (
+              <AssignedGuestChip
+                key={g.id}
+                guest={g}
+                onUnassign={onUnassign}
+                onDragStart={onDragStartGuest}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </article>
   );
