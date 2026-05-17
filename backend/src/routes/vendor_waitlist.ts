@@ -82,10 +82,46 @@ interface SubmitBody {
   location?: unknown;
   website?: unknown;
   message?: unknown;
+  portfolio_links?: unknown;
+  instagram_handle?: unknown;
 }
 
 function trimStr(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
+}
+
+/** Normalise one portfolio URL the same way the `website` field does: accept
+ *  bare hosts (auto-prefix https://), reject non-URL strings, enforce http(s).
+ *  Returns the canonical URL string (with scheme) so the admin clicks straight
+ *  through. */
+function normalisePortfolioUrl(raw: string): string {
+  if (raw.length > 500) {
+    throw new HttpError(400, "portfolio link too long (max 500)");
+  }
+  const candidate =
+    raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new HttpError(400, "portfolio link is not a valid URL");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new HttpError(400, "portfolio link protocol must be http or https");
+  }
+  if (!parsed.hostname) throw new HttpError(400, "portfolio link hostname required");
+  return candidate;
+}
+
+/** Instagram handles: alphanumeric + dot + underscore, 1-30 chars (IG's own
+ *  limit). Accept either "@handle" or bare "handle" — strip leading '@'. */
+const IG_HANDLE_RE = /^[A-Za-z0-9._]{1,30}$/;
+function normaliseInstagramHandle(raw: string): string {
+  const stripped = raw.replace(/^@+/, "");
+  if (!IG_HANDLE_RE.test(stripped)) {
+    throw new HttpError(400, "instagram_handle must be 1-30 chars of letters, digits, '.' or '_'");
+  }
+  return stripped;
 }
 
 async function handleSubmit(ctx: Ctx): Promise<Response> {
@@ -154,6 +190,31 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     }
   }
 
+  // Portfolio links — optional list of URLs. Cap at 6 so a misbehaving
+  // client can't dump a thousand entries onto us. Same auto-prefix +
+  // URL-parse forgiveness as the `website` field.
+  const portfolioLinks: string[] = [];
+  if (Array.isArray(body.portfolio_links)) {
+    if (body.portfolio_links.length > 6) {
+      throw new HttpError(400, "portfolio_links too many (max 6)");
+    }
+    for (const raw of body.portfolio_links) {
+      const link = trimStr(raw);
+      if (!link) continue;
+      portfolioLinks.push(normalisePortfolioUrl(link));
+    }
+  } else if (body.portfolio_links != null) {
+    throw new HttpError(400, "portfolio_links must be an array");
+  }
+
+  // Instagram handle — optional. Strip leading '@' so the admin display
+  // logic doesn't have to handle both forms.
+  let instagramHandle: string | null = null;
+  if (body.instagram_handle != null && body.instagram_handle !== "") {
+    const raw = trimStr(body.instagram_handle);
+    if (raw) instagramHandle = normaliseInstagramHandle(raw);
+  }
+
   const row = insertVendorWaitlist({
     business_name,
     email,
@@ -161,6 +222,8 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     location,
     website,
     message,
+    portfolio_links: portfolioLinks,
+    instagram_handle: instagramHandle,
   });
   addAuditLog({
     actor_user_id: null,

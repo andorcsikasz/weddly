@@ -20,6 +20,10 @@ export interface VendorWaitlistRow {
   location: string | null;
   website: string | null;
   message: string | null;
+  /** JSON-encoded `string[]` (URLs) or null. Parsed via `parsePortfolioLinks`
+   *  on read — defensive against legacy / hand-edited rows. */
+  portfolio_links: string | null;
+  instagram_handle: string | null;
   status: string;
   reviewed_by_user_id: number | null;
   reviewed_at: number | null;
@@ -28,6 +32,21 @@ export interface VendorWaitlistRow {
   sent_subject: string | null;
   sent_body: string | null;
   created_at: number;
+}
+
+/** Defensive JSON parse — rows existed before the column was added, and
+ *  someone hand-editing the DB could land non-JSON text in here. Drop
+ *  garbage rather than throwing; a bad value loses the portfolio links but
+ *  never blocks the admin list. */
+function parsePortfolioLinks(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((v): v is string => typeof v === "string" && v.length > 0);
+  } catch {
+    return [];
+  }
 }
 
 /** Legacy `contacted`/`dismissed` rows pre-date the three-outcome triage
@@ -50,6 +69,8 @@ export function toVendorWaitlistEntry(row: VendorWaitlistRow): VendorWaitlistEnt
     location: row.location,
     website: row.website,
     message: row.message,
+    portfolio_links: parsePortfolioLinks(row.portfolio_links),
+    instagram_handle: row.instagram_handle,
     status: toStatus(row.status),
     reviewed_at: row.reviewed_at,
     created_at: row.created_at,
@@ -65,6 +86,8 @@ export function toVendorWaitlistAdminView(row: VendorWaitlistRow): VendorWaitlis
     location: row.location,
     website: row.website,
     message: row.message,
+    portfolio_links: parsePortfolioLinks(row.portfolio_links),
+    instagram_handle: row.instagram_handle,
     status: toStatus(row.status),
     reviewed_at: row.reviewed_at,
     outcome_at: row.outcome_at,
@@ -96,12 +119,19 @@ export function insertVendorWaitlist(input: {
   location: string | null;
   website: string | null;
   message: string | null;
+  portfolio_links: string[];
+  instagram_handle: string | null;
 }): VendorWaitlistRow {
   const ts = now();
+  // Empty array serialises to null on the row — keeps the column NULL for
+  // submissions without portfolio, so the admin can `WHERE portfolio_links
+  // IS NOT NULL` if we ever want to filter on it.
+  const portfolioJson =
+    input.portfolio_links.length > 0 ? JSON.stringify(input.portfolio_links) : null;
   const result = db
     .prepare(
-      `INSERT INTO vendor_waitlist (business_name, email, category, location, website, message, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'new', ?)`,
+      `INSERT INTO vendor_waitlist (business_name, email, category, location, website, message, portfolio_links, instagram_handle, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
     )
     .run(
       input.business_name,
@@ -110,6 +140,8 @@ export function insertVendorWaitlist(input: {
       input.location,
       input.website,
       input.message,
+      portfolioJson,
+      input.instagram_handle,
       ts,
     );
   const row = getVendorWaitlistById(Number(result.lastInsertRowid));

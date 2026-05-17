@@ -21,6 +21,12 @@ export interface SubmitVendorWaitlistInput {
   location: string | null;
   website: string | null;
   message: string | null;
+  /** Up to 6 portfolio URLs (galleries, reels, Instagram posts, Drive
+   *  folders, …). Each entry must be a parseable http(s) URL. Empty array
+   *  is fine — the field is optional. */
+  portfolio_links: string[];
+  /** Bare Instagram handle (no leading '@'). Optional. */
+  instagram_handle: string | null;
 }
 
 /** Public-form return shape — the same shape the admin list returns, minus
@@ -34,6 +40,8 @@ export interface VendorWaitlistEntry {
   location: string | null;
   website: string | null;
   message: string | null;
+  portfolio_links: string[];
+  instagram_handle: string | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
   created_at: number;
@@ -50,6 +58,8 @@ export interface VendorWaitlistAdminView {
   location: string | null;
   website: string | null;
   message: string | null;
+  portfolio_links: string[];
+  instagram_handle: string | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
   outcome_at: number | null;

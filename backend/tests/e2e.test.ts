@@ -6115,6 +6115,8 @@ describe("vendor waitlist", () => {
     location: string | null;
     website: string | null;
     message: string | null;
+    portfolio_links: string[];
+    instagram_handle: string | null;
     status: "new" | "under_review" | "accepted" | "rejected";
     outcome_at?: number | null;
     notes?: string | null;
@@ -6265,6 +6267,114 @@ describe("vendor waitlist", () => {
       token: userReg.data.token,
     });
     expect(list2.status).toBe(403);
+  });
+
+  test("portfolio_links + instagram_handle round-trip and surface to admin", async () => {
+    wipeAll();
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(adminReg.status).toBe(201);
+
+    // Bare hosts in portfolio links should auto-prefix https:// (same forgiving
+    // behavior as the `website` field). Leading '@' on the IG handle is
+    // stripped server-side so the admin renders a clean handle.
+    const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "Florea Studio",
+      email: "florea@example.test",
+      category: "decor_floral",
+      portfolio_links: [
+        "example.com/work",
+        "https://instagram.com/p/abc",
+        "", // empty entries are filtered out
+      ],
+      instagram_handle: "@florea_studio_bp",
+    });
+    expect(submit.status).toBe(201);
+    expect(submit.data.entry.portfolio_links).toEqual([
+      "https://example.com/work",
+      "https://instagram.com/p/abc",
+    ]);
+    expect(submit.data.entry.instagram_handle).toBe("florea_studio_bp");
+
+    // Admin list returns the same fields.
+    const list = await req<{ entries: Entry[] }>("GET", "/api/admin/vendor-waitlist", undefined, {
+      token: adminReg.data.token,
+    });
+    expect(list.status).toBe(200);
+    expect(list.data.entries[0]?.portfolio_links).toEqual([
+      "https://example.com/work",
+      "https://instagram.com/p/abc",
+    ]);
+    expect(list.data.entries[0]?.instagram_handle).toBe("florea_studio_bp");
+  });
+
+  test("portfolio_links + instagram_handle reject bad inputs", async () => {
+    wipeAll();
+    // Non-URL portfolio link is rejected.
+    const badLink = await req("POST", "/api/vendors/waitlist", {
+      business_name: "X",
+      email: "x@y.z",
+      category: "venue",
+      portfolio_links: ["not a url"],
+    });
+    expect(badLink.status).toBe(400);
+
+    // Cap is 6.
+    const tooMany = await req("POST", "/api/vendors/waitlist", {
+      business_name: "X",
+      email: "x@y.z",
+      category: "venue",
+      portfolio_links: [
+        "https://a.test",
+        "https://b.test",
+        "https://c.test",
+        "https://d.test",
+        "https://e.test",
+        "https://f.test",
+        "https://g.test",
+      ],
+    });
+    expect(tooMany.status).toBe(400);
+
+    // portfolio_links must be an array (not a string).
+    const notArray = await req("POST", "/api/vendors/waitlist", {
+      business_name: "X",
+      email: "x@y.z",
+      category: "venue",
+      portfolio_links: "https://a.test",
+    });
+    expect(notArray.status).toBe(400);
+
+    // Invalid IG handle (contains a hyphen).
+    const badIg = await req("POST", "/api/vendors/waitlist", {
+      business_name: "X",
+      email: "x@y.z",
+      category: "venue",
+      instagram_handle: "bad-handle",
+    });
+    expect(badIg.status).toBe(400);
+  });
+
+  test("portfolio_links + instagram_handle default to empty/null when omitted", async () => {
+    wipeAll();
+    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(adminReg.status).toBe(201);
+
+    const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
+      business_name: "No Portfolio Inc",
+      email: "none@example.test",
+      category: "venue",
+    });
+    expect(submit.status).toBe(201);
+    expect(submit.data.entry.portfolio_links).toEqual([]);
+    expect(submit.data.entry.instagram_handle).toBeNull();
   });
 });
 

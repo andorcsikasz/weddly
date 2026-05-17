@@ -731,6 +731,39 @@ const hu: LocaleMessages = {
     privacy_consent_link: "adatkezelési tájékoztatót",
     privacy_consent_suffix: ", és hozzájárulok a megadott adatok kezeléséhez.",
     form_err_privacy_consent: "A jelentkezéshez el kell fogadnod az adatkezelési tájékoztatót.",
+    section_business_title: "Bemutatkozás",
+    section_business_sub: "Pár alap adat, hogy be tudjunk titeket azonosítani.",
+    section_contact_title: "Kapcsolat & régió",
+    section_contact_sub: "Hogy elérjünk titeket, és tudjuk, hol dolgoztok.",
+    section_portfolio_title: "Portfólió",
+    section_portfolio_sub:
+      "Mutassátok meg a munkáitokat — ez alapján döntünk a felvételről. Opcionális, de nagyon ajánlott.",
+    optional_pill: "Opcionális",
+    portfolio_links_label: "Portfólió linkek",
+    portfolio_links_placeholder: "https://…",
+    portfolio_link_remove: "Link eltávolítása",
+    portfolio_add_link: "+ Új link",
+    portfolio_links_limit: "Legfeljebb 6 link.",
+    portfolio_hint_default:
+      "Galéria, weboldal, Instagram poszt, Drive mappa — bármi, amit megosztanátok.",
+    portfolio_hint_venue_stay:
+      "Helyszín fotók, tárlatvezető videó, Google Maps panoráma, vagy a saját weboldal galériája.",
+    portfolio_hint_food_drink:
+      "Étlap PDF / link, kóstolós fotók, korábbi esemény galéria, vagy social poszt.",
+    portfolio_hint_atmosphere:
+      "Instagram posztok, web galériák — 3–6 darab elég, amiből látszik a stílusotok.",
+    portfolio_hint_experience:
+      "YouTube / Vimeo / Mixcloud / Spotify link, korábbi esküvő galéria, demoszett.",
+    portfolio_hint_style:
+      "Lookbook, Instagram galéria, weboldal — fontos, hogy ránézésre lássuk a stílust.",
+    portfolio_hint_details:
+      "Web, online katalógus, korábbi munkák galériája — amit szívesen megmutatnátok.",
+    instagram_label: "Instagram",
+    instagram_placeholder: "viragstudio_bp",
+    instagram_help: "Az üzleti Instagram fióknév (@ nélkül is jó). Opcionális.",
+    form_err_portfolio_link: "Az egyik portfólió link nem érvényes URL.",
+    form_err_instagram_handle:
+      "Az Instagram fióknév csak betűt, számot, pontot és aláhúzást tartalmazhat (max 30 karakter).",
   },
   public: {
     menu_open: "Menü megnyitása",
@@ -1894,6 +1927,8 @@ const hu: LocaleMessages = {
     waitlist_card_message_label: "Üzenet",
     waitlist_card_notes_label: "Belső jegyzet",
     waitlist_card_sent_label: "Kiküldött válasz",
+    waitlist_card_portfolio_label: "Portfólió",
+    waitlist_card_instagram_label: "Instagram",
     waitlist_action_respond: "Megválaszolom",
     waitlist_action_reopen: "Újra megnyit",
     waitlist_modal_title: "Válasz a jelentkezésre",

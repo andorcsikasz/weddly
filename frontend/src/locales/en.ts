@@ -731,6 +731,39 @@ const en: LocaleMessages = {
     privacy_consent_link: "privacy policy",
     privacy_consent_suffix: ", and I consent to the processing of the data I provide.",
     form_err_privacy_consent: "Please accept the privacy policy to submit your application.",
+    section_business_title: "About you",
+    section_business_sub: "A few basics so we know who's applying.",
+    section_contact_title: "Contact & region",
+    section_contact_sub: "How to reach you and where you work.",
+    section_portfolio_title: "Portfolio",
+    section_portfolio_sub:
+      "Show us your work — it's what we use to decide. Optional, but highly recommended.",
+    optional_pill: "Optional",
+    portfolio_links_label: "Portfolio links",
+    portfolio_links_placeholder: "https://…",
+    portfolio_link_remove: "Remove link",
+    portfolio_add_link: "+ Add link",
+    portfolio_links_limit: "Up to 6 links.",
+    portfolio_hint_default:
+      "Gallery, website, Instagram post, Drive folder — anything you'd share.",
+    portfolio_hint_venue_stay:
+      "Venue photos, walkthrough video, Google Maps panorama, or your own website gallery.",
+    portfolio_hint_food_drink:
+      "Menu PDF / link, tasting photos, past-event gallery, or a social post.",
+    portfolio_hint_atmosphere:
+      "Instagram posts, web galleries — 3–6 examples are plenty to convey your style.",
+    portfolio_hint_experience:
+      "YouTube / Vimeo / Mixcloud / Spotify link, past-wedding gallery, demo set.",
+    portfolio_hint_style:
+      "Lookbook, Instagram gallery, website — we want a quick read on your style.",
+    portfolio_hint_details:
+      "Website, online catalogue, past-work gallery — whatever you'd like to share.",
+    instagram_label: "Instagram",
+    instagram_placeholder: "florastudio_bp",
+    instagram_help: "Your business Instagram handle (the @ is optional). Optional.",
+    form_err_portfolio_link: "One of the portfolio links isn't a valid URL.",
+    form_err_instagram_handle:
+      "Instagram handle can only contain letters, digits, dots and underscores (max 30 chars).",
   },
   public: {
     menu_open: "Open menu",
@@ -1878,6 +1911,8 @@ const en: LocaleMessages = {
     waitlist_card_message_label: "Message",
     waitlist_card_notes_label: "Internal notes",
     waitlist_card_sent_label: "Sent reply",
+    waitlist_card_portfolio_label: "Portfolio",
+    waitlist_card_instagram_label: "Instagram",
     waitlist_action_respond: "Reply",
     waitlist_action_reopen: "Re-open",
     waitlist_modal_title: "Reply to submission",

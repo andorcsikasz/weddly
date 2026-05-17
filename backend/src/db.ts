@@ -198,6 +198,15 @@ addColumnIfMissing("vendor_waitlist", "sent_body", "sent_body TEXT");
 // having to google the name.
 addColumnIfMissing("vendor_waitlist", "website", "website TEXT");
 
+// Structured portfolio submission on the public vendor waitlist form.
+// `portfolio_links` holds a JSON-encoded array (max 6) of validated URLs the
+// vendor pastes — Pixieset galleries, Vimeo reels, Instagram posts, Drive
+// folders, etc. Stored as TEXT (JSON) rather than a separate table because
+// the field is write-once on submit and read whole — no per-link queries.
+// `instagram_handle` is the bare handle (no leading '@' — server strips it).
+addColumnIfMissing("vendor_waitlist", "portfolio_links", "portfolio_links TEXT");
+addColumnIfMissing("vendor_waitlist", "instagram_handle", "instagram_handle TEXT");
+
 // `couple_supplier_id` back-reference on auto-synced budget lines. When a
 // DIY supplier entry on /app/suppliers has a price, the backend creates a
 // matching `budget_lines` row stamped with this id. The frontend renders

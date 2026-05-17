@@ -761,6 +761,38 @@ export interface LocaleMessages {
     privacy_consent_link: string;
     privacy_consent_suffix: string;
     form_err_privacy_consent: string;
+    /** Numbered section titles in the redesigned waitlist form. The form is
+     *  split into three vertical sections so vendors can scan it before
+     *  filling — Cég, Kapcsolat, Portfólió. */
+    section_business_title: string;
+    section_business_sub: string;
+    section_contact_title: string;
+    section_contact_sub: string;
+    section_portfolio_title: string;
+    section_portfolio_sub: string;
+    /** "Opcionális" pill rendered next to optional field labels. */
+    optional_pill: string;
+    /** Portfolio submission block. The per-category help text is keyed
+     *  through `portfolio_hint_<group>` (six groups, mirrors SUPPLIER_GROUPS)
+     *  so the form swaps the helper text + placeholder as the category
+     *  dropdown changes. */
+    portfolio_links_label: string;
+    portfolio_links_placeholder: string;
+    portfolio_link_remove: string;
+    portfolio_add_link: string;
+    portfolio_links_limit: string;
+    portfolio_hint_default: string;
+    portfolio_hint_venue_stay: string;
+    portfolio_hint_food_drink: string;
+    portfolio_hint_atmosphere: string;
+    portfolio_hint_experience: string;
+    portfolio_hint_style: string;
+    portfolio_hint_details: string;
+    instagram_label: string;
+    instagram_placeholder: string;
+    instagram_help: string;
+    form_err_portfolio_link: string;
+    form_err_instagram_handle: string;
   };
   public: {
     menu_open: string;
@@ -2045,6 +2077,8 @@ export interface LocaleMessages {
     waitlist_card_message_label: string;
     waitlist_card_notes_label: string;
     waitlist_card_sent_label: string;
+    waitlist_card_portfolio_label: string;
+    waitlist_card_instagram_label: string;
     waitlist_action_respond: string;
     waitlist_action_reopen: string;
     waitlist_modal_title: string;

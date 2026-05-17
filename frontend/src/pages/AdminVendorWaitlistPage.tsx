@@ -13,7 +13,7 @@ import type {
   VendorWaitlistStatus,
 } from "@shared/vendor_waitlist";
 import { buildEmailDraft } from "@shared/vendor_waitlist";
-import { ExternalLink, Mail, MessageSquare, RotateCcw } from "lucide-react";
+import { AtSign, ExternalLink, Link2, Mail, MessageSquare, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
@@ -310,6 +310,40 @@ function EntryCard({
           </div>
         )}
       </dl>
+
+      {entry.instagram_handle && (
+        <a
+          href={`https://instagram.com/${entry.instagram_handle}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+        >
+          <AtSign size={12} aria-hidden /> {entry.instagram_handle}
+        </a>
+      )}
+
+      {entry.portfolio_links.length > 0 && (
+        <div className="mt-3 rounded-lg bg-white/60 dark:bg-umber-900/40 p-3">
+          <p className="text-xs font-medium text-ink-800 dark:text-paper-50">
+            {t("admin.waitlist_card_portfolio_label")}
+          </p>
+          <ul className="mt-1.5 grid gap-1">
+            {entry.portfolio_links.map((url) => (
+              <li key={url}>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex max-w-full items-center gap-1 truncate text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+                >
+                  <Link2 size={12} aria-hidden className="shrink-0" />
+                  <span className="truncate">{url}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {entry.message && (
         <p className="mt-3 rounded-lg bg-white/60 dark:bg-umber-900/40 p-3 text-sm italic text-ink-700 dark:text-paper-100">
