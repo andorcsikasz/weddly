@@ -34,6 +34,7 @@ import {
   Lightbulb,
   Mail,
   MapPin,
+  MoreHorizontal,
   PartyPopper,
   Pencil,
   Phone,
@@ -1254,35 +1255,14 @@ export default function SuppliersPage() {
                     )}
                     <button
                       type="button"
-                      onClick={() =>
-                        setReporting({
-                          id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                          name: s.name,
-                        })
-                      }
-                      aria-label={t("suppliers.report.aria_label")}
-                      title={t("suppliers.report.aria_label")}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
-                    >
-                      <Flag size={14} aria-hidden />
-                    </button>
-                    <CompareToggle
-                      supplierId={s.id}
-                      isCompared={isCompared}
-                      capReached={compareCapReached}
-                      onToggle={() => toggleCompare(s.id)}
-                      t={t}
-                    />
-                    <button
-                      type="button"
                       onClick={() => togglePicked(s)}
                       aria-label={isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")}
                       aria-pressed={isPicked}
                       title={t("suppliers.pick_aria")}
                       className={
                         isPicked
-                          ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                          : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                          ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                          : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                       }
                     >
                       {isPicked ? (
@@ -1291,19 +1271,20 @@ export default function SuppliersPage() {
                         <Bookmark size={15} aria-hidden />
                       )}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleSaved(s.id)}
-                      aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
-                      aria-pressed={isSaved}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
-                    >
-                      <Star
-                        size={15}
-                        className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-                        aria-hidden
-                      />
-                    </button>
+                    <SupplierActionsMenu
+                      isCompared={isCompared}
+                      isSaved={isSaved}
+                      capReached={compareCapReached}
+                      onToggleCompare={() => toggleCompare(s.id)}
+                      onToggleSaved={() => toggleSaved(s.id)}
+                      onReport={() =>
+                        setReporting({
+                          id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                          name: s.name,
+                        })
+                      }
+                      t={t}
+                    />
                     <VoteRow supplier={s} onVote={onVote} t={t} />
                   </div>
                 </article>
@@ -1319,18 +1300,11 @@ export default function SuppliersPage() {
                     : ""
                 } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
               >
-                {/* Top-right corner: compare + pick + save. The pick button
-                    marks a card as "our chosen one" for its sub-category, the
-                    star is the lightweight bookmark, and compare collects the
-                    card into the side-by-side view. */}
+                {/* Top-right corner: pick (visible primary chip) + overflow
+                    menu holding compare, save, and report. Collapsing the
+                    secondary actions keeps the cluster from crowding the
+                    supplier name on a 360 px viewport. */}
                 <div className="absolute right-3 top-3 inline-flex items-center gap-1">
-                  <CompareToggle
-                    supplierId={s.id}
-                    isCompared={isCompared}
-                    capReached={compareCapReached}
-                    onToggle={() => toggleCompare(s.id)}
-                    t={t}
-                  />
                   <button
                     type="button"
                     onClick={() => togglePicked(s)}
@@ -1339,8 +1313,8 @@ export default function SuppliersPage() {
                     title={t("suppliers.pick_aria")}
                     className={
                       isPicked
-                        ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                        : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                        ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                        : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                     }
                   >
                     {isPicked ? (
@@ -1349,19 +1323,20 @@ export default function SuppliersPage() {
                       <Bookmark size={15} aria-hidden />
                     )}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleSaved(s.id)}
-                    aria-label={isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
-                    aria-pressed={isSaved}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
-                  >
-                    <Star
-                      size={15}
-                      className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-                      aria-hidden
-                    />
-                  </button>
+                  <SupplierActionsMenu
+                    isCompared={isCompared}
+                    isSaved={isSaved}
+                    capReached={compareCapReached}
+                    onToggleCompare={() => toggleCompare(s.id)}
+                    onToggleSaved={() => toggleSaved(s.id)}
+                    onReport={() =>
+                      setReporting({
+                        id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                        name: s.name,
+                      })
+                    }
+                    t={t}
+                  />
                 </div>
                 {/* Single-column body: avatar + name + meta line (with price
                     band and capacity inline so the meta strip stays one line),
@@ -1475,20 +1450,6 @@ export default function SuppliersPage() {
                         <Mail size={14} />
                       </a>
                     )}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setReporting({
-                          id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                          name: s.name,
-                        })
-                      }
-                      className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
-                      aria-label={t("suppliers.report.aria_label")}
-                      title={t("suppliers.report.aria_label")}
-                    >
-                      <Flag size={14} aria-hidden />
-                    </button>
                   </div>
                   <div className="ml-auto flex items-center">
                     <VoteRow supplier={s} onVote={onVote} t={t} />
@@ -1745,6 +1706,115 @@ function CompareToggle({
     >
       <Scale size={14} aria-hidden />
     </button>
+  );
+}
+
+/** Overflow menu for a supplier card. Collapses the Save + Compare + Report
+ *  actions behind a single ••• so the corner cluster stays uncrowded on
+ *  mobile. The Pick chip stays outside as a visible primary affordance.
+ *  Menu is anchored absolutely to the trigger; closes on outside tap + Esc. */
+function SupplierActionsMenu({
+  isCompared,
+  isSaved,
+  capReached,
+  onToggleCompare,
+  onToggleSaved,
+  onReport,
+  t,
+}: {
+  isCompared: boolean;
+  isSaved: boolean;
+  capReached: boolean;
+  onToggleCompare: () => void;
+  onToggleSaved: () => void;
+  onReport: () => void;
+  t: (key: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const compareDisabled = !isCompared && capReached;
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t("suppliers.actions_menu_aria")}
+        title={t("suppliers.actions_menu_aria")}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+      >
+        <MoreHorizontal size={16} aria-hidden />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-10 mt-1 w-52 origin-top-right rounded-xl border border-paper-300 bg-white p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            disabled={compareDisabled}
+            onClick={() => {
+              setOpen(false);
+              onToggleCompare();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-700 hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <Scale size={14} aria-hidden className="shrink-0" />
+            <span className="flex-1">
+              {isCompared ? t("suppliers.compare.remove_aria") : t("suppliers.compare.add_aria")}
+            </span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onToggleSaved();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <Star
+              size={14}
+              aria-hidden
+              className={`shrink-0 ${isSaved ? "fill-blush-500 text-blush-500" : ""}`}
+            />
+            <span className="flex-1">
+              {isSaved ? t("suppliers.unsave_aria") : t("suppliers.save_aria")}
+            </span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onReport();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <Flag size={14} aria-hidden className="shrink-0" />
+            <span className="flex-1">{t("suppliers.report.aria_label")}</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

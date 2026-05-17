@@ -31,6 +31,7 @@ import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { adminUserApi, planningApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { CoachMarks } from "./CoachMarks";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { KeyboardShortcutsSheet, useShortcutsHotkey } from "./KeyboardShortcutsSheet";
 import { ProfileMenu } from "./ProfileMenu";
@@ -457,7 +458,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           "More" button that opens a bottom sheet with the rest. Admin view
           keeps its existing 5-tab layout (the 5 admin pages all fit) and
           inverts to a violet tint to mirror the desktop rail. */}
-      <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur lg:hidden border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95">
+      <nav
+        data-coach-target="bottom-nav"
+        className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur lg:hidden border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95"
+      >
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
           {displayItems
             .filter((item) => item.tabKey)
@@ -480,6 +484,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {!inAdminView && (
             <button
               type="button"
+              data-coach-target="more-button"
               onClick={() => setMoreOpen(true)}
               aria-haspopup="dialog"
               aria-expanded={moreOpen}
@@ -506,6 +511,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="app" />
       <KeyboardShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      {/* First-run coach-marks. Mounts only on mobile and only when the
+       *  user hasn't seen them — the component self-gates on localStorage
+       *  + viewport. Admin view skips so admins don't see couple-facing
+       *  onboarding when they hop in to moderate. */}
+      {!inAdminView && <CoachMarks />}
     </div>
   );
 }

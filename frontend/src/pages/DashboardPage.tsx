@@ -1224,7 +1224,11 @@ export default function DashboardPage() {
           the user reloads after sending, the section disappears and the
           invite is managed from the Profile partner card. ──────────── */}
           {!couple.partner_b_id && (!invite || sentToEmail) && (
-            <section id="invite-partner" className="card stationery mb-8 scroll-mt-24">
+            <section
+              id="invite-partner"
+              data-coach-target="partner-invite"
+              className="card stationery mb-8 scroll-mt-24"
+            >
               <h2>{t("dashboard.invite_partner")}</h2>
               <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
                 {t("dashboard.invite_partner_help")}

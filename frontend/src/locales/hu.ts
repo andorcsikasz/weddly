@@ -1551,6 +1551,7 @@ const hu: LocaleMessages = {
     city_all: "Összes város",
     empty_filtered: "Erre a szűrésre nincs találat. Próbálj más szót vagy várost.",
     price_legend: "Olcsóbb → Drágább",
+    actions_menu_aria: "További műveletek",
     save_aria: "Mentés",
     unsave_aria: "Mentés visszavonása",
     saved_filter: "Mentett ({n})",
@@ -2586,6 +2587,19 @@ const hu: LocaleMessages = {
     seating_seats: "Hely elvétele / hozzáadása",
     seating_delete: "Kiválasztott asztal törlése",
     rsvp_keyboard_mode: "Csak-billentyű mód be-/kikapcsolása",
+  },
+  coach: {
+    bottom_nav_title: "Itt a navigáció",
+    bottom_nav_body: "Az alsó sávban gyorsan eléred a Kezdő, Vendég, Költés és Szállító részeket.",
+    more_button_title: "Több",
+    more_button_body:
+      "A „Több” gombra koppintva előhívható az Ültetés, Programterv, Nászút és a többi felület.",
+    partner_invite_title: "Hívd meg a párodat",
+    partner_invite_body: "Itt küldhetsz meghívót a társadnak, hogy közösen tervezzétek az esküvőt.",
+    next: "Tovább",
+    done: "Kezdjük",
+    skip: "Kihagyom",
+    step_position: "{current}/{total}",
   },
 };
 

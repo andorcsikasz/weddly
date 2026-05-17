@@ -1688,6 +1688,8 @@ export interface LocaleMessages {
     empty_filtered: string;
     /** Price-band scale tooltip / legend. */
     price_legend: string;
+    /** Overflow menu trigger label on each supplier card. */
+    actions_menu_aria: string;
     /** Saved-supplier star + filter chip. */
     save_aria: string;
     unsave_aria: string;
@@ -2803,5 +2805,20 @@ export interface LocaleMessages {
     seating_seats: string;
     seating_delete: string;
     rsvp_keyboard_mode: string;
+  };
+  /** First-run coach-marks shown on mobile only, once per device. Three
+   *  steps surface the bottom-nav, the More sheet, and the partner-invite
+   *  section so cohort C (older relatives) don't miss them. */
+  coach: {
+    bottom_nav_title: string;
+    bottom_nav_body: string;
+    more_button_title: string;
+    more_button_body: string;
+    partner_invite_title: string;
+    partner_invite_body: string;
+    next: string;
+    done: string;
+    skip: string;
+    step_position: string;
   };
 }

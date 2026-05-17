@@ -1539,6 +1539,7 @@ const en: LocaleMessages = {
     city_all: "All cities",
     empty_filtered: "No suppliers match this search. Try a different word or city.",
     price_legend: "Cheaper → Pricier",
+    actions_menu_aria: "More actions",
     save_aria: "Save",
     unsave_aria: "Remove from saved",
     saved_filter: "Saved ({n})",
@@ -2565,6 +2566,21 @@ const en: LocaleMessages = {
     seating_seats: "Remove / add a seat",
     seating_delete: "Delete selected table",
     rsvp_keyboard_mode: "Toggle keyboard-only mode",
+  },
+  coach: {
+    bottom_nav_title: "Quick navigation",
+    bottom_nav_body:
+      "The bottom bar jumps you between Home, Guests, Budget and Suppliers in one tap.",
+    more_button_title: "More",
+    more_button_body:
+      "Tap More to reach Seating, Schedule, Honeymoon and the rest of the planning surfaces.",
+    partner_invite_title: "Invite your partner",
+    partner_invite_body:
+      "Send your partner an invitation here so you can plan the wedding together.",
+    next: "Next",
+    done: "Got it",
+    skip: "Skip",
+    step_position: "{current}/{total}",
   },
 };
 

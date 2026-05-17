@@ -854,7 +854,68 @@ export default function BudgetPage() {
           <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
         </div>
 
-        <div className="card overflow-hidden p-0">
+        {/* Mobile: each line is a stacked card so the planned/actual inputs
+            get full width and the delta hugs the category header. Reuses the
+            same setter + state as the desktop table. */}
+        <div className="space-y-2 md:hidden">
+          {CATEGORIES.map((cat) => {
+            if (cat === "honeymoon") {
+              return (
+                <HoneymoonAggregateCard
+                  key={cat}
+                  planned={honeymoonAgg?.planned ?? 0}
+                  actual={honeymoonAgg?.actual ?? 0}
+                  locale={locale}
+                  currency={currency}
+                />
+              );
+            }
+            const bucket = categoryBuckets.get(cat);
+            const linesForCat = bucket?.lines ?? [];
+            const planned = bucket?.planned ?? 0;
+            const actual = bucket?.actual ?? 0;
+            const isHighlighted =
+              highlightLineId !== null && linesForCat.some((l) => l.id === highlightLineId);
+            const isFrozen = frozenCategoriesSet.has(cat);
+            const editable = bucket?.editable ?? true;
+            const canDelete = !isFrozen && linesForCat.length > 0 && editable;
+            return (
+              <BudgetMobileCard
+                key={cat}
+                id={`cat-${cat}-mobile`}
+                category={cat}
+                planned={planned}
+                actual={actual}
+                currency={currency}
+                locale={locale}
+                isHighlighted={isHighlighted}
+                readOnlyPlanned={isFrozen || !editable}
+                readOnlyActual={!editable}
+                canDelete={canDelete}
+                onPlannedCommit={(v) => setAggregatedPlanned(cat, v)}
+                onActualCommit={(v) => setAggregatedActual(cat, v)}
+                onDelete={() => removeAllInCategory(cat)}
+              />
+            );
+          })}
+          {lines
+            .filter((l) => l.category === "other" && !isDefaultOtherLine(l))
+            .map((line) => (
+              <BudgetMobileCustomCard
+                key={line.id}
+                line={line}
+                currency={currency}
+                locale={locale}
+                isHighlighted={line.id === highlightLineId}
+                onPlannedCommit={(v) => save(line, "planned_huf", v)}
+                onActualCommit={(v) => save(line, "actual_huf", v)}
+                onDelete={() => removeLine(line.id)}
+              />
+            ))}
+          <AddCustomRowMobile onAdd={addCustomRow} />
+        </div>
+
+        <div className="card hidden overflow-hidden p-0 md:block">
           <table className="min-w-full text-sm">
             <thead className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:text-umber-300">
               <tr>
@@ -1382,6 +1443,399 @@ function HoneymoonAggregateRow({
         </Link>
       </td>
     </tr>
+  );
+}
+
+/* ─── Mobile card variants ────────────────────────────────────────── */
+
+/** Mobile card for a regular category row. Renders the same HufInputs as the
+ *  desktop table but stacked vertically so the inputs get full width on a
+ *  360 px viewport. Diff lives in the header next to the category name. */
+function BudgetMobileCard({
+  id,
+  category,
+  planned,
+  actual,
+  currency,
+  locale,
+  isHighlighted,
+  readOnlyPlanned,
+  readOnlyActual,
+  canDelete,
+  onPlannedCommit,
+  onActualCommit,
+  onDelete,
+}: {
+  id: string;
+  category: BudgetCategory;
+  planned: number;
+  actual: number;
+  currency: Currency;
+  locale: "hu" | "en";
+  isHighlighted: boolean;
+  readOnlyPlanned: boolean;
+  readOnlyActual: boolean;
+  canDelete: boolean;
+  onPlannedCommit: (v: number) => void | Promise<void>;
+  onActualCommit: (v: number) => void | Promise<void>;
+  onDelete: () => void;
+}) {
+  const { t } = useT();
+  const delta = actual - planned;
+  return (
+    <article
+      id={id}
+      data-category={category}
+      className={`card scroll-mt-24 p-3 ${
+        isHighlighted
+          ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
+          : ""
+      }`}
+    >
+      <header className="flex items-start justify-between gap-3">
+        <CategoryCell category={category} />
+        <DeltaPill delta={delta} currency={currency} locale={locale} />
+      </header>
+      <dl className="mt-3 space-y-2">
+        <div className="flex items-center gap-3">
+          <dt className="basis-20 shrink-0 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.planned")}
+          </dt>
+          <dd className="min-w-0 flex-1">
+            <HufInput
+              value={planned}
+              onCommit={onPlannedCommit}
+              readOnly={readOnlyPlanned}
+              dataKey="planned"
+              ariaLabel={t("budget.planned")}
+            />
+          </dd>
+        </div>
+        <div className="flex items-center gap-3">
+          <dt className="basis-20 shrink-0 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.actual")}
+          </dt>
+          <dd className="min-w-0 flex-1">
+            <HufInput
+              value={actual}
+              onCommit={onActualCommit}
+              readOnly={readOnlyActual}
+              dataKey="actual"
+              ariaLabel={t("budget.actual")}
+            />
+          </dd>
+        </div>
+      </dl>
+      {canDelete && (
+        <div className="mt-2 flex justify-end">
+          <button
+            type="button"
+            className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
+            onClick={onDelete}
+            aria-label={t("budget.delete")}
+          >
+            <Trash2 size={14} /> {t("budget.delete")}
+          </button>
+        </div>
+      )}
+    </article>
+  );
+}
+
+/** Mobile card for a user-added custom line. Same layout as the category
+ *  card but with the user's icon + label and an always-on delete button. */
+function BudgetMobileCustomCard({
+  line,
+  currency,
+  locale,
+  isHighlighted,
+  onPlannedCommit,
+  onActualCommit,
+  onDelete,
+}: {
+  line: BudgetLine;
+  currency: Currency;
+  locale: "hu" | "en";
+  isHighlighted: boolean;
+  onPlannedCommit: (v: number) => void | Promise<void>;
+  onActualCommit: (v: number) => void | Promise<void>;
+  onDelete: () => void;
+}) {
+  const { t } = useT();
+  const delta = line.actual_huf - line.planned_huf;
+  return (
+    <article
+      data-budget-line-id={line.id}
+      data-category="other-custom"
+      className={`card p-3 ${
+        isHighlighted
+          ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
+          : ""
+      }`}
+    >
+      <header className="flex items-start justify-between gap-3">
+        <CustomRowLabel icon={line.icon} label={line.label} />
+        <DeltaPill delta={delta} currency={currency} locale={locale} />
+      </header>
+      <dl className="mt-3 space-y-2">
+        <div className="flex items-center gap-3">
+          <dt className="basis-20 shrink-0 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.planned")}
+          </dt>
+          <dd className="min-w-0 flex-1">
+            <HufInput
+              value={line.planned_huf}
+              onCommit={onPlannedCommit}
+              dataKey="planned"
+              ariaLabel={t("budget.planned")}
+            />
+          </dd>
+        </div>
+        <div className="flex items-center gap-3">
+          <dt className="basis-20 shrink-0 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.actual")}
+          </dt>
+          <dd className="min-w-0 flex-1">
+            <HufInput
+              value={line.actual_huf}
+              onCommit={onActualCommit}
+              dataKey="actual"
+              ariaLabel={t("budget.actual")}
+            />
+          </dd>
+        </div>
+      </dl>
+      <div className="mt-2 flex justify-end">
+        <button
+          type="button"
+          className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
+          onClick={onDelete}
+          aria-label={t("budget.delete")}
+        >
+          <Trash2 size={14} /> {t("budget.delete")}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+/** Read-only mobile card mirror of HoneymoonAggregateRow. Tapping anywhere
+ *  on it routes to /app/honeymoon where the breakdown actually lives. */
+function HoneymoonAggregateCard({
+  planned,
+  actual,
+  locale,
+  currency,
+}: {
+  planned: number;
+  actual: number;
+  locale: "hu" | "en";
+  currency: Currency;
+}) {
+  const { t } = useT();
+  const Icon = CATEGORY_ICONS.honeymoon;
+  const delta = actual - planned;
+  return (
+    <Link
+      to="/app/honeymoon"
+      className="card flex flex-col gap-2 p-3 transition hover:border-blush-300 dark:hover:border-blush-400/60"
+      aria-label={t("budget.honeymoon_open_aria")}
+    >
+      <header className="flex items-start justify-between gap-3">
+        <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
+          <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
+          {t("budget.cat.honeymoon")}
+        </span>
+        <ArrowUpRight size={14} className="shrink-0 text-ink-400 dark:text-umber-300" aria-hidden />
+      </header>
+      <dl className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.planned")}
+          </dt>
+          <dd className="tabular-nums text-ink-900 dark:text-paper-50">
+            {formatMoney(planned, currency, locale)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.actual")}
+          </dt>
+          <dd className="tabular-nums text-ink-900 dark:text-paper-50">
+            {formatMoney(actual, currency, locale)}
+          </dd>
+        </div>
+      </dl>
+      {delta !== 0 && (
+        <DeltaPill delta={delta} currency={currency} locale={locale} className="self-end" />
+      )}
+    </Link>
+  );
+}
+
+/** Inline "add custom line" affordance for mobile — `<button>` that toggles
+ *  into a stacked form. Mirrors the desktop AddCustomRowTr's contract so the
+ *  same `onAdd` callback feeds both. */
+function AddCustomRowMobile({
+  onAdd,
+}: {
+  onAdd: (
+    label: string,
+    plannedHuf: number,
+    options?: { perGuest?: boolean; icon?: string | null },
+  ) => Promise<void>;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const [label, setLabel] = useState("");
+  const [amountDraft, setAmountDraft] = useState("");
+  const [iconSlug, setIconSlug] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function reset() {
+    setOpen(false);
+    setLabel("");
+    setAmountDraft("");
+    setIconSlug(null);
+    setError(null);
+    setSaving(false);
+  }
+
+  async function commit() {
+    const trimmed = label.trim();
+    const amount = Number(amountDraft.replace(/\D/g, "") || "0");
+    if (!trimmed) {
+      setError(t("budget.custom_row_label_placeholder"));
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await onAdd(trimmed, amount, { icon: iconSlug });
+      reset();
+    } catch {
+      setError(t("common.error_generic"));
+      setSaving(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full rounded-2xl border border-dashed border-paper-300 px-3 py-3 text-sm text-ink-500 transition hover:border-ink-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
+      >
+        + {t("budget.custom_row_add_aria")}
+      </button>
+    );
+  }
+
+  return (
+    <article className="card p-3">
+      <label className="block">
+        <span className="field-label">{t("budget.custom_row_label_placeholder")}</span>
+        <input
+          autoFocus
+          type="text"
+          maxLength={80}
+          value={label}
+          disabled={saving}
+          onChange={(e) => {
+            setLabel(e.target.value);
+            if (error) setError(null);
+          }}
+          className="input"
+        />
+      </label>
+      <label className="mt-2 block">
+        <span className="field-label">{t("budget.custom_row_amount_placeholder")}</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={14}
+          value={amountDraft}
+          disabled={saving}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "");
+            setAmountDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+          }}
+          className="input text-right tabular-nums"
+        />
+      </label>
+      <div
+        role="radiogroup"
+        aria-label={t("budget.custom_row_icon_label")}
+        className="mt-3 flex flex-wrap items-center gap-1"
+      >
+        <span className="mr-1 text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+          {t("budget.custom_row_icon_label")}
+        </span>
+        {CUSTOM_ICON_CHOICES.map(({ slug, Icon }) => {
+          const selected = iconSlug === slug;
+          return (
+            <button
+              key={slug}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={saving}
+              onClick={() => setIconSlug(selected ? null : slug)}
+              aria-label={t(`budget.custom_row_icon_choice.${slug}` as const)}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-md border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 ${
+                selected
+                  ? "border-blush-500 bg-blush-50 text-blush-700 dark:border-blush-400/60 dark:bg-blush-400/15 dark:text-blush-300"
+                  : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
+              }`}
+            >
+              <Icon size={14} aria-hidden />
+            </button>
+          );
+        })}
+      </div>
+      {error && (
+        <p className="mt-2 text-[11px] text-blush-700 dark:text-blush-300" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="mt-3 flex justify-end gap-2">
+        <button type="button" className="btn-ghost btn-sm" onClick={reset} disabled={saving}>
+          {t("budget.custom_row_cancel")}
+        </button>
+        <button type="button" className="btn-primary btn-sm" onClick={commit} disabled={saving}>
+          {t("budget.custom_row_save")}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+/** Compact diff chip — colored by sign, hidden when zero. Shared by all
+ *  mobile budget cards so the visual treatment is consistent. */
+function DeltaPill({
+  delta,
+  currency,
+  locale,
+  className = "",
+}: {
+  delta: number;
+  currency: Currency;
+  locale: "hu" | "en";
+  className?: string;
+}) {
+  if (delta === 0) return null;
+  const positive = delta > 0;
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${
+        positive
+          ? "bg-red-50 text-red-700 dark:bg-red-400/15 dark:text-red-300"
+          : "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+      } ${className}`}
+    >
+      {formatMoney(delta, currency, locale)}
+    </span>
   );
 }
 
