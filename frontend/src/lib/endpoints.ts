@@ -712,6 +712,16 @@ export const adminUserApi = {
    *  every ~30s while the admin is signed in and renders a small red
    *  badge next to each section with count > 0. */
   sidebarBadges: () => apiFetch<AdminSidebarBadges>("GET", "/api/admin/sidebar-badges"),
+  /** Instagram-style "I looked at this" ping — stamps `admin_section_seen.seen_at`
+   *  for this admin+section so the next badge poll counts only rows authored
+   *  AFTER the visit. AppShell fires this on navigation into the matching
+   *  /app/admin/{section} path. */
+  markSectionSeen: (section: "suppliers" | "users" | "vendor_waitlist" | "feedback") =>
+    apiFetch<{ ok: true; section: string; seen_at: number }>(
+      "POST",
+      "/api/admin/sidebar-badges/seen",
+      { section },
+    ),
 };
 
 export const vendorWaitlistApi = {

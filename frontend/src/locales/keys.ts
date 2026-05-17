@@ -1503,6 +1503,15 @@ export interface LocaleMessages {
     full_blocked: string;
     /** Partial placement toast when a household drag/tap exceeds free seats. */
     partial_placed: string;
+    /** Inline labels + helper copy for the host/partner placeholder cards
+     *  on /app/logistics (mirror the same labels seating uses). */
+    bride_label: string;
+    groom_label: string;
+    partner_placeholder_hint: string;
+    /** Household link/unlink + ARIA copy shared with seating. */
+    household_unlink: string;
+    household_relink: string;
+    household_linked_aria: string;
   };
   seating: {
     title: string;

@@ -396,49 +396,101 @@ async function handleUnflagUser(ctx: Ctx): Promise<Response> {
   return json({ user: view, cleared: resolved !== null });
 }
 
+type AdminSection = "suppliers" | "users" | "vendor_waitlist" | "feedback";
+const VALID_SECTIONS: ReadonlySet<AdminSection> = new Set([
+  "suppliers",
+  "users",
+  "vendor_waitlist",
+  "feedback",
+]);
+
+/** Per-admin `seen_at` threshold for each sidebar section. Defaults to 0
+ *  (epoch) when the admin has never opened that page — every existing
+ *  row counts as "new" on first visit, then only rows authored after
+ *  the visit count thereafter. */
+function seenWatermarks(userId: number): Record<AdminSection, number> {
+  const rows = db
+    .prepare("SELECT section, seen_at FROM admin_section_seen WHERE user_id = ?")
+    .all(userId) as { section: string; seen_at: number }[];
+  const out: Record<AdminSection, number> = {
+    suppliers: 0,
+    users: 0,
+    vendor_waitlist: 0,
+    feedback: 0,
+  };
+  for (const r of rows) {
+    if (VALID_SECTIONS.has(r.section as AdminSection)) {
+      out[r.section as AdminSection] = r.seen_at;
+    }
+  }
+  return out;
+}
+
 /**
- * Sidebar unread counts. The admin nav rail (AppShell) polls this every
- * 30s and shows a small red badge next to each section that has
- * something needing the admin's attention:
+ * Sidebar unread counts, Instagram-style: each section counts only the
+ * rows authored AFTER this admin last opened that page. Opening the
+ * page upserts `admin_section_seen` (via `handleMarkSectionSeen`) so
+ * the badge clears on the next poll.
  *
- *   - suppliers       → community_suppliers awaiting_review (moderation queue)
- *   - users           → user_flags resolved_at IS NULL (live flags)
- *   - vendor_waitlist → vendor_waitlist status='new' (the inbox)
- *   - feedback        → feedback_submissions status='new'
- *
- * Each count is the result of one indexed COUNT(*) query — all four
- * combined take a single-digit ms even with thousands of rows. Returns
- * the shape verbatim from the shared `AdminSidebarBadges` type.
+ *   - suppliers       → community_suppliers awaiting_review, created_at > seen
+ *   - users           → user_flags resolved_at IS NULL, created_at > seen
+ *   - vendor_waitlist → vendor_waitlist status='new', created_at > seen
+ *   - feedback        → feedback_submissions status='new', created_at > seen
  */
 function handleSidebarBadges(ctx: Ctx): Response {
-  requireAdmin(ctx);
+  const admin = requireAdmin(ctx);
+  const seen = seenWatermarks(admin.id);
   const suppliers = (
     db
-      .prepare("SELECT COUNT(*) AS n FROM community_suppliers WHERE status = 'awaiting_review'")
-      .get() as { n: number }
+      .prepare(
+        "SELECT COUNT(*) AS n FROM community_suppliers WHERE status = 'awaiting_review' AND created_at > ?",
+      )
+      .get(seen.suppliers) as { n: number }
   ).n;
   const users = (
-    db.prepare("SELECT COUNT(*) AS n FROM user_flags WHERE resolved_at IS NULL").get() as {
-      n: number;
-    }
+    db
+      .prepare("SELECT COUNT(*) AS n FROM user_flags WHERE resolved_at IS NULL AND created_at > ?")
+      .get(seen.users) as { n: number }
   ).n;
   const vendor_waitlist = (
-    db.prepare("SELECT COUNT(*) AS n FROM vendor_waitlist WHERE status = 'new'").get() as {
-      n: number;
-    }
+    db
+      .prepare("SELECT COUNT(*) AS n FROM vendor_waitlist WHERE status = 'new' AND created_at > ?")
+      .get(seen.vendor_waitlist) as { n: number }
   ).n;
   const feedback = (
-    db.prepare("SELECT COUNT(*) AS n FROM feedback_submissions WHERE status = 'new'").get() as {
-      n: number;
-    }
+    db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM feedback_submissions WHERE status = 'new' AND created_at > ?",
+      )
+      .get(seen.feedback) as { n: number }
   ).n;
   return json({ suppliers, users, vendor_waitlist, feedback });
+}
+
+/** Upsert the admin's `seen_at` for one sidebar section. The frontend
+ *  fires this every time the admin lands on /app/admin/{section}; the
+ *  next badge poll then returns 0 for that section until newer rows
+ *  arrive. Idempotent — repeated calls just bump the watermark. */
+async function handleMarkSectionSeen(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const body = await readJson<{ section?: unknown }>(ctx.req);
+  if (typeof body.section !== "string" || !VALID_SECTIONS.has(body.section as AdminSection)) {
+    throw new HttpError(400, "Invalid section");
+  }
+  const ts = Date.now();
+  db.prepare(
+    `INSERT INTO admin_section_seen (user_id, section, seen_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT (user_id, section) DO UPDATE SET seen_at = excluded.seen_at`,
+  ).run(admin.id, body.section, ts);
+  return json({ ok: true, section: body.section, seen_at: ts });
 }
 
 export function registerAdminUserRoutes(router: Router) {
   router.get("/api/admin/users", handleListUsers, true);
   router.get("/api/admin/couples", handleListCouples, true);
   router.get("/api/admin/sidebar-badges", handleSidebarBadges, true);
+  router.post("/api/admin/sidebar-badges/seen", handleMarkSectionSeen, true);
   router.post("/api/admin/users/:id/resend-verify", handleResendVerify, true);
   router.delete("/api/admin/users/:id", handleDeleteUser, true);
   router.post("/api/admin/users/:id/flag", handleFlagUser, true);

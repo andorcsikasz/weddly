@@ -670,3 +670,15 @@ CREATE INDEX IF NOT EXISTS idx_supplier_events_supplier
   ON supplier_events(supplier_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_supplier_events_type
   ON supplier_events(event_type, created_at DESC);
+
+-- Per-admin "I looked at this section" watermark. Instagram-style: the
+-- sidebar red badge counts only rows newer than the admin's `seen_at`
+-- for that section, so opening the page clears the dot. PK is composite
+-- (user_id, section); `section` is one of 'suppliers' | 'users' |
+-- 'vendor_waitlist' | 'feedback' — validated server-side.
+CREATE TABLE IF NOT EXISTS admin_section_seen (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  section TEXT NOT NULL,
+  seen_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, section)
+);

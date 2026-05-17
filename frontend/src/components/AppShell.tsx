@@ -228,6 +228,28 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, [user?.is_admin]);
 
+  // ── Instagram-style "section seen" ping ───────────────────────────────
+  // When the admin navigates into one of /app/admin/{suppliers|users|
+  // vendor-waitlist|feedback}, stamp the watermark so the badge clears on
+  // the next poll. We also optimistically zero the local badge so the
+  // red dot disappears the moment the page loads (no 30s wait). Section
+  // mapping mirrors ADMIN_ITEMS' `badgeKey`.
+  useEffect(() => {
+    if (!user?.is_admin) return;
+    let section: "suppliers" | "users" | "vendor_waitlist" | "feedback" | null = null;
+    if (location.pathname.startsWith("/app/admin/suppliers")) section = "suppliers";
+    else if (location.pathname.startsWith("/app/admin/users")) section = "users";
+    else if (location.pathname.startsWith("/app/admin/vendor-waitlist"))
+      section = "vendor_waitlist";
+    else if (location.pathname.startsWith("/app/admin/feedback")) section = "feedback";
+    if (!section) return;
+    // Optimistic zero — the server roundtrip will catch up in <100ms.
+    setAdminBadges((cur) => (cur ? { ...cur, [section as string]: 0 } : cur));
+    void adminUserApi.markSectionSeen(section).catch(() => {
+      /* non-critical — the next 30s poll re-syncs from the server */
+    });
+  }, [user?.is_admin, location.pathname]);
+
   // ── Warm-dark mode toggle ────────────────────────────────────────────
   // Theme preference is shared with PublicShell via `localStorage["weddly.theme"]`,
   // so toggling on the landing carries into /app and vice versa. Class lives

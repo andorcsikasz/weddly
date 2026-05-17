@@ -783,11 +783,7 @@ function DraggableGuestRow({
       }`}
     >
       {partnerRole ? (
-        <Crown
-          size={14}
-          className="shrink-0 text-blush-600 dark:text-blush-300"
-          aria-hidden
-        />
+        <Crown size={14} className="shrink-0 text-blush-600 dark:text-blush-300" aria-hidden />
       ) : (
         <User size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
       )}
