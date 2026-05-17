@@ -158,6 +158,31 @@ export function SeatingMap({
     if (arr) arr.push(a);
   }
 
+  // Would moving `movingId` to (x, y) overlap any other table at its current
+  // (local or persisted) position + dims? Used to reject drags/nudges that
+  // would stack tables, with an axis-slide fallback so the user can graze
+  // along an edge instead of getting stuck.
+  function wouldCollide(movingId: number, x: number, y: number): boolean {
+    const moving = tables.find((tb) => tb.id === movingId);
+    if (!moving) return false;
+    const movingDims = localDims.get(movingId) ?? {
+      width_mm: moving.width_mm,
+      length_mm: moving.length_mm,
+    };
+    const a = footprintOf(moving.shape, moving.rotation_deg ?? 0, { x, y }, movingDims);
+    for (const other of tables) {
+      if (other.id === movingId) continue;
+      const pos = localPos.get(other.id) ?? { x: other.x_mm, y: other.y_mm };
+      const dims = localDims.get(other.id) ?? {
+        width_mm: other.width_mm,
+        length_mm: other.length_mm,
+      };
+      const b = footprintOf(other.shape, other.rotation_deg ?? 0, pos, dims);
+      if (footprintsCollide(a, b)) return true;
+    }
+    return false;
+  }
+
   // Convert a pointer event to SVG-user-space mm coordinates. Returns null
   // if the SVG isn't mounted (shouldn't happen during a real drag).
   const toSvgPoint = useCallback((clientX: number, clientY: number) => {
@@ -214,11 +239,29 @@ export function SeatingMap({
     if (!p) return;
 
     if (drag.kind === "move") {
-      const newX = clamp(Math.round(p.x - drag.grabOffsetX), 0, ROOM_W_MM);
-      const newY = clamp(Math.round(p.y - drag.grabOffsetY), 0, ROOM_H_MM);
+      const tableId = drag.tableId;
+      const moving = tables.find((tb) => tb.id === tableId);
+      const fallback = moving ? { x: moving.x_mm, y: moving.y_mm } : { x: 0, y: 0 };
+      const last = localPos.get(tableId) ?? fallback;
+      const desiredX = clamp(Math.round(p.x - drag.grabOffsetX), 0, ROOM_W_MM);
+      const desiredY = clamp(Math.round(p.y - drag.grabOffsetY), 0, ROOM_H_MM);
+      // Try the full move first; if it would overlap another table, fall back
+      // to single-axis moves so the user can slide along an edge instead of
+      // the table freezing the moment it touches a neighbour.
+      let nextX = last.x;
+      let nextY = last.y;
+      if (!wouldCollide(tableId, desiredX, desiredY)) {
+        nextX = desiredX;
+        nextY = desiredY;
+      } else if (!wouldCollide(tableId, desiredX, last.y)) {
+        nextX = desiredX;
+      } else if (!wouldCollide(tableId, last.x, desiredY)) {
+        nextY = desiredY;
+      }
+      if (nextX === last.x && nextY === last.y) return;
       setLocalPos((prev) => {
         const next = new Map(prev);
-        next.set(drag.tableId, { x: newX, y: newY });
+        next.set(tableId, { x: nextX, y: nextY });
         return next;
       });
       return;
@@ -353,7 +396,10 @@ export function SeatingMap({
       e.preventDefault();
       const newX = clamp(pos.x + dx, 0, ROOM_W_MM);
       const newY = clamp(pos.y + dy, 0, ROOM_H_MM);
-      // Mirror locally for instant feedback, then persist.
+      // Drop the nudge if it would push the table on top of another. No
+      // axis-slide fallback here — keyboard moves are deliberate (one key,
+      // one step), so silently changing the direction would feel buggy.
+      if (wouldCollide(table.id, newX, newY)) return;
       setLocalPos((prev) => {
         const next = new Map(prev);
         next.set(table.id, { x: newX, y: newY });
@@ -361,7 +407,7 @@ export function SeatingMap({
       });
       onMove(table.id, newX, newY);
     },
-    [selectedId, tables, localPos, onMove, onSeatsChange, onDeleteTable, onAddTable],
+    [selectedId, tables, localPos, localDims, onMove, onSeatsChange, onDeleteTable, onAddTable],
   );
 
   const cardContent = (
@@ -1116,6 +1162,108 @@ function halfDims(t: SeatingTable): { rx: number; ry: number } {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+// ── Collision detection ───────────────────────────────────────────────
+// Pairwise check that prevents tables being dragged or nudged on top of
+// each other. Round tables are circles, everything else is an oriented
+// rectangle around its centre (length = local x-axis, width = local y-axis).
+// 1mm of bookkeeping slack so two perfectly-edge-adjacent tables don't
+// register as touching.
+type Footprint =
+  | { kind: "circle"; cx: number; cy: number; r: number }
+  | { kind: "rect"; cx: number; cy: number; halfL: number; halfW: number; rot: number };
+
+const COLLISION_SLACK_MM = 1;
+
+function footprintOf(
+  shape: SeatingTable["shape"],
+  rotationDeg: number,
+  pos: { x: number; y: number },
+  dims: { width_mm: number; length_mm: number },
+): Footprint {
+  if (shape === "round") {
+    return { kind: "circle", cx: pos.x, cy: pos.y, r: dims.width_mm / 2 - COLLISION_SLACK_MM };
+  }
+  return {
+    kind: "rect",
+    cx: pos.x,
+    cy: pos.y,
+    halfL: dims.length_mm / 2 - COLLISION_SLACK_MM,
+    halfW: dims.width_mm / 2 - COLLISION_SLACK_MM,
+    rot: (rotationDeg * Math.PI) / 180,
+  };
+}
+
+function rectCorners(r: { cx: number; cy: number; halfL: number; halfW: number; rot: number }) {
+  const cos = Math.cos(r.rot);
+  const sin = Math.sin(r.rot);
+  const pts = [
+    { x: r.halfL, y: r.halfW },
+    { x: r.halfL, y: -r.halfW },
+    { x: -r.halfL, y: -r.halfW },
+    { x: -r.halfL, y: r.halfW },
+  ];
+  return pts.map((c) => ({ x: r.cx + c.x * cos - c.y * sin, y: r.cy + c.x * sin + c.y * cos }));
+}
+
+function overlapsOnAxis(
+  a: { x: number; y: number }[],
+  b: { x: number; y: number }[],
+  ax: number,
+  ay: number,
+): boolean {
+  let aMin = Infinity;
+  let aMax = -Infinity;
+  let bMin = Infinity;
+  let bMax = -Infinity;
+  for (const p of a) {
+    const proj = p.x * ax + p.y * ay;
+    if (proj < aMin) aMin = proj;
+    if (proj > aMax) aMax = proj;
+  }
+  for (const p of b) {
+    const proj = p.x * ax + p.y * ay;
+    if (proj < bMin) bMin = proj;
+    if (proj > bMax) bMax = proj;
+  }
+  return aMax >= bMin && bMax >= aMin;
+}
+
+function footprintsCollide(a: Footprint, b: Footprint): boolean {
+  if (a.kind === "circle" && b.kind === "circle") {
+    const dx = a.cx - b.cx;
+    const dy = a.cy - b.cy;
+    const rsum = a.r + b.r;
+    return dx * dx + dy * dy < rsum * rsum;
+  }
+  if (a.kind === "rect" && b.kind === "rect") {
+    const ca = rectCorners(a);
+    const cb = rectCorners(b);
+    const axes = [
+      { x: Math.cos(a.rot), y: Math.sin(a.rot) },
+      { x: -Math.sin(a.rot), y: Math.cos(a.rot) },
+      { x: Math.cos(b.rot), y: Math.sin(b.rot) },
+      { x: -Math.sin(b.rot), y: Math.cos(b.rot) },
+    ];
+    for (const ax of axes) if (!overlapsOnAxis(ca, cb, ax.x, ax.y)) return false;
+    return true;
+  }
+  const rect = a.kind === "rect" ? a : (b as Extract<Footprint, { kind: "rect" }>);
+  const circ = a.kind === "circle" ? a : (b as Extract<Footprint, { kind: "circle" }>);
+  // Transform circle centre into rect's local frame, then clamp to the
+  // rect's half-extents; distance from clamp to centre vs r gives the test.
+  const dx = circ.cx - rect.cx;
+  const dy = circ.cy - rect.cy;
+  const cos = Math.cos(-rect.rot);
+  const sin = Math.sin(-rect.rot);
+  const lx = dx * cos - dy * sin;
+  const ly = dx * sin + dy * cos;
+  const clx = clamp(lx, -rect.halfL, rect.halfL);
+  const cly = clamp(ly, -rect.halfW, rect.halfW);
+  const ddx = lx - clx;
+  const ddy = ly - cly;
+  return ddx * ddx + ddy * ddy < circ.r * circ.r;
 }
 
 export const ROOM_DIMS = { W_MM: DEFAULT_ROOM_W_MM, H_MM: DEFAULT_ROOM_H_MM };
