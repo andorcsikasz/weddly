@@ -111,16 +111,20 @@ export function renderEmail(input: RenderInput): RenderedEmail {
 
   function renderHtml({ hu, en, ctaUrl, category, unsubscribeToken }: RenderInput): string {
     const preheader = hu.preheader ?? hu.paragraphs[0] ?? "";
+    // Long Hungarian compound names (couple display names, household labels)
+    // can otherwise force horizontal scroll on narrow mobile mail clients.
+    // word-break:break-word is well-supported across Gmail/Apple Mail; hyphens
+    // is best-effort but degrades gracefully.
     const huParas = hu.paragraphs
       .map(
         (p) =>
-          `<p style="margin:0 0 14px 0;color:${COLOR.ink};font-size:16px;line-height:1.55;">${escapeHtml(p)}</p>`,
+          `<p style="margin:0 0 14px 0;color:${COLOR.ink};font-size:16px;line-height:1.55;word-break:break-word;hyphens:auto;">${escapeHtml(p)}</p>`,
       )
       .join("");
     const enParas = en.paragraphs
       .map(
         (p) =>
-          `<p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;">${escapeHtml(p)}</p>`,
+          `<p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;word-break:break-word;hyphens:auto;">${escapeHtml(p)}</p>`,
       )
       .join("");
 
@@ -162,7 +166,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
             <!-- HU primary card -->
             <tr>
               <td style="background-color:${COLOR.card};border-radius:14px;padding:32px 32px 28px 32px;box-shadow:0 1px 2px rgba(31,29,27,0.04),0 4px 18px rgba(31,29,27,0.06);">
-                <p style="margin:0 0 18px 0;color:${COLOR.ink};font-size:18px;font-weight:600;line-height:1.4;">
+                <p style="margin:0 0 18px 0;color:${COLOR.ink};font-size:18px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
                   ${escapeHtml(hu.greeting)}
                 </p>
                 ${huParas}
@@ -191,7 +195,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                 <p style="margin:0 0 12px 0;color:${COLOR.muted};font-size:11px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">
                   English
                 </p>
-                <p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;font-weight:600;line-height:1.4;">
+                <p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
                   ${escapeHtml(en.greeting)}
                 </p>
                 ${enParas}

@@ -261,7 +261,7 @@ export default function RsvpCheckinPage() {
           <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-ink-500">
             {t("rsvp.checkin_kicker")}
           </p>
-          <h1 className="mt-1 font-serif text-3xl">{t("rsvp.checkin_title")}</h1>
+          <h1 className="mt-1 font-serif text-3xl sm:text-4xl">{t("rsvp.checkin_title")}</h1>
           <p className="mt-2 text-sm text-ink-600">{t("rsvp.checkin_intro")}</p>
 
           <div className="mt-6 space-y-4">

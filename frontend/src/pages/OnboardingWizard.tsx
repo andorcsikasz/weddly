@@ -949,7 +949,7 @@ function ExistingCoupleWelcome({ couple }: { couple: Couple }) {
     <Shell>
       <div className="mx-auto max-w-xl">
         <div className="card animate-fade-in-up">
-          <h1 className="font-serif text-3xl">
+          <h1 className="font-serif text-3xl sm:text-4xl break-words hyphens-auto">
             {t("onboarding.welcome_existing_title", { names: couple.display_name })}
           </h1>
           <p className="mt-3 text-ink-600">{t("onboarding.welcome_existing_body")}</p>

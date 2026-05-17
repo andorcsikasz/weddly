@@ -891,7 +891,11 @@ export default function SuppliersPage() {
           The right-edge fade only shows when the row actually overflows —
           otherwise it leaves a phantom white slab next to the last step. */}
       <div className="relative mb-3">
-        <div ref={chainScrollRef} className="overflow-x-auto pb-1">
+        {/* snap-x mandatory keeps each step centred under a flicked thumb on
+            touch widths — without it the row drifts mid-icon and the user
+            has to nudge it back. snap-start on each child anchors the
+            alignment to the leading edge of the step group. */}
+        <div ref={chainScrollRef} className="overflow-x-auto snap-x snap-mandatory pb-1">
           <div className="flex min-w-max items-stretch gap-1">
             {SUPPLIER_GROUPS.map((g, i) => {
               const Icon = GROUP_ICON[g.id];
@@ -900,7 +904,7 @@ export default function SuppliersPage() {
                 total: g.categories.length,
               };
               return (
-                <div key={g.id} className="flex items-stretch gap-1">
+                <div key={g.id} className="flex snap-start items-stretch gap-1">
                   {i > 0 && (
                     <span className="self-center text-paper-400 dark:text-umber-300" aria-hidden>
                       →

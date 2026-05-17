@@ -1141,6 +1141,9 @@ export interface LocaleMessages {
     invite_state_not_invited: string;
     invite_state_invited: string;
     invite_state_delivered: string;
+    /** Mobile-only short label rendered inside the chip when the screen is
+     *  too narrow for icons-with-tooltip discovery. Sub-6-char target. */
+    invite_state_not_invited_short: string;
     invite_state_cycle_to_invited: string;
     invite_state_cycle_to_delivered: string;
     invite_state_cycle_to_clear: string;
@@ -2565,6 +2568,15 @@ export interface LocaleMessages {
     workspaces_edit_done: string;
     payments_title: string;
     payments_body: string;
+    /** Display preferences — density toggle for older relatives / outdoor
+     *  day-of use who can't read the 10/11 px utility labels at default size. */
+    display_title: string;
+    display_body: string;
+    density_label: string;
+    density_compact: string;
+    density_compact_help: string;
+    density_comfortable: string;
+    density_comfortable_help: string;
     /** "Wedding RSVP" settings card on /app/profile. Today it carries a
      *  single opt-in: whether the RSVP flow asks guests if they need
      *  accommodation. Default off so couples who don't offer it don't ask. */

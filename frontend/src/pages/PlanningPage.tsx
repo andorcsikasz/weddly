@@ -398,7 +398,7 @@ export default function PlanningPage() {
     <AppShell>
       <div>
         <header className="mb-6">
-          <h1 className="text-3xl font-serif text-ink-900 dark:text-paper-50">
+          <h1 className="text-3xl font-serif text-ink-900 sm:text-4xl dark:text-paper-50">
             {t("planning.title")}
           </h1>
           <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("planning.sub")}</p>

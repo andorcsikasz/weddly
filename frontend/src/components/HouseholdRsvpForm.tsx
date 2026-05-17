@@ -591,7 +591,7 @@ export function HouseholdRsvpForm({
 
   return (
     <form className="card stationery animate-fade-in-up" onSubmit={onSubmit}>
-      <p className="text-xs uppercase tracking-widest text-ink-500 dark:text-umber-300">
+      <p className="text-xs uppercase tracking-widest text-ink-500 break-words hyphens-auto dark:text-umber-300">
         {view.couple_display_name}
       </p>
       {view.wedding_date && (

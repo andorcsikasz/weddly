@@ -9,7 +9,7 @@ export default function NotFoundPage() {
   return (
     <Shell>
       <div className="mx-auto mt-16 max-w-md text-center">
-        <h1 className="text-3xl">{t("notfound.title")}</h1>
+        <h1 className="text-3xl sm:text-4xl">{t("notfound.title")}</h1>
         <p className="mt-3 text-ink-600">{t("notfound.body")}</p>
         <Link to="/" className="btn-primary mt-6 inline-block">
           {t("notfound.go_home")}

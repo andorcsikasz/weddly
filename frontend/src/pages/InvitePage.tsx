@@ -129,8 +129,8 @@ export default function InvitePage() {
             </>
           ) : (
             <>
-              <h1>{t("invite.title")}</h1>
-              <p className="mt-2 text-sm text-ink-600">
+              <h1 className="break-words hyphens-auto">{t("invite.title")}</h1>
+              <p className="mt-2 text-sm text-ink-600 break-words hyphens-auto">
                 {t("invite.intro", { partner: invite.couple_display_name ?? "—" })}
               </p>
               {user ? (

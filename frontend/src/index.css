@@ -68,9 +68,18 @@
     letter-spacing: -0.01em;
   }
 
+  /* Default h1 starts at text-3xl on phones and grows to text-4xl at sm+ so
+     long titles (especially Hungarian compounds) don't shove cards off the
+     viewport on a 360px screen. Pages that need a bigger hero override the
+     classes inline; this is just the safer default for utility-less <h1>s. */
   h1 {
-    font-size: 2.25rem;
+    font-size: 1.875rem;
     line-height: 1.1;
+  }
+  @media (min-width: 640px) {
+    h1 {
+      font-size: 2.25rem;
+    }
   }
 
   h2 {
@@ -387,5 +396,20 @@
       rgba(246, 242, 231, 0.08) 50%,
       transparent 100%
     );
+  }
+
+  /* Comfortable density — bumps the smallest utility-text classes one notch
+     so cohort C (older relatives / outdoor day-of use under sun glare) can
+     read them without zooming. Default density is compact (the existing
+     design); ProfilePage exposes a toggle that flips `density-comfortable`
+     on <html>. We only retune the two arbitrary-size classes used as 10/11px
+     labels — leaving `.text-xs` and up alone preserves the visual hierarchy. */
+  html.density-comfortable .text-\[10px\] {
+    font-size: 0.75rem; /* 12px — Tailwind text-xs */
+    line-height: 1rem;
+  }
+  html.density-comfortable .text-\[11px\] {
+    font-size: 0.8125rem; /* 13px — halfway to text-sm so jumps stay subtle */
+    line-height: 1.125rem;
   }
 }

@@ -1075,7 +1075,9 @@ function TransferTable({
                   {tr.depart_at ? formatDepartAt(tr.depart_at) : "—"}
                 </td>
                 <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
-                  <span className={full ? "font-semibold text-rose-600 dark:text-rose-400" : undefined}>
+                  <span
+                    className={full ? "font-semibold text-rose-600 dark:text-rose-400" : undefined}
+                  >
                     {assigned.length}
                     {tr.capacity !== null ? `/${tr.capacity}` : ""}
                   </span>

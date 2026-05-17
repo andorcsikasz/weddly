@@ -732,7 +732,9 @@ export default function DashboardPage() {
       {!couple.partner_b_id && <PartnerMergeBanner onAccepted={() => window.location.reload()} />}
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl">{couple.display_name}</h1>
+          <h1 className="font-serif text-3xl sm:text-4xl break-words hyphens-auto">
+            {couple.display_name}
+          </h1>
           <EditableWeddingDate goal={couple.wedding_date_goal} onSave={saveWeddingDate} />
         </div>
         <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">

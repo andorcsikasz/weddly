@@ -1180,6 +1180,7 @@ const hu: LocaleMessages = {
     invite_state_not_invited: "Még nem hívtátok meg",
     invite_state_invited: "Meghívva",
     invite_state_delivered: "Meghívó átadva",
+    invite_state_not_invited_short: "—",
     invite_state_cycle_to_invited: "Kattints a meghívottá jelöléshez",
     invite_state_cycle_to_delivered: "Kattints, ha átadtátok a meghívót",
     invite_state_cycle_to_clear: "Kattints a visszavonáshoz",
@@ -2344,6 +2345,14 @@ const hu: LocaleMessages = {
     workspaces_edit_done: "Esemény mentve",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
+    display_title: "Megjelenítés",
+    display_body:
+      "Állítsd be, mennyire legyen sűrű a szöveg. A kényelmes mód növeli a legapróbb feliratokat — hasznos a szülőknek vagy napsütésben.",
+    density_label: "Sűrűség",
+    density_compact: "Tömör",
+    density_compact_help: "Alapértelmezett — több fér el a képernyőn.",
+    density_comfortable: "Kényelmes",
+    density_comfortable_help: "Nagyobb apró feliratok — szülőknek, idősebb segítőknek ajánljuk.",
     rsvp_title: "RSVP beállítások",
     rsvp_body:
       "Ezek a beállítások szabályozzák, milyen kérdéseket látnak a vendégek a visszajelzéskor.",

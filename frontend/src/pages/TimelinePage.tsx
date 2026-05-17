@@ -271,7 +271,7 @@ export default function TimelinePage() {
     <AppShell>
       <div className="space-y-6">
         <header>
-          <h1 className="text-3xl font-serif text-ink-900 dark:text-paper-50">
+          <h1 className="text-3xl font-serif text-ink-900 sm:text-4xl dark:text-paper-50">
             {t("timeline.title")}
           </h1>
           <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("timeline.sub")}</p>
@@ -352,13 +352,24 @@ function PocCard({
           {t("timeline.poc_empty")}
         </p>
       ) : (
-        // Below 768px collapse into a horizontal-scroll strip so each contact
+        // Below 640px collapse into a horizontal-scroll strip so each contact
         // card stays usable on phones without forcing a long vertical list.
-        <ul className="flex gap-3 overflow-x-auto px-5 py-4 sm:flex-col sm:gap-0 sm:divide-y sm:divide-paper-200 sm:overflow-visible sm:px-0 sm:py-0 dark:sm:divide-umber-700">
-          {items.map(({ pick, supplier }) => (
-            <PocRow key={pick.supplier_id} pick={pick} supplier={supplier} locale={locale} />
-          ))}
-        </ul>
+        // snap-x mandatory + snap-start on each card centres a flicked card
+        // instead of leaving it half-scrolled. The right-edge gradient hints
+        // "more to swipe" — only rendered below sm, where the row scrolls.
+        <div className="relative">
+          <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 py-4 sm:flex-col sm:gap-0 sm:divide-y sm:divide-paper-200 sm:overflow-visible sm:px-0 sm:py-0 dark:sm:divide-umber-700">
+            {items.map(({ pick, supplier }) => (
+              <PocRow key={pick.supplier_id} pick={pick} supplier={supplier} locale={locale} />
+            ))}
+          </ul>
+          {items.length > 1 && (
+            <div
+              className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent sm:hidden dark:from-umber-800"
+              aria-hidden
+            />
+          )}
+        </div>
       )}
     </section>
   );
@@ -382,7 +393,7 @@ function PocRow({
   return (
     <li
       id={`poc-${pick.supplier_id}`}
-      className="flex w-64 shrink-0 items-start gap-3 rounded-2xl border border-paper-300 px-3 py-3 transition-colors sm:w-auto sm:rounded-none sm:border-0 sm:px-5 dark:border-umber-700"
+      className="flex w-64 shrink-0 snap-start items-start gap-3 rounded-2xl border border-paper-300 px-3 py-3 transition-colors sm:w-auto sm:rounded-none sm:border-0 sm:px-5 dark:border-umber-700"
     >
       <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-700 dark:bg-umber-700 dark:text-paper-100">
         <Icon size={16} aria-hidden="true" />

@@ -1717,33 +1717,38 @@ function GuestDrawer({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4"
-      onClick={(e) => {
-        // Backdrop click only — let clicks inside the form bubble normally.
-        if (e.target === e.currentTarget) void autoSaveAndClose();
-      }}
-    >
-      <form
-        className="flex w-full max-w-2xl max-h-[85vh] flex-col overflow-hidden rounded-2xl bg-paper-50 shadow-pop dark:bg-umber-800"
-        onSubmit={onSubmit}
-      >
-        <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4 dark:border-umber-700">
-          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
-            {guest ? t("guests.edit") : t("guests.add")}
-          </h2>
+    <Dialog
+      open
+      role="dialog"
+      title={guest ? t("guests.edit") : t("guests.add")}
+      size="lg"
+      onClose={() => void autoSaveAndClose()}
+      closeOnBackdrop={!submitting}
+      footer={
+        <>
           <button
             type="button"
-            className="btn-ghost btn-sm"
+            className="btn-ghost"
             onClick={() => void autoSaveAndClose()}
-            aria-label={t("common.cancel")}
+            disabled={submitting}
           >
-            <X size={18} />
+            {t("common.cancel")}
           </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          {/* Name reads as the page's headline — a borderless serif input that
-              looks like display text but stays editable, with a faint
+          <button
+            type="submit"
+            form="guest-edit-form"
+            className="btn-primary"
+            disabled={submitting}
+          >
+            {submitting ? t("guests.saving") : t("common.save")}
+          </button>
+        </>
+      }
+    >
+      <form id="guest-edit-form" onSubmit={onSubmit} className="flex flex-col">
+        <div>
+          {/* Name reads as the drawer's headline — a borderless serif input
+              that looks like display text but stays editable, with a faint
               underline on focus so the affordance is still legible. */}
           <input
             type="text"
@@ -2027,20 +2032,8 @@ function GuestDrawer({
 
           {error && <p className="field-error">{error}</p>}
         </div>
-        <div className="flex gap-2 border-t border-paper-200 px-6 py-4 dark:border-umber-700">
-          <button
-            type="button"
-            className="btn-ghost flex-1"
-            onClick={() => void autoSaveAndClose()}
-          >
-            {t("common.cancel")}
-          </button>
-          <button type="submit" className="btn-primary flex-1" disabled={submitting}>
-            {submitting ? t("guests.saving") : t("common.save")}
-          </button>
-        </div>
       </form>
-    </div>
+    </Dialog>
   );
 }
 

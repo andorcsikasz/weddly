@@ -78,7 +78,7 @@ export function PartnerMergeBanner({ onAccepted }: { onAccepted: () => void }) {
 
   return (
     <div className="mb-6 rounded-2xl border-2 border-violet-300 bg-violet-50 dark:border-violet-500/40 dark:bg-violet-500/10 p-4 shadow-soft">
-      <p className="text-sm text-violet-950 dark:text-violet-100">
+      <p className="text-sm text-violet-950 break-words hyphens-auto dark:text-violet-100">
         {t("invite.merge_banner_body", {
           inviter: invite.inviter_name || invite.inviter_email,
           couple: invite.couple_display_name,

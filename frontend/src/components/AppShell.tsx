@@ -9,6 +9,7 @@ import {
   Heart,
   Image as ImageIcon,
   Inbox,
+  Keyboard,
   Languages,
   LayoutDashboard,
   LayoutList,
@@ -31,6 +32,7 @@ import { useAuth } from "../lib/auth";
 import { adminUserApi, planningApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { KeyboardShortcutsSheet, useShortcutsHotkey } from "./KeyboardShortcutsSheet";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -178,6 +180,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const mainRef = useRef<HTMLElement | null>(null);
   const { user } = useAuth();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Global `?` hotkey + the small header trigger both write to this state.
+  // Hidden entirely on touch widths via the matchMedia gate inside the hook,
+  // so the modal can't ambush a mobile user who pairs a Bluetooth keyboard.
+  const { open: shortcutsOpen, setOpen: setShortcutsOpen } = useShortcutsHotkey();
   // Bottom-nav "More" sheet — surfaces the flows that didn't make the 4-tab
   // cut (Planning, Schedule, Seating, Honeymoon, Moodboard, Media). Admin
   // view doesn't need it because the admin nav already fits in 5 slots.
@@ -355,6 +361,19 @@ export function AppShell({ children }: { children: ReactNode }) {
               gap-1 is plenty between square buttons; gap-2 made the row
               spread out beyond the wordmark on narrow viewports. */}
           <div className="flex items-center gap-1">
+            {/* Keyboard shortcuts — md+ only. The `?` hotkey itself is gated by
+                a matchMedia(min-width:768px) check, so this button is the only
+                way to discover the sheet on touch widths (and we hide it
+                because there are no useful shortcuts there). */}
+            <button
+              type="button"
+              className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 md:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+              aria-label={t("shortcuts.title")}
+              title={t("shortcuts.title")}
+              onClick={() => setShortcutsOpen(true)}
+            >
+              <Keyboard size={18} aria-hidden="true" />
+            </button>
             <button
               type="button"
               className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
@@ -486,6 +505,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="app" />
+      <KeyboardShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   );
 }
