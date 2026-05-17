@@ -9611,3 +9611,441 @@ describe("multi-workspace: Alpha / Bravo / Charlie", () => {
     expect(blocked.status).toBe(403);
   });
 });
+
+describe("admin analytics", () => {
+  // Shapes mirror the contracts in shared/admin_analytics.ts. Defined inline
+  // (not imported) so a future contract widening doesn't silently make these
+  // assertions go from strict to permissive — Bun's test runner uses
+  // structural equality, so leaving fields off the local type wouldn't help
+  // either way.
+  interface Stats {
+    count: number;
+    sum: number;
+    avg: number;
+    median: number;
+    p25: number;
+    p75: number;
+  }
+  interface MoneyPayload {
+    couples_with_budget: number;
+    couples_with_actuals: number;
+    budget_ceiling_huf: Stats;
+    planned_huf: Stats;
+    actual_huf: Stats;
+    per_category: {
+      category: string;
+      avg_planned: number;
+      avg_actual: number;
+      couples_with_data: number;
+    }[];
+    budget_histogram: { bucket_max_huf: number; count: number }[];
+  }
+  interface ActivityPayload {
+    signups: { last_24h: number; last_7d: number; last_30d: number; total: number };
+    active_users: { last_24h: number; last_7d: number; last_30d: number };
+    onboarding_funnel: {
+      registered: number;
+      verified: number;
+      onboarded: number;
+      pct_verified: number;
+      pct_onboarded: number;
+    };
+    couples_by_status: Record<string, number>;
+    top_actions: { action: string; count: number }[];
+    signups_daily: { date: string; count: number }[];
+  }
+  interface PicksPayload {
+    total_picks: number;
+    picks_per_couple: Stats;
+    top_picks: {
+      supplier_id: string;
+      category: string;
+      pick_count: number;
+      source: "curated" | "community" | "diy";
+      display_name: string;
+    }[];
+    category_coverage: {
+      category: string;
+      picked: number;
+      missing: number;
+      coverage_pct: number;
+    }[];
+    source_breakdown: { curated: number; community: number; diy: number };
+  }
+
+  async function registerAdmin(): Promise<string> {
+    const r = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    expect(r.status).toBe(201);
+    return r.data.token;
+  }
+
+  /** Create a bare couple workspace by hand, bypassing the user/onboarding
+   *  flow. We need a couple with a specific budget ceiling for the analytics
+   *  math to land on round numbers, and the onboarding API hardcodes a 5M
+   *  ceiling. */
+  function insertBareCouple(opts: {
+    budget_ceiling_huf: number | null;
+    status?: string;
+  }): number {
+    const ts = now();
+    const r = db
+      .prepare(
+        `INSERT INTO couples (partner_a_id, display_name, bride_name, groom_name, budget_ceiling_huf, status, created_at, updated_at)
+         VALUES (0, 'Bare', '', '', ?, ?, ?, ?)`,
+      )
+      .run(opts.budget_ceiling_huf, opts.status ?? "active", ts, ts);
+    return Number(r.lastInsertRowid);
+  }
+
+  function insertBudgetLine(
+    coupleId: number,
+    category: string,
+    planned: number,
+    actual: number,
+  ): void {
+    const ts = now();
+    db.prepare(
+      `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).run(coupleId, category, category, planned, actual, ts, ts);
+  }
+
+  test("admin gate: non-admin gets 403 on every analytics route", async () => {
+    wipeAll();
+    await registerAdmin();
+    const { token: coupleToken } = await bootstrapCouple("analytics-nonadmin@weddly.test");
+    for (const path of [
+      "/api/admin/analytics/money",
+      "/api/admin/analytics/activity",
+      "/api/admin/analytics/picks",
+    ]) {
+      const r = await req(path.startsWith("/api") ? "GET" : "GET", path, undefined, {
+        token: coupleToken,
+      });
+      expect(r.status).toBe(403);
+    }
+  });
+
+  test("empty database returns zero stats with no NaN / division-by-zero", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+
+    const money = await req<MoneyPayload>("GET", "/api/admin/analytics/money", undefined, {
+      token: adminToken,
+    });
+    expect(money.status).toBe(200);
+    expect(money.data.couples_with_budget).toBe(0);
+    expect(money.data.couples_with_actuals).toBe(0);
+    expect(money.data.budget_ceiling_huf).toEqual({
+      count: 0,
+      sum: 0,
+      avg: 0,
+      median: 0,
+      p25: 0,
+      p75: 0,
+    });
+    expect(money.data.planned_huf.count).toBe(0);
+    expect(money.data.actual_huf.count).toBe(0);
+    // Per-category and histogram are always returned fully populated even
+    // when the underlying tables are empty.
+    expect(money.data.per_category.length).toBeGreaterThan(0);
+    expect(
+      money.data.per_category.every((c) => c.avg_planned === 0 && c.couples_with_data === 0),
+    ).toBe(true);
+    expect(money.data.budget_histogram.length).toBe(7); // 0 + 6 size brackets
+    expect(money.data.budget_histogram.every((b) => b.count === 0)).toBe(true);
+    // No NaN anywhere — JSON.stringify would have crashed earlier if so, but
+    // assert defensively.
+    const moneyStr = JSON.stringify(money.data);
+    expect(moneyStr.includes("NaN")).toBe(false);
+    expect(moneyStr.includes("null")).toBe(false);
+
+    const activity = await req<ActivityPayload>("GET", "/api/admin/analytics/activity", undefined, {
+      token: adminToken,
+    });
+    expect(activity.status).toBe(200);
+    // Admin's own signup is the only registered user.
+    expect(activity.data.signups.total).toBe(1);
+    expect(activity.data.onboarding_funnel.registered).toBe(1);
+    expect(activity.data.onboarding_funnel.pct_verified).toBeGreaterThanOrEqual(0);
+    expect(activity.data.onboarding_funnel.pct_verified).toBeLessThanOrEqual(1);
+    // Couples table is empty so every status reads zero.
+    expect(activity.data.couples_by_status).toEqual({
+      active: 0,
+      paused: 0,
+      deleting: 0,
+      archived: 0,
+    });
+    // Always 14 days returned, oldest-first.
+    expect(activity.data.signups_daily.length).toBe(14);
+
+    const picks = await req<PicksPayload>("GET", "/api/admin/analytics/picks", undefined, {
+      token: adminToken,
+    });
+    expect(picks.status).toBe(200);
+    expect(picks.data.total_picks).toBe(0);
+    expect(picks.data.picks_per_couple).toEqual({
+      count: 0,
+      sum: 0,
+      avg: 0,
+      median: 0,
+      p25: 0,
+      p75: 0,
+    });
+    expect(picks.data.top_picks).toEqual([]);
+    // category_coverage denominator clamps to 1 so coverage_pct stays a real
+    // number even with zero couples-with-picks.
+    expect(picks.data.category_coverage.every((c) => c.coverage_pct === 0)).toBe(true);
+    expect(picks.data.source_breakdown).toEqual({ curated: 0, community: 0, diy: 0 });
+  });
+
+  test("money: three couples with 1M / 2M / 3M budget → avg + median 2M", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+
+    // 1M / 2M / 3M budget ceilings — symmetric around 2M so the math is
+    // trivially verifiable.
+    insertBareCouple({ budget_ceiling_huf: 1_000_000 });
+    insertBareCouple({ budget_ceiling_huf: 2_000_000 });
+    insertBareCouple({ budget_ceiling_huf: 3_000_000 });
+    // A `deleting` tombstone must NOT count towards budget stats.
+    insertBareCouple({ budget_ceiling_huf: 99_000_000, status: "deleting" });
+    // A couple with no ceiling but a budget line — still counts as
+    // "with_budget" via the line.
+    const cNoCeil = insertBareCouple({ budget_ceiling_huf: null });
+    insertBudgetLine(cNoCeil, "venue", 500_000, 0);
+
+    const money = await req<MoneyPayload>("GET", "/api/admin/analytics/money", undefined, {
+      token: adminToken,
+    });
+    expect(money.status).toBe(200);
+    // 3 ceilings + 1 line-only = 4
+    expect(money.data.couples_with_budget).toBe(4);
+    expect(money.data.budget_ceiling_huf.count).toBe(3);
+    expect(money.data.budget_ceiling_huf.sum).toBe(6_000_000);
+    expect(money.data.budget_ceiling_huf.avg).toBe(2_000_000);
+    expect(money.data.budget_ceiling_huf.median).toBe(2_000_000);
+    expect(money.data.budget_ceiling_huf.p25).toBe(1_500_000);
+    expect(money.data.budget_ceiling_huf.p75).toBe(2_500_000);
+    // Histogram: 1M, 2M, 3M land in the 1M, 3M, 3M buckets respectively.
+    // The line-only couple has no ceiling → bucket_max_huf=0.
+    const h = Object.fromEntries(
+      money.data.budget_histogram.map((b) => [b.bucket_max_huf, b.count]),
+    );
+    expect(h[0]).toBe(1); // line-only couple
+    expect(h[1_000_000]).toBe(1); // 1M ceiling
+    expect(h[3_000_000]).toBe(2); // 2M + 3M both land in the 3M bucket
+    expect(h[5_000_000]).toBe(0);
+    expect(h[10_000_000]).toBe(0);
+    expect(h[20_000_000]).toBe(0);
+    expect(h[30_000_000]).toBe(0); // 99M deleting couple is filtered out
+  });
+
+  test("money: per_category averages + couples_with_actuals", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+
+    const cA = insertBareCouple({ budget_ceiling_huf: 4_000_000 });
+    const cB = insertBareCouple({ budget_ceiling_huf: 4_000_000 });
+    // Two couples both put 1M into venue planned — avg_planned = 1M.
+    insertBudgetLine(cA, "venue", 1_000_000, 800_000);
+    insertBudgetLine(cB, "venue", 1_000_000, 200_000);
+    // Only cA put anything into catering actuals.
+    insertBudgetLine(cA, "catering", 500_000, 500_000);
+
+    const money = await req<MoneyPayload>("GET", "/api/admin/analytics/money", undefined, {
+      token: adminToken,
+    });
+    expect(money.status).toBe(200);
+    expect(money.data.couples_with_actuals).toBe(2); // both have a >0 actual_huf
+    const venue = money.data.per_category.find((c) => c.category === "venue");
+    expect(venue).toBeDefined();
+    expect(venue?.avg_planned).toBe(1_000_000);
+    expect(venue?.avg_actual).toBe(500_000); // (800k + 200k) / 2
+    expect(venue?.couples_with_data).toBe(2);
+    const catering = money.data.per_category.find((c) => c.category === "catering");
+    expect(catering?.couples_with_data).toBe(1);
+    // Empty category still surfaces with zeros so the UI table stays uniform.
+    const honeymoon = money.data.per_category.find((c) => c.category === "honeymoon");
+    expect(honeymoon).toBeDefined();
+    expect(honeymoon?.couples_with_data).toBe(0);
+  });
+
+  test("activity: signups_daily buckets users by created_at date (5d + 12d ago)", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+
+    // Stamp two users at 5 and 12 days ago. We insert via raw SQL so we can
+    // backdate `created_at` without round-tripping the register endpoint
+    // (which uses Date.now()).
+    const ts5d = Date.now() - 5 * 24 * 60 * 60 * 1000;
+    const ts12d = Date.now() - 12 * 24 * 60 * 60 * 1000;
+    // Outside the 14-day window — must not appear in signups_daily but
+    // should still count toward `total`.
+    const ts20d = Date.now() - 20 * 24 * 60 * 60 * 1000;
+    db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+       VALUES (?, '', 'Five', 'active', 'owner', 0, ?, ?)`,
+    ).run("five@weddly.test", ts5d, ts5d);
+    db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+       VALUES (?, '', 'Twelve', 'active', 'owner', 0, ?, ?)`,
+    ).run("twelve@weddly.test", ts12d, ts12d);
+    db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+       VALUES (?, '', 'Way back', 'active', 'owner', 0, ?, ?)`,
+    ).run("waaaay-back@weddly.test", ts20d, ts20d);
+
+    const activity = await req<ActivityPayload>("GET", "/api/admin/analytics/activity", undefined, {
+      token: adminToken,
+    });
+    expect(activity.status).toBe(200);
+
+    // Compute the expected YYYY-MM-DD labels in the same UTC frame the
+    // server uses, then look them up.
+    function isoUtc(ms: number): string {
+      const d = new Date(ms);
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    }
+    const day5 = isoUtc(ts5d);
+    const day12 = isoUtc(ts12d);
+    const day5Bucket = activity.data.signups_daily.find((b) => b.date === day5);
+    const day12Bucket = activity.data.signups_daily.find((b) => b.date === day12);
+    expect(day5Bucket?.count).toBe(1);
+    expect(day12Bucket?.count).toBe(1);
+    // 20-day-old user must not show up in the 14-day window.
+    expect(activity.data.signups_daily.length).toBe(14);
+    // Total signups still counts everyone non-purged (admin + 3 inserted).
+    expect(activity.data.signups.total).toBe(4);
+    expect(activity.data.signups.last_7d).toBeGreaterThanOrEqual(1); // the 5d user
+    expect(activity.data.signups.last_30d).toBeGreaterThanOrEqual(3); // 5d + 12d + 20d users
+
+    // Daily buckets are oldest-first.
+    const dates = activity.data.signups_daily.map((d) => d.date);
+    const sorted = [...dates].sort();
+    expect(dates).toEqual(sorted);
+  });
+
+  test("activity: top_actions returns last-30d audit counts, capped at 12", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const ts = Date.now();
+    // 5 budget_line.create + 3 guest.create + 1 super-old (out of window).
+    for (let i = 0; i < 5; i += 1) {
+      db.prepare(
+        `INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at)
+         VALUES (null, null, 'budget_line.create', 'budget_line', null, ?)`,
+      ).run(ts - i * 1000);
+    }
+    for (let i = 0; i < 3; i += 1) {
+      db.prepare(
+        `INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at)
+         VALUES (null, null, 'guest.create', 'guest', null, ?)`,
+      ).run(ts - i * 1000);
+    }
+    db.prepare(
+      `INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at)
+       VALUES (null, null, 'ancient.action', 'misc', null, ?)`,
+    ).run(ts - 40 * 24 * 60 * 60 * 1000);
+
+    const activity = await req<ActivityPayload>("GET", "/api/admin/analytics/activity", undefined, {
+      token: adminToken,
+    });
+    expect(activity.status).toBe(200);
+    const top = activity.data.top_actions;
+    expect(top.length).toBeLessThanOrEqual(12);
+    expect(top[0]).toEqual({ action: "budget_line.create", count: 5 });
+    expect(top[1]).toEqual({ action: "guest.create", count: 3 });
+    // 40-day-old action filtered out by the 30-day window.
+    expect(top.find((a) => a.action === "ancient.action")).toBeUndefined();
+  });
+
+  test("activity: couples_by_status enumerates all four states even with sparse data", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+
+    insertBareCouple({ budget_ceiling_huf: null, status: "active" });
+    insertBareCouple({ budget_ceiling_huf: null, status: "active" });
+    insertBareCouple({ budget_ceiling_huf: null, status: "paused" });
+
+    const activity = await req<ActivityPayload>("GET", "/api/admin/analytics/activity", undefined, {
+      token: adminToken,
+    });
+    expect(activity.status).toBe(200);
+    expect(activity.data.couples_by_status).toEqual({
+      active: 2,
+      paused: 1,
+      deleting: 0,
+      archived: 0,
+    });
+  });
+
+  test("picks: per-couple distribution + source breakdown + top + coverage", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+
+    const cA = insertBareCouple({ budget_ceiling_huf: null });
+    const cB = insertBareCouple({ budget_ceiling_huf: null });
+    const cC = insertBareCouple({ budget_ceiling_huf: null });
+
+    // A: 2 curated picks
+    db.prepare(
+      `INSERT INTO couple_picks (couple_id, category, supplier_id, picked_by_user_id, picked_at) VALUES (?, ?, ?, NULL, ?)`,
+    ).run(cA, "venue", "normafa-rendezvenyhaz", Date.now());
+    db.prepare(
+      `INSERT INTO couple_picks (couple_id, category, supplier_id, picked_by_user_id, picked_at) VALUES (?, ?, ?, NULL, ?)`,
+    ).run(cA, "catering", "deadbeefdeadbeef", Date.now()); // DIY hex
+    // B: 1 curated pick (same supplier as A → top_picks count = 2)
+    db.prepare(
+      `INSERT INTO couple_picks (couple_id, category, supplier_id, picked_by_user_id, picked_at) VALUES (?, ?, ?, NULL, ?)`,
+    ).run(cB, "venue", "normafa-rendezvenyhaz", Date.now());
+    // C: 1 community pick
+    db.prepare(
+      `INSERT INTO couple_picks (couple_id, category, supplier_id, picked_by_user_id, picked_at) VALUES (?, ?, ?, NULL, ?)`,
+    ).run(cC, "music_dj", "c42", Date.now());
+
+    const picks = await req<PicksPayload>("GET", "/api/admin/analytics/picks", undefined, {
+      token: adminToken,
+    });
+    expect(picks.status).toBe(200);
+    expect(picks.data.total_picks).toBe(4);
+    // 3 couples engaged → median of [1, 1, 2] = 1.
+    expect(picks.data.picks_per_couple.count).toBe(3);
+    expect(picks.data.picks_per_couple.median).toBe(1);
+    expect(picks.data.picks_per_couple.sum).toBe(4);
+
+    // Top picks: most-picked first.
+    const topVenue = picks.data.top_picks.find((t) => t.supplier_id === "normafa-rendezvenyhaz");
+    expect(topVenue?.pick_count).toBe(2);
+    expect(topVenue?.source).toBe("curated");
+    // Curated entry should resolve to its directory name, NOT the slug.
+    expect(topVenue?.display_name).not.toBe("normafa-rendezvenyhaz");
+    expect(topVenue?.display_name.length).toBeGreaterThan(0);
+
+    const topDiy = picks.data.top_picks.find((t) => t.supplier_id === "deadbeefdeadbeef");
+    expect(topDiy?.source).toBe("diy");
+    // No couple_suppliers row exists → fallback to the raw id.
+    expect(topDiy?.display_name).toBe("deadbeefdeadbeef");
+
+    const topCommunity = picks.data.top_picks.find((t) => t.supplier_id === "c42");
+    expect(topCommunity?.source).toBe("community");
+
+    // Source breakdown counts every pick row.
+    expect(picks.data.source_breakdown).toEqual({ curated: 2, community: 1, diy: 1 });
+
+    // Category coverage: venue is picked by 2 of 3 active couples → 2/3.
+    const cov = picks.data.category_coverage.find((c) => c.category === "venue");
+    expect(cov?.picked).toBe(2);
+    expect(cov?.missing).toBe(1);
+    expect(cov?.coverage_pct).toBeCloseTo(2 / 3, 5);
+    // A category nobody picked: 0/3.
+    const empty = picks.data.category_coverage.find((c) => c.category === "rings");
+    expect(empty?.picked).toBe(0);
+    expect(empty?.missing).toBe(3);
+    expect(empty?.coverage_pct).toBe(0);
+  });
+});
