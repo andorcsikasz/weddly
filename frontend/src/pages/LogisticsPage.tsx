@@ -20,12 +20,14 @@
 import type {
   Accommodation,
   Couple,
+  Currency,
   Guest,
   Transfer,
   UpsertAccommodationInput,
   UpsertTransferInput,
 } from "@shared/types";
 import {
+  Banknote,
   Bed,
   Bus,
   Crown,
@@ -34,6 +36,7 @@ import {
   Home,
   Link2,
   MapPin,
+  Minus,
   Pencil,
   Phone,
   Plus,
@@ -48,7 +51,7 @@ import { AppShell } from "../components/AppShell";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { accommodationApi, coupleApi, guestApi, transferApi } from "../lib/endpoints";
-import { formatHuf } from "../lib/format";
+import { currencySymbol, formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -668,6 +671,7 @@ export default function LogisticsPage() {
       {editingAccommodation !== null && (
         <AccommodationDialog
           initial={editingAccommodation === "new" ? null : editingAccommodation}
+          currency={couple?.currency ?? "HUF"}
           onClose={() => setEditingAccommodation(null)}
           onSaved={async () => {
             setEditingAccommodation(null);
@@ -1246,18 +1250,20 @@ function formatDepartAt(value: string): string {
 
 function AccommodationDialog({
   initial,
+  currency,
   onClose,
   onSaved,
 }: {
   initial: Accommodation | null;
+  currency: Currency;
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const [name, setName] = useState(initial?.name ?? "");
   const [address, setAddress] = useState(initial?.address ?? "");
-  const [capacity, setCapacity] = useState<string>(String(initial?.capacity ?? 2));
+  const [capacity, setCapacity] = useState<number>(initial?.capacity ?? 2);
   const [priceHuf, setPriceHuf] = useState<string>(
     initial?.price_huf != null ? String(initial.price_huf) : "",
   );
@@ -1266,6 +1272,8 @@ function AccommodationDialog({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
 
+  const currencyGlyph = currencySymbol(currency, locale);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
@@ -1273,8 +1281,7 @@ function AccommodationDialog({
       toast.error(t("logistics.name_required"));
       return;
     }
-    const cap = Number(capacity);
-    if (!Number.isInteger(cap) || cap < 1) {
+    if (!Number.isInteger(capacity) || capacity < 1) {
       toast.error(t("logistics.capacity_invalid"));
       return;
     }
@@ -1286,7 +1293,7 @@ function AccommodationDialog({
     const body: UpsertAccommodationInput = {
       name: trimmed,
       address: address.trim() || null,
-      capacity: cap,
+      capacity,
       price_huf: price,
       link: link.trim() || null,
       contact: contact.trim() || null,
@@ -1321,75 +1328,135 @@ function AccommodationDialog({
         </>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-3">
-        <Field label={t("logistics.name")}>
+      <form onSubmit={onSubmit} className="space-y-4">
+        <Field icon={Home} label={t("logistics.accommodation_name")}>
           <input
             type="text"
             className="input"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder={t("logistics.accommodation_name_placeholder")}
             autoFocus
           />
         </Field>
-        <Field label={t("logistics.address")}>
+        <Field icon={MapPin} label={t("logistics.address")}>
           <input
             type="text"
             className="input"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            placeholder={t("logistics.address_placeholder")}
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={t("logistics.capacity")}>
+          <Field icon={Users} label={t("logistics.capacity")} help={t("logistics.capacity_help")}>
+            <CapacityStepper value={capacity} onChange={setCapacity} />
+          </Field>
+          <Field
+            icon={Banknote}
+            label={t("logistics.price_label")}
+            help={t("logistics.price_help")}
+          >
+            <div className="relative">
+              <span
+                className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs font-medium text-ink-500 dark:text-umber-300"
+                aria-hidden
+              >
+                {currencyGlyph}
+              </span>
+              <input
+                type="number"
+                min={0}
+                step={1000}
+                className="input pl-9"
+                value={priceHuf}
+                onChange={(e) => setPriceHuf(e.target.value)}
+                placeholder="—"
+                inputMode="numeric"
+              />
+            </div>
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field icon={Link2} label={t("logistics.link")}>
             <input
-              type="number"
-              min={1}
-              max={100}
+              type="url"
               className="input"
-              value={capacity}
-              onChange={(e) => setCapacity(e.target.value)}
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder={t("logistics.link_placeholder")}
             />
           </Field>
-          <Field label={t("logistics.price_huf")}>
+          <Field icon={Phone} label={t("logistics.contact")}>
             <input
-              type="number"
-              min={0}
-              step={1000}
+              type="text"
               className="input"
-              value={priceHuf}
-              onChange={(e) => setPriceHuf(e.target.value)}
-              placeholder="—"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              placeholder={t("logistics.contact_placeholder")}
             />
           </Field>
         </div>
-        <Field label={t("logistics.link")}>
-          <input
-            type="url"
-            className="input"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            placeholder="https://"
-          />
-        </Field>
-        <Field label={t("logistics.contact")}>
-          <input
-            type="text"
-            className="input"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            placeholder={t("logistics.contact_placeholder")}
-          />
-        </Field>
         <Field label={t("logistics.notes")}>
           <textarea
             className="input"
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            placeholder={t("logistics.notes_placeholder")}
           />
         </Field>
       </form>
     </Dialog>
+  );
+}
+
+/** ± stepper for the capacity input. Bare number inputs read as "type a
+ *  number"; couples almost always increment in 1s or 2s, so dedicated
+ *  buttons turn the most common interaction into a single tap and the
+ *  remaining typing path stays available. */
+function CapacityStepper({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (next: number) => void;
+}) {
+  const { t } = useT();
+  const clamp = (n: number) => Math.max(1, Math.min(100, n));
+  return (
+    <div className="inline-flex h-10 items-stretch overflow-hidden rounded-xl border border-paper-300 bg-paper-50 focus-within:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-umber-600">
+      <button
+        type="button"
+        onClick={() => onChange(clamp(value - 1))}
+        disabled={value <= 1}
+        aria-label={t("common.decrement")}
+        className="flex w-10 items-center justify-center text-ink-700 hover:bg-paper-200 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-umber-700"
+      >
+        <Minus size={14} aria-hidden />
+      </button>
+      <input
+        type="number"
+        min={1}
+        max={100}
+        value={value}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          if (Number.isFinite(n)) onChange(clamp(Math.trunc(n)));
+        }}
+        className="w-full border-0 bg-transparent text-center text-sm font-medium text-ink-900 focus:outline-none focus:ring-0 dark:text-paper-50"
+        inputMode="numeric"
+      />
+      <button
+        type="button"
+        onClick={() => onChange(clamp(value + 1))}
+        disabled={value >= 100}
+        aria-label={t("common.increment")}
+        className="flex w-10 items-center justify-center text-ink-700 hover:bg-paper-200 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-umber-700"
+      >
+        <Plus size={14} aria-hidden />
+      </button>
+    </div>
   );
 }
 
@@ -1515,13 +1582,27 @@ function TransferDialog({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  icon: Icon,
+  help,
+  children,
+}: {
+  label: string;
+  icon?: typeof Home;
+  help?: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-ink-600 dark:text-umber-200">
+      <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-ink-600 dark:text-umber-200">
+        {Icon && <Icon size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />}
         {label}
       </span>
       {children}
+      {help && (
+        <span className="mt-1 block text-[11px] text-ink-500 dark:text-umber-300">{help}</span>
+      )}
     </label>
   );
 }

@@ -395,8 +395,10 @@ function ActivitySection({
         />
       </div>
 
-      {/* Daily signups bar chart — 14 days, newest-last. Empty days render
-       *  as tiny placeholder bars so the column stays visible. */}
+      {/* Daily signups — 14-day SVG area chart. Smoother than the
+       *  former bar list and reads as a single shape, which is the
+       *  more "minimalist informative" call. Falls back to a friendly
+       *  empty-state when no signups landed in the window. */}
       <div className="mb-6">
         <h3 className="m-0 mb-2 text-sm font-semibold text-ink-700 dark:text-paper-200">
           {t("admin.analytics_activity_signups_daily_title")}
@@ -410,24 +412,7 @@ function ActivitySection({
             <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
               {t("admin.analytics_activity_signups_daily_sub")}
             </p>
-            <ul className="flex h-24 items-end gap-1">
-              {a.signups_daily.map((d) => {
-                const pct = dailyMax > 0 ? (d.count / dailyMax) * 100 : 0;
-                return (
-                  <li
-                    key={d.date}
-                    className="flex flex-1 flex-col items-center justify-end gap-1"
-                    title={`${d.date} · ${d.count}`}
-                  >
-                    <div
-                      className="w-full rounded-t bg-violet-600 dark:bg-violet-500"
-                      style={{ height: `${Math.max(2, pct)}%` }}
-                      aria-label={`${d.date}: ${d.count}`}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
+            <SignupsAreaChart points={a.signups_daily} max={dailyMax} />
             <div className="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-umber-300 stat-num">
               <span>{a.signups_daily[0]?.date ?? ""}</span>
               <span>{a.signups_daily[a.signups_daily.length - 1]?.date ?? ""}</span>
@@ -843,37 +828,86 @@ function SourceStackedBar({
   locale: "hu" | "en";
 }) {
   const { t } = useT();
-  // Treat a zero total as the empty case so the bar still renders an empty
-  // outline rather than NaN widths.
+  // Treat a zero total as the empty case so the donut still renders an
+  // outline rather than NaN arc lengths.
   const safeTotal = total > 0 ? total : 1;
-  const cPct = (curated / safeTotal) * 100;
-  const cmPct = (community / safeTotal) * 100;
-  const dPct = (diy / safeTotal) * 100;
+
+  // Arc-length math: each segment occupies `value/total` of the
+  // circumference. We render three concentric arcs by computing
+  // stroke-dasharray + stroke-dashoffset on a single circle path. SVG
+  // strokes go clockwise from the top (after `transform rotate(-90)`).
+  const SIZE = 96;
+  const RADIUS = 38;
+  const CIRC = 2 * Math.PI * RADIUS;
+  const cLen = (curated / safeTotal) * CIRC;
+  const cmLen = (community / safeTotal) * CIRC;
+  const dLen = (diy / safeTotal) * CIRC;
+  // Cumulative offsets, walking clockwise around the ring.
+  const cOff = 0;
+  const cmOff = -cLen;
+  const dOff = -(cLen + cmLen);
 
   return (
-    <div>
-      <div
-        className="flex h-6 overflow-hidden rounded-md border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+    <div className="flex flex-wrap items-center gap-5">
+      <svg
+        width={SIZE}
+        height={SIZE}
+        viewBox={`0 0 ${SIZE} ${SIZE}`}
         role="img"
         aria-label={`curated ${curated}, community ${community}, diy ${diy}`}
+        className="shrink-0"
       >
-        <div
-          className="h-full bg-violet-600 dark:bg-violet-500"
-          style={{ width: `${cPct}%` }}
-          title={`${t("admin.analytics_source_curated")} · ${formatNumber(curated, locale)}`}
-        />
-        <div
-          className="h-full bg-sage-500 dark:bg-sage-400"
-          style={{ width: `${cmPct}%` }}
-          title={`${t("admin.analytics_source_community")} · ${formatNumber(community, locale)}`}
-        />
-        <div
-          className="h-full bg-blush-500 dark:bg-blush-400"
-          style={{ width: `${dPct}%` }}
-          title={`${t("admin.analytics_source_diy")} · ${formatNumber(diy, locale)}`}
-        />
-      </div>
-      <div className="mt-2 flex flex-wrap gap-3 text-xs text-ink-700 dark:text-paper-100">
+        <title>
+          {t("admin.analytics_picks_source_breakdown_title")} · {formatNumber(total, locale)}
+        </title>
+        <g
+          transform={`translate(${SIZE / 2} ${SIZE / 2}) rotate(-90)`}
+          fill="none"
+          strokeWidth={12}
+        >
+          {/* Track underneath each arc — keeps the empty case readable. */}
+          <circle r={RADIUS} className="stroke-paper-200 dark:stroke-umber-700" strokeWidth={12} />
+          {curated > 0 && (
+            <circle
+              r={RADIUS}
+              className="stroke-violet-600 dark:stroke-violet-500"
+              strokeDasharray={`${cLen} ${CIRC - cLen}`}
+              strokeDashoffset={cOff}
+              strokeLinecap="butt"
+            />
+          )}
+          {community > 0 && (
+            <circle
+              r={RADIUS}
+              className="stroke-sage-500 dark:stroke-sage-400"
+              strokeDasharray={`${cmLen} ${CIRC - cmLen}`}
+              strokeDashoffset={cmOff}
+              strokeLinecap="butt"
+            />
+          )}
+          {diy > 0 && (
+            <circle
+              r={RADIUS}
+              className="stroke-blush-500 dark:stroke-blush-400"
+              strokeDasharray={`${dLen} ${CIRC - dLen}`}
+              strokeDashoffset={dOff}
+              strokeLinecap="butt"
+            />
+          )}
+        </g>
+        <text
+          x="50%"
+          y="50%"
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="fill-ink-900 dark:fill-paper-50 stat-num"
+          fontSize="18"
+          fontWeight={600}
+        >
+          {formatNumber(total, locale)}
+        </text>
+      </svg>
+      <div className="flex flex-col gap-1 text-xs text-ink-700 dark:text-paper-100">
         <LegendDot
           colourClass="bg-violet-600 dark:bg-violet-500"
           label={t("admin.analytics_source_curated")}
@@ -913,6 +947,91 @@ function LegendDot({
 }
 
 // ─── Shared primitives ─────────────────────────────────────────────────────
+
+/** Minimalist SVG area chart for the 14-day signups trend. Inline SVG —
+ *  no chart library — so the bundle stays lean and the look matches the
+ *  rest of the dashboard's quiet aesthetic. The shape is a Catmull-Rom
+ *  curve through the daily counts; we render it as a filled area with a
+ *  stroke on top + small dots at each day so individual values stay
+ *  legible. */
+function SignupsAreaChart({
+  points,
+  max,
+}: {
+  points: Array<{ date: string; count: number }>;
+  max: number;
+}) {
+  // viewBox is fixed; CSS lets the SVG scale to its container width.
+  const W = 280;
+  const H = 96;
+  const PAD_Y = 8;
+  // When every day is zero, render a flat baseline rather than NaN.
+  const scale = max > 0 ? (H - 2 * PAD_Y) / max : 0;
+  const stepX = points.length > 1 ? W / (points.length - 1) : W;
+  const coords = points.map((p, i) => ({
+    x: i * stepX,
+    y: H - PAD_Y - p.count * scale,
+  }));
+
+  // Build a smooth path using midpoint-anchored Bezier segments — visually
+  // softer than straight lines while staying faithful to the data (no
+  // overshoot past local maxima the way Catmull-Rom can).
+  const path = coords
+    .map((p, i, arr) => {
+      if (i === 0) return `M ${p.x} ${p.y}`;
+      const prev = arr[i - 1];
+      if (!prev) return `M ${p.x} ${p.y}`;
+      const midX = (prev.x + p.x) / 2;
+      return `Q ${midX} ${prev.y} ${midX} ${(prev.y + p.y) / 2} T ${p.x} ${p.y}`;
+    })
+    .join(" ");
+  const fillPath = `${path} L ${W} ${H} L 0 ${H} Z`;
+
+  const total = points.reduce((acc, p) => acc + p.count, 0);
+  const ariaLabel = `14 day signup chart, total ${total}`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      className="block h-24 w-full"
+      role="img"
+      aria-label={ariaLabel}
+    >
+      <title>{ariaLabel}</title>
+      <path d={fillPath} className="fill-violet-500/20 dark:fill-violet-400/25" strokeWidth={0} />
+      <path
+        d={path}
+        className="stroke-violet-600 dark:stroke-violet-400"
+        strokeWidth={1.5}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {coords.map((p, i) => {
+        const point = points[i];
+        if (!point) return null;
+        return (
+          <circle
+            key={point.date}
+            cx={p.x}
+            cy={p.y}
+            r={point.count > 0 ? 2.5 : 1.5}
+            className={
+              point.count > 0
+                ? "fill-violet-700 dark:fill-violet-300"
+                : "fill-paper-300 dark:fill-umber-600"
+            }
+          >
+            <title>
+              {point.date} · {point.count}
+            </title>
+          </circle>
+        );
+      })}
+    </svg>
+  );
+}
 
 /** Pure-CSS horizontal bar. Width is a percentage of the parent so the
  *  caller controls the absolute scale via the surrounding grid. We render a

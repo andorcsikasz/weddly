@@ -125,12 +125,12 @@ export default function AdminVendorWaitlistPage() {
 
   return (
     <AppShell>
-      <header className="mb-6">
+      <header className="mb-4">
         <h1>{t("admin.waitlist_title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.waitlist_sub")}</p>
       </header>
 
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         {FILTERS.map((f) => {
           const count = entries.filter((e) => e.status === f).length;
           return (
@@ -145,28 +145,17 @@ export default function AdminVendorWaitlistPage() {
       </div>
 
       {loading ? (
-        <ul className="grid gap-4">
+        <ul className="grid gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i}>
-              <article className="rounded-2xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-5 shadow-soft">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 flex flex-col gap-1.5">
-                    <Skeleton width={200} height={20} />
-                    <Skeleton width={160} height={12} />
-                    <Skeleton width={120} height={12} />
+              <article className="rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1 flex flex-col gap-1">
+                    <Skeleton width={200} height={18} />
+                    <Skeleton width={260} height={12} />
                   </div>
-                  <Skeleton width={80} height={20} rounded="full" />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-                  <Skeleton width={130} height={12} />
-                  <Skeleton width={90} height={18} rounded="full" />
-                </div>
-                <div className="mt-3 flex flex-col gap-1.5 rounded-lg bg-white/60 dark:bg-umber-900/40 p-3">
-                  <Skeleton width="100%" height={12} />
-                  <Skeleton width="80%" height={12} />
-                </div>
-                <div className="mt-4 flex flex-wrap justify-end gap-2">
-                  <Skeleton width={120} height={32} rounded="md" />
+                  <Skeleton width={70} height={18} rounded="full" />
+                  <Skeleton width={120} height={28} rounded="md" />
                 </div>
               </article>
             </li>
@@ -177,7 +166,7 @@ export default function AdminVendorWaitlistPage() {
           {t(EMPTY_KEY[filter])}
         </div>
       ) : (
-        <ul className="grid gap-4">
+        <ul className="grid gap-2">
           {visibleEntries.map((e) => (
             <li key={e.id}>
               <EntryCard
@@ -258,138 +247,164 @@ function EntryCard({
   onReopen: () => void;
   pending: boolean;
 }) {
-  const cardCls = `rounded-2xl border p-5 shadow-soft ${STATUS_CARD_CLASSES[entry.status]}`;
+  const cardCls = `rounded-xl border p-3 ${STATUS_CARD_CLASSES[entry.status]}`;
+  // Collapse "extra" detail (portfolio, message, sent-email body, admin
+  // notes) behind a single `<details>` so the resting card is a tight
+  // header + meta row + action button. The admin opens detail only when
+  // triaging — most rows in "Elfogadva" / "Elutasítva" don't need it
+  // expanded by default.
+  const hasDetail =
+    entry.portfolio_links.length > 0 ||
+    !!entry.message ||
+    !!entry.sent_subject ||
+    !!entry.notes ||
+    !!entry.instagram_handle ||
+    !!entry.website;
   return (
     <article className={cardCls}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* Header row: name + meta on the left, status + action button on
+       *  the right. Everything stays on one line at desktop widths and
+       *  flows to two on narrow viewports. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-medium text-ink-900 dark:text-paper-50">
-            {entry.business_name}
-          </h2>
-          <a
-            href={`mailto:${entry.email}`}
-            className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
-          >
-            <Mail size={12} aria-hidden /> {entry.email}
-          </a>
-          {entry.location && (
-            <p className="mt-1 text-xs text-ink-600 dark:text-umber-200">{entry.location}</p>
-          )}
-          {entry.website && (
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <h2 className="m-0 text-base font-medium text-ink-900 dark:text-paper-50">
+              {entry.business_name}
+            </h2>
             <a
-              href={entry.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-0.5 inline-flex max-w-full items-center gap-1 truncate text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+              href={`mailto:${entry.email}`}
+              className="inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
             >
-              <ExternalLink size={12} aria-hidden /> {entry.website}
+              <Mail size={11} aria-hidden /> {entry.email}
             </a>
-          )}
-        </div>
-        <StatusPill status={entry.status} label={t(STATUS_KEY[entry.status])} />
-      </div>
-
-      <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-600 dark:text-umber-200">
-        <div>
-          <dt className="inline font-medium text-ink-700 dark:text-paper-100">
-            {t("admin.waitlist_card_submitted")}:{" "}
-          </dt>
-          <dd className="inline">{fmtDate(entry.created_at)}</dd>
-        </div>
-        <div>
-          <dd className="inline rounded-full bg-white/60 dark:bg-umber-900/40 px-2 py-0.5">
-            {t(`suppliers.cat.${entry.category}`)}
-          </dd>
-        </div>
-        {entry.outcome_at && (
-          <div>
-            <dt className="inline font-medium text-ink-700 dark:text-paper-100">
-              {t("admin.waitlist_card_decided")}:{" "}
-            </dt>
-            <dd className="inline">{fmtDate(entry.outcome_at)}</dd>
           </div>
-        )}
-      </dl>
-
-      {entry.instagram_handle && (
-        <a
-          href={`https://instagram.com/${entry.instagram_handle}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
-        >
-          <AtSign size={12} aria-hidden /> {entry.instagram_handle}
-        </a>
-      )}
-
-      {entry.portfolio_links.length > 0 && (
-        <div className="mt-3 rounded-lg bg-white/60 dark:bg-umber-900/40 p-3">
-          <p className="text-xs font-medium text-ink-800 dark:text-paper-50">
-            {t("admin.waitlist_card_portfolio_label")}
-          </p>
-          <ul className="mt-1.5 grid gap-1">
-            {entry.portfolio_links.map((url) => (
-              <li key={url}>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex max-w-full items-center gap-1 truncate text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
-                >
-                  <Link2 size={12} aria-hidden className="shrink-0" />
-                  <span className="truncate">{url}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-600 dark:text-umber-200">
+            <span>{fmtDate(entry.created_at)}</span>
+            <span className="rounded-full bg-white/60 dark:bg-umber-900/40 px-1.5 py-0.5">
+              {t(`suppliers.cat.${entry.category}`)}
+            </span>
+            {entry.location && <span className="truncate">{entry.location}</span>}
+            {entry.outcome_at && (
+              <span>
+                {t("admin.waitlist_card_decided")}: {fmtDate(entry.outcome_at)}
+              </span>
+            )}
+          </div>
         </div>
-      )}
-
-      {entry.message && (
-        <p className="mt-3 rounded-lg bg-white/60 dark:bg-umber-900/40 p-3 text-sm italic text-ink-700 dark:text-paper-100">
-          <span className="not-italic font-medium text-ink-800 dark:text-paper-50">
-            {t("admin.waitlist_card_message_label")}:{" "}
-          </span>
-          {entry.message}
-        </p>
-      )}
-
-      {entry.sent_subject && (
-        <details className="mt-3 text-xs text-ink-700 dark:text-paper-100">
-          <summary className="cursor-pointer font-medium text-ink-800 dark:text-paper-50">
-            {t("admin.waitlist_card_sent_label")}: {entry.sent_subject}
-          </summary>
-          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-white/60 dark:bg-umber-900/40 p-3 font-sans text-xs leading-relaxed">
-            {entry.sent_body ?? ""}
-          </pre>
-        </details>
-      )}
-
-      {entry.notes && (
-        <p className="mt-3 rounded-lg border border-dashed border-ink-300 bg-white/40 dark:border-umber-700 dark:bg-umber-900/30 p-3 text-xs text-ink-700 dark:text-paper-100">
-          <span className="font-medium text-ink-800 dark:text-paper-50">
-            {t("admin.waitlist_card_notes_label")}:{" "}
-          </span>
-          {entry.notes}
-        </p>
-      )}
-
-      <div className="mt-4 flex flex-wrap justify-end gap-2">
-        {entry.status === "new" ? (
-          <Button type="button" variant="primary" size="sm" onClick={onRespond} disabled={pending}>
-            <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
-          </Button>
-        ) : (
-          <>
-            <Button type="button" variant="outline" size="sm" onClick={onReopen} disabled={pending}>
-              <RotateCcw size={14} aria-hidden /> {t("admin.waitlist_action_reopen")}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onRespond} disabled={pending}>
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusPill status={entry.status} label={t(STATUS_KEY[entry.status])} />
+          {entry.status === "new" ? (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={onRespond}
+              disabled={pending}
+            >
               <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
             </Button>
-          </>
-        )}
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onReopen}
+                disabled={pending}
+              >
+                <RotateCcw size={14} aria-hidden /> {t("admin.waitlist_action_reopen")}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onRespond}
+                disabled={pending}
+              >
+                <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
+
+      {hasDetail && (
+        <details className="mt-2 text-xs text-ink-700 dark:text-paper-100">
+          <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("admin.waitlist_card_more_label")}
+          </summary>
+          <div className="mt-2 flex flex-col gap-2">
+            {entry.website && (
+              <a
+                href={entry.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex max-w-full items-center gap-1 truncate text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+              >
+                <ExternalLink size={12} aria-hidden /> {entry.website}
+              </a>
+            )}
+            {entry.instagram_handle && (
+              <a
+                href={`https://instagram.com/${entry.instagram_handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+              >
+                <AtSign size={12} aria-hidden /> {entry.instagram_handle}
+              </a>
+            )}
+            {entry.portfolio_links.length > 0 && (
+              <div className="rounded-md bg-white/60 dark:bg-umber-900/40 p-2">
+                <p className="text-[11px] font-medium text-ink-800 dark:text-paper-50">
+                  {t("admin.waitlist_card_portfolio_label")}
+                </p>
+                <ul className="mt-1 grid gap-0.5">
+                  {entry.portfolio_links.map((url) => (
+                    <li key={url}>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex max-w-full items-center gap-1 truncate text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+                      >
+                        <Link2 size={12} aria-hidden className="shrink-0" />
+                        <span className="truncate">{url}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {entry.message && (
+              <p className="rounded-md bg-white/60 dark:bg-umber-900/40 p-2 text-sm italic text-ink-700 dark:text-paper-100">
+                <span className="not-italic font-medium text-ink-800 dark:text-paper-50">
+                  {t("admin.waitlist_card_message_label")}:{" "}
+                </span>
+                {entry.message}
+              </p>
+            )}
+            {entry.sent_subject && (
+              <details className="text-xs text-ink-700 dark:text-paper-100">
+                <summary className="cursor-pointer font-medium text-ink-800 dark:text-paper-50">
+                  {t("admin.waitlist_card_sent_label")}: {entry.sent_subject}
+                </summary>
+                <pre className="mt-1 whitespace-pre-wrap rounded-md bg-white/60 dark:bg-umber-900/40 p-2 font-sans text-xs leading-relaxed">
+                  {entry.sent_body ?? ""}
+                </pre>
+              </details>
+            )}
+            {entry.notes && (
+              <p className="rounded-md border border-dashed border-ink-300 bg-white/40 dark:border-umber-700 dark:bg-umber-900/30 p-2 text-xs text-ink-700 dark:text-paper-100">
+                <span className="font-medium text-ink-800 dark:text-paper-50">
+                  {t("admin.waitlist_card_notes_label")}:{" "}
+                </span>
+                {entry.notes}
+              </p>
+            )}
+          </div>
+        </details>
+      )}
     </article>
   );
 }

@@ -35,9 +35,17 @@
   /* Belt-and-braces background on <html> so content that grows past the
      body's 100% height still paints over a themed surface (otherwise
      scrolling past the viewport reveals the browser's default white
-     html background, especially noticeable in warm-dark mode). */
+     html background, especially noticeable in warm-dark mode).
+
+     `scrollbar-gutter: stable` reserves space for the vertical scrollbar
+     whether it's needed or not — without this, navigating between a short
+     page (no scrollbar) and a long page (scrollbar appears) shifts every
+     centered element (incl. the sidebar) horizontally by ~15px. The mac
+     overlay-scrollbar default already avoids this on Safari/Chrome on macOS,
+     but Windows + Firefox-on-anything need the explicit gutter. */
   html {
     background-color: theme("colors.paper.100");
+    scrollbar-gutter: stable;
   }
   html.dark {
     background-color: theme("colors.umber.900");
