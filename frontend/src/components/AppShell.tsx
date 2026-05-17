@@ -9,7 +9,6 @@ import {
   Heart,
   Image as ImageIcon,
   Inbox,
-  Keyboard,
   Languages,
   LayoutDashboard,
   LayoutList,
@@ -408,19 +407,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               gap-1 is plenty between square buttons; gap-2 made the row
               spread out beyond the wordmark on narrow viewports. */}
           <div className="flex items-center gap-1">
-            {/* Keyboard shortcuts — md+ only. The `?` hotkey itself is gated by
-                a matchMedia(min-width:768px) check, so this button is the only
-                way to discover the sheet on touch widths (and we hide it
-                because there are no useful shortcuts there). */}
-            <button
-              type="button"
-              className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 md:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-              aria-label={t("shortcuts.title")}
-              title={t("shortcuts.title")}
-              onClick={() => setShortcutsOpen(true)}
-            >
-              <Keyboard size={18} aria-hidden="true" />
-            </button>
             <button
               type="button"
               className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
