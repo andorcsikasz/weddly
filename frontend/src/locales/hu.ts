@@ -724,6 +724,13 @@ const hu: LocaleMessages = {
     contact_cta: "Előregisztráció",
     contact_subject: "Szolgáltatói várólista",
     back_to_landing: "Vissza a főoldalra",
+    beta_notice_title: "Nyílt béta — jelenleg ingyenes",
+    beta_notice_body:
+      "A Wēddly szolgáltatói címjegyzéke jelenleg nyílt bétában van: a jelentkezés és a listázás díjmentes. A béta lezárása után monetizációs modellt vezetünk be (pl. előfizetés vagy kiemelt megjelenés). A most jelentkezőket időben értesítjük a feltételekről, mielőtt bármilyen díj életbe lépne.",
+    privacy_consent_prefix: "Elolvastam és elfogadom az ",
+    privacy_consent_link: "adatkezelési tájékoztatót",
+    privacy_consent_suffix: ", és hozzájárulok a megadott adatok kezeléséhez.",
+    form_err_privacy_consent: "A jelentkezéshez el kell fogadnod az adatkezelési tájékoztatót.",
   },
   public: {
     menu_open: "Menü megnyitása",
@@ -2516,6 +2523,10 @@ const hu: LocaleMessages = {
     trust_microcopy_prefix: "A nyílt béta alatt ingyenes — bankkártya nem szükséges. Olvasd el az ",
     trust_microcopy_privacy_link: "adatvédelmi szabályzatot",
     trust_microcopy_suffix: ".",
+    privacy_consent_prefix: "Elolvastam és elfogadom az ",
+    privacy_consent_link: "adatkezelési tájékoztatót",
+    privacy_consent_suffix: ", és hozzájárulok az adataim kezeléséhez.",
+    privacy_consent_error: "A regisztrációhoz el kell fogadnod az adatkezelési tájékoztatót.",
   },
   legal: {
     draft_banner_label: "Nyílt béta — még nincs jogi átvilágítás",

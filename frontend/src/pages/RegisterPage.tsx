@@ -21,6 +21,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [fullName, setFullName] = useState("");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Holds the freshly-minted session until the user clicks past the
@@ -30,6 +31,7 @@ export default function RegisterPage() {
   const [resending, setResending] = useState(false);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const errorId = useId();
+  const consentId = useId();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -43,6 +45,10 @@ export default function RegisterPage() {
     setError(null);
     if (password !== passwordConfirm) {
       setError(t("auth.password_mismatch"));
+      return;
+    }
+    if (!privacyConsent) {
+      setError(t("register.privacy_consent_error"));
       return;
     }
     setSubmitting(true);
@@ -191,6 +197,29 @@ export default function RegisterPage() {
                   : undefined
               }
             />
+            {/* GDPR consent — required. Block submit until checked. The
+                policy itself is linked inline so the user can read it
+                without leaving the form. */}
+            <label
+              htmlFor={consentId}
+              className="flex cursor-pointer items-start gap-2 rounded-md border border-paper-200 bg-paper-50 p-3 text-sm text-ink-700 transition-colors hover:border-blush-300 hover:bg-blush-50 dark:border-umber-700 dark:bg-umber-800/40 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/10"
+            >
+              <input
+                id={consentId}
+                type="checkbox"
+                checked={privacyConsent}
+                onChange={(e) => setPrivacyConsent(e.target.checked)}
+                className="mt-0.5 h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-500 dark:border-umber-600"
+                aria-required="true"
+              />
+              <span className="flex-1 leading-snug">
+                {t("register.privacy_consent_prefix")}
+                <Link to="/privacy" className="underline hover:text-ink-900" target="_blank" rel="noopener">
+                  {t("register.privacy_consent_link")}
+                </Link>
+                {t("register.privacy_consent_suffix")}
+              </span>
+            </label>
             {error && (
               <p id={errorId} className="field-error" role="alert">
                 {error}
@@ -202,6 +231,7 @@ export default function RegisterPage() {
               fullWidth
               loading={submitting}
               loadingLabel={t("common.loading")}
+              disabled={!privacyConsent}
             >
               {t("auth.submit_register")}
             </Button>

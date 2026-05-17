@@ -1,6 +1,6 @@
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
-import { ArrowLeft, Check } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { ArrowLeft, Check, Info } from "lucide-react";
+import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { PhaseAftermathArt, PhaseGuestsArt, PhaseSuppliersArt } from "../components/illustrations";
 import { VendorListingMockup } from "../components/mockups";
@@ -115,9 +115,11 @@ function WaitlistContact() {
   const [location, setLocation] = useState("");
   const [website, setWebsite] = useState("");
   const [message, setMessage] = useState("");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const consentId = useId();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -134,6 +136,7 @@ function WaitlistContact() {
       return setErrorMsg(t("vendors.form_err_email"));
     }
     if (!category) return setErrorMsg(t("vendors.form_err_category"));
+    if (!privacyConsent) return setErrorMsg(t("vendors.form_err_privacy_consent"));
 
     setSubmitting(true);
     try {
@@ -174,6 +177,18 @@ function WaitlistContact() {
   return (
     <div className="card">
       <h2 className="font-serif text-3xl text-ink-900 sm:text-4xl">{t("vendors.contact_title")}</h2>
+      {/* Beta + future-monetization disclosure — sets honest expectations
+          before vendors submit. Pricing is not finalised, so we promise
+          notice rather than a number. */}
+      <div className="mt-5 flex items-start gap-3 rounded-lg border border-blush-200 bg-blush-50 p-4 text-sm text-ink-700 dark:border-blush-400/30 dark:bg-blush-400/10 dark:text-paper-100">
+        <Info size={18} className="mt-0.5 shrink-0 text-blush-600" aria-hidden />
+        <div className="flex-1">
+          <p className="font-medium text-ink-900 dark:text-paper-50">
+            {t("vendors.beta_notice_title")}
+          </p>
+          <p className="mt-1 leading-relaxed">{t("vendors.beta_notice_body")}</p>
+        </div>
+      </div>
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div>
           <label htmlFor="vendor-business" className="field-label">
@@ -271,6 +286,27 @@ function WaitlistContact() {
             placeholder={t("vendors.form_message_placeholder")}
           />
         </div>
+        {/* GDPR consent — required. */}
+        <label
+          htmlFor={consentId}
+          className="flex cursor-pointer items-start gap-2 rounded-md border border-paper-200 bg-paper-50 p-3 text-sm text-ink-700 transition-colors hover:border-blush-300 hover:bg-blush-50 dark:border-umber-700 dark:bg-umber-800/40 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/10"
+        >
+          <input
+            id={consentId}
+            type="checkbox"
+            checked={privacyConsent}
+            onChange={(e) => setPrivacyConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-500 dark:border-umber-600"
+            aria-required="true"
+          />
+          <span className="flex-1 leading-snug">
+            {t("vendors.privacy_consent_prefix")}
+            <Link to="/privacy" className="underline hover:text-ink-900" target="_blank" rel="noopener">
+              {t("vendors.privacy_consent_link")}
+            </Link>
+            {t("vendors.privacy_consent_suffix")}
+          </span>
+        </label>
         {errorMsg && (
           <p className="text-sm text-blush-700" role="alert">
             {errorMsg}
@@ -279,7 +315,7 @@ function WaitlistContact() {
         <button
           type="submit"
           className="btn-primary btn-lg inline-flex w-full justify-center sm:w-auto"
-          disabled={submitting}
+          disabled={submitting || !privacyConsent}
         >
           {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}
         </button>

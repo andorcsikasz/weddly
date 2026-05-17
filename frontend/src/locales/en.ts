@@ -724,6 +724,13 @@ const en: LocaleMessages = {
     contact_cta: "Pre-register",
     contact_subject: "Vendor waitlist",
     back_to_landing: "Back to the landing page",
+    beta_notice_title: "Open beta — free for now",
+    beta_notice_body:
+      "Weddly's vendor directory is currently in open beta: applying and being listed is free of charge. After the beta we will introduce a monetisation model (e.g. subscription or featured placement). Everyone who joins now will be notified of the terms well before any fees take effect.",
+    privacy_consent_prefix: "I have read and accept the ",
+    privacy_consent_link: "privacy policy",
+    privacy_consent_suffix: ", and I consent to the processing of the data I provide.",
+    form_err_privacy_consent: "Please accept the privacy policy to submit your application.",
   },
   public: {
     menu_open: "Open menu",
@@ -2492,6 +2499,10 @@ const en: LocaleMessages = {
     trust_microcopy_prefix: "Free during the open beta — no card required. Read our ",
     trust_microcopy_privacy_link: "privacy policy",
     trust_microcopy_suffix: ".",
+    privacy_consent_prefix: "I have read and accept the ",
+    privacy_consent_link: "privacy policy",
+    privacy_consent_suffix: ", and I consent to the processing of my data.",
+    privacy_consent_error: "Please accept the privacy policy to create your account.",
   },
   legal: {
     draft_banner_label: "Open beta — pending legal review",

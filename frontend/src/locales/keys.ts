@@ -750,6 +750,17 @@ export interface LocaleMessages {
     contact_cta: string;
     contact_subject: string;
     back_to_landing: string;
+    /** Beta + future-monetization notice shown above the waitlist form so
+     *  vendors understand the directory is free during the beta and that a
+     *  paid model will follow once the platform exits beta. */
+    beta_notice_title: string;
+    beta_notice_body: string;
+    /** GDPR consent checkbox before submit. Same three-piece split as the
+     *  register page so the policy link is a real <Link>. */
+    privacy_consent_prefix: string;
+    privacy_consent_link: string;
+    privacy_consent_suffix: string;
+    form_err_privacy_consent: string;
   };
   public: {
     menu_open: string;
@@ -2760,6 +2771,13 @@ export interface LocaleMessages {
     trust_microcopy_prefix: string;
     trust_microcopy_privacy_link: string;
     trust_microcopy_suffix: string;
+    /** GDPR-style consent checkbox shown above the submit button — required
+     *  before the form will POST. Three pieces so the policy link stays a
+     *  real react-router <Link>. */
+    privacy_consent_prefix: string;
+    privacy_consent_link: string;
+    privacy_consent_suffix: string;
+    privacy_consent_error: string;
   };
   /** /privacy — MVP-quality privacy policy. Bilingual (HU primary, EN
    *  block beneath). Content stays plain JSX in PrivacyPage.tsx; only
