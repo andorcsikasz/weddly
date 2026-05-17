@@ -254,7 +254,12 @@ export default function AdminUsersPage() {
       ? Math.max(0, Math.ceil((flag.scheduled_delete_at - Date.now()) / (24 * 60 * 60 * 1000)))
       : 0;
     return (
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      // Outer row stays single-line so the flag + trash + verify cluster
+      // sits in the same vertical column across every workspace card. The
+      // previous `flex-wrap` dropped the action group below the email when
+      // the email was long (which was most of them), giving the column an
+      // uneven "icons hanging out below random rows" look the user flagged.
+      <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="font-medium text-ink-900 dark:text-paper-50">{u.full_name}</span>
           <span className="text-xs text-ink-500 dark:text-umber-300 break-all">{u.email}</span>
