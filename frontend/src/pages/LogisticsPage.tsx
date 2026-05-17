@@ -1011,13 +1011,13 @@ function AccommodationCard({
 
       <header className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="inline-flex items-center gap-1.5 truncate text-base font-semibold">
+          <h3 className="flex items-center gap-1.5 text-base font-semibold">
             <Home size={14} aria-hidden className="shrink-0 text-blush-600 dark:text-blush-300" />
             <span className="truncate">{accommodation.name}</span>
           </h3>
           {accommodation.address && (
-            <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-              <MapPin size={11} aria-hidden />
+            <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+              <MapPin size={11} aria-hidden className="shrink-0" />
               <span className="truncate">{accommodation.address}</span>
             </p>
           )}
