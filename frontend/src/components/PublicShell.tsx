@@ -183,7 +183,7 @@ function PublicHeader() {
           >
             <LogIn size={18} aria-hidden="true" />
           </Link>
-          <Link to="/signup" className="btn-primary px-3.5 py-1.5 text-sm">
+          <Link to="/signup" className="btn-primary !py-2 px-3.5 text-sm sm:!py-1.5">
             {t("landing.cta_signup")}
           </Link>
           <button
@@ -198,7 +198,7 @@ function PublicHeader() {
           <button
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:h-8 sm:w-8 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
             title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
           >
@@ -214,7 +214,7 @@ function PublicHeader() {
             aria-expanded={menuOpen}
             aria-controls="public-mobile-nav"
             aria-label={menuOpen ? t("public.menu_close") : t("public.menu_open")}
-            className="-mr-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:hidden"
+            className="-mr-1 inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:h-8 sm:w-8 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:hidden"
           >
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -354,11 +354,13 @@ function PublicFooter() {
       </div>
 
       <div className="border-t border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-5 text-xs text-ink-500 dark:text-umber-300 sm:flex-row sm:items-center sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-5 text-xs text-ink-500 dark:text-umber-300 sm:flex-row sm:items-center sm:px-6">
           <p>
             © {new Date().getFullYear()} {t("app.name")}
           </p>
-          <div className="flex gap-5">
+          {/* `flex-wrap` so the five legal links don't overflow 360px on
+              mobile (HU "Szolgáltatói ÁSZF (tervezet)" alone is ~210px). */}
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
             <Link to="/terms" className="hover:text-ink-700 dark:hover:text-paper-100">
               {t("landing.footer_legal_terms")}
             </Link>
