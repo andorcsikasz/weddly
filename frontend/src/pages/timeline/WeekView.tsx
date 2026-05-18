@@ -7,7 +7,7 @@
 // every minute on today's column only.
 
 import type { PlanningItem } from "@shared/types";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "../../lib/i18n";
 
 interface ResolvedSupplier {
@@ -65,13 +65,14 @@ function startOfWeekMon(d: Date): Date {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-// 2-hour bands so the rail breathes — 24 one-hour labels were too dense. The
-// 00:00–07:00 band is collapsed by default (most users plan during waking
-// hours); a toggle bar above the grid expands it back to a full 24h rail.
-const HOUR_STEP = 2;
-const EARLY_HOUR_START = 0;
-const DEFAULT_HOUR_START = 8;
-const HOUR_END_EXCL = 24;
+// All 24 hours render at a fixed pixel height per row so spacing stays
+// relaxed — the hour-grid container scrolls vertically when there isn't
+// room for the full day. Default scroll position lands on 06:00 so the
+// morning–evening planning window is visible without scrolling, while
+// 00–05 and 22–23 remain one swipe away.
+const HOUR_PX = 48;
+const DAY_HOURS = 24;
+const DEFAULT_VISIBLE_START_HOUR = 6;
 const LANE_HEIGHT_PX = 22;
 const LANE_GAP_PX = 8;
 const GUTTER_WIDTH_PX = 56;
@@ -154,7 +155,7 @@ export default function WeekView({
   supplierById,
   onOpenTask,
 }: WeekViewProps) {
-  const { locale, t } = useT();
+  const { locale } = useT();
   // Force re-render every 60s so the "now" line drifts down the today column.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -162,7 +163,16 @@ export default function WeekView({
     return () => window.clearInterval(id);
   }, []);
 
-  const [showEarlyHours, setShowEarlyHours] = useState(false);
+  // Scroll the hour rail so 06:00 sits at the top of the visible area on
+  // mount. Re-snap when the focal week changes (prev/next nav) so each new
+  // week opens at the same window instead of inheriting the prior offset.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-snap on week change
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = DEFAULT_VISIBLE_START_HOUR * HOUR_PX;
+  }, [currentDate]);
 
   const monday = useMemo(() => startOfWeekMon(currentDate), [currentDate]);
   const days = useMemo(() => {
@@ -181,20 +191,17 @@ export default function WeekView({
   const stripHeight =
     maxLane < 0 ? LANE_HEIGHT_PX + LANE_GAP_PX : (maxLane + 1) * (LANE_HEIGHT_PX + 2) + LANE_GAP_PX;
 
-  // Hour rail spans 08:00–22:00 by default; expanding the early band drops
-  // the start back to 00:00. The "now" indicator hides when the current clock
-  // falls outside the visible window (e.g. 03:00 while collapsed).
-  const hourStart = showEarlyHours ? EARLY_HOUR_START : DEFAULT_HOUR_START;
-  const hourSpan = HOUR_END_EXCL - hourStart;
+  // Full 24h rail rendered at fixed pixel rows — the "now" line sits at
+  // its absolute pixel offset from midnight and is always reachable via
+  // scroll, so no in-range check is needed.
   const now = new Date();
   const nowHour = now.getHours();
   const nowMin = now.getMinutes();
-  const showNow = todayInWeek && nowHour >= hourStart;
-  const nowTopPct = ((nowHour + nowMin / 60 - hourStart) / hourSpan) * 100;
+  const showNow = todayInWeek;
+  const nowTopPx = (nowHour + nowMin / 60) * HOUR_PX;
 
   const hourLabels: number[] = [];
-  for (let h = hourStart; h < HOUR_END_EXCL; h += HOUR_STEP) hourLabels.push(h);
-  const hourRows = hourLabels.length;
+  for (let h = 0; h < DAY_HOURS; h++) hourLabels.push(h);
 
   const allDayLabel = locale === "hu" ? "egész napos" : "All-day";
   const todayAriaLabel = locale === "hu" ? "Jelenlegi idő" : "Current time";
@@ -287,76 +294,59 @@ export default function WeekView({
         </div>
       </div>
 
-      {/* ── Early-hours toggle — collapses the 00:00–07:00 band by default
-       *    so the rail focuses on waking hours. Click anywhere on the strip
-       *    to flip; the button row spans the full width so it reads as a
-       *    section divider rather than an inline icon. ────────────────── */}
-      <button
-        type="button"
-        onClick={() => setShowEarlyHours((s) => !s)}
-        aria-expanded={showEarlyHours}
-        aria-label={
-          showEarlyHours ? t("timeline.hide_early_hours") : t("timeline.show_early_hours")
-        }
-        className="flex w-full items-center gap-1.5 border-b border-paper-300 px-2 py-1 text-left text-[10px] uppercase tracking-wider text-ink-500 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-900/40 dark:focus-visible:ring-paper-100"
-      >
-        <span
-          aria-hidden="true"
-          className="inline-flex h-3 w-3 items-center justify-center font-sans text-[10px] leading-none"
+      {/* ── Hour grid — scrollable in a fixed-height-per-hour rail. The
+       *    parent decides the visible window via flex-1; on mount + every
+       *    week change we scroll to 06:00 so the morning–evening planning
+       *    window opens by default. Users can swipe up/down to reach
+       *    night hours. ────────────────────────────────────────────── */}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div
+          className="grid"
+          style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px repeat(7, minmax(0, 1fr))` }}
         >
-          {showEarlyHours ? "▴" : "▾"}
-        </span>
-        <span>00:00–07:00</span>
-      </button>
+          <div
+            className="grid"
+            style={{ gridTemplateRows: `repeat(${DAY_HOURS}, ${HOUR_PX}px)` }}
+          >
+            {hourLabels.map((h) => (
+              <div
+                key={h}
+                className="border-t border-paper-200 pr-2 text-right text-[11px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
+              >
+                <span className="-translate-y-1/2 inline-block">
+                  {h.toString().padStart(2, "0")}:00
+                </span>
+              </div>
+            ))}
+          </div>
 
-      {/* ── Hour grid — fills the rest of the card, no scroll. The grid uses
-       *    minmax(0, 1fr) rows so the visible hours share whatever vertical
-       *    space the parent gives us. Hour labels sit in a parallel
-       *    1fr-per-row column so they line up with the rules exactly. ──── */}
-      <div
-        className="grid min-h-0 flex-1"
-        style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px repeat(7, minmax(0, 1fr))` }}
-      >
-        {/* Gutter column — one cell per 2-hour band. */}
-        <div className="grid" style={{ gridTemplateRows: `repeat(${hourRows}, minmax(0, 1fr))` }}>
-          {hourLabels.map((h) => (
+          {days.map((d, i) => (
             <div
-              key={h}
-              className="border-t border-paper-200 pr-2 text-right text-[10px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
+              key={d.toISOString()}
+              className="relative grid border-l border-paper-200 dark:border-umber-700"
+              style={{ gridTemplateRows: `repeat(${DAY_HOURS}, ${HOUR_PX}px)` }}
             >
-              <span className="-translate-y-1/2 inline-block">
-                {h.toString().padStart(2, "0")}:00
-              </span>
+              {hourLabels.map((h) => (
+                <div key={h} className="border-t border-paper-200 dark:border-umber-700" />
+              ))}
+
+              {showNow && i === todayCol && (
+                <div
+                  className="pointer-events-none absolute left-0 right-0 z-10"
+                  style={{ top: `${nowTopPx}px` }}
+                  aria-label={todayAriaLabel}
+                  title={todayAriaLabel}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500"
+                  />
+                  <div className="h-0.5 w-full bg-blush-500" />
+                </div>
+              )}
             </div>
           ))}
         </div>
-
-        {days.map((d, i) => (
-          <div
-            key={d.toISOString()}
-            className="relative grid border-l border-paper-200 dark:border-umber-700"
-            style={{ gridTemplateRows: `repeat(${hourRows}, minmax(0, 1fr))` }}
-          >
-            {hourLabels.map((h) => (
-              <div key={h} className="border-t border-paper-200 dark:border-umber-700" />
-            ))}
-
-            {showNow && i === todayCol && (
-              <div
-                className="pointer-events-none absolute left-0 right-0 z-10"
-                style={{ top: `${nowTopPct}%` }}
-                aria-label={todayAriaLabel}
-                title={todayAriaLabel}
-              >
-                <span
-                  aria-hidden="true"
-                  className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500"
-                />
-                <div className="h-0.5 w-full bg-blush-500" />
-              </div>
-            )}
-          </div>
-        ))}
       </div>
     </div>
   );

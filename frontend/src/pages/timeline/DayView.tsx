@@ -7,7 +7,7 @@
 // stay pinned while a long day scrolls.
 
 import type { PlanningItem } from "@shared/types";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "../../lib/i18n";
 
 interface ResolvedSupplier {
@@ -51,14 +51,16 @@ function diffDays(a: Date, b: Date): number {
   return Math.round(ms / 86_400_000);
 }
 
-// 2-hour bands (08, 10, …, 22 by default). One-hour bands crammed 24 labels
-// into the available vertical space and the rail looked like a wall of
-// numbers; two-hour bands halve the label count. The 00:00–07:00 band is
-// collapsed by default and expandable via a toggle bar above the grid.
-const HOUR_STEP = 2;
-const EARLY_HOUR_START = 0;
-const DEFAULT_HOUR_START = 8;
-const HOUR_END_EXCL = 24;
+// All 24 hours render at a fixed pixel height per row so spacing stays
+// "lazább" (relaxed) — the container scrolls vertically when there isn't
+// room. Default scroll position lands on 06:00 so the morning–evening
+// window the couple actually plans against is visible without scrolling,
+// while early hours (00–05) and late hours (22–23) remain one swipe away.
+const HOUR_PX = 48;
+const DAY_HOURS = 24;
+const DEFAULT_VISIBLE_START_HOUR = 6;
+const HOURS: number[] = [];
+for (let h = 0; h < DAY_HOURS; h++) HOURS.push(h);
 
 function formatHour(h: number): string {
   // 24-hour clock per spec — same in HU and EN.
@@ -72,7 +74,7 @@ export default function DayView({
   supplierById,
   onOpenTask,
 }: DayViewProps) {
-  const { locale, t } = useT();
+  const { locale } = useT();
   // Suppress unused-variable warnings when supplierById isn't needed for
   // rendering — kept on the props contract so future work can surface a
   // supplier chip on each bar without changing the call sites.
@@ -85,12 +87,17 @@ export default function DayView({
     return () => clearInterval(id);
   }, []);
 
-  const [showEarlyHours, setShowEarlyHours] = useState(false);
-  const hourStart = showEarlyHours ? EARLY_HOUR_START : DEFAULT_HOUR_START;
-  const hourSpan = HOUR_END_EXCL - hourStart;
-  const hourLabels: number[] = [];
-  for (let h = hourStart; h < HOUR_END_EXCL; h += HOUR_STEP) hourLabels.push(h);
-  const hourRows = hourLabels.length;
+  // Scroll the hour rail so the visible window opens at 06:00 on mount.
+  // After that the user owns the scroll position — we don't re-snap on
+  // every render, only on currentDate change (so prev/next day still
+  // lands at 06:00 instead of leaving last-day's offset behind).
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-snap on day change
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = DEFAULT_VISIBLE_START_HOUR * HOUR_PX;
+  }, [currentDate]);
 
   const intl = locale === "hu" ? "hu-HU" : "en-US";
   const dayStart = startOfDay(currentDate);
@@ -129,15 +136,11 @@ export default function DayView({
     return rows;
   }, [tasks, dayStart, locale]);
 
-  // "Now" indicator position — renders only when today is current and the
-  // clock falls inside the visible rail (hidden when collapsed and now is
-  // before 08:00). Position is expressed as % of the grid height so it
-  // tracks whatever vertical space the parent gives the hour grid.
+  // "Now" indicator position — renders whenever the view is on today.
+  // The whole 24h rail is rendered, so the line is always reachable via
+  // scroll; we just place it at its absolute pixel offset from midnight.
   const now = new Date();
-  const nowTopPct =
-    isToday && now.getHours() >= hourStart
-      ? ((now.getHours() + now.getMinutes() / 60 - hourStart) / hourSpan) * 100
-      : null;
+  const nowTopPx = isToday ? (now.getHours() + now.getMinutes() / 60) * HOUR_PX : null;
 
   const emptyHint = locale === "hu" ? "Nincs feladat erre a napra" : "No tasks for this day";
 
@@ -194,63 +197,47 @@ export default function DayView({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowEarlyHours((s) => !s)}
-        aria-expanded={showEarlyHours}
-        aria-label={
-          showEarlyHours ? t("timeline.hide_early_hours") : t("timeline.show_early_hours")
-        }
-        className="flex w-full items-center gap-1.5 border-b border-paper-300 px-2 py-1 text-left text-[10px] uppercase tracking-wider text-ink-500 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-900/40 dark:focus-visible:ring-paper-100"
-      >
-        <span
-          aria-hidden="true"
-          className="inline-flex h-3 w-3 items-center justify-center font-sans text-[10px] leading-none"
-        >
-          {showEarlyHours ? "▴" : "▾"}
-        </span>
-        <span>00:00–07:00</span>
-      </button>
-
-      <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: "56px 1fr" }}>
-        <div
-          className="grid"
-          style={{ gridTemplateRows: `repeat(${hourRows}, minmax(0, 1fr))` }}
-          aria-hidden="true"
-        >
-          {hourLabels.map((h) => (
-            <div
-              key={h}
-              className="border-t border-paper-200 pr-2 text-right text-[10px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
-            >
-              <span className="-translate-y-1/2 inline-block">
-                <time dateTime={`${h.toString().padStart(2, "0")}:00`}>{formatHour(h)}</time>
-              </span>
-            </div>
-          ))}
-        </div>
-        <div
-          className="relative grid"
-          style={{ gridTemplateRows: `repeat(${hourRows}, minmax(0, 1fr))` }}
-        >
-          {hourLabels.map((h) => (
-            <div
-              key={h}
-              className="border-t border-paper-200 dark:border-umber-700"
-              aria-hidden="true"
-            />
-          ))}
-          {nowTopPct !== null && (
-            <div
-              className="pointer-events-none absolute inset-x-0"
-              style={{ top: `${nowTopPct}%` }}
-              aria-label={locale === "hu" ? "Most" : "Now"}
-            >
-              <div className="relative h-0.5 bg-blush-500">
-                <span className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500" />
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div className="grid" style={{ gridTemplateColumns: "56px 1fr" }}>
+          <div
+            className="grid"
+            style={{ gridTemplateRows: `repeat(${DAY_HOURS}, ${HOUR_PX}px)` }}
+            aria-hidden="true"
+          >
+            {HOURS.map((h) => (
+              <div
+                key={h}
+                className="border-t border-paper-200 pr-2 text-right text-[11px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
+              >
+                <span className="-translate-y-1/2 inline-block">
+                  <time dateTime={`${h.toString().padStart(2, "0")}:00`}>{formatHour(h)}</time>
+                </span>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
+          <div
+            className="relative grid"
+            style={{ gridTemplateRows: `repeat(${DAY_HOURS}, ${HOUR_PX}px)` }}
+          >
+            {HOURS.map((h) => (
+              <div
+                key={h}
+                className="border-t border-paper-200 dark:border-umber-700"
+                aria-hidden="true"
+              />
+            ))}
+            {nowTopPx !== null && (
+              <div
+                className="pointer-events-none absolute inset-x-0"
+                style={{ top: `${nowTopPx}px` }}
+                aria-label={locale === "hu" ? "Most" : "Now"}
+              >
+                <div className="relative h-0.5 bg-blush-500">
+                  <span className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
