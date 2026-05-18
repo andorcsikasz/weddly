@@ -364,6 +364,34 @@
       transparent 8px
     );
   }
+
+  /* Softer cousin of .stationery-dark — ink-800 base instead of ink-900,
+     paper hairlines bumped a notch so the texture still reads on the
+     brighter surface. Used by the honeymoon header tiles where the heavy
+     near-black of .stationery-dark felt too harsh next to the warm paper
+     page background. Dark-mode override matches stationery-dark
+     (umber-800) so the two variants converge in dark, where the umber
+     palette already does the "pleasant" job. */
+  .stationery-ink {
+    background-color: theme("colors.ink.800");
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(246, 242, 231, 0.06) 0,
+      rgba(246, 242, 231, 0.06) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+  html.dark .stationery-ink {
+    background-color: theme("colors.umber.800");
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(246, 242, 231, 0.06) 0,
+      rgba(246, 242, 231, 0.06) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
   html.dark .stationery-dark {
     /* One shade lighter than the page (`html.dark` → umber-900) so the
      * dark-blue hero tiles read as raised cards instead of merging into the

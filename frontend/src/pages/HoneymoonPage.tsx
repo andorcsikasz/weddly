@@ -603,7 +603,7 @@ function DaysTile({
   }, [start, end]);
 
   return (
-    <div ref={wrapperRef} className="card-hover stationery-dark relative !p-5">
+    <div ref={wrapperRef} className="card-hover stationery-ink relative !p-5">
       <div className="flex items-center gap-2 text-paper-200">
         <Calendar size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
@@ -695,7 +695,7 @@ function DestinationTile({
   const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="card-hover stationery-dark relative flex h-full flex-col justify-center !p-5">
+    <div className="card-hover stationery-ink relative flex h-full flex-col justify-center !p-5">
       <div className="flex items-center gap-2 text-paper-200">
         <MapPin size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
@@ -959,7 +959,7 @@ function BudgetSummaryTile({
   return (
     <Link
       to="/app/budget"
-      className="card-hover stationery-dark relative flex h-full flex-col justify-center overflow-hidden !p-5"
+      className="card-hover stationery-ink relative flex h-full flex-col justify-center overflow-hidden !p-5"
     >
       <div className="flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
