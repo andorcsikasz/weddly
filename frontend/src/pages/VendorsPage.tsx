@@ -402,7 +402,7 @@ function WaitlistContact() {
                 to="/terms/vendor-subscription"
                 className="underline hover:text-ink-900 dark:hover:text-paper-50"
               >
-                {t("landing.footer_legal_subscription")}
+                {t("vendors.beta_notice_terms_link")}
               </Link>
             </p>
           </div>

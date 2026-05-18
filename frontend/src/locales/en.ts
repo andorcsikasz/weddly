@@ -740,6 +740,7 @@ const en: LocaleMessages = {
     beta_notice_title: "Open beta — free for now",
     beta_notice_body:
       "Weddly's vendor directory is currently in open beta: applying and being listed is free of charge. After the beta we will introduce a monetisation model (e.g. subscription or featured placement). Everyone who joins now will be notified of the terms well before any fees take effect.",
+    beta_notice_terms_link: "Vendor subscription terms",
     privacy_consent_prefix: "I have read and accept the ",
     privacy_consent_link: "privacy policy",
     privacy_consent_suffix: ", and I consent to the processing of the data I provide.",

@@ -777,6 +777,10 @@ export interface LocaleMessages {
      *  paid model will follow once the platform exits beta. */
     beta_notice_title: string;
     beta_notice_body: string;
+    /** Inline link under the beta notice that points at the future
+     *  paid-tier ÁSZF page. Reads cleaner without the "(draft)" label —
+     *  the page itself still carries the draft banner. */
+    beta_notice_terms_link: string;
     /** GDPR consent checkbox before submit. Same three-piece split as the
      *  register page so the policy link is a real <Link>. */
     privacy_consent_prefix: string;
