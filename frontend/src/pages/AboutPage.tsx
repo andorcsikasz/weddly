@@ -16,7 +16,7 @@ export default function AboutPage() {
 
   return (
     <PublicShell>
-      <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
+      <article className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-20">
         <LegalHeader
           title={t("about.page_title")}
           updatedLabel={t("about.last_updated_label")}
@@ -24,30 +24,36 @@ export default function AboutPage() {
         />
         <section
           lang={locale}
-          className="mt-12 space-y-10 text-base leading-loose text-ink-800 sm:text-lg sm:leading-loose"
+          className="mt-14 space-y-10 text-ink-800 [hyphens:auto] [text-wrap:pretty]"
         >
-          <p>{madeIn}</p>
-          <p>{t("about.paragraph_why")}</p>
+          <p className="text-lg leading-relaxed sm:text-xl sm:leading-relaxed">{madeIn}</p>
+          <p className="text-base leading-loose sm:text-lg sm:leading-loose">
+            {t("about.paragraph_why")}
+          </p>
 
-          <div className="space-y-6 pt-4">
+          <div className="space-y-6 pt-6">
             <H2>{t("about.paragraph_principles_title")}</H2>
-            <ul className="ml-5 list-disc space-y-4">
-              <li>{t("about.principle_calm")}</li>
-              <li>{t("about.principle_no_lock_in")}</li>
-              <li>{t("about.principle_hungarian")}</li>
+            <ul className="space-y-5 text-base leading-loose sm:text-lg sm:leading-loose">
+              {[
+                t("about.principle_calm"),
+                t("about.principle_no_lock_in"),
+                t("about.principle_hungarian"),
+              ].map((principle) => (
+                <li key={principle} className="border-l-2 border-ink-300 pl-4">
+                  {principle}
+                </li>
+              ))}
             </ul>
           </div>
 
-          <div className="space-y-6 pt-4">
+          <div className="space-y-5 pt-6">
             <H2>{t("about.paragraph_contact_label")}</H2>
-            <p>
-              <a
-                href={`mailto:${t("about.paragraph_contact_email")}`}
-                className="btn-primary inline-block"
-              >
-                {t("about.paragraph_contact_cta")}
-              </a>
-            </p>
+            <a
+              href={`mailto:${t("about.paragraph_contact_email")}`}
+              className="btn-primary inline-block"
+            >
+              {t("about.paragraph_contact_cta")}
+            </a>
           </div>
         </section>
         <BackLink />
