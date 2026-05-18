@@ -499,19 +499,28 @@ interface PlanningSeed {
   title: string;
   body: string | null;
   done: boolean;
-  due_date: string | null;
+  /** Days before the wedding the task starts. Negative = before, null = no
+   *  range (the row falls into the "open ranges" panel on /app/timeline). */
+  start_offset: number | null;
+  /** Days before the wedding the task is due. Pair with `start_offset` to
+   *  draw a Gantt bar; pair with null start_offset to draw a single-day
+   *  milestone marker. */
+  due_offset: number | null;
   assignee: string | null;
   priority: 0 | 1 | 2;
 }
 
 const PLANNING_ITEMS: PlanningSeed[] = [
+  // Done tasks — drawn as solid bars in the past months. Spaced so the
+  // Gantt reads chronologically: venue first, then suppliers, then invites.
   {
     kind: "task",
     topic: "wedding",
     title: "Book the swamp",
     body: "Confirm with the Witch — onion fields included.",
     done: true,
-    due_date: null,
+    start_offset: -150,
+    due_offset: -135,
     assignee: "Shrek",
     priority: 0,
   },
@@ -521,7 +530,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     title: "Hire Magic Mirror as photographer",
     body: "Negotiated rate.",
     done: true,
-    due_date: null,
+    start_offset: -130,
+    due_offset: -110,
     assignee: "Fiona",
     priority: 0,
   },
@@ -531,29 +541,23 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     title: "Send invites",
     body: "Pinocchio is delivering by hand.",
     done: true,
-    due_date: null,
+    start_offset: -95,
+    due_offset: -80,
     assignee: "Donkey",
     priority: 1,
   },
+  // Open tasks — bars staggered through the next 6 weeks so the Gantt has
+  // visible parallel lanes rather than one straight column.
   {
     kind: "task",
     topic: "wedding",
     title: "Final dress fitting",
     body: "Ogre-cut alteration — needs one more pass.",
     done: false,
-    due_date: null,
+    start_offset: -42,
+    due_offset: -21,
     assignee: "Fiona",
     priority: 1,
-  },
-  {
-    kind: "task",
-    topic: "wedding",
-    title: "Confirm Donkey's speech length",
-    body: "Cap at 20 min. (It will run over.)",
-    done: false,
-    due_date: null,
-    assignee: "Shrek",
-    priority: 2,
   },
   {
     kind: "task",
@@ -561,7 +565,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     title: "Order the cake (seven tiers)",
     body: null,
     done: false,
-    due_date: null,
+    start_offset: -60,
+    due_offset: -45,
     assignee: "Shrek",
     priority: 1,
   },
@@ -571,9 +576,32 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     title: "Chase Fairy Godmother for plus-one",
     body: "She RSVPed no — see if she'll bring Charming anyway.",
     done: false,
-    due_date: null,
+    start_offset: -28,
+    due_offset: -14,
     assignee: "Fiona",
     priority: 0,
+  },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Confirm Donkey's speech length",
+    body: "Cap at 20 min. (It will run over.)",
+    done: false,
+    start_offset: -21,
+    due_offset: -7,
+    assignee: "Shrek",
+    priority: 2,
+  },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Print place cards & seating chart",
+    body: "A4 + A6 from the Wēddly print export.",
+    done: false,
+    start_offset: -14,
+    due_offset: -3,
+    assignee: "Fiona",
+    priority: 1,
   },
   {
     kind: "task",
@@ -581,17 +609,22 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     title: "Book Honeymoon Isle flights",
     body: "Round trip. Avoid Lord Farquaad's airline.",
     done: false,
-    due_date: null,
+    start_offset: -45,
+    due_offset: -30,
     assignee: "Shrek",
     priority: 1,
   },
+  // Ideas — no date ranges (`start_offset` + `due_offset` null). The
+  // planning page surfaces these under the "ötletek" tab and they're
+  // intentionally excluded from the Gantt.
   {
     kind: "idea",
     topic: "wedding",
     title: "Fireworks finale",
     body: "Dragon. Obviously.",
     done: false,
-    due_date: null,
+    start_offset: null,
+    due_offset: null,
     assignee: null,
     priority: 0,
   },
@@ -601,7 +634,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     title: "Skip the dance floor, do mud pit",
     body: "Floor optional.",
     done: false,
-    due_date: null,
+    start_offset: null,
+    due_offset: null,
     assignee: null,
     priority: 0,
   },
@@ -611,7 +645,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     title: "Onion bouquet instead of flowers",
     body: "Layers!",
     done: false,
-    due_date: null,
+    start_offset: null,
+    due_offset: null,
     assignee: null,
     priority: 0,
   },
@@ -1007,18 +1042,22 @@ export function seedShrekDemo(coupleId: number): SeedResult {
       result.schedule_events_created += 1;
     }
 
-    // 5. Planning items.
+    // 5. Planning items. `start_date` + `due_date` are derived from the
+    //    seed's `*_offset` fields (days before the wedding) so the Gantt
+    //    on /app/timeline draws each task as a real bar over the months.
     const insertPlanning = db.prepare(
       `INSERT INTO planning_items
          (couple_id, kind, topic, title, body, done, due_date, scheduled_time, position,
           assignee, suggested_by_user_id, start_date, supplier_id, priority,
           created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?,
-               ?, NULL, NULL, NULL, ?,
+               ?, NULL, ?, NULL, ?,
                ?, ?)`,
     );
     let pos = 0;
     for (const p of PLANNING_ITEMS) {
+      const startDate = p.start_offset !== null ? addDaysIso(weddingDate, p.start_offset) : null;
+      const dueDate = p.due_offset !== null ? addDaysIso(weddingDate, p.due_offset) : null;
       insertPlanning.run(
         coupleId,
         p.kind,
@@ -1026,9 +1065,10 @@ export function seedShrekDemo(coupleId: number): SeedResult {
         p.title,
         p.body,
         p.done ? 1 : 0,
-        p.due_date,
+        dueDate,
         pos++,
         p.assignee,
+        startDate,
         p.priority,
         ts,
         ts,
