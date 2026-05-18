@@ -7,7 +7,13 @@
 // and that's what the PDF export consumes.
 
 import type { Couple, Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
-import { defaultDimsForShape, maxSeatsForTable } from "@shared/seating";
+import {
+  CHAIR_BACK_DEPTH_MM,
+  MIN_AISLE_MM,
+  chairOffsets,
+  defaultDimsForShape,
+  maxSeatsForTable,
+} from "@shared/seating";
 import {
   Baby,
   ChefHat,
@@ -782,6 +788,63 @@ export default function SeatingPage() {
     announceUndoable(t("seating.toast_moved").replace("{table}", table.label));
   }
 
+  // Axis-aligned bbox of a table (body + chairs) in mm, post-rotation. Chairs
+  // marked × via disabled_seats are skipped — they don't extend the footprint
+  // because no one will sit there. Used by the symmetric layout to ensure
+  // MIN_AISLE_MM clearance between adjacent tables' chair-backs.
+  function tableFootprintMm(tb: SeatingTable): { w: number; h: number } {
+    const isRound = tb.shape === "round";
+    const isSquare = tb.shape === "square";
+    // Half-dimensions of the table body. Mirrors halfDims() in SeatingMap.tsx:
+    // round/square are symmetric; long/head orient with length along x.
+    const rx = isRound
+      ? tb.width_mm / 2
+      : isSquare
+        ? Math.max(tb.width_mm, tb.length_mm) / 2
+        : tb.length_mm / 2;
+    const ry = isRound
+      ? tb.width_mm / 2
+      : isSquare
+        ? Math.max(tb.width_mm, tb.length_mm) / 2
+        : tb.width_mm / 2;
+
+    const disabled = new Set(tb.disabled_seats ?? []);
+    const offsets = chairOffsets(tb.shape, tb.seats, rx, ry);
+    let extL = rx;
+    let extR = rx;
+    let extT = ry;
+    let extB = ry;
+    for (let i = 0; i < offsets.length; i++) {
+      if (disabled.has(i)) continue;
+      const c = offsets[i];
+      if (!c) continue;
+      if (isRound) {
+        // Round-table chairs sit on the circle; treat each one as extending
+        // the bbox by CHAIR_BACK_DEPTH_MM in the half-space matching its
+        // position relative to the table centre.
+        if (c.dx < -1) extL = Math.max(extL, -c.dx + CHAIR_BACK_DEPTH_MM);
+        if (c.dx > 1) extR = Math.max(extR, c.dx + CHAIR_BACK_DEPTH_MM);
+        if (c.dy < -1) extT = Math.max(extT, -c.dy + CHAIR_BACK_DEPTH_MM);
+        if (c.dy > 1) extB = Math.max(extB, c.dy + CHAIR_BACK_DEPTH_MM);
+      } else {
+        // Rectangular shapes — chair sits exactly on one edge.
+        if (Math.abs(c.dy + ry) < 1) extT = ry + CHAIR_BACK_DEPTH_MM;
+        else if (Math.abs(c.dy - ry) < 1) extB = ry + CHAIR_BACK_DEPTH_MM;
+        if (Math.abs(c.dx + rx) < 1) extL = rx + CHAIR_BACK_DEPTH_MM;
+        else if (Math.abs(c.dx - rx) < 1) extR = rx + CHAIR_BACK_DEPTH_MM;
+      }
+    }
+
+    // Use a symmetric half-extent so the table's centre lines up with the
+    // grid cell's centre (asymmetric offsets would shift the visual balance).
+    const localW = 2 * Math.max(extL, extR);
+    const localH = 2 * Math.max(extT, extB);
+    const rot = ((tb.rotation_deg ?? 0) * Math.PI) / 180;
+    const cos = Math.abs(Math.cos(rot));
+    const sin = Math.abs(Math.sin(rot));
+    return { w: localW * cos + localH * sin, h: localW * sin + localH * cos };
+  }
+
   // One-click symmetric layout: head table hugs the top wall on the room's
   // vertical centreline; the remaining tables are distributed into an evenly-
   // spaced grid below it, with the last (partial) row centred so the result
@@ -820,8 +883,42 @@ export default function SeatingPage() {
         // so cells stay close to square — wide rooms get more columns, tall
         // rooms get more rows.
         const ratio = availW / availH;
-        const cols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * ratio))));
-        const rows = Math.ceil(n / cols);
+        const idealCols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * ratio))));
+
+        // Cell must hold the largest guest table's footprint (table body +
+        // non-disabled chair backs) plus MIN_AISLE_MM, so adjacent tables'
+        // chairs are far enough apart for someone to walk between them.
+        // × seats are excluded — they render but don't count as real chairs.
+        let maxFootprintW = 0;
+        let maxFootprintH = 0;
+        for (const g of guests) {
+          const fp = tableFootprintMm(g);
+          if (fp.w > maxFootprintW) maxFootprintW = fp.w;
+          if (fp.h > maxFootprintH) maxFootprintH = fp.h;
+        }
+        const minCellW = maxFootprintW + MIN_AISLE_MM;
+        const minCellH = maxFootprintH + MIN_AISLE_MM;
+        const aisleMaxCols = Math.max(1, Math.floor(availW / minCellW));
+        const aisleMaxRows = Math.max(1, Math.floor(availH / minCellH));
+
+        let cols: number;
+        let rows: number;
+        if (aisleMaxCols * aisleMaxRows >= n) {
+          // Room is big enough to honour the aisle constraint. Start from the
+          // ratio-ideal column count, clamp to aisleMaxCols, then bump cols up
+          // if rows would otherwise exceed aisleMaxRows.
+          cols = Math.min(idealCols, aisleMaxCols);
+          rows = Math.ceil(n / cols);
+          if (rows > aisleMaxRows) {
+            cols = Math.min(aisleMaxCols, Math.ceil(n / aisleMaxRows));
+            rows = Math.ceil(n / cols);
+          }
+        } else {
+          // Too many tables for full aisles — fall back to ratio-based packing
+          // so every table still gets a slot, even if tighter than ideal.
+          cols = idealCols;
+          rows = Math.ceil(n / cols);
+        }
         const cellW = availW / cols;
         const cellH = availH / rows;
         const lastRowCount = n - (rows - 1) * cols;
