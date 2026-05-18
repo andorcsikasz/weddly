@@ -384,9 +384,13 @@ export default function GanttView({
 
       {/* Body — single vertical scroll container so the gutter rows and the
           chart bars stay aligned. `scrollbar-gutter: stable` keeps the
-          chart from shifting horizontally when a scrollbar appears. */}
+          chart from shifting horizontally when a scrollbar appears.
+          `min-h-full` on the inner wrapper makes the chart canvas stretch
+          to the full body height even when the row list is short or empty,
+          so month bands, week dividers, and the today line read as a real
+          chart canvas instead of a thin strip at the top. */}
       <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
-        <div className="relative flex">
+        <div className="relative flex min-h-full">
           {/* Task-name gutter — `sticky left-0` is cheap insurance: even though
               the chart doesn't scroll horizontally today, pinning the gutter
               makes the visual hierarchy unmistakable. */}
@@ -394,13 +398,7 @@ export default function GanttView({
             className="sticky left-0 z-10 shrink-0 border-r border-paper-200 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95"
             style={{ width: TASK_GUTTER_WIDTH }}
           >
-            {visible.length === 0 ? (
-              <div
-                className="flex items-center px-3 text-xs text-ink-500 dark:text-umber-300"
-                style={{ height: ROW_HEIGHT }}
-                aria-hidden="true"
-              />
-            ) : (
+            {visible.length === 0 ? null : (
               visible.map((bar, idx) => {
                 const item = bar.item;
                 const supplier = item.supplier_id
@@ -522,22 +520,25 @@ export default function GanttView({
               />
             )}
 
+            {/* Empty state — floats centred over the full chart canvas
+                instead of being a fixed-height row at the top, so the body
+                doesn't look truncated when there are no tasks in the
+                window. */}
+            {visible.length === 0 && (
+              <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center gap-2 text-sm text-ink-500 dark:text-umber-300">
+                <Sparkles
+                  size={20}
+                  className="text-blush-300 dark:text-blush-400"
+                  aria-hidden="true"
+                />
+                <span>{t("timeline.window_empty")}</span>
+              </div>
+            )}
+
             {/* Rows — borders + bars. Rows are transparent so the month bands
                 show through. */}
             <div className="relative">
-              {visible.length === 0 ? (
-                <div
-                  className="relative flex items-center justify-center gap-2 text-sm text-ink-500 dark:text-umber-300"
-                  style={{ height: ROW_HEIGHT }}
-                >
-                  <Sparkles
-                    size={20}
-                    className="text-blush-300 dark:text-blush-400"
-                    aria-hidden="true"
-                  />
-                  <span>{t("timeline.window_empty")}</span>
-                </div>
-              ) : (
+              {visible.length === 0 ? null : (
                 visible.map((bar, idx) => {
                   const item = bar.item;
                   const supplier = item.supplier_id
