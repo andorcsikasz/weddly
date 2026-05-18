@@ -134,6 +134,9 @@ const en: LocaleMessages = {
     reset_invalid: "This reset link is invalid or has expired. Request a new one.",
     show_password: "Show password",
     hide_password: "Hide password",
+    or: "or",
+    google_failed: "Google sign-in failed. Please try again.",
+    google_unavailable: "Google sign-in isn't available right now.",
   },
   verify: {
     banner_title: "Confirm your email",

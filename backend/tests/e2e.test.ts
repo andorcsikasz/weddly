@@ -380,6 +380,171 @@ describe("auth", () => {
   });
 });
 
+describe("auth (google)", () => {
+  // The verifier is wired to accept HMAC-signed test bearers when
+  // GOOGLE_TEST_BYPASS=1; setup.ts sets that. mintTestBearer lives next to
+  // the verifier so the format stays in one place.
+  // Imported inside the describe to keep the top-of-file import block tidy.
+  // biome-ignore lint/style/useTopLevelRegex: dynamic import keeps test imports localised
+  const importMint = () => import("../src/lib/google_oauth");
+
+  test("first-time Google sign-in creates a verified user with a session", async () => {
+    wipeAll();
+    const { mintTestBearer } = await importMint();
+    const credential = mintTestBearer({
+      sub: "google-sub-aaa",
+      email: "alice@example.com",
+      name: "Alice Example",
+    });
+    const r = await req<{ token: string; user: { id: number; email: string; verified_email: boolean } }>(
+      "POST",
+      "/api/auth/google",
+      { credential, privacy_version: PRIVACY_VERSION },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.user.email).toBe("alice@example.com");
+    expect(r.data.user.verified_email).toBe(true);
+
+    // The session works for /me — same flow as password registration.
+    const me = await req<{ user: { email: string } }>("GET", "/api/auth/me", undefined, {
+      token: r.data.token,
+    });
+    expect(me.status).toBe(200);
+    expect(me.data.user.email).toBe("alice@example.com");
+
+    // google_sub landed on the row.
+    const row = db
+      .prepare("SELECT google_sub, verified_email FROM users WHERE email = ?")
+      .get("alice@example.com") as { google_sub: string | null; verified_email: number };
+    expect(row.google_sub).toBe("google-sub-aaa");
+    expect(row.verified_email).toBe(1);
+
+    // The consent ledger picked up a "privacy" row for this user.
+    const consent = db
+      .prepare(
+        "SELECT version FROM user_consents WHERE subject_user_id = (SELECT id FROM users WHERE email = ?) AND document = 'privacy'",
+      )
+      .get("alice@example.com") as { version: string } | undefined;
+    expect(consent?.version).toBe(PRIVACY_VERSION);
+  });
+
+  test("second Google sign-in for the same account just logs in", async () => {
+    wipeAll();
+    const { mintTestBearer } = await importMint();
+    const credential = mintTestBearer({ sub: "google-sub-bbb", email: "bob@example.com", name: "Bob" });
+    const first = await req<{ user: { id: number } }>("POST", "/api/auth/google", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(first.status).toBe(201);
+
+    const second = await req<{ user: { id: number } }>("POST", "/api/auth/google", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(second.status).toBe(200);
+    expect(second.data.user.id).toBe(first.data.user.id);
+
+    // No duplicate user row.
+    const count = db
+      .prepare("SELECT COUNT(*) AS n FROM users WHERE email = ?")
+      .get("bob@example.com") as { n: number };
+    expect(count.n).toBe(1);
+  });
+
+  test("Google sign-in links to an existing verified password account", async () => {
+    wipeAll();
+    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+      email: "carol@example.com",
+      password: "supersafe123",
+      full_name: "Carol",
+    });
+    expect(reg.status).toBe(201);
+    // Flip verified_email so the link path is allowed.
+    db.prepare("UPDATE users SET verified_email = 1 WHERE email = ?").run("carol@example.com");
+
+    const { mintTestBearer } = await importMint();
+    const credential = mintTestBearer({
+      sub: "google-sub-ccc",
+      email: "carol@example.com",
+      name: "Carol Google",
+    });
+    const r = await req<{ user: { id: number } }>("POST", "/api/auth/google", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.user.id).toBe(reg.data.user.id);
+
+    const row = db
+      .prepare("SELECT google_sub FROM users WHERE email = ?")
+      .get("carol@example.com") as { google_sub: string | null };
+    expect(row.google_sub).toBe("google-sub-ccc");
+  });
+
+  test("Google sign-in refuses to link onto an unverified password account", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "dave@example.com",
+      password: "supersafe123",
+      full_name: "Dave",
+    });
+    // verified_email stays 0 (the default).
+
+    const { mintTestBearer } = await importMint();
+    const credential = mintTestBearer({
+      sub: "google-sub-ddd",
+      email: "dave@example.com",
+      name: "Dave",
+    });
+    const r = await req("POST", "/api/auth/google", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(r.status).toBe(409);
+  });
+
+  test("Google sign-in rejects an unverified email claim", async () => {
+    wipeAll();
+    const { mintTestBearer } = await importMint();
+    const credential = mintTestBearer({
+      sub: "google-sub-eee",
+      email: "eve@example.com",
+      name: "Eve",
+      emailVerified: false,
+    });
+    const r = await req("POST", "/api/auth/google", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test("Google sign-in rejects a malformed bearer", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/google", {
+      credential: "not-a-real-jwt",
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(r.status).toBe(401);
+  });
+
+  test("brand-new Google sign-in rejects a stale privacy_version", async () => {
+    wipeAll();
+    const { mintTestBearer } = await importMint();
+    const credential = mintTestBearer({
+      sub: "google-sub-fff",
+      email: "frank@example.com",
+      name: "Frank",
+    });
+    const r = await req("POST", "/api/auth/google", {
+      credential,
+      privacy_version: "1999-01-01",
+    });
+    expect(r.status).toBe(400);
+  });
+});
+
 describe("onboarding + invites", () => {
   test("onboard → get current → invite → accept (full partner-B flow)", async () => {
     wipeAll();

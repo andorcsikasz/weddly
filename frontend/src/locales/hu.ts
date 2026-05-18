@@ -134,6 +134,9 @@ const hu: LocaleMessages = {
     reset_invalid: "Ez a link érvénytelen vagy lejárt. Kérj egy újat.",
     show_password: "Jelszó mutatása",
     hide_password: "Jelszó elrejtése",
+    or: "vagy",
+    google_failed: "A Google bejelentkezés nem sikerült. Próbáld újra.",
+    google_unavailable: "A Google bejelentkezés most nem elérhető.",
   },
   verify: {
     banner_title: "Erősítsd meg az e-mail címed",

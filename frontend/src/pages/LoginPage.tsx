@@ -1,5 +1,6 @@
 import { type FormEvent, type Ref, useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { Shell } from "../components/Shell";
 import { Button, PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -50,7 +51,15 @@ export default function LoginPage() {
       <div className="mx-auto max-w-md">
         <div className="card">
           <h1 className="text-2xl">{t("auth.login_title")}</h1>
-          <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
+          <div className="mt-6">
+            <GoogleSignInButton mode="signin" redirectTo={redirectTo} />
+          </div>
+          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-500">
+            <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
+            <span>{t("auth.or")}</span>
+            <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
+          </div>
+          <form className="space-y-4" onSubmit={onSubmit} noValidate>
             <Field
               id="email"
               label={t("auth.email_label")}

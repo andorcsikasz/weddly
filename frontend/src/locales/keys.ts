@@ -171,6 +171,12 @@ export interface LocaleMessages {
     reset_invalid: string;
     show_password: string;
     hide_password: string;
+    /** Separator label between Google button and password form. */
+    or: string;
+    /** Toast when /api/auth/google returns a non-recoverable error. */
+    google_failed: string;
+    /** Toast when /api/auth/google returns 503 (not configured on this env). */
+    google_unavailable: string;
   };
   verify: {
     banner_title: string;

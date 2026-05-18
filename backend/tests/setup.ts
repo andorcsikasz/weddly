@@ -11,6 +11,11 @@ process.env.RESEND_API_KEY = ""; // ensure email is no-op
 // Admin allowlist for tests — must be set BEFORE the server boots so config.ts
 // picks it up. Tests register `admin@test.test` to exercise admin-only routes.
 process.env.ADMIN_EMAILS = "admin@test.test";
+// Enables the Google ID-token verifier's HMAC test-bearer path so the E2E
+// suite can exercise /api/auth/google without hitting Google. Tests mint
+// bearers via mintTestBearer(); see backend/src/lib/google_oauth.ts.
+process.env.GOOGLE_TEST_BYPASS = "1";
+process.env.GOOGLE_CLIENT_ID = "test-google-client.apps.googleusercontent.com";
 
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {

@@ -3,6 +3,7 @@ import type { AuthSession } from "@shared/types";
 import { Mail } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { Shell } from "../components/Shell";
 import { Button, PasswordField, useToast } from "../components/ui";
 import { ApiError, apiFetch } from "../lib/api";
@@ -145,7 +146,15 @@ export default function RegisterPage() {
       <div className="mx-auto max-w-md">
         <div className="card">
           <h1 className="text-2xl">{t("auth.register_title")}</h1>
-          <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
+          <div className="mt-6">
+            <GoogleSignInButton mode="signup" redirectTo="/onboarding" />
+          </div>
+          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-500">
+            <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
+            <span>{t("auth.or")}</span>
+            <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
+          </div>
+          <form className="space-y-4" onSubmit={onSubmit} noValidate>
             <div>
               <label htmlFor="full_name" className="field-label">
                 {t("auth.full_name_label")}

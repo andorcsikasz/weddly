@@ -29,6 +29,7 @@ import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
 import { registerAdminUserRoutes } from "./routes/admin_users";
 import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";
 import { registerAuthRoutes } from "./routes/auth";
+import { registerAuthGoogleRoutes } from "./routes/auth_google";
 import { registerBudgetRoutes } from "./routes/budget";
 import { registerCommunitySupplierRoutes } from "./routes/community_suppliers";
 import { registerCouplePauseRoutes } from "./routes/couple_pause";
@@ -67,6 +68,7 @@ seedSupplierTaxonomy();
 const router = new Router();
 registerHealthRoutes(router);
 registerAuthRoutes(router);
+registerAuthGoogleRoutes(router);
 registerPasswordResetRoutes(router);
 registerEmailVerifyRoutes(router);
 registerEmailChangeRoutes(router);
@@ -111,21 +113,26 @@ const IS_PROD = process.env.NODE_ENV === "production";
 // so those origins are whitelisted for fonts and stylesheets.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' https://plausible.io",
-  "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com",
+  // Google Identity Services script (https://accounts.google.com/gsi/client)
+  // is loaded from the login/register pages to render the "Continue with
+  // Google" button. The GSI client also pulls a second script from
+  // gstatic.com, so both origins need to be whitelisted.
+  "script-src 'self' https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
   // *.pinimg.com hosts the Pinterest pin thumbnails rendered by /app/moodboard —
   // the URLs come from the backend's RSS proxy, so only image origins need
   // whitelisting (no Pinterest script/iframe).
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com",
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
-  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me",
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
   // `blob:` is for the /app/seating PDF preview modal — the generated chart
   // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
   // renders it inline. Without blob: in frame-src the iframe loads blank.
-  "frame-src https://www.openstreetmap.org blob:",
+  // accounts.google.com renders the GSI one-tap / button iframe.
+  "frame-src https://www.openstreetmap.org https://accounts.google.com blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
