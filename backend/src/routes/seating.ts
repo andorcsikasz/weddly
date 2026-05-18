@@ -694,6 +694,20 @@ function handleDeleteConflict(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+/** Standalone list endpoint for couple-defined seating conflicts. The same
+ *  rows already ship inside `GET /api/seating/plan` for the canvas; this
+ *  surface mirrors the POST/DELETE pair so anyone exploring the API gets a
+ *  RESTful triplet instead of "POST yes, DELETE yes, GET nope, 404". */
+function handleListConflicts(ctx: Ctx): Response {
+  const { coupleId } = requireCouple(ctx);
+  const conflicts = (
+    db
+      .prepare("SELECT * FROM seating_conflicts WHERE couple_id = ? ORDER BY id ASC")
+      .all(coupleId) as ConflictRow[]
+  ).map(toConflict);
+  return json({ conflicts });
+}
+
 export function registerSeatingRoutes(router: Router) {
   router.get("/api/seating/plan", handleGetPlan, true);
   router.post("/api/seating/tables", handleCreateTable, true);
@@ -702,6 +716,7 @@ export function registerSeatingRoutes(router: Router) {
   router.post("/api/seating/assign", handleAssignSeat, true);
   router.post("/api/seating/unassign", handleUnassignSeat, true);
   router.post("/api/seating/swap", handleSwapSeats, true);
+  router.get("/api/seating/conflicts", handleListConflicts, true);
   router.post("/api/seating/conflicts", handleCreateConflict, true);
   router.delete("/api/seating/conflicts/:id", handleDeleteConflict, true);
 }
