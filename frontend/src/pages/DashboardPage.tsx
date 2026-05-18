@@ -1340,7 +1340,7 @@ export default function DashboardPage() {
              *  ≥sm. The pills inside stretch with the cells. */}
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
               <IconNavLink to="/app/guests" icon={<Users size={18} />} label={t("nav.guests")} />
-              <IconNavLink to="/app/budget" icon={<Wallet size={18} />} label={t("nav.budget")} />
+              <IconNavLink to="/app/budget" icon={<Coins size={18} />} label={t("nav.budget")} />
               <IconNavLink
                 to="/app/seating"
                 icon={<Armchair size={18} />}

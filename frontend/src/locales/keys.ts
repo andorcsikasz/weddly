@@ -851,7 +851,13 @@ export interface LocaleMessages {
     print: string;
     /** Read-only "for guests" surface — the couple-side preview that mirrors the public /g/:slug/:code page. */
     guest_portal: string;
-    /** Sidebar group header that bundles the guest-facing surfaces. */
+    /** Sidebar group headers that bundle the rail into the four phases
+     *  of the wedding journey. `guest` is the read-only portal preview;
+     *  the other three carry the couple from decisions → wedding-day ops
+     *  → before-and-after inspiration. */
+    group_planning: string;
+    group_executing: string;
+    group_dreaming: string;
     group_guest: string;
     /** Accessible label for the locale toggle. */
     switch_language: string;

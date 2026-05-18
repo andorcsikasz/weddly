@@ -7,6 +7,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
+  Coins,
   GanttChartSquare,
   Image as ImageIcon,
   Inbox,
@@ -24,7 +25,6 @@ import {
   UserCheck,
   UserCog,
   Users,
-  Wallet,
   X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -41,12 +41,20 @@ import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
-/** `group` lets the sidebar render a visible section header before items
- *  that aren't part of the main couple-flow rail. Today the only non-default
- *  group is "guest" (Vendégeknek) — the page is read-only and aimed at
- *  guests, so visually separating it from the planning surfaces helps the
- *  couple find it without making it feel like another to-do. */
-type NavGroup = "default" | "guest";
+/** `group` partitions the sidebar into four logical phases of the wedding
+ *  journey, with a thin section header between each:
+ *   - `default` (Áttekintés alone) — the entry point, no header above it.
+ *   - `planning` — the data & decision surfaces (guests, money, vendors,
+ *     tasks, gantt). What the couple touches every week.
+ *   - `executing` — wedding-day operations: the run-of-show, seating
+ *     chart, and the accommodation/transfer board.
+ *   - `dreaming` — pre-wedding inspiration (moodboard) + post-wedding
+ *     follow-up (honeymoon, photo gallery). Time-ordered so it reads as a
+ *     before-and-after bookend around the day itself.
+ *   - `guest` — the read-only "Vendégoldal" portal preview. Lives at the
+ *     bottom because it's not a couple-planning surface; it's what
+ *     RSVP-yes guests see at /g/:slug/:code. */
+type NavGroup = "default" | "planning" | "executing" | "dreaming" | "guest";
 
 type NavItem = {
   to: string;
@@ -63,26 +71,29 @@ const ITEMS: NavItem[] = [
     tabKey: "nav.tab_dashboard",
     icon: <LayoutDashboard size={18} />,
   },
+  // ── Planning ──────────────────────────────────────────────────────
+  // Workflow order inside the group: people first (guests), then money
+  // (budget), then bookings (suppliers), then free-form tasks & gantt.
   {
     to: "/app/guests",
     labelKey: "nav.guests",
     tabKey: "nav.tab_guests",
     icon: <Users size={18} />,
+    group: "planning",
   },
   {
     to: "/app/budget",
     labelKey: "nav.budget",
     tabKey: "nav.tab_budget",
-    icon: <Wallet size={18} />,
+    icon: <Coins size={18} />,
+    group: "planning",
   },
-  // Workflow order: book Szolgáltatók first (caterer drives most line items),
-  // then Tervezés for free-form tasks/ideas, then Programterv to lay out the
-  // wedding day, then Ültetés once the RSVPs + run-of-show settle.
   {
     to: "/app/suppliers",
     labelKey: "nav.suppliers",
     tabKey: "nav.tab_suppliers",
     icon: <Store size={18} />,
+    group: "planning",
   },
   // Free-form planning surface — desktop-only so the mobile bottom nav stays
   // at the 5 core flows. Two tabs inside: tasks + ideas. The wedding-day
@@ -91,6 +102,7 @@ const ITEMS: NavItem[] = [
     to: "/app/planning",
     labelKey: "nav.planning",
     icon: <ClipboardList size={18} />,
+    group: "planning",
   },
   // Gantt-style task timeline + supplier point-of-contact panel — desktop
   // sidebar only. Sits between planning (define tasks) and schedule (lay
@@ -99,13 +111,16 @@ const ITEMS: NavItem[] = [
     to: "/app/timeline",
     labelKey: "nav.timeline",
     icon: <GanttChartSquare size={18} />,
+    group: "planning",
   },
-  // Day-of run-of-show — desktop sidebar only. The page also surfaces on the
-  // dashboard via the day-of mode when daysUntil <= 1.
+  // ── Executing ─────────────────────────────────────────────────────
+  // Day-of operations. Schedule lays out the run-of-show, Seating maps
+  // the dining room, Logistics covers accommodation + transfers.
   {
     to: "/app/schedule",
     labelKey: "nav.schedule",
     icon: <CalendarClock size={18} />,
+    group: "executing",
   },
   // Seating moved off the mobile bottom nav into the "More" sheet — the row
   // now stays at the four core flows (Dashboard / Guests / Budget / Suppliers)
@@ -114,6 +129,7 @@ const ITEMS: NavItem[] = [
     to: "/app/seating",
     labelKey: "nav.seating",
     icon: <Armchair size={18} />,
+    group: "executing",
   },
   // Logistics — accommodation + transfer assignment. Sits right after seating
   // because the workflow is similar (drag guests onto units) and the data it
@@ -123,6 +139,16 @@ const ITEMS: NavItem[] = [
     to: "/app/logistics",
     labelKey: "nav.logistics",
     icon: <Bed size={18} />,
+    group: "executing",
+  },
+  // ── Dreaming + follow-up ──────────────────────────────────────────
+  // Time-ordered: Moodboard (pre-wedding inspiration) → Nászút (the
+  // immediate post-wedding trip) → Képek (photos that arrive after).
+  {
+    to: "/app/moodboard",
+    labelKey: "nav.moodboard",
+    icon: <ImageIcon size={18} />,
+    group: "dreaming",
   },
   // Post-wedding "follow-up" entries — desktop sidebar only; bottom mobile
   // nav stays at 5 items via `slice(0, 5)` further down.
@@ -130,23 +156,17 @@ const ITEMS: NavItem[] = [
     to: "/app/honeymoon",
     labelKey: "nav.honeymoon",
     icon: <Plane size={18} />,
-  },
-  // Visual inspiration — pre-wedding companion to /app/media. Embeds a
-  // Pinterest board the couple links; no backend, URL stored in localStorage.
-  {
-    to: "/app/moodboard",
-    labelKey: "nav.moodboard",
-    icon: <ImageIcon size={18} />,
+    group: "dreaming",
   },
   {
     to: "/app/media",
     labelKey: "nav.media",
     icon: <Camera size={18} />,
+    group: "dreaming",
   },
   // ── Guest-facing area ──────────────────────────────────────────────
-  // Read-only "for guests" portal preview. Sits under a separate header
-  // in the sidebar (group: "guest") because it isn't a couple-planning
-  // surface — it's what RSVP-yes guests see at /g/:slug/:code.
+  // Read-only "for guests" portal preview — what RSVP-yes guests see at
+  // /g/:slug/:code. Visually separated from the planning rail above.
   {
     to: "/app/guest-portal",
     labelKey: "nav.guest_portal",
@@ -391,7 +411,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {t("landing.skip_to_main")}
       </a>
       <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 xl:max-w-screen-2xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
           {/* When signed in, the wordmark routes to the in-app dashboard so
               users don't get punted to the marketing landing (which reads as
               "I got logged out"). Signed-out viewers (rare here, but safe)
@@ -449,7 +469,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8 xl:max-w-screen-2xl">
+      <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
         <aside
           className={`hidden shrink-0 transition-[width] duration-200 lg:block ${
             sidebarCollapsed ? "w-14" : "w-56"
@@ -504,37 +524,23 @@ export function AppShell({ children }: { children: ReactNode }) {
             ) : (
               <nav className="flex flex-col gap-1">
                 {(() => {
-                  // Render items in stable order, but inject a small section
-                  // header whenever the `group` field flips. Today the only
-                  // non-default group is "guest" — keeps the read-only guest
-                  // portal visually separated from the planning rail above.
+                  // Render items in stable order, injecting a small section
+                  // header (or, when collapsed, a thin divider) whenever the
+                  // `group` field flips. The first item lives in `default` so
+                  // no header sits above the dashboard.
                   let lastGroup: NavGroup = "default";
                   return displayItems.map((item) => {
                     const itemGroup: NavGroup = (item as NavItem).group ?? "default";
-                    const showHeader = itemGroup !== lastGroup;
+                    const showHeader = itemGroup !== lastGroup && itemGroup !== "default";
                     lastGroup = itemGroup;
                     return (
                       <div key={item.to}>
-                        {showHeader &&
-                          itemGroup === "guest" &&
-                          (sidebarCollapsed ? (
-                            <div
-                              className="mx-2 my-2 h-px bg-paper-300 dark:bg-umber-700"
-                              aria-hidden
-                            />
-                          ) : (
-                            <div className="mt-3 flex items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                              <span
-                                className="h-px flex-1 bg-paper-300 dark:bg-umber-700"
-                                aria-hidden
-                              />
-                              <span>{t("nav.group_guest")}</span>
-                              <span
-                                className="h-px flex-1 bg-paper-300 dark:bg-umber-700"
-                                aria-hidden
-                              />
-                            </div>
-                          ))}
+                        {showHeader && (
+                          <SidebarGroupHeader
+                            label={t(`nav.group_${itemGroup}`)}
+                            collapsed={sidebarCollapsed}
+                          />
+                        )}
                         <SideLink
                           to={item.to}
                           icon={item.icon}
@@ -621,6 +627,23 @@ export function AppShell({ children }: { children: ReactNode }) {
        *  + viewport. Admin view skips so admins don't see couple-facing
        *  onboarding when they hop in to moderate. */}
       {!inAdminView && <CoachMarks />}
+    </div>
+  );
+}
+
+/** Section divider that sits between sidebar groups. Renders a label
+ *  flanked by two thin hairlines when the rail is expanded, and a single
+ *  centered hairline (no text) when it's collapsed — so the visual break
+ *  is preserved without overflowing the narrow rail. */
+function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: boolean }) {
+  if (collapsed) {
+    return <div className="mx-2 my-2 h-px bg-paper-300 dark:bg-umber-700" aria-hidden />;
+  }
+  return (
+    <div className="mt-3 flex items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+      <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+      <span>{label}</span>
+      <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
     </div>
   );
 }
