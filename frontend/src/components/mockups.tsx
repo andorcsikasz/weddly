@@ -39,7 +39,7 @@ export function WorkspaceMockup({ className }: Common) {
     <svg
       viewBox="0 0 640 440"
       role="img"
-      aria-label="Weddly dashboard preview"
+      aria-label={t("landing.mockup_aria_dashboard")}
       className={className}
     >
       {/* Drop-shadow simulator */}
@@ -386,7 +386,12 @@ export function BudgetMockup({ className }: Common) {
   const { t, locale } = useT();
   const labelFor = (key: string) => (locale === "hu" ? (BUDGET_LABELS_HU[key] ?? key) : key);
   return (
-    <svg viewBox="0 0 480 360" role="img" aria-label="Live budget mockup" className={className}>
+    <svg
+      viewBox="0 0 480 360"
+      role="img"
+      aria-label={t("landing.mockup_aria_budget")}
+      className={className}
+    >
       <g className="text-ink-900" opacity="0.06">
         <rect x="4" y="10" width="480" height="360" rx="16" fill="currentColor" />
       </g>
@@ -530,7 +535,7 @@ export function GuestListMockup({ className }: Common) {
     <svg
       viewBox="0 0 480 360"
       role="img"
-      aria-label="Guest list and RSVP mockup"
+      aria-label={t("landing.mockup_aria_guests")}
       className={className}
     >
       <g className="text-ink-900" opacity="0.06">
@@ -698,7 +703,12 @@ export function SeatingMockup({ className }: Common) {
     { x: 280, y: 290, key: "uni", label: t("landing.mockup_table_uni") },
   ];
   return (
-    <svg viewBox="0 0 480 360" role="img" aria-label="Seating canvas mockup" className={className}>
+    <svg
+      viewBox="0 0 480 360"
+      role="img"
+      aria-label={t("landing.mockup_aria_seating")}
+      className={className}
+    >
       <g className="text-ink-900" opacity="0.06">
         <rect x="4" y="10" width="480" height="360" rx="16" fill="currentColor" />
       </g>
@@ -879,7 +889,7 @@ export function VendorListingMockup({ className }: Common) {
     <svg
       viewBox="0 0 360 232"
       role="img"
-      aria-label="Vendor listing card preview"
+      aria-label={t("landing.mockup_aria_vendor")}
       className={className}
     >
       <g className="text-ink-900" opacity="0.06">

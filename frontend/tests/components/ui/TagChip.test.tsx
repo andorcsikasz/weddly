@@ -1,6 +1,7 @@
 import { describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { TagChip } from "@/components/ui/TagChip";
+import { I18nProvider } from "@/lib/i18n";
 
 describe("<TagChip>", () => {
   it("renders as a checkbox role and reflects selected state via aria-checked", () => {
@@ -39,9 +40,14 @@ describe("<TagChip>", () => {
   it("renders a remove button in removable mode and fires onRemove", () => {
     const onRemove = mock(() => undefined);
     render(
-      <TagChip label="Anna" selected onToggle={() => undefined} removable onRemove={onRemove} />,
+      <I18nProvider>
+        <TagChip label="Anna" selected onToggle={() => undefined} removable onRemove={onRemove} />
+      </I18nProvider>,
     );
-    const remove = screen.getByRole("button", { name: /Remove Anna/i });
+    // The button's aria-label runs through t("common.remove_item", { label }),
+    // which resolves to "Remove Anna" (en) or "Anna eltávolítása" (hu) depending
+    // on jsdom's detected locale — both contain "Anna", which is enough to find it.
+    const remove = screen.getByRole("button", { name: /Anna/ });
     fireEvent.click(remove);
     expect(onRemove).toHaveBeenCalledTimes(1);
   });

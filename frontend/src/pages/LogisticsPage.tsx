@@ -926,6 +926,7 @@ function AssignedGuestChip({
   onUnassign: (g: Guest) => void;
   onDragStart: (e: DragEvent<HTMLElement>, guestId: number, groupIds?: number[]) => void;
 }) {
+  const { t } = useT();
   return (
     <span
       draggable
@@ -937,7 +938,7 @@ function AssignedGuestChip({
         type="button"
         onClick={() => onUnassign(guest)}
         className="rounded-full p-0.5 hover:bg-paper-300 dark:hover:bg-umber-600"
-        aria-label="Eltávolítás"
+        aria-label={t("common.remove_item", { label: guest.full_name })}
       >
         <X size={11} />
       </button>

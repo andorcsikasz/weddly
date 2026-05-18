@@ -145,7 +145,10 @@ function PublicHeader() {
             wordmark, as solid paper-toned chips. Vendor + Guest are
             the two non-couple paths — couples land via the right-side
             sign-up. */}
-        <nav aria-label="Audience" className="ml-2 hidden items-center gap-2 md:flex">
+        <nav
+          aria-label={t("public.nav_audience_aria")}
+          className="ml-2 hidden items-center gap-2 md:flex"
+        >
           <Link
             to="/vendors"
             className="rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700"
@@ -187,7 +190,7 @@ function PublicHeader() {
             type="button"
             onClick={() => setLocale(otherLocale)}
             className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:inline-flex"
-            aria-label={`Switch language to ${otherLocale.toUpperCase()}`}
+            aria-label={t("nav.switch_language")}
             title={otherLocale.toUpperCase()}
           >
             <Languages size={18} aria-hidden="true" />
@@ -221,7 +224,7 @@ function PublicHeader() {
       {menuOpen && (
         <nav
           id="public-mobile-nav"
-          aria-label="Primary mobile"
+          aria-label={t("public.nav_mobile_aria")}
           className="border-t border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900 md:hidden"
         >
           <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 text-sm text-ink-700 dark:text-paper-100 sm:px-6">
@@ -261,7 +264,7 @@ function PublicHeader() {
               }}
               className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
-              <span>Language</span>
+              <span>{t("nav.switch_language")}</span>
               <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
                 {locale} → {otherLocale}
               </span>

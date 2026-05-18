@@ -400,7 +400,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
               value={form.name}
               onChange={(e) => setField("name", e.target.value)}
               errorText={errors.name}
-              placeholder="Anna's Photography"
+              placeholder={t("suppliers.submit.name_placeholder")}
             />
             {/* Self-vs-recommendation switch. The boolean drives the trust
                 pill on the public card — "Szolgáltató" badge when the vendor
@@ -437,7 +437,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
                 value={form.city}
                 onChange={(e) => setField("city", e.target.value)}
                 errorText={errors.city}
-                placeholder="Budapest"
+                placeholder={t("suppliers.submit.city_placeholder")}
               />
               <TextField
                 id="submit-supplier-address"
@@ -446,7 +446,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
                 value={form.address}
                 onChange={(e) => setField("address", e.target.value)}
                 errorText={errors.address}
-                placeholder="Király u. 12"
+                placeholder={t("suppliers.submit.address_placeholder")}
               />
             </div>
           </section>
@@ -467,7 +467,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
                 value={form.contact_email}
                 onChange={(e) => setField("contact_email", e.target.value)}
                 errorText={errors.contact_email}
-                placeholder="hello@anna.hu"
+                placeholder={t("suppliers.submit.email_placeholder")}
               />
               <TextField
                 id="submit-supplier-phone"

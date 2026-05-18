@@ -20,6 +20,10 @@ export interface LocaleMessages {
     /** Aria-labels for stepper +/− buttons. */
     increment: string;
     decrement: string;
+    /** Generic "Remove {label}" aria-label for chip/tag close buttons. */
+    remove_item: string;
+    /** Bare "Remove" word — short close-button aria-labels with no target. */
+    remove: string;
   };
   app: {
     name: string;
@@ -705,6 +709,12 @@ export interface LocaleMessages {
     why_c_body: string;
     why_d_title: string;
     why_d_body: string;
+    /** aria-labels for the four decorative landing-page SVG mockups. */
+    mockup_aria_dashboard: string;
+    mockup_aria_budget: string;
+    mockup_aria_guests: string;
+    mockup_aria_seating: string;
+    mockup_aria_vendor: string;
     mockup_date: string;
     mockup_live_budget_label: string;
     mockup_total_spend: string;
@@ -821,6 +831,9 @@ export interface LocaleMessages {
   public: {
     menu_open: string;
     menu_close: string;
+    /** Landmark labels for the marketing header navs (screen-reader only). */
+    nav_audience_aria: string;
+    nav_mobile_aria: string;
   };
   nav: {
     dashboard: string;
@@ -1037,6 +1050,8 @@ export interface LocaleMessages {
     map_error: string;
     /** Aria-label + tooltip for the "open in OpenStreetMap" link in the map modal. */
     map_open_external: string;
+    /** iframe title for the OSM embed — receives `{label}` (place name). */
+    map_iframe_title: string;
     /** Day-count plural — receives `{count}`. */
     day_one: string;
     day_other: string;
@@ -1894,8 +1909,11 @@ export interface LocaleMessages {
       category_label: string;
       category_placeholder: string;
       name_label: string;
+      name_placeholder: string;
       city_label: string;
+      city_placeholder: string;
       address_label: string;
+      address_placeholder: string;
       address_help: string;
       address_resolving: string;
       address_resolved: string;
@@ -1903,6 +1921,7 @@ export interface LocaleMessages {
       address_resolve_failed: string;
       website_label: string;
       email_label: string;
+      email_placeholder: string;
       phone_label: string;
       phone_optional: string;
       blurb_label: string;

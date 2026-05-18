@@ -30,7 +30,6 @@ import {
   Unlink2,
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { Button, Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
@@ -1117,7 +1116,7 @@ export default function SeatingPage() {
   }, [selectedGuestId, guestById, t]);
 
   return (
-    <AppShell>
+    <>
       <span aria-live="polite" aria-atomic="true" className="sr-only">
         {a11yMessage}
       </span>
@@ -1570,7 +1569,7 @@ export default function SeatingPage() {
           </p>
         </Dialog>
       )}
-    </AppShell>
+    </>
   );
 }
 
@@ -2576,7 +2575,7 @@ function DraggableGuest({
             e.stopPropagation();
             onRelink();
           }}
-          aria-label={relinkLabel ?? "Re-link household"}
+          aria-label={relinkLabel}
           title={relinkLabel}
           className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
         >

@@ -147,7 +147,7 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
           {state === "ready" && coords && (
             <iframe
               key={`${coords.lat},${coords.lng}`}
-              title={`Map of ${label}`}
+              title={t("honeymoon.map_iframe_title", { label })}
               src={osmEmbedUrl(coords, label)}
               loading="eager"
               referrerPolicy="no-referrer-when-downgrade"

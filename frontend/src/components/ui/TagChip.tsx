@@ -1,5 +1,6 @@
 import { Check, X } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useT } from "../../lib/i18n";
 
 type TagChipProps = {
   label: string;
@@ -25,6 +26,7 @@ export function TagChip({
   className,
   ...rest
 }: TagChipProps) {
+  const { t } = useT();
   const base =
     "relative inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 disabled:cursor-not-allowed disabled:opacity-50 before:absolute before:inset-x-0 before:-inset-y-1.5 before:content-['']";
   const variant = selected
@@ -44,7 +46,7 @@ export function TagChip({
           onClick={onRemove}
           disabled={disabled}
           className="-mr-1 rounded-full p-0.5 hover:bg-ink-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-200 dark:hover:bg-paper-50/20 dark:focus-visible:ring-paper-100"
-          aria-label={`Remove ${label}`}
+          aria-label={t("common.remove_item", { label })}
         >
           <X size={12} aria-hidden="true" />
         </button>
