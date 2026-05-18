@@ -18,12 +18,15 @@ import {
   ChefHat,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
+  Circle,
   ClipboardList,
   Disc3,
   Flower2,
   Gem,
   Globe,
   Hand,
+  Heart,
   Lightbulb,
   Mail,
   Maximize2,
@@ -361,9 +364,19 @@ function PocCard({
           ))}
         </ul>
       ) : items.length === 0 ? (
-        <p className="px-5 py-6 text-sm text-ink-600 dark:text-umber-200">
-          {t("timeline.poc_empty")}
-        </p>
+        <div className="flex flex-col items-start gap-3 px-5 py-6">
+          <p className="text-sm text-ink-600 dark:text-umber-200">
+            {t("timeline.poc_empty")}
+          </p>
+          <Link
+            to="/app/suppliers"
+            className="inline-flex items-center gap-1.5 rounded-full bg-blush-500 px-3.5 py-1.5 text-xs font-medium text-paper-50 transition-colors hover:bg-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100"
+          >
+            <Heart size={14} aria-hidden="true" />
+            <span>{t("nav.suppliers")}</span>
+            <ChevronRight size={14} aria-hidden="true" />
+          </Link>
+        </div>
       ) : (
         // Below 640px collapse into a horizontal-scroll strip so each contact
         // card stays usable on phones without forcing a long vertical list.
@@ -909,6 +922,20 @@ function UndatedCard({
                   onClick={() => onOpenTask(item)}
                   className="group flex w-full flex-wrap items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-paper-100/50 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
                 >
+                  {item.done ? (
+                    <CheckCircle2
+                      size={18}
+                      className="shrink-0 text-sage-400 dark:text-sage-300"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Circle
+                      size={18}
+                      className="shrink-0 text-ink-300 dark:text-umber-400"
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                    />
+                  )}
                   <span
                     className={`min-w-0 flex-1 truncate text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
                   >
