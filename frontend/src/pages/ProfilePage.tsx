@@ -575,6 +575,7 @@ export default function ProfilePage() {
                   type="button"
                   role="radio"
                   aria-checked={active}
+                  aria-label={c}
                   onClick={() => saveCurrency(c)}
                   className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
                     active
@@ -582,7 +583,7 @@ export default function ProfilePage() {
                       : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
                   }`}
                 >
-                  {c}
+                  {currencySymbol(c, locale)}
                 </button>
               );
             })}

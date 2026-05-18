@@ -1,7 +1,14 @@
 // Budget planner. Hero "cost planning" panel with a guest-count slider that
 // re-prices per-guest categories live, plus an inline-editable line table.
 
-import type { BudgetCategory, BudgetLine, BudgetSnapshot, Couple, Currency } from "@shared/types";
+import {
+  type BudgetCategory,
+  type BudgetLine,
+  type BudgetSnapshot,
+  type Couple,
+  type Currency,
+  CURRENCIES,
+} from "@shared/types";
 import {
   ArrowUpRight,
   BarChart3,
@@ -37,7 +44,7 @@ import {
   writeCostPlanningCount,
 } from "../lib/cost_planning";
 import { budgetApi, coupleApi } from "../lib/endpoints";
-import { formatMoney, formatNumber, todayIso } from "../lib/format";
+import { currencySymbol, formatMoney, formatNumber, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
@@ -763,11 +770,60 @@ export default function BudgetPage() {
   // in sync with whatever the couple picked on /app/profile.
   const currency: Currency = couple?.currency ?? "HUF";
 
+  // Mirrors the picker on /app/profile so the couple can switch display
+  // currency without leaving /app/budget. Stored amounts keep their integer
+  // values — only the symbol re-skins, matching ProfilePage.saveCurrency.
+  async function saveCurrency(next: Currency) {
+    if (next === currency) return;
+    const ok = await confirm({
+      title: t("profile.budget_currency_confirm_title"),
+      body: t("profile.budget_currency_confirm_body"),
+      confirmLabel: t("profile.budget_currency_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    try {
+      const r = await coupleApi.update({ currency: next });
+      setCouple(r.couple);
+      publish("budget:changed");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   return (
     <AppShell>
-      <header className="mb-6">
-        <h1>{t("budget.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.sub")}</p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <h1>{t("budget.title")}</h1>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.sub")}</p>
+        </div>
+        <div
+          role="radiogroup"
+          aria-label={t("profile.budget_currency_label")}
+          className="inline-flex shrink-0 overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+        >
+          {CURRENCIES.map((c) => {
+            const active = c === currency;
+            return (
+              <button
+                key={c}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={c}
+                onClick={() => saveCurrency(c)}
+                className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                  active
+                    ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+                }`}
+              >
+                {currencySymbol(c, locale)}
+              </button>
+            );
+          })}
+        </div>
       </header>
 
       <CostPlanningCard
