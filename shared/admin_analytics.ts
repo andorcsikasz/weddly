@@ -118,3 +118,45 @@ export interface AdminPicksAnalytics {
   /** Aggregate breakdown of where the picks point. */
   source_breakdown: { curated: number; community: number; diy: number };
 }
+
+// ─── /api/admin/analytics/engagement ─────────────────────────────────────
+
+export interface AdminEngagementAnalytics {
+  /** Session stats derived from `audit_log` rows for the past 30 days.
+   *  Two adjacent rows from the same actor count as one session as long
+   *  as they're within `SESSION_GAP_MINUTES` (default 30). Distribution
+   *  is in minutes (integer). Sessions shorter than the gap (single-row
+   *  bursts) count as 1-minute sessions so the median doesn't collapse
+   *  to zero. */
+  session_duration_minutes: AdminAnalyticsStats;
+  /** Total distinct sessions inferred from audit_log gaps. Same window. */
+  total_sessions: number;
+  /** Distinct users who triggered at least one audit row in the window. */
+  active_users_30d: number;
+  /** D+1 / D+7 / D+30 retention: of users who signed up on day 0, the
+   *  fraction still seen N days later (any audit_log activity OR
+   *  last_seen_at >= signup+N). Cohort = users registered ≥30 days ago
+   *  so the D+30 bucket has settled data. Returns null when the cohort
+   *  is empty (no users old enough). */
+  retention: {
+    cohort_size: number;
+    d1: number | null;
+    d7: number | null;
+    d30: number | null;
+  };
+  /** 24×7 weekday-by-hour matrix of audit_log activity over the past
+   *  30 days. `matrix[dow][hour]` — dow is 0..6 with 0=Monday (so the
+   *  chart's row order matches the typical European week display).
+   *  Hour is 0..23 in UTC. Values are absolute counts. */
+  time_of_day: {
+    matrix: number[][];
+    max: number;
+  };
+  /** Top 8 most-used "features" over the past 30 days. Features are
+   *  derived from `audit_log.action` prefixes (e.g. "guest.", "budget.",
+   *  "schedule.", "supplier.") so the rollup stays stable as new
+   *  individual actions land. The frontend renders these as a small
+   *  horizontal bar list. */
+  top_features: Array<{ feature: string; count: number; users: number }>;
+}
+
