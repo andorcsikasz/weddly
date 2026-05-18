@@ -972,6 +972,9 @@ const hu: LocaleMessages = {
     outside_after_other: "még {count} később",
     seo_title: "Idővonal — Weddly",
     seo_description: "Esküvői feladataid Gantt-nézetben + kapcsolattartók.",
+    all_day_label: "egész napos",
+    now_label: "Most",
+    day_empty: "Nincs feladat erre a napra",
   },
   honeymoon: {
     title: "Nászút",

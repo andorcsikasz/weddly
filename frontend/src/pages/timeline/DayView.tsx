@@ -7,6 +7,7 @@
 // stay pinned while a long day scrolls.
 
 import type { PlanningItem } from "@shared/types";
+import { Calendar } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "../../lib/i18n";
 
@@ -40,12 +41,6 @@ function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-function addDays(d: Date, n: number): Date {
-  const next = new Date(d);
-  next.setDate(next.getDate() + n);
-  return next;
-}
-
 function diffDays(a: Date, b: Date): number {
   const ms = startOfDay(b).getTime() - startOfDay(a).getTime();
   return Math.round(ms / 86_400_000);
@@ -59,6 +54,7 @@ function diffDays(a: Date, b: Date): number {
 const HOUR_PX = 48;
 const DAY_HOURS = 24;
 const DEFAULT_VISIBLE_START_HOUR = 6;
+const GUTTER_WIDTH_PX = 56;
 const HOURS: number[] = [];
 for (let h = 0; h < DAY_HOURS; h++) HOURS.push(h);
 
@@ -74,7 +70,7 @@ export default function DayView({
   supplierById,
   onOpenTask,
 }: DayViewProps) {
-  const { locale } = useT();
+  const { t, locale } = useT();
   // Suppress unused-variable warnings when supplierById isn't needed for
   // rendering — kept on the props contract so future work can surface a
   // supplier chip on each bar without changing the call sites.
@@ -102,6 +98,8 @@ export default function DayView({
   const intl = locale === "hu" ? "hu-HU" : "en-US";
   const dayStart = startOfDay(currentDate);
   const isToday = dayStart.getTime() === startOfDay(today).getTime();
+  const dow = dayStart.getDay(); // 0 = Sun, 6 = Sat
+  const isWeekend = dow === 0 || dow === 6;
 
   const weekdayLabel = useMemo(
     () => new Intl.DateTimeFormat(intl, { weekday: "long" }).format(dayStart),
@@ -142,32 +140,63 @@ export default function DayView({
   const now = new Date();
   const nowTopPx = isToday ? (now.getHours() + now.getMinutes() / 60) * HOUR_PX : null;
 
-  const emptyHint = locale === "hu" ? "Nincs feladat erre a napra" : "No tasks for this day";
+  const emptyHint = t("timeline.day_empty");
+  const allDayLabel = t("timeline.all_day_label");
+  const todayLabel = t("timeline.today_label");
+  const nowLabel = t("timeline.now_label");
+
+  // Weekend tint for the hour-grid column matches the WeekView treatment so
+  // Saturday/Sunday days feel quieter than weekdays. Applied to both the
+  // header background and the hour-grid container.
+  const weekendBgClass = isWeekend ? "bg-paper-100/30 dark:bg-umber-900/30" : "";
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-baseline gap-3 px-5 py-4">
+      <header
+        className={`flex items-center gap-3 px-5 py-4 ${weekendBgClass}`}
+        aria-label={weekdayLabel}
+      >
+        <Calendar
+          aria-hidden="true"
+          className="h-4 w-4 text-blush-500 dark:text-blush-400"
+          strokeWidth={1.75}
+        />
         <div className="flex flex-col">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          <span
+            className={`text-[11px] font-semibold uppercase tracking-widest ${
+              isWeekend ? "text-ink-600 dark:text-umber-300" : "text-ink-500 dark:text-umber-300"
+            }`}
+          >
             {weekdayLabel}
           </span>
           <span className="text-xs text-ink-500 dark:text-umber-300">{monthLabel}</span>
         </div>
         {isToday ? (
           <span
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blush-500 text-3xl font-serif text-paper-50"
-            aria-label={locale === "hu" ? "Ma" : "Today"}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blush-500 font-serif text-3xl text-paper-50 ring-2 ring-blush-200 dark:ring-blush-400/30"
+            aria-label={todayLabel}
           >
             {dayNumber}
           </span>
         ) : (
-          <span className="text-3xl font-serif text-ink-900 dark:text-paper-50">{dayNumber}</span>
+          <span className="font-serif text-3xl text-ink-900 dark:text-paper-50">{dayNumber}</span>
         )}
       </header>
 
-      <div className="bg-paper-100 px-5 py-2 dark:bg-umber-900/40">
+      <div
+        className={`border-paper-200 border-y px-5 py-2 dark:border-umber-700 ${
+          isWeekend
+            ? "bg-paper-100/50 dark:bg-umber-900/40"
+            : "bg-paper-100/50 dark:bg-umber-900/30"
+        }`}
+      >
+        <div className="mb-1">
+          <span className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-umber-300">
+            {allDayLabel}
+          </span>
+        </div>
         {allDayTasks.length === 0 ? (
-          <p className="text-xs italic text-ink-500 dark:text-umber-300">{emptyHint}</p>
+          <p className="text-[11px] italic text-ink-400 dark:text-umber-300">{emptyHint}</p>
         ) : (
           <ul className="space-y-1">
             {allDayTasks.map((item) => {
@@ -180,7 +209,7 @@ export default function DayView({
                     type="button"
                     onClick={() => onOpenTask(item)}
                     title={item.title}
-                    className={`flex h-6 w-full items-center rounded-md px-2 text-xs transition-colors hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${barClasses}`}
+                    className={`flex h-6 w-full items-center rounded-md px-2 text-xs ring-1 ring-transparent transition-all hover:ring-blush-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:hover:ring-blush-400/40 dark:focus-visible:ring-paper-100 ${barClasses}`}
                   >
                     <span
                       className={`min-w-0 flex-1 truncate text-left ${
@@ -197,19 +226,26 @@ export default function DayView({
         )}
       </div>
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="grid" style={{ gridTemplateColumns: "56px 1fr" }}>
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]"
+        style={{ scrollbarWidth: "thin" }}
+      >
+        <div
+          className={`grid ${weekendBgClass}`}
+          style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px 1fr` }}
+        >
           <div
-            className="grid"
+            className="grid border-r border-paper-200 dark:border-umber-700"
             style={{ gridTemplateRows: `repeat(${DAY_HOURS}, ${HOUR_PX}px)` }}
             aria-hidden="true"
           >
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="border-t border-paper-200 pr-2 text-right text-[11px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
+                className="border-t border-paper-200 pr-2 text-right text-[11px] leading-none text-ink-500 tabular-nums dark:border-umber-700 dark:text-umber-300"
               >
-                <span className="-translate-y-1/2 inline-block">
+                <span className={`-translate-y-1/2 inline-block ${h === 12 ? "font-medium" : ""}`}>
                   <time dateTime={`${h.toString().padStart(2, "0")}:00`}>{formatHour(h)}</time>
                 </span>
               </div>
@@ -222,18 +258,29 @@ export default function DayView({
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="border-t border-paper-200 dark:border-umber-700"
+                className="relative border-t border-paper-200 dark:border-umber-700"
                 aria-hidden="true"
-              />
+              >
+                {/* Half-hour rule — fainter than the full-hour border so the
+                    grid reads as a calendar without feeling busy. */}
+                <div className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-paper-200/50 dark:bg-umber-700/40" />
+              </div>
             ))}
             {nowTopPx !== null && (
               <div
                 className="pointer-events-none absolute inset-x-0"
                 style={{ top: `${nowTopPx}px` }}
-                aria-label={locale === "hu" ? "Most" : "Now"}
+                aria-label={nowLabel}
+                aria-live="polite"
               >
+                {/* Soft blush halo underlay — pure-tailwind alternative to a
+                    raw rgba shadow, so the glow obeys the token palette. */}
+                <div
+                  aria-hidden="true"
+                  className="-translate-y-1/2 absolute inset-x-0 top-1/2 h-3 bg-blush-500/30 blur-md"
+                />
                 <div className="relative h-0.5 bg-blush-500">
-                  <span className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500" />
+                  <span className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-0 h-2.5 w-2.5 rounded-full bg-blush-500 ring-2 ring-blush-300/60" />
                 </div>
               </div>
             )}

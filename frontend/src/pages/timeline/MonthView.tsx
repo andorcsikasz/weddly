@@ -224,14 +224,21 @@ export default function MonthView({
         style={{ gridTemplateColumns: "40px repeat(7, 1fr)" }}
       >
         <div aria-hidden="true" />
-        {dayAbbrevs.map((label, idx) => (
-          <div
-            key={idx}
-            className="px-2 py-2 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300"
-          >
-            {label}
-          </div>
-        ))}
+        {dayAbbrevs.map((label, idx) => {
+          // Mon..Fri = 0..4 weekday, Sat/Sun = 5/6 weekend.
+          const isWeekend = idx === 5 || idx === 6;
+          const headerClass = isWeekend
+            ? "text-ink-600 dark:text-umber-300"
+            : "text-ink-500 dark:text-umber-300";
+          return (
+            <div
+              key={idx}
+              className={`px-2 py-2 text-[11px] uppercase tracking-widest ${headerClass}`}
+            >
+              {label}
+            </div>
+          );
+        })}
       </div>
 
       {/* Week rows */}
@@ -245,7 +252,7 @@ export default function MonthView({
               style={{ gridTemplateColumns: "40px repeat(7, 1fr)" }}
             >
               {/* ISO week gutter */}
-              <div className="flex items-start justify-center pt-1.5 text-[11px] text-ink-500 dark:text-umber-300">
+              <div className="flex items-start justify-center pt-1.5 font-serif text-sm text-ink-400 dark:text-umber-400">
                 {isoWeek(weekStart)}
               </div>
 
@@ -255,6 +262,7 @@ export default function MonthView({
                 const inMonth = day.getMonth() === currentDate.getMonth();
                 const isToday = sameDay(day, today);
                 const isPast = day < today && !isToday;
+                const isWeekend = col === 5 || col === 6;
                 // Three-tier dimming: in-month future = full ink, in-month
                 // past = muted (already happened — couples don't need them
                 // to compete visually with what's still ahead), out-of-month
@@ -264,12 +272,26 @@ export default function MonthView({
                   : isPast
                     ? "text-ink-400 dark:text-umber-300"
                     : "text-ink-900 dark:text-paper-50";
+                // Stacked tints, weakest at the bottom. Out-of-month wins
+                // over weekend (the soft month-boundary band reads first).
+                // Past in-month is muted on top of the weekend wash so the
+                // weekend column still reads on already-passed days.
+                const cellTintClass = !inMonth
+                  ? "bg-paper-50/40 dark:bg-umber-900/40"
+                  : isPast
+                    ? isWeekend
+                      ? "bg-paper-100/50 dark:bg-umber-900/40"
+                      : "bg-paper-100/40 dark:bg-umber-900/30"
+                    : isWeekend
+                      ? "bg-paper-100/30 dark:bg-umber-900/30"
+                      : "";
+                const todayRing = isToday
+                  ? "ring-1 ring-inset ring-blush-400/40 dark:ring-blush-300/40"
+                  : "";
                 return (
                   <div
                     key={col}
-                    className={`relative min-h-[80px] border-r border-paper-200 last:border-r-0 dark:border-umber-700 ${
-                      isPast && inMonth ? "bg-paper-100/40 dark:bg-umber-900/30" : ""
-                    }`}
+                    className={`relative min-h-[80px] border-r border-paper-200 transition-colors last:border-r-0 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-900/50 ${cellTintClass} ${todayRing}`}
                   >
                     <div className="px-1.5 pt-1">
                       {isToday ? (
@@ -277,7 +299,7 @@ export default function MonthView({
                           {day.getDate()}
                         </span>
                       ) : (
-                        <span className={`text-sm ${dayNumClass}`}>{day.getDate()}</span>
+                        <span className={`font-serif text-sm ${dayNumClass}`}>{day.getDate()}</span>
                       )}
                     </div>
                   </div>
@@ -290,9 +312,12 @@ export default function MonthView({
               {layout?.bars.map((bar) => {
                 const item = bar.item;
                 const done = item.done;
+                // Completed tasks retreat: same sage tint, 70% opacity, line-
+                // through, and a thinner border accent. Active tasks get a
+                // refined Gantt-bar feel — bottom-border in blush-500/60.
                 const barClasses = done
-                  ? "bg-sage-300 dark:bg-sage-400/30 text-sage-900 dark:text-paper-50 line-through"
-                  : "bg-blush-300 dark:bg-blush-400/30 text-ink-900 dark:text-paper-50";
+                  ? "bg-sage-300 opacity-70 line-through border-b-2 border-sage-500/40 text-sage-900 ring-sage-400/60 dark:bg-sage-400/30 dark:text-paper-50"
+                  : "bg-blush-300 border-b-2 border-blush-500/60 text-ink-900 ring-blush-400/60 dark:bg-blush-400/30 dark:text-paper-50 dark:ring-blush-300/40";
                 // The 7-day region begins at the 40px gutter and fills the
                 // remainder of the row. Express position as `calc()` so it
                 // tracks any container width.
@@ -305,7 +330,7 @@ export default function MonthView({
                     key={`bar-${item.id}-${bar.startCol}`}
                     onClick={() => onOpenTask(item)}
                     title={item.title}
-                    className={`absolute h-5 truncate rounded-sm px-1.5 text-left text-[11px] transition-colors hover:brightness-95 ${barClasses}`}
+                    className={`absolute h-5 truncate rounded-sm px-1.5 text-left text-[11px] transition-colors hover:brightness-95 hover:ring-1 ${barClasses}`}
                     style={{
                       left: leftCalc,
                       width: widthCalc,
@@ -333,7 +358,7 @@ export default function MonthView({
                     type="button"
                     key={`more-${weekIdx}-${col}`}
                     onClick={() => onOpenTask(first)}
-                    className="absolute h-5 truncate rounded-sm px-1.5 text-left text-[11px] text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                    className="absolute h-5 truncate px-1.5 text-left text-[11px] text-ink-500 underline decoration-paper-300 underline-offset-2 transition-colors hover:text-ink-900 hover:decoration-ink-500 dark:text-umber-300 dark:decoration-umber-600 dark:hover:text-paper-100 dark:hover:decoration-umber-300"
                     style={{
                       left: leftCalc,
                       width: widthCalc,

@@ -30,6 +30,7 @@ import {
   PartyPopper,
   Phone,
   Shirt,
+  Sparkles,
   Speaker,
   StickyNote,
   Tent,
@@ -340,9 +341,13 @@ function PocCard({
   const { t } = useT();
 
   return (
-    <section className="card p-0">
+    <section className="card p-0 rounded-3xl ring-1 ring-paper-300/60 dark:ring-umber-700/60">
       <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
+        <h2 className="flex items-center gap-2.5 font-serif text-lg text-ink-900 dark:text-paper-50">
+          <span
+            className="inline-block h-5 w-0.5 rounded-full bg-blush-500"
+            aria-hidden="true"
+          />
           {t("timeline.poc_title")}
         </h2>
       </header>
@@ -350,7 +355,7 @@ function PocCard({
         <ul className="divide-y divide-paper-200 p-0 dark:divide-umber-700" aria-hidden="true">
           {[0, 1, 2].map((i) => (
             <li key={i} className="flex items-center gap-3 px-5 py-3">
-              <Skeleton variant="circle" width={28} />
+              <Skeleton variant="circle" width={40} />
               <div className="flex-1 space-y-1.5">
                 <Skeleton variant="block" width="40%" height={14} rounded="md" />
                 <Skeleton variant="block" width="60%" height={11} rounded="md" />
@@ -370,8 +375,14 @@ function PocCard({
         // "more to swipe" — only rendered below sm, where the row scrolls.
         <div className="relative">
           <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 py-4 sm:flex-col sm:gap-0 sm:divide-y sm:divide-paper-200 sm:overflow-visible sm:px-0 sm:py-0 dark:sm:divide-umber-700">
-            {items.map(({ pick, supplier }) => (
-              <PocRow key={pick.supplier_id} pick={pick} supplier={supplier} locale={locale} />
+            {items.map(({ pick, supplier }, index) => (
+              <PocRow
+                key={pick.supplier_id}
+                pick={pick}
+                supplier={supplier}
+                locale={locale}
+                isFirst={index === 0}
+              />
             ))}
           </ul>
           {items.length > 1 && (
@@ -390,10 +401,12 @@ function PocRow({
   pick,
   supplier,
   locale,
+  isFirst,
 }: {
   pick: CouplePick;
   supplier: ResolvedSupplier | null;
   locale: "hu" | "en";
+  isFirst: boolean;
 }) {
   const { t } = useT();
   const Icon = supplier ? CATEGORY_ICON[supplier.category] : Building2;
@@ -401,13 +414,20 @@ function PocRow({
   const displayName =
     supplier?.name ?? (locale === "hu" ? "Ismeretlen kapcsolattartó" : "Unknown supplier");
 
+  // The horizontal-scroll mobile variant uses standalone bordered cards, so
+  // the list-rail accent (`border-l-2`) only applies at sm+. First row skips
+  // the rail so the top edge doesn't read as heavy.
+  const railClass = isFirst
+    ? "sm:border-l-2 sm:border-transparent"
+    : "sm:border-l-2 sm:border-paper-200 dark:sm:border-umber-700";
+
   return (
     <li
       id={`poc-${pick.supplier_id}`}
-      className="flex w-64 shrink-0 snap-start items-start gap-3 rounded-2xl border border-paper-300 px-3 py-3 transition-colors sm:w-auto sm:rounded-none sm:border-0 sm:px-5 dark:border-umber-700"
+      className={`flex w-64 shrink-0 snap-start items-start gap-3 rounded-2xl border border-paper-300 px-3 py-3 transition-colors sm:w-auto sm:rounded-none sm:border-0 sm:px-5 sm:hover:bg-paper-100/40 dark:border-umber-700 dark:sm:hover:bg-umber-900/40 ${railClass}`}
     >
-      <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-700 dark:bg-umber-700 dark:text-paper-100">
-        <Icon size={16} aria-hidden="true" />
+      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
+        <Icon size={18} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
@@ -420,7 +440,7 @@ function PocRow({
           {supplier?.phone ? (
             <a
               href={`tel:${supplier.phone.replace(/\s+/g, "")}`}
-              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
             >
               <Phone size={11} aria-hidden="true" />
               <span>{supplier.phone}</span>
@@ -438,7 +458,7 @@ function PocRow({
           {supplier?.email ? (
             <a
               href={`mailto:${supplier.email}`}
-              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
             >
               <Mail size={11} aria-hidden="true" />
               <span className="truncate max-w-[140px]">{supplier.email}</span>
@@ -458,7 +478,7 @@ function PocRow({
               href={supplier.website}
               target="_blank"
               rel="noreferrer noopener"
-              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 hover:bg-paper-200 dark:bg-umber-700 dark:hover:bg-umber-700/80"
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
             >
               <Globe size={11} aria-hidden="true" />
               <span>{t("suppliers.visit_website")}</span>
@@ -549,7 +569,7 @@ function ChartCard({
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+            className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
             aria-label={t("timeline.expand_label")}
             title={t("timeline.expand_label")}
           >
@@ -561,32 +581,34 @@ function ChartCard({
   }
 
   const navCluster = (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       <button
         type="button"
         onClick={navToday}
-        className="rounded-full border border-paper-300 px-3 py-1 text-xs font-medium text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-paper-100 dark:hover:bg-umber-700"
+        className="min-h-tap rounded-full bg-blush-50 px-3.5 py-1.5 text-xs font-medium text-blush-700 transition-colors hover:bg-blush-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:bg-blush-400/15 dark:text-blush-300 dark:hover:bg-blush-400/25"
       >
         {t("timeline.today_button")}
       </button>
-      <button
-        type="button"
-        onClick={() => navStep(-1)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-        aria-label={t("timeline.prev_label")}
-        title={t("timeline.prev_label")}
-      >
-        <ChevronLeft size={16} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onClick={() => navStep(1)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-        aria-label={t("timeline.next_label")}
-        title={t("timeline.next_label")}
-      >
-        <ChevronRight size={16} aria-hidden="true" />
-      </button>
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => navStep(-1)}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+          aria-label={t("timeline.prev_label")}
+          title={t("timeline.prev_label")}
+        >
+          <ChevronLeft size={16} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => navStep(1)}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+          aria-label={t("timeline.next_label")}
+          title={t("timeline.next_label")}
+        >
+          <ChevronRight size={16} aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 
@@ -654,13 +676,23 @@ function ChartCard({
   // blank space below the bars; the new one fills the card with structure).
   const inlineHeightClass = "h-[70vh] min-h-[520px]";
 
+  // Calendar modes (day/week/month) get a soft serif title that reads as the
+  // date headline; the Gantt-style 3M/6M views keep the compact uppercase
+  // chrome they had so the long range string doesn't dwarf the canvas.
+  const isCalendarMode = mode === "day" || mode === "week" || mode === "month";
+  const titleClass = isCalendarMode
+    ? "font-serif text-xl text-ink-900 dark:text-paper-50"
+    : "text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100";
+
   return (
     <>
-      <section className={`card flex flex-col p-0 ${inlineHeightClass}`}>
+      <section
+        className={`card flex flex-col p-0 rounded-3xl shadow-pop ring-1 ring-paper-300/60 dark:ring-umber-700/60 ${inlineHeightClass}`}
+      >
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
           <div className="flex flex-wrap items-center gap-3">
             {navCluster}
-            <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">{title}</h2>
+            <h2 className={titleClass}>{title}</h2>
           </div>
           {renderToolbar({ showExpand: true })}
         </header>
@@ -733,10 +765,10 @@ function ChartModeSwitch({
             aria-label={opt.full}
             title={opt.full}
             onClick={() => onModeChange(opt.value)}
-            className={`min-h-tap rounded-md px-2 py-1 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
+            className={`min-h-tap rounded-md px-2 pb-0.5 pt-1 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
               active
-                ? "text-ink-900 dark:text-paper-50"
-                : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-200"
+                ? "border-b-2 border-blush-500 text-ink-900 dark:text-paper-50"
+                : "border-b-2 border-transparent text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-200"
             }`}
           >
             {opt.short}
@@ -832,11 +864,25 @@ function UndatedCard({
 }) {
   const { t } = useT();
 
+  // When there are zero tasks of any kind the page reads as a fresh-install
+  // empty state; otherwise the "every task is dated" line stays italic + quiet
+  // so it doesn't shout at couples who finished the job.
+  const showFreshEmpty = !hasAnyTasks;
+
   return (
-    <section className="card p-0">
+    <section className="card p-0 rounded-3xl ring-1 ring-paper-300/60 dark:ring-umber-700/60">
       <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
-          {t("timeline.no_dates_title")}
+        <h2 className="flex items-center gap-2.5 font-serif text-lg text-ink-900 dark:text-paper-50">
+          <span
+            className="inline-block h-5 w-0.5 rounded-full bg-blush-500"
+            aria-hidden="true"
+          />
+          <span>{t("timeline.no_dates_title")}</span>
+          {tasks.length > 0 && (
+            <span className="inline-flex items-center justify-center rounded-full bg-blush-50 px-2 py-0.5 font-sans text-[11px] font-semibold text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+              {tasks.length}
+            </span>
+          )}
         </h2>
       </header>
       {loading ? (
@@ -846,36 +892,52 @@ function UndatedCard({
           ))}
         </div>
       ) : tasks.length === 0 ? (
-        <p className="px-5 py-6 text-sm text-ink-600 dark:text-umber-200">
-          {hasAnyTasks ? t("timeline.no_dates_empty") : t("timeline.no_dates_empty_all")}
-        </p>
+        showFreshEmpty ? (
+          <div className="flex flex-col items-center gap-2 px-5 py-10 text-center">
+            <Sparkles
+              size={28}
+              className="text-blush-400 dark:text-blush-300"
+              aria-hidden="true"
+            />
+            <p className="text-base text-ink-700 dark:text-paper-100">
+              {t("timeline.no_dates_empty_all")}
+            </p>
+          </div>
+        ) : (
+          <p className="px-5 py-6 text-sm italic text-ink-500 dark:text-umber-300">
+            {t("timeline.no_dates_empty")}
+          </p>
+        )
       ) : (
         <ul className="divide-y divide-paper-200 dark:divide-umber-700">
           {tasks.map((item) => {
             const supplier = item.supplier_id ? (supplierById.get(item.supplier_id) ?? null) : null;
             return (
-              <li key={item.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-                <span
-                  className={`min-w-0 flex-1 truncate text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
-                >
-                  {item.title}
-                </span>
-                {item.assignee && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] text-ink-700 dark:bg-umber-700 dark:text-paper-100">
-                    {item.assignee}
-                  </span>
-                )}
-                {supplier && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-paper-200 px-2 py-0.5 text-[11px] text-ink-700 dark:bg-umber-700 dark:text-paper-100">
-                    {supplier.name}
-                  </span>
-                )}
+              <li key={item.id}>
                 <button
                   type="button"
                   onClick={() => onOpenTask(item)}
-                  className="btn-ghost btn-sm shrink-0"
+                  className="group flex w-full flex-wrap items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-paper-100/50 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
                 >
-                  {t("timeline.set_dates")}
+                  <span
+                    className={`min-w-0 flex-1 truncate text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
+                  >
+                    {item.title}
+                  </span>
+                  {item.assignee && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+                      {item.assignee}
+                    </span>
+                  )}
+                  {supplier && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-paper-200 px-2 py-0.5 text-[11px] text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+                      {supplier.name}
+                    </span>
+                  )}
+                  <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-blush-700 transition-colors group-hover:text-blush-800 dark:text-blush-300 dark:group-hover:text-blush-200">
+                    <span>{t("timeline.set_dates")}</span>
+                    <ChevronRight size={14} aria-hidden="true" />
+                  </span>
                 </button>
               </li>
             );

@@ -971,6 +971,9 @@ const en: LocaleMessages = {
     outside_after_other: "{count} later",
     seo_title: "Timeline — Weddly",
     seo_description: "Your wedding tasks as a Gantt chart with quick supplier contacts.",
+    all_day_label: "All-day",
+    now_label: "Now",
+    day_empty: "No tasks for this day",
   },
   honeymoon: {
     title: "Honeymoon",

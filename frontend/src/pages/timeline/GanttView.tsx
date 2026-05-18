@@ -255,17 +255,29 @@ export default function GanttView({
             )}
           </div>
           <div className="relative h-7">
-            {geometry.months.map((m, idx) => (
-              <div
-                key={m.start.toISOString()}
-                className={`absolute top-0 flex h-full items-center px-2 text-[12px] font-medium ${
-                  idx === 0 ? "" : "border-l border-paper-300 dark:border-umber-700"
-                } text-ink-800 dark:text-paper-100`}
-                style={{ left: `${m.offsetPct}%`, width: `${m.widthPct}%` }}
-              >
-                <span className="capitalize">{m.label}</span>
-              </div>
-            ))}
+            {geometry.months.map((m, idx) => {
+              // A year-flip is signalled by `yearLabel` being set — except for
+              // the first band, which always shows the year (so the user has
+              // a reference) but isn't structurally a section break.
+              const isYearChange = m.yearLabel !== null && idx !== 0;
+              const dividerClass = isYearChange
+                ? "border-l border-paper-300 dark:border-umber-600"
+                : idx === 0
+                  ? ""
+                  : "border-l border-paper-200 dark:border-umber-700";
+              const labelClass = isYearChange
+                ? "font-serif text-[12px] font-medium text-ink-700 dark:text-paper-100"
+                : "font-serif text-[12px] text-ink-500 dark:text-umber-300";
+              return (
+                <div
+                  key={m.start.toISOString()}
+                  className={`absolute top-0 flex h-full items-center px-2 ${dividerClass} ${labelClass}`}
+                  style={{ left: `${m.offsetPct}%`, width: `${m.widthPct}%` }}
+                >
+                  <span className="capitalize">{m.label}</span>
+                </div>
+              );
+            })}
           </div>
 
           {/* Marker badges live in the header (which the body's
@@ -322,11 +334,11 @@ export default function GanttView({
                     type="button"
                     key={`gutter-${item.id}`}
                     onClick={() => onOpenTask(item)}
-                    className="flex w-full items-center gap-2 border-b border-paper-200 px-3 text-left text-xs transition-colors hover:bg-paper-100 dark:border-umber-700/60 dark:hover:bg-umber-700/40"
+                    className="flex w-full items-center gap-2 border-b border-paper-200 px-3 text-left transition-colors hover:bg-paper-100 dark:border-umber-700/60 dark:hover:bg-umber-700/40"
                     style={{ height: ROW_HEIGHT }}
                   >
                     <span
-                      className={`min-w-0 flex-1 truncate ${
+                      className={`min-w-0 flex-1 truncate text-sm ${
                         item.done
                           ? "text-ink-400 line-through dark:text-umber-300"
                           : "text-ink-900 dark:text-paper-50"
@@ -336,7 +348,7 @@ export default function GanttView({
                     </span>
                     {supplier && (
                       <span
-                        className="inline-flex shrink-0 items-center truncate rounded-full bg-paper-100 px-1.5 py-0.5 text-[10px] text-ink-700 dark:bg-umber-700 dark:text-paper-100"
+                        className="inline-flex shrink-0 items-center truncate text-[10px] text-ink-500 dark:text-umber-300"
                         style={{ maxWidth: 80 }}
                         title={supplier.name}
                       >
@@ -375,17 +387,24 @@ export default function GanttView({
               />
             ))}
 
-            {/* Month dividers (skip first — the gutter border handles that edge) */}
-            {geometry.months.map((m, idx) =>
-              idx === 0 ? null : (
+            {/* Month dividers (skip first — the gutter border handles that
+                edge). Year-change ticks get a slightly stronger value so the
+                section break reads at a glance. */}
+            {geometry.months.map((m, idx) => {
+              if (idx === 0) return null;
+              const isYearChange = m.yearLabel !== null;
+              const tickClass = isYearChange
+                ? "bg-paper-300 dark:bg-umber-600"
+                : "bg-paper-200 dark:bg-umber-700";
+              return (
                 <div
                   key={`divider-${m.start.toISOString()}`}
-                  className="absolute inset-y-0 w-px bg-paper-300 dark:bg-umber-700"
+                  className={`absolute inset-y-0 w-px ${tickClass}`}
                   style={{ left: `${m.offsetPct}%` }}
                   aria-hidden="true"
                 />
-              ),
-            )}
+              );
+            })}
 
             {/* Wedding-day vertical (sage). The badge sits in the header
                 so this is just the line — `-translate-x-1/2` centres a 1px
@@ -398,10 +417,12 @@ export default function GanttView({
               />
             )}
 
-            {/* Today vertical (blush). Badge is in the header. */}
+            {/* Today vertical (blush). Badge is in the header. A soft glow
+                matches the Day/Week now-line treatment so the eye lands on
+                "today" the moment the chart loads. */}
             {todayLeftPct !== null && (
               <div
-                className="pointer-events-none absolute inset-y-0 z-[1] w-0.5 -translate-x-1/2 bg-blush-500"
+                className="pointer-events-none absolute inset-y-0 z-[1] w-0.5 -translate-x-1/2 bg-blush-500 shadow-[0_0_8px_rgba(211,93,66,0.45)]"
                 style={{ left: `${todayLeftPct}%` }}
                 aria-hidden="true"
               />
@@ -419,9 +440,12 @@ export default function GanttView({
                     ? (supplierById.get(item.supplier_id) ?? null)
                     : null;
                   const done = item.done;
+                  // Mirror MonthView's polished bar treatment: completed
+                  // tasks retreat (opacity-70 + line-through + thinner sage
+                  // border), active tasks get a blush bottom-border accent.
                   const barClasses = done
-                    ? "bg-sage-300 text-sage-900 dark:bg-sage-400/30 dark:text-paper-50"
-                    : "bg-blush-300 text-ink-900 dark:bg-blush-400/30 dark:text-paper-50";
+                    ? "bg-sage-300 opacity-70 border-b-2 border-sage-500/40 text-sage-900 ring-sage-400/60 dark:bg-sage-400/30 dark:text-paper-50"
+                    : "bg-blush-300 border-b-2 border-blush-500/60 text-ink-900 ring-blush-400/60 dark:bg-blush-400/30 dark:text-paper-50 dark:ring-blush-300/40";
                   const corners = `${bar.clipLeft ? "rounded-l-none" : "rounded-l-md"} ${
                     bar.clipRight ? "rounded-r-none" : "rounded-r-md"
                   }`;
@@ -435,7 +459,7 @@ export default function GanttView({
                         type="button"
                         onClick={() => onOpenTask(item)}
                         title={item.title}
-                        className={`absolute top-1/2 z-[2] flex h-6 -translate-y-1/2 items-center gap-1 px-2 text-[11px] shadow-soft transition-colors hover:brightness-95 ${barClasses} ${corners}`}
+                        className={`absolute top-1/2 z-[2] flex h-6 -translate-y-1/2 items-center gap-1 px-2 text-[11px] shadow-soft transition-colors hover:brightness-95 hover:ring-1 ${barClasses} ${corners}`}
                         style={{
                           left: `${bar.leftPct}%`,
                           width: `max(${bar.widthPct}%, 12px)`,

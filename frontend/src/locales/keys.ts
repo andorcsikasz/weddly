@@ -128,6 +128,10 @@ export interface LocaleMessages {
     outside_after_other: string;
     seo_title: string;
     seo_description: string;
+    /** Day + Week view chrome: all-day strip header, "now" line, empty hint. */
+    all_day_label: string;
+    now_label: string;
+    day_empty: string;
   };
   a11y: {
     /** Generic close button label (dialogs, sheets). */

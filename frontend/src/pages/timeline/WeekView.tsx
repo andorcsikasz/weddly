@@ -80,6 +80,10 @@ const GUTTER_WIDTH_PX = 56;
 const DAY_ABBR_HU: readonly string[] = ["H", "K", "SZE", "CS", "P", "SZO", "V"];
 const DAY_ABBR_EN: readonly string[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+// Mon-indexed (0..6) → true when the column is Sat (5) or Sun (6). Used to
+// tint the day column + soften the header label on weekends.
+const WEEKEND_COLS: readonly boolean[] = [false, false, false, false, false, true, true];
+
 // ── Lane packing for multi-day all-day bars ─────────────────────────────────
 
 interface PlacedBar {
@@ -155,7 +159,7 @@ export default function WeekView({
   supplierById,
   onOpenTask,
 }: WeekViewProps) {
-  const { locale } = useT();
+  const { t, locale } = useT();
   // Force re-render every 60s so the "now" line drifts down the today column.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -203,8 +207,8 @@ export default function WeekView({
   const hourLabels: number[] = [];
   for (let h = 0; h < DAY_HOURS; h++) hourLabels.push(h);
 
-  const allDayLabel = locale === "hu" ? "egész napos" : "All-day";
-  const todayAriaLabel = locale === "hu" ? "Jelenlegi idő" : "Current time";
+  const allDayLabel = t("timeline.all_day_label");
+  const todayAriaLabel = t("timeline.now_label");
 
   return (
     <div className="flex h-full flex-col">
@@ -213,16 +217,24 @@ export default function WeekView({
         className="grid border-b border-paper-300 dark:border-umber-700"
         style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px repeat(7, minmax(0, 1fr))` }}
       >
-        <div aria-hidden="true" />
+        <div aria-hidden="true" className="border-r border-paper-200 dark:border-umber-700" />
         {days.map((d, i) => {
           const isToday = todayInWeek && i === todayCol;
+          const weekend = WEEKEND_COLS[i] === true;
           return (
-            <div key={d.toISOString()} className="flex flex-col items-center justify-center py-2">
+            <div
+              key={d.toISOString()}
+              className={`flex flex-col items-center justify-center py-2 ${
+                weekend ? "bg-paper-100/30 dark:bg-umber-900/30" : ""
+              }`}
+            >
               <span
-                className={`text-[11px] font-medium uppercase tracking-wider ${
+                className={`text-[10px] font-medium uppercase tracking-widest ${
                   isToday
                     ? "text-blush-700 dark:text-blush-300"
-                    : "text-ink-500 dark:text-umber-300"
+                    : weekend
+                      ? "text-ink-600 dark:text-umber-300"
+                      : "text-ink-500 dark:text-umber-300"
                 }`}
               >
                 {dayAbbr[i]}
@@ -230,8 +242,12 @@ export default function WeekView({
               <span
                 className={
                   isToday
-                    ? "mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush-500 text-base font-semibold tabular-nums text-paper-50"
-                    : "mt-1 text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50"
+                    ? "mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush-500 font-serif text-lg tabular-nums text-paper-50 ring-2 ring-blush-200 dark:ring-blush-400/20"
+                    : `mt-1 font-serif text-lg tabular-nums ${
+                        weekend
+                          ? "text-ink-700 dark:text-paper-50/90"
+                          : "text-ink-900 dark:text-paper-50"
+                      }`
                 }
               >
                 {d.getDate()}
@@ -243,15 +259,30 @@ export default function WeekView({
 
       {/* ── All-day strip ────────────────────────────────────────────────── */}
       <div
-        className="grid border-b border-paper-300 dark:border-umber-700"
+        className="grid border-b border-paper-300 bg-paper-100/50 dark:border-umber-700 dark:bg-umber-900/30"
         style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px repeat(7, minmax(0, 1fr))` }}
       >
-        <div className="flex items-start justify-end pr-2 pt-1.5">
-          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <div className="flex items-start justify-end border-r border-paper-200 pr-2 pt-1.5 dark:border-umber-700">
+          <span className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-umber-300">
             {allDayLabel}
           </span>
         </div>
         <div className="relative col-span-7" style={{ height: stripHeight, paddingTop: 4 }}>
+          {/* Weekend-column tints sit behind the bars so multi-day spans
+              still draw on top. Absolutely positioned so they don't fight
+              the bar-placement grid below. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 grid"
+            style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
+          >
+            {WEEKEND_COLS.map((weekend, i) => (
+              <div
+                key={`we-${i}`}
+                className={weekend ? "bg-paper-100/30 dark:bg-umber-900/30" : ""}
+              />
+            ))}
+          </div>
           {/* Inner 7-col grid hosts the bars via grid-column placement so
               widths track the day columns exactly regardless of container
               width. */}
@@ -278,7 +309,7 @@ export default function WeekView({
                   type="button"
                   onClick={() => onOpenTask(item)}
                   title={supplier ? `${item.title} — ${supplier.name}` : item.title}
-                  className={`flex h-5 items-center truncate rounded-md px-2 text-xs transition-colors hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${barClasses}`}
+                  className={`flex h-5 items-center truncate rounded-md px-2 text-xs ring-1 ring-transparent transition-all hover:ring-blush-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:hover:ring-blush-400/40 dark:focus-visible:ring-paper-100 ${barClasses}`}
                   style={{
                     gridColumnStart: startCol + 1,
                     gridColumnEnd: `span ${span}`,
@@ -299,53 +330,77 @@ export default function WeekView({
        *    week change we scroll to 06:00 so the morning–evening planning
        *    window opens by default. Users can swipe up/down to reach
        *    night hours. ────────────────────────────────────────────── */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]"
+        style={{ scrollbarWidth: "thin" }}
+      >
         <div
           className="grid"
           style={{ gridTemplateColumns: `${GUTTER_WIDTH_PX}px repeat(7, minmax(0, 1fr))` }}
         >
           <div
-            className="grid"
+            className="grid border-r border-paper-200 dark:border-umber-700"
             style={{ gridTemplateRows: `repeat(${DAY_HOURS}, ${HOUR_PX}px)` }}
+            aria-hidden="true"
           >
             {hourLabels.map((h) => (
               <div
                 key={h}
-                className="border-t border-paper-200 pr-2 text-right text-[11px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
+                className="border-t border-paper-200 pr-2 text-right text-[11px] leading-none text-ink-500 tabular-nums dark:border-umber-700 dark:text-umber-300"
               >
-                <span className="-translate-y-1/2 inline-block">
+                <span className={`-translate-y-1/2 inline-block ${h === 12 ? "font-medium" : ""}`}>
                   {h.toString().padStart(2, "0")}:00
                 </span>
               </div>
             ))}
           </div>
 
-          {days.map((d, i) => (
-            <div
-              key={d.toISOString()}
-              className="relative grid border-l border-paper-200 dark:border-umber-700"
-              style={{ gridTemplateRows: `repeat(${DAY_HOURS}, ${HOUR_PX}px)` }}
-            >
-              {hourLabels.map((h) => (
-                <div key={h} className="border-t border-paper-200 dark:border-umber-700" />
-              ))}
+          {days.map((d, i) => {
+            const weekend = WEEKEND_COLS[i] === true;
+            return (
+              <div
+                key={d.toISOString()}
+                className={`relative grid border-l border-paper-200 dark:border-umber-700 ${
+                  weekend ? "bg-paper-100/30 dark:bg-umber-900/30" : ""
+                }`}
+                style={{ gridTemplateRows: `repeat(${DAY_HOURS}, ${HOUR_PX}px)` }}
+              >
+                {hourLabels.map((h) => (
+                  <div key={h} className="relative border-t border-paper-200 dark:border-umber-700">
+                    {/* Half-hour rule — fainter than the full-hour border so
+                        the grid reads as a real calendar without busywork. */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-paper-200/50 dark:bg-umber-700/40"
+                    />
+                  </div>
+                ))}
 
-              {showNow && i === todayCol && (
-                <div
-                  className="pointer-events-none absolute left-0 right-0 z-10"
-                  style={{ top: `${nowTopPx}px` }}
-                  aria-label={todayAriaLabel}
-                  title={todayAriaLabel}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blush-500"
-                  />
-                  <div className="h-0.5 w-full bg-blush-500" />
-                </div>
-              )}
-            </div>
-          ))}
+                {showNow && i === todayCol && (
+                  <div
+                    className="pointer-events-none absolute right-0 left-0 z-10"
+                    style={{ top: `${nowTopPx}px` }}
+                    aria-label={todayAriaLabel}
+                    aria-live="polite"
+                    title={todayAriaLabel}
+                  >
+                    {/* Soft blush halo underlay — token-driven alternative to
+                        a raw rgba shadow so the glow obeys the palette. */}
+                    <div
+                      aria-hidden="true"
+                      className="-translate-y-1/2 absolute inset-x-0 top-1/2 h-3 bg-blush-500/30 blur-md"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-0 h-2.5 w-2.5 rounded-full bg-blush-500 ring-2 ring-blush-300/60"
+                    />
+                    <div className="h-0.5 w-full bg-blush-500" />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
