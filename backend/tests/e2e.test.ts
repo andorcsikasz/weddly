@@ -396,11 +396,10 @@ describe("auth (google)", () => {
       email: "alice@example.com",
       name: "Alice Example",
     });
-    const r = await req<{ token: string; user: { id: number; email: string; verified_email: boolean } }>(
-      "POST",
-      "/api/auth/google",
-      { credential, privacy_version: PRIVACY_VERSION },
-    );
+    const r = await req<{
+      token: string;
+      user: { id: number; email: string; verified_email: boolean };
+    }>("POST", "/api/auth/google", { credential, privacy_version: PRIVACY_VERSION });
     expect(r.status).toBe(201);
     expect(r.data.user.email).toBe("alice@example.com");
     expect(r.data.user.verified_email).toBe(true);
@@ -431,7 +430,11 @@ describe("auth (google)", () => {
   test("second Google sign-in for the same account just logs in", async () => {
     wipeAll();
     const { mintTestBearer } = await importMint();
-    const credential = mintTestBearer({ sub: "google-sub-bbb", email: "bob@example.com", name: "Bob" });
+    const credential = mintTestBearer({
+      sub: "google-sub-bbb",
+      email: "bob@example.com",
+      name: "Bob",
+    });
     const first = await req<{ user: { id: number } }>("POST", "/api/auth/google", {
       credential,
       privacy_version: PRIVACY_VERSION,

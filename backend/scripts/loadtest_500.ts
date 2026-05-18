@@ -216,12 +216,7 @@ const flows: Record<string, Flow> = {
     await req("GET", "/api/suppliers", undefined, token);
     await req("GET", "/api/supplier-categories", undefined, token);
     await req("GET", "/api/picks", undefined, token);
-    await req(
-      "PUT",
-      "/api/picks/venue",
-      { supplier_id: "normafa-rendezvenyhaz" },
-      token,
-    );
+    await req("PUT", "/api/picks/venue", { supplier_id: "normafa-rendezvenyhaz" }, token);
     await req("GET", "/api/picks", undefined, token);
   },
 };
@@ -262,7 +257,9 @@ async function main() {
       tasks.push(runFlow(bucket, flow, i));
     }
   }
-  console.log(`\nLaunching ${tasks.length} users (${Object.keys(flows).length} flows × ${PERSONAS_PER_BUCKET}) in parallel…\n`);
+  console.log(
+    `\nLaunching ${tasks.length} users (${Object.keys(flows).length} flows × ${PERSONAS_PER_BUCKET}) in parallel…\n`,
+  );
   const t0 = performance.now();
   const results = await Promise.all(tasks);
   const wallMs = performance.now() - t0;
@@ -302,10 +299,7 @@ async function main() {
   }
   rows.sort((a, b) => b.p95 - a.p95);
 
-  console.log(
-    "endpoint".padEnd(46) +
-      "n    err   p50   p95   p99   max  flag",
-  );
+  console.log("endpoint".padEnd(46) + "n    err   p50   p95   p99   max  flag");
   console.log("─".repeat(92));
   for (const r of rows) {
     console.log(
@@ -320,9 +314,7 @@ async function main() {
   const freezes = rows.filter((r) => r.flag === "FREEZE");
   const slow = rows.filter((r) => r.flag === "SLOW");
   const errs = rows.filter((r) => r.flag === "ERR");
-  console.log(
-    `\nUX assessment under ${ok}-user load (wall ${(wallMs / 1000).toFixed(2)}s):`,
-  );
+  console.log(`\nUX assessment under ${ok}-user load (wall ${(wallMs / 1000).toFixed(2)}s):`);
   console.log(`  FREEZE candidates (p95 ≥ 1000ms): ${freezes.length}`);
   for (const r of freezes) {
     console.log(`    • ${r.endpoint}  — p95 ${fmt(r.p95)}ms, p99 ${fmt(r.p99)}ms, n=${r.n}`);

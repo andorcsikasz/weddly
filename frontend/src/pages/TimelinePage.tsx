@@ -365,9 +365,7 @@ function PocCard({
         </ul>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-start gap-3 px-5 py-6">
-          <p className="text-sm text-ink-600 dark:text-umber-200">
-            {t("timeline.poc_empty")}
-          </p>
+          <p className="text-sm text-ink-600 dark:text-umber-200">{t("timeline.poc_empty")}</p>
           <Link
             to="/app/suppliers"
             className="inline-flex items-center gap-1.5 rounded-full bg-blush-500 px-3.5 py-1.5 text-xs font-medium text-paper-50 transition-colors hover:bg-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100"
