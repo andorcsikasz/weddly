@@ -1040,6 +1040,11 @@ export interface LocaleMessages {
     todo_empty_cta: string;
     todo_check_aria: string;
     todo_uncheck_aria: string;
+    /** Inline "Add a task" input shown under the todo list (and in the empty
+     *  state) — placeholder doubles as the field's aria-label, the aria
+     *  string covers the submit button. */
+    todo_add_placeholder: string;
+    todo_add_aria: string;
     /** Header tiles (days / destination / budget). */
     tile_days: string;
     tile_destination: string;
@@ -1075,6 +1080,9 @@ export interface LocaleMessages {
     costs_sub: string;
     costs_empty_title: string;
     costs_empty_body: string;
+    /** Compact one-line variant used when the empty state shares a row with
+     *  the preset chips — drop the long "kezdd egy kategóriával…" copy. */
+    costs_empty_short: string;
     /** Per-card "spent so far" inline label. Receives `{actual}` pre-formatted. */
     cost_actual_inline: string;
     /** Aria-label for the per-card range slider. Receives `{label}`. */

@@ -995,6 +995,8 @@ const en: LocaleMessages = {
     todo_empty_cta: "Open Planning",
     todo_check_aria: "Mark as done",
     todo_uncheck_aria: "Mark as not done",
+    todo_add_placeholder: "Add a honeymoon task…",
+    todo_add_aria: "Add task",
     tile_days: "Days",
     tile_destination: "Where",
     tile_budget: "Allocated budget",
@@ -1022,6 +1024,7 @@ const en: LocaleMessages = {
     costs_empty_title: "No costs yet",
     costs_empty_body:
       "Start with a category — travel, accommodation, food, activities. You can edit the planned amount any time.",
+    costs_empty_short: "Start with a category:",
     cost_actual_inline: "Spent: {actual}",
     slider_aria: "{label} planned amount",
     preset: {

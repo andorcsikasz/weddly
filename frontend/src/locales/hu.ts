@@ -996,6 +996,8 @@ const hu: LocaleMessages = {
     todo_empty_cta: "Tervezés megnyitása",
     todo_check_aria: "Jelölés késznek",
     todo_uncheck_aria: "Visszajelölés",
+    todo_add_placeholder: "Új nászúti teendő…",
+    todo_add_aria: "Teendő hozzáadása",
     tile_days: "Hány nap",
     tile_destination: "Hova",
     tile_budget: "Tervezett keret",
@@ -1024,6 +1026,7 @@ const hu: LocaleMessages = {
     costs_empty_title: "Még nincs költség",
     costs_empty_body:
       "Kezdd egy kategóriával — utazás, szállás, étkezés, programok. A tervezett összeget bármikor szerkesztheted.",
+    costs_empty_short: "Kezdd egy kategóriával:",
     cost_actual_inline: "Eddig: {actual}",
     slider_aria: "{label} tervezett összeg",
     preset: {

@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   MapPin,
   Plane,
+  Plus,
   ShieldCheck,
   Trash2,
   UtensilsCrossed,
@@ -261,6 +262,17 @@ export default function HoneymoonPage() {
     }
   }
 
+  async function addHoneymoonTask(title: string): Promise<boolean> {
+    try {
+      const r = await planningApi.create({ kind: "task", topic: "honeymoon", title });
+      setHoneymoonTasks((prev) => [...prev, r.item]);
+      return true;
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      return false;
+    }
+  }
+
   useEffect(() => {
     refresh();
   }, []);
@@ -491,14 +503,15 @@ export default function HoneymoonPage() {
         </div>
 
         {honeymoonLines.length === 0 ? (
-          <div className="card flex flex-col items-start gap-4 text-left">
-            <div>
-              <h3 className="font-serif text-lg">{t("honeymoon.costs_empty_title")}</h3>
-              <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
-                {t("honeymoon.costs_empty_body")}
-              </p>
-            </div>
-            <PresetChips onPick={addPreset} usedIds={usedPresetIds} />
+          // Compact empty state — short prompt + the chips inline so the
+          // section doesn't take a tall card just to say "no rows yet". The
+          // chips already carry "Utazás / Szállás / ..." copy, so the body
+          // line is reduced to the action verb only.
+          <div className="card flex flex-wrap items-center gap-3 !p-4 text-left">
+            <p className="text-sm text-ink-700 dark:text-paper-100">
+              {t("honeymoon.costs_empty_short")}
+            </p>
+            <PresetChips onPick={addPreset} usedIds={usedPresetIds} compact />
           </div>
         ) : (
           <div className="card overflow-hidden p-0">
@@ -529,7 +542,11 @@ export default function HoneymoonPage() {
         )}
       </section>
 
-      <HoneymoonTodoSection items={honeymoonTasks} onToggle={toggleTaskDone} />
+      <HoneymoonTodoSection
+        items={honeymoonTasks}
+        onToggle={toggleTaskDone}
+        onAdd={addHoneymoonTask}
+      />
     </>
   );
 }
@@ -1027,7 +1044,7 @@ function PresetChips({
                 : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:text-blush-300"
             }
           >
-            <Icon size={14} aria-hidden="true" />
+            <Icon size={18} aria-hidden="true" />
             {t(`honeymoon.preset.${p.id}`)}
           </button>
         );
@@ -1241,12 +1258,59 @@ function FlightEstimateCard({
 function HoneymoonTodoSection({
   items,
   onToggle,
+  onAdd,
 }: {
   items: PlanningItem[];
   onToggle: (item: PlanningItem) => Promise<void>;
+  /** Create a new honeymoon-topic task with the given title. Returns true on
+   *  success so the inline form can clear its input; false leaves the typed
+   *  value in place so the user can retry without re-typing. */
+  onAdd: (title: string) => Promise<boolean>;
 }) {
   const { t } = useT();
   const done = items.filter((i) => i.done).length;
+  const [draft, setDraft] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = draft.trim();
+    if (!trimmed || submitting) return;
+    setSubmitting(true);
+    try {
+      const ok = await onAdd(trimmed);
+      if (ok) setDraft("");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  /** Single-line "+ Add a task" form. Used in both the empty state and at the
+   *  bottom of the list so the affordance is always visible. */
+  const addForm = (
+    <form onSubmit={submit} className="flex items-center gap-2">
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder={t("honeymoon.todo_add_placeholder")}
+        aria-label={t("honeymoon.todo_add_placeholder")}
+        disabled={submitting}
+        maxLength={200}
+        className="input h-9 min-h-0 flex-1 py-1 text-sm"
+      />
+      <button
+        type="submit"
+        disabled={!draft.trim() || submitting}
+        aria-label={t("honeymoon.todo_add_aria")}
+        title={t("honeymoon.todo_add_aria")}
+        className="btn-primary inline-flex h-9 w-9 items-center justify-center !p-0"
+      >
+        <Plus size={16} aria-hidden="true" />
+      </button>
+    </form>
+  );
+
   return (
     <section className="mt-8">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
@@ -1266,52 +1330,55 @@ function HoneymoonTodoSection({
         </Link>
       </div>
       {items.length === 0 ? (
-        <div className="card text-sm text-ink-700 dark:text-paper-100">
-          <p>{t("honeymoon.todo_empty_body")}</p>
-          <Link to="/app/planning" className="btn-outline btn-sm mt-3 inline-flex">
-            {t("honeymoon.todo_empty_cta")}
-          </Link>
+        <div className="card !p-4">
+          <p className="text-sm text-ink-700 dark:text-paper-100">
+            {t("honeymoon.todo_empty_body")}
+          </p>
+          <div className="mt-3">{addForm}</div>
         </div>
       ) : (
-        <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-paper-50 dark:hover:bg-umber-700/40"
-            >
-              <button
-                type="button"
-                onClick={() => onToggle(item)}
-                aria-pressed={item.done}
-                aria-label={
-                  item.done ? t("honeymoon.todo_uncheck_aria") : t("honeymoon.todo_check_aria")
-                }
-                className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
-                  item.done
-                    ? "border-sage-500 bg-sage-500 text-white dark:border-sage-400 dark:bg-sage-400 dark:text-umber-900"
-                    : "border-paper-300 bg-paper-50 text-transparent hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800"
-                }`}
+        <div className="card p-0">
+          <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-paper-50 dark:hover:bg-umber-700/40"
               >
-                <Check size={14} aria-hidden="true" />
-              </button>
-              <p
-                className={`min-w-0 flex-1 truncate text-sm ${
-                  item.done
-                    ? "text-ink-400 line-through dark:text-umber-300"
-                    : "text-ink-900 dark:text-paper-50"
-                }`}
-                title={item.title}
-              >
-                {item.title}
-              </p>
-              {item.assignee && (
-                <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
-                  {item.assignee}
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
+                <button
+                  type="button"
+                  onClick={() => onToggle(item)}
+                  aria-pressed={item.done}
+                  aria-label={
+                    item.done ? t("honeymoon.todo_uncheck_aria") : t("honeymoon.todo_check_aria")
+                  }
+                  className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
+                    item.done
+                      ? "border-sage-500 bg-sage-500 text-white dark:border-sage-400 dark:bg-sage-400 dark:text-umber-900"
+                      : "border-paper-300 bg-paper-50 text-transparent hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800"
+                  }`}
+                >
+                  <Check size={14} aria-hidden="true" />
+                </button>
+                <p
+                  className={`min-w-0 flex-1 truncate text-sm ${
+                    item.done
+                      ? "text-ink-400 line-through dark:text-umber-300"
+                      : "text-ink-900 dark:text-paper-50"
+                  }`}
+                  title={item.title}
+                >
+                  {item.title}
+                </p>
+                {item.assignee && (
+                  <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
+                    {item.assignee}
+                  </span>
+                )}
+              </li>
+            ))}
+            <li className="px-4 py-2.5">{addForm}</li>
+          </ul>
+        </div>
       )}
     </section>
   );
