@@ -80,12 +80,7 @@ describe("guests: validation + filter", () => {
   test("POST /api/guests rejects full_name longer than 200 chars", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("g-toolong@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/guests",
-      { full_name: "x".repeat(201) },
-      { token },
-    );
+    const r = await req("POST", "/api/guests", { full_name: "x".repeat(201) }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -194,9 +189,14 @@ describe("guests: validation + filter", () => {
     wipeAll();
     const { token } = await bootstrapCouple("g-combo@weddly.test");
     await req("POST", "/api/guests", { full_name: "Anna Smith", group_tag: "work" }, { token });
-    await req("POST", "/api/guests", { full_name: "Anna Jones", group_tag: "her_family" }, {
-      token,
-    });
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna Jones", group_tag: "her_family" },
+      {
+        token,
+      },
+    );
     await req("POST", "/api/guests", { full_name: "Bob Smith", group_tag: "work" }, { token });
     const r = await req<{ guests: { full_name: string }[] }>(
       "GET",
@@ -424,12 +424,9 @@ describe("guests: CSV import", () => {
     const csv = "full_name,group_tag\nAnna,mars_family";
     const r = await req("POST", "/api/guests/import", { csv }, { token });
     expect(r.status).toBe(201);
-    const list = await req<{ guests: { group_tag: string }[] }>(
-      "GET",
-      "/api/guests",
-      undefined,
-      { token },
-    );
+    const list = await req<{ guests: { group_tag: string }[] }>("GET", "/api/guests", undefined, {
+      token,
+    });
     expect(list.data.guests[0]!.group_tag).toBe("other");
   });
 
@@ -835,12 +832,9 @@ describe("guests: auth + cross-couple isolation", () => {
       { full_name: "B's Aunt" },
       { token: b.token },
     );
-    const r = await req(
-      "DELETE",
-      `/api/guests/${bGuest.data.guest.id}`,
-      undefined,
-      { token: a.token },
-    );
+    const r = await req("DELETE", `/api/guests/${bGuest.data.guest.id}`, undefined, {
+      token: a.token,
+    });
     expect(r.status).toBe(404);
   });
 
@@ -851,16 +845,10 @@ describe("guests: auth + cross-couple isolation", () => {
     await req("POST", "/api/guests", { full_name: "A-Guest-1" }, { token: a.token });
     await req("POST", "/api/guests", { full_name: "B-Guest-1" }, { token: b.token });
     await req("POST", "/api/guests", { full_name: "B-Guest-2" }, { token: b.token });
-    const bList = await req<{ guests: { full_name: string }[] }>(
-      "GET",
-      "/api/guests",
-      undefined,
-      { token: b.token },
-    );
-    expect(bList.data.guests.map((g) => g.full_name).sort()).toEqual([
-      "B-Guest-1",
-      "B-Guest-2",
-    ]);
+    const bList = await req<{ guests: { full_name: string }[] }>("GET", "/api/guests", undefined, {
+      token: b.token,
+    });
+    expect(bList.data.guests.map((g) => g.full_name).sort()).toEqual(["B-Guest-1", "B-Guest-2"]);
   });
 });
 
@@ -884,12 +872,7 @@ describe("households: validation + delete guard", () => {
   test("POST /api/households rejects label longer than 200 chars", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("hh-toolong@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/households",
-      { label: "x".repeat(201) },
-      { token },
-    );
+    const r = await req("POST", "/api/households", { label: "x".repeat(201) }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -1093,12 +1076,9 @@ describe("households: validation + delete guard", () => {
       { label: "B-Only" },
       { token: b.token },
     );
-    const r = await req(
-      "DELETE",
-      `/api/households/${bHh.data.household.id}`,
-      undefined,
-      { token: a.token },
-    );
+    const r = await req("DELETE", `/api/households/${bHh.data.household.id}`, undefined, {
+      token: a.token,
+    });
     expect(r.status).toBe(404);
   });
 
@@ -1169,14 +1149,8 @@ describe("rsvp lookup: validation + rate limit", () => {
     await req("POST", "/api/guests", { full_name: "Anna" }, { token });
     const slug = await getSlug(token);
     const code = (await listHouseholds(token))[0]!.code;
-    const upper = await req(
-      "GET",
-      `/api/rsvp/lookup?couple=${slug.toUpperCase()}&code=${code}`,
-    );
-    const lower = await req(
-      "GET",
-      `/api/rsvp/lookup?couple=${slug.toLowerCase()}&code=${code}`,
-    );
+    const upper = await req("GET", `/api/rsvp/lookup?couple=${slug.toUpperCase()}&code=${code}`);
+    const lower = await req("GET", `/api/rsvp/lookup?couple=${slug.toLowerCase()}&code=${code}`);
     expect(upper.status).toBe(200);
     expect(lower.status).toBe(200);
   });
@@ -1536,12 +1510,9 @@ describe("rsvp checkin: validation + idempotency + isolation", () => {
     const second = await fetch(`${BASE}/api/rsvp/checkin`, { method: "POST", headers, body });
     expect(second.status).toBe(200);
     expect(second.headers.get("idempotent-replay")).toBe("1");
-    const list = await req<{ guests: { full_name: string }[] }>(
-      "GET",
-      "/api/guests",
-      undefined,
-      { token },
-    );
+    const list = await req<{ guests: { full_name: string }[] }>("GET", "/api/guests", undefined, {
+      token,
+    });
     const adds = list.data.guests.filter((g) => g.full_name === "Plus-One-Hash");
     expect(adds.length).toBe(1);
   });
@@ -1934,10 +1905,7 @@ describe("guest portal: gate + isolation", () => {
       household_code: hh.code,
       members: [{ guest_id: g.data.guest.id, rsvp_status: "yes" }],
     });
-    const r = await req(
-      "GET",
-      `/api/guest/portal?couple=${slug.toLowerCase()}&code=${hh.code}`,
-    );
+    const r = await req("GET", `/api/guest/portal?couple=${slug.toLowerCase()}&code=${hh.code}`);
     expect(r.status).toBe(200);
   });
 
@@ -2020,12 +1988,7 @@ describe("households: cross-couple public lookup isolation", () => {
         "SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'household.regen_code'",
       )
       .get(coupleId) as { n: number };
-    await req(
-      "POST",
-      `/api/households/${hh.data.household.id}/regenerate-code`,
-      {},
-      { token },
-    );
+    await req("POST", `/api/households/${hh.data.household.id}/regenerate-code`, {}, { token });
     const after = db
       .prepare(
         "SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'household.regen_code'",

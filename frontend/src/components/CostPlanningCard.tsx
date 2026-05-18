@@ -881,9 +881,7 @@ function CategoryRowInner({
         {amountInner}
       </Link>
     ) : (
-      <span className={`stat-num block text-right text-xs ${amountColorClass}`}>
-        {amountInner}
-      </span>
+      <span className={`stat-num block text-right text-xs ${amountColorClass}`}>{amountInner}</span>
     );
 
   const trackEl = linkTo ? (

@@ -269,10 +269,7 @@ export default function QuarterView({
 
   return (
     <div className="flex h-full flex-col">
-      <div
-        className="grid flex-1"
-        style={{ gridTemplateRows: "repeat(3, minmax(0, 1fr))" }}
-      >
+      <div className="grid flex-1" style={{ gridTemplateRows: "repeat(3, minmax(0, 1fr))" }}>
         {rowSlices.map((slice, rowIdx) => {
           const layout = rowLayouts[rowIdx];
           const isLastRow = rowIdx === 2;
@@ -290,9 +287,7 @@ export default function QuarterView({
                       key={`filler-${rowIdx}-${colIdx}`}
                       className={`min-h-[100px] bg-paper-50/40 dark:bg-umber-900/40 ${
                         isLastCol ? "" : "border-r border-paper-200 dark:border-umber-700"
-                      } ${
-                        isLastRow ? "" : "border-b border-paper-200 dark:border-umber-700"
-                      }`}
+                      } ${isLastRow ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
                     />
                   );
                 }
@@ -314,9 +309,7 @@ export default function QuarterView({
                     key={`cell-${rowIdx}-${colIdx}`}
                     className={`relative min-h-[100px] transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-900/40 ${cellTint} ${todayRing} ${
                       isLastCol ? "" : "border-r border-paper-200 dark:border-umber-700"
-                    } ${
-                      isLastRow ? "" : "border-b border-paper-200 dark:border-umber-700"
-                    }`}
+                    } ${isLastRow ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
                   >
                     <div className="flex items-start justify-between px-2 pt-1">
                       <div className="flex items-baseline gap-1.5">

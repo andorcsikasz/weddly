@@ -217,7 +217,9 @@ describe("POST /api/auth/login — validation + errors", () => {
       password: "supersafe123",
       full_name: "Suspended",
     });
-    db.prepare("UPDATE users SET status = 'suspended' WHERE email = ?").run("suspended@example.com");
+    db.prepare("UPDATE users SET status = 'suspended' WHERE email = ?").run(
+      "suspended@example.com",
+    );
     const r = await req("POST", "/api/auth/login", {
       email: "suspended@example.com",
       password: "supersafe123",
@@ -261,7 +263,7 @@ describe("POST /api/auth/login — validation + errors", () => {
     const sixth = await req(
       "POST",
       "/api/auth/login",
-        { email: "ratelimit@example.com", password: "wrong-guess" },
+      { email: "ratelimit@example.com", password: "wrong-guess" },
       { clientIp: ip },
     );
     expect(sixth.status).toBe(429);
@@ -726,9 +728,9 @@ describe("POST /api/auth/forgot", () => {
   test("unknown email does NOT create a token row", async () => {
     wipeAll();
     await req("POST", "/api/auth/forgot", { email: "nobody2@example.test" });
-    const rows = db
-      .prepare("SELECT COUNT(*) AS n FROM password_reset_tokens")
-      .get() as { n: number };
+    const rows = db.prepare("SELECT COUNT(*) AS n FROM password_reset_tokens").get() as {
+      n: number;
+    };
     expect(rows.n).toBe(0);
   });
 
@@ -766,9 +768,7 @@ describe("POST /api/auth/forgot", () => {
     expect(tokenRow.consumed_at).toBeNull();
 
     const mail = db
-      .prepare(
-        "SELECT to_email FROM email_log WHERE kind = 'password_reset' AND to_email = ?",
-      )
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'password_reset' AND to_email = ?")
       .all("forgot-ok@example.com") as { to_email: string }[];
     expect(mail.length).toBe(1);
   });
@@ -1066,15 +1066,11 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("new request supersedes prior pending token (old is deleted)", async () => {
     wipeAll();
-    const reg = await req<{ token: string; user: { id: number } }>(
-      "POST",
-      "/api/auth/register",
-      {
-        email: "ce-super@example.com",
-        password: "supersafe123",
-        full_name: "CE",
-      },
-    );
+    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+      email: "ce-super@example.com",
+      password: "supersafe123",
+      full_name: "CE",
+    });
     await req(
       "POST",
       "/api/auth/change-email-request",
@@ -1217,15 +1213,11 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
 
   test("confirm flips users.email + verified_email = 1", async () => {
     wipeAll();
-    const reg = await req<{ token: string; user: { id: number } }>(
-      "POST",
-      "/api/auth/register",
-      {
-        email: "ce-flip@example.com",
-        password: "supersafe123",
-        full_name: "Flip",
-      },
-    );
+    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+      email: "ce-flip@example.com",
+      password: "supersafe123",
+      full_name: "Flip",
+    });
     await req(
       "POST",
       "/api/auth/change-email-request",
@@ -1233,9 +1225,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
       { token: reg.data.token },
     );
     const tokenRow = db
-      .prepare(
-        "SELECT token FROM email_change_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1",
-      )
+      .prepare("SELECT token FROM email_change_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1")
       .get(reg.data.user.id) as { token: string };
     const r = await req<{ ok: true; email: string }>(
       "POST",
@@ -1316,12 +1306,7 @@ describe("POST /api/account/email-preferences", () => {
       password: "supersafe123",
       full_name: "Prefs",
     });
-    const r = await req(
-      "POST",
-      "/api/account/email-preferences",
-      {},
-      { token: reg.data.token },
-    );
+    const r = await req("POST", "/api/account/email-preferences", {}, { token: reg.data.token });
     expect(r.status).toBe(400);
   });
 
@@ -1557,11 +1542,7 @@ describe("POST /api/auth/google", () => {
       name: "Link",
     });
     // Link path doesn't need privacy_version (existing user) — leave it off.
-    const r = await req<{ user: { id: number } }>(
-      "POST",
-      "/api/auth/google",
-      { credential },
-    );
+    const r = await req<{ user: { id: number } }>("POST", "/api/auth/google", { credential });
     expect(r.status).toBe(200);
     expect(r.data.user.id).toBe(reg.data.user.id);
     const row = db
@@ -1627,9 +1608,9 @@ describe("POST /api/auth/google", () => {
       password: "supersafe123",
       full_name: "Susp",
     });
-    db.prepare(
-      "UPDATE users SET status = 'suspended', verified_email = 1 WHERE email = ?",
-    ).run("g-susp-email@example.com");
+    db.prepare("UPDATE users SET status = 'suspended', verified_email = 1 WHERE email = ?").run(
+      "g-susp-email@example.com",
+    );
     const { mintTestBearer } = await importMint();
     const credential = mintTestBearer({
       sub: "g-susp-email-001",

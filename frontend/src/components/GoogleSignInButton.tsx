@@ -203,7 +203,8 @@ export function GoogleSignInButton({
           gsi.prompt((n) => {
             if (import.meta.env.DEV) {
               const reasons: string[] = [];
-              if (n.isNotDisplayed?.()) reasons.push(`not_displayed:${n.getNotDisplayedReason?.()}`);
+              if (n.isNotDisplayed?.())
+                reasons.push(`not_displayed:${n.getNotDisplayedReason?.()}`);
               if (n.isSkippedMoment?.()) reasons.push(`skipped:${n.getSkippedReason?.()}`);
               if (n.isDismissedMoment?.()) reasons.push(`dismissed:${n.getDismissedReason?.()}`);
               if (reasons.length > 0) console.debug("[gsi] one-tap", reasons.join(" "));

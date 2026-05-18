@@ -30,7 +30,14 @@ function demoWeddingDate(): string {
 
 interface GuestSeed {
   full_name: string;
-  group_tag: "his_family" | "her_family" | "his_friends" | "her_friends" | "shared_friends" | "work" | "other";
+  group_tag:
+    | "his_family"
+    | "her_family"
+    | "his_friends"
+    | "her_friends"
+    | "shared_friends"
+    | "work"
+    | "other";
   kind: "adult" | "child" | "baby";
   rsvp_status: "pending" | "yes" | "no" | "maybe";
   meal_choice: "meat" | "fish" | "vegetarian" | "vegan" | "child" | "none" | null;
@@ -298,20 +305,104 @@ const BUDGET_LINES: Array<{
   actual: number;
   notes: string | null;
 }> = [
-  { category: "venue", label: "Swamp clearing + ogre-sized marquee", planned: 3_200_000, actual: 1_500_000, notes: "Includes onion-field rental." },
-  { category: "catering", label: "Far Far Away catering — onion-forward menu", planned: 2_400_000, actual: 800_000, notes: null },
-  { category: "drinks", label: "Bog-water bar + mead pairings", planned: 720_000, actual: 250_000, notes: null },
-  { category: "attire", label: "Ogre-cut wedding dress + Shrek's vest", planned: 950_000, actual: 950_000, notes: "Tailor: Wolf in Granny's Clothes." },
-  { category: "decor_floral", label: "Swamp lilies + fire-resistant garlands", planned: 700_000, actual: 200_000, notes: "Dragon-proof centrepieces." },
-  { category: "photo_video", label: "Magic Mirror live broadcast", planned: 1_200_000, actual: 1_200_000, notes: "Books fast — Mirror is in high demand." },
-  { category: "music_dj", label: "DJ Donkey & the Three Pigs (live)", planned: 600_000, actual: 600_000, notes: "Setlist negotiated." },
-  { category: "cake_dessert", label: "Seven-tier ogre cake + Gingy croquembouche", planned: 360_000, actual: 0, notes: "Order 6 weeks out." },
-  { category: "hair_makeup", label: "Royal grooming — Fiona prep", planned: 240_000, actual: 0, notes: null },
-  { category: "transport", label: "Donkey shuttle service", planned: 360_000, actual: 360_000, notes: "Round trips. Loud. Reliable." },
-  { category: "honeymoon", label: "Honeymoon — Honeymoon Isle (the literal one)", planned: 720_000, actual: 0, notes: null },
-  { category: "stationery", label: "Scroll-style invites + place cards", planned: 220_000, actual: 220_000, notes: null },
-  { category: "favours", label: "Onion-themed favours (peeling guide included)", planned: 110_000, actual: 0, notes: null },
-  { category: "rings", label: "Wedding bands — solid iron", planned: 240_000, actual: 240_000, notes: "Resized for ogre fingers." },
+  {
+    category: "venue",
+    label: "Swamp clearing + ogre-sized marquee",
+    planned: 3_200_000,
+    actual: 1_500_000,
+    notes: "Includes onion-field rental.",
+  },
+  {
+    category: "catering",
+    label: "Far Far Away catering — onion-forward menu",
+    planned: 2_400_000,
+    actual: 800_000,
+    notes: null,
+  },
+  {
+    category: "drinks",
+    label: "Bog-water bar + mead pairings",
+    planned: 720_000,
+    actual: 250_000,
+    notes: null,
+  },
+  {
+    category: "attire",
+    label: "Ogre-cut wedding dress + Shrek's vest",
+    planned: 950_000,
+    actual: 950_000,
+    notes: "Tailor: Wolf in Granny's Clothes.",
+  },
+  {
+    category: "decor_floral",
+    label: "Swamp lilies + fire-resistant garlands",
+    planned: 700_000,
+    actual: 200_000,
+    notes: "Dragon-proof centrepieces.",
+  },
+  {
+    category: "photo_video",
+    label: "Magic Mirror live broadcast",
+    planned: 1_200_000,
+    actual: 1_200_000,
+    notes: "Books fast — Mirror is in high demand.",
+  },
+  {
+    category: "music_dj",
+    label: "DJ Donkey & the Three Pigs (live)",
+    planned: 600_000,
+    actual: 600_000,
+    notes: "Setlist negotiated.",
+  },
+  {
+    category: "cake_dessert",
+    label: "Seven-tier ogre cake + Gingy croquembouche",
+    planned: 360_000,
+    actual: 0,
+    notes: "Order 6 weeks out.",
+  },
+  {
+    category: "hair_makeup",
+    label: "Royal grooming — Fiona prep",
+    planned: 240_000,
+    actual: 0,
+    notes: null,
+  },
+  {
+    category: "transport",
+    label: "Donkey shuttle service",
+    planned: 360_000,
+    actual: 360_000,
+    notes: "Round trips. Loud. Reliable.",
+  },
+  {
+    category: "honeymoon",
+    label: "Honeymoon — Honeymoon Isle (the literal one)",
+    planned: 720_000,
+    actual: 0,
+    notes: null,
+  },
+  {
+    category: "stationery",
+    label: "Scroll-style invites + place cards",
+    planned: 220_000,
+    actual: 220_000,
+    notes: null,
+  },
+  {
+    category: "favours",
+    label: "Onion-themed favours (peeling guide included)",
+    planned: 110_000,
+    actual: 0,
+    notes: null,
+  },
+  {
+    category: "rings",
+    label: "Wedding bands — solid iron",
+    planned: 240_000,
+    actual: 240_000,
+    notes: "Resized for ogre fingers.",
+  },
 ];
 
 interface SchedSeed {
@@ -323,17 +414,83 @@ interface SchedSeed {
 }
 
 const SCHEDULE_EVENTS: SchedSeed[] = [
-  { label: "Donkey arrives (early — as always)", starts_at_minutes: 9 * 60, duration_minutes: 30, location: "Swamp gate", notes: "Bring his own coffee." },
-  { label: "Hair & makeup — Fiona", starts_at_minutes: 10 * 60, duration_minutes: 90, location: "The royal tent", notes: null },
-  { label: "Guest arrivals + welcome drinks", starts_at_minutes: 14 * 60, duration_minutes: 60, location: "Swamp clearing", notes: "Mead on tap." },
-  { label: "Ceremony — Shrek + Fiona", starts_at_minutes: 15 * 60 + 30, duration_minutes: 45, location: "Onion arch", notes: "Magic Mirror live-broadcasts." },
-  { label: "Photos (Magic Mirror)", starts_at_minutes: 16 * 60 + 30, duration_minutes: 60, location: "Far Far Away meadow", notes: null },
-  { label: "Dinner served", starts_at_minutes: 18 * 60, duration_minutes: 120, location: "Marquee", notes: null },
-  { label: "First dance", starts_at_minutes: 20 * 60 + 30, duration_minutes: 15, location: "Dance floor", notes: '"I\'m a Believer"' },
-  { label: "Best-man speech (Donkey)", starts_at_minutes: 21 * 60, duration_minutes: 20, location: "Marquee", notes: "Hard cap: 20 min. (Likely will run over.)" },
-  { label: "Cake cutting — seven-tier ogre cake", starts_at_minutes: 21 * 60 + 30, duration_minutes: 15, location: "Marquee", notes: null },
-  { label: "Dance floor opens (DJ Donkey)", starts_at_minutes: 22 * 60, duration_minutes: 180, location: "Marquee", notes: null },
-  { label: "Last call + Donkey shuttle departs", starts_at_minutes: 25 * 60, duration_minutes: 30, location: "Swamp gate", notes: "Past midnight — day-2 row." },
+  {
+    label: "Donkey arrives (early — as always)",
+    starts_at_minutes: 9 * 60,
+    duration_minutes: 30,
+    location: "Swamp gate",
+    notes: "Bring his own coffee.",
+  },
+  {
+    label: "Hair & makeup — Fiona",
+    starts_at_minutes: 10 * 60,
+    duration_minutes: 90,
+    location: "The royal tent",
+    notes: null,
+  },
+  {
+    label: "Guest arrivals + welcome drinks",
+    starts_at_minutes: 14 * 60,
+    duration_minutes: 60,
+    location: "Swamp clearing",
+    notes: "Mead on tap.",
+  },
+  {
+    label: "Ceremony — Shrek + Fiona",
+    starts_at_minutes: 15 * 60 + 30,
+    duration_minutes: 45,
+    location: "Onion arch",
+    notes: "Magic Mirror live-broadcasts.",
+  },
+  {
+    label: "Photos (Magic Mirror)",
+    starts_at_minutes: 16 * 60 + 30,
+    duration_minutes: 60,
+    location: "Far Far Away meadow",
+    notes: null,
+  },
+  {
+    label: "Dinner served",
+    starts_at_minutes: 18 * 60,
+    duration_minutes: 120,
+    location: "Marquee",
+    notes: null,
+  },
+  {
+    label: "First dance",
+    starts_at_minutes: 20 * 60 + 30,
+    duration_minutes: 15,
+    location: "Dance floor",
+    notes: '"I\'m a Believer"',
+  },
+  {
+    label: "Best-man speech (Donkey)",
+    starts_at_minutes: 21 * 60,
+    duration_minutes: 20,
+    location: "Marquee",
+    notes: "Hard cap: 20 min. (Likely will run over.)",
+  },
+  {
+    label: "Cake cutting — seven-tier ogre cake",
+    starts_at_minutes: 21 * 60 + 30,
+    duration_minutes: 15,
+    location: "Marquee",
+    notes: null,
+  },
+  {
+    label: "Dance floor opens (DJ Donkey)",
+    starts_at_minutes: 22 * 60,
+    duration_minutes: 180,
+    location: "Marquee",
+    notes: null,
+  },
+  {
+    label: "Last call + Donkey shuttle departs",
+    starts_at_minutes: 25 * 60,
+    duration_minutes: 30,
+    location: "Swamp gate",
+    notes: "Past midnight — day-2 row.",
+  },
 ];
 
 interface PlanningSeed {
@@ -348,17 +505,116 @@ interface PlanningSeed {
 }
 
 const PLANNING_ITEMS: PlanningSeed[] = [
-  { kind: "task", topic: "wedding", title: "Book the swamp", body: "Confirm with the Witch — onion fields included.", done: true, due_date: null, assignee: "Shrek", priority: 0 },
-  { kind: "task", topic: "wedding", title: "Hire Magic Mirror as photographer", body: "Negotiated rate.", done: true, due_date: null, assignee: "Fiona", priority: 0 },
-  { kind: "task", topic: "wedding", title: "Send invites", body: "Pinocchio is delivering by hand.", done: true, due_date: null, assignee: "Donkey", priority: 1 },
-  { kind: "task", topic: "wedding", title: "Final dress fitting", body: "Ogre-cut alteration — needs one more pass.", done: false, due_date: null, assignee: "Fiona", priority: 1 },
-  { kind: "task", topic: "wedding", title: "Confirm Donkey's speech length", body: "Cap at 20 min. (It will run over.)", done: false, due_date: null, assignee: "Shrek", priority: 2 },
-  { kind: "task", topic: "wedding", title: "Order the cake (seven tiers)", body: null, done: false, due_date: null, assignee: "Shrek", priority: 1 },
-  { kind: "task", topic: "wedding", title: "Chase Fairy Godmother for plus-one", body: "She RSVPed no — see if she'll bring Charming anyway.", done: false, due_date: null, assignee: "Fiona", priority: 0 },
-  { kind: "task", topic: "honeymoon", title: "Book Honeymoon Isle flights", body: "Round trip. Avoid Lord Farquaad's airline.", done: false, due_date: null, assignee: "Shrek", priority: 1 },
-  { kind: "idea", topic: "wedding", title: "Fireworks finale", body: "Dragon. Obviously.", done: false, due_date: null, assignee: null, priority: 0 },
-  { kind: "idea", topic: "wedding", title: "Skip the dance floor, do mud pit", body: "Floor optional.", done: false, due_date: null, assignee: null, priority: 0 },
-  { kind: "idea", topic: "wedding", title: "Onion bouquet instead of flowers", body: "Layers!", done: false, due_date: null, assignee: null, priority: 0 },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Book the swamp",
+    body: "Confirm with the Witch — onion fields included.",
+    done: true,
+    due_date: null,
+    assignee: "Shrek",
+    priority: 0,
+  },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Hire Magic Mirror as photographer",
+    body: "Negotiated rate.",
+    done: true,
+    due_date: null,
+    assignee: "Fiona",
+    priority: 0,
+  },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Send invites",
+    body: "Pinocchio is delivering by hand.",
+    done: true,
+    due_date: null,
+    assignee: "Donkey",
+    priority: 1,
+  },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Final dress fitting",
+    body: "Ogre-cut alteration — needs one more pass.",
+    done: false,
+    due_date: null,
+    assignee: "Fiona",
+    priority: 1,
+  },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Confirm Donkey's speech length",
+    body: "Cap at 20 min. (It will run over.)",
+    done: false,
+    due_date: null,
+    assignee: "Shrek",
+    priority: 2,
+  },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Order the cake (seven tiers)",
+    body: null,
+    done: false,
+    due_date: null,
+    assignee: "Shrek",
+    priority: 1,
+  },
+  {
+    kind: "task",
+    topic: "wedding",
+    title: "Chase Fairy Godmother for plus-one",
+    body: "She RSVPed no — see if she'll bring Charming anyway.",
+    done: false,
+    due_date: null,
+    assignee: "Fiona",
+    priority: 0,
+  },
+  {
+    kind: "task",
+    topic: "honeymoon",
+    title: "Book Honeymoon Isle flights",
+    body: "Round trip. Avoid Lord Farquaad's airline.",
+    done: false,
+    due_date: null,
+    assignee: "Shrek",
+    priority: 1,
+  },
+  {
+    kind: "idea",
+    topic: "wedding",
+    title: "Fireworks finale",
+    body: "Dragon. Obviously.",
+    done: false,
+    due_date: null,
+    assignee: null,
+    priority: 0,
+  },
+  {
+    kind: "idea",
+    topic: "wedding",
+    title: "Skip the dance floor, do mud pit",
+    body: "Floor optional.",
+    done: false,
+    due_date: null,
+    assignee: null,
+    priority: 0,
+  },
+  {
+    kind: "idea",
+    topic: "wedding",
+    title: "Onion bouquet instead of flowers",
+    body: "Layers!",
+    done: false,
+    due_date: null,
+    assignee: null,
+    priority: 0,
+  },
 ];
 
 /** Idempotent helper — generate a household code unique within this couple. */
@@ -402,10 +658,46 @@ interface SeatPlan {
 
 const SEAT_PLAN: SeatPlan = {
   tables: [
-    { label: "Head table", shape: "head", seats: 6, x_mm: 600, y_mm: 200, width_mm: 2400, length_mm: 900, is_kids_table: false },
-    { label: "Family — bride's side", shape: "round", seats: 8, x_mm: 300, y_mm: 1100, width_mm: 1500, length_mm: 1500, is_kids_table: false },
-    { label: "Best man's table", shape: "round", seats: 8, x_mm: 1800, y_mm: 1100, width_mm: 1500, length_mm: 1500, is_kids_table: false },
-    { label: "Friends — fairytale crowd", shape: "round", seats: 8, x_mm: 3300, y_mm: 1100, width_mm: 1500, length_mm: 1500, is_kids_table: false },
+    {
+      label: "Head table",
+      shape: "head",
+      seats: 6,
+      x_mm: 600,
+      y_mm: 200,
+      width_mm: 2400,
+      length_mm: 900,
+      is_kids_table: false,
+    },
+    {
+      label: "Family — bride's side",
+      shape: "round",
+      seats: 8,
+      x_mm: 300,
+      y_mm: 1100,
+      width_mm: 1500,
+      length_mm: 1500,
+      is_kids_table: false,
+    },
+    {
+      label: "Best man's table",
+      shape: "round",
+      seats: 8,
+      x_mm: 1800,
+      y_mm: 1100,
+      width_mm: 1500,
+      length_mm: 1500,
+      is_kids_table: false,
+    },
+    {
+      label: "Friends — fairytale crowd",
+      shape: "round",
+      seats: 8,
+      x_mm: 3300,
+      y_mm: 1100,
+      width_mm: 1500,
+      length_mm: 1500,
+      is_kids_table: false,
+    },
   ],
   seating: [
     {
@@ -797,7 +1089,9 @@ export function seedShrekDemo(coupleId: number): SeedResult {
          (couple_id, name, address, capacity, price_huf, link, contact, notes, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
-    const setGuestAcc = db.prepare("UPDATE guests SET accommodation_id = ?, updated_at = ? WHERE id = ?");
+    const setGuestAcc = db.prepare(
+      "UPDATE guests SET accommodation_id = ?, updated_at = ? WHERE id = ?",
+    );
     for (const a of ACCOMMODATIONS) {
       const r = insertAcc.run(
         coupleId,
@@ -825,7 +1119,9 @@ export function seedShrekDemo(coupleId: number): SeedResult {
          (couple_id, label, direction, depart_at, capacity, notes, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     );
-    const setGuestTransfer = db.prepare("UPDATE guests SET transfer_id = ?, updated_at = ? WHERE id = ?");
+    const setGuestTransfer = db.prepare(
+      "UPDATE guests SET transfer_id = ?, updated_at = ? WHERE id = ?",
+    );
     for (const t of TRANSFERS) {
       const r = insertTransfer.run(
         coupleId,

@@ -13,12 +13,7 @@ const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function addGuest(token: string, full_name = "Guest"): Promise<number> {
-  const r = await req<{ guest: { id: number } }>(
-    "POST",
-    "/api/guests",
-    { full_name },
-    { token },
-  );
+  const r = await req<{ guest: { id: number } }>("POST", "/api/guests", { full_name }, { token });
   expect(r.status).toBe(201);
   return r.data.guest.id;
 }
@@ -345,12 +340,7 @@ describe("seating tables: PATCH", () => {
   test("404 on unknown table id", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("st-patch-1@weddly.test");
-    const r = await req(
-      "PATCH",
-      "/api/seating/tables/9999999",
-      { label: "Anything" },
-      { token },
-    );
+    const r = await req("PATCH", "/api/seating/tables/9999999", { label: "Anything" }, { token });
     expect(r.status).toBe(404);
   });
 
@@ -443,9 +433,7 @@ describe("seating tables: DELETE", () => {
     const r = await req("DELETE", `/api/seating/tables/${t.id}`, undefined, { token });
     expect(r.status).toBe(200);
     const audit = db
-      .prepare(
-        "SELECT action FROM audit_log WHERE couple_id = ? AND action = 'table.delete'",
-      )
+      .prepare("SELECT action FROM audit_log WHERE couple_id = ? AND action = 'table.delete'")
       .all(coupleId) as { action: string }[];
     expect(audit.length).toBe(1);
   });
@@ -573,9 +561,7 @@ describe("seating: assign seats", () => {
     expect(rows.length).toBe(1);
     expect(rows[0]!.guest_id).toBe(b);
     // The displaced guest now has no seat.
-    const aRows = db
-      .prepare("SELECT id FROM seat_assignments WHERE guest_id = ?")
-      .all(a);
+    const aRows = db.prepare("SELECT id FROM seat_assignments WHERE guest_id = ?").all(a);
     expect(aRows.length).toBe(0);
   });
 
@@ -606,9 +592,7 @@ describe("seating: assign seats", () => {
       { token },
     );
     const row = db
-      .prepare(
-        "SELECT after_json FROM audit_log WHERE couple_id = ? AND action = 'seat.assign'",
-      )
+      .prepare("SELECT after_json FROM audit_log WHERE couple_id = ? AND action = 'seat.assign'")
       .get(coupleId) as { after_json: string };
     const after = JSON.parse(row.after_json) as { guest_name: string; table_label: string };
     expect(after.guest_name).toBe("Audit Guest");
@@ -629,12 +613,7 @@ describe("seating: unassign", () => {
     const a = await bootstrapCouple("un-2a@weddly.test");
     const b = await bootstrapCouple("un-2b@weddly.test");
     const bg = await addGuest(b.token, "B");
-    const r = await req(
-      "POST",
-      "/api/seating/unassign",
-      { guest_id: bg },
-      { token: a.token },
-    );
+    const r = await req("POST", "/api/seating/unassign", { guest_id: bg }, { token: a.token });
     expect(r.status).toBe(404);
   });
 
@@ -659,9 +638,7 @@ describe("seating: unassign", () => {
     );
     await req("POST", "/api/seating/unassign", { guest_id: g }, { token });
     const row = db
-      .prepare(
-        "SELECT before_json FROM audit_log WHERE couple_id = ? AND action = 'seat.unassign'",
-      )
+      .prepare("SELECT before_json FROM audit_log WHERE couple_id = ? AND action = 'seat.unassign'")
       .get(coupleId) as { before_json: string };
     const before = JSON.parse(row.before_json) as { table_label: string };
     expect(before.table_label).toBe("Vacate-from");
@@ -673,12 +650,7 @@ describe("seating: swap", () => {
     wipeAll();
     const { token } = await bootstrapCouple("sw-1@weddly.test");
     const g = await addGuest(token, "Solo");
-    const r = await req(
-      "POST",
-      "/api/seating/swap",
-      { guest_a_id: g, guest_b_id: g },
-      { token },
-    );
+    const r = await req("POST", "/api/seating/swap", { guest_a_id: g, guest_b_id: g }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -709,12 +681,7 @@ describe("seating: swap", () => {
       { table_id: t.id, seat_index: 0, guest_id: a },
       { token },
     );
-    const r = await req(
-      "POST",
-      "/api/seating/swap",
-      { guest_a_id: a, guest_b_id: b },
-      { token },
-    );
+    const r = await req("POST", "/api/seating/swap", { guest_a_id: a, guest_b_id: b }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -879,12 +846,9 @@ describe("seating: conflicts", () => {
       { token: b.token },
     );
     expect(crossDel.status).toBe(404);
-    const ownDel = await req(
-      "DELETE",
-      `/api/seating/conflicts/${c.data.conflict.id}`,
-      undefined,
-      { token: a.token },
-    );
+    const ownDel = await req("DELETE", `/api/seating/conflicts/${c.data.conflict.id}`, undefined, {
+      token: a.token,
+    });
     expect(ownDel.status).toBe(200);
   });
 
@@ -903,9 +867,7 @@ describe("seating: conflicts", () => {
     // Hard-delete the guest via API.
     const del = await req("DELETE", `/api/guests/${a}`, undefined, { token });
     expect(del.status).toBe(200);
-    const rows = db
-      .prepare("SELECT id FROM seating_conflicts WHERE couple_id = ?")
-      .all(coupleId);
+    const rows = db.prepare("SELECT id FROM seating_conflicts WHERE couple_id = ?").all(coupleId);
     expect(rows.length).toBe(0);
   });
 
@@ -921,12 +883,9 @@ describe("seating: conflicts", () => {
       { guest_a_id: a1, guest_b_id: a2, kind: "avoid" },
       { token: a.token },
     );
-    const list = await req<{ conflicts: unknown[] }>(
-      "GET",
-      "/api/seating/conflicts",
-      undefined,
-      { token: b.token },
-    );
+    const list = await req<{ conflicts: unknown[] }>("GET", "/api/seating/conflicts", undefined, {
+      token: b.token,
+    });
     expect(list.status).toBe(200);
     expect(list.data.conflicts.length).toBe(0);
   });
@@ -959,12 +918,9 @@ describe("schedule: list", () => {
     await makeEvent(token, { label: "After", starts_at_minutes: 600, sort_order: 1 });
     await makeEvent(token, { label: "Before", starts_at_minutes: 600, sort_order: 0 });
     await makeEvent(token, { label: "Way later", starts_at_minutes: 1000 });
-    const list = await req<{ events: { label: string }[] }>(
-      "GET",
-      "/api/schedule",
-      undefined,
-      { token },
-    );
+    const list = await req<{ events: { label: string }[] }>("GET", "/api/schedule", undefined, {
+      token,
+    });
     expect(list.data.events.map((e) => e.label)).toEqual(["Before", "After", "Way later"]);
   });
 });
@@ -1113,12 +1069,7 @@ describe("schedule: patch", () => {
   test("404 on unknown id", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("sp-1@weddly.test");
-    const r = await req(
-      "PATCH",
-      "/api/schedule/99999",
-      { label: "x" },
-      { token },
-    );
+    const r = await req("PATCH", "/api/schedule/99999", { label: "x" }, { token });
     expect(r.status).toBe(404);
   });
 
@@ -1127,9 +1078,9 @@ describe("schedule: patch", () => {
     const { token } = await bootstrapCouple("sp-2@weddly.test");
     const e = await makeEvent(token, { label: "Stale-me" });
     db.prepare("UPDATE schedule_events SET updated_at = updated_at + 5000 WHERE id = ?").run(e.id);
-    const fresh = db
-      .prepare("SELECT updated_at FROM schedule_events WHERE id = ?")
-      .get(e.id) as { updated_at: number };
+    const fresh = db.prepare("SELECT updated_at FROM schedule_events WHERE id = ?").get(e.id) as {
+      updated_at: number;
+    };
     const res = await fetch(`${BASE}/api/schedule/${e.id}`, {
       method: "PATCH",
       headers: {
@@ -1172,12 +1123,7 @@ describe("schedule: patch", () => {
         notes: string | null;
         duration_minutes: number | null;
       };
-    }>(
-      "PATCH",
-      `/api/schedule/${e.data.event.id}`,
-      { label: "Renamed" },
-      { token },
-    );
+    }>("PATCH", `/api/schedule/${e.data.event.id}`, { label: "Renamed" }, { token });
     expect(upd.status).toBe(200);
     expect(upd.data.event.label).toBe("Renamed");
     expect(upd.data.event.location).toBe("Kápolna");
@@ -1189,12 +1135,7 @@ describe("schedule: patch", () => {
     wipeAll();
     const { token } = await bootstrapCouple("sp-4@weddly.test");
     const e = await makeEvent(token);
-    const r = await req(
-      "PATCH",
-      `/api/schedule/${e.id}`,
-      { starts_at_minutes: 3000 },
-      { token },
-    );
+    const r = await req("PATCH", `/api/schedule/${e.id}`, { starts_at_minutes: 3000 }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -1352,24 +1293,14 @@ describe("planning: create validation", () => {
   test("invalid kind → 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("pl-1@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/planning",
-      { kind: "blob", title: "Hi" },
-      { token },
-    );
+    const r = await req("POST", "/api/planning", { kind: "blob", title: "Hi" }, { token });
     expect(r.status).toBe(400);
   });
 
   test("missing title → 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("pl-2@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/planning",
-      { kind: "task", title: "" },
-      { token },
-    );
+    const r = await req("POST", "/api/planning", { kind: "task", title: "" }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -1401,12 +1332,7 @@ describe("planning: create validation", () => {
     wipeAll();
     const { token } = await bootstrapCouple("pl-5@weddly.test");
     for (const kind of ["task", "idea", "schedule"] as const) {
-      const r = await req(
-        "POST",
-        "/api/planning",
-        { kind, title: `Hi ${kind}` },
-        { token },
-      );
+      const r = await req("POST", "/api/planning", { kind, title: `Hi ${kind}` }, { token });
       expect(r.status).toBe(201);
     }
   });
@@ -1508,12 +1434,7 @@ describe("planning: create validation", () => {
     const { token } = await bootstrapCouple("pl-13@weddly.test");
     const r = await req<{
       item: { suggested_by_user_id: number | null; suggested_by_name: string | null };
-    }>(
-      "POST",
-      "/api/planning",
-      { kind: "idea", title: "Branded napkins" },
-      { token },
-    );
+    }>("POST", "/api/planning", { kind: "idea", title: "Branded napkins" }, { token });
     expect(r.status).toBe(201);
     expect(r.data.item.suggested_by_user_id).not.toBeNull();
     expect(r.data.item.suggested_by_name).toBe("Owner");
@@ -1524,12 +1445,7 @@ describe("planning: create validation", () => {
     const { token } = await bootstrapCouple("pl-14@weddly.test");
     const r = await req<{
       item: { suggested_by_user_id: number | null; suggested_by_name: string | null };
-    }>(
-      "POST",
-      "/api/planning",
-      { kind: "task", title: "Pay deposit" },
-      { token },
-    );
+    }>("POST", "/api/planning", { kind: "task", title: "Pay deposit" }, { token });
     expect(r.status).toBe(201);
     expect(r.data.item.suggested_by_user_id).toBeNull();
     expect(r.data.item.suggested_by_name).toBeNull();
@@ -1564,12 +1480,7 @@ describe("planning: list + patch + delete", () => {
   test("404 PATCH on unknown id", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("pp-1@weddly.test");
-    const r = await req(
-      "PATCH",
-      "/api/planning/999999",
-      { title: "X" },
-      { token },
-    );
+    const r = await req("PATCH", "/api/planning/999999", { title: "X" }, { token });
     expect(r.status).toBe(404);
   });
 
@@ -1667,12 +1578,9 @@ describe("planning: list + patch + delete", () => {
     const created = await makePlanning(token, { kind: "idea", title: "Bye" });
     const r = await req("DELETE", `/api/planning/${created.id}`, undefined, { token });
     expect(r.status).toBe(200);
-    const after = await req<{ items: { id: number }[] }>(
-      "GET",
-      "/api/planning",
-      undefined,
-      { token },
-    );
+    const after = await req<{ items: { id: number }[] }>("GET", "/api/planning", undefined, {
+      token,
+    });
     expect(after.data.items.find((i) => i.id === created.id)).toBeUndefined();
   });
 
@@ -1681,12 +1589,9 @@ describe("planning: list + patch + delete", () => {
     const a = await bootstrapCouple("pp-9a@weddly.test");
     const b = await bootstrapCouple("pp-9b@weddly.test");
     const created = await makePlanning(a.token, { kind: "task", title: "Hidden" });
-    const bList = await req<{ items: { id: number }[] }>(
-      "GET",
-      "/api/planning",
-      undefined,
-      { token: b.token },
-    );
+    const bList = await req<{ items: { id: number }[] }>("GET", "/api/planning", undefined, {
+      token: b.token,
+    });
     expect(bList.data.items.find((i) => i.id === created.id)).toBeUndefined();
     const bPatch = await req(
       "PATCH",
@@ -1821,12 +1726,9 @@ describe("print: place cards", () => {
     wipeAll();
     const { token } = await bootstrapCouple("pc-4@weddly.test");
     const gid = await addGuest(token, "Selectable");
-    const res = await fetch(
-      `${BASE}/api/print/place-cards?guest_ids=99999,${gid}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    const res = await fetch(`${BASE}/api/print/place-cards?guest_ids=99999,${gid}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     await expectPdf(res);
   });
 });
@@ -1858,18 +1760,13 @@ describe("print: schedule pdf", () => {
     await expectPdf(res);
     // The list endpoint orders by starts_at; confirm event_count is 3.
     const row = db
-      .prepare(
-        "SELECT after_json FROM audit_log WHERE couple_id = ? AND action = 'print.schedule'",
-      )
+      .prepare("SELECT after_json FROM audit_log WHERE couple_id = ? AND action = 'print.schedule'")
       .get(coupleId) as { after_json: string };
     expect(JSON.parse(row.after_json).event_count).toBe(3);
     // And the list endpoint orders them ASC.
-    const list = await req<{ events: { label: string }[] }>(
-      "GET",
-      "/api/schedule",
-      undefined,
-      { token },
-    );
+    const list = await req<{ events: { label: string }[] }>("GET", "/api/schedule", undefined, {
+      token,
+    });
     expect(list.data.events.map((e) => e.label)).toEqual(["A", "B", "C"]);
   });
 

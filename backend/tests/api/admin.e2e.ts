@@ -65,10 +65,7 @@ async function insertSupplierAwaitingReview(token: string): Promise<number> {
       "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
     )
     .get(numericId) as { token: string };
-  const verify = await req(
-    "POST",
-    `/api/suppliers/community/verify/${tokenRow.token}`,
-  );
+  const verify = await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
   expect(verify.status).toBe(200);
   return numericId;
 }
@@ -289,12 +286,7 @@ describe("admin users — list, engagement, badges", () => {
     const adminToken = await bootstrapAdmin();
     // Watermark all sections to NOW so the existing admin row doesn't count.
     for (const section of ["suppliers", "users", "vendor_waitlist", "feedback"]) {
-      await req(
-        "POST",
-        "/api/admin/sidebar-badges/seen",
-        { section },
-        { token: adminToken },
-      );
+      await req("POST", "/api/admin/sidebar-badges/seen", { section }, { token: adminToken });
     }
     // Now create new rows in every category.
     const { token } = await bootstrapCouple("badger@weddly.test");
@@ -322,12 +314,9 @@ describe("admin users — list, engagement, badges", () => {
   test("sidebar mark-seen clears the section it touches", async () => {
     const adminToken = await bootstrapAdmin();
     await req("POST", "/api/feedback", { message: "Hello world." });
-    const before = await req<{ feedback: number }>(
-      "GET",
-      "/api/admin/sidebar-badges",
-      undefined,
-      { token: adminToken },
-    );
+    const before = await req<{ feedback: number }>("GET", "/api/admin/sidebar-badges", undefined, {
+      token: adminToken,
+    });
     expect(before.data.feedback).toBeGreaterThanOrEqual(1);
     const mark = await req<{ section: string; seen_at: number }>(
       "POST",
@@ -338,12 +327,9 @@ describe("admin users — list, engagement, badges", () => {
     expect(mark.status).toBe(200);
     expect(mark.data.section).toBe("feedback");
     expect(typeof mark.data.seen_at).toBe("number");
-    const after = await req<{ feedback: number }>(
-      "GET",
-      "/api/admin/sidebar-badges",
-      undefined,
-      { token: adminToken },
-    );
+    const after = await req<{ feedback: number }>("GET", "/api/admin/sidebar-badges", undefined, {
+      token: adminToken,
+    });
     expect(after.data.feedback).toBe(0);
   });
 
@@ -384,7 +370,9 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
     // RESEND_API_KEY is empty in the test harness — what matters is the
     // attempt was recorded).
     const log = db
-      .prepare("SELECT kind, to_email, status FROM email_log WHERE user_id = ? ORDER BY id DESC LIMIT 1")
+      .prepare(
+        "SELECT kind, to_email, status FROM email_log WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+      )
       .get(targetId) as { kind: string; to_email: string; status: string } | undefined;
     expect(log).toBeDefined();
     expect(log?.kind).toBe("verify_resend");
@@ -424,7 +412,12 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
 
   test("resend-verify with bad id → 400", async () => {
     const adminToken = await bootstrapAdmin();
-    const r = await req("POST", "/api/admin/users/notanumber/resend-verify", {}, { token: adminToken });
+    const r = await req(
+      "POST",
+      "/api/admin/users/notanumber/resend-verify",
+      {},
+      { token: adminToken },
+    );
     expect(r.status).toBe(400);
   });
 
@@ -433,12 +426,9 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
     const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, {
       token: adminToken,
     });
-    const r = await req(
-      "DELETE",
-      `/api/admin/users/${me.data.user.id}`,
-      undefined,
-      { token: adminToken },
-    );
+    const r = await req("DELETE", `/api/admin/users/${me.data.user.id}`, undefined, {
+      token: adminToken,
+    });
     expect(r.status).toBe(400);
   });
 
@@ -640,14 +630,14 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
   test("purge-deleting — deletes a couple-owner triggers cascading tombstone, then purge sweeps it", async () => {
     const adminToken = await bootstrapAdmin();
     const { coupleId } = await bootstrapCouple("victim@weddly.test");
-    const owner = db
-      .prepare("SELECT id FROM users WHERE email = 'victim@weddly.test'")
-      .get() as { id: number };
+    const owner = db.prepare("SELECT id FROM users WHERE email = 'victim@weddly.test'").get() as {
+      id: number;
+    };
     // Admin deletes the owner → couple flips to status='deleting'.
     await req("DELETE", `/api/admin/users/${owner.id}`, undefined, { token: adminToken });
-    const before = db
-      .prepare("SELECT status FROM couples WHERE id = ?")
-      .get(coupleId) as { status: string };
+    const before = db.prepare("SELECT status FROM couples WHERE id = ?").get(coupleId) as {
+      status: string;
+    };
     expect(before.status).toBe("deleting");
     const r = await req<{ purged: number }>(
       "POST",
@@ -682,12 +672,9 @@ describe("admin suppliers — list, approve, hide/unhide", () => {
     const adminToken = await bootstrapAdmin();
     const { token } = await bootstrapCouple("submitter@weddly.test");
     const id = await insertSupplierAwaitingReview(token);
-    const list = await req<AdminSuppliersResp>(
-      "GET",
-      "/api/admin/suppliers",
-      undefined,
-      { token: adminToken },
-    );
+    const list = await req<AdminSuppliersResp>("GET", "/api/admin/suppliers", undefined, {
+      token: adminToken,
+    });
     expect(list.status).toBe(200);
     const row = list.data.suppliers.find((s) => s.id === id);
     expect(row).toBeDefined();
@@ -708,7 +695,9 @@ describe("admin suppliers — list, approve, hide/unhide", () => {
     expect(r.status).toBe(200);
     expect(r.data.supplier.status).toBe("active");
     const audit = db
-      .prepare("SELECT action FROM audit_log WHERE action = 'supplier.community.approve' AND target_id = ?")
+      .prepare(
+        "SELECT action FROM audit_log WHERE action = 'supplier.community.approve' AND target_id = ?",
+      )
       .get(id) as { action: string } | undefined;
     expect(audit).toBeDefined();
   });
@@ -736,7 +725,12 @@ describe("admin suppliers — list, approve, hide/unhide", () => {
 
   test("approve — bad id → 400", async () => {
     const adminToken = await bootstrapAdmin();
-    const r = await req("POST", "/api/admin/suppliers/notanumber/approve", {}, { token: adminToken });
+    const r = await req(
+      "POST",
+      "/api/admin/suppliers/notanumber/approve",
+      {},
+      { token: adminToken },
+    );
     expect(r.status).toBe(400);
   });
 
@@ -794,12 +788,9 @@ describe("admin suppliers — list, approve, hide/unhide", () => {
       token: adminToken,
     });
     expect(del.status).toBe(200);
-    const after = await req<AdminSuppliersResp>(
-      "GET",
-      "/api/admin/suppliers",
-      undefined,
-      { token: adminToken },
-    );
+    const after = await req<AdminSuppliersResp>("GET", "/api/admin/suppliers", undefined, {
+      token: adminToken,
+    });
     expect(after.data.suppliers.find((s) => s.id === id)).toBeUndefined();
   });
 
@@ -838,12 +829,7 @@ describe("admin suppliers — reports, notes, enrich", () => {
 
     const full = await req<{
       reports: Array<{ supplier_id: number; reason: string; note: string | null }>;
-    }>(
-      "GET",
-      `/api/admin/suppliers/${id}/reports`,
-      undefined,
-      { token: adminToken },
-    );
+    }>("GET", `/api/admin/suppliers/${id}/reports`, undefined, { token: adminToken });
     expect(full.data.reports.length).toBe(1);
     expect(full.data.reports[0]?.reason).toBe("spam");
     expect(full.data.reports[0]?.note).toBe("All caps clickbait");
@@ -851,7 +837,9 @@ describe("admin suppliers — reports, notes, enrich", () => {
 
   test("reports list — unknown supplier → 404", async () => {
     const adminToken = await bootstrapAdmin();
-    const r = await req("GET", "/api/admin/suppliers/99999/reports", undefined, { token: adminToken });
+    const r = await req("GET", "/api/admin/suppliers/99999/reports", undefined, {
+      token: adminToken,
+    });
     expect(r.status).toBe(404);
   });
 
@@ -909,12 +897,9 @@ describe("admin suppliers — reports, notes, enrich", () => {
     );
     expect(patched.status).toBe(200);
     expect(patched.data.supplier.admin_notes).toBe("Owner confirmed they want to be listed.");
-    const list = await req<AdminSuppliersResp>(
-      "GET",
-      "/api/admin/suppliers",
-      undefined,
-      { token: adminToken },
-    );
+    const list = await req<AdminSuppliersResp>("GET", "/api/admin/suppliers", undefined, {
+      token: adminToken,
+    });
     expect(list.data.suppliers.find((s) => s.id === id)?.admin_notes).toBe(
       "Owner confirmed they want to be listed.",
     );
@@ -924,12 +909,7 @@ describe("admin suppliers — reports, notes, enrich", () => {
     const adminToken = await bootstrapAdmin();
     const { token } = await bootstrapCouple("submitter@weddly.test");
     const id = await insertSupplierAwaitingReview(token);
-    const r = await req(
-      "PATCH",
-      `/api/admin/suppliers/${id}/notes`,
-      {},
-      { token: adminToken },
-    );
+    const r = await req("PATCH", `/api/admin/suppliers/${id}/notes`, {}, { token: adminToken });
     expect(r.status).toBe(400);
   });
 
@@ -1303,7 +1283,12 @@ describe("vendor waitlist — admin list/decide/reopen", () => {
 
   test("reopen — unknown id → 404", async () => {
     const adminToken = await bootstrapAdmin();
-    const r = await req("POST", "/api/admin/vendor-waitlist/99999/reopen", {}, { token: adminToken });
+    const r = await req(
+      "POST",
+      "/api/admin/vendor-waitlist/99999/reopen",
+      {},
+      { token: adminToken },
+    );
     expect(r.status).toBe(404);
   });
 });
@@ -1366,12 +1351,9 @@ describe("feedback — admin list/status/delete", () => {
     const adminToken = await bootstrapAdmin();
     await req("POST", "/api/feedback", { message: "first" });
     await req("POST", "/api/feedback", { message: "second" });
-    const list = await req<{ entries: FeedbackRow[] }>(
-      "GET",
-      "/api/admin/feedback",
-      undefined,
-      { token: adminToken },
-    );
+    const list = await req<{ entries: FeedbackRow[] }>("GET", "/api/admin/feedback", undefined, {
+      token: adminToken,
+    });
     expect(list.status).toBe(200);
     expect(list.data.entries.length).toBe(2);
     // Ordering is `ORDER BY created_at DESC` — but in tests both rows can land
@@ -1385,12 +1367,9 @@ describe("feedback — admin list/status/delete", () => {
   test("admin can move status new → read → resolved → dismissed", async () => {
     const adminToken = await bootstrapAdmin();
     await req("POST", "/api/feedback", { message: "moving" });
-    const list = await req<{ entries: FeedbackRow[] }>(
-      "GET",
-      "/api/admin/feedback",
-      undefined,
-      { token: adminToken },
-    );
+    const list = await req<{ entries: FeedbackRow[] }>("GET", "/api/admin/feedback", undefined, {
+      token: adminToken,
+    });
     const id = list.data.entries[0]!.id;
     for (const status of ["read", "resolved", "dismissed"] as const) {
       const r = await req<{ entry: FeedbackRow }>(
@@ -1429,12 +1408,9 @@ describe("feedback — admin list/status/delete", () => {
   test("admin PATCH status — invalid status string → 400", async () => {
     const adminToken = await bootstrapAdmin();
     await req("POST", "/api/feedback", { message: "x" });
-    const list = await req<{ entries: FeedbackRow[] }>(
-      "GET",
-      "/api/admin/feedback",
-      undefined,
-      { token: adminToken },
-    );
+    const list = await req<{ entries: FeedbackRow[] }>("GET", "/api/admin/feedback", undefined, {
+      token: adminToken,
+    });
     const id = list.data.entries[0]!.id;
     const r = await req(
       "PATCH",
@@ -1448,23 +1424,17 @@ describe("feedback — admin list/status/delete", () => {
   test("admin DELETE — hard-removes the row", async () => {
     const adminToken = await bootstrapAdmin();
     await req("POST", "/api/feedback", { message: "delete me" });
-    const list = await req<{ entries: FeedbackRow[] }>(
-      "GET",
-      "/api/admin/feedback",
-      undefined,
-      { token: adminToken },
-    );
+    const list = await req<{ entries: FeedbackRow[] }>("GET", "/api/admin/feedback", undefined, {
+      token: adminToken,
+    });
     const id = list.data.entries[0]!.id;
     const del = await req("DELETE", `/api/admin/feedback/${id}`, undefined, {
       token: adminToken,
     });
     expect(del.status).toBe(200);
-    const after = await req<{ entries: FeedbackRow[] }>(
-      "GET",
-      "/api/admin/feedback",
-      undefined,
-      { token: adminToken },
-    );
+    const after = await req<{ entries: FeedbackRow[] }>("GET", "/api/admin/feedback", undefined, {
+      token: adminToken,
+    });
     expect(after.data.entries.length).toBe(0);
   });
 
@@ -1732,16 +1702,11 @@ describe("supplier taxonomy — admin categories CRUD", () => {
     await insertSupplierAwaitingReview(token); // category=venue
     // Find the seeded `venue` category id.
     const tax = await req<TaxonomyResp>("GET", "/api/supplier-categories");
-    const venueCat = tax.data.groups
-      .flatMap((g) => g.categories)
-      .find((c) => c.slug === "venue");
+    const venueCat = tax.data.groups.flatMap((g) => g.categories).find((c) => c.slug === "venue");
     expect(venueCat).toBeDefined();
-    const r = await req(
-      "DELETE",
-      `/api/admin/supplier-categories/${venueCat!.id}`,
-      undefined,
-      { token: adminToken },
-    );
+    const r = await req("DELETE", `/api/admin/supplier-categories/${venueCat!.id}`, undefined, {
+      token: adminToken,
+    });
     expect(r.status).toBe(409);
   });
 

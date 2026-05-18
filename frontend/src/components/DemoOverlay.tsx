@@ -168,9 +168,7 @@ export function DemoOverlay() {
         </div>
       )}
 
-      {nudgeOpen && (
-        <DemoNudgeModal onClose={closeNudge} onConvert={convert} />
-      )}
+      {nudgeOpen && <DemoNudgeModal onClose={closeNudge} onConvert={convert} />}
     </>
   );
 }
@@ -240,11 +238,7 @@ function DemoNudgeModal({ onClose, onConvert }: { onClose: () => void; onConvert
               {t("demo.popup_cta_primary")}
               <ArrowRight size={16} aria-hidden="true" />
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-outline btn-lg w-full sm:w-auto"
-            >
+            <button type="button" onClick={onClose} className="btn-outline btn-lg w-full sm:w-auto">
               {t("demo.popup_cta_secondary")}
             </button>
           </div>

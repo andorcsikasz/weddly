@@ -44,12 +44,7 @@ async function registerAndAcceptInvite(email: string, token: string): Promise<st
   });
   expect(reg.status).toBe(201);
   await verifyUserEmail(email);
-  const accept = await req(
-    "POST",
-    `/api/invites/${token}/accept`,
-    {},
-    { token: reg.data.token },
-  );
+  const accept = await req("POST", `/api/invites/${token}/accept`, {}, { token: reg.data.token });
   expect(accept.status).toBe(200);
   return reg.data.token;
 }
@@ -366,12 +361,9 @@ describe("couples_lifecycle: slug normalization + collision", () => {
   test("renaming to the current slug is a no-op 200 (idempotent)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("slug-idem@weddly.test");
-    const cur = await req<{ couple: { slug: string } }>(
-      "GET",
-      "/api/couples/current",
-      undefined,
-      { token },
-    );
+    const cur = await req<{ couple: { slug: string } }>("GET", "/api/couples/current", undefined, {
+      token,
+    });
     const slug = cur.data.couple.slug;
 
     const r = await req<{ couple: { slug: string } }>(
@@ -533,12 +525,9 @@ describe("couples_lifecycle: partner view status transitions", () => {
     const { token: aToken } = await bootstrapCouple("pv-a@weddly.test");
 
     // No invite yet → null.
-    const before = await req<{ partner: unknown }>(
-      "GET",
-      "/api/couples/partner",
-      undefined,
-      { token: aToken },
-    );
+    const before = await req<{ partner: unknown }>("GET", "/api/couples/partner", undefined, {
+      token: aToken,
+    });
     expect(before.data.partner).toBeNull();
 
     // Send invite → status="invited", surfaces invited_email.
@@ -600,12 +589,9 @@ describe("couples_lifecycle: partner view status transitions", () => {
       password: "supersafe123",
       full_name: "U",
     });
-    const r = await req<{ detail?: { code?: string } }>(
-      "GET",
-      "/api/couples/partner",
-      undefined,
-      { token: reg.data.token },
-    );
+    const r = await req<{ detail?: { code?: string } }>("GET", "/api/couples/partner", undefined, {
+      token: reg.data.token,
+    });
     expect(r.status).toBe(403);
     expect(r.data.detail?.code).toBe("email_unverified");
   });
@@ -618,12 +604,7 @@ describe("couples_lifecycle: activity log scoping + windowing", () => {
     const { coupleId: coupleB } = await bootstrapCouple("act-iso-b@weddly.test");
 
     // A creates a guest → guest.create audit row in A's couple.
-    await req(
-      "POST",
-      "/api/guests",
-      { full_name: "Aunt A" },
-      { token: tokenA },
-    );
+    await req("POST", "/api/guests", { full_name: "Aunt A" }, { token: tokenA });
 
     // B (different workspace) — inject a guest.create row directly via the
     // audit table so we can prove the feed filter is on couple_id, not
@@ -729,12 +710,9 @@ describe("couples_lifecycle: invite lookup + incoming list", () => {
       ts,
     );
 
-    const incoming = await req<{ invites: unknown[] }>(
-      "GET",
-      "/api/invites/incoming",
-      undefined,
-      { token: bToken },
-    );
+    const incoming = await req<{ invites: unknown[] }>("GET", "/api/invites/incoming", undefined, {
+      token: bToken,
+    });
     expect(incoming.status).toBe(200);
     // Couple A is already partner-B-linked → the filter hides this invite,
     // so B sees an empty list.
@@ -927,17 +905,17 @@ describe("couples_lifecycle: pause request lifecycle", () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("pause-restore@weddly.test");
     await req("POST", "/api/couples/pause", {}, { token });
-    const before = db
-      .prepare("SELECT status FROM couples WHERE id = ?")
-      .get(coupleId) as { status: string };
+    const before = db.prepare("SELECT status FROM couples WHERE id = ?").get(coupleId) as {
+      status: string;
+    };
     expect(before.status).toBe("paused");
 
     const cancel = await req("POST", "/api/couples/pause/cancel", {}, { token });
     expect(cancel.status).toBe(200);
 
-    const after = db
-      .prepare("SELECT status FROM couples WHERE id = ?")
-      .get(coupleId) as { status: string };
+    const after = db.prepare("SELECT status FROM couples WHERE id = ?").get(coupleId) as {
+      status: string;
+    };
     expect(after.status).toBe("active");
   });
 
@@ -1064,12 +1042,9 @@ describe("couples_lifecycle: accommodations CRUD", () => {
   test("list returns [] when none have been created yet", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("acc-empty@weddly.test");
-    const r = await req<{ accommodations: unknown[] }>(
-      "GET",
-      "/api/accommodations",
-      undefined,
-      { token },
-    );
+    const r = await req<{ accommodations: unknown[] }>("GET", "/api/accommodations", undefined, {
+      token,
+    });
     expect(r.status).toBe(200);
     expect(r.data.accommodations).toEqual([]);
   });
@@ -1114,12 +1089,7 @@ describe("couples_lifecycle: accommodations CRUD", () => {
   test("create with oversize name (>120 chars) → 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("acc-big-name@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/accommodations",
-      { name: "x".repeat(121) },
-      { token },
-    );
+    const r = await req("POST", "/api/accommodations", { name: "x".repeat(121) }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -1140,12 +1110,7 @@ describe("couples_lifecycle: accommodations CRUD", () => {
   test("create with negative price_huf → 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("acc-neg-price@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/accommodations",
-      { name: "X", price_huf: -1 },
-      { token },
-    );
+    const r = await req("POST", "/api/accommodations", { name: "X", price_huf: -1 }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -1194,12 +1159,9 @@ describe("couples_lifecycle: accommodations CRUD", () => {
     const d = await req("DELETE", `/api/accommodations/${id}`, undefined, { token });
     expect(d.status).toBe(200);
 
-    const l = await req<{ accommodations: unknown[] }>(
-      "GET",
-      "/api/accommodations",
-      undefined,
-      { token },
-    );
+    const l = await req<{ accommodations: unknown[] }>("GET", "/api/accommodations", undefined, {
+      token,
+    });
     expect(l.data.accommodations).toEqual([]);
   });
 
@@ -1375,12 +1337,9 @@ describe("couples_lifecycle: honeymoon flight estimate", () => {
     wipeAll();
     const { token } = await bootstrapCouple("hm-empty@weddly.test");
 
-    const r = await req<{ estimate: unknown }>(
-      "GET",
-      "/api/honeymoon/flight-estimate",
-      undefined,
-      { token },
-    );
+    const r = await req<{ estimate: unknown }>("GET", "/api/honeymoon/flight-estimate", undefined, {
+      token,
+    });
     expect(r.status).toBe(200);
     expect(r.data.estimate).toBeNull();
   });
@@ -1404,12 +1363,9 @@ describe("couples_lifecycle: honeymoon flight estimate", () => {
       { token },
     );
 
-    const r = await req<{ estimate: unknown }>(
-      "GET",
-      "/api/honeymoon/flight-estimate",
-      undefined,
-      { token },
-    );
+    const r = await req<{ estimate: unknown }>("GET", "/api/honeymoon/flight-estimate", undefined, {
+      token,
+    });
     expect(r.status).toBe(200);
     expect(r.data.estimate).toBeNull();
   });
@@ -1417,12 +1373,9 @@ describe("couples_lifecycle: honeymoon flight estimate", () => {
   test("without a couple → estimate is null (no 4xx)", async () => {
     wipeAll();
     const { token } = await freshUserNoCouple("hm-noc@weddly.test");
-    const r = await req<{ estimate: unknown }>(
-      "GET",
-      "/api/honeymoon/flight-estimate",
-      undefined,
-      { token },
-    );
+    const r = await req<{ estimate: unknown }>("GET", "/api/honeymoon/flight-estimate", undefined, {
+      token,
+    });
     expect(r.status).toBe(200);
     expect(r.data.estimate).toBeNull();
   });
@@ -1507,12 +1460,9 @@ describe("couples_lifecycle: places search proxy", () => {
   test("response shape is { places: [...] } when query is too short", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("places-shape@weddly.test");
-    const r = await req<{ places: unknown[] }>(
-      "GET",
-      "/api/places/search?q=a",
-      undefined,
-      { token },
-    );
+    const r = await req<{ places: unknown[] }>("GET", "/api/places/search?q=a", undefined, {
+      token,
+    });
     expect(r.status).toBe(200);
     expect(Array.isArray(r.data.places)).toBe(true);
   });
@@ -1553,12 +1503,7 @@ describe("couples_lifecycle: places search proxy", () => {
   test("oversized query (>100 chars) returns 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("places-big@weddly.test");
-    const r = await req(
-      "GET",
-      `/api/places/search?q=${"x".repeat(101)}`,
-      undefined,
-      { token },
-    );
+    const r = await req("GET", `/api/places/search?q=${"x".repeat(101)}`, undefined, { token });
     expect(r.status).toBe(400);
   });
 });
@@ -1612,12 +1557,7 @@ describe("couples_lifecycle: multi-workspace + leave couple", () => {
 
     const bad1 = await req("POST", "/api/users/me/active-couple", {}, { token });
     expect(bad1.status).toBe(400);
-    const bad2 = await req(
-      "POST",
-      "/api/users/me/active-couple",
-      { couple_id: -1 },
-      { token },
-    );
+    const bad2 = await req("POST", "/api/users/me/active-couple", { couple_id: -1 }, { token });
     expect(bad2.status).toBe(400);
     const bad3 = await req(
       "POST",
@@ -1670,9 +1610,9 @@ describe("couples_lifecycle: multi-workspace + leave couple", () => {
     const r = await req("POST", "/api/users/me/leave-couple", {}, { token: bToken });
     expect(r.status).toBe(200);
 
-    const refreshed = db
-      .prepare("SELECT partner_b_id FROM couples WHERE id = ?")
-      .get(coupleId) as { partner_b_id: number | null };
+    const refreshed = db.prepare("SELECT partner_b_id FROM couples WHERE id = ?").get(coupleId) as {
+      partner_b_id: number | null;
+    };
     expect(refreshed.partner_b_id).toBeNull();
 
     // Couple row itself still exists.

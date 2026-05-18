@@ -63,7 +63,8 @@ export function DemoLaunchCard() {
     } catch (e) {
       // Server rate-limit or transient outage. Show the localized message;
       // re-clicking the button refreshes the bucket within a minute.
-      const msg = e instanceof ApiError ? t("landing.demo_card_error") : t("landing.demo_card_error");
+      const msg =
+        e instanceof ApiError ? t("landing.demo_card_error") : t("landing.demo_card_error");
       setError(msg);
       setBusy(false);
     }
@@ -131,10 +132,7 @@ export function DemoLaunchCard() {
       </p>
 
       {error && (
-        <p
-          role="alert"
-          className="mt-2 text-xs font-medium text-red-700 dark:text-red-300"
-        >
+        <p role="alert" className="mt-2 text-xs font-medium text-red-700 dark:text-red-300">
           {error}
         </p>
       )}

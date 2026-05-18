@@ -224,10 +224,7 @@ export default function HalfYearView({
         {/* Header strip — month titles. Sits as its own grid row so the
             bar-overlay can align to the same columns without inheriting
             the title heights. */}
-        <div
-          className="grid"
-          style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
-        >
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}>
           {months.map((m, idx) => {
             const isToday = idx === todayMonthCol;
             const showYear = prevYear !== m.getFullYear();

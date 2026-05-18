@@ -303,24 +303,14 @@ describe("budget lines: input validation", () => {
   test("PATCH on bad numeric id returns 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("bv-patch-badid@weddly.test");
-    const r = await req(
-      "PATCH",
-      "/api/budget/lines/not-a-number",
-      { actual_huf: 1 },
-      { token },
-    );
+    const r = await req("PATCH", "/api/budget/lines/not-a-number", { actual_huf: 1 }, { token });
     expect(r.status).toBe(400);
   });
 
   test("PATCH unknown line id returns 404", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("bv-patch-404@weddly.test");
-    const r = await req(
-      "PATCH",
-      "/api/budget/lines/9999999",
-      { actual_huf: 1 },
-      { token },
-    );
+    const r = await req("PATCH", "/api/budget/lines/9999999", { actual_huf: 1 }, { token });
     expect(r.status).toBe(404);
   });
 
@@ -393,12 +383,7 @@ describe("budget lines: cross-couple isolation", () => {
     const id = create.data.line.id;
 
     const { token: tokB } = await bootstrapCouple("iso-b@weddly.test");
-    const r = await req(
-      "PATCH",
-      `/api/budget/lines/${id}`,
-      { actual_huf: 999 },
-      { token: tokB },
-    );
+    const r = await req("PATCH", `/api/budget/lines/${id}`, { actual_huf: 999 }, { token: tokB });
     expect(r.status).toBe(404);
   });
 
@@ -492,12 +477,7 @@ describe("budget snapshots", () => {
   test("POST snapshot rejects oversized name (>200)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("snap-bigname@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/budget/snapshots",
-      { name: "x".repeat(201) },
-      { token },
-    );
+    const r = await req("POST", "/api/budget/snapshots", { name: "x".repeat(201) }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -525,12 +505,7 @@ describe("budget snapshots", () => {
       { token },
     );
     expect(s2.status).toBe(201);
-    const list = await req<SnapshotsResp>(
-      "GET",
-      "/api/budget/snapshots",
-      undefined,
-      { token },
-    );
+    const list = await req<SnapshotsResp>("GET", "/api/budget/snapshots", undefined, { token });
     expect(list.status).toBe(200);
     expect(list.data.snapshots[0]?.id).toBe(s2.data.snapshot.id);
     expect(list.data.snapshots[1]?.id).toBe(s1.data.snapshot.id);
@@ -560,24 +535,14 @@ describe("budget snapshots", () => {
   test("restore on unknown snapshot id returns 404", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("snap-unknown@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/budget/snapshots/9999999/restore",
-      {},
-      { token },
-    );
+    const r = await req("POST", "/api/budget/snapshots/9999999/restore", {}, { token });
     expect(r.status).toBe(404);
   });
 
   test("restore with non-numeric id returns 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("snap-badid@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/budget/snapshots/not-a-number/restore",
-      {},
-      { token },
-    );
+    const r = await req("POST", "/api/budget/snapshots/not-a-number/restore", {}, { token });
     expect(r.status).toBe(400);
   });
 
@@ -598,24 +563,16 @@ describe("budget snapshots", () => {
       { token: tokA },
     );
     const { token: tokB } = await bootstrapCouple("snap-iso-b@weddly.test");
-    const r = await req(
-      "DELETE",
-      `/api/budget/snapshots/${snap.data.snapshot.id}`,
-      undefined,
-      { token: tokB },
-    );
+    const r = await req("DELETE", `/api/budget/snapshots/${snap.data.snapshot.id}`, undefined, {
+      token: tokB,
+    });
     expect(r.status).toBe(404);
   });
 
   test("snapshot list isolated per couple", async () => {
     wipeAll();
     const { token: tokA } = await bootstrapCouple("snap-list-a@weddly.test");
-    await req(
-      "POST",
-      "/api/budget/snapshots",
-      { name: "A's secret plan" },
-      { token: tokA },
-    );
+    await req("POST", "/api/budget/snapshots", { name: "A's secret plan" }, { token: tokA });
     const { token: tokB } = await bootstrapCouple("snap-list-b@weddly.test");
     const list = await req<SnapshotsResp>("GET", "/api/budget/snapshots", undefined, {
       token: tokB,
@@ -667,9 +624,7 @@ describe("budget snapshots", () => {
     });
     expect(r.status).toBe(200);
     const audits = db
-      .prepare(
-        "SELECT id FROM audit_log WHERE couple_id = ? AND action = 'budget.snapshot_delete'",
-      )
+      .prepare("SELECT id FROM audit_log WHERE couple_id = ? AND action = 'budget.snapshot_delete'")
       .all(coupleId) as { id: number }[];
     expect(audits.length).toBe(1);
   });
@@ -747,12 +702,7 @@ describe("suppliers directory: vote validation + auth", () => {
   test("PUT /vote on bogus 'c' community id returns 404", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("vote-bogus-c@weddly.test");
-    const r = await req(
-      "PUT",
-      "/api/suppliers/c99999/vote",
-      { value: 1 },
-      { token },
-    );
+    const r = await req("PUT", "/api/suppliers/c99999/vote", { value: 1 }, { token });
     expect(r.status).toBe(404);
   });
 
@@ -839,12 +789,7 @@ describe("suppliers directory: vote validation + auth", () => {
       full_name: "B",
     });
     await verifyUserEmail("vote-pair-b@weddly.test");
-    await req(
-      "POST",
-      `/api/invites/${inv.data.invite.token}/accept`,
-      {},
-      { token: b.data.token },
-    );
+    await req("POST", `/api/invites/${inv.data.invite.token}/accept`, {}, { token: b.data.token });
 
     interface VoteResp {
       votes_score: number;
@@ -870,9 +815,7 @@ describe("suppliers directory: vote validation + auth", () => {
     expect(bVote.data.votes_score).toBe(1);
 
     const rows = db
-      .prepare(
-        "SELECT COUNT(*) AS c FROM supplier_votes WHERE couple_id = ? AND supplier_id = ?",
-      )
+      .prepare("SELECT COUNT(*) AS c FROM supplier_votes WHERE couple_id = ? AND supplier_id = ?")
       .get(ob.data.couple.id, "normafa-rendezvenyhaz") as { c: number };
     expect(rows.c).toBe(1);
   });
@@ -1136,9 +1079,7 @@ describe("community suppliers: verify endpoint", () => {
     expect(submit.status).toBe(201);
     const numericId = Number(submit.data.supplier.id.slice(1));
     const tokenRow = db
-      .prepare(
-        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ?",
-      )
+      .prepare("SELECT token FROM community_supplier_verifications WHERE supplier_id = ?")
       .get(numericId) as { token: string };
     const first = await req<{ ok: boolean; already_consumed: boolean }>(
       "POST",
@@ -1171,19 +1112,13 @@ describe("community suppliers: verify endpoint", () => {
     expect(submit.status).toBe(201);
     const numericId = Number(submit.data.supplier.id.slice(1));
     const tokenRow = db
-      .prepare(
-        "SELECT id, token FROM community_supplier_verifications WHERE supplier_id = ?",
-      )
+      .prepare("SELECT id, token FROM community_supplier_verifications WHERE supplier_id = ?")
       .get(numericId) as { id: number; token: string };
     // Force expiry into the past.
     db.prepare("UPDATE community_supplier_verifications SET expires_at = 1 WHERE id = ?").run(
       tokenRow.id,
     );
-    const r = await req(
-      "POST",
-      `/api/suppliers/community/verify/${tokenRow.token}`,
-      {},
-    );
+    const r = await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`, {});
     expect(r.status).toBe(410);
   });
 
@@ -1206,22 +1141,14 @@ describe("community suppliers: verify endpoint", () => {
     );
     const numericId = Number(submit.data.supplier.id.slice(1));
     const tokenRow = db
-      .prepare(
-        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ?",
-      )
+      .prepare("SELECT token FROM community_supplier_verifications WHERE supplier_id = ?")
       .get(numericId) as { token: string };
     db.prepare("DELETE FROM community_suppliers WHERE id = ?").run(numericId);
     const remaining = db
-      .prepare(
-        "SELECT COUNT(*) AS c FROM community_supplier_verifications WHERE token = ?",
-      )
+      .prepare("SELECT COUNT(*) AS c FROM community_supplier_verifications WHERE token = ?")
       .get(tokenRow.token) as { c: number };
     expect(remaining.c).toBe(0);
-    const r = await req(
-      "POST",
-      `/api/suppliers/community/verify/${tokenRow.token}`,
-      {},
-    );
+    const r = await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`, {});
     expect(r.status).toBe(404);
   });
 });
@@ -1229,11 +1156,7 @@ describe("community suppliers: verify endpoint", () => {
 describe("community suppliers: report endpoint", () => {
   test("report requires auth (401)", async () => {
     wipeAll();
-    const r = await req(
-      "POST",
-      "/api/suppliers/community/1/report",
-      { reason: "spam" },
-    );
+    const r = await req("POST", "/api/suppliers/community/1/report", { reason: "spam" });
     expect(r.status).toBe(401);
   });
 
@@ -1252,12 +1175,7 @@ describe("community suppliers: report endpoint", () => {
   test("report with id=0 returns 400 (must be positive)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("rep-zero@weddly.test");
-    const r = await req(
-      "POST",
-      "/api/suppliers/community/0/report",
-      { reason: "spam" },
-      { token },
-    );
+    const r = await req("POST", "/api/suppliers/community/0/report", { reason: "spam" }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -1334,18 +1252,11 @@ describe("community suppliers: report endpoint", () => {
     const numericId = Number(submit.data.supplier.id.slice(1));
     // Promote past both gates so the public list shows it.
     const tokRow = db
-      .prepare(
-        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ?",
-      )
+      .prepare("SELECT token FROM community_supplier_verifications WHERE supplier_id = ?")
       .get(numericId) as { token: string };
     await req("POST", `/api/suppliers/community/verify/${tokRow.token}`);
     const adminToken = await registerAdminAndGetToken();
-    await req(
-      "POST",
-      `/api/admin/suppliers/${numericId}/approve`,
-      {},
-      { token: adminToken },
-    );
+    await req("POST", `/api/admin/suppliers/${numericId}/approve`, {}, { token: adminToken });
 
     const reporters: string[] = ["r1", "r2", "r3"];
     let lastAutoHidden = false;
@@ -1518,12 +1429,7 @@ describe("couple_suppliers: validation + auth", () => {
   test("DELETE on unknown id returns 404", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("cs-del-404@weddly.test");
-    const r = await req(
-      "DELETE",
-      "/api/couple-suppliers/deadbeefdeadbeef",
-      undefined,
-      { token },
-    );
+    const r = await req("DELETE", "/api/couple-suppliers/deadbeefdeadbeef", undefined, { token });
     expect(r.status).toBe(404);
   });
 
@@ -1578,12 +1484,9 @@ describe("couple_suppliers: validation + auth", () => {
       { token: tokA },
     );
     const { token: tokB } = await bootstrapCouple("cs-iso-b@weddly.test");
-    const list = await req<CoupleSuppliersListResp>(
-      "GET",
-      "/api/couple-suppliers",
-      undefined,
-      { token: tokB },
-    );
+    const list = await req<CoupleSuppliersListResp>("GET", "/api/couple-suppliers", undefined, {
+      token: tokB,
+    });
     expect(list.status).toBe(200);
     expect(list.data.suppliers).toHaveLength(0);
   });
@@ -1598,12 +1501,9 @@ describe("couple_suppliers: validation + auth", () => {
       { token: tokA },
     );
     const { token: tokB } = await bootstrapCouple("cs-iso-del-b@weddly.test");
-    const r = await req(
-      "DELETE",
-      `/api/couple-suppliers/${create.data.supplier.id}`,
-      undefined,
-      { token: tokB },
-    );
+    const r = await req("DELETE", `/api/couple-suppliers/${create.data.supplier.id}`, undefined, {
+      token: tokB,
+    });
     expect(r.status).toBe(404);
   });
 });
@@ -1632,12 +1532,7 @@ describe("couple_picks: validation + auth", () => {
   test("PUT with invalid category slug returns 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("pick-bad-cat@weddly.test");
-    const r = await req(
-      "PUT",
-      "/api/picks/snorgle",
-      { supplier_id: "s1" },
-      { token },
-    );
+    const r = await req("PUT", "/api/picks/snorgle", { supplier_id: "s1" }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -1658,36 +1553,21 @@ describe("couple_picks: validation + auth", () => {
   test("PUT empty supplier_id returns 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("pick-empty-sid@weddly.test");
-    const r = await req(
-      "PUT",
-      "/api/picks/venue",
-      { supplier_id: " " },
-      { token },
-    );
+    const r = await req("PUT", "/api/picks/venue", { supplier_id: " " }, { token });
     expect(r.status).toBe(400);
   });
 
   test("PUT supplier_id > 80 chars returns 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("pick-long-sid@weddly.test");
-    const r = await req(
-      "PUT",
-      "/api/picks/venue",
-      { supplier_id: "x".repeat(81) },
-      { token },
-    );
+    const r = await req("PUT", "/api/picks/venue", { supplier_id: "x".repeat(81) }, { token });
     expect(r.status).toBe(400);
   });
 
   test("PUT non-string supplier_id returns 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("pick-num-sid@weddly.test");
-    const r = await req(
-      "PUT",
-      "/api/picks/venue",
-      { supplier_id: 42 },
-      { token },
-    );
+    const r = await req("PUT", "/api/picks/venue", { supplier_id: 42 }, { token });
     expect(r.status).toBe(400);
   });
 
@@ -1721,12 +1601,9 @@ describe("couple_picks: validation + auth", () => {
     await req("PUT", "/api/picks/venue", { supplier_id: "v1" }, { token });
     await req("PUT", "/api/picks/catering", { supplier_id: "c1" }, { token });
     await req("PUT", "/api/picks/photo_video", { supplier_id: "p1" }, { token });
-    const list = await req<{ picks: { category: string }[] }>(
-      "GET",
-      "/api/picks",
-      undefined,
-      { token },
-    );
+    const list = await req<{ picks: { category: string }[] }>("GET", "/api/picks", undefined, {
+      token,
+    });
     expect(list.status).toBe(200);
     const cats = list.data.picks.map((p) => p.category);
     expect(cats).toEqual([...cats].sort());
@@ -1744,12 +1621,9 @@ describe("couple_picks: validation + auth", () => {
     const { token: tokA } = await bootstrapCouple("pick-iso-a@weddly.test");
     await req("PUT", "/api/picks/venue", { supplier_id: "a-only" }, { token: tokA });
     const { token: tokB } = await bootstrapCouple("pick-iso-b@weddly.test");
-    const list = await req<{ picks: { supplier_id: string }[] }>(
-      "GET",
-      "/api/picks",
-      undefined,
-      { token: tokB },
-    );
+    const list = await req<{ picks: { supplier_id: string }[] }>("GET", "/api/picks", undefined, {
+      token: tokB,
+    });
     expect(list.status).toBe(200);
     expect(list.data.picks.find((p) => p.supplier_id === "a-only")).toBeUndefined();
   });
@@ -1932,12 +1806,9 @@ describe("supplier taxonomy: admin gates + edge cases", () => {
   test("DELETE unknown group returns 404", async () => {
     wipeAll();
     const adminToken = await registerAdminAndGetToken();
-    const r = await req(
-      "DELETE",
-      "/api/admin/supplier-groups/999999",
-      undefined,
-      { token: adminToken },
-    );
+    const r = await req("DELETE", "/api/admin/supplier-groups/999999", undefined, {
+      token: adminToken,
+    });
     expect(r.status).toBe(404);
   });
 
@@ -2009,16 +1880,11 @@ describe("supplier taxonomy: admin gates + edge cases", () => {
     const list = await req<{
       groups: { categories: { id: number; slug: string }[] }[];
     }>("GET", "/api/supplier-categories");
-    const cat = list.data.groups
-      .flatMap((g) => g.categories)
-      .find((c) => c.slug === "venue");
+    const cat = list.data.groups.flatMap((g) => g.categories).find((c) => c.slug === "venue");
     expect(cat).toBeDefined();
-    const r = await req(
-      "DELETE",
-      `/api/admin/supplier-categories/${cat?.id}`,
-      undefined,
-      { token: adminToken },
-    );
+    const r = await req("DELETE", `/api/admin/supplier-categories/${cat?.id}`, undefined, {
+      token: adminToken,
+    });
     expect(r.status).toBe(409);
   });
 
@@ -2059,12 +1925,9 @@ describe("supplier taxonomy: admin gates + edge cases", () => {
   test("DELETE unknown category returns 404", async () => {
     wipeAll();
     const adminToken = await registerAdminAndGetToken();
-    const r = await req(
-      "DELETE",
-      "/api/admin/supplier-categories/999999",
-      undefined,
-      { token: adminToken },
-    );
+    const r = await req("DELETE", "/api/admin/supplier-categories/999999", undefined, {
+      token: adminToken,
+    });
     expect(r.status).toBe(404);
   });
 
@@ -2080,4 +1943,3 @@ describe("supplier taxonomy: admin gates + edge cases", () => {
     expect(r.status).toBe(404);
   });
 });
-
