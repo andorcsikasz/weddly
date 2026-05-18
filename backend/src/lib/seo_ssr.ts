@@ -52,10 +52,10 @@ const META: Record<SeoLocale, LocaleMeta> = {
   hu: {
     lang: "hu",
     ogLocale: "hu_HU",
-    title: "Wēddly — az egész esküvőtök egy helyen",
+    title: "Wēddly · Közös esküvőtervezés egy helyen",
     description:
-      "Költségvetés, vendéglista, RSVP, ültetés és nyomtatványok egy közös felületen. Pár perc beállítás, és estékből percek lesznek.",
-    twDescription: "Egy közös felület mindkettőtöknek. A nyílt béta alatt ingyenes.",
+      "Tervezzétek együtt az esküvőtöket egy nyugodt, közös felületen: költségvetés, vendégek, RSVP, ültetés, nyomtatható kártyák. A nyílt béta alatt ingyenes.",
+    twDescription: "Közös felület mindkettőtöknek — a nyílt béta alatt ingyenes.",
     ogImageAlt: "Wēddly — közösen tervezzétek az esküvőtöket, nyugodtan.",
     brandName: "Wēddly",
     brandDescription:
@@ -90,10 +90,10 @@ const META: Record<SeoLocale, LocaleMeta> = {
   en: {
     lang: "en",
     ogLocale: "en_US",
-    title: "Weddly — your whole wedding in one shared workspace",
+    title: "Weddly · Your shared wedding-planning workspace",
     description:
-      "Budget, guest list, RSVP links, visual seating and printable cards live together in one shared workspace. Set up in minutes; free throughout the open beta.",
-    twDescription: "One shared workspace for both of you. Free throughout the open beta.",
+      "Plan your wedding together in one calm, shared workspace — budget, guests, RSVP, seating and printable cards. Free throughout the open beta.",
+    twDescription: "One shared workspace for both of you — free in the open beta.",
     ogImageAlt: "Weddly — plan your wedding together, calmly.",
     brandName: "Weddly",
     brandDescription:
@@ -165,7 +165,7 @@ function buildJsonLd(opts: {
       "@type": "Organization",
       name: meta.brandName,
       url: origin,
-      logo: `${origin}/favicon.svg`,
+      logo: `${origin}/logo.png`,
       description: meta.brandDescription,
       sameAs: [`https://${HU_HOST}`, `https://${EN_HOST}`],
     },
@@ -223,11 +223,15 @@ function buildHeadBlock(opts: { host: string | null; pathname: string; isRsvp: b
   const canonicalUrl = `https://${canonicalHost}${path}`;
   const huUrl = `https://${HU_HOST}${path}`;
   const enUrl = `https://${EN_HOST}${path}`;
-  const ogImage = opts.isRsvp ? "/og-rsvp.png" : "/og.png";
+  // Absolute og/twitter image URL — some scrapers (Facebook, LinkedIn) only
+  // honour absolute paths. Stays on the canonical host so the preview card
+  // attribution matches the click target the share resolves to.
+  const ogImage = `https://${canonicalHost}${opts.isRsvp ? "/og-rsvp.png" : "/og.png"}`;
 
   return [
     `<title>${escapeAttr(meta.title)}</title>`,
     `<meta name="description" content="${escapeAttr(meta.description)}" />`,
+    `<meta name="application-name" content="${escapeAttr(meta.brandName)}" />`,
     `<link rel="canonical" href="${canonicalUrl}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:site_name" content="Wēddly" />`,
@@ -292,6 +296,12 @@ export function renderRobotsTxt(host: string | null): string {
   ].join("\n");
 }
 
+// Captured at module-load (== deploy) time so every URL in the sitemap
+// shares the same lastmod for this revision. Google ignores <priority> and
+// <changefreq> per their docs; <lastmod> is the only signal in this trio
+// they actually use to schedule recrawl.
+const SITEMAP_LASTMOD = new Date().toISOString().slice(0, 10);
+
 export function renderSitemapXml(host: string | null): string {
   const locale = localeForHost(host);
   const canonicalHost = canonicalHostFor(locale);
@@ -305,6 +315,7 @@ export function renderSitemapXml(host: string | null): string {
     return [
       "  <url>",
       `    <loc>${here}</loc>`,
+      `    <lastmod>${SITEMAP_LASTMOD}</lastmod>`,
       `    <xhtml:link rel="alternate" hreflang="${locale}" href="${here}" />`,
       `    <xhtml:link rel="alternate" hreflang="${altLocale}" href="${there}" />`,
       `    <xhtml:link rel="alternate" hreflang="x-default" href="${xDefault}" />`,
