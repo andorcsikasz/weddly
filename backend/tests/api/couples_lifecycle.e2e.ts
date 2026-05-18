@@ -350,16 +350,17 @@ describe("couples_lifecycle: slug normalization + collision", () => {
     await req("PATCH", "/api/couples/slug", { slug: "TAKENBYA" }, { token: tA });
 
     const { token: tB } = await bootstrapCouple("slugcoll-b@weddly.test");
-    const collide = await req<{ detail?: { error?: string } }>(
+    // err() returns `{ error: <message>, detail: <extra-or-undefined> }`.
+    // The slug-take handler doesn't ship extra, so the user-visible string
+    // is on the top-level `error` field.
+    const collide = await req<{ error?: string }>(
       "PATCH",
       "/api/couples/slug",
       { slug: "TAKENBYA" },
       { token: tB },
     );
     expect(collide.status).toBe(409);
-    // Detail body has an error string with "taken" in it so the UI can show
-    // a meaningful message rather than a generic 409.
-    expect(String(collide.data.detail?.error ?? "")).toMatch(/taken/i);
+    expect(String(collide.data.error ?? "")).toMatch(/taken/i);
   });
 
   test("renaming to the current slug is a no-op 200 (idempotent)", async () => {
@@ -699,7 +700,7 @@ describe("couples_lifecycle: activity log scoping + windowing", () => {
 describe("couples_lifecycle: invite lookup + incoming list", () => {
   test("/api/invites/incoming filters out full couples (where partner_b already linked)", async () => {
     wipeAll();
-    const { token: tA } = await bootstrapCouple("incfull-a@weddly.test");
+    const { token: tA, coupleId: coupleA } = await bootstrapCouple("incfull-a@weddly.test");
     const inv = await req<{ invite: { token: string } }>(
       "POST",
       "/api/couples/invites",
@@ -709,27 +710,24 @@ describe("couples_lifecycle: invite lookup + incoming list", () => {
     // B accepts (now couple has partner B linked).
     const bToken = await registerAndAcceptInvite("incfull-b@weddly.test", inv.data.invite.token);
 
-    // Hand-craft a fresh unconsumed invite to B from couple A (couple is now
-    // full — incoming list should hide it).
+    // Hand-craft a fresh unconsumed invite to B's email from couple A
+    // (couple is now full — incoming list should hide it).
+    const inviterId = db
+      .prepare("SELECT id FROM users WHERE email = ?")
+      .get("incfull-a@weddly.test") as { id: number };
     const ts = Date.now();
     db.prepare(
-      `INSERT INTO couple_invites (couple_id, token, invited_email, invited_by_user_id, consumed_at, expires_at, created_at)
-       VALUES ((SELECT id FROM users WHERE email = ?), ?, ?, (SELECT id FROM users WHERE email = ?), NULL, ?, ?)`,
+      `INSERT INTO couple_invites
+         (couple_id, token, invited_email, invited_by_user_id, consumed_at, expires_at, created_at)
+       VALUES (?, ?, ?, ?, NULL, ?, ?)`,
     ).run(
-      "incfull-a@weddly.test",
+      coupleA,
       "freshtoken-incoming-full",
       "incfull-b@weddly.test",
-      "incfull-a@weddly.test",
+      inviterId.id,
       ts + 7 * 24 * 60 * 60 * 1000,
       ts,
     );
-    // Note above subquery picks the user_id, but couple_invites.couple_id
-    // expects a couple — rewrite using the actual couple id.
-    db.prepare(
-      `UPDATE couple_invites SET couple_id = (
-         SELECT couple_id FROM couple_members WHERE user_id = (SELECT id FROM users WHERE email = ?) LIMIT 1
-       ) WHERE token = 'freshtoken-incoming-full'`,
-    ).run("incfull-a@weddly.test");
 
     const incoming = await req<{ invites: unknown[] }>(
       "GET",
@@ -738,8 +736,8 @@ describe("couples_lifecycle: invite lookup + incoming list", () => {
       { token: bToken },
     );
     expect(incoming.status).toBe(200);
-    // B is already in this couple — both invites filter out (consumed +
-    // partner_b-linked). Length should be zero.
+    // Couple A is already partner-B-linked → the filter hides this invite,
+    // so B sees an empty list.
     expect(incoming.data.invites.length).toBe(0);
   });
 
