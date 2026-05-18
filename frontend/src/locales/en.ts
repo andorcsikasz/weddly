@@ -638,14 +638,13 @@ const en: LocaleMessages = {
     t3_meta: "September 2026 · Pécs · composite from beta interviews",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_eyebrow: "Pricing",
-    pricing_title: "Free for everything you need to plan a wedding.",
+    pricing_title: "Free now — pricing arrives with v2.",
     pricing_body:
-      "Budget, guest list, RSVP links, seating canvas and printable cards stay free during and after the open beta. Paid tiers in v2 will add advanced extras on top, while the planning core stays free.",
-    pricing_bullet_1: "Free during the beta — and after",
+      "Throughout the open beta everything is free: budget, guest list, RSVP links, seating canvas and printable cards. We'll introduce pricing with v2.",
+    pricing_bullet_1: "Free during the open beta",
     pricing_bullet_2: "Pause any time · 30-day grace",
     pricing_bullet_3: "CSV / PDF export, included",
-    pricing_v2_note:
-      "v2 paid extras (later): premium templates, additional storage, white-label vendor profiles.",
+    pricing_v2_note: "v2 introduces pricing. Details will be announced ahead of time.",
     why_eyebrow: "Why Weddly",
     why_title: "Meaning first, planning simplified.",
     why_a_title: "Everything in one place, in your hands",

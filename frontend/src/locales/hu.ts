@@ -638,14 +638,13 @@ const hu: LocaleMessages = {
     t3_meta: "2026. szeptember · Pécs · béta-interjúkból összeállítva",
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
     pricing_eyebrow: "Árak",
-    pricing_title: "Ami az esküvőtervezéshez kell, az ingyen marad.",
+    pricing_title: "Most ingyen — az árazás a v2-vel jön.",
     pricing_body:
-      "Költségvetés, vendéglista, RSVP linkek, ültetési vászon és nyomtatható kártyák — mind ingyen maradnak a nyílt béta alatt és után is. A v2-ben jönnek fizetős csomagok, de csak extra funkciókhoz; a tervezés magja mindig ingyenes marad.",
-    pricing_bullet_1: "Ingyenes a béta alatt és után is",
+      "A nyílt béta alatt minden funkciót szabadon használhattok: költségvetés, vendéglista, RSVP linkek, ültetési vászon és nyomtatható kártyák. A v2-vel vezetjük be az árazást.",
+    pricing_bullet_1: "Ingyenes a nyílt béta alatt",
     pricing_bullet_2: "Bármikor szüneteltethető · 30 nap",
     pricing_bullet_3: "CSV / PDF export, korlátlanul",
-    pricing_v2_note:
-      "A v2 fizetős extrái (később): prémium sablonok, plusz tárhely, white-label szolgáltató profilok.",
+    pricing_v2_note: "A v2-vel jön az árazás. A részleteket időben kihirdetjük.",
     why_eyebrow: "Miért Wēddly",
     why_title: "Először a lényeg, aztán a tervezés.",
     why_a_title: "Minden egy helyen, kézben tartva",

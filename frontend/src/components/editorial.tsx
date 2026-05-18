@@ -212,10 +212,14 @@ export function SectionLabel({
   orientation = "horizontal",
   className = "",
 }: SectionLabelProps) {
+  // `num === "—"` is the convention for "no real number, decorative only".
+  // In that case the italic em-dash glyph adds visual noise next to the
+  // hairline rule — drop it and let the rule alone lead into the label.
+  const showNumeral = num !== "—";
   if (orientation === "vertical") {
     return (
       <span className={`inline-flex flex-col items-center gap-3 ${className}`}>
-        <NumeralGlyph value={num} />
+        {showNumeral && <NumeralGlyph value={num} />}
         <span className="h-10 w-px bg-paper-400 dark:bg-umber-600" aria-hidden="true" />
         <EyebrowGlyph label={label} vertical />
       </span>
@@ -223,7 +227,7 @@ export function SectionLabel({
   }
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
-      <NumeralGlyph value={num} />
+      {showNumeral && <NumeralGlyph value={num} />}
       <span className="h-px w-8 bg-paper-400 dark:bg-umber-600" aria-hidden="true" />
       <EyebrowGlyph label={label} />
     </span>

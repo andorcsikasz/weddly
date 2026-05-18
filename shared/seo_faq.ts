@@ -22,7 +22,7 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
   hu: [
     {
       q: "Tényleg ingyenes a Wēddly?",
-      a: "Igen — a nyílt béta alatt mindent ingyen használhattok. A v2-ben jönnek majd fizetős csomagok extra funkciókhoz (plusz tárhely, prémium sablonok), de a költségvetés, vendéglista, RSVP és ültetés ingyenes marad.",
+      a: "A nyílt béta alatt minden funkciót szabadon használhattok — költségvetés, vendéglista, RSVP, ültetés, nyomtatható kártyák. A v2-vel vezetjük be az árazást; a részleteket időben kihirdetjük.",
     },
     {
       q: "Mindketten tudjuk használni?",
@@ -48,7 +48,7 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
   en: [
     {
       q: "Is Weddly really free?",
-      a: "Yes — everything is free throughout the open beta. Paid tiers will arrive in v2 for extras (extra storage, premium templates), but budget, guest list, RSVP and seating stay free.",
+      a: "Every feature is free throughout the open beta — budget, guest list, RSVP, seating, printable cards. We'll introduce pricing with v2; details will be announced ahead of time.",
     },
     {
       q: "Can both of us use it?",
