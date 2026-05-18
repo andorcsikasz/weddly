@@ -22,6 +22,13 @@ const STORAGE_KEY = "weddly.moodboard_url";
 const PERSONAL_OWNER_EMAIL = "andor.csikasz@gmail.com";
 const PERSONAL_DEFAULT_URL = "https://hu.pinterest.com/andorcsikasz/when-i-get-married/";
 
+// Demo workspace default — every ephemeral Shrek & Fiona couple lands on
+// /app/moodboard with this Pinterest board prefilled, so the page reads as
+// populated. Mirrors the owner pattern above: applied at render time, never
+// written to localStorage (which is browser-wide and would leak the URL into
+// a subsequent real workspace on the same machine).
+const DEMO_DEFAULT_URL = "https://hu.pinterest.com/weddlyxyz/when-i-get-married/";
+
 type ErrorCode = "invalid_url" | "not_found" | "private" | "empty" | "fetch_failed";
 
 const ERROR_KEY: Record<ErrorCode, string> = {
@@ -69,19 +76,29 @@ export default function MoodboardPage() {
   const [formError, setFormError] = useState<ErrorCode | null>(null);
   const [previewError, setPreviewError] = useState<ErrorCode | null>(null);
 
-  // Pre-fill the owner's personal Pinterest board when they land on the
-  // moodboard in their real (non-demo) workspace with nothing saved yet.
-  // Intentionally not written to localStorage — that key is browser-wide,
-  // so persisting would also surface this URL inside the demo couple.
+  // Auto-prefill a Pinterest board when the workspace lands on /app/moodboard
+  // with nothing saved yet. Two cases:
+  //   - Demo couple → the wēddly board ("when I get married"), so the visitor
+  //     sees a populated grid the first time they open the moodboard.
+  //   - Owner's real workspace → the personal board (kept for parity with the
+  //     pre-demo behaviour).
+  // Neither writes to localStorage: that key is browser-wide and persisting
+  // would leak the URL into the other kind of workspace on the same device.
   useEffect(() => {
     if (url) return;
-    if (!user || user.email !== PERSONAL_OWNER_EMAIL) return;
+    if (!user) return;
     let cancelled = false;
     coupleApi
       .current()
       .then((res) => {
-        if (cancelled) return;
-        if (res.couple && !res.couple.is_demo) {
+        if (cancelled || !res.couple) return;
+        if (res.couple.is_demo) {
+          setUrl(DEMO_DEFAULT_URL);
+          setDraft(DEMO_DEFAULT_URL);
+          setEditing(false);
+          return;
+        }
+        if (user.email === PERSONAL_OWNER_EMAIL) {
           setUrl(PERSONAL_DEFAULT_URL);
           setDraft(PERSONAL_DEFAULT_URL);
           setEditing(false);
