@@ -813,6 +813,8 @@ const hu: LocaleMessages = {
     tab_suppliers: "Szállító",
     tab_more: "Több",
     more_sheet_title: "További funkciók",
+    sidebar_collapse: "Oldalsáv összecsukása",
+    sidebar_expand: "Oldalsáv kinyitása",
   },
   planning: {
     title: "Tervezés",
@@ -1361,6 +1363,7 @@ const hu: LocaleMessages = {
     lines_title: "Költségsorok",
     lines_sub: "Szerkeszd a sorokat — a fenti összegek és sávok élőben frissülnek.",
     lines_empty: "Még nincs költségsor. Adj hozzá egyet, hogy elindulhass.",
+    lines_totals_label: "Összesen",
     honeymoon_breakdown_hint: "Lebontás a Nászút oldalon",
     honeymoon_open_aria: "Nászút oldal megnyitása",
     snapshots_sub: "Ments el egy verziót, amit később összevethetsz a mostanival.",

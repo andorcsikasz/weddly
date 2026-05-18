@@ -16,6 +16,8 @@ import {
   MessageCircle,
   Moon,
   MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plane,
   ShieldCheck,
   Sun,
@@ -304,6 +306,23 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [theme]);
 
+  // ── Sidebar collapse toggle ──────────────────────────────────────────
+  // Desktop-only. When collapsed, the rail narrows to an icon strip and
+  // labels become hover tooltips — useful on smaller laptops where the
+  // 224px rail crowds the main content. Persisted to localStorage so the
+  // choice survives reloads and route changes.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("weddly.sidebar.collapsed") === "1";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("weddly.sidebar.collapsed", sidebarCollapsed ? "1" : "0");
+    } catch {
+      /* localStorage blocked — preference just won't persist */
+    }
+  }, [sidebarCollapsed]);
+
   // ── Workspace handoff cleanup ────────────────────────────────────────
   // When the user signs out, wipe every `weddly.*` localStorage key so
   // the next person on this device doesn't inherit the previous tenant's
@@ -431,64 +450,104 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:pb-8 xl:max-w-screen-2xl">
-        <aside className="hidden w-56 shrink-0 lg:block">
-          {inAdminView ? (
-            <nav className="sticky top-20 flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-300">
-                <ShieldCheck size={11} aria-hidden="true" />
-                {t("admin.nav_label")}
-              </div>
-              {displayItems.map((item) => {
-                const badgeKey = (item as AdminNavItem).badgeKey;
-                const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
-                return (
-                  <AdminSideLink
-                    key={item.to}
-                    to={item.to}
-                    icon={item.icon}
-                    badgeCount={badgeCount}
-                  >
-                    {t(item.labelKey)}
-                  </AdminSideLink>
-                );
-              })}
-            </nav>
-          ) : (
-            <nav className="sticky top-20 flex flex-col gap-1">
-              {(() => {
-                // Render items in stable order, but inject a small section
-                // header whenever the `group` field flips. Today the only
-                // non-default group is "guest" — keeps the read-only guest
-                // portal visually separated from the planning rail above.
-                let lastGroup: NavGroup = "default";
-                return displayItems.map((item) => {
-                  const itemGroup: NavGroup = (item as NavItem).group ?? "default";
-                  const showHeader = itemGroup !== lastGroup;
-                  lastGroup = itemGroup;
+        <aside
+          className={`hidden shrink-0 transition-[width] duration-200 lg:block ${
+            sidebarCollapsed ? "w-14" : "w-56"
+          }`}
+        >
+          <div className="sticky top-20 flex flex-col gap-1">
+            {/* Collapse toggle — sits above the nav so it's the same affordance
+                in both couple and admin views. Aligns right when expanded so
+                the chevron sits flush with the rail edge; centered when
+                collapsed. */}
+            <div
+              className={`flex pb-1 ${sidebarCollapsed ? "justify-center" : "justify-end pr-1"}`}
+            >
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed((v) => !v)}
+                aria-label={t(sidebarCollapsed ? "nav.sidebar_expand" : "nav.sidebar_collapse")}
+                title={t(sidebarCollapsed ? "nav.sidebar_expand" : "nav.sidebar_collapse")}
+                aria-expanded={!sidebarCollapsed}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+              >
+                {sidebarCollapsed ? (
+                  <PanelLeftOpen size={16} aria-hidden="true" />
+                ) : (
+                  <PanelLeftClose size={16} aria-hidden="true" />
+                )}
+              </button>
+            </div>
+            {inAdminView ? (
+              <nav className="flex flex-col gap-0.5">
+                {!sidebarCollapsed && (
+                  <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-300">
+                    <ShieldCheck size={11} aria-hidden="true" />
+                    {t("admin.nav_label")}
+                  </div>
+                )}
+                {displayItems.map((item) => {
+                  const badgeKey = (item as AdminNavItem).badgeKey;
+                  const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
                   return (
-                    <div key={item.to}>
-                      {showHeader && itemGroup === "guest" && (
-                        <div className="mt-3 flex items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                          <span
-                            className="h-px flex-1 bg-paper-300 dark:bg-umber-700"
-                            aria-hidden
-                          />
-                          <span>{t("nav.group_guest")}</span>
-                          <span
-                            className="h-px flex-1 bg-paper-300 dark:bg-umber-700"
-                            aria-hidden
-                          />
-                        </div>
-                      )}
-                      <SideLink to={item.to} icon={item.icon}>
-                        {t(item.labelKey)}
-                      </SideLink>
-                    </div>
+                    <AdminSideLink
+                      key={item.to}
+                      to={item.to}
+                      icon={item.icon}
+                      label={t(item.labelKey)}
+                      collapsed={sidebarCollapsed}
+                      badgeCount={badgeCount}
+                    />
                   );
-                });
-              })()}
-            </nav>
-          )}
+                })}
+              </nav>
+            ) : (
+              <nav className="flex flex-col gap-1">
+                {(() => {
+                  // Render items in stable order, but inject a small section
+                  // header whenever the `group` field flips. Today the only
+                  // non-default group is "guest" — keeps the read-only guest
+                  // portal visually separated from the planning rail above.
+                  let lastGroup: NavGroup = "default";
+                  return displayItems.map((item) => {
+                    const itemGroup: NavGroup = (item as NavItem).group ?? "default";
+                    const showHeader = itemGroup !== lastGroup;
+                    lastGroup = itemGroup;
+                    return (
+                      <div key={item.to}>
+                        {showHeader &&
+                          itemGroup === "guest" &&
+                          (sidebarCollapsed ? (
+                            <div
+                              className="mx-2 my-2 h-px bg-paper-300 dark:bg-umber-700"
+                              aria-hidden
+                            />
+                          ) : (
+                            <div className="mt-3 flex items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                              <span
+                                className="h-px flex-1 bg-paper-300 dark:bg-umber-700"
+                                aria-hidden
+                              />
+                              <span>{t("nav.group_guest")}</span>
+                              <span
+                                className="h-px flex-1 bg-paper-300 dark:bg-umber-700"
+                                aria-hidden
+                              />
+                            </div>
+                          ))}
+                        <SideLink
+                          to={item.to}
+                          icon={item.icon}
+                          label={t(item.labelKey)}
+                          collapsed={sidebarCollapsed}
+                        />
+                      </div>
+                    );
+                  });
+                })()}
+              </nav>
+            )}
+          </div>
         </aside>
         <main
           id="main-content"
@@ -569,18 +628,24 @@ export function AppShell({ children }: { children: ReactNode }) {
 function SideLink({
   to,
   icon,
-  children,
+  label,
+  collapsed,
 }: {
   to: string;
   icon: ReactNode;
-  children: ReactNode;
+  label: string;
+  collapsed?: boolean;
 }) {
   return (
     <NavLink
       to={to}
       end={to === "/app"}
+      title={collapsed ? label : undefined}
+      aria-label={collapsed ? label : undefined}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
+        `flex items-center rounded-xl text-sm transition-colors ${
+          collapsed ? "h-10 w-10 justify-center" : "gap-3 px-3 py-2"
+        } ${
           isActive
             ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
@@ -588,7 +653,7 @@ function SideLink({
       }
     >
       {icon}
-      <span>{children}</span>
+      {!collapsed && <span>{label}</span>}
     </NavLink>
   );
 }
@@ -600,30 +665,51 @@ function SideLink({
 function AdminSideLink({
   to,
   icon,
-  children,
+  label,
+  collapsed,
   badgeCount,
 }: {
   to: string;
   icon: ReactNode;
-  children: ReactNode;
+  label: string;
+  collapsed?: boolean;
   /** Unread-style count rendered as a small red index on the right of the
-   *  row. Hidden when zero. Capped at 99 to keep the pill from blowing up. */
+   *  row. Hidden when zero. Capped at 99 to keep the pill from blowing up.
+   *  In collapsed mode it shrinks to a 8px dot anchored to the icon. */
   badgeCount?: number;
 }) {
   return (
     <NavLink
       to={to}
+      title={collapsed ? label : undefined}
+      aria-label={collapsed ? label : undefined}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
+        `flex items-center rounded-xl text-sm transition-colors ${
+          collapsed ? "h-10 w-10 justify-center" : "gap-3 px-3 py-2"
+        } ${
           isActive
             ? "bg-violet-950 text-white dark:bg-violet-700"
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
         }`
       }
     >
-      {icon}
-      <span className="flex-1">{children}</span>
-      {badgeCount && badgeCount > 0 ? <SidebarBadge count={badgeCount} /> : null}
+      {collapsed ? (
+        <span className="relative inline-flex">
+          {icon}
+          {badgeCount && badgeCount > 0 ? (
+            <span
+              aria-label={`${badgeCount} new`}
+              className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-blush-600"
+            />
+          ) : null}
+        </span>
+      ) : (
+        <>
+          {icon}
+          <span className="flex-1">{label}</span>
+          {badgeCount && badgeCount > 0 ? <SidebarBadge count={badgeCount} /> : null}
+        </>
+      )}
     </NavLink>
   );
 }

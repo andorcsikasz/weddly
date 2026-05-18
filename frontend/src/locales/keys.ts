@@ -864,6 +864,10 @@ export interface LocaleMessages {
     /** Mobile bottom nav "more" button — opens a sheet with the remaining flows. */
     tab_more: string;
     more_sheet_title: string;
+    /** Aria-labels for the desktop sidebar collapse toggle. Pair shown on the
+     *  small chevron button that narrows the rail to icons-only. */
+    sidebar_collapse: string;
+    sidebar_expand: string;
   };
   /** Free-form planning surface — three tabs over the planning_items table. */
   planning: {
@@ -1425,6 +1429,8 @@ export interface LocaleMessages {
     lines_title: string;
     lines_sub: string;
     lines_empty: string;
+    /** Label for the totals row at the bottom of the budget lines table. */
+    lines_totals_label: string;
     /** Hint shown in the aggregated honeymoon row's note cell. */
     honeymoon_breakdown_hint: string;
     /** Aria-label for the chevron link that opens /app/honeymoon. */

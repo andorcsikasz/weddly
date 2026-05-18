@@ -813,6 +813,8 @@ const en: LocaleMessages = {
     tab_suppliers: "Vendors",
     tab_more: "More",
     more_sheet_title: "More",
+    sidebar_collapse: "Collapse sidebar",
+    sidebar_expand: "Expand sidebar",
   },
   planning: {
     title: "Planning",
@@ -1354,6 +1356,7 @@ const en: LocaleMessages = {
     lines_title: "Budget lines",
     lines_sub: "Edit each line — totals above and bars update live.",
     lines_empty: "No budget lines yet. Add one to start planning.",
+    lines_totals_label: "Total",
     honeymoon_breakdown_hint: "Breakdown on the Honeymoon page",
     honeymoon_open_aria: "Open the Honeymoon page",
     snapshots_sub: "Capture a scenario you can compare to later.",
