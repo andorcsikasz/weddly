@@ -1,11 +1,12 @@
-// Read-only analytics rollups for /app/admin/analytics. Three orthogonal
-// endpoints — money / activity / picks — each returning one fully-aggregated
-// payload so the dashboard can render in a single round-trip. Gated by the
-// same ADMIN_EMAILS allowlist as the rest of /api/admin/*.
+// Read-only analytics rollups for /app/admin/analytics. Four orthogonal
+// endpoints — money / activity / picks / engagement — each returning one
+// fully-aggregated payload so the dashboard can render in a single round-trip.
+// Gated by the same ADMIN_EMAILS allowlist as the rest of /api/admin/*.
 
 import type {
   AdminActivityAnalytics,
   AdminAnalyticsStats,
+  AdminEngagementAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
 } from "@shared/admin_analytics";
@@ -497,8 +498,194 @@ function handlePicks(ctx: Ctx): Response {
   return json(picksAnalytics());
 }
 
+// ─── /api/admin/analytics/engagement ─────────────────────────────────────
+
+// Two adjacent audit rows from the same actor count as the same session as
+// long as they're within this many minutes apart. 30 is the de-facto
+// industry default (matches GA, Mixpanel) and is documented in
+// shared/admin_analytics.ts.
+const SESSION_GAP_MINUTES = 30;
+const MS_PER_MINUTE = 60 * 1000;
+const SESSION_GAP_MS = SESSION_GAP_MINUTES * MS_PER_MINUTE;
+
+const TOP_FEATURE_LIMIT = 8;
+
+function engagementAnalytics(): AdminEngagementAnalytics {
+  const now = Date.now();
+  const windowStart = now - 30 * DAY_MS;
+
+  // Pull the 30-day audit window in one shot, pre-sorted by actor + time so
+  // the JS-side session walker is a single linear pass. Anonymous rows
+  // (actor_user_id IS NULL — system tasks, RSVP submissions, etc.) are
+  // excluded; sessions are inherently a per-user concept.
+  const auditRows = db
+    .prepare(
+      `SELECT actor_user_id, action, created_at FROM audit_log
+        WHERE created_at >= ? AND actor_user_id IS NOT NULL
+        ORDER BY actor_user_id ASC, created_at ASC`,
+    )
+    .all(windowStart) as { actor_user_id: number; action: string; created_at: number }[];
+
+  // ─── Sessions: walk per-user, break on >30min gap. ─────────────────────
+  const sessionDurations: number[] = [];
+  const activeUsers = new Set<number>();
+  let currentActor: number | null = null;
+  let sessionStart = 0;
+  let sessionLastSeen = 0;
+
+  const flushSession = (): void => {
+    if (currentActor === null) return;
+    const elapsedMs = sessionLastSeen - sessionStart;
+    // Single-row bursts count as 1-minute sessions so the median doesn't
+    // collapse to zero (spec'd in shared/admin_analytics.ts).
+    const minutes = Math.max(1, Math.round(elapsedMs / MS_PER_MINUTE));
+    sessionDurations.push(minutes);
+  };
+
+  for (const row of auditRows) {
+    activeUsers.add(row.actor_user_id);
+    if (row.actor_user_id !== currentActor) {
+      // New actor — close the previous session, start a fresh one.
+      flushSession();
+      currentActor = row.actor_user_id;
+      sessionStart = row.created_at;
+      sessionLastSeen = row.created_at;
+      continue;
+    }
+    if (row.created_at - sessionLastSeen > SESSION_GAP_MS) {
+      // Gap exceeded — flush the closed session and start a new one for the
+      // same actor.
+      flushSession();
+      sessionStart = row.created_at;
+      sessionLastSeen = row.created_at;
+      continue;
+    }
+    sessionLastSeen = row.created_at;
+  }
+  flushSession();
+
+  const sessionDurationMinutes = quantiles(sessionDurations);
+  const totalSessions = sessionDurations.length;
+
+  // ─── Retention: cohort = users registered ≥30d ago. ────────────────────
+  const cohortCutoff = now - 30 * DAY_MS;
+  const cohortRows = db
+    .prepare(
+      `SELECT id, created_at, last_seen_at FROM users
+        WHERE status = 'active' AND email NOT LIKE '%@purged.local' AND created_at <= ?`,
+    )
+    .all(cohortCutoff) as {
+    id: number;
+    created_at: number;
+    last_seen_at: number | null;
+  }[];
+
+  // Pre-compute the earliest audit_log timestamp per user (across all time,
+  // not just the 30-day analytics window). Retention asks "did this user
+  // EVER come back N days after signup", so the activity window must be
+  // unbounded on the late side.
+  const auditByUser = new Map<number, number[]>();
+  if (cohortRows.length > 0) {
+    const auditAll = db
+      .prepare(
+        `SELECT actor_user_id, created_at FROM audit_log
+          WHERE actor_user_id IS NOT NULL
+          ORDER BY actor_user_id ASC, created_at ASC`,
+      )
+      .all() as { actor_user_id: number; created_at: number }[];
+    for (const r of auditAll) {
+      const arr = auditByUser.get(r.actor_user_id);
+      if (arr) arr.push(r.created_at);
+      else auditByUser.set(r.actor_user_id, [r.created_at]);
+    }
+  }
+
+  let d1Hits = 0;
+  let d7Hits = 0;
+  let d30Hits = 0;
+  for (const u of cohortRows) {
+    const audits = auditByUser.get(u.id) ?? [];
+    const lastSeen = u.last_seen_at ?? 0;
+    const t1 = u.created_at + 1 * DAY_MS;
+    const t7 = u.created_at + 7 * DAY_MS;
+    const t30 = u.created_at + 30 * DAY_MS;
+    // Audits are sorted ASC per user, so the last element is the latest
+    // activity timestamp. A user counts as "retained at D+N" if EITHER
+    // their latest audit_log row is at/after that boundary OR their
+    // last_seen_at has moved past it. last_seen_at is updated on every
+    // authed request, so it captures lurkers who didn't mutate anything.
+    const latestAudit = audits.length > 0 ? (audits[audits.length - 1] ?? 0) : 0;
+    const hasAfter = (boundary: number): boolean => lastSeen >= boundary || latestAudit >= boundary;
+    if (hasAfter(t1)) d1Hits += 1;
+    if (hasAfter(t7)) d7Hits += 1;
+    if (hasAfter(t30)) d30Hits += 1;
+  }
+
+  const cohortSize = cohortRows.length;
+  const round3 = (n: number): number => Math.round(n * 1000) / 1000;
+  const retention =
+    cohortSize === 0
+      ? { cohort_size: 0, d1: null, d7: null, d30: null }
+      : {
+          cohort_size: cohortSize,
+          d1: round3(d1Hits / cohortSize),
+          d7: round3(d7Hits / cohortSize),
+          d30: round3(d30Hits / cohortSize),
+        };
+
+  // ─── Time-of-day matrix: 7 rows (Mon..Sun) × 24 cols (0..23 UTC). ──────
+  const matrix: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0));
+  let maxCell = 0;
+  for (const row of auditRows) {
+    const d = new Date(row.created_at);
+    // JS getUTCDay: 0=Sun..6=Sat. Spec wants 0=Mon..6=Sun, so remap.
+    const dow = (d.getUTCDay() + 6) % 7;
+    const hour = d.getUTCHours();
+    const rowMatrix = matrix[dow];
+    if (!rowMatrix) continue;
+    const cur = rowMatrix[hour] ?? 0;
+    const next = cur + 1;
+    rowMatrix[hour] = next;
+    if (next > maxCell) maxCell = next;
+  }
+
+  // ─── Top features: action prefix before the first ".". ─────────────────
+  const featureCounts = new Map<string, { count: number; users: Set<number> }>();
+  for (const row of auditRows) {
+    const dot = row.action.indexOf(".");
+    const feature = dot === -1 ? row.action : row.action.slice(0, dot);
+    let bucket = featureCounts.get(feature);
+    if (!bucket) {
+      bucket = { count: 0, users: new Set() };
+      featureCounts.set(feature, bucket);
+    }
+    bucket.count += 1;
+    bucket.users.add(row.actor_user_id);
+  }
+  const topFeatures = [...featureCounts.entries()]
+    .map(([feature, b]) => ({ feature, count: b.count, users: b.users.size }))
+    // Sort by count desc, tie-broken alphabetically for a stable response.
+    .sort((a, b) => b.count - a.count || a.feature.localeCompare(b.feature))
+    .slice(0, TOP_FEATURE_LIMIT);
+
+  return {
+    session_duration_minutes: sessionDurationMinutes,
+    total_sessions: totalSessions,
+    active_users_30d: activeUsers.size,
+    retention,
+    time_of_day: { matrix, max: maxCell },
+    top_features: topFeatures,
+  };
+}
+
+function handleEngagement(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(engagementAnalytics());
+}
+
 export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/money", handleMoney, true);
   router.get("/api/admin/analytics/activity", handleActivity, true);
   router.get("/api/admin/analytics/picks", handlePicks, true);
+  router.get("/api/admin/analytics/engagement", handleEngagement, true);
 }

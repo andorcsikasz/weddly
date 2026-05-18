@@ -39,8 +39,7 @@ export async function req<T = unknown>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-test-client-ip":
-      opts.clientIp ??
-      `10.0.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`,
+      opts.clientIp ?? `10.0.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`,
   };
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
   if (opts.headers) {

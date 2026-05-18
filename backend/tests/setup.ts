@@ -3,8 +3,11 @@
 import { existsSync, rmSync } from "node:fs";
 
 process.env.NODE_ENV = "test";
-process.env.DB_PATH = "./data/test-weddly.db";
-process.env.PORT = "8791";
+// Allow callers to override PORT + DB_PATH so two worktrees can run their
+// e2e suites side-by-side without colliding on :8791. Default to the
+// shared sentinel values when nothing's been pre-set.
+process.env.DB_PATH = process.env.DB_PATH ?? "./data/test-weddly.db";
+process.env.PORT = process.env.PORT ?? "8791";
 process.env.JWT_SECRET = "test-jwt-secret-0123456789abcdef0123456789abcdef0123456789abcdef";
 process.env.FRONTEND_BASE_URL = "http://localhost:5173";
 process.env.RESEND_API_KEY = ""; // ensure email is no-op

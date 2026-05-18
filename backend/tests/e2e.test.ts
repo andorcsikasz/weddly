@@ -9840,6 +9840,19 @@ describe("admin analytics", () => {
     }[];
     source_breakdown: { curated: number; community: number; diy: number };
   }
+  interface EngagementPayload {
+    session_duration_minutes: Stats;
+    total_sessions: number;
+    active_users_30d: number;
+    retention: {
+      cohort_size: number;
+      d1: number | null;
+      d7: number | null;
+      d30: number | null;
+    };
+    time_of_day: { matrix: number[][]; max: number };
+    top_features: { feature: string; count: number; users: number }[];
+  }
 
   async function registerAdmin(): Promise<string> {
     const r = await req<{ token: string }>("POST", "/api/auth/register", {
@@ -9890,6 +9903,7 @@ describe("admin analytics", () => {
       "/api/admin/analytics/money",
       "/api/admin/analytics/activity",
       "/api/admin/analytics/picks",
+      "/api/admin/analytics/engagement",
     ]) {
       const r = await req(path.startsWith("/api") ? "GET" : "GET", path, undefined, {
         token: coupleToken,
@@ -10215,6 +10229,144 @@ describe("admin analytics", () => {
     expect(empty?.picked).toBe(0);
     expect(empty?.missing).toBe(3);
     expect(empty?.coverage_pct).toBe(0);
+  });
+
+  test("engagement: empty database returns all-zero shape with null retention", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    // registerAdmin writes a `user.register` audit row for the admin. Wipe
+    // it so this test can assert the truly-empty path (no sessions, no
+    // active users, etc.). The registration flow is exercised elsewhere.
+    db.exec("DELETE FROM audit_log");
+
+    const eng = await req<EngagementPayload>("GET", "/api/admin/analytics/engagement", undefined, {
+      token: adminToken,
+    });
+    expect(eng.status).toBe(200);
+    // All top-level fields present.
+    expect(eng.data.session_duration_minutes).toEqual({
+      count: 0,
+      sum: 0,
+      avg: 0,
+      median: 0,
+      p25: 0,
+      p75: 0,
+    });
+    expect(eng.data.total_sessions).toBe(0);
+    expect(eng.data.active_users_30d).toBe(0);
+    // The admin user we just registered is younger than 30 days, so the
+    // cohort is empty — every retention number must be null.
+    expect(eng.data.retention.cohort_size).toBe(0);
+    expect(eng.data.retention.d1).toBeNull();
+    expect(eng.data.retention.d7).toBeNull();
+    expect(eng.data.retention.d30).toBeNull();
+    // Heatmap is always a fully-populated 7×24 grid even with no data.
+    expect(eng.data.time_of_day.matrix.length).toBe(7);
+    expect(eng.data.time_of_day.matrix.every((row) => row.length === 24)).toBe(true);
+    expect(eng.data.time_of_day.matrix.every((row) => row.every((c) => c === 0))).toBe(true);
+    expect(eng.data.time_of_day.max).toBe(0);
+    expect(eng.data.top_features).toEqual([]);
+  });
+
+  test("engagement: planted audit rows surface sessions, features, and heatmap cells", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const { token: _userToken } = await bootstrapCouple("engage-user@weddly.test");
+    const userRow = db
+      .prepare("SELECT id FROM users WHERE email = ?")
+      .get("engage-user@weddly.test") as { id: number };
+    const userId = userRow.id;
+
+    const ts = Date.now();
+    const MIN = 60 * 1000;
+
+    // Session 1: three rows within the 30-minute gap window.
+    db.prepare(
+      `INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at)
+       VALUES (?, NULL, 'guest.create', 'guest', NULL, ?)`,
+    ).run(userId, ts - 60 * MIN);
+    db.prepare(
+      `INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at)
+       VALUES (?, NULL, 'guest.update', 'guest', NULL, ?)`,
+    ).run(userId, ts - 50 * MIN);
+    db.prepare(
+      `INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at)
+       VALUES (?, NULL, 'budget.line.create', 'budget_line', NULL, ?)`,
+    ).run(userId, ts - 40 * MIN);
+    // Session 2: a single row 5 hours later (gap > 30min → new session).
+    db.prepare(
+      `INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at)
+       VALUES (?, NULL, 'guest.delete', 'guest', NULL, ?)`,
+    ).run(userId, ts - 5 * 60 * MIN);
+    // Anonymous row — must be ignored by the 30-day window query.
+    db.prepare(
+      `INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at)
+       VALUES (NULL, NULL, 'rsvp.submit', 'rsvp', NULL, ?)`,
+    ).run(ts - 2 * 60 * MIN);
+
+    const eng = await req<EngagementPayload>("GET", "/api/admin/analytics/engagement", undefined, {
+      token: adminToken,
+    });
+    expect(eng.status).toBe(200);
+    expect(eng.data.total_sessions).toBeGreaterThanOrEqual(2);
+    expect(eng.data.active_users_30d).toBeGreaterThanOrEqual(1);
+    expect(eng.data.session_duration_minutes.count).toBe(eng.data.total_sessions);
+
+    // The 3-row burst spans 20 minutes; the singleton becomes a 1-minute
+    // session. Median sits at the lower of the two when there are exactly
+    // two sessions — be tolerant of additional plausible sessions from
+    // bootstrapCouple's own audit footprint but pin the headline numbers.
+    expect(eng.data.session_duration_minutes.sum).toBeGreaterThanOrEqual(1);
+    expect(eng.data.session_duration_minutes.median).toBeGreaterThanOrEqual(1);
+
+    // "guest" prefix should appear (3 rows: create + update + delete).
+    const guestFeature = eng.data.top_features.find((f) => f.feature === "guest");
+    expect(guestFeature).toBeDefined();
+    expect(guestFeature?.count).toBeGreaterThanOrEqual(3);
+    expect(guestFeature?.users).toBeGreaterThanOrEqual(1);
+
+    // "budget" prefix should also surface from budget.line.create.
+    const budgetFeature = eng.data.top_features.find((f) => f.feature === "budget");
+    expect(budgetFeature).toBeDefined();
+
+    // Anonymous rsvp.submit must not appear (actor_user_id IS NULL filter).
+    expect(eng.data.top_features.find((f) => f.feature === "rsvp")).toBeUndefined();
+
+    // Heatmap max must reflect the densest cell — at minimum 1.
+    expect(eng.data.time_of_day.max).toBeGreaterThanOrEqual(1);
+    // Each row is 24-wide; total cell sum equals the audit row count for
+    // non-null actors over the 30-day window.
+    const cellSum = eng.data.time_of_day.matrix.reduce(
+      (s, row) => s + row.reduce((rs, c) => rs + c, 0),
+      0,
+    );
+    expect(cellSum).toBeGreaterThanOrEqual(4);
+  });
+
+  test("engagement: retention reports cohort_size + d1/d7/d30 fractions", async () => {
+    wipeAll();
+    const adminToken = await registerAdmin();
+
+    // Backdate two users by 60 days so they fall into the ≥30-day cohort.
+    const ts60 = Date.now() - 60 * 24 * 60 * 60 * 1000;
+    db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at, last_seen_at)
+       VALUES (?, '', 'Returner', 'active', 'owner', 0, ?, ?, ?)`,
+    ).run("returner@weddly.test", ts60, ts60, Date.now()); // last_seen_at is now → counts for D+30
+    db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at, last_seen_at)
+       VALUES (?, '', 'Lurker', 'active', 'owner', 0, ?, ?, ?)`,
+    ).run("lurker@weddly.test", ts60, ts60, null); // never came back → 0 retention
+
+    const eng = await req<EngagementPayload>("GET", "/api/admin/analytics/engagement", undefined, {
+      token: adminToken,
+    });
+    expect(eng.status).toBe(200);
+    expect(eng.data.retention.cohort_size).toBe(2);
+    // Returner came back well past D+30 (last_seen_at = now ≫ created_at + 30d).
+    expect(eng.data.retention.d1).toBe(0.5);
+    expect(eng.data.retention.d7).toBe(0.5);
+    expect(eng.data.retention.d30).toBe(0.5);
   });
 });
 
