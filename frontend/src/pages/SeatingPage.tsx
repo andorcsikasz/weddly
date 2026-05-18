@@ -1818,6 +1818,22 @@ function SeatLayoutPreview({
               transform={`rotate(${rotDeg} ${px} ${py})`}
               className={isDisabled ? "fill-paper-200" : "fill-blush-300"}
             />
+            {/* Seat number — small but readable. Kept upright (not
+                counter-rotated to the chair) so it reads consistently no
+                matter which edge of the table the chair sits on. Skipped
+                for disabled seats since the × already fills the centre. */}
+            {!isDisabled && (
+              <text
+                x={px}
+                y={py}
+                textAnchor="middle"
+                dominantBaseline="central"
+                className="fill-ink-800 font-semibold dark:fill-ink-900"
+                style={{ fontSize: 8, pointerEvents: "none" }}
+              >
+                {i + 1}
+              </text>
+            )}
             {isDisabled && (
               <g
                 transform={`translate(${px} ${py}) rotate(${rotDeg})`}
