@@ -3069,18 +3069,17 @@ const hu: LocaleMessages = {
     // ── Persistent banner that runs across the top of /app while the
     //    active workspace is a demo couple. ───────────────────────────
     banner_title: "Shrek & Fiona demo",
-    banner_body: "Játssz vele bátran — minden szerkesztés elveszik, amikor kilépsz.",
     banner_cta: "Kezdd a sajátotokat",
     banner_dismiss_aria: "Bezárás",
-    // ── Conversion popup ─────────────────────────────────────────────
-    popup_eyebrow: "Itt az idő, herceg(nő)",
+    // ── Conversion popup ─ minimalist: title + one-line body + one
+    //    primary CTA + a trust microcopy under it. The "happily ever
+    //    after" movie reference is the only fairytale beat — everything
+    //    else is short, single-language Hungarian. ─────────────────────
     popup_title: "Ideje elkezdeni a saját tündérmesétek.",
     popup_body:
-      "Lehet, hogy a herceg nem fehér lovon érkezik (lehet, hogy egy beszélő szamáron), de az „örökkön örökké” most kezdődik. Hagyd Shreket a swampban, és tervezzétek meg végre a SAJÁT esküvőtöket.",
-    popup_signoff: "— a wēddly és egy közeli ogre",
-    popup_cta_primary: "Tündérmese · regisztráció",
-    popup_cta_secondary: "Maradok még a swampban",
-    popup_seen_again_in: "Pár perc múlva újra felugrik, ha kéred.",
+      "Lehet, hogy a herceg nem fehér lovon érkezik — de az „örökkön örökké” most kezdődik.",
+    popup_cta: "Regisztráció",
+    popup_microcopy: "Ingyenes a nyílt béta alatt.",
   },
 };
 

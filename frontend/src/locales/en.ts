@@ -3047,18 +3047,15 @@ const en: LocaleMessages = {
     // ── Persistent banner that runs across the top of /app while the
     //    active workspace is a demo couple. ───────────────────────────
     banner_title: "Shrek & Fiona demo",
-    banner_body: "Play around — every change vanishes the moment you sign out.",
     banner_cta: "Start your own",
     banner_dismiss_aria: "Dismiss",
-    // ── Conversion popup ─────────────────────────────────────────────
-    popup_eyebrow: "Hey, future royalty",
+    // ── Conversion popup ─ minimalist: title + one-line body + one
+    //    primary CTA + a trust microcopy under it. ─────────────────────
     popup_title: "Time to start your own fairy tale.",
     popup_body:
-      "Maybe the prince won't arrive on a white horse (maybe he'll arrive on a talking donkey). Either way, your happily ever after starts now. Leave Shrek in the swamp and plan YOUR wedding for real.",
-    popup_signoff: "— Weddly, and one nearby ogre",
-    popup_cta_primary: "Begin our story · sign up",
-    popup_cta_secondary: "I'll hang in the swamp a bit longer",
-    popup_seen_again_in: "We'll nudge you again in a few minutes.",
+      "Maybe the prince won't arrive on a white horse — but your “happily ever after” starts now.",
+    popup_cta: "Sign up",
+    popup_microcopy: "Free during the open beta.",
   },
 };
 

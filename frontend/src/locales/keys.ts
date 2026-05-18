@@ -3342,15 +3342,11 @@ export interface LocaleMessages {
    *  under `landing.*`) because they render inside the authenticated shell. */
   demo: {
     banner_title: string;
-    banner_body: string;
     banner_cta: string;
     banner_dismiss_aria: string;
-    popup_eyebrow: string;
     popup_title: string;
     popup_body: string;
-    popup_signoff: string;
-    popup_cta_primary: string;
-    popup_cta_secondary: string;
-    popup_seen_again_in: string;
+    popup_cta: string;
+    popup_microcopy: string;
   };
 }

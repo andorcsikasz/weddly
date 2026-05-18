@@ -12,7 +12,7 @@
 //      Dismissal stamps a localStorage cooldown so it doesn't pester
 //      every navigation.
 
-import { ArrowRight, Sparkles, X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Couple } from "@shared/types";
@@ -196,52 +196,34 @@ function DemoNudgeModal({ onClose, onConvert }: { onClose: () => void; onConvert
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-lg overflow-hidden rounded-t-3xl bg-paper-50 shadow-pop ring-1 ring-paper-300 sm:rounded-3xl dark:bg-umber-800 dark:ring-umber-700">
-        {/* Watercolor accent — keeps the popup feeling on-brand instead of
-            looking like a generic JS confirm. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-blush-200/70 blur-2xl dark:bg-blush-700/30"
-        />
+      <div className="relative w-full max-w-md overflow-hidden rounded-t-3xl bg-paper-50 ring-1 ring-paper-300 shadow-pop sm:rounded-3xl dark:bg-umber-800 dark:ring-umber-700">
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900 dark:text-paper-300 dark:hover:bg-umber-700"
+          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-300 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
           aria-label={t("demo.banner_dismiss_aria")}
         >
           <X size={16} aria-hidden="true" />
         </button>
-        <div className="relative p-7 sm:p-9">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
-            {t("demo.popup_eyebrow")}
-          </p>
+        <div className="p-7 sm:p-9">
           <h2
             id="demo-nudge-title"
-            className="mt-3 font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl"
+            className="pr-10 font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl"
           >
             {t("demo.popup_title")}
           </h2>
-          <p className="mt-4 text-sm leading-relaxed text-ink-700 dark:text-paper-100 sm:text-base">
+          <p className="mt-4 font-serif text-base leading-relaxed text-ink-700 dark:text-paper-100">
             {t("demo.popup_body")}
           </p>
-          <p className="mt-3 font-serif text-sm italic text-ink-500 dark:text-umber-300">
-            {t("demo.popup_signoff")}
-          </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={onConvert}
-              className="btn-primary btn-lg inline-flex w-full items-center justify-center gap-2 shadow-sm sm:w-auto"
-            >
-              {t("demo.popup_cta_primary")}
-              <ArrowRight size={16} aria-hidden="true" />
-            </button>
-            <button type="button" onClick={onClose} className="btn-outline btn-lg w-full sm:w-auto">
-              {t("demo.popup_cta_secondary")}
-            </button>
-          </div>
-          <p className="mt-4 text-xs text-ink-500 dark:text-umber-300">
-            {t("demo.popup_seen_again_in")}
+          <button
+            type="button"
+            onClick={onConvert}
+            className="btn-primary btn-lg mt-6 inline-flex w-full items-center justify-center gap-2 shadow-sm"
+          >
+            {t("demo.popup_cta")}
+          </button>
+          <p className="mt-3 text-center text-xs text-ink-500 dark:text-umber-300">
+            {t("demo.popup_microcopy")}
           </p>
         </div>
       </div>
