@@ -1457,7 +1457,6 @@ const en: LocaleMessages = {
     benchmark_source_hint: "Where do these numbers come from?",
     overcap_soft_label: "A touch over your budget",
     overcap_medium_label: "Over by {amount}",
-    overcap_serious_action: "What's pushing it up? Show top 3 lines →",
     per_guest_planned: "Planned · {amount}/guest × {count} guests",
     per_guest_actual: "Actual · {amount}/guest · based on {confirmed} confirmed RSVPs",
   },

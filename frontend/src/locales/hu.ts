@@ -1465,7 +1465,6 @@ const hu: LocaleMessages = {
     benchmark_source_hint: "Honnan jönnek ezek a számok?",
     overcap_soft_label: "Kicsit a kereted fölött",
     overcap_medium_label: "{amount}-tal a keret fölött",
-    overcap_serious_action: "Mi húzza fel? Mutasd a top 3 tételt →",
     per_guest_planned: "Tervezett · {amount}/fő × {count} vendég",
     per_guest_actual: "Tényleges · {amount}/fő · {confirmed} igen-RSVP alapján",
   },

@@ -1594,9 +1594,6 @@ export interface LocaleMessages {
     /** Medium tier (5–20 % over). Replaces the legacy `budget.over_by` pill
      *  copy with the same magnitude semantics. Receives `{amount}`. */
     overcap_medium_label: string;
-    /** Serious tier (>20 % over). Action line under the warning pill that
-     *  deep-links to /app/budget#top-overage. */
-    overcap_serious_action: string;
     /** Always-on planned row under the headline.
      *  Receives `{amount}` (per-guest planned) and `{count}` (slider count). */
     per_guest_planned: string;

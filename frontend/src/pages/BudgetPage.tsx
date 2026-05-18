@@ -127,10 +127,6 @@ export default function BudgetPage() {
   /** Snapshot id currently being restored — disables both action buttons on
    *  the affected card and shows an inline spinner. Null when idle. */
   const [restoringId, setRestoringId] = useState<number | null>(null);
-  /** Line id to flash with a blush ring after a `#top-overage` deep-link.
-   *  Mirrors the highlight pattern used on SuppliersPage post-submit. */
-  const [highlightLineId, setHighlightLineId] = useState<number | null>(null);
-
   async function refresh() {
     const [linesR, snapsR, coupleR] = await Promise.all([
       budgetApi.listLines(),
@@ -580,54 +576,6 @@ export default function BudgetPage() {
   // count is small.
   const livePlannedTotal = useMemo(() => lines.reduce((s, l) => s + l.planned_huf, 0), [lines]);
 
-  // Deep-link target from CostPlanningCard's serious-tier action. Picks the
-  // single line with the biggest positive (actual − planned) delta, falling
-  // back to the heaviest planned line when nothing is over plan. Excludes the
-  // honeymoon roll-up because it doesn't render a clickable row here — the
-  // dedicated page owns that breakdown.
-  const topOverageLineId = useMemo<number | null>(() => {
-    const candidates = lines.filter((l) => l.category !== "honeymoon");
-    if (candidates.length === 0) return null;
-    let bestDelta = 0;
-    let bestId: number | null = null;
-    for (const l of candidates) {
-      const delta = l.actual_huf - l.planned_huf;
-      if (delta > bestDelta) {
-        bestDelta = delta;
-        bestId = l.id;
-      }
-    }
-    if (bestId !== null) return bestId;
-    // No line is over plan — fall back to the heaviest planned line so the
-    // user still lands somewhere actionable. (Simpler-than-spec branch
-    // documented per the task brief.)
-    let bestPlanned = -1;
-    for (const l of candidates) {
-      if (l.planned_huf > bestPlanned) {
-        bestPlanned = l.planned_huf;
-        bestId = l.id;
-      }
-    }
-    return bestId;
-  }, [lines]);
-
-  // When CostPlanningCard's serious-tier link drops us at /app/budget#top-overage,
-  // scroll the heaviest-overage row into view + flash a 2 s blush ring on it.
-  // Browser-native scroll-to-anchor handles the case where JS can't find a
-  // row (e.g. empty list) via the `id="top-overage"` anchor on the section.
-  useEffect(() => {
-    if (location.hash !== "#top-overage") return;
-    if (lines.length === 0) return;
-    if (topOverageLineId === null) return;
-    const el = document.querySelector<HTMLElement>(`[data-budget-line-id="${topOverageLineId}"]`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    setHighlightLineId(topOverageLineId);
-    const tid = window.setTimeout(() => setHighlightLineId(null), 2000);
-    return () => window.clearTimeout(tid);
-    // `location.hash` and `lines` together cover: first paint after navigation,
-    // and the post-refresh case where lines arrive after the hash.
-  }, [location.hash, lines, topOverageLineId]);
-
   // Dashboard "tap the amount" deep-link → /app/budget#cat-<category>. Scroll
   // the first table row of that category into view and focus its planned-huf
   // input so the user lands ready to type. Falls back to the CostPlanningCard
@@ -797,7 +745,7 @@ export default function BudgetPage() {
         onRemoveCustomRow={removeCustomRow}
       />
 
-      <section id="top-overage" className="mt-8 scroll-mt-24">
+      <section className="mt-8">
         <div className="mb-3">
           <h2>{t("budget.lines_title")}</h2>
           <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
@@ -823,8 +771,6 @@ export default function BudgetPage() {
             const linesForCat = bucket?.lines ?? [];
             const planned = bucket?.planned ?? 0;
             const actual = bucket?.actual ?? 0;
-            const isHighlighted =
-              highlightLineId !== null && linesForCat.some((l) => l.id === highlightLineId);
             const isFrozen = frozenCategoriesSet.has(cat);
             const editable = bucket?.editable ?? true;
             const canDelete = !isFrozen && linesForCat.length > 0 && editable;
@@ -837,7 +783,6 @@ export default function BudgetPage() {
                 actual={actual}
                 currency={currency}
                 locale={locale}
-                isHighlighted={isHighlighted}
                 readOnlyPlanned={isFrozen || !editable}
                 readOnlyActual={!editable}
                 canDelete={canDelete}
@@ -855,7 +800,6 @@ export default function BudgetPage() {
                 line={line}
                 currency={currency}
                 locale={locale}
-                isHighlighted={line.id === highlightLineId}
                 onPlannedCommit={(v) => save(line, "planned_huf", v)}
                 onActualCommit={(v) => save(line, "actual_huf", v)}
                 onDelete={() => removeLine(line.id)}
@@ -902,8 +846,6 @@ export default function BudgetPage() {
                 const planned = bucket?.planned ?? 0;
                 const actual = bucket?.actual ?? 0;
                 const delta = actual - planned;
-                const isHighlighted =
-                  highlightLineId !== null && linesForCat.some((l) => l.id === highlightLineId);
                 const isFrozen = frozenCategoriesSet.has(cat);
                 // Lines from DIY suppliers are read-only here; if a category
                 // is entirely supplier-managed the aggregate edit would fail,
@@ -915,11 +857,7 @@ export default function BudgetPage() {
                     key={cat}
                     id={`cat-${cat}`}
                     data-category={cat}
-                    className={`scroll-mt-24 border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60 ${
-                      isHighlighted
-                        ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
-                        : ""
-                    }`}
+                    className="scroll-mt-24 border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60"
                   >
                     <td className="px-4 py-2 align-middle">
                       <CategoryCell category={cat} />
@@ -976,17 +914,12 @@ export default function BudgetPage() {
                 .filter((l) => l.category === "other" && !isDefaultOtherLine(l))
                 .map((line) => {
                   const delta = line.actual_huf - line.planned_huf;
-                  const isHighlighted = line.id === highlightLineId;
                   return (
                     <tr
                       key={line.id}
                       data-budget-line-id={line.id}
                       data-category="other-custom"
-                      className={`border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60 ${
-                        isHighlighted
-                          ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
-                          : ""
-                      }`}
+                      className="border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60"
                     >
                       <td className="px-4 py-2 align-middle">
                         <CustomRowLabel icon={line.icon} label={line.label} />
@@ -1434,7 +1367,6 @@ function BudgetMobileCard({
   actual,
   currency,
   locale,
-  isHighlighted,
   readOnlyPlanned,
   readOnlyActual,
   canDelete,
@@ -1448,7 +1380,6 @@ function BudgetMobileCard({
   actual: number;
   currency: Currency;
   locale: "hu" | "en";
-  isHighlighted: boolean;
   readOnlyPlanned: boolean;
   readOnlyActual: boolean;
   canDelete: boolean;
@@ -1459,15 +1390,7 @@ function BudgetMobileCard({
   const { t } = useT();
   const delta = actual - planned;
   return (
-    <article
-      id={id}
-      data-category={category}
-      className={`card scroll-mt-24 p-3 ${
-        isHighlighted
-          ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
-          : ""
-      }`}
-    >
+    <article id={id} data-category={category} className="card scroll-mt-24 p-3">
       <header className="flex items-start justify-between gap-3">
         <CategoryCell category={category} />
         {actual > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
@@ -1524,7 +1447,6 @@ function BudgetMobileCustomCard({
   line,
   currency,
   locale,
-  isHighlighted,
   onPlannedCommit,
   onActualCommit,
   onDelete,
@@ -1532,7 +1454,6 @@ function BudgetMobileCustomCard({
   line: BudgetLine;
   currency: Currency;
   locale: "hu" | "en";
-  isHighlighted: boolean;
   onPlannedCommit: (v: number) => void | Promise<void>;
   onActualCommit: (v: number) => void | Promise<void>;
   onDelete: () => void;
@@ -1540,15 +1461,7 @@ function BudgetMobileCustomCard({
   const { t } = useT();
   const delta = line.actual_huf - line.planned_huf;
   return (
-    <article
-      data-budget-line-id={line.id}
-      data-category="other-custom"
-      className={`card p-3 ${
-        isHighlighted
-          ? "ring-2 ring-blush-300 ring-offset-2 dark:ring-blush-400/60 dark:ring-offset-umber-900"
-          : ""
-      }`}
-    >
+    <article data-budget-line-id={line.id} data-category="other-custom" className="card p-3">
       <header className="flex items-start justify-between gap-3">
         <CustomRowLabel icon={line.icon} label={line.label} />
         {line.actual_huf > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}

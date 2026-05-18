@@ -437,11 +437,13 @@ export function CostPlanningCard({
           {t("budget.cost_planning_headline")}
         </p>
         <div className="flex items-center gap-3">
-          {showActualToggle && (
+          {showActualToggle && hasAnyActual && (
             // Icon-only toggle for the actual-overlay. The receipt glyph signals
             // "actual paid spend"; the red ring when active picks up the overlay's
             // red stroke colour so they read as a single affordance. Title +
             // aria-label keep the action discoverable for keyboard and SR users.
+            // Hidden until at least one row has an actual amount — otherwise
+            // toggling does nothing visible and the icon reads as a dead chip.
             <button
               type="button"
               onClick={() => setShowActualOverlay((v) => !v)}
@@ -631,21 +633,6 @@ export function CostPlanningCard({
                 {cap !== null ? formatMoney(cap, currency, locale) : "—"}
               </span>
             )}
-          </div>
-        )}
-        {/* Serious tier (>20 % over): the pill alone is too easy to dismiss,
-         *  so we add a deep link to the category sliders sorted by overage.
-         *  BudgetPage doesn't read the #top-overage hash today — the link
-         *  navigates and trusts the user to scroll; wiring the scroll
-         *  selector lives in BudgetPage and is Agent B's territory. */}
-        {tier === "serious" && (
-          <div className="mt-1.5 text-[11px]">
-            <Link
-              to="/app/budget#top-overage"
-              className="text-blush-700 underline-offset-2 hover:text-blush-800 hover:underline dark:text-blush-300 dark:hover:text-blush-200"
-            >
-              {t("cost_planning.overcap_serious_action")}
-            </Link>
           </div>
         )}
       </div>
