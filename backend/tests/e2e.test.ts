@@ -10049,3 +10049,217 @@ describe("admin analytics", () => {
     expect(empty?.coverage_pct).toBe(0);
   });
 });
+
+// ─── SEO routes + meta injection ─────────────────────────────────────────────
+//
+// The geo-targeted SEO layer (backend/src/lib/seo_ssr.ts + routes/seo.ts) is
+// the only thing search engines see before JS runs. Regressions here are
+// invisible in normal QA — a broken canonical or hreflang can silently
+// demote the site for months before someone notices. These tests pin down
+// the contract so any future edit to seo_ssr.ts has to update them on
+// purpose.
+
+import {
+  EN_HOST,
+  HU_HOST,
+  canonicalHostFor,
+  localeForHost,
+  renderIndexHtml,
+  renderRobotsTxt,
+  renderSitemapXml,
+} from "../src/lib/seo_ssr";
+import { SEO_FAQ } from "../../shared/seo_faq";
+
+async function fetchWithHost(path: string, host: string | null): Promise<Response> {
+  const headers: Record<string, string> = {};
+  if (host !== null) headers.Host = host;
+  return await fetch(`${BASE}${path}`, { headers });
+}
+
+describe("seo: host detection", () => {
+  test("localeForHost maps weddly.hu, weddly.xyz, and falls back to hu", () => {
+    expect(localeForHost("weddly.hu")).toBe("hu");
+    expect(localeForHost("weddly.xyz")).toBe("en");
+    expect(localeForHost("WEDDLY.HU")).toBe("hu");
+    expect(localeForHost("weddly.xyz:443")).toBe("en");
+    expect(localeForHost("staging.weddly.xyz")).toBe("en");
+    expect(localeForHost("preview.weddly.hu")).toBe("hu");
+    expect(localeForHost("localhost:5173")).toBe("hu");
+    expect(localeForHost("127.0.0.1")).toBe("hu");
+    expect(localeForHost(null)).toBe("hu");
+    expect(localeForHost(undefined)).toBe("hu");
+    expect(localeForHost("")).toBe("hu");
+  });
+
+  test("canonicalHostFor matches the geo-targeting design", () => {
+    expect(canonicalHostFor("hu")).toBe(HU_HOST);
+    expect(canonicalHostFor("en")).toBe(EN_HOST);
+  });
+});
+
+describe("seo: /robots.txt", () => {
+  test("weddly.hu robots advertises HU sitemap + disallows private paths", async () => {
+    const r = await fetchWithHost("/robots.txt", "weddly.hu");
+    expect(r.status).toBe(200);
+    expect(r.headers.get("content-type")).toContain("text/plain");
+    const body = await r.text();
+    expect(body).toContain(`Sitemap: https://${HU_HOST}/sitemap.xml`);
+    for (const blocked of ["/app/", "/onboarding", "/invite/", "/rsvp/", "/reset-password/"]) {
+      expect(body).toContain(`Disallow: ${blocked}`);
+    }
+  });
+
+  test("weddly.xyz robots advertises EN sitemap", async () => {
+    const r = await fetchWithHost("/robots.txt", "weddly.xyz");
+    expect(r.status).toBe(200);
+    expect(await r.text()).toContain(`Sitemap: https://${EN_HOST}/sitemap.xml`);
+  });
+
+  test("subdomain of weddly.xyz still resolves to EN canonical", async () => {
+    const r = await fetchWithHost("/robots.txt", "staging.weddly.xyz");
+    expect(await r.text()).toContain(`Sitemap: https://${EN_HOST}/sitemap.xml`);
+  });
+});
+
+describe("seo: /sitemap.xml", () => {
+  test("weddly.hu sitemap has HU URLs, lastmod, and xhtml:link alternates", async () => {
+    const r = await fetchWithHost("/sitemap.xml", "weddly.hu");
+    expect(r.status).toBe(200);
+    expect(r.headers.get("content-type")).toContain("application/xml");
+    const body = await r.text();
+    expect(body).toContain(`<loc>https://${HU_HOST}/</loc>`);
+    expect(body).toContain(`<loc>https://${HU_HOST}/about</loc>`);
+    expect(body).toContain(`<loc>https://${HU_HOST}/signup</loc>`);
+    // Every <url> entry must carry a <lastmod>; Google ignores priority/changefreq
+    // but uses lastmod to schedule recrawl.
+    expect(body).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
+    // Reciprocal hreflang alternates per URL.
+    expect(body).toContain(`<xhtml:link rel="alternate" hreflang="hu" href="https://${HU_HOST}/"`);
+    expect(body).toContain(`<xhtml:link rel="alternate" hreflang="en" href="https://${EN_HOST}/"`);
+    expect(body).toContain(
+      `<xhtml:link rel="alternate" hreflang="x-default" href="https://${HU_HOST}/"`,
+    );
+    // No private paths leak into the sitemap.
+    for (const blocked of ["/app/", "/onboarding", "/rsvp"]) {
+      expect(body).not.toContain(`<loc>https://${HU_HOST}${blocked}`);
+    }
+  });
+
+  test("weddly.xyz sitemap lists EN canonical URLs", async () => {
+    const body = await (await fetchWithHost("/sitemap.xml", "weddly.xyz")).text();
+    expect(body).toContain(`<loc>https://${EN_HOST}/</loc>`);
+    expect(body).toContain(`<loc>https://${EN_HOST}/about</loc>`);
+    expect(body).not.toContain(`<loc>https://${HU_HOST}/`);
+  });
+});
+
+describe("seo: renderIndexHtml meta injection", () => {
+  // Minimum-viable template that matches what frontend/index.html and the
+  // prerender script produce — sentinel markers around an HU placeholder block
+  // plus an empty `<div id="root">`.
+  const TEMPLATE = `<!doctype html>
+<html lang="hu">
+<head>
+<!-- SEO_HEAD_START -->
+<title>placeholder</title>
+<!-- SEO_HEAD_END -->
+</head>
+<body><div id="root"></div></body>
+</html>`;
+
+  function render(host: string, pathname: string, isRsvp = false): string {
+    return renderIndexHtml(TEMPLATE, { host, pathname, isRsvp });
+  }
+
+  test("weddly.hu root: HU lang, HU canonical, EN hreflang alternate", () => {
+    const html = render("weddly.hu", "/");
+    expect(html).toContain(`<html lang="hu"`);
+    expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/" />`);
+    expect(html).toContain(`<meta property="og:url" content="https://${HU_HOST}/" />`);
+    expect(html).toContain(`<meta property="og:locale" content="hu_HU" />`);
+    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/"`);
+    expect(html).toContain(`hreflang="en" href="https://${EN_HOST}/"`);
+    expect(html).toContain(`hreflang="x-default" href="https://${HU_HOST}/"`);
+  });
+
+  test("weddly.xyz root: EN lang, EN canonical, HU hreflang alternate", () => {
+    const html = render("weddly.xyz", "/");
+    expect(html).toContain(`<html lang="en"`);
+    expect(html).toContain(`<link rel="canonical" href="https://${EN_HOST}/" />`);
+    expect(html).toContain(`<meta property="og:locale" content="en_US" />`);
+  });
+
+  test("sub-routes get path-aware canonical + og:url", () => {
+    const html = render("weddly.hu", "/about");
+    expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/about" />`);
+    expect(html).toContain(`<meta property="og:url" content="https://${HU_HOST}/about" />`);
+    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/about"`);
+    expect(html).toContain(`hreflang="en" href="https://${EN_HOST}/about"`);
+  });
+
+  test("og:image is an absolute URL on the canonical host", () => {
+    const huRoot = render("weddly.hu", "/");
+    expect(huRoot).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
+    expect(huRoot).toContain(`<meta name="twitter:image" content="https://${HU_HOST}/og.png" />`);
+    const enRoot = render("weddly.xyz", "/");
+    expect(enRoot).toContain(`<meta property="og:image" content="https://${EN_HOST}/og.png" />`);
+  });
+
+  test("/rsvp routes get the og-rsvp image variant on the right host", () => {
+    const html = render("weddly.hu", "/rsvp/abc", true);
+    expect(html).toContain(`<meta property="og:image" content="https://${HU_HOST}/og-rsvp.png" />`);
+  });
+
+  test("root path emits all four JSON-LD blocks; sub-routes only two", () => {
+    const root = render("weddly.hu", "/");
+    const rootTypes = [...root.matchAll(/"@type":"([A-Za-z]+)"/g)].map((m) => m[1]);
+    expect(rootTypes).toContain("Organization");
+    expect(rootTypes).toContain("WebSite");
+    expect(rootTypes).toContain("SoftwareApplication");
+    expect(rootTypes).toContain("FAQPage");
+
+    const sub = render("weddly.hu", "/about");
+    const subTypes = [...sub.matchAll(/"@type":"([A-Za-z]+)"/g)].map((m) => m[1]);
+    expect(subTypes).toContain("Organization");
+    expect(subTypes).toContain("WebSite");
+    expect(subTypes).not.toContain("SoftwareApplication");
+    expect(subTypes).not.toContain("FAQPage");
+  });
+
+  test("FAQPage JSON-LD enumerates the shared SEO_FAQ for the host's locale", () => {
+    const huRoot = render("weddly.hu", "/");
+    for (const entry of SEO_FAQ.hu) {
+      // The Q text appears as a Question name in the JSON-LD block.
+      expect(huRoot).toContain(JSON.stringify(entry.q).slice(1, -1));
+    }
+    const enRoot = render("weddly.xyz", "/");
+    for (const entry of SEO_FAQ.en) {
+      expect(enRoot).toContain(JSON.stringify(entry.q).slice(1, -1));
+    }
+  });
+
+  test("template without SEO sentinels falls back to lang swap only", () => {
+    const out = renderIndexHtml(`<html lang="hu"><head></head><body></body></html>`, {
+      host: "weddly.xyz",
+      pathname: "/",
+      isRsvp: false,
+    });
+    // No sentinels → no canonical/hreflang injected, but lang still flipped.
+    expect(out).toContain(`<html lang="en"`);
+    expect(out).not.toContain("canonical");
+  });
+});
+
+describe("seo: pure renderRobotsTxt / renderSitemapXml", () => {
+  test("renderRobotsTxt encodes the per-host Sitemap line", () => {
+    expect(renderRobotsTxt("weddly.hu")).toContain(`Sitemap: https://${HU_HOST}/sitemap.xml`);
+    expect(renderRobotsTxt("weddly.xyz")).toContain(`Sitemap: https://${EN_HOST}/sitemap.xml`);
+  });
+
+  test("renderSitemapXml lists the same public paths for both hosts (just different canonical)", () => {
+    const huUrls = (renderSitemapXml("weddly.hu").match(/<loc>([^<]+)<\/loc>/g) ?? []).length;
+    const enUrls = (renderSitemapXml("weddly.xyz").match(/<loc>([^<]+)<\/loc>/g) ?? []).length;
+    expect(huUrls).toBe(enUrls);
+    expect(huUrls).toBeGreaterThanOrEqual(8); // /, /signup, /vendors, /about, /login, /privacy, /terms, /imprint, /subscription-terms
+  });
+});

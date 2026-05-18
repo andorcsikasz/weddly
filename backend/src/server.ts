@@ -20,12 +20,7 @@ import {
   Router,
 } from "./lib/http";
 import { log, makeLogger } from "./lib/logger";
-import {
-  localeForHost,
-  renderIndexHtml,
-  renderRobotsTxt,
-  renderSitemapXml,
-} from "./lib/seo_ssr";
+import { localeForHost, renderIndexHtml } from "./lib/seo_ssr";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { registerAccommodationRoutes } from "./routes/accommodations";
@@ -59,6 +54,7 @@ import { registerGuestPortalRoutes } from "./routes/guest_portal";
 import { registerRsvpRoutes } from "./routes/rsvp";
 import { registerScheduleRoutes } from "./routes/schedule";
 import { registerSeatingRoutes } from "./routes/seating";
+import { registerSeoRoutes } from "./routes/seo";
 import { registerTransferRoutes } from "./routes/transfers";
 import { registerSupplierCostRoutes } from "./routes/supplier_costs";
 import { registerSupplierRoutes } from "./routes/suppliers";
@@ -105,6 +101,7 @@ registerAdminAnalyticsRoutes(router);
 registerVendorWaitlistRoutes(router);
 registerUserCoupleRoutes(router);
 registerFeedbackRoutes(router);
+registerSeoRoutes(router);
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -172,7 +169,8 @@ const FRONTEND_INDEX_EN = join(FRONTEND_DIST, "index.en.html");
 async function loadIndexHtmlSource(locale: "hu" | "en"): Promise<string> {
   const cached = indexHtmlSources[locale];
   if (cached !== undefined) return cached;
-  const path = locale === "en" && existsSync(FRONTEND_INDEX_EN) ? FRONTEND_INDEX_EN : FRONTEND_INDEX;
+  const path =
+    locale === "en" && existsSync(FRONTEND_INDEX_EN) ? FRONTEND_INDEX_EN : FRONTEND_INDEX;
   const text = await Bun.file(path).text();
   indexHtmlSources[locale] = text;
   return text;
@@ -188,19 +186,8 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
 
   const host = req.headers.get("host");
 
-  // SEO files are rendered per host: weddly.hu vs weddly.xyz get their own
-  // canonical sitemap + their own Sitemap: line in robots.txt. Must intercept
-  // BEFORE the static-file fallback so the dist copies (if any) don't win.
-  if (pathname === "/robots.txt") {
-    return new Response(renderRobotsTxt(host), {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
-  }
-  if (pathname === "/sitemap.xml") {
-    return new Response(renderSitemapXml(host), {
-      headers: { "Content-Type": "application/xml; charset=utf-8" },
-    });
-  }
+  // /robots.txt and /sitemap.xml are served by registerSeoRoutes (above the
+  // SPA fallback in route order), so we don't try to short-circuit them here.
 
   // Direct file hit (assets in frontend/dist/assets/, OG images, the favicon, …).
   const filePath = join(FRONTEND_DIST, decodeURIComponent(pathname));
