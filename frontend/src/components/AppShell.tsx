@@ -30,7 +30,7 @@ import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
-import { adminUserApi, planningApi } from "../lib/endpoints";
+import { adminUserApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { CoachMarks } from "./CoachMarks";
 import { FeedbackDialog } from "./FeedbackDialog";
@@ -360,30 +360,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // /app/admin URL would render the admin chrome around a redirect.
   const inAdminView = user?.is_admin === true && location.pathname.startsWith("/app/admin");
 
-  // Timeline link is hidden until the couple has at least one task — with
-  // zero planning_items the page is empty chrome. Refetch on each pathname
-  // change so the link appears once the user adds their first task on
-  // /app/planning without forcing a page reload. Default to `true` while
-  // loading so the link doesn't pop in for established couples.
-  const [hasAnyTask, setHasAnyTask] = useState(true);
-  useEffect(() => {
-    if (!user || inAdminView) return;
-    let cancelled = false;
-    planningApi
-      .list()
-      .then((r) => {
-        if (cancelled) return;
-        setHasAnyTask(r.items.some((i) => i.kind === "task"));
-      })
-      .catch(() => {
-        /* network/auth blip — keep the link visible rather than punish the user */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user, inAdminView, location.pathname]);
-
-  const coupleItems = hasAnyTask ? ITEMS : ITEMS.filter((i) => i.to !== "/app/timeline");
+  const coupleItems = ITEMS;
   const displayItems = inAdminView ? ADMIN_ITEMS : coupleItems;
 
   return (

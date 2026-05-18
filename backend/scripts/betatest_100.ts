@@ -319,12 +319,7 @@ async function runPersona(p: PersonaSpec): Promise<void> {
       );
       if (r.status !== 200) record(tag, "budget-patch", r);
     }
-    const snap = await req(
-      "POST",
-      "/api/budget/snapshots",
-      { name: `${p.tag} snapshot` },
-      token,
-    );
+    const snap = await req("POST", "/api/budget/snapshots", { name: `${p.tag} snapshot` }, token);
     if (snap.status !== 201) record(tag, "budget-snapshot", snap);
   } else {
     record(tag, "budget-list", lines);
@@ -390,12 +385,7 @@ async function runPersona(p: PersonaSpec): Promise<void> {
   }
 }
 
-async function runExplore(
-  tag: string,
-  token: string,
-  op: string,
-  p: PersonaSpec,
-): Promise<void> {
+async function runExplore(tag: string, token: string, op: string, p: PersonaSpec): Promise<void> {
   switch (op) {
     case "bulk-add-30": {
       // Try a bulk endpoint that may not exist.
@@ -459,12 +449,7 @@ async function runExplore(
     }
     case "delete-guest": {
       // List guests, try to delete the first one.
-      const list = await req<{ guests: { id: number }[] }>(
-        "GET",
-        "/api/guests",
-        undefined,
-        token,
-      );
+      const list = await req<{ guests: { id: number }[] }>("GET", "/api/guests", undefined, token);
       const id = list.data?.guests?.[0]?.id;
       if (!id) break;
       const del = await req("DELETE", `/api/guests/${id}`, undefined, token);
@@ -634,11 +619,7 @@ async function main() {
   const ordered = Array.from(groups.values()).sort((a, b) => b.count - a.count);
   console.log("Aggregated friction (sorted by frequency):");
   console.log("─".repeat(96));
-  console.log(
-    "count  status  step".padEnd(40) +
-      "  endpoint".padEnd(38) +
-      "  personas",
-  );
+  console.log("count  status  step".padEnd(40) + "  endpoint".padEnd(38) + "  personas");
   console.log("─".repeat(96));
   for (const g of ordered) {
     const buckets = Array.from(g.personas).sort().join(",");
