@@ -479,6 +479,22 @@ const en: LocaleMessages = {
     cta_signup: "Start planning",
     cta_login: "Sign in",
     cta_signup_sub: "Free to use throughout the open beta.",
+    // ── Interactive "try it" budget demo ──────────────────────────────
+    demo_eyebrow: "Try it — no signup",
+    demo_title: "How much will your wedding cost?",
+    demo_body:
+      "Drag the guest count and the budget — the categories recalc with the same logic the real Budget page uses. If it feels right, your workspace starts with these numbers.",
+    demo_guests_label: "Guest count",
+    demo_budget_label: "Planned budget",
+    demo_per_guest_label: "Cost per guest",
+    demo_per_guest_sub: "What Wēddly will plan per head for that headcount and ceiling.",
+    demo_breakdown_eyebrow: "Live breakdown",
+    demo_breakdown_sub: "based on HU averages",
+    demo_total_label: "Total budget",
+    demo_cta: "Save it — sign up with these numbers",
+    demo_cta_secondary: "How it works",
+    demo_disclaimer:
+      "The demo is an estimate. The real budget is editable, lockable per category, and audit-logged.",
     faq_title: "Questions you'll probably ask",
     faq_q_free: "Is Weddly really free?",
     faq_a_free:

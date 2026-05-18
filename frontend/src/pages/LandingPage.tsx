@@ -36,6 +36,7 @@ import {
   SeatingMockup,
   WorkspaceMockup,
 } from "../components/mockups";
+import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -100,6 +101,14 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ════════════════════════ Interactive "Try it" demo ════════════════════════
+          A no-signup budget calculator using the real DEFAULT_BUDGET_SPLIT.
+          The CTA stashes the visitor's numbers into the onboarding draft so
+          the wizard picks them up after register + verify. Goal: a visitor
+          who plays here will have invested 30s of value before being asked
+          to register. */}
+      <InteractiveBudgetDemo />
 
       {/* ════════════════════════ Wordmark spine ════════════════════════
           Stationery letterhead beat: faded WĒDDLY centred on a thin

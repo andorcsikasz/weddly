@@ -479,6 +479,22 @@ const hu: LocaleMessages = {
     cta_signup: "Kezdjétek el",
     cta_login: "Bejelentkezés",
     cta_signup_sub: "A nyílt béta alatt szabadon használhatjátok.",
+    // ── Interaktív "próbáld ki" költségvetés demo ─────────────────────
+    demo_eyebrow: "Próbáld ki — regisztráció nélkül",
+    demo_title: "Mennyibe kerül a ti esküvőtök?",
+    demo_body:
+      "Húzd a vendégszámot és a keretet — a kategóriák ugyanazzal a logikával számolódnak, mint a regisztráció után. Ha tetszik, a megadott számokkal indul a saját költségvetésetek.",
+    demo_guests_label: "Vendégszám",
+    demo_budget_label: "Tervezett keret",
+    demo_per_guest_label: "Vendégenkénti költség",
+    demo_per_guest_sub: "Ennyit szán majd a Wēddly egy főre a kerettel és a létszámmal.",
+    demo_breakdown_eyebrow: "Élő bontás",
+    demo_breakdown_sub: "magyar átlag arányok",
+    demo_total_label: "Teljes keret",
+    demo_cta: "Mentsd el — regisztrálok ezekkel a számokkal",
+    demo_cta_secondary: "Hogyan működik",
+    demo_disclaimer:
+      "A demo csak becslés. A valódi költségvetés szerkeszthető, kategóriánként rögzíthető, és élő auditnaplót vezet.",
     faq_title: "Gyakori kérdések",
     faq_q_free: "Tényleg ingyenes a Wēddly?",
     faq_a_free:
