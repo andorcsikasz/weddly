@@ -716,6 +716,24 @@ export default function BudgetPage() {
     return map;
   }, [lines]);
   const hasAnyTableRow = tableLines.length > 0 || honeymoonAgg !== null;
+
+  // Sum across every line for the table's footer totals row. Delta only counts
+  // rows that have a real actual spend — `actual_huf === 0` means the couple
+  // hasn't paid yet, so a "negative delta" there is just the full plan
+  // pretending to be an overage. Rolling those into the sum would make the
+  // total delta meaningless. Matches the per-row rule below.
+  const tableTotals = useMemo(() => {
+    let planned = 0;
+    let actual = 0;
+    let delta = 0;
+    for (const l of lines) {
+      planned += l.planned_huf;
+      actual += l.actual_huf;
+      if (l.actual_huf > 0) delta += l.actual_huf - l.planned_huf;
+    }
+    return { planned, actual, delta };
+  }, [lines]);
+
   // Pulled once near the top so every money render below — table, totals,
   // snapshot card, breakdown dialog — shares one source of truth and stays
   // in sync with whatever the couple picked on /app/profile.
@@ -979,7 +997,7 @@ export default function BudgetPage() {
                       />
                     </td>
                     <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
-                      {delta !== 0 && (
+                      {actual > 0 && delta !== 0 && (
                         <span
                           className={
                             delta > 0
@@ -1044,7 +1062,7 @@ export default function BudgetPage() {
                         />
                       </td>
                       <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
-                        {delta !== 0 && (
+                        {line.actual_huf > 0 && delta !== 0 && (
                           <span
                             className={
                               delta > 0
@@ -1071,6 +1089,33 @@ export default function BudgetPage() {
                 })}
               <AddCustomRowTr onAdd={addCustomRow} />
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-paper-300 bg-paper-50 font-medium dark:border-umber-600 dark:bg-umber-800/40">
+                <td className="px-4 py-3 align-middle text-ink-900 dark:text-paper-50">
+                  {t("budget.lines_totals_label")}
+                </td>
+                <td className="px-4 py-3 text-center align-middle tabular-nums text-ink-900 dark:text-paper-50">
+                  {formatMoney(tableTotals.planned, currency, locale)}
+                </td>
+                <td className="px-4 py-3 text-center align-middle tabular-nums text-ink-900 dark:text-paper-50">
+                  {formatMoney(tableTotals.actual, currency, locale)}
+                </td>
+                <td className="hidden px-4 py-3 text-center align-middle tabular-nums sm:table-cell">
+                  {tableTotals.delta !== 0 && (
+                    <span
+                      className={
+                        tableTotals.delta > 0
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-emerald-600 dark:text-emerald-400"
+                      }
+                    >
+                      {formatMoney(tableTotals.delta, currency, locale)}
+                    </span>
+                  )}
+                </td>
+                <td className="px-2 py-3" />
+              </tr>
+            </tfoot>
           </table>
         </div>
       </section>
@@ -1405,7 +1450,7 @@ function HoneymoonAggregateRow({
         {formatMoney(actual, currency, locale)}
       </td>
       <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
-        {delta !== 0 && (
+        {actual > 0 && delta !== 0 && (
           <span
             className={
               delta > 0
@@ -1479,7 +1524,7 @@ function BudgetMobileCard({
     >
       <header className="flex items-start justify-between gap-3">
         <CategoryCell category={category} />
-        <DeltaPill delta={delta} currency={currency} locale={locale} />
+        {actual > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
       </header>
       <dl className="mt-3 space-y-2">
         <div className="flex items-center gap-3">
@@ -1560,7 +1605,7 @@ function BudgetMobileCustomCard({
     >
       <header className="flex items-start justify-between gap-3">
         <CustomRowLabel icon={line.icon} label={line.label} />
-        <DeltaPill delta={delta} currency={currency} locale={locale} />
+        {line.actual_huf > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
       </header>
       <dl className="mt-3 space-y-2">
         <div className="flex items-center gap-3">
@@ -1651,7 +1696,7 @@ function HoneymoonAggregateCard({
           </dd>
         </div>
       </dl>
-      {delta !== 0 && (
+      {actual > 0 && delta !== 0 && (
         <DeltaPill delta={delta} currency={currency} locale={locale} className="self-end" />
       )}
     </Link>
