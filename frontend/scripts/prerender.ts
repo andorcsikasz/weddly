@@ -162,7 +162,7 @@ function injectIntoRoot(template: string, body: string): string {
   // after hydration — it's exclusively for the pre-JS paint and crawlers.
   const ROOT_EMPTY = `<div id="root"></div>`;
   if (!template.includes(ROOT_EMPTY)) {
-    throw new Error("prerender: <div id=\"root\"></div> placeholder not found in dist/index.html");
+    throw new Error('prerender: <div id="root"></div> placeholder not found in dist/index.html');
   }
   return template.replace(ROOT_EMPTY, `<div id="root">\n      ${body}\n    </div>`);
 }

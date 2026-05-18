@@ -344,10 +344,7 @@ function PocCard({
     <section className="card p-0 rounded-3xl ring-1 ring-paper-300/60 dark:ring-umber-700/60">
       <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
         <h2 className="flex items-center gap-2.5 font-serif text-lg text-ink-900 dark:text-paper-50">
-          <span
-            className="inline-block h-5 w-0.5 rounded-full bg-blush-500"
-            aria-hidden="true"
-          />
+          <span className="inline-block h-5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           {t("timeline.poc_title")}
         </h2>
       </header>
@@ -873,10 +870,7 @@ function UndatedCard({
     <section className="card p-0 rounded-3xl ring-1 ring-paper-300/60 dark:ring-umber-700/60">
       <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
         <h2 className="flex items-center gap-2.5 font-serif text-lg text-ink-900 dark:text-paper-50">
-          <span
-            className="inline-block h-5 w-0.5 rounded-full bg-blush-500"
-            aria-hidden="true"
-          />
+          <span className="inline-block h-5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           <span>{t("timeline.no_dates_title")}</span>
           {tasks.length > 0 && (
             <span className="inline-flex items-center justify-center rounded-full bg-blush-50 px-2 py-0.5 font-sans text-[11px] font-semibold text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
@@ -894,11 +888,7 @@ function UndatedCard({
       ) : tasks.length === 0 ? (
         showFreshEmpty ? (
           <div className="flex flex-col items-center gap-2 px-5 py-10 text-center">
-            <Sparkles
-              size={28}
-              className="text-blush-400 dark:text-blush-300"
-              aria-hidden="true"
-            />
+            <Sparkles size={28} className="text-blush-400 dark:text-blush-300" aria-hidden="true" />
             <p className="text-base text-ink-700 dark:text-paper-100">
               {t("timeline.no_dates_empty_all")}
             </p>

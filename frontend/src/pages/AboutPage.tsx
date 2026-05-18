@@ -12,10 +12,7 @@ export default function AboutPage() {
   const { t, locale } = useT();
   useDocumentMeta("about.seo_title", "about.seo_description");
 
-  const madeIn = t("about.paragraph_made_in").replace(
-    "{founder}",
-    t("about.founder_placeholder"),
-  );
+  const madeIn = t("about.paragraph_made_in").replace("{founder}", t("about.founder_placeholder"));
 
   return (
     <PublicShell>
