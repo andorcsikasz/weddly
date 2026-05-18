@@ -749,11 +749,8 @@ export interface LocaleMessages {
     form_category_placeholder: string;
     form_location_label: string;
     form_location_placeholder: string;
-    form_location_help: string;
     form_website_label: string;
     form_website_placeholder: string;
-    form_website_help: string;
-    form_err_website: string;
     form_submit: string;
     form_submitting: string;
     form_success_title: string;
@@ -796,8 +793,6 @@ export interface LocaleMessages {
     section_contact_sub: string;
     section_portfolio_title: string;
     section_portfolio_sub: string;
-    /** "Opcionális" pill rendered next to optional field labels. */
-    optional_pill: string;
     /** Portfolio submission block. The per-category help text is keyed
      *  through `portfolio_hint_<group>` (six groups, mirrors SUPPLIER_GROUPS)
      *  so the form swaps the helper text + placeholder as the category
@@ -806,7 +801,6 @@ export interface LocaleMessages {
     portfolio_links_placeholder: string;
     portfolio_link_remove: string;
     portfolio_add_link: string;
-    portfolio_links_limit: string;
     portfolio_hint_default: string;
     portfolio_hint_venue_stay: string;
     portfolio_hint_food_drink: string;
@@ -816,7 +810,6 @@ export interface LocaleMessages {
     portfolio_hint_details: string;
     instagram_label: string;
     instagram_placeholder: string;
-    instagram_help: string;
     form_err_portfolio_link: string;
     form_err_instagram_handle: string;
   };

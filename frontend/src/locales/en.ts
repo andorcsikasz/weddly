@@ -715,18 +715,15 @@ const en: LocaleMessages = {
     form_category_placeholder: "e.g. venue, photo, catering",
     form_location_label: "Address / Google Maps link",
     form_location_placeholder: "e.g. Budapest, or https://maps.app.goo.gl/…",
-    form_location_help: "Address or map link — helps us place you by region. Optional.",
     form_website_label: "Website",
     form_website_placeholder: "e.g. example.com or https://example.com",
-    form_website_help: "Portfolio, Instagram or business homepage — helps us review. Optional.",
-    form_err_website: "Please enter a valid website URL.",
     form_submit: "Join the waitlist",
     form_submitting: "Sending…",
     form_success_title: "You're on the waitlist.",
     form_success_body:
       "We aren't onboarding vendors yet — we've sent a confirmation to the email you provided, and we'll write again once we open in your category.",
     form_message_label: "Message",
-    form_message_placeholder: "A line or two about what you do — optional.",
+    form_message_placeholder: "A line or two about what you do.",
     form_err_required: "Please fill in the business name.",
     form_err_email: "Please enter a valid email.",
     form_err_category: "Pick a category.",
@@ -752,12 +749,10 @@ const en: LocaleMessages = {
     section_portfolio_title: "Portfolio",
     section_portfolio_sub:
       "Show us your work — it's what we use to decide. Optional, but highly recommended.",
-    optional_pill: "Optional",
     portfolio_links_label: "Portfolio links",
     portfolio_links_placeholder: "https://…",
     portfolio_link_remove: "Remove link",
     portfolio_add_link: "+ Add link",
-    portfolio_links_limit: "Up to 6 links.",
     portfolio_hint_default:
       "Gallery, website, Instagram post, Drive folder — anything you'd share.",
     portfolio_hint_venue_stay:
@@ -774,7 +769,6 @@ const en: LocaleMessages = {
       "Website, online catalogue, past-work gallery — whatever you'd like to share.",
     instagram_label: "Instagram",
     instagram_placeholder: "florastudio_bp",
-    instagram_help: "Your business Instagram handle (the @ is optional). Optional.",
     form_err_portfolio_link: "One of the portfolio links isn't a valid URL.",
     form_err_instagram_handle:
       "Instagram handle can only contain letters, digits, dots and underscores (max 30 chars).",

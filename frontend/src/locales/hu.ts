@@ -715,18 +715,15 @@ const hu: LocaleMessages = {
     form_category_placeholder: "pl. helyszín, fotó, catering",
     form_location_label: "Cím / Google Maps link",
     form_location_placeholder: "pl. Budapest, vagy https://maps.app.goo.gl/…",
-    form_location_help: "Cím vagy térképlink — segít a régió szerinti besoroláshoz. Opcionális.",
     form_website_label: "Weboldal",
     form_website_placeholder: "pl. example.com vagy https://example.com",
-    form_website_help: "Portfólió, Instagram vagy üzleti honlap — segít az átnézésben. Opcionális.",
-    form_err_website: "Érvényes weboldal-cím szükséges.",
     form_submit: "Felvesz a várólistára",
     form_submitting: "Küldés…",
     form_success_title: "Várólistán vagytok.",
     form_success_body:
       "Még nem fogadunk be szolgáltatókat — visszaigazoló e-mailt küldtünk a megadott címre, és értesítünk, amint nyitunk a kategóriátokban.",
     form_message_label: "Üzenet",
-    form_message_placeholder: "Pár sor a szolgáltatásotokról — opcionális.",
+    form_message_placeholder: "Pár sor a szolgáltatásotokról.",
     form_err_required: "Töltsd ki a vállalkozás nevét.",
     form_err_email: "Érvényes e-mail cím szükséges.",
     form_err_category: "Válassz egy kategóriát.",
@@ -752,12 +749,10 @@ const hu: LocaleMessages = {
     section_portfolio_title: "Portfólió",
     section_portfolio_sub:
       "Mutassátok meg a munkáitokat — ez alapján döntünk a felvételről. Opcionális, de nagyon ajánlott.",
-    optional_pill: "Opcionális",
     portfolio_links_label: "Portfólió linkek",
     portfolio_links_placeholder: "https://…",
     portfolio_link_remove: "Link eltávolítása",
     portfolio_add_link: "+ Új link",
-    portfolio_links_limit: "Legfeljebb 6 link.",
     portfolio_hint_default:
       "Galéria, weboldal, Instagram poszt, Drive mappa — bármi, amit megosztanátok.",
     portfolio_hint_venue_stay:
@@ -774,7 +769,6 @@ const hu: LocaleMessages = {
       "Web, online katalógus, korábbi munkák galériája — amit szívesen megmutatnátok.",
     instagram_label: "Instagram",
     instagram_placeholder: "viragstudio_bp",
-    instagram_help: "Az üzleti Instagram fióknév (@ nélkül is jó). Opcionális.",
     form_err_portfolio_link: "Az egyik portfólió link nem érvényes URL.",
     form_err_instagram_handle:
       "Az Instagram fióknév csak betűt, számot, pontot és aláhúzást tartalmazhat (max 30 karakter).",
