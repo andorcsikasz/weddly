@@ -25,24 +25,34 @@ const MAX_BUDGET = 12_000_000;
 const BUDGET_STEP = 100_000;
 const DEFAULT_BUDGET = 6_000_000;
 
-// Categories shown as their own bar. The rest are aggregated into a single
-// "other" row so the visualisation stays scannable on mobile. The order
-// reflects rough spend dominance for HU weddings.
-const FEATURED: BudgetCategory[] = [
-  "venue",
-  "catering",
-  "photo_video",
-  "attire",
-  "decor_floral",
-  "music_dj",
+// Display rows. Each row is one bar; `shareOf` lists the BudgetCategory
+// keys whose shares from DEFAULT_BUDGET_SPLIT sum into that row. We collapse
+// catering+drinks under one "vendéglátás" bar (which is how HU couples
+// actually think about it) so the tail "other" bar stays small relative to
+// the featured rows — otherwise it grows large enough to dominate the chart.
+type DemoRow = {
+  /** i18n key suffix under `budget.cat.*` for the bar label. */
+  label: BudgetCategory;
+  /** Categories whose DEFAULT_BUDGET_SPLIT shares sum into this row. */
+  shareOf: BudgetCategory[];
+};
+
+const FEATURED_ROWS: DemoRow[] = [
+  { label: "venue", shareOf: ["venue"] },
+  { label: "catering", shareOf: ["catering", "drinks"] },
+  { label: "photo_video", shareOf: ["photo_video"] },
+  { label: "attire", shareOf: ["attire"] },
+  { label: "decor_floral", shareOf: ["decor_floral"] },
+  { label: "music_dj", shareOf: ["music_dj"] },
+  { label: "honeymoon", shareOf: ["honeymoon"] },
 ];
 
+// Everything not pulled into a featured row falls into "Egyéb". With the
+// list above this is ~14% of the total — small enough to feel like a tail.
 const OTHER_CATS: BudgetCategory[] = [
-  "drinks",
   "cake_dessert",
   "hair_makeup",
   "transport",
-  "honeymoon",
   "stationery",
   "favours",
   "rings",
@@ -85,13 +95,13 @@ export function InteractiveBudgetDemo() {
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
 
   // Compute per-category HUF using the same split the onboarding wizard
-  // uses. Featured rows keep their own share; the residual is summed into
-  // "other" for the display.
+  // uses. Featured rows sum the shares of their `shareOf` keys; the residual
+  // (OTHER_CATS) lands in a single "other" tail row.
   const rows = useMemo(() => {
-    const featured = FEATURED.map((cat) => ({
-      cat,
-      amount: Math.round(budget * DEFAULT_BUDGET_SPLIT[cat]),
-    }));
+    const featured = FEATURED_ROWS.map((row) => {
+      const share = row.shareOf.reduce((s, c) => s + DEFAULT_BUDGET_SPLIT[c], 0);
+      return { cat: row.label, amount: Math.round(budget * share) };
+    });
     const otherShare = OTHER_CATS.reduce((s, c) => s + DEFAULT_BUDGET_SPLIT[c], 0);
     const otherAmount = Math.round(budget * otherShare);
     const all = [...featured, { cat: "other" as BudgetCategory, amount: otherAmount }];
