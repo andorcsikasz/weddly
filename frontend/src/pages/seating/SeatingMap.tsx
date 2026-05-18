@@ -920,13 +920,16 @@ function TableShape({
 
       {/* Label — serif, in the warm blush from the brand palette. We
           counter-rotate by -rotation so the text always reads upright in
-          screen space, regardless of how the table is rotated. */}
+          screen space, regardless of how the table is rotated. Label size
+          is clamped: small enough that the round Table 4 doesn't shout
+          over its neighbours, big enough that a narrow long/head table's
+          label stays readable. */}
       <g transform={`rotate(${-rotation})`} style={{ pointerEvents: "none" }}>
         <text
           x={0}
-          y={Math.min(rx, ry) * 0.15}
+          y={Math.min(220, Math.min(rx, ry) * 0.42) * 0.35}
           textAnchor="middle"
-          fontSize={Math.min(rx, ry) * 0.42}
+          fontSize={Math.max(180, Math.min(220, Math.min(rx, ry) * 0.42))}
           fontFamily='"Cormorant Garamond", Georgia, serif'
           fontWeight={600}
           className={isSelected ? "fill-paper-50" : "fill-blush-700"}
