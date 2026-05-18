@@ -169,21 +169,26 @@ export function SeatingMap({
     return () => ro.disconnect();
   }, [expanded]);
 
-  // Pick a scale + SVG pixel size:
+  // Pick a scale + SVG pixel size for the EXPANDED overlay only:
   //   - When room aspect is close to wrapper aspect (within 2×), use the
   //     "meet" scale so the whole room fits with no scroll.
   //   - Otherwise, zoom to fill the shorter axis (longer room dim overflows
   //     and the outer wrapper scrolls). This is what the user expects when
-  //     they enter an awkward shape like 10×50 m.
+  //     they enter an awkward shape like 10×50 m and click the maximise
+  //     button to dig into details.
+  //
+  // The inline card stays on plain fit-to-meet — the user wants to *see the
+  // whole room at a glance* in the editor surface; awkward aspects are
+  // expected to be rare and easy to inspect via the maximise button.
   const svgSize = useMemo<{ width: number | string; height: number | string }>(() => {
-    if (!wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
+    if (!expanded || !wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
       return { width: "100%", height: "100%" };
     }
     const meetScale = Math.min(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
     const maxScale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
     const scale = maxScale / meetScale > 2 ? maxScale : meetScale;
     return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
-  }, [wrapperPx, ROOM_W_MM, ROOM_H_MM]);
+  }, [expanded, wrapperPx, ROOM_W_MM, ROOM_H_MM]);
 
   // ESC closes the expanded overlay. Lock body scroll while open so the
   // backdrop doesn't reveal the page underneath when the user scrolls.
