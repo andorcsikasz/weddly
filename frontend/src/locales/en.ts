@@ -1355,8 +1355,6 @@ const en: LocaleMessages = {
       "Drag the slider to see how planned costs shift with headcount. Per-guest categories scale; fixed costs stay put.",
     cost_planning_baseline_note: "{n} guests",
     cost_planning_unit_label: "guests",
-    top_movers_title: "What's pulling the budget up?",
-    top_movers_sub: "Your three heaviest lines — worth a second look.",
     lines_title: "Budget lines",
     lines_sub: "Edit each line — totals above and bars update live.",
     lines_empty: "No budget lines yet. Add one to start planning.",

@@ -496,24 +496,6 @@ export default function BudgetPage() {
     [couple?.frozen_categories],
   );
 
-  // Three heaviest planned lines the couple can actually act on — frozen
-  // categories are off-limits (planned is pinned), DIY-supplier-mirrored
-  // rows are owned by /app/suppliers, and the honeymoon roll-up belongs to
-  // /app/honeymoon. Zero-planned rows would be noise. Stable across
-  // refreshes; recomputed only when `lines` or frozen state changes.
-  const topMovers = useMemo<BudgetLine[]>(() => {
-    return [...lines]
-      .filter(
-        (l) =>
-          l.planned_huf > 0 &&
-          l.couple_supplier_id === null &&
-          l.category !== "honeymoon" &&
-          !frozenCategoriesSet.has(l.category),
-      )
-      .sort((a, b) => b.planned_huf - a.planned_huf)
-      .slice(0, 3);
-  }, [lines, frozenCategoriesSet]);
-
   async function removeLine(id: number) {
     const ok = await confirm({
       title: t("common.confirm_delete_title"),
@@ -814,42 +796,6 @@ export default function BudgetPage() {
         onEditCustomRowPlanned={setCustomRowPlanned}
         onRemoveCustomRow={removeCustomRow}
       />
-
-      {topMovers.length > 0 && (
-        <section aria-labelledby="top-movers-title" className="mt-8">
-          <div className="mb-3">
-            <h2 id="top-movers-title">{t("budget.top_movers_title")}</h2>
-            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
-              {t("budget.top_movers_sub")}
-            </p>
-          </div>
-          <div className="card overflow-hidden p-0">
-            <ul className="divide-y divide-paper-200 dark:divide-umber-700">
-              {topMovers.map((line, idx) => (
-                <li key={line.id} className="flex items-center gap-3 px-4 py-3">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-paper-100 text-xs font-semibold tabular-nums text-ink-700 dark:bg-umber-700 dark:text-umber-100"
-                  >
-                    {idx + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-ink-800 dark:text-umber-100">
-                      {line.label}
-                    </div>
-                    <div className="text-xs text-ink-500 dark:text-umber-300">
-                      {t(`budget.cat.${line.category}`)}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-sm font-semibold tabular-nums text-ink-800 dark:text-umber-100">
-                    {formatMoney(line.planned_huf, currency, locale)}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
 
       <section id="top-overage" className="mt-8 scroll-mt-24">
         <div className="mb-3">
