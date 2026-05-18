@@ -5,6 +5,11 @@
  * scrapers (Twitter, Facebook, Slack) can show the share cards — many
  * of them don't render SVG og:image reliably.
  *
+ * Also renders public/logo.svg → public/logo.png at 512×512 for the
+ * Organization JSON-LD logo (referenced by backend/src/lib/seo_ssr.ts).
+ * Google's structured-data tooling resolves the logo URL, so a PNG is
+ * safer than SVG even though we'd prefer SVG.
+ *
  * Usage: `bun run og` from the frontend workspace.
  *
  * The SVGs are the source of truth — edit them, then re-run this script.
@@ -19,18 +24,19 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 
 const variants = [
-  { svg: "public/og.svg", png: "public/og.png" },
-  { svg: "public/og-rsvp.svg", png: "public/og-rsvp.png" },
+  { svg: "public/og.svg", png: "public/og.png", width: 1200 },
+  { svg: "public/og-rsvp.svg", png: "public/og-rsvp.png", width: 1200 },
+  { svg: "public/logo.svg", png: "public/logo.png", width: 512 },
 ];
 
 for (const v of variants) {
   const svgPath = resolve(root, v.svg);
   const pngPath = resolve(root, v.png);
   const svg = readFileSync(svgPath);
-  // Render at the target Open Graph size. fitTo:width keeps the SVG
-  // viewBox proportional and pins the output at exactly 1200px wide.
+  // fitTo:width keeps the SVG viewBox proportional and pins the output
+  // at exactly the target pixel width (og cards = 1200, square logo = 512).
   const resvg = new Resvg(svg, {
-    fitTo: { mode: "width", value: 1200 },
+    fitTo: { mode: "width", value: v.width },
     // Use system serif as the Cormorant fallback; SVG references
     // 'Cormorant Garamond, Georgia, serif'. resvg-js falls through to
     // bundled noto fonts otherwise — Georgia approximates Cormorant
