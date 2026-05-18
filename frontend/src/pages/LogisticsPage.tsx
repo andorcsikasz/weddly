@@ -442,10 +442,14 @@ export default function LogisticsPage() {
       </header>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        {/* Tabs fill the remaining row width (flex-1 on the container, then
+         *  flex-1 on each TabButton so the two split it evenly). The action
+         *  button on the right keeps its intrinsic width.
+         */}
         <div
           role="tablist"
           aria-label={t("logistics.tabs_aria")}
-          className="inline-flex rounded-lg border border-paper-300 bg-paper-100 p-0.5 dark:border-umber-700 dark:bg-umber-900"
+          className="flex flex-1 min-w-[12rem] rounded-lg border border-paper-300 bg-paper-100 p-0.5 dark:border-umber-700 dark:bg-umber-900"
         >
           <TabButton
             active={tab === "accommodation"}
@@ -462,7 +466,7 @@ export default function LogisticsPage() {
         </div>
         <button
           type="button"
-          className="btn-primary ml-auto"
+          className="btn-primary"
           onClick={() =>
             tab === "accommodation" ? setEditingAccommodation("new") : setEditingTransfer("new")
           }
@@ -713,7 +717,7 @@ function TabButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
         active
           ? "bg-white text-ink-900 shadow-sm dark:bg-umber-700 dark:text-paper-100"
           : "text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-100"
