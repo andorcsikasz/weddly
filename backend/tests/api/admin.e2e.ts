@@ -79,8 +79,9 @@ async function insertSupplierAwaitingReview(token: string): Promise<number> {
 
 describe("admin gate — 403 for verified non-admin token on every /api/admin/* route", () => {
   // Inventory of every admin route exposed by the six modules under test.
-  // Each entry is one request; the loop registers a single test per row so
-  // a future regression points at the exact route that lost its requireAdmin.
+  // Bundled into one test so the gate suite costs one wipe + one bootstrap
+  // (instead of ~30) — keeps the SQLite WAL volume low on macOS test runs
+  // where rapid wipes trigger SQLITE_IOERR_VNODE under load.
   const routes: Array<{
     method: string;
     path: string;
@@ -156,14 +157,23 @@ describe("admin gate — 403 for verified non-admin token on every /api/admin/* 
     { method: "DELETE", path: "/api/admin/supplier-categories/1" },
   ];
 
-  for (const r of routes) {
-    test(`${r.method} ${r.path} → 403 with non-admin token`, async () => {
-      wipeAll();
-      const { token } = await bootstrapCouple("notadmin@weddly.test");
+  test("every listed admin route returns 403 with a non-admin verified token", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("notadmin@weddly.test");
+    for (const r of routes) {
       const res = await req(r.method, r.path, r.body, { token });
+      // Annotate the failure with the exact route so a regression points
+      // at the handler that lost its requireAdmin() call.
+      if (res.status !== 403) {
+        throw new Error(
+          `${r.method} ${r.path} expected 403, got ${res.status} (body=${JSON.stringify(
+            res.data,
+          )})`,
+        );
+      }
       expect(res.status).toBe(403);
-    });
-  }
+    }
+  });
 });
 
 describe("admin gate — 401 with no token on every /api/admin/* route", () => {
@@ -183,13 +193,20 @@ describe("admin gate — 401 with no token on every /api/admin/* route", () => {
       body: { slug: "z_test", label_hu: "Z", label_en: "Z" },
     },
   ];
-  for (const r of routes) {
-    test(`${r.method} ${r.path} → 401 with no token`, async () => {
-      wipeAll();
+  test("every listed admin route returns 401 with no Authorization header", async () => {
+    wipeAll();
+    for (const r of routes) {
       const res = await req(r.method, r.path, r.body);
+      if (res.status !== 401) {
+        throw new Error(
+          `${r.method} ${r.path} expected 401, got ${res.status} (body=${JSON.stringify(
+            res.data,
+          )})`,
+        );
+      }
       expect(res.status).toBe(401);
-    });
-  }
+    }
+  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────
