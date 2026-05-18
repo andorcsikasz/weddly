@@ -749,14 +749,18 @@ interface SeatPlan {
   seating: Array<{ table_label: string; seats: Array<{ index: number; full_name: string }> }>;
 }
 
+// Table coordinates are in millimetres on the demo's 20 × 30 m floor
+// (x: 0..20000, y: 0..30000). Layout: head table centred at the top, three
+// round tables in a triangle further down, leaving plenty of empty floor
+// the visitor can drag into.
 const SEAT_PLAN: SeatPlan = {
   tables: [
     {
       label: "Head table",
       shape: "head",
       seats: 6,
-      x_mm: 600,
-      y_mm: 200,
+      x_mm: 8800,
+      y_mm: 2500,
       width_mm: 2400,
       length_mm: 900,
       is_kids_table: false,
@@ -765,8 +769,8 @@ const SEAT_PLAN: SeatPlan = {
       label: "Family — bride's side",
       shape: "round",
       seats: 8,
-      x_mm: 300,
-      y_mm: 1100,
+      x_mm: 3000,
+      y_mm: 9000,
       width_mm: 1500,
       length_mm: 1500,
       is_kids_table: false,
@@ -775,8 +779,8 @@ const SEAT_PLAN: SeatPlan = {
       label: "Best man's table",
       shape: "round",
       seats: 8,
-      x_mm: 1800,
-      y_mm: 1100,
+      x_mm: 15500,
+      y_mm: 9000,
       width_mm: 1500,
       length_mm: 1500,
       is_kids_table: false,
@@ -785,8 +789,8 @@ const SEAT_PLAN: SeatPlan = {
       label: "Friends — fairytale crowd",
       shape: "round",
       seats: 8,
-      x_mm: 3300,
-      y_mm: 1100,
+      x_mm: 9250,
+      y_mm: 15500,
       width_mm: 1500,
       length_mm: 1500,
       is_kids_table: false,

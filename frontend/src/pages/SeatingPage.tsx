@@ -39,6 +39,14 @@ import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
 import { computeSymmetricLayout } from "./seating/layout";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
+import { isCurrentSessionDemo } from "../components/DemoLaunchCard";
+
+// Demo workspace canvas — 20 × 30 m. Sized to fit the seeded Shrek & Fiona
+// layout with room to drag tables around. Applied in-memory only (never
+// written to localStorage), so the visitor's real workspace on the same
+// device keeps its own saved dimensions.
+const DEMO_ROOM_W_MM = 20_000;
+const DEMO_ROOM_H_MM = 30_000;
 
 const SHAPES: TableShape[] = ["round", "long", "square", "head"];
 
@@ -93,8 +101,17 @@ export default function SeatingPage() {
   // Editable canvas dimensions. Defaults to 12×9 m and persists to
   // localStorage so a refresh keeps the user's room. v2 will move this onto
   // the couples table so partners share it across devices.
-  const [roomWidthMm, setRoomWidthMm] = useState<number>(ROOM_DIMS.W_MM);
-  const [roomHeightMm, setRoomHeightMm] = useState<number>(ROOM_DIMS.H_MM);
+  // Demo workspaces ignore the localStorage default and start at 20×30 m so
+  // the seeded fairytale tables sit on a generous floor — they also skip the
+  // localStorage write below so the visitor's real saved value (if any)
+  // stays untouched.
+  const isDemoSession = isCurrentSessionDemo();
+  const [roomWidthMm, setRoomWidthMm] = useState<number>(
+    isDemoSession ? DEMO_ROOM_W_MM : ROOM_DIMS.W_MM,
+  );
+  const [roomHeightMm, setRoomHeightMm] = useState<number>(
+    isDemoSession ? DEMO_ROOM_H_MM : ROOM_DIMS.H_MM,
+  );
   // Tap-to-place mode (forced on for coarse pointers, optional for fine ones).
   const [coarsePointer, setCoarsePointer] = useState(false);
   const [tapModeUser, setTapModeUser] = useState(false);
@@ -149,8 +166,10 @@ export default function SeatingPage() {
   // Hydrate room dimensions from localStorage on mount. We only persist if the
   // saved values pass a sanity check — old/bad data should fall back to
   // defaults rather than blow up the canvas.
+  // Skipped for demo sessions: the demo's 20×30 m default would otherwise be
+  // overwritten by whatever the visitor's real workspace had saved.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || isDemoSession) return;
     try {
       const raw = window.localStorage.getItem("weddly.seating.room_dims");
       if (!raw) return;
@@ -162,20 +181,26 @@ export default function SeatingPage() {
     } catch {
       /* noop — corrupt entry, keep defaults */
     }
-  }, []);
+  }, [isDemoSession]);
 
-  const updateRoom = useCallback((widthMm: number, heightMm: number) => {
-    setRoomWidthMm(widthMm);
-    setRoomHeightMm(heightMm);
-    try {
-      window.localStorage.setItem(
-        "weddly.seating.room_dims",
-        JSON.stringify({ w: widthMm, h: heightMm }),
-      );
-    } catch {
-      /* localStorage may throw in private mode — non-fatal */
-    }
-  }, []);
+  const updateRoom = useCallback(
+    (widthMm: number, heightMm: number) => {
+      setRoomWidthMm(widthMm);
+      setRoomHeightMm(heightMm);
+      // Demo sessions stay in-memory — never write to the browser-wide
+      // localStorage key, so a later real workspace keeps its own dims.
+      if (isDemoSession) return;
+      try {
+        window.localStorage.setItem(
+          "weddly.seating.room_dims",
+          JSON.stringify({ w: widthMm, h: heightMm }),
+        );
+      } catch {
+        /* localStorage may throw in private mode — non-fatal */
+      }
+    },
+    [isDemoSession],
+  );
 
   // Detect coarse pointer (touch). We listen for changes so a hybrid device
   // (laptop with touch input) flips correctly when the user reaches for the
