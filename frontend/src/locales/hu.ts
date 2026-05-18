@@ -1357,12 +1357,7 @@ const hu: LocaleMessages = {
     cost_planning_baseline_note: "{n} vendég",
     cost_planning_unit_label: "vendég",
     top_movers_title: "Mi húzza fel a kasszát?",
-    top_movers_sub:
-      "A három legdrágább tételed. Egy koppintással elengeded azt, amire nincs szükség.",
-    top_movers_skip: "Ez nem kell",
-    top_movers_skip_aria: "„{label}” elengedése a költségvetésből",
-    top_movers_skipped: "„{label}” elengedve",
-    top_movers_undo: "Visszavonás",
+    top_movers_sub: "A három legdrágább tételed — ide érdemes először ránézni.",
     lines_title: "Költségsorok",
     lines_sub: "Szerkeszd a sorokat — a fenti összegek és sávok élőben frissülnek.",
     lines_empty: "Még nincs költségsor. Adj hozzá egyet, hogy elindulhass.",
