@@ -46,8 +46,9 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Skeleton, useToast } from "../components/ui";
 import DayView from "./timeline/DayView";
-import GanttView from "./timeline/GanttView";
+import HalfYearView from "./timeline/HalfYearView";
 import MonthView from "./timeline/MonthView";
+import QuarterView from "./timeline/QuarterView";
 import WeekView from "./timeline/WeekView";
 import { ApiError } from "../lib/api";
 import { coupleApi, coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
@@ -664,17 +665,27 @@ function ChartCard({
         />
       );
     }
-    // quarter / half
+    if (mode === "quarter") {
+      return (
+        <QuarterView
+          currentDate={currentDate}
+          today={today}
+          tasks={tasks}
+          supplierById={supplierById as unknown as Map<string, ViewSupplier>}
+          onOpenTask={onOpenTask}
+          weddingDate={weddingDate}
+        />
+      );
+    }
+    // half
     return (
-      <GanttView
+      <HalfYearView
         currentDate={currentDate}
         today={today}
-        weddingDate={weddingDate}
         tasks={tasks}
         supplierById={supplierById as unknown as Map<string, ViewSupplier>}
-        mode={mode}
         onOpenTask={onOpenTask}
-        onSupplierChipClick={onSupplierChipClick}
+        weddingDate={weddingDate}
       />
     );
   }
@@ -687,7 +698,9 @@ function ChartCard({
   // Calendar modes (day/week/month) get a soft serif title that reads as the
   // date headline; the Gantt-style 3M/6M views keep the compact uppercase
   // chrome they had so the long range string doesn't dwarf the canvas.
-  const isCalendarMode = mode === "day" || mode === "week" || mode === "month";
+  // Every mode now renders as a calendar-grid (Day/Week/Month) or month-/
+  // week-grid (Quarter/Half-year) — the title chrome can stay uniformly serif.
+  const isCalendarMode = true;
   const titleClass = isCalendarMode
     ? "font-serif text-xl text-ink-900 dark:text-paper-50"
     : "text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100";
