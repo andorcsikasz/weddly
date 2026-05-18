@@ -14,11 +14,11 @@ import type {
 } from "@shared/types";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
+  Armchair,
   ArrowRight,
   CalendarClock,
   CalendarHeart,
   Camera,
-  ChefHat,
   Clipboard,
   ClipboardList,
   Clock,
@@ -30,8 +30,8 @@ import {
   Plane,
   Printer,
   QrCode,
+  Store,
   Users,
-  UtensilsCrossed,
   Wallet,
   X,
 } from "lucide-react";
@@ -1340,14 +1340,10 @@ export default function DashboardPage() {
              *  ≥sm. The pills inside stretch with the cells. */}
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
               <IconNavLink to="/app/guests" icon={<Users size={18} />} label={t("nav.guests")} />
-              <IconNavLink
-                to="/app/budget"
-                icon={<UtensilsCrossed size={18} />}
-                label={t("nav.budget")}
-              />
+              <IconNavLink to="/app/budget" icon={<Wallet size={18} />} label={t("nav.budget")} />
               <IconNavLink
                 to="/app/seating"
-                icon={<ChefHat size={18} />}
+                icon={<Armchair size={18} />}
                 label={t("nav.seating")}
               />
               <IconNavLink
@@ -1357,7 +1353,7 @@ export default function DashboardPage() {
               />
               <IconNavLink
                 to="/app/suppliers"
-                icon={<Heart size={18} />}
+                icon={<Store size={18} />}
                 label={t("nav.suppliers")}
               />
               <IconNavLink

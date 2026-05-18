@@ -1,12 +1,11 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
 import {
+  Armchair,
   Bed,
   CalendarClock,
   Camera,
-  ChefHat,
   ClipboardList,
   GanttChartSquare,
-  Heart,
   Image as ImageIcon,
   Inbox,
   Languages,
@@ -20,11 +19,12 @@ import {
   PanelLeftOpen,
   Plane,
   ShieldCheck,
+  Store,
   Sun,
   UserCheck,
   UserCog,
   Users,
-  UtensilsCrossed,
+  Wallet,
   X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -73,7 +73,7 @@ const ITEMS: NavItem[] = [
     to: "/app/budget",
     labelKey: "nav.budget",
     tabKey: "nav.tab_budget",
-    icon: <UtensilsCrossed size={18} />,
+    icon: <Wallet size={18} />,
   },
   // Workflow order: book Szolgáltatók first (caterer drives most line items),
   // then Tervezés for free-form tasks/ideas, then Programterv to lay out the
@@ -82,7 +82,7 @@ const ITEMS: NavItem[] = [
     to: "/app/suppliers",
     labelKey: "nav.suppliers",
     tabKey: "nav.tab_suppliers",
-    icon: <Heart size={18} />,
+    icon: <Store size={18} />,
   },
   // Free-form planning surface — desktop-only so the mobile bottom nav stays
   // at the 5 core flows. Two tabs inside: tasks + ideas. The wedding-day
@@ -113,7 +113,7 @@ const ITEMS: NavItem[] = [
   {
     to: "/app/seating",
     labelKey: "nav.seating",
-    icon: <ChefHat size={18} />,
+    icon: <Armchair size={18} />,
   },
   // Logistics — accommodation + transfer assignment. Sits right after seating
   // because the workflow is similar (drag guests onto units) and the data it

@@ -9,8 +9,8 @@
 import type { Couple, Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
 import { defaultDimsForShape, maxSeatsForTable } from "@shared/seating";
 import {
+  Armchair,
   Baby,
-  ChefHat,
   Circle,
   Copy,
   Crown,
@@ -1164,7 +1164,7 @@ export default function SeatingPage() {
 
       {tables.length === 0 ? (
         <div className="card stationery text-center">
-          <ChefHat size={28} className="mx-auto text-ink-500 dark:text-umber-300" />
+          <Armchair size={28} className="mx-auto text-ink-500 dark:text-umber-300" />
           <h3 className="mt-3 text-base font-semibold">{t("seating.no_tables")}</h3>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
             {t("seating.add_first_table")}
