@@ -100,13 +100,25 @@ export interface SymmetricLayoutResult {
 
 /** Compute target positions for "symmetric" auto-arrange.
  *
- *  Layout: head table (if present) hugs the top wall on the vertical
- *  centreline; guest tables fill a row-major grid below. Each grid cell is
- *  sized to hold the largest guest footprint plus MIN_AISLE_MM, so chairs
- *  from adjacent tables stay walkable apart.
+ *  Layout strategy:
+ *    - Head table (if any) hugs the top wall on the vertical centreline.
+ *    - Guest tables fill a row-major grid below. Grid dimensions are chosen
+ *      so the most-square cell pattern matches the room aspect, then clamped
+ *      to whatever fits the available area with MIN_AISLE_MM between every
+ *      adjacent pair. The largest guest footprint sets the cell size — every
+ *      aisle is at least MIN_AISLE_MM regardless of which two tables sit
+ *      next to each other.
+ *    - When the room is genuinely too small to honour MIN_AISLE everywhere
+ *      (crowded mode), we still keep MIN_AISLE between every pair and let
+ *      the grid overflow into the wall margin (or past the room) rather
+ *      than overlapping chairs. `meta.crowded = true` so callers can warn.
+ *    - When the grid is smaller than the available area it is centred so
+ *      the result reads balanced. With a head table present we anchor the
+ *      grid's top to the head-clearance line so HEAD_CLEARANCE_MM is never
+ *      compressed by centring.
  *
- *  Sizes and rotations are not changed — only x_mm / y_mm. Tables not in the
- *  input are simply absent from the returned map. */
+ *  Sizes and rotations are not changed — only x_mm / y_mm. Tables not in
+ *  the input are absent from the returned map. */
 export function computeSymmetricLayout(input: SymmetricLayoutInput): SymmetricLayoutResult {
   const { tables, roomWidthMm, roomHeightMm } = input;
   const positions = new Map<number, { x_mm: number; y_mm: number }>();
@@ -145,60 +157,116 @@ export function computeSymmetricLayout(input: SymmetricLayoutInput): SymmetricLa
   if (availW <= 0 || availH <= 0) return { positions, meta };
 
   const n = guests.length;
-  const ratio = availW / availH;
-  const idealCols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * ratio))));
-
-  let maxFootprintW = 0;
-  let maxFootprintH = 0;
+  let fpW = 0;
+  let fpH = 0;
   for (const g of guests) {
     const fp = tableFootprintMm(g);
-    if (fp.w > maxFootprintW) maxFootprintW = fp.w;
-    if (fp.h > maxFootprintH) maxFootprintH = fp.h;
+    if (fp.w > fpW) fpW = fp.w;
+    if (fp.h > fpH) fpH = fp.h;
   }
-  const minCellW = maxFootprintW + MIN_AISLE_MM;
-  const minCellH = maxFootprintH + MIN_AISLE_MM;
-  const aisleMaxCols = Math.max(1, Math.floor(availW / minCellW));
-  const aisleMaxRows = Math.max(1, Math.floor(availH / minCellH));
+
+  // Three capability tiers, picked top-down:
+  //   L1 comfortable — every adjacent pair gets ≥ MIN_AISLE between them.
+  //   L2 crowded but no-overlap — full aisle won't fit, but tables still
+  //      stay inside the room without overlapping.
+  //   L3 overflow — even touching tables don't fit; some overlap is
+  //      unavoidable. Picked so the L1/L2 fast paths aren't used.
+  // Per-axis maxima for each tier (the wall margin already covers the
+  // table-to-wall gap, so no extra aisle is reserved at the edges):
+  //   aisleMax: cols * fp + (cols - 1) * MIN_AISLE ≤ avail
+  //   touchMax: cols * fp ≤ roomDim (max grid span the room will tolerate)
+  const aisleMaxCols = Math.max(0, Math.floor((availW + MIN_AISLE_MM) / (fpW + MIN_AISLE_MM)));
+  const aisleMaxRows = Math.max(0, Math.floor((availH + MIN_AISLE_MM) / (fpH + MIN_AISLE_MM)));
+  const maxGridDimY = head ? Math.max(0, roomHeightMm - usedTopMm) : roomHeightMm;
+  const touchMaxCols = Math.max(0, Math.floor(roomWidthMm / fpW));
+  const touchMaxRows = Math.max(0, Math.floor(maxGridDimY / fpH));
+
+  // Aim for a most-square grid that matches the room and per-table aspect
+  // ratios together. A tall table in a wide room still wants more columns
+  // than rows.
+  const targetRatio = (availW / availH) * (fpH / fpW);
+  const idealCols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * targetRatio))));
 
   let cols: number;
-  let rows: number;
-  let crowded = false;
-  if (aisleMaxCols * aisleMaxRows >= n) {
+  if (aisleMaxCols >= 1 && aisleMaxRows >= 1 && aisleMaxCols * aisleMaxRows >= n) {
+    // L1
     cols = Math.min(idealCols, aisleMaxCols);
-    rows = Math.ceil(n / cols);
-    if (rows > aisleMaxRows) {
+    const probeRows = Math.ceil(n / cols);
+    if (probeRows > aisleMaxRows) {
       cols = Math.min(aisleMaxCols, Math.ceil(n / aisleMaxRows));
-      rows = Math.ceil(n / cols);
     }
+  } else if (touchMaxCols >= 1 && touchMaxRows >= 1 && touchMaxCols * touchMaxRows >= n) {
+    // L2 — pick cols ∈ [ceil(n / touchMaxRows), touchMaxCols] so rows fits.
+    const lower = Math.max(1, Math.ceil(n / touchMaxRows));
+    const upper = Math.max(lower, touchMaxCols);
+    cols = Math.min(upper, Math.max(lower, idealCols));
   } else {
-    cols = idealCols;
-    rows = Math.ceil(n / cols);
-    crowded = true;
+    // L3
+    cols = Math.min(n, Math.max(1, idealCols));
   }
-  const cellW = availW / cols;
-  const cellH = availH / rows;
-  const lastRowCount = n - (rows - 1) * cols;
+  const rows = Math.ceil(n / cols);
 
+  // Pitch per axis. Three regimes:
+  //   1. Comfortable — room has slack: spread to fill `avail` so aisles are
+  //      generous and the grid is symmetric to the walls.
+  //   2. Crowded — `avail` can't hold a full MIN_AISLE pitch: use the
+  //      MIN_AISLE pitch even though it overflows `avail` into the wall
+  //      margin. Better balanced than tight in the centre with dead zones.
+  //   3. Severely crowded — even the MIN_AISLE pitch would push tables past
+  //      the room walls: clamp pitch to fit inside the room. This gives
+  //      up some aisle space (and may overlap chairs in truly impossible
+  //      rooms), but keeps tables visually contained so the user sees the
+  //      crowding instead of tables flying off the canvas.
+  // `maxDim` is the largest the grid extent is allowed to be — full room
+  // along x, but room-minus-head along y when a head table is present.
+  const axisPitch = (count: number, fp: number, avail: number, maxDim: number): number => {
+    if (count <= 1) return 0;
+    const spreadPitch = (avail - fp) / (count - 1);
+    const aislePitch = fp + MIN_AISLE_MM;
+    if (spreadPitch >= aislePitch) return spreadPitch;
+    const roomCapPitch = (maxDim - fp) / (count - 1);
+    return Math.min(aislePitch, roomCapPitch);
+  };
+  const pitchX = axisPitch(cols, fpW, availW, roomWidthMm);
+  const pitchY = axisPitch(rows, fpH, availH, maxGridDimY);
+
+  const gridW = (cols - 1) * pitchX + fpW;
+  const gridH = (rows - 1) * pitchY + fpH;
+
+  // Centre the grid in the available area. With a head table we never lift
+  // the grid above availTop — that would eat into HEAD_CLEARANCE_MM.
+  const startX = availLeft + (availW - gridW) / 2;
+  let startY = availTop + (availH - gridH) / 2;
+  if (head && startY < availTop) startY = availTop;
+
+  const lastRowCount = n - (rows - 1) * cols;
   for (let i = 0; i < n; i++) {
     const g = guests[i];
     if (!g) continue;
     const r = Math.floor(i / cols);
     const c = i % cols;
+    // Centre the last row if it isn't full, so "3 + 2 of 3-cols" reads as a
+    // tidy 3 + 2 centred rather than 3 + 2 left-aligned.
     const isLastPartial = r === rows - 1 && lastRowCount < cols;
     const colsInRow = isLastPartial ? lastRowCount : cols;
-    const rowOffset = isLastPartial ? ((cols - colsInRow) * cellW) / 2 : 0;
+    const rowOffset = isLastPartial ? ((cols - colsInRow) * pitchX) / 2 : 0;
     positions.set(g.id, {
-      x_mm: Math.round(availLeft + rowOffset + (c + 0.5) * cellW),
-      y_mm: Math.round(availTop + (r + 0.5) * cellH),
+      x_mm: Math.round(startX + rowOffset + fpW / 2 + c * pitchX),
+      y_mm: Math.round(startY + fpH / 2 + r * pitchY),
     });
   }
 
+  // `crowded` reflects realised geometry, not which tier we took. L2 layouts
+  // that happen to land exactly at MIN_AISLE on every axis aren't crowded —
+  // the user still gets a walkable aisle.
+  const aisleX = cols > 1 ? pitchX - fpW : Number.POSITIVE_INFINITY;
+  const aisleY = rows > 1 ? pitchY - fpH : Number.POSITIVE_INFINITY;
   meta.cols = cols;
   meta.rows = rows;
-  meta.cellWMm = cellW;
-  meta.cellHMm = cellH;
-  meta.minCellWMm = minCellW;
-  meta.minCellHMm = minCellH;
-  meta.crowded = crowded;
+  meta.cellWMm = pitchX;
+  meta.cellHMm = pitchY;
+  meta.minCellWMm = fpW + MIN_AISLE_MM;
+  meta.minCellHMm = fpH + MIN_AISLE_MM;
+  meta.crowded = aisleX < MIN_AISLE_MM || aisleY < MIN_AISLE_MM;
   return { positions, meta };
 }

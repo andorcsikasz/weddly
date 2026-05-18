@@ -1604,6 +1604,8 @@ const en: LocaleMessages = {
     toast_moved: "{table} moved",
     toast_resized: "{table} resized",
     toast_arranged: "Tables arranged symmetrically",
+    toast_arranged_crowded:
+      "Room is tight for this many tables — some pairs lack 80 cm of walking space. Increase the room size or remove tables.",
     arrange_button_label: "Arrange tables symmetrically",
     swap_seats_title: "This seat is already taken",
     swap_seats_body: "{occupant} is currently sitting here. Swap with {guest}, replace, or cancel?",

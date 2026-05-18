@@ -1753,6 +1753,7 @@ export interface LocaleMessages {
     toast_moved: string;
     toast_resized: string;
     toast_arranged: string;
+    toast_arranged_crowded: string;
     arrange_button_label: string;
     /** Conflict (already-occupied seat) prompt. */
     swap_seats_title: string;

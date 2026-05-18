@@ -789,7 +789,7 @@ export default function SeatingPage() {
   // reads balanced. Sizes and rotations are preserved — this only moves.
   async function arrangeTablesSymmetrically() {
     if (tables.length === 0) return;
-    const { positions: newPos } = computeSymmetricLayout({
+    const { positions: newPos, meta } = computeSymmetricLayout({
       tables,
       roomWidthMm,
       roomHeightMm,
@@ -842,6 +842,7 @@ export default function SeatingPage() {
     publish("seating:changed");
     await refresh();
     announceUndoable(t("seating.toast_arranged"));
+    if (meta.crowded) toast.error(t("seating.toast_arranged_crowded"));
   }
 
   async function resizeTable(id: number, width_mm: number, length_mm: number) {

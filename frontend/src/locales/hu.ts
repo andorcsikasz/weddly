@@ -1618,6 +1618,8 @@ const hu: LocaleMessages = {
     toast_moved: "{table} áthelyezve",
     toast_resized: "{table} átméretezve",
     toast_arranged: "Asztalok szimmetrikusan elrendezve",
+    toast_arranged_crowded:
+      "A terem szűk az asztalok számához — egyes asztalok között nincs 80 cm közlekedési hely. Növeld a termet vagy csökkentsd az asztalok számát.",
     arrange_button_label: "Asztalok szimmetrikus elrendezése",
     swap_seats_title: "Ez az ülőhely már foglalt",
     swap_seats_body:

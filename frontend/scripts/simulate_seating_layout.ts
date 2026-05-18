@@ -365,7 +365,10 @@ interface Audit {
   crowded: boolean;
 }
 
-function audit(scenario: Scenario): { result: ReturnType<typeof computeSymmetricLayout>; a: Audit } {
+function audit(scenario: Scenario): {
+  result: ReturnType<typeof computeSymmetricLayout>;
+  a: Audit;
+} {
   const result = computeSymmetricLayout({
     tables: scenario.tables,
     roomWidthMm: scenario.roomWidthMm,
@@ -429,7 +432,8 @@ function audit(scenario: Scenario): { result: ReturnType<typeof computeSymmetric
       const top = p.y - p.halfH;
       if (top >= headBottom) {
         // Horizontal overlap with head x-range?
-        const overlapX = Math.min(p.x + p.halfW, head.x + head.halfW) -
+        const overlapX =
+          Math.min(p.x + p.halfW, head.x + head.halfW) -
           Math.max(p.x - p.halfW, head.x - head.halfW);
         if (overlapX > 0) {
           const gap = top - headBottom;
@@ -542,4 +546,6 @@ console.log(`  crowded fallbacks:   ${totalCrowded}`);
 console.log(`  median space waste:  ${fmtPct(median)}`);
 console.log(`  max space waste:     ${fmtPct(wasteValues[wasteValues.length - 1] ?? 0)}`);
 console.log(`  min space waste:     ${fmtPct(wasteValues[0] ?? 0)}`);
-console.log(`\nConstants: WALL_MARGIN=${WALL_MARGIN_MM} HEAD_CLEAR=${HEAD_CLEARANCE_MM} MIN_AISLE=${MIN_AISLE_MM} CHAIR_BACK=${CHAIR_BACK_DEPTH_MM}`);
+console.log(
+  `\nConstants: WALL_MARGIN=${WALL_MARGIN_MM} HEAD_CLEAR=${HEAD_CLEARANCE_MM} MIN_AISLE=${MIN_AISLE_MM} CHAIR_BACK=${CHAIR_BACK_DEPTH_MM}`,
+);
