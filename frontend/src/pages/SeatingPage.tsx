@@ -28,6 +28,7 @@ import {
   Trash2,
   Undo2,
   Unlink2,
+  User,
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Dialog, useConfirm, useToast } from "../components/ui";
@@ -2519,6 +2520,17 @@ function DraggableGuest({
           className="mr-1 inline-block align-text-bottom text-blush-500 dark:text-blush-300"
         />
       )}
+      {/* Generic person silhouette for plain members of a linked household —
+          mirrors the logistics sidebar so the joint-guest card reads the same
+          across the app. Solo guests stay iconless to keep the unassigned
+          list visually quiet. */}
+      {!partnerRole && guest.kind !== "baby" && groupIds && groupIds.length > 1 && (
+        <User
+          size={compact ? 14 : 16}
+          aria-hidden
+          className="mr-1 inline-block align-text-bottom text-ink-500 dark:text-umber-300"
+        />
+      )}
       {guest.full_name}
       {relinkable && onRelink && (
         <button
@@ -2569,44 +2581,51 @@ function HouseholdGroup({
   const groupIds = guests.map((g) => g.id);
   return (
     <div
-      className={`relative rounded-lg border pl-3 pr-1 pt-1 pb-1.5 transition-colors ${
+      role="group"
+      aria-label={ariaLabel}
+      onClick={(e) => {
+        // Let nested controls (member rows, unlink button) handle their own
+        // clicks first — they stopPropagation. Card-level clicks fall back
+        // to "arm this household for placement".
+        const target = e.target as HTMLElement;
+        if (target.closest("button")) return;
+        onTap(householdId);
+      }}
+      className={`group relative rounded-lg border py-1 pl-3 pr-1 transition-colors ${
         selected
           ? "border-blush-500 bg-blush-50 ring-2 ring-blush-400 dark:border-blush-400 dark:bg-blush-400/15"
           : "border-paper-300 bg-paper-50 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
-      }`}
-      role="group"
-      aria-label={ariaLabel}
+      } ${tapMode ? "cursor-pointer" : ""}`}
     >
-      {/* Vertical rail visually connects the members — the whole purpose
-          of the card. blush-400 to feel warm; sits flush to the inner
-          padding edge so individual member rows still get whitespace. */}
+      {/* Vertical rail visually ties the members together — blush-400 to
+          feel warm, hugs the left padding edge. */}
       <span
         aria-hidden
-        className="absolute left-1.5 top-1.5 bottom-1.5 w-0.5 rounded-full bg-blush-400 dark:bg-blush-400/70"
+        className="absolute bottom-1 left-1.5 top-1 w-0.5 rounded-full bg-blush-400 dark:bg-blush-400/70"
       />
-      {/* Chip row sits flush against the first member to kill the empty
-          band above the names — that band used to read as a drop target
-          even though dragging there did nothing. */}
-      <div className="flex items-start justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => onTap(householdId)}
-          className="-ml-1 inline-flex items-center gap-1 rounded px-1 text-[11px] font-semibold uppercase tracking-wider text-ink-500 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:text-paper-100 dark:focus-visible:ring-umber-300"
-          aria-pressed={selected || undefined}
-        >
-          <Link2 size={12} aria-hidden className="text-blush-600 dark:text-blush-300" />
-          {guests.length}
-        </button>
-        <button
-          type="button"
-          onClick={() => onUnlink(householdId)}
-          aria-label={unlinkLabel}
-          title={unlinkLabel}
-          className="inline-flex h-5 w-5 items-center justify-center rounded text-ink-400 hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100 dark:focus-visible:ring-umber-300"
-        >
-          <Unlink2 size={12} aria-hidden />
-        </button>
-      </div>
+      {/* Floating count chip on the top-left edge — identifies the
+          household at a glance without occupying a row of the card. */}
+      <span
+        title={ariaLabel}
+        className="absolute -left-1 -top-1.5 inline-flex h-4 items-center gap-0.5 rounded-full bg-blush-400 px-1.5 text-[9px] font-bold leading-none text-white shadow-sm dark:bg-blush-500"
+      >
+        <Link2 size={8} strokeWidth={3} aria-hidden />
+        {guests.length}
+      </span>
+      {/* Unlink — small floating action top-right. Kept semi-visible so
+          touch users can find it; full opacity on hover/focus. */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onUnlink(householdId);
+        }}
+        aria-label={unlinkLabel}
+        title={unlinkLabel}
+        className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded text-ink-400 opacity-60 transition-opacity hover:bg-paper-200 hover:text-ink-700 hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100 dark:focus-visible:ring-umber-300"
+      >
+        <Unlink2 size={11} aria-hidden />
+      </button>
       <ul className="space-y-1">
         {guests.map((g) => (
           <li key={g.id}>
