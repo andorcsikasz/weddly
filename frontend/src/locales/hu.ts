@@ -701,19 +701,16 @@ const hu: LocaleMessages = {
     mockup_vendor_category: "Virágdekoráció · Budapest",
     mockup_vendor_reviews: "4,9 · 23 értékelés",
     mockup_vendor_cta: "Profil megtekintése",
-    // ── "Próbáld ki — Shrek & Fiona demo esküvő" ──────────────────────
+    // ── Landing "try the demo" card — neutral copy, the fairytale
+    //    identity reveals itself only after the visitor lands in /app. ──
     demo_card_eyebrow: "Egy kattintás · regisztráció nélkül",
-    demo_card_title: "Tervezzétek meg Shrek és Fiona esküvőjét",
+    demo_card_title: "Próbálj ki egy kész esküvőt",
     demo_card_body:
-      "Egy ügynökcsapat összerakott egy mese-esküvőt: 15 vendég, költségvetés, ültetésrend, transzfer, ütemterv. Klikk, és máris bent vagy.",
+      "Vendégek, költségvetés, ültetésrend — minden a helyén. Klikk, és bent vagy.",
     demo_card_cta: "Indítsd a demót",
-    demo_card_loading: "Készül a swamp…",
-    demo_card_meta_a: "15 vendég a meséből",
-    demo_card_meta_b: "költségvetés + transzfer",
-    demo_card_meta_c: "élő szerkesztés",
-    demo_card_disclaimer:
-      "A demo minden indításkor frissen születik. Szerkeszthetsz benne, de a változások nem mentődnek el.",
-    demo_card_error: "Nem indult a demo. Próbáld újra egy perc múlva.",
+    demo_card_loading: "Egy pillanat…",
+    demo_card_disclaimer: "Minden indítás új. A változások nem mentődnek el.",
+    demo_card_error: "Nem indult. Próbáld újra.",
   },
   vendors: {
     seo_title: "Szolgáltatóknak — Wēddly",

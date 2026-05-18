@@ -571,9 +571,6 @@ export interface LocaleMessages {
     demo_card_body: string;
     demo_card_cta: string;
     demo_card_loading: string;
-    demo_card_meta_a: string;
-    demo_card_meta_b: string;
-    demo_card_meta_c: string;
     demo_card_disclaimer: string;
     demo_card_error: string;
     faq_title: string;

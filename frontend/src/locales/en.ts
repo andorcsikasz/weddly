@@ -701,19 +701,15 @@ const en: LocaleMessages = {
     mockup_vendor_category: "Floral design · Budapest, HU",
     mockup_vendor_reviews: "4.9 · 23 reviews",
     mockup_vendor_cta: "View profile",
-    // ── "Try it — Shrek & Fiona demo wedding" ─────────────────────────
+    // ── Landing "try the demo" card — neutral copy, the fairytale
+    //    identity reveals itself only after the visitor lands in /app. ──
     demo_card_eyebrow: "One click · no signup",
-    demo_card_title: "Plan Shrek & Fiona's wedding",
-    demo_card_body:
-      "A group of agents staged a fairytale wedding: 15 guests, budget, seating chart, transfers, run-of-show. Click and you're in.",
+    demo_card_title: "Try a pre-built wedding",
+    demo_card_body: "Guests, budget, seating — all set up. Click and you're in.",
     demo_card_cta: "Start the demo",
-    demo_card_loading: "Warming up the swamp…",
-    demo_card_meta_a: "15 fairytale guests",
-    demo_card_meta_b: "budget + transfers",
-    demo_card_meta_c: "live editing",
-    demo_card_disclaimer:
-      "Every demo starts fresh. You can edit anything inside, but changes don't get saved.",
-    demo_card_error: "Demo didn't start. Try again in a minute.",
+    demo_card_loading: "One moment…",
+    demo_card_disclaimer: "Every launch is fresh. Changes don't get saved.",
+    demo_card_error: "Didn't start. Try again.",
   },
   vendors: {
     seo_title: "For vendors — Weddly",

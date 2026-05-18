@@ -93,26 +93,11 @@ export function DemoLaunchCard() {
         {t("landing.demo_card_body")}
       </p>
 
-      <ul className="mt-4 grid grid-cols-1 gap-1.5 text-xs uppercase tracking-[0.18em] text-ink-500 dark:text-umber-300">
-        <li className="flex items-center gap-2">
-          <span aria-hidden="true" className="inline-block h-1 w-1 rounded-full bg-blush-600" />
-          {t("landing.demo_card_meta_a")}
-        </li>
-        <li className="flex items-center gap-2">
-          <span aria-hidden="true" className="inline-block h-1 w-1 rounded-full bg-blush-600" />
-          {t("landing.demo_card_meta_b")}
-        </li>
-        <li className="flex items-center gap-2">
-          <span aria-hidden="true" className="inline-block h-1 w-1 rounded-full bg-blush-600" />
-          {t("landing.demo_card_meta_c")}
-        </li>
-      </ul>
-
       <button
         type="button"
         onClick={launch}
         disabled={busy}
-        className="btn-primary btn-lg mt-6 inline-flex w-full items-center justify-center gap-2 shadow-sm disabled:cursor-wait disabled:opacity-80"
+        className="btn-primary btn-lg mt-5 inline-flex w-full items-center justify-center gap-2 shadow-sm disabled:cursor-wait disabled:opacity-80"
       >
         {busy ? (
           <>
