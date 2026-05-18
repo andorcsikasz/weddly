@@ -1410,10 +1410,12 @@ export default function SuppliersPage() {
                       href={s.website}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="btn-outline btn-sm"
+                      className="btn-ghost btn-sm"
+                      aria-label={t("suppliers.visit_website")}
+                      title={t("suppliers.visit_website")}
                       onClick={() => trackSupplierClick(s.id, "website_click")}
                     >
-                      {t("suppliers.visit_website")}
+                      <Globe size={14} aria-hidden />
                     </a>
                     {s.contact_phone && (
                       <PhoneReveal
@@ -1430,6 +1432,8 @@ export default function SuppliersPage() {
                         <Mail size={14} />
                       </a>
                     )}
+                  </div>
+                  <div className="ml-auto flex items-center gap-1">
                     <CompareToggle
                       supplierId={s.id}
                       isCompared={isCompared}
@@ -1446,8 +1450,6 @@ export default function SuppliersPage() {
                       }
                       t={t}
                     />
-                  </div>
-                  <div className="ml-auto flex items-center">
                     <VoteRow supplier={s} onVote={onVote} t={t} />
                   </div>
                 </div>
