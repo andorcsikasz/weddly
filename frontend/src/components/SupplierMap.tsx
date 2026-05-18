@@ -8,8 +8,8 @@
 import type { DirectorySupplier } from "@shared/suppliers";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useMemo } from "react";
-import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
+import { useEffect, useMemo } from "react";
+import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { useT } from "../lib/i18n";
 
 // Brand-tinted vector dots instead of Leaflet's default PNG pins. Keeps the
@@ -32,6 +32,33 @@ const PIN_STYLE = {
 } as const;
 
 const HUNGARY_CENTER: [number, number] = [47.16, 19.51];
+// Generous edge padding so the outermost pins never sit on the border of the
+// viewport, and a maxZoom cap so a tight cluster (or a single pin) doesn't
+// land at street level where the rest of the country falls off-screen.
+const FIT_OPTIONS: L.FitBoundsOptions = { padding: [48, 48], maxZoom: 13 };
+
+// Re-fits the map whenever the visible pin set changes. MapContainer's `bounds`
+// prop is read once on construction, so without this child the map keeps the
+// initial framing after the user tightens filters and stays zoomed out over a
+// lot of irrelevant area.
+function FitToPins({ pins }: { pins: { lat: number; lng: number }[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (pins.length === 0) {
+      map.setView(HUNGARY_CENTER, 7);
+      return;
+    }
+    if (pins.length === 1) {
+      const only = pins[0];
+      if (!only) return;
+      map.setView([only.lat, only.lng], FIT_OPTIONS.maxZoom ?? 13);
+      return;
+    }
+    const bounds = L.latLngBounds(pins.map((p) => [p.lat, p.lng] as [number, number]));
+    map.fitBounds(bounds, FIT_OPTIONS);
+  }, [map, pins]);
+  return null;
+}
 
 export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplier[] }) {
   const { t, locale } = useT();
@@ -45,22 +72,15 @@ export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplie
     [suppliers],
   );
 
-  // Fit zoom to the data when there's enough spread; otherwise centre on Hungary.
-  const bounds = useMemo(() => {
-    if (pins.length < 2) return null;
-    return L.latLngBounds(pins.map((p) => [p.lat, p.lng] as [number, number]));
-  }, [pins]);
-
   return (
     <div className="overflow-hidden rounded-2xl border border-paper-300 dark:border-umber-700 shadow-pop">
       <MapContainer
         center={HUNGARY_CENTER}
         zoom={7}
-        bounds={bounds ?? undefined}
-        boundsOptions={{ padding: [40, 40] }}
         scrollWheelZoom={false}
         style={{ height: "70vh", minHeight: "480px", width: "100%" }}
       >
+        <FitToPins pins={pins} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
