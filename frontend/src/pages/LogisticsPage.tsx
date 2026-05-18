@@ -471,9 +471,7 @@ export default function LogisticsPage() {
               type="button"
               className="btn-primary"
               onClick={() =>
-                tab === "accommodation"
-                  ? setEditingAccommodation("new")
-                  : setEditingTransfer("new")
+                tab === "accommodation" ? setEditingAccommodation("new") : setEditingTransfer("new")
               }
             >
               <Plus size={16} />{" "}
@@ -483,71 +481,71 @@ export default function LogisticsPage() {
             </button>
           </div>
 
-        <section>
-          {loading ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Skeleton variant="block" height={140} rounded="lg" />
-              <Skeleton variant="block" height={140} rounded="lg" />
-            </div>
-          ) : tab === "accommodation" ? (
-            accommodations.length === 0 ? (
+          <section>
+            {loading ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Skeleton variant="block" height={140} rounded="lg" />
+                <Skeleton variant="block" height={140} rounded="lg" />
+              </div>
+            ) : tab === "accommodation" ? (
+              accommodations.length === 0 ? (
+                <EmptyState
+                  icon={<Bed size={24} className="text-ink-500 dark:text-umber-300" />}
+                  title={t("logistics.no_accommodations")}
+                  hint={t("logistics.no_accommodations_hint")}
+                />
+              ) : (
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {accommodations.map((a) => (
+                    <li key={a.id}>
+                      <AccommodationCard
+                        accommodation={a}
+                        assigned={guestsByAccommodation.get(a.id) ?? []}
+                        isDropTarget={hoverAccommodationId === a.id}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (hoverAccommodationId !== a.id) setHoverAccommodationId(a.id);
+                        }}
+                        onDragLeave={(e) => {
+                          if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                          setHoverAccommodationId((cur) => (cur === a.id ? null : cur));
+                        }}
+                        onDrop={(e) => dropOnAccommodation(e, a)}
+                        onEdit={() => setEditingAccommodation(a)}
+                        onDelete={() => deleteAccommodation(a)}
+                        onUnassign={(g) => assignAccommodationOne(g.id, null)}
+                        onDragStartGuest={onDragStart}
+                        tapArmed={tapMode && selectedGuestId !== null}
+                        onTap={() => handleTapAccommodation(a)}
+                        t={t}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : transfers.length === 0 ? (
               <EmptyState
-                icon={<Bed size={24} className="text-ink-500 dark:text-umber-300" />}
-                title={t("logistics.no_accommodations")}
-                hint={t("logistics.no_accommodations_hint")}
+                icon={<Bus size={24} className="text-ink-500 dark:text-umber-300" />}
+                title={t("logistics.no_transfers")}
+                hint={t("logistics.no_transfers_hint")}
               />
             ) : (
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {accommodations.map((a) => (
-                  <li key={a.id}>
-                    <AccommodationCard
-                      accommodation={a}
-                      assigned={guestsByAccommodation.get(a.id) ?? []}
-                      isDropTarget={hoverAccommodationId === a.id}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        if (hoverAccommodationId !== a.id) setHoverAccommodationId(a.id);
-                      }}
-                      onDragLeave={(e) => {
-                        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-                        setHoverAccommodationId((cur) => (cur === a.id ? null : cur));
-                      }}
-                      onDrop={(e) => dropOnAccommodation(e, a)}
-                      onEdit={() => setEditingAccommodation(a)}
-                      onDelete={() => deleteAccommodation(a)}
-                      onUnassign={(g) => assignAccommodationOne(g.id, null)}
-                      onDragStartGuest={onDragStart}
-                      tapArmed={tapMode && selectedGuestId !== null}
-                      onTap={() => handleTapAccommodation(a)}
-                      t={t}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )
-          ) : transfers.length === 0 ? (
-            <EmptyState
-              icon={<Bus size={24} className="text-ink-500 dark:text-umber-300" />}
-              title={t("logistics.no_transfers")}
-              hint={t("logistics.no_transfers_hint")}
-            />
-          ) : (
-            <TransferTable
-              transfers={transfers}
-              guestsByTransfer={guestsByTransfer}
-              hoverTransferId={hoverTransferId}
-              setHoverTransferId={setHoverTransferId}
-              onDrop={dropOnTransfer}
-              onEdit={(tr) => setEditingTransfer(tr)}
-              onDelete={deleteTransfer}
-              onUnassign={(g) => assignTransferOne(g.id, null)}
-              onDragStartGuest={onDragStart}
-              tapArmed={tapMode && selectedGuestId !== null}
-              onTapTransfer={handleTapTransfer}
-              t={t}
-            />
-          )}
-        </section>
+              <TransferTable
+                transfers={transfers}
+                guestsByTransfer={guestsByTransfer}
+                hoverTransferId={hoverTransferId}
+                setHoverTransferId={setHoverTransferId}
+                onDrop={dropOnTransfer}
+                onEdit={(tr) => setEditingTransfer(tr)}
+                onDelete={deleteTransfer}
+                onUnassign={(g) => assignTransferOne(g.id, null)}
+                onDragStartGuest={onDragStart}
+                tapArmed={tapMode && selectedGuestId !== null}
+                onTapTransfer={handleTapTransfer}
+                t={t}
+              />
+            )}
+          </section>
         </div>
 
         <aside
