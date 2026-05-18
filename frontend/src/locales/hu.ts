@@ -2964,11 +2964,11 @@ const hu: LocaleMessages = {
       "A Wēddly egy kis, budapesti műhelyben készülő eszköz, ami a pároknak segít együtt megtervezni az esküvőt — nyugodtan, egy helyen.",
     page_title: "Rólunk",
     last_updated_label: "Utolsó frissítés",
-    last_updated_date: "2026-05-11",
+    last_updated_date: "2026-05-18",
     paragraph_made_in:
-      "Készítette: {founder}, Budapesten. Kézzel írott — nincs platformdíj, nincs befektető, nincs növekedési csapat.",
+      "{founder} vagyok. Abba a korba léptem, hogy egyre több barátomnak aktuális az esküvőszervezés — és kicsit nekem is kezd az lenni. Úgy voltam vele, hogy ezt lehet jobban is csinálni, mintsem hogy egy végtelen Excel, Google Form és rajzolgatás háromszögében ragadjon az ember.",
     paragraph_why:
-      "Azért indítottuk a Wēddly-t, mert minden eddigi esküvőtervező eszköz hangosnak hatott. Egy nyugodt, közös felületet szerettünk volna — ahol mindkét partner ugyanazt a képet látja, ahol a költségvetés újraszámolódik, ha nő a vendéglista, és ahol az eredmény egy tiszta papírlapra nyomtatható. Ennyi a termék.",
+      "Hiszek abban, hogy az esküvő — az, hogy két ember összeköti egymással az életét — az egyik legnagyobb és legfontosabb dolog, ami egy ember életében történik. Szeretném, hogy ez tudjon szem előtt maradni.",
     paragraph_contact_label: "Írjatok nekünk",
     paragraph_contact_email: "hello@weddly.xyz",
     paragraph_principles_title: "Amiben hiszünk",
@@ -2978,7 +2978,7 @@ const hu: LocaleMessages = {
       "Az adataitok a tiétek. Export, szüneteltetés, törlés — ti döntötök, ügyfélszolgálatra nincs szükség.",
     principle_hungarian: "Magyar elsőként, angollal kiegészítve. A hazai esküvők ritmusára szabva.",
     en_section_label: "English",
-    founder_placeholder: "[alapító neve később]",
+    founder_placeholder: "Csíkász Andor",
   },
   session: {
     expired_title: "A munkamenet lejárt",

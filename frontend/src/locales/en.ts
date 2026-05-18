@@ -2938,11 +2938,11 @@ const en: LocaleMessages = {
       "Weddly is a small Budapest-built tool to help couples plan their wedding together — calmly, in one place.",
     page_title: "About Weddly",
     last_updated_label: "Last updated",
-    last_updated_date: "2026-05-11",
+    last_updated_date: "2026-05-18",
     paragraph_made_in:
-      "Built by {founder} in Budapest, Hungary. Hand-rolled — no platform fees, no investors, no growth team.",
+      "I'm {founder}. I've reached the age where more and more of my friends are planning weddings — and slowly so am I. It struck me that this could be done better than getting stuck in an endless triangle of Excel, Google Forms, and back-of-the-napkin sketches.",
     paragraph_why:
-      "We started Weddly because every existing wedding tool felt loud. We wanted a calm, shared workspace — one where both partners see the same picture, where the budget recalculates as the guest list grows, and where the result prints onto a clean piece of paper. That's the whole product.",
+      "I believe a wedding — two people joining their lives together — is one of the biggest and most important things that happens in a person's life. I want that to stay in focus.",
     paragraph_contact_label: "Get in touch",
     paragraph_contact_email: "hello@weddly.xyz",
     paragraph_principles_title: "What we believe",
@@ -2953,7 +2953,7 @@ const en: LocaleMessages = {
     principle_hungarian:
       "Hungarian-first, English-supported. Built around the way weddings actually run here.",
     en_section_label: "English",
-    founder_placeholder: "[founder name TBD]",
+    founder_placeholder: "Andor Csíkász",
   },
   session: {
     expired_title: "Session ended",

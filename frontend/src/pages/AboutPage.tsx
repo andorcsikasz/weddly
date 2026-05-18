@@ -7,10 +7,8 @@ import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } fro
 
 /**
  * /about — who built Weddly, why, and how to reach them. The founder
- * name is intentionally a placeholder (locales `about.founder_placeholder`)
- * so a human can replace it before going public. Until that's done the
- * page renders "[founder name TBD]" / "[alapító neve később]" so the
- * placeholder reads obviously placeholder-ish rather than empty.
+ * name lives in `about.founder_placeholder` per locale and is templated
+ * into `paragraph_made_in` via the `{founder}` token.
  */
 export default function AboutPage() {
   const { t } = useT();
