@@ -205,10 +205,10 @@ function DemoNudgeModal({ onClose, onConvert }: { onClose: () => void; onConvert
         >
           <X size={16} aria-hidden="true" />
         </button>
-        <div className="p-7 sm:p-9">
+        <div className="p-7 text-center sm:p-9">
           <h2
             id="demo-nudge-title"
-            className="pr-10 font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl"
+            className="font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl"
           >
             {t("demo.popup_title")}
           </h2>
@@ -222,7 +222,7 @@ function DemoNudgeModal({ onClose, onConvert }: { onClose: () => void; onConvert
           >
             {t("demo.popup_cta")}
           </button>
-          <p className="mt-3 text-center text-xs text-ink-500 dark:text-umber-300">
+          <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
             {t("demo.popup_microcopy")}
           </p>
         </div>
