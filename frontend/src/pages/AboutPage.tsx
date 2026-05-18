@@ -1,18 +1,21 @@
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
-import en from "../locales/en";
-import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
-import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } from "./PrivacyPage";
+import { BackLink, H2, LegalHeader } from "./PrivacyPage";
 
 /**
- * /about — who built Weddly, why, and how to reach them. The founder
- * name lives in `about.founder_placeholder` per locale and is templated
- * into `paragraph_made_in` via the `{founder}` token.
+ * /about — who built Weddly, why, and how to reach them. Renders only
+ * the active locale (HU or EN) — unlike the legal pages, this one is
+ * personal copy, not a dual-language legal document.
  */
 export default function AboutPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("about.seo_title", "about.seo_description");
+
+  const madeIn = t("about.paragraph_made_in").replace(
+    "{founder}",
+    t("about.founder_placeholder"),
+  );
 
   return (
     <PublicShell>
@@ -22,49 +25,29 @@ export default function AboutPage() {
           updatedLabel={t("about.last_updated_label")}
           updatedDate={t("about.last_updated_date")}
         />
-        <AboutBodyForLocale strings={hu.about} sectionLocale="hu" />
-        <SecondaryLanguageDivider label="English" />
-        <AboutBodyForLocale strings={en.about} sectionLocale="en" secondary />
+        <section lang={locale} className="mt-8 space-y-6 text-base leading-relaxed text-ink-800">
+          <p>{madeIn}</p>
+          <p>{t("about.paragraph_why")}</p>
+
+          <H2>{t("about.paragraph_principles_title")}</H2>
+          <ul className="ml-5 list-disc space-y-2">
+            <li>{t("about.principle_calm")}</li>
+            <li>{t("about.principle_no_lock_in")}</li>
+            <li>{t("about.principle_hungarian")}</li>
+          </ul>
+
+          <H2>{t("about.paragraph_contact_label")}</H2>
+          <p>
+            <a
+              href={`mailto:${t("about.paragraph_contact_email")}`}
+              className="underline hover:text-ink-900"
+            >
+              {t("about.paragraph_contact_email")}
+            </a>
+          </p>
+        </section>
         <BackLink />
       </article>
     </PublicShell>
-  );
-}
-
-function AboutBodyForLocale({
-  strings,
-  sectionLocale,
-  secondary,
-}: {
-  strings: typeof hu.about;
-  sectionLocale: "hu" | "en";
-  secondary?: boolean;
-}) {
-  // `paragraph_made_in` has a `{founder}` placeholder; we substitute it
-  // with the locale's own founder_placeholder string so HU and EN read
-  // the same value style.
-  const madeIn = strings.paragraph_made_in.replace("{founder}", strings.founder_placeholder);
-  return (
-    <LegalSection sectionLocale={sectionLocale} secondary={secondary}>
-      <p>{madeIn}</p>
-      <p>{strings.paragraph_why}</p>
-
-      <H2>{strings.paragraph_principles_title}</H2>
-      <ul className="ml-5 list-disc space-y-2">
-        <li>{strings.principle_calm}</li>
-        <li>{strings.principle_no_lock_in}</li>
-        <li>{strings.principle_hungarian}</li>
-      </ul>
-
-      <H2>{strings.paragraph_contact_label}</H2>
-      <p>
-        <a
-          href={`mailto:${strings.paragraph_contact_email}`}
-          className="underline hover:text-ink-900"
-        >
-          {strings.paragraph_contact_email}
-        </a>
-      </p>
-    </LegalSection>
   );
 }

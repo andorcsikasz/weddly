@@ -3206,8 +3206,8 @@ export interface LocaleMessages {
     complaints_title: string;
     complaints_body: string;
   };
-  /** /about — who built Weddly. Founder name is intentionally a
-   *  placeholder string so a human can fill it in before launch. */
+  /** /about — who built Weddly. `founder_placeholder` holds the founder's
+   *  name per locale and is templated into `paragraph_made_in`. */
   about: {
     seo_title: string;
     seo_description: string;
