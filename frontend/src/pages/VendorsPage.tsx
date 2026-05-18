@@ -227,14 +227,6 @@ function SectionHeader({
   );
 }
 
-function OptionalPill({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300">
-      {label}
-    </span>
-  );
-}
-
 function WaitlistContact() {
   const { t } = useT();
   const [businessName, setBusinessName] = useState("");
@@ -408,16 +400,16 @@ function WaitlistContact() {
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-10">
+        <form onSubmit={onSubmit} className="mt-6 space-y-7">
           {/* ── Section 1: business identity ─────────────────────────── */}
-          <section className="space-y-5">
+          <section className="space-y-3">
             <SectionHeader
               step={1}
               icon={<Briefcase size={16} />}
               title={t("vendors.section_business_title")}
               sub={t("vendors.section_business_sub")}
             />
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label htmlFor="vendor-business" className="field-label">
                   {t("vendors.form_business_label")}
@@ -465,14 +457,14 @@ function WaitlistContact() {
           </section>
 
           {/* ── Section 2: contact + region ──────────────────────────── */}
-          <section className="space-y-5">
+          <section className="space-y-3">
             <SectionHeader
               step={2}
               icon={<Mail size={16} />}
               title={t("vendors.section_contact_title")}
               sub={t("vendors.section_contact_sub")}
             />
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label htmlFor="vendor-email" className="field-label">
                   {t("vendors.form_email_label")}
@@ -495,7 +487,6 @@ function WaitlistContact() {
                 >
                   <MapPin size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
                   {t("vendors.form_location_label")}
-                  <OptionalPill label={t("vendors.optional_pill")} />
                 </label>
                 <input
                   id="vendor-location"
@@ -505,13 +496,12 @@ function WaitlistContact() {
                   maxLength={500}
                   placeholder={t("vendors.form_location_placeholder")}
                 />
-                <p className="field-help">{t("vendors.form_location_help")}</p>
               </div>
             </div>
           </section>
 
           {/* ── Section 3: portfolio (category-aware) ────────────────── */}
-          <section className="space-y-5">
+          <section className="space-y-3">
             <SectionHeader
               step={3}
               icon={<ImageIcon size={16} />}
@@ -522,7 +512,7 @@ function WaitlistContact() {
             {/* Category-aware hint banner — copy comes from
                 `vendors.portfolio_hint_<group>` and swaps as the category
                 dropdown changes. */}
-            <div className="rounded-2xl border border-paper-300 bg-paper-50 p-4 text-sm leading-relaxed text-ink-700 dark:border-umber-700 dark:bg-umber-900/60 dark:text-paper-100">
+            <div className="rounded-xl border border-paper-300 bg-paper-50 px-3 py-2.5 text-sm leading-relaxed text-ink-700 dark:border-umber-700 dark:bg-umber-900/60 dark:text-paper-100">
               <p className="flex items-start gap-2">
                 <Sparkles
                   size={14}
@@ -534,12 +524,8 @@ function WaitlistContact() {
             </div>
 
             <div>
-              <label
-                htmlFor="vendor-website"
-                className="field-label inline-flex items-center gap-1.5"
-              >
+              <label htmlFor="vendor-website" className="field-label">
                 {t("vendors.form_website_label")}
-                <OptionalPill label={t("vendors.optional_pill")} />
               </label>
               <input
                 id="vendor-website"
@@ -551,7 +537,6 @@ function WaitlistContact() {
                 inputMode="url"
                 autoComplete="url"
               />
-              <p className="field-help">{t("vendors.form_website_help")}</p>
             </div>
 
             <div>
@@ -561,7 +546,6 @@ function WaitlistContact() {
               >
                 <AtSign size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
                 {t("vendors.instagram_label")}
-                <OptionalPill label={t("vendors.optional_pill")} />
               </label>
               <div className="relative">
                 <span
@@ -582,7 +566,6 @@ function WaitlistContact() {
                   spellCheck={false}
                 />
               </div>
-              <p className="field-help">{t("vendors.instagram_help")}</p>
             </div>
 
             <div>
@@ -590,7 +573,6 @@ function WaitlistContact() {
                 <span className="field-label mb-0 inline-flex items-center gap-1.5">
                   <Link2 size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
                   {t("vendors.portfolio_links_label")}
-                  <OptionalPill label={t("vendors.optional_pill")} />
                 </span>
                 <span className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
                   {portfolioFilled}/{MAX_PORTFOLIO_LINKS}
@@ -620,9 +602,6 @@ function WaitlistContact() {
                   <Plus size={14} aria-hidden />
                   {t("vendors.portfolio_add_link")}
                 </button>
-                <p className="text-xs text-ink-500 dark:text-umber-300">
-                  {t("vendors.portfolio_links_limit")}
-                </p>
               </div>
             </div>
 
@@ -633,12 +612,11 @@ function WaitlistContact() {
               >
                 <MessageSquare size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
                 {t("vendors.form_message_label")}
-                <OptionalPill label={t("vendors.optional_pill")} />
               </label>
               <textarea
                 id="vendor-message"
                 className="input"
-                rows={3}
+                rows={2}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={1000}
