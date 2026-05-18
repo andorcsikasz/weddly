@@ -1,7 +1,6 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
 import { Check, Flag, FlagOff, Lightbulb, Mail, MessageCircle, Trash2 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { FlagUserDialog } from "../components/FlagUserDialog";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -386,7 +385,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("admin.users_title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.users_sub")}</p>
@@ -621,7 +620,7 @@ export default function AdminUsersPage() {
         }}
         onConfirm={onFlagConfirm}
       />
-    </AppShell>
+    </>
   );
 }
 

@@ -5,7 +5,6 @@ import type {
 } from "@shared/supplier_taxonomy";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { Button, Dialog, Skeleton, TextField, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierTaxonomyApi, supplierTaxonomyApi } from "../lib/endpoints";
@@ -85,7 +84,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1>{t("admin.taxonomy_title")}</h1>
@@ -232,7 +231,7 @@ export default function AdminCategoriesPage() {
       {editing && (
         <EditorDialog target={editing} onClose={() => setEditing(null)} onSaved={refresh} />
       )}
-    </AppShell>
+    </>
   );
 }
 

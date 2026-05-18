@@ -53,7 +53,6 @@ import {
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AppShell } from "../components/AppShell";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, fetchPdfBlob, guestApi, householdApi, placeCardsUrl } from "../lib/endpoints";
@@ -424,7 +423,7 @@ export default function GuestsPage() {
   );
 
   return (
-    <AppShell>
+    <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>{t("guests.title")}</h1>
@@ -671,7 +670,7 @@ export default function GuestsPage() {
           }}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 

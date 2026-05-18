@@ -37,7 +37,6 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { AppShell } from "../components/AppShell";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
@@ -417,7 +416,7 @@ export default function HoneymoonPage() {
   }
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("honeymoon.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("honeymoon.sub")}</p>
@@ -522,7 +521,7 @@ export default function HoneymoonPage() {
       </section>
 
       <HoneymoonTodoSection items={honeymoonTasks} onToggle={toggleTaskDone} />
-    </AppShell>
+    </>
   );
 }
 

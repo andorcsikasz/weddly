@@ -55,7 +55,6 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AppShell } from "../components/AppShell";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
@@ -671,7 +670,7 @@ export default function SuppliersPage() {
   }
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1>{t("suppliers.title")}</h1>
@@ -1564,7 +1563,7 @@ export default function SuppliersPage() {
         onRemove={toggleCompare}
         t={t}
       />
-    </AppShell>
+    </>
   );
 }
 

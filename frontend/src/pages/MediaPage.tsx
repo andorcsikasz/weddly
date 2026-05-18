@@ -3,13 +3,12 @@
 // lands in a follow-up.
 
 import { Camera } from "lucide-react";
-import { AppShell } from "../components/AppShell";
 import { useT } from "../lib/i18n";
 
 export default function MediaPage() {
   const { t } = useT();
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("media.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("media.sub")}</p>
@@ -26,6 +25,6 @@ export default function MediaPage() {
           </p>
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }

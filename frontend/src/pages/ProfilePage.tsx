@@ -17,7 +17,6 @@ import { CURRENCIES } from "@shared/types";
 import { ChevronDown } from "lucide-react";
 import { type CSSProperties, type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AppShell } from "../components/AppShell";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
 import { ApiError } from "../lib/api";
@@ -499,7 +498,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <AppShell>
+    <>
       <h1>{t("profile.title")}</h1>
 
       <section className="card mt-6">
@@ -977,7 +976,7 @@ export default function ProfilePage() {
         )}
         {error && <p className="field-error mt-3">{error}</p>}
       </section>
-    </AppShell>
+    </>
   );
 }
 

@@ -8,7 +8,6 @@
 import type { MoodboardPin } from "@shared/types";
 import { AlertTriangle, ExternalLink, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { moodboardApi } from "../lib/endpoints";
@@ -119,7 +118,7 @@ export default function MoodboardPage() {
   const showForm = editing || !url;
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("moodboard.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("moodboard.sub")}</p>
@@ -286,6 +285,6 @@ export default function MoodboardPage() {
           ) : null}
         </>
       )}
-    </AppShell>
+    </>
   );
 }

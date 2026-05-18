@@ -15,7 +15,6 @@ import type {
 import { buildEmailDraft } from "@shared/vendor_waitlist";
 import { AtSign, ExternalLink, Link2, Mail, MessageSquare, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminVendorWaitlistApi } from "../lib/endpoints";
@@ -124,7 +123,7 @@ export default function AdminVendorWaitlistPage() {
     });
 
   return (
-    <AppShell>
+    <>
       <header className="mb-4">
         <h1>{t("admin.waitlist_title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.waitlist_sub")}</p>
@@ -203,7 +202,7 @@ export default function AdminVendorWaitlistPage() {
           t={t}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 

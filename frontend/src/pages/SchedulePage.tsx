@@ -14,7 +14,6 @@ import {
 } from "@shared/schedule";
 import { Clock, Download, MapPin, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { fetchPdfBlob, scheduleApi, schedulePdfUrl } from "../lib/endpoints";
@@ -208,7 +207,7 @@ export default function SchedulePage() {
   );
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1>{t("schedule.title")}</h1>
@@ -375,7 +374,7 @@ export default function SchedulePage() {
           onApply={onApplyWand}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 

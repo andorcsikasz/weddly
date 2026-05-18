@@ -47,7 +47,6 @@ import {
   X,
 } from "lucide-react";
 import { type DragEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { accommodationApi, coupleApi, guestApi, transferApi } from "../lib/endpoints";
@@ -435,7 +434,7 @@ export default function LogisticsPage() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("logistics.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("logistics.sub")}</p>
@@ -694,7 +693,7 @@ export default function LogisticsPage() {
           }}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 

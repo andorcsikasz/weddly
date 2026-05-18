@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { type ChangeEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { AppShell } from "../components/AppShell";
 import {
   CATEGORY_ICONS,
   CostPlanningCard,
@@ -792,7 +791,7 @@ export default function BudgetPage() {
   }
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h1>{t("budget.title")}</h1>
@@ -1178,7 +1177,7 @@ export default function BudgetPage() {
           </div>
         )}
       </section>
-    </AppShell>
+    </>
   );
 }
 

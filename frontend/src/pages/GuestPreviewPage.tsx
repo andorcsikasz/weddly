@@ -7,7 +7,6 @@
 
 import { Check, Copy, Info } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { GuestPortalView } from "../components/GuestPortalView";
 import { coupleApi, scheduleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -76,7 +75,7 @@ export default function GuestPreviewPage() {
     : null;
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("guest_preview.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
@@ -104,7 +103,7 @@ export default function GuestPreviewPage() {
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("guest_preview.empty")}</p>
         )}
       </div>
-    </AppShell>
+    </>
   );
 }
 

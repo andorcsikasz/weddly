@@ -5,7 +5,6 @@
 import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
 import { CheckCircle2, Eye, Mail, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { useDocumentMeta } from "../lib/seo";
 import { ApiError } from "../lib/api";
@@ -80,7 +79,7 @@ export default function AdminFeedbackPage() {
   const fmtMoney = (huf: number) => huf.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB") + " Ft";
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("admin.feedback_title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.feedback_sub")}</p>
@@ -297,7 +296,7 @@ export default function AdminFeedbackPage() {
           </table>
         </div>
       )}
-    </AppShell>
+    </>
   );
 }
 

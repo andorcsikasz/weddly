@@ -14,7 +14,6 @@ import {
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { SupplierDirectoryView } from "../components/admin/SupplierDirectoryView";
 import { SegmentedControl, Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -81,7 +80,7 @@ export default function AdminSuppliersPage() {
   const [view, setView] = useState<"moderation" | "directory">("moderation");
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("admin.suppliers_title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.suppliers_sub")}</p>
@@ -99,7 +98,7 @@ export default function AdminSuppliersPage() {
       </header>
 
       {view === "directory" ? <SupplierDirectoryView /> : <ModerationView />}
-    </AppShell>
+    </>
   );
 }
 

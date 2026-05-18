@@ -17,7 +17,6 @@ import type {
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppShell } from "../components/AppShell";
 import { Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminAnalyticsApi } from "../lib/endpoints";
@@ -94,7 +93,7 @@ export default function AdminAnalyticsPage() {
     money.status === "error" || activity.status === "error" || picks.status === "error";
 
   return (
-    <AppShell>
+    <>
       <header className="mb-6">
         <h1>{t("admin.analytics_title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.analytics_sub")}</p>
@@ -110,7 +109,7 @@ export default function AdminAnalyticsPage() {
       <MoneySection state={money} locale={locale} />
       <ActivitySection state={activity} locale={locale} />
       <PicksSection state={picks} locale={locale} />
-    </AppShell>
+    </>
   );
 }
 

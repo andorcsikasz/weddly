@@ -37,7 +37,6 @@ import {
 } from "lucide-react";
 import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { AppShell } from "../components/AppShell";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
@@ -105,7 +104,7 @@ function targetGuestCount(couple: Couple): number | null {
 
 function DashboardSkeleton() {
   return (
-    <AppShell>
+    <>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-2">
           <Skeleton variant="block" width={240} height={36} rounded="md" />
@@ -156,7 +155,7 @@ function DashboardSkeleton() {
           </ul>
         </div>
       </section>
-    </AppShell>
+    </>
   );
 }
 
@@ -725,7 +724,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <AppShell>
+    <>
       {/* Surfaces when both partners signed up separately. Hidden unless
        *  there's a pending partner-invite addressed to this user's email;
        *  joining purges the user's solo workspace (typed-phrase confirm). */}
@@ -1376,7 +1375,7 @@ export default function DashboardPage() {
           </section>
         </>
       )}
-    </AppShell>
+    </>
   );
 }
 

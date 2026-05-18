@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { adminUserApi } from "../lib/endpoints";
@@ -764,5 +764,19 @@ function BottomLink({
       </span>
       <span className="truncate">{children}</span>
     </NavLink>
+  );
+}
+
+/** Route-layout wrapper. Mount this at the parent `/app` route so the
+ *  AppShell — sidebar, header, workspace switcher — stays mounted across
+ *  every couple-facing navigation. Without this, each /app/* route renders
+ *  its own AppShell instance, which causes the sidebar to flash and the
+ *  WorkspaceSwitcher to refetch on every page change. Child pages just
+ *  return their content (no AppShell wrapper). */
+export function AppShellLayout() {
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
   );
 }

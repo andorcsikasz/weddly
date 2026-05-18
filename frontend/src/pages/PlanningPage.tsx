@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AppShell } from "../components/AppShell";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { planningApi } from "../lib/endpoints";
@@ -395,7 +394,7 @@ export default function PlanningPage() {
   }
 
   return (
-    <AppShell>
+    <>
       <div>
         <header className="mb-6">
           <h1 className="text-3xl font-serif text-ink-900 sm:text-4xl dark:text-paper-50">
@@ -614,7 +613,7 @@ export default function PlanningPage() {
           }}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 

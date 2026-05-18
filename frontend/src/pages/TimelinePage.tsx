@@ -40,7 +40,6 @@ import { Link } from "react-router-dom";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AppShell } from "../components/AppShell";
 import { Skeleton, useToast } from "../components/ui";
 import DayView from "./timeline/DayView";
 import GanttView from "./timeline/GanttView";
@@ -270,7 +269,7 @@ export default function TimelinePage() {
   }
 
   return (
-    <AppShell>
+    <>
       <div className="space-y-6">
         <header>
           <div className="flex items-center gap-3">
@@ -325,7 +324,7 @@ export default function TimelinePage() {
           }}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 
