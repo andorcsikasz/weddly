@@ -563,6 +563,19 @@ export interface LocaleMessages {
     demo_cat_ceremony_services: string;
     demo_cat_stationery_smalls: string;
     demo_cat_reserve: string;
+    /** Landing-page demo launch card — kicks off a Shrek & Fiona seeded
+     *  workspace via POST /api/demo/start. Separate string set from the
+     *  interactive budget demo above so the visible CTAs stay scannable. */
+    demo_card_eyebrow: string;
+    demo_card_title: string;
+    demo_card_body: string;
+    demo_card_cta: string;
+    demo_card_loading: string;
+    demo_card_meta_a: string;
+    demo_card_meta_b: string;
+    demo_card_meta_c: string;
+    demo_card_disclaimer: string;
+    demo_card_error: string;
     faq_title: string;
     // FAQ Q&A pairs moved to shared/seo_faq.ts so the visible landing FAQ
     // and the FAQPage JSON-LD share a single source. Only faq_title (the
@@ -2537,6 +2550,47 @@ export interface LocaleMessages {
     analytics_picks_empty: string;
     analytics_picks_top_empty: string;
     analytics_picks_coverage_empty: string;
+    analytics_engagement_title: string;
+    analytics_engagement_sub: string;
+    analytics_engagement_empty: string;
+    analytics_engagement_load_error: string;
+    analytics_engagement_session_duration: string;
+    analytics_engagement_session_minutes: string;
+    analytics_engagement_session_median: string;
+    analytics_engagement_session_p25: string;
+    analytics_engagement_session_p75: string;
+    analytics_engagement_session_count: string;
+    analytics_engagement_session_total_sessions: string;
+    analytics_engagement_active_users_30d: string;
+    analytics_engagement_retention: string;
+    analytics_engagement_retention_d1: string;
+    analytics_engagement_retention_d7: string;
+    analytics_engagement_retention_d30: string;
+    analytics_engagement_retention_cohort: string;
+    analytics_engagement_retention_empty: string;
+    analytics_engagement_heatmap: string;
+    analytics_engagement_heatmap_sub: string;
+    analytics_engagement_heatmap_empty: string;
+    analytics_engagement_dow_mon: string;
+    analytics_engagement_dow_tue: string;
+    analytics_engagement_dow_wed: string;
+    analytics_engagement_dow_thu: string;
+    analytics_engagement_dow_fri: string;
+    analytics_engagement_dow_sat: string;
+    analytics_engagement_dow_sun: string;
+    analytics_engagement_dow_long_mon: string;
+    analytics_engagement_dow_long_tue: string;
+    analytics_engagement_dow_long_wed: string;
+    analytics_engagement_dow_long_thu: string;
+    analytics_engagement_dow_long_fri: string;
+    analytics_engagement_dow_long_sat: string;
+    analytics_engagement_dow_long_sun: string;
+    analytics_engagement_heatmap_tooltip: string;
+    analytics_engagement_top_features: string;
+    analytics_engagement_top_features_empty: string;
+    analytics_engagement_users: string;
+    analytics_engagement_total_label: string;
+    analytics_engagement_total_picks: string;
   };
   rsvp: {
     title: string;
@@ -3292,5 +3346,22 @@ export interface LocaleMessages {
     done: string;
     skip: string;
     step_position: string;
+  };
+  /** /app chrome shown while the active workspace is a demo couple (is_demo).
+   *  Two surfaces: a persistent banner across the top of /app, and a
+   *  conversion popup that fires a few minutes in. Strings live here (not
+   *  under `landing.*`) because they render inside the authenticated shell. */
+  demo: {
+    banner_title: string;
+    banner_body: string;
+    banner_cta: string;
+    banner_dismiss_aria: string;
+    popup_eyebrow: string;
+    popup_title: string;
+    popup_body: string;
+    popup_signoff: string;
+    popup_cta_primary: string;
+    popup_cta_secondary: string;
+    popup_seen_again_in: string;
   };
 }

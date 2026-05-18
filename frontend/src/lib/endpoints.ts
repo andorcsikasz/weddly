@@ -64,6 +64,7 @@ import type {
 import type { CouplePick } from "@shared/picks";
 import type {
   AdminActivityAnalytics,
+  AdminEngagementAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
 } from "@shared/admin_analytics";
@@ -84,6 +85,19 @@ import type {
   UpdateSupplierGroupInput,
 } from "@shared/supplier_taxonomy";
 import { apiFetch, getToken } from "./api";
+
+/** Public landing-page "try the demo" endpoint. Spins up a brand-new
+ *  Shrek & Fiona workspace and returns a session token. No registration,
+ *  no email. The returned `couple.is_demo` is what the /app UI keys off
+ *  to render the demo banner + conversion popup. */
+export const demoApi = {
+  start: () =>
+    apiFetch<{
+      session: AuthSession;
+      couple: Couple | null;
+      seeded: Record<string, number>;
+    }>("POST", "/api/demo/start", {}),
+};
 
 export const authApi = {
   register: (body: {
@@ -778,13 +792,15 @@ export const feedbackApi = {
   submit: (body: FeedbackInput) => apiFetch<{ ok: true }>("POST", "/api/feedback", body),
 };
 
-/** Read-only analytics surfaces for the admin dashboard. Three orthogonal
- *  GET endpoints — money, activity, picks — each returns the aggregated view
- *  in one round-trip. See `shared/admin_analytics.ts` for the response shapes. */
+/** Read-only analytics surfaces for the admin dashboard. Four orthogonal
+ *  GET endpoints — money, activity, picks, engagement — each returns the
+ *  aggregated view in one round-trip. See `shared/admin_analytics.ts` for
+ *  the response shapes. */
 export const adminAnalyticsApi = {
   money: () => apiFetch<AdminMoneyAnalytics>("GET", "/api/admin/analytics/money"),
   activity: () => apiFetch<AdminActivityAnalytics>("GET", "/api/admin/analytics/activity"),
   picks: () => apiFetch<AdminPicksAnalytics>("GET", "/api/admin/analytics/picks"),
+  engagement: () => apiFetch<AdminEngagementAnalytics>("GET", "/api/admin/analytics/engagement"),
 };
 
 export const adminFeedbackApi = {

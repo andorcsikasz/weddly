@@ -36,6 +36,7 @@ import { registerCouplePauseRoutes } from "./routes/couple_pause";
 import { registerCoupleRoutes } from "./routes/couples";
 import { registerCouplePickRoutes } from "./routes/couple_picks";
 import { registerCoupleSupplierRoutes } from "./routes/couple_suppliers";
+import { registerDemoRoutes, runDemoBootSweep } from "./routes/demo";
 import { registerDocumentArchiveRoutes } from "./routes/document_archive";
 import { registerEmailChangeRoutes } from "./routes/email_change";
 import { registerEmailPrefsRoutes } from "./routes/email_prefs";
@@ -104,6 +105,7 @@ registerVendorWaitlistRoutes(router);
 registerUserCoupleRoutes(router);
 registerFeedbackRoutes(router);
 registerSeoRoutes(router);
+registerDemoRoutes(router);
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -322,6 +324,9 @@ const server = Bun.serve({
 if (process.env.NODE_ENV !== "test") {
   startPurgeWorker();
   startEmailWorker();
+  // Tidy any abandoned demo couples left over from a previous boot — keeps
+  // the table sparse even when /api/demo/start hasn't been hit in days.
+  runDemoBootSweep();
 }
 
 log.info("server.listening", {
