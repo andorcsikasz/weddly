@@ -11,11 +11,13 @@
 import type {
   AdminActivityAnalytics,
   AdminAnalyticsStats,
+  AdminEngagementAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
+import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -34,9 +36,16 @@ export default function AdminAnalyticsPage() {
   const [money, setMoney] = useState<Loadable<AdminMoneyAnalytics>>({ status: "loading" });
   const [activity, setActivity] = useState<Loadable<AdminActivityAnalytics>>({ status: "loading" });
   const [picks, setPicks] = useState<Loadable<AdminPicksAnalytics>>({ status: "loading" });
+  // Engagement is a separate, independently-loaded rollup so that a backend
+  // that hasn't yet shipped the engagement endpoint (parallel agent) still
+  // lets the other three sections render cleanly. We DON'T fold it into the
+  // Promise.all gate above for that reason.
+  const [engagement, setEngagement] = useState<Loadable<AdminEngagementAnalytics>>({
+    status: "loading",
+  });
 
   // `nonce` lets the retry button re-run the effect without remounting the
-  // whole tree — bumping it triggers a re-fetch and resets the three slots
+  // whole tree — bumping it triggers a re-fetch and resets the four slots
   // to loading so the skeletons come back.
   const [nonce, setNonce] = useState(0);
 
@@ -44,14 +53,15 @@ export default function AdminAnalyticsPage() {
     setMoney({ status: "loading" });
     setActivity({ status: "loading" });
     setPicks({ status: "loading" });
+    setEngagement({ status: "loading" });
     setNonce((n) => n + 1);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     let anyError = false;
-    // Promise.all so the three sections light up together — the visual is
-    // cleaner than three independent waterfalls, and the cost is the
+    // Promise.all so the three legacy sections light up together — the visual
+    // is cleaner than three independent waterfalls, and the cost is the
     // slowest endpoint (typically money on a populated DB).
     Promise.all([
       adminAnalyticsApi.money().catch((e) => {
@@ -84,6 +94,19 @@ export default function AdminAnalyticsPage() {
         if (!anyError) anyError = true;
         toast.error(e instanceof ApiError ? e.message : t("admin.analytics_load_error"));
       });
+
+    // Engagement is fired in parallel but tracked independently. The backend
+    // for this endpoint may not exist yet — show a graceful empty card
+    // instead of dragging the whole page into the error state.
+    adminAnalyticsApi
+      .engagement()
+      .then((e) => {
+        if (!cancelled) setEngagement({ status: "ok", data: e });
+      })
+      .catch(() => {
+        if (!cancelled) setEngagement({ status: "error" });
+      });
+
     return () => {
       cancelled = true;
     };
@@ -109,6 +132,7 @@ export default function AdminAnalyticsPage() {
       <MoneySection state={money} locale={locale} />
       <ActivitySection state={activity} locale={locale} />
       <PicksSection state={picks} locale={locale} />
+      <EngagementSection state={engagement} locale={locale} />
     </>
   );
 }
@@ -827,6 +851,10 @@ function SourceStackedBar({
   locale: "hu" | "en";
 }) {
   const { t } = useT();
+  // Hover state — drives both the central total → hovered count swap AND
+  // the slight pop on the hovered arc. `null` = no hover, show grand total.
+  const [hovered, setHovered] = useState<"curated" | "community" | "diy" | null>(null);
+
   // Treat a zero total as the empty case so the donut still renders an
   // outline rather than NaN arc lengths.
   const safeTotal = total > 0 ? total : 1;
@@ -835,8 +863,9 @@ function SourceStackedBar({
   // circumference. We render three concentric arcs by computing
   // stroke-dasharray + stroke-dashoffset on a single circle path. SVG
   // strokes go clockwise from the top (after `transform rotate(-90)`).
-  const SIZE = 96;
-  const RADIUS = 38;
+  const SIZE = 144;
+  const RADIUS = 56;
+  const STROKE = 18;
   const CIRC = 2 * Math.PI * RADIUS;
   const cLen = (curated / safeTotal) * CIRC;
   const cmLen = (community / safeTotal) * CIRC;
@@ -846,8 +875,25 @@ function SourceStackedBar({
   const cmOff = -cLen;
   const dOff = -(cLen + cmLen);
 
+  const hoveredValue =
+    hovered === "curated"
+      ? curated
+      : hovered === "community"
+        ? community
+        : hovered === "diy"
+          ? diy
+          : null;
+  const hoveredLabel =
+    hovered === "curated"
+      ? t("admin.analytics_source_curated")
+      : hovered === "community"
+        ? t("admin.analytics_source_community")
+        : hovered === "diy"
+          ? t("admin.analytics_source_diy")
+          : null;
+
   return (
-    <div className="flex flex-wrap items-center gap-5">
+    <div className="flex flex-wrap items-center gap-6">
       <svg
         width={SIZE}
         height={SIZE}
@@ -859,54 +905,125 @@ function SourceStackedBar({
         <title>
           {t("admin.analytics_picks_source_breakdown_title")} · {formatNumber(total, locale)}
         </title>
+        <defs>
+          {/* Subtle drop shadow — applied to the outer arc group so the
+           *  donut feels lifted off the card without going Bootstrap-y. */}
+          <filter id="donut-shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+            <feOffset dx="0" dy="1" result="offsetblur" />
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.18" />
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          {/* Gradient fills per slice — tailwind tokens via currentColor so
+           *  the colours come from the theme palette, not raw hex. */}
+          <linearGradient id="donut-grad-curated" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" className="text-violet-500" stopColor="currentColor" />
+            <stop offset="100%" className="text-violet-700" stopColor="currentColor" />
+          </linearGradient>
+          <linearGradient id="donut-grad-community" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" className="text-sage-400" stopColor="currentColor" />
+            <stop offset="100%" className="text-sage-600" stopColor="currentColor" />
+          </linearGradient>
+          <linearGradient id="donut-grad-diy" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" className="text-blush-400" stopColor="currentColor" />
+            <stop offset="100%" className="text-blush-600" stopColor="currentColor" />
+          </linearGradient>
+        </defs>
         <g
           transform={`translate(${SIZE / 2} ${SIZE / 2}) rotate(-90)`}
           fill="none"
-          strokeWidth={12}
+          strokeWidth={STROKE}
+          filter="url(#donut-shadow)"
         >
           {/* Track underneath each arc — keeps the empty case readable. */}
-          <circle r={RADIUS} className="stroke-paper-200 dark:stroke-umber-700" strokeWidth={12} />
+          <circle
+            r={RADIUS}
+            className="stroke-paper-200 dark:stroke-umber-700"
+            strokeWidth={STROKE}
+          />
           {curated > 0 && (
             <circle
               r={RADIUS}
-              className="stroke-violet-600 dark:stroke-violet-500"
+              stroke="url(#donut-grad-curated)"
               strokeDasharray={`${cLen} ${CIRC - cLen}`}
               strokeDashoffset={cOff}
               strokeLinecap="butt"
-            />
+              strokeWidth={hovered === "curated" ? STROKE + 2 : STROKE}
+              onPointerEnter={() => setHovered("curated")}
+              onPointerLeave={() => setHovered(null)}
+              className="cursor-pointer transition-[stroke-width]"
+            >
+              <title>
+                {t("admin.analytics_source_curated")} · {formatNumber(curated, locale)}
+              </title>
+            </circle>
           )}
           {community > 0 && (
             <circle
               r={RADIUS}
-              className="stroke-sage-500 dark:stroke-sage-400"
+              stroke="url(#donut-grad-community)"
               strokeDasharray={`${cmLen} ${CIRC - cmLen}`}
               strokeDashoffset={cmOff}
               strokeLinecap="butt"
-            />
+              strokeWidth={hovered === "community" ? STROKE + 2 : STROKE}
+              onPointerEnter={() => setHovered("community")}
+              onPointerLeave={() => setHovered(null)}
+              className="cursor-pointer transition-[stroke-width]"
+            >
+              <title>
+                {t("admin.analytics_source_community")} · {formatNumber(community, locale)}
+              </title>
+            </circle>
           )}
           {diy > 0 && (
             <circle
               r={RADIUS}
-              className="stroke-blush-500 dark:stroke-blush-400"
+              stroke="url(#donut-grad-diy)"
               strokeDasharray={`${dLen} ${CIRC - dLen}`}
               strokeDashoffset={dOff}
               strokeLinecap="butt"
-            />
+              strokeWidth={hovered === "diy" ? STROKE + 2 : STROKE}
+              onPointerEnter={() => setHovered("diy")}
+              onPointerLeave={() => setHovered(null)}
+              className="cursor-pointer transition-[stroke-width]"
+            >
+              <title>
+                {t("admin.analytics_source_diy")} · {formatNumber(diy, locale)}
+              </title>
+            </circle>
           )}
         </g>
+        {/* Centre label — total by default, the hovered slice's value when
+         *  the pointer is on a slice. The caption underneath (small) gives
+         *  context so the value alone doesn't look untethered. */}
         <text
           x="50%"
-          y="50%"
+          y="46%"
           textAnchor="middle"
           dominantBaseline="central"
           className="fill-ink-900 dark:fill-paper-50 stat-num"
-          fontSize="18"
+          fontSize="22"
           fontWeight={600}
         >
-          {formatNumber(total, locale)}
+          {formatNumber(hoveredValue ?? total, locale)}
+        </text>
+        <text
+          x="50%"
+          y="62%"
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="fill-ink-500 dark:fill-umber-300"
+          fontSize="10"
+        >
+          {hoveredLabel ?? t("admin.analytics_engagement_total_picks")}
         </text>
       </svg>
-      <div className="flex flex-col gap-1 text-xs text-ink-700 dark:text-paper-100">
+      <div className="flex flex-col gap-1.5 text-sm text-ink-700 dark:text-paper-100">
         <LegendDot
           colourClass="bg-violet-600 dark:bg-violet-500"
           label={t("admin.analytics_source_curated")}
@@ -945,14 +1062,506 @@ function LegendDot({
   );
 }
 
+// ─── Engagement section ────────────────────────────────────────────────────
+
+/** Engagement rollup — four sub-cards in a responsive 2×2 grid. Driven by
+ *  `AdminEngagementAnalytics`. The backend endpoint may not be deployed
+ *  yet (parallel agent in flight); the surrounding component fires it
+ *  independently of the legacy three so a 404 here only hides this
+ *  section, not the whole page. */
+function EngagementSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminEngagementAnalytics>;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  if (state.status === "loading") {
+    return (
+      <section className="card mt-6">
+        <h2 className="m-0 mb-3 text-lg font-semibold text-ink-900 dark:text-paper-50">
+          {t("admin.analytics_engagement_title")}
+        </h2>
+        <Skeleton height={240} />
+      </section>
+    );
+  }
+  if (state.status === "error") {
+    // Soft fallback — render the title + a single line, no toast. The error
+    // is most likely the endpoint not existing yet, and we don't want to
+    // make the admin retry the whole page over it.
+    return (
+      <section className="card mt-6">
+        <h2 className="m-0 mb-3 text-lg font-semibold text-ink-900 dark:text-paper-50">
+          {t("admin.analytics_engagement_title")}
+        </h2>
+        <p className="text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_engagement_load_error")}
+        </p>
+      </section>
+    );
+  }
+
+  const e = state.data;
+  return (
+    <section className="card mt-6">
+      <header className="mb-4">
+        <h2 className="m-0 text-lg font-semibold text-ink-900 dark:text-paper-50">
+          {t("admin.analytics_engagement_title")}
+        </h2>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_engagement_sub")}
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <SessionDurationCard
+          stats={e.session_duration_minutes}
+          totalSessions={e.total_sessions}
+          locale={locale}
+        />
+        <RetentionCard retention={e.retention} locale={locale} />
+        <TimeOfDayHeatmap matrix={e.time_of_day.matrix} max={e.time_of_day.max} />
+        <TopFeaturesCard features={e.top_features} locale={locale} />
+      </div>
+    </section>
+  );
+}
+
+/** Sub-card wrapper — keeps spacing + ring consistent across the four
+ *  engagement panels. Mirrors the look of the legacy KPI tiles (rounded-xl
+ *  + ring-1 ink-100 + paper-50 fill) so the section feels of-a-piece. */
+function SubCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl bg-paper-50 p-5 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700">
+      <h3 className="m-0 mb-3 text-sm font-semibold text-ink-700 dark:text-paper-200">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function SessionDurationCard({
+  stats,
+  totalSessions,
+  locale,
+}: {
+  stats: AdminAnalyticsStats;
+  totalSessions: number;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  return (
+    <SubCard title={t("admin.analytics_engagement_session_duration")}>
+      <div className="flex items-baseline gap-2">
+        <span className="text-4xl font-semibold text-ink-900 dark:text-paper-50 stat-num">
+          {formatNumber(stats.avg, locale)}
+        </span>
+        <span className="text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_engagement_session_minutes")}
+        </span>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <StatChip
+          label={t("admin.analytics_engagement_session_median", {
+            value: formatNumber(stats.median, locale),
+          })}
+        />
+        <StatChip
+          label={t("admin.analytics_engagement_session_p25", {
+            value: formatNumber(stats.p25, locale),
+          })}
+        />
+        <StatChip
+          label={t("admin.analytics_engagement_session_p75", {
+            value: formatNumber(stats.p75, locale),
+          })}
+        />
+        <StatChip
+          label={t("admin.analytics_engagement_session_count", {
+            count: stats.count,
+          })}
+        />
+      </div>
+      <p className="mt-3 text-xs text-ink-500 dark:text-umber-300 stat-num">
+        {t("admin.analytics_engagement_session_total_sessions")}:{" "}
+        {formatNumber(totalSessions, locale)}
+      </p>
+    </SubCard>
+  );
+}
+
+function StatChip({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-paper-300 bg-white px-2.5 py-0.5 text-[11px] font-medium text-ink-700 stat-num dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
+      {label}
+    </span>
+  );
+}
+
+function RetentionCard({
+  retention,
+  locale,
+}: {
+  retention: AdminEngagementAnalytics["retention"];
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const haveAny = retention.d1 !== null || retention.d7 !== null || retention.d30 !== null;
+  return (
+    <SubCard title={t("admin.analytics_engagement_retention")}>
+      {!haveAny ? (
+        <p className="text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_engagement_retention_empty")}
+        </p>
+      ) : (
+        <RetentionChart retention={retention} locale={locale} />
+      )}
+      <p className="mt-2 text-xs text-ink-500 dark:text-umber-300 stat-num">
+        {t("admin.analytics_engagement_retention_cohort", {
+          n: formatNumber(retention.cohort_size, locale),
+        })}
+      </p>
+    </SubCard>
+  );
+}
+
+function RetentionChart({
+  retention,
+  locale,
+}: {
+  retention: AdminEngagementAnalytics["retention"];
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  // Three points: D+1 / D+7 / D+30. Null bucket → render at 0 but ghost
+  // the dot so the chart stays honest about missing data.
+  const W = 280;
+  const H = 100;
+  const PAD_L = 32;
+  const PAD_R = 8;
+  const PAD_T = 12;
+  const PAD_B = 24;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+  const pts = [
+    { label: t("admin.analytics_engagement_retention_d1"), value: retention.d1 },
+    { label: t("admin.analytics_engagement_retention_d7"), value: retention.d7 },
+    { label: t("admin.analytics_engagement_retention_d30"), value: retention.d30 },
+  ];
+  const xs = pts.map((_, i) => PAD_L + (innerW * i) / Math.max(1, pts.length - 1));
+  const ys = pts.map((p) =>
+    p.value === null ? H - PAD_B : H - PAD_B - innerH * Math.max(0, Math.min(1, p.value)),
+  );
+
+  const linePath = pts
+    .map((p, i) => {
+      if (p.value === null) return null;
+      const x = xs[i];
+      const y = ys[i];
+      if (x === undefined || y === undefined) return null;
+      return { x, y };
+    })
+    .filter((p): p is { x: number; y: number } => p !== null)
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+    .join(" ");
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="block h-24 w-full"
+      role="img"
+      aria-label="retention curve"
+    >
+      <title>retention D+1 / D+7 / D+30</title>
+      {/* y-axis ticks at 0%, 50%, 100% — pure visual scaffolding. */}
+      {[0, 0.5, 1].map((frac) => {
+        const y = H - PAD_B - innerH * frac;
+        return (
+          <g key={frac}>
+            <line
+              x1={PAD_L}
+              x2={W - PAD_R}
+              y1={y}
+              y2={y}
+              className="stroke-paper-300 dark:stroke-umber-700"
+              strokeWidth={1}
+              strokeDasharray={frac === 0 ? undefined : "2 3"}
+            />
+            <text
+              x={PAD_L - 6}
+              y={y + 3}
+              textAnchor="end"
+              className="fill-ink-500 dark:fill-umber-300"
+              fontSize="9"
+            >
+              {Math.round(frac * 100)}%
+            </text>
+          </g>
+        );
+      })}
+      {linePath && (
+        <path
+          d={linePath}
+          fill="none"
+          className="stroke-violet-600 dark:stroke-violet-300"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+      {pts.map((p, i) => {
+        const x = xs[i];
+        const y = ys[i];
+        if (x === undefined || y === undefined) return null;
+        const isMissing = p.value === null;
+        return (
+          <g key={p.label}>
+            <circle
+              cx={x}
+              cy={y}
+              r={3.5}
+              className={
+                isMissing
+                  ? "fill-paper-300 dark:fill-umber-600"
+                  : "fill-violet-600 dark:fill-violet-300"
+              }
+            >
+              <title>
+                {p.label} · {isMissing ? "—" : `${Math.round((p.value ?? 0) * 100)}%`}
+              </title>
+            </circle>
+            <text
+              x={x}
+              y={H - 6}
+              textAnchor="middle"
+              className="fill-ink-500 dark:fill-umber-300"
+              fontSize="10"
+            >
+              {p.label}
+            </text>
+            {!isMissing && (
+              <text
+                x={x}
+                y={y - 8}
+                textAnchor="middle"
+                className="fill-ink-700 dark:fill-paper-100 stat-num"
+                fontSize="10"
+                fontWeight={600}
+              >
+                {Math.round((p.value ?? 0) * 100)}%
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {/* locale is used implicitly via the formatNumber-free percent text;
+       *  kept in the deps so retention re-renders pick it up if we ever
+       *  swap in locale-specific number formatting. */}
+      {locale === "hu" ? null : null}
+    </svg>
+  );
+}
+
+/** 7×24 weekday × hour heatmap. Cells are 14×14 px (matches the spec) and
+ *  the opacity scales linearly with `value / max`. We render with a
+ *  fixed-width SVG so the column alignment stays pixel-perfect even when
+ *  the surrounding card squeezes the row. Tooltips ride <title> on each
+ *  <rect> — same pattern the legacy chart uses, no JS hover bookkeeping. */
+function TimeOfDayHeatmap({ matrix, max }: { matrix: number[][]; max: number }) {
+  const { t } = useT();
+  // Render even when the matrix is undersized — the backend SHOULD return
+  // 7×24 but a defensive default beats a runtime crash if the contract
+  // drifts.
+  const CELL = 14;
+  const GAP = 2;
+  const ROW_LABEL_W = 32;
+  const COL_LABEL_H = 14;
+  const gridW = 24 * CELL + 23 * GAP;
+  const gridH = 7 * CELL + 6 * GAP;
+  const W = ROW_LABEL_W + gridW + 8;
+  const H = COL_LABEL_H + gridH + 4;
+
+  const dowShort = [
+    t("admin.analytics_engagement_dow_mon"),
+    t("admin.analytics_engagement_dow_tue"),
+    t("admin.analytics_engagement_dow_wed"),
+    t("admin.analytics_engagement_dow_thu"),
+    t("admin.analytics_engagement_dow_fri"),
+    t("admin.analytics_engagement_dow_sat"),
+    t("admin.analytics_engagement_dow_sun"),
+  ];
+  const dowLong = [
+    t("admin.analytics_engagement_dow_long_mon"),
+    t("admin.analytics_engagement_dow_long_tue"),
+    t("admin.analytics_engagement_dow_long_wed"),
+    t("admin.analytics_engagement_dow_long_thu"),
+    t("admin.analytics_engagement_dow_long_fri"),
+    t("admin.analytics_engagement_dow_long_sat"),
+    t("admin.analytics_engagement_dow_long_sun"),
+  ];
+
+  const isEmpty = max <= 0;
+  return (
+    <SubCard title={t("admin.analytics_engagement_heatmap")}>
+      <p className="mb-3 text-xs text-ink-500 dark:text-umber-300">
+        {t("admin.analytics_engagement_heatmap_sub")}
+      </p>
+      {isEmpty ? (
+        <p className="text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_engagement_heatmap_empty")}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <svg
+            width={W}
+            height={H}
+            viewBox={`0 0 ${W} ${H}`}
+            role="img"
+            aria-label="time of day heatmap"
+          >
+            <title>activity heatmap, weekday × hour</title>
+            {/* Column labels — every 6 hours. */}
+            {[0, 6, 12, 18].map((h) => (
+              <text
+                key={`col-${h}`}
+                x={ROW_LABEL_W + h * (CELL + GAP) + CELL / 2}
+                y={COL_LABEL_H - 4}
+                textAnchor="middle"
+                className="fill-ink-500 dark:fill-umber-300"
+                fontSize="9"
+              >
+                {String(h).padStart(2, "0")}
+              </text>
+            ))}
+            {/* Row labels + cells. */}
+            {Array.from({ length: 7 }).map((_, dow) => {
+              const row = matrix[dow] ?? [];
+              const rowY = COL_LABEL_H + dow * (CELL + GAP);
+              return (
+                <g key={`row-${dow}`}>
+                  <text
+                    x={ROW_LABEL_W - 6}
+                    y={rowY + CELL / 2 + 3}
+                    textAnchor="end"
+                    className="fill-ink-500 dark:fill-umber-300"
+                    fontSize="9"
+                  >
+                    {dowShort[dow]}
+                  </text>
+                  {Array.from({ length: 24 }).map((__, hour) => {
+                    const value = row[hour] ?? 0;
+                    const opacity = max > 0 ? value / max : 0;
+                    return (
+                      <rect
+                        key={`cell-${dow}-${hour}`}
+                        x={ROW_LABEL_W + hour * (CELL + GAP)}
+                        y={rowY}
+                        width={CELL}
+                        height={CELL}
+                        rx={2}
+                        className="fill-violet-500"
+                        // Floor opacity to a faint paper tint so the empty
+                        // cells still register as "a grid", not a hole.
+                        fillOpacity={opacity === 0 ? 0.06 : 0.18 + opacity * 0.82}
+                      >
+                        <title>
+                          {t("admin.analytics_engagement_heatmap_tooltip", {
+                            day: dowLong[dow] ?? "",
+                            hour: String(hour).padStart(2, "0"),
+                            count: value,
+                          })}
+                        </title>
+                      </rect>
+                    );
+                  })}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      )}
+    </SubCard>
+  );
+}
+
+function TopFeaturesCard({
+  features,
+  locale,
+}: {
+  features: AdminEngagementAnalytics["top_features"];
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  // Slice to 8 max per spec; the backend caps at 8 too but a belt-and-
+  // suspenders slice keeps the surface honest if that ever drifts.
+  const rows = features.slice(0, 8);
+  const maxCount = rows.reduce((m, r) => Math.max(m, r.count), 0);
+  return (
+    <SubCard title={t("admin.analytics_engagement_top_features")}>
+      {rows.length === 0 ? (
+        <p className="text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_engagement_top_features_empty")}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {rows.map((row) => {
+            const pct = maxCount > 0 ? (row.count / maxCount) * 100 : 0;
+            return (
+              <li key={row.feature} className="grid grid-cols-[8rem_1fr_auto] items-center gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-ink-800 dark:text-paper-100">
+                    {row.feature}
+                  </div>
+                  <div className="text-[11px] text-ink-500 dark:text-umber-300">
+                    {t("admin.analytics_engagement_users", { count: row.users })}
+                  </div>
+                </div>
+                <div
+                  className="relative h-2.5 w-full rounded-full bg-paper-200 dark:bg-umber-700"
+                  role="img"
+                  aria-label={`${row.feature} ${row.count}`}
+                >
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-700 dark:from-violet-400 dark:to-violet-600"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="text-sm font-semibold text-ink-800 stat-num dark:text-paper-50">
+                  {formatNumber(row.count, locale)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </SubCard>
+  );
+}
+
 // ─── Shared primitives ─────────────────────────────────────────────────────
 
 /** Minimalist SVG area chart for the 14-day signups trend. Inline SVG —
  *  no chart library — so the bundle stays lean and the look matches the
- *  rest of the dashboard's quiet aesthetic. The shape is a Catmull-Rom
- *  curve through the daily counts; we render it as a filled area with a
- *  stroke on top + small dots at each day so individual values stay
- *  legible. */
+ *  rest of the dashboard's quiet aesthetic.
+ *
+ *  Polish pass (May 2026):
+ *   - violet-400 → transparent linear gradient fill (vertical)
+ *   - 1px stroke on top
+ *   - x-axis tick labels for every 3rd day
+ *   - mouse-tracking overlay that shows the closest day's count + date
+ *
+ *  We render with two coordinate systems: an SVG whose viewBox uses real
+ *  pixel-equivalent units (so stroke widths and font sizes don't get
+ *  distorted by preserveAspectRatio="none"), and a percentage-based
+ *  overlay <div> that handles pointer events. Mixing the two means we get
+ *  crisp visuals AND a hover that survives any container width. */
 function SignupsAreaChart({
   points,
   max,
@@ -960,16 +1569,25 @@ function SignupsAreaChart({
   points: Array<{ date: string; count: number }>;
   max: number;
 }) {
-  // viewBox is fixed; CSS lets the SVG scale to its container width.
-  const W = 280;
-  const H = 96;
-  const PAD_Y = 8;
+  // Hover state — index into `points`. Null when the pointer is outside.
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
+  // viewBox dimensions chosen to give the axis ticks enough room without
+  // distorting the line; the SVG itself stretches via CSS to fill its
+  // container width.
+  const W = 560;
+  const H = 180;
+  const PAD_TOP = 12;
+  const PAD_BOTTOM = 22; // room for the x-axis tick labels
+  const PAD_X = 4;
+  const innerW = W - 2 * PAD_X;
+  const innerH = H - PAD_TOP - PAD_BOTTOM;
   // When every day is zero, render a flat baseline rather than NaN.
-  const scale = max > 0 ? (H - 2 * PAD_Y) / max : 0;
-  const stepX = points.length > 1 ? W / (points.length - 1) : W;
+  const scale = max > 0 ? innerH / max : 0;
+  const stepX = points.length > 1 ? innerW / (points.length - 1) : innerW;
   const coords = points.map((p, i) => ({
-    x: i * stepX,
-    y: H - PAD_Y - p.count * scale,
+    x: PAD_X + i * stepX,
+    y: H - PAD_BOTTOM - p.count * scale,
   }));
 
   // Build a smooth path using midpoint-anchored Bezier segments — visually
@@ -984,51 +1602,143 @@ function SignupsAreaChart({
       return `Q ${midX} ${prev.y} ${midX} ${(prev.y + p.y) / 2} T ${p.x} ${p.y}`;
     })
     .join(" ");
-  const fillPath = `${path} L ${W} ${H} L 0 ${H} Z`;
+  const baselineY = H - PAD_BOTTOM;
+  const fillPath = `${path} L ${PAD_X + innerW} ${baselineY} L ${PAD_X} ${baselineY} Z`;
 
   const total = points.reduce((acc, p) => acc + p.count, 0);
   const ariaLabel = `14 day signup chart, total ${total}`;
 
+  // Stable gradient id — index-free since there's only one of these per
+  // page. SVG <defs> in scope of one document, so a static id is fine.
+  const gradientId = "signups-area-gradient";
+
+  // Pointer handler — convert clientX into our viewBox x and snap to the
+  // nearest data point. Avoids a per-frame allocation hot path by caching
+  // the bounding rect through the closure.
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (points.length === 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / Math.max(1, rect.width);
+    const idx = Math.round(ratio * (points.length - 1));
+    setHoverIdx(Math.max(0, Math.min(points.length - 1, idx)));
+  };
+
+  const hovered = hoverIdx !== null ? points[hoverIdx] : null;
+  const hoveredCoord = hoverIdx !== null ? coords[hoverIdx] : null;
+
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      preserveAspectRatio="none"
-      className="block h-24 w-full"
-      role="img"
-      aria-label={ariaLabel}
+    <div
+      className="relative w-full"
+      onPointerMove={onPointerMove}
+      onPointerLeave={() => setHoverIdx(null)}
     >
-      <title>{ariaLabel}</title>
-      <path d={fillPath} className="fill-violet-500/20 dark:fill-violet-400/25" strokeWidth={0} />
-      <path
-        d={path}
-        className="stroke-violet-600 dark:stroke-violet-400"
-        strokeWidth={1.5}
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {coords.map((p, i) => {
-        const point = points[i];
-        if (!point) return null;
-        return (
-          <circle
-            key={point.date}
-            cx={p.x}
-            cy={p.y}
-            r={point.count > 0 ? 2.5 : 1.5}
-            className={
-              point.count > 0
-                ? "fill-violet-700 dark:fill-violet-300"
-                : "fill-paper-300 dark:fill-umber-600"
-            }
-          >
-            <title>
-              {point.date} · {point.count}
-            </title>
-          </circle>
-        );
-      })}
-    </svg>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="block h-40 w-full"
+        role="img"
+        aria-label={ariaLabel}
+      >
+        <title>{ariaLabel}</title>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            {/* violet-400 (top) → transparent (bottom). The colour stops are
+             *  filled via class so tailwind can resolve the token; the SVG
+             *  spec doesn't allow CSS variables on stop-color in all
+             *  browsers, so we use the className escape hatch tailwind
+             *  provides via `text-*` + `currentColor`. */}
+            <stop
+              offset="0%"
+              className="text-violet-400"
+              stopColor="currentColor"
+              stopOpacity={0.55}
+            />
+            <stop
+              offset="100%"
+              className="text-violet-400"
+              stopColor="currentColor"
+              stopOpacity={0}
+            />
+          </linearGradient>
+        </defs>
+        {/* Subtle baseline so a flat day-zero chart still reads. */}
+        <line
+          x1={PAD_X}
+          x2={PAD_X + innerW}
+          y1={baselineY}
+          y2={baselineY}
+          className="stroke-paper-300 dark:stroke-umber-700"
+          strokeWidth={1}
+        />
+        <path d={fillPath} fill={`url(#${gradientId})`} stroke="none" />
+        <path
+          d={path}
+          className="stroke-violet-600 dark:stroke-violet-300"
+          strokeWidth={1.5}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        {/* x-axis tick labels every 3rd day. */}
+        {coords.map((p, i) => {
+          const point = points[i];
+          if (!point) return null;
+          if (i % 3 !== 0 && i !== coords.length - 1) return null;
+          // YYYY-MM-DD → short "MM-DD" so the labels stay readable on a 14-row strip.
+          const short = point.date.slice(5);
+          return (
+            <text
+              key={`tick-${point.date}`}
+              x={p.x}
+              y={H - 6}
+              textAnchor={i === 0 ? "start" : i === coords.length - 1 ? "end" : "middle"}
+              className="fill-ink-500 dark:fill-umber-300"
+              fontSize="10"
+            >
+              {short}
+            </text>
+          );
+        })}
+        {/* Hover crosshair + dot — rendered above everything else. */}
+        {hovered && hoveredCoord && (
+          <g>
+            <line
+              x1={hoveredCoord.x}
+              x2={hoveredCoord.x}
+              y1={PAD_TOP - 4}
+              y2={baselineY}
+              className="stroke-violet-600/40 dark:stroke-violet-300/40"
+              strokeWidth={1}
+              strokeDasharray="2 3"
+            />
+            <circle
+              cx={hoveredCoord.x}
+              cy={hoveredCoord.y}
+              r={3.5}
+              className="fill-violet-600 dark:fill-violet-300"
+            />
+            <circle
+              cx={hoveredCoord.x}
+              cy={hoveredCoord.y}
+              r={6}
+              className="fill-violet-600/20 dark:fill-violet-300/20"
+            />
+          </g>
+        )}
+      </svg>
+      {/* HTML overlay tooltip — positions itself in CSS percent space so
+       *  the SVG can keep its non-uniform scale. */}
+      {hovered && hoverIdx !== null && (
+        <div
+          className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-2 rounded-md border border-ink-100 bg-white px-2 py-1 text-[11px] font-medium text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
+          style={{ left: `${(hoverIdx / Math.max(1, points.length - 1)) * 100}%` }}
+        >
+          <div className="stat-num">{hovered.date}</div>
+          <div className="stat-num text-violet-600 dark:text-violet-300">{hovered.count}</div>
+        </div>
+      )}
+    </div>
   );
 }
 

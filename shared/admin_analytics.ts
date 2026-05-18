@@ -159,4 +159,3 @@ export interface AdminEngagementAnalytics {
    *  horizontal bar list. */
   top_features: Array<{ feature: string; count: number; users: number }>;
 }
-
