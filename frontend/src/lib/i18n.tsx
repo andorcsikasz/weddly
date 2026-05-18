@@ -23,6 +23,15 @@ function detectInitial(): Locale {
   } catch {
     // localStorage may be blocked
   }
+  // Host-based default keeps the rendered locale in sync with the SSR canonical
+  // (weddly.hu = HU, weddly.xyz = EN). Without this, a user landing on
+  // weddly.xyz from a Google snippet that promised English content would
+  // hydrate into HU and feel bait-and-switched. See backend/src/lib/seo_ssr.ts.
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    if (host === "weddly.xyz" || host.endsWith(".weddly.xyz")) return "en";
+    if (host === "weddly.hu" || host.endsWith(".weddly.hu")) return "hu";
+  }
   if (typeof navigator !== "undefined" && navigator.language?.toLowerCase().startsWith("hu")) {
     return "hu";
   }

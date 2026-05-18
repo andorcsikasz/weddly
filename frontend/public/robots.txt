@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /app/
-Disallow: /onboarding
-Disallow: /invite/
-Disallow: /rsvp/
-Disallow: /reset-password/
-
-Sitemap: https://weddly.xyz/sitemap.xml

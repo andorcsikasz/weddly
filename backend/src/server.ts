@@ -20,6 +20,7 @@ import {
   Router,
 } from "./lib/http";
 import { log, makeLogger } from "./lib/logger";
+import { renderIndexHtml, renderRobotsTxt, renderSitemapXml } from "./lib/seo_ssr";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { registerAccommodationRoutes } from "./routes/accommodations";
@@ -154,27 +155,42 @@ function clientIpFrom(req: Request): string | null {
   return req.headers.get("x-real-ip");
 }
 
-// Memoised RSVP-themed index.html — built once on first request by swapping
-// `/og.png` → `/og-rsvp.png` in the canonical index. We keep the rest of
-// the head identical so the SPA's runtime title/description still take
-// over on hydration; only the social-scraper image differs.
-let rsvpIndexHtml: string | null = null;
-async function loadRsvpIndexHtml(): Promise<string> {
-  if (rsvpIndexHtml !== null) return rsvpIndexHtml;
-  const base = await Bun.file(FRONTEND_INDEX).text();
-  rsvpIndexHtml = base.replaceAll("/og.png", "/og-rsvp.png");
-  return rsvpIndexHtml;
+// Memoised index.html source. The per-request renderer (renderIndexHtml in
+// lib/seo_ssr.ts) splices a host-aware <head> block between the SEO_HEAD
+// sentinels — that picks HU canonical for weddly.hu and EN canonical for
+// weddly.xyz, plus the right og:image variant for /rsvp* routes.
+let indexHtmlSource: string | null = null;
+async function loadIndexHtmlSource(): Promise<string> {
+  if (indexHtmlSource !== null) return indexHtmlSource;
+  indexHtmlSource = await Bun.file(FRONTEND_INDEX).text();
+  return indexHtmlSource;
 }
 
 function isRsvpRoute(pathname: string): boolean {
   return pathname === "/rsvp" || pathname.startsWith("/rsvp/");
 }
 
-async function tryServeStatic(pathname: string): Promise<Response | null> {
+async function tryServeStatic(req: Request, pathname: string): Promise<Response | null> {
   if (!CONFIG.serveFrontend) return null;
   if (pathname.startsWith("/api/")) return null;
 
-  // Direct file hit (assets in frontend/dist/assets/, the OG image, robots.txt, …).
+  const host = req.headers.get("host");
+
+  // SEO files are rendered per host: weddly.hu vs weddly.xyz get their own
+  // canonical sitemap + their own Sitemap: line in robots.txt. Must intercept
+  // BEFORE the static-file fallback so the dist copies (if any) don't win.
+  if (pathname === "/robots.txt") {
+    return new Response(renderRobotsTxt(host), {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+  if (pathname === "/sitemap.xml") {
+    return new Response(renderSitemapXml(host), {
+      headers: { "Content-Type": "application/xml; charset=utf-8" },
+    });
+  }
+
+  // Direct file hit (assets in frontend/dist/assets/, OG images, the favicon, …).
   const filePath = join(FRONTEND_DIST, decodeURIComponent(pathname));
   if (filePath.startsWith(FRONTEND_DIST) && existsSync(filePath)) {
     const f = Bun.file(filePath);
@@ -183,14 +199,13 @@ async function tryServeStatic(pathname: string): Promise<Response | null> {
 
   // SPA fallback for unknown routes — let React Router resolve client-side.
   if (existsSync(FRONTEND_INDEX)) {
-    // RSVP-specific share card: scrape-time meta swap so a /rsvp* link
-    // previews as the invitation card instead of the marketing one.
-    if (isRsvpRoute(pathname)) {
-      return new Response(await loadRsvpIndexHtml(), {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
-    }
-    return new Response(Bun.file(FRONTEND_INDEX), {
+    const template = await loadIndexHtmlSource();
+    const html = renderIndexHtml(template, {
+      host,
+      pathname,
+      isRsvp: isRsvpRoute(pathname),
+    });
+    return new Response(html, {
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });
   }
@@ -210,7 +225,7 @@ const server = Bun.serve({
 
     const matched = router.match(req.method, url.pathname);
     if (!matched) {
-      const fallback = await tryServeStatic(url.pathname);
+      const fallback = await tryServeStatic(req, url.pathname);
       if (fallback) {
         const headers = new Headers(fallback.headers);
         for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
