@@ -144,10 +144,8 @@ export function DemoOverlay() {
               aria-hidden="true"
               className="shrink-0 text-blush-700 dark:text-blush-300"
             />
-            <div className="min-w-0 flex-1 truncate">
-              <strong className="font-semibold">{t("demo.banner_title")}</strong>
-              <span className="mx-2 text-ink-500 dark:text-umber-300">·</span>
-              <span className="text-ink-700 dark:text-paper-200">{t("demo.banner_body")}</span>
+            <div className="min-w-0 flex-1 truncate font-semibold">
+              {t("demo.banner_title")}
             </div>
             <button
               type="button"
