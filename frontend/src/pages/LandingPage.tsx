@@ -75,12 +75,16 @@ export default function LandingPage() {
           <h1 className="max-w-[14ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-7xl sm:leading-[0.96] lg:text-8xl">
             {t("landing.hero_title")}
           </h1>
-          <div className="mt-8 max-w-md">
+          <div className="mt-8 sm:max-w-md">
+            {/* Full-width thumb targets on mobile so the CTA pair anchors the
+                viewport rather than floating in the upper-left as two thin
+                inline pills. `sm:w-auto` snaps back to content-width for the
+                side-by-side desktop layout. */}
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link to="/signup" className="btn-primary btn-lg shadow-sm">
+              <Link to="/signup" className="btn-primary btn-lg w-full shadow-sm sm:w-auto">
                 {t("landing.cta_signup")}
               </Link>
-              <Link to="/login" className="btn-outline btn-lg">
+              <Link to="/login" className="btn-outline btn-lg w-full sm:w-auto">
                 {t("landing.cta_login")}
               </Link>
             </div>
@@ -158,7 +162,7 @@ export default function LandingPage() {
           <h2 className="mt-6 max-w-3xl font-serif text-3xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.phases_title")}
           </h2>
-          <ol className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-5 lg:gap-x-4">
+          <ol className="mt-12 grid gap-x-6 gap-y-7 sm:gap-y-12 sm:grid-cols-2 lg:grid-cols-5 lg:gap-x-4">
             <PhaseStep
               n={1}
               art={<PhasePlanArt className="h-12 w-12" />}
@@ -315,10 +319,10 @@ export default function LandingPage() {
               {t("landing.suppliers_section_body")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/signup" className="btn-primary">
+              <Link to="/signup" className="btn-primary w-full sm:w-auto">
                 {t("landing.suppliers_couple_cta")}
               </Link>
-              <Link to="/vendors#waitlist" className="btn-outline">
+              <Link to="/vendors#waitlist" className="btn-outline w-full sm:w-auto">
                 {t("landing.suppliers_vendor_cta")}
               </Link>
             </div>
@@ -463,7 +467,10 @@ export default function LandingPage() {
             {t("landing.closing_title")}
           </h2>
           <div className="mt-10 flex justify-center">
-            <Link to="/signup" className="btn-primary btn-lg shadow-sm">
+            <Link
+              to="/signup"
+              className="btn-primary btn-lg w-full max-w-sm shadow-sm sm:w-auto sm:max-w-none"
+            >
               {t("landing.cta_signup")}
             </Link>
           </div>
@@ -501,7 +508,11 @@ function PhaseStep({
   body: string;
 }) {
   return (
-    <li className="relative flex flex-col">
+    // Mobile: art sits to the left of the title + body so each phase is one
+    // compact row rather than a 200 px stack — cuts the section's mobile
+    // height in half while keeping the numeral / illustration visual identity.
+    // `sm:` flips back to the original vertical card layout for the desktop grid.
+    <li className="relative flex flex-row items-start gap-4 sm:flex-col sm:gap-0">
       {/* Big italic numeral floated behind the title — the visual
           anchor for each phase. */}
       <span
@@ -510,11 +521,11 @@ function PhaseStep({
       >
         0{n}
       </span>
-      <div className="relative">{art}</div>
-      <h3 className="relative mt-3 font-serif text-xl text-ink-900 dark:text-paper-50">{title}</h3>
-      <p className="relative mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
-        {body}
-      </p>
+      <div className="relative shrink-0">{art}</div>
+      <div className="relative min-w-0 flex-1">
+        <h3 className="font-serif text-xl text-ink-900 dark:text-paper-50 sm:mt-3">{title}</h3>
+        <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
+      </div>
     </li>
   );
 }
