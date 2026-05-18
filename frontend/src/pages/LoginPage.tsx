@@ -52,7 +52,7 @@ export default function LoginPage() {
         <div className="card">
           <h1 className="text-2xl">{t("auth.login_title")}</h1>
           <div className="mt-6">
-            <GoogleSignInButton mode="signin" redirectTo={redirectTo} />
+            <GoogleSignInButton mode="signin" redirectTo={redirectTo} oneTap autoSelect />
           </div>
           <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-500">
             <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />

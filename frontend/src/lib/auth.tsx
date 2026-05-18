@@ -86,6 +86,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persistToken(null);
     setUser(null);
     setSessionExpired(false);
+    // Tell Google Identity Services the user explicitly signed out so the
+    // next visit to /login doesn't auto_select them back in via One Tap.
+    // Safe to call when GSI was never loaded — the optional chain no-ops.
+    const gsi = (
+      window as unknown as {
+        google?: { accounts?: { id?: { disableAutoSelect?: () => void } } };
+      }
+    ).google?.accounts?.id;
+    gsi?.disableAutoSelect?.();
   }, []);
 
   const setSession = useCallback((token: string, u: User) => {

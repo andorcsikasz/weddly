@@ -55,6 +55,12 @@ interface GsiAccountsId {
     callback: (resp: GsiCredentialResponse) => void;
     auto_select?: boolean;
     cancel_on_tap_outside?: boolean;
+    /** Modern (Chrome 117+) replacement for third-party cookies in One Tap.
+     *  When true, GSI uses the browser's Federated Credential Management
+     *  API; falls back automatically on browsers that don't support it. */
+    use_fedcm_for_prompt?: boolean;
+    /** Where to anchor the One Tap UI. "right" matches Google's docs. */
+    prompt_parent_id?: string;
   }) => void;
   renderButton: (
     el: HTMLElement,
@@ -69,6 +75,23 @@ interface GsiAccountsId {
       locale?: string;
     },
   ) => void;
+  /** Shows the One Tap dialog. The callback (optional, deprecated in FedCM
+   *  mode) reports why a prompt didn't appear — useful for diagnostics. */
+  prompt: (cb?: (n: PromptNotification) => void) => void;
+  /** Dismisses the One Tap dialog (no-op when nothing is open). */
+  cancel: () => void;
+  /** Tells GSI the user explicitly signed out so the next visit doesn't
+   *  auto_select them back in. */
+  disableAutoSelect: () => void;
+}
+
+interface PromptNotification {
+  isNotDisplayed?: () => boolean;
+  isSkippedMoment?: () => boolean;
+  isDismissedMoment?: () => boolean;
+  getNotDisplayedReason?: () => string;
+  getSkippedReason?: () => string;
+  getDismissedReason?: () => string;
 }
 
 function getGsi(): GsiAccountsId | null {
@@ -84,11 +107,24 @@ interface Props {
   mode: "signup" | "signin";
   /** Where to send the user after a successful auth. Defaults to /app. */
   redirectTo?: string;
+  /** Also pop Google's One Tap dialog after init. Use on the login page so a
+   *  returning visitor signed into Google in this browser is offered their
+   *  account without clicking the button. */
+  oneTap?: boolean;
+  /** When true (and oneTap is on), Google silently re-issues a credential
+   *  for the previously-used account on subsequent visits — same UX as
+   *  Gmail's "Stay signed in". Has no effect on first-time users. */
+  autoSelect?: boolean;
 }
 
 const CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "") as string;
 
-export function GoogleSignInButton({ mode, redirectTo = "/app" }: Props) {
+export function GoogleSignInButton({
+  mode,
+  redirectTo = "/app",
+  oneTap = false,
+  autoSelect = false,
+}: Props) {
   const { t, locale } = useT();
   const { setSession } = useAuth();
   const toast = useToast();
@@ -112,6 +148,7 @@ export function GoogleSignInButton({ mode, redirectTo = "/app" }: Props) {
         gsi.initialize({
           client_id: CLIENT_ID,
           callback: async (resp) => {
+            if (cancelled) return;
             try {
               const session = await authApi.google({
                 credential: resp.credential,
@@ -131,8 +168,13 @@ export function GoogleSignInButton({ mode, redirectTo = "/app" }: Props) {
               toast.error(msg);
             }
           },
-          auto_select: false,
+          auto_select: autoSelect,
           cancel_on_tap_outside: true,
+          // FedCM is required from Chrome 117+ — without it One Tap silently
+          // falls back to third-party cookies, which are blocked by default
+          // in Safari and Firefox. GSI handles the non-FedCM fallback for
+          // older browsers internally.
+          use_fedcm_for_prompt: true,
         });
 
         // Width: button stretches to host width up to GSI's max of 400. We
@@ -149,6 +191,25 @@ export function GoogleSignInButton({ mode, redirectTo = "/app" }: Props) {
           width,
           locale: locale === "hu" ? "hu_HU" : "en_US",
         });
+
+        // One Tap fires the floating prompt (top-right by default) so a
+        // returning user signed into Google in this browser gets a
+        // single-tap option without clicking the button. With autoSelect
+        // it short-circuits to a silent credential issuance — same UX as
+        // Gmail's seamless re-signin. Honours its own cooldown rules: if
+        // the user dismissed three prompts recently, Google won't show it
+        // again for a few hours, and we get a notification.
+        if (oneTap) {
+          gsi.prompt((n) => {
+            if (import.meta.env.DEV) {
+              const reasons: string[] = [];
+              if (n.isNotDisplayed?.()) reasons.push(`not_displayed:${n.getNotDisplayedReason?.()}`);
+              if (n.isSkippedMoment?.()) reasons.push(`skipped:${n.getSkippedReason?.()}`);
+              if (n.isDismissedMoment?.()) reasons.push(`dismissed:${n.getDismissedReason?.()}`);
+              if (reasons.length > 0) console.debug("[gsi] one-tap", reasons.join(" "));
+            }
+          });
+        }
       })
       .catch(() => {
         if (!cancelled) setHidden(true);
@@ -156,8 +217,11 @@ export function GoogleSignInButton({ mode, redirectTo = "/app" }: Props) {
 
     return () => {
       cancelled = true;
+      // Dismiss any open One Tap when the user navigates away from /login
+      // — otherwise the floating dialog can outlive its page.
+      getGsi()?.cancel();
     };
-  }, [mode, redirectTo, locale, navigate, setSession, t, toast]);
+  }, [mode, redirectTo, oneTap, autoSelect, locale, navigate, setSession, t, toast]);
 
   if (hidden) return null;
   // Min-height matches Google's "large" button so the layout doesn't jump

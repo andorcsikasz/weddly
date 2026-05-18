@@ -142,7 +142,12 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "geolocation=(self), microphone=(), camera=()",
+  // identity-credentials-get is the Permissions-Policy feature gate FedCM
+  // checks before letting the Google One Tap prompt issue a credential.
+  // Without it Chrome 117+ silently rejects gsi.prompt() with a CORS-ish
+  // console error and the One Tap dialog never appears.
+  "Permissions-Policy":
+    "geolocation=(self), microphone=(), camera=(), identity-credentials-get=(self)",
   "Content-Security-Policy": CSP,
   ...(IS_PROD ? { "Strict-Transport-Security": "max-age=31536000; includeSubDomains" } : {}),
 };
