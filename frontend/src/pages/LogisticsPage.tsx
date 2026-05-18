@@ -440,42 +440,49 @@ export default function LogisticsPage() {
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("logistics.sub")}</p>
       </header>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {/* Tabs fill the remaining row width (flex-1 on the container, then
-         *  flex-1 on each TabButton so the two split it evenly). The action
-         *  button on the right keeps its intrinsic width.
-         */}
-        <div
-          role="tablist"
-          aria-label={t("logistics.tabs_aria")}
-          className="flex flex-1 min-w-[12rem] rounded-lg border border-paper-300 bg-paper-100 p-0.5 dark:border-umber-700 dark:bg-umber-900"
-        >
-          <TabButton
-            active={tab === "accommodation"}
-            onClick={() => setTab("accommodation")}
-            label={t("logistics.tab_accommodation")}
-            icon={<Bed size={14} />}
-          />
-          <TabButton
-            active={tab === "transfer"}
-            onClick={() => setTab("transfer")}
-            label={t("logistics.tab_transfer")}
-            icon={<Bus size={14} />}
-          />
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() =>
-            tab === "accommodation" ? setEditingAccommodation("new") : setEditingTransfer("new")
-          }
-        >
-          <Plus size={16} />{" "}
-          {tab === "accommodation" ? t("logistics.add_accommodation") : t("logistics.add_transfer")}
-        </button>
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+        <div>
+          {/* Tabs + action button row, now nested inside the section column so
+           *  its width matches the empty-state / cards directly below it
+           *  (instead of overflowing into the sidebar's column above the
+           *  pinned aside). flex-1 on the tablist + flex-1 on each TabButton
+           *  splits the available width 50/50; the action button keeps its
+           *  intrinsic width on the right. */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div
+              role="tablist"
+              aria-label={t("logistics.tabs_aria")}
+              className="flex flex-1 min-w-[12rem] rounded-lg border border-paper-300 bg-paper-100 p-0.5 dark:border-umber-700 dark:bg-umber-900"
+            >
+              <TabButton
+                active={tab === "accommodation"}
+                onClick={() => setTab("accommodation")}
+                label={t("logistics.tab_accommodation")}
+                icon={<Bed size={14} />}
+              />
+              <TabButton
+                active={tab === "transfer"}
+                onClick={() => setTab("transfer")}
+                label={t("logistics.tab_transfer")}
+                icon={<Bus size={14} />}
+              />
+            </div>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() =>
+                tab === "accommodation"
+                  ? setEditingAccommodation("new")
+                  : setEditingTransfer("new")
+              }
+            >
+              <Plus size={16} />{" "}
+              {tab === "accommodation"
+                ? t("logistics.add_accommodation")
+                : t("logistics.add_transfer")}
+            </button>
+          </div>
+
         <section>
           {loading ? (
             <div className="grid gap-3 sm:grid-cols-2">
@@ -541,6 +548,7 @@ export default function LogisticsPage() {
             />
           )}
         </section>
+        </div>
 
         <aside
           className={`card sticky top-20 self-start transition-colors ${
