@@ -1320,7 +1320,7 @@ export default function SeatingPage() {
               {t("seating.no_unassigned")}
             </p>
           ) : (
-            <ul className="mt-3 max-h-[60vh] space-y-1 overflow-y-auto">
+            <ul className="mt-3 max-h-[60vh] space-y-3 overflow-y-auto pl-1 pt-2">
               {partnerSlots.map((slot) =>
                 slot.guest ? (
                   <li key={slot.role}>
