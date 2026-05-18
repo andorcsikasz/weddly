@@ -489,6 +489,16 @@ db.exec(`
      WHERE c.partner_b_id IS NOT NULL;
 `);
 
+// Ephemeral demo workspaces — the public landing's "Try the demo" button hits
+// `POST /api/demo/start`, which seeds a Shrek & Fiona wedding into a fresh
+// couple stamped with `is_demo = 1`. The flag drives the persistent banner +
+// conversion popup inside /app, AND lets the demo housekeeping sweep purge
+// abandoned demo workspaces older than ~24 h so the database doesn't grow
+// unbounded. 0/1 to match the project's other booleans; default 0 so legacy
+// couples keep their existing read.
+addColumnIfMissing("couples", "is_demo", "is_demo INTEGER NOT NULL DEFAULT 0");
+db.exec("CREATE INDEX IF NOT EXISTS idx_couples_is_demo ON couples(is_demo, created_at)");
+
 export function now(): number {
   return Date.now();
 }

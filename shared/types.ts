@@ -249,6 +249,11 @@ export interface Couple {
    *  the public form. Per-member `meal_choice` values are preserved server
    *  side, so flipping it back on re-surfaces them. */
   rsvp_collects_meal: boolean;
+  /** True for ephemeral demo couples created via `POST /api/demo/start`.
+   *  The /app UI uses this to render the persistent "Demo wedding" banner
+   *  and fire the conversion popup after a few minutes. Demo couples are
+   *  auto-purged by the demo route's housekeeping sweep. */
+  is_demo: boolean;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`
