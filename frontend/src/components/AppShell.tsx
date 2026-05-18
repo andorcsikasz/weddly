@@ -4,6 +4,8 @@ import {
   Bed,
   CalendarClock,
   Camera,
+  ChevronsLeft,
+  ChevronsRight,
   ClipboardList,
   GanttChartSquare,
   Image as ImageIcon,
@@ -15,8 +17,6 @@ import {
   MessageCircle,
   Moon,
   MoreHorizontal,
-  PanelLeftClose,
-  PanelLeftOpen,
   Plane,
   ShieldCheck,
   Store,
@@ -472,9 +472,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
               >
                 {sidebarCollapsed ? (
-                  <PanelLeftOpen size={16} aria-hidden="true" />
+                  <ChevronsRight size={18} aria-hidden="true" />
                 ) : (
-                  <PanelLeftClose size={16} aria-hidden="true" />
+                  <ChevronsLeft size={18} aria-hidden="true" />
                 )}
               </button>
             </div>
