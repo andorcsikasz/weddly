@@ -498,24 +498,8 @@ const en: LocaleMessages = {
     demo_disclaimer:
       "The demo is an estimate. The real budget is editable, lockable per category, and audit-logged.",
     faq_title: "Questions you'll probably ask",
-    faq_q_free: "Is Weddly really free?",
-    faq_a_free:
-      "Yes — for the open beta. We'll add paid tiers in v2 only for advanced features (extra storage, premium templates). Budgeting, guest list, RSVP, and seating stay free.",
-    faq_q_partner: "Can both of us use it?",
-    faq_a_partner:
-      "Yes. One of you signs up, then sends an invite link to the other. You both share the same workspace, with separate logins.",
-    faq_q_data: "What happens to our data?",
-    faq_a_data:
-      "It's yours. Every change lands in an audit log you can read. Pause the workspace any time; if it stays paused for 30 days, we delete everything automatically.",
-    faq_q_after_wedding: "What happens to our data after the wedding?",
-    faq_a_after_wedding:
-      "It stays put — active forever, just like a wedding album you keep on the shelf. Pause from your Profile any time. Once paused, we keep everything for 30 days, then permanently delete it. Either of you can cancel before the deadline.",
-    faq_q_planner: "Do we need a wedding planner?",
-    faq_a_planner:
-      "Weddly walks you through budget, guests and seating at your own pace, so plenty of couples plan it together this way. If you have a planner already, they can join your workspace as a third login.",
-    faq_q_ready: "Is it ready for our wedding?",
-    faq_a_ready:
-      "Live budget, RSVP links, visual seating and printable cards (A4 / A6 / A3) all work today. The supplier directory is curated for browsing now, with bookings landing in v2.",
+    // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
+    // FAQPage JSON-LD).
     closing_title: "Two minutes to set up.",
     closing_body:
       "Free throughout the open beta, with the freedom to pause the workspace whenever life gets busy.",

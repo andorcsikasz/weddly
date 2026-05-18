@@ -41,6 +41,7 @@ import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
+import { SEO_FAQ } from "@shared/seo_faq";
 
 // Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
 // these to reserve layout space, so the page doesn't jump as below-fold
@@ -50,9 +51,12 @@ const MOCKUP_AR_SUPPLIERS = "320 / 280";
 const MOCKUP_AR_WORKSPACE = "640 / 440";
 
 export default function LandingPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("seo.home_title", "seo.home_description");
   const askGuestCode = useGuestCodePrompt();
+  // Single source of truth (shared/seo_faq.ts) — same array also feeds the
+  // FAQPage JSON-LD in seo_ssr.ts, so they can't drift.
+  const faqEntries = SEO_FAQ[locale];
 
   return (
     <PublicShell>
@@ -437,12 +441,9 @@ export default function LandingPage() {
             {t("landing.faq_title")}
           </h2>
           <div className="mt-10 space-y-3">
-            <FaqCard q={t("landing.faq_q_free")} a={t("landing.faq_a_free")} />
-            <FaqCard q={t("landing.faq_q_partner")} a={t("landing.faq_a_partner")} />
-            <FaqCard q={t("landing.faq_q_data")} a={t("landing.faq_a_data")} />
-            <FaqCard q={t("landing.faq_q_after_wedding")} a={t("landing.faq_a_after_wedding")} />
-            <FaqCard q={t("landing.faq_q_planner")} a={t("landing.faq_a_planner")} />
-            <FaqCard q={t("landing.faq_q_ready")} a={t("landing.faq_a_ready")} />
+            {faqEntries.map((entry) => (
+              <FaqCard key={entry.q} q={entry.q} a={entry.a} />
+            ))}
           </div>
         </div>
       </section>
@@ -601,9 +602,13 @@ function AudienceRow({
   to?: string;
   onClick?: () => void;
 }) {
+  // The CTA label is hidden behind the arrow on the narrowest viewports so
+  // long HU strings (e.g. "Tovább a regisztrációhoz") don't force the row
+  // to overflow horizontally. The whole row is still tappable through the
+  // wrapping <Link>/<button>, and `aria-label` carries the full intent.
   const cta = (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap font-serif text-lg leading-relaxed text-ink-900 dark:text-paper-50 transition-colors hover:text-blush-700 sm:text-xl">
-      {ctaLabel}
+    <span className="inline-flex items-center gap-2 font-serif text-lg leading-relaxed text-ink-900 transition-colors hover:text-blush-700 dark:text-paper-50 sm:text-xl">
+      <span className="hidden sm:inline">{ctaLabel}</span>
       <span aria-hidden>→</span>
     </span>
   );
@@ -612,14 +617,16 @@ function AudienceRow({
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 sm:h-11 sm:w-11">
         {icon}
       </span>
-      <p className="flex-1 font-serif text-lg leading-relaxed text-ink-900 dark:text-paper-50 sm:text-xl">
+      <p className="min-w-0 flex-1 font-serif text-lg leading-relaxed text-ink-900 dark:text-paper-50 sm:text-xl">
         {row}
       </p>
-      <div>
+      <div className="shrink-0">
         {to ? (
-          <Link to={to}>{cta}</Link>
+          <Link to={to} aria-label={ctaLabel}>
+            {cta}
+          </Link>
         ) : (
-          <button type="button" onClick={onClick} className="text-left">
+          <button type="button" onClick={onClick} aria-label={ctaLabel} className="text-left">
             {cta}
           </button>
         )}

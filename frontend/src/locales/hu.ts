@@ -498,24 +498,8 @@ const hu: LocaleMessages = {
     demo_disclaimer:
       "A demo csak becslés. A valódi költségvetés szerkeszthető, kategóriánként rögzíthető, és élő auditnaplót vezet.",
     faq_title: "Gyakori kérdések",
-    faq_q_free: "Tényleg ingyenes a Wēddly?",
-    faq_a_free:
-      "Igen — a nyílt béta alatt mindent ingyen használhattok. A v2-ben jönnek majd fizetős csomagok extra funkciókhoz (plusz tárhely, prémium sablonok), de a költségvetés, vendéglista, RSVP és ültetés ingyenes marad.",
-    faq_q_partner: "Mindketten tudjuk használni?",
-    faq_a_partner:
-      "Igen. Egyikőtök regisztrál, és egy linkkel meghívja a másikat. Ugyanazt a felületet látjátok, mindketten saját belépéssel.",
-    faq_q_data: "Mi történik az adatainkkal?",
-    faq_a_data:
-      "A tiétek. Minden változást auditnaplóban követünk. Bármikor szüneteltethetitek a felületet; ha 30 napon belül visszajöttök, ott folytatjátok, ahol abbahagytátok — ügyfélszolgálatra sincs szükség.",
-    faq_q_after_wedding: "Mi történik az adatainkkal az esküvő után?",
-    faq_a_after_wedding:
-      "Ott maradnak — addig, ameddig csak szeretnétek, mintha egy esküvői albumot tartanátok a polcon. A Profil oldalról bármikor szüneteltethetitek a felületet: 30 napig megőrizzük az adatokat, utána véglegesen töröljük. A határidőig bármelyikőtök vissza tudja vonni a kérést.",
-    faq_q_planner: "Kell hozzá esküvőszervező?",
-    faq_a_planner:
-      "Megoldjátok kettesben is — a Wēddly végigvezet a költségvetésen, vendéglistán és ültetésen. Ha van szervezőtök, ő is csatlakozhat egy harmadik belépéssel ugyanahhoz a felülethez.",
-    faq_q_ready: "Készen áll a mi esküvőnkre?",
-    faq_a_ready:
-      "Az élő költségvetés, RSVP linkek, vizuális ültetés és nyomtatható kártyák (A4 / A6 / A3) ma már működnek. A szolgáltatói lista válogatott; a foglalás a v2-ben jön.",
+    // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
+    // FAQPage JSON-LD).
     closing_title: "Két perc, és minden a helyén.",
     closing_body:
       "A nyílt béta alatt szabadon használhatjátok, és bármikor szüneteltethetitek a felületeteket — ott folytatjátok, ahol abbahagytátok.",

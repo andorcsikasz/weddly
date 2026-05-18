@@ -549,21 +549,9 @@ export interface LocaleMessages {
     demo_cta_secondary: string;
     demo_disclaimer: string;
     faq_title: string;
-    faq_q_free: string;
-    faq_a_free: string;
-    faq_q_partner: string;
-    faq_a_partner: string;
-    faq_q_data: string;
-    faq_a_data: string;
-    /** Retention Q&A — surfaces the pause / 30-day-grace policy so the
-     *  question of "what happens to my workspace after the wedding" has
-     *  a real answer on the landing page. */
-    faq_q_after_wedding: string;
-    faq_a_after_wedding: string;
-    faq_q_planner: string;
-    faq_a_planner: string;
-    faq_q_ready: string;
-    faq_a_ready: string;
+    // FAQ Q&A pairs moved to shared/seo_faq.ts so the visible landing FAQ
+    // and the FAQPage JSON-LD share a single source. Only faq_title (the
+    // section heading) lives here.
     closing_title: string;
     closing_body: string;
     // ── Soft-Modern redesign additions ───────────────────────────────

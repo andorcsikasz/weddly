@@ -12,6 +12,8 @@
 // stay as whatever this module injects — those are the only signals Google's
 // non-JS crawler ever sees.
 
+import { SEO_FAQ } from "../../../shared/seo_faq";
+
 export const HU_HOST = "weddly.hu";
 export const EN_HOST = "weddly.xyz";
 
@@ -43,9 +45,6 @@ interface LocaleMeta {
   brandName: string;
   /** Short description for Organization schema. */
   brandDescription: string;
-  /** Per-locale FAQ entries surfaced in FAQPage schema on the root path. Must
-   *  match the visible landing-page FAQ exactly — Google flags divergence. */
-  faq: ReadonlyArray<{ q: string; a: string }>;
 }
 
 const META: Record<SeoLocale, LocaleMeta> = {
@@ -60,32 +59,6 @@ const META: Record<SeoLocale, LocaleMeta> = {
     brandName: "Wēddly",
     brandDescription:
       "Magyar esküvőtervező webalkalmazás pároknak: költségvetés, vendéglista, RSVP, ültetési rend és nyomtatható kártyák egy közös felületen.",
-    faq: [
-      {
-        q: "Tényleg ingyenes a Wēddly?",
-        a: "Igen — a nyílt béta alatt mindent ingyen használhattok. A v2-ben jönnek majd fizetős csomagok extra funkciókhoz (plusz tárhely, prémium sablonok), de a költségvetés, vendéglista, RSVP és ültetés ingyenes marad.",
-      },
-      {
-        q: "Mindketten tudjuk használni?",
-        a: "Igen. Egyikőtök regisztrál, és egy linkkel meghívja a másikat. Ugyanazt a felületet látjátok, mindketten saját belépéssel.",
-      },
-      {
-        q: "Mi történik az adatainkkal?",
-        a: "A tiétek. Minden változást auditnaplóban követünk. Bármikor szüneteltethetitek a felületet; ha 30 napon belül visszajöttök, ott folytatjátok, ahol abbahagytátok — ügyfélszolgálatra sincs szükség.",
-      },
-      {
-        q: "Mi történik az adatainkkal az esküvő után?",
-        a: "Ott maradnak — addig, ameddig csak szeretnétek, mintha egy esküvői albumot tartanátok a polcon. A Profil oldalról bármikor szüneteltethetitek a felületet: 30 napig megőrizzük az adatokat, utána véglegesen töröljük. A határidőig bármelyikőtök vissza tudja vonni a kérést.",
-      },
-      {
-        q: "Kell hozzá esküvőszervező?",
-        a: "Megoldjátok kettesben is — a Wēddly végigvezet a költségvetésen, vendéglistán és ültetésen. Ha van szervezőtök, ő is csatlakozhat egy harmadik belépéssel ugyanahhoz a felülethez.",
-      },
-      {
-        q: "Készen áll a mi esküvőnkre?",
-        a: "Az élő költségvetés, RSVP linkek, vizuális ültetés és nyomtatható kártyák (A4 / A6 / A3) ma már működnek. A szolgáltatói lista válogatott; a foglalás a v2-ben jön.",
-      },
-    ],
   },
   en: {
     lang: "en",
@@ -98,32 +71,6 @@ const META: Record<SeoLocale, LocaleMeta> = {
     brandName: "Weddly",
     brandDescription:
       "Wedding planning web app for couples: budget, guest list, RSVP, seating chart and printable cards in one shared workspace.",
-    faq: [
-      {
-        q: "Is Weddly really free?",
-        a: "Yes — everything is free throughout the open beta. Paid tiers will arrive in v2 for extras (extra storage, premium templates), but budget, guest list, RSVP and seating stay free.",
-      },
-      {
-        q: "Can both of us use it?",
-        a: "Yes. One of you signs up and invites the other with a link. You both see the same workspace with your own logins.",
-      },
-      {
-        q: "What happens to our data?",
-        a: "It's yours. Every change goes into an audit log. You can pause the workspace any time; come back within 30 days and pick up exactly where you left off — no support ticket needed.",
-      },
-      {
-        q: "What happens to our data after the wedding?",
-        a: "It stays — as long as you want, like a wedding album on a shelf. From the Profile page you can pause the workspace any time: we keep the data for 30 days, then delete it permanently. Either of you can undo the request until that deadline.",
-      },
-      {
-        q: "Do we need a wedding planner?",
-        a: "You can plan it together — Weddly walks you through budget, guests and seating. If you do work with a planner, they can join the same workspace with a third login.",
-      },
-      {
-        q: "Is it ready for our wedding?",
-        a: "Live budget, RSVP links, visual seating and printable cards (A4 / A6 / A3) work today. The supplier directory is curated for browsing; bookings land in v2.",
-      },
-    ],
   },
 };
 
@@ -191,7 +138,7 @@ function buildJsonLd(opts: {
     blocks.push({
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      mainEntity: meta.faq.map((entry) => ({
+      mainEntity: SEO_FAQ[opts.locale].map((entry) => ({
         "@type": "Question",
         name: entry.q,
         acceptedAnswer: { "@type": "Answer", text: entry.a },
