@@ -10570,6 +10570,65 @@ describe("seo: renderIndexHtml meta injection", () => {
   });
 });
 
+describe("demo: /api/demo/start", () => {
+  test("creates an ephemeral Shrek & Fiona workspace with seeded data", async () => {
+    wipeAll();
+
+    const res = await req<{
+      session: { token: string; user: { id: number; couple_id: number | null } };
+      couple: { id: number; is_demo: boolean; bride_name: string; groom_name: string } | null;
+      seeded: Record<string, number>;
+    }>("POST", "/api/demo/start");
+
+    expect(res.status).toBe(201);
+    expect(res.data.couple).not.toBeNull();
+    expect(res.data.couple?.is_demo).toBe(true);
+    expect(res.data.couple?.bride_name).toBe("Fiona");
+    expect(res.data.couple?.groom_name).toBe("Shrek");
+    // 15 fairytale guests + Shrek + Fiona = 17
+    expect(res.data.seeded.guests_created).toBe(17);
+    expect(res.data.seeded.budget_lines_created).toBeGreaterThan(10);
+    expect(res.data.seeded.tables_created).toBeGreaterThan(0);
+    expect(res.data.seeded.schedule_events_created).toBeGreaterThan(5);
+
+    // The returned session token lets the visitor hit protected endpoints
+    // straight away — no email verify, no onboarding wizard.
+    const me = await req<{ user: { couple_id: number } }>("GET", "/api/auth/me", undefined, {
+      token: res.data.session.token,
+    });
+    expect(me.status).toBe(200);
+    expect(me.data.user.couple_id).toBe(res.data.couple?.id);
+
+    const guests = await req<{ guests: Array<{ full_name: string }> }>(
+      "GET",
+      "/api/guests",
+      undefined,
+      { token: res.data.session.token },
+    );
+    expect(guests.status).toBe(200);
+    const names = guests.data.guests.map((g) => g.full_name);
+    expect(names).toContain("Donkey");
+    expect(names).toContain("Puss in Boots");
+    expect(names).toContain("Gingerbread Man");
+  });
+
+  test("each demo start mints a fresh couple (data is not shared across visitors)", async () => {
+    wipeAll();
+    const a = await req<{ couple: { id: number } | null; session: { token: string } }>(
+      "POST",
+      "/api/demo/start",
+    );
+    const b = await req<{ couple: { id: number } | null; session: { token: string } }>(
+      "POST",
+      "/api/demo/start",
+    );
+    expect(a.status).toBe(201);
+    expect(b.status).toBe(201);
+    expect(a.data.couple?.id).not.toBe(b.data.couple?.id);
+    expect(a.data.session.token).not.toBe(b.data.session.token);
+  });
+});
+
 describe("seo: pure renderRobotsTxt / renderSitemapXml", () => {
   test("renderRobotsTxt encodes the per-host Sitemap line", () => {
     expect(renderRobotsTxt("weddly.hu")).toContain(`Sitemap: https://${HU_HOST}/sitemap.xml`);
