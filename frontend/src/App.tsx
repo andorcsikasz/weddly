@@ -1,49 +1,61 @@
-import type { JSX, ReactNode } from "react";
+import { lazy, Suspense, type JSX, type ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AppShellLayout } from "./components/AppShell";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
+
+// Public routes are eagerly imported — they're FCP-critical and small in
+// aggregate. The signed-in /app/* and admin/* areas, plus low-traffic
+// flows (rsvp, onboarding, invite-by-token, reset-password), are lazy so
+// they never ship in the landing-page first paint. Before this split the
+// public bundle was ~1.4 MB; the admin + planning + seating + timeline
+// + suppliers + leaflet code lived there even for an unauthenticated
+// visitor browsing /. After: only public components ship in the entry
+// chunk, the rest streams in when a session lands on /app.
 import AboutPage from "./pages/AboutPage";
-import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
-import AdminFeedbackPage from "./pages/AdminFeedbackPage";
-import AdminCategoriesPage from "./pages/AdminCategoriesPage";
-import AdminSuppliersPage from "./pages/AdminSuppliersPage";
-import AdminUsersPage from "./pages/AdminUsersPage";
-import AdminVendorWaitlistPage from "./pages/AdminVendorWaitlistPage";
-import BudgetPage from "./pages/BudgetPage";
-import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import GuestPortalPage from "./pages/GuestPortalPage";
-import GuestPreviewPage from "./pages/GuestPreviewPage";
-import GuestsPage from "./pages/GuestsPage";
-import InvitePage from "./pages/InvitePage";
+import ImprintPage from "./pages/ImprintPage";
 import LandingPage from "./pages/LandingPage";
-import LogisticsPage from "./pages/LogisticsPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import OnboardingWizard from "./pages/OnboardingWizard";
-import PlanningPage from "./pages/PlanningPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import RegisterPage from "./pages/RegisterPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import ProfilePage from "./pages/ProfilePage";
-import RsvpCheckinPage from "./pages/RsvpCheckinPage";
-import RsvpPage from "./pages/RsvpPage";
-import SchedulePage from "./pages/SchedulePage";
-import SeatingPage from "./pages/SeatingPage";
-import HoneymoonPage from "./pages/HoneymoonPage";
-import ImprintPage from "./pages/ImprintPage";
-import MediaPage from "./pages/MediaPage";
-import MoodboardPage from "./pages/MoodboardPage";
 import SubscriptionTermsPage from "./pages/SubscriptionTermsPage";
-import SuppliersPage from "./pages/SuppliersPage";
 import TermsPage from "./pages/TermsPage";
-import TimelinePage from "./pages/TimelinePage";
 import VendorsPage from "./pages/VendorsPage";
-import ChangeEmailPage from "./pages/ChangeEmailPage";
-import VerifyEmailPage from "./pages/VerifyEmailPage";
-import VerifySupplierPage from "./pages/VerifySupplierPage";
+
+const AppShellLayout = lazy(() =>
+  import("./components/AppShell").then((m) => ({ default: m.AppShellLayout })),
+);
+const AdminAnalyticsPage = lazy(() => import("./pages/AdminAnalyticsPage"));
+const AdminFeedbackPage = lazy(() => import("./pages/AdminFeedbackPage"));
+const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
+const AdminSuppliersPage = lazy(() => import("./pages/AdminSuppliersPage"));
+const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
+const AdminVendorWaitlistPage = lazy(() => import("./pages/AdminVendorWaitlistPage"));
+const BudgetPage = lazy(() => import("./pages/BudgetPage"));
+const ChangeEmailPage = lazy(() => import("./pages/ChangeEmailPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const GuestPortalPage = lazy(() => import("./pages/GuestPortalPage"));
+const GuestPreviewPage = lazy(() => import("./pages/GuestPreviewPage"));
+const GuestsPage = lazy(() => import("./pages/GuestsPage"));
+const HoneymoonPage = lazy(() => import("./pages/HoneymoonPage"));
+const InvitePage = lazy(() => import("./pages/InvitePage"));
+const LogisticsPage = lazy(() => import("./pages/LogisticsPage"));
+const MediaPage = lazy(() => import("./pages/MediaPage"));
+const MoodboardPage = lazy(() => import("./pages/MoodboardPage"));
+const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
+const PlanningPage = lazy(() => import("./pages/PlanningPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const RsvpCheckinPage = lazy(() => import("./pages/RsvpCheckinPage"));
+const RsvpPage = lazy(() => import("./pages/RsvpPage"));
+const SchedulePage = lazy(() => import("./pages/SchedulePage"));
+const SeatingPage = lazy(() => import("./pages/SeatingPage"));
+const SuppliersPage = lazy(() => import("./pages/SuppliersPage"));
+const TimelinePage = lazy(() => import("./pages/TimelinePage"));
+const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
+const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -75,9 +87,14 @@ function FullScreenLoader() {
 
 // Per-route boundary so a render error in one page doesn't take down the
 // whole app — the user can navigate to a sibling route via the fallback's
-// "Go to home" link without a full reload.
+// "Go to home" link without a full reload. Suspense wraps the children so
+// lazy()-d chunks render the loader during their network fetch.
 function Page({ children }: { children: ReactNode }) {
-  return <ErrorBoundary>{children}</ErrorBoundary>;
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<FullScreenLoader />}>{children}</Suspense>
+    </ErrorBoundary>
+  );
 }
 
 export default function App() {
@@ -260,7 +277,9 @@ export default function App() {
         path="/app"
         element={
           <RequireAuth>
-            <AppShellLayout />
+            <Suspense fallback={<FullScreenLoader />}>
+              <AppShellLayout />
+            </Suspense>
           </RequireAuth>
         }
       >

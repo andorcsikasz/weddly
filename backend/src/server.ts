@@ -20,7 +20,12 @@ import {
   Router,
 } from "./lib/http";
 import { log, makeLogger } from "./lib/logger";
-import { renderIndexHtml, renderRobotsTxt, renderSitemapXml } from "./lib/seo_ssr";
+import {
+  localeForHost,
+  renderIndexHtml,
+  renderRobotsTxt,
+  renderSitemapXml,
+} from "./lib/seo_ssr";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { registerAccommodationRoutes } from "./routes/accommodations";
@@ -155,15 +160,22 @@ function clientIpFrom(req: Request): string | null {
   return req.headers.get("x-real-ip");
 }
 
-// Memoised index.html source. The per-request renderer (renderIndexHtml in
-// lib/seo_ssr.ts) splices a host-aware <head> block between the SEO_HEAD
-// sentinels — that picks HU canonical for weddly.hu and EN canonical for
-// weddly.xyz, plus the right og:image variant for /rsvp* routes.
-let indexHtmlSource: string | null = null;
-async function loadIndexHtmlSource(): Promise<string> {
-  if (indexHtmlSource !== null) return indexHtmlSource;
-  indexHtmlSource = await Bun.file(FRONTEND_INDEX).text();
-  return indexHtmlSource;
+// Memoised index.html sources, one per SEO locale. The Vite build emits
+// `index.html` (HU body, written by frontend/scripts/prerender.ts) and
+// `index.en.html` (EN body). Each variant already has the locale's landing
+// copy baked into `<div id="root">` so crawlers and the pre-hydration paint
+// see real content; the per-request renderer (renderIndexHtml) then splices
+// a host-aware <head> block on top with the right canonical, hreflang, and
+// og tags.
+const indexHtmlSources: Partial<Record<"hu" | "en", string>> = {};
+const FRONTEND_INDEX_EN = join(FRONTEND_DIST, "index.en.html");
+async function loadIndexHtmlSource(locale: "hu" | "en"): Promise<string> {
+  const cached = indexHtmlSources[locale];
+  if (cached !== undefined) return cached;
+  const path = locale === "en" && existsSync(FRONTEND_INDEX_EN) ? FRONTEND_INDEX_EN : FRONTEND_INDEX;
+  const text = await Bun.file(path).text();
+  indexHtmlSources[locale] = text;
+  return text;
 }
 
 function isRsvpRoute(pathname: string): boolean {
@@ -199,7 +211,8 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
 
   // SPA fallback for unknown routes — let React Router resolve client-side.
   if (existsSync(FRONTEND_INDEX)) {
-    const template = await loadIndexHtmlSource();
+    const locale = localeForHost(host);
+    const template = await loadIndexHtmlSource(locale);
     const html = renderIndexHtml(template, {
       host,
       pathname,

@@ -39,6 +39,13 @@ interface LocaleMeta {
   description: string;
   twDescription: string;
   ogImageAlt: string;
+  /** Human "product name" used in Organization / SoftwareApplication JSON-LD. */
+  brandName: string;
+  /** Short description for Organization schema. */
+  brandDescription: string;
+  /** Per-locale FAQ entries surfaced in FAQPage schema on the root path. Must
+   *  match the visible landing-page FAQ exactly — Google flags divergence. */
+  faq: ReadonlyArray<{ q: string; a: string }>;
 }
 
 const META: Record<SeoLocale, LocaleMeta> = {
@@ -50,6 +57,35 @@ const META: Record<SeoLocale, LocaleMeta> = {
       "Költségvetés, vendéglista, RSVP, ültetés és nyomtatványok egy közös felületen. Pár perc beállítás, és estékből percek lesznek.",
     twDescription: "Egy közös felület mindkettőtöknek. A nyílt béta alatt ingyenes.",
     ogImageAlt: "Wēddly — közösen tervezzétek az esküvőtöket, nyugodtan.",
+    brandName: "Wēddly",
+    brandDescription:
+      "Magyar esküvőtervező webalkalmazás pároknak: költségvetés, vendéglista, RSVP, ültetési rend és nyomtatható kártyák egy közös felületen.",
+    faq: [
+      {
+        q: "Tényleg ingyenes a Wēddly?",
+        a: "Igen — a nyílt béta alatt mindent ingyen használhattok. A v2-ben jönnek majd fizetős csomagok extra funkciókhoz (plusz tárhely, prémium sablonok), de a költségvetés, vendéglista, RSVP és ültetés ingyenes marad.",
+      },
+      {
+        q: "Mindketten tudjuk használni?",
+        a: "Igen. Egyikőtök regisztrál, és egy linkkel meghívja a másikat. Ugyanazt a felületet látjátok, mindketten saját belépéssel.",
+      },
+      {
+        q: "Mi történik az adatainkkal?",
+        a: "A tiétek. Minden változást auditnaplóban követünk. Bármikor szüneteltethetitek a felületet; ha 30 napon belül visszajöttök, ott folytatjátok, ahol abbahagytátok — ügyfélszolgálatra sincs szükség.",
+      },
+      {
+        q: "Mi történik az adatainkkal az esküvő után?",
+        a: "Ott maradnak — addig, ameddig csak szeretnétek, mintha egy esküvői albumot tartanátok a polcon. A Profil oldalról bármikor szüneteltethetitek a felületet: 30 napig megőrizzük az adatokat, utána véglegesen töröljük. A határidőig bármelyikőtök vissza tudja vonni a kérést.",
+      },
+      {
+        q: "Kell hozzá esküvőszervező?",
+        a: "Megoldjátok kettesben is — a Wēddly végigvezet a költségvetésen, vendéglistán és ültetésen. Ha van szervezőtök, ő is csatlakozhat egy harmadik belépéssel ugyanahhoz a felülethez.",
+      },
+      {
+        q: "Készen áll a mi esküvőnkre?",
+        a: "Az élő költségvetés, RSVP linkek, vizuális ültetés és nyomtatható kártyák (A4 / A6 / A3) ma már működnek. A szolgáltatói lista válogatott; a foglalás a v2-ben jön.",
+      },
+    ],
   },
   en: {
     lang: "en",
@@ -59,6 +95,35 @@ const META: Record<SeoLocale, LocaleMeta> = {
       "Budget, guest list, RSVP links, visual seating and printable cards live together in one shared workspace. Set up in minutes; free throughout the open beta.",
     twDescription: "One shared workspace for both of you. Free throughout the open beta.",
     ogImageAlt: "Weddly — plan your wedding together, calmly.",
+    brandName: "Weddly",
+    brandDescription:
+      "Wedding planning web app for couples: budget, guest list, RSVP, seating chart and printable cards in one shared workspace.",
+    faq: [
+      {
+        q: "Is Weddly really free?",
+        a: "Yes — everything is free throughout the open beta. Paid tiers will arrive in v2 for extras (extra storage, premium templates), but budget, guest list, RSVP and seating stay free.",
+      },
+      {
+        q: "Can both of us use it?",
+        a: "Yes. One of you signs up and invites the other with a link. You both see the same workspace with your own logins.",
+      },
+      {
+        q: "What happens to our data?",
+        a: "It's yours. Every change goes into an audit log. You can pause the workspace any time; come back within 30 days and pick up exactly where you left off — no support ticket needed.",
+      },
+      {
+        q: "What happens to our data after the wedding?",
+        a: "It stays — as long as you want, like a wedding album on a shelf. From the Profile page you can pause the workspace any time: we keep the data for 30 days, then delete it permanently. Either of you can undo the request until that deadline.",
+      },
+      {
+        q: "Do we need a wedding planner?",
+        a: "You can plan it together — Weddly walks you through budget, guests and seating. If you do work with a planner, they can join the same workspace with a third login.",
+      },
+      {
+        q: "Is it ready for our wedding?",
+        a: "Live budget, RSVP links, visual seating and printable cards (A4 / A6 / A3) work today. The supplier directory is curated for browsing; bookings land in v2.",
+      },
+    ],
   },
 };
 
@@ -81,6 +146,69 @@ export function canonicalHostFor(locale: SeoLocale): string {
 
 function escapeAttr(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+/** Build a <script type="application/ld+json"> block for the host + path.
+ *  Organization + WebSite go on every page; SoftwareApplication + FAQPage
+ *  only on the root path (Google's docs: FAQPage must reflect visible FAQ
+ *  on the same page, which is the landing). */
+function buildJsonLd(opts: {
+  locale: SeoLocale;
+  canonicalHost: string;
+  pathname: string;
+}): string {
+  const meta = META[opts.locale];
+  const origin = `https://${opts.canonicalHost}`;
+  const blocks: object[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: meta.brandName,
+      url: origin,
+      logo: `${origin}/favicon.svg`,
+      description: meta.brandDescription,
+      sameAs: [`https://${HU_HOST}`, `https://${EN_HOST}`],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: meta.brandName,
+      url: origin,
+      inLanguage: opts.locale === "hu" ? "hu-HU" : "en-US",
+    },
+  ];
+  if (opts.pathname === "/" || opts.pathname === "") {
+    blocks.push({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: meta.brandName,
+      description: meta.description,
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Web",
+      url: origin,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "HUF" },
+    });
+    blocks.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: meta.faq.map((entry) => ({
+        "@type": "Question",
+        name: entry.q,
+        acceptedAnswer: { "@type": "Answer", text: entry.a },
+      })),
+    });
+  }
+  // Each block in its own <script> tag (Google's recommended pattern; easier
+  // for testing-tool diffs than one combined array).
+  return blocks
+    .map((b) => {
+      // Escape `</` to avoid breaking out of the <script> if a string ever
+      // contains a closing tag. JSON.stringify already escapes nothing else
+      // that matters here.
+      const json = JSON.stringify(b).replace(/<\//g, "<\\/");
+      return `<script type="application/ld+json">${json}</script>`;
+    })
+    .join("\n    ");
 }
 
 /** Build the SEO `<head>` block (everything between the sentinels) for the
@@ -120,6 +248,7 @@ function buildHeadBlock(opts: { host: string | null; pathname: string; isRsvp: b
     `<link rel="alternate" hreflang="hu" href="${huUrl}" />`,
     `<link rel="alternate" hreflang="en" href="${enUrl}" />`,
     `<link rel="alternate" hreflang="x-default" href="${huUrl}" />`,
+    buildJsonLd({ locale, canonicalHost, pathname: path }),
   ].join("\n    ");
 }
 
