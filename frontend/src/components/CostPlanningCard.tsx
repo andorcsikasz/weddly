@@ -738,8 +738,11 @@ function CategoryRowInner({
   // Slider step — fine enough for big budgets, coarse enough not to spam.
   const step = rowMax >= 1_000_000 ? 25_000 : 10_000;
 
-  // Per-guest unit for the cross-coupling hint.
-  const perGuest = scales && count > 0 ? Math.round(liveDisplay / count) : null;
+  // Per-guest unit for the cross-coupling hint. Suppressed while the row is
+  // still 0 — a "0/fő" subscript next to "0 Ft" is just noise, and one user
+  // in the test cohort read it as "each guest costs 0 forint" instead of
+  // "no plan yet". Once the row has a value the hint becomes useful again.
+  const perGuest = scales && count > 0 && liveDisplay > 0 ? Math.round(liveDisplay / count) : null;
 
   // Drag input is in display units. Convert back to baseline before pushing
   // up to the parent's drag map, so the saved planned amount is normalised
@@ -990,7 +993,10 @@ function CustomRowInner({
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
   const step = rowMax >= 1_000_000 ? 25_000 : 10_000;
   const Icon = resolveCustomIcon(line.icon);
-  const perGuest = line.per_guest && count > 0 ? Math.round(liveDisplay / count) : null;
+  // Match CategoryRow: a "0/fő" subscript next to "0 Ft" is just noise, so
+  // suppress it until the row actually has a plan.
+  const perGuest =
+    line.per_guest && count > 0 && liveDisplay > 0 ? Math.round(liveDisplay / count) : null;
 
   const trackStyle: CSSProperties = {
     width: "100%",
