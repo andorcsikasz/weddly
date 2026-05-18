@@ -396,17 +396,16 @@ export function CostPlanningCard({
   const commitMin = (v: number) => onBoundsChange?.(v, maxCount);
   const commitMax = (v: number) => onBoundsChange?.(minCount, v);
 
-  // Anchor for the per-row slider WIDTH and `max`. Pinned to the couple's
-  // overall cap so the rail end represents "your whole budget on this one
-  // row" — a sensible visual ceiling, and a hard drag ceiling that stops the
-  // earlier behaviour where rolling-peak math let the user drag a single row
-  // up to billions of forint. When the couple hasn't set a cap yet we fall
-  // back to a generous 5 M HUF (typical HU wedding scale) so the slider is
-  // still usable. Critically, this is stable across a drag: previously the
-  // anchor recomputed from the peak row, so as the user dragged a row up,
-  // the rail grew underneath the thumb and they could never reach the end.
+  // Anchor for the per-row slider WIDTH and `max`. 30 % of the couple's
+  // overall cap — at 5 M HUF cap that's a 1.5 M HUF ceiling per row, which
+  // matches the honeymoon page's `honeymoonSliderMax` and is a generous
+  // upper bound for any single wedding category (venue often runs higher,
+  // but those values go in via the table). Letting one row eat the whole
+  // budget makes the rail feel unbounded and lets the user accidentally
+  // drag past sane values. With no cap set we use 1.5 M directly. Stable
+  // across drags so the rail end doesn't chase the thumb.
   const widthAnchor = useMemo(() => {
-    const ceiling = cap !== null && cap > 0 ? cap : 5_000_000;
+    const ceiling = cap !== null && cap > 0 ? cap * 0.3 : 1_500_000;
     return Math.max(ceiling, 100_000);
   }, [cap]);
 
