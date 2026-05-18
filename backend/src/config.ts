@@ -53,4 +53,14 @@ export const CONFIG = {
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
+  /** Google OAuth web-client id (e.g. "1234-abc.apps.googleusercontent.com").
+   *  When empty, `/api/auth/google` returns 503 so the rest of the app keeps
+   *  working in dev without Google credentials. Same value is baked into the
+   *  frontend at build time as `VITE_GOOGLE_CLIENT_ID`. */
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  /** Test-only escape hatch: when `1`, the Google ID-token verifier accepts a
+   *  signed "test bearer" instead of a real Google JWT. The bearer is HMAC'd
+   *  with `jwtSecret`, so only callers who already own the secret (i.e. the
+   *  E2E test process) can mint one. Never set this in production. */
+  googleTestBypass: process.env.NODE_ENV !== "production" && process.env.GOOGLE_TEST_BYPASS === "1",
 };

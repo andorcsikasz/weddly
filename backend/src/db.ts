@@ -325,6 +325,19 @@ addColumnIfMissing("guests", "partner_role", "partner_role TEXT");
 // active" column. NULL means "never logged in since the column was added".
 addColumnIfMissing("users", "last_seen_at", "last_seen_at INTEGER");
 
+// Google account linkage. `users.google_sub` is the Google-issued `sub` claim
+// — a stable, opaque user id that never changes even if the user renames the
+// account or rotates emails. Null for password-only accounts. Partial unique
+// index (NULL excluded) so a second Google sign-in for the same account is
+// caught at the DB layer too, not just by the application check. Index lives
+// in db.ts (not schema.sql) because the column is added by addColumnIfMissing
+// — see [[project_schema_additive_ordering]] for the May 2026 incident.
+addColumnIfMissing("users", "google_sub", "google_sub TEXT");
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub_unique " +
+    "ON users(google_sub) WHERE google_sub IS NOT NULL",
+);
+
 // Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
 // Default 0 (off) so couples who don't offer accommodation don't pester
 // guests with an irrelevant checkbox. When the couple flips it on from the
