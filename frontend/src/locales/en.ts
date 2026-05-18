@@ -2928,6 +2928,7 @@ const en: LocaleMessages = {
       "I believe a wedding — two people joining their lives together — is one of the biggest and most important things that happens in a person's life. I want that to stay in focus.",
     paragraph_contact_label: "Get in touch",
     paragraph_contact_email: "hello@weddly.xyz",
+    paragraph_contact_cta: "Write a message",
     paragraph_principles_title: "What we believe",
     principle_calm:
       "Calm beats clever. The wedding is the event; the tool should stay out of the way.",

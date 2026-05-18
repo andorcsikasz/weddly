@@ -2954,6 +2954,7 @@ const hu: LocaleMessages = {
       "Hiszek abban, hogy az esküvő — az, hogy két ember összeköti egymással az életét — az egyik legnagyobb és legfontosabb dolog, ami egy ember életében történik. Szeretném, hogy ez tudjon szem előtt maradni.",
     paragraph_contact_label: "Írjatok nekünk",
     paragraph_contact_email: "hello@weddly.xyz",
+    paragraph_contact_cta: "Üzenet írása",
     paragraph_principles_title: "Amiben hiszünk",
     principle_calm:
       "A nyugalom többet ér, mint a trükközés. Az esemény az esküvő; az eszköz álljon félre.",

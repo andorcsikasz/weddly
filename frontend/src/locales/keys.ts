@@ -3208,6 +3208,7 @@ export interface LocaleMessages {
     paragraph_why: string;
     paragraph_contact_label: string;
     paragraph_contact_email: string;
+    paragraph_contact_cta: string;
     paragraph_principles_title: string;
     principle_calm: string;
     principle_no_lock_in: string;
