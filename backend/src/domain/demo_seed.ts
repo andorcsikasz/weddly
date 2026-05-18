@@ -599,7 +599,9 @@ export function seedShrekDemo(coupleId: number): SeedResult {
                ?, ?, ?, ?)`,
     );
 
-    // Bride first so she appears at the top of the household.
+    // Bride first so she appears at the top of the household. Parameter
+    // order matches the INSERT above — invitation_delivered_at is hardcoded
+    // NULL in the SQL, so it does NOT take a positional value here.
     insertGuest.run(
       coupleId,
       "Fiona",
@@ -612,9 +614,8 @@ export function seedShrekDemo(coupleId: number): SeedResult {
       0,
       "Stay (Stay Forever)",
       "Bride. Princess by day, ogre by night.",
-      ts,
-      ts,
-      ts,
+      ts, // rsvp_responded_at
+      ts, // invited_at
       hostHhId,
       "bride",
       ts,
@@ -632,7 +633,6 @@ export function seedShrekDemo(coupleId: number): SeedResult {
       0,
       "I'm a Believer",
       "Groom. Big guy, big heart.",
-      ts,
       ts,
       ts,
       hostHhId,
@@ -667,9 +667,8 @@ export function seedShrekDemo(coupleId: number): SeedResult {
           0,
           null,
           m.notes,
-          respondedAt,
-          ts,
-          ts,
+          respondedAt, // rsvp_responded_at
+          ts, // invited_at — invitation_delivered_at stays NULL in SQL
           hhId,
           null,
           ts,

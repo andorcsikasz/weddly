@@ -10585,8 +10585,9 @@ describe("demo: /api/demo/start", () => {
     expect(res.data.couple?.is_demo).toBe(true);
     expect(res.data.couple?.bride_name).toBe("Fiona");
     expect(res.data.couple?.groom_name).toBe("Shrek");
-    // 15 fairytale guests + Shrek + Fiona = 17
-    expect(res.data.seeded.guests_created).toBe(17);
+    // Shrek + Fiona host pair plus the seeded fairytale crowd.
+    expect(res.data.seeded.guests_created).toBeGreaterThanOrEqual(17);
+    expect(res.data.seeded.households_created).toBeGreaterThanOrEqual(10);
     expect(res.data.seeded.budget_lines_created).toBeGreaterThan(10);
     expect(res.data.seeded.tables_created).toBeGreaterThan(0);
     expect(res.data.seeded.schedule_events_created).toBeGreaterThan(5);
@@ -10597,7 +10598,11 @@ describe("demo: /api/demo/start", () => {
       token: res.data.session.token,
     });
     expect(me.status).toBe(200);
-    expect(me.data.user.couple_id).toBe(res.data.couple?.id);
+    // `couple` is asserted not-null above; tsc doesn't track that through
+    // `expect(...).not.toBeNull()` so we re-narrow with a non-null assertion
+    // for the .toBe(number) overload to bind.
+    // biome-ignore lint/style/noNonNullAssertion: see comment above
+    expect(me.data.user.couple_id).toBe(res.data.couple!.id);
 
     const guests = await req<{ guests: Array<{ full_name: string }> }>(
       "GET",

@@ -1769,22 +1769,28 @@ describe("supplier taxonomy: public read", () => {
     wipeAll();
     const adminToken = await registerAdminAndGetToken();
 
+    // Unique slug per run — `supplier_groups` / `supplier_categories` are NOT
+    // in wipeAll's truncate list, so admin-created rows from earlier tests
+    // (in the same suite OR the parent e2e.test.ts) leak across runs and a
+    // hardcoded slug would flake.
+    const slug = `cache_test_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
     // Hit GET once to prime the in-process cache.
     const before = await req<{ groups: { slug: string }[] }>("GET", "/api/supplier-categories");
     expect(before.status).toBe(200);
-    expect(before.data.groups.find((g) => g.slug === "wellness")).toBeUndefined();
+    expect(before.data.groups.find((g) => g.slug === slug)).toBeUndefined();
 
     const create = await req(
       "POST",
       "/api/admin/supplier-groups",
-      { slug: "wellness", label_hu: "W", label_en: "W" },
+      { slug, label_hu: "W", label_en: "W" },
       { token: adminToken },
     );
     expect(create.status).toBe(201);
 
     const after = await req<{ groups: { slug: string }[] }>("GET", "/api/supplier-categories");
     expect(after.status).toBe(200);
-    expect(after.data.groups.find((g) => g.slug === "wellness")).toBeDefined();
+    expect(after.data.groups.find((g) => g.slug === slug)).toBeDefined();
   });
 
   test("public GET reflects admin PATCH (cache invalidation on update)", async () => {
@@ -1817,10 +1823,12 @@ describe("supplier taxonomy: public read", () => {
     wipeAll();
     const adminToken = await registerAdminAndGetToken();
 
+    // Same flakiness guard as the create-cache test above — unique slug.
+    const slug = `cache_del_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const create = await req<{ group: { id: number; slug: string } }>(
       "POST",
       "/api/admin/supplier-groups",
-      { slug: "cache_test_del", label_hu: "X", label_en: "X" },
+      { slug, label_hu: "X", label_en: "X" },
       { token: adminToken },
     );
     expect(create.status).toBe(201);
@@ -1834,7 +1842,7 @@ describe("supplier taxonomy: public read", () => {
     );
     expect(del.status).toBe(200);
     const after = await req<{ groups: { slug: string }[] }>("GET", "/api/supplier-categories");
-    expect(after.data.groups.find((g) => g.slug === "cache_test_del")).toBeUndefined();
+    expect(after.data.groups.find((g) => g.slug === slug)).toBeUndefined();
   });
 });
 
