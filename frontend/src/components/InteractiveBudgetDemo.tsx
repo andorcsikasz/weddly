@@ -17,10 +17,13 @@ const MIN_GUESTS = 20;
 const MAX_GUESTS = 250;
 const DEFAULT_GUESTS = 80;
 
-const MIN_BUDGET = 1_000_000;
-const MAX_BUDGET = 30_000_000;
+// Range tuned for the Hungarian market — anything under 3M is unrealistic
+// for a wedding with catering, and anything over 12M is the long tail. A
+// tighter range makes the slider feel meaningful on every drag.
+const MIN_BUDGET = 3_000_000;
+const MAX_BUDGET = 12_000_000;
 const BUDGET_STEP = 100_000;
-const DEFAULT_BUDGET = 8_000_000;
+const DEFAULT_BUDGET = 6_000_000;
 
 // Categories shown as their own bar. The rest are aggregated into a single
 // "other" row so the visualisation stays scannable on mobile. The order
@@ -194,17 +197,22 @@ export function InteractiveBudgetDemo() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="space-y-3">
               <Link
                 to={signupHref}
                 onClick={() => stashDraft(guests, budget)}
-                className="btn-primary btn-lg shadow-sm"
+                className="btn-primary btn-lg w-full shadow-sm"
               >
                 {t("landing.demo_cta")}
               </Link>
-              <a href="#phases" className="btn-outline btn-lg">
-                {t("landing.demo_cta_secondary")}
-              </a>
+              <p className="text-center text-sm text-ink-500 dark:text-umber-300">
+                <a
+                  href="#phases"
+                  className="font-serif italic underline-offset-4 hover:text-ink-700 hover:underline dark:hover:text-paper-100"
+                >
+                  {t("landing.demo_cta_secondary")}
+                </a>
+              </p>
             </div>
             <p className="text-xs text-ink-500 dark:text-umber-300">
               {t("landing.demo_disclaimer")}

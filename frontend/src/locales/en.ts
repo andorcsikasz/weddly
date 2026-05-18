@@ -493,8 +493,8 @@ const en: LocaleMessages = {
     demo_breakdown_eyebrow: "Live breakdown",
     demo_breakdown_sub: "based on HU averages",
     demo_total_label: "Total budget",
-    demo_cta: "Save it — sign up with these numbers",
-    demo_cta_secondary: "How it works",
+    demo_cta: "Continue with these numbers",
+    demo_cta_secondary: "or see how it works →",
     demo_disclaimer:
       "The demo is an estimate. The real budget is editable, lockable per category, and audit-logged.",
     faq_title: "Questions you'll probably ask",

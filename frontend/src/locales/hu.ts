@@ -493,8 +493,8 @@ const hu: LocaleMessages = {
     demo_breakdown_eyebrow: "Élő bontás",
     demo_breakdown_sub: "magyar átlag arányok",
     demo_total_label: "Teljes keret",
-    demo_cta: "Mentsd el — regisztrálok ezekkel a számokkal",
-    demo_cta_secondary: "Hogyan működik",
+    demo_cta: "Folytasd a regisztrációval",
+    demo_cta_secondary: "vagy nézd meg, hogyan működik →",
     demo_disclaimer:
       "A demo csak becslés. A valódi költségvetés szerkeszthető, kategóriánként rögzíthető, és élő auditnaplót vezet.",
     faq_title: "Gyakori kérdések",
