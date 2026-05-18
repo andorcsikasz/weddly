@@ -163,8 +163,11 @@ function PublicHeader() {
           </Link>
         </nav>
 
-        {/* Right cluster: every interactive item at text-sm so the
-            wordmark logo is the only thing that visually leads. */}
+        {/* Right cluster: utility icons (feedback, login, locale, theme)
+            sit together on the left, and the signup CTA anchors the
+            right edge alone so the action is the visual terminus. The
+            hamburger trails on mobile (md:hidden) — on desktop the
+            signup button is the rightmost interactive element. */}
         <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
@@ -182,9 +185,6 @@ function PublicHeader() {
             title={t("landing.cta_login")}
           >
             <LogIn size={18} aria-hidden="true" />
-          </Link>
-          <Link to="/signup" className="btn-primary !py-2 px-3.5 text-sm sm:!py-1.5">
-            {t("landing.cta_signup")}
           </Link>
           <button
             type="button"
@@ -208,6 +208,9 @@ function PublicHeader() {
               <Moon size={18} aria-hidden="true" />
             )}
           </button>
+          <Link to="/signup" className="btn-primary !py-2 px-3.5 text-sm sm:!py-1.5">
+            {t("landing.cta_signup")}
+          </Link>
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
