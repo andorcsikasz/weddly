@@ -3,18 +3,20 @@
 // Anchors on `currentDate` snapped to its month boundary, expands forward by
 // the mode's month count, then renders:
 //   - a left task gutter (name + supplier chip) aligned to the chart rows
-//   - a header row with year ribbon + month labels
+//   - a stacked header: year ribbon → month labels → (3M only) week ticks
 //   - alternating month background bands + 1px month dividers
+//   - (3M only) lighter week dividers on every Monday inside the window
 //   - "today" vertical line with a floating label
 //   - "wedding day" vertical line with a heart marker (when set)
-//   - per-row dividers; bars are one per task with min width so a 1-day
-//     task stays clickable even at the 6-month zoom
+//   - per-row dividers + soft alternating row tint so a long list scans easy
+//   - bars are one per task with a generous 24px min width so a 1-day task
+//     stays readable even at the 6-month zoom
 //
 // Bars get clipped corners on the side that runs past the visible window so
 // it's obvious a task extends beyond what you're looking at.
 
 import type { PlanningItem } from "@shared/types";
-import { Heart } from "lucide-react";
+import { Heart, Sparkles } from "lucide-react";
 import { useMemo } from "react";
 import { useT } from "../../lib/i18n";
 
@@ -75,6 +77,22 @@ function addMonths(d: Date, n: number): Date {
   return new Date(d.getFullYear(), d.getMonth() + n, 1);
 }
 
+/** Monday-anchored week start. JS `getDay()` is Sunday-zeroed; rotate so
+ *  Monday is the canonical week start for HU + EN conventions. */
+function startOfWeekMon(d: Date): Date {
+  const dow = d.getDay(); // 0=Sun .. 6=Sat
+  const delta = (dow + 6) % 7; // Mon=0, Sun=6
+  return addDays(startOfDay(d), -delta);
+}
+
+/** ISO week number — matches what a Gantt user expects on the time axis. */
+function isoWeek(d: Date): number {
+  const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  dt.setDate(dt.getDate() + 4 - (dt.getDay() || 7));
+  const jan1 = new Date(dt.getFullYear(), 0, 1);
+  return Math.ceil(((dt.getTime() - jan1.getTime()) / 86_400_000 + 1) / 7);
+}
+
 // ── geometry ──────────────────────────────────────────────────────────────
 
 interface MonthBand {
@@ -89,12 +107,24 @@ interface MonthBand {
   widthPct: number;
 }
 
+interface WeekTick {
+  /** Monday this tick anchors to. */
+  start: Date;
+  weekNumber: number;
+  offsetPct: number;
+  /** True when this Monday is the 1st of the month — we skip the divider
+   *  here because the month rule is dominant, but we still render the
+   *  label. */
+  coincidesWithMonth: boolean;
+}
+
 interface Geometry {
   windowStart: Date;
   /** Inclusive last day of the window. */
   windowEnd: Date;
   totalDays: number;
   months: MonthBand[];
+  weeks: WeekTick[];
 }
 
 function buildGeometry(currentDate: Date, mode: "quarter" | "half", locale: "hu" | "en"): Geometry {
@@ -124,7 +154,28 @@ function buildGeometry(currentDate: Date, mode: "quarter" | "half", locale: "hu"
     });
     lastYear = start.getFullYear();
   }
-  return { windowStart, windowEnd, totalDays, months };
+
+  // Week ticks — only meaningful for the 3M view. The 6M view has 26+
+  // weeks which devolves into visual static, so we skip them entirely there.
+  const weeks: WeekTick[] = [];
+  if (mode === "quarter") {
+    let cursor = startOfWeekMon(windowStart);
+    // Skip the first tick if it falls before the window — its label would
+    // sit at a negative offset and the divider would clip outside the chart.
+    if (cursor < windowStart) cursor = addDays(cursor, 7);
+    while (cursor <= windowEnd) {
+      const offsetDays = diffDays(windowStart, cursor);
+      weeks.push({
+        start: new Date(cursor),
+        weekNumber: isoWeek(cursor),
+        offsetPct: (offsetDays / totalDays) * 100,
+        coincidesWithMonth: cursor.getDate() === 1,
+      });
+      cursor = addDays(cursor, 7);
+    }
+  }
+
+  return { windowStart, windowEnd, totalDays, months, weeks };
 }
 
 interface BarLayout {
@@ -162,7 +213,9 @@ function layoutTask(item: PlanningItem, geo: Geometry): BarLayout | null {
 /** Sticky left task-name column. Wide enough for short titles + a small
  *  supplier chip on the right, narrow enough to leave the chart room. */
 const TASK_GUTTER_WIDTH = 220;
-const ROW_HEIGHT = 40;
+/** 44px gives the 24px bars (h-6) generous vertical padding so a long task
+ *  list reads as airy, not crammed. */
+const ROW_HEIGHT = 44;
 
 export default function GanttView({
   currentDate,
@@ -223,17 +276,19 @@ export default function GanttView({
     ? (diffDays(geometry.windowStart, weddingDate as Date) / geometry.totalDays) * 100
     : null;
 
+  const showWeeks = mode === "quarter";
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Header — task-column spacer + year ribbon + month labels.
-          Stays outside the scrollable body so it never disappears as the
-          couple scrolls a long task list. `relative z-30` so the marker
-          badges we straddle across the header's bottom border (today pill
-          + wedding heart) stack above the body's bars instead of being
-          clipped by the body's `overflow-y-auto`. */}
+      {/* Header — task-column spacer + year ribbon + month labels (+ week
+          ticks at 3M). Stays outside the scrollable body so it never
+          disappears as the couple scrolls a long task list. `relative z-30`
+          so the marker badges we straddle across the header's bottom border
+          (today pill + wedding heart) stack above the body's bars instead
+          of being clipped by the body's `overflow-y-auto`. */}
       <div className="relative z-30 flex shrink-0 border-b border-paper-300 dark:border-umber-700">
         <div
-          className="shrink-0 border-r border-paper-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:border-umber-700 dark:text-umber-300"
+          className="shrink-0 border-r border-paper-200 px-3 py-2 font-serif text-[12px] uppercase tracking-wider text-ink-500 dark:border-umber-700 dark:text-umber-300"
           style={{ width: TASK_GUTTER_WIDTH }}
         >
           {t("timeline.task_column")}
@@ -241,12 +296,12 @@ export default function GanttView({
         <div className="relative flex-1">
           {/* Year ribbon — only printed when the year flips so we don't repeat
               "2026" twelve times across the 6M view. */}
-          <div className="relative h-4">
+          <div className="relative h-5">
             {geometry.months.map((m) =>
               m.yearLabel ? (
                 <span
                   key={`yr-${m.start.toISOString()}`}
-                  className="absolute top-0 px-2 text-[10px] uppercase tracking-wider text-ink-400 dark:text-umber-400"
+                  className="absolute top-1 px-2 text-[10px] uppercase tracking-wider text-ink-400 dark:text-umber-400"
                   style={{ left: `${m.offsetPct}%` }}
                 >
                   {m.yearLabel}
@@ -260,14 +315,18 @@ export default function GanttView({
               // the first band, which always shows the year (so the user has
               // a reference) but isn't structurally a section break.
               const isYearChange = m.yearLabel !== null && idx !== 0;
+              // First month always gets the "ink-700" treatment so the eye
+              // lands on the start of the window; subsequent year-flips also
+              // bump up the weight so section breaks read at a glance.
+              const isPrimary = idx === 0 || isYearChange;
               const dividerClass = isYearChange
                 ? "border-l border-paper-300 dark:border-umber-600"
                 : idx === 0
                   ? ""
                   : "border-l border-paper-200 dark:border-umber-700";
-              const labelClass = isYearChange
-                ? "font-serif text-[12px] font-medium text-ink-700 dark:text-paper-100"
-                : "font-serif text-[12px] text-ink-500 dark:text-umber-300";
+              const labelClass = isPrimary
+                ? "font-serif text-[13px] font-medium text-ink-700 dark:text-paper-100"
+                : "font-serif text-[13px] text-ink-500 dark:text-umber-300";
               return (
                 <div
                   key={m.start.toISOString()}
@@ -279,6 +338,22 @@ export default function GanttView({
               );
             })}
           </div>
+
+          {/* Week tick row — only on 3M. 6M would render 26+ ticks which
+              degrades into visual static, so we don't bother there. */}
+          {showWeeks && (
+            <div className="relative h-[22px]">
+              {geometry.weeks.map((w) => (
+                <span
+                  key={`wk-${w.start.toISOString()}`}
+                  className="absolute top-1 px-1 font-serif text-[10px] text-ink-400 dark:text-umber-400"
+                  style={{ left: `${w.offsetPct}%` }}
+                >
+                  W{w.weekNumber}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Marker badges live in the header (which the body's
               `overflow-y-auto` doesn't clip) and straddle its bottom border
@@ -308,33 +383,36 @@ export default function GanttView({
       </div>
 
       {/* Body — single vertical scroll container so the gutter rows and the
-          chart bars stay aligned. */}
-      <div className="flex-1 overflow-y-auto">
+          chart bars stay aligned. `scrollbar-gutter: stable` keeps the
+          chart from shifting horizontally when a scrollbar appears. */}
+      <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
         <div className="relative flex">
-          {/* Task-name gutter */}
+          {/* Task-name gutter — `sticky left-0` is cheap insurance: even though
+              the chart doesn't scroll horizontally today, pinning the gutter
+              makes the visual hierarchy unmistakable. */}
           <div
-            className="shrink-0 border-r border-paper-200 dark:border-umber-700"
+            className="sticky left-0 z-10 shrink-0 border-r border-paper-200 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95"
             style={{ width: TASK_GUTTER_WIDTH }}
           >
             {visible.length === 0 ? (
               <div
                 className="flex items-center px-3 text-xs text-ink-500 dark:text-umber-300"
                 style={{ height: ROW_HEIGHT }}
-              >
-                {t("timeline.window_empty")}
-              </div>
+                aria-hidden="true"
+              />
             ) : (
-              visible.map((bar) => {
+              visible.map((bar, idx) => {
                 const item = bar.item;
                 const supplier = item.supplier_id
                   ? (supplierById.get(item.supplier_id) ?? null)
                   : null;
+                const zebra = idx % 2 === 1 ? "bg-paper-50/60 dark:bg-umber-900/30" : "";
                 return (
                   <button
                     type="button"
                     key={`gutter-${item.id}`}
                     onClick={() => onOpenTask(item)}
-                    className="flex w-full items-center gap-2 border-b border-paper-200 px-3 text-left transition-colors hover:bg-paper-100 dark:border-umber-700/60 dark:hover:bg-umber-700/40"
+                    className={`flex w-full items-center gap-2 border-b border-paper-200 px-3 text-left transition-colors hover:bg-paper-100 dark:border-umber-700/60 dark:hover:bg-umber-700/40 ${zebra}`}
                     style={{ height: ROW_HEIGHT }}
                   >
                     <span
@@ -387,6 +465,22 @@ export default function GanttView({
               />
             ))}
 
+            {/* Week dividers (3M only). Lighter than the month rules so they
+                read as a subdivision, not a section break. Skip the Mondays
+                that coincide with a month-1st — the month divider owns
+                that vertical. */}
+            {showWeeks &&
+              geometry.weeks.map((w) =>
+                w.coincidesWithMonth ? null : (
+                  <div
+                    key={`wkdiv-${w.start.toISOString()}`}
+                    className="pointer-events-none absolute inset-y-0 w-px bg-paper-200/60 dark:bg-umber-700/40"
+                    style={{ left: `${w.offsetPct}%` }}
+                    aria-hidden="true"
+                  />
+                ),
+              )}
+
             {/* Month dividers (skip first — the gutter border handles that
                 edge). Year-change ticks get a slightly stronger value so the
                 section break reads at a glance. */}
@@ -417,9 +511,9 @@ export default function GanttView({
               />
             )}
 
-            {/* Today vertical (blush). Badge is in the header. A soft glow
-                matches the Day/Week now-line treatment so the eye lands on
-                "today" the moment the chart loads. */}
+            {/* Today vertical (blush). Badge is in the header. Kept as a
+                plain rule — no glow — to match the Day/Week clean-line
+                treatment the user signed off on. */}
             {todayLeftPct !== null && (
               <div
                 className="pointer-events-none absolute inset-y-0 z-[1] w-0.5 -translate-x-1/2 bg-blush-500"
@@ -432,14 +526,25 @@ export default function GanttView({
                 show through. */}
             <div className="relative">
               {visible.length === 0 ? (
-                <div style={{ height: ROW_HEIGHT }} aria-hidden="true" />
+                <div
+                  className="relative flex items-center justify-center gap-2 text-sm text-ink-500 dark:text-umber-300"
+                  style={{ height: ROW_HEIGHT }}
+                >
+                  <Sparkles
+                    size={20}
+                    className="text-blush-300 dark:text-blush-400"
+                    aria-hidden="true"
+                  />
+                  <span>{t("timeline.window_empty")}</span>
+                </div>
               ) : (
-                visible.map((bar) => {
+                visible.map((bar, idx) => {
                   const item = bar.item;
                   const supplier = item.supplier_id
                     ? (supplierById.get(item.supplier_id) ?? null)
                     : null;
                   const done = item.done;
+                  const zebra = idx % 2 === 1 ? "bg-paper-50/60 dark:bg-umber-900/30" : "";
                   // Mirror MonthView's polished bar treatment: completed
                   // tasks retreat (opacity-70 + line-through + thinner sage
                   // border), active tasks get a blush bottom-border accent.
@@ -452,7 +557,7 @@ export default function GanttView({
                   return (
                     <div
                       key={`row-${item.id}`}
-                      className="relative border-b border-paper-200 dark:border-umber-700/60"
+                      className={`relative border-b border-paper-200 dark:border-umber-700/60 ${zebra}`}
                       style={{ height: ROW_HEIGHT }}
                     >
                       <button
@@ -462,8 +567,8 @@ export default function GanttView({
                         className={`absolute top-1/2 z-[2] flex h-6 -translate-y-1/2 items-center gap-1 px-2 text-[11px] shadow-soft transition-colors hover:brightness-95 hover:ring-1 ${barClasses} ${corners}`}
                         style={{
                           left: `${bar.leftPct}%`,
-                          width: `max(${bar.widthPct}%, 12px)`,
-                          minWidth: 12,
+                          width: `max(${bar.widthPct}%, 24px)`,
+                          minWidth: 24,
                         }}
                       >
                         <span
@@ -471,7 +576,7 @@ export default function GanttView({
                         >
                           {item.title}
                         </span>
-                        {supplier && bar.widthPct > 10 && (
+                        {supplier && bar.widthPct > 14 && (
                           <span
                             role="button"
                             tabIndex={0}
