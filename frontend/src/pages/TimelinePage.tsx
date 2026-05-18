@@ -46,9 +46,8 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Skeleton, useToast } from "../components/ui";
 import DayView from "./timeline/DayView";
-import HalfYearView from "./timeline/HalfYearView";
+import GanttView from "./timeline/GanttView";
 import MonthView from "./timeline/MonthView";
-import QuarterView from "./timeline/QuarterView";
 import WeekView from "./timeline/WeekView";
 import { ApiError } from "../lib/api";
 import { coupleApi, coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
@@ -665,27 +664,19 @@ function ChartCard({
         />
       );
     }
-    if (mode === "quarter") {
-      return (
-        <QuarterView
-          currentDate={currentDate}
-          today={today}
-          tasks={tasks}
-          supplierById={supplierById as unknown as Map<string, ViewSupplier>}
-          onOpenTask={onOpenTask}
-          weddingDate={weddingDate}
-        />
-      );
-    }
-    // half
+    // quarter / half — horizontal Gantt with week ticks at 3M, month bands
+    // at 6M. The chart fills the card; tasks lay as bars spanning the time
+    // they cover.
     return (
-      <HalfYearView
+      <GanttView
         currentDate={currentDate}
         today={today}
+        weddingDate={weddingDate}
         tasks={tasks}
         supplierById={supplierById as unknown as Map<string, ViewSupplier>}
+        mode={mode}
         onOpenTask={onOpenTask}
-        weddingDate={weddingDate}
+        onSupplierChipClick={onSupplierChipClick}
       />
     );
   }
