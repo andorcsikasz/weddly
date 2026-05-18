@@ -173,12 +173,21 @@ function formatDateShort(iso: string | null, locale: "hu" | "en"): string {
  *  of a native range input ourselves so the look stays consistent across
  *  Chromium / Firefox / WebKit. Colors come from the shared CSS vars
  *  (`--range-fill-amount` / `--range-fill-remainder`) so the fill inverts
- *  under `html.dark` (filled = bright paper, remainder = dark umber). */
-function rangeFillStyle(value: number, min: number, max: number): { background: string } {
+ *  under `html.dark` (filled = bright paper, remainder = dark umber).
+ *  `thumbPx` anchors the gradient stop to the thumb centre — see the twin in
+ *  CostPlanningCard for why a raw `${pct}%` stop visibly misaligns. */
+function rangeFillStyle(
+  value: number,
+  min: number,
+  max: number,
+  thumbPx = 14,
+): { background: string } {
   const span = max - min;
   const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
+  const offsetPx = thumbPx * (0.5 - pct / 100);
+  const stop = `calc(${pct}% + ${offsetPx.toFixed(3)}px)`;
   return {
-    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${pct}%, var(--range-fill-remainder) ${pct}%, var(--range-fill-remainder) 100%)`,
+    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${stop}, var(--range-fill-remainder) ${stop}, var(--range-fill-remainder) 100%)`,
   };
 }
 
@@ -1129,7 +1138,7 @@ function CostRow({
         onKeyUp={commitPending}
         onBlur={commitPending}
         className="range-fill range-fill-thin col-span-3 col-start-1 row-start-2 w-full sm:col-span-1 sm:col-start-2 sm:row-start-1"
-        style={rangeFillStyle(editValue, 0, sliderMax)}
+        style={rangeFillStyle(editValue, 0, sliderMax, 12)}
         aria-label={t("honeymoon.slider_aria", { label: line.label })}
       />
 

@@ -51,12 +51,29 @@ import { useT } from "../lib/i18n";
  *  but not Chrome/Safari), so we paint the filled portion ourselves via an
  *  inline gradient. Pair with the `.range-fill` component class. Colors come
  *  from CSS vars (`--range-fill-amount` / `--range-fill-remainder`) so the
- *  fill inverts under `html.dark` (filled = bright, remainder = dark). */
-function rangeFillStyle(value: number, min: number, max: number): { background: string } {
+ *  fill inverts under `html.dark` (filled = bright, remainder = dark).
+ *
+ *  `thumbPx` aligns the gradient stop with the native thumb's centre. Browsers
+ *  travel the thumb between `thumbW/2` and `width − thumbW/2`, so the raw
+ *  value% diverges from the visual thumb position — visible as a fill overshoot
+ *  near the middle and a fill→thumb gap near the ends. The calc-based stop
+ *  pins the gradient edge to where the thumb actually paints. Pass 14 for the
+ *  default thumb, 12 for `.range-fill-thin`. Static bars (no thumb at all)
+ *  reuse this so they line up pixel-for-pixel with their interactive twin. */
+function rangeFillStyle(
+  value: number,
+  min: number,
+  max: number,
+  thumbPx = 14,
+): { background: string } {
   const span = max - min;
   const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
+  // offset = thumbW * (0.5 − pct/100). At pct=0 → +thumbW/2 (clear of left
+  // edge); at pct=100 → −thumbW/2 (clear of right edge); at pct=50 → 0.
+  const offsetPx = thumbPx * (0.5 - pct / 100);
+  const stop = `calc(${pct}% + ${offsetPx.toFixed(3)}px)`;
   return {
-    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${pct}%, var(--range-fill-remainder) ${pct}%, var(--range-fill-remainder) 100%)`,
+    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${stop}, var(--range-fill-remainder) ${stop}, var(--range-fill-remainder) 100%)`,
   };
 }
 
@@ -769,9 +786,10 @@ function CategoryRowInner({
 
   // Track gradient + dimensions are computed identically in both modes so
   // the link-mode honeymoon row reads as the same bar chart as the rest.
+  // Thin variant → 12 px thumb (see `.range-fill-thin` CSS).
   const trackStyle: CSSProperties = {
     width: `${widthPct}%`,
-    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${fillPct}%, var(--range-fill-remainder) ${fillPct}%, var(--range-fill-remainder) 100%)`,
+    ...rangeFillStyle(liveDisplay, 0, rowMax, 12),
   };
 
   const categoryLabel = t(`budget.cat.${category}`);
@@ -893,10 +911,15 @@ function CategoryRowInner({
   // are visually comparable at a glance. Non-interactive — `aria-hidden`
   // keeps it out of the AT tree (the actual amount is already in the right
   // tile copy). Clamped to 100% so over-spend doesn't bleed past the row.
+  // Mirrors the planned slider's thumb-aware stop so an actual == planned row
+  // ends both bars at exactly the same x — without the offset they'd diverge
+  // by up to 6 px and read as slightly different values.
   const actualFillPct = rowMax > 0 ? Math.max(0, Math.min(100, (actual / rowMax) * 100)) : 0;
+  const actualFillOffsetPx = 12 * (0.5 - actualFillPct / 100);
+  const actualFillStop = `calc(${actualFillPct}% + ${actualFillOffsetPx.toFixed(3)}px)`;
   const actualOverlayStyle: CSSProperties = {
     width: `${widthPct}%`,
-    background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillPct}%, var(--range-actual-remainder) ${actualFillPct}%, var(--range-actual-remainder) 100%)`,
+    background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillStop}, var(--range-actual-remainder) ${actualFillStop}, var(--range-actual-remainder) 100%)`,
   };
   const actualOverlayEl =
     showActualOverlay && actual > 0 ? (
@@ -998,16 +1021,20 @@ function CustomRowInner({
   const perGuest =
     line.per_guest && count > 0 && liveDisplay > 0 ? Math.round(liveDisplay / count) : null;
 
+  // Thin variant → 12 px thumb. See `rangeFillStyle` for why the stop has to
+  // be calc-anchored to the thumb centre.
   const trackStyle: CSSProperties = {
     width: "100%",
-    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${fillPct}%, var(--range-fill-remainder) ${fillPct}%, var(--range-fill-remainder) 100%)`,
+    ...rangeFillStyle(liveDisplay, 0, rowMax, 12),
   };
 
   const actualFillPct =
     rowMax > 0 ? Math.max(0, Math.min(100, (line.actual_huf / rowMax) * 100)) : 0;
+  const actualFillOffsetPx = 12 * (0.5 - actualFillPct / 100);
+  const actualFillStop = `calc(${actualFillPct}% + ${actualFillOffsetPx.toFixed(3)}px)`;
   const actualOverlayStyle: CSSProperties = {
     width: "100%",
-    background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillPct}%, var(--range-actual-remainder) ${actualFillPct}%, var(--range-actual-remainder) 100%)`,
+    background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillStop}, var(--range-actual-remainder) ${actualFillStop}, var(--range-actual-remainder) 100%)`,
   };
 
   // Slider input is in display units; convert back to baseline before
