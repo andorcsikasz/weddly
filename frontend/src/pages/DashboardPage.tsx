@@ -470,11 +470,20 @@ export default function DashboardPage() {
     // acceptance is reflected elsewhere (partner card on Profile). This
     // prevents the "Next step" CTA from pointing at a section that we
     // hide as soon as an invite is in flight.
-    {
-      key: "task_invite_partner",
-      done: couple.partner_b_id !== null || invite !== null,
-      to: couple.partner_b_id !== null || invite !== null ? "/app/profile" : "#invite-partner",
-    },
+    // Omitted in the demo workspace — there's no real partner to invite,
+    // so the row would always sit unchecked and lead nowhere useful.
+    ...(couple.is_demo
+      ? []
+      : [
+          {
+            key: "task_invite_partner",
+            done: couple.partner_b_id !== null || invite !== null,
+            to:
+              couple.partner_b_id !== null || invite !== null
+                ? "/app/profile"
+                : "#invite-partner",
+          },
+        ]),
     { key: "task_add_guests", done: totalGuests > 0, to: "/app/guests" },
     { key: "task_plan_budget", done: lines.length > 0, to: "/app/budget" },
     {
@@ -1221,8 +1230,10 @@ export default function DashboardPage() {
           either no invite is in flight or one was just sent in this
           session (so the confirmation card still gets to render). Once
           the user reloads after sending, the section disappears and the
-          invite is managed from the Profile partner card. ──────────── */}
-          {!couple.partner_b_id && (!invite || sentToEmail) && (
+          invite is managed from the Profile partner card.
+          Hidden entirely in the demo workspace — there's no real partner
+          to invite there, and the form would just confuse the visitor. */}
+          {!couple.is_demo && !couple.partner_b_id && (!invite || sentToEmail) && (
             <section
               id="invite-partner"
               data-coach-target="partner-invite"
