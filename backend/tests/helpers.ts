@@ -123,6 +123,13 @@ export function wipeAll(): void {
     "couple_currency_history",
     "consent_log",
     "supplier_views",
+    // Wipe the taxonomy AFTER the community/couple supplier tables that
+    // reference it (FK on category slug) — then seedSupplierTaxonomy at the
+    // bottom of this function repopulates the 6 default groups / 14
+    // categories. Without this wipe, admin-CRUD tests across files leak
+    // extra groups/categories into later tests' baseline counts.
+    "supplier_categories",
+    "supplier_groups",
     // users MUST come before couples — users.couple_id REFERENCES couples(id)
     // with no CASCADE, so deleting couples first FK-fails (silently swallowed
     // by the try/catch below) and leaves stale rows that bleed into the next
