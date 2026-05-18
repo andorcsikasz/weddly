@@ -497,6 +497,15 @@ const hu: LocaleMessages = {
     demo_cta_secondary: "vagy nézd meg, hogyan működik →",
     demo_disclaimer:
       "A demo csak becslés. A valódi költségvetés szerkeszthető, kategóriánként rögzíthető, és élő auditnaplót vezet.",
+    demo_cat_food_drinks: "Vendéglátás & ital",
+    demo_cat_venue: "Helyszín",
+    demo_cat_photo_video: "Fotó & videó",
+    demo_cat_decor_floral: "Dekor & virág",
+    demo_cat_attire_beauty: "Ruházat & szépség",
+    demo_cat_music_dj: "Zene & DJ",
+    demo_cat_ceremony_services: "Ceremónia & szolgáltatók",
+    demo_cat_stationery_smalls: "Meghívó, papíráru, apróságok",
+    demo_cat_reserve: "Tartalék",
     faq_title: "Gyakori kérdések",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
     // FAQPage JSON-LD).

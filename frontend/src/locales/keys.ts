@@ -548,6 +548,15 @@ export interface LocaleMessages {
     demo_cta: string;
     demo_cta_secondary: string;
     demo_disclaimer: string;
+    demo_cat_food_drinks: string;
+    demo_cat_venue: string;
+    demo_cat_photo_video: string;
+    demo_cat_decor_floral: string;
+    demo_cat_attire_beauty: string;
+    demo_cat_music_dj: string;
+    demo_cat_ceremony_services: string;
+    demo_cat_stationery_smalls: string;
+    demo_cat_reserve: string;
     faq_title: string;
     // FAQ Q&A pairs moved to shared/seo_faq.ts so the visible landing FAQ
     // and the FAQPage JSON-LD share a single source. Only faq_title (the

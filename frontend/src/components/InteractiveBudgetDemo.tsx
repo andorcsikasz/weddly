@@ -1,15 +1,11 @@
-// Interactive "try-it" widget for the landing page. Mirrors the real budget
-// page: same DEFAULT_BUDGET_SPLIT, same formatHuf, same per-guest framing —
-// so a visitor who likes it can sign up and find an identical-shape Budget
-// page seeded from the same numbers via URL params.
-//
-// No backend, no auth. Pure client state. Keep it under one screen on
-// mobile so it doesn't feel like a separate page.
+// Interactive "try-it" widget for the landing page. Pure client state — no
+// backend, no auth. The breakdown uses ratios curated for the landing demo
+// (see DEMO_ROWS below); the real Budget page after signup uses a more
+// granular DEFAULT_BUDGET_SPLIT. The handoff carries only the chosen guest
+// count + total budget into the onboarding draft.
 
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import type { BudgetCategory } from "@shared/types";
-import { DEFAULT_BUDGET_SPLIT } from "@shared/types";
 import { formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 
@@ -25,38 +21,26 @@ const MAX_BUDGET = 12_000_000;
 const BUDGET_STEP = 100_000;
 const DEFAULT_BUDGET = 6_000_000;
 
-// Display rows. Each row is one bar; `shareOf` lists the BudgetCategory
-// keys whose shares from DEFAULT_BUDGET_SPLIT sum into that row. We collapse
-// catering+drinks under one "vendéglátás" bar (which is how HU couples
-// actually think about it) so the tail "other" bar stays small relative to
-// the featured rows — otherwise it grows large enough to dominate the chart.
+// Curated breakdown ratios for HU weddings. Order = display order (the
+// reserve bucket lives at the end because it is conceptually a buffer
+// rather than a spend line). Shares sum to 1.00.
 type DemoRow = {
-  /** i18n key suffix under `budget.cat.*` for the bar label. */
-  label: BudgetCategory;
-  /** Categories whose DEFAULT_BUDGET_SPLIT shares sum into this row. */
-  shareOf: BudgetCategory[];
+  /** Locale key (under `landing.*`) for the bar label. */
+  i18nKey: string;
+  /** Share of the total budget — sums to 1 across the array. */
+  share: number;
 };
 
-const FEATURED_ROWS: DemoRow[] = [
-  { label: "venue", shareOf: ["venue"] },
-  { label: "catering", shareOf: ["catering", "drinks"] },
-  { label: "photo_video", shareOf: ["photo_video"] },
-  { label: "attire", shareOf: ["attire"] },
-  { label: "decor_floral", shareOf: ["decor_floral"] },
-  { label: "music_dj", shareOf: ["music_dj"] },
-  { label: "honeymoon", shareOf: ["honeymoon"] },
-];
-
-// Everything not pulled into a featured row falls into "Egyéb". With the
-// list above this is ~14% of the total — small enough to feel like a tail.
-const OTHER_CATS: BudgetCategory[] = [
-  "cake_dessert",
-  "hair_makeup",
-  "transport",
-  "stationery",
-  "favours",
-  "rings",
-  "other",
+const DEMO_ROWS: DemoRow[] = [
+  { i18nKey: "landing.demo_cat_food_drinks", share: 0.35 },
+  { i18nKey: "landing.demo_cat_venue", share: 0.18 },
+  { i18nKey: "landing.demo_cat_photo_video", share: 0.13 },
+  { i18nKey: "landing.demo_cat_decor_floral", share: 0.09 },
+  { i18nKey: "landing.demo_cat_attire_beauty", share: 0.08 },
+  { i18nKey: "landing.demo_cat_music_dj", share: 0.07 },
+  { i18nKey: "landing.demo_cat_ceremony_services", share: 0.05 },
+  { i18nKey: "landing.demo_cat_stationery_smalls", share: 0.02 },
+  { i18nKey: "landing.demo_cat_reserve", share: 0.03 },
 ];
 
 function clamp(n: number, lo: number, hi: number) {
@@ -94,17 +78,13 @@ export function InteractiveBudgetDemo() {
   const [guests, setGuests] = useState(DEFAULT_GUESTS);
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
 
-  // Compute per-category HUF using the same split the onboarding wizard
-  // uses. Featured rows sum the shares of their `shareOf` keys; the residual
-  // (OTHER_CATS) lands in a single "other" tail row.
+  // Multiply each curated share by the chosen total, then normalise bar
+  // widths against the largest row so the chart reads at a glance.
   const rows = useMemo(() => {
-    const featured = FEATURED_ROWS.map((row) => {
-      const share = row.shareOf.reduce((s, c) => s + DEFAULT_BUDGET_SPLIT[c], 0);
-      return { cat: row.label, amount: Math.round(budget * share) };
-    });
-    const otherShare = OTHER_CATS.reduce((s, c) => s + DEFAULT_BUDGET_SPLIT[c], 0);
-    const otherAmount = Math.round(budget * otherShare);
-    const all = [...featured, { cat: "other" as BudgetCategory, amount: otherAmount }];
+    const all = DEMO_ROWS.map((row) => ({
+      i18nKey: row.i18nKey,
+      amount: Math.round(budget * row.share),
+    }));
     const maxAmount = all.reduce((m, r) => Math.max(m, r.amount), 0);
     return all.map((r) => ({
       ...r,
@@ -241,10 +221,10 @@ export function InteractiveBudgetDemo() {
             </div>
             <ul className="mt-5 space-y-4">
               {rows.map((row) => (
-                <li key={row.cat}>
+                <li key={row.i18nKey}>
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="font-serif text-sm text-ink-800 dark:text-paper-100 sm:text-base">
-                      {t(`budget.cat.${row.cat}`)}
+                      {t(row.i18nKey)}
                     </span>
                     <span className="font-serif text-sm text-ink-700 dark:text-paper-100 tabular-nums sm:text-base">
                       {formatHuf(row.amount, locale)}

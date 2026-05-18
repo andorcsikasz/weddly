@@ -497,6 +497,15 @@ const en: LocaleMessages = {
     demo_cta_secondary: "or see how it works →",
     demo_disclaimer:
       "The demo is an estimate. The real budget is editable, lockable per category, and audit-logged.",
+    demo_cat_food_drinks: "Food & drinks",
+    demo_cat_venue: "Venue",
+    demo_cat_photo_video: "Photo & video",
+    demo_cat_decor_floral: "Decor & florals",
+    demo_cat_attire_beauty: "Attire & beauty",
+    demo_cat_music_dj: "Music & DJ",
+    demo_cat_ceremony_services: "Ceremony & officiant",
+    demo_cat_stationery_smalls: "Stationery & small items",
+    demo_cat_reserve: "Reserve",
     faq_title: "Questions you'll probably ask",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
     // FAQPage JSON-LD).
