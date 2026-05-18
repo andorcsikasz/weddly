@@ -16,8 +16,8 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useId, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { PhaseAftermathArt, PhaseGuestsArt, PhaseSuppliersArt } from "../components/illustrations";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
@@ -43,6 +43,24 @@ const CATEGORY_TO_GROUP: Record<SupplierCategory, SupplierGroup> = (() => {
 export default function VendorsPage() {
   const { t } = useT();
   useDocumentMeta("vendors.seo_title", "vendors.seo_description");
+  const location = useLocation();
+
+  // React Router doesn't natively scroll to a `#hash` after SPA navigation,
+  // so deep links like `/vendors#waitlist` (from the landing's
+  // "Kerüljetek a listára" CTA) land at the top of the page instead of the
+  // form. We resolve the hash on mount + whenever it changes and scroll the
+  // matching section into view. `scroll-mt-24` on the target absorbs the
+  // sticky header so the headline isn't hidden under it.
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.slice(1);
+    // requestAnimationFrame so the section has mounted before we measure.
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [location.hash]);
 
   return (
     <PublicShell>
@@ -96,7 +114,7 @@ export default function VendorsPage() {
       {/* Waitlist contact — real backend submission with category-aware
        *  portfolio block. The wider container vs. before is intentional:
        *  the redesigned form uses a 2-col layout on lg+ for short fields. */}
-      <section id="waitlist" className="bg-paper-50 dark:bg-umber-900">
+      <section id="waitlist" className="scroll-mt-24 bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-24">
           <WaitlistContact />
         </div>
