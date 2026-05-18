@@ -124,8 +124,12 @@ export function wipeAll(): void {
     "couple_currency_history",
     "consent_log",
     "supplier_views",
-    "couples",
+    // users MUST come before couples — users.couple_id REFERENCES couples(id)
+    // with no CASCADE, so deleting couples first FK-fails (silently swallowed
+    // by the try/catch below) and leaves stale rows that bleed into the next
+    // test. Order mirrors the original wipeAll in tests/e2e.test.ts.
     "users",
+    "couples",
   ];
   for (const t of tables) {
     try {

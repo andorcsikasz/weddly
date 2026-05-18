@@ -1888,7 +1888,7 @@ describe("guest portal: gate + isolation", () => {
     // Seed a schedule entry.
     const ev = await req<{ event: { id: number } }>(
       "POST",
-      "/api/schedule/events",
+      "/api/schedule",
       { label: "Ceremony", starts_at_minutes: 16 * 60, duration_minutes: 60 },
       { token },
     );
