@@ -10,10 +10,17 @@ import { AlertTriangle, ExternalLink, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { moodboardApi } from "../lib/endpoints";
+import { useAuth } from "../lib/auth";
+import { coupleApi, moodboardApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 const STORAGE_KEY = "weddly.moodboard_url";
+
+// Personal default — only auto-applies for the owner's real workspace.
+// Computed at render time (never written to localStorage) so it doesn't
+// bleed into the demo couple when switching workspaces in the same browser.
+const PERSONAL_OWNER_EMAIL = "andor.csikasz@gmail.com";
+const PERSONAL_DEFAULT_URL = "https://hu.pinterest.com/andorcsikasz/when-i-get-married/";
 
 type ErrorCode = "invalid_url" | "not_found" | "private" | "empty" | "fetch_failed";
 
@@ -50,6 +57,7 @@ function classifyError(err: unknown): ErrorCode {
 
 export default function MoodboardPage() {
   const { t } = useT();
+  const { user } = useAuth();
   const [url, setUrl] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     return window.localStorage.getItem(STORAGE_KEY) ?? "";
@@ -60,6 +68,32 @@ export default function MoodboardPage() {
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<ErrorCode | null>(null);
   const [previewError, setPreviewError] = useState<ErrorCode | null>(null);
+
+  // Pre-fill the owner's personal Pinterest board when they land on the
+  // moodboard in their real (non-demo) workspace with nothing saved yet.
+  // Intentionally not written to localStorage — that key is browser-wide,
+  // so persisting would also surface this URL inside the demo couple.
+  useEffect(() => {
+    if (url) return;
+    if (!user || user.email !== PERSONAL_OWNER_EMAIL) return;
+    let cancelled = false;
+    coupleApi
+      .current()
+      .then((res) => {
+        if (cancelled) return;
+        if (res.couple && !res.couple.is_demo) {
+          setUrl(PERSONAL_DEFAULT_URL);
+          setDraft(PERSONAL_DEFAULT_URL);
+          setEditing(false);
+        }
+      })
+      .catch(() => {
+        /* non-critical — the empty form is the safe fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, url]);
 
   useEffect(() => {
     if (!url || editing) return;
