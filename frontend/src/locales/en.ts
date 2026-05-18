@@ -743,7 +743,7 @@ const en: LocaleMessages = {
     contact_cta: "Pre-register",
     contact_subject: "Vendor waitlist",
     back_to_landing: "Back to the landing page",
-    beta_notice_title: "Open beta — free for now",
+    beta_notice_title: "Open beta — free",
     beta_notice_body:
       "Weddly's vendor directory is currently in open beta: applying and being listed is free of charge. After the beta we will introduce a monetisation model (e.g. subscription or featured placement). Everyone who joins now will be notified of the terms well before any fees take effect.",
     beta_notice_terms_link: "Vendor subscription terms",

@@ -743,7 +743,7 @@ const hu: LocaleMessages = {
     contact_cta: "Előregisztráció",
     contact_subject: "Szolgáltatói várólista",
     back_to_landing: "Vissza a főoldalra",
-    beta_notice_title: "Nyílt béta — jelenleg ingyenes",
+    beta_notice_title: "Nyílt béta — ingyenes",
     beta_notice_body:
       "A Wēddly szolgáltatói címjegyzéke jelenleg nyílt bétában van: a jelentkezés és a listázás díjmentes. A béta lezárása után monetizációs modellt vezetünk be (pl. előfizetés vagy kiemelt megjelenés). A most jelentkezőket időben értesítjük a feltételekről, mielőtt bármilyen díj életbe lépne.",
     beta_notice_terms_link: "Szolgáltatói ÁSZF",
