@@ -73,36 +73,32 @@ export default function LandingPage() {
           className="pointer-events-none absolute -top-10 right-[-14rem] h-[36rem] w-[36rem] text-blush-100 sm:right-[-10rem]"
         />
         <div className="relative mx-auto max-w-7xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
-          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12">
-            <div>
-              <h1 className="max-w-[14ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-7xl sm:leading-[0.96] lg:text-8xl">
-                {t("landing.hero_title")}
-              </h1>
-              <div className="mt-8 sm:max-w-md">
-                {/* Full-width thumb targets on mobile so the CTA pair anchors the
-                    viewport rather than floating in the upper-left as two thin
-                    inline pills. `sm:w-auto` snaps back to content-width for the
-                    side-by-side desktop layout. */}
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Link to="/signup" className="btn-primary btn-lg w-full shadow-sm sm:w-auto">
-                    {t("landing.cta_signup")}
-                  </Link>
-                  <Link to="/login" className="btn-outline btn-lg w-full sm:w-auto">
-                    {t("landing.cta_login")}
-                  </Link>
-                </div>
-                <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
-                  {t("landing.cta_signup_sub")}
-                </p>
+          <h1 className="max-w-[14ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+            {t("landing.hero_title")}
+          </h1>
+          <div className="mt-8 flex flex-col items-start gap-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-8">
+            <div className="sm:max-w-md">
+              {/* Full-width thumb targets on mobile so the CTA pair anchors the
+                  viewport rather than floating in the upper-left as two thin
+                  inline pills. `sm:w-auto` snaps back to content-width for the
+                  side-by-side desktop layout. */}
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link to="/signup" className="btn-primary btn-lg w-full shadow-sm sm:w-auto">
+                  {t("landing.cta_signup")}
+                </Link>
+                <Link to="/login" className="btn-outline btn-lg w-full sm:w-auto">
+                  {t("landing.cta_login")}
+                </Link>
               </div>
+              <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+                {t("landing.cta_signup_sub")}
+              </p>
             </div>
-            {/* Right-edge demo card on desktop, full-width below the CTAs on
-                mobile. One-tap "Try the Shrek & Fiona demo wedding" — the
-                button hits POST /api/demo/start and drops the visitor into
-                /app with a fully seeded workspace. */}
-            <div className="flex justify-center lg:justify-end">
-              <DemoLaunchCard />
-            </div>
+            {/* One-tap "try the demo" — a single text link sitting to the
+                right of the primary CTAs on desktop, stacking below on
+                mobile. Hits POST /api/demo/start and drops the visitor into
+                /app with a fully-seeded workspace. */}
+            <DemoLaunchCard />
           </div>
         </div>
 

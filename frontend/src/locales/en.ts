@@ -701,14 +701,10 @@ const en: LocaleMessages = {
     mockup_vendor_category: "Floral design · Budapest, HU",
     mockup_vendor_reviews: "4.9 · 23 reviews",
     mockup_vendor_cta: "View profile",
-    // ── Landing "try the demo" card — neutral copy, the fairytale
-    //    identity reveals itself only after the visitor lands in /app. ──
-    demo_card_eyebrow: "One click · no signup",
-    demo_card_title: "Try a pre-built wedding",
-    demo_card_body: "Guests, budget, seating — all set up. Click and you're in.",
-    demo_card_cta: "Start the demo",
+    // ── Landing "try the demo" link — minimal, one phrase. Conveys
+    //    "demo wedding, no signup required" and nothing else. ──────────
+    demo_card_cta: "Try the demo wedding · no signup",
     demo_card_loading: "One moment…",
-    demo_card_disclaimer: "Every launch is fresh. Changes don't get saved.",
     demo_card_error: "Didn't start. Try again.",
   },
   vendors: {

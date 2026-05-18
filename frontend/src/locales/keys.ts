@@ -563,15 +563,10 @@ export interface LocaleMessages {
     demo_cat_ceremony_services: string;
     demo_cat_stationery_smalls: string;
     demo_cat_reserve: string;
-    /** Landing-page demo launch card — kicks off a Shrek & Fiona seeded
-     *  workspace via POST /api/demo/start. Separate string set from the
-     *  interactive budget demo above so the visible CTAs stay scannable. */
-    demo_card_eyebrow: string;
-    demo_card_title: string;
-    demo_card_body: string;
+    /** Landing-page demo launch link — kicks off the seeded demo
+     *  workspace via POST /api/demo/start. One CTA line + states. */
     demo_card_cta: string;
     demo_card_loading: string;
-    demo_card_disclaimer: string;
     demo_card_error: string;
     faq_title: string;
     // FAQ Q&A pairs moved to shared/seo_faq.ts so the visible landing FAQ
