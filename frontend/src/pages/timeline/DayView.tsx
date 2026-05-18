@@ -51,16 +51,14 @@ function diffDays(a: Date, b: Date): number {
   return Math.round(ms / 86_400_000);
 }
 
-// Full-day grid in 2-hour bands (00, 02, …, 22). One-hour bands crammed 24
-// labels into the available vertical space and the rail looked like a wall of
-// numbers; two-hour bands halve the label count while the grid still covers
-// the full 24h day, so the "now" indicator stays positioned by raw clock time.
-const HOUR_START = 0;
-const HOUR_SPAN = 24;
+// 2-hour bands (08, 10, …, 22 by default). One-hour bands crammed 24 labels
+// into the available vertical space and the rail looked like a wall of
+// numbers; two-hour bands halve the label count. The 00:00–07:00 band is
+// collapsed by default and expandable via a toggle bar above the grid.
 const HOUR_STEP = 2;
-const HOUR_LABELS: number[] = [];
-for (let h = HOUR_START; h < HOUR_START + HOUR_SPAN; h += HOUR_STEP) HOUR_LABELS.push(h);
-const HOUR_ROWS = HOUR_LABELS.length;
+const EARLY_HOUR_START = 0;
+const DEFAULT_HOUR_START = 8;
+const HOUR_END_EXCL = 24;
 
 function formatHour(h: number): string {
   // 24-hour clock per spec — same in HU and EN.
@@ -74,7 +72,7 @@ export default function DayView({
   supplierById,
   onOpenTask,
 }: DayViewProps) {
-  const { locale } = useT();
+  const { locale, t } = useT();
   // Suppress unused-variable warnings when supplierById isn't needed for
   // rendering — kept on the props contract so future work can surface a
   // supplier chip on each bar without changing the call sites.
@@ -86,6 +84,13 @@ export default function DayView({
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
   }, []);
+
+  const [showEarlyHours, setShowEarlyHours] = useState(false);
+  const hourStart = showEarlyHours ? EARLY_HOUR_START : DEFAULT_HOUR_START;
+  const hourSpan = HOUR_END_EXCL - hourStart;
+  const hourLabels: number[] = [];
+  for (let h = hourStart; h < HOUR_END_EXCL; h += HOUR_STEP) hourLabels.push(h);
+  const hourRows = hourLabels.length;
 
   const intl = locale === "hu" ? "hu-HU" : "en-US";
   const dayStart = startOfDay(currentDate);
@@ -124,13 +129,15 @@ export default function DayView({
     return rows;
   }, [tasks, dayStart, locale]);
 
-  // "Now" indicator position — always renders for "today" since the rail now
-  // spans the full 24h day. Position is expressed as % of the grid height so
-  // it tracks whatever vertical space the parent gives the hour grid.
+  // "Now" indicator position — renders only when today is current and the
+  // clock falls inside the visible rail (hidden when collapsed and now is
+  // before 08:00). Position is expressed as % of the grid height so it
+  // tracks whatever vertical space the parent gives the hour grid.
   const now = new Date();
-  const nowTopPct = isToday
-    ? ((now.getHours() + now.getMinutes() / 60 - HOUR_START) / HOUR_SPAN) * 100
-    : null;
+  const nowTopPct =
+    isToday && now.getHours() >= hourStart
+      ? ((now.getHours() + now.getMinutes() / 60 - hourStart) / hourSpan) * 100
+      : null;
 
   const emptyHint = locale === "hu" ? "Nincs feladat erre a napra" : "No tasks for this day";
 
@@ -187,13 +194,31 @@ export default function DayView({
         )}
       </div>
 
+      <button
+        type="button"
+        onClick={() => setShowEarlyHours((s) => !s)}
+        aria-expanded={showEarlyHours}
+        aria-label={
+          showEarlyHours ? t("timeline.hide_early_hours") : t("timeline.show_early_hours")
+        }
+        className="flex w-full items-center gap-1.5 border-b border-paper-300 px-2 py-1 text-left text-[10px] uppercase tracking-wider text-ink-500 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-900/40 dark:focus-visible:ring-paper-100"
+      >
+        <span
+          aria-hidden="true"
+          className="inline-flex h-3 w-3 items-center justify-center font-sans text-[10px] leading-none"
+        >
+          {showEarlyHours ? "▴" : "▾"}
+        </span>
+        <span>00:00–07:00</span>
+      </button>
+
       <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: "56px 1fr" }}>
         <div
           className="grid"
-          style={{ gridTemplateRows: `repeat(${HOUR_ROWS}, minmax(0, 1fr))` }}
+          style={{ gridTemplateRows: `repeat(${hourRows}, minmax(0, 1fr))` }}
           aria-hidden="true"
         >
-          {HOUR_LABELS.map((h) => (
+          {hourLabels.map((h) => (
             <div
               key={h}
               className="border-t border-paper-200 pr-2 text-right text-[10px] leading-none text-ink-500 dark:border-umber-700 dark:text-umber-300"
@@ -206,9 +231,9 @@ export default function DayView({
         </div>
         <div
           className="relative grid"
-          style={{ gridTemplateRows: `repeat(${HOUR_ROWS}, minmax(0, 1fr))` }}
+          style={{ gridTemplateRows: `repeat(${hourRows}, minmax(0, 1fr))` }}
         >
-          {HOUR_LABELS.map((h) => (
+          {hourLabels.map((h) => (
             <div
               key={h}
               className="border-t border-paper-200 dark:border-umber-700"

@@ -945,6 +945,8 @@ const hu: LocaleMessages = {
     outside_before_other: "{count} korábban",
     outside_after_one: "még {count} később",
     outside_after_other: "még {count} később",
+    show_early_hours: "00:00–07:00 megjelenítése",
+    hide_early_hours: "00:00–07:00 elrejtése",
     seo_title: "Idővonal — Weddly",
     seo_description: "Esküvői feladataid Gantt-nézetben + kapcsolattartók.",
   },

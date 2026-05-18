@@ -122,6 +122,10 @@ export interface LocaleMessages {
     outside_before_other: string;
     outside_after_one: string;
     outside_after_other: string;
+    /** Aria-labels for the early-hours (00:00–07:00) toggle bar in Day/Week
+     *  views. The bar collapses the night band by default. */
+    show_early_hours: string;
+    hide_early_hours: string;
     seo_title: string;
     seo_description: string;
   };

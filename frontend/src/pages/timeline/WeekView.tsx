@@ -65,12 +65,13 @@ function startOfWeekMon(d: Date): Date {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-// Full day grid in 2-hour bands so the rail breathes — 24 one-hour labels
-// were too dense at typical card heights. The grid still covers the full 24h
-// day, so the "now" indicator stays anchored to raw clock time.
-const HOUR_START = 0;
-const HOUR_SPAN = 24;
+// 2-hour bands so the rail breathes — 24 one-hour labels were too dense. The
+// 00:00–07:00 band is collapsed by default (most users plan during waking
+// hours); a toggle bar above the grid expands it back to a full 24h rail.
 const HOUR_STEP = 2;
+const EARLY_HOUR_START = 0;
+const DEFAULT_HOUR_START = 8;
+const HOUR_END_EXCL = 24;
 const LANE_HEIGHT_PX = 22;
 const LANE_GAP_PX = 8;
 const GUTTER_WIDTH_PX = 56;
@@ -153,13 +154,15 @@ export default function WeekView({
   supplierById,
   onOpenTask,
 }: WeekViewProps) {
-  const { locale } = useT();
+  const { locale, t } = useT();
   // Force re-render every 60s so the "now" line drifts down the today column.
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = window.setInterval(() => setTick((n) => n + 1), 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  const [showEarlyHours, setShowEarlyHours] = useState(false);
 
   const monday = useMemo(() => startOfWeekMon(currentDate), [currentDate]);
   const days = useMemo(() => {
@@ -178,18 +181,19 @@ export default function WeekView({
   const stripHeight =
     maxLane < 0 ? LANE_HEIGHT_PX + LANE_GAP_PX : (maxLane + 1) * (LANE_HEIGHT_PX + 2) + LANE_GAP_PX;
 
-  // ── "Now" indicator — visible whenever today is in-week (the rail now
-  //    spans the full 0–23 range, so the clock is always in-range). Position
-  //    is expressed as a % of the grid height so the line tracks the row
-  //    layout no matter what container height the parent provides.
+  // Hour rail spans 08:00–22:00 by default; expanding the early band drops
+  // the start back to 00:00. The "now" indicator hides when the current clock
+  // falls outside the visible window (e.g. 03:00 while collapsed).
+  const hourStart = showEarlyHours ? EARLY_HOUR_START : DEFAULT_HOUR_START;
+  const hourSpan = HOUR_END_EXCL - hourStart;
   const now = new Date();
   const nowHour = now.getHours();
   const nowMin = now.getMinutes();
-  const showNow = todayInWeek;
-  const nowTopPct = ((nowHour + nowMin / 60 - HOUR_START) / HOUR_SPAN) * 100;
+  const showNow = todayInWeek && nowHour >= hourStart;
+  const nowTopPct = ((nowHour + nowMin / 60 - hourStart) / hourSpan) * 100;
 
   const hourLabels: number[] = [];
-  for (let h = HOUR_START; h < HOUR_START + HOUR_SPAN; h += HOUR_STEP) hourLabels.push(h);
+  for (let h = hourStart; h < HOUR_END_EXCL; h += HOUR_STEP) hourLabels.push(h);
   const hourRows = hourLabels.length;
 
   const allDayLabel = locale === "hu" ? "egész napos" : "All-day";
@@ -283,8 +287,30 @@ export default function WeekView({
         </div>
       </div>
 
+      {/* ── Early-hours toggle — collapses the 00:00–07:00 band by default
+       *    so the rail focuses on waking hours. Click anywhere on the strip
+       *    to flip; the button row spans the full width so it reads as a
+       *    section divider rather than an inline icon. ────────────────── */}
+      <button
+        type="button"
+        onClick={() => setShowEarlyHours((s) => !s)}
+        aria-expanded={showEarlyHours}
+        aria-label={
+          showEarlyHours ? t("timeline.hide_early_hours") : t("timeline.show_early_hours")
+        }
+        className="flex w-full items-center gap-1.5 border-b border-paper-300 px-2 py-1 text-left text-[10px] uppercase tracking-wider text-ink-500 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-900/40 dark:focus-visible:ring-paper-100"
+      >
+        <span
+          aria-hidden="true"
+          className="inline-flex h-3 w-3 items-center justify-center font-sans text-[10px] leading-none"
+        >
+          {showEarlyHours ? "▴" : "▾"}
+        </span>
+        <span>00:00–07:00</span>
+      </button>
+
       {/* ── Hour grid — fills the rest of the card, no scroll. The grid uses
-       *    minmax(0, 1fr) rows so the 24 hours always share whatever vertical
+       *    minmax(0, 1fr) rows so the visible hours share whatever vertical
        *    space the parent gives us. Hour labels sit in a parallel
        *    1fr-per-row column so they line up with the rules exactly. ──── */}
       <div

@@ -944,6 +944,8 @@ const en: LocaleMessages = {
     outside_before_other: "{count} earlier",
     outside_after_one: "{count} later",
     outside_after_other: "{count} later",
+    show_early_hours: "Show 00:00–07:00",
+    hide_early_hours: "Hide 00:00–07:00",
     seo_title: "Timeline — Weddly",
     seo_description: "Your wedding tasks as a Gantt chart with quick supplier contacts.",
   },
