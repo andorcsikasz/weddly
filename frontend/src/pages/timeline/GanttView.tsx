@@ -422,7 +422,7 @@ export default function GanttView({
                 "today" the moment the chart loads. */}
             {todayLeftPct !== null && (
               <div
-                className="pointer-events-none absolute inset-y-0 z-[1] w-0.5 -translate-x-1/2 bg-blush-500 shadow-[0_0_8px_rgba(211,93,66,0.45)]"
+                className="pointer-events-none absolute inset-y-0 z-[1] w-0.5 -translate-x-1/2 bg-blush-500"
                 style={{ left: `${todayLeftPct}%` }}
                 aria-hidden="true"
               />

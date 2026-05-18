@@ -396,15 +396,9 @@ export default function WeekView({
                     aria-live="polite"
                     title={todayAriaLabel}
                   >
-                    {/* Soft blush halo underlay — token-driven alternative to
-                        a raw rgba shadow so the glow obeys the palette. */}
-                    <div
-                      aria-hidden="true"
-                      className="-translate-y-1/2 absolute inset-x-0 top-1/2 h-3 bg-blush-500/30 blur-md"
-                    />
                     <span
                       aria-hidden="true"
-                      className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-0 h-2.5 w-2.5 rounded-full bg-blush-500 ring-2 ring-blush-300/60"
+                      className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-0 h-2.5 w-2.5 rounded-full bg-blush-500"
                     />
                     <div className="h-0.5 w-full bg-blush-500" />
                   </div>

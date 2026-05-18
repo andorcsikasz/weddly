@@ -281,14 +281,8 @@ export default function DayView({
                 aria-label={nowLabel}
                 aria-live="polite"
               >
-                {/* Soft blush halo underlay — pure-tailwind alternative to a
-                    raw rgba shadow, so the glow obeys the token palette. */}
-                <div
-                  aria-hidden="true"
-                  className="-translate-y-1/2 absolute inset-x-0 top-1/2 h-3 bg-blush-500/30 blur-md"
-                />
                 <div className="relative h-0.5 bg-blush-500">
-                  <span className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-0 h-2.5 w-2.5 rounded-full bg-blush-500 ring-2 ring-blush-300/60" />
+                  <span className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-0 h-2.5 w-2.5 rounded-full bg-blush-500" />
                 </div>
               </div>
             )}
