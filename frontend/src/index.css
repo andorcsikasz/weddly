@@ -13,6 +13,10 @@
        spent amount, not the empty space (paper-100 amount on umber-700). */
     --range-fill-amount: theme("colors.ink.700");
     --range-fill-remainder: theme("colors.paper.200");
+    /* Frozen-row fill: blush so the locked rows share their palette with the
+       row label + lock badge. Used by `.range-fill-frozen` rows via an inline
+       `--range-fill-amount` override. */
+    --range-fill-frozen: theme("colors.blush.400");
     /* Same inversion for the over-budget "actual spend" overlay: keeps the
        red as the eye-catching half in both modes (bright red on light, soft
        red on umber) and dims the empty side. */
@@ -22,6 +26,7 @@
   html.dark {
     --range-fill-amount: theme("colors.paper.100");
     --range-fill-remainder: theme("colors.umber.700");
+    --range-fill-frozen: theme("colors.blush.300");
     --range-actual-amount: #fca5a5;
     --range-actual-remainder: theme("colors.umber.700");
   }
@@ -277,6 +282,33 @@
   .range-fill-thin::-moz-range-thumb {
     width: 12px;
     height: 12px;
+  }
+  /* Frozen-row treatment: the slider is `disabled`, so opacity isn't enough to
+     read as "intentionally locked" — without colour it looks like a regular
+     row that just feels muted. Switch the thumb to blush so it shares the
+     palette of the lock badge and the row label, and let the gradient pick up
+     a softer fill (the `--range-fill-amount` var is overridden inline). The
+     `:disabled` opacity dip is cancelled so the blush stays vivid — the
+     `not-allowed` cursor + lock icon already signal non-interactive. */
+  .range-fill-frozen::-webkit-slider-thumb {
+    background: theme("colors.blush.500");
+    border-color: theme("colors.paper.50");
+  }
+  .range-fill-frozen::-moz-range-thumb {
+    background: theme("colors.blush.500");
+    border-color: theme("colors.paper.50");
+  }
+  html.dark .range-fill-frozen::-webkit-slider-thumb {
+    background: theme("colors.blush.300");
+    border-color: theme("colors.umber.900");
+  }
+  html.dark .range-fill-frozen::-moz-range-thumb {
+    background: theme("colors.blush.300");
+    border-color: theme("colors.umber.900");
+  }
+  .range-fill-frozen:disabled {
+    opacity: 1;
+    cursor: not-allowed;
   }
 
   /* Subtle diagonal hairline texture for "stationery" surfaces. */

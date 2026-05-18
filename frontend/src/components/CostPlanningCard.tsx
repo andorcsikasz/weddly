@@ -396,26 +396,19 @@ export function CostPlanningCard({
   const commitMin = (v: number) => onBoundsChange?.(v, maxCount);
   const commitMax = (v: number) => onBoundsChange?.(minCount, v);
 
-  // Anchor for the per-row slider WIDTH. Computed from the *peak* possible
-  // value each row can reach (baseline value × max-headcount factor for
-  // per-guest rows, plain baseline value for fixed). Stable across headcount
-  // changes — so when the headcount slider moves, per-guest row sliders grow
-  // and shrink visibly instead of all proportionally locking together.
+  // Anchor for the per-row slider WIDTH and `max`. Pinned to the couple's
+  // overall cap so the rail end represents "your whole budget on this one
+  // row" — a sensible visual ceiling, and a hard drag ceiling that stops the
+  // earlier behaviour where rolling-peak math let the user drag a single row
+  // up to billions of forint. When the couple hasn't set a cap yet we fall
+  // back to a generous 5 M HUF (typical HU wedding scale) so the slider is
+  // still usable. Critically, this is stable across a drag: previously the
+  // anchor recomputed from the peak row, so as the user dragged a row up,
+  // the rail grew underneath the thumb and they could never reach the end.
   const widthAnchor = useMemo(() => {
-    const maxFactor = baseline > 0 ? maxCount / baseline : 1;
-    let peak = 0;
-    for (const b of buckets) {
-      const rowPeak = b.scales ? Math.round(b.plannedBaseline * maxFactor) : b.plannedBaseline;
-      if (rowPeak > peak) peak = rowPeak;
-    }
-    // Custom rows mirror the bucket logic: per-guest custom rows hit their
-    // peak at the max-headcount factor, fixed ones cap at their baseline.
-    for (const c of customDisplays) {
-      const rowPeak = c.scales ? Math.round(c.plannedBaseline * maxFactor) : c.plannedBaseline;
-      if (rowPeak > peak) peak = rowPeak;
-    }
-    return Math.max(peak, 100_000);
-  }, [buckets, customDisplays, baseline, maxCount]);
+    const ceiling = cap !== null && cap > 0 ? cap : 5_000_000;
+    return Math.max(ceiling, 100_000);
+  }, [cap]);
 
   // If the user narrows the bounds below the current slider value, clamp
   // it back into range so the thumb doesn't pin off the track.
@@ -787,9 +780,15 @@ function CategoryRowInner({
   // Track gradient + dimensions are computed identically in both modes so
   // the link-mode honeymoon row reads as the same bar chart as the rest.
   // Thin variant → 12 px thumb (see `.range-fill-thin` CSS).
+  // For frozen rows, override `--range-fill-amount` so the gradient picks up
+  // a muted blush instead of the default ink. Paired with `range-fill-frozen`
+  // (thumb colour) and the blush amount text below, this turns the whole row
+  // into one "locked" visual unit — readable at a glance from across the
+  // table, but soft enough not to compete with the live editable rows.
   const trackStyle: CSSProperties = {
     width: `${widthPct}%`,
     ...rangeFillStyle(liveDisplay, 0, rowMax, 12),
+    ...(frozen ? ({ "--range-fill-amount": "var(--range-fill-frozen)" } as CSSProperties) : {}),
   };
 
   const categoryLabel = t(`budget.cat.${category}`);
@@ -868,17 +867,22 @@ function CategoryRowInner({
     </span>
   );
 
+  // Frozen rows render the amount in blush so the whole row (label, slider,
+  // amount) shares one palette and reads as a single locked unit.
+  const amountColorClass = frozen
+    ? "text-blush-700 dark:text-blush-300"
+    : "text-ink-700 dark:text-paper-100";
   const amountTile =
     amountLinkTo && !linkTo ? (
       <Link
         to={`${amountLinkTo}#cat-${category}`}
-        className="stat-num block rounded text-right text-xs text-ink-700 underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-paper-100 dark:hover:text-paper-50"
+        className={`stat-num block rounded text-right text-xs ${amountColorClass} underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:hover:text-paper-50`}
         aria-label={t("budget.open_table_aria", { category: categoryLabel })}
       >
         {amountInner}
       </Link>
     ) : (
-      <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
+      <span className={`stat-num block text-right text-xs ${amountColorClass}`}>
         {amountInner}
       </span>
     );
@@ -900,7 +904,7 @@ function CategoryRowInner({
       onMouseUp={(e) => commit(Number(e.currentTarget.value))}
       onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
       onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-      className={`range-fill range-fill-thin block ${frozen ? "cursor-not-allowed opacity-60" : ""}`}
+      className={`range-fill range-fill-thin block ${frozen ? "range-fill-frozen" : ""}`}
       style={trackStyle}
       aria-label={t("budget.edit_planned_aria", { category: categoryLabel })}
     />
