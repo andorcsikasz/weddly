@@ -846,10 +846,14 @@ function PartnerSlotPlaceholder({
   );
 }
 
-/** Linked-household card. Vertical blush rail visually ties members together;
- *  every member row is independently draggable and carries the whole
- *  `groupIds` payload so a single drag spreads the party. Unlink2 breaks the
- *  group apart for this session. Mirrors SeatingPage's HouseholdGroup. */
+/** Linked-household card. Whole card is draggable — the user can grab the
+ *  rail, the gaps between rows, or any of the member rows themselves, and
+ *  the drag always carries the full `groupIds` payload. Per the UX review
+ *  the old "header row" (chain icon + count + unlink button) used to eat
+ *  ~28px of vertical space above the members and read as a separate clickable
+ *  surface, making it unclear that the household could be grabbed as one
+ *  unit. Both controls now hang off the top edge as compact corner badges
+ *  so the member rows start right at the top of the card. */
 function HouseholdGroup({
   householdId,
   guests,
@@ -872,32 +876,54 @@ function HouseholdGroup({
   ariaLabel: string;
 }) {
   const groupIds = guests.map((g) => g.id);
+  const firstGuest = guests[0];
+  if (!firstGuest) return null;
+  // Drag-from-anywhere: nested draggable members win when grabbed directly,
+  // but starting a drag on the rail / padding / gap-between-rows lands on
+  // the card and we still emit the same group payload.
+  const onCardDragStart = (e: DragEvent<HTMLDivElement>) => {
+    onDragStart(e, firstGuest.id, groupIds);
+  };
   return (
     <div
       role="group"
       aria-label={ariaLabel}
-      className="relative rounded-lg border border-paper-300 bg-paper-50 pl-3 pr-2 py-2 transition-colors hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+      draggable
+      onDragStart={onCardDragStart}
+      className="group relative cursor-grab rounded-lg border border-paper-300 bg-paper-50 py-1 pl-3 pr-1 transition-colors hover:border-ink-400 active:cursor-grabbing dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
     >
+      {/* Left rail — visually ties the members together. */}
       <span
         aria-hidden
-        className="absolute left-1.5 top-2 bottom-2 w-0.5 rounded-full bg-blush-400 dark:bg-blush-400/70"
+        className="absolute bottom-1 left-1.5 top-1 w-0.5 rounded-full bg-blush-400 dark:bg-blush-400/70"
       />
-      <div className="flex items-start justify-between gap-2">
-        <span className="-ml-1 inline-flex items-center gap-1 rounded px-1 text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
-          <Link2 size={12} aria-hidden className="text-blush-600 dark:text-blush-300" />
-          {guests.length}
-        </span>
-        <button
-          type="button"
-          onClick={() => onUnlink(householdId)}
-          aria-label={unlinkLabel}
-          title={unlinkLabel}
-          className="inline-flex h-6 w-6 items-center justify-center rounded text-ink-400 hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-        >
-          <Unlink2 size={12} aria-hidden />
-        </button>
-      </div>
-      <ul className="mt-1 space-y-1">
+      {/* Compact count chip sitting on the top-left edge of the card.
+       *  Identifies the household at a glance without taking a row. */}
+      <span
+        title={ariaLabel}
+        className="absolute -left-1 -top-1.5 inline-flex h-4 items-center gap-0.5 rounded-full bg-blush-400 px-1.5 text-[9px] font-bold leading-none text-white shadow-sm dark:bg-blush-500"
+      >
+        <Link2 size={8} strokeWidth={3} aria-hidden />
+        {guests.length}
+      </span>
+      {/* Unlink — small floating action top-right. Always semi-visible so
+       *  touch users can find it; full opacity on hover/focus. The
+       *  onDragStart preventDefault keeps a drag started on the button from
+       *  hijacking the card's group drag. */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onUnlink(householdId);
+        }}
+        onDragStart={(e) => e.preventDefault()}
+        aria-label={unlinkLabel}
+        title={unlinkLabel}
+        className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded text-ink-400 opacity-60 transition-opacity hover:bg-paper-200 hover:text-ink-700 hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+      >
+        <Unlink2 size={11} aria-hidden />
+      </button>
+      <ul className="space-y-1">
         {guests.map((g) => (
           <li key={g.id}>
             <DraggableGuestRow
