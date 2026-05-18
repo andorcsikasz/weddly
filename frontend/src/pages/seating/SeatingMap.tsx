@@ -9,7 +9,7 @@
 import type { SeatAssignment, SeatingTable } from "@shared/types";
 import { chairOffsets, maxSeatsForTable } from "@shared/seating";
 import { Baby, Maximize2, Minus, Plus, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "../../lib/i18n";
 
@@ -21,7 +21,7 @@ const DEFAULT_ROOM_W_MM = 12_000;
 const DEFAULT_ROOM_H_MM = 9_000;
 // Sensible bounds for the editable input: 3m (intimate) to 50m (ballroom).
 const MIN_ROOM_MM = 3_000;
-const MAX_ROOM_MM = 50_000;
+const MAX_ROOM_MM = 100_000;
 const GRID_STEP_MM = 500; // 50-cm grid lines — fine enough to plan furniture against
 
 const MIN_DIM_MM = 100;
@@ -150,6 +150,40 @@ export function SeatingMap({
   // proportioned regardless of container size, so all drag/resize logic
   // continues to work without changes.
   const [expanded, setExpanded] = useState(false);
+
+  // Wrapper sizing. We measure the scroll container so the SVG can be drawn
+  // at a "useful" zoom level instead of the default fit-to-meet behaviour,
+  // which makes elongated rooms (e.g. 10×50 m) render as a tiny strip with
+  // huge empty bands on the sides. Re-attach when `expanded` toggles since
+  // React unmounts the cardContent and remounts it inside the portal.
+  const scrollWrapperRef = useRef<HTMLDivElement | null>(null);
+  const [wrapperPx, setWrapperPx] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    const el = scrollWrapperRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      if (r) setWrapperPx({ w: r.width, h: r.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [expanded]);
+
+  // Pick a scale + SVG pixel size:
+  //   - When room aspect is close to wrapper aspect (within 2×), use the
+  //     "meet" scale so the whole room fits with no scroll.
+  //   - Otherwise, zoom to fill the shorter axis (longer room dim overflows
+  //     and the outer wrapper scrolls). This is what the user expects when
+  //     they enter an awkward shape like 10×50 m.
+  const svgSize = useMemo<{ width: number | string; height: number | string }>(() => {
+    if (!wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
+      return { width: "100%", height: "100%" };
+    }
+    const meetScale = Math.min(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
+    const maxScale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
+    const scale = maxScale / meetScale > 2 ? maxScale : meetScale;
+    return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
+  }, [wrapperPx, ROOM_W_MM, ROOM_H_MM]);
 
   // ESC closes the expanded overlay. Lock body scroll while open so the
   // backdrop doesn't reveal the page underneath when the user scrolls.
@@ -435,29 +469,28 @@ export function SeatingMap({
           </button>
         </div>
       </header>
-      {/* Expanded mode auto-fits the whole floor plan into the 90vh × 90vw
-            overlay via the SVG's viewBox — the full room is always visible,
-            no scrolling. Inline mode keeps the fixed 60vh frame.
-            `min-h-0` is the critical bit in expanded: a flex child has
-            `min-height: auto` by default, so the SVG's intrinsic content
-            size lets the wrapper grow past its allotted height and clip
-            the bottom of the room. Forcing min-h-0 lets the flex math
-            actually constrain the wrapper to whatever's left in the
-            90vh card. The SVG inside fills the wrapper via absolute
-            positioning, which sidesteps the same min-height: auto quirk
-            on the SVG itself. */}
+      {/* Wrapper is a scroll container sized to a fixed slot (60 vh inline,
+          90 vh × 90 vw in expanded). The SVG inside is sized in pixels via
+          svgSize so an elongated room (10×50 m) zooms in and scrolls
+          instead of collapsing into a thin strip via xMidYMid-meet.
+          flex centring keeps small rooms (those that don't need to scroll)
+          visually balanced in the wrapper. */}
       <div
-        className={`relative bg-paper-50 dark:bg-umber-900 ${expanded ? "min-h-0 flex-1 p-4" : ""}`}
+        ref={scrollWrapperRef}
+        className={`relative flex items-center justify-center overflow-auto bg-paper-50 dark:bg-umber-900 ${
+          expanded ? "min-h-0 flex-1 p-4" : "h-[60vh] max-h-[640px] w-full"
+        }`}
       >
         <svg
           ref={svgRef}
           viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
           preserveAspectRatio="xMidYMid meet"
-          className={`block select-none touch-none focus:outline-none ${
-            expanded
-              ? "absolute inset-4 h-[calc(100%-2rem)] w-[calc(100%-2rem)]"
-              : "h-[60vh] max-h-[640px] w-full"
-          }`}
+          style={{
+            width: svgSize.width,
+            height: svgSize.height,
+            flexShrink: 0,
+          }}
+          className="block select-none touch-none focus:outline-none"
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           onPointerLeave={endDrag}
