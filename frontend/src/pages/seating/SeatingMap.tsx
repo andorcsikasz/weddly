@@ -119,6 +119,32 @@ export function SeatingMap({
     new Map(),
   );
   const [drag, setDrag] = useState<DragState | null>(null);
+
+  // Keyboard nudges fire onMove on every keydown which, when the user holds an
+  // arrow key, sends a PATCH per step. Each PATCH uses the *same* stale
+  // `If-Match` ETag (the next tick's refresh hasn't landed yet) so all but the
+  // first 409 with "another user modified this table". Debounce: update the
+  // local visual state instantly but only flush the LAST target to the server
+  // after a short idle pause.
+  const pendingKeyMoveRef = useRef<{ id: number; x: number; y: number } | null>(null);
+  const keyMoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushKeyMove = useCallback(() => {
+    const pending = pendingKeyMoveRef.current;
+    if (!pending) return;
+    pendingKeyMoveRef.current = null;
+    if (keyMoveTimerRef.current) {
+      clearTimeout(keyMoveTimerRef.current);
+      keyMoveTimerRef.current = null;
+    }
+    onMove(pending.id, pending.x, pending.y);
+  }, [onMove]);
+  // Flush on unmount so a pending move isn't lost if the user navigates away.
+  useEffect(
+    () => () => {
+      flushKeyMove();
+    },
+    [flushKeyMove],
+  );
   // When true, the whole card mounts into a fullscreen portal at 90vw × 90vh.
   // Same SVG inside — viewBox-based scaling means tables stay correctly
   // proportioned regardless of container size, so all drag/resize logic
@@ -363,9 +389,24 @@ export function SeatingMap({
         next.set(table.id, { x: newX, y: newY });
         return next;
       });
-      onMove(table.id, newX, newY);
+      // Coalesce a held arrow key into a single PATCH on key-up (or after a
+      // short idle pause). Stores the latest target so the server eventually
+      // sees the final position, not every step along the way.
+      pendingKeyMoveRef.current = { id: table.id, x: newX, y: newY };
+      if (keyMoveTimerRef.current) clearTimeout(keyMoveTimerRef.current);
+      keyMoveTimerRef.current = setTimeout(flushKeyMove, 250);
     },
-    [selectedId, tables, localPos, onMove, onSeatsChange, onDeleteTable, onAddTable],
+    [
+      selectedId,
+      tables,
+      localPos,
+      flushKeyMove,
+      onSeatsChange,
+      onDeleteTable,
+      onAddTable,
+      ROOM_W_MM,
+      ROOM_H_MM,
+    ],
   );
 
   const cardContent = (
