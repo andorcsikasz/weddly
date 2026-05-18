@@ -86,7 +86,20 @@ export function getCategoryById(id: number): SupplierCategoryRow | null {
   );
 }
 
+// Taxonomy is a small (~6 groups, ~14 categories) static-ish dataset read on
+// every supplier-dropdown render and on app boot. The 500-user load test
+// pushed `GET /api/supplier-categories` to p95 ≈ 2.1s under contention even
+// though the on-disk data hadn't changed for the duration of the run.
+// Memoise the rebuilt response in-process and invalidate on any admin
+// mutation via invalidateTaxonomyCache(). Pure additive — no API change.
+let cachedTaxonomy: SupplierTaxonomy | null = null;
+
+export function invalidateTaxonomyCache(): void {
+  cachedTaxonomy = null;
+}
+
 export function buildTaxonomy(): SupplierTaxonomy {
+  if (cachedTaxonomy) return cachedTaxonomy;
   const groups = listGroups();
   const categories = listCategories();
   const byGroup = new Map<number, AdminSupplierCategory[]>();
@@ -95,12 +108,13 @@ export function buildTaxonomy(): SupplierTaxonomy {
     arr.push(toCategory(c));
     byGroup.set(c.group_id, arr);
   }
-  return {
+  cachedTaxonomy = {
     groups: groups.map((g) => ({
       ...toGroup(g),
       categories: byGroup.get(g.id) ?? [],
     })),
   };
+  return cachedTaxonomy;
 }
 
 /** Bumps the next sort_order so newly created rows land at the end. */
@@ -139,6 +153,7 @@ export function createGroup(input: CreateGroupInput): SupplierGroupRow {
   const id = Number(r.lastInsertRowid);
   const row = getGroupById(id);
   if (!row) throw new Error("Failed to insert supplier_group");
+  invalidateTaxonomyCache();
   return row;
 }
 
@@ -165,6 +180,7 @@ export function updateGroup(id: number, patch: UpdateGroupInput): SupplierGroupR
     ts,
     id,
   );
+  invalidateTaxonomyCache();
   return getGroupById(id);
 }
 
@@ -178,6 +194,7 @@ export function categoriesInGroup(groupId: number): number {
 
 export function deleteGroup(id: number): void {
   db.prepare("DELETE FROM supplier_groups WHERE id = ?").run(id);
+  invalidateTaxonomyCache();
 }
 
 interface CreateCategoryInput {
@@ -211,6 +228,7 @@ export function createCategory(input: CreateCategoryInput): SupplierCategoryRow 
   const id = Number(r.lastInsertRowid);
   const row = getCategoryById(id);
   if (!row) throw new Error("Failed to insert supplier_category");
+  invalidateTaxonomyCache();
   return row;
 }
 
@@ -242,6 +260,7 @@ export function updateCategory(id: number, patch: UpdateCategoryInput): Supplier
     ts,
     id,
   );
+  invalidateTaxonomyCache();
   return getCategoryById(id);
 }
 
@@ -259,6 +278,7 @@ export function suppliersInCategory(slug: string): number {
 
 export function deleteCategory(id: number): void {
   db.prepare("DELETE FROM supplier_categories WHERE id = ?").run(id);
+  invalidateTaxonomyCache();
 }
 
 // ─── Seed ────────────────────────────────────────────────────────────────────
@@ -430,4 +450,5 @@ export function seedSupplierTaxonomy(): void {
       catOrder += 10;
     }
   }
+  invalidateTaxonomyCache();
 }
