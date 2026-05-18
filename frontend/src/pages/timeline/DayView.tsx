@@ -83,17 +83,25 @@ export default function DayView({
     return () => clearInterval(id);
   }, []);
 
-  // Scroll the hour rail so the visible window opens at 06:00 on mount.
-  // After that the user owns the scroll position — we don't re-snap on
-  // every render, only on currentDate change (so prev/next day still
-  // lands at 06:00 instead of leaving last-day's offset behind).
+  // Scroll the hour rail on mount + every focal-day change. When the
+  // visible day IS today, place the "now" line at 1/3 of the viewport
+  // height so the user sees ~1 part of already-elapsed hours above and
+  // ~2 parts of upcoming hours below. Other days default to 06:00 at the
+  // top of the visible window. After the auto-snap, the user owns scroll.
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-snap on day change
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTop = DEFAULT_VISIBLE_START_HOUR * HOUR_PX;
-  }, [currentDate]);
+    const focalIsToday = startOfDay(currentDate).getTime() === startOfDay(today).getTime();
+    if (focalIsToday) {
+      const n = new Date();
+      const nowPx = (n.getHours() + n.getMinutes() / 60) * HOUR_PX;
+      el.scrollTop = Math.max(0, nowPx - el.clientHeight / 3);
+    } else {
+      el.scrollTop = DEFAULT_VISIBLE_START_HOUR * HOUR_PX;
+    }
+  }, [currentDate, today]);
 
   const intl = locale === "hu" ? "hu-HU" : "en-US";
   const dayStart = startOfDay(currentDate);

@@ -167,16 +167,27 @@ export default function WeekView({
     return () => window.clearInterval(id);
   }, []);
 
-  // Scroll the hour rail so 06:00 sits at the top of the visible area on
-  // mount. Re-snap when the focal week changes (prev/next nav) so each new
-  // week opens at the same window instead of inheriting the prior offset.
+  // Scroll the hour rail on mount + every focal-week change. When the
+  // visible week CONTAINS today, place the "now" line at 1/3 of the
+  // viewport height (1 part elapsed above, 2 parts upcoming below) so
+  // the present moment is always on screen without the user scrolling.
+  // Weeks without today default to 06:00 at the top.
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-snap on week change
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTop = DEFAULT_VISIBLE_START_HOUR * HOUR_PX;
-  }, [currentDate]);
+    const weekMonday = startOfWeekMon(currentDate);
+    const todayOffset = diffDays(weekMonday, startOfDay(today));
+    const weekContainsToday = todayOffset >= 0 && todayOffset <= 6;
+    if (weekContainsToday) {
+      const n = new Date();
+      const nowPx = (n.getHours() + n.getMinutes() / 60) * HOUR_PX;
+      el.scrollTop = Math.max(0, nowPx - el.clientHeight / 3);
+    } else {
+      el.scrollTop = DEFAULT_VISIBLE_START_HOUR * HOUR_PX;
+    }
+  }, [currentDate, today]);
 
   const monday = useMemo(() => startOfWeekMon(currentDate), [currentDate]);
   const days = useMemo(() => {
