@@ -157,14 +157,20 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
 
 function injectIntoRoot(template: string, body: string): string {
   // The vite-built index.html still has `<div id="root"></div>`. We replace
-  // it with the same div containing the static body. React's createRoot()
-  // wipes children on first render, so the user never sees this content
-  // after hydration — it's exclusively for the pre-JS paint and crawlers.
+  // it with the same div wrapping the static body inside an off-screen
+  // container. React's createRoot() wipes children on first render, but on
+  // slow networks the user briefly sees the pre-hydration paint — wrapping
+  // it in an off-screen, aria-hidden div keeps the content crawlable while
+  // hiding the unstyled flash from human visitors. Off-screen (not
+  // display:none) so Google still indexes the body.
   const ROOT_EMPTY = `<div id="root"></div>`;
   if (!template.includes(ROOT_EMPTY)) {
     throw new Error('prerender: <div id="root"></div> placeholder not found in dist/index.html');
   }
-  return template.replace(ROOT_EMPTY, `<div id="root">\n      ${body}\n    </div>`);
+  const hiddenStyle =
+    "position:absolute;left:-10000px;top:0;width:1px;height:1px;overflow:hidden";
+  const wrapped = `<div aria-hidden="true" style="${hiddenStyle}">\n      ${body}\n    </div>`;
+  return template.replace(ROOT_EMPTY, `<div id="root">\n      ${wrapped}\n    </div>`);
 }
 
 function main(): void {
