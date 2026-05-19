@@ -1286,6 +1286,11 @@ export interface LocaleMessages {
     household_remove: string;
     household_expand: string;
     household_collapse: string;
+    /** Bed-icon button toggle in each household header — flips the per-household
+     *  `rsvp_offers_accommodation` flag so the public RSVP form for that family
+     *  surfaces (or hides) the "needs accommodation?" checkbox. */
+    household_accommodation_on: string;
+    household_accommodation_off: string;
     household_section_title: string;
     household_section_help: string;
     couple_slug_title: string;
@@ -1416,10 +1421,19 @@ export interface LocaleMessages {
     meals_help: string;
     meals_total_yes: string;
     meals_section_meals: string;
+    meals_section_meals_help: string;
     meals_section_dietary: string;
+    meals_section_dietary_help: string;
     meals_pending_label: string;
     meals_pending_help_one: string;
     meals_pending_help_other: string;
+    /** "X gyermekkel" — small chip above the stacked bar so the caterer sees
+     *  babies separately from the chart (babies don't eat from the menu). */
+    meals_baby_count_one: string;
+    meals_baby_count_other: string;
+    /** Pending count rendered as an amber pill in the chip row above the bar. */
+    meals_pending_chip_one: string;
+    meals_pending_chip_other: string;
     meals_no_yes_yet: string;
     meals_copy_text: string;
     meals_copy_success: string;
@@ -3349,6 +3363,7 @@ export interface LocaleMessages {
    *  under `landing.*`) because they render inside the authenticated shell. */
   demo: {
     banner_title: string;
+    banner_exit: string;
     banner_cta: string;
     banner_dismiss_aria: string;
     popup_title: string;

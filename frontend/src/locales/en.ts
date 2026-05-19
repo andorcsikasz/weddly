@@ -1294,6 +1294,8 @@ const en: LocaleMessages = {
     household_remove: "Delete household",
     household_expand: "Expand household",
     household_collapse: "Collapse household",
+    household_accommodation_on: "Accommodation question on — click to turn off",
+    household_accommodation_off: "Accommodation question off — click to turn on",
     household_section_title: "Households",
     household_section_help:
       "Group people who RSVP together (a couple, a family). They'll see each other on the check-in page.",
@@ -3054,6 +3056,7 @@ const en: LocaleMessages = {
     // ── Persistent banner that runs across the top of /app while the
     //    active workspace is a demo couple. ───────────────────────────
     banner_title: "Shrek & Fiona demo",
+    banner_exit: "Back to home",
     banner_cta: "Start your own",
     banner_dismiss_aria: "Dismiss",
     // ── Conversion popup ─ minimalist: title + one-line body + one

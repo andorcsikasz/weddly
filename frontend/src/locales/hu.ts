@@ -1271,7 +1271,13 @@ const hu: LocaleMessages = {
     meals_help: "Csak az „igen” választ adott vendégek számolnak.",
     meals_total_yes: "{count} igen-válasz",
     meals_section_meals: "Menüválasztás",
+    meals_section_meals_help: "Egy vendég egy menüt választ",
     meals_section_dietary: "Allergének és érzékenységek",
+    meals_section_dietary_help: "Több is jelölhető egy vendégnél",
+    meals_baby_count_one: "{count} baba",
+    meals_baby_count_other: "{count} baba",
+    meals_pending_chip_one: "{count} még nem választott",
+    meals_pending_chip_other: "{count} még nem választott",
     meals_pending_label: "Még nem választott",
     meals_pending_help_one: "1 vendég még nem választott menüt.",
     meals_pending_help_other: "{count} vendég még nem választott menüt.",
@@ -1300,6 +1306,8 @@ const hu: LocaleMessages = {
     household_remove: "Háztartás törlése",
     household_expand: "Háztartás kibontása",
     household_collapse: "Háztartás összecsukása",
+    household_accommodation_on: "Szállás-kérés kérdés bekapcsolva — kattints a kikapcsoláshoz",
+    household_accommodation_off: "Szállás-kérés kérdés kikapcsolva — kattints a bekapcsoláshoz",
     household_section_title: "Háztartások",
     household_section_help:
       "Csoportosítsd egy háztartásba azokat, akik együtt válaszolnak (pár, család). A check-in oldalon egymást is látják.",
@@ -3076,6 +3084,7 @@ const hu: LocaleMessages = {
     // ── Persistent banner that runs across the top of /app while the
     //    active workspace is a demo couple. ───────────────────────────
     banner_title: "Shrek & Fiona demo",
+    banner_exit: "Vissza a kezdőlapra",
     banner_cta: "Kezdd a sajátotokat",
     banner_dismiss_aria: "Bezárás",
     // ── Conversion popup ─ minimalist: title + one-line body + one

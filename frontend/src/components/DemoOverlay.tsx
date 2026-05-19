@@ -12,7 +12,7 @@
 //      Dismissal stamps a localStorage cooldown so it doesn't pester
 //      every navigation.
 
-import { Sparkles, X } from "lucide-react";
+import { ArrowLeft, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Couple } from "@shared/types";
@@ -111,20 +111,23 @@ export function DemoOverlay() {
     setNudgeOpen(false);
   };
 
-  const convert = async () => {
+  const exitDemo = async (destination: "/" | "/signup") => {
     stampNudgeLastSeen();
     setNudgeOpen(false);
-    // Sign the demo session out before we hand the visitor to /signup so the
-    // registration form doesn't think they're already authenticated and the
-    // RedirectIfAuthed gate bounces them back into the demo workspace.
+    // Sign the demo session out before we hand the visitor anywhere — both
+    // /signup's RedirectIfAuthed and /'s public shell would otherwise still
+    // see the active demo token and bounce them back into /app.
     clearDemoSessionFlag();
     try {
       await logout();
     } catch {
       // logout already swallows errors; fall through to navigate
     }
-    navigate("/signup");
+    navigate(destination);
   };
+
+  const convert = () => exitDemo("/signup");
+  const goHome = () => exitDemo("/");
 
   if (!isDemo) return null;
 
@@ -147,6 +150,14 @@ export function DemoOverlay() {
             <div className="min-w-0 flex-1 truncate font-semibold">
               {t("demo.banner_title")}
             </div>
+            <button
+              type="button"
+              onClick={goHome}
+              className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-700 underline decoration-sage-400 decoration-1 underline-offset-4 transition-colors hover:text-ink-900 hover:decoration-sage-600 dark:text-paper-200 dark:decoration-sage-500 dark:hover:text-paper-50"
+            >
+              <ArrowLeft size={12} aria-hidden="true" />
+              {t("demo.banner_exit")}
+            </button>
             <button
               type="button"
               onClick={() => setNudgeOpen(true)}
