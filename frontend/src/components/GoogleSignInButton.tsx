@@ -6,7 +6,7 @@
 // without a Cloud Console project) the component renders nothing so the
 // password form stays usable.
 
-import { PRIVACY_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../lib/api";
@@ -162,6 +162,7 @@ export function GoogleSignInButton({
               const session = await authApi.google({
                 credential: resp.credential,
                 privacy_version: PRIVACY_VERSION,
+                terms_version: TERMS_VERSION,
               });
               setSession(session.token, session.user);
               navigate(redirectTo, { replace: true });

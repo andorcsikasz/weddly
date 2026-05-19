@@ -1,7 +1,7 @@
 import "./setup";
 
 import { describe, expect, test } from "bun:test";
-import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import { db, now } from "../src/db";
 import { runEmailSweep } from "../src/domain/emails/worker";
 import { runPurgeSweep } from "../src/domain/purge";
@@ -55,8 +55,12 @@ function withConsentVersions(method: string, path: string, body: unknown): unkno
     return body;
   }
   const obj = body as Record<string, unknown>;
-  if (path === "/api/auth/register") {
-    return "privacy_version" in obj ? obj : { ...obj, privacy_version: PRIVACY_VERSION };
+  if (path === "/api/auth/register" || path === "/api/auth/google") {
+    return {
+      ...("privacy_version" in obj ? {} : { privacy_version: PRIVACY_VERSION }),
+      ...("terms_version" in obj ? {} : { terms_version: TERMS_VERSION }),
+      ...obj,
+    };
   }
   if (path === "/api/vendors/waitlist") {
     return {

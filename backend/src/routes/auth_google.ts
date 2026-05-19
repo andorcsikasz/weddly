@@ -14,7 +14,7 @@
 // hash can't be cracked back into a usable password.
 
 import { randomBytes } from "node:crypto";
-import { PRIVACY_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { hashPassword } from "../auth/password";
 import { issueSession } from "../auth/session";
@@ -32,6 +32,7 @@ interface GoogleAuthBody {
   /** Required for new registrations — matches the password-register contract.
    *  Ignored when the credential maps to an existing account. */
   privacy_version?: unknown;
+  terms_version?: unknown;
 }
 
 async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
@@ -100,10 +101,15 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
     return signInExisting(ctx, fresh, "auth.login_google");
   }
 
-  // 3) Brand-new user. GDPR Art. 7(1) — the same privacy-version check the
-  //    password register flow uses applies here too.
+  // 3) Brand-new user. GDPR Art. 7(1) — the same version checks the
+  //    password register flow uses apply here too. Clicking the Google
+  //    button is the affirmative act that accepts both documents per
+  //    the "By continuing…" microcopy on the signup card.
   if (body.privacy_version !== PRIVACY_VERSION) {
     throw new HttpError(400, "Privacy policy version is out of date — please refresh the page");
+  }
+  if (body.terms_version !== TERMS_VERSION) {
+    throw new HttpError(400, "Terms version is out of date — please refresh the page");
   }
 
   const fullName = identity.name.length > 0 ? identity.name.slice(0, 200) : identity.email;
@@ -122,14 +128,25 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
     .run(identity.email, passwordHash, fullName, identity.sub, ts, ts);
   const userId = Number(result.lastInsertRowid);
 
+  const ip = ctx.clientIp;
+  const userAgent = ctx.req.headers.get("user-agent");
   recordConsent({
     subjectUserId: userId,
     subjectKind: "user",
     subjectRef: null,
     document: "privacy",
     version: PRIVACY_VERSION,
-    ip: ctx.clientIp,
-    userAgent: ctx.req.headers.get("user-agent"),
+    ip,
+    userAgent,
+  });
+  recordConsent({
+    subjectUserId: userId,
+    subjectKind: "user",
+    subjectRef: null,
+    document: "terms",
+    version: TERMS_VERSION,
+    ip,
+    userAgent,
   });
   addAuditLog({
     actor_user_id: userId,

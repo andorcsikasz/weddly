@@ -2740,13 +2740,11 @@ const hu: LocaleMessages = {
     go_home: "Vissza a kezdőlapra",
   },
   register: {
-    trust_microcopy_prefix: "A nyílt béta alatt ingyenes — bankkártya nem szükséges. Olvasd el az ",
-    trust_microcopy_privacy_link: "adatvédelmi szabályzatot",
-    trust_microcopy_suffix: ".",
-    privacy_consent_prefix: "Elolvastam és elfogadom az ",
-    privacy_consent_link: "adatkezelési tájékoztatót",
-    privacy_consent_suffix: ", és hozzájárulok az adataim kezeléséhez.",
-    privacy_consent_error: "A regisztrációhoz el kell fogadnod az adatkezelési tájékoztatót.",
+    continuing_prefix: "A folytatással elfogadod az ",
+    continuing_privacy_link: "adatkezelési tájékoztatót",
+    continuing_and: " és a ",
+    continuing_terms_link: "felhasználási feltételeket",
+    continuing_suffix: ".",
   },
   legal: {
     draft_banner_label: "Nyílt béta — még nincs jogi átvilágítás",

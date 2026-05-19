@@ -3027,20 +3027,16 @@ export interface LocaleMessages {
     try_again: string;
     go_home: string;
   };
-  /** Trust microcopy under the RegisterPage submit button. Split into
-   *  three pieces so the privacy-policy link can be a real <Link>
-   *  without resorting to dangerouslySetInnerHTML. */
+  /** Clickwrap microcopy under the RegisterPage submit button — the
+   *  affirmative act of clicking Register accepts both documents.
+   *  Five pieces so the two policy links stay real <Link>s without
+   *  dangerouslySetInnerHTML. */
   register: {
-    trust_microcopy_prefix: string;
-    trust_microcopy_privacy_link: string;
-    trust_microcopy_suffix: string;
-    /** GDPR-style consent checkbox shown above the submit button — required
-     *  before the form will POST. Three pieces so the policy link stays a
-     *  real react-router <Link>. */
-    privacy_consent_prefix: string;
-    privacy_consent_link: string;
-    privacy_consent_suffix: string;
-    privacy_consent_error: string;
+    continuing_prefix: string;
+    continuing_privacy_link: string;
+    continuing_and: string;
+    continuing_terms_link: string;
+    continuing_suffix: string;
   };
   /** /privacy — MVP-quality privacy policy. Bilingual (HU primary, EN
    *  block beneath). Content stays plain JSX in PrivacyPage.tsx; only

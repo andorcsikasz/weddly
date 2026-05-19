@@ -1,6 +1,6 @@
 // Register / login / logout / me. Issues opaque session tokens.
 
-import { PRIVACY_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { hashPassword, verifyPassword } from "../auth/password";
 import { extractToken, issueSession, revokeSession } from "../auth/session";
@@ -18,10 +18,12 @@ interface RegisterBody {
   email?: unknown;
   password?: unknown;
   full_name?: unknown;
-  /** Required: the privacy-policy version the user clicked through. Must
-   *  match the server's current PRIVACY_VERSION — refusing stale clients
-   *  keeps the ledger honest. */
+  /** Required version stamps for the two documents the user accepts by
+   *  clicking Register (clickwrap-style: the "By continuing…" microcopy
+   *  beneath the button names both Privacy and Terms). Refusing stale
+   *  clients keeps the ledger honest about what they actually saw. */
   privacy_version?: unknown;
+  terms_version?: unknown;
 }
 
 interface LoginBody {
@@ -62,11 +64,14 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   const password = parsePassword(body.password);
   const fullName = parseFullName(body.full_name);
   // GDPR Art. 7(1) — refuse the request if the client didn't pass the
-  // current policy version. The frontend bakes the constant into the
+  // current policy versions. The frontend bakes both constants into the
   // payload; an old cached SPA hitting a server with a bumped policy
   // forces a hard refresh rather than silently logging a stale consent.
   if (body.privacy_version !== PRIVACY_VERSION) {
     throw new HttpError(400, "Privacy policy version is out of date — please refresh the page");
+  }
+  if (body.terms_version !== TERMS_VERSION) {
+    throw new HttpError(400, "Terms version is out of date — please refresh the page");
   }
 
   if (getUserByEmail(email)) throw new HttpError(409, "Email already registered");
@@ -81,14 +86,25 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     .run(email, passwordHash, fullName, ts, ts);
   const userId = Number(result.lastInsertRowid);
 
+  const ip = ctx.clientIp;
+  const userAgent = ctx.req.headers.get("user-agent");
   recordConsent({
     subjectUserId: userId,
     subjectKind: "user",
     subjectRef: null,
     document: "privacy",
     version: PRIVACY_VERSION,
-    ip: ctx.clientIp,
-    userAgent: ctx.req.headers.get("user-agent"),
+    ip,
+    userAgent,
+  });
+  recordConsent({
+    subjectUserId: userId,
+    subjectKind: "user",
+    subjectRef: null,
+    document: "terms",
+    version: TERMS_VERSION,
+    ip,
+    userAgent,
   });
 
   addAuditLog({

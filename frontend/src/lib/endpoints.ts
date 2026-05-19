@@ -105,12 +105,13 @@ export const authApi = {
     password: string;
     full_name: string;
     privacy_version: string;
+    terms_version: string;
   }) => apiFetch<AuthSession>("POST", "/api/auth/register", body),
   /** Sign in OR register with a Google Identity Services credential JWT.
-   *  `privacy_version` is required so the GDPR consent ledger lands when this
-   *  call creates a brand-new account; the server ignores it when the
+   *  Both version stamps are required so the GDPR consent ledger lands when
+   *  this call creates a brand-new account; the server ignores them when the
    *  credential maps to an existing user. */
-  google: (body: { credential: string; privacy_version: string }) =>
+  google: (body: { credential: string; privacy_version: string; terms_version: string }) =>
     apiFetch<AuthSession>("POST", "/api/auth/google", body),
   login: (body: { email: string; password: string }) =>
     apiFetch<AuthSession>("POST", "/api/auth/login", body),

@@ -2716,13 +2716,11 @@ const en: LocaleMessages = {
     go_home: "Go to home",
   },
   register: {
-    trust_microcopy_prefix: "Free during the open beta — no card required. Read our ",
-    trust_microcopy_privacy_link: "privacy policy",
-    trust_microcopy_suffix: ".",
-    privacy_consent_prefix: "I have read and accept the ",
-    privacy_consent_link: "privacy policy",
-    privacy_consent_suffix: ", and I consent to the processing of my data.",
-    privacy_consent_error: "Please accept the privacy policy to create your account.",
+    continuing_prefix: "By continuing, you agree to our ",
+    continuing_privacy_link: "Privacy Policy",
+    continuing_and: " and ",
+    continuing_terms_link: "Terms of use",
+    continuing_suffix: ".",
   },
   legal: {
     draft_banner_label: "Open beta — pending legal review",

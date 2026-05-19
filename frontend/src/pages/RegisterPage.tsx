@@ -1,4 +1,4 @@
-import { PRIVACY_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { Mail } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
@@ -23,7 +23,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [fullName, setFullName] = useState("");
-  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Holds the freshly-minted session until the user clicks past the
@@ -33,7 +32,6 @@ export default function RegisterPage() {
   const [resending, setResending] = useState(false);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const errorId = useId();
-  const consentId = useId();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -49,17 +47,18 @@ export default function RegisterPage() {
       setError(t("auth.password_mismatch"));
       return;
     }
-    if (!privacyConsent) {
-      setError(t("register.privacy_consent_error"));
-      return;
-    }
     setSubmitting(true);
     try {
+      // Submitting the form is the affirmative act that records consent —
+      // the "By continuing…" microcopy below the button names both
+      // documents. Sending both version stamps means the audit ledger
+      // gets a row per accepted document.
       const session = await authApi.register({
         email: email.trim(),
         password,
         full_name: fullName.trim(),
         privacy_version: PRIVACY_VERSION,
+        terms_version: TERMS_VERSION,
       });
       // Hold the session in transient state ONLY — we do NOT persist the
       // token to localStorage yet. If we did, hitting BACK from the
@@ -213,34 +212,6 @@ export default function RegisterPage() {
                   : undefined
               }
             />
-            {/* GDPR consent — required. Block submit until checked. The
-                policy itself is linked inline so the user can read it
-                without leaving the form. */}
-            <label
-              htmlFor={consentId}
-              className="flex cursor-pointer items-start gap-2 rounded-md border border-paper-200 bg-paper-50 p-3 text-sm text-ink-700 transition-colors hover:border-blush-300 hover:bg-blush-50 dark:border-umber-700 dark:bg-umber-800/40 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/10"
-            >
-              <input
-                id={consentId}
-                type="checkbox"
-                checked={privacyConsent}
-                onChange={(e) => setPrivacyConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-500 dark:border-umber-600"
-                aria-required="true"
-              />
-              <span className="flex-1 leading-snug">
-                {t("register.privacy_consent_prefix")}
-                <Link
-                  to="/privacy"
-                  className="underline hover:text-ink-900"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  {t("register.privacy_consent_link")}
-                </Link>
-                {t("register.privacy_consent_suffix")}
-              </span>
-            </label>
             {error && (
               <p id={errorId} className="field-error" role="alert">
                 {error}
@@ -252,19 +223,22 @@ export default function RegisterPage() {
               fullWidth
               loading={submitting}
               loadingLabel={t("common.loading")}
-              disabled={!privacyConsent}
             >
               {t("auth.submit_register")}
             </Button>
-            {/* Trust microcopy directly under the submit button — reassures
-                "no card needed" and threads the privacy policy through a
-                react-router <Link> so the SPA doesn't reload. */}
+            {/* Clickwrap-style consent: submitting the form is the
+                affirmative act that accepts both policies. Both links
+                stay react-router <Link>s so the SPA doesn't reload. */}
             <p className="field-help mt-3 text-center">
-              {t("register.trust_microcopy_prefix")}{" "}
+              {t("register.continuing_prefix")}
               <Link to="/privacy" className="underline hover:text-ink-700">
-                {t("register.trust_microcopy_privacy_link")}
+                {t("register.continuing_privacy_link")}
               </Link>
-              {t("register.trust_microcopy_suffix")}
+              {t("register.continuing_and")}
+              <Link to="/terms" className="underline hover:text-ink-700">
+                {t("register.continuing_terms_link")}
+              </Link>
+              {t("register.continuing_suffix")}
             </p>
           </form>
           <p className="mt-4 text-sm text-ink-600">
