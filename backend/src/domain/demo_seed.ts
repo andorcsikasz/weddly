@@ -754,49 +754,55 @@ interface SeatPlan {
 }
 
 // Table coordinates are in millimetres on the demo's 20 × 30 m floor
-// (x: 0..20000, y: 0..30000). Layout: head table centred at the top, three
-// round tables in a triangle further down, leaving plenty of empty floor
-// the visitor can drag into.
+// (x: 0..20000, y: 0..30000). `x_mm` / `y_mm` are the table's CENTRE.
+// Convention from shared/types.ts:
+//   - `width_mm` is the SHORTER side (= the depth for a long/head table).
+//   - `length_mm` is the LONGER side (= the horizontal span).
+// A 2.4 × 0.9 m head table is therefore length_mm: 2400, width_mm: 900.
+//
+// Layout: head table centred against the top wall, three round guest
+// tables in a row further down, with empty floor below for the visitor
+// to drag new tables into.
 const SEAT_PLAN: SeatPlan = {
   tables: [
     {
       label: "Head table",
       shape: "head",
       seats: 6,
-      x_mm: 8800,
-      y_mm: 2500,
-      width_mm: 2400,
-      length_mm: 900,
+      x_mm: 10_000,
+      y_mm: 3_000,
+      width_mm: 900,
+      length_mm: 2_400,
       is_kids_table: false,
     },
     {
       label: "Family — bride's side",
       shape: "round",
       seats: 8,
-      x_mm: 3000,
-      y_mm: 9000,
-      width_mm: 1500,
-      length_mm: 1500,
-      is_kids_table: false,
-    },
-    {
-      label: "Best man's table",
-      shape: "round",
-      seats: 8,
-      x_mm: 15500,
-      y_mm: 9000,
-      width_mm: 1500,
-      length_mm: 1500,
+      x_mm: 4_500,
+      y_mm: 10_000,
+      width_mm: 1_500,
+      length_mm: 1_500,
       is_kids_table: false,
     },
     {
       label: "Friends — fairytale crowd",
       shape: "round",
       seats: 8,
-      x_mm: 9250,
-      y_mm: 15500,
-      width_mm: 1500,
-      length_mm: 1500,
+      x_mm: 10_000,
+      y_mm: 10_000,
+      width_mm: 1_500,
+      length_mm: 1_500,
+      is_kids_table: false,
+    },
+    {
+      label: "Best man's table",
+      shape: "round",
+      seats: 8,
+      x_mm: 15_500,
+      y_mm: 10_000,
+      width_mm: 1_500,
+      length_mm: 1_500,
       is_kids_table: false,
     },
   ],
