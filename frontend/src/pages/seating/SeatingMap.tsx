@@ -1044,18 +1044,21 @@ function TableShape({
               fontWeight={600}
               className={isSelected ? "fill-paper-50" : "fill-blush-700"}
             >
-              {lines.length === 1 ? (
-                lines[0]
-              ) : (
-                <>
-                  <tspan x={0} dy={-labelSize * 0.55}>
-                    {lines[0]}
-                  </tspan>
-                  <tspan x={0} dy={labelSize * 1.1}>
-                    {lines[1]}
-                  </tspan>
-                </>
-              )}
+              {lines.length === 1
+                ? lines[0]
+                : // Multi-line label. The first tspan's dy backs up by
+                  // half the total stack height so the visual centre of
+                  // all lines lands on the text element's y baseline.
+                  // Each subsequent tspan advances by one line-height
+                  // (1.1 × fontSize) from its predecessor.
+                  lines.map((line, i) => {
+                    const dy = i === 0 ? -labelSize * 0.55 * (lines.length - 1) : labelSize * 1.1;
+                    return (
+                      <tspan key={i} x={0} dy={dy}>
+                        {line}
+                      </tspan>
+                    );
+                  })}
             </text>
           </g>
         );
@@ -1289,38 +1292,54 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
-// Decide how many lines a table label should occupy.
-// One line if the estimated width fits `maxWidth` at `fontSize`; otherwise
-// split at the space closest to the middle. Falls back to a hard mid-word
-// split if there's no space at all. Always returns at most 2 lines — beyond
-// that the label is too long for the table and the second line is just
-// wrapped as-is (the user can rename if it still overflows).
+// Wrap a table label into up to 3 lines so it stays on the table body.
 //
-// Width estimation uses 0.52 of fontSize per character — a reasonable
-// average for Cormorant Garamond at body weights. Good enough as a
-// "should I wrap?" decision without measuring the actual rendered text.
+// Strategy: estimate text width as length × 0.52 × fontSize (a reasonable
+// average for Cormorant Garamond), then greedy word-pack into successive
+// lines that each fit `maxWidth`. The last line absorbs any remaining
+// words so we never produce more than MAX_LINES — better to slightly
+// overflow the last line than to chop the label mid-sentence. Hard-cuts a
+// single oversize word into MAX_LINES pieces if there are no spaces.
 function wrapLabel(label: string, maxWidth: number, fontSize: number): string[] {
+  const MAX_LINES = 3;
   const avgCharWidth = fontSize * 0.52;
-  const estWidth = label.length * avgCharWidth;
-  if (estWidth <= maxWidth) return [label];
-  // Find the space closest to the middle.
-  const mid = label.length / 2;
-  let best = -1;
-  let bestDist = Number.POSITIVE_INFINITY;
-  for (let i = 0; i < label.length; i++) {
-    if (label[i] !== " ") continue;
-    const d = Math.abs(i - mid);
-    if (d < bestDist) {
-      bestDist = d;
-      best = i;
+  const maxChars = Math.max(1, Math.floor(maxWidth / avgCharWidth));
+  if (label.length <= maxChars) return [label];
+
+  const words = label.split(/\s+/).filter((w) => w.length > 0);
+  if (words.length === 0) return [label];
+
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (test.length <= maxChars || lines.length === MAX_LINES - 1) {
+      // Either it fits, or we're on the last allowed line and just keep
+      // appending so the rest of the label doesn't get truncated.
+      line = test;
+    } else {
+      lines.push(line);
+      line = word;
     }
   }
-  if (best === -1) {
-    // No space — hard split at the middle character.
-    const cut = Math.floor(mid);
-    return [label.slice(0, cut), label.slice(cut)];
+  if (line) lines.push(line);
+
+  // No spaces: hard-cut into MAX_LINES roughly equal chunks.
+  if (lines.length === 1 && lines[0]!.length > maxChars) {
+    const whole = lines[0]!;
+    const out: string[] = [];
+    let rest = whole;
+    while (rest.length > 0 && out.length < MAX_LINES) {
+      out.push(rest.slice(0, maxChars));
+      rest = rest.slice(maxChars);
+    }
+    if (rest.length > 0) {
+      // Anything still left after MAX_LINES — fold into the last line.
+      out[out.length - 1] = `${out[out.length - 1]}${rest}`;
+    }
+    return out;
   }
-  return [label.slice(0, best).trim(), label.slice(best + 1).trim()];
+  return lines;
 }
 
 export const ROOM_DIMS = { W_MM: DEFAULT_ROOM_W_MM, H_MM: DEFAULT_ROOM_H_MM };
