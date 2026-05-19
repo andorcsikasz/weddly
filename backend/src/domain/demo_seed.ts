@@ -753,24 +753,25 @@ interface SeatPlan {
   seating: Array<{ table_label: string; seats: Array<{ index: number; full_name: string }> }>;
 }
 
-// Table coordinates are in millimetres on the demo's 20 × 30 m floor
-// (x: 0..20000, y: 0..30000). `x_mm` / `y_mm` are the table's CENTRE.
+// Table coordinates are in millimetres on the demo's 10 × 15 m portrait
+// floor (x: 0..10000, y: 0..15000). `x_mm` / `y_mm` are the table's CENTRE.
 // Convention from shared/types.ts:
 //   - `width_mm` is the SHORTER side (= the depth for a long/head table).
 //   - `length_mm` is the LONGER side (= the horizontal span).
 // A 2.4 × 0.9 m head table is therefore length_mm: 2400, width_mm: 900.
 //
 // Layout: head table centred against the top wall, three round guest
-// tables in a row further down, with empty floor below for the visitor
-// to drag new tables into.
+// tables in a triangle below — left + right at mid-room, friends down
+// below them — so the portrait floor reads as used end-to-end without
+// crowding.
 const SEAT_PLAN: SeatPlan = {
   tables: [
     {
       label: "Head table",
       shape: "head",
       seats: 6,
-      x_mm: 10_000,
-      y_mm: 3_000,
+      x_mm: 5_000,
+      y_mm: 1_500,
       width_mm: 900,
       length_mm: 2_400,
       is_kids_table: false,
@@ -779,18 +780,8 @@ const SEAT_PLAN: SeatPlan = {
       label: "Family — bride's side",
       shape: "round",
       seats: 8,
-      x_mm: 4_500,
-      y_mm: 10_000,
-      width_mm: 1_500,
-      length_mm: 1_500,
-      is_kids_table: false,
-    },
-    {
-      label: "Friends — fairytale crowd",
-      shape: "round",
-      seats: 8,
-      x_mm: 10_000,
-      y_mm: 10_000,
+      x_mm: 2_500,
+      y_mm: 6_000,
       width_mm: 1_500,
       length_mm: 1_500,
       is_kids_table: false,
@@ -799,8 +790,18 @@ const SEAT_PLAN: SeatPlan = {
       label: "Best man's table",
       shape: "round",
       seats: 8,
-      x_mm: 15_500,
-      y_mm: 10_000,
+      x_mm: 7_500,
+      y_mm: 6_000,
+      width_mm: 1_500,
+      length_mm: 1_500,
+      is_kids_table: false,
+    },
+    {
+      label: "Friends — fairytale crowd",
+      shape: "round",
+      seats: 8,
+      x_mm: 5_000,
+      y_mm: 10_500,
       width_mm: 1_500,
       length_mm: 1_500,
       is_kids_table: false,

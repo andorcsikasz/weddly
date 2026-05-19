@@ -41,12 +41,13 @@ import { computeSymmetricLayout } from "./seating/layout";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 import { isCurrentSessionDemo } from "../components/DemoLaunchCard";
 
-// Demo workspace canvas — 20 × 30 m. Sized to fit the seeded Shrek & Fiona
-// layout with room to drag tables around. Applied in-memory only (never
-// written to localStorage), so the visitor's real workspace on the same
-// device keeps its own saved dimensions.
-const DEMO_ROOM_W_MM = 20_000;
-const DEMO_ROOM_H_MM = 30_000;
+// Demo workspace canvas — 10 × 15 m portrait. Sized for the intimate
+// 15-guest fairytale wedding: head table + 3 round tables fit comfortably
+// with room to drag, without the floor reading as empty. Applied in-memory
+// only (never written to localStorage), so the visitor's real workspace on
+// the same device keeps its own saved dimensions.
+const DEMO_ROOM_W_MM = 10_000;
+const DEMO_ROOM_H_MM = 15_000;
 
 const SHAPES: TableShape[] = ["round", "long", "square", "head"];
 
