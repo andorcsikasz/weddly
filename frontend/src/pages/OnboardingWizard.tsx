@@ -1,4 +1,4 @@
-// 5-step wizard. Wedding planning starts uncertain — couples often have a
+// 4-step wizard. Wedding planning starts uncertain — couples often have a
 // season ("Summer 2027") rather than a date, a guest range rather than a
 // number, and a vague budget. Each step lets them pick how certain they are
 // (the "kind") and only asks the fields that match.
@@ -6,7 +6,6 @@
 import type {
   BudgetGoal,
   BudgetKind,
-  CeremonyKind,
   Couple,
   Currency,
   GuestCountGoal,
@@ -14,13 +13,12 @@ import type {
   WeddingDateGoal,
   WeddingDateKind,
   WeddingSeason,
-  WeddingStyleTag,
 } from "@shared/types";
 import { CURRENCIES } from "@shared/types";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
-import { Skeleton, TagChip } from "../components/ui";
+import { Skeleton } from "../components/ui";
 import { coupleApi } from "../lib/endpoints";
 import {
   currencySymbol,
@@ -37,18 +35,16 @@ import { useDocumentMeta } from "../lib/seo";
 
 const DRAFT_KEY = "weddly.onboarding_draft";
 
-const STYLE_TAGS: WeddingStyleTag[] = [
-  "classic",
-  "modern",
-  "rustic",
-  "garden",
-  "bohemian",
-  "minimalist",
-  "vintage",
-  "destination",
-];
-
 const SEASONS: WeddingSeason[] = ["spring", "summer", "fall", "winter"];
+
+// Sensible starting range per currency. HUF defaults to a typical Hungarian
+// wedding (4-6M Ft, ~€10-15k); EUR/USD use the rough conversion so switching
+// the unit re-bases the values instead of leaving "6 000 000 €" in the box.
+const BUDGET_DEFAULTS: Record<Currency, { min: string; max: string; placeholder: string }> = {
+  HUF: { min: "4000000", max: "6000000", placeholder: "5000000" },
+  EUR: { min: "10000", max: "15000", placeholder: "12000" },
+  USD: { min: "12000", max: "18000", placeholder: "15000" },
+};
 
 const TODAY = new Date();
 const MIN_YEAR = TODAY.getFullYear();
@@ -58,8 +54,6 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 interface FormState {
   bride_name: string;
   groom_name: string;
-  /** Optional civil / religious / both. `null` = user hasn't picked. */
-  ceremony_kind: CeremonyKind | null;
   date_kind: WeddingDateKind;
   date_exact: string;
   date_year: string;
@@ -73,18 +67,16 @@ interface FormState {
   budget_exact: string;
   budget_min: string;
   budget_max: string;
-  /** Picked on step 3 next to the budget inputs. Stored verbatim on the
+  /** Picked on step 4 next to the budget inputs. Stored verbatim on the
    *  couple via the onboard call; flips every money field after onboarding. */
   currency: Currency;
-  style_tags: WeddingStyleTag[];
 }
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 
 const DEFAULT_FORM: FormState = {
   bride_name: "",
   groom_name: "",
-  ceremony_kind: null,
   date_kind: "season",
   date_exact: "",
   date_year: String(MIN_YEAR + 1),
@@ -96,10 +88,9 @@ const DEFAULT_FORM: FormState = {
   guest_max: "100",
   budget_kind: "range",
   budget_exact: "",
-  budget_min: "4000000",
-  budget_max: "6000000",
+  budget_min: BUDGET_DEFAULTS.HUF.min,
+  budget_max: BUDGET_DEFAULTS.HUF.max,
   currency: "HUF",
-  style_tags: [],
 };
 
 function buildDateGoal(f: FormState): WeddingDateGoal {
@@ -340,12 +331,17 @@ export default function OnboardingWizard() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function toggleTag(tag: WeddingStyleTag) {
+  /** Switching currency rebases the budget range to that currency's typical
+   *  values — "6 000 000 €" would carry over from the HUF default otherwise
+   *  and looks absurd. `budget_exact` is left alone so a user who typed a
+   *  specific number isn't surprised by it changing, but its placeholder
+   *  scales with the unit via BUDGET_DEFAULTS below. */
+  function setCurrency(c: Currency) {
     setForm((prev) => ({
       ...prev,
-      style_tags: prev.style_tags.includes(tag)
-        ? prev.style_tags.filter((x) => x !== tag)
-        : [...prev.style_tags, tag],
+      currency: c,
+      budget_min: BUDGET_DEFAULTS[c].min,
+      budget_max: BUDGET_DEFAULTS[c].max,
     }));
   }
 
@@ -370,18 +366,11 @@ export default function OnboardingWizard() {
         guest_count_goal: buildGuestGoal(form),
         budget_goal: buildBudgetGoal(form),
         currency: form.currency,
-        style_tags: form.style_tags,
+        // Style tags are no longer collected in onboarding — the field stays
+        // on the model so users can set it later from Profile, but ships
+        // empty from this flow.
+        style_tags: [],
       });
-      // Persist optional ceremony_kind via the partial-update endpoint —
-      // onboard() doesn't accept it. We don't surface this as a fatal error;
-      // the user can set it later from Profile if the follow-up fails.
-      if (form.ceremony_kind !== null) {
-        try {
-          await coupleApi.update({ ceremony_kind: form.ceremony_kind });
-        } catch {
-          /* non-fatal — couple is created; ceremony_kind stays null */
-        }
-      }
       completedRef.current = true;
       clearDraft();
       navigate("/app", { replace: true });
@@ -438,35 +427,6 @@ export default function OnboardingWizard() {
                     onChange={(e) => update("groom_name", e.target.value)}
                   />
                 </div>
-              </div>
-
-              {/* Optional ceremony-kind sub-question. `null` = skip — nothing
-                  gets persisted unless the user picks. Persists via a partial
-                  update after onboarding (see onSubmit). */}
-              <div className="mt-6">
-                <p className="text-sm font-medium text-ink-700">
-                  {t("onboarding.ceremony_kind_question")}
-                </p>
-                <div
-                  className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
-                  role="radiogroup"
-                  aria-label={t("onboarding.ceremony_kind_question")}
-                >
-                  {(["civil", "religious", "both"] as CeremonyKind[]).map((k) => (
-                    <KindButton
-                      key={k}
-                      active={form.ceremony_kind === k}
-                      onClick={() => update("ceremony_kind", k)}
-                      label={t(`onboarding.ceremony_kind_${k}`)}
-                    />
-                  ))}
-                  <KindButton
-                    active={form.ceremony_kind === null}
-                    onClick={() => update("ceremony_kind", null)}
-                    label={t("onboarding.ceremony_kind_skip")}
-                  />
-                </div>
-                <p className="mt-2 text-xs text-ink-500">{t("onboarding.ceremony_kind_help")}</p>
               </div>
             </>
           )}
@@ -664,7 +624,7 @@ export default function OnboardingWizard() {
                         type="button"
                         role="radio"
                         aria-checked={active}
-                        onClick={() => update("currency", c)}
+                        onClick={() => setCurrency(c)}
                         className={`min-h-[44px] px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs ${
                           active
                             ? "bg-ink-900 text-paper-50"
@@ -708,7 +668,10 @@ export default function OnboardingWizard() {
                       className="input flex-1"
                       value={formatGroupedDigits(form.budget_exact, locale)}
                       onChange={(e) => update("budget_exact", digitsOnly(e.target.value))}
-                      placeholder={formatGroupedDigits("5000000", locale)}
+                      placeholder={formatGroupedDigits(
+                        BUDGET_DEFAULTS[form.currency].placeholder,
+                        locale,
+                      )}
                     />
                     <span className="text-sm text-ink-500">
                       {currencySymbol(form.currency, locale)}
@@ -783,27 +746,6 @@ export default function OnboardingWizard() {
                     )}
                 </>
               )}
-            </>
-          )}
-
-          {step === 4 && (
-            <>
-              <h1>{t("onboarding.step5_title")}</h1>
-              <p className="mt-2 text-sm text-ink-600">{t("onboarding.style_help")}</p>
-              <div
-                className="mt-6 flex flex-wrap gap-2"
-                role="group"
-                aria-label={t("onboarding.style_help")}
-              >
-                {STYLE_TAGS.map((tag) => (
-                  <TagChip
-                    key={tag}
-                    label={t(`onboarding.style_${tag}`)}
-                    selected={form.style_tags.includes(tag)}
-                    onToggle={() => toggleTag(tag)}
-                  />
-                ))}
-              </div>
             </>
           )}
 
