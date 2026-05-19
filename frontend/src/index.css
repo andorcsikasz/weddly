@@ -155,6 +155,23 @@
     font-weight: 600;
   }
 
+  /* ── Admin shell typography ─────────────────────────────────────────
+     The admin section is an operational tool, not editorial copy — the
+     Cormorant serif we use on h1/h2 makes the dashboard feel inconsistent
+     next to the Inter sans body text and stat-num numbers. Inside the
+     admin shell (data-admin-shell on the <main> in AppShell.tsx) every
+     heading drops back to the sans stack so all four text styles —
+     headings, body, labels, stat-num numbers — share one family. */
+  [data-admin-shell] h1,
+  [data-admin-shell] h2,
+  [data-admin-shell] h3,
+  [data-admin-shell] h4,
+  [data-admin-shell] h5,
+  [data-admin-shell] h6 {
+    font-family: theme("fontFamily.sans");
+    letter-spacing: -0.01em;
+  }
+
   /* Honour reduced motion. */
   @media (prefers-reduced-motion: reduce) {
     *,
