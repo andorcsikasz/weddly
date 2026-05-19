@@ -208,7 +208,10 @@ function PublicHeader() {
           >
             <LogIn size={18} aria-hidden="true" />
           </Link>
-          <Link to="/signup" className="btn-primary !py-2 px-3.5 text-sm sm:!py-1.5">
+          <Link
+            to="/signup"
+            className="btn-primary shrink-0 whitespace-nowrap !py-2 px-3.5 text-sm sm:!py-1.5"
+          >
             {t("landing.cta_signup")}
           </Link>
           <button
