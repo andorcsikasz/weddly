@@ -243,18 +243,24 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   return null;
 }
 
-// Domains we 301-redirect to the canonical .hu host. We consolidated to one
+// Domains we redirect to the canonical .hu host. We consolidated to one
 // Railway service + one SQLite volume in May 2026; .xyz now lives only as a
 // historical alias that bounces visitors to the .hu canonical so we don't
 // accidentally accept signups against a database that has since been retired.
 // The redirect runs ahead of every other handler so even an /api/* call is
 // bounced — third-party integrations have to update their base URL.
-const LEGACY_HOSTS = new Set([
-  "weddly.xyz",
-  "www.weddly.xyz",
-  "app.weddly.xyz",
-]);
+//
+// app.weddly.* never existed as a live host; only the apex / www. of each
+// TLD did. Listing them keeps the redirect list honest.
+const LEGACY_HOSTS = new Set(["weddly.xyz", "www.weddly.xyz"]);
 const CANONICAL_HOST = "www.weddly.hu";
+
+// 301 strips POST bodies (most clients downgrade to GET). 308 preserves the
+// method + body, which matters for `/api/*` POSTs from third-party
+// integrations that may still hit the legacy host while their config drifts.
+// For browser-facing GET/HEAD navigations we keep 301 so the browser caches
+// the redirect aggressively (308's cache semantics are weaker in practice).
+const PRESERVE_METHOD = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 const server = Bun.serve({
   port: CONFIG.port,
@@ -263,14 +269,17 @@ const server = Bun.serve({
     const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
     const start = performance.now();
 
-    // Legacy-host 301 redirect — runs before CORS preflight handling so even
-    // an OPTIONS probe gets bounced. Preserves the path + query so a guest
+    // Legacy-host redirect — runs before CORS preflight handling so even an
+    // OPTIONS probe gets bounced. Preserves the path + query so a guest
     // arriving at https://weddly.xyz/rsvp/ABC1234 ends up at the .hu mirror.
-    const hostHeader = req.headers.get("host")?.toLowerCase() ?? "";
-    if (LEGACY_HOSTS.has(hostHeader)) {
+    // Use `url.hostname` rather than the raw `Host` header so a `:port`
+    // suffix (e.g. on a non-standard reverse-proxy setup) doesn't sneak
+    // past the allowlist. URL.hostname is always lowercased + port-free.
+    if (LEGACY_HOSTS.has(url.hostname.toLowerCase())) {
       const target = `https://${CANONICAL_HOST}${url.pathname}${url.search}`;
+      const status = PRESERVE_METHOD.has(req.method) ? 308 : 301;
       return new Response(null, {
-        status: 301,
+        status,
         headers: { Location: target, "Cache-Control": "public, max-age=3600" },
       });
     }
