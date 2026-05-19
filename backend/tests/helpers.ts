@@ -67,10 +67,10 @@ function withConsentVersions(method: string, path: string, body: unknown): unkno
     return body;
   }
   const obj = body as Record<string, unknown>;
-  if (path === "/api/auth/register") {
-    // Register now requires BOTH privacy_version and terms_version. Tests
-    // probing the "missing version" path pass either field as null to
-    // preserve the original probe.
+  if (path === "/api/auth/register" || path === "/api/auth/google") {
+    // Both register paths require BOTH privacy_version and terms_version
+    // for brand-new accounts. Tests probing the "missing version" path
+    // pass either field as null to preserve the original probe.
     return {
       ...("privacy_version" in obj ? {} : { privacy_version: PRIVACY_VERSION }),
       ...("terms_version" in obj ? {} : { terms_version: TERMS_VERSION }),
