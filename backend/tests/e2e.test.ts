@@ -10651,3 +10651,110 @@ describe("seo: pure renderRobotsTxt / renderSitemapXml", () => {
     expect(huUrls).toBeGreaterThanOrEqual(8); // /, /signup, /vendors, /about, /login, /privacy, /terms, /imprint, /subscription-terms
   });
 });
+
+describe("seo: per-route uniqueness", () => {
+  // The landing's title/description used to bleed into every public route
+  // because renderIndexHtml didn't path-key its lookup. shared/seo_routes.ts
+  // now overrides for known routes. These tests pin the override so the
+  // bleed can't silently regress (Google flags identical-meta URLs as
+  // duplicates and ranks them all lower).
+  const TEMPLATE = `<!doctype html>
+<html lang="hu">
+<head>
+<!-- SEO_HEAD_START -->
+<title>placeholder</title>
+<!-- SEO_HEAD_END -->
+</head>
+<body><div id="root"><div class="seo-prerender">
+<!-- SEO_BODY_START -->
+<header><h1>placeholder body</h1></header>
+<!-- SEO_BODY_END -->
+</div></div></body>
+</html>`;
+
+  function render(host: string, pathname: string): string {
+    return renderIndexHtml(TEMPLATE, { host, pathname, isRsvp: false });
+  }
+
+  const HU_ROUTES = [
+    { path: "/about", titleSnippet: "Rólunk" },
+    { path: "/vendors", titleSnippet: "Szolgáltatóknak" },
+    { path: "/privacy", titleSnippet: "Adatvédelmi" },
+    { path: "/terms", titleSnippet: "Felhasználási feltételek" },
+    { path: "/imprint", titleSnippet: "Impresszum" },
+    { path: "/login", titleSnippet: "Bejelentkezés" },
+    { path: "/signup", titleSnippet: "Regisztráció" },
+  ];
+
+  test("every HU public route ships a unique <title> + <h1>", () => {
+    const seenTitles = new Set<string>();
+    const seenH1s = new Set<string>();
+    for (const { path, titleSnippet } of HU_ROUTES) {
+      const html = render("weddly.hu", path);
+      const title = html.match(/<title>([^<]+)<\/title>/)?.[1] ?? "";
+      const h1 = html.match(/<h1>([^<]+)<\/h1>/)?.[1] ?? "";
+      expect(title).toContain(titleSnippet);
+      // <title> AND <h1> must be distinct per path (no landing bleed-through).
+      expect(seenTitles.has(title)).toBe(false);
+      expect(seenH1s.has(h1)).toBe(false);
+      seenTitles.add(title);
+      seenH1s.add(h1);
+    }
+  });
+
+  test("every EN public route ships a unique <title> + <h1>", () => {
+    const EN_ROUTES = [
+      { path: "/about", titleSnippet: "About" },
+      { path: "/vendors", titleSnippet: "For vendors" },
+      { path: "/privacy", titleSnippet: "Privacy" },
+      { path: "/terms", titleSnippet: "Terms" },
+      { path: "/imprint", titleSnippet: "Imprint" },
+      { path: "/login", titleSnippet: "Sign in" },
+      { path: "/signup", titleSnippet: "Create your couple workspace" },
+    ];
+    const seenTitles = new Set<string>();
+    const seenH1s = new Set<string>();
+    for (const { path, titleSnippet } of EN_ROUTES) {
+      const html = render("weddly.xyz", path);
+      const title = html.match(/<title>([^<]+)<\/title>/)?.[1] ?? "";
+      const h1 = html.match(/<h1>([^<]+)<\/h1>/)?.[1] ?? "";
+      expect(title).toContain(titleSnippet);
+      expect(seenTitles.has(title)).toBe(false);
+      expect(seenH1s.has(h1)).toBe(false);
+      seenTitles.add(title);
+      seenH1s.add(h1);
+    }
+  });
+
+  test("og:title + twitter:title also flip per route", () => {
+    const html = render("weddly.hu", "/about");
+    expect(html).toMatch(/<meta property="og:title" content="[^"]*Rólunk[^"]*"/);
+    expect(html).toMatch(/<meta name="twitter:title" content="[^"]*Rólunk[^"]*"/);
+  });
+
+  test("landing keeps its rich SSR body (sentinels untouched)", () => {
+    const html = render("weddly.hu", "/");
+    // Landing's <h1> comes from the template (locales/hu.ts hero_title),
+    // not from the route override — the override only fires for non-landing
+    // public routes. Verify the landing body wasn't swapped out.
+    expect(html).toContain("placeholder body"); // template's body untouched
+  });
+
+  test("unknown paths fall back to the landing body without swap", () => {
+    const html = render("weddly.hu", "/typo-not-a-route");
+    expect(html).toContain("placeholder body");
+    // Unknown path still gets the LANDING title (no override match).
+    const title = html.match(/<title>([^<]+)<\/title>/)?.[1] ?? "";
+    expect(title).not.toContain("Rólunk");
+    expect(title).not.toContain("Impresszum");
+  });
+
+  test("SEO prerender content is NOT hidden off-screen (no display:none / left:-10000px)", () => {
+    // Regression guard for the 0708e45-style off-screen wrap that downweighted
+    // the prerendered SEO body for Googlebot. The body must live inside a
+    // normal visible container.
+    const html = render("weddly.hu", "/");
+    expect(html).not.toContain("left:-10000px");
+    expect(html).not.toContain("aria-hidden=\"true\" style=\"position:absolute");
+  });
+});
