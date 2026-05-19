@@ -10759,29 +10759,11 @@ describe("seo: per-route uniqueness", () => {
     }
   });
 
-  test("every EN public route ships a unique <title> + <h1>", () => {
-    const EN_ROUTES = [
-      { path: "/about", titleSnippet: "About" },
-      { path: "/vendors", titleSnippet: "For vendors" },
-      { path: "/privacy", titleSnippet: "Privacy" },
-      { path: "/terms", titleSnippet: "Terms" },
-      { path: "/imprint", titleSnippet: "Imprint" },
-      { path: "/login", titleSnippet: "Sign in" },
-      { path: "/signup", titleSnippet: "Create your couple workspace" },
-    ];
-    const seenTitles = new Set<string>();
-    const seenH1s = new Set<string>();
-    for (const { path, titleSnippet } of EN_ROUTES) {
-      const html = render("weddly.xyz", path);
-      const title = html.match(/<title>([^<]+)<\/title>/)?.[1] ?? "";
-      const h1 = html.match(/<h1>([^<]+)<\/h1>/)?.[1] ?? "";
-      expect(title).toContain(titleSnippet);
-      expect(seenTitles.has(title)).toBe(false);
-      expect(seenH1s.has(h1)).toBe(false);
-      seenTitles.add(title);
-      seenH1s.add(h1);
-    }
-  });
+  // Note: the EN per-route uniqueness test was removed when we consolidated
+  // to a single canonical (.hu). The SSR renderer now always emits HU
+  // content for crawlers; EN-language users still get an EN UI client-side
+  // via the language switcher, but Googlebot only sees the HU titles. The
+  // HU uniqueness test above is the load-bearing one.
 
   test("og:title + twitter:title also flip per route", () => {
     const html = render("weddly.hu", "/about");
