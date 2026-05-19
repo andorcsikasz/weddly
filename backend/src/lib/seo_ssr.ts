@@ -30,6 +30,10 @@ const PUBLIC_PATHS: ReadonlyArray<{ path: string; priority: string; changefreq: 
   // the auth flows. Same path on both hosts; the locale switch happens via
   // Host header just like the landing.
   { path: "/eszkozok/eskuvo-koltsegvetes-kalkulator", priority: "0.8", changefreq: "monthly" },
+  { path: "/eszkozok/eskuvo-visszaszamlalo", priority: "0.8", changefreq: "monthly" },
+  { path: "/eszkozok/vendeglista-sablon", priority: "0.8", changefreq: "monthly" },
+  { path: "/eszkozok/ultetesi-rend-keszito", priority: "0.8", changefreq: "monthly" },
+  { path: "/eszkozok/rsvp-szoveg-generator", priority: "0.8", changefreq: "monthly" },
   { path: "/signup", priority: "0.7", changefreq: "monthly" },
   { path: "/vendors", priority: "0.6", changefreq: "monthly" },
   { path: "/about", priority: "0.5", changefreq: "monthly" },

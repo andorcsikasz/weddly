@@ -14,7 +14,11 @@ import { useAuth } from "./lib/auth";
 // chunk, the rest streams in when a session lands on /app.
 import AboutPage from "./pages/AboutPage";
 import BudgetCalculatorPage from "./pages/BudgetCalculatorPage";
+import CountdownPage from "./pages/CountdownPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import GuestListTemplatePage from "./pages/GuestListTemplatePage";
+import RsvpGeneratorPage from "./pages/RsvpGeneratorPage";
+import SeatingChartPage from "./pages/SeatingChartPage";
 import ImprintPage from "./pages/ImprintPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -124,6 +128,38 @@ export default function App() {
         element={
           <Page>
             <BudgetCalculatorPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/eszkozok/eskuvo-visszaszamlalo"
+        element={
+          <Page>
+            <CountdownPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/eszkozok/vendeglista-sablon"
+        element={
+          <Page>
+            <GuestListTemplatePage />
+          </Page>
+        }
+      />
+      <Route
+        path="/eszkozok/ultetesi-rend-keszito"
+        element={
+          <Page>
+            <SeatingChartPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/eszkozok/rsvp-szoveg-generator"
+        element={
+          <Page>
+            <RsvpGeneratorPage />
           </Page>
         }
       />

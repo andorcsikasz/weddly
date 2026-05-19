@@ -180,6 +180,78 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Live calculator tuned to Hungarian wedding averages: drag the guest count and budget, every category recalculates. One click carries the numbers into your own workspace.",
     },
   },
+  "/eszkozok/eskuvo-visszaszamlalo": {
+    hu: {
+      title: "Esküvő visszaszámláló — hány nap van hátra | Wēddly",
+      description:
+        "Hány nap, hét, hónap van az esküvőtökig? Add meg a dátumot, és mérföldkövekkel együtt látod mit érdemes intézni 12, 9, 6, 3, 1 hónappal és 1 héttel előtte.",
+      h1: "Esküvő visszaszámláló",
+      intro:
+        "Add meg az esküvőtök dátumát — Élőben látod a maradék napok, hetek, hónapok számát, és egy mérföldkő-listát hogy mit érdemes intézni mikor.",
+    },
+    en: {
+      title: "Wedding countdown — days remaining | Weddly",
+      description:
+        "How many days, weeks, months until your wedding? Pick a date and get a milestone timeline: what to plan 12, 9, 6, 3, 1 month and 1 week out.",
+      h1: "Wedding countdown",
+      intro:
+        "Pick your wedding date — see months, weeks and days remaining live, with a milestone list of what to plan when.",
+    },
+  },
+  "/eszkozok/vendeglista-sablon": {
+    hu: {
+      title: "Vendéglista sablon — esküvői CSV (ingyen) | Wēddly",
+      description:
+        "Letölthető CSV vendéglista-sablon magyar esküvőre szabva: vezetéknév, e-mail, telefon, háztartás, étrend, kísérő, RSVP. Importálható közvetlenül a Wēddly-be.",
+      h1: "Vendéglista sablon — magyar esküvőre szabva",
+      intro:
+        "Töltsd le a CSV-sablont, töltsd ki Excel-ben vagy Sheets-ben, vagy importáld közvetlenül a Wēddly-be. Magyar oszlopnevekkel, 8 példasorral.",
+    },
+    en: {
+      title: "Wedding guest list template — CSV (free) | Weddly",
+      description:
+        "Downloadable wedding guest-list CSV template: last name, email, phone, household, diet, plus-one, RSVP. Imports straight into Weddly.",
+      h1: "Wedding guest list template",
+      intro:
+        "Download the CSV template, fill it in Excel or Sheets, or import directly into Weddly. Eight sample rows so you see the format.",
+    },
+  },
+  "/eszkozok/ultetesi-rend-keszito": {
+    hu: {
+      title: "Ültetési rend készítő — ingyenes esküvői | Wēddly",
+      description:
+        "Vászon, asztalok, vendégek — húzd a helyükre, és A4 / A6 / A3 PDF-be exportálódik, pontos mm méretben. Magyar esküvőkre szabva, ingyenes a nyílt béta alatt.",
+      h1: "Ültetési rend készítő — ingyen, magyar esküvőkre",
+      intro:
+        "Interaktív ültetési vászon: asztalok, vendégek drag-and-drop, automatikus konfliktus-jelzés, és nyomtatható PDF A4 / A6 (ültetőkártya) / A3 (bejárati tábla) méretben.",
+    },
+    en: {
+      title: "Wedding seating chart maker — free | Weddly",
+      description:
+        "Canvas, tables, guests — drag onto seats and export to PDF at A4 / A6 / A3 at exact mm. Tailored for Hungarian weddings, free during the open beta.",
+      h1: "Wedding seating chart maker",
+      intro:
+        "Interactive seating canvas: tables, drag-and-drop guests, conflict flags, and printable PDF export at A4 / A6 (place cards) / A3 (entrance display).",
+    },
+  },
+  "/eszkozok/rsvp-szoveg-generator": {
+    hu: {
+      title: "RSVP szöveg generátor — esküvői minta | Wēddly",
+      description:
+        "RSVP minta szöveg esküvői meghívóhoz: töltsd ki a párotok nevét, dátumot, helyszínt, és kapsz kész szöveget klasszikus, hétköznapi és költői stílusban.",
+      h1: "RSVP minta szöveg — esküvői meghívóhoz",
+      intro:
+        "Töltsd ki a nevet, dátumot, helyszínt és RSVP-határidőt — három stílusban (klasszikus, hétköznapi, költői) generálunk kész RSVP-szöveget. Másolható egy kattintással.",
+    },
+    en: {
+      title: "Wedding RSVP wording generator | Weddly",
+      description:
+        "RSVP wording for wedding invitations: enter your names, date, venue and deadline, get ready-to-use wording in formal, casual or poetic styles.",
+      h1: "Wedding RSVP wording — generator",
+      intro:
+        "Enter names, date, venue and deadline — we generate ready-to-use RSVP wording in three styles (formal, casual, poetic). Copy with one click.",
+    },
+  },
   "/signup": {
     hu: {
       title: "Regisztráció — Wēddly",

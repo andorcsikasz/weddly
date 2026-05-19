@@ -3136,6 +3136,168 @@ const en: LocaleMessages = {
       faq_a4:
         "Yes. The “Continue in Weddly” button carries the guest count + total into your workspace draft; onboarding picks up with those numbers pre-filled. From there it's per-category editable and you can pause the workspace any time.",
     },
+    countdown: {
+      page_eyebrow: "Tools · Wedding countdown",
+      page_h1: "Wedding countdown",
+      page_intro:
+        "How many days until your wedding? Pick a date and see months, weeks and days remaining — live. Milestones included: what to plan 12, 9, 6, 3, 1 month and 1 week out.",
+      input_label: "Wedding date",
+      result_days_unit: "days",
+      result_days_unit_one: "day",
+      result_until: "to go",
+      result_passed: "since your wedding",
+      result_empty: "Pick a date to start the countdown.",
+      breakdown_months: "months",
+      breakdown_weeks: "weeks",
+      breakdown_days: "days",
+      milestones_h2: "Milestones — what to plan when",
+      milestone_12m:
+        "12 months out: book the venue, lock the date, draft a first guest count, set the overall budget ceiling.",
+      milestone_9m:
+        "9 months out: photographer, videographer, music, ceremony officiant; design the invitation suite.",
+      milestone_6m:
+        "6 months out: finalize the catering menu, pick the attire, send save-the-dates, block hotel rooms for out-of-town guests.",
+      milestone_3m:
+        "3 months out: mail invitations, first pass on seating, order decor and flowers, lock the rehearsal-dinner venue.",
+      milestone_1m:
+        "1 month out: collect RSVPs, share final headcount with venue, finalize seating, order printed stationery.",
+      milestone_1w:
+        "1 week out: vendor run-of-show, speech rehearsal, hand off decor and printing, and… sleep.",
+      cta_h2: "Plan the remaining weeks together",
+      cta_body:
+        "A countdown is a start; a 12-month checklist works best in a shared workspace. Weddly tailors every milestone to your date and pings you when it's time to act.",
+      cta_button: "Open your workspace",
+      faq_h2: "Common questions",
+      faq_q1: "How early should we start wedding planning?",
+      faq_a1:
+        "Typical: 12–18 months out. Venue and photographer book earliest — for popular dates, 18 months is already tight in Hungary.",
+      faq_q2: "How long before the wedding should invitations go out?",
+      faq_a2:
+        "Classic: 8–12 weeks before the wedding, with an RSVP deadline ~4 weeks out. For out-of-town guests, send save-the-dates 4–6 weeks earlier.",
+      faq_q3: "What is a save-the-date and when should we send it?",
+      faq_a3:
+        "A save-the-date is a short heads-up about the date and venue region so guests can block calendars. Ideal: 6–9 months out, especially if many guests are travelling.",
+    },
+    guest_list_template: {
+      page_eyebrow: "Tools · Guest list template",
+      page_h1: "Wedding guest list template",
+      page_intro:
+        "A downloadable guest-list CSV template: first name, last name, email, phone, household, dietary needs, plus-one, RSVP status. Fill it in Excel or Google Sheets — or import directly into Weddly so both of you see the same list, live.",
+      preview_h2: "What's in the template",
+      preview_caption: "Wedding-tuned columns, ready to import into Weddly.",
+      col_first_name: "First name",
+      col_last_name: "Last name",
+      col_email: "Email",
+      col_phone: "Phone",
+      col_household: "Household",
+      col_diet: "Diet",
+      col_plus_one: "Plus-one",
+      col_status: "RSVP status",
+      download_h2: "Download the template",
+      download_body:
+        "A CSV file, UTF-8, comma-separated. Opens in Excel, Google Sheets or Numbers — or import it straight into Weddly after signup.",
+      download_csv_btn: "Download guest-list CSV",
+      download_csv_hint:
+        "Includes 8 example rows so you can see the format — replace them with your own data.",
+      organization_h2: "How to organize the list",
+      organization_li_1:
+        "Group by household, not by individual. One invitation goes to one household, and the household RSVPs together — way less chaos.",
+      organization_li_2:
+        "Keep dietary info in its own column (vegan / vegetarian / gluten-free / lactose-free / other). It's the field caterers ask for most often.",
+      organization_li_3:
+        "Only put a name in the plus-one column if you know who it is — otherwise leave it as “TBA”. Floating plus-ones cause catering headaches.",
+      cta_h2: "Import into Weddly",
+      cta_body:
+        "Weddly imports the CSV, auto-builds households out of it, and gives every guest a unique RSVP link. Guests answer on their phone; you watch the status list update.",
+      cta_button: "Open your workspace",
+      faq_h2: "Guest list questions",
+      faq_q1: "How many guests should we invite?",
+      faq_a1:
+        "Hungarian typical: 80–120 guests. Headcount drives venue, catering and ~55% of the total budget — pin the guest count before pinning the budget. The Weddly budget calculator shows the impact live.",
+      faq_q2: "Who NOT to invite?",
+      faq_a2:
+        "No mandatory column. A simple rule: if you haven't seen them in 2+ years and don't actively want them on the big day, skip. Obligation invites are the most common source of stress.",
+      faq_q3: "What columns should a wedding guest list spreadsheet have?",
+      faq_a3:
+        "Minimum: first name, last name, contact (email or phone), household, RSVP status. Useful extras: diet, plus-one, relationship (family / friends / work / uni). The Weddly template covers all of these.",
+    },
+    seating_chart: {
+      page_eyebrow: "Tools · Seating chart maker",
+      page_h1: "Wedding seating chart maker",
+      page_intro:
+        "A canvas, tables, guests — drag guests onto tables and Weddly exports a printable seating chart at A4, A6 (place cards) and A3 (entrance display) sizes. Goes straight to the printer at exact mm. Free during the open beta.",
+      what_h2: "What you get",
+      what_body:
+        "An interactive canvas where you place tables (round, rectangular, head table) and drag guests from your list to seats. The canvas flags conflicts — if two guests can't stand each other, or if a round table is exceeding sensible capacity.",
+      print_h2: "Print sizes",
+      print_body:
+        "Every chart exports to PDF in three sizes at exact mm — your print shop can run it without retouching:",
+      print_li_a4:
+        "A4 (210 × 297 mm) — compact overview for the couple and the coordinator. Fits the whole room on one page.",
+      print_li_a6:
+        "A6 (105 × 148 mm) — place cards. One card per guest, with surname and table number.",
+      print_li_a3:
+        "A3 (297 × 420 mm) — the entrance display. The big board guests check on arrival to find their table.",
+      etiquette_h2: "Seating etiquette — the basics",
+      etiquette_li_1:
+        "Head table: couple in the middle, witnesses and parents next to them. Classic size: 6–10 people. Place it along the long axis of the room so everyone has a clear sightline.",
+      etiquette_li_2:
+        "Generations: older guests further from the dance floor, closer to the exits. Younger guests closer to the music. Not a rule, just kind.",
+      etiquette_li_3:
+        "Conflicts: if you know two guests genuinely don't get along (divorce, family rift), don't pretend otherwise. Different tables — Weddly's conflict flag is built for this.",
+      etiquette_li_4:
+        "Kids: under 8, with parents. 8+, often a separate kids' table with activities and a tailored menu — much more relaxed than mixed adult tables.",
+      cta_h2: "Try the canvas",
+      cta_body:
+        "The full seating canvas lives in your workspace. After signup you can import your guest list with a click and start planning — both of you see the same canvas, in real time.",
+      cta_button: "Open your workspace",
+      faq_h2: "Seating chart questions",
+      faq_q1: "How many guests per table?",
+      faq_a1:
+        "Round: 8–10 ideal, max 12. Rectangular (banquet): 6–8 per side, so 12–16 per table. Above 10 conversation breaks; Weddly warns if you over-pack a table.",
+      faq_q2: "When should we make the seating chart?",
+      faq_a2:
+        "After the RSVP deadline (~4 weeks out). Draft modes are fine before then; finalize once headcount is locked. Weddly has draft + final modes so you don't lose the in-between work.",
+      faq_q3: "How do we handle awkward guests?",
+      faq_a3:
+        "Safest move: separate tables, at least 2 tables apart. Add the conflict to your notes and Weddly will flag if you accidentally drag them next to each other.",
+    },
+    rsvp_generator: {
+      page_eyebrow: "Tools · RSVP wording generator",
+      page_h1: "Wedding RSVP wording — generator",
+      page_intro:
+        "Fill in your names, date, venue and RSVP deadline; we generate ready-to-use wording in three styles: formal, casual and poetic. Copy with one click and paste into your invitation or your Weddly RSVP page.",
+      form_h2: "Your details",
+      form_partner_a_label: "Your name",
+      form_partner_a_placeholder: "e.g. Anna",
+      form_partner_b_label: "Partner's name",
+      form_partner_b_placeholder: "e.g. Bence",
+      form_date_label: "Wedding date",
+      form_venue_label: "Venue",
+      form_venue_placeholder: "e.g. Normafa Manor, Budapest",
+      form_deadline_label: "RSVP deadline",
+      style_h2: "Style",
+      style_formal: "Formal",
+      style_casual: "Casual",
+      style_poetic: "Poetic",
+      output_h2: "Your wording",
+      output_copy_btn: "Copy",
+      output_copied: "Copied!",
+      cta_h2: "Give every guest their own RSVP link",
+      cta_body:
+        "Static wording is a good start — but Weddly gives every guest their own RSVP link with name pre-filled, dietary options, plus-one and allergy fields. Guests reply on their phone in a minute; you watch the list fill in.",
+      cta_button: "Open your workspace",
+      faq_h2: "RSVP questions",
+      faq_q1: "What does RSVP mean?",
+      faq_a1:
+        "RSVP comes from the French “Répondez s'il vous plaît” — “please respond”. In a wedding context: please let us know whether you can attend. Classic: collect RSVPs 3–4 weeks before the wedding.",
+      faq_q2: "When should we send the RSVP request?",
+      faq_a2:
+        "The RSVP request goes with the invitation — typically 8–12 weeks out. RSVP deadline: ~4 weeks before the wedding so you can lock final headcount with the venue and caterer.",
+      faq_q3: "What should the RSVP wording include?",
+      faq_a3:
+        "Minimum: your names, the wedding date, venue, RSVP deadline, and one contact channel (email / phone / link). Helpful extras: a dietary question, a plus-one field, an allergy line. Weddly's RSVP page covers all of these via a single link.",
+    },
   },
 };
 

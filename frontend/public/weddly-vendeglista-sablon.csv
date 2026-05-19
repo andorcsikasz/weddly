@@ -1,0 +1,9 @@
+vezeteknev,keresztnev,email,telefon,haztartas,etrend,kiserő,rsvp_status
+Kovács,Anna,anna@example.com,+36 30 123 4567,Kovács család,vegetariánus,Bence,pending
+Kovács,Bence,bence@example.com,+36 30 765 4321,Kovács család,,Anna,pending
+Nagy,Zoltán,zoltan.nagy@example.com,+36 70 111 2222,Nagy család,glutén-mentes,,pending
+Nagy,Eszter,eszter.nagy@example.com,+36 70 333 4444,Nagy család,,,pending
+Tóth,Péter,peter@example.com,+36 20 555 6666,Tóth Péter,,Tóth Kata,pending
+Szabó,Dóra,dora@example.com,+36 30 777 8888,Szabó Dóra,vegán,,pending
+Horváth,Marcell,marcell@example.com,+36 20 999 1010,Horváth Marcell,,TBA,pending
+Varga,Júlia,julia@example.com,+36 70 121 3141,Varga család,laktóz-mentes,Varga Tamás,pending

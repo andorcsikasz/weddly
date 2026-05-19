@@ -3160,6 +3160,168 @@ const hu: LocaleMessages = {
       faq_a4:
         "Igen. A „Folytasd a Wēddly-ben” gombbal a vendégszám és a teljes keret bekerül a saját workspace-etek vázlatába; a regisztráció utáni onboardingnál ezekkel a számokkal indul a tervezés. Onnantól kategóriánként szerkeszthetitek és bármikor szüneteltethetitek a workspace-et.",
     },
+    countdown: {
+      page_eyebrow: "Eszközök · Esküvő visszaszámláló",
+      page_h1: "Esküvő visszaszámláló",
+      page_intro:
+        "Hány nap van még az esküvőtökig? Add meg a dátumot, és élőben látod, hány hónap, hét és nap maradt. Tájékozódáshoz mérföldköveket is mutatunk: 12, 9, 6, 3 és 1 hónappal, valamint a nagy nap előtti utolsó héten mit érdemes intézni.",
+      input_label: "Az esküvő dátuma",
+      result_days_unit: "nap",
+      result_days_unit_one: "nap",
+      result_until: "van hátra",
+      result_passed: "telt el az esküvőtök óta",
+      result_empty: "Válassz dátumot a visszaszámlálás indításához.",
+      breakdown_months: "hónap",
+      breakdown_weeks: "hét",
+      breakdown_days: "nap",
+      milestones_h2: "Mit érdemes intézni — mérföldkövek szerint",
+      milestone_12m:
+        "12 hónappal előtte: helyszín lefoglalása, dátum kijelölése, vendégszám első becslése, a teljes keret felállítása.",
+      milestone_9m:
+        "9 hónappal előtte: fotós, videós, zenész és ceremónia-szolgáltatók keresése; meghívók grafikai kialakítása.",
+      milestone_6m:
+        "6 hónappal előtte: catering és menü véglegesítése, ruhák kiválasztása, save-the-date kiküldése, szállás-blokk leadása vendégeknek.",
+      milestone_3m:
+        "3 hónappal előtte: meghívók kiküldése, ültetési rend első verziója, dekor és virág megrendelése, próbavacsora helyszíne.",
+      milestone_1m:
+        "1 hónappal előtte: RSVP-k összegyűjtése, végleges létszám a helyszínnek, ülésrend véglegesítése, nyomtatványok megrendelése.",
+      milestone_1w:
+        "1 héttel előtte: forgatókönyv véglegesítése a szolgáltatókkal, beszéd-próbák, dekor és nyomtatványok átadása, és… aludjatok.",
+      cta_h2: "Tervezzétek meg a maradék hetekben",
+      cta_body:
+        "A visszaszámláló jó indító, de a 12 hónapos teendőlistát egy közös workspace-en érdemes követni. A Wēddly minden mérföldkövet a saját dátumotokra szab, és értesít, mikor érdemes lépni.",
+      cta_button: "Workspace indítása",
+      faq_h2: "Gyakori kérdések",
+      faq_q1: "Mikor érdemes kezdeni az esküvőtervezést?",
+      faq_a1:
+        "Magyar átlag: 12–18 hónappal az esküvő előtt. A helyszín és a fotós a két leghamarabb foglalandó tétel — népszerű időpontokra 18 hónappal előtte már nehéz lehet jó helyszínt találni.",
+      faq_q2: "Hány nappal előtte küldjük ki a meghívókat?",
+      faq_a2:
+        "Klasszikusan 8–12 héttel az esküvő előtt érdemes a meghívókat kiküldeni, RSVP-határidővel ~4 héttel az esküvő előtt. Külföldről érkező vendégeknek érdemes 4–6 héttel hamarabb save-the-date-et küldeni.",
+      faq_q3: "Mi az a save-the-date és mikor küldjük?",
+      faq_a3:
+        "A save-the-date egy rövid előzetes értesítés a dátumról és a helyszín-régióról, hogy a vendégek be tudják iktatni a naptárukba. Ideális kiküldési idő: 6–9 hónappal az esküvő előtt, főleg ha sok vidéki vagy külföldi vendég lesz.",
+    },
+    guest_list_template: {
+      page_eyebrow: "Eszközök · Vendéglista sablon",
+      page_h1: "Vendéglista sablon — magyar esküvőre szabva",
+      page_intro:
+        "Egy letölthető vendéglista CSV-sablon, magyar oszlopnevekkel: vezetéknév, keresztnév, e-mail, telefon, háztartás, étrend, kísérő, RSVP-státusz. Töltsd le, töltsd ki Excel-ben vagy Google Sheets-ben — vagy importáld közvetlenül a Wēddly-be és onnantól mindkettőtök ugyanazt a listát látja, valós időben.",
+      preview_h2: "Mit tartalmaz a sablon",
+      preview_caption: "Magyar esküvőkre szabott oszlopok, importálható Wēddly-be.",
+      col_first_name: "Keresztnév",
+      col_last_name: "Vezetéknév",
+      col_email: "E-mail",
+      col_phone: "Telefon",
+      col_household: "Háztartás",
+      col_diet: "Étrend",
+      col_plus_one: "Kísérő",
+      col_status: "RSVP-státusz",
+      download_h2: "Töltsd le a sablont",
+      download_body:
+        "Egy CSV-fájl, UTF-8 kódolásban, vesszővel elválasztva. Megnyitható Excel-ben, Google Sheets-ben, Numbersben — vagy egy kattintással beimportálható a Wēddly-be a regisztráció után.",
+      download_csv_btn: "Vendéglista CSV letöltése",
+      download_csv_hint:
+        "8 példasort tartalmaz, hogy lásd a formátumot — a saját adataid bekerülésekor cseréld le őket.",
+      organization_h2: "Hogyan szervezd a listát",
+      organization_li_1:
+        "Háztartásonként csoportosíts, ne egyénenként. Egy meghívó egy háztartásnak megy ki, és a háztartás együtt válaszol — sokkal kevesebb RSVP-káosz.",
+      organization_li_2:
+        "Az étrendet külön oszlopban tartsd (vegán/vegetariánus/gluténmentes/laktóz-mentes/egyéb). Catering-egyeztetésnél ez a leggyakrabban kért adat.",
+      organization_li_3:
+        "A „kísérő” oszlopba csak akkor írj nevet, ha biztosan tudjátok ki lesz az — különben „TBA”-ot. A bizonytalan kísérők catering-tervezésnél fejfájást okoznak.",
+      cta_h2: "Importáld a Wēddly-be",
+      cta_body:
+        "A Wēddly importálja a CSV-t, automatikusan háztartásokat épít belőle, és minden vendégnek egyedi RSVP linket generál. A vendégek telefonon válaszolnak, ti egy listán látjátok az állapotot.",
+      cta_button: "Workspace indítása",
+      faq_h2: "Gyakori kérdések a vendéglistáról",
+      faq_q1: "Hány vendéget hívjunk az esküvőre?",
+      faq_a1:
+        "Magyar átlag: 80–120 fő. A létszám közvetlenül befolyásolja a helyszínt, cateringet és a teljes keret 55%-át — érdemes a vendégszámot előbb tisztázni, mint a keretet. A Wēddly költségvetés-kalkulátora élőben mutatja a hatást.",
+      faq_q2: "Kiket NEM kell hívni az esküvőre?",
+      faq_a2:
+        "Nincs kötelező mező. Egy érvényes elv: ha az utolsó találkozás óta több mint 2 év telt el, vagy nem érdekel hogy ott legyenek-e a nagy napon, akkor inkább ne. A „kötelességből” meghívott vendégek a leggyakoribb feszültségforrás.",
+      faq_q3: "Mit írjak a vendéglista Excel/Google Sheets fájlomban?",
+      faq_a3:
+        "Minimum: keresztnév, vezetéknév, kapcsolattartó (e-mail vagy telefon), háztartás, RSVP-státusz. Hasznos extra oszlopok: étrend, kísérő, kapcsolat típusa (család / barát / munka / egyetem). A Wēddly-sablon mindezt tartalmazza.",
+    },
+    seating_chart: {
+      page_eyebrow: "Eszközök · Ültetési rend készítő",
+      page_h1: "Ültetési rend készítő — ingyen, magyar esküvőkre",
+      page_intro:
+        "Egy vászon, asztalok, vendégek — húzd a vendégeket az asztalokra, és a Wēddly egy kattintással nyomtatható ültetési rendet készít A4, A6 (ültetőkártya) és A3 (a nagy tábla a bejárathoz) méretben. Egyenesen a nyomdába vihető, pontos mm méretben. A nyílt béta alatt ingyenes.",
+      what_h2: "Mit kapsz",
+      what_body:
+        "Egy interaktív vásznat, ahol asztalokat (kerek, szögletes, főasztal) helyezel el, és a vendéglistádról húzod őket a helyükre. A vászon konfliktusokat is jelez — ha két vendég ki nem állhatja egymást, vagy ha egy asztal kerek méretarány-szabálysértést szenved.",
+      print_h2: "Nyomtatási méretek",
+      print_body:
+        "Minden ültetési rend három méretben exportálódik PDF-be, pontos mm-rel — a nyomda gond nélkül feldolgozza:",
+      print_li_a4:
+        "A4 (210 × 297 mm) — kompakt áttekintés, a párnak és a koordinátornak. Egyetlen lapra fér el a teljes terem.",
+      print_li_a6:
+        "A6 (105 × 148 mm) — ültetőkártyák. Vendégenként egy lap a vezetéknévvel és az asztal-számmal.",
+      print_li_a3:
+        "A3 (297 × 420 mm) — a bejáratnál kifüggesztett nagy tábla. A vendégek itt nézik meg, hogy melyik asztalhoz mennek.",
+      etiquette_h2: "Ültetési etikett — magyar esküvő alapok",
+      etiquette_li_1:
+        "Főasztal: a pár középen, mellettük a tanúk és a szülők. Klasszikusan 6–10 fő. A főasztalt a terem hosszabb tengelyén szokás elhelyezni, hogy minden vendég jól lássa.",
+      etiquette_li_2:
+        "Korosztály-elv: az idősebb generációt a táncparkettől távolabb, közel a kijárathoz/öltözőhöz. A fiatalokat közelebb a zenéhez. Ez nem szabály, de meleg figyelmesség.",
+      etiquette_li_3:
+        "Konfliktus-kezelés: ha tudsz egy vendégpárról, akik nem férnek meg egy asztalnál (válás, családi feszültség), ne tegyél úgy mintha nem létezne. Külön asztalra menjenek — a Wēddly konfliktus-jelzése pont ezt segíti.",
+      etiquette_li_4:
+        "Gyerekek: 8 év alatt érdemes a szülőkkel egy asztalnál ülniük; 8 év felett külön gyerek-asztal játékkal és külön cateringgel sokszor sikeresebb. Magyar esküvőkön ritka a teljesen gyerekmentes esküvő.",
+      cta_h2: "Próbáld ki a vásznat",
+      cta_body:
+        "A teljes ültetési vászon a workspace-etekben él. Regisztráció után pár kattintással behúzhatod a vendéglistádat és kezdődhet az ültetés-tervezés — mindkettőtök ugyanazt a vásznat látja, valós időben.",
+      cta_button: "Workspace indítása",
+      faq_h2: "Gyakori kérdések az ültetési rendről",
+      faq_q1: "Hányan üljenek egy asztalnál?",
+      faq_a1:
+        "Kerek asztal: 8–10 fő ideális, max 12. Szögletes (banketts): 6–8 fő egy oldalon, vagyis 12–16 egy asztalon. 10 fő felett a beszélgetés szétfeslik, vendégek nem hallják egymást — a Wēddly figyelmeztet, ha túl sokat raksz egy asztalra.",
+      faq_q2: "Mikor készítsem el az ültetési rendet?",
+      faq_a2:
+        "Az RSVP-határidő (~4 héttel az esküvő előtt) után érdemes kezdeni. A végleges létszámmal lehet pontosan tervezni; addig vázlat-szinten elég. A Wēddly-ben kétféle nézet van: tervezett és végleges, így átmehetsz vázlat-módból véglegesbe.",
+      faq_q3: "Hogyan oldjam meg a kínos vendégeket?",
+      faq_a3:
+        "A legbiztosabb módszer: külön asztal és minimum 2 asztalnyi távolság. A vendéglistádba felviszed a konfliktust mint jegyzet, a Wēddly pedig jelez, ha véletlenül egymás mellé húzod őket.",
+    },
+    rsvp_generator: {
+      page_eyebrow: "Eszközök · RSVP szöveg generátor",
+      page_h1: "RSVP minta szöveg — esküvői meghívóhoz",
+      page_intro:
+        "Töltsd ki a párotok nevét, a dátumot, a helyszínt és az RSVP-határidőt, és három stílusban generálunk neked kész szöveget: klasszikus, hétköznapi és költői. Másolj egyetlen kattintással, és pakold a meghívóba vagy a Wēddly RSVP-oldalra.",
+      form_h2: "Az adataitok",
+      form_partner_a_label: "Egyikőtök neve",
+      form_partner_a_placeholder: "pl. Anna",
+      form_partner_b_label: "Másikotok neve",
+      form_partner_b_placeholder: "pl. Bence",
+      form_date_label: "Az esküvő dátuma",
+      form_venue_label: "Helyszín",
+      form_venue_placeholder: "pl. Normafa Rendezvényház, Budapest",
+      form_deadline_label: "RSVP-határidő",
+      style_h2: "Stílus",
+      style_formal: "Klasszikus",
+      style_casual: "Hétköznapi",
+      style_poetic: "Költői",
+      output_h2: "A te szöveged",
+      output_copy_btn: "Másolás",
+      output_copied: "Másolva!",
+      cta_h2: "Adj saját RSVP linket minden vendégnek",
+      cta_body:
+        "A statikus RSVP-szöveg jó kezdés — de a Wēddly minden vendégnek saját RSVP-linket generál (név előre kitöltve, étrend, kísérő, allergia). A vendégek telefonon válaszolnak egy perc alatt; ti egy listán látjátok az állapotot.",
+      cta_button: "Workspace indítása",
+      faq_h2: "Gyakori kérdések az RSVP-ről",
+      faq_q1: "Mit jelent az RSVP?",
+      faq_a1:
+        "Az RSVP a francia „Répondez s'il vous plaît” rövidítése — „kérjük, válaszoljon”. Esküvős kontextusban annyit jelent: kérjük, jelezze, hogy jön-e az esküvőre. A magyar esküvőkön klasszikusan 3–4 héttel az esküvő előtt szokás összegyűjteni.",
+      faq_q2: "Mikor küldjem ki az RSVP-kérést?",
+      faq_a2:
+        "Az RSVP-kérés a meghívóval együtt megy — magyar átlag: 8–12 héttel az esküvő előtt. RSVP-határidő: ~4 héttel az esküvő előtt, hogy a catering-nek és helyszínnek időben tudjátok jelezni a végleges létszámot.",
+      faq_q3: "Mit írjak az RSVP-szövegbe?",
+      faq_a3:
+        "Minimum: párotok neve, az esküvő dátuma, helyszín, RSVP-határidő és egy elérhetőség (e-mail vagy telefon, vagy egy link). Hasznos extra: étrend kérdés, kísérő-mező, allergia. A Wēddly RSVP-oldala ezeket egy linken keresztül oldja meg.",
+    },
   },
 };
 
