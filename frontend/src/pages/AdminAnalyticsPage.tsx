@@ -1569,62 +1569,84 @@ function SignupsAreaChart({
   points: Array<{ date: string; count: number }>;
   max: number;
 }) {
-  // Hover state — index into `points`. Null when the pointer is outside.
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
-  // viewBox dimensions chosen to give the axis ticks enough room without
-  // distorting the line; the SVG itself stretches via CSS to fill its
-  // container width.
+  // Polymarket-style layout: room on the right for Y-axis labels, room at
+  // the bottom for x-ticks, no horizontal padding so the line touches the
+  // edges. viewBox stretches to container width via preserveAspectRatio
+  // "none"; stroke widths stay crisp via vectorEffect="non-scaling-stroke"
+  // and text sizes via dominant-baseline + a separate font-size attribute.
   const W = 560;
-  const H = 180;
-  const PAD_TOP = 12;
-  const PAD_BOTTOM = 22; // room for the x-axis tick labels
-  const PAD_X = 4;
-  const innerW = W - 2 * PAD_X;
+  const H = 200;
+  const PAD_TOP = 16;
+  const PAD_BOTTOM = 22;
+  const PAD_LEFT = 0;
+  const PAD_RIGHT = 36; // room for the right-anchored y-axis labels
+  const innerW = W - PAD_LEFT - PAD_RIGHT;
   const innerH = H - PAD_TOP - PAD_BOTTOM;
-  // When every day is zero, render a flat baseline rather than NaN.
-  const scale = max > 0 ? innerH / max : 0;
+  // Round the y-axis ceiling to a "nice" number so the gridline labels are
+  // human-readable (1/2/5/10/20/...). Falls back to 1 when every day is 0.
+  const niceMax = niceCeiling(Math.max(1, max));
+  const scale = innerH / niceMax;
   const stepX = points.length > 1 ? innerW / (points.length - 1) : innerW;
+  const baselineY = H - PAD_BOTTOM;
   const coords = points.map((p, i) => ({
-    x: PAD_X + i * stepX,
-    y: H - PAD_BOTTOM - p.count * scale,
+    x: PAD_LEFT + i * stepX,
+    y: baselineY - p.count * scale,
   }));
 
-  // Build a smooth path using midpoint-anchored Bezier segments — visually
-  // softer than straight lines while staying faithful to the data (no
-  // overshoot past local maxima the way Catmull-Rom can).
+  // Straight polyline between data points — one row per day, so the
+  // honest representation is segment-by-segment. Bezier smoothing was
+  // creating spurious bulges between adjacent zero-count days.
   const path = coords
-    .map((p, i, arr) => {
-      if (i === 0) return `M ${p.x} ${p.y}`;
-      const prev = arr[i - 1];
-      if (!prev) return `M ${p.x} ${p.y}`;
-      const midX = (prev.x + p.x) / 2;
-      return `Q ${midX} ${prev.y} ${midX} ${(prev.y + p.y) / 2} T ${p.x} ${p.y}`;
-    })
+    .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
     .join(" ");
-  const baselineY = H - PAD_BOTTOM;
-  const fillPath = `${path} L ${PAD_X + innerW} ${baselineY} L ${PAD_X} ${baselineY} Z`;
+  const fillPath = `${path} L ${PAD_LEFT + innerW} ${baselineY} L ${PAD_LEFT} ${baselineY} Z`;
 
   const total = points.reduce((acc, p) => acc + p.count, 0);
   const ariaLabel = `14 day signup chart, total ${total}`;
-
-  // Stable gradient id — index-free since there's only one of these per
-  // page. SVG <defs> in scope of one document, so a static id is fine.
   const gradientId = "signups-area-gradient";
 
-  // Pointer handler — convert clientX into our viewBox x and snap to the
-  // nearest data point. Avoids a per-frame allocation hot path by caching
-  // the bounding rect through the closure.
+  // Y-axis grid lines at 0%, 25%, 50%, 75%, 100% of niceMax — Polymarket's
+  // signature dashed horizontal rules with right-anchored numeric labels.
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((q) => ({
+    y: baselineY - q * innerH,
+    value: Math.round(q * niceMax),
+  }));
+
+  // X-axis tick selector — show first, last, and evenly-spaced interior
+  // ticks, but suppress any interior tick that lands within 2 indices of
+  // the last one (the source of "05-1805-19" collisions on dense strips).
+  const lastIdx = coords.length - 1;
+  const tickIndices = new Set<number>();
+  tickIndices.add(0);
+  if (lastIdx > 0) tickIndices.add(lastIdx);
+  const interiorStep = Math.max(1, Math.round(coords.length / 4));
+  for (let i = interiorStep; i < lastIdx; i += interiorStep) {
+    if (lastIdx - i < 2) continue; // would collide with the right edge
+    tickIndices.add(i);
+  }
+
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (points.length === 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / Math.max(1, rect.width);
+    // Account for the right-side padding when mapping clientX → data index;
+    // the inner plot area is narrower than the rendered div.
+    const innerRatio = (W - PAD_LEFT - PAD_RIGHT) / W;
+    const ratio = ((e.clientX - rect.left) / Math.max(1, rect.width)) / innerRatio;
     const idx = Math.round(ratio * (points.length - 1));
     setHoverIdx(Math.max(0, Math.min(points.length - 1, idx)));
   };
 
   const hovered = hoverIdx !== null ? points[hoverIdx] : null;
   const hoveredCoord = hoverIdx !== null ? coords[hoverIdx] : null;
+  // Convert the hovered point's x back to CSS percent for the HTML tooltip.
+  // We anchor against the rendered width (which includes the right pad),
+  // so the tooltip sits over the data point, not its padded position.
+  const hoveredLeftPct =
+    hoverIdx !== null
+      ? ((PAD_LEFT + hoverIdx * stepX) / W) * 100
+      : 0;
 
   return (
     <div
@@ -1635,72 +1657,82 @@ function SignupsAreaChart({
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        className="block h-40 w-full"
+        className="block h-48 w-full"
         role="img"
         aria-label={ariaLabel}
       >
         <title>{ariaLabel}</title>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            {/* violet-400 (top) → transparent (bottom). The colour stops are
-             *  filled via class so tailwind can resolve the token; the SVG
-             *  spec doesn't allow CSS variables on stop-color in all
-             *  browsers, so we use the className escape hatch tailwind
-             *  provides via `text-*` + `currentColor`. */}
             <stop
               offset="0%"
-              className="text-violet-400"
+              className="text-violet-500"
               stopColor="currentColor"
-              stopOpacity={0.55}
+              stopOpacity={0.35}
             />
             <stop
               offset="100%"
-              className="text-violet-400"
+              className="text-violet-500"
               stopColor="currentColor"
               stopOpacity={0}
             />
           </linearGradient>
         </defs>
-        {/* Subtle baseline so a flat day-zero chart still reads. */}
-        <line
-          x1={PAD_X}
-          x2={PAD_X + innerW}
-          y1={baselineY}
-          y2={baselineY}
-          className="stroke-paper-300 dark:stroke-umber-700"
-          strokeWidth={1}
-        />
+        {/* Y-axis dashed gridlines + right-anchored numeric labels. */}
+        {yTicks.map((t) => (
+          <g key={`yt-${t.value}`}>
+            <line
+              x1={PAD_LEFT}
+              x2={PAD_LEFT + innerW}
+              y1={t.y}
+              y2={t.y}
+              className="stroke-paper-200 dark:stroke-umber-700"
+              strokeWidth={1}
+              strokeDasharray={t.value === 0 ? undefined : "3 4"}
+              vectorEffect="non-scaling-stroke"
+            />
+            <text
+              x={W - 4}
+              y={t.y + 3}
+              textAnchor="end"
+              className="fill-ink-400 dark:fill-umber-300 stat-num"
+              fontSize="9"
+            >
+              {t.value}
+            </text>
+          </g>
+        ))}
         <path d={fillPath} fill={`url(#${gradientId})`} stroke="none" />
         <path
           d={path}
           className="stroke-violet-600 dark:stroke-violet-300"
-          strokeWidth={1.5}
+          strokeWidth={1.75}
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
           vectorEffect="non-scaling-stroke"
         />
-        {/* x-axis tick labels every 3rd day. */}
+        {/* X-axis ticks — first, last, and evenly-spaced interior dates.
+         *  Suppressed when an interior tick would collide with the
+         *  right-edge label (within 2 indices of the last). */}
         {coords.map((p, i) => {
+          if (!tickIndices.has(i)) return null;
           const point = points[i];
           if (!point) return null;
-          if (i % 3 !== 0 && i !== coords.length - 1) return null;
-          // YYYY-MM-DD → short "MM-DD" so the labels stay readable on a 14-row strip.
           const short = point.date.slice(5);
           return (
             <text
               key={`tick-${point.date}`}
               x={p.x}
               y={H - 6}
-              textAnchor={i === 0 ? "start" : i === coords.length - 1 ? "end" : "middle"}
-              className="fill-ink-500 dark:fill-umber-300"
-              fontSize="10"
+              textAnchor={i === 0 ? "start" : i === lastIdx ? "end" : "middle"}
+              className="fill-ink-400 dark:fill-umber-300 stat-num"
+              fontSize="9"
             >
               {short}
             </text>
           );
         })}
-        {/* Hover crosshair + dot — rendered above everything else. */}
         {hovered && hoveredCoord && (
           <g>
             <line
@@ -1711,6 +1743,7 @@ function SignupsAreaChart({
               className="stroke-violet-600/40 dark:stroke-violet-300/40"
               strokeWidth={1}
               strokeDasharray="2 3"
+              vectorEffect="non-scaling-stroke"
             />
             <circle
               cx={hoveredCoord.x}
@@ -1727,12 +1760,10 @@ function SignupsAreaChart({
           </g>
         )}
       </svg>
-      {/* HTML overlay tooltip — positions itself in CSS percent space so
-       *  the SVG can keep its non-uniform scale. */}
       {hovered && hoverIdx !== null && (
         <div
           className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-2 rounded-md border border-ink-100 bg-white px-2 py-1 text-[11px] font-medium text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
-          style={{ left: `${(hoverIdx / Math.max(1, points.length - 1)) * 100}%` }}
+          style={{ left: `${hoveredLeftPct}%` }}
         >
           <div className="stat-num">{hovered.date}</div>
           <div className="stat-num text-violet-600 dark:text-violet-300">{hovered.count}</div>
@@ -1740,6 +1771,20 @@ function SignupsAreaChart({
       )}
     </div>
   );
+}
+
+/** Round `n` up to a "nice" Y-axis ceiling — one of 1, 2, 5 × 10^k. So a
+ *  max of 7 becomes 10, a max of 23 becomes 25 (well, 50 actually — the
+ *  1/2/5 series). Used so the gridline labels read as round numbers
+ *  instead of "0 / 1.75 / 3.5 / 5.25 / 7". */
+function niceCeiling(n: number): number {
+  if (n <= 1) return 1;
+  const pow = Math.pow(10, Math.floor(Math.log10(n)));
+  const norm = n / pow;
+  if (norm <= 1) return pow;
+  if (norm <= 2) return 2 * pow;
+  if (norm <= 5) return 5 * pow;
+  return 10 * pow;
 }
 
 /** Pure-CSS horizontal bar. Width is a percentage of the parent so the
