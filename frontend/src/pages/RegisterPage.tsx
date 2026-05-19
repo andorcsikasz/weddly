@@ -147,7 +147,12 @@ export default function RegisterPage() {
         <div className="card">
           <h1 className="text-2xl">{t("auth.register_title")}</h1>
           <div className="mt-6">
-            <GoogleSignInButton mode="signup" redirectTo="/onboarding" />
+            {/* oneTap (without autoSelect) means a returning Google user
+                lands here, gets the floating prompt, and one-taps to sign
+                in. We deliberately leave autoSelect off on /signup so a
+                visitor who came specifically to register doesn't get
+                silently signed in as an existing account. */}
+            <GoogleSignInButton mode="signup" redirectTo="/onboarding" oneTap />
           </div>
           <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-500">
             <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
