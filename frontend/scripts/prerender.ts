@@ -157,19 +157,36 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
 
 function injectIntoRoot(template: string, body: string): string {
   // The vite-built index.html still has `<div id="root"></div>`. We replace
-  // it with the same div wrapping the static body inside an off-screen
-  // container. React's createRoot() wipes children on first render, but on
-  // slow networks the user briefly sees the pre-hydration paint — wrapping
-  // it in an off-screen, aria-hidden div keeps the content crawlable while
-  // hiding the unstyled flash from human visitors. Off-screen (not
-  // display:none) so Google still indexes the body.
+  // it with the same div containing the static body. React's createRoot()
+  // wipes children on first render, so the user only sees the SSR body
+  // during the ~100-300 ms between first paint and hydration.
+  //
+  // We do NOT hide this content off-screen / via aria-hidden / display:none.
+  // Google's HTML-only crawl pass (which drives most SPA ranking) downweights
+  // visually-hidden text — off-screen at -10000px specifically matches the
+  // textbook keyword-stuffing pattern its spam filters watch for. The brief
+  // pre-hydration flash is the better trade: visible content gives Google
+  // full ranking weight AND wins LCP (Largest Contentful Paint fires at the
+  // SSR body rather than waiting for the bundle to parse + render). The
+  // `seo-prerender` class lets the stylesheet apply minimal typography so
+  // the flash looks like a quiet text block, not a raw DOM dump.
+  //
+  // The SEO_BODY_START / SEO_BODY_END sentinels let the per-request renderer
+  // in backend/src/lib/seo_ssr.ts swap this landing body for a route-specific
+  // body when a known non-landing public path (e.g. /about, /vendors) is
+  // requested. Without that swap every URL would ship the landing's <h1>
+  // and Google would treat them as duplicates of the landing.
   const ROOT_EMPTY = `<div id="root"></div>`;
   if (!template.includes(ROOT_EMPTY)) {
     throw new Error('prerender: <div id="root"></div> placeholder not found in dist/index.html');
   }
-  const hiddenStyle =
-    "position:absolute;left:-10000px;top:0;width:1px;height:1px;overflow:hidden";
-  const wrapped = `<div aria-hidden="true" style="${hiddenStyle}">\n      ${body}\n    </div>`;
+  const wrapped = [
+    `<div class="seo-prerender">`,
+    `      <!-- SEO_BODY_START -->`,
+    `      ${body}`,
+    `      <!-- SEO_BODY_END -->`,
+    `    </div>`,
+  ].join("\n      ");
   return template.replace(ROOT_EMPTY, `<div id="root">\n      ${wrapped}\n    </div>`);
 }
 

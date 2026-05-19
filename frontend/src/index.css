@@ -37,6 +37,51 @@
     height: 100%;
   }
 
+  /* SSR prerender body (frontend/scripts/prerender.ts) — what crawlers see
+   * before the React bundle parses. Real users only catch ~100-300 ms of
+   * this before createRoot() wipes it; the styling keeps the flash from
+   * looking like a raw DOM dump. Tailwind utility classes on the React
+   * tree fully replace these rules post-hydration. */
+  .seo-prerender {
+    max-width: 64ch;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3rem;
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    color: theme("colors.ink.700");
+    line-height: 1.55;
+  }
+  .seo-prerender h1 {
+    font-size: clamp(1.75rem, 5vw, 2.75rem);
+    font-style: italic;
+    line-height: 1.1;
+    margin: 0 0 0.75rem;
+  }
+  .seo-prerender h2 {
+    font-size: clamp(1.35rem, 3vw, 1.8rem);
+    margin: 2rem 0 0.5rem;
+  }
+  .seo-prerender h3 {
+    font-size: 1.1rem;
+    margin: 1.25rem 0 0.25rem;
+  }
+  .seo-prerender p,
+  .seo-prerender dd {
+    margin: 0.5rem 0 1rem;
+  }
+  .seo-prerender dt {
+    font-weight: 600;
+    margin-top: 1rem;
+  }
+  .seo-prerender a {
+    color: theme("colors.ink.900");
+    text-decoration: underline;
+  }
+  .seo-prerender footer nav {
+    display: inline-block;
+    margin-right: 1.5rem;
+    vertical-align: top;
+  }
+
   /* Belt-and-braces background on <html> so content that grows past the
      body's 100% height still paints over a themed surface (otherwise
      scrolling past the viewport reveals the browser's default white

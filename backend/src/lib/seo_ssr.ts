@@ -13,6 +13,7 @@
 // non-JS crawler ever sees.
 
 import { SEO_FAQ } from "../../../shared/seo_faq";
+import { lookupRouteSeo } from "../../../shared/seo_routes";
 
 export const HU_HOST = "weddly.hu";
 export const EN_HOST = "weddly.xyz";
@@ -160,41 +161,52 @@ function buildJsonLd(opts: {
 
 /** Build the SEO `<head>` block (everything between the sentinels) for the
  *  given host + path. Returns just the inner block — the caller splices it
- *  into the template between the sentinels. */
+ *  into the template between the sentinels.
+ *
+ *  Per-route title/description override (from shared/seo_routes.ts) is what
+ *  stops every public URL from re-using the landing's meta — Googlebot's
+ *  HTML-only crawl then sees a distinct title + description per indexed
+ *  page instead of "the same page repeated nine times". */
 function buildHeadBlock(opts: { host: string | null; pathname: string; isRsvp: boolean }): string {
   const locale = localeForHost(opts.host);
-  const meta = META[locale];
-  const altMeta = META[locale === "hu" ? "en" : "hu"];
+  const defaultMeta = META[locale];
+  const altDefaultMeta = META[locale === "hu" ? "en" : "hu"];
   const canonicalHost = canonicalHostFor(locale);
   const path = opts.pathname || "/";
   const canonicalUrl = `https://${canonicalHost}${path}`;
   const huUrl = `https://${HU_HOST}${path}`;
   const enUrl = `https://${EN_HOST}${path}`;
-  // Absolute og/twitter image URL — some scrapers (Facebook, LinkedIn) only
-  // honour absolute paths. Stays on the canonical host so the preview card
-  // attribution matches the click target the share resolves to.
   const ogImage = `https://${canonicalHost}${opts.isRsvp ? "/og-rsvp.png" : "/og.png"}`;
 
+  // Route-specific title + description take precedence over the landing
+  // defaults so each public path ships a unique <title> / description in
+  // the initial HTML. Twitter description, og image, locales etc. stay
+  // from the landing META (those are brand-level, not page-level).
+  const routeSeo = lookupRouteSeo(path);
+  const title = routeSeo ? routeSeo[locale].title : defaultMeta.title;
+  const description = routeSeo ? routeSeo[locale].description : defaultMeta.description;
+  const twDescription = routeSeo ? routeSeo[locale].description : defaultMeta.twDescription;
+
   return [
-    `<title>${escapeAttr(meta.title)}</title>`,
-    `<meta name="description" content="${escapeAttr(meta.description)}" />`,
-    `<meta name="application-name" content="${escapeAttr(meta.brandName)}" />`,
+    `<title>${escapeAttr(title)}</title>`,
+    `<meta name="description" content="${escapeAttr(description)}" />`,
+    `<meta name="application-name" content="${escapeAttr(defaultMeta.brandName)}" />`,
     `<link rel="canonical" href="${canonicalUrl}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:site_name" content="Wēddly" />`,
-    `<meta property="og:locale" content="${meta.ogLocale}" />`,
-    `<meta property="og:locale:alternate" content="${altMeta.ogLocale}" />`,
+    `<meta property="og:locale" content="${defaultMeta.ogLocale}" />`,
+    `<meta property="og:locale:alternate" content="${altDefaultMeta.ogLocale}" />`,
     `<meta property="og:url" content="${canonicalUrl}" />`,
-    `<meta property="og:title" content="${escapeAttr(meta.title)}" />`,
-    `<meta property="og:description" content="${escapeAttr(meta.description)}" />`,
+    `<meta property="og:title" content="${escapeAttr(title)}" />`,
+    `<meta property="og:description" content="${escapeAttr(description)}" />`,
     `<meta property="og:image" content="${ogImage}" />`,
     `<meta property="og:image:type" content="image/png" />`,
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
-    `<meta property="og:image:alt" content="${escapeAttr(meta.ogImageAlt)}" />`,
+    `<meta property="og:image:alt" content="${escapeAttr(defaultMeta.ogImageAlt)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="${escapeAttr(meta.title)}" />`,
-    `<meta name="twitter:description" content="${escapeAttr(meta.twDescription)}" />`,
+    `<meta name="twitter:title" content="${escapeAttr(title)}" />`,
+    `<meta name="twitter:description" content="${escapeAttr(twDescription)}" />`,
     `<meta name="twitter:image" content="${ogImage}" />`,
     `<link rel="alternate" hreflang="hu" href="${huUrl}" />`,
     `<link rel="alternate" hreflang="en" href="${enUrl}" />`,
@@ -203,9 +215,69 @@ function buildHeadBlock(opts: { host: string | null; pathname: string; isRsvp: b
   ].join("\n    ");
 }
 
+/** Build a tiny route-specific SSR body (h1 + intro + footer nav). Returns
+ *  null for the landing and unknown paths — those keep whatever body the
+ *  prerender script baked into the template. Used by renderIndexHtml below
+ *  to give Googlebot a distinct <h1> + paragraph on each public URL
+ *  instead of nine copies of the landing's hero. */
+function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
+  const routeSeo = lookupRouteSeo(pathname);
+  if (!routeSeo) return null;
+  const entry = routeSeo[locale];
+  // Footer link target for the imprint route depends on locale (HU mounts at
+  // /impresszum, EN at /imprint — both reach the same React page).
+  const imprintHref = locale === "hu" ? "/impresszum" : "/imprint";
+  const labels =
+    locale === "hu"
+      ? {
+          about: "Rólunk",
+          privacy: "Adatvédelem",
+          terms: "Felhasználási feltételek",
+          imprint: "Impresszum",
+          signup: "Regisztráció",
+          login: "Bejelentkezés",
+          vendors: "Szolgáltatóknak",
+          home: "Főoldal",
+        }
+      : {
+          about: "About",
+          privacy: "Privacy",
+          terms: "Terms",
+          imprint: "Imprint",
+          signup: "Sign up",
+          login: "Sign in",
+          vendors: "For vendors",
+          home: "Home",
+        };
+  return [
+    `<header>`,
+    `  <h1>${escapeAttr(entry.h1)}</h1>`,
+    `  <p>${escapeAttr(entry.intro)}</p>`,
+    `</header>`,
+    `<footer>`,
+    `  <nav>`,
+    `    <a href="/">${escapeAttr(labels.home)}</a> · `,
+    `    <a href="/signup">${escapeAttr(labels.signup)}</a> · `,
+    `    <a href="/login">${escapeAttr(labels.login)}</a> · `,
+    `    <a href="/vendors">${escapeAttr(labels.vendors)}</a> · `,
+    `    <a href="/about">${escapeAttr(labels.about)}</a> · `,
+    `    <a href="/privacy">${escapeAttr(labels.privacy)}</a> · `,
+    `    <a href="/terms">${escapeAttr(labels.terms)}</a> · `,
+    `    <a href="${imprintHref}">${escapeAttr(labels.imprint)}</a>`,
+    `  </nav>`,
+    `</footer>`,
+  ].join("\n      ");
+}
+
+const BODY_START = "<!-- SEO_BODY_START -->";
+const BODY_END = "<!-- SEO_BODY_END -->";
+
 /** Splice the host-aware `<head>` block into the index.html template,
  *  replacing whatever sits between `<!-- SEO_HEAD_START -->` and
- *  `<!-- SEO_HEAD_END -->`. Also flips the `<html lang>` attribute. */
+ *  `<!-- SEO_HEAD_END -->`. Also flips the `<html lang>` attribute and,
+ *  for known non-landing routes, replaces the prerendered landing body
+ *  with a route-specific h1 + intro between
+ *  `<!-- SEO_BODY_START -->` / `<!-- SEO_BODY_END -->`. */
 export function renderIndexHtml(
   template: string,
   opts: { host: string | null; pathname: string; isRsvp: boolean },
@@ -213,16 +285,36 @@ export function renderIndexHtml(
   const locale = localeForHost(opts.host);
   const head = buildHeadBlock(opts);
 
+  // Splice the <head> block.
+  let out: string;
   const startIdx = template.indexOf(HEAD_START);
   const endIdx = template.indexOf(HEAD_END);
   if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
-    // Template lost its sentinels (build mishap / hand-edit). Fail open: return
-    // the template unchanged so we at least serve the page rather than 500.
-    return template.replace(/<html lang="[^"]*"/, `<html lang="${META[locale].lang}"`);
+    // Template lost its sentinels (build mishap / hand-edit). Fail open: serve
+    // the template unchanged rather than 500.
+    out = template;
+  } else {
+    const before = template.slice(0, startIdx + HEAD_START.length);
+    const after = template.slice(endIdx);
+    out = `${before}\n    ${head}\n    ${after}`;
   }
-  const before = template.slice(0, startIdx + HEAD_START.length);
-  const after = template.slice(endIdx);
-  const out = `${before}\n    ${head}\n    ${after}`;
+
+  // Splice the route-specific body if this is a known non-landing public
+  // route. For "/" and unknown paths we keep whatever body the prerender
+  // script baked into the template — that's already the rich landing body
+  // on landing files, and the same body is harmless as a fallback for
+  // unknown paths.
+  const routeBody = renderRouteBody(opts.pathname || "/", locale);
+  if (routeBody) {
+    const bodyStartIdx = out.indexOf(BODY_START);
+    const bodyEndIdx = out.indexOf(BODY_END);
+    if (bodyStartIdx !== -1 && bodyEndIdx !== -1 && bodyEndIdx > bodyStartIdx) {
+      const before = out.slice(0, bodyStartIdx + BODY_START.length);
+      const after = out.slice(bodyEndIdx);
+      out = `${before}\n      ${routeBody}\n      ${after}`;
+    }
+  }
+
   return out.replace(/<html lang="[^"]*"/, `<html lang="${META[locale].lang}"`);
 }
 
