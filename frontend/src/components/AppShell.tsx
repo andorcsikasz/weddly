@@ -563,6 +563,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           id="main-content"
           ref={mainRef}
           tabIndex={-1}
+          data-admin-shell={inAdminView ? "true" : undefined}
           className="flex-1 min-w-0 focus:outline-none"
         >
           {children}
