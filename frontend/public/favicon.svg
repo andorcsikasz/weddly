@@ -1,22 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Weddly">
-  <!-- Two interlocking wedding bands on a full-bleed paper-cream square.
-       Replaces the older serif-W zig-zag badge, which read as a fuzzy
-       chevron in Google's 16x16 SERP favicon slot. Universal wedding
-       symbol, no glyph dependencies, survives both raw (browser tab) and
-       circle-cropped (Google SERP, iOS home-screen) renderings.
+  <!-- Dark-blue square + white dove silhouette. Replaces the two-rings
+       favicon — peace-dove iconography is more brand-distinctive than
+       interlocking bands (which read as Olympic rings at 16x16) and the
+       white-on-navy contrast survives Google's circular SERP crop.
 
-       Palette: paper-50 (#efe9d9) surface + ink-900 (#101830) rings —
-       the brand's quiet "wedding stationery" pair rather than a generic
-       blue badge.
+       Background uses the brand's logo navy (#1d3a8a) so the favicon
+       and Organization-schema logo share a colour story.
 
-       Stroke width 5 on a 64 viewBox = ~1.25px at 16x16; thinner than
-       that sub-pixel-averages into a fuzzy haze. Each ring sits ~9 units
-       off centre so the overlap reads as a linked pair rather than a
-       single thick band, and so neither ring crowds the safe-area inset
-       Google's circular crop reserves. -->
-  <rect width="64" height="64" fill="#efe9d9"/>
-  <g fill="none" stroke="#101830" stroke-width="5">
-    <circle cx="23" cy="32" r="14"/>
-    <circle cx="41" cy="32" r="14"/>
+       The dove is composed of primitives rather than one freehand path
+       so each feature (body, head, beak, tail, wing) lands at a
+       predictable size — at 16x16 the head + beak are the only details
+       guaranteed to survive antialiasing, so they sit on the upper
+       right where the eye lands first. -->
+  <rect width="64" height="64" fill="#1d3a8a"/>
+  <g fill="#ffffff">
+    <!-- Body — tilted ellipse, head-end raised. -->
+    <ellipse cx="28" cy="36" rx="15" ry="7.5" transform="rotate(-10 28 36)"/>
+    <!-- Tail flare at the back (left), simple forked notch. -->
+    <path d="M 10 34 L 17 38 L 10 42 L 15 38 Z"/>
+    <!-- Head. -->
+    <circle cx="44" cy="27" r="6.5"/>
+    <!-- Beak — small wedge pointing right. -->
+    <path d="M 49 25 L 56 25.5 L 50 30 Z"/>
+    <!-- Raised wing arcing above the body. -->
+    <path d="M 22 32 Q 28 16 40 21 Q 38 31 30 33 Q 25 33 22 32 Z"/>
   </g>
 </svg>
