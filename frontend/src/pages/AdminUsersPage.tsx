@@ -490,15 +490,15 @@ export default function AdminUsersPage() {
                 )}
                 <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
                   {t(
-                    visibleCouples.length === 1
+                    realCouples.length === 1
                       ? "admin.workspaces_count_one"
                       : "admin.workspaces_count_other",
-                    { n: visibleCouples.length },
+                    { n: realCouples.length },
                   )}
                 </span>
               </div>
             </div>
-            {visibleCouples.length === 0 ? (
+            {realCouples.length === 0 ? (
               <div className="card text-sm text-ink-500 dark:text-umber-300">
                 {t("admin.couples_empty")}
               </div>
@@ -515,7 +515,7 @@ export default function AdminUsersPage() {
                   <div>{t("admin.table_workspace_last_active")}</div>
                 </div>
                 <ul className="space-y-2">
-                  {visibleCouples.map((c) => {
+                  {realCouples.map((c) => {
                     // Server returns partners scrubbed of users we already
                     // know are missing (rare race); fall back to userById
                     // for the freshest local state.
@@ -575,6 +575,67 @@ export default function AdminUsersPage() {
               </>
             )}
           </section>
+
+          {/* ── Demo workspaces — landing-page "try Shrek & Fiona" seedlings.
+           *  Kept separate from the real-couple list so signup numbers stay
+           *  honest. Compact one-line rows; the demo-purge worker on the
+           *  backend reaps these on its own schedule, so no destructive
+           *  action surface here. ───────────────────────────────────────── */}
+          {demoCouples.length > 0 && (
+            <section className="mb-10">
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+                  {t("admin.demo_workspaces_section")}
+                </h2>
+                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  {t(
+                    demoCouples.length === 1
+                      ? "admin.demo_workspaces_count_one"
+                      : "admin.demo_workspaces_count_other",
+                    { n: demoCouples.length },
+                  )}
+                </span>
+              </div>
+              <p className="mb-3 text-xs text-ink-500 dark:text-umber-300">
+                {t("admin.demo_workspaces_help")}
+              </p>
+              <ul className="space-y-1.5">
+                {demoCouples.map((c) => {
+                  const members = c.partners
+                    .map((p) => userById.get(p.id))
+                    .filter((u): u is AdminUserView => u != null);
+                  const firstMemberEmail = members[0]?.email ?? "—";
+                  return (
+                    <li
+                      key={c.id}
+                      className="rounded-xl border border-paper-200 bg-paper-50/60 dark:border-umber-700 dark:bg-umber-800/60 px-4 py-2"
+                    >
+                      <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_9rem_9rem] md:items-center">
+                        <div className="whitespace-nowrap">
+                          <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
+                            {workspaceId(c)}
+                          </code>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                          <Badge tone="muted">{t("admin.demo_badge")}</Badge>
+                          <span className="truncate">{workspaceLabel(c)}</span>
+                        </div>
+                        <div className="truncate text-xs text-ink-500 dark:text-umber-300">
+                          {firstMemberEmail}
+                        </div>
+                        <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+                          {formatDate(c.created_at, locale)}
+                        </div>
+                        <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+                          {formatRelative(c.last_seen_at, locale, t)}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
 
           {/* ── Orphan users — no workspace yet ───────────────────────────── */}
           <section>

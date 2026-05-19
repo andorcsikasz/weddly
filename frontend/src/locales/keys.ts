@@ -2223,6 +2223,13 @@ export interface LocaleMessages {
     workspaces_section: string;
     workspaces_count_one: string;
     workspaces_count_other: string;
+    /** Demo workspaces are landing-page Shrek & Fiona seedlings — kept in
+     *  their own section so the real-couple list stays scannable. */
+    demo_workspaces_section: string;
+    demo_workspaces_count_one: string;
+    demo_workspaces_count_other: string;
+    demo_workspaces_help: string;
+    demo_badge: string;
     orphans_section: string;
     orphans_count_one: string;
     orphans_count_other: string;

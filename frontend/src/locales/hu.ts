@@ -2037,6 +2037,12 @@ const hu: LocaleMessages = {
     workspaces_section: "Páros munkaterületek",
     workspaces_count_one: "{n} munkaterület",
     workspaces_count_other: "{n} munkaterület",
+    demo_workspaces_section: "Demo munkaterületek",
+    demo_workspaces_count_one: "{n} demo",
+    demo_workspaces_count_other: "{n} demo",
+    demo_workspaces_help:
+      "A nyitóoldali „Shrek & Fiona” demóból érkező munkaterületek. Külön gyűjtve, hogy a valós párok listája tiszta maradjon — a háttérben futó sweep automatikusan kitakarítja őket.",
+    demo_badge: "Demo",
     orphans_section: "Munkaterület nélküli felhasználók",
     orphans_count_one: "{n} felhasználó",
     orphans_count_other: "{n} felhasználó",

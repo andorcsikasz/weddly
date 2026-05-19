@@ -2022,6 +2022,12 @@ const en: LocaleMessages = {
     workspaces_section: "Couple workspaces",
     workspaces_count_one: "{n} workspace",
     workspaces_count_other: "{n} workspaces",
+    demo_workspaces_section: "Demo workspaces",
+    demo_workspaces_count_one: "{n} demo",
+    demo_workspaces_count_other: "{n} demo",
+    demo_workspaces_help:
+      "Shrek & Fiona workspaces seeded by the landing-page demo. Kept separate so the real-couple list stays clean — the background sweep purges these on its own schedule.",
+    demo_badge: "Demo",
     orphans_section: "Users without a workspace",
     orphans_count_one: "{n} user",
     orphans_count_other: "{n} users",
