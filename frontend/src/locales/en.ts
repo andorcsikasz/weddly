@@ -1657,7 +1657,7 @@ const en: LocaleMessages = {
   },
   suppliers: {
     title: "Suppliers",
-    sub: "Curated list. Reach out directly — v2 will let you book here.",
+    sub: "Curated list. Reach out to them directly; booking arrives in v2.",
     contact_email: "Email",
     visit_website: "Website",
     no_phone: "No phone on file",
@@ -3093,7 +3093,7 @@ const en: LocaleMessages = {
     //    primary CTA + a trust microcopy under it. ─────────────────────
     popup_title: "Time to start your own fairy tale.",
     popup_body:
-      "Maybe the prince won't arrive on a white horse — but your “happily ever after” starts now.",
+      "Maybe the prince won't arrive on a white horse, but your happily ever after starts now.",
     popup_cta: "Sign up",
     popup_microcopy: "Free during the open beta.",
   },

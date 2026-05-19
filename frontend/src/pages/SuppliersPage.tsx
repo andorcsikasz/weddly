@@ -671,12 +671,16 @@ export default function SuppliersPage() {
 
   return (
     <>
-      <header className="mb-6 flex items-start justify-between gap-4">
+      <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <h1>{t("suppliers.title")}</h1>
           <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("suppliers.sub")}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        {/* Controls stack under the title on mobile so the view-mode pills and
+            "Drop your own" button don't compress the heading + sub-copy into a
+            tall narrow column. `flex-wrap` lets the two control groups break
+            independently on the narrowest viewports. */}
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
           <div
             role="group"
             aria-label={t("suppliers.view_label")}

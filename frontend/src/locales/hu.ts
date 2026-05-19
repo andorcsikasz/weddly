@@ -1671,7 +1671,7 @@ const hu: LocaleMessages = {
   },
   suppliers: {
     title: "Szolgáltatók",
-    sub: "Válogatott lista. Lépj kapcsolatba közvetlenül; v2-ben rendelhetsz innen.",
+    sub: "Válogatott lista. Velük közvetlenül egyeztess; foglalni v2-ben tudtok majd.",
     contact_email: "E-mail",
     visit_website: "Weboldal",
     no_phone: "Nincs megadva telefonszám",
@@ -3117,7 +3117,7 @@ const hu: LocaleMessages = {
     //    else is short, single-language Hungarian. ─────────────────────
     popup_title: "Ideje elkezdeni a saját tündérmesétek.",
     popup_body:
-      "Lehet, hogy a herceg nem fehér lovon érkezik — de az „örökkön örökké” most kezdődik.",
+      "Lehet, hogy a herceg nem fehér lovon jön, de az örökkön örökké most kezdődik.",
     popup_cta: "Regisztráció",
     popup_microcopy: "Ingyenes a nyílt béta alatt.",
   },
