@@ -1179,7 +1179,7 @@ function TopUsersCard({
           return (
             <li
               key={u.user_id}
-              className="grid grid-cols-[1.5rem_minmax(0,1fr)_minmax(0,1.4fr)_5rem_5rem] items-center gap-3 text-sm"
+              className="grid grid-cols-[1.5rem_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)_6rem_4rem] items-center gap-3 text-sm"
             >
               <span className="stat-num text-xs text-ink-400 dark:text-umber-300">
                 {String(i + 1).padStart(2, "0")}
@@ -1188,6 +1188,9 @@ function TopUsersCard({
                 {u.full_name}
               </span>
               <span className="truncate text-xs text-ink-500 dark:text-umber-300">{u.email}</span>
+              <span className="truncate text-xs text-ink-500 dark:text-umber-300">
+                {formatRelative(u.last_seen_at, locale, t)}
+              </span>
               <div className="relative h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                 <div
                   className="h-full rounded-full bg-violet-600 dark:bg-violet-500"
@@ -1206,6 +1209,31 @@ function TopUsersCard({
       </p>
     </SubCard>
   );
+}
+
+/** "X mins ago" / "X hours ago" / "X days ago" / absolute date past 7 days.
+ *  Mirrors the relative formatter on AdminUsersPage so the wording stays
+ *  identical across the admin surfaces. */
+function formatRelative(
+  unixMs: number | null,
+  locale: string,
+  t: (k: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (unixMs == null) return t("admin.last_active_never");
+  const diff = Date.now() - unixMs;
+  if (diff < 60 * 1000) return t("admin.last_active_now");
+  const mins = Math.floor(diff / (60 * 1000));
+  if (mins < 60) return t("admin.last_active_minutes", { n: mins });
+  const hours = Math.floor(diff / (60 * 60 * 1000));
+  if (hours < 24) return t("admin.last_active_hours", { n: hours });
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  if (days < 7) return t("admin.last_active_days", { n: days });
+  const d = new Date(unixMs);
+  return d.toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 // ─── Demo section ──────────────────────────────────────────────────────────
