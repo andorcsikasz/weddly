@@ -17,8 +17,8 @@ import {
   Cake,
   Camera,
   ChefHat,
-  ArrowDown,
-  ArrowUp,
+  ArrowBigDown,
+  ArrowBigUp,
   Bookmark,
   BookmarkCheck,
   ChevronRight,
@@ -1821,7 +1821,7 @@ function VoteRow({
             : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-blush-300"
         }
       >
-        <ArrowUp size={14} aria-hidden />
+        <ArrowBigUp size={16} aria-hidden />
       </button>
       <span
         className={`min-w-[1.25rem] text-center tabular-nums ${
@@ -1845,7 +1845,7 @@ function VoteRow({
             : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
         }
       >
-        <ArrowDown size={14} aria-hidden />
+        <ArrowBigDown size={16} aria-hidden />
       </button>
     </div>
   );
