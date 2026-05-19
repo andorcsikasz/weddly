@@ -16,6 +16,8 @@ import {
   BedDouble,
   Calendar,
   Check,
+  Circle,
+  CheckCircle2,
   Compass,
   Map as MapIcon,
   AlertTriangle,
@@ -26,6 +28,7 @@ import {
   Trash2,
   UtensilsCrossed,
   Wallet,
+  Wand2,
 } from "lucide-react";
 import {
   type ComponentType,
@@ -38,7 +41,11 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { useConfirm, useToast } from "../components/ui";
+import { Dialog, useConfirm, useToast } from "../components/ui";
+import {
+  TASK_TEMPLATE_GROUPS,
+  localizeText,
+} from "../lib/planning_templates";
 import { ApiError } from "../lib/api";
 import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
@@ -1267,10 +1274,68 @@ function HoneymoonTodoSection({
    *  value in place so the user can retry without re-typing. */
   onAdd: (title: string) => Promise<boolean>;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const done = items.filter((i) => i.done).length;
   const [draft, setDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [wandOpen, setWandOpen] = useState(false);
+  const [wandApplying, setWandApplying] = useState(false);
+
+  // Honeymoon-group items from the shared task template. Pulled from
+  // TASK_TEMPLATE_GROUPS so the wand on this page stays in lockstep with
+  // the planning page's honeymoon section — adding a template item there
+  // surfaces it here automatically.
+  const wandItems = useMemo(
+    () => TASK_TEMPLATE_GROUPS.find((g) => g.id === "honeymoon")?.items ?? [],
+    [],
+  );
+  // Track which existing task titles match a template item so the dialog
+  // can default-deselect duplicates — couples shouldn't get two "Repjegyet
+  // lefoglalni" rows just for re-opening the wand. Match across both
+  // locales so a HU-typed task hides the EN template entry too.
+  const existingTitles = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of items) set.add(item.title);
+    return set;
+  }, [items]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  // Reset the selection every time the dialog opens — default to "every
+  // template item not already in the list".
+  useEffect(() => {
+    if (!wandOpen) return;
+    const next = new Set<number>();
+    wandItems.forEach((it, idx) => {
+      if (!existingTitles.has(it.title.hu) && !existingTitles.has(it.title.en)) next.add(idx);
+    });
+    setSelected(next);
+  }, [wandOpen, wandItems, existingTitles]);
+
+  async function applyWand() {
+    if (wandApplying) return;
+    setWandApplying(true);
+    let added = 0;
+    try {
+      for (let i = 0; i < wandItems.length; i++) {
+        if (!selected.has(i)) continue;
+        const tmpl = wandItems[i];
+        if (!tmpl) continue;
+        const ok = await onAdd(localizeText(tmpl.title, locale));
+        if (ok) added++;
+      }
+    } finally {
+      setWandApplying(false);
+      if (added > 0) setWandOpen(false);
+    }
+  }
+
+  function toggleSelected(idx: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1322,12 +1387,22 @@ function HoneymoonTodoSection({
               : t("honeymoon.todo_sub_empty")}
           </p>
         </div>
-        <Link
-          to="/app/planning"
-          className="text-sm text-ink-700 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
-        >
-          {t("honeymoon.todo_manage_link")}
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setWandOpen(true)}
+            className="btn-outline btn-sm inline-flex items-center gap-1.5"
+          >
+            <Wand2 size={14} aria-hidden="true" />
+            {t("honeymoon.todo_wand_button")}
+          </button>
+          <Link
+            to="/app/planning"
+            className="text-sm text-ink-700 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+          >
+            {t("honeymoon.todo_manage_link")}
+          </Link>
+        </div>
       </div>
       {items.length === 0 ? (
         <div className="card !p-4">
@@ -1379,6 +1454,107 @@ function HoneymoonTodoSection({
             <li className="px-4 py-2.5">{addForm}</li>
           </ul>
         </div>
+      )}
+      {wandOpen && (
+        <Dialog
+          open
+          role="dialog"
+          title={t("honeymoon.todo_wand_dialog_title")}
+          closeOnBackdrop
+          onClose={() => {
+            if (!wandApplying) setWandOpen(false);
+          }}
+          footer={
+            <>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setWandOpen(false)}
+                disabled={wandApplying}
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={applyWand}
+                disabled={wandApplying || selected.size === 0}
+              >
+                {wandApplying
+                  ? t("common.loading")
+                  : t("honeymoon.todo_wand_confirm", { count: selected.size })}
+              </button>
+            </>
+          }
+        >
+          <p className="text-sm text-ink-700 dark:text-paper-100">
+            {t("honeymoon.todo_wand_dialog_body")}
+          </p>
+          <div className="mt-3 rounded-lg border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("planning.template_select_label", {
+                  count: selected.size,
+                  total: wandItems.length,
+                })}
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  setSelected(
+                    selected.size === wandItems.length
+                      ? new Set()
+                      : new Set(wandItems.map((_, idx) => idx)),
+                  )
+                }
+                className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
+              >
+                {selected.size === wandItems.length
+                  ? t("planning.template_select_none")
+                  : t("planning.template_select_all")}
+              </button>
+            </div>
+            <ul className="space-y-0.5">
+              {wandItems.map((tmpl, idx) => {
+                const on = selected.has(idx);
+                const dupe =
+                  existingTitles.has(tmpl.title.hu) || existingTitles.has(tmpl.title.en);
+                return (
+                  <li key={tmpl.title.en}>
+                    <button
+                      type="button"
+                      onClick={() => toggleSelected(idx)}
+                      aria-pressed={on}
+                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                        on
+                          ? "bg-paper-100 text-ink-900 hover:bg-paper-200 dark:bg-umber-700/60 dark:text-paper-50 dark:hover:bg-umber-700"
+                          : "text-ink-400 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                      }`}
+                    >
+                      {on ? (
+                        <CheckCircle2
+                          size={14}
+                          className="shrink-0 text-sage-700 dark:text-sage-300"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <Circle size={14} className="shrink-0" aria-hidden="true" />
+                      )}
+                      <span className={on ? "" : "line-through"}>
+                        {localizeText(tmpl.title, locale)}
+                      </span>
+                      {dupe && (
+                        <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+                          {t("honeymoon.todo_wand_already_added")}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </Dialog>
       )}
     </section>
   );

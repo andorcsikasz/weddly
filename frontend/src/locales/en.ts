@@ -1005,6 +1005,12 @@ const en: LocaleMessages = {
     todo_uncheck_aria: "Mark as not done",
     todo_add_placeholder: "Add a honeymoon task…",
     todo_add_aria: "Add task",
+    todo_wand_button: "Wand",
+    todo_wand_dialog_title: "Honeymoon task pack",
+    todo_wand_dialog_body:
+      "Drop the trip-prep starter set onto your list. Untick the ones you don't need.",
+    todo_wand_confirm: "Add {count}",
+    todo_wand_already_added: "Already on list",
     tile_days: "Days",
     tile_destination: "Where",
     tile_budget: "Allocated budget",

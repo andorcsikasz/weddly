@@ -1052,6 +1052,15 @@ export interface LocaleMessages {
      *  string covers the submit button. */
     todo_add_placeholder: string;
     todo_add_aria: string;
+    /** Wand dialog scoped to honeymoon tasks — slimmer cousin of the
+     *  planning page's TaskTemplateDialog. `_confirm` receives `{count}` =
+     *  picked items; `_already_added` is the per-row badge for entries
+     *  already on the couple's list. */
+    todo_wand_button: string;
+    todo_wand_dialog_title: string;
+    todo_wand_dialog_body: string;
+    todo_wand_confirm: string;
+    todo_wand_already_added: string;
     /** Header tiles (days / destination / budget). */
     tile_days: string;
     tile_destination: string;

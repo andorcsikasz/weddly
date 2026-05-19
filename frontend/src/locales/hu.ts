@@ -1006,6 +1006,12 @@ const hu: LocaleMessages = {
     todo_uncheck_aria: "Visszajelölés",
     todo_add_placeholder: "Új nászúti teendő…",
     todo_add_aria: "Teendő hozzáadása",
+    todo_wand_button: "Varázspálca",
+    todo_wand_dialog_title: "Nászúti teendőcsomag",
+    todo_wand_dialog_body:
+      "Tedd a listára az indulás előtti alap teendőket. A nem kellőket vedd ki a pipából.",
+    todo_wand_confirm: "Hozzáadás ({count})",
+    todo_wand_already_added: "Már a listán",
     tile_days: "Hány nap",
     tile_destination: "Hova",
     tile_budget: "Tervezett keret",
