@@ -196,8 +196,13 @@ export function GoogleSignInButton({
           theme: "outline",
           size: "large",
           text: mode === "signup" ? "signup_with" : "signin_with",
-          shape: "rectangular",
-          logo_alignment: "left",
+          // Pill = fully rounded edges. Matches the rest of Weddly's auth
+          // surfaces, which use generous radii on primary CTAs.
+          shape: "pill",
+          // Centred logo + text reads more like a branded CTA than the
+          // left-aligned default (which leaves a big gap of whitespace
+          // between the G and the label at the button's full width).
+          logo_alignment: "center",
           width,
           locale: locale === "hu" ? "hu_HU" : "en_US",
         });
