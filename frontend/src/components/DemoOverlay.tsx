@@ -136,13 +136,13 @@ export function DemoOverlay() {
         <div
           role="status"
           aria-live="polite"
-          className="sticky top-0 z-30 border-b border-blush-200 bg-gradient-to-r from-blush-100 via-blush-50 to-blush-100 px-4 py-2 text-sm text-ink-800 shadow-sm dark:border-blush-700/40 dark:from-umber-800 dark:via-umber-900 dark:to-umber-800 dark:text-paper-100"
+          className="sticky top-0 z-30 border-b border-paper-300 bg-paper-100 px-4 py-2 text-sm text-ink-800 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
         >
           <div className="mx-auto flex max-w-7xl items-center gap-3 sm:gap-4">
             <Sparkles
               size={16}
               aria-hidden="true"
-              className="shrink-0 text-blush-700 dark:text-blush-300"
+              className="shrink-0 text-ink-600 dark:text-paper-300"
             />
             <div className="min-w-0 flex-1 truncate font-semibold">
               {t("demo.banner_title")}
@@ -150,7 +150,7 @@ export function DemoOverlay() {
             <button
               type="button"
               onClick={() => setNudgeOpen(true)}
-              className="hidden shrink-0 rounded-full bg-ink-900 px-3 py-1 text-xs font-semibold text-paper-50 transition-colors hover:bg-ink-700 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-blush-200 sm:inline-flex"
+              className="hidden shrink-0 rounded-full bg-ink-900 px-3 py-1 text-xs font-semibold text-paper-50 transition-colors hover:bg-ink-700 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 sm:inline-flex"
             >
               {t("demo.banner_cta")}
             </button>
@@ -158,7 +158,7 @@ export function DemoOverlay() {
               type="button"
               onClick={() => setBannerDismissed(true)}
               aria-label={t("demo.banner_dismiss_aria")}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-blush-200/60 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-700"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-700"
             >
               <X size={14} aria-hidden="true" />
             </button>
