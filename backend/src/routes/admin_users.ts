@@ -137,13 +137,52 @@ function partnersForCouple(coupleId: number): PartnerRow[] {
     .all(coupleId) as PartnerRow[];
 }
 
-function toAdminCouple(row: CoupleRow): AdminCoupleView {
+/** One pass over audit_log → demo couples, aggregating feature-prefix
+ *  counts so the admin couples listing can render usage chips on each
+ *  live demo row without triggering N+1 reads. Real couples are skipped
+ *  entirely — the chip is a demo-only signal. */
+function demoFeatureCountsByCoupleId(): Map<number, Record<string, number>> {
+  const out = new Map<number, Record<string, number>>();
+  const rows = db
+    .prepare(
+      `SELECT a.couple_id AS couple_id, a.action AS action, COUNT(*) AS n
+         FROM audit_log a
+         JOIN couples c ON c.id = a.couple_id
+        WHERE c.is_demo = 1
+        GROUP BY a.couple_id, a.action`,
+    )
+    .all() as { couple_id: number; action: string; n: number }[];
+  for (const r of rows) {
+    const dot = r.action.indexOf(".");
+    const feature = dot === -1 ? r.action : r.action.slice(0, dot);
+    let bucket = out.get(r.couple_id);
+    if (!bucket) {
+      bucket = {};
+      out.set(r.couple_id, bucket);
+    }
+    bucket[feature] = (bucket[feature] ?? 0) + r.n;
+  }
+  return out;
+}
+
+function toAdminCouple(
+  row: CoupleRow,
+  demoFeatureCounts: Map<number, Record<string, number>>,
+): AdminCoupleView {
   const c = toCouple(row);
   // Workspace-level "last active" = the most recent partner activity. NULL
   // when neither partner has loaded the app since the column was added.
   const seen = db
     .prepare("SELECT MAX(last_seen_at) AS max FROM users WHERE couple_id = ?")
     .get(c.id) as { max: number | null };
+  // Per-feature event counts for the admin demo panel — populated only
+  // for demos (real couples have a richer activity surface and these
+  // chips would be noisy there).
+  const featureCounts = c.is_demo ? (demoFeatureCounts.get(c.id) ?? {}) : null;
+  const totalEvents =
+    featureCounts === null
+      ? null
+      : Object.values(featureCounts).reduce((sum, n) => sum + n, 0);
   return {
     id: c.id,
     slug: row.slug ?? null,
@@ -155,6 +194,8 @@ function toAdminCouple(row: CoupleRow): AdminCoupleView {
     created_at: c.created_at,
     last_seen_at: seen.max,
     is_demo: c.is_demo,
+    demo_feature_counts: featureCounts,
+    demo_total_events: totalEvents,
   };
 }
 
@@ -181,7 +222,8 @@ function handleListUsers(ctx: Ctx): Response {
 
 function handleListCouples(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json({ couples: listAllCouples().map(toAdminCouple) });
+  const demoCounts = demoFeatureCountsByCoupleId();
+  return json({ couples: listAllCouples().map((row) => toAdminCouple(row, demoCounts)) });
 }
 
 function parseId(ctx: Ctx): number {

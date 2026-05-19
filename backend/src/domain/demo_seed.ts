@@ -1265,21 +1265,34 @@ function addDaysIso(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Housekeeping — purge demo couples older than `maxAgeMs`. Called both
- *  inline from `POST /api/demo/start` (so an abandoned demo lazily disappears
- *  on the next visitor) and from the boot-time sweep in server.ts so a quiet
- *  weekend still tidies up.
+/** Default demo lifetime — 4 hours. Beyond that the workspace is reaped
+ *  by the next sweep tick. Visitors abandoning the trial almost always
+ *  drop in the first few minutes; anyone still poking around after four
+ *  hours is keeping the row warm against the next visitor's fresh start. */
+export const DEMO_MAX_AGE_MS = 4 * 60 * 60 * 1000;
+
+/** Housekeeping — purge demo couples older than `maxAgeMs`. Called from
+ *  three places: inline on `POST /api/demo/start` (lazy cleanup before
+ *  the next seed), the boot-time sweep in server.ts, and the hourly
+ *  `runPurgeSweep()` in domain/purge.ts so abandoned demos disappear on
+ *  their own without depending on landing-page traffic.
+ *
+ *  Before hard-delete we snapshot the demo's audit_log into `demo_usage`
+ *  — one row per purged demo capturing lifetime + per-feature event
+ *  counts. That preserves the "what did visitors actually try?" signal
+ *  for the admin analytics surface even after the source rows are gone.
  *
  *  Demo couples have no audit-retention obligation (they were never real),
- *  so after the shared purgeOneCouple call (which scrubs PII + nulls the
- *  couples row) we go further and hard-delete the tombstone + the purged
- *  user rows. This keeps the auth.email index sparse so a fresh demo never
- *  collides on a "deleted-…@purged.local" address. */
-export function purgeStaleDemoCouples(maxAgeMs: number = 24 * 60 * 60 * 1000): number {
+ *  so after the snapshot we DELETE the audit_log rows for the couple —
+ *  a one-time exception to the append-only contract, scoped to demos.
+ *  Required because audit_log.actor_user_id REFERENCES users(id) with
+ *  no ON DELETE clause and FKs are enforced, so the user DELETE below
+ *  would otherwise fail and the sweep would silently no-op forever. */
+export function purgeStaleDemoCouples(maxAgeMs: number = DEMO_MAX_AGE_MS): number {
   const cutoff = now() - maxAgeMs;
   const rows = db
-    .prepare("SELECT id FROM couples WHERE is_demo = 1 AND created_at < ?")
-    .all(cutoff) as { id: number }[];
+    .prepare("SELECT id, slug, created_at FROM couples WHERE is_demo = 1 AND created_at < ?")
+    .all(cutoff) as { id: number; slug: string | null; created_at: number }[];
   if (rows.length === 0) return 0;
   let purged = 0;
   for (const r of rows) {
@@ -1290,7 +1303,25 @@ export function purgeStaleDemoCouples(maxAgeMs: number = 24 * 60 * 60 * 1000): n
       const userIds = (
         db.prepare("SELECT id FROM users WHERE couple_id = ?").all(r.id) as { id: number }[]
       ).map((u) => u.id);
+
+      // Snapshot usage from audit_log BEFORE the rows disappear. We match
+      // via couple_id directly so any "demo.start" entry written before the
+      // user was linked to the couple is still captured.
+      snapshotDemoUsage(r.id, r.slug, r.created_at, userIds);
+
       purgeOneCouple(r.id, { silent: true });
+
+      // Now scrub the audit_log entries for this demo — they were just
+      // aggregated into demo_usage and would block the user DELETE under
+      // FK enforcement.
+      db.prepare("DELETE FROM audit_log WHERE couple_id = ?").run(r.id);
+      if (userIds.length > 0) {
+        const placeholders = userIds.map(() => "?").join(",");
+        db.prepare(`DELETE FROM audit_log WHERE actor_user_id IN (${placeholders})`).run(
+          ...userIds,
+        );
+      }
+
       for (const uid of userIds) {
         db.prepare("DELETE FROM sessions WHERE user_id = ?").run(uid);
         db.prepare("DELETE FROM users WHERE id = ?").run(uid);
@@ -1303,4 +1334,60 @@ export function purgeStaleDemoCouples(maxAgeMs: number = 24 * 60 * 60 * 1000): n
     }
   }
   return purged;
+}
+
+/** Write a one-row summary of a demo's audit history into `demo_usage`.
+ *  Called from `purgeStaleDemoCouples` right before the rows are hard-
+ *  deleted. The snapshot survives the purge so admin analytics can keep
+ *  showing "147 demos served, top features tried: budget, seating, guests"
+ *  long after the underlying workspaces are gone. */
+function snapshotDemoUsage(
+  coupleId: number,
+  slug: string | null,
+  createdAt: number,
+  userIds: number[],
+): void {
+  // Pull every audit row attributable to this demo. We match by couple_id
+  // OR actor_user_id ∈ demo's users — the demo.start row is logged with
+  // the demo's couple_id, but subsequent in-app actions also stamp
+  // actor_user_id so the OR catches any anomalies (e.g. a future action
+  // that forgets to set couple_id).
+  let auditRows: { action: string }[] = [];
+  if (userIds.length === 0) {
+    auditRows = db
+      .prepare("SELECT action FROM audit_log WHERE couple_id = ?")
+      .all(coupleId) as { action: string }[];
+  } else {
+    const placeholders = userIds.map(() => "?").join(",");
+    auditRows = db
+      .prepare(
+        `SELECT action FROM audit_log
+          WHERE couple_id = ? OR actor_user_id IN (${placeholders})`,
+      )
+      .all(coupleId, ...userIds) as { action: string }[];
+  }
+
+  const featureCounts: Record<string, number> = {};
+  for (const row of auditRows) {
+    const dot = row.action.indexOf(".");
+    const feature = dot === -1 ? row.action : row.action.slice(0, dot);
+    featureCounts[feature] = (featureCounts[feature] ?? 0) + 1;
+  }
+
+  const purgedAt = now();
+  const lifetimeSeconds = Math.max(0, Math.floor((purgedAt - createdAt) / 1000));
+  db.prepare(
+    `INSERT INTO demo_usage
+       (source_couple_id, source_slug, created_at, purged_at,
+        lifetime_seconds, total_events, feature_counts_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    coupleId,
+    slug,
+    createdAt,
+    purgedAt,
+    lifetimeSeconds,
+    auditRows.length,
+    JSON.stringify(featureCounts),
+  );
 }

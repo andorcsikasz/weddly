@@ -117,6 +117,15 @@ export interface AdminCoupleView {
    *  page's "try Shrek & Fiona" flow and are grouped into their own admin
    *  section so the real-user list stays scannable. */
   is_demo: boolean;
+  /** Per-feature event counts on the demo workspace's audit_log, keyed by
+   *  the feature prefix (`"guest"`, `"budget"`, …). Populated only when
+   *  `is_demo` is true — real couples have a richer engagement surface
+   *  and this map would be noisy there. Empty object = demo that exists
+   *  but no actions have been taken yet (just the `demo.start` event). */
+  demo_feature_counts: Record<string, number> | null;
+  /** Total audit-log events for the demo workspace. Sum of the values in
+   *  `demo_feature_counts`. Null for non-demo couples. */
+  demo_total_events: number | null;
 }
 
 // ─── Couples (the workspace) ─────────────────────────────────────────────────

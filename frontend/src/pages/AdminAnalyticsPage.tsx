@@ -1287,20 +1287,22 @@ function DemoSection({
         </p>
       </header>
 
-      {/* Top KPI row — five tiles that read as the first-glance status of
-       *  the demo funnel. */}
-      <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+      {/* Top KPI row — first-glance status of the demo funnel. `total`
+       *  is live workspaces only (reaped after 4h); `total_served` adds the
+       *  historic snapshots so the cumulative "how many tried it" survives
+       *  the sweep. */}
+      <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <KpiTile
           label={t("admin.analytics_demo_total")}
           value={formatNumber(d.total_demos, locale)}
         />
         <KpiTile
-          label={t("admin.analytics_demo_new_24h")}
-          value={formatNumber(d.new_demos.last_24h, locale)}
+          label={t("admin.analytics_demo_total_served")}
+          value={formatNumber(d.total_demos_served, locale)}
         />
         <KpiTile
-          label={t("admin.analytics_demo_new_7d")}
-          value={formatNumber(d.new_demos.last_7d, locale)}
+          label={t("admin.analytics_demo_new_24h")}
+          value={formatNumber(d.new_demos.last_24h, locale)}
         />
         <KpiTile
           label={t("admin.analytics_demo_active_24h")}
@@ -1309,6 +1311,10 @@ function DemoSection({
         <KpiTile
           label={t("admin.analytics_demo_avg_events")}
           value={formatNumber(d.avg_events_per_demo, locale)}
+        />
+        <KpiTile
+          label={t("admin.analytics_demo_avg_lifetime")}
+          value={formatLifetime(d.avg_lifetime_seconds, locale)}
         />
       </div>
 
@@ -1345,8 +1351,76 @@ function DemoSection({
           </p>
         </SubCard>
       </div>
+
+      {/* Top features panel — combined view of features touched across
+       *  live demos AND historic snapshots (the snapshot table preserves
+       *  this signal past the 4h reaper). The bar widths use the highest
+       *  count as the max so the strongest signal anchors the layout. */}
+      <SubCard title={t("admin.analytics_demo_top_features_title")} className="mt-4">
+        <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_demo_top_features_sub")}
+        </p>
+        {d.top_features.length === 0 ? (
+          <p className="text-sm text-ink-500 dark:text-umber-300">
+            {t("admin.analytics_demo_top_features_empty")}
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {(() => {
+              const max = Math.max(0, ...d.top_features.map((f) => f.count));
+              return d.top_features.map((f) => {
+                const pct = max === 0 ? 0 : Math.max(4, Math.round((f.count / max) * 100));
+                return (
+                  <li key={f.feature} className="text-sm">
+                    <div className="mb-0.5 flex items-baseline justify-between gap-3">
+                      <span className="font-medium text-ink-700 dark:text-paper-100">
+                        {f.feature}
+                      </span>
+                      <span className="text-xs text-ink-500 dark:text-umber-300 stat-num">
+                        {formatNumber(f.count, locale)}{" "}
+                        <span className="opacity-70">
+                          (
+                          {t(
+                            f.demos === 1
+                              ? "admin.analytics_demo_feature_demos_one"
+                              : "admin.analytics_demo_feature_demos_other",
+                            { n: f.demos },
+                          )}
+                          )
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-paper-100 dark:bg-umber-800">
+                      <div
+                        className="h-full rounded-full bg-rose-500/70 dark:bg-rose-400/70"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </li>
+                );
+              });
+            })()}
+          </ul>
+        )}
+      </SubCard>
     </section>
   );
+}
+
+/** Render avg-lifetime seconds as a human-scaled "5m 12s" / "2h 14m"
+ *  string. Used by the demo KPI tile only — the value is bounded by the
+ *  4h reaper, so we never need day-level formatting. */
+function formatLifetime(seconds: number, locale: "hu" | "en"): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const hUnit = locale === "hu" ? "ó" : "h";
+  const mUnit = locale === "hu" ? "p" : "m";
+  const sUnit = locale === "hu" ? "mp" : "s";
+  if (h > 0) return `${h}${hUnit} ${m}${mUnit}`;
+  if (m > 0) return `${m}${mUnit} ${s}${sUnit}`;
+  return `${s}${sUnit}`;
 }
 
 /** Compact KPI tile — used by the demo section header row. Mirrors the
@@ -1370,12 +1444,18 @@ function KpiTile({ label, value }: { label: string; value: string }) {
 function SubCard({
   title,
   children,
+  className,
 }: {
   title: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="rounded-2xl bg-paper-50 p-5 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700">
+    <div
+      className={`rounded-2xl bg-paper-50 p-5 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700${
+        className ? ` ${className}` : ""
+      }`}
+    >
       <h3 className="m-0 mb-3 text-sm font-semibold text-ink-700 dark:text-paper-200">{title}</h3>
       {children}
     </div>

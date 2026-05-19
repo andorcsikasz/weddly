@@ -704,3 +704,25 @@ CREATE TABLE IF NOT EXISTS admin_section_seen (
   seen_at INTEGER NOT NULL,
   PRIMARY KEY (user_id, section)
 );
+
+-- Demo workspace usage snapshot. Demo couples are hard-deleted by the
+-- continuous sweep once they cross the age threshold (4h); right before
+-- the DELETE we aggregate their audit_log into one row here so the admin
+-- analytics surface keeps a permanent record of who tried what. No FK to
+-- couples/users — the source rows are gone by the time anyone reads this.
+CREATE TABLE IF NOT EXISTS demo_usage (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  -- Original demo couple id at the time of purge. Not a FK (the row is
+  -- about to be hard-deleted) — kept as a stable retroactive handle so
+  -- two snapshots from the same demo never collide.
+  source_couple_id INTEGER NOT NULL,
+  source_slug TEXT,
+  created_at INTEGER NOT NULL,
+  purged_at INTEGER NOT NULL,
+  lifetime_seconds INTEGER NOT NULL,
+  total_events INTEGER NOT NULL,
+  -- Map of feature-prefix → event count, e.g. {"guest":12,"budget":3}.
+  -- Feature prefix is the substring before the first "." in audit.action.
+  feature_counts_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS idx_demo_usage_purged_at ON demo_usage(purged_at DESC);

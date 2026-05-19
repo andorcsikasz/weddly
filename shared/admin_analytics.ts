@@ -198,4 +198,16 @@ export interface AdminDemoAnalytics {
    *  Compare against the regular `engagement.total_sessions` for a
    *  real-vs-demo traffic split. */
   total_demo_events_30d: number;
+  /** Total demos served ever — live workspaces + every purged snapshot
+   *  from `demo_usage`. Survives the continuous 4h sweep so the "how
+   *  many people tried it" number doesn't reset as demos are reaped. */
+  total_demos_served: number;
+  /** Mean lifetime (seconds) across purged demos — proxy for how long
+   *  visitors actually spent in the trial before abandoning it. 0 when
+   *  no demos have been purged yet. */
+  avg_lifetime_seconds: number;
+  /** Top features tried across BOTH live demos and historic snapshots,
+   *  ordered by event count. Same shape as the engagement endpoint's
+   *  `top_features` so the frontend can reuse its bar-list component. */
+  top_features: Array<{ feature: string; count: number; demos: number }>;
 }

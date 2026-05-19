@@ -2230,6 +2230,15 @@ export interface LocaleMessages {
     demo_workspaces_count_other: string;
     demo_workspaces_help: string;
     demo_badge: string;
+    /** Per-demo event count line on the admin demo list, e.g. "12 esemény". */
+    demo_events_label_one: string;
+    demo_events_label_other: string;
+    /** Shown on the demo row when the visitor never touched anything past
+     *  the seeded `demo.start` row — i.e. opened the trial then bounced. */
+    demo_events_none: string;
+    /** "+3 további" suffix after the visible feature chips on a demo that
+     *  exercised more features than fit on one line. */
+    demo_feature_more: string;
     orphans_section: string;
     orphans_count_one: string;
     orphans_count_other: string;
@@ -2635,6 +2644,16 @@ export interface LocaleMessages {
     analytics_demo_events_title: string;
     analytics_demo_events_unit: string;
     analytics_demo_events_help: string;
+    /** Counts live demo workspaces + every historic `demo_usage` row —
+     *  the cumulative "how many tried it" that survives the 4h reaper. */
+    analytics_demo_total_served: string;
+    /** Mean lifetime of purged demos, formatted as "5m 12s" / "2h 14m". */
+    analytics_demo_avg_lifetime: string;
+    analytics_demo_top_features_title: string;
+    analytics_demo_top_features_sub: string;
+    analytics_demo_top_features_empty: string;
+    analytics_demo_feature_demos_one: string;
+    analytics_demo_feature_demos_other: string;
   };
   rsvp: {
     title: string;

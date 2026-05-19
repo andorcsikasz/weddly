@@ -804,6 +804,70 @@ function demoAnalytics(): AdminDemoAnalytics {
     }
   }
 
+  // ─── Historic snapshots + cross-source feature aggregate. ─────────────
+  // `demo_usage` rows are written by the continuous purge sweep right
+  // before each demo workspace is hard-deleted — one row per ever-purged
+  // demo with lifetime + feature counts. We blend them with live audit
+  // data so the "what did visitors try?" signal survives the 4h reaper.
+  const featureTotals = new Map<string, { count: number; demos: Set<string | number> }>();
+  const bump = (feature: string, n: number, demoKey: string | number): void => {
+    let bucket = featureTotals.get(feature);
+    if (!bucket) {
+      bucket = { count: 0, demos: new Set() };
+      featureTotals.set(feature, bucket);
+    }
+    bucket.count += n;
+    bucket.demos.add(demoKey);
+  };
+
+  // Live demos — per-action counts from audit_log, grouped by couple.
+  if (demoIds.length > 0) {
+    const placeholders = demoIds.map(() => "?").join(",");
+    const liveByAction = db
+      .prepare(
+        `SELECT couple_id, action, COUNT(*) AS n FROM audit_log
+          WHERE couple_id IN (${placeholders})
+          GROUP BY couple_id, action`,
+      )
+      .all(...demoIds) as { couple_id: number; action: string; n: number }[];
+    for (const r of liveByAction) {
+      const dot = r.action.indexOf(".");
+      const feature = dot === -1 ? r.action : r.action.slice(0, dot);
+      bump(feature, r.n, `live:${r.couple_id}`);
+    }
+  }
+
+  // Historic snapshots — feature counts are pre-aggregated as JSON.
+  const usageRows = db
+    .prepare("SELECT source_couple_id, lifetime_seconds, feature_counts_json FROM demo_usage")
+    .all() as {
+    source_couple_id: number;
+    lifetime_seconds: number;
+    feature_counts_json: string;
+  }[];
+  for (const u of usageRows) {
+    let counts: Record<string, number> = {};
+    try {
+      counts = JSON.parse(u.feature_counts_json) as Record<string, number>;
+    } catch {
+      counts = {};
+    }
+    for (const [feature, n] of Object.entries(counts)) {
+      bump(feature, n, `hist:${u.source_couple_id}`);
+    }
+  }
+
+  const topFeatures = [...featureTotals.entries()]
+    .map(([feature, b]) => ({ feature, count: b.count, demos: b.demos.size }))
+    .sort((a, b) => b.count - a.count || a.feature.localeCompare(b.feature))
+    .slice(0, 12);
+
+  const totalDemosServed = totalDemos + usageRows.length;
+  const avgLifetimeSeconds =
+    usageRows.length === 0
+      ? 0
+      : Math.round(usageRows.reduce((s, u) => s + u.lifetime_seconds, 0) / usageRows.length);
+
   return {
     total_demos: totalDemos,
     new_demos: { last_24h: new24h, last_7d: new7d, last_30d: new30d },
@@ -811,6 +875,9 @@ function demoAnalytics(): AdminDemoAnalytics {
     active_demos_24h: activeDemos24h,
     avg_events_per_demo: avgEventsPerDemo,
     total_demo_events_30d: totalDemoEvents30d,
+    total_demos_served: totalDemosServed,
+    avg_lifetime_seconds: avgLifetimeSeconds,
+    top_features: topFeatures,
   };
 }
 

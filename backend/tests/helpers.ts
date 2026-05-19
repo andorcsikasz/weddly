@@ -126,6 +126,7 @@ export function wipeAll(): void {
     "supplier_votes",
     "vendor_waitlist",
     "feedback_submissions",
+    "demo_usage",
     "couple_members",
     "couple_currency_history",
     "consent_log",

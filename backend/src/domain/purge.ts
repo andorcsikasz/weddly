@@ -11,6 +11,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { log } from "../lib/logger";
 import { sweepStaleRateLimitBuckets } from "../lib/rate_limit";
+import { purgeStaleDemoCouples } from "./demo_seed";
 import { sendKind } from "./emails";
 import { listFlagsDueForPurge, markFlagPurged } from "./user_flags";
 
@@ -218,6 +219,7 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
 export function runPurgeSweep(): {
   purged: number;
   flagged_purged: number;
+  demos_purged: number;
   ratelimit_buckets_deleted: number;
 } {
   const ts = now();
@@ -259,6 +261,15 @@ export function runPurgeSweep(): {
     }
   }
 
+  // Demo workspaces past the 4h lifetime — kept on the same hourly tick
+  // instead of a dedicated timer so we only run one housekeeping loop.
+  let demosPurged = 0;
+  try {
+    demosPurged = purgeStaleDemoCouples();
+  } catch (e) {
+    log.error("purge.demo_sweep_failed", e);
+  }
+
   let ratelimitDeleted = 0;
   try {
     ratelimitDeleted = sweepStaleRateLimitBuckets().deleted;
@@ -268,6 +279,7 @@ export function runPurgeSweep(): {
   return {
     purged: due.length,
     flagged_purged: flaggedPurged,
+    demos_purged: demosPurged,
     ratelimit_buckets_deleted: ratelimitDeleted,
   };
 }
@@ -280,7 +292,7 @@ export function startPurgeWorker(): void {
   // Run once at boot so a long downtime catches up immediately.
   try {
     const r = runPurgeSweep();
-    if (r.purged > 0 || r.ratelimit_buckets_deleted > 0) log.info("purge.boot_sweep", r);
+    if (r.purged > 0 || r.demos_purged > 0 || r.ratelimit_buckets_deleted > 0) log.info("purge.boot_sweep", r);
   } catch (e) {
     log.error("purge.boot_sweep_failed", e);
   }
@@ -288,7 +300,7 @@ export function startPurgeWorker(): void {
     () => {
       try {
         const r = runPurgeSweep();
-        if (r.purged > 0 || r.ratelimit_buckets_deleted > 0) log.info("purge.hourly_sweep", r);
+        if (r.purged > 0 || r.demos_purged > 0 || r.ratelimit_buckets_deleted > 0) log.info("purge.hourly_sweep", r);
       } catch (e) {
         log.error("purge.hourly_sweep_failed", e);
       }
