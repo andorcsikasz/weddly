@@ -13,13 +13,14 @@ import type {
   RsvpStatus,
 } from "@shared/types";
 import {
+  Atom,
   Baby,
   Ban,
+  Bed,
   Beef,
   Briefcase,
   Check,
   CheckCheck,
-  Atom,
   ChevronDown,
   ClipboardCopy,
   Cookie,
@@ -252,6 +253,15 @@ export default function GuestsPage() {
   async function onChangeHouseholdGroup(id: number, groupTag: GuestGroupTag) {
     try {
       await householdApi.update(id, { group_tag: groupTag });
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  async function onToggleHouseholdAccommodation(id: number, next: boolean) {
+    try {
+      await householdApi.update(id, { rsvp_offers_accommodation: next });
       refresh();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -579,6 +589,7 @@ export default function GuestsPage() {
               onDeleteHousehold={() => onDeleteHousehold(hh)}
               onRenameHousehold={onRenameHousehold}
               onChangeGroup={onChangeHouseholdGroup}
+              onToggleAccommodation={onToggleHouseholdAccommodation}
               onCycleInviteState={onCycleInviteState}
               onPrintPlaceCard={onPrintPlaceCard}
             />
@@ -802,6 +813,7 @@ function HouseholdCard({
   onDeleteHousehold,
   onRenameHousehold,
   onChangeGroup,
+  onToggleAccommodation,
   onCycleInviteState,
   onPrintPlaceCard,
 }: {
@@ -816,6 +828,7 @@ function HouseholdCard({
   onDeleteHousehold: () => void;
   onRenameHousehold: (id: number, label: string) => Promise<void>;
   onChangeGroup: (id: number, groupTag: GuestGroupTag) => Promise<void>;
+  onToggleAccommodation: (id: number, next: boolean) => Promise<void>;
   onCycleInviteState: (g: Guest) => void;
   onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
@@ -925,6 +938,10 @@ function HouseholdCard({
         <div className="flex flex-wrap items-center gap-1">
           {!isHosts && (
             <>
+              <AccommodationToggle
+                on={household.rsvp_offers_accommodation}
+                onChange={(next) => onToggleAccommodation(household.id, next)}
+              />
               <button
                 type="button"
                 className="btn-ghost btn-sm"
@@ -2234,6 +2251,42 @@ function HouseholdGroupChip({
   );
 }
 
+/** Per-household toggle for "ask this household if they need accommodation
+ *  in the RSVP form". When ON, the public RSVP form for this household
+ *  shows the "needs accommodation?" checkbox (gated on
+ *  `view.rsvp_offers_accommodation`); when OFF, the question is hidden.
+ *  Renders as a Bed icon button — filled sage when on, muted outline when
+ *  off — so the household card header doubles as a quick at-a-glance map
+ *  of which families have been offered lodging. */
+function AccommodationToggle({
+  on,
+  onChange,
+}: {
+  on: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  const { t } = useT();
+  const label = on
+    ? t("guests.household_accommodation_on")
+    : t("guests.household_accommodation_off");
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!on)}
+      aria-pressed={on}
+      aria-label={label}
+      title={label}
+      className={
+        on
+          ? "btn-ghost btn-sm bg-sage-100 text-sage-700 hover:bg-sage-200 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:bg-sage-400/25"
+          : "btn-ghost btn-sm text-ink-400 dark:text-umber-300"
+      }
+    >
+      <Bed size={14} aria-hidden />
+    </button>
+  );
+}
+
 function RsvpGlyph({ status }: { status: RsvpStatus }) {
   // Same glyph language as RsvpBadge, sized to sit next to the label text.
   const ch = status === "yes" ? "✓" : status === "no" ? "✗" : status === "maybe" ? "?" : "⌛";
@@ -2507,10 +2560,20 @@ function MealsDialog({
     return { mealCounts, dietaryCounts, pending, totalYes };
   }, [guests]);
 
-  // Per-section max — drives the relative bar heights so a section with
-  // counts like {1, 0, 0, 0, 0, 0} still shows a full-height bar for "1"
-  // (and the empty bars stay empty). Falls back to 0 when nothing's set.
-  const mealMax = Math.max(0, ...MEAL_ORDER.map((m) => stats.mealCounts[m]));
+  // Babies don't eat from the wedding menu, so the meals chart only counts
+  // adults + children. Surface the count separately so the caterer still
+  // knows how many infants to expect (high-chair / changing-room signal).
+  const babyYes = useMemo(
+    () => guests.filter((g) => g.rsvp_status === "yes" && g.kind === "baby").length,
+    [guests],
+  );
+  // Denominator for the stacked bar and per-meal percentages: meals picked +
+  // pending. Babies are excluded so percentages describe "what's on the
+  // catering order", not "headcount at the venue".
+  const mealsDenominator =
+    MEAL_ORDER.reduce((acc, m) => acc + stats.mealCounts[m], 0) + stats.pending;
+  // Allergens count against the full "yes" cohort (including babies — they
+  // can be lactose-intolerant just like adults).
   const dietaryMax = Math.max(0, ...DIETARY_TAG_KEYS.map((tag) => stats.dietaryCounts[tag]));
 
   async function copySummary() {
@@ -2611,47 +2674,84 @@ function MealsDialog({
           <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_no_yes_yet")}</p>
         ) : (
           <>
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_help")}</p>
-              <p className="text-sm font-medium text-ink-800 dark:text-paper-100">
+            {/* Header summary: total + baby callout. Replaces the old in-line
+                "X yes-válasz" pill on the right with a richer chip row that
+                also surfaces the baby count (caterer needs to know).  */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-medium text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-300">
+                <Check size={12} aria-hidden />
                 {t("guests.meals_total_yes", { count: stats.totalYes })}
-              </p>
+              </span>
+              {babyYes > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
+                  <Baby size={12} aria-hidden />
+                  {t("guests.meals_baby_count", { count: babyYes })}
+                </span>
+              )}
+              {stats.pending > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
+                  {t("guests.meals_pending_chip", { count: stats.pending })}
+                </span>
+              )}
             </div>
 
-            <section>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                {t("guests.meals_section_meals")}
-              </h3>
-              <ul className="mt-3 grid grid-cols-6 gap-3">
+            {/* MEALS — one shared horizontal bar split by share. Meals are
+                mutually exclusive (one choice per guest) so a single
+                stacked bar reads more honestly than six independent
+                heights. The legend below shows icon + count + share per
+                meal, color-keyed to its bar segment. */}
+            <section className="space-y-3">
+              <header className="flex items-baseline justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                  {t("guests.meals_section_meals")}
+                </h3>
+                <span className="text-xs text-ink-500 dark:text-umber-300">
+                  {t("guests.meals_section_meals_help")}
+                </span>
+              </header>
+              <MealsStackedBar
+                mealCounts={stats.mealCounts}
+                pending={stats.pending}
+                total={mealsDenominator}
+              />
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {MEAL_ORDER.map((m) => (
-                  <MealStatBar
+                  <MealLegendRow
                     key={m}
-                    icon={<MealIcon meal={m} />}
+                    meal={m}
                     label={t(`guests.meal_${m}`)}
                     count={stats.mealCounts[m]}
-                    max={mealMax}
+                    total={mealsDenominator}
                   />
                 ))}
               </ul>
-              {stats.pending > 0 && (
-                <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
-                  {t("guests.meals_pending_help", { count: stats.pending })}
-                </p>
-              )}
             </section>
 
-            <section>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                {t("guests.meals_section_dietary")}
-              </h3>
-              <ul className="mt-3 grid grid-cols-6 gap-3">
+            {/* ALLERGENS — independent counts, so vertical list of bars
+                each tinted with the allergen's own semantic palette
+                (dairy=sky, wheat=amber, nut=orange, egg=yellow,
+                seafood=cyan). The horizontal layout + tinted rails make
+                this section unmistakeably different from the meal section
+                above so a glance is enough to know which is which. */}
+            <section className="space-y-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-700/30">
+              <header className="flex items-baseline justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                  {t("guests.meals_section_dietary")}
+                </h3>
+                <span className="text-xs text-ink-500 dark:text-umber-300">
+                  {t("guests.meals_section_dietary_help")}
+                </span>
+              </header>
+              <ul className="space-y-1.5">
                 {DIETARY_TAG_KEYS.map((tag) => (
-                  <MealStatBar
+                  <AllergenRow
                     key={tag}
-                    icon={<DietaryTagIcon tag={tag} />}
+                    tag={tag}
                     label={t(`rsvp.tag_${tag}`)}
                     count={stats.dietaryCounts[tag]}
                     max={dietaryMax}
+                    totalYes={stats.totalYes}
                   />
                 ))}
               </ul>
@@ -2663,61 +2763,194 @@ function MealsDialog({
   );
 }
 
-function MealStatBar({
-  icon,
+/** Meal segment colours. Each meal gets a distinct palette swatch so the
+ *  stacked bar's segments are decodable without reading the legend, AND
+ *  the legend row's icon dot reuses the same swatch so the eye can match
+ *  segment ↔ legend row instantly. Pending uses paper-400 (very muted) so
+ *  the "unanswered" share reads as missing data rather than a sixth meal. */
+const MEAL_SEGMENT_BG: Record<MealChoice, string> = {
+  meat: "bg-blush-500 dark:bg-blush-400",
+  fish: "bg-sky-500 dark:bg-sky-400",
+  vegetarian: "bg-sage-500 dark:bg-sage-400",
+  vegan: "bg-sage-700 dark:bg-sage-300",
+  child: "bg-amber-400 dark:bg-amber-300",
+  none: "bg-ink-400 dark:bg-umber-400",
+};
+const MEAL_SEGMENT_DOT: Record<MealChoice, string> = {
+  meat: "bg-blush-500 dark:bg-blush-400",
+  fish: "bg-sky-500 dark:bg-sky-400",
+  vegetarian: "bg-sage-500 dark:bg-sage-400",
+  vegan: "bg-sage-700 dark:bg-sage-300",
+  child: "bg-amber-400 dark:bg-amber-300",
+  none: "bg-ink-400 dark:bg-umber-400",
+};
+
+function MealsStackedBar({
+  mealCounts,
+  pending,
+  total,
+}: {
+  mealCounts: Record<MealChoice, number>;
+  pending: number;
+  total: number;
+}) {
+  const { t } = useT();
+  if (total === 0) {
+    return (
+      <div className="h-3 w-full rounded-full bg-paper-200 dark:bg-umber-900/60" aria-hidden />
+    );
+  }
+  return (
+    <div
+      className="flex h-3 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-900/60"
+      role="presentation"
+    >
+      {MEAL_ORDER.map((m) => {
+        const c = mealCounts[m];
+        if (c === 0) return null;
+        const pct = (c / total) * 100;
+        return (
+          <div
+            key={m}
+            className={`${MEAL_SEGMENT_BG[m]} h-full`}
+            style={{ width: `${pct}%` }}
+            title={`${t(`guests.meal_${m}`)}: ${c}`}
+            aria-hidden
+          />
+        );
+      })}
+      {pending > 0 && (
+        <div
+          className="h-full bg-paper-400 dark:bg-umber-500"
+          style={{ width: `${(pending / total) * 100}%` }}
+          title={`${t("guests.meals_pending_label")}: ${pending}`}
+          aria-hidden
+        />
+      )}
+    </div>
+  );
+}
+
+function MealLegendRow({
+  meal,
+  label,
+  count,
+  total,
+}: {
+  meal: MealChoice;
+  label: string;
+  count: number;
+  total: number;
+}) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  const dim = count === 0;
+  return (
+    <li
+      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm ${
+        dim
+          ? "border-paper-200 bg-paper-50/60 text-ink-400 dark:border-umber-700/60 dark:bg-umber-800/40 dark:text-umber-400"
+          : "border-paper-300 bg-paper-50 text-ink-800 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+      }`}
+    >
+      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${MEAL_SEGMENT_DOT[meal]}`} aria-hidden />
+      <span aria-hidden className={dim ? "text-ink-400 dark:text-umber-400" : ""}>
+        <MealIcon meal={meal} />
+      </span>
+      <span className="flex-1 truncate text-xs">{label}</span>
+      <span className="font-mono text-sm font-semibold tabular-nums">{count}</span>
+      <span className="w-9 text-right font-mono text-[11px] tabular-nums text-ink-500 dark:text-umber-300">
+        {dim ? "—" : `${pct}%`}
+      </span>
+    </li>
+  );
+}
+
+/** Allergens get their own visual language: a tinted left rail + filled
+ *  bar in the same colour family, on top of a paper-100 surface. The
+ *  section as a whole sits inside its own container so it never reads as
+ *  the same kind of grid as the meals section above. */
+function AllergenRow({
+  tag,
   label,
   count,
   max,
+  totalYes,
 }: {
-  icon: ReactNode;
+  tag: DietaryTag;
   label: string;
   count: number;
-  /** Section max — heights are scaled relative to this so the tallest bar
-   *  in a section always fills the track. 0 means "no data anywhere in
-   *  this section" → render every bar as empty. */
   max: number;
+  totalYes: number;
 }) {
+  const tone = DIETARY_TAG_TONE[tag];
+  // Solid filled-bar colour per tone (matches the active chip palette).
+  const fillCls: Record<DietaryTone, string> = {
+    dairy: "bg-sky-500 dark:bg-sky-400",
+    wheat: "bg-amber-500 dark:bg-amber-400",
+    nut: "bg-orange-500 dark:bg-orange-400",
+    egg: "bg-yellow-400 dark:bg-yellow-300",
+    seafood: "bg-cyan-600 dark:bg-cyan-400",
+  };
+  const rail: Record<DietaryTone, string> = {
+    dairy: "bg-sky-400 dark:bg-sky-400",
+    wheat: "bg-amber-400 dark:bg-amber-400",
+    nut: "bg-orange-400 dark:bg-orange-400",
+    egg: "bg-yellow-300 dark:bg-yellow-300",
+    seafood: "bg-cyan-500 dark:bg-cyan-400",
+  };
   const dim = count === 0;
-  // 4% floor for any non-zero count so a "1" next to a "20" still shows
-  // a visible nub instead of disappearing entirely.
-  const heightPct = max > 0 ? Math.max((count / max) * 100, count > 0 ? 4 : 0) : 0;
+  // Widths normalised to the section max so a "1" next to a "20" still
+  // shows a visible nub. 4% floor for any non-zero.
+  const fillPct = max > 0 ? Math.max((count / max) * 100, count > 0 ? 4 : 0) : 0;
+  const sharePct = totalYes > 0 ? Math.round((count / totalYes) * 100) : 0;
   return (
     <li
-      className={`flex flex-col items-center gap-2 rounded-lg border px-2 py-3 transition-colors ${
+      className={`flex items-center gap-3 overflow-hidden rounded-lg border bg-paper-50 transition-opacity dark:bg-umber-800 ${
         dim
-          ? "border-paper-200 bg-paper-50/60 dark:border-umber-700/60 dark:bg-umber-800/40"
-          : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+          ? "border-paper-200 opacity-60 dark:border-umber-700/60"
+          : "border-paper-300 dark:border-umber-700"
       }`}
     >
       <span
-        className={`font-mono text-2xl font-semibold tabular-nums ${
+        aria-hidden
+        className={`h-9 w-1 shrink-0 ${dim ? "bg-paper-300 dark:bg-umber-700" : rail[tone]}`}
+      />
+      <span
+        aria-hidden
+        className={
+          dim
+            ? "shrink-0 text-ink-400 dark:text-umber-400"
+            : "shrink-0 text-ink-700 dark:text-paper-100"
+        }
+      >
+        <DietaryTagIcon tag={tag} />
+      </span>
+      <span
+        className={`min-w-[5rem] flex-shrink-0 truncate text-sm ${
+          dim ? "text-ink-400 dark:text-umber-400" : "text-ink-700 dark:text-paper-100"
+        }`}
+      >
+        {label}
+      </span>
+      <div
+        className="relative flex h-2 flex-1 items-center overflow-hidden rounded-full bg-paper-200 dark:bg-umber-900/60"
+        role="presentation"
+      >
+        <div
+          aria-hidden
+          className={`h-full rounded-full transition-[width] ${dim ? "bg-paper-300 dark:bg-umber-700" : fillCls[tone]}`}
+          style={{ width: `${fillPct}%` }}
+        />
+      </div>
+      <span
+        className={`w-10 shrink-0 text-right font-mono text-sm font-semibold tabular-nums ${
           dim ? "text-ink-400 dark:text-umber-400" : "text-ink-900 dark:text-paper-50"
         }`}
       >
         {count}
       </span>
-      <div
-        className="relative flex h-24 w-6 items-end overflow-hidden rounded bg-paper-200 dark:bg-umber-900/60"
-        role="presentation"
-      >
-        <div
-          aria-hidden
-          className="w-full rounded bg-ink-700 transition-[height] dark:bg-paper-100"
-          style={{ height: `${heightPct}%` }}
-        />
-      </div>
-      <span
-        aria-hidden
-        className={dim ? "text-ink-400 dark:text-umber-400" : "text-ink-700 dark:text-paper-100"}
-      >
-        {icon}
-      </span>
-      <span
-        className={`text-center text-xs leading-tight ${
-          dim ? "text-ink-400 dark:text-umber-300" : "text-ink-700 dark:text-paper-100"
-        }`}
-      >
-        {label}
+      <span className="mr-3 hidden w-12 shrink-0 text-right font-mono text-[11px] tabular-nums text-ink-500 sm:inline dark:text-umber-300">
+        {dim ? "—" : `${sharePct}%`}
       </span>
     </li>
   );
