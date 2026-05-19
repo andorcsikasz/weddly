@@ -515,30 +515,41 @@ export function SeatingMap({
           </button>
         </div>
       </header>
-      {/* Two-level wrapper structure so the SVG can be both centred (when
-          smaller than the viewport) and fully scrollable (when bigger).
-          Putting `align-items: center` directly on the scroll container
-          would push an overlarge SVG's top above the container's content
-          edge — the area is *unreachable* by the scrollbar (a known flex
-          + overflow gotcha). Splitting it: the outer div owns the scroll
-          and the fixed viewport size, the inner div owns the centring and
-          grows to enclose the SVG. */}
+      {/* Two layout regimes:
+          - INLINE: fixed 60 vh frame, no scroll. The SVG fills the wrapper
+            and preserveAspectRatio=meet drops the room into the centre at
+            fit scale. The inner div uses `h-full w-full` so percentage
+            heights actually resolve — `min-h-full` (used in expanded) would
+            leave the SVG's height: 100% computed against an auto-height
+            parent, and the SVG would balloon to its viewBox aspect ratio.
+          - EXPANDED (portal overlay): inner div uses `flex min-h-full
+            min-w-full items-center justify-center` so an overlarge SVG
+            grows the inner div, with the outer's `overflow-auto` scrolling
+            the result. Putting align-items: center directly on the scroll
+            container is the classic flex + overflow gotcha — the SVG's
+            top moves above the scroll edge and becomes unreachable. */}
       <div
         ref={scrollWrapperRef}
-        className={`relative overflow-auto bg-paper-50 dark:bg-umber-900 ${
-          expanded ? "min-h-0 flex-1 p-4" : "h-[60vh] max-h-[640px] w-full"
+        className={`relative bg-paper-50 dark:bg-umber-900 ${
+          expanded
+            ? "min-h-0 flex-1 overflow-auto p-4"
+            : "h-[60vh] max-h-[640px] w-full overflow-hidden"
         }`}
       >
-        <div className="flex min-h-full min-w-full items-center justify-center">
+        <div
+          className={
+            expanded ? "flex min-h-full min-w-full items-center justify-center" : "h-full w-full"
+          }
+        >
           <svg
             ref={svgRef}
             viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
             preserveAspectRatio="xMidYMid meet"
-            style={{
-              width: svgSize.width,
-              height: svgSize.height,
-              flexShrink: 0,
-            }}
+            style={
+              expanded
+                ? { width: svgSize.width, height: svgSize.height, flexShrink: 0 }
+                : { width: "100%", height: "100%" }
+            }
             className="block select-none focus:outline-none"
             onPointerMove={moveDrag}
             onPointerUp={endDrag}
