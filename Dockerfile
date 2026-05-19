@@ -18,8 +18,10 @@ COPY frontend ./frontend
 # forwards same-named service variables into the build.
 ARG VITE_PLAUSIBLE_DOMAIN
 ARG VITE_SENTRY_DSN
+ARG VITE_GOOGLE_CLIENT_ID
 ENV VITE_PLAUSIBLE_DOMAIN=${VITE_PLAUSIBLE_DOMAIN} \
-    VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+    VITE_SENTRY_DSN=${VITE_SENTRY_DSN} \
+    VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 RUN cd frontend && bun run build
 
 # --- runtime image ---
