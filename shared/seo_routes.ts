@@ -162,6 +162,24 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Sign in to your shared Weddly workspace. Pick up where you left off — shared budget, guest list, RSVP links and seating canvas for both of you.",
     },
   },
+  "/eszkozok/eskuvo-koltsegvetes-kalkulator": {
+    hu: {
+      title: "Esküvő költségvetés kalkulátor — Wēddly",
+      description:
+        "Mennyibe kerül egy esküvő Magyarországon 2026-ban? Húzd a vendégszámot és a keretet — kategóriánként élőben számolódik. Ingyenes, regisztráció nélkül.",
+      h1: "Esküvő költségvetés kalkulátor",
+      intro:
+        "Magyar esküvős átlagokra szabott élő kalkulátor: húzd a vendégszámot és a keretet, kategóriánként újraszámolódik. A számokat egy kattintással átvihetitek a saját workspace-etekbe.",
+    },
+    en: {
+      title: "Wedding budget calculator — Weddly",
+      description:
+        "How much does a wedding cost in Hungary in 2026? Drag the guest count and budget — every category recalculates live. Free, no signup needed.",
+      h1: "Wedding budget calculator",
+      intro:
+        "Live calculator tuned to Hungarian wedding averages: drag the guest count and budget, every category recalculates. One click carries the numbers into your own workspace.",
+    },
+  },
   "/signup": {
     hu: {
       title: "Regisztráció — Wēddly",

@@ -3103,6 +3103,46 @@ const hu: LocaleMessages = {
     popup_cta: "Regisztráció",
     popup_microcopy: "Ingyenes a nyílt béta alatt.",
   },
+  tools: {
+    budget_calculator: {
+      page_eyebrow: "Eszközök · Költségvetés-kalkulátor",
+      page_h1: "Esküvő költségvetés kalkulátor",
+      page_intro:
+        "Mennyibe kerül egy esküvő Magyarországon 2026-ban? Húzd a vendégszámot és a tervezett keretet — kategóriánként élőben számolódik, mire mennyit szán a Wēddly egy átlagos magyar esküvőnél. Regisztráció és e-mail-cím nem kell hozzá; ha tetszik az eredmény, egy kattintással elindíthatjátok vele a saját költségvetéseteket.",
+      averages_h2: "Mennyibe kerül egy esküvő Magyarországon 2026-ban?",
+      averages_body:
+        "Egy 80–100 fős magyar esküvő mediánja jelenleg 5–8 millió forint között mozog: a catering és italok teszik ki a teljes keret nagyjából harmadát, a helyszín 15–20%-át, fotó-videó 10–15%-át, dekor és virág 8–10%-át, a többi kategória (öltözet, zene, ceremónia, papírárú) együttesen 20–25%-át. A budapesti és balatoni helyszínek 15–25%-kal drágábbak a vidéki átlagnál; a téli és kora őszi időpontok 5–10%-kal olcsóbbak a júniusi–szeptemberi csúcsidőszakhoz képest.",
+      averages_source_note:
+        "Forrás: 2025–2026-os magyar esküvős szolgáltatói árlapok és pár-interjúk összesítése. A kalkulátor a saját számaitokkal megy — az átlagok csak orientációs pont, nem ígéret.",
+      ratios_h2: "Mire mennyit szánjunk?",
+      ratios_body:
+        "A klasszikus magyar esküvős bontás: vendégeknek szóló költés (catering + ital + helyszín) ≈ 55%, vizuális élmény (fotó-videó, dekor, virág, papírárú) ≈ 25%, párra szóló költés (ruha, frizura, smink, gyűrűk) ≈ 8%, zene és program ≈ 7%, ceremónia és szertartás ≈ 5%. A maradék 3% biztonsági tartalék: ha utolsó pillanatban változik a vendégszám vagy a menü, ebből pótolható.",
+      tips_h2: "Mire figyelj a számoknál",
+      tips_li_1:
+        "Az átlagok nem ígéretek. A saját számotok az, ami a Wēddly-be kerül — kategóriánként szerkeszthető, és minden módosítás auditnaplóba kerül, hogy bármikor visszanézhessétek, ki, mit és miért változtatott.",
+      tips_li_2:
+        "A vendégszám az egyetlen szám, ami minden mást elmozdít. Plusz 20 fő ~12–15%-kal emeli a catering + helyszín + dekor sort együtt. Ezért a kalkulátorban a vendégszám csúszka újraosztja az egész keretet.",
+      tips_li_3:
+        "A 3% biztonsági tartalék nem luxus. Magyar esküvők 70%-án az utolsó hat hétben még legalább egy jelentős tételnek el kell mozdulnia — ezt a kerettartalékkal lefedve nem kell hideg-rideg kompromisszumokat hozni.",
+      cta_h2: "Folytasd a Wēddly-ben",
+      cta_body:
+        "A kalkulátor számai bekerülnek a saját workspace-etekbe: ott már kategóriánként szerkesztheted őket, valós időben hozzáférhetsz a partnereddel, és minden változás bekerül az auditnaplóba. A nyílt béta alatt ingyen használhatjátok.",
+      cta_button: "Indítsátok el a workspace-eteket",
+      faq_h2: "Gyakori kérdések a kalkulátorról",
+      faq_q1: "Mennyibe kerül átlagosan egy esküvő Magyarországon?",
+      faq_a1:
+        "Egy 80–100 fős esküvő mediánja 5–8 millió forint 2026-ban, a vidéki és fővárosi árkülönbségtől függően. A kalkulátorban kicsi és nagy létszámra is megnézheted, hogyan oszlik el a keret kategóriák szerint.",
+      faq_q2: "Mennyit költsünk egy vendégre?",
+      faq_a2:
+        "Egy vendégre átlagosan 50 000–80 000 Ft jut a teljes keretből, ami magába foglalja a cateringet, italokat, dekort és a vendégekre eső helyszín-arányt. A Wēddly kalkulátora pontosan kiszámolja a vendégszám és a keret alapján a per-fő költést.",
+      faq_q3: "Hogyan oszlik meg az esküvői keret kategóriák között?",
+      faq_a3:
+        "Magyar esküvőkre szabva: ~35% catering és italok, ~18% helyszín, ~13% fotó-videó, ~9% dekor és virág, ~8% öltözet és szépség, ~7% zene/DJ, ~5% ceremónia, ~2% papírárú, és ~3% biztonsági tartalék. A kalkulátorban élőben látjátok az aktuális számokra vetítve.",
+      faq_q4: "Megőrizhetők a számok regisztráció után?",
+      faq_a4:
+        "Igen. A „Folytasd a Wēddly-ben” gombbal a vendégszám és a teljes keret bekerül a saját workspace-etek vázlatába; a regisztráció utáni onboardingnál ezekkel a számokkal indul a tervezés. Onnantól kategóriánként szerkeszthetitek és bármikor szüneteltethetitek a workspace-et.",
+    },
+  },
 };
 
 export default hu;

@@ -3378,4 +3378,35 @@ export interface LocaleMessages {
     popup_cta: string;
     popup_microcopy: string;
   };
+  /** Standalone, SEO-targeted tool pages mounted at /eszkozok/* — public
+   *  surfaces that double as ranking pages for long-tail Hungarian wedding
+   *  queries Weddly can plausibly own (calculators, generators, templates). */
+  tools: {
+    budget_calculator: {
+      page_eyebrow: string;
+      page_h1: string;
+      page_intro: string;
+      averages_h2: string;
+      averages_body: string;
+      averages_source_note: string;
+      ratios_h2: string;
+      ratios_body: string;
+      tips_h2: string;
+      tips_li_1: string;
+      tips_li_2: string;
+      tips_li_3: string;
+      cta_h2: string;
+      cta_body: string;
+      cta_button: string;
+      faq_h2: string;
+      faq_q1: string;
+      faq_a1: string;
+      faq_q2: string;
+      faq_a2: string;
+      faq_q3: string;
+      faq_a3: string;
+      faq_q4: string;
+      faq_a4: string;
+    };
+  };
 }

@@ -25,6 +25,11 @@ export type SeoLocale = "hu" | "en";
  *  Disallow. Keep in sync with frontend/src/App.tsx public routes. */
 const PUBLIC_PATHS: ReadonlyArray<{ path: string; priority: string; changefreq: string }> = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
+  // Tool pages — high SEO value (each targets a long-tail HU query the
+  // landing can't rank for on its own) so they get a higher priority than
+  // the auth flows. Same path on both hosts; the locale switch happens via
+  // Host header just like the landing.
+  { path: "/eszkozok/eskuvo-koltsegvetes-kalkulator", priority: "0.8", changefreq: "monthly" },
   { path: "/signup", priority: "0.7", changefreq: "monthly" },
   { path: "/vendors", priority: "0.6", changefreq: "monthly" },
   { path: "/about", priority: "0.5", changefreq: "monthly" },

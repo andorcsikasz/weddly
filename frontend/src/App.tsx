@@ -13,6 +13,7 @@ import { useAuth } from "./lib/auth";
 // visitor browsing /. After: only public components ship in the entry
 // chunk, the rest streams in when a session lands on /app.
 import AboutPage from "./pages/AboutPage";
+import BudgetCalculatorPage from "./pages/BudgetCalculatorPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ImprintPage from "./pages/ImprintPage";
 import LandingPage from "./pages/LandingPage";
@@ -113,6 +114,16 @@ export default function App() {
         element={
           <Page>
             <VendorsPage />
+          </Page>
+        }
+      />
+      {/* SEO tool pages mounted at /eszkozok/* — each one targets a long-
+       *  tail HU search query the landing alone can't rank for. */}
+      <Route
+        path="/eszkozok/eskuvo-koltsegvetes-kalkulator"
+        element={
+          <Page>
+            <BudgetCalculatorPage />
           </Page>
         }
       />

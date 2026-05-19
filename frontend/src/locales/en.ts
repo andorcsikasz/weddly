@@ -3079,6 +3079,46 @@ const en: LocaleMessages = {
     popup_cta: "Sign up",
     popup_microcopy: "Free during the open beta.",
   },
+  tools: {
+    budget_calculator: {
+      page_eyebrow: "Tools · Budget calculator",
+      page_h1: "Wedding budget calculator",
+      page_intro:
+        "How much does a wedding cost in Hungary in 2026? Drag the guest count and the planned budget — every category recalculates live against the Weddly defaults for a typical Hungarian wedding. No signup, no email; if you like what you see, one click carries the numbers into your own workspace.",
+      averages_h2: "How much does a wedding cost in Hungary in 2026?",
+      averages_body:
+        "The median 80–100 guest Hungarian wedding currently lands between HUF 5 and 8 million. Catering and drinks take roughly a third of the total, the venue 15–20%, photography and video 10–15%, decor and flowers 8–10%, with the remaining 20–25% split between attire, music, ceremony and stationery. Budapest and Balaton venues run 15–25% above the regional average; winter and early-autumn weddings come in 5–10% under the June-to-September peak.",
+      averages_source_note:
+        "Source: 2025–2026 Hungarian wedding supplier rate cards and couple interviews. The calculator runs on your own numbers — the averages are a starting point, not a promise.",
+      ratios_h2: "How much to put where",
+      ratios_body:
+        "The classic Hungarian split: guest-facing spend (catering + drinks + venue) ≈ 55%, visual record (photo, video, decor, flowers, stationery) ≈ 25%, couple-facing spend (attire, hair, makeup, rings) ≈ 8%, music and programme ≈ 7%, ceremony and officiating ≈ 5%. The remaining 3% is a contingency: it covers late guest-count changes or menu swaps without forcing painful trade-offs.",
+      tips_h2: "Reading the numbers",
+      tips_li_1:
+        "Averages aren't promises. Your numbers are the ones that land in Weddly — every category is editable, and every change goes into an audit log so you can always see who changed what and why.",
+      tips_li_2:
+        "Guest count is the one lever that moves everything else. An extra 20 guests bumps catering + venue + decor together by ~12–15%. That's why the calculator's guest slider re-cooks the whole budget on every drag.",
+      tips_li_3:
+        "The 3% contingency isn't luxury. About 70% of Hungarian weddings have at least one major line item move in the last six weeks — keeping a buffer means you don't make those decisions under pressure.",
+      cta_h2: "Continue in Weddly",
+      cta_body:
+        "The calculator's numbers carry into your workspace — per-category editing, real-time sync with your partner, full audit log of every change. Free throughout the open beta.",
+      cta_button: "Open your workspace",
+      faq_h2: "Calculator questions",
+      faq_q1: "How much does an average wedding cost in Hungary?",
+      faq_a1:
+        "An 80–100 guest wedding currently runs HUF 5–8M (median) in 2026, depending on whether the venue is rural or in Budapest / on Balaton. The calculator lets you see how the budget splits for any guest count + total.",
+      faq_q2: "How much per guest?",
+      faq_a2:
+        "Around HUF 50,000–80,000 per guest from the total budget — that covers catering, drinks, decor and the guest-share of the venue. The calculator computes the exact per-guest figure for the numbers you set.",
+      faq_q3: "How is a wedding budget broken down by category?",
+      faq_a3:
+        "Hungarian-typical split: ~35% catering and drinks, ~18% venue, ~13% photo / video, ~9% decor and flowers, ~8% attire and beauty, ~7% music / DJ, ~5% ceremony, ~2% stationery, ~3% contingency. The calculator visualises this live against your numbers.",
+      faq_q4: "Are the numbers saved after signup?",
+      faq_a4:
+        "Yes. The “Continue in Weddly” button carries the guest count + total into your workspace draft; onboarding picks up with those numbers pre-filled. From there it's per-category editable and you can pause the workspace any time.",
+    },
+  },
 };
 
 export default en;
