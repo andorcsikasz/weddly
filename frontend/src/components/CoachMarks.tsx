@@ -196,23 +196,73 @@ export function CoachMarks() {
 
   return createPortal(
     <div className="fixed inset-0 z-[80] lg:hidden">
-      {/* Dim the whole page. Clicks here are swallowed so the user can't
-          fire UI underneath while the overlay is up. */}
-      <div className="absolute inset-0 bg-ink-900/55 backdrop-blur-[1px]" onClick={skip} />
-
-      {/* Highlight ring around the target. If we don't have a rect yet, the
-          tooltip alone is enough; the ring just won't render. */}
-      {targetRect && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute rounded-xl ring-4 ring-blush-400 ring-offset-2 ring-offset-paper-50 transition-all duration-200 dark:ring-offset-umber-900"
-          style={{
-            left: targetRect.left - 4,
-            top: targetRect.top - 4,
-            width: targetRect.width + 8,
-            height: targetRect.height + 8,
-          }}
-        />
+      {targetRect ? (
+        <>
+          {/* Cutout dimmer: a 0-padding rect positioned over the target with
+              a huge spread box-shadow that paints the dim everywhere EXCEPT
+              inside the rect. The target stays at full brightness so users
+              can see exactly what the tooltip is pointing at. Clicks on the
+              shadow area dismiss (via the sibling swallower below); clicks
+              inside the cutout pass through so the user can also just tap
+              the highlighted control to act on it. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute rounded-xl transition-all duration-200"
+            style={{
+              left: targetRect.left - 4,
+              top: targetRect.top - 4,
+              width: targetRect.width + 8,
+              height: targetRect.height + 8,
+              boxShadow: "0 0 0 9999px rgba(28, 25, 23, 0.55)",
+            }}
+          />
+          {/* Click swallower covering the dimmed area only — built from four
+              strips around the cutout so the target itself stays tappable. */}
+          <div
+            className="absolute inset-x-0 top-0"
+            style={{ height: Math.max(0, targetRect.top - 4) }}
+            onClick={skip}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0"
+            style={{ top: targetRect.bottom + 4 }}
+            onClick={skip}
+          />
+          <div
+            className="absolute left-0"
+            style={{
+              top: Math.max(0, targetRect.top - 4),
+              width: Math.max(0, targetRect.left - 4),
+              height: targetRect.height + 8,
+            }}
+            onClick={skip}
+          />
+          <div
+            className="absolute right-0"
+            style={{
+              top: Math.max(0, targetRect.top - 4),
+              left: targetRect.right + 4,
+              height: targetRect.height + 8,
+            }}
+            onClick={skip}
+          />
+          {/* Highlight ring around the target. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute rounded-xl ring-4 ring-blush-400 ring-offset-2 ring-offset-paper-50 transition-all duration-200 dark:ring-offset-umber-900"
+            style={{
+              left: targetRect.left - 4,
+              top: targetRect.top - 4,
+              width: targetRect.width + 8,
+              height: targetRect.height + 8,
+            }}
+          />
+        </>
+      ) : (
+        // No target rect yet — fall back to a full dim so the tooltip
+        // doesn't sit on top of a fully interactive page. The next render
+        // (once the rect is measured) will swap in the cutout.
+        <div className="absolute inset-0 bg-ink-900/55" onClick={skip} />
       )}
 
       {/* Tooltip. Stops propagation so the buttons inside aren't read as a

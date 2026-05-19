@@ -49,6 +49,22 @@
     <link rel="alternate" hreflang="x-default" href="https://weddly.hu/" />
     <!-- SEO_HEAD_END -->
     <!--
+      Hide the prerendered SEO body from human users. The prerender script
+      (frontend/scripts/prerender.ts) bakes a semantic HTML body inside
+      <div id="root"> so crawlers parsing the HTML directly see real
+      content. Real users used to catch a brief flash of that unstyled
+      block before React's createRoot() wiped it; on slow connections or
+      when the JS bundle is delayed the flash could last seconds and felt
+      like a "raw sitemap" page. Hiding it inline (before any external
+      stylesheet loads) means humans never see it, while Googlebot's
+      rendered crawl (which is what actually drives SPA ranking now) still
+      indexes the React app once it hydrates. Inline <style> is allowed by
+      CSP via 'unsafe-inline' in style-src.
+    -->
+    <style>
+      .seo-prerender { display: none !important; }
+    </style>
+    <!--
       Fonts are intentionally NOT loaded from third-party hosts (rsms.me,
       Google Fonts) so that the landing page can render without leaking
       visitor IPs to font CDNs. The Tailwind sans + serif stacks fall
