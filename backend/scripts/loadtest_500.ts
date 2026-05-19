@@ -14,7 +14,7 @@
 
 import "../tests/setup";
 
-import { PRIVACY_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import { db } from "../src/db";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
@@ -105,6 +105,7 @@ async function registerOnboard(prefix: string, index: number, opts?: { guests?: 
     password: "loadtest-pw-123",
     full_name: "LoadTest",
     privacy_version: PRIVACY_VERSION,
+    terms_version: TERMS_VERSION,
   });
   if (reg.status !== 201) throw new Error(`register ${reg.status}`);
   const token = reg.data.token;

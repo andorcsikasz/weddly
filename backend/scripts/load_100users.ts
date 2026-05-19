@@ -5,7 +5,7 @@
 
 import "../tests/setup";
 
-import { PRIVACY_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import { db } from "../src/db";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
@@ -68,6 +68,7 @@ async function register(email: string): Promise<string> {
     full_name: "LoadTest",
     // Required since commit 5c06181 — bare register payloads 400 without it.
     privacy_version: PRIVACY_VERSION,
+    terms_version: TERMS_VERSION,
   });
   if (r.status !== 201) throw new Error(`register failed (${r.status}) for ${email}`);
   return r.data.token;

@@ -9,7 +9,7 @@
 
 import { expect } from "bun:test";
 
-import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import { db } from "../src/db";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
@@ -68,7 +68,14 @@ function withConsentVersions(method: string, path: string, body: unknown): unkno
   }
   const obj = body as Record<string, unknown>;
   if (path === "/api/auth/register") {
-    return "privacy_version" in obj ? obj : { ...obj, privacy_version: PRIVACY_VERSION };
+    // Register now requires BOTH privacy_version and terms_version. Tests
+    // probing the "missing version" path pass either field as null to
+    // preserve the original probe.
+    return {
+      ...("privacy_version" in obj ? {} : { privacy_version: PRIVACY_VERSION }),
+      ...("terms_version" in obj ? {} : { terms_version: TERMS_VERSION }),
+      ...obj,
+    };
   }
   if (path === "/api/vendors/waitlist") {
     return {
