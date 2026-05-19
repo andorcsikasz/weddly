@@ -704,7 +704,7 @@ const en: LocaleMessages = {
     // ── Landing "try the demo" card — small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
     //    identity is the reveal once the visitor lands in /app. ─────────
-    demo_card_eyebrow: "Demo · no signup",
+    demo_card_eyebrow: "no signup",
     demo_card_title: "Try it",
     demo_card_cta: "Start the demo",
     demo_card_loading: "One moment…",
