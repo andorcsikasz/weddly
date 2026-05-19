@@ -1488,12 +1488,18 @@ describe("couples_lifecycle: places search proxy", () => {
     wipeAll();
     const { token } = await bootstrapCouple("places-rl@weddly.test");
 
-    // Capacity is 6 with a 1-token/sec refill. Two-character "ab" queries
-    // short-circuit BEFORE hitting Nominatim so we can fire them fast; the
-    // rate-limit hook still ticks for each call. Sevenenth should 429.
+    // Capacity is 6 with a 1-token/sec refill. The route short-circuits
+    // queries with `q.length < 2` BEFORE hitting Nominatim, so single-char
+    // queries fire fast without a real network roundtrip; the rate-limit
+    // hook still ticks for each call. Seventh should 429.
     let lastStatus = 0;
     for (let i = 0; i < 8; i++) {
-      const r = await req("GET", `/api/places/search?q=ab${i}`, undefined, { token });
+      const r = await req(
+        "GET",
+        `/api/places/search?q=${String.fromCharCode(97 + i)}`,
+        undefined,
+        { token },
+      );
       lastStatus = r.status;
       if (r.status === 429) break;
     }
