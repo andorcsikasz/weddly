@@ -64,6 +64,7 @@ import type {
 import type { CouplePick } from "@shared/picks";
 import type {
   AdminActivityAnalytics,
+  AdminDemoAnalytics,
   AdminEngagementAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
@@ -802,6 +803,7 @@ export const adminAnalyticsApi = {
   activity: () => apiFetch<AdminActivityAnalytics>("GET", "/api/admin/analytics/activity"),
   picks: () => apiFetch<AdminPicksAnalytics>("GET", "/api/admin/analytics/picks"),
   engagement: () => apiFetch<AdminEngagementAnalytics>("GET", "/api/admin/analytics/engagement"),
+  demo: () => apiFetch<AdminDemoAnalytics>("GET", "/api/admin/analytics/demo"),
 };
 
 export const adminFeedbackApi = {

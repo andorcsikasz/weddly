@@ -2613,6 +2613,29 @@ export interface LocaleMessages {
     analytics_engagement_users: string;
     analytics_engagement_total_label: string;
     analytics_engagement_total_picks: string;
+    /** Top active users leaderboard inside the engagement panel — ranks
+     *  real users (demo workspaces excluded) by audit event count over
+     *  the last 30 days. */
+    analytics_engagement_top_users: string;
+    analytics_engagement_top_users_empty: string;
+    analytics_engagement_top_users_help: string;
+    /** Demo platform monitoring — separate analytics card below the
+     *  engagement panel. KPI tiles for total/new/active demos, a daily
+     *  creation series, and a 30-day audit event tally. */
+    analytics_demo_title: string;
+    analytics_demo_sub: string;
+    analytics_demo_load_error: string;
+    analytics_demo_empty: string;
+    analytics_demo_total: string;
+    analytics_demo_new_24h: string;
+    analytics_demo_new_7d: string;
+    analytics_demo_active_24h: string;
+    analytics_demo_avg_events: string;
+    analytics_demo_daily_title: string;
+    analytics_demo_daily_sub: string;
+    analytics_demo_events_title: string;
+    analytics_demo_events_unit: string;
+    analytics_demo_events_help: string;
   };
   rsvp: {
     title: string;

@@ -11,6 +11,7 @@
 import type {
   AdminActivityAnalytics,
   AdminAnalyticsStats,
+  AdminDemoAnalytics,
   AdminEngagementAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
@@ -43,6 +44,10 @@ export default function AdminAnalyticsPage() {
   const [engagement, setEngagement] = useState<Loadable<AdminEngagementAnalytics>>({
     status: "loading",
   });
+  // Demo analytics — same independent-load pattern as engagement; a
+  // backend without /api/admin/analytics/demo still renders the other
+  // sections cleanly.
+  const [demo, setDemo] = useState<Loadable<AdminDemoAnalytics>>({ status: "loading" });
 
   // `nonce` lets the retry button re-run the effect without remounting the
   // whole tree — bumping it triggers a re-fetch and resets the four slots
@@ -54,6 +59,7 @@ export default function AdminAnalyticsPage() {
     setActivity({ status: "loading" });
     setPicks({ status: "loading" });
     setEngagement({ status: "loading" });
+    setDemo({ status: "loading" });
     setNonce((n) => n + 1);
   }, []);
 
@@ -107,6 +113,15 @@ export default function AdminAnalyticsPage() {
         if (!cancelled) setEngagement({ status: "error" });
       });
 
+    adminAnalyticsApi
+      .demo()
+      .then((d) => {
+        if (!cancelled) setDemo({ status: "ok", data: d });
+      })
+      .catch(() => {
+        if (!cancelled) setDemo({ status: "error" });
+      });
+
     return () => {
       cancelled = true;
     };
@@ -133,6 +148,7 @@ export default function AdminAnalyticsPage() {
       <ActivitySection state={activity} locale={locale} />
       <PicksSection state={picks} locale={locale} />
       <EngagementSection state={engagement} locale={locale} />
+      <DemoSection state={demo} locale={locale} />
     </>
   );
 }
@@ -1124,8 +1140,199 @@ function EngagementSection({
         <RetentionCard retention={e.retention} locale={locale} />
         <TimeOfDayHeatmap matrix={e.time_of_day.matrix} max={e.time_of_day.max} />
         <TopFeaturesCard features={e.top_features} locale={locale} />
+        <div className="lg:col-span-2">
+          <TopUsersCard users={e.top_users} locale={locale} />
+        </div>
       </div>
     </section>
+  );
+}
+
+/** Top active users leaderboard — table of {full_name, email, event_count,
+ *  last_seen_at}. Demo users are filtered out server-side so the rank
+ *  reflects real engagement. Renders 10 rows max; empty state when the
+ *  audit window is empty (the most-active value would be 0 across the
+ *  board). */
+function TopUsersCard({
+  users,
+  locale,
+}: {
+  users: AdminEngagementAnalytics["top_users"];
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  if (users.length === 0) {
+    return (
+      <SubCard title={t("admin.analytics_engagement_top_users")}>
+        <p className="text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_engagement_top_users_empty")}
+        </p>
+      </SubCard>
+    );
+  }
+  const max = Math.max(1, ...users.map((u) => u.event_count));
+  return (
+    <SubCard title={t("admin.analytics_engagement_top_users")}>
+      <ul className="space-y-2">
+        {users.map((u, i) => {
+          const pct = (u.event_count / max) * 100;
+          return (
+            <li
+              key={u.user_id}
+              className="grid grid-cols-[1.5rem_minmax(0,1fr)_minmax(0,1.4fr)_5rem_5rem] items-center gap-3 text-sm"
+            >
+              <span className="stat-num text-xs text-ink-400 dark:text-umber-300">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="truncate font-medium text-ink-900 dark:text-paper-50">
+                {u.full_name}
+              </span>
+              <span className="truncate text-xs text-ink-500 dark:text-umber-300">{u.email}</span>
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                <div
+                  className="h-full rounded-full bg-violet-600 dark:bg-violet-500"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="stat-num text-right text-xs text-ink-700 dark:text-paper-100">
+                {u.event_count}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-2 text-[11px] text-ink-400 dark:text-umber-300">
+        {t("admin.analytics_engagement_top_users_help")}
+      </p>
+    </SubCard>
+  );
+}
+
+// ─── Demo section ──────────────────────────────────────────────────────────
+
+/** Demo platform monitoring. Distinct from engagement because demo
+ *  workspaces are intentionally ephemeral — mixing them into signups /
+ *  retention would inflate every real-user number. Same load pattern as
+ *  the engagement panel; a 404 only hides this card, not the whole
+ *  page. */
+function DemoSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminDemoAnalytics>;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  if (state.status === "loading") {
+    return (
+      <section className="card mt-6">
+        <h2 className="m-0 mb-3 text-lg font-semibold text-ink-900 dark:text-paper-50">
+          {t("admin.analytics_demo_title")}
+        </h2>
+        <Skeleton height={200} />
+      </section>
+    );
+  }
+  if (state.status === "error") {
+    return (
+      <section className="card mt-6">
+        <h2 className="m-0 mb-3 text-lg font-semibold text-ink-900 dark:text-paper-50">
+          {t("admin.analytics_demo_title")}
+        </h2>
+        <p className="text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_demo_load_error")}
+        </p>
+      </section>
+    );
+  }
+
+  const d = state.data;
+  const dailyMax = Math.max(0, ...d.demos_daily.map((p) => p.count));
+  return (
+    <section className="card mt-6">
+      <header className="mb-4">
+        <h2 className="m-0 text-lg font-semibold text-ink-900 dark:text-paper-50">
+          {t("admin.analytics_demo_title")}
+        </h2>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_demo_sub")}
+        </p>
+      </header>
+
+      {/* Top KPI row — five tiles that read as the first-glance status of
+       *  the demo funnel. */}
+      <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+        <KpiTile
+          label={t("admin.analytics_demo_total")}
+          value={formatNumber(d.total_demos, locale)}
+        />
+        <KpiTile
+          label={t("admin.analytics_demo_new_24h")}
+          value={formatNumber(d.new_demos.last_24h, locale)}
+        />
+        <KpiTile
+          label={t("admin.analytics_demo_new_7d")}
+          value={formatNumber(d.new_demos.last_7d, locale)}
+        />
+        <KpiTile
+          label={t("admin.analytics_demo_active_24h")}
+          value={formatNumber(d.active_demos_24h, locale)}
+        />
+        <KpiTile
+          label={t("admin.analytics_demo_avg_events")}
+          value={formatNumber(d.avg_events_per_demo, locale)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <SubCard title={t("admin.analytics_demo_daily_title")}>
+          {d.demos_daily.length === 0 || dailyMax === 0 ? (
+            <p className="text-sm text-ink-500 dark:text-umber-300">
+              {t("admin.analytics_demo_empty")}
+            </p>
+          ) : (
+            <>
+              <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                {t("admin.analytics_demo_daily_sub")}
+              </p>
+              <SignupsAreaChart points={d.demos_daily} max={dailyMax} />
+              <div className="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-umber-300 stat-num">
+                <span>{d.demos_daily[0]?.date ?? ""}</span>
+                <span>{d.demos_daily[d.demos_daily.length - 1]?.date ?? ""}</span>
+              </div>
+            </>
+          )}
+        </SubCard>
+        <SubCard title={t("admin.analytics_demo_events_title")}>
+          <div className="flex items-baseline gap-2">
+            <span className="stat-num text-3xl font-semibold text-ink-900 dark:text-paper-50">
+              {formatNumber(d.total_demo_events_30d, locale)}
+            </span>
+            <span className="text-xs text-ink-500 dark:text-umber-300">
+              {t("admin.analytics_demo_events_unit")}
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
+            {t("admin.analytics_demo_events_help")}
+          </p>
+        </SubCard>
+      </div>
+    </section>
+  );
+}
+
+/** Compact KPI tile — used by the demo section header row. Mirrors the
+ *  KPI-tile look from the legacy money/activity surfaces. */
+function KpiTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-paper-50 p-3 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700">
+      <div className="text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        {label}
+      </div>
+      <div className="stat-num mt-1 text-2xl font-semibold text-ink-900 dark:text-paper-50">
+        {value}
+      </div>
+    </div>
   );
 }
 

@@ -3,7 +3,7 @@
 // rollup), picks (supplier-pick distribution). Each is a single GET that
 // returns the aggregated view in one round-trip; no per-row drilldown.
 
-import type { BudgetCategory } from "./types";
+import type { BudgetCategory, UnixMs } from "./types";
 import type { CoupleStatus } from "./types";
 import type { SupplierCategory } from "./suppliers";
 
@@ -158,4 +158,44 @@ export interface AdminEngagementAnalytics {
    *  individual actions land. The frontend renders these as a small
    *  horizontal bar list. */
   top_features: Array<{ feature: string; count: number; users: number }>;
+  /** Top 10 most active users over the past 30 days, ranked by audit_log
+   *  event count. Demo users (email ending in `@demo.weddly.local`) are
+   *  excluded — they show up in the dedicated demo analytics surface. */
+  top_users: Array<{
+    user_id: number;
+    full_name: string;
+    email: string;
+    event_count: number;
+    last_seen_at: UnixMs | null;
+  }>;
+}
+
+// ─── /api/admin/analytics/demo ───────────────────────────────────────────
+
+/** Demo-platform usage rollup. Kept separate from the regular surfaces
+ *  because demo workspaces are intentionally short-lived (a background
+ *  sweep purges idle ones) and would skew signups / retention if mixed
+ *  in with real users. */
+export interface AdminDemoAnalytics {
+  /** Demo workspaces alive in the DB right now (excludes purged rows).
+   *  Demo couples are flagged via `couples.is_demo = 1`. */
+  total_demos: number;
+  /** New demo workspaces created over each window. `last_24h` is the
+   *  freshness signal admins look at first. */
+  new_demos: { last_24h: number; last_7d: number; last_30d: number };
+  /** Newest-last `{date, count}` array for daily demo creations over the
+   *  last 14 days. Same shape as the activity surface's `signups_daily`
+   *  so the frontend reuses the same chart component. */
+  demos_daily: Array<{ date: string; count: number }>;
+  /** Demo workspaces with at least one audit_log row in the last 24h —
+   *  a "live demos" signal admins use to spot organic load before it
+   *  shows up in registration numbers. */
+  active_demos_24h: number;
+  /** Mean audit_log event count across demo workspaces. Rounded to the
+   *  nearest integer; 0 when there are no demos. */
+  avg_events_per_demo: number;
+  /** Total audit events from demo workspaces over the last 30 days.
+   *  Compare against the regular `engagement.total_sessions` for a
+   *  real-vs-demo traffic split. */
+  total_demo_events_30d: number;
 }

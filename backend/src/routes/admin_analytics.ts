@@ -6,6 +6,7 @@
 import type {
   AdminActivityAnalytics,
   AdminAnalyticsStats,
+  AdminDemoAnalytics,
   AdminEngagementAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
@@ -509,6 +510,7 @@ const MS_PER_MINUTE = 60 * 1000;
 const SESSION_GAP_MS = SESSION_GAP_MINUTES * MS_PER_MINUTE;
 
 const TOP_FEATURE_LIMIT = 8;
+const TOP_USER_LIMIT = 10;
 
 function engagementAnalytics(): AdminEngagementAnalytics {
   const now = Date.now();
@@ -668,6 +670,48 @@ function engagementAnalytics(): AdminEngagementAnalytics {
     .sort((a, b) => b.count - a.count || a.feature.localeCompare(b.feature))
     .slice(0, TOP_FEATURE_LIMIT);
 
+  // ─── Top users: per-actor event counts across the same 30d window. ─────
+  // Demo users (email ending in @demo.weddly.local) are excluded — they
+  // get their own surface so the leaderboard reflects real engagement.
+  const eventsByUser = new Map<number, number>();
+  for (const row of auditRows) {
+    eventsByUser.set(row.actor_user_id, (eventsByUser.get(row.actor_user_id) ?? 0) + 1);
+  }
+  const topUserIds = [...eventsByUser.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 25) // hydrate a few extra so the demo filter doesn't underfill
+    .map(([id]) => id);
+  const userRows =
+    topUserIds.length === 0
+      ? []
+      : (db
+          .prepare(
+            `SELECT id, full_name, email, last_seen_at FROM users
+              WHERE id IN (${topUserIds.map(() => "?").join(",")})`,
+          )
+          .all(...topUserIds) as {
+          id: number;
+          full_name: string;
+          email: string;
+          last_seen_at: number | null;
+        }[]);
+  const userMap = new Map(userRows.map((u) => [u.id, u]));
+  const topUsers = topUserIds
+    .map((id) => {
+      const u = userMap.get(id);
+      if (!u) return null;
+      if (u.email.endsWith("@demo.weddly.local")) return null;
+      return {
+        user_id: u.id,
+        full_name: u.full_name,
+        email: u.email,
+        event_count: eventsByUser.get(id) ?? 0,
+        last_seen_at: u.last_seen_at,
+      };
+    })
+    .filter((u): u is NonNullable<typeof u> => u !== null)
+    .slice(0, TOP_USER_LIMIT);
+
   return {
     session_duration_minutes: sessionDurationMinutes,
     total_sessions: totalSessions,
@@ -675,7 +719,104 @@ function engagementAnalytics(): AdminEngagementAnalytics {
     retention,
     time_of_day: { matrix, max: maxCell },
     top_features: topFeatures,
+    top_users: topUsers,
   };
+}
+
+// ─── /api/admin/analytics/demo ──────────────────────────────────────────
+
+function demoAnalytics(): AdminDemoAnalytics {
+  const now = Date.now();
+  const cutoff24h = now - 1 * DAY_MS;
+  const cutoff7d = now - 7 * DAY_MS;
+  const cutoff30d = now - 30 * DAY_MS;
+
+  // Demo couples — flagged via is_demo. Live rows only; purged tombstones
+  // sit in status='deleting' and the background sweep drops them entirely.
+  const demoRows = db
+    .prepare(
+      `SELECT id, created_at FROM couples WHERE is_demo = 1 AND status != 'deleting'`,
+    )
+    .all() as { id: number; created_at: number }[];
+
+  const totalDemos = demoRows.length;
+  let new24h = 0;
+  let new7d = 0;
+  let new30d = 0;
+  for (const r of demoRows) {
+    if (r.created_at >= cutoff24h) new24h += 1;
+    if (r.created_at >= cutoff7d) new7d += 1;
+    if (r.created_at >= cutoff30d) new30d += 1;
+  }
+
+  // 14-day daily creation series. Same UTC YYYY-MM-DD bucketing as the
+  // activity surface's signups_daily so the frontend can reuse the chart.
+  const isoDay = (d: Date): string =>
+    `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  const days: Array<{ date: string; count: number }> = [];
+  const todayUtc = new Date(now);
+  todayUtc.setUTCHours(0, 0, 0, 0);
+  for (let i = 13; i >= 0; i -= 1) {
+    const d = new Date(todayUtc.getTime() - i * DAY_MS);
+    days.push({ date: isoDay(d), count: 0 });
+  }
+  const dateIndex = new Map(days.map((d, i) => [d.date, i]));
+  for (const r of demoRows) {
+    const d = new Date(r.created_at);
+    d.setUTCHours(0, 0, 0, 0);
+    const key = isoDay(d);
+    const idx = dateIndex.get(key);
+    if (idx !== undefined) {
+      const bucket = days[idx];
+      if (bucket) bucket.count += 1;
+    }
+  }
+
+  // active_demos_24h + total_demo_events_30d + avg_events_per_demo. One
+  // SELECT joining audit_log → users → couples filtered by is_demo. We
+  // do this with a sub-query on couple ids to keep the planner happy.
+  const demoIds = demoRows.map((r) => r.id);
+  let activeDemos24h = 0;
+  let totalDemoEvents30d = 0;
+  let avgEventsPerDemo = 0;
+  if (demoIds.length > 0) {
+    const placeholders = demoIds.map(() => "?").join(",");
+    const auditDemoRows = db
+      .prepare(
+        `SELECT u.couple_id AS couple_id, a.created_at AS created_at FROM audit_log a
+          JOIN users u ON u.id = a.actor_user_id
+          WHERE u.couple_id IN (${placeholders})
+            AND a.created_at >= ?`,
+      )
+      .all(...demoIds, cutoff30d) as { couple_id: number; created_at: number }[];
+
+    totalDemoEvents30d = auditDemoRows.length;
+    const eventsPerDemo = new Map<number, number>();
+    const recentDemos = new Set<number>();
+    for (const r of auditDemoRows) {
+      eventsPerDemo.set(r.couple_id, (eventsPerDemo.get(r.couple_id) ?? 0) + 1);
+      if (r.created_at >= cutoff24h) recentDemos.add(r.couple_id);
+    }
+    activeDemos24h = recentDemos.size;
+    if (eventsPerDemo.size > 0) {
+      const sum = [...eventsPerDemo.values()].reduce((acc, n) => acc + n, 0);
+      avgEventsPerDemo = Math.round(sum / demoIds.length);
+    }
+  }
+
+  return {
+    total_demos: totalDemos,
+    new_demos: { last_24h: new24h, last_7d: new7d, last_30d: new30d },
+    demos_daily: days,
+    active_demos_24h: activeDemos24h,
+    avg_events_per_demo: avgEventsPerDemo,
+    total_demo_events_30d: totalDemoEvents30d,
+  };
+}
+
+function handleDemo(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(demoAnalytics());
 }
 
 function handleEngagement(ctx: Ctx): Response {
@@ -688,4 +829,5 @@ export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/activity", handleActivity, true);
   router.get("/api/admin/analytics/picks", handlePicks, true);
   router.get("/api/admin/analytics/engagement", handleEngagement, true);
+  router.get("/api/admin/analytics/demo", handleDemo, true);
 }
