@@ -108,6 +108,7 @@ function wipeAll() {
     "supplier_votes",
     "vendor_waitlist",
     "feedback_submissions",
+    "demo_usage",
     "supplier_categories",
     "supplier_groups",
     "users",
@@ -10680,6 +10681,80 @@ describe("demo: /api/demo/start", () => {
     expect(b.status).toBe(201);
     expect(a.data.couple?.id).not.toBe(b.data.couple?.id);
     expect(a.data.session.token).not.toBe(b.data.session.token);
+  });
+
+  test("stale demos (>4h old) are reaped on the next sweep and snapshot lands in demo_usage", async () => {
+    wipeAll();
+
+    // Mint a demo, then fake-age it past the 4h threshold so the next sweep
+    // catches it. We also stuff a couple of representative audit rows so the
+    // snapshot has something to aggregate.
+    const res = await req<{ couple: { id: number } | null; session: { token: string } }>(
+      "POST",
+      "/api/demo/start",
+    );
+    expect(res.status).toBe(201);
+    const coupleId = res.data.couple?.id ?? 0;
+    expect(coupleId).toBeGreaterThan(0);
+    const ownerRow = db
+      .prepare("SELECT id FROM users WHERE couple_id = ? LIMIT 1")
+      .get(coupleId) as { id: number };
+
+    // Two more audit entries to prove feature aggregation works.
+    db.prepare(
+      "INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at) VALUES (?, ?, 'guest.create', 'guest', 0, ?)",
+    ).run(ownerRow.id, coupleId, Date.now());
+    db.prepare(
+      "INSERT INTO audit_log (actor_user_id, couple_id, action, target_kind, target_id, created_at) VALUES (?, ?, 'budget.update', 'budget_line', 0, ?)",
+    ).run(ownerRow.id, coupleId, Date.now());
+
+    // Age the demo 5h into the past so it crosses the 4h reaper threshold.
+    const fiveHoursAgo = Date.now() - 5 * 60 * 60 * 1000;
+    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(fiveHoursAgo, coupleId);
+
+    const { purgeStaleDemoCouples } = await import("../src/domain/demo_seed");
+    const purged = purgeStaleDemoCouples();
+    expect(purged).toBeGreaterThanOrEqual(1);
+
+    // Couple + user rows are gone — the demo had no retention claim.
+    // bun:sqlite returns null (not undefined) for empty .get() lookups.
+    const stillCouple = db.prepare("SELECT id FROM couples WHERE id = ?").get(coupleId);
+    expect(stillCouple).toBeNull();
+    const stillUser = db.prepare("SELECT id FROM users WHERE id = ?").get(ownerRow.id);
+    expect(stillUser).toBeNull();
+
+    // demo_usage holds a one-row summary with the per-feature counts.
+    const usage = db
+      .prepare(
+        "SELECT total_events, feature_counts_json, lifetime_seconds FROM demo_usage WHERE source_couple_id = ?",
+      )
+      .get(coupleId) as
+      | { total_events: number; feature_counts_json: string; lifetime_seconds: number }
+      | undefined;
+    expect(usage).toBeDefined();
+    if (!usage) return;
+    expect(usage.total_events).toBeGreaterThanOrEqual(3); // demo.start + guest + budget
+    expect(usage.lifetime_seconds).toBeGreaterThanOrEqual(4 * 60 * 60);
+    const counts = JSON.parse(usage.feature_counts_json) as Record<string, number>;
+    expect(counts.guest).toBeGreaterThanOrEqual(1);
+    expect(counts.budget).toBeGreaterThanOrEqual(1);
+    expect(counts.demo).toBeGreaterThanOrEqual(1);
+  });
+
+  test("fresh demos (<4h old) are left alone", async () => {
+    wipeAll();
+    const res = await req<{ couple: { id: number } | null }>("POST", "/api/demo/start");
+    const coupleId = res.data.couple?.id ?? 0;
+    expect(coupleId).toBeGreaterThan(0);
+
+    const { purgeStaleDemoCouples } = await import("../src/domain/demo_seed");
+    const purged = purgeStaleDemoCouples();
+    expect(purged).toBe(0);
+
+    const stillThere = db
+      .prepare("SELECT id FROM couples WHERE id = ?")
+      .get(coupleId) as { id: number } | undefined;
+    expect(stillThere?.id).toBe(coupleId);
   });
 });
 
