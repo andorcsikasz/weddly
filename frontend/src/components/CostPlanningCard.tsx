@@ -835,11 +835,17 @@ function CategoryRowInner({
   // on per-guest categories, which made the bar rail width inconsistent
   // across rows; with the hint on its own line the rail length is the
   // same for every row and "x px = y HUF" reads correctly.
+  // The "actual / planned" pair (e.g. "120 000 / 350 000") only fits on the
+  // narrow mobile right-column when both halves are tiny. Hiding the actual
+  // prefix on `<sm` lets us tighten the right column from 8rem → 5.5rem and
+  // hand those 2.5rem back to the slider — a noticeable gain in the bar
+  // chart's effective length on a 360 px viewport. The actual spend is
+  // still visible in the budget table and reappears on `sm:` widths.
   const amountInner = (
     <span className="flex flex-col items-end leading-tight">
       <span className="whitespace-nowrap">
         {actual > 0 && (
-          <span className="text-ink-400 dark:text-umber-300">
+          <span className="hidden text-ink-400 sm:inline dark:text-umber-300">
             {formatMoney(actual, currency, locale)} /{" "}
           </span>
         )}
@@ -923,7 +929,7 @@ function CategoryRowInner({
       <li>
         <Link
           to={linkTo}
-          className="grid grid-cols-[8.5rem_minmax(0,1fr)_8rem] items-center gap-3 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
+          className="grid grid-cols-[7rem_minmax(0,1fr)_5.5rem] items-center gap-2 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
           aria-label={categoryLabel}
         >
           <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
@@ -944,7 +950,7 @@ function CategoryRowInner({
   return (
     <li
       id={`cat-${category}`}
-      className="grid grid-cols-[8.5rem_minmax(0,1fr)_8rem] scroll-mt-24 items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:text-sm"
+      className="grid grid-cols-[7rem_minmax(0,1fr)_5.5rem] scroll-mt-24 items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm"
     >
       {leftTile}
       <div className="w-full">
@@ -1042,7 +1048,7 @@ function CustomRowInner({
   }
 
   return (
-    <li className="grid grid-cols-[8.5rem_minmax(0,1fr)_8rem] items-center gap-3 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:text-sm">
+    <li className="grid grid-cols-[7rem_minmax(0,1fr)_5.5rem] items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm">
       <span className="flex items-center gap-1.5 text-ink-700 dark:text-paper-100">
         {onRemove ? (
           <button
@@ -1086,7 +1092,7 @@ function CustomRowInner({
         <span className="flex flex-col items-end leading-tight">
           <span className="whitespace-nowrap">
             {line.actual_huf > 0 && (
-              <span className="text-ink-400 dark:text-umber-300">
+              <span className="hidden text-ink-400 sm:inline dark:text-umber-300">
                 {formatMoney(line.actual_huf, currency, locale)} /{" "}
               </span>
             )}
