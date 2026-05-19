@@ -471,94 +471,98 @@ export function SeatingMap({
           </button>
         </div>
       </header>
-      {/* Wrapper is a scroll container sized to a fixed slot (60 vh inline,
-          90 vh × 90 vw in expanded). The SVG inside is sized in pixels via
-          svgSize so an elongated room (10×50 m) zooms in and scrolls
-          instead of collapsing into a thin strip via xMidYMid-meet.
-          flex centring keeps small rooms (those that don't need to scroll)
-          visually balanced in the wrapper. */}
+      {/* Two-level wrapper structure so the SVG can be both centred (when
+          smaller than the viewport) and fully scrollable (when bigger).
+          Putting `align-items: center` directly on the scroll container
+          would push an overlarge SVG's top above the container's content
+          edge — the area is *unreachable* by the scrollbar (a known flex
+          + overflow gotcha). Splitting it: the outer div owns the scroll
+          and the fixed viewport size, the inner div owns the centring and
+          grows to enclose the SVG. */}
       <div
         ref={scrollWrapperRef}
-        className={`relative flex items-center justify-center overflow-auto bg-paper-50 dark:bg-umber-900 ${
+        className={`relative overflow-auto bg-paper-50 dark:bg-umber-900 ${
           expanded ? "min-h-0 flex-1 p-4" : "h-[60vh] max-h-[640px] w-full"
         }`}
       >
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
-          preserveAspectRatio="xMidYMid meet"
-          style={{
-            width: svgSize.width,
-            height: svgSize.height,
-            flexShrink: 0,
-          }}
-          className="block select-none touch-none focus:outline-none"
-          onPointerMove={moveDrag}
-          onPointerUp={endDrag}
-          onPointerLeave={endDrag}
-          onKeyDown={handleKey}
-          // Click on empty area to deselect.
-          onClick={(e) => {
-            if (e.target === svgRef.current) onSelect(null);
-          }}
-          aria-label={t("seating.map_title")}
-          role="img"
-          tabIndex={0}
-        >
-          <defs>
-            {/* Diagonal stripe used to highlight a table when the unassigned
+        <div className="flex min-h-full min-w-full items-center justify-center">
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
+            preserveAspectRatio="xMidYMid meet"
+            style={{
+              width: svgSize.width,
+              height: svgSize.height,
+              flexShrink: 0,
+            }}
+            className="block select-none touch-none focus:outline-none"
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerLeave={endDrag}
+            onKeyDown={handleKey}
+            // Click on empty area to deselect.
+            onClick={(e) => {
+              if (e.target === svgRef.current) onSelect(null);
+            }}
+            aria-label={t("seating.map_title")}
+            role="img"
+            tabIndex={0}
+          >
+            <defs>
+              {/* Diagonal stripe used to highlight a table when the unassigned
                 panel is the active drop target. Defined once at the SVG root
                 so any fill="url(#seat-drop-stripe)" can reference it. */}
-            <pattern
-              id="seat-drop-stripe"
-              patternUnits="userSpaceOnUse"
-              width={120}
-              height={120}
-              patternTransform="rotate(45)"
-            >
-              <rect width={120} height={120} className="fill-blush-50" />
-              <line x1={0} y1={0} x2={0} y2={120} className="stroke-blush-200" strokeWidth={40} />
-            </pattern>
-          </defs>
-          <Grid widthMm={ROOM_W_MM} heightMm={ROOM_H_MM} />
-          {unassignedHighlight && (
-            <rect
-              x={0}
-              y={0}
-              width={ROOM_W_MM}
-              height={ROOM_H_MM}
-              fill="url(#seat-drop-stripe)"
-              opacity={0.4}
-              style={{ pointerEvents: "none" }}
-            />
-          )}
-          {tables.map((table) => {
-            const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
-            const dims = localDims.get(table.id) ?? {
-              width_mm: table.width_mm,
-              length_mm: table.length_mm,
-            };
-            // Build a synthetic table with the live local dimensions so the
-            // shape redraws under the cursor during a resize drag.
-            const liveTable: SeatingTable = { ...table, ...dims };
-            const filled = seatsByTable.get(table.id)?.length ?? 0;
-            return (
-              <TableShape
-                key={table.id}
-                table={liveTable}
-                cx={pos.x}
-                cy={pos.y}
-                filledSeats={filled}
-                babySeatedSet={babySeatsByTable?.get(table.id)}
-                isSelected={selectedId === table.id}
-                onPointerDown={(e) => startMove(e, table)}
-                onHandlePointerDown={(e, h) => startResize(e, table, h)}
-                onSeatsDelta={(delta) => onSeatsChange(table.id, delta)}
-                t={t}
+              <pattern
+                id="seat-drop-stripe"
+                patternUnits="userSpaceOnUse"
+                width={120}
+                height={120}
+                patternTransform="rotate(45)"
+              >
+                <rect width={120} height={120} className="fill-blush-50" />
+                <line x1={0} y1={0} x2={0} y2={120} className="stroke-blush-200" strokeWidth={40} />
+              </pattern>
+            </defs>
+            <Grid widthMm={ROOM_W_MM} heightMm={ROOM_H_MM} />
+            {unassignedHighlight && (
+              <rect
+                x={0}
+                y={0}
+                width={ROOM_W_MM}
+                height={ROOM_H_MM}
+                fill="url(#seat-drop-stripe)"
+                opacity={0.4}
+                style={{ pointerEvents: "none" }}
               />
-            );
-          })}
-        </svg>
+            )}
+            {tables.map((table) => {
+              const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
+              const dims = localDims.get(table.id) ?? {
+                width_mm: table.width_mm,
+                length_mm: table.length_mm,
+              };
+              // Build a synthetic table with the live local dimensions so the
+              // shape redraws under the cursor during a resize drag.
+              const liveTable: SeatingTable = { ...table, ...dims };
+              const filled = seatsByTable.get(table.id)?.length ?? 0;
+              return (
+                <TableShape
+                  key={table.id}
+                  table={liveTable}
+                  cx={pos.x}
+                  cy={pos.y}
+                  filledSeats={filled}
+                  babySeatedSet={babySeatsByTable?.get(table.id)}
+                  isSelected={selectedId === table.id}
+                  onPointerDown={(e) => startMove(e, table)}
+                  onHandlePointerDown={(e, h) => startResize(e, table, h)}
+                  onSeatsDelta={(delta) => onSeatsChange(table.id, delta)}
+                  t={t}
+                />
+              );
+            })}
+          </svg>
+        </div>
       </div>
     </>
   );
