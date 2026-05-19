@@ -243,12 +243,37 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   return null;
 }
 
+// Domains we 301-redirect to the canonical .hu host. We consolidated to one
+// Railway service + one SQLite volume in May 2026; .xyz now lives only as a
+// historical alias that bounces visitors to the .hu canonical so we don't
+// accidentally accept signups against a database that has since been retired.
+// The redirect runs ahead of every other handler so even an /api/* call is
+// bounced — third-party integrations have to update their base URL.
+const LEGACY_HOSTS = new Set([
+  "weddly.xyz",
+  "www.weddly.xyz",
+  "app.weddly.xyz",
+]);
+const CANONICAL_HOST = "www.weddly.hu";
+
 const server = Bun.serve({
   port: CONFIG.port,
   async fetch(req) {
     const url = new URL(req.url);
     const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
     const start = performance.now();
+
+    // Legacy-host 301 redirect — runs before CORS preflight handling so even
+    // an OPTIONS probe gets bounced. Preserves the path + query so a guest
+    // arriving at https://weddly.xyz/rsvp/ABC1234 ends up at the .hu mirror.
+    const hostHeader = req.headers.get("host")?.toLowerCase() ?? "";
+    if (LEGACY_HOSTS.has(hostHeader)) {
+      const target = `https://${CANONICAL_HOST}${url.pathname}${url.search}`;
+      return new Response(null, {
+        status: 301,
+        headers: { Location: target, "Cache-Control": "public, max-age=3600" },
+      });
+    }
 
     if (req.method === "OPTIONS") return corsPreflight(req);
 
