@@ -51,6 +51,11 @@
   html {
     background-color: theme("colors.paper.100");
     scrollbar-gutter: stable;
+    /* Smooth-scroll for in-page hash navigation (footer links, the
+       landing's `#phases` / `#waitlist` jumps) so the page doesn't snap
+       when the user taps an anchor. The `prefers-reduced-motion` rule
+       further down already neutralises this for users who've opted out. */
+    scroll-behavior: smooth;
   }
   html.dark {
     background-color: theme("colors.umber.900");

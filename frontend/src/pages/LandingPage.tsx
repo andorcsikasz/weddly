@@ -16,7 +16,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BotanicalCorner, EucalyptusStem, WatercolorBlob } from "../components/botanical";
 import { PullQuote, SectionLabel, WatermarkNumeral } from "../components/editorial";
@@ -111,7 +111,7 @@ export default function LandingPage() {
             peeking up." */}
         <div className="relative mt-2 overflow-hidden bg-paper-100 dark:bg-umber-900 pt-6 sm:pt-8 lg:pt-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="origin-bottom -mb-4 sm:-mb-14 lg:-mb-20">
+            <div className="origin-bottom mb-0 sm:-mb-14 lg:-mb-20">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
                 <div className="rotate-[-1.5deg] drop-shadow-[0_30px_50px_rgba(16,24,48,0.18)]">
                   <WorkspaceMockup className="h-auto w-full" />
@@ -168,8 +168,8 @@ export default function LandingPage() {
           Numbered timeline. Each phase has a giant italic numeral
           bleeding behind its title; one continuous rule line at the
           numeral baseline serves as the literal timeline. */}
-      <section id="phases" className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-7xl px-4 pt-14 pb-12 sm:px-6 sm:pt-20 sm:pb-16">
+      <section id="phases" className="relative scroll-mt-20 bg-paper-50 dark:bg-umber-900">
+        <div className="mx-auto max-w-7xl px-4 pt-10 pb-10 sm:px-6 sm:pt-20 sm:pb-16">
           <SectionLabel num="—" label={t("landing.product_eyebrow")} />
           <h2 className="mt-6 max-w-3xl font-serif text-3xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.phases_title")}
@@ -213,8 +213,8 @@ export default function LandingPage() {
           Mockup framed as a tilted polaroid with a watermark "02.1" sitting
           behind it. Copy on the left in a narrow column. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-20">
+          <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
               <h2 className="font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
@@ -244,7 +244,7 @@ export default function LandingPage() {
           Full-bleed paper-100 surface, mockup centred above, copy below
           in two columns — the layout of a feature spread. */}
       <section className="relative bg-paper-100/70 dark:bg-umber-900/70">
-        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20">
           <h2 className="max-w-3xl font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.block_guests_title")}
           </h2>
@@ -265,7 +265,7 @@ export default function LandingPage() {
           Narrow copy column on the left, mockup blown up to bleed off
           the right edge of the viewport. */}
       <section className="relative overflow-hidden bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
               <h2 className="font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
@@ -305,7 +305,7 @@ export default function LandingPage() {
           corner="br"
           className="pointer-events-none absolute bottom-12 right-4 h-24 w-24 text-paper-300 dark:text-umber-600 sm:h-40 sm:w-40 lg:right-12"
         />
-        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-24">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.why_eyebrow")}
           </p>
@@ -320,8 +320,8 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
-      <section id="suppliers" className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+      <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <SectionLabel num="—" label={t("landing.phase_suppliers_title")} />
             <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-5xl">
@@ -348,7 +348,7 @@ export default function LandingPage() {
       {/* ════════════════════════ 08 · Testimonials ════════════════════════
           One pull-quote dominates; two whispers underneath. */}
       <section className="relative bg-paper-100/60 dark:bg-umber-900/60">
-        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.testimonials_eyebrow")}
           </p>
@@ -379,7 +379,7 @@ export default function LandingPage() {
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-20">
           <h2 className="font-serif text-3xl leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.audience_title")}
           </h2>
@@ -452,7 +452,7 @@ export default function LandingPage() {
           Tight max-w-2xl, italic question-mark headline, rows as
           inflatable cards instead of dividers. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-20">
           <h2 className="font-serif text-5xl italic leading-[0.96] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
             {t("landing.faq_title")}
           </h2>
@@ -491,7 +491,66 @@ export default function LandingPage() {
           </p>
         </div>
       </section>
+      <MobileStickySignup />
     </PublicShell>
+  );
+}
+
+/** Bottom-sticky signup CTA shown only on mobile (`lg:hidden`). Appears
+ *  after the visitor scrolls past the hero so the call-to-action never
+ *  goes more than a thumb-tap away; hides again when the closing-section
+ *  CTA is on screen so the two don't fight visually. Honours
+ *  `prefers-reduced-motion` via the CSS-level transition timing. */
+function MobileStickySignup() {
+  const { t } = useT();
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        const y = window.scrollY;
+        const vh = window.innerHeight;
+        const docH = document.documentElement.scrollHeight;
+        // Show after the visitor has clearly cleared the hero (~75% of one
+        // viewport — calibrated to the hero + mockup-band combined height),
+        // and hide once the closing section's own CTA is in view (within the
+        // last 600 px) so the sticky bar doesn't duplicate it.
+        const past = y > vh * 0.75;
+        const nearBottom = y + vh > docH - 600;
+        setVisible(past && !nearBottom);
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  return (
+    <div
+      aria-hidden={!visible}
+      className={`pointer-events-none safe-bottom fixed inset-x-0 bottom-0 z-30 px-4 pb-3 pt-2 transition-opacity duration-200 lg:hidden ${
+        visible ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      {/* Decorative paper-toned veil under the button so it stays legible
+          against the photo / mockup behind it. `pointer-events-none` on the
+          wrapper makes the rest of the bar non-blocking; only the CTA
+          itself receives taps. */}
+      <div className="absolute inset-x-0 bottom-0 -z-10 h-[calc(100%+8px)] bg-gradient-to-t from-paper-50 via-paper-50/95 to-transparent dark:from-umber-900 dark:via-umber-900/95" />
+      <Link
+        to="/signup"
+        className="btn-primary btn-lg pointer-events-auto w-full shadow-[0_12px_28px_-12px_rgba(16,24,48,0.45)]"
+        tabIndex={visible ? 0 : -1}
+      >
+        {t("landing.cta_signup")}
+      </Link>
+    </div>
   );
 }
 
@@ -567,7 +626,7 @@ function FeaturedTestimonial({
 }) {
   return (
     <figure className="mt-8">
-      <blockquote className="font-serif text-3xl leading-[1.2] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+      <blockquote className="font-serif text-2xl leading-[1.25] text-ink-900 dark:text-paper-50 sm:text-4xl sm:leading-[1.2] lg:text-5xl">
         &ldquo;{quote}&rdquo;
       </blockquote>
       <figcaption className="mt-8 flex items-center gap-4">

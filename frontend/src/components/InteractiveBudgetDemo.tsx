@@ -101,7 +101,7 @@ export function InteractiveBudgetDemo() {
       id="try-it"
       className="relative overflow-hidden bg-paper-50 dark:bg-umber-900 border-y border-paper-300 dark:border-umber-700"
     >
-      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.demo_eyebrow")}
