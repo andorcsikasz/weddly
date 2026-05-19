@@ -216,6 +216,17 @@ const TASK_GUTTER_WIDTH = 220;
 /** 44px gives the 24px bars (h-6) generous vertical padding so a long task
  *  list reads as airy, not crammed. */
 const ROW_HEIGHT = 44;
+/** Fixed pixel width per day per zoom level. The chart canvas overflows
+ *  the card horizontally on purpose: at 3M a comfortable week is ~125px
+ *  (so the whole quarter is ~1650px and overflows a typical 1100px card
+ *  by ~50%), at 6M each month gets ~270px. Users scroll right inside the
+ *  card to reach later weeks/months. Picking widths here drives every
+ *  band, divider, bar, and marker position because they're all CSS-%
+ *  values relative to the fixed-width chart container. */
+const DAY_WIDTH_PX: Record<"quarter" | "half", number> = {
+  quarter: 18,
+  half: 9,
+};
 
 export default function GanttView({
   currentDate,
@@ -233,6 +244,7 @@ export default function GanttView({
     () => buildGeometry(currentDate, mode, locale),
     [currentDate, mode, locale],
   );
+  const chartWidthPx = geometry.totalDays * DAY_WIDTH_PX[mode];
 
   const ordered = useMemo(() => {
     return [...tasks].sort((a, b) => {
@@ -280,20 +292,29 @@ export default function GanttView({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Header — task-column spacer + year ribbon + month labels (+ week
-          ticks at 3M). Stays outside the scrollable body so it never
-          disappears as the couple scrolls a long task list. `relative z-30`
-          so the marker badges we straddle across the header's bottom border
-          (today pill + wedding heart) stack above the body's bars instead
-          of being clipped by the body's `overflow-y-auto`. */}
-      <div className="relative z-30 flex shrink-0 border-b border-paper-300 dark:border-umber-700">
+      {/* Single scroll container handles BOTH axes. The chart canvas has a
+          fixed pixel width (`chartWidthPx`) wider than the card, so the
+          user scrolls horizontally to reach later weeks/months. The header
+          pins via `sticky top-0`; both gutter cells pin via `sticky left-0`
+          so the time axis + task-name column stay anchored while the chart
+          slides under them. */}
+      <div className="relative flex-1 overflow-auto [scrollbar-gutter:stable]">
         <div
-          className="shrink-0 border-r border-paper-200 px-3 py-2 font-serif text-[12px] uppercase tracking-wider text-ink-500 dark:border-umber-700 dark:text-umber-300"
+          className="flex min-h-full flex-col"
+          style={{ minWidth: TASK_GUTTER_WIDTH + chartWidthPx }}
+        >
+      {/* Header — task-column spacer + year ribbon + month labels (+ week
+          ticks at 3M). Sticky-top so it stays as the couple scrolls vertically;
+          its gutter cell is sticky-left so it stays anchored as the chart
+          slides horizontally underneath. */}
+      <div className="sticky top-0 z-30 flex shrink-0 border-b border-paper-300 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95">
+        <div
+          className="sticky left-0 z-40 shrink-0 border-r border-paper-200 bg-paper-50/95 px-3 py-2 font-serif text-[12px] uppercase tracking-wider text-ink-500 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95 dark:text-umber-300"
           style={{ width: TASK_GUTTER_WIDTH }}
         >
           {t("timeline.task_column")}
         </div>
-        <div className="relative flex-1">
+        <div className="relative" style={{ width: chartWidthPx }}>
           {/* Year ribbon — only printed when the year flips so we don't repeat
               "2026" twelve times across the 6M view. */}
           <div className="relative h-5">
@@ -382,18 +403,12 @@ export default function GanttView({
         </div>
       </div>
 
-      {/* Body — single vertical scroll container so the gutter rows and the
-          chart bars stay aligned. `scrollbar-gutter: stable` keeps the
-          chart from shifting horizontally when a scrollbar appears.
-          `min-h-full` on the inner wrapper makes the chart canvas stretch
-          to the full body height even when the row list is short or empty,
-          so month bands, week dividers, and the today line read as a real
-          chart canvas instead of a thin strip at the top. */}
-      <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
-        <div className="relative flex min-h-full">
-          {/* Task-name gutter — `sticky left-0` is cheap insurance: even though
-              the chart doesn't scroll horizontally today, pinning the gutter
-              makes the visual hierarchy unmistakable. */}
+      {/* Body — sits inside the shared scroll container. `flex-1 min-h-0`
+          makes it fill the remaining vertical space, so month bands, week
+          dividers, and the today line read as a real chart canvas instead
+          of a thin strip at the top when the task list is short. */}
+      <div className="relative flex min-h-0 flex-1">
+          {/* Task-name gutter — pins to the left while the chart scrolls. */}
           <div
             className="sticky left-0 z-10 shrink-0 border-r border-paper-200 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95"
             style={{ width: TASK_GUTTER_WIDTH }}
@@ -447,10 +462,9 @@ export default function GanttView({
             )}
           </div>
 
-          {/* Chart — bands + dividers + markers + bars. `relative` so absolute
-              overlays span the full body height (which equals the gutter's
-              height because rows are the same fixed pixel size). */}
-          <div className="relative flex-1">
+          {/* Chart — bands + dividers + markers + bars. Fixed pixel width;
+              percentage positions inside compute relative to this width. */}
+          <div className="relative shrink-0" style={{ width: chartWidthPx }}>
             {/* Alternating month bands */}
             {geometry.months.map((m, idx) => (
               <div
@@ -604,6 +618,7 @@ export default function GanttView({
               )}
             </div>
           </div>
+      </div>
         </div>
       </div>
     </div>
