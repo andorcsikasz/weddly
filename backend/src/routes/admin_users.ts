@@ -180,9 +180,7 @@ function toAdminCouple(
   // chips would be noisy there).
   const featureCounts = c.is_demo ? (demoFeatureCounts.get(c.id) ?? {}) : null;
   const totalEvents =
-    featureCounts === null
-      ? null
-      : Object.values(featureCounts).reduce((sum, n) => sum + n, 0);
+    featureCounts === null ? null : Object.values(featureCounts).reduce((sum, n) => sum + n, 0);
   return {
     id: c.id,
     slug: row.slug ?? null,

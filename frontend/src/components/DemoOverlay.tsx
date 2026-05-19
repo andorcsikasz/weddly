@@ -147,9 +147,7 @@ export function DemoOverlay() {
               aria-hidden="true"
               className="shrink-0 text-sage-700 dark:text-sage-300"
             />
-            <div className="min-w-0 flex-1 truncate font-semibold">
-              {t("demo.banner_title")}
-            </div>
+            <div className="min-w-0 flex-1 truncate font-semibold">{t("demo.banner_title")}</div>
             <button
               type="button"
               onClick={goHome}

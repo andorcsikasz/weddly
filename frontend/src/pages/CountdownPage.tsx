@@ -110,17 +110,16 @@ export default function CountdownPage() {
               <p className="mt-2 text-base text-ink-600 dark:text-paper-200">
                 {Math.abs(dayDelta) === 1
                   ? t("tools.countdown.result_days_unit_one")
-                  : t("tools.countdown.result_days_unit")}
-                {" "}
+                  : t("tools.countdown.result_days_unit")}{" "}
                 {dayDelta < 0
                   ? t("tools.countdown.result_passed")
                   : t("tools.countdown.result_until")}
               </p>
               {parts && (
                 <p className="mt-6 text-sm text-ink-500 dark:text-umber-300">
-                  {parts.months} {t("tools.countdown.breakdown_months")} ·{" "}
-                  {parts.weeks} {t("tools.countdown.breakdown_weeks")} ·{" "}
-                  {parts.days} {t("tools.countdown.breakdown_days")}
+                  {parts.months} {t("tools.countdown.breakdown_months")} · {parts.weeks}{" "}
+                  {t("tools.countdown.breakdown_weeks")} · {parts.days}{" "}
+                  {t("tools.countdown.breakdown_days")}
                 </p>
               )}
             </div>

@@ -22,10 +22,7 @@ export default function BudgetCalculatorPage() {
   // Title + description are also overridden server-side by seo_ssr.ts for
   // the HTML-only crawl pass — this hook just keeps the tab title in sync
   // for users who navigate client-side.
-  useDocumentMeta(
-    "tools.budget_calculator.page_h1",
-    "tools.budget_calculator.page_intro",
-  );
+  useDocumentMeta("tools.budget_calculator.page_h1", "tools.budget_calculator.page_intro");
 
   return (
     <PublicShell>

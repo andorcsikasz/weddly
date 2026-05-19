@@ -10751,9 +10751,9 @@ describe("demo: /api/demo/start", () => {
     const purged = purgeStaleDemoCouples();
     expect(purged).toBe(0);
 
-    const stillThere = db
-      .prepare("SELECT id FROM couples WHERE id = ?")
-      .get(coupleId) as { id: number } | undefined;
+    const stillThere = db.prepare("SELECT id FROM couples WHERE id = ?").get(coupleId) as
+      | { id: number }
+      | undefined;
     expect(stillThere?.id).toBe(coupleId);
   });
 });
@@ -10808,12 +10808,8 @@ describe("seo: per-route uniqueness", () => {
   test("HU alias /impresszum resolves to the same SEO entry as /imprint", () => {
     const a = render("weddly.hu", "/imprint");
     const b = render("weddly.hu", "/impresszum");
-    expect(a.match(/<title>([^<]+)<\/title>/)?.[1]).toBe(
-      b.match(/<title>([^<]+)<\/title>/)?.[1],
-    );
-    expect(a.match(/<h1>([^<]+)<\/h1>/)?.[1]).toBe(
-      b.match(/<h1>([^<]+)<\/h1>/)?.[1],
-    );
+    expect(a.match(/<title>([^<]+)<\/title>/)?.[1]).toBe(b.match(/<title>([^<]+)<\/title>/)?.[1]);
+    expect(a.match(/<h1>([^<]+)<\/h1>/)?.[1]).toBe(b.match(/<h1>([^<]+)<\/h1>/)?.[1]);
     // But the canonical URL still tracks the actual request path.
     expect(b).toContain('href="https://weddly.hu/impresszum"');
   });
@@ -10869,6 +10865,6 @@ describe("seo: per-route uniqueness", () => {
     // normal visible container.
     const html = render("weddly.hu", "/");
     expect(html).not.toContain("left:-10000px");
-    expect(html).not.toContain("aria-hidden=\"true\" style=\"position:absolute");
+    expect(html).not.toContain('aria-hidden="true" style="position:absolute');
   });
 });

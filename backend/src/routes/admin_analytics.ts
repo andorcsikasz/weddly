@@ -734,9 +734,7 @@ function demoAnalytics(): AdminDemoAnalytics {
   // Demo couples — flagged via is_demo. Live rows only; purged tombstones
   // sit in status='deleting' and the background sweep drops them entirely.
   const demoRows = db
-    .prepare(
-      `SELECT id, created_at FROM couples WHERE is_demo = 1 AND status != 'deleting'`,
-    )
+    .prepare(`SELECT id, created_at FROM couples WHERE is_demo = 1 AND status != 'deleting'`)
     .all() as { id: number; created_at: number }[];
 
   const totalDemos = demoRows.length;

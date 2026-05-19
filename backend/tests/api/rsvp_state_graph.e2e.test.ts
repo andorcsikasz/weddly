@@ -101,7 +101,12 @@ interface CheckinResponse {
 
 async function submit(
   seeded: SeededHousehold,
-  members: { guest_id: number; rsvp_status: string; meal_choice?: string | null; dietary?: string | null }[],
+  members: {
+    guest_id: number;
+    rsvp_status: string;
+    meal_choice?: string | null;
+    dietary?: string | null;
+  }[],
   added: { full_name: string; kind?: string; rsvp_status?: string }[] = [],
   idempotencyKey?: string,
 ): Promise<{ status: number; data: CheckinResponse }> {
@@ -165,12 +170,7 @@ describe("rsvp state graph: per-member transitions", () => {
     let step = 0;
     for (const next of ["yes", "no", "yes", "maybe"] as const) {
       step++;
-      const r = await submit(
-        seed,
-        [{ guest_id: id, rsvp_status: next }],
-        [],
-        `trans-step-${step}`,
-      );
+      const r = await submit(seed, [{ guest_id: id, rsvp_status: next }], [], `trans-step-${step}`);
       expect(r.status).toBe(200);
       expect(getGuestStatus(id)).toBe(next);
     }
@@ -277,11 +277,7 @@ describe("rsvp state graph: added_members lifecycle", () => {
       kind: "adult",
       rsvp_status: "yes",
     }));
-    const r = await submit(
-      seed,
-      [{ guest_id: seed.members[0]!.id, rsvp_status: "yes" }],
-      big,
-    );
+    const r = await submit(seed, [{ guest_id: seed.members[0]!.id, rsvp_status: "yes" }], big);
     expect(r.status).toBe(400);
     expect(countHouseholdGuests(seed.household.id)).toBe(before);
   });
@@ -521,9 +517,7 @@ describe("rsvp state graph: independence + field validation", () => {
     wipeAll();
     const seed = await seedHousehold("val-meal@weddly.test", ["Anna"]);
     const id = seed.members[0]!.id;
-    const r = await submit(seed, [
-      { guest_id: id, rsvp_status: "yes", meal_choice: "sushi" },
-    ]);
+    const r = await submit(seed, [{ guest_id: id, rsvp_status: "yes", meal_choice: "sushi" }]);
     expect(r.status).toBe(200);
     expect(getGuestRow(id).meal_choice).toBeNull();
   });
@@ -583,11 +577,16 @@ describe("rsvp state graph: guest portal gate", () => {
     const seed = await seedHousehold("portal-yes@weddly.test", ["Anna"]);
     // Seed a schedule event before opening the gate so the portal payload
     // includes it.
-    const ev = await req("POST", "/api/schedule", {
-      label: "Ceremony",
-      starts_at_minutes: 16 * 60,
-      duration_minutes: 60,
-    }, { token: seed.token });
+    const ev = await req(
+      "POST",
+      "/api/schedule",
+      {
+        label: "Ceremony",
+        starts_at_minutes: 16 * 60,
+        duration_minutes: 60,
+      },
+      { token: seed.token },
+    );
     expect(ev.status).toBe(201);
 
     await submit(seed, [{ guest_id: seed.members[0]!.id, rsvp_status: "yes" }]);
@@ -809,9 +808,7 @@ describe("rsvp state graph: audit log", () => {
     wipeAll();
     const seed = await seedHousehold("audit-one@weddly.test", ["Anna", "Bence"]);
     const before = db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'rsvp.submit'",
-      )
+      .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'rsvp.submit'")
       .get(seed.coupleId) as { n: number };
 
     await submit(seed, [
@@ -819,9 +816,7 @@ describe("rsvp state graph: audit log", () => {
       { guest_id: seed.members[1]!.id, rsvp_status: "no" },
     ]);
     const after = db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'rsvp.submit'",
-      )
+      .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'rsvp.submit'")
       .get(seed.coupleId) as { n: number };
     expect(after.n).toBe(before.n + 2);
   });

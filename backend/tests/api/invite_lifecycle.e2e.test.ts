@@ -71,9 +71,9 @@ describe("invite_lifecycle: happy path + email-verify bypass", () => {
   test("1. happy path: A invites, B registers, B accepts → both share couple", async () => {
     wipeAll();
     const { token: aToken, coupleId } = await bootstrapCouple("happy-a@weddly.test");
-    const aRow = db
-      .prepare("SELECT id FROM users WHERE email = ?")
-      .get("happy-a@weddly.test") as { id: number };
+    const aRow = db.prepare("SELECT id FROM users WHERE email = ?").get("happy-a@weddly.test") as {
+      id: number;
+    };
     const inviteToken = await createInvite(aToken, "happy-b@weddly.test");
 
     const { token: bToken, userId: bId } = await freshUserNoCouple("happy-b@weddly.test");
@@ -86,7 +86,9 @@ describe("invite_lifecycle: happy path + email-verify bypass", () => {
     expect(accept.status).toBe(200);
     expect(accept.data.couple.id).toBe(coupleId);
 
-    const couple = db.prepare("SELECT partner_a_id, partner_b_id FROM couples WHERE id = ?").get(coupleId) as {
+    const couple = db
+      .prepare("SELECT partner_a_id, partner_b_id FROM couples WHERE id = ?")
+      .get(coupleId) as {
       partner_a_id: number;
       partner_b_id: number;
     };
@@ -392,9 +394,9 @@ describe("invite_lifecycle: accept variants", () => {
     expect(oldCouple.display_name).toBe("Purged workspace");
 
     // B now points at A's workspace.
-    const bRow = db.prepare("SELECT couple_id FROM users WHERE email = ?").get("merge-b@weddly.test") as
-      | { couple_id: number }
-      | undefined;
+    const bRow = db
+      .prepare("SELECT couple_id FROM users WHERE email = ?")
+      .get("merge-b@weddly.test") as { couple_id: number } | undefined;
     expect(bRow?.couple_id).toBe(aCoupleId);
   });
 
@@ -451,12 +453,16 @@ describe("invite_lifecycle: accept variants", () => {
 
   test("19. /accept-merge with empty source workspace succeeds (no purge surprises)", async () => {
     wipeAll();
-    const { token: aToken, coupleId: aCoupleId } = await bootstrapCouple("merge-empty-a@weddly.test");
+    const { token: aToken, coupleId: aCoupleId } = await bootstrapCouple(
+      "merge-empty-a@weddly.test",
+    );
     const inviteToken = await createInvite(aToken, "merge-empty-b@weddly.test");
 
     // B onboards but doesn't add any guests/budget on top of the defaults
     // bootstrap already seeds — the merge should still succeed.
-    const { token: bToken, coupleId: bCoupleId } = await bootstrapCouple("merge-empty-b@weddly.test");
+    const { token: bToken, coupleId: bCoupleId } = await bootstrapCouple(
+      "merge-empty-b@weddly.test",
+    );
 
     const r = await req<{ couple: { id: number } }>(
       "POST",
@@ -536,9 +542,7 @@ describe("invite_lifecycle: switch active couple", () => {
   test("22. B in 2 couples → POST /active-couple flips the pointer + /current reflects it", async () => {
     wipeAll();
     // B onboards their own workspace (couple #1).
-    const { token: bToken, coupleId: bOwnCoupleId } = await bootstrapCouple(
-      "switch-b@weddly.test",
-    );
+    const { token: bToken, coupleId: bOwnCoupleId } = await bootstrapCouple("switch-b@weddly.test");
 
     // A invites B; B accept-merges? No — accept-merge purges. We need B to be
     // a member of TWO live workspaces. Use the multi-workspace API: B creates
@@ -553,12 +557,9 @@ describe("invite_lifecycle: switch active couple", () => {
     const bravoId = additional.data.couple.id;
 
     // After creating additional, user.couple_id auto-switched to bravoId.
-    const cur1 = await req<{ couple: { id: number } }>(
-      "GET",
-      "/api/couples/current",
-      undefined,
-      { token: bToken },
-    );
+    const cur1 = await req<{ couple: { id: number } }>("GET", "/api/couples/current", undefined, {
+      token: bToken,
+    });
     expect(cur1.data.couple.id).toBe(bravoId);
 
     // Flip back to the original (Alpha) workspace.
@@ -570,12 +571,9 @@ describe("invite_lifecycle: switch active couple", () => {
     );
     expect(switchBack.status).toBe(200);
 
-    const cur2 = await req<{ couple: { id: number } }>(
-      "GET",
-      "/api/couples/current",
-      undefined,
-      { token: bToken },
-    );
+    const cur2 = await req<{ couple: { id: number } }>("GET", "/api/couples/current", undefined, {
+      token: bToken,
+    });
     expect(cur2.data.couple.id).toBe(bOwnCoupleId);
   });
 
@@ -669,7 +667,9 @@ describe("invite_lifecycle: leave couple", () => {
     await req("POST", "/api/users/me/leave-couple", {}, { token: bToken });
 
     // Now couple C invites B; B accepts.
-    const { token: cToken, coupleId: cCoupleId } = await bootstrapCouple("leave-rejoin-c@weddly.test");
+    const { token: cToken, coupleId: cCoupleId } = await bootstrapCouple(
+      "leave-rejoin-c@weddly.test",
+    );
     const invC = await createInvite(cToken, "leave-rejoin-b@weddly.test");
     const accept = await req<{ couple: { id: number } }>(
       "POST",
@@ -743,9 +743,11 @@ describe("invite_lifecycle: partner view + audit trail", () => {
   test("30. audit log records invite.create, invite.accept, invite.cancel, user.leave_couple", async () => {
     wipeAll();
     const { token: aToken, coupleId } = await bootstrapCouple("audit-a@weddly.test");
-    const aUserId = (db
-      .prepare("SELECT id FROM users WHERE email = ?")
-      .get("audit-a@weddly.test") as { id: number }).id;
+    const aUserId = (
+      db.prepare("SELECT id FROM users WHERE email = ?").get("audit-a@weddly.test") as {
+        id: number;
+      }
+    ).id;
 
     // 1. Create + cancel cycle (so we can assert both create AND cancel rows).
     await createInvite(aToken, "audit-throwaway@weddly.test");
@@ -755,9 +757,11 @@ describe("invite_lifecycle: partner view + audit trail", () => {
     const liveToken = await createInvite(aToken, "audit-b@weddly.test");
     const { token: bToken } = await freshUserNoCouple("audit-b@weddly.test");
     await req("POST", `/api/invites/${liveToken}/accept`, {}, { token: bToken });
-    const bUserId = (db
-      .prepare("SELECT id FROM users WHERE email = ?")
-      .get("audit-b@weddly.test") as { id: number }).id;
+    const bUserId = (
+      db.prepare("SELECT id FROM users WHERE email = ?").get("audit-b@weddly.test") as {
+        id: number;
+      }
+    ).id;
 
     // 3. B leaves so we get a user.leave_couple row.
     await req("POST", "/api/users/me/leave-couple", {}, { token: bToken });

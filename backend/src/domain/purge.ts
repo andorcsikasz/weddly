@@ -292,7 +292,8 @@ export function startPurgeWorker(): void {
   // Run once at boot so a long downtime catches up immediately.
   try {
     const r = runPurgeSweep();
-    if (r.purged > 0 || r.demos_purged > 0 || r.ratelimit_buckets_deleted > 0) log.info("purge.boot_sweep", r);
+    if (r.purged > 0 || r.demos_purged > 0 || r.ratelimit_buckets_deleted > 0)
+      log.info("purge.boot_sweep", r);
   } catch (e) {
     log.error("purge.boot_sweep_failed", e);
   }
@@ -300,7 +301,8 @@ export function startPurgeWorker(): void {
     () => {
       try {
         const r = runPurgeSweep();
-        if (r.purged > 0 || r.demos_purged > 0 || r.ratelimit_buckets_deleted > 0) log.info("purge.hourly_sweep", r);
+        if (r.purged > 0 || r.demos_purged > 0 || r.ratelimit_buckets_deleted > 0)
+          log.info("purge.hourly_sweep", r);
       } catch (e) {
         log.error("purge.hourly_sweep_failed", e);
       }

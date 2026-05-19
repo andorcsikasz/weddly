@@ -2377,7 +2377,8 @@ const en: LocaleMessages = {
     analytics_engagement_top_users_help:
       "Audit events over the last 30 days. Demo users are listed on the Demo card instead.",
     analytics_demo_title: "Demo platform",
-    analytics_demo_sub: "Monitoring of the landing-page Shrek & Fiona demos. Kept separate so they don't skew real-user metrics.",
+    analytics_demo_sub:
+      "Monitoring of the landing-page Shrek & Fiona demos. Kept separate so they don't skew real-user metrics.",
     analytics_demo_load_error: "Could not load demo analytics.",
     analytics_demo_empty: "No demo activity yet.",
     analytics_demo_total: "Demo workspaces",
@@ -2389,11 +2390,13 @@ const en: LocaleMessages = {
     analytics_demo_daily_sub: "New demo workspaces by day (UTC).",
     analytics_demo_events_title: "Demo activity (30d)",
     analytics_demo_events_unit: "audit events",
-    analytics_demo_events_help: "Total audit events from demo workspaces over the last 30 days. Compare against the engagement card's session count for a real-vs-demo traffic split.",
+    analytics_demo_events_help:
+      "Total audit events from demo workspaces over the last 30 days. Compare against the engagement card's session count for a real-vs-demo traffic split.",
     analytics_demo_total_served: "Total served (incl. reaped)",
     analytics_demo_avg_lifetime: "Avg lifetime",
     analytics_demo_top_features_title: "What visitors tried",
-    analytics_demo_top_features_sub: "Features touched across demo workspaces — live + historic snapshots.",
+    analytics_demo_top_features_sub:
+      "Features touched across demo workspaces — live + historic snapshots.",
     analytics_demo_top_features_empty: "No features have been used in demos yet.",
     analytics_demo_feature_demos_one: "{n} demo",
     analytics_demo_feature_demos_other: "{n} demos",

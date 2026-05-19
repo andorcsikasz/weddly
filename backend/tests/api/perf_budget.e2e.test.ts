@@ -258,9 +258,7 @@ describe("perf: couples", () => {
     );
     expect(created.status).toBe(201);
     const inviteToken = created.data.invite.token;
-    const { p95 } = await timeIt("invites.get", () =>
-      req("GET", `/api/invites/${inviteToken}`),
-    );
+    const { p95 } = await timeIt("invites.get", () => req("GET", `/api/invites/${inviteToken}`));
     expect(p95).toBeLessThan(50);
   });
 });
@@ -502,12 +500,7 @@ describe("perf: budget", () => {
     let counter = 0;
     const { p95 } = await timeIt("budget.snapshot.create", () => {
       counter += 1;
-      return req(
-        "POST",
-        "/api/budget/snapshots",
-        { name: `Snap ${counter}` },
-        { token },
-      );
+      return req("POST", "/api/budget/snapshots", { name: `Snap ${counter}` }, { token });
     });
     expect(p95).toBeLessThan(100);
   });
@@ -646,12 +639,7 @@ describe("perf: seating", () => {
     let counter = 0;
     const { p95 } = await timeIt("seating.tables.patch", () => {
       counter += 1;
-      return req(
-        "PATCH",
-        `/api/seating/tables/${id}`,
-        { x_mm: counter * 10 },
-        { token },
-      );
+      return req("PATCH", `/api/seating/tables/${id}`, { x_mm: counter * 10 }, { token });
     });
     expect(p95).toBeLessThan(50);
   });
@@ -781,12 +769,7 @@ describe("perf: suppliers", () => {
     let counter = 0;
     const { p95 } = await timeIt("picks.upsert", () => {
       counter += 1;
-      return req(
-        "PUT",
-        "/api/picks/venue",
-        { supplier_id: `dummy-${counter}` },
-        { token },
-      );
+      return req("PUT", "/api/picks/venue", { supplier_id: `dummy-${counter}` }, { token });
     });
     expect(p95).toBeLessThan(50);
   });

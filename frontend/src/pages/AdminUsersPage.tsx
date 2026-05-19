@@ -611,9 +611,7 @@ export default function AdminUsersPage() {
                   const total = c.demo_total_events ?? 0;
                   // The demo.start row is bookkeeping noise — strip it so the
                   // chips only reflect what the visitor actually touched.
-                  const usable = Object.entries(counts).filter(
-                    ([feature]) => feature !== "demo",
-                  );
+                  const usable = Object.entries(counts).filter(([feature]) => feature !== "demo");
                   const usableTotal = usable.reduce((s, [, n]) => s + n, 0);
                   const sortedFeatures = usable.sort(
                     (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),

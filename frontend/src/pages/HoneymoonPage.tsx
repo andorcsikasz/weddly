@@ -42,10 +42,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { Dialog, useConfirm, useToast } from "../components/ui";
-import {
-  TASK_TEMPLATE_GROUPS,
-  localizeText,
-} from "../lib/planning_templates";
+import { TASK_TEMPLATE_GROUPS, localizeText } from "../lib/planning_templates";
 import { ApiError } from "../lib/api";
 import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
@@ -1517,8 +1514,7 @@ function HoneymoonTodoSection({
             <ul className="space-y-0.5">
               {wandItems.map((tmpl, idx) => {
                 const on = selected.has(idx);
-                const dupe =
-                  existingTitles.has(tmpl.title.hu) || existingTitles.has(tmpl.title.en);
+                const dupe = existingTitles.has(tmpl.title.hu) || existingTitles.has(tmpl.title.en);
                 return (
                   <li key={tmpl.title.en}>
                     <button

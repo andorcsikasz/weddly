@@ -479,9 +479,7 @@ export default function DashboardPage() {
             key: "task_invite_partner",
             done: couple.partner_b_id !== null || invite !== null,
             to:
-              couple.partner_b_id !== null || invite !== null
-                ? "/app/profile"
-                : "#invite-partner",
+              couple.partner_b_id !== null || invite !== null ? "/app/profile" : "#invite-partner",
           },
         ]),
     { key: "task_add_guests", done: totalGuests > 0, to: "/app/guests" },

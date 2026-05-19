@@ -1354,9 +1354,9 @@ function snapshotDemoUsage(
   // that forgets to set couple_id).
   let auditRows: { action: string }[] = [];
   if (userIds.length === 0) {
-    auditRows = db
-      .prepare("SELECT action FROM audit_log WHERE couple_id = ?")
-      .all(coupleId) as { action: string }[];
+    auditRows = db.prepare("SELECT action FROM audit_log WHERE couple_id = ?").all(coupleId) as {
+      action: string;
+    }[];
   } else {
     const placeholders = userIds.map(() => "?").join(",");
     auditRows = db

@@ -116,7 +116,9 @@ describe("workspace_multi: membership listing baseline", () => {
 
     // Both memberships present.
     const rows = db
-      .prepare("SELECT couple_id FROM couple_members WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY couple_id ASC")
+      .prepare(
+        "SELECT couple_id FROM couple_members WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY couple_id ASC",
+      )
       .all("ws-mcreate2@weddly.test") as { couple_id: number }[];
     expect(rows.map((r) => r.couple_id).sort()).toEqual([alphaId, bravoId].sort());
 
@@ -151,7 +153,12 @@ describe("workspace_multi: switching active workspace", () => {
 
     // Spawn auto-flips to Bravo; flip back to Alpha first so we can
     // explicitly assert the switch back to Bravo works.
-    const flipA = await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
+    const flipA = await req(
+      "POST",
+      "/api/users/me/active-couple",
+      { couple_id: alphaId },
+      { token },
+    );
     expect(flipA.status).toBe(200);
 
     const flipB = await req<{ couple: { id: number } }>(
@@ -163,12 +170,9 @@ describe("workspace_multi: switching active workspace", () => {
     expect(flipB.status).toBe(200);
     expect(flipB.data.couple.id).toBe(bravoId);
 
-    const cur = await req<{ couple: { id: number } }>(
-      "GET",
-      "/api/couples/current",
-      undefined,
-      { token },
-    );
+    const cur = await req<{ couple: { id: number } }>("GET", "/api/couples/current", undefined, {
+      token,
+    });
     expect(cur.data.couple.id).toBe(bravoId);
 
     // Bravo has only the auto-spawned partner host guests — no
@@ -212,7 +216,12 @@ describe("workspace_multi: switching active workspace", () => {
     // Spawn Bravo (auto-flips), then switch back to Alpha.
     const bravoId = await spawnEvent(token, "Bravo");
     expect(bravoId).not.toBe(alphaId);
-    const back = await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
+    const back = await req(
+      "POST",
+      "/api/users/me/active-couple",
+      { couple_id: alphaId },
+      { token },
+    );
     expect(back.status).toBe(200);
 
     // Alpha's data is untouched.
@@ -384,9 +393,9 @@ describe("workspace_multi: leave workspace flows", () => {
     const leave = await req("POST", "/api/users/me/leave-couple", {}, { token: bToken });
     expect(leave.status).toBe(200);
 
-    const refreshed = db
-      .prepare("SELECT partner_b_id FROM couples WHERE id = ?")
-      .get(coupleId) as { partner_b_id: number | null };
+    const refreshed = db.prepare("SELECT partner_b_id FROM couples WHERE id = ?").get(coupleId) as {
+      partner_b_id: number | null;
+    };
     expect(refreshed.partner_b_id).toBeNull();
 
     const bUserRow = db
@@ -613,21 +622,15 @@ describe("workspace_multi: cross-workspace data isolation", () => {
     );
     expect(e2.status).toBe(201);
 
-    const bList = await req<{ events: { label: string }[] }>(
-      "GET",
-      "/api/schedule",
-      undefined,
-      { token },
-    );
+    const bList = await req<{ events: { label: string }[] }>("GET", "/api/schedule", undefined, {
+      token,
+    });
     expect(bList.data.events.map((e) => e.label).sort()).toEqual(["Welcome drinks"]);
 
     await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
-    const aList = await req<{ events: { label: string }[] }>(
-      "GET",
-      "/api/schedule",
-      undefined,
-      { token },
-    );
+    const aList = await req<{ events: { label: string }[] }>("GET", "/api/schedule", undefined, {
+      token,
+    });
     expect(aList.data.events.map((e) => e.label).sort()).toEqual(["Ceremony"]);
   });
 
@@ -741,9 +744,7 @@ describe("workspace_multi: cross-workspace data isolation", () => {
     // Defence-in-depth: assert at the DB level that activity rows on
     // Bravo do not include any guest.create with target_id from Alpha.
     const dbRows = db
-      .prepare(
-        "SELECT target_id FROM audit_log WHERE couple_id = ? AND action = 'guest.create'",
-      )
+      .prepare("SELECT target_id FROM audit_log WHERE couple_id = ? AND action = 'guest.create'")
       .all(bravoId) as { target_id: number }[];
     // Bravo has exactly one guest.create row.
     expect(dbRows.length).toBe(1);
@@ -849,12 +850,9 @@ describe("workspace_multi: integrity + edge invariants", () => {
     expect([alphaId, bravoId]).toContain(userRow.couple_id);
 
     // The /current endpoint MUST agree with users.couple_id (no torn read).
-    const cur = await req<{ couple: { id: number } }>(
-      "GET",
-      "/api/couples/current",
-      undefined,
-      { token },
-    );
+    const cur = await req<{ couple: { id: number } }>("GET", "/api/couples/current", undefined, {
+      token,
+    });
     expect(cur.data.couple.id).toBe(userRow.couple_id);
   });
 });

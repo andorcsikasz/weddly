@@ -1913,9 +1913,7 @@ function SignupsAreaChart({
   // Straight polyline between data points — one row per day, so the
   // honest representation is segment-by-segment. Bezier smoothing was
   // creating spurious bulges between adjacent zero-count days.
-  const path = coords
-    .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-    .join(" ");
+  const path = coords.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(" ");
   const fillPath = `${path} L ${PAD_LEFT + innerW} ${baselineY} L ${PAD_LEFT} ${baselineY} Z`;
 
   const total = points.reduce((acc, p) => acc + p.count, 0);
@@ -1948,7 +1946,7 @@ function SignupsAreaChart({
     // Account for the right-side padding when mapping clientX → data index;
     // the inner plot area is narrower than the rendered div.
     const innerRatio = (W - PAD_LEFT - PAD_RIGHT) / W;
-    const ratio = ((e.clientX - rect.left) / Math.max(1, rect.width)) / innerRatio;
+    const ratio = (e.clientX - rect.left) / Math.max(1, rect.width) / innerRatio;
     const idx = Math.round(ratio * (points.length - 1));
     setHoverIdx(Math.max(0, Math.min(points.length - 1, idx)));
   };
@@ -1958,10 +1956,7 @@ function SignupsAreaChart({
   // Convert the hovered point's x back to CSS percent for the HTML tooltip.
   // We anchor against the rendered width (which includes the right pad),
   // so the tooltip sits over the data point, not its padded position.
-  const hoveredLeftPct =
-    hoverIdx !== null
-      ? ((PAD_LEFT + hoverIdx * stepX) / W) * 100
-      : 0;
+  const hoveredLeftPct = hoverIdx !== null ? ((PAD_LEFT + hoverIdx * stepX) / W) * 100 : 0;
 
   return (
     <div

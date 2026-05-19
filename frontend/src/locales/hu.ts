@@ -2395,7 +2395,8 @@ const hu: LocaleMessages = {
     analytics_engagement_top_users_help:
       "Audit-események száma az elmúlt 30 napban. A demo felhasználók a demo kártyán szerepelnek.",
     analytics_demo_title: "Demo platform",
-    analytics_demo_sub: "A landing oldali Shrek & Fiona demók monitorozása. Külön gyűjtve, hogy a valós aktivitást ne torzítsa.",
+    analytics_demo_sub:
+      "A landing oldali Shrek & Fiona demók monitorozása. Külön gyűjtve, hogy a valós aktivitást ne torzítsa.",
     analytics_demo_load_error: "Nem sikerült betölteni a demo adatokat.",
     analytics_demo_empty: "Még nincs demo aktivitás.",
     analytics_demo_total: "Demo workspace",
@@ -2407,11 +2408,13 @@ const hu: LocaleMessages = {
     analytics_demo_daily_sub: "Új demo workspace-ek napi bontásban (UTC).",
     analytics_demo_events_title: "Demo aktivitás (30 nap)",
     analytics_demo_events_unit: "audit esemény",
-    analytics_demo_events_help: "A demo workspace-ek összes audit-eseménye az elmúlt 30 napban. Hasonlítsd az aktivitási kártya munkamenet számához a valós/demo forgalmi arányért.",
+    analytics_demo_events_help:
+      "A demo workspace-ek összes audit-eseménye az elmúlt 30 napban. Hasonlítsd az aktivitási kártya munkamenet számához a valós/demo forgalmi arányért.",
     analytics_demo_total_served: "Összes (kitakarítva is)",
     analytics_demo_avg_lifetime: "Átlag élettartam",
     analytics_demo_top_features_title: "Mit próbáltak ki",
-    analytics_demo_top_features_sub: "A demo munkaterületeken használt funkciók — élő és kitakarított snapshotok összesen.",
+    analytics_demo_top_features_sub:
+      "A demo munkaterületeken használt funkciók — élő és kitakarított snapshotok összesen.",
     analytics_demo_top_features_empty: "Még nem használtak semmilyen funkciót a demókban.",
     analytics_demo_feature_demos_one: "{n} demo",
     analytics_demo_feature_demos_other: "{n} demo",
@@ -3127,8 +3130,7 @@ const hu: LocaleMessages = {
     //    after" movie reference is the only fairytale beat — everything
     //    else is short, single-language Hungarian. ─────────────────────
     popup_title: "Ideje elkezdeni a saját tündérmesétek.",
-    popup_body:
-      "Lehet, hogy a herceg nem fehér lovon jön, de az örökkön örökké most kezdődik.",
+    popup_body: "Lehet, hogy a herceg nem fehér lovon jön, de az örökkön örökké most kezdődik.",
     popup_cta: "Regisztráció",
     popup_microcopy: "Ingyenes a nyílt béta alatt.",
   },

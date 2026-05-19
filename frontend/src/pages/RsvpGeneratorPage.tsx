@@ -210,12 +210,10 @@ export default function RsvpGeneratorPage() {
             rows={Math.min(14, output.split("\n").length + 2)}
             className="mt-4 w-full rounded-xl border border-paper-300 dark:border-umber-700 bg-white dark:bg-umber-800 px-4 py-3 font-serif text-base leading-relaxed text-ink-900 dark:text-paper-50 focus:outline-none focus:ring-2 focus:ring-ink-400"
           />
-          <button
-            type="button"
-            onClick={copy}
-            className="btn-outline btn-md mt-3"
-          >
-            {copied ? t("tools.rsvp_generator.output_copied") : t("tools.rsvp_generator.output_copy_btn")}
+          <button type="button" onClick={copy} className="btn-outline btn-md mt-3">
+            {copied
+              ? t("tools.rsvp_generator.output_copied")
+              : t("tools.rsvp_generator.output_copy_btn")}
           </button>
         </div>
       </section>

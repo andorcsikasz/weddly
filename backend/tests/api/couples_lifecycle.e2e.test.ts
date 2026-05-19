@@ -1494,12 +1494,9 @@ describe("couples_lifecycle: places search proxy", () => {
     // hook still ticks for each call. Seventh should 429.
     let lastStatus = 0;
     for (let i = 0; i < 8; i++) {
-      const r = await req(
-        "GET",
-        `/api/places/search?q=${String.fromCharCode(97 + i)}`,
-        undefined,
-        { token },
-      );
+      const r = await req("GET", `/api/places/search?q=${String.fromCharCode(97 + i)}`, undefined, {
+        token,
+      });
       lastStatus = r.status;
       if (r.status === 429) break;
     }

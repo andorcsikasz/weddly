@@ -94,12 +94,7 @@ describe("pause_delete_gdpr: pause window scheduling", () => {
     };
     expect(beforeRow.status).toBe("paused");
 
-    const cancel = await req<{ ok: boolean }>(
-      "POST",
-      "/api/couples/pause/cancel",
-      {},
-      { token },
-    );
+    const cancel = await req<{ ok: boolean }>("POST", "/api/couples/pause/cancel", {}, { token });
     expect(cancel.status).toBe(200);
     expect(cancel.data.ok).toBe(true);
 
@@ -170,12 +165,7 @@ describe("pause_delete_gdpr: pause window scheduling", () => {
 
     // Cancel to clear the active state, then try a 600-char reason.
     await req("POST", "/api/couples/pause/cancel", {}, { token });
-    await req(
-      "POST",
-      "/api/couples/pause",
-      { reason: `   ${"x".repeat(600)}   ` },
-      { token },
-    );
+    await req("POST", "/api/couples/pause", { reason: `   ${"x".repeat(600)}   ` }, { token });
     row = db
       .prepare(
         "SELECT reason FROM couple_pause_requests WHERE couple_id = ? ORDER BY id DESC LIMIT 1",
@@ -268,9 +258,9 @@ describe("pause_delete_gdpr: runPurgeSweep deadline gating", () => {
     expect(couple.status).toBe("paused");
 
     // PII is intact.
-    const u = db.prepare("SELECT email, password_hash FROM users WHERE couple_id = ?").get(
-      coupleId,
-    ) as { email: string; password_hash: string };
+    const u = db
+      .prepare("SELECT email, password_hash FROM users WHERE couple_id = ?")
+      .get(coupleId) as { email: string; password_hash: string };
     expect(u.email).toBe("sweep-before@weddly.test");
     expect(u.password_hash).not.toBe("!purged!");
   });
@@ -321,12 +311,7 @@ describe("pause_delete_gdpr: runPurgeSweep deadline gating", () => {
       { category: "venue", label: "Reception hall", planned_huf: 1_500_000 },
       { token },
     );
-    await req(
-      "POST",
-      "/api/planning",
-      { kind: "task", title: "Pick the cake" },
-      { token },
-    );
+    await req("POST", "/api/planning", { kind: "task", title: "Pick the cake" }, { token });
     await req(
       "POST",
       "/api/schedule",
@@ -356,15 +341,19 @@ describe("pause_delete_gdpr: runPurgeSweep deadline gating", () => {
       // by table_id IN (...). We assert the count regardless.
       let n: number;
       if (t === "seat_assignments") {
-        n = (db
-          .prepare(
-            "SELECT COUNT(*) AS n FROM seat_assignments WHERE table_id IN (SELECT id FROM seating_tables WHERE couple_id = ?)",
-          )
-          .get(coupleId) as { n: number }).n;
+        n = (
+          db
+            .prepare(
+              "SELECT COUNT(*) AS n FROM seat_assignments WHERE table_id IN (SELECT id FROM seating_tables WHERE couple_id = ?)",
+            )
+            .get(coupleId) as { n: number }
+        ).n;
       } else {
-        n = (db
-          .prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE couple_id = ?`)
-          .get(coupleId) as { n: number }).n;
+        n = (
+          db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE couple_id = ?`).get(coupleId) as {
+            n: number;
+          }
+        ).n;
       }
       expect(n).toBe(0);
     }
@@ -397,17 +386,21 @@ describe("pause_delete_gdpr: runPurgeSweep deadline gating", () => {
     await req("POST", "/api/guests", { full_name: "Aunt Trixi" }, { token });
     await req("POST", "/api/couples/pause", {}, { token });
 
-    const beforeCount = (db
-      .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ?")
-      .get(coupleId) as { n: number }).n;
+    const beforeCount = (
+      db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ?").get(coupleId) as {
+        n: number;
+      }
+    ).n;
     expect(beforeCount).toBeGreaterThan(0);
 
     setDeadlineTo(coupleId, now() - ONE_DAY_MS);
     runPurgeSweep();
 
-    const afterCount = (db
-      .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ?")
-      .get(coupleId) as { n: number }).n;
+    const afterCount = (
+      db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ?").get(coupleId) as {
+        n: number;
+      }
+    ).n;
     // Audit log is append-only; sweep only INSERTs a `couple.purge` row.
     expect(afterCount).toBeGreaterThan(beforeCount);
 
@@ -441,22 +434,26 @@ describe("pause_delete_gdpr: runPurgeSweep deadline gating", () => {
     const { token, coupleId } = await bootstrapCouple("sweep-email-log@weddly.test");
     // The welcome-verify mailer ran during bootstrapCouple → at least one
     // row references this user_id.
-    const before = (db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM email_log WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-      )
-      .get(coupleId) as { n: number }).n;
+    const before = (
+      db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM email_log WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+        )
+        .get(coupleId) as { n: number }
+    ).n;
     expect(before).toBeGreaterThanOrEqual(0);
 
     await req("POST", "/api/couples/pause", {}, { token });
     setDeadlineTo(coupleId, now() - ONE_DAY_MS);
     runPurgeSweep();
 
-    const after = (db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM email_log WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?) OR couple_id = ?",
-      )
-      .get(coupleId, coupleId) as { n: number }).n;
+    const after = (
+      db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM email_log WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?) OR couple_id = ?",
+        )
+        .get(coupleId, coupleId) as { n: number }
+    ).n;
     // Whatever `account_purged` mail the worker fired is enqueued AFTER
     // bootstrap's welcome mail but before the DELETE statement runs in the
     // same synchronous call. In a hermetic test (RESEND_API_KEY=""), the
@@ -487,9 +484,7 @@ describe("pause_delete_gdpr: runPurgeSweep deadline gating", () => {
     // Two rows in couple_pause_requests for this couple: first cancelled,
     // second pending — the SQL-most-recent one is the live one.
     const rows = db
-      .prepare(
-        "SELECT status FROM couple_pause_requests WHERE couple_id = ? ORDER BY id ASC",
-      )
+      .prepare("SELECT status FROM couple_pause_requests WHERE couple_id = ? ORDER BY id ASC")
       .all(coupleId) as { status: string }[];
     expect(rows.map((r) => r.status)).toEqual(["cancelled", "pending"]);
   });
@@ -572,9 +567,9 @@ describe("pause_delete_gdpr: cross-couple isolation", () => {
     expect(bCouple.status).toBe("active");
     expect(bCouple.display_name).toBe("Anna & Bence");
 
-    const bGuests = (db
-      .prepare("SELECT COUNT(*) AS n FROM guests WHERE couple_id = ?")
-      .get(cidB) as { n: number }).n;
+    const bGuests = (
+      db.prepare("SELECT COUNT(*) AS n FROM guests WHERE couple_id = ?").get(cidB) as { n: number }
+    ).n;
     expect(bGuests).toBe(1);
 
     const bUser = db
@@ -600,12 +595,7 @@ describe("pause_delete_gdpr: cross-couple isolation", () => {
 
     // The active workspace is now Bravo. Switch back to Alpha so pause()
     // targets the workspace we expect to be purged.
-    const sw = await req(
-      "POST",
-      "/api/users/me/active-couple",
-      { couple_id: alphaId },
-      { token },
-    );
+    const sw = await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
     expect(sw.status).toBe(200);
 
     await req("POST", "/api/couples/pause", {}, { token });
@@ -728,19 +718,22 @@ describe("pause_delete_gdpr: data residency after purge", () => {
 
     // Couple state remains 'deleting' (the second sweep did not re-run the
     // scrub or revert any field).
-    const c = db.prepare("SELECT status, display_name FROM couples WHERE id = ?").get(
-      coupleId,
-    ) as { status: string; display_name: string };
+    const c = db.prepare("SELECT status, display_name FROM couples WHERE id = ?").get(coupleId) as {
+      status: string;
+      display_name: string;
+    };
     expect(c.status).toBe("deleting");
     expect(c.display_name).toBe("Purged workspace");
 
     // Audit-log: exactly ONE couple.purge entry (the second sweep didn't
     // append a redundant row).
-    const purgeRows = (db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'couple.purge'",
-      )
-      .get(coupleId) as { n: number }).n;
+    const purgeRows = (
+      db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM audit_log WHERE couple_id = ? AND action = 'couple.purge'",
+        )
+        .get(coupleId) as { n: number }
+    ).n;
     expect(purgeRows).toBe(1);
   });
 });
