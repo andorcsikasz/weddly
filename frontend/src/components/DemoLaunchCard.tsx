@@ -81,7 +81,10 @@ export function DemoLaunchCard() {
         onClick={launch}
         disabled={busy}
         aria-busy={busy}
-        className="btn-primary mt-5 inline-flex w-full items-center justify-center gap-1.5 text-sm shadow-sm disabled:cursor-wait disabled:opacity-80"
+        // Sage instead of ink-900 so the demo CTA stays visually distinct
+        // from the primary register/login buttons on the same page. Sage
+        // also ties the card to the in-app demo banner colour.
+        className="btn mt-5 inline-flex w-full items-center justify-center gap-1.5 bg-sage-700 text-paper-50 text-sm shadow-sm hover:bg-sage-800 disabled:cursor-wait disabled:opacity-80 dark:bg-sage-500 dark:text-umber-900 dark:hover:bg-sage-400"
       >
         {busy ? (
           <>
