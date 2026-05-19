@@ -134,6 +134,15 @@ export function GoogleSignInButton({
 
   useEffect(() => {
     if (!CLIENT_ID) {
+      // Dev hint — usually means VITE_GOOGLE_CLIENT_ID is missing OR the Vite
+      // dev server was started before frontend/.env existed (Vite reads .env
+      // once at boot, never on HMR). Production builds bake the value at
+      // build time so a missing var there is a deploy-config bug.
+      if (import.meta.env.DEV) {
+        console.warn(
+          "[GoogleSignInButton] VITE_GOOGLE_CLIENT_ID is empty. Restart `bun run dev:frontend` after editing frontend/.env.",
+        );
+      }
       setHidden(true);
       return;
     }
