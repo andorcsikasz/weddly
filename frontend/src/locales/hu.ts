@@ -704,7 +704,7 @@ const hu: LocaleMessages = {
     // ── Landing "try the demo" card — small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
     //    identity is the reveal once the visitor lands in /app. ─────────
-    demo_card_eyebrow: "Demo · regisztráció nélkül",
+    demo_card_eyebrow: "regisztráció nélkül",
     demo_card_title: "Próbáld ki",
     demo_card_cta: "Indítsd a demót",
     demo_card_loading: "Egy pillanat…",
