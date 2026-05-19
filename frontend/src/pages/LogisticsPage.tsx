@@ -1019,7 +1019,16 @@ function AccommodationCard({
   onTap: () => void;
   t: (k: string) => string;
 }) {
-  const full = assigned.length >= accommodation.capacity;
+  // Three states for the capacity meter on the card chrome:
+  //   • `atCapacity` (== capacity) → emerald — "perfectly filled, all good."
+  //     The drop is still refused (the count helper toasts a full_blocked
+  //     when free === 0) but the colour reads as confirmation, not alarm.
+  //   • `overCapacity` (> capacity) → rose — recoverable bug state. The
+  //     server happily stores overflow (the cap is advisory) but the UI
+  //     surfaces it so the couple can rebalance.
+  //   • below capacity → no colour, default chrome.
+  const atCapacity = assigned.length === accommodation.capacity;
+  const overCapacity = assigned.length > accommodation.capacity;
   // Rectangular `card` again — the clip-path house silhouette read as crude
   // at sm+ widths (the triangular roof dwarfed the body). A small Home icon
   // next to the name keeps the "this is a lodging" cue without sacrificing
@@ -1039,12 +1048,16 @@ function AccommodationCard({
       aria-label={accommodation.name}
       className={`card relative flex h-full flex-col gap-3 overflow-hidden transition-colors ${
         isDropTarget
-          ? full
+          ? overCapacity
             ? "ring-2 ring-rose-400"
-            : "ring-2 ring-blush-500 bg-blush-50/40 dark:bg-blush-400/10"
-          : full
+            : atCapacity
+              ? "ring-2 ring-emerald-500 bg-emerald-50/40 dark:bg-emerald-400/10"
+              : "ring-2 ring-blush-500 bg-blush-50/40 dark:bg-blush-400/10"
+          : overCapacity
             ? "ring-1 ring-rose-300/60"
-            : ""
+            : atCapacity
+              ? "ring-1 ring-emerald-300/60"
+              : ""
       } ${tapArmed ? "cursor-pointer ring-2 ring-blush-300 ring-dashed dark:ring-blush-400/40" : ""}`}
     >
       {/* Slim blush top rule — the only chrome that hints at "lodging" now
@@ -1093,7 +1106,15 @@ function AccommodationCard({
       <dl className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-600 dark:text-umber-200">
         <div className="inline-flex items-center gap-1">
           <Users size={11} aria-hidden />
-          <span className={full ? "font-semibold text-rose-600 dark:text-rose-400" : undefined}>
+          <span
+            className={
+              overCapacity
+                ? "font-semibold text-rose-600 dark:text-rose-400"
+                : atCapacity
+                  ? "font-semibold text-emerald-700 dark:text-emerald-400"
+                  : undefined
+            }
+          >
             {assigned.length}/{accommodation.capacity}
           </span>
         </div>
@@ -1123,9 +1144,11 @@ function AccommodationCard({
 
       <div
         className={`min-h-[44px] flex-1 rounded-md border border-dashed p-2 ${
-          full
+          overCapacity
             ? "border-rose-300 bg-rose-50/40 dark:border-rose-400/40 dark:bg-rose-400/10"
-            : "border-paper-300 dark:border-umber-700"
+            : atCapacity
+              ? "border-emerald-300 bg-emerald-50/40 dark:border-emerald-400/40 dark:bg-emerald-400/10"
+              : "border-paper-300 dark:border-umber-700"
         }`}
       >
         {assigned.length === 0 ? (
@@ -1192,7 +1215,11 @@ function TransferTable({
         <tbody>
           {transfers.map((tr) => {
             const assigned = guestsByTransfer.get(tr.id) ?? [];
-            const full = tr.capacity !== null && assigned.length >= tr.capacity;
+            // Same tri-state colour scheme as AccommodationCard:
+            // emerald == exactly at capacity (good, full), rose only when
+            // the assigned count has overflowed past it.
+            const atCapacity = tr.capacity !== null && assigned.length === tr.capacity;
+            const overCapacity = tr.capacity !== null && assigned.length > tr.capacity;
             return (
               <tr
                 key={tr.id}
@@ -1213,9 +1240,11 @@ function TransferTable({
                 }}
                 className={`border-b border-paper-200 last:border-b-0 dark:border-umber-700 ${
                   hoverTransferId === tr.id
-                    ? full
+                    ? overCapacity
                       ? "bg-rose-50 dark:bg-rose-400/10"
-                      : "bg-blush-50 dark:bg-blush-400/15"
+                      : atCapacity
+                        ? "bg-emerald-50 dark:bg-emerald-400/10"
+                        : "bg-blush-50 dark:bg-blush-400/15"
                     : ""
                 } ${tapArmed ? "cursor-pointer hover:bg-blush-50/60 dark:hover:bg-blush-400/10" : ""}`}
               >
@@ -1228,7 +1257,13 @@ function TransferTable({
                 </td>
                 <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
                   <span
-                    className={full ? "font-semibold text-rose-600 dark:text-rose-400" : undefined}
+                    className={
+                      overCapacity
+                        ? "font-semibold text-rose-600 dark:text-rose-400"
+                        : atCapacity
+                          ? "font-semibold text-emerald-700 dark:text-emerald-400"
+                          : undefined
+                    }
                   >
                     {assigned.length}
                     {tr.capacity !== null ? `/${tr.capacity}` : ""}
