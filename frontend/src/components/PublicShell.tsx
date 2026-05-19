@@ -163,11 +163,11 @@ function PublicHeader() {
           </Link>
         </nav>
 
-        {/* Right cluster: utility icons (feedback, login, locale, theme)
-            sit together on the left, and the signup CTA anchors the
-            right edge alone so the action is the visual terminus. The
-            hamburger trails on mobile (md:hidden) — on desktop the
-            signup button is the rightmost interactive element. */}
+        {/* Right cluster — left-to-right DOM order: feedback, locale,
+            theme, login, signup. The action button anchors the right
+            edge alone; login sits closest to it because "I already
+            have an account" is the next-most-likely intent after the
+            primary CTA. The hamburger trails on mobile only. */}
         <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
@@ -178,14 +178,6 @@ function PublicHeader() {
           >
             <MessageSquare size={18} aria-hidden="true" />
           </button>
-          <Link
-            to="/login"
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
-            aria-label={t("landing.cta_login")}
-            title={t("landing.cta_login")}
-          >
-            <LogIn size={18} aria-hidden="true" />
-          </Link>
           <button
             type="button"
             onClick={() => setLocale(otherLocale)}
@@ -208,6 +200,14 @@ function PublicHeader() {
               <Moon size={18} aria-hidden="true" />
             )}
           </button>
+          <Link
+            to="/login"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
+            aria-label={t("landing.cta_login")}
+            title={t("landing.cta_login")}
+          >
+            <LogIn size={18} aria-hidden="true" />
+          </Link>
           <Link to="/signup" className="btn-primary !py-2 px-3.5 text-sm sm:!py-1.5">
             {t("landing.cta_signup")}
           </Link>
