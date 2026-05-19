@@ -19,6 +19,26 @@ declare global {
   }
 }
 
+// Vite's content-hashed chunks get new filenames on every deploy. A user with
+// a stale index.html still in browser cache requests the old chunk URLs, hits
+// 404, and React.lazy() throws — which lands here. Auto-recover by forcing a
+// full reload (bypasses HTTP cache so the fresh HTML + chunks come down).
+// The sessionStorage guard prevents an infinite reload loop if the chunk
+// genuinely cannot be fetched (e.g. user is offline).
+const CHUNK_RELOAD_FLAG = "weddly.chunkReload.attempted";
+
+function isChunkLoadError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (error.name === "ChunkLoadError") return true;
+  const m = error.message || "";
+  return (
+    m.includes("Failed to fetch dynamically imported module") ||
+    m.includes("Importing a module script failed") ||
+    /Loading (CSS )?chunk [\w-]+ failed/i.test(m) ||
+    m.includes("error loading dynamically imported module")
+  );
+}
+
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
 
@@ -27,6 +47,22 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    if (isChunkLoadError(error)) {
+      let alreadyTried = false;
+      try {
+        alreadyTried = sessionStorage.getItem(CHUNK_RELOAD_FLAG) === "1";
+        sessionStorage.setItem(CHUNK_RELOAD_FLAG, "1");
+      } catch {
+        // sessionStorage can throw in privacy modes; fall through to reload.
+      }
+      if (!alreadyTried) {
+        console.warn("[error-boundary] chunk load error — forcing reload", error.message);
+        window.location.reload();
+        return;
+      }
+      // Already reloaded once this session and still failing — fall through
+      // and show the fallback UI so the user isn't stuck in a loop.
+    }
     console.error("[error-boundary]", error, info.componentStack);
     window.Sentry?.captureException(error, {
       contexts: { react: { componentStack: info.componentStack } },
