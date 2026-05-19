@@ -18,6 +18,14 @@ export interface UserRow {
   updated_at: number;
   /** Additive column (see db.ts) — null for rows that pre-date the field. */
   last_seen_at: number | null;
+  /** Google-issued `sub` claim, set when a user signs in / signs up with
+   *  Google. Null for password-only accounts. */
+  google_sub?: string | null;
+  /** 1 = user has set a real local password; 0 = Google-only signup with a
+   *  synthetic placeholder hash. Password-reset is refused when 0 so an
+   *  attacker with knowledge of the email can't quietly install a password
+   *  on a Google-only account. Defaults to 1 for back-compat. */
+  password_set?: number;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var

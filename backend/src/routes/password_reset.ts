@@ -29,6 +29,22 @@ async function handleForgot(ctx: Ctx): Promise<Response> {
 
   const user = getUserByEmail(emailRaw);
   if (!user || user.status === "suspended") return json({ ok: true });
+  // Google-only accounts never set a password, so a password-recovery email
+  // would be a stealthy take-over channel: an attacker who knows the email
+  // could install a password without the legitimate user expecting that
+  // surface to exist on their Google-bound account. Silently skip the issue
+  // — still return 200 so the route doesn't leak which accounts are
+  // Google-only vs password-only. See [[security_google_only_password_reset]].
+  if (user.password_set === 0) {
+    addAuditLog({
+      actor_user_id: user.id,
+      couple_id: null,
+      action: "auth.password_reset_request_skipped_google_only",
+      target_kind: "user",
+      target_id: user.id,
+    });
+    return json({ ok: true });
+  }
 
   const token = randomBytes(32).toString("hex");
   const ts = now();
@@ -91,6 +107,15 @@ async function handleReset(ctx: Ctx): Promise<Response> {
   if (row.consumed_at) throw new HttpError(400, "Invalid or expired token");
   const ts = now();
   if (row.expires_at < ts) throw new HttpError(400, "Invalid or expired token");
+
+  // Defence in depth: if somehow a token exists for a Google-only account
+  // (legacy row, manual DB insert, race against a future "promote to
+  // password" flow), refuse the reset and return the same opaque error.
+  // See [[security_google_only_password_reset]].
+  const target = getUserById(row.user_id);
+  if (!target || target.password_set === 0) {
+    throw new HttpError(400, "Invalid or expired token");
+  }
 
   const newHash = await hashPassword(body.password);
   db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(

@@ -118,12 +118,15 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
   const placeholderPw = `${randomBytes(32).toString("hex")}${randomBytes(32).toString("hex")}`;
   const passwordHash = await hashPassword(placeholderPw);
   const ts = now();
+  // password_set = 0 — Google-only account. Stops the password-reset side
+  // door from working on accounts the legitimate user never put a password
+  // on, see [[security_google_only_password_reset]].
   const result = db
     .prepare(
       `INSERT INTO users
          (email, password_hash, full_name, status, role, verified_email,
-          google_sub, created_at, updated_at)
-       VALUES (?, ?, ?, 'active', 'owner', 1, ?, ?, ?)`,
+          google_sub, password_set, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 1, ?, 0, ?, ?)`,
     )
     .run(identity.email, passwordHash, fullName, identity.sub, ts, ts);
   const userId = Number(result.lastInsertRowid);
@@ -162,20 +165,12 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
   // verified_email = 1 so the user lands directly on onboarding.
 
   const token = issueSession(userId);
-  const row: UserRow = {
-    id: userId,
-    email: identity.email,
-    password_hash: passwordHash,
-    full_name: fullName,
-    status: "active",
-    role: "owner",
-    couple_id: null,
-    verified_email: 1,
-    created_at: ts,
-    updated_at: ts,
-    last_seen_at: null,
-  };
-  const session: AuthSession = { token, user: toUser(row) };
+  // Re-read the freshly-inserted row instead of hand-reconstructing it — the
+  // schema picks up additive columns (google_sub, password_set, last_seen_at)
+  // without needing this literal to be kept in sync.
+  const fresh = getUserById(userId);
+  if (!fresh) throw new HttpError(500, "User vanished after Google register");
+  const session: AuthSession = { token, user: toUser(fresh) };
   return json(session, { status: 201 });
 }
 

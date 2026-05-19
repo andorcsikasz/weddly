@@ -338,6 +338,17 @@ db.exec(
     "ON users(google_sub) WHERE google_sub IS NOT NULL",
 );
 
+// "Did this user ever set a real password?" — 1 = yes (default for back-compat,
+// every legacy user signed up with password), 0 = Google-only signup, no local
+// password ever set. Gates `/api/auth/forgot` and `/api/auth/reset` so an
+// attacker who knows a Google-only user's email can't quietly install a
+// password and take over the account through the password-recovery side door
+// (the legitimate user would never expect a password path to exist on their
+// Google-only account, so a stealthy reset is more dangerous here than on
+// regular accounts). Flipped to 1 the moment a password is actually set,
+// either through the reset flow or any future "set initial password" surface.
+addColumnIfMissing("users", "password_set", "password_set INTEGER NOT NULL DEFAULT 1");
+
 // Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
 // Default 0 (off) so couples who don't offer accommodation don't pester
 // guests with an irrelevant checkbox. When the couple flips it on from the

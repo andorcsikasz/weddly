@@ -2846,6 +2846,56 @@ describe("password reset", () => {
     });
     expect(r.status).toBe(400);
   });
+
+  test("forgot+reset are no-ops for Google-only accounts", async () => {
+    wipeAll();
+    // Sign up via Google — no local password is ever set.
+    // biome-ignore lint/style/useTopLevelRegex: dynamic import keeps test imports localised
+    const { mintTestBearer } = await import("../src/lib/google_oauth");
+    const credential = mintTestBearer({
+      sub: "google-sub-pwreset",
+      email: "google-only@weddly.test",
+      name: "Google Only",
+    });
+    const reg = await req("POST", "/api/auth/google", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(reg.status).toBe(201);
+    const userId = db
+      .prepare("SELECT id, password_set FROM users WHERE email = ?")
+      .get("google-only@weddly.test") as { id: number; password_set: number };
+    expect(userId.password_set).toBe(0);
+
+    // /forgot still returns 200 (no enumeration leak)…
+    const f = await req("POST", "/api/auth/forgot", { email: "google-only@weddly.test" });
+    expect(f.status).toBe(200);
+    // …but no token was issued.
+    const tokens = db
+      .prepare("SELECT COUNT(*) AS n FROM password_reset_tokens WHERE user_id = ?")
+      .get(userId.id) as { n: number };
+    expect(tokens.n).toBe(0);
+
+    // Defence in depth: even if an attacker fabricates a token row directly,
+    // /reset refuses it.
+    db.prepare(
+      `INSERT INTO password_reset_tokens (user_id, token, expires_at, consumed_at, created_at)
+       VALUES (?, 'fabricatedtoken1234567890abcdef', ?, NULL, ?)`,
+    ).run(userId.id, Date.now() + 60000, Date.now());
+    const r = await req("POST", "/api/auth/reset", {
+      token: "fabricatedtoken1234567890abcdef",
+      password: "attackerset123",
+    });
+    expect(r.status).toBe(400);
+
+    // And the password hash on the user row is unchanged — the synthetic
+    // placeholder still in place, so an attacker can't log in.
+    const pwLogin = await req("POST", "/api/auth/login", {
+      email: "google-only@weddly.test",
+      password: "attackerset123",
+    });
+    expect(pwLogin.status).toBe(401);
+  });
 });
 
 describe("email verification", () => {
