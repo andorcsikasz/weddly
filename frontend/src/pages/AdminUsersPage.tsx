@@ -86,6 +86,11 @@ export default function AdminUsersPage() {
     () => couples.filter((c) => c.status === "deleting").length,
     [couples],
   );
+  // Demo workspaces ("try Shrek & Fiona") are seeded by the landing-page
+  // flow; keep them out of the real-couple list so the admin overview
+  // reflects actual signups, but surface them in their own section below.
+  const realCouples = useMemo(() => visibleCouples.filter((c) => !c.is_demo), [visibleCouples]);
+  const demoCouples = useMemo(() => visibleCouples.filter((c) => c.is_demo), [visibleCouples]);
 
   function workspaceLabel(c: AdminCoupleView): string {
     if (c.display_name && c.display_name.trim()) return c.display_name;

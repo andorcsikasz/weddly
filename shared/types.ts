@@ -113,6 +113,10 @@ export interface AdminCoupleView {
   /** MAX(last_seen_at) across the workspace's members. Null when nobody on
    *  the workspace has been seen since the column was added. */
   last_seen_at: UnixMs | null;
+  /** Mirrors `couples.is_demo`. Demo workspaces are seeded by the landing
+   *  page's "try Shrek & Fiona" flow and are grouped into their own admin
+   *  section so the real-user list stays scannable. */
+  is_demo: boolean;
 }
 
 // ─── Couples (the workspace) ─────────────────────────────────────────────────

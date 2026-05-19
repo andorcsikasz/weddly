@@ -154,6 +154,7 @@ function toAdminCouple(row: CoupleRow): AdminCoupleView {
     partners: partnersForCouple(c.id),
     created_at: c.created_at,
     last_seen_at: seen.max,
+    is_demo: c.is_demo,
   };
 }
 
