@@ -93,13 +93,13 @@ export default function LoginPage() {
               {t("auth.submit_login")}
             </Button>
           </form>
-          <p className="mt-4 text-sm text-ink-600">
+          <p className="mt-4 text-center text-sm text-ink-600">
             {t("auth.no_account")}{" "}
             <Link to="/signup" className="font-medium text-ink-900 underline">
               {t("auth.submit_register")}
             </Link>
           </p>
-          <p className="mt-2 text-sm text-ink-600">
+          <p className="mt-2 text-center text-sm text-ink-600">
             <Link to="/forgot-password" className="font-medium text-ink-900 underline">
               {t("auth.forgot_link")}
             </Link>

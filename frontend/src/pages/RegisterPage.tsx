@@ -241,7 +241,7 @@ export default function RegisterPage() {
               {t("register.continuing_suffix")}
             </p>
           </form>
-          <p className="mt-4 text-sm text-ink-600">
+          <p className="mt-4 text-center text-sm text-ink-600">
             {t("auth.have_account")}{" "}
             <Link to="/login" className="font-medium text-ink-900 underline">
               {t("auth.submit_login")}
