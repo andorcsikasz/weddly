@@ -1752,6 +1752,7 @@ export interface LocaleMessages {
     map_help: string;
     map_expand: string;
     map_collapse: string;
+    map_recenter: string;
     editor_empty: string;
     size_mm_label: string;
     width_mm_label: string;

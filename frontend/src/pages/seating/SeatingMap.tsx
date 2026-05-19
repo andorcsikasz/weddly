@@ -8,7 +8,7 @@
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
 import { chairOffsets, maxSeatsForTable } from "@shared/seating";
-import { Baby, Maximize2, Minus, Plus, X } from "lucide-react";
+import { Baby, Locate, Maximize2, Minus, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "../../lib/i18n";
@@ -168,6 +168,19 @@ export function SeatingMap({
     ro.observe(el);
     return () => ro.disconnect();
   }, [expanded]);
+
+  // When the room or wrapper resizes in expanded mode, the SVG's pixel
+  // dimensions jump. The browser keeps scrollTop/scrollLeft byte values, so
+  // the user lands at an arbitrary corner of the new layout. Re-centre so
+  // the change feels like "the camera stayed put" instead of teleporting.
+  // Only runs in expanded mode; inline mode never overflows.
+  useEffect(() => {
+    if (!expanded) return;
+    const el = scrollWrapperRef.current;
+    if (!el) return;
+    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+  }, [expanded, ROOM_W_MM, ROOM_H_MM, wrapperPx?.w, wrapperPx?.h]);
 
   // Pick a scale + SVG pixel size for the EXPANDED overlay only.
   // Always "max-scale": pick the larger of the two fit ratios so the
@@ -431,6 +444,15 @@ export function SeatingMap({
       pendingKeyMoveRef.current = { id: table.id, x: newX, y: newY };
       if (keyMoveTimerRef.current) clearTimeout(keyMoveTimerRef.current);
       keyMoveTimerRef.current = setTimeout(flushKeyMove, 250);
+      // Auto-scroll the viewport to keep the nudged table in view. Critical
+      // in the expanded overlay where the SVG is bigger than the wrapper —
+      // without this, a held arrow key walks the table off-screen with no
+      // way to follow. `nearest` minimises jitter (only scrolls when the
+      // table actually leaves the visible area).
+      requestAnimationFrame(() => {
+        const el = svgRef.current?.querySelector(`[data-seating-table="${table.id}"]`);
+        if (el instanceof Element) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      });
     },
     [
       selectedId,
@@ -460,6 +482,28 @@ export function SeatingMap({
             widthAriaLabel={t("seating.room_width_aria")}
             heightAriaLabel={t("seating.room_height_aria")}
           />
+          {expanded && (
+            <button
+              type="button"
+              onClick={() => {
+                // Re-centre: scroll so the wrapper's viewport is in the
+                // middle of the (always-overflowing) SVG. Handy when the
+                // user scrolls deep into a 50 m room and wants to "go back
+                // to the middle". The `Math.max` fit guarantees at least
+                // one axis is bigger than the wrapper, so the scrollLefts
+                // are non-zero.
+                const el = scrollWrapperRef.current;
+                if (!el) return;
+                el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+                el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+              }}
+              className="rounded-md border border-paper-300 bg-paper-50 p-1.5 text-ink-500 transition-colors hover:border-ink-700 hover:text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-paper-100 dark:hover:text-paper-100"
+              aria-label={t("seating.map_recenter")}
+              title={t("seating.map_recenter")}
+            >
+              <Locate size={16} aria-hidden />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
@@ -495,7 +539,7 @@ export function SeatingMap({
               height: svgSize.height,
               flexShrink: 0,
             }}
-            className="block select-none touch-none focus:outline-none"
+            className="block select-none focus:outline-none"
             onPointerMove={moveDrag}
             onPointerUp={endDrag}
             onPointerLeave={endDrag}
@@ -832,7 +876,11 @@ function TableShape({
         // is to dispatch a click on the element.
         (e.currentTarget as Element & { click?: () => void }).click?.();
       }}
-      style={{ cursor: "grab" }}
+      // touchAction: none ONLY on the draggable table group so finger drags
+      // here start a table move via Pointer Events. Empty canvas / between
+      // tables keeps the SVG's default touch-action: auto so touch users can
+      // pan-scroll the room in the expanded overlay.
+      style={{ cursor: "grab", touchAction: "none" }}
       // Keyboard a11y: focusable, Enter/Space mimics a click-to-select, and
       // arrow/[/]/Delete shortcuts are handled by the parent SeatingMap so a
       // single keydown listener can govern the whole canvas.

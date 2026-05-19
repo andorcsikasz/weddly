@@ -1585,6 +1585,7 @@ const en: LocaleMessages = {
     map_help: "Drag a table to move it. Drag its edges to resize. Click to edit.",
     map_expand: "Expand floor plan",
     map_collapse: "Close expanded view",
+    map_recenter: "Re-centre map",
     editor_empty: "Pick a table on the map to edit its details.",
     size_mm_label: "Size",
     width_mm_label: "Width",

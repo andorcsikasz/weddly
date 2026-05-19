@@ -1597,6 +1597,7 @@ const hu: LocaleMessages = {
       "Húzd az asztalt a helyére. Húzd az oldalát az átméretezéshez. Kattints a részletekért.",
     map_expand: "Térkép nagyítása",
     map_collapse: "Térkép bezárása",
+    map_recenter: "Vissza a térkép közepére",
     editor_empty: "Válassz egy asztalt a térképen a részletek szerkesztéséhez.",
     size_mm_label: "Méret",
     width_mm_label: "Szélesség",
