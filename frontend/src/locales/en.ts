@@ -1468,7 +1468,6 @@ const en: LocaleMessages = {
     benchmark_methodology:
       "Illustrative estimate for HU 2026 derived from publicly-visible vendor pricing (tradergroup.hu, eskuvo.com). Not professional advice — your own quotes will be more accurate.",
     benchmark_source_hint: "Where do these numbers come from?",
-    overcap_soft_label: "A touch over your budget",
     overcap_medium_label: "Over by {amount}",
     per_guest_planned: "Planned · {amount}/guest × {count} guests",
     per_guest_actual: "Actual · {amount}/guest · based on {confirmed} confirmed RSVPs",

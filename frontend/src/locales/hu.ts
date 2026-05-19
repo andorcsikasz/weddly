@@ -1475,7 +1475,6 @@ const hu: LocaleMessages = {
     benchmark_methodology:
       "Tájékoztató jellegű becslés HU 2026-ra, publikus szállítói árakból (tradergroup.hu, eskuvo.com). Nem szakvélemény — saját ajánlatok mindig pontosabbak.",
     benchmark_source_hint: "Honnan jönnek ezek a számok?",
-    overcap_soft_label: "Kicsit a kereted fölött",
     overcap_medium_label: "{amount}-tal a keret fölött",
     per_guest_planned: "Tervezett · {amount}/fő × {count} vendég",
     per_guest_actual: "Tényleges · {amount}/fő · {confirmed} igen-RSVP alapján",

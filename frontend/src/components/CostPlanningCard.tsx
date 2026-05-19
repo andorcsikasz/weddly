@@ -472,12 +472,16 @@ export function CostPlanningCard({
             ) : tier === "soft" ? (
               // 0–5 % over: calm amber dot, no blush pill — well within the
               // noise floor of cap accuracy, so the warning is muted on purpose.
+              // Copy still includes the exact overage amount so the couple can
+              // see the actual gap, not a vague "a touch over" hand-wave.
               <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
                 <span
                   className="inline-block h-2 w-2 self-center rounded-full bg-amber-500 dark:bg-amber-400"
                   aria-hidden="true"
                 />
-                {t("cost_planning.overcap_soft_label")}
+                {t("cost_planning.overcap_medium_label", {
+                  amount: formatMoney(overage, currency, locale),
+                })}
               </span>
             ) : (
               // medium (5–20 %) + serious (>20 %): same blush pill; the serious

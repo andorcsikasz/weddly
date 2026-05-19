@@ -1609,10 +1609,9 @@ export interface LocaleMessages {
     benchmark_methodology: string;
     /** Tiny "(?)" affordance label after the benchmark strip. */
     benchmark_source_hint: string;
-    /** Soft tier (0–5 % over). Calm "a touch over" copy, no alarm. */
-    overcap_soft_label: string;
-    /** Medium tier (5–20 % over). Replaces the legacy `budget.over_by` pill
-     *  copy with the same magnitude semantics. Receives `{amount}`. */
+    /** Over-cap pill copy, shared by soft (0–5 %) and medium (5–20 %) tiers.
+     *  Receives `{amount}` — the soft tier renders the same exact-amount copy
+     *  so the user always sees the precise overage, not a vague hand-wave. */
     overcap_medium_label: string;
     /** Always-on planned row under the headline.
      *  Receives `{amount}` (per-guest planned) and `{count}` (slider count). */
