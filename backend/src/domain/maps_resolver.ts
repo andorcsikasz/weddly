@@ -33,7 +33,7 @@ const LONG_URL_HOSTS = new Set([
   "maps.google.hu",
 ]);
 
-const USER_AGENT = "weddly-maps-resolver/0.1 (admin@weddly.xyz)";
+const USER_AGENT = "weddly-maps-resolver/0.1 (admin@weddly.hu)";
 
 /** Identifies whether the input string looks like a Google Maps URL — used by
  *  callers to decide whether to fire the resolver vs treat input as plain

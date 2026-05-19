@@ -1322,7 +1322,7 @@ const hu: LocaleMessages = {
     checkin_pill_show: "Részletek",
     checkin_pill_hide: "Bezárás",
     checkin_pill_url_hint:
-      "A vendégek a weddly.xyz/rsvp oldalon írják be a jegyes pár azonosítóját és a 4 jegyű kódjukat.",
+      "A vendégek a weddly.hu/rsvp oldalon írják be a jegyes pár azonosítóját és a 4 jegyű kódjukat.",
     couple_slug_help_locked:
       "Az azonosító a meghívókra és a check-in oldalra is rákerül — zárolva, hogy a kiosztott linkek továbbra is működjenek.",
     invited_check_label: "Megjelölve meghívottnak",

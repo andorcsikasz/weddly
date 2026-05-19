@@ -1,22 +1,21 @@
-// Geo-targeted SEO rendering for the dual-domain deployment.
+// Single-domain SEO rendering.
 //
-// weddly.hu = HU canonical, weddly.xyz = EN canonical. The Bun process serves
-// both domains from the same app, so the SPA's `index.html`, `robots.txt`,
-// and `sitemap.xml` are rendered per request based on the Host header. Google
-// then sees two locale-specific, mutually-hreflang'd sites instead of one
-// duplicated site, and the share-card scraper for each locale sees its own
-// language.
+// Up to May 2026 we ran two TLDs in parallel — weddly.hu = HU canonical,
+// weddly.xyz = EN canonical — with cross-host hreflang. The .xyz project was
+// retired (one DB, one canonical) and weddly.xyz now 301-redirects to
+// weddly.hu, so search engines following the old hreflang chains would just
+// de-index the EN alternate.
 //
-// The SPA's runtime `useDocumentMeta` still updates title/description per
-// route post-hydration (for the user's tab), but canonical/hreflang/og:url
-// stay as whatever this module injects — those are the only signals Google's
-// non-JS crawler ever sees.
+// Today: weddly.hu is the only canonical. The locale switch is purely
+// client-side (localStorage + language switcher); the initial SSR'd HTML is
+// HU-locale by default for crawlers landing on the canonical host.
 
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { lookupRouteSeo } from "../../../shared/seo_routes";
 
 export const HU_HOST = "weddly.hu";
-export const EN_HOST = "weddly.xyz";
+/** Canonical host for every public URL in SEO output. */
+export const CANONICAL_HOST = HU_HOST;
 
 export type SeoLocale = "hu" | "en";
 
@@ -87,18 +86,17 @@ const META: Record<SeoLocale, LocaleMeta> = {
 const HEAD_START = "<!-- SEO_HEAD_START -->";
 const HEAD_END = "<!-- SEO_HEAD_END -->";
 
-/** Pick the SEO locale for a Host header. The `weddly.xyz` apex + any
- *  subdomain of it map to EN; everything else (weddly.hu, localhost, raw IPs,
- *  Railway preview domains) falls back to HU so dev keeps the long-standing
- *  HU default. */
-export function localeForHost(host: string | null | undefined): SeoLocale {
-  const h = (host ?? "").toLowerCase().split(":")[0] ?? "";
-  if (h === EN_HOST || h.endsWith(`.${EN_HOST}`)) return "en";
+/** SEO locale for a request. We no longer host EN on a separate TLD, so this
+ *  always returns "hu" — the only locale the SSR'd HTML advertises to
+ *  crawlers. EN-language users still get an EN UI client-side via the
+ *  in-app language switcher, but that's not what Googlebot sees. The
+ *  parameter is retained so callers don't all have to be rewritten. */
+export function localeForHost(_host: string | null | undefined): SeoLocale {
   return "hu";
 }
 
-export function canonicalHostFor(locale: SeoLocale): string {
-  return locale === "en" ? EN_HOST : HU_HOST;
+export function canonicalHostFor(_locale: SeoLocale): string {
+  return CANONICAL_HOST;
 }
 
 function escapeAttr(s: string): string {
@@ -124,7 +122,7 @@ function buildJsonLd(opts: {
       url: origin,
       logo: `${origin}/logo.png`,
       description: meta.brandDescription,
-      sameAs: [`https://${HU_HOST}`, `https://${EN_HOST}`],
+      sameAs: [`https://${CANONICAL_HOST}`],
     },
     {
       "@context": "https://schema.org",
@@ -183,8 +181,7 @@ function buildHeadBlock(opts: { host: string | null; pathname: string; isRsvp: b
   const canonicalHost = canonicalHostFor(locale);
   const path = opts.pathname || "/";
   const canonicalUrl = `https://${canonicalHost}${path}`;
-  const huUrl = `https://${HU_HOST}${path}`;
-  const enUrl = `https://${EN_HOST}${path}`;
+  const huUrl = `https://${CANONICAL_HOST}${path}`;
   const ogImage = `https://${canonicalHost}${opts.isRsvp ? "/og-rsvp.png" : "/og.png"}`;
 
   // Route-specific title + description take precedence over the landing
@@ -218,7 +215,6 @@ function buildHeadBlock(opts: { host: string | null; pathname: string; isRsvp: b
     `<meta name="twitter:description" content="${escapeAttr(twDescription)}" />`,
     `<meta name="twitter:image" content="${ogImage}" />`,
     `<link rel="alternate" hreflang="hu" href="${huUrl}" />`,
-    `<link rel="alternate" hreflang="en" href="${enUrl}" />`,
     `<link rel="alternate" hreflang="x-default" href="${huUrl}" />`,
     buildJsonLd({ locale, canonicalHost, pathname: path }),
   ].join("\n    ");
@@ -327,9 +323,7 @@ export function renderIndexHtml(
   return out.replace(/<html lang="[^"]*"/, `<html lang="${META[locale].lang}"`);
 }
 
-export function renderRobotsTxt(host: string | null): string {
-  const locale = localeForHost(host);
-  const canonicalHost = canonicalHostFor(locale);
+export function renderRobotsTxt(_host: string | null): string {
   return [
     "User-agent: *",
     "Allow: /",
@@ -339,7 +333,7 @@ export function renderRobotsTxt(host: string | null): string {
     "Disallow: /rsvp/",
     "Disallow: /reset-password/",
     "",
-    `Sitemap: https://${canonicalHost}/sitemap.xml`,
+    `Sitemap: https://${CANONICAL_HOST}/sitemap.xml`,
     "",
   ].join("\n");
 }
@@ -350,23 +344,15 @@ export function renderRobotsTxt(host: string | null): string {
 // they actually use to schedule recrawl.
 const SITEMAP_LASTMOD = new Date().toISOString().slice(0, 10);
 
-export function renderSitemapXml(host: string | null): string {
-  const locale = localeForHost(host);
-  const canonicalHost = canonicalHostFor(locale);
-  const altLocale: SeoLocale = locale === "hu" ? "en" : "hu";
-  const altHost = canonicalHostFor(altLocale);
-
+export function renderSitemapXml(_host: string | null): string {
   const urls = PUBLIC_PATHS.map(({ path, priority, changefreq }) => {
-    const here = `https://${canonicalHost}${path}`;
-    const there = `https://${altHost}${path}`;
-    const xDefault = `https://${HU_HOST}${path}`;
+    const here = `https://${CANONICAL_HOST}${path}`;
     return [
       "  <url>",
       `    <loc>${here}</loc>`,
       `    <lastmod>${SITEMAP_LASTMOD}</lastmod>`,
-      `    <xhtml:link rel="alternate" hreflang="${locale}" href="${here}" />`,
-      `    <xhtml:link rel="alternate" hreflang="${altLocale}" href="${there}" />`,
-      `    <xhtml:link rel="alternate" hreflang="x-default" href="${xDefault}" />`,
+      `    <xhtml:link rel="alternate" hreflang="hu" href="${here}" />`,
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${here}" />`,
       `    <changefreq>${changefreq}</changefreq>`,
       `    <priority>${priority}</priority>`,
       "  </url>",

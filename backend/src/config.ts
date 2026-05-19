@@ -21,7 +21,7 @@ if (IS_PROD && process.env.RESEND_API_KEY && (process.env.EMAIL_FROM ?? "") === 
   console.error(
     "[config] FATAL: RESEND_API_KEY is set but EMAIL_FROM is missing. " +
       "Verify a domain in Resend and set EMAIL_FROM to a sender on that domain " +
-      "(e.g. `Weddly <hello@weddly.xyz>`).",
+      "(e.g. `Weddly <hello@weddly.hu>`).",
   );
   process.exit(1);
 }

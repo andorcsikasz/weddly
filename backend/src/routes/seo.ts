@@ -1,10 +1,9 @@
 // Crawler-facing SEO routes: robots.txt and sitemap.xml.
 //
-// These are dynamic — their content depends on the request Host so weddly.hu
-// vs weddly.xyz get their own canonical Sitemap line + their own per-host
-// URL set. They live as proper routes (not as fall-throughs in
-// `tryServeStatic`) so they're reachable regardless of SERVE_FRONTEND and so
-// e2e tests can exercise them without spinning up the SPA bundle.
+// Single-host deployment as of May 2026 — the renderers ignore the Host and
+// always emit canonical URLs against weddly.hu, but we still take Host as a
+// parameter so the routing signature stays compatible with future
+// multi-locale work.
 
 import type { Router } from "../lib/http";
 import { renderRobotsTxt, renderSitemapXml } from "../lib/seo_ssr";

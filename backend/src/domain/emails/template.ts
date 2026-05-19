@@ -105,7 +105,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     } else {
       lines.push("You're getting this because it's about your Weddly account.");
     }
-    lines.push("Weddly · weddly.xyz");
+    lines.push("Weddly · weddly.hu");
     return lines.join("\n");
   }
 
@@ -244,7 +244,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:12px;line-height:1.5;">${why}</p>
       ${unsubLine}
       <p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:11px;line-height:1.5;letter-spacing:0.04em;">
-        <span style="font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:0.24em;">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">weddly.xyz</a>
+        <span style="font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:0.24em;">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">weddly.hu</a>
       </p>
     `;
   }

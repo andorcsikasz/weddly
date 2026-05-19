@@ -9,7 +9,7 @@ import type { MoodboardPin } from "@shared/types";
 import { HttpError } from "../lib/http";
 
 const FETCH_TIMEOUT_MS = 8000;
-const PIN_USER_AGENT = "Mozilla/5.0 (compatible; Weddly/1.0; +https://weddly.xyz)";
+const PIN_USER_AGENT = "Mozilla/5.0 (compatible; Weddly/1.0; +https://weddly.hu)";
 
 /** Parsed `<user>/<board>` segments from a Pinterest board URL.
  *  `null` means the URL didn't look like a board link at all. */

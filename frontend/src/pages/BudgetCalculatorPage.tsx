@@ -1,5 +1,5 @@
-// Standalone tool page: /eszkozok/eskuvo-koltsegvetes-kalkulator (HU canon)
-// — also reachable as the same URL on weddly.xyz with EN content.
+// Standalone tool page: /eszkozok/eskuvo-koltsegvetes-kalkulator (HU canon).
+// Same URL serves EN content client-side when the user's locale is en.
 //
 // Builds on top of the existing InteractiveBudgetDemo (the same widget that
 // lives on the landing page) but wraps it in SEO-tuned framing: a dedicated

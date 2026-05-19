@@ -1316,7 +1316,7 @@ const en: LocaleMessages = {
     checkin_pill_show: "Show check-in details",
     checkin_pill_hide: "Hide check-in details",
     checkin_pill_url_hint:
-      "Guests visit weddly.xyz/rsvp and enter your couple identifier + their 4-digit code.",
+      "Guests visit weddly.hu/rsvp and enter your couple identifier + their 4-digit code.",
     couple_slug_help_locked:
       "Pre-printed on invites and the public check-in page — locked so links you've already shared keep working.",
     invited_check_label: "Mark as invited",

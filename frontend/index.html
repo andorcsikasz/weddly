@@ -7,12 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#efe9d9" />
     <!--
-      The SEO head block below is rewritten per request by backend/src/lib/seo_ssr.ts
-      so weddly.hu (HU canonical) and weddly.xyz (EN canonical) each get their
-      own locale-appropriate meta tags + hreflang alternates. The static
-      content here is the HU fallback used by Vite dev and any direct file
-      access that bypasses the Bun server. Do NOT remove the sentinel
-      comments — the rewriter splices between them.
+      The SEO head block below is rewritten per request by backend/src/lib/seo_ssr.ts.
+      Single-host deployment (weddly.hu) as of May 2026 — the rewriter
+      always emits weddly.hu as the canonical and skips the EN hreflang.
+      The static content here is the HU fallback used by Vite dev and any
+      direct file access that bypasses the Bun server. Do NOT remove the
+      sentinel comments — the rewriter splices between them.
     -->
     <!-- SEO_HEAD_START -->
     <title>Wēddly · Közös esküvőtervezés egy helyen</title>
@@ -45,7 +45,6 @@
     />
     <meta name="twitter:image" content="/og.png" />
     <link rel="alternate" hreflang="hu" href="https://weddly.hu/" />
-    <link rel="alternate" hreflang="en" href="https://weddly.xyz/" />
     <link rel="alternate" hreflang="x-default" href="https://weddly.hu/" />
     <!-- SEO_HEAD_END -->
     <!--

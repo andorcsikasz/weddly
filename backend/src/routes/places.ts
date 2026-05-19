@@ -8,7 +8,7 @@ import { getUserById } from "../domain/users";
 import { type Ctx, HttpError, json, requireVerifiedAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
-const USER_AGENT = "weddly-places-autocomplete/0.1 (admin@weddly.xyz)";
+const USER_AGENT = "weddly-places-autocomplete/0.1 (admin@weddly.hu)";
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
 
 interface NominatimResult {

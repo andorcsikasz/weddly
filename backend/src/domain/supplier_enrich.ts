@@ -128,7 +128,7 @@ async function fetchHtml(initial: URL): Promise<string | null> {
         redirect: "manual",
         headers: {
           // Some sites refuse default fetch UA; identify ourselves explicitly.
-          "User-Agent": "WeddlyEnrichBot/1.0 (+https://weddly.xyz)",
+          "User-Agent": "WeddlyEnrichBot/1.0 (+https://weddly.hu)",
           Accept: "text/html,application/xhtml+xml",
         },
         signal: controller.signal,
