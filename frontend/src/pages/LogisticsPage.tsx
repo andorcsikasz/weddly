@@ -598,7 +598,13 @@ export default function LogisticsPage() {
               {t("logistics.sidebar_empty")}
             </p>
           ) : (
-            <ul className="mt-3 max-h-[60vh] space-y-1 overflow-y-auto">
+            // pl-1.5 + pt-2 (offset by -ml-1.5 / -mt — visually identical to
+            // before but the items sit inside the ul's clip region) give the
+            // corner count chip on each household room to peek above + to the
+            // left of its card without being chopped by overflow-y-auto's
+            // implicit horizontal clipping. space-y-2 widens the gap between
+            // households so the stacks read as separate parties.
+            <ul className="-ml-1.5 mt-3 max-h-[60vh] space-y-2 overflow-y-auto pl-1.5 pt-2">
               {partnerSlots.map((slot) =>
                 slot.guest ? (
                   <li key={slot.role}>
