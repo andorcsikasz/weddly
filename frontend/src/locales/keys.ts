@@ -563,8 +563,10 @@ export interface LocaleMessages {
     demo_cat_ceremony_services: string;
     demo_cat_stationery_smalls: string;
     demo_cat_reserve: string;
-    /** Landing-page demo launch link — kicks off the seeded demo
-     *  workspace via POST /api/demo/start. One CTA line + states. */
+    /** Landing-page demo launch card — small tilted sticker on the right
+     *  of the hero. Eyebrow + title + button + loading/error states. */
+    demo_card_eyebrow: string;
+    demo_card_title: string;
     demo_card_cta: string;
     demo_card_loading: string;
     demo_card_error: string;

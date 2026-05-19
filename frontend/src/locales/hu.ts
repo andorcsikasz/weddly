@@ -701,9 +701,12 @@ const hu: LocaleMessages = {
     mockup_vendor_category: "Virágdekoráció · Budapest",
     mockup_vendor_reviews: "4,9 · 23 értékelés",
     mockup_vendor_cta: "Profil megtekintése",
-    // ── Landing "try the demo" link — minimal, one phrase. Conveys
-    //    "demo wedding, no signup required" and nothing else. ──────────
-    demo_card_cta: "Demo esküvő · regisztráció nélkül",
+    // ── Landing "try the demo" card — small tilted sticker on the right
+    //    of the hero. Eyebrow + italic title + one button. The fairytale
+    //    identity is the reveal once the visitor lands in /app. ─────────
+    demo_card_eyebrow: "Demo · regisztráció nélkül",
+    demo_card_title: "Próbáld ki",
+    demo_card_cta: "Indítsd a demót",
     demo_card_loading: "Egy pillanat…",
     demo_card_error: "Nem indult. Próbáld újra.",
   },

@@ -1,9 +1,12 @@
-// Landing-page "Try the demo" link. Single text link in the hero — one tap
-// hits `POST /api/demo/start` and drops the visitor into /app with a fully
-// seeded fairytale workspace. Intentionally minimal: the only message it
-// carries is "demo wedding, no signup required". The fairytale identity is
-// a reveal once the visitor lands inside /app, not a marketing line here.
+// Landing-page demo CTA — a small, lightly-tilted "sticker" card on the
+// right of the hero. One tap hits `POST /api/demo/start` and drops the
+// visitor into /app with a fully seeded fairytale workspace. The card
+// stays minimal: short label, one button, no marketing paragraphs.
+//
+// The fairytale identity (Shrek & Fiona) is a reveal once the visitor
+// lands inside /app — not a marketing line out here.
 
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -51,41 +54,52 @@ export function DemoLaunchCard() {
       const res = await demoApi.start();
       markCurrentSessionDemo();
       setSession(res.session.token, res.session.user);
-      // Hard navigate to /app so AppShell remounts against a clean slate.
+      // Hard navigate to /app so the shell remounts on a clean session.
       navigate("/app", { replace: true });
     } catch {
-      // Server rate-limit or transient outage. Re-clicking refreshes the
-      // bucket within ~a minute.
       setError(t("landing.demo_card_error"));
       setBusy(false);
     }
   };
 
   return (
-    <div className="text-left sm:text-right">
+    <aside
+      aria-labelledby="demo-card-title"
+      className="relative w-full max-w-[280px] rotate-[-3deg] rounded-2xl border border-paper-300 bg-paper-50 p-5 text-left shadow-[0_18px_40px_-20px_rgba(16,24,48,0.28)] transition-transform hover:rotate-[-1deg] dark:border-umber-700 dark:bg-umber-800 sm:p-6"
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
+        {t("landing.demo_card_eyebrow")}
+      </p>
+      <h2
+        id="demo-card-title"
+        className="mt-2 font-serif text-2xl italic leading-[1.05] text-ink-900 dark:text-paper-50"
+      >
+        {t("landing.demo_card_title")}
+      </h2>
       <button
         type="button"
         onClick={launch}
         disabled={busy}
         aria-busy={busy}
-        className="group inline-flex items-center gap-1.5 font-serif text-base italic text-ink-700 underline decoration-paper-400 decoration-1 underline-offset-[6px] transition-colors hover:text-blush-700 hover:decoration-blush-400 focus:outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70 dark:text-paper-200 dark:decoration-umber-600 dark:hover:text-blush-300 dark:hover:decoration-blush-400 dark:focus-visible:ring-paper-100 sm:text-lg"
+        className="btn-primary mt-5 inline-flex w-full items-center justify-center gap-1.5 text-sm shadow-sm disabled:cursor-wait disabled:opacity-80"
       >
-        {busy ? t("landing.demo_card_loading") : t("landing.demo_card_cta")}
-        <span
-          aria-hidden="true"
-          className="transition-transform group-hover:translate-x-0.5"
-        >
-          →
-        </span>
+        {busy ? (
+          <>
+            <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+            {t("landing.demo_card_loading")}
+          </>
+        ) : (
+          <>
+            {t("landing.demo_card_cta")}
+            <ArrowRight size={14} aria-hidden="true" />
+          </>
+        )}
       </button>
       {error && (
-        <p
-          role="alert"
-          className="mt-2 text-xs font-medium text-red-700 dark:text-red-300"
-        >
+        <p role="alert" className="mt-2 text-xs font-medium text-red-700 dark:text-red-300">
           {error}
         </p>
       )}
-    </div>
+    </aside>
   );
 }
