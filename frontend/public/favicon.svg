@@ -1,11 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Weddly">
-  <!-- Wedding-band-inspired badge. Navy disc + cream serif-flavoured W as
-       a zig-zag path (so glyph stays sharp at 16×16 without depending on
-       Georgia being installed). Inset coral ring is thick enough to
-       survive a 16×16 render — earlier 1.25px ring vanished entirely. -->
-  <circle cx="32" cy="32" r="31" fill="#101830"/>
-  <circle cx="32" cy="32" r="26.5" fill="none" stroke="#e2826a" stroke-width="2.5" stroke-opacity="0.85"/>
-  <path d="M 14 20 L 24 46 L 32 27 L 40 46 L 50 20"
-        fill="none" stroke="#efe9d9" stroke-width="7.5"
-        stroke-linejoin="miter" stroke-linecap="round" stroke-miterlimit="2"/>
+  <!-- Two interlocking wedding bands on a full-bleed paper-cream square.
+       Replaces the older serif-W zig-zag badge, which read as a fuzzy
+       chevron in Google's 16x16 SERP favicon slot. Universal wedding
+       symbol, no glyph dependencies, survives both raw (browser tab) and
+       circle-cropped (Google SERP, iOS home-screen) renderings.
+
+       Palette: paper-50 (#efe9d9) surface + ink-900 (#101830) rings —
+       the brand's quiet "wedding stationery" pair rather than a generic
+       blue badge.
+
+       Stroke width 5 on a 64 viewBox = ~1.25px at 16x16; thinner than
+       that sub-pixel-averages into a fuzzy haze. Each ring sits ~9 units
+       off centre so the overlap reads as a linked pair rather than a
+       single thick band, and so neither ring crowds the safe-area inset
+       Google's circular crop reserves. -->
+  <rect width="64" height="64" fill="#efe9d9"/>
+  <g fill="none" stroke="#101830" stroke-width="5">
+    <circle cx="23" cy="32" r="14"/>
+    <circle cx="41" cy="32" r="14"/>
+  </g>
 </svg>
