@@ -169,24 +169,21 @@ export function SeatingMap({
     return () => ro.disconnect();
   }, [expanded]);
 
-  // Pick a scale + SVG pixel size for the EXPANDED overlay only:
-  //   - When room aspect is close to wrapper aspect (within 2×), use the
-  //     "meet" scale so the whole room fits with no scroll.
-  //   - Otherwise, zoom to fill the shorter axis (longer room dim overflows
-  //     and the outer wrapper scrolls). This is what the user expects when
-  //     they enter an awkward shape like 10×50 m and click the maximise
-  //     button to dig into details.
+  // Pick a scale + SVG pixel size for the EXPANDED overlay only.
+  // Always "max-scale": pick the larger of the two fit ratios so the
+  // shorter axis fills the wrapper and the longer axis overflows. This
+  // guarantees the canvas is scrollable in expanded mode regardless of
+  // room size or aspect — what the user wants when they click maximise to
+  // dig into details.
   //
-  // The inline card stays on plain fit-to-meet — the user wants to *see the
-  // whole room at a glance* in the editor surface; awkward aspects are
-  // expected to be rare and easy to inspect via the maximise button.
+  // The inline card stays on plain fit-to-meet — the user wants to *see
+  // the whole room at a glance* in the editor surface; the expand button
+  // is the affordance for "I want to scroll around at a useful zoom".
   const svgSize = useMemo<{ width: number | string; height: number | string }>(() => {
     if (!expanded || !wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
       return { width: "100%", height: "100%" };
     }
-    const meetScale = Math.min(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
-    const maxScale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
-    const scale = maxScale / meetScale > 2 ? maxScale : meetScale;
+    const scale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
     return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
   }, [expanded, wrapperPx, ROOM_W_MM, ROOM_H_MM]);
 
@@ -961,20 +958,45 @@ function TableShape({
           screen space, regardless of how the table is rotated. Label size
           is clamped: small enough that the round Table 4 doesn't shout
           over its neighbours, big enough that a narrow long/head table's
-          label stays readable. */}
-      <g transform={`rotate(${-rotation})`} style={{ pointerEvents: "none" }}>
-        <text
-          x={0}
-          y={Math.min(220, Math.min(rx, ry) * 0.42) * 0.35}
-          textAnchor="middle"
-          fontSize={Math.max(180, Math.min(220, Math.min(rx, ry) * 0.42))}
-          fontFamily='"Cormorant Garamond", Georgia, serif'
-          fontWeight={600}
-          className={isSelected ? "fill-paper-50" : "fill-blush-700"}
-        >
-          {table.label}
-        </text>
-      </g>
+          label stays readable. If the label doesn't fit on one line at
+          ~90% of the table's inner width, we wrap it to two lines so it
+          stays on the table instead of bleeding past the edge. */}
+      {(() => {
+        const labelSize = Math.max(180, Math.min(220, Math.min(rx, ry) * 0.42));
+        const baseY = labelSize * 0.35;
+        // The available width depends on rotation orientation in *table*
+        // space (the body extends 2*rx along its local x). The label is
+        // counter-rotated, but the constraint stays in the table frame
+        // because that's where it has to fit visually.
+        const innerW = rx * 2 * 0.9;
+        const lines = wrapLabel(table.label, innerW, labelSize);
+        return (
+          <g transform={`rotate(${-rotation})`} style={{ pointerEvents: "none" }}>
+            <text
+              x={0}
+              y={baseY}
+              textAnchor="middle"
+              fontSize={labelSize}
+              fontFamily='"Cormorant Garamond", Georgia, serif'
+              fontWeight={600}
+              className={isSelected ? "fill-paper-50" : "fill-blush-700"}
+            >
+              {lines.length === 1 ? (
+                lines[0]
+              ) : (
+                <>
+                  <tspan x={0} dy={-labelSize * 0.55}>
+                    {lines[0]}
+                  </tspan>
+                  <tspan x={0} dy={labelSize * 1.1}>
+                    {lines[1]}
+                  </tspan>
+                </>
+              )}
+            </text>
+          </g>
+        );
+      })()}
 
       {/* Selection-only affordances: resize handles + seat buttons. */}
       {isSelected && (
@@ -1202,6 +1224,40 @@ function halfDims(t: SeatingTable): { rx: number; ry: number } {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+// Decide how many lines a table label should occupy.
+// One line if the estimated width fits `maxWidth` at `fontSize`; otherwise
+// split at the space closest to the middle. Falls back to a hard mid-word
+// split if there's no space at all. Always returns at most 2 lines — beyond
+// that the label is too long for the table and the second line is just
+// wrapped as-is (the user can rename if it still overflows).
+//
+// Width estimation uses 0.52 of fontSize per character — a reasonable
+// average for Cormorant Garamond at body weights. Good enough as a
+// "should I wrap?" decision without measuring the actual rendered text.
+function wrapLabel(label: string, maxWidth: number, fontSize: number): string[] {
+  const avgCharWidth = fontSize * 0.52;
+  const estWidth = label.length * avgCharWidth;
+  if (estWidth <= maxWidth) return [label];
+  // Find the space closest to the middle.
+  const mid = label.length / 2;
+  let best = -1;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < label.length; i++) {
+    if (label[i] !== " ") continue;
+    const d = Math.abs(i - mid);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+  if (best === -1) {
+    // No space — hard split at the middle character.
+    const cut = Math.floor(mid);
+    return [label.slice(0, cut), label.slice(cut)];
+  }
+  return [label.slice(0, best).trim(), label.slice(best + 1).trim()];
 }
 
 export const ROOM_DIMS = { W_MM: DEFAULT_ROOM_W_MM, H_MM: DEFAULT_ROOM_H_MM };
