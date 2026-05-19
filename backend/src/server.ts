@@ -204,13 +204,27 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   // SPA fallback in route order), so we don't try to short-circuit them here.
 
   // Direct file hit (assets in frontend/dist/assets/, OG images, the favicon, …).
+  // Vite emits content-hashed filenames into /assets/, so those URLs are
+  // immutable for the lifetime of the build — cache them aggressively. Other
+  // top-level statics (favicon, og.png, logo.png) can change without a URL
+  // change, so they get a short cache instead.
   const filePath = join(FRONTEND_DIST, decodeURIComponent(pathname));
   if (filePath.startsWith(FRONTEND_DIST) && existsSync(filePath)) {
     const f = Bun.file(filePath);
-    if (await f.exists()) return new Response(f);
+    if (await f.exists()) {
+      const isHashedAsset = pathname.startsWith("/assets/");
+      const cacheHeader = isHashedAsset
+        ? "public, max-age=31536000, immutable"
+        : "public, max-age=300";
+      return new Response(f, { headers: { "Cache-Control": cacheHeader } });
+    }
   }
 
   // SPA fallback for unknown routes — let React Router resolve client-side.
+  // The HTML must NOT be cached by browsers/CDNs: every deploy ships a new
+  // index.html (with refreshed asset hashes and any pre-hydration SSR body
+  // changes), and stale HTML means users see old chunks 404 and old SSR
+  // flashes long after the fix has shipped.
   if (existsSync(FRONTEND_INDEX)) {
     const locale = localeForHost(host);
     const template = await loadIndexHtmlSource(locale);
@@ -220,7 +234,10 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
       isRsvp: isRsvpRoute(pathname),
     });
     return new Response(html, {
-      headers: { "Content-Type": "text/html; charset=utf-8" },
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
     });
   }
   return null;
