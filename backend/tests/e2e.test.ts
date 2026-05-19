@@ -10686,6 +10686,19 @@ describe("seo: per-route uniqueness", () => {
     { path: "/signup", titleSnippet: "Regisztráció" },
   ];
 
+  test("HU alias /impresszum resolves to the same SEO entry as /imprint", () => {
+    const a = render("weddly.hu", "/imprint");
+    const b = render("weddly.hu", "/impresszum");
+    expect(a.match(/<title>([^<]+)<\/title>/)?.[1]).toBe(
+      b.match(/<title>([^<]+)<\/title>/)?.[1],
+    );
+    expect(a.match(/<h1>([^<]+)<\/h1>/)?.[1]).toBe(
+      b.match(/<h1>([^<]+)<\/h1>/)?.[1],
+    );
+    // But the canonical URL still tracks the actual request path.
+    expect(b).toContain('href="https://weddly.hu/impresszum"');
+  });
+
   test("every HU public route ships a unique <title> + <h1>", () => {
     const seenTitles = new Set<string>();
     const seenH1s = new Set<string>();
