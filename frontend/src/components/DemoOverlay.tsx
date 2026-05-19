@@ -136,13 +136,13 @@ export function DemoOverlay() {
         <div
           role="status"
           aria-live="polite"
-          className="sticky top-0 z-30 border-b border-paper-300 bg-paper-100 px-4 py-2 text-sm text-ink-800 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+          className="sticky top-0 z-30 border-b border-sage-300 bg-sage-100 px-4 py-2 text-sm text-ink-800 dark:border-sage-700/60 dark:bg-sage-900/40 dark:text-paper-100"
         >
           <div className="mx-auto flex max-w-7xl items-center gap-3 sm:gap-4">
             <Sparkles
               size={16}
               aria-hidden="true"
-              className="shrink-0 text-ink-600 dark:text-paper-300"
+              className="shrink-0 text-sage-700 dark:text-sage-300"
             />
             <div className="min-w-0 flex-1 truncate font-semibold">
               {t("demo.banner_title")}
@@ -158,7 +158,7 @@ export function DemoOverlay() {
               type="button"
               onClick={() => setBannerDismissed(true)}
               aria-label={t("demo.banner_dismiss_aria")}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-700"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-sage-200 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-sage-800/60"
             >
               <X size={14} aria-hidden="true" />
             </button>
