@@ -271,12 +271,10 @@
   .btn-sm {
     @apply px-3 py-1.5 text-xs;
   }
-  /* Landing-page button skin: keeps the colour of whatever .btn-* it sits
-     on top of, but swaps the typography to uppercase + bold + tracked and
-     lifts the button off the page with `shadow-pop`. Only used on the
-     marketing surface — interior app buttons stay quiet. */
+  /* Landing-page button typography. Pair with `.btn-lifted` for the 3-D
+     Polymarket-style shadow stack. Colours stay on the underlying .btn-*. */
   .btn-landing {
-    @apply font-bold uppercase tracking-wider shadow-pop;
+    @apply font-bold uppercase tracking-wider;
   }
 
   .input {

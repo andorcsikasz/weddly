@@ -84,10 +84,16 @@ export default function LandingPage() {
                     inline pills. `sm:w-auto` snaps back to content-width for the
                     side-by-side desktop layout. */}
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <Link to="/signup" className="btn-primary btn-landing btn-lg w-full sm:w-auto">
+                  <Link
+                    to="/signup"
+                    className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
+                  >
                     {t("landing.cta_signup")}
                   </Link>
-                  <Link to="/login" className="btn-outline btn-landing btn-lg w-full sm:w-auto">
+                  <Link
+                    to="/login"
+                    className="btn-outline btn-lifted btn-landing btn-lg w-full sm:w-auto"
+                  >
                     {t("landing.cta_login")}
                   </Link>
                 </div>
@@ -331,10 +337,16 @@ export default function LandingPage() {
               {t("landing.suppliers_section_body")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/signup" className="btn-primary btn-landing w-full sm:w-auto">
+              <Link
+                to="/signup"
+                className="btn-primary btn-lifted btn-landing w-full sm:w-auto"
+              >
                 {t("landing.suppliers_couple_cta")}
               </Link>
-              <Link to="/vendors#waitlist" className="btn-outline btn-landing w-full sm:w-auto">
+              <Link
+                to="/vendors#waitlist"
+                className="btn-outline btn-lifted btn-landing w-full sm:w-auto"
+              >
                 {t("landing.suppliers_vendor_cta")}
               </Link>
             </div>
@@ -440,7 +452,10 @@ export default function LandingPage() {
                 <IconRow icon={<Pause size={16} />}>{t("landing.pricing_bullet_2")}</IconRow>
                 <IconRow icon={<FileText size={16} />}>{t("landing.pricing_bullet_3")}</IconRow>
               </ul>
-              <Link to="/signup" className="btn-primary btn-landing btn-lg mt-8 w-full">
+              <Link
+                to="/signup"
+                className="btn-primary btn-lifted btn-landing btn-lg mt-8 w-full"
+              >
                 {t("landing.cta_signup")}
               </Link>
             </div>
@@ -481,7 +496,7 @@ export default function LandingPage() {
           <div className="mt-10 flex justify-center">
             <Link
               to="/signup"
-              className="btn-primary btn-landing btn-lg w-full max-w-sm sm:w-auto sm:max-w-none"
+              className="btn-primary btn-lifted btn-landing btn-lg w-full max-w-sm sm:w-auto sm:max-w-none"
             >
               {t("landing.cta_signup")}
             </Link>
@@ -545,7 +560,7 @@ function MobileStickySignup() {
       <div className="absolute inset-x-0 bottom-0 -z-10 h-[calc(100%+8px)] bg-gradient-to-t from-paper-50 via-paper-50/95 to-transparent dark:from-umber-900 dark:via-umber-900/95" />
       <Link
         to="/signup"
-        className="btn-primary btn-landing btn-lg pointer-events-auto w-full shadow-[0_12px_28px_-12px_rgba(16,24,48,0.45)]"
+        className="btn-primary btn-lifted btn-landing btn-lg pointer-events-auto w-full"
         tabIndex={visible ? 0 : -1}
       >
         {t("landing.cta_signup")}
