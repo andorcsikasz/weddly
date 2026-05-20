@@ -796,3 +796,56 @@ CREATE INDEX IF NOT EXISTS idx_listings_source ON listings(source);
 CREATE INDEX IF NOT EXISTS idx_listings_category ON listings(category);
 CREATE INDEX IF NOT EXISTS idx_listings_vendor_account ON listings(vendor_account_id);
 CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
+
+-- ── P2.B: Growth instrumentation ────────────────────────────────────────────
+--
+-- Per-event log for the founder's 60-day commitment metric ("≥40% couples
+-- publish microsite, ≥15% new signup via microsite referrer"). Anonymous-
+-- tolerant — guest visits to /rsvp/* / /guest/portal don't carry user_id but
+-- still count. `payload_json` holds per-kind extras (e.g. RSVP yes/no
+-- counts, sign-up source). Indexed by kind+ts for the admin pull;
+-- (couple_id, ts) covers the per-wedding funnel view.
+--
+-- Privacy: we store a *hashed* user-agent and a *truncated* Referer, not the
+-- raw values, so the table can't be used to re-identify guests across
+-- weddings. See domain/growth_events.ts for the hashing constants.
+CREATE TABLE IF NOT EXISTS growth_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,
+  couple_id INTEGER REFERENCES couples(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  household_id INTEGER REFERENCES households(id) ON DELETE SET NULL,
+  referrer TEXT,                                               -- truncated to 500 chars
+  user_agent_hash TEXT,                                        -- 16-hex SHA-256 prefix
+  payload_json TEXT,                                           -- per-kind extras (JSON)
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_growth_events_kind ON growth_events(kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_growth_events_couple ON growth_events(couple_id, created_at DESC);
+
+-- ── P2.C: Vendor listing claims ─────────────────────────────────────────────
+--
+-- Email-verification token for the "this listing is mine" flow. The token is
+-- sent to listings.contact_email (the address the curator / submitter put on
+-- the directory card — proof-of-control of the business inbox). Status flows
+-- pending → verified (on token consume); expired-but-unused tokens are
+-- swept by the same lifecycle worker that purges other one-shot tokens.
+--
+-- Consuming the token in `routes/vendor_claim.ts` happens atomically:
+-- creates a users(role='vendor') row IF the email isn't already taken,
+-- creates a vendor_accounts row, flips listings.vendor_account_id, issues a
+-- session. If the email is taken by an existing user (e.g. a couple_id user),
+-- the claim is rejected with a clear error — we don't silently merge roles.
+CREATE TABLE IF NOT EXISTS listing_claims (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  listing_id TEXT NOT NULL,                                    -- targets listings.id; documented invariant, no FK
+  email_sent_to TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending',                      -- 'pending' | 'verified' | 'expired' | 'cancelled'
+  expires_at INTEGER NOT NULL,
+  verified_at INTEGER,
+  vendor_account_id INTEGER REFERENCES vendor_accounts(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_listing_claims_listing ON listing_claims(listing_id);
+CREATE INDEX IF NOT EXISTS idx_listing_claims_status ON listing_claims(status, created_at DESC);
