@@ -1,16 +1,18 @@
 import { CheckCircle2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { feedbackApi } from "../lib/endpoints";
+import { currencySymbol, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Button } from "./ui/Button";
 import { Dialog } from "./ui/Dialog";
 
 /**
  * Public feedback dialog. Three independent segments — message, 1–10
- * rating, monthly-value slider (0–15 000 Ft) — plus an optional reply
- * email. Submitting POSTs to /api/feedback, which forwards to the team
- * inbox. All fields are optional; the backend rejects only an empty
- * payload (no message + no rating + no monthly value).
+ * rating, monthly-value slider — plus an optional reply email. The slider
+ * range is locale-derived: HU shows HUF (0–15 000 Ft, step 500), EN shows
+ * EUR (0–50 €, step 5). The submitted value is interpreted in the same
+ * currency the visitor saw; backend rows pair it with the `locale` column
+ * so admins read the unit correctly downstream.
  */
 type FeedbackDialogProps = {
   open: boolean;
@@ -20,11 +22,15 @@ type FeedbackDialogProps = {
   source?: "landing" | "app";
 };
 
-const MONTHLY_MAX = 15000;
-const MONTHLY_STEP = 500;
+const MONTHLY_RANGES = {
+  hu: { max: 15000, step: 500 },
+  en: { max: 50, step: 5 },
+} as const;
 
 export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDialogProps) {
   const { t, locale } = useT();
+  const monthlyRange = MONTHLY_RANGES[locale];
+  const monthlySymbol = currencySymbol(localeCurrency(locale), locale);
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState<number | null>(null);
   const [monthly, setMonthly] = useState<number | null>(null);
@@ -166,34 +172,32 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
               <input
                 type="range"
                 min={0}
-                max={MONTHLY_MAX}
-                step={MONTHLY_STEP}
+                max={monthlyRange.max}
+                step={monthlyRange.step}
                 value={monthly ?? 0}
                 onChange={(e) => setMonthly(Number(e.target.value))}
                 className="range-fill w-full"
                 style={{
                   background: `linear-gradient(to right, var(--color-mode-accent) 0%, var(--color-mode-accent) ${
-                    ((monthly ?? 0) / MONTHLY_MAX) * 100
+                    ((monthly ?? 0) / monthlyRange.max) * 100
                   }%, var(--color-paper-200, #efe9d9) ${
-                    ((monthly ?? 0) / MONTHLY_MAX) * 100
+                    ((monthly ?? 0) / monthlyRange.max) * 100
                   }%, var(--color-paper-200, #efe9d9) 100%)`,
                 }}
                 aria-valuemin={0}
-                aria-valuemax={MONTHLY_MAX}
+                aria-valuemax={monthlyRange.max}
                 aria-valuenow={monthly ?? 0}
                 aria-label={t("landing.feedback_monthly_label")}
               />
-              {/* Scale endpoints. tabular-nums keeps "0 Ft" and "15 000 Ft"
-                  vertically aligned across HU/EN number formats. */}
               <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
-                <span>{`0 Ft`}</span>
-                <span>{`${MONTHLY_MAX.toLocaleString(locale === "hu" ? "hu" : "en")} Ft`}</span>
+                <span>{`0 ${monthlySymbol}`}</span>
+                <span>{`${monthlyRange.max.toLocaleString(locale === "hu" ? "hu" : "en")} ${monthlySymbol}`}</span>
               </div>
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-ink-500 dark:text-umber-300">
                   {monthly === null || monthly === 0
                     ? t("landing.feedback_monthly_zero")
-                    : `${monthly.toLocaleString(locale === "hu" ? "hu" : "en")} Ft`}
+                    : `${monthly.toLocaleString(locale === "hu" ? "hu" : "en")} ${monthlySymbol}`}
                 </span>
                 <span className="text-xs text-ink-500 dark:text-umber-300">
                   {t("landing.feedback_monthly_hint")}
