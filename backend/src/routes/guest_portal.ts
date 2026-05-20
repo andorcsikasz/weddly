@@ -19,6 +19,7 @@ import { type CoupleRow } from "../domain/couples";
 import { listScheduleEvents } from "../domain/schedule";
 import { type HouseholdRow, listMembers, toHouseholdMember } from "../domain/households";
 import { normalizeSlugInput } from "../domain/slug";
+import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { type Ctx, HttpError, json, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -67,6 +68,11 @@ function handleGetPortal(ctx: Ctx): Response {
   if (!anyYes) {
     throw new HttpError(403, "Please RSVP yes first", { code: "not_rsvpd" });
   }
+
+  recordGrowthEventFromRequest("guest.portal.view", ctx.req, {
+    couple_id: couple.id,
+    household_id: household.id,
+  });
 
   const schedule: GuestScheduleEntry[] = listScheduleEvents(couple.id).map((e) => ({
     id: e.id,

@@ -9,6 +9,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
+import { recordGrowthEvent } from "../domain/growth_events";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
@@ -115,6 +116,20 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     target_id: userId,
     after: { email },
   });
+
+  // Funnel attribution: did this signup originate from an /rsvp/* landing?
+  // Best-effort — the Referer at the /api/auth/register call usually points
+  // at the /register page, not the original RSVP URL. The frontend can later
+  // pass a stronger source signal in the body; until then we capture what
+  // we have and let the admin dashboard apply the regex filter.
+  const referer = ctx.req.headers.get("referer");
+  if (referer && /\/rsvp\/[^?#]+/.test(referer)) {
+    recordGrowthEvent("signup.from_rsvp_referrer", {
+      user_id: userId,
+      referrer: referer,
+      user_agent: ctx.req.headers.get("user-agent"),
+    });
+  }
 
   // Welcome + verification — single email, both purposes. Soft verification:
   // we never block signup or login on this; the dashboard banner nags until

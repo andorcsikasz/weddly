@@ -37,6 +37,7 @@ import {
 import { normalizeSlugInput } from "../domain/slug";
 import { getUserById } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
+import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -120,6 +121,10 @@ function handleLookup(ctx: Ctx): Response {
   const code = ctx.url.searchParams.get("code") ?? "";
   const couple = resolveCoupleBySlug(slug);
   const hh = resolveHousehold(couple.id, code);
+  recordGrowthEventFromRequest("rsvp.page.view", ctx.req, {
+    couple_id: couple.id,
+    household_id: hh.id,
+  });
   return json({ rsvp: buildView(couple, hh) });
 }
 
@@ -434,6 +439,17 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   notifyCouple(couple, hh, [...updated, ...addedRows], previous);
   notifyGuests(couple, [...updated, ...addedRows]);
 
+  // Funnel: which household just RSVP'd, and with what breakdown.
+  const counts = { yes: 0, no: 0, maybe: 0, pending: 0 };
+  for (const m of updated) {
+    if (m.rsvp_status in counts) counts[m.rsvp_status as keyof typeof counts]++;
+  }
+  recordGrowthEventFromRequest("rsvp.submitted", ctx.req, {
+    couple_id: couple.id,
+    household_id: hh.id,
+    payload: { counts, added_count: addedRows.length },
+  });
+
   const payload = { rsvp: buildView(couple, hh) };
   const serialized = JSON.stringify(payload);
   rsvpIdempotencyCache.set(cacheKey, {
@@ -464,6 +480,11 @@ function legacyHouseholdFor(code: string): { couple: CoupleRow; household: House
 function handleLegacyGet(ctx: Ctx): Response {
   rateLimit(ctx.clientIp, "rsvp:get", RSVP_BUCKET);
   const { couple, household } = legacyHouseholdFor(ctx.params.code ?? "");
+  recordGrowthEventFromRequest("rsvp.page.view", ctx.req, {
+    couple_id: couple.id,
+    household_id: household.id,
+    payload: { legacy_code: true },
+  });
   return json({ rsvp: buildView(couple, household) });
 }
 
@@ -558,6 +579,16 @@ async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
   const { previous, updated } = persistCheckin(couple, hh, members);
   notifyCouple(couple, hh, updated, previous);
   notifyGuests(couple, updated);
+
+  const counts = { yes: 0, no: 0, maybe: 0, pending: 0 };
+  for (const m of updated) {
+    if (m.rsvp_status in counts) counts[m.rsvp_status as keyof typeof counts]++;
+  }
+  recordGrowthEventFromRequest("rsvp.submitted", ctx.req, {
+    couple_id: couple.id,
+    household_id: hh.id,
+    payload: { counts, legacy_code: true },
+  });
 
   // Both the legacy GET and the new check-in flow now return PublicCheckinView
   // — the household is the unit of truth. Old frontends that still POST here
