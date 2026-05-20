@@ -574,7 +574,7 @@ function MobileStickySignup() {
 function IconRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
     <li className="flex items-center gap-3">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-blush-700 dark:text-blush-300">
         {icon}
       </span>
       <span className="font-serif text-base text-ink-800 dark:text-paper-100">{children}</span>
@@ -711,7 +711,7 @@ function AudienceRow({
   );
   return (
     <div className="flex items-center gap-4 py-6 sm:gap-6 sm:py-8">
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 sm:h-11 sm:w-11">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-700 text-white sm:h-11 sm:w-11 dark:bg-blush-400 dark:text-umber-900">
         {icon}
       </span>
       <p className="min-w-0 flex-1 font-serif text-lg leading-relaxed text-ink-900 dark:text-paper-50 sm:text-xl">
