@@ -167,7 +167,9 @@ const en: LocaleMessages = {
     gate_already_verified: "You're verified — continue.",
     gate_refresh: "I've confirmed — continue",
     gate_logout: "Sign out",
+    gate_continue_limited: "Continue with limited access →",
     gate_open_inbox: "Open {provider}",
+    banner_done: "I've verified",
   },
   verify_supplier: {
     page_title: "Confirm your listing",
@@ -483,6 +485,8 @@ const en: LocaleMessages = {
       "Budget, guest list, RSVPs, seating and printables live together. Both of you see the same picture, change something once, and spend the time you save on each other.",
     cta_signup: "Start planning",
     cta_login: "Sign in",
+    brand_tagline_paper: "Paper letters · Stationery",
+    brand_signature: "Weddly",
     cta_signup_sub: "Free to use throughout the open beta.",
     // ── Interactive "try it" budget demo ──────────────────────────────
     demo_eyebrow: "Try it — no signup",
@@ -1243,7 +1247,9 @@ const en: LocaleMessages = {
     group_work: "Work",
     group_other: "Other",
     empty_title: "No guests yet",
-    empty_body: "Add one by hand or import a CSV.",
+    empty_body:
+      "Add your first guest or import the whole list from CSV — the template keeps the format right.",
+    empty_cta_add: "Add your first guest",
     saving: "Saving…",
     import_done_one: "Imported {count} guest",
     import_done_other: "Imported {count} guests",
@@ -1563,6 +1569,9 @@ const en: LocaleMessages = {
     no_unassigned: "Everyone is seated!",
     no_tables: "No tables yet",
     add_first_table: "Add one to get started.",
+    empty_body_no_guests:
+      "Seating is built around your guest list — start with guests, then we'll arrange tables around them.",
+    empty_cta_add_guests: "Add guests",
     drag_help: "Drag guests onto seats.",
     household_linked_aria: "{n}-member household, linked",
     household_unlink: "Separate household",
@@ -3141,33 +3150,33 @@ const en: LocaleMessages = {
       page_eyebrow: "Tools · Budget calculator",
       page_h1: "Wedding budget calculator",
       page_intro:
-        "How much does a wedding cost in Hungary in 2026? Drag the guest count and the planned budget — every category recalculates live against the Weddly defaults for a typical Hungarian wedding. No signup, no email; if you like what you see, one click carries the numbers into your own workspace.",
-      averages_h2: "How much does a wedding cost in Hungary in 2026?",
+        "How much does a wedding cost? Drag the guest count and the planned budget — every category recalculates live against Weddly's defaults for an 80–100 guest wedding. No signup, no email; if you like what you see, one click carries the numbers into your own workspace.",
+      averages_h2: "How much does a wedding cost?",
       averages_body:
-        "The median 80–100 guest Hungarian wedding currently lands between HUF 5 and 8 million. Catering and drinks take roughly a third of the total, the venue 15–20%, photography and video 10–15%, decor and flowers 8–10%, with the remaining 20–25% split between attire, music, ceremony and stationery. Budapest and Balaton venues run 15–25% above the regional average; winter and early-autumn weddings come in 5–10% under the June-to-September peak.",
+        "An 80–100 guest wedding typically spreads its spend the same way regardless of country: catering and drinks take roughly a third of the total, the venue 15–20%, photography and video 10–15%, decor and flowers 8–10%, with the remaining 20–25% split between attire, music, ceremony and stationery. Major-city venues run 15–25% above the regional average; winter and early-autumn weddings come in 5–10% under the June-to-September peak.",
       averages_source_note:
-        "Source: 2025–2026 Hungarian wedding supplier rate cards and couple interviews. The calculator runs on your own numbers — the averages are a starting point, not a promise.",
+        "Source: 2025–2026 wedding supplier rate cards and couple interviews. The calculator runs on your own numbers — the averages are a starting point, not a promise.",
       ratios_h2: "How much to put where",
       ratios_body:
-        "The classic Hungarian split: guest-facing spend (catering + drinks + venue) ≈ 55%, visual record (photo, video, decor, flowers, stationery) ≈ 25%, couple-facing spend (attire, hair, makeup, rings) ≈ 8%, music and programme ≈ 7%, ceremony and officiating ≈ 5%. The remaining 3% is a contingency: it covers late guest-count changes or menu swaps without forcing painful trade-offs.",
+        "The classic split: guest-facing spend (catering + drinks + venue) ≈ 55%, visual record (photo, video, decor, flowers, stationery) ≈ 25%, couple-facing spend (attire, hair, makeup, rings) ≈ 8%, music and programme ≈ 7%, ceremony and officiating ≈ 5%. The remaining 3% is a contingency: it covers late guest-count changes or menu swaps without forcing painful trade-offs.",
       tips_h2: "Reading the numbers",
       tips_li_1:
         "Averages aren't promises. Your numbers are the ones that land in Weddly — every category is editable, and every change goes into an audit log so you can always see who changed what and why.",
       tips_li_2:
         "Guest count is the one lever that moves everything else. An extra 20 guests bumps catering + venue + decor together by ~12–15%. That's why the calculator's guest slider re-cooks the whole budget on every drag.",
       tips_li_3:
-        "The 3% contingency isn't luxury. About 70% of Hungarian weddings have at least one major line item move in the last six weeks — keeping a buffer means you don't make those decisions under pressure.",
+        "The 3% contingency isn't luxury. About 70% of weddings have at least one major line item move in the last six weeks — keeping a buffer means you don't make those decisions under pressure.",
       cta_h2: "Continue in Weddly",
       cta_body:
         "The calculator's numbers carry into your workspace — per-category editing, real-time sync with your partner, full audit log of every change. Free throughout the open beta.",
       cta_button: "Open your workspace",
       faq_h2: "Calculator questions",
-      faq_q1: "How much does an average wedding cost in Hungary?",
+      faq_q1: "How much does an average wedding cost?",
       faq_a1:
-        "An 80–100 guest wedding currently runs HUF 5–8M (median) in 2026, depending on whether the venue is rural or in Budapest / on Balaton. The calculator lets you see how the budget splits for any guest count + total.",
+        "An 80–100 guest wedding follows the same proportional split regardless of country — catering and venue dominate, with 20–25% of the remaining budget covering attire, music, ceremony and stationery. The calculator lets you see how the budget splits for any guest count + total in your own currency.",
       faq_q2: "How much per guest?",
       faq_a2:
-        "Around HUF 50,000–80,000 per guest from the total budget — that covers catering, drinks, decor and the guest-share of the venue. The calculator computes the exact per-guest figure for the numbers you set.",
+        "Catering, drinks, decor and the guest-share of the venue typically run together as the largest per-guest cost. The calculator computes the exact per-guest figure for the total you set — work backwards from the per-guest you can afford if that frames the budget better for you.",
       faq_q3: "How is a wedding budget broken down by category?",
       faq_a3:
         "Hungarian-typical split: ~35% catering and drinks, ~18% venue, ~13% photo / video, ~9% decor and flowers, ~8% attire and beauty, ~7% music / DJ, ~5% ceremony, ~2% stationery, ~3% contingency. The calculator visualises this live against your numbers.",

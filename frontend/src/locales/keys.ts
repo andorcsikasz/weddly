@@ -203,7 +203,9 @@ export interface LocaleMessages {
     gate_already_verified: string;
     gate_refresh: string;
     gate_logout: string;
+    gate_continue_limited: string;
     gate_open_inbox: string;
+    banner_done: string;
   };
   /** Public "confirm your community-supplier listing" page — reached from the
    *  email sent to the listing's contact_email after submission. */
@@ -541,6 +543,13 @@ export interface LocaleMessages {
     cta_signup: string;
     cta_login: string;
     cta_signup_sub: string;
+    /** Top-of-fold brand tagline — was hardcoded "Budapest · Paper letters"
+     *  before the EN parity pass. HU keeps the Budapest reference because
+     *  it's accurate for HU readers; EN reads as a neutral product line. */
+    brand_tagline_paper: string;
+    /** Section signature at the bottom of the testimonials block — same
+     *  rationale as `brand_tagline_paper`. */
+    brand_signature: string;
     demo_eyebrow: string;
     demo_title: string;
     demo_body: string;
@@ -1400,6 +1409,7 @@ export interface LocaleMessages {
     group_other: string;
     empty_title: string;
     empty_body: string;
+    empty_cta_add: string;
     saving: string;
     import_done_one: string;
     import_done_other: string;
@@ -1728,6 +1738,8 @@ export interface LocaleMessages {
     no_unassigned: string;
     no_tables: string;
     add_first_table: string;
+    empty_body_no_guests: string;
+    empty_cta_add_guests: string;
     drag_help: string;
     /** Household-aware seating affordances: the badge that marks a guest as
      *  part of a linked household, the unlink/relink toggles, and the

@@ -166,7 +166,9 @@ const hu: LocaleMessages = {
     gate_already_verified: "Már meg van erősítve — folytasd.",
     gate_refresh: "Megerősítettem — tovább",
     gate_logout: "Kijelentkezés",
+    gate_continue_limited: "Tovább korlátozott hozzáféréssel →",
     gate_open_inbox: "{provider} megnyitása",
+    banner_done: "Megerősítettem",
   },
   verify_supplier: {
     page_title: "Hirdetés megerősítése",
@@ -483,6 +485,8 @@ const hu: LocaleMessages = {
       "Költségvetés, vendéglista, RSVP linkek és ültetési rend egy közös felületen. Mindkettőtök ugyanazt a képet látja, valós időben.",
     cta_signup: "Kezdjétek el",
     cta_login: "Bejelentkezés",
+    brand_tagline_paper: "Budapest · Papírlevelek",
+    brand_signature: "Weddly, Budapest",
     cta_signup_sub: "A nyílt béta alatt szabadon használhatjátok.",
     // ── Interaktív "próbáld ki" költségvetés demo ─────────────────────
     demo_eyebrow: "Próbáld ki — regisztráció nélkül",
@@ -1249,7 +1253,8 @@ const hu: LocaleMessages = {
     group_work: "Munkahely",
     group_other: "Egyéb",
     empty_title: "Még nincsenek vendégek",
-    empty_body: "Adj hozzá egyenként, vagy importálj CSV-t.",
+    empty_body: "Add hozzá az elsőt, vagy importálj egy egész listát CSV-ből — a sablon segít a formátumban.",
+    empty_cta_add: "Első vendég hozzáadása",
     saving: "Mentés…",
     import_done_one: "Importálva: {count} vendég",
     import_done_other: "Importálva: {count} vendég",
@@ -1572,6 +1577,9 @@ const hu: LocaleMessages = {
     no_unassigned: "Mindenki le van ültetve!",
     no_tables: "Még nincsenek asztalok",
     add_first_table: "Adj hozzá egyet a kezdéshez.",
+    empty_body_no_guests:
+      "Az ültetésrendet a vendéglistára építjük rá — kezdj a vendégekkel, utána tudunk asztalokat tenni mellé.",
+    empty_cta_add_guests: "Vendégek hozzáadása",
     drag_help: "Húzd a vendégeket az ülőhelyekre.",
     household_linked_aria: "{n} fős háztartás összekapcsolva",
     household_unlink: "Háztartás szétválasztása",

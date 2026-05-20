@@ -62,11 +62,29 @@ const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 
+// Session-storage flag set by VerifyEmailGate when the user opts into the
+// "continue with limited access" path. Lets the gate downgrade to an
+// in-AppShell banner so the user can poke around the workspace structure
+// while still being blocked at the backend by `requireVerifiedAuth` on
+// write endpoints. The flag is session-scoped on purpose — a tab reload
+// after verification clears it, and a hard logout/login also clears.
+const VERIFY_BYPASS_SESSION_KEY = "weddly.verify.bypass";
+function verifyBypassed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(VERIFY_BYPASS_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
   if (loading) return <FullScreenLoader />;
   if (!user) return <Navigate to="/login" replace />;
-  if (!user.verified_email) return <VerifyEmailGate email={user.email} />;
+  if (!user.verified_email && !verifyBypassed()) {
+    return <VerifyEmailGate email={user.email} />;
+  }
   return children;
 }
 

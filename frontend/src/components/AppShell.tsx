@@ -36,6 +36,7 @@ import { adminUserApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { CoachMarks } from "./CoachMarks";
 import { DemoOverlay } from "./DemoOverlay";
+import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { KeyboardShortcutsSheet, useShortcutsHotkey } from "./KeyboardShortcutsSheet";
 import { ProfileMenu } from "./ProfileMenu";
@@ -414,6 +415,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Demo workspaces (`is_demo = 1`) render a sticky banner + a 3-minute
           conversion nudge popup. Component no-ops for real couples. */}
       <DemoOverlay />
+      {/* Unverified-email banner — only renders when the user opted into
+          "continue with limited access" from VerifyEmailGate. Reads the
+          same sessionStorage flag the gate writes. */}
+      <VerifyEmailBanner />
       <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
           {/* When signed in, the wordmark routes to the in-app dashboard so

@@ -10,10 +10,15 @@
 // for users whose email isn't verified yet.
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { Shell } from "./Shell";
+
+// Mirror of the session-key in App.tsx — kept in sync via a constant so the
+// gate and the bypass check can't drift.
+const VERIFY_BYPASS_SESSION_KEY = "weddly.verify.bypass";
 
 function inboxLinkForEmail(email: string): { url: string; provider: string } | null {
   const at = email.lastIndexOf("@");
@@ -53,11 +58,28 @@ function inboxLinkForEmail(email: string): { url: string; provider: string } | n
 
 export function VerifyEmailGate({ email }: { email: string }) {
   const { t } = useT();
+  const navigate = useNavigate();
   const { refresh, logout } = useAuth();
   type Status = "idle" | "sending" | "sent" | "already";
   const [status, setStatus] = useState<Status>("idle");
   const [refreshing, setRefreshing] = useState(false);
   const inbox = inboxLinkForEmail(email);
+
+  function onContinueLimited() {
+    // Session-scoped opt-in. The gate is replaced by an in-shell banner
+    // (rendered by AppShell) until the tab is closed or the user logs out;
+    // backend `requireVerifiedAuth` endpoints will still 403 for writes,
+    // so the user can navigate but not, say, send a partner invite.
+    try {
+      window.sessionStorage.setItem(VERIFY_BYPASS_SESSION_KEY, "1");
+    } catch {
+      // sessionStorage may be blocked — the gate will just re-show, which
+      // is the right fail-closed behaviour.
+    }
+    // Force RequireAuth to re-evaluate by navigating to the same path; the
+    // re-render reads the freshly-set flag.
+    navigate(0);
+  }
 
   async function onResend() {
     setStatus("sending");
@@ -137,13 +159,20 @@ export function VerifyEmailGate({ email }: { email: string }) {
             {t("verify.check_inbox_spam_hint")}
           </p>
 
-          <div className="mt-6 border-t border-paper-300 pt-4 dark:border-umber-700">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-paper-300 pt-4 dark:border-umber-700">
             <button
               type="button"
               className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
               onClick={() => void logout()}
             >
               {t("verify.gate_logout")}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost btn-sm text-ink-600 dark:text-paper-200 underline-offset-4 hover:underline"
+              onClick={onContinueLimited}
+            >
+              {t("verify.gate_continue_limited")}
             </button>
           </div>
         </div>
