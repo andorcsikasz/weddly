@@ -39,6 +39,7 @@ import {
 import { DemoLaunchCard } from "../components/DemoLaunchCard";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
+import { currencySymbol, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
@@ -438,7 +439,7 @@ export default function LandingPage() {
                   0
                 </span>
                 <span className="mb-3 font-serif text-3xl text-ink-700 dark:text-paper-100 sm:text-4xl">
-                  Ft
+                  {currencySymbol(localeCurrency(locale), locale)}
                 </span>
               </div>
               <p className="mt-1 font-serif text-sm italic text-ink-500 dark:text-umber-300">

@@ -43,6 +43,7 @@ import { registerEmailPrefsRoutes } from "./routes/email_prefs";
 import { registerEmailVerifyRoutes } from "./routes/email_verify";
 import { registerExportRoutes } from "./routes/export";
 import { registerFeedbackRoutes } from "./routes/feedback";
+import { registerGrowthRoutes } from "./routes/growth";
 import { registerGuestRoutes } from "./routes/guests";
 import { registerHealthRoutes } from "./routes/health";
 import { registerHoneymoonRoutes } from "./routes/honeymoon";
@@ -112,6 +113,7 @@ registerAdminAnalyticsRoutes(router);
 registerVendorWaitlistRoutes(router);
 registerUserCoupleRoutes(router);
 registerFeedbackRoutes(router);
+registerGrowthRoutes(router);
 registerSeoRoutes(router);
 registerDemoRoutes(router);
 
