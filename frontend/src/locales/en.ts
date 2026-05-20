@@ -47,7 +47,7 @@ const en: LocaleMessages = {
       "Households, RSVP codes, meal picks and CSV imports — every guest detail in one tidy list.",
     suppliers_title: "Suppliers — Weddly",
     suppliers_description:
-      "Hungarian wedding suppliers filtered by category, city and community feedback.",
+      "Wedding suppliers filtered by category, city and community feedback.",
     budget_title: "Budget — Weddly",
     budget_description:
       "Planned vs actual spend by category, with snapshots and per-guest breakdowns.",
@@ -862,7 +862,7 @@ const en: LocaleMessages = {
     empty_schedule: "No schedule yet. Start with the ceremony time and build the day from there.",
     template_button: "Generate template",
     template_button_hint:
-      "Typical Hungarian wedding-day flow in one click — anchored to your ceremony time.",
+      "Typical wedding-day flow in one click — anchored to your ceremony time.",
     template_dialog_title: "Schedule template",
     template_dialog_body:
       "When does the ceremony start? We'll line up the rest of the day around it.",
@@ -894,7 +894,7 @@ const en: LocaleMessages = {
     // Task tab wand + dialog.
     task_template_button: "Task template",
     task_template_button_hint:
-      "12 classic Hungarian wedding to-dos — optionally assign a single owner to all of them.",
+      "12 classic wedding to-dos — optionally assign a single owner to all of them.",
     task_template_dialog_title: "Task template",
     task_template_dialog_body:
       "If one person owns all 12, set them as the default here. Otherwise leave blank and assign individually later.",
