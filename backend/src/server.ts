@@ -62,9 +62,17 @@ import { registerSupplierCostRoutes } from "./routes/supplier_costs";
 import { registerSupplierRoutes } from "./routes/suppliers";
 import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
+import { backfillListings } from "./domain/listings";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
 
 seedSupplierTaxonomy();
+// Boot-time mirror of suppliers_data.ts + community_suppliers into the
+// unified `listings` table. Idempotent; content_hash short-circuit means
+// unchanged rows are no-ops on every subsequent boot.
+{
+  const counts = backfillListings();
+  log.info("listings.backfill", counts);
+}
 
 const router = new Router();
 registerHealthRoutes(router);

@@ -14,6 +14,7 @@ import type {
 } from "@shared/community_suppliers";
 import type { DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
 import { db, now } from "../db";
+import { deleteListingForCommunityId, syncListingFromCommunityId } from "./listings";
 
 /** Verification-token TTL — 7 days. Vendors often share a generic inbox that
  *  is only checked weekly, so a week-long window keeps the friction low. */
@@ -228,7 +229,12 @@ export function insertCommunitySupplier(
       ts,
       ts,
     );
-  return Number(result.lastInsertRowid);
+  const id = Number(result.lastInsertRowid);
+  // Dual-write into the unified listings table — P2.A. The row lands as
+  // 'pending', invisible to the public directory until verification + admin
+  // approval flip it to 'active'. See [[feedback_multi_agent_debate]].
+  syncListingFromCommunityId(id);
+  return id;
 }
 
 // ── Email verification tokens ──────────────────────────────────────────────
@@ -303,6 +309,7 @@ export function consumeVerificationToken(token: string): VerificationResult {
       "UPDATE community_suppliers SET status = 'awaiting_review', updated_at = ? WHERE id = ?",
     ).run(ts, row.supplier_id);
     alreadyActive = false;
+    syncListingFromCommunityId(row.supplier_id);
   }
 
   return { ok: true, supplierId: row.supplier_id, alreadyActive };
@@ -317,6 +324,7 @@ export function markPendingAsAwaitingReview(supplierId: number): void {
   db.prepare(
     "UPDATE community_suppliers SET status = 'awaiting_review', updated_at = ? WHERE id = ? AND status = 'pending'",
   ).run(ts, supplierId);
+  syncListingFromCommunityId(supplierId);
 }
 
 /** Admin approval: flip `awaiting_review` → `active`. No-op if the row is
@@ -332,6 +340,7 @@ export function approveSupplier(id: number): CommunitySupplierStatus {
     ts,
     id,
   );
+  syncListingFromCommunityId(id);
   return "active";
 }
 
@@ -355,9 +364,13 @@ export function setStatus(
        WHERE id = ?`,
     ).run(ts, id);
   }
+  syncListingFromCommunityId(id);
 }
 
 export function deleteCommunitySupplier(id: number): void {
+  // Drop the mirrored listings row first so a concurrent reader can't see a
+  // dangling 'c{N}' card whose backing community row has just been wiped.
+  deleteListingForCommunityId(id);
   db.prepare("DELETE FROM community_suppliers WHERE id = ?").run(id);
 }
 
