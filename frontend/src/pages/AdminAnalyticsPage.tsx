@@ -295,7 +295,7 @@ function PageHeader({
             onClick={onRefresh}
             disabled={refreshing}
             aria-label={t("admin.analytics_refresh")}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-paper-50 px-3 py-1.5 text-xs font-medium text-ink-800 transition-colors duration-150 hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+            className="btn-lifted inline-flex items-center gap-1.5 rounded-lg bg-paper-50 px-3 py-1.5 text-xs font-medium text-ink-800 transition-colors duration-150 hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
           >
             <RefreshIcon spinning={refreshing} />
             <span>{hasError ? t("admin.analytics_retry") : t("admin.analytics_refresh")}</span>
@@ -316,9 +316,9 @@ function PageHeader({
               onClick={() => scrollTo(s.id)}
               aria-current={active ? "true" : undefined}
               className={
-                "rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 " +
+                "btn-lifted rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 " +
                 (active
-                  ? "bg-violet-600 text-white shadow-sm dark:bg-violet-500"
+                  ? "bg-violet-600 text-white dark:bg-violet-500"
                   : "bg-paper-200/70 text-ink-700 hover:bg-paper-300/80 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700")
               }
             >

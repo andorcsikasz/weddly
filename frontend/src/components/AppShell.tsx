@@ -716,7 +716,7 @@ function AdminSideLink({
           collapsed ? "h-10 w-10 justify-center" : "gap-3 px-3 py-2"
         } ${
           isActive
-            ? "bg-violet-950 text-white dark:bg-violet-700"
+            ? "btn-lifted bg-violet-950 text-white dark:bg-violet-700"
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
         }`
       }
