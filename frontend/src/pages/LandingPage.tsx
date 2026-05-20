@@ -148,7 +148,7 @@ export default function LandingPage() {
           </span>
           <Wordmark size="lg" className="mx-auto text-paper-400 dark:text-umber-600 sm:mx-0" />
           <span className="hidden flex-1 text-right font-serif text-sm italic text-blush-600 dark:text-blush-300 sm:block">
-            Budapest · Paper letters
+            {t("landing.brand_tagline_paper")}
           </span>
         </div>
       </section>
@@ -500,7 +500,7 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-10 font-serif text-sm italic text-ink-500 dark:text-umber-300">
-            — {t("app.name")}, Budapest
+            — {t("landing.brand_signature")}
           </p>
         </div>
       </section>

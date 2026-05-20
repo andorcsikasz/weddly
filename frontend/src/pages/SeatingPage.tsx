@@ -29,8 +29,10 @@ import {
   Undo2,
   Unlink2,
   User,
+  Users,
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button, Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
@@ -1189,12 +1191,30 @@ export default function SeatingPage() {
       </div>
 
       {tables.length === 0 ? (
-        <div className="card stationery text-center">
-          <Armchair size={28} className="mx-auto text-ink-500 dark:text-umber-300" />
-          <h3 className="mt-3 text-base font-semibold">{t("seating.no_tables")}</h3>
-          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-            {t("seating.add_first_table")}
-          </p>
+        // Empty-state action card. Always offers "add first table"; if the
+        // guest list is also empty, points the user up-stream to /app/guests
+        // first — building tables before there's anyone to seat is the
+        // common first-run wrong-turn.
+        <div className="card stationery">
+          <div className="text-center">
+            <Armchair size={28} className="mx-auto text-ink-500 dark:text-umber-300" />
+            <h3 className="mt-3 text-base font-semibold">{t("seating.no_tables")}</h3>
+            <p className="mx-auto mt-1 max-w-md text-sm text-ink-600 dark:text-umber-200">
+              {guests.length === 0
+                ? t("seating.empty_body_no_guests")
+                : t("seating.add_first_table")}
+            </p>
+          </div>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <button type="button" className="btn-primary" onClick={addTable}>
+              <Plus size={16} aria-hidden /> {t("seating.add_table")}
+            </button>
+            {guests.length === 0 && (
+              <Link to="/app/guests" className="btn-outline">
+                <Users size={16} aria-hidden /> {t("seating.empty_cta_add_guests")}
+              </Link>
+            )}
+          </div>
         </div>
       ) : (
         <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_320px]">

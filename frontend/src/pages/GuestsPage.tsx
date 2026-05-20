@@ -553,9 +553,44 @@ export default function GuestsPage() {
       {loading ? (
         <HouseholdListSkeleton />
       ) : households.length === 0 && guests.length === 0 ? (
-        <div className="card stationery text-center">
-          <h3 className="text-base font-semibold">{t("guests.empty_title")}</h3>
-          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{t("guests.empty_body")}</p>
+        // Empty-state action card. Three inline CTAs covering the three
+        // realistic next moves (manual add, CSV bulk import, template
+        // download) so first-run users never face a passive "no guests yet"
+        // dead end. Header buttons above still work; this is the in-content
+        // mirror that owns the visual focus when the list is genuinely empty.
+        <div className="card stationery">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">{t("guests.empty_title")}</h3>
+            <p className="mx-auto mt-1 max-w-md text-sm text-ink-600 dark:text-umber-200">
+              {t("guests.empty_body")}
+            </p>
+          </div>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setEditing({ guest: null, defaultHouseholdId: null })}
+            >
+              <UserPlus size={16} aria-hidden /> {t("guests.empty_cta_add")}
+            </button>
+            <label className="btn-outline cursor-pointer">
+              <Upload size={16} aria-hidden /> {t("guests.import_csv")}
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onImport(f);
+                  e.target.value = "";
+                }}
+                disabled={importing}
+              />
+            </label>
+            <button type="button" className="btn-outline" onClick={downloadCsvTemplate}>
+              <Download size={16} aria-hidden /> {t("guests.download_template")}
+            </button>
+          </div>
         </div>
       ) : debouncedQuery ? (
         <SearchResults
