@@ -623,28 +623,31 @@ export function GuestListMockup({ className }: Common) {
         const y = 132 + i * 40;
         const statusColor =
           row.status === "yes"
-            ? "text-blush-500"
+            ? "text-sage-500"
             : row.status === "pending"
               ? "text-paper-500"
               : "text-ink-300";
         const statusBg =
           row.status === "yes"
-            ? "text-blush-100"
+            ? "text-sage-100"
             : row.status === "pending"
               ? "text-paper-200"
               : "text-ink-100";
         const statusFg =
           row.status === "yes"
-            ? "text-blush-700"
+            ? "text-sage-700"
             : row.status === "pending"
               ? "text-ink-700"
               : "text-ink-500";
+        // Avatar dots cycle through calm naturals (sage / paper / ink) instead
+        // of the previous loud blush tones — the page already carries blush
+        // accents elsewhere; here we want the mockup to feel restful.
         const avatarTones = {
-          1: "text-blush-300",
-          2: "text-blush-200",
-          3: "text-paper-300",
-          4: "text-ink-200",
-          5: "text-paper-500",
+          1: "text-sage-200",
+          2: "text-paper-300",
+          3: "text-ink-100",
+          4: "text-sage-100",
+          5: "text-paper-400",
         } as const;
         return (
           <g key={row.name}>
