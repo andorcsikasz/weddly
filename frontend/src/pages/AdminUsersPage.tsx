@@ -323,7 +323,7 @@ export default function AdminUsersPage() {
             </span>
           )}
           {opts.showLastActive && (
-            <span className="text-[11px] italic text-ink-500 dark:text-umber-300">
+            <span className="text-[11px] text-ink-500 dark:text-umber-300">
               {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
             </span>
           )}
@@ -525,16 +525,14 @@ export default function AdminUsersPage() {
                             </span>
                             {statusLabel && <Badge tone="muted">{statusLabel}</Badge>}
                             {members.length === 1 && (
-                              <span className="text-[11px] italic text-ink-500 dark:text-umber-300">
+                              <span className="text-[11px] text-ink-500 dark:text-umber-300">
                                 {t("admin.workspace_solo_member")}
                               </span>
                             )}
                           </div>
                           <div>
                             {members.length === 0 ? (
-                              <span className="text-xs italic text-ink-500 dark:text-umber-300">
-                                —
-                              </span>
+                              <span className="text-xs text-ink-500 dark:text-umber-300">—</span>
                             ) : (
                               <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
                                 {members.map((u) => (
