@@ -101,22 +101,22 @@ export function InteractiveBudgetDemo() {
       id="try-it"
       className="relative overflow-hidden bg-paper-50 dark:bg-umber-900 border-y border-paper-300 dark:border-umber-700"
     >
-      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.demo_eyebrow")}
           </p>
-          <h2 className="mt-4 font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="mt-2.5 font-serif text-2xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-3xl lg:text-4xl">
             {t("landing.demo_title")}
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-sm text-ink-600 dark:text-umber-200 sm:text-base">
+          <p className="mx-auto mt-2 max-w-xl text-sm text-ink-600 dark:text-umber-200">
             {t("landing.demo_body")}
           </p>
         </div>
 
-        <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:items-start lg:gap-12">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-start lg:gap-10">
           {/* Controls */}
-          <div className="space-y-8">
+          <div className="space-y-5">
             <div>
               <div className="flex items-baseline justify-between gap-3">
                 <label
@@ -125,7 +125,7 @@ export function InteractiveBudgetDemo() {
                 >
                   {t("landing.demo_guests_label")}
                 </label>
-                <span className="font-serif text-2xl italic text-blush-700 dark:text-blush-300">
+                <span className="font-serif text-xl italic text-blush-700 dark:text-blush-300">
                   {guests}
                 </span>
               </div>
@@ -137,10 +137,10 @@ export function InteractiveBudgetDemo() {
                 step={1}
                 value={guests}
                 onChange={(e) => setGuests(clamp(Number(e.target.value), MIN_GUESTS, MAX_GUESTS))}
-                className="mt-3 w-full accent-blush-600"
+                className="mt-2 w-full accent-blush-600"
                 aria-label={t("landing.demo_guests_label")}
               />
-              <div className="mt-1 flex justify-between text-xs text-ink-500 dark:text-umber-300">
+              <div className="mt-0.5 flex justify-between text-[11px] text-ink-500 dark:text-umber-300">
                 <span>{MIN_GUESTS}</span>
                 <span>{MAX_GUESTS}</span>
               </div>
@@ -154,7 +154,7 @@ export function InteractiveBudgetDemo() {
                 >
                   {t("landing.demo_budget_label")}
                 </label>
-                <span className="font-serif text-2xl italic text-blush-700 dark:text-blush-300">
+                <span className="font-serif text-xl italic text-blush-700 dark:text-blush-300">
                   {formatHuf(budget, locale)}
                 </span>
               </div>
@@ -166,71 +166,67 @@ export function InteractiveBudgetDemo() {
                 step={BUDGET_STEP}
                 value={budget}
                 onChange={(e) => setBudget(clamp(Number(e.target.value), MIN_BUDGET, MAX_BUDGET))}
-                className="mt-3 w-full accent-blush-600"
+                className="mt-2 w-full accent-blush-600"
                 aria-label={t("landing.demo_budget_label")}
               />
-              <div className="mt-1 flex justify-between text-xs text-ink-500 dark:text-umber-300">
+              <div className="mt-0.5 flex justify-between text-[11px] text-ink-500 dark:text-umber-300">
                 <span>{formatHuf(MIN_BUDGET, locale)}</span>
                 <span>{formatHuf(MAX_BUDGET, locale)}</span>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white dark:bg-umber-800 p-5 ring-1 ring-paper-300 dark:ring-umber-700">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 dark:text-umber-300">
+            <div className="flex items-baseline gap-3 rounded-xl bg-white dark:bg-umber-800 px-4 py-3 ring-1 ring-paper-300 dark:ring-umber-700">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-500 dark:text-umber-300 shrink-0">
                 {t("landing.demo_per_guest_label")}
               </p>
-              <p className="mt-2 font-serif text-3xl text-ink-900 dark:text-paper-50 sm:text-4xl">
+              <p className="ml-auto font-serif text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
                 {formatHuf(perGuest, locale)}
-              </p>
-              <p className="mt-1 font-serif text-sm italic text-ink-500 dark:text-umber-300">
-                {t("landing.demo_per_guest_sub")}
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div>
               <Link
                 to={signupHref}
                 onClick={() => stashDraft(guests, budget)}
-                className="btn-primary btn-lg w-full shadow-sm"
+                className="btn-primary btn-lifted btn-landing w-full"
               >
                 {t("landing.demo_cta")}
               </Link>
-              <p className="text-center text-sm text-ink-500 dark:text-umber-300">
+              <p className="mt-2 text-center text-[11px] text-ink-500 dark:text-umber-300">
                 <a
                   href="#phases"
                   className="font-serif italic underline-offset-4 hover:text-ink-700 hover:underline dark:hover:text-paper-100"
                 >
                   {t("landing.demo_cta_secondary")}
                 </a>
+                <span className="mx-2 text-paper-400">·</span>
+                {t("landing.demo_disclaimer")}
               </p>
             </div>
-            <p className="text-xs text-ink-500 dark:text-umber-300">
-              {t("landing.demo_disclaimer")}
-            </p>
           </div>
 
           {/* Live bars */}
-          <div className="rounded-2xl bg-white dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-pop sm:p-8">
+          <div className="rounded-2xl bg-white dark:bg-umber-800 p-5 ring-1 ring-paper-300 dark:ring-umber-700 shadow-pop sm:p-6">
             <div className="flex items-baseline justify-between">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
                 {t("landing.demo_breakdown_eyebrow")}
               </p>
-              <p className="font-serif text-sm italic text-ink-500 dark:text-umber-300">
+              <p className="font-serif text-xs italic text-ink-500 dark:text-umber-300 sm:text-sm">
                 {t("landing.demo_breakdown_sub")}
               </p>
             </div>
-            <ul className="mt-5 space-y-4">
+            <ul className="mt-4 space-y-2.5">
               {rows.map((row) => (
                 <li key={row.i18nKey}>
                   <div className="flex items-baseline justify-between gap-3">
-                    <span className="font-serif text-sm text-ink-800 dark:text-paper-100 sm:text-base">
+                    <span className="font-serif text-sm text-ink-800 dark:text-paper-100">
                       {t(row.i18nKey)}
                     </span>
-                    <span className="font-serif text-sm text-ink-700 dark:text-paper-100 tabular-nums sm:text-base">
+                    <span className="font-serif text-sm text-ink-700 dark:text-paper-100 tabular-nums">
                       {formatHuf(row.amount, locale)}
                     </span>
                   </div>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                     <div
                       className="h-full rounded-full bg-blush-500 transition-[width] duration-300 ease-out"
                       style={{ width: `${row.pct}%` }}
@@ -239,12 +235,12 @@ export function InteractiveBudgetDemo() {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 border-t border-paper-300 dark:border-umber-700 pt-4">
+            <div className="mt-4 border-t border-paper-300 dark:border-umber-700 pt-3">
               <div className="flex items-baseline justify-between">
                 <span className="font-serif text-base text-ink-900 dark:text-paper-50">
                   {t("landing.demo_total_label")}
                 </span>
-                <span className="font-serif text-xl text-ink-900 dark:text-paper-50 tabular-nums">
+                <span className="font-serif text-lg text-ink-900 dark:text-paper-50 tabular-nums">
                   {formatHuf(budget, locale)}
                 </span>
               </div>
