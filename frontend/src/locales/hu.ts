@@ -637,17 +637,16 @@ const hu: LocaleMessages = {
     testimonials_eyebrow: "A bétából",
     testimonials_title: "Párok, akik már a Wēddlyvel tervezték az esküvőjüket",
     t1_quote:
-      "Végre abbahagytuk az éjféli PDF-küldözgetést. A közös munkaterületen Bencével 15 perces blokkokban tudtunk haladni, együtt.",
+      "Egy helyen van minden — költségvetés, vendégek, ültetés. Mindketten ugyanazt látjuk, és tudjuk, mi a következő lépés.",
     t1_name: "Anna & Bence",
-    t1_meta: "2026. május · Budapest · béta-interjúkból összeállítva",
+    t1_meta: "Budapest · béta-interjúkból összeállítva",
     t2_quote:
-      "Az RSVP linkek megmentettek. Nyolcvanhét vendég válaszolt egy kattintással a telefonján, és az étrend oszlop tisztán jött ki.",
+      "Nem kellett kitalálnunk, mit hol és mikor csináljunk — a Wēddly végigvezetett a folyamaton.",
     t2_name: "Eszter & Dani",
-    t2_meta: "2026. augusztus · Balaton · béta-interjúkból összeállítva",
-    t3_quote:
-      "Az ültetési rendet a nagy nap előtti este nyomtattuk A3-ban — pár kattintás, és kijött készen, pontos méretben.",
+    t2_meta: "Debrecen · béta-interjúkból összeállítva",
+    t3_quote: "Egyszerűen működik. Több eszközre nincs is szükségünk.",
     t3_name: "Kata & Marci",
-    t3_meta: "2026. szeptember · Pécs · béta-interjúkból összeállítva",
+    t3_meta: "Szeged · béta-interjúkból összeállítva",
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
     pricing_eyebrow: "Árak",
     pricing_title: "Most ingyen — az árazás a v2-vel jön.",

@@ -298,30 +298,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ════════════════════════ 06 · Why — PULL-QUOTE ════════════════════════
-          The page's editorial peak. One italic statement does the work;
-          the four differentiation points reduce to a single keyword
-          row underneath. */}
+      {/* ════════════════════════ 06 · Why — PULL-QUOTE + 2×2 ════════════════════════
+          Editorial pull-quote on top, then the four why-points as a 2×2
+          grid below with title + short body. Replaces the previous loose
+          "keyword strip" that floated under the quote with no weight. */}
       <section className="stationery-light relative">
         <BotanicalCorner
           corner="tl"
-          className="pointer-events-none absolute left-4 top-12 h-24 w-24 text-paper-300 dark:text-umber-600 sm:h-40 sm:w-40 lg:left-12"
+          className="pointer-events-none absolute left-4 top-8 h-20 w-20 text-paper-300 dark:text-umber-600 sm:h-28 sm:w-28 lg:left-10"
         />
         <BotanicalCorner
           corner="br"
-          className="pointer-events-none absolute bottom-12 right-4 h-24 w-24 text-paper-300 dark:text-umber-600 sm:h-40 sm:w-40 lg:right-12"
+          className="pointer-events-none absolute bottom-8 right-4 h-20 w-20 text-paper-300 dark:text-umber-600 sm:h-28 sm:w-28 lg:right-10"
         />
-        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.why_eyebrow")}
           </p>
-          <PullQuote quote={t("landing.why_title")} className="mt-8" />
-          <div className="mt-10 grid gap-3 text-center text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 dark:text-umber-300 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-3">
-            <WhyKeyword>{t("landing.why_a_title")}</WhyKeyword>
-            <WhyKeyword>{t("landing.why_b_title")}</WhyKeyword>
-            <WhyKeyword>{t("landing.why_c_title")}</WhyKeyword>
-            <WhyKeyword>{t("landing.why_d_title")}</WhyKeyword>
-          </div>
+          <PullQuote quote={t("landing.why_title")} className="mt-5" />
+          <ul className="mx-auto mt-10 grid max-w-4xl gap-x-10 gap-y-8 sm:mt-14 sm:grid-cols-2 sm:gap-y-10">
+            <WhyPoint title={t("landing.why_a_title")} body={t("landing.why_a_body")} />
+            <WhyPoint title={t("landing.why_b_title")} body={t("landing.why_b_body")} />
+            <WhyPoint title={t("landing.why_c_title")} body={t("landing.why_c_body")} />
+            <WhyPoint title={t("landing.why_d_title")} body={t("landing.why_d_body")} />
+          </ul>
         </div>
       </section>
 
@@ -464,14 +464,14 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════ 11 · FAQ ════════════════════════
-          Tight max-w-2xl, italic question-mark headline, rows as
-          inflatable cards instead of dividers. */}
+          Tight max-w-2xl, italic question-mark headline scaled down so
+          the section doesn't dominate vertically on small viewports. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-5xl italic leading-[0.96] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
+        <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
+          <h2 className="font-serif text-3xl italic leading-[1] tracking-[-0.01em] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.faq_title")}
           </h2>
-          <div className="mt-10 space-y-3">
+          <div className="mt-6 space-y-2 sm:mt-8">
             {faqEntries.map((entry) => (
               <FaqCard key={entry.q} q={entry.q} a={entry.a} />
             ))}
@@ -616,15 +616,14 @@ function PhaseStep({
   );
 }
 
-function WhyKeyword({ children }: { children: ReactNode }) {
+function WhyPoint({ title, body }: { title: string; body: string }) {
   return (
-    <span className="inline-flex items-center gap-3">
-      <span
-        className="hidden h-px w-6 bg-paper-400 dark:bg-umber-600 sm:inline-block"
-        aria-hidden="true"
-      />
-      {children}
-    </span>
+    <li>
+      <h3 className="font-serif text-xl text-ink-900 dark:text-paper-50 sm:text-2xl">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
+        {body}
+      </p>
+    </li>
   );
 }
 
@@ -734,15 +733,15 @@ function AudienceRow({
 
 function FaqCard({ q, a }: { q: string; a: ReactNode }) {
   return (
-    <details className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5">
+    <details className="group rounded-xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-4 py-3 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-5 sm:py-3.5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
-        <span className="font-serif text-xl text-ink-900 dark:text-paper-50">{q}</span>
+        <span className="font-serif text-base text-ink-900 dark:text-paper-50 sm:text-lg">{q}</span>
         <ChevronDown
-          size={18}
+          size={16}
           className="shrink-0 text-ink-500 dark:text-umber-300 transition-transform group-open:rotate-180"
         />
       </summary>
-      <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{a}</p>
+      <p className="mt-2.5 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{a}</p>
     </details>
   );
 }

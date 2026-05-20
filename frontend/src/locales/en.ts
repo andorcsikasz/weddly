@@ -637,17 +637,16 @@ const en: LocaleMessages = {
     testimonials_eyebrow: "From the beta",
     testimonials_title: "Couples who've used Weddly to plan",
     t1_quote:
-      "We finally stopped emailing each other PDFs at midnight. The shared workspace meant Bence and I could plan in 15-minute pockets, side by side.",
+      "Everything lives in one place — budget, guests, seating. We both see the same view, and we always know what's next.",
     t1_name: "Anna & Bence",
-    t1_meta: "May 2026 · Budapest · composite from beta interviews",
+    t1_meta: "Budapest · composite from beta interviews",
     t2_quote:
-      "The RSVP links saved us. Eighty-seven guests tapped, replied and went on with their day — and the meal-choice column came out clean.",
+      "We didn't have to figure out the order of things — Weddly walked us through the process.",
     t2_name: "Eszter & Dani",
-    t2_meta: "August 2026 · Lake Balaton · composite from beta interviews",
-    t3_quote:
-      "Printing the seating chart at A3 the night before was as simple as it gets. The PDF came out at exact size and went straight onto the entrance easel.",
+    t2_meta: "Debrecen · composite from beta interviews",
+    t3_quote: "It just works. We don't need another tool.",
     t3_name: "Kata & Marci",
-    t3_meta: "September 2026 · Pécs · composite from beta interviews",
+    t3_meta: "Szeged · composite from beta interviews",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_eyebrow: "Pricing",
     pricing_title: "Free now — pricing arrives with v2.",
