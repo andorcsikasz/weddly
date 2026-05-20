@@ -45,6 +45,7 @@ import { registerExportRoutes } from "./routes/export";
 import { registerFeedbackRoutes } from "./routes/feedback";
 import { registerGrowthRoutes } from "./routes/growth";
 import { registerGuestRoutes } from "./routes/guests";
+import { registerVendorClaimRoutes } from "./routes/vendor_claim";
 import { registerHealthRoutes } from "./routes/health";
 import { registerHoneymoonRoutes } from "./routes/honeymoon";
 import { registerHouseholdRoutes } from "./routes/households";
@@ -114,6 +115,7 @@ registerVendorWaitlistRoutes(router);
 registerUserCoupleRoutes(router);
 registerFeedbackRoutes(router);
 registerGrowthRoutes(router);
+registerVendorClaimRoutes(router);
 registerSeoRoutes(router);
 registerDemoRoutes(router);
 
