@@ -291,12 +291,16 @@
     --btn-highlight: rgba(255, 255, 255, 0.30);
   }
   html.dark .btn-outline {
-    --btn-rim: theme("colors.umber.900");
-    --btn-rim-hover: theme("colors.umber.950");
-    --btn-rim-active: theme("colors.umber.800");
-    --btn-highlight: rgba(255, 255, 255, 0.06);
-    --btn-shadow: rgba(0, 0, 0, 0.30);
-    --btn-shadow-hover: rgba(0, 0, 0, 0.36);
+    /* Canvas is umber-900 in dark mode, so the rim has to step past it
+       (umber-950) — otherwise the rim ends up the exact same colour as
+       the background and the lift effect is invisible. */
+    --btn-rim: theme("colors.umber.950");
+    --btn-rim-hover: #050302;
+    --btn-rim-active: theme("colors.umber.900");
+    --btn-highlight: rgba(255, 255, 255, 0.08);
+    --btn-edge: rgba(255, 255, 255, 0.06);
+    --btn-shadow: rgba(0, 0, 0, 0.36);
+    --btn-shadow-hover: rgba(0, 0, 0, 0.42);
   }
   .btn-lg {
     @apply px-6 py-3 text-base;

@@ -151,13 +151,13 @@ function PublicHeader() {
         >
           <Link
             to="/vendors"
-            className="btn-lifted rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#1a1410] dark:[--btn-rim-hover:#0f0a07] dark:[--btn-rim-active:#251c14]"
+            className="btn-lifted rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#0f0a07] dark:[--btn-rim-hover:#050302] dark:[--btn-rim-active:#1a1410]"
           >
             {t("landing.nav_vendors")}
           </Link>
           <Link
             to="/rsvp"
-            className="btn-lifted rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#1a1410] dark:[--btn-rim-hover:#0f0a07] dark:[--btn-rim-active:#251c14]"
+            className="btn-lifted rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#0f0a07] dark:[--btn-rim-hover:#050302] dark:[--btn-rim-active:#1a1410]"
           >
             {t("landing.footer_guests")}
           </Link>
@@ -313,7 +313,7 @@ function PublicFooter() {
           </p>
           <button
             type="button"
-            className="btn-lifted inline-flex items-center gap-2 rounded-md border border-paper-300/70 bg-paper-100 px-3.5 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#1a1410] dark:[--btn-rim-hover:#0f0a07] dark:[--btn-rim-active:#251c14]"
+            className="btn-lifted inline-flex items-center gap-2 rounded-md border border-paper-300/70 bg-paper-100 px-3.5 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#0f0a07] dark:[--btn-rim-hover:#050302] dark:[--btn-rim-active:#1a1410]"
             onClick={() => {
               void askGuestCode();
             }}
