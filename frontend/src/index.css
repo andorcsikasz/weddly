@@ -209,21 +209,29 @@
   .btn-lifted {
     /* Defaults — generic dark rim. Variant classes (.btn-primary,
        .btn-outline, .btn-accent) or inline `[--btn-rim:...]` overrides
-       supply colour-matched values per button. */
+       supply colour-matched values per button.
+       `--btn-edge` paints a hair-thin highlight at the inside-bottom
+       edge of the face so the seam between face and rim is always
+       visible — without it, dark-faced buttons (.btn-primary) on a
+       light canvas read as one solid block. On light-faced buttons the
+       white edge is invisible, which is the right behaviour. */
     --btn-rim: rgba(15, 17, 30, 0.22);
     --btn-rim-hover: rgba(15, 17, 30, 0.28);
     --btn-rim-active: rgba(15, 17, 30, 0.20);
     --btn-highlight: rgba(255, 255, 255, 0.20);
+    --btn-edge: rgba(255, 255, 255, 0.10);
     --btn-shadow: rgba(15, 17, 30, 0.18);
     --btn-shadow-hover: rgba(15, 17, 30, 0.22);
     box-shadow:
       inset 0 1px 0 0 var(--btn-highlight),
+      inset 0 -1px 0 0 var(--btn-edge),
       0 4px 0 0 var(--btn-rim),
       0 8px 12px -4px var(--btn-shadow);
   }
   .btn-lifted:hover {
     box-shadow:
       inset 0 1px 0 0 var(--btn-highlight),
+      inset 0 -1px 0 0 var(--btn-edge),
       0 5px 0 0 var(--btn-rim-hover),
       0 10px 16px -4px var(--btn-shadow-hover);
   }
@@ -243,12 +251,13 @@
   .btn-primary {
     @apply btn bg-ink-800 text-paper-100 hover:bg-ink-900
       dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-50;
-    /* Colour-matched rim for the lifted variant — ink-900/950 are 1-2
-       shades deeper than the ink-800 face so the bottom rim reads as
-       "same surface, deeper" rather than a generic drop shadow. */
-    --btn-rim: theme("colors.ink.900");
-    --btn-rim-hover: theme("colors.ink.950");
-    --btn-rim-active: theme("colors.ink.800");
+    /* Light-mode rim is pushed to near-black (~3% lightness) so it
+       clearly separates from the ink-800 face (~13% lightness). The
+       earlier ink-900 rim sat only 6% off the face and visually merged
+       with it against the warm paper canvas. */
+    --btn-rim: #04060e;
+    --btn-rim-hover: #010207;
+    --btn-rim-active: theme("colors.ink.900");
   }
   .btn-accent {
     /* Bumped from blush-500 → blush-600 for AA contrast on the warm paper
