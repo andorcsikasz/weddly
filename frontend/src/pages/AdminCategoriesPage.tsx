@@ -5,6 +5,7 @@ import type {
 } from "@shared/supplier_taxonomy";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { AdminEmptyState, AdminPageHeader } from "../components/admin";
 import { Button, Dialog, Skeleton, TextField, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierTaxonomyApi, supplierTaxonomyApi } from "../lib/endpoints";
@@ -85,23 +86,23 @@ export default function AdminCategoriesPage() {
 
   return (
     <>
-      <header className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1>{t("admin.taxonomy_title")}</h1>
-          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.taxonomy_sub")}</p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary btn-sm"
-          onClick={() => setEditing({ kind: "new-group" })}
-        >
-          <Plus size={14} />
-          <span>{t("admin.taxonomy_add_group")}</span>
-        </button>
-      </header>
+      <AdminPageHeader
+        title={t("admin.taxonomy_title")}
+        subtitle={t("admin.taxonomy_sub")}
+        actions={
+          <button
+            type="button"
+            className="btn-primary btn-sm"
+            onClick={() => setEditing({ kind: "new-group" })}
+          >
+            <Plus size={14} />
+            <span>{t("admin.taxonomy_add_group")}</span>
+          </button>
+        }
+      />
 
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, gi) => (
             <section key={gi} className="card p-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
@@ -136,11 +137,9 @@ export default function AdminCategoriesPage() {
           ))}
         </div>
       ) : groups.length === 0 ? (
-        <div className="card text-sm text-ink-500 dark:text-umber-300">
-          {t("admin.taxonomy_empty")}
-        </div>
+        <AdminEmptyState>{t("admin.taxonomy_empty")}</AdminEmptyState>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {groups.map((g) => (
             <section key={g.id} className="card p-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
@@ -172,7 +171,7 @@ export default function AdminCategoriesPage() {
                   </button>
                   <button
                     type="button"
-                    className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
+                    className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
                     onClick={() => onDeleteGroup(g)}
                     aria-label={t("admin.taxonomy_delete")}
                   >
@@ -187,7 +186,7 @@ export default function AdminCategoriesPage() {
                   {g.categories.map((c) => (
                     <li
                       key={c.id}
-                      className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
+                      className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-700/40"
                     >
                       <div>
                         <div className="text-ink-900 dark:text-paper-50">
@@ -212,7 +211,7 @@ export default function AdminCategoriesPage() {
                         </button>
                         <button
                           type="button"
-                          className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
+                          className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
                           onClick={() => onDeleteCategory(c)}
                           aria-label={t("admin.taxonomy_delete")}
                         >

@@ -1,6 +1,7 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
 import { Check, Flag, FlagOff, Lightbulb, Mail, MessageCircle, Trash2 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { AdminEmptyState, AdminPageHeader, AdminSectionHeader } from "../components/admin";
 import { FlagUserDialog } from "../components/FlagUserDialog";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -375,7 +376,7 @@ export default function AdminUsersPage() {
           {!isSelf && (
             <button
               type="button"
-              className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
+              className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
               onClick={() => onDelete(u)}
               disabled={isPending}
               title={t("admin.delete_user")}
@@ -391,20 +392,13 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <header className="mb-6">
-        <h1>{t("admin.users_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.users_sub")}</p>
-      </header>
+      <AdminPageHeader title={t("admin.users_title")} subtitle={t("admin.users_sub")} />
 
       {loading ? (
         <>
-          <section className="mb-10">
-            <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-                {t("admin.workspaces_section")}
-              </h2>
-            </div>
-            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300 md:grid">
+          <section className="mb-6">
+            <AdminSectionHeader title={t("admin.workspaces_section")} />
+            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300 md:grid">
               <div>{t("admin.table_workspace_id")}</div>
               <div>{t("admin.table_workspace_name")}</div>
               <div>{t("admin.table_workspace_members")}</div>
@@ -415,7 +409,7 @@ export default function AdminUsersPage() {
               {Array.from({ length: 6 }).map((_, i) => (
                 <li
                   key={i}
-                  className="rounded-2xl border-2 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-800 px-5 py-4 shadow-soft"
+                  className="rounded-2xl bg-paper-50 px-5 py-4 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700"
                 >
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
                     <Skeleton width={56} height={18} rounded="sm" />
@@ -433,14 +427,10 @@ export default function AdminUsersPage() {
           </section>
 
           <section>
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-                {t("admin.orphans_section")}
-              </h2>
-            </div>
+            <AdminSectionHeader title={t("admin.orphans_section")} />
             <div className="card overflow-x-auto p-0">
               <table className="min-w-full text-sm">
-                <thead className="bg-paper-100 dark:bg-umber-700/60 text-left text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                <thead className="bg-paper-100 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:bg-umber-700/60 dark:text-umber-300">
                   <tr>
                     <th className="px-3 py-2">{t("admin.table_name")}</th>
                     <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
@@ -472,42 +462,36 @@ export default function AdminUsersPage() {
       ) : (
         <>
           {/* ── Workspaces (couples) — one card per couple ────────────────── */}
-          <section className="mb-10">
-            <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-                {t("admin.workspaces_section")}
-              </h2>
-              <div className="flex items-center gap-3">
-                {deletingCount > 0 && (
+          <section className="mb-6">
+            <AdminSectionHeader
+              title={t("admin.workspaces_section")}
+              count={t(
+                realCouples.length === 1
+                  ? "admin.workspaces_count_one"
+                  : "admin.workspaces_count_other",
+                { n: realCouples.length },
+              )}
+              actions={
+                deletingCount > 0 ? (
                   <button
                     type="button"
-                    className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
+                    className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
                     onClick={onPurgeDeleting}
                     disabled={purgingDeleting}
                   >
                     {t("admin.purge_deleting_button", { n: deletingCount })}
                   </button>
-                )}
-                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                  {t(
-                    realCouples.length === 1
-                      ? "admin.workspaces_count_one"
-                      : "admin.workspaces_count_other",
-                    { n: realCouples.length },
-                  )}
-                </span>
-              </div>
-            </div>
+                ) : undefined
+              }
+            />
             {realCouples.length === 0 ? (
-              <div className="card text-sm text-ink-500 dark:text-umber-300">
-                {t("admin.couples_empty")}
-              </div>
+              <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
             ) : (
               <>
                 {/* Card-style row header — uses the same 4-column grid as the
                  *  rows below so the labels line up exactly. Hidden on small
                  *  screens (rows stack vertically there). */}
-                <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300 md:grid">
+                <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300 md:grid">
                   <div>{t("admin.table_workspace_id")}</div>
                   <div>{t("admin.table_workspace_name")}</div>
                   <div>{t("admin.table_workspace_members")}</div>
@@ -527,7 +511,7 @@ export default function AdminUsersPage() {
                     return (
                       <li
                         key={c.id}
-                        className="rounded-2xl border-2 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-800 px-5 py-2.5 shadow-soft"
+                        className="rounded-2xl bg-paper-50 px-5 py-2.5 ring-1 ring-ink-100 transition-colors duration-150 hover:bg-paper-100/60 dark:bg-umber-900 dark:ring-umber-700 dark:hover:bg-umber-800/60"
                       >
                         <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
                           <div className="whitespace-nowrap">
@@ -582,23 +566,17 @@ export default function AdminUsersPage() {
            *  backend reaps these on its own schedule, so no destructive
            *  action surface here. ───────────────────────────────────────── */}
           {demoCouples.length > 0 && (
-            <section className="mb-10">
-              <div className="mb-3 flex items-baseline justify-between gap-3">
-                <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-                  {t("admin.demo_workspaces_section")}
-                </h2>
-                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                  {t(
-                    demoCouples.length === 1
-                      ? "admin.demo_workspaces_count_one"
-                      : "admin.demo_workspaces_count_other",
-                    { n: demoCouples.length },
-                  )}
-                </span>
-              </div>
-              <p className="mb-3 text-xs text-ink-500 dark:text-umber-300">
-                {t("admin.demo_workspaces_help")}
-              </p>
+            <section className="mb-6">
+              <AdminSectionHeader
+                title={t("admin.demo_workspaces_section")}
+                count={t(
+                  demoCouples.length === 1
+                    ? "admin.demo_workspaces_count_one"
+                    : "admin.demo_workspaces_count_other",
+                  { n: demoCouples.length },
+                )}
+                description={t("admin.demo_workspaces_help")}
+              />
               <ul className="space-y-1.5">
                 {demoCouples.map((c) => {
                   const members = c.partners
@@ -621,7 +599,7 @@ export default function AdminUsersPage() {
                   return (
                     <li
                       key={c.id}
-                      className="rounded-xl border border-paper-200 bg-paper-50/60 dark:border-umber-700 dark:bg-umber-800/60 px-4 py-2"
+                      className="rounded-2xl bg-paper-50/60 px-4 py-2 ring-1 ring-ink-100 transition-colors duration-150 hover:bg-paper-100/60 dark:bg-umber-900/60 dark:ring-umber-700 dark:hover:bg-umber-800/60"
                     >
                       <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_9rem_9rem] md:items-center">
                         <div className="whitespace-nowrap">
@@ -680,24 +658,19 @@ export default function AdminUsersPage() {
 
           {/* ── Orphan users — no workspace yet ───────────────────────────── */}
           <section>
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-                {t("admin.orphans_section")}
-              </h2>
-              <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t(orphans.length === 1 ? "admin.orphans_count_one" : "admin.orphans_count_other", {
-                  n: orphans.length,
-                })}
-              </span>
-            </div>
+            <AdminSectionHeader
+              title={t("admin.orphans_section")}
+              count={t(
+                orphans.length === 1 ? "admin.orphans_count_one" : "admin.orphans_count_other",
+                { n: orphans.length },
+              )}
+            />
             {orphans.length === 0 ? (
-              <div className="card text-sm text-ink-500 dark:text-umber-300">
-                {t("admin.orphans_empty")}
-              </div>
+              <AdminEmptyState>{t("admin.orphans_empty")}</AdminEmptyState>
             ) : (
               <div className="card overflow-x-auto p-0">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-paper-100 dark:bg-umber-700/60 text-left text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  <thead className="bg-paper-100 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:bg-umber-700/60 dark:text-umber-300">
                     <tr>
                       <th className="px-3 py-2">{t("admin.table_name")}</th>
                       <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
@@ -705,7 +678,10 @@ export default function AdminUsersPage() {
                   </thead>
                   <tbody>
                     {orphans.map((u) => (
-                      <tr key={u.id} className="border-t border-paper-200 dark:border-umber-700">
+                      <tr
+                        key={u.id}
+                        className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
+                      >
                         <td className="px-3 py-2" colSpan={2}>
                           {renderUserCell(u, { showLastActive: true })}
                         </td>

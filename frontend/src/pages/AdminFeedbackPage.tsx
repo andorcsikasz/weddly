@@ -5,6 +5,7 @@
 import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
 import { CheckCircle2, Eye, Mail, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AdminEmptyState, AdminPageHeader } from "../components/admin";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { useDocumentMeta } from "../lib/seo";
 import { ApiError } from "../lib/api";
@@ -80,15 +81,12 @@ export default function AdminFeedbackPage() {
 
   return (
     <>
-      <header className="mb-6">
-        <h1>{t("admin.feedback_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.feedback_sub")}</p>
-      </header>
+      <AdminPageHeader title={t("admin.feedback_title")} subtitle={t("admin.feedback_sub")} />
 
       {loading ? (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            <thead className="text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
               <tr>
                 <th className="pb-3">{t("admin.feedback_col_submitter")}</th>
                 <th className="pb-3">{t("admin.feedback_col_message")}</th>
@@ -144,13 +142,11 @@ export default function AdminFeedbackPage() {
           </table>
         </div>
       ) : entries.length === 0 ? (
-        <div className="card text-center text-sm text-ink-500 dark:text-umber-300">
-          {t("admin.feedback_empty")}
-        </div>
+        <AdminEmptyState>{t("admin.feedback_empty")}</AdminEmptyState>
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            <thead className="text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
               <tr>
                 <th className="pb-3">{t("admin.feedback_col_submitter")}</th>
                 <th className="pb-3">{t("admin.feedback_col_message")}</th>
@@ -170,7 +166,7 @@ export default function AdminFeedbackPage() {
                 return (
                   <tr
                     key={e.id}
-                    className="border-t border-paper-200 dark:border-umber-700 align-top"
+                    className="border-t border-paper-200 align-top transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
                   >
                     <td className="py-3 pr-4">
                       {displayName && (
@@ -281,7 +277,7 @@ export default function AdminFeedbackPage() {
                         )}
                         <button
                           type="button"
-                          className="btn-ghost btn-sm text-violet-950 hover:bg-violet-50 dark:text-violet-200 dark:hover:bg-violet-500/20"
+                          className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
                           disabled={pendingId === e.id}
                           onClick={() => remove(e.id)}
                         >

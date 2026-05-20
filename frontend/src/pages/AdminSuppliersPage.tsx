@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminEmptyState, AdminFilterChip, AdminPageHeader } from "../components/admin";
 import { SupplierDirectoryView } from "../components/admin/SupplierDirectoryView";
 import { SegmentedControl, Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -81,21 +82,17 @@ export default function AdminSuppliersPage() {
 
   return (
     <>
-      <header className="mb-6">
-        <h1>{t("admin.suppliers_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.suppliers_sub")}</p>
-        <div className="mt-3">
-          <SegmentedControl
-            ariaLabel={t("admin.suppliers_title")}
-            value={view}
-            onChange={setView}
-            options={[
-              { value: "moderation", label: t("admin.suppliers_view_moderation") },
-              { value: "directory", label: t("admin.suppliers_view_directory") },
-            ]}
-          />
-        </div>
-      </header>
+      <AdminPageHeader title={t("admin.suppliers_title")} subtitle={t("admin.suppliers_sub")}>
+        <SegmentedControl
+          ariaLabel={t("admin.suppliers_title")}
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "moderation", label: t("admin.suppliers_view_moderation") },
+            { value: "directory", label: t("admin.suppliers_view_directory") },
+          ]}
+        />
+      </AdminPageHeader>
 
       {view === "directory" ? <SupplierDirectoryView /> : <ModerationView />}
     </>
@@ -302,17 +299,17 @@ function ModerationView() {
         <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
           {t("admin.filter_status_label")}
         </span>
-        <FilterChip
+        <AdminFilterChip
           label={t("admin.filter_status_all")}
           active={filter === "all"}
           onClick={() => setFilter("all")}
         />
-        <FilterChip
+        <AdminFilterChip
           label={t("admin.filter_status_pending")}
           active={filter === "pending"}
           onClick={() => setFilter("pending")}
         />
-        <FilterChip
+        <AdminFilterChip
           label={
             awaitingReviewCount > 0
               ? `${t("admin.filter_status_awaiting_review")} · ${awaitingReviewCount}`
@@ -321,12 +318,12 @@ function ModerationView() {
           active={filter === "awaiting_review"}
           onClick={() => setFilter("awaiting_review")}
         />
-        <FilterChip
+        <AdminFilterChip
           label={t("admin.filter_status_active")}
           active={filter === "active"}
           onClick={() => setFilter("active")}
         />
-        <FilterChip
+        <AdminFilterChip
           label={t("admin.filter_status_hidden")}
           active={filter === "hidden"}
           onClick={() => setFilter("hidden")}
@@ -362,7 +359,7 @@ function ModerationView() {
           </button>
           <button
             type="button"
-            className="btn-ghost btn-sm text-violet-950 dark:text-violet-200"
+            className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
             onClick={onBulkDelete}
             disabled={selected.size === 0}
           >
@@ -372,7 +369,7 @@ function ModerationView() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <article key={i} className="card flex flex-col gap-3 p-3">
               <header className="flex flex-wrap items-center gap-2">
@@ -395,13 +392,11 @@ function ModerationView() {
           ))}
         </div>
       ) : suppliers.length === 0 ? (
-        <div className="card text-sm text-ink-500 dark:text-umber-300">{t("admin.empty")}</div>
+        <AdminEmptyState>{t("admin.empty")}</AdminEmptyState>
       ) : visibleSuppliers.length === 0 ? (
-        <div className="card text-sm text-ink-500 dark:text-umber-300">
-          {t("admin.empty_filtered")}
-        </div>
+        <AdminEmptyState>{t("admin.empty_filtered")}</AdminEmptyState>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {visibleSuppliers.map((s) => (
             <SupplierCard
               key={s.id}
@@ -421,31 +416,6 @@ function ModerationView() {
         </div>
       )}
     </>
-  );
-}
-
-function FilterChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={
-        active
-          ? "rounded-full border border-violet-900 bg-violet-900 dark:border-violet-500/50 dark:bg-violet-500/30 px-3 py-1 text-xs font-medium text-paper-100 dark:text-violet-100"
-          : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-violet-950 hover:border-violet-300 dark:border-umber-700 dark:bg-umber-800 dark:text-violet-200 dark:hover:border-violet-400/40"
-      }
-    >
-      {label}
-    </button>
   );
 }
 
@@ -620,9 +590,7 @@ function SupplierCard({
           }
         >
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h2 className="m-0 text-base font-semibold text-ink-900 dark:text-paper-50">
-              {s.name}
-            </h2>
+            <h2 className="m-0 text-sm font-semibold text-ink-900 dark:text-paper-50">{s.name}</h2>
             <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
             <PriceBandPill band={s.price_band} />
             <span className="text-xs text-ink-500 dark:text-umber-300">
@@ -659,7 +627,7 @@ function SupplierCard({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {/* Contact column */}
             <section className="flex flex-col gap-3">
-              <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
+              <h3 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
                 {t("admin.suppliers_card_section_contact")}
               </h3>
               <CardField
@@ -708,7 +676,7 @@ function SupplierCard({
 
             {/* Listing column */}
             <section className="flex flex-col gap-3">
-              <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
+              <h3 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
                 {t("admin.suppliers_card_section_listing")}
               </h3>
               <CardField
@@ -727,7 +695,7 @@ function SupplierCard({
 
             {/* Meta + metrics column */}
             <section className="flex flex-col gap-3">
-              <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
+              <h3 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
                 {t("admin.suppliers_card_section_meta")}
               </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -774,9 +742,9 @@ function SupplierCard({
           {/* Admin notes — the CRM heart of the page. Editable in place, with a
            *  dirty indicator and an explicit save action so an accidental tab
            *  away doesn't silently drop a half-typed thought. */}
-          <section className="flex flex-col gap-2 rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-3">
+          <section className="flex flex-col gap-2 rounded-2xl bg-paper-50 p-4 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="m-0 text-xs font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-200">
+              <h3 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
                 {t("admin.suppliers_card_section_notes")}
               </h3>
               <span
@@ -860,7 +828,7 @@ function SupplierCard({
         ) : null}
         <button
           type="button"
-          className="btn-ghost btn-sm text-violet-950"
+          className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
           onClick={onDelete}
           aria-label={t("admin.delete")}
         >

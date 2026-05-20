@@ -15,6 +15,7 @@ import type {
 import { buildEmailDraft } from "@shared/vendor_waitlist";
 import { AtSign, ExternalLink, Link2, Mail, MessageSquare, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AdminEmptyState, AdminFilterChip, AdminPageHeader } from "../components/admin";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminVendorWaitlistApi } from "../lib/endpoints";
@@ -124,16 +125,13 @@ export default function AdminVendorWaitlistPage() {
 
   return (
     <>
-      <header className="mb-4">
-        <h1>{t("admin.waitlist_title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("admin.waitlist_sub")}</p>
-      </header>
+      <AdminPageHeader title={t("admin.waitlist_title")} subtitle={t("admin.waitlist_sub")} />
 
       <div className="mb-3 flex flex-wrap gap-2">
         {FILTERS.map((f) => {
           const count = entries.filter((e) => e.status === f).length;
           return (
-            <FilterPill
+            <AdminFilterChip
               key={f}
               label={`${t(FILTER_KEY[f])}${count > 0 ? ` · ${count}` : ""}`}
               active={filter === f}
@@ -147,7 +145,7 @@ export default function AdminVendorWaitlistPage() {
         <ul className="grid gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i}>
-              <article className="rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-3">
+              <article className="rounded-2xl bg-paper-50 p-4 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0 flex-1 flex flex-col gap-1">
                     <Skeleton width={200} height={18} />
@@ -161,9 +159,7 @@ export default function AdminVendorWaitlistPage() {
           ))}
         </ul>
       ) : visibleEntries.length === 0 ? (
-        <div className="card text-center text-sm text-ink-500 dark:text-umber-300">
-          {t(EMPTY_KEY[filter])}
-        </div>
+        <AdminEmptyState>{t(EMPTY_KEY[filter])}</AdminEmptyState>
       ) : (
         <ul className="grid gap-2">
           {visibleEntries.map((e) => (
@@ -206,31 +202,6 @@ export default function AdminVendorWaitlistPage() {
   );
 }
 
-function FilterPill({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={
-        active
-          ? "rounded-full border border-violet-900 bg-violet-900 dark:border-violet-500/50 dark:bg-violet-500/30 px-3 py-1 text-xs font-medium text-paper-100 dark:text-violet-100"
-          : "rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-violet-950 dark:text-violet-200 hover:border-violet-300 dark:hover:border-violet-400/40"
-      }
-    >
-      {label}
-    </button>
-  );
-}
-
 function EntryCard({
   entry,
   t,
@@ -246,7 +217,7 @@ function EntryCard({
   onReopen: () => void;
   pending: boolean;
 }) {
-  const cardCls = `rounded-xl border p-3 ${STATUS_CARD_CLASSES[entry.status]}`;
+  const cardCls = `rounded-2xl border p-4 transition-colors duration-150 ${STATUS_CARD_CLASSES[entry.status]}`;
   // Collapse "extra" detail (portfolio, message, sent-email body, admin
   // notes) behind a single `<details>` so the resting card is a tight
   // header + meta row + action button. The admin opens detail only when
@@ -267,7 +238,7 @@ function EntryCard({
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <h2 className="m-0 text-base font-medium text-ink-900 dark:text-paper-50">
+            <h2 className="m-0 text-sm font-semibold text-ink-900 dark:text-paper-50">
               {entry.business_name}
             </h2>
             <a
@@ -627,7 +598,7 @@ function OutcomeButton({
       role="radio"
       aria-checked={active}
       onClick={() => onPick(outcome)}
-      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${
         active ? activeTint : tint
       }`}
     >
