@@ -128,6 +128,14 @@ export function wipeAll(): void {
     "feedback_submissions",
     "demo_usage",
     "couple_members",
+    // P2.A — unified listing/vendor schema; community rows in `listings` orphan
+    // when community_suppliers is wiped, so clean them here. Curated rows are
+    // re-materialised by `backfillListings()` on the next boot; tests don't
+    // re-trigger it because the server is already running, so we DELETE only
+    // the community/claimed rows and trust the boot snapshot for curated.
+    "growth_events",
+    "listing_claims",
+    "vendor_accounts",
     "couple_currency_history",
     "consent_log",
     "supplier_views",
@@ -151,6 +159,13 @@ export function wipeAll(): void {
     } catch {
       // Table may not yet exist on a fresh boot; ignore.
     }
+  }
+  // Listings.curated stays (re-materialised by backfill on boot); wipe the
+  // mutable community/claimed slices so a test isn't surprised by orphans.
+  try {
+    db.exec("DELETE FROM listings WHERE source != 'curated'");
+  } catch {
+    // Listings table may not yet exist on a fresh boot; ignore.
   }
   // Re-seed the supplier taxonomy after wiping — public directory + admin
   // taxonomy tests expect the 6 default groups / 14 categories to exist.

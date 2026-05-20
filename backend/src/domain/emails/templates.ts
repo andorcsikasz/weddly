@@ -149,6 +149,13 @@ export interface CommunitySupplierVerifyPayload {
   verifyUrl: string;
 }
 
+export interface VendorClaimVerifyPayload {
+  /** Listing name surfaced in the email body. */
+  listingName: string;
+  /** Full URL the recipient clicks to claim — includes the single-use token. */
+  verifyUrl: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -172,6 +179,7 @@ export type KindPayload = {
   wedding_date_changed: WeddingDateChangedPayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
+  vendor_claim_verify: VendorClaimVerifyPayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -773,6 +781,36 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If this wasn't you and you don't want a listing, just ignore this email — the listing won't publish without a click.",
       ],
       cta: "Confirm listing",
+      footnote: "Link expires in 7 days.",
+    },
+  }),
+  // P2.C — vendor claim verify mail. Route `routes/vendor_claim.ts` actually
+  // sends this via `sendEmail` (the recipient isn't a Weddly user yet — no
+  // preferences row to honour); the builder below exists only so the type
+  // system stays exhaustive and a future migration to `sendKind` is a one-
+  // line change.
+  vendor_claim_verify: (p) => ({
+    subject: "Weddly: igényeld a listing tulajdonjogát / claim your listing",
+    ctaUrl: p.verifyUrl,
+    hu: {
+      preheader: `${p.listingName} tulajdonjogát igényelnéd?`,
+      greeting: "Szia!",
+      paragraphs: [
+        `Valaki a Weddly-n igényelte a(z) ${p.listingName} listing tulajdonjogát.`,
+        "Ha tényleg te vagy, kattints az alábbi linkre — ezzel jelszót állíthatsz be, és innentől te szerkesztheted a saját adataidat a katalógusban.",
+        "Ha nem te kezdeményezted, hagyd figyelmen kívül ezt az emailt — kattintás nélkül semmi sem történik.",
+      ],
+      cta: "Listing átvétele",
+      footnote: "A link 7 napig érvényes.",
+    },
+    en: {
+      greeting: "Hi there,",
+      paragraphs: [
+        `Someone requested ownership of the ${p.listingName} listing on Weddly.`,
+        "If that was you, click the link below — you'll set a password and from then on manage the listing yourself in the directory.",
+        "If you didn't request this, just ignore the email — nothing happens without clicking the link.",
+      ],
+      cta: "Claim the listing",
       footnote: "Link expires in 7 days.",
     },
   }),
