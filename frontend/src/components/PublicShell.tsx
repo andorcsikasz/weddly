@@ -303,32 +303,33 @@ function PublicFooter() {
   const askGuestCode = useGuestCodePrompt();
   return (
     <footer className="mt-24 border-t border-paper-300 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-950/60">
-      {/* Band: guest CTA — italic serif label sitting just to the left of
-          the stationery-textured button, centred as a single cluster so
-          the invitation reads as one quiet beat instead of two opposed
-          ends of the band. */}
+      {/* Band: guest CTA. Italic serif label + a paper chip that mirrors
+          the header's `Szolgáltatóknak / Vendégeknek` lifted chips so the
+          two surfaces feel unified rather than two different button systems. */}
       <div className="border-b border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:flex-row sm:gap-5 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:flex-row sm:gap-4 sm:px-6">
           <p className="font-serif text-lg italic text-ink-900 dark:text-paper-50 sm:text-xl">
             {t("landing.footer_band_text")}
           </p>
           <button
             type="button"
-            className="stationery inline-flex items-center gap-2.5 rounded-lg border border-paper-400/80 px-5 py-2.5 text-sm font-medium text-ink-900 shadow-sm transition-all hover:border-ink-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 focus-visible:ring-offset-2 dark:border-umber-600 dark:text-paper-50 dark:hover:border-blush-300 dark:focus-visible:ring-blush-400"
+            className="btn-lifted inline-flex items-center gap-2 rounded-md border border-paper-300/70 bg-paper-100 px-3.5 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#1a1410] dark:[--btn-rim-hover:#0f0a07] dark:[--btn-rim-active:#251c14]"
             onClick={() => {
               void askGuestCode();
             }}
           >
-            <UserCheck size={15} aria-hidden />
+            <UserCheck size={14} aria-hidden />
             {t("landing.footer_band_cta")}
           </button>
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+      {/* Brand column is intentionally wider so the tagline has room to
+          breathe and the three link columns line up evenly to the right. */}
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
         <div>
           <Wordmark size="md" className="text-ink-900 dark:text-paper-50" />
-          <p className="mt-3 text-sm text-ink-600 dark:text-umber-200">
+          <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-600 dark:text-umber-200">
             {t("landing.footer_tagline")}
           </p>
         </div>
