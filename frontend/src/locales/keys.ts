@@ -2500,6 +2500,34 @@ export interface LocaleMessages {
     analytics_sub: string;
     analytics_retry: string;
     analytics_load_error: string;
+    /** Sticky-header chrome shared across every section. */
+    analytics_refresh: string;
+    analytics_last_loaded: string;
+    analytics_nav_money: string;
+    analytics_nav_activity: string;
+    analytics_nav_picks: string;
+    analytics_nav_engagement: string;
+    analytics_nav_demo: string;
+    /** Compact KPI tile labels added in the 2026 redesign. */
+    analytics_money_couples_with_budget_short: string;
+    analytics_money_couples_with_actuals_short: string;
+    analytics_money_median_ceiling: string;
+    analytics_activity_signups_24h: string;
+    analytics_activity_signups_30d: string;
+    analytics_activity_active_users_24h: string;
+    analytics_activity_verified_pct: string;
+    analytics_picks_per_couple_avg: string;
+    analytics_picks_sources_mix: string;
+    analytics_engagement_session_avg_short: string;
+    analytics_engagement_sessions_total_short: string;
+    analytics_engagement_d7_retention: string;
+    analytics_engagement_top_feature_kpi: string;
+    analytics_engagement_top_feature_none: string;
+    analytics_demo_kpi_total: string;
+    analytics_demo_kpi_served: string;
+    analytics_demo_kpi_active: string;
+    analytics_demo_kpi_events: string;
+    analytics_demo_kpi_lifetime: string;
     /** Section headers — three `<section className="card">` blocks. */
     analytics_section_money: string;
     analytics_section_activity: string;
