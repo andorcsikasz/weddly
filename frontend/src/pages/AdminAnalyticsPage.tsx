@@ -505,30 +505,15 @@ function MoneySection({
             <KpiTile
               label={t("admin.analytics_money_avg_planned")}
               value={formatHuf(m.planned_huf.avg, locale)}
-              sub={t("admin.analytics_money_sub_distribution", {
-                median: formatHuf(m.planned_huf.median, locale),
-                p25: formatHuf(m.planned_huf.p25, locale),
-                p75: formatHuf(m.planned_huf.p75, locale),
-              })}
               emphasis
             />
             <KpiTile
               label={t("admin.analytics_money_avg_actual")}
               value={formatHuf(m.actual_huf.avg, locale)}
-              sub={t("admin.analytics_money_sub_distribution", {
-                median: formatHuf(m.actual_huf.median, locale),
-                p25: formatHuf(m.actual_huf.p25, locale),
-                p75: formatHuf(m.actual_huf.p75, locale),
-              })}
             />
             <KpiTile
               label={t("admin.analytics_money_median_ceiling")}
               value={formatHuf(m.budget_ceiling_huf.median, locale)}
-              sub={t("admin.analytics_money_sub_distribution", {
-                median: formatHuf(m.budget_ceiling_huf.avg, locale),
-                p25: formatHuf(m.budget_ceiling_huf.p25, locale),
-                p75: formatHuf(m.budget_ceiling_huf.p75, locale),
-              })}
             />
           </div>
 
