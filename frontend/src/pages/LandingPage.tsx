@@ -427,11 +427,8 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <SectionLabel num="—" label={t("landing.pricing_eyebrow")} className="justify-center" />
-            <h2 className="mt-5 font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-              {t("landing.pricing_title")}
-            </h2>
           </div>
-          <div className="relative mx-auto mt-10 max-w-lg">
+          <div className="relative mx-auto mt-8 max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-8 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-10">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
                 {t("landing.stats_eyebrow")}
