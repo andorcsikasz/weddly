@@ -6,20 +6,24 @@
 
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatHuf } from "../lib/format";
+import type { Currency } from "@shared/types";
+import { formatMoney, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 const MIN_GUESTS = 20;
 const MAX_GUESTS = 250;
 const DEFAULT_GUESTS = 80;
 
-// Range tuned for the Hungarian market — anything under 3M is unrealistic
-// for a wedding with catering, and anything over 12M is the long tail. A
-// tighter range makes the slider feel meaningful on every drag.
-const MIN_BUDGET = 3_000_000;
-const MAX_BUDGET = 12_000_000;
-const BUDGET_STEP = 100_000;
-const DEFAULT_BUDGET = 6_000_000;
+// Per-currency slider bounds. HU range covers the 3–12M Ft realistic span
+// (sub-3M can't cover catering, 12M+ is the long tail). EUR/USD ranges are
+// rough EN-market equivalents — wide enough that any visitor finds their
+// number in the first drag, narrow enough that each tick feels meaningful.
+type BudgetRange = { min: number; max: number; step: number; default: number };
+const BUDGET_RANGES: Record<Currency, BudgetRange> = {
+  HUF: { min: 3_000_000, max: 12_000_000, step: 100_000, default: 6_000_000 },
+  EUR: { min: 8_000, max: 60_000, step: 500, default: 25_000 },
+  USD: { min: 10_000, max: 80_000, step: 500, default: 30_000 },
+};
 
 // Curated breakdown ratios for HU weddings. Order = display order (the
 // reserve bucket lives at the end because it is conceptually a buffer
@@ -75,8 +79,10 @@ function stashDraft(guests: number, budget: number) {
 
 export function InteractiveBudgetDemo() {
   const { t, locale } = useT();
+  const currency = localeCurrency(locale);
+  const range = BUDGET_RANGES[currency];
   const [guests, setGuests] = useState(DEFAULT_GUESTS);
-  const [budget, setBudget] = useState(DEFAULT_BUDGET);
+  const [budget, setBudget] = useState(range.default);
 
   // Multiply each curated share by the chosen total, then normalise bar
   // widths against the largest row so the chart reads at a glance.
@@ -155,23 +161,23 @@ export function InteractiveBudgetDemo() {
                   {t("landing.demo_budget_label")}
                 </label>
                 <span className="font-serif text-xl italic text-blush-700 dark:text-blush-300">
-                  {formatHuf(budget, locale)}
+                  {formatMoney(budget, currency, locale)}
                 </span>
               </div>
               <input
                 id="demo-budget"
                 type="range"
-                min={MIN_BUDGET}
-                max={MAX_BUDGET}
-                step={BUDGET_STEP}
+                min={range.min}
+                max={range.max}
+                step={range.step}
                 value={budget}
-                onChange={(e) => setBudget(clamp(Number(e.target.value), MIN_BUDGET, MAX_BUDGET))}
+                onChange={(e) => setBudget(clamp(Number(e.target.value), range.min, range.max))}
                 className="mt-2 w-full accent-blush-600"
                 aria-label={t("landing.demo_budget_label")}
               />
               <div className="mt-0.5 flex justify-between text-[11px] text-ink-500 dark:text-umber-300">
-                <span>{formatHuf(MIN_BUDGET, locale)}</span>
-                <span>{formatHuf(MAX_BUDGET, locale)}</span>
+                <span>{formatMoney(range.min, currency, locale)}</span>
+                <span>{formatMoney(range.max, currency, locale)}</span>
               </div>
             </div>
 
@@ -180,7 +186,7 @@ export function InteractiveBudgetDemo() {
                 {t("landing.demo_per_guest_label")}
               </p>
               <p className="ml-auto font-serif text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
-                {formatHuf(perGuest, locale)}
+                {formatMoney(perGuest, currency, locale)}
               </p>
             </div>
 
@@ -223,7 +229,7 @@ export function InteractiveBudgetDemo() {
                       {t(row.i18nKey)}
                     </span>
                     <span className="font-serif text-sm text-ink-700 dark:text-paper-100 tabular-nums">
-                      {formatHuf(row.amount, locale)}
+                      {formatMoney(row.amount, currency, locale)}
                     </span>
                   </div>
                   <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
@@ -241,7 +247,7 @@ export function InteractiveBudgetDemo() {
                   {t("landing.demo_total_label")}
                 </span>
                 <span className="font-serif text-lg text-ink-900 dark:text-paper-50 tabular-nums">
-                  {formatHuf(budget, locale)}
+                  {formatMoney(budget, currency, locale)}
                 </span>
               </div>
             </div>

@@ -12,6 +12,15 @@ import type {
 
 type Locale = "hu" | "en";
 
+/** Best-guess currency for a UI locale. HU → HUF, anything else → EUR. Used
+ *  by public surfaces (landing pricing, the budget try-it widget, feedback
+ *  value slider) that need to read as native to the visitor BEFORE they sign
+ *  up and pick a couple-level currency. After signup, prefer
+ *  `couple.currency` over this — the couple may have explicitly chosen USD. */
+export function localeCurrency(locale: Locale): Currency {
+  return locale === "hu" ? "HUF" : "EUR";
+}
+
 const MONEY = (locale: Locale, currency: Currency) =>
   new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     style: "currency",
