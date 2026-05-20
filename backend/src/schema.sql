@@ -726,3 +726,73 @@ CREATE TABLE IF NOT EXISTS demo_usage (
   feature_counts_json TEXT NOT NULL DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS idx_demo_usage_purged_at ON demo_usage(purged_at DESC);
+
+-- ── P2.A: Unified directory listing model ───────────────────────────────────
+--
+-- Splits the public-facing card ("listing") from the legal payee
+-- ("vendor_account"). Decided via multi-agent debate 2026-05-21: a single
+-- `suppliers` table conflates the payee with the card, which doesn't survive
+-- Phase 3 (Stripe Connect, KYC, multi-listing vendors — e.g. a photo+video
+-- studio that wants one payout account and two directory cards). See
+-- [[feedback_multi_agent_debate]].
+
+-- A legal payee, 1:1 with a users row of role='vendor'. Created when a vendor
+-- signs up self-serve OR claims an existing listing. Phase 3 will add
+-- stripe_account_id, kyc_status, and payout fields — deliberately kept out of
+-- P2.A scope (don't pre-build infra).
+CREATE TABLE IF NOT EXISTS vendor_accounts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  display_name TEXT NOT NULL,
+  contact_email TEXT,
+  contact_phone TEXT,
+  vat_number TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- Unified directory listing — the public-facing card for ANY source.
+-- id strategy preserves the existing public-string convention so couple_picks
+-- / couple_supplier_costs / supplier_votes / supplier_events can target
+-- `listings.id` without migrating their stored values:
+--   curated:    slug from suppliers_data.ts          (e.g. "etyeki-kuria")
+--   community:  'c' || community_suppliers.id        (e.g. "c47")
+--   claimed:    'v' || vendor_accounts.id            (Phase 2.5+ — fresh vendor listings)
+-- vendor_account_id is nullable so curated/unclaimed-community rows are
+-- first-class. When a vendor claims an existing listing, this flips to
+-- non-null without rewriting the id (couples' picks stay valid).
+-- content_hash short-circuits the boot-time idempotent upsert from
+-- suppliers_data.ts — identical content skips the UPDATE entirely. Also used
+-- as a row-fingerprint for community syncs so re-syncs are no-ops when
+-- nothing changed.
+-- status mirrors the community_suppliers state machine
+-- ('pending' | 'awaiting_review' | 'active' | 'hidden'); curated rows are
+-- always 'active'.
+CREATE TABLE IF NOT EXISTS listings (
+  id TEXT PRIMARY KEY,
+  source TEXT NOT NULL,                                        -- 'curated' | 'community' | 'claimed'
+  vendor_account_id INTEGER REFERENCES vendor_accounts(id) ON DELETE SET NULL,
+  category TEXT NOT NULL,
+  name TEXT NOT NULL,
+  city TEXT NOT NULL,
+  address TEXT,
+  website TEXT,
+  contact_email TEXT,
+  contact_phone TEXT,
+  blurb_hu TEXT,
+  blurb_en TEXT,
+  price_band INTEGER,                                          -- 1..5; null when unpriced
+  capacity_min INTEGER,
+  capacity_max INTEGER,
+  lat REAL,
+  lng REAL,
+  submitter_type TEXT,                                         -- 'user' | 'self' | NULL (curated)
+  status TEXT NOT NULL DEFAULT 'active',                       -- 'active' | 'pending' | 'awaiting_review' | 'hidden'
+  content_hash TEXT,                                           -- short-circuit for idempotent upserts
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_listings_source ON listings(source);
+CREATE INDEX IF NOT EXISTS idx_listings_category ON listings(category);
+CREATE INDEX IF NOT EXISTS idx_listings_vendor_account ON listings(vendor_account_id);
+CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
