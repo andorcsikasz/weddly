@@ -23,13 +23,15 @@ function detectInitial(): Locale {
   } catch {
     // localStorage may be blocked
   }
-  // Single-host deployment (weddly.hu) — no host-based locale signal. Fall
-  // back to navigator.language so a browser configured for English lands in
-  // EN by default; otherwise default to HU (our primary market).
-  if (typeof navigator !== "undefined" && navigator.language?.toLowerCase().startsWith("en")) {
-    return "en";
+  // Single-host deployment — no host-based locale signal. Sniff
+  // navigator.language: an HU-speaking browser lands in HU, everything
+  // else (FR, DE, ES, EN, …) defaults to EN. This is the flip from the
+  // HU-default era; the international-expansion shift means an unsaved
+  // visitor is more likely to want EN than HU.
+  if (typeof navigator !== "undefined" && navigator.language?.toLowerCase().startsWith("hu")) {
+    return "hu";
   }
-  return "hu";
+  return "en";
 }
 
 function resolve(tree: LocaleMessages, path: string): string | null {
