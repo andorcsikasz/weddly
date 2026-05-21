@@ -43,7 +43,7 @@ import { ensurePartnerGuests, listGuestsByCouple, renamePartnerGuest } from "../
 import { renderSeatingChartPdf } from "../domain/pdf";
 import { purgeOneCouple } from "../domain/purge";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
-import { getUserById, toUser, type UserRow } from "../domain/users";
+import { getUserById, normaliseLocale, toUser, type UserRow } from "../domain/users";
 import {
   type Ctx,
   HttpError,
@@ -128,6 +128,15 @@ function parseCurrency(raw: unknown): Currency | null {
     throw new HttpError(400, "currency must be HUF, EUR, or USD");
   }
   return raw as Currency;
+}
+
+/** Pick a sensible default currency for a new couple based on the owner's
+ *  signup locale. HU users get HUF (the dominant local market); EN / other
+ *  users get EUR (broadest international fit — covers most of the EU). The
+ *  picker is just a default — the user can override during onboarding via
+ *  the optional `currency` field, and they can flip via PATCH afterwards. */
+function defaultCurrencyForLocale(locale: "hu" | "en" | null): Currency {
+  return locale === "en" ? "EUR" : "HUF";
 }
 
 const VALID_CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -428,9 +437,14 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const locLng = parseOptionalFloat(body.location_lng, "location_lng", -180, 180);
   const locRadius = parseOptionalInt(body.location_radius_km, "location_radius_km", 0, 5000);
   const styleTags = parseStyleTags(body.style_tags);
-  // Currency is optional in onboarding — DB DEFAULT 'HUF' kicks in when the
-  // wizard skips the picker. Validated to the same allowlist as PATCH.
-  const currency: Currency = parseCurrency(body.currency) ?? "HUF";
+  // Currency is optional in onboarding. When the wizard ships an explicit
+  // pick we use it; otherwise we derive from the user's signup locale
+  // (HU→HUF, EN→EUR) so an international visitor isn't dropped into a
+  // Forint budget by accident. Both paths are validated through the same
+  // allowlist as PATCH.
+  const ownerRow = getUserById(userId);
+  const ownerLocale = normaliseLocale(ownerRow?.locale);
+  const currency: Currency = parseCurrency(body.currency) ?? defaultCurrencyForLocale(ownerLocale);
 
   const existing = getCoupleForUser(userId);
   if (existing) throw new HttpError(409, "Couple already onboarded for this user");

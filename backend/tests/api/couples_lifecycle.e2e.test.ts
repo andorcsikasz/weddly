@@ -211,6 +211,67 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     expect(r.status).toBe(400);
   });
 
+  test("onboard derives currency from owner locale when client omits the picker", async () => {
+    // EN-locale signup → couple defaults to EUR. HU-locale signup → HUF.
+    // This is the international-expansion fix: a fresh EN user shouldn't
+    // land in a Forint budget by accident.
+    wipeAll();
+
+    // EN user → EUR
+    const enReg = await req<RegisterResp>("POST", "/api/auth/register", {
+      email: "currency-en@weddly.test",
+      password: "supersafe123",
+      full_name: "EN User",
+      locale: "en",
+    });
+    expect(enReg.status).toBe(201);
+    await verifyUserEmail("currency-en@weddly.test");
+    const enOnboard = await req<{ couple: { currency: string } }>(
+      "POST",
+      "/api/couples/onboard",
+      { bride_name: "Anna", groom_name: "Bence" },
+      { token: enReg.data.token },
+    );
+    expect(enOnboard.status).toBe(201);
+    expect(enOnboard.data.couple.currency).toBe("EUR");
+
+    // HU user → HUF
+    const huReg = await req<RegisterResp>("POST", "/api/auth/register", {
+      email: "currency-hu@weddly.test",
+      password: "supersafe123",
+      full_name: "HU User",
+      locale: "hu",
+    });
+    expect(huReg.status).toBe(201);
+    await verifyUserEmail("currency-hu@weddly.test");
+    const huOnboard = await req<{ couple: { currency: string } }>(
+      "POST",
+      "/api/couples/onboard",
+      { bride_name: "Anna", groom_name: "Bence" },
+      { token: huReg.data.token },
+    );
+    expect(huOnboard.status).toBe(201);
+    expect(huOnboard.data.couple.currency).toBe("HUF");
+
+    // Explicit `currency` in the body still wins over the locale default.
+    const explReg = await req<RegisterResp>("POST", "/api/auth/register", {
+      email: "currency-explicit@weddly.test",
+      password: "supersafe123",
+      full_name: "EN User",
+      locale: "en",
+    });
+    expect(explReg.status).toBe(201);
+    await verifyUserEmail("currency-explicit@weddly.test");
+    const explOnboard = await req<{ couple: { currency: string } }>(
+      "POST",
+      "/api/couples/onboard",
+      { bride_name: "Anna", groom_name: "Bence", currency: "USD" },
+      { token: explReg.data.token },
+    );
+    expect(explOnboard.status).toBe(201);
+    expect(explOnboard.data.couple.currency).toBe("USD");
+  });
+
   test("past wedding_date is accepted (eloping-after-the-fact)", async () => {
     wipeAll();
     const { token } = await freshUserNoCouple("past-date@weddly.test");
