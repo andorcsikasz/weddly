@@ -107,13 +107,23 @@ export const authApi = {
     full_name: string;
     privacy_version: string;
     terms_version: string;
+    /** Current UI locale, persisted on users.locale so the user's preference
+     *  survives across devices. Backend only stores 'hu' | 'en'. */
+    locale?: "hu" | "en";
   }) => apiFetch<AuthSession>("POST", "/api/auth/register", body),
   /** Sign in OR register with a Google Identity Services credential JWT.
    *  Both version stamps are required so the GDPR consent ledger lands when
    *  this call creates a brand-new account; the server ignores them when the
    *  credential maps to an existing user. */
-  google: (body: { credential: string; privacy_version: string; terms_version: string }) =>
-    apiFetch<AuthSession>("POST", "/api/auth/google", body),
+  google: (body: {
+    credential: string;
+    privacy_version: string;
+    terms_version: string;
+    /** Same persistence semantics as `register.locale` — only applied to
+     *  brand-new accounts; ignored when the credential matches an
+     *  existing user. */
+    locale?: "hu" | "en";
+  }) => apiFetch<AuthSession>("POST", "/api/auth/google", body),
   login: (body: { email: string; password: string }) =>
     apiFetch<AuthSession>("POST", "/api/auth/login", body),
   logout: () => apiFetch<{ ok: true }>("POST", "/api/auth/logout"),

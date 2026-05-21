@@ -6,6 +6,9 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useS
 import { SessionExpiredDialog } from "../components/SessionExpiredDialog";
 import { ApiError, getToken, SESSION_EXPIRED_EVENT, setToken as persistToken } from "./api";
 import { authApi } from "./endpoints";
+import { useT } from "./i18n";
+
+const LOCALE_STORAGE_KEY = "weddly.locale";
 
 interface AuthState {
   user: User | null;
@@ -25,6 +28,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // True when an /api/* call returned 401 mid-session — pops the re-login
   // modal so the user can resume without losing typed state.
   const [sessionExpired, setSessionExpired] = useState(false);
+  const { setLocale: setI18nLocale } = useT();
+
+  // Sync the server-stored `user.locale` into the in-memory i18n state
+  // exactly once per login — but only if this device hasn't explicitly
+  // chosen a locale yet (empty localStorage). The local choice trumps the
+  // server preference on the device where the user made it. Server-stored
+  // locale wins on fresh devices where there's nothing to override.
+  useEffect(() => {
+    if (!user?.locale) return;
+    let hasLocalChoice = false;
+    try {
+      hasLocalChoice = window.localStorage.getItem(LOCALE_STORAGE_KEY) !== null;
+    } catch {
+      // localStorage blocked — fall through and apply the server pref.
+    }
+    if (!hasLocalChoice) {
+      setI18nLocale(user.locale);
+    }
+  }, [user?.locale, setI18nLocale]);
 
   const refresh = useCallback(async () => {
     if (!getToken()) {

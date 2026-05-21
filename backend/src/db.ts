@@ -349,6 +349,13 @@ db.exec(
 // either through the reset flow or any future "set initial password" surface.
 addColumnIfMissing("users", "password_set", "password_set INTEGER NOT NULL DEFAULT 1");
 
+// Per-user UI locale, captured at signup from navigator.language and
+// surfaced on /api/auth/me. Foundation for per-locale outbound email
+// (currently still bilingual HU+EN — that rewrite is a separate change).
+// Nullable so legacy users get falsy until they next sign in / update it.
+// Validation lives in the routes that write to it; here it's just TEXT.
+addColumnIfMissing("users", "locale", "locale TEXT");
+
 // Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
 // Default 0 (off) so couples who don't offer accommodation don't pester
 // guests with an irrelevant checkbox. When the couple flips it on from the

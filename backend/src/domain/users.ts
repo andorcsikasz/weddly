@@ -26,6 +26,10 @@ export interface UserRow {
    *  attacker with knowledge of the email can't quietly install a password
    *  on a Google-only account. Defaults to 1 for back-compat. */
   password_set?: number;
+  /** Per-user UI locale, captured at signup from the client's
+   *  navigator.language. Null for pre-feature rows; falls back to the
+   *  client's own detection in that case. */
+  locale?: string | null;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var
@@ -44,8 +48,18 @@ export function toUser(row: UserRow): User {
     is_admin: isAdminEmail(row.email),
     couple_id: row.couple_id,
     verified_email: Boolean(row.verified_email),
+    locale: normaliseLocale(row.locale),
     created_at: row.created_at,
   };
+}
+
+/** Coerce a raw DB locale value into the shape the frontend expects. We
+ *  only persist 'hu' | 'en' so anything else (legacy 'en-GB', stray
+ *  'es-419') drops to null; the client then falls back to its own
+ *  navigator detection. */
+export function normaliseLocale(raw: string | null | undefined): "hu" | "en" | null {
+  if (raw === "hu" || raw === "en") return raw;
+  return null;
 }
 
 export function getUserById(id: number): UserRow | null {

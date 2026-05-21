@@ -22,6 +22,10 @@ export interface User {
   /** Couple this user belongs to. `null` only on signup before onboarding. */
   couple_id: number | null;
   verified_email: boolean;
+  /** Per-user UI locale captured at signup. Null until the user signs up
+   *  through a client that sends `locale` in the register body — the
+   *  frontend then prefers `user.locale` over its own navigator detection. */
+  locale: "hu" | "en" | null;
   created_at: UnixMs;
 }
 

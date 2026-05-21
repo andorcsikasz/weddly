@@ -25,6 +25,11 @@ interface RegisterBody {
    *  clients keeps the ledger honest about what they actually saw. */
   privacy_version?: unknown;
   terms_version?: unknown;
+  /** UI locale the client is currently rendering in. Stored on `users.locale`
+   *  so the user's preference survives across devices. Only 'hu' | 'en' are
+   *  persisted; anything else (or omitted) leaves the column null and the
+   *  client falls back to its own navigator.language detection. */
+  locale?: unknown;
 }
 
 interface LoginBody {
@@ -79,12 +84,15 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
 
   const passwordHash = await hashPassword(password);
   const ts = now();
+  // Coerce locale at the boundary — only persist values the frontend +
+  // backend i18n actually understand. Anything else stays null.
+  const persistedLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
   const result = db
     .prepare(
-      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
-       VALUES (?, ?, ?, 'active', 'owner', 0, ?, ?)`,
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, locale, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 0, ?, ?, ?)`,
     )
-    .run(email, passwordHash, fullName, ts, ts);
+    .run(email, passwordHash, fullName, persistedLocale, ts, ts);
   const userId = Number(result.lastInsertRowid);
 
   const ip = ctx.clientIp;

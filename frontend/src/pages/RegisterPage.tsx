@@ -14,7 +14,7 @@ import { useDocumentMeta } from "../lib/seo";
 
 export default function RegisterPage() {
   const { setSession } = useAuth();
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   useDocumentMeta("seo.register_title", "seo.register_description");
   const navigate = useNavigate();
@@ -59,6 +59,10 @@ export default function RegisterPage() {
         full_name: fullName.trim(),
         privacy_version: PRIVACY_VERSION,
         terms_version: TERMS_VERSION,
+        // Carry the rendered locale so the user's preference survives across
+        // devices — backend persists to users.locale. Only the two values
+        // the i18n layer actually supports flow through.
+        locale,
       });
       // Hold the session in transient state ONLY — we do NOT persist the
       // token to localStorage yet. If we did, hitting BACK from the
