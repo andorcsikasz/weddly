@@ -36,6 +36,16 @@ export default defineConfig({
         // enumerate exhaustively. Path-prefix matches catch every file
         // resolved out of the named node_modules directory.
         manualChunks(id) {
+          // Locale chunks come first — they're heavy (~160KB each) and need
+          // to ship as separate files so the i18n layer can dynamic-import
+          // HU only when a non-EN-default visitor flips the language.
+          // Returning explicit chunk names ensures Vite emits them as
+          // hu-*.js / en-*.js even when the import looks eager (the
+          // prerender script imports both at build time, which would
+          // otherwise inline them into the main chunk).
+          if (id.includes("/src/locales/hu.ts")) return "locale-hu";
+          if (id.includes("/src/locales/en.ts")) return "locale-en";
+
           if (!id.includes("node_modules")) return undefined;
           // React core + scheduler — never changes for our visitors and is
           // the single biggest fixed cost.

@@ -1,12 +1,29 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import en from "../locales/en";
-import hu from "../locales/hu";
 import type { LocaleMessages } from "../locales/keys";
 
 export type Locale = "hu" | "en";
 
 const STORAGE_KEY = "weddly.locale";
-const TREES: Record<Locale, LocaleMessages> = { hu, en };
+
+// Locale-tree cache. EN is bundled eagerly (Next-9: was 162KB; previously
+// hu+en together inflated the initial chunk by 347KB / 63% of `index.js`).
+// HU is dynamically imported the first time setLocale("hu") fires; the
+// promise is cached so a back-and-forth flip doesn't re-fetch. Real HU
+// users (navigator.language=hu) pay one extra network round trip on the
+// I18nProvider mount; everyone else (EN default, FR, DE, …) saves the
+// full HU chunk.
+const TREES: Partial<Record<Locale, LocaleMessages>> = { en };
+let huPromise: Promise<LocaleMessages> | null = null;
+function loadHu(): Promise<LocaleMessages> {
+  if (TREES.hu) return Promise.resolve(TREES.hu);
+  if (huPromise) return huPromise;
+  huPromise = import("../locales/hu").then((mod) => {
+    TREES.hu = mod.default;
+    return mod.default;
+  });
+  return huPromise;
+}
 
 interface I18nState {
   locale: Locale;
@@ -64,8 +81,11 @@ function pickCount(vars?: Record<string, string | number>): number | null {
   return null;
 }
 
-/** Walks both trees and warns on missing keys. Catches translation drift early. */
-function warnDrift() {
+/** Walks both trees and warns on missing keys. Catches translation drift early.
+ *  Dev-only — gated by `import.meta.env.DEV` so the production bundle never
+ *  loads the HU chunk just to lint it. */
+async function warnDriftDev() {
+  const huTree = await loadHu();
   const flatten = (obj: Record<string, unknown>, prefix = ""): string[] => {
     const out: string[] = [];
     for (const [k, v] of Object.entries(obj)) {
@@ -75,7 +95,7 @@ function warnDrift() {
     }
     return out;
   };
-  const huKeys = new Set(flatten(hu as unknown as Record<string, unknown>));
+  const huKeys = new Set(flatten(huTree as unknown as Record<string, unknown>));
   const enKeys = new Set(flatten(en as unknown as Record<string, unknown>));
   for (const k of huKeys) if (!enKeys.has(k)) console.warn("[i18n] missing in en:", k);
   for (const k of enKeys) if (!huKeys.has(k)) console.warn("[i18n] missing in hu:", k);
@@ -83,32 +103,66 @@ function warnDrift() {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(detectInitial);
+  // Bumps when the dynamic HU import resolves, so components re-render with
+  // the freshly-loaded tree once it's available. Without this, the initial
+  // HU detection would render with EN strings (the fallback) until the user
+  // flipped something that triggered a re-render.
+  const [huLoadedAt, setHuLoadedAt] = useState<number>(0);
+
+  // On mount: if HU is the initial locale, kick off the import so the user
+  // doesn't see EN strings flash before the dynamic chunk lands. The flash
+  // window is one paint frame in practice — Vite splits the chunk into a
+  // sibling preload, but a slow network is still a slow network.
+  useEffect(() => {
+    if (locale === "hu" && !TREES.hu) {
+      void loadHu().then(() => setHuLoadedAt(Date.now()));
+    }
+  }, [locale]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
-    if (import.meta.env.DEV) warnDrift();
+    if (import.meta.env.DEV) void warnDriftDev();
   }, [locale]);
 
-  const setLocale = (l: Locale) => {
+  const setLocale = useCallback((l: Locale) => {
     try {
       localStorage.setItem(STORAGE_KEY, l);
     } catch {
       // ignore
     }
-    setLocaleState(l);
-  };
-
-  const t = (path: string, vars?: Record<string, string | number>) => {
-    const tree = TREES[locale];
-    const count = pickCount(vars);
-    if (count !== null) {
-      const variant = count === 1 ? `${path}_one` : `${path}_other`;
-      const pluralForm = resolve(tree, variant);
-      if (pluralForm !== null) return interpolate(pluralForm, vars);
+    if (l === "hu" && !TREES.hu) {
+      // Flip the state first so the rest of the UI snaps to its new locale
+      // immediately; the HU chunk arrives a tick later and triggers a
+      // re-render via `huLoadedAt`. The EN fallback in `t()` means the
+      // interim isn't blank, just temporarily in EN.
+      setLocaleState(l);
+      void loadHu().then(() => setHuLoadedAt(Date.now()));
+    } else {
+      setLocaleState(l);
     }
-    const base = resolve(tree, path);
-    return interpolate(base ?? path, vars);
-  };
+  }, []);
+
+  const t = useCallback(
+    (path: string, vars?: Record<string, string | number>) => {
+      // `huLoadedAt` is read here only to make the closure re-evaluate when
+      // the dynamic HU import lands — without referencing it, useCallback
+      // would memoise against a stale TREES.hu of `undefined`.
+      void huLoadedAt;
+      // Fall back to EN whenever the requested tree isn't ready yet (HU
+      // mid-load) — better than showing the raw key. Once the chunk lands,
+      // the next render uses the real HU string.
+      const tree = TREES[locale] ?? en;
+      const count = pickCount(vars);
+      if (count !== null) {
+        const variant = count === 1 ? `${path}_one` : `${path}_other`;
+        const pluralForm = resolve(tree, variant);
+        if (pluralForm !== null) return interpolate(pluralForm, vars);
+      }
+      const base = resolve(tree, path);
+      return interpolate(base ?? path, vars);
+    },
+    [locale, huLoadedAt],
+  );
 
   return <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>;
 }
