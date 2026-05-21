@@ -108,6 +108,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persistToken(null);
     setUser(null);
     setSessionExpired(false);
+    // Drop the verify-email bypass flag — otherwise logout → relogin as a
+    // different unverified user would skip the gate (the flag is keyed by
+    // browser tab, not by user). Mirrors the same key VerifyEmailGate writes.
+    try {
+      window.sessionStorage.removeItem("weddly.verify.bypass");
+    } catch {
+      /* sessionStorage may be blocked — non-fatal, gate remains correct
+         on the next render because the flag was never set in that case */
+    }
     // Tell Google Identity Services the user explicitly signed out so the
     // next visit to /login doesn't auto_select them back in via One Tap.
     // Safe to call when GSI was never loaded — the optional chain no-ops.
