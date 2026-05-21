@@ -134,6 +134,14 @@ export function purgeOneCouple(
     "UPDATE couple_pause_requests SET status = 'completed', completed_at = ? WHERE couple_id = ? AND status = 'pending'",
   ).run(ts, coupleId);
 
+  // Next-11 (GDPR purge gap): growth_events.couple_id has ON DELETE CASCADE,
+  // but `purgeOneCouple` scrubs the couples row in-place (line 117 UPDATE,
+  // not DELETE), so the cascade never fires. Explicit DELETE here so the
+  // behavioural trail — `referrer` (may carry microsite slugs that
+  // re-identify the wedding) + `payload_json` — is wiped alongside the
+  // rest of the workspace's data.
+  db.prepare("DELETE FROM growth_events WHERE couple_id = ?").run(coupleId);
+
   addAuditLog({
     actor_user_id: null,
     couple_id: coupleId,
@@ -194,6 +202,26 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
   // identifying content tied to this user.
   db.prepare("DELETE FROM supplier_votes WHERE user_id = ?").run(userId);
   db.prepare("DELETE FROM feedback_submissions WHERE user_id = ?").run(userId);
+
+  // Next-11 — three Phase-2 tables that didn't exist when this sweep was
+  // first written:
+  //   - listing_claims.email_sent_to is raw PII (the vendor's contact
+  //     email captured at claim-start). Not FK-linked to users, so
+  //     nothing cascades it away — DELETE explicitly.
+  //   - vendor_accounts.owner_user_id has ON DELETE CASCADE, but we
+  //     scrub the users row in-place (UPDATE below), so the cascade
+  //     never fires. DELETE explicitly; that in turn flips
+  //     listings.vendor_account_id + listing_claims.vendor_account_id
+  //     to NULL via their FK SET-NULL rules, leaving the directory
+  //     listing as orphaned-but-public (correct: it's curated content,
+  //     not the user's personal data).
+  //   - growth_events.user_id is ON DELETE SET NULL but the users row
+  //     survives the scrub, so explicit UPDATE de-links the behavioural
+  //     trail from the now-purged identity. Row kept (aggregate-only).
+  db.prepare("DELETE FROM listing_claims WHERE email_sent_to = ?").run(user.email);
+  db.prepare("DELETE FROM vendor_accounts WHERE owner_user_id = ?").run(userId);
+  db.prepare("UPDATE growth_events SET user_id = NULL WHERE user_id = ?").run(userId);
+
   db.prepare(
     `UPDATE users SET email = 'deleted-' || id || '@purged.local',
                       password_hash = '!purged!',
