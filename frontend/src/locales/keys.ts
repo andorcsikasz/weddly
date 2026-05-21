@@ -2645,20 +2645,6 @@ export interface LocaleMessages {
     feedback_delete_confirm_body: string;
     feedback_anon: string;
     feedback_no_message: string;
-    /** Filter chip labels at the top of the inbox — multi-select; default
-     *  active = "new + read" ("untriaged"). */
-    feedback_filter_new: string;
-    feedback_filter_read: string;
-    feedback_filter_resolved: string;
-    feedback_filter_dismissed: string;
-    /** Empty-state and error-state copy. The empty state replaces the
-     *  one-liner with a real lucide icon + title + description pointing
-     *  to the public /visszajelzes form. */
-    feedback_empty_title: string;
-    feedback_empty_body: string;
-    feedback_load_error_title: string;
-    feedback_load_error_body: string;
-    feedback_retry: string;
     /** /app/admin/analytics page — three orthogonal rollups (money,
      *  activity, picks) rendered as KPI tiles + tables + CSS bar charts.
      *  Read-only — no actions, no per-row drilldown. */

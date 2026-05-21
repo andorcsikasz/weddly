@@ -90,3 +90,75 @@ describe("GET /api/public/wedding/:slug — minimal coverage", () => {
     expect(r.status).toBe(400);
   });
 });
+
+describe("/w/:slug SSR meta — couple-personalised <title> + OG tags", () => {
+  test("opted-in couple → title carries name + date, og:image uses cover URL", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("ssr-meta@weddly.test");
+    db.prepare(
+      "UPDATE couples SET is_public = 1, venue_name = ?, cover_image_url = ? WHERE id = ?",
+    ).run("Festetics Palace", "https://images.example/cover.jpg", coupleId);
+    const slugRow = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
+      | { slug: string }
+      | undefined;
+
+    // The frontend index.html is only served when the SPA bundle exists in
+    // dist/ — in tests we hit the raw seo_ssr module instead, which lets us
+    // assert the SSR contract without a build step.
+    const { renderIndexHtml } = await import("../../src/lib/seo_ssr");
+    const template = [
+      '<!doctype html><html lang="hu"><head>',
+      "<!-- SEO_HEAD_START -->",
+      "<title>placeholder</title>",
+      "<!-- SEO_HEAD_END -->",
+      "</head><body><div id=\"root\"></div></body></html>",
+    ].join("\n");
+    const html = renderIndexHtml(template, {
+      host: "weddly.hu",
+      pathname: `/w/${slugRow!.slug}`,
+      isRsvp: false,
+    });
+
+    // Title carries the couple display_name + wedding date + venue.
+    expect(html).toContain("<title>");
+    expect(html).toContain("2026-09-12");
+    expect(html).toContain("Festetics Palace");
+    // og:image points at the couple-pasted cover URL, not the brand fallback.
+    expect(html).toContain('property="og:image" content="https://images.example/cover.jpg"');
+    expect(html).not.toContain('content="https://weddly.hu/og.png"');
+  });
+
+  test("private couple → SSR falls back to brand meta (no personalisation leak)", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("ssr-meta-private@weddly.test");
+    // is_public stays 0 by default — the lookup must return null.
+    const slugRow = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
+      | { slug: string }
+      | undefined;
+
+    const { renderIndexHtml } = await import("../../src/lib/seo_ssr");
+    const template = [
+      '<!doctype html><html lang="hu"><head>',
+      "<!-- SEO_HEAD_START -->",
+      "<title>placeholder</title>",
+      "<!-- SEO_HEAD_END -->",
+      "</head><body></body></html>",
+    ].join("\n");
+    const html = renderIndexHtml(template, {
+      host: "weddly.hu",
+      pathname: `/w/${slugRow!.slug}`,
+      isRsvp: false,
+    });
+
+    // No couple data in the head — brand default title + og:image. The
+    // slug itself is allowed in `canonical` / `og:url` because that's
+    // just the URL the page was served on; the leak we guard against is
+    // names / dates / venue showing up in title or description.
+    expect(html).toContain('content="https://weddly.hu/og.png"');
+    expect(html).toContain("Wēddly · Közös esküvőtervezés egy helyen");
+    // Spot-check that the bride/groom test names (set by bootstrapCouple)
+    // do NOT leak into the head when is_public = 0.
+    expect(html).not.toContain("Anna");
+    expect(html).not.toContain("Bence");
+  });
+});

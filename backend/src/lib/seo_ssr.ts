@@ -12,6 +12,8 @@
 
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { lookupRouteSeo } from "../../../shared/seo_routes";
+import { db } from "../db";
+import { normalizeSlugInput } from "../domain/slug";
 
 export const HU_HOST = "weddly.hu";
 /** Canonical host for every public URL in SEO output. */
@@ -174,7 +176,61 @@ function buildJsonLd(opts: {
  *  stops every public URL from re-using the landing's meta — Googlebot's
  *  HTML-only crawl then sees a distinct title + description per indexed
  *  page instead of "the same page repeated nine times". */
-function buildHeadBlock(opts: { host: string | null; pathname: string; isRsvp: boolean }): string {
+/** Slug-to-meta lookup for the public wedding website (`/w/:slug`). Returns
+ *  null if the path isn't a wedding URL, the slug doesn't resolve, the
+ *  workspace isn't active, OR the couple hasn't opted in (`is_public = 0`).
+ *  Same SELECT predicate as `routes/public_wedding.ts:resolveCoupleBySlug`
+ *  so the SSR <head> and the JSON endpoint can never disagree. */
+export interface WeddingSiteMeta {
+  display_name: string;
+  wedding_date: string | null;
+  venue_name: string | null;
+  cover_image_url: string | null;
+}
+
+const WEDDING_PATH_RE = /^\/w\/([^/?#]+)/;
+
+export function lookupWeddingSiteMeta(pathname: string | null | undefined): WeddingSiteMeta | null {
+  if (!pathname) return null;
+  const m = WEDDING_PATH_RE.exec(pathname);
+  if (!m) return null;
+  const slugRaw = decodeURIComponent(m[1] ?? "");
+  if (!slugRaw || slugRaw.length > 64) return null;
+  const slug = normalizeSlugInput(slugRaw);
+  if (!slug) return null;
+  const row = db
+    .prepare(
+      "SELECT display_name, wedding_date, venue_name, cover_image_url FROM couples WHERE slug = ? AND status = 'active' AND is_public = 1",
+    )
+    .get(slug) as
+    | {
+        display_name: string;
+        wedding_date: string | null;
+        venue_name: string | null;
+        cover_image_url: string | null;
+      }
+    | undefined;
+  if (!row) return null;
+  return {
+    display_name: row.display_name,
+    wedding_date: row.wedding_date,
+    venue_name: row.venue_name,
+    cover_image_url: row.cover_image_url,
+  };
+}
+
+function buildHeadBlock(opts: {
+  host: string | null;
+  pathname: string;
+  isRsvp: boolean;
+  /** Couple-specific overrides for the `/w/:slug` route. When present, the
+   *  `<title>` + meta description + OG/Twitter title+description switch
+   *  to a personalised string and `cover_image_url` (if set) replaces
+   *  the brand og.png. The whole viral loop hinges on this — the share
+   *  card on FB / WhatsApp / iMessage must say "Anna & Bence · 12 Sept 2026"
+   *  and show their cover image, not "Plan your wedding together". */
+  weddingMeta?: WeddingSiteMeta | null;
+}): string {
   const locale = localeForHost(opts.host);
   const defaultMeta = META[locale];
   const altDefaultMeta = META[locale === "hu" ? "en" : "hu"];
@@ -182,16 +238,46 @@ function buildHeadBlock(opts: { host: string | null; pathname: string; isRsvp: b
   const path = opts.pathname || "/";
   const canonicalUrl = `https://${canonicalHost}${path}`;
   const huUrl = `https://${CANONICAL_HOST}${path}`;
-  const ogImage = `https://${canonicalHost}${opts.isRsvp ? "/og-rsvp.png" : "/og.png"}`;
+  // Couple-specific OG image when the couple set a cover URL; falls back
+  // to /og-rsvp.png on RSVP routes and the brand /og.png everywhere else.
+  // External URLs are passed through as-is (couple-pasted Imgur / Cloudinary).
+  let ogImage: string;
+  if (opts.weddingMeta?.cover_image_url) {
+    ogImage = opts.weddingMeta.cover_image_url;
+  } else if (opts.isRsvp) {
+    ogImage = `https://${canonicalHost}/og-rsvp.png`;
+  } else {
+    ogImage = `https://${canonicalHost}/og.png`;
+  }
 
   // Route-specific title + description take precedence over the landing
   // defaults so each public path ships a unique <title> / description in
   // the initial HTML. Twitter description, og image, locales etc. stay
   // from the landing META (those are brand-level, not page-level).
-  const routeSeo = lookupRouteSeo(path);
-  const title = routeSeo ? routeSeo[locale].title : defaultMeta.title;
-  const description = routeSeo ? routeSeo[locale].description : defaultMeta.description;
-  const twDescription = routeSeo ? routeSeo[locale].description : defaultMeta.twDescription;
+  // The wedding-site override is highest priority — couple-personalised
+  // share cards beat both route SEO and brand defaults.
+  let title: string;
+  let description: string;
+  let twDescription: string;
+  if (opts.weddingMeta) {
+    const wm = opts.weddingMeta;
+    const dateBlock = wm.wedding_date ?? "";
+    const venueBlock = wm.venue_name ? ` · ${wm.venue_name}` : "";
+    title = `${wm.display_name}${dateBlock ? ` · ${dateBlock}` : ""}${venueBlock}`;
+    // Localised description sentence — same shape for HU + EN, just the
+    // connector word changes. Keeps the share-card body warm without
+    // having to drop the names into a long brand pitch.
+    description =
+      locale === "hu"
+        ? `${wm.display_name} esküvői oldala — programterv, helyszín, RSVP.`
+        : `${wm.display_name} — schedule, venue and RSVP in one place.`;
+    twDescription = description;
+  } else {
+    const routeSeo = lookupRouteSeo(path);
+    title = routeSeo ? routeSeo[locale].title : defaultMeta.title;
+    description = routeSeo ? routeSeo[locale].description : defaultMeta.description;
+    twDescription = routeSeo ? routeSeo[locale].description : defaultMeta.twDescription;
+  }
 
   return [
     `<title>${escapeAttr(title)}</title>`,
@@ -288,7 +374,10 @@ export function renderIndexHtml(
   opts: { host: string | null; pathname: string; isRsvp: boolean },
 ): string {
   const locale = localeForHost(opts.host);
-  const head = buildHeadBlock(opts);
+  // Look up the couple meta once at the boundary — `buildHeadBlock` is a
+  // pure string-builder so we keep the DB read here.
+  const weddingMeta = lookupWeddingSiteMeta(opts.pathname);
+  const head = buildHeadBlock({ ...opts, weddingMeta });
 
   // Splice the <head> block.
   let out: string;

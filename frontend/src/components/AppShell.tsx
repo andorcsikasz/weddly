@@ -728,9 +728,7 @@ function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: b
       {/* Hairline only — shown at md (icon-only rail) and at lg+ when the
           user has collapsed the rail. */}
       <div
-        className={`mx-2 my-2 h-px bg-paper-300 dark:bg-umber-700 ${
-          collapsed ? "" : "lg:hidden"
-        }`}
+        className={`mx-2 my-2 h-px bg-paper-300 dark:bg-umber-700 ${collapsed ? "" : "lg:hidden"}`}
         aria-hidden
       />
       {/* Labelled header — only renders in the fully-expanded rail. */}
