@@ -841,7 +841,7 @@ export default function AdminUsersPage() {
                 {filteredOrphans.length === 0 ? (
                   <AdminEmptyState>{t("admin.orphans_empty")}</AdminEmptyState>
                 ) : (
-                  <div className="card overflow-x-auto p-0">
+                  <div className="admin-card overflow-x-auto !p-0">
                     <table className="min-w-full text-sm">
                       <thead className="bg-paper-100 text-left eyebrow dark:bg-umber-700/60">
                         <tr>

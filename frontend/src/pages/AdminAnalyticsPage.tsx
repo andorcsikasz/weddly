@@ -382,7 +382,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="card p-5">
+    <section className="admin-card !p-5">
       <header className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="eyebrow m-0">{title}</h2>
         {subtitle && <span className="text-xs text-ink-500 dark:text-umber-300">{subtitle}</span>}
@@ -546,7 +546,11 @@ function MoneySection({
                       key={b.bucket_max_huf}
                       className="grid grid-cols-[8rem_1fr_3rem] items-center gap-2"
                     >
-                      <span className="stat-num text-left text-xs text-ink-600 dark:text-umber-200">
+                      <span
+                        className={`text-left text-xs text-ink-600 dark:text-umber-200 ${
+                          b.bucket_max_huf === 0 ? "" : "stat-num"
+                        }`}
+                      >
                         {b.bucket_max_huf === 0
                           ? t("admin.analytics_money_histogram_no_budget")
                           : t("admin.analytics_money_histogram_bucket_upper", {

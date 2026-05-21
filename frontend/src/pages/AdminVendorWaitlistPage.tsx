@@ -338,7 +338,7 @@ function EntryCard({
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant="accent"
                 size="sm"
                 onClick={onReopen}
                 loading={pending}
@@ -399,7 +399,7 @@ function EntryCard({
             {entry.message && (
               <div className="admin-tile">
                 <p className="eyebrow">{t("admin.waitlist_card_message_label")}</p>
-                <p className="mt-1 text-sm italic text-ink-700 dark:text-paper-100">
+                <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
                   {entry.message}
                 </p>
               </div>

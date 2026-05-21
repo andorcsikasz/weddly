@@ -326,7 +326,7 @@ export default function AdminFeedbackPage() {
                         </a>
                       )}
                       {!displayName && !displayEmail && (
-                        <span className="text-xs italic text-ink-500 dark:text-umber-300">
+                        <span className="text-xs text-ink-500 dark:text-umber-300">
                           {t("admin.feedback_anon")}
                         </span>
                       )}
@@ -337,7 +337,7 @@ export default function AdminFeedbackPage() {
                           {e.message}
                         </p>
                       ) : (
-                        <span className="text-xs italic text-ink-500 dark:text-umber-300">
+                        <span className="text-xs text-ink-500 dark:text-umber-300">
                           {t("admin.feedback_no_message")}
                         </span>
                       )}

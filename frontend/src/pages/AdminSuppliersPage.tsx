@@ -706,7 +706,7 @@ function SupplierCard({
                   <DefRow
                     label={t("admin.suppliers_card_field_hide_reason")}
                     value={
-                      <span className="italic text-ink-600 dark:text-umber-200">{s.hide_reason}</span>
+                      <span className="text-ink-600 dark:text-umber-200">{s.hide_reason}</span>
                     }
                   />
                 ) : null}
@@ -755,12 +755,12 @@ function SupplierCard({
           {/* Admin notes — the CRM heart of the page. Editable in place, with a
            *  dirty indicator and an explicit save action so an accidental tab
            *  away doesn't silently drop a half-typed thought. */}
-          <section className="flex flex-col gap-2 rounded-2xl bg-paper-50 p-4 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700">
+          <section className="admin-card flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <h3 className="eyebrow m-0">{t("admin.suppliers_card_section_notes")}</h3>
               <span
-                className={`text-[10px] uppercase tracking-wide ${
-                  dirty ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"
+                className={`eyebrow ${
+                  dirty ? "text-blush-700 dark:text-blush-300" : ""
                 }`}
               >
                 {dirty
