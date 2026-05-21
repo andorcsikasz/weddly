@@ -1333,6 +1333,9 @@ export interface LocaleMessages {
     csv_help: string;
     full_name: string;
     email: string;
+    send_invite_label: string;
+    send_invite_help: string;
+    send_invite_disabled_help: string;
     phone: string;
     group: string;
     rsvp: string;

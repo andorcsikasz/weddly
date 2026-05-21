@@ -8,9 +8,11 @@ import type {
   MealChoice,
   RsvpStatus,
 } from "@shared/types";
+import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
+import { sendKind } from "../domain/emails";
 import { recordExport } from "../domain/exports";
 import { indexHeaders, parseCsv } from "../lib/csv";
 import {
@@ -57,6 +59,12 @@ interface UpsertBody {
    *  invited_at is also set, since delivered implies invited); `false` clears
    *  only the delivered timestamp. Omitted = leave as-is. */
   delivered?: unknown;
+  /** Boolean — `true` and `email` present: fire a `guest_invite` email with a
+   *  one-click /rsvp/{invite_code} link. Also stamps `invited_at` so the
+   *  guest row's status badge moves to "invited" in the UI. Silently ignored
+   *  when no email is on the guest or the flag is false. Create-only — for
+   *  resends, use the dedicated endpoint (TODO when it lands). */
+  send_invite?: unknown;
   /** Household this guest belongs to. If omitted on create, the server
    *  spawns a household-of-one with the guest's name as its label. */
   household_id?: unknown;
@@ -237,8 +245,12 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   // `invited` / `delivered` are optional — when truthy, the create call stamps
   // both timestamps at `ts`. `delivered=true` implies `invited=true` (you
   // can't physically hand over an invitation that was never marked invited).
+  // `send_invite=true` ALSO implies `invited=true` — firing the invite email
+  // is itself the invitation, so the guest's status badge moves to invited
+  // without the couple needing to flip a second toggle.
+  const willSendInvite = body.send_invite === true && parsed.email !== null;
   const deliveredAt = body.delivered === true ? ts : null;
-  const invitedAt = body.invited === true || deliveredAt !== null ? ts : null;
+  const invitedAt = body.invited === true || deliveredAt !== null || willSendInvite ? ts : null;
   const result = db
     .prepare(
       `INSERT INTO guests
@@ -282,6 +294,29 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   });
 
   const row = getGuestByIdScoped(guestId, couple.id) as GuestRow;
+
+  // Fire the invite email AFTER the row + audit log are persisted so a failed
+  // mailer (no Resend key in dev, transient 5xx in prod) doesn't roll back
+  // the guest create. `sendKind` is fire-and-forget and records its own
+  // attempt in `email_log` — the route stays synchronous and fast.
+  if (willSendInvite && parsed.email) {
+    const rsvpUrl = `${CONFIG.frontendBaseUrl}/rsvp/${code}`;
+    void sendKind(
+      "guest_invite",
+      {
+        coupleDisplayName: couple.display_name,
+        guestName: parsed.full_name,
+        weddingDate: couple.wedding_date,
+        rsvpUrl,
+      },
+      {
+        user: null,
+        guest: { email: parsed.email, full_name: parsed.full_name },
+        couple_id: couple.id,
+      },
+    );
+  }
+
   return json({ guest: toGuest(row) }, { status: 201 });
 }
 

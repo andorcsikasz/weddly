@@ -103,6 +103,20 @@ export interface RsvpThanksForGuestPayload {
   rsvpStatus: "yes" | "no" | "maybe";
   rsvpPageUrl: string;
 }
+export interface GuestInvitePayload {
+  /** "Anna & Bence" — used in the subject + body so the recipient knows
+   *  whose wedding they're being invited to. */
+  coupleDisplayName: string;
+  /** Recipient's display name as it sits in the guest row. May be null when
+   *  the couple created a placeholder row without typing a name yet. */
+  guestName: string | null;
+  /** Pre-formatted wedding date ("2026-09-12") or null if the couple hasn't
+   *  pinned a date yet. */
+  weddingDate: string | null;
+  /** Full URL with the per-guest invite_code baked in — the recipient lands
+   *  on /rsvp/{code} with the form pre-populated and just confirms. */
+  rsvpUrl: string;
+}
 export interface OnboardingNudgePayload {
   onboardingUrl: string;
 }
@@ -171,6 +185,7 @@ export type KindPayload = {
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
   rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
+  guest_invite: GuestInvitePayload;
   onboarding_nudge: OnboardingNudgePayload;
   milestone_t90: MilestonePayload;
   milestone_t30: MilestonePayload;
@@ -587,6 +602,36 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "Open the link any time if anything changes.",
     },
   }),
+
+  guest_invite: (p) => {
+    const dateHu = p.weddingDate ? ` (${p.weddingDate})` : "";
+    const dateEn = p.weddingDate ? ` (${p.weddingDate})` : "";
+    const greetingHuName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
+    const greetingEnName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
+    return {
+      subject: `${p.coupleDisplayName} meghívnak az esküvőjükre / invite you to their wedding`,
+      ctaUrl: p.rsvpUrl,
+      hu: {
+        preheader: "Egy kattintás — visszajelzés, ételválasztás, szállásigény.",
+        greeting: `Szia${greetingHuName}!`,
+        paragraphs: [
+          `${p.coupleDisplayName} szeretettel meghívnak az esküvőjükre${dateHu}.`,
+          "A lenti gombra kattintva egyetlen oldalon visszajelezhetsz: jössz-e, mit ennél, kell-e szállás, és van-e zenekívánságod. Bármikor frissítheted, ha valami változna.",
+        ],
+        cta: "Visszajelzés küldése",
+        footnote: "Ha véletlenül kaptad, hagyd figyelmen kívül — semmi sem fog történni.",
+      },
+      en: {
+        greeting: `Hi${greetingEnName},`,
+        paragraphs: [
+          `${p.coupleDisplayName} would love to have you at their wedding${dateEn}.`,
+          "One click on the button below opens a single page where you can confirm attendance, pick a meal, flag accommodation needs, and request a song. You can update your answer any time.",
+        ],
+        cta: "RSVP now",
+        footnote: "Got this by mistake? Ignore it — nothing happens.",
+      },
+    };
+  },
 
   onboarding_nudge: (p, ctx) => ({
     subject: "Folytasd ott, ahol abbahagytad / Pick up where you left off",

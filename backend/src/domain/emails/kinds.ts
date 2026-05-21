@@ -17,6 +17,7 @@ export type EmailKind =
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
   | "rsvp_received_household_for_couple" // aggregated notification: whole party RSVP'd in one go
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
+  | "guest_invite" // sent to a guest with a one-click /rsvp/{code} link
   | "onboarding_nudge" // 24h after signup if they haven't onboarded a couple
   | "milestone_t90" // 90 days before the wedding
   | "milestone_t30" // 30 days before
@@ -51,6 +52,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   rsvp_received_for_couple: "transactional",
   rsvp_received_household_for_couple: "transactional",
   rsvp_thanks_for_guest: "transactional",
+  // Transactional: the couple explicitly clicked "send invite" for this
+  // guest in /app/guests — the recipient is waiting on the link.
+  guest_invite: "transactional",
   onboarding_nudge: "lifecycle",
   milestone_t90: "lifecycle",
   milestone_t30: "lifecycle",

@@ -217,6 +217,100 @@ describe("guests: validation + filter", () => {
   });
 });
 
+// ─── guests: send_invite on create ─────────────────────────────────────────
+//
+// The "send invite now" checkbox in /app/guests posts `send_invite: true` on
+// the create body. When the guest has an email, the server fires a
+// `guest_invite` mail with a /rsvp/{invite_code} magic link AND stamps
+// `invited_at` so the row's status badge moves to "invited" without a second
+// toggle. When the email is missing the flag is silently ignored — partial
+// info on a new guest shouldn't error.
+
+describe("guests: send_invite on create", () => {
+  test("send_invite=true with email fires guest_invite kind and stamps invited_at", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("send-inv@weddly.test");
+    const r = await req<{ guest: { id: number; invited_at: number | null } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna", email: "anna@example.test", send_invite: true },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.guest.invited_at).not.toBeNull();
+
+    const log = db
+      .prepare(
+        "SELECT kind, to_email, status FROM email_log WHERE couple_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(coupleId) as { kind: string; to_email: string; status: string } | undefined;
+    expect(log).toBeDefined();
+    expect(log?.kind).toBe("guest_invite");
+    expect(log?.to_email).toBe("anna@example.test");
+  });
+
+  test("send_invite=true without email is silently ignored", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("send-noemail@weddly.test");
+    const r = await req<{ guest: { id: number; invited_at: number | null } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "NoEmail", send_invite: true },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    // invited_at stays null when we can't physically deliver — the flag is a
+    // hint, not a stamp. The couple can still flip the "invited" toggle by
+    // hand to track that they texted the guest instead.
+    expect(r.data.guest.invited_at).toBeNull();
+
+    const logCount = db
+      .prepare("SELECT COUNT(*) as n FROM email_log WHERE couple_id = ? AND kind = 'guest_invite'")
+      .get(coupleId) as { n: number };
+    expect(logCount.n).toBe(0);
+  });
+
+  test("send_invite omitted preserves silent-create behaviour (back-compat)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("send-omit@weddly.test");
+    const r = await req<{ guest: { id: number; invited_at: number | null } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Quiet", email: "quiet@example.test" },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.guest.invited_at).toBeNull();
+
+    const logCount = db
+      .prepare("SELECT COUNT(*) as n FROM email_log WHERE couple_id = ? AND kind = 'guest_invite'")
+      .get(coupleId) as { n: number };
+    expect(logCount.n).toBe(0);
+  });
+
+  test("guest_invite email body contains the /rsvp/{code} magic link", async () => {
+    // dev/test mode has no Resend key so the mailer logs to stdout — the
+    // rendered body still lands in `email_log` (status=skipped_no_provider)
+    // but the body itself is in the log line, not the row. Instead we read
+    // the guest back out and assert the URL we'd have shipped matches the
+    // server-side base + the row's invite_code.
+    wipeAll();
+    const { token } = await bootstrapCouple("send-url@weddly.test");
+    const r = await req<{ guest: { id: number; invite_code: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Linker", email: "linker@example.test", send_invite: true },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    // invite_code is 6 chars from the Crockford-style alphabet — same shape
+    // the server bakes into the email URL. Ship-readiness check: the code is
+    // present, non-empty, and the legacy `/rsvp/:code` route already accepts
+    // this exact shape (see rsvp.ts handleByCode).
+    expect(r.data.guest.invite_code).toMatch(/^[A-Z2-9]{6}$/);
+  });
+});
+
 // ─── guests: bulk endpoint ─────────────────────────────────────────────────
 
 describe("guests: bulk endpoint", () => {

@@ -1261,6 +1261,11 @@ const hu: LocaleMessages = {
       "A CSV-nek legyen 'full_name' oszlopa. Választható: email, phone, group_tag, plus_one_name, dietary, notes.",
     full_name: "Név",
     email: "E-mail",
+    send_invite_label: "Meghívó küldése most",
+    send_invite_help:
+      "Egy gombnyomásra a vendég megkapja a meghívót a megadott e-mail címre, benne egy egykattintásos visszajelző-linkkel.",
+    send_invite_disabled_help:
+      "Add meg az e-mail címet, hogy a meghívót automatikusan elküldhessük.",
     phone: "Telefon",
     group: "Csoport",
     rsvp: "Visszajelzés",

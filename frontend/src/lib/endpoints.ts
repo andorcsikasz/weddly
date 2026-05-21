@@ -321,6 +321,11 @@ export interface GuestUpsert extends Partial<Guest> {
   /** Same shape as `invited`, but for the "invitation handed over" stamp.
    *  `true` implies invited=true server-side. */
   delivered?: boolean;
+  /** Create-only — `true` fires a `guest_invite` email with a one-click
+   *  /rsvp/{invite_code} link. Requires `email` to be set on the guest;
+   *  silently ignored otherwise. Implies `invited=true` on the resulting
+   *  row. */
+  send_invite?: boolean;
 }
 
 export const guestApi = {

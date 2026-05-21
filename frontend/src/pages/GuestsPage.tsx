@@ -1715,6 +1715,12 @@ function GuestDrawer({
     guest?.household_id ?? init.defaultHouseholdId ?? households[0]?.id ?? null,
   );
   const [newHouseholdLabel, setNewHouseholdLabel] = useState("");
+  // Create-only — when the couple has typed an email on a new guest, surface
+  // a "send invite now" toggle that fires the `guest_invite` email on save.
+  // Defaults off so the existing "create silently, send invites later in bulk"
+  // workflow keeps working unchanged. We never show this on edit because the
+  // dedicated resend endpoint hasn't shipped yet.
+  const [sendInvite, setSendInvite] = useState(false);
 
   /** Autocomplete hits for the "Új háztartás" input. Match existing
    *  households by label, then existing guests by full_name (their
@@ -1768,6 +1774,9 @@ function GuestDrawer({
       body.household_id = null;
       const label = newHouseholdLabel.trim();
       if (label) body.new_household_label = label;
+    }
+    if (!guest && sendInvite && (form.email ?? "").trim()) {
+      body.send_invite = true;
     }
     return body;
   }
@@ -1866,6 +1875,37 @@ function GuestDrawer({
             onChange={(v) => setForm({ ...form, email: v || null })}
             type="email"
           />
+          {!guest &&
+            (() => {
+              const hasEmail = (form.email ?? "").trim().length > 0;
+              return (
+                <div className="-mt-2 mb-3">
+                  <label
+                    className={`flex items-start gap-2 text-sm ${
+                      hasEmail
+                        ? "text-ink-700 dark:text-paper-100"
+                        : "cursor-not-allowed text-ink-400 dark:text-umber-400"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-paper-400 accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      checked={sendInvite && hasEmail}
+                      disabled={!hasEmail}
+                      onChange={(e) => setSendInvite(e.target.checked)}
+                    />
+                    <span>
+                      <span className="block">{t("guests.send_invite_label")}</span>
+                      <span className="block text-xs text-ink-500 dark:text-umber-300">
+                        {hasEmail
+                          ? t("guests.send_invite_help")
+                          : t("guests.send_invite_disabled_help")}
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              );
+            })()}
           <Field
             label={t("guests.phone")}
             value={form.phone ?? ""}
