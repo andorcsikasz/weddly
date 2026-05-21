@@ -22,7 +22,12 @@ import { normalizeSlugInput } from "../domain/slug";
 import { type Ctx, HttpError, json, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
-const WEDDING_BUCKET = { capacity: 60, refillRate: 1 / 2 };
+// 20-token burst then ~10/min sustained per IP. Slug enumeration is the
+// concern (the only credential to a wedding site is the slug itself), so the
+// sustained rate stays low. Legitimate guests open the link 1-3 times an
+// hour; the burst absorbs simultaneous social-share fan-out off a single
+// shared NAT without locking anyone out.
+const WEDDING_BUCKET = { capacity: 20, refillRate: 1 / 6 };
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
 
