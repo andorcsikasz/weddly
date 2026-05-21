@@ -609,25 +609,38 @@ export default function GuestsPage() {
       ) : (
         <div className="space-y-4">
           {(virtualReveal ? households : households.slice(0, 100)).map((hh) => (
-            <HouseholdCard
+            // `content-visibility: auto` lets the browser skip layout +
+            // paint for offscreen household cards. `contain-intrinsic-size`
+            // gives it a placeholder height so the scrollbar still tracks
+            // total list length and the scroll-restore-on-back works.
+            // Native fallback when unsupported (older Safari) — the card
+            // just renders normally. Saves render churn on N>60 lists
+            // flagged by the a11y/perf-critic agent.
+            <div
               key={hh.id}
-              household={hh}
-              members={guestsByHousehold.get(hh.id) ?? []}
-              coupleSlug={couple?.slug ?? null}
-              onCopyShare={() => {
-                void copyShare(couple?.slug ?? null, hh.code);
-              }}
-              onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
-              onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
-              onDeleteGuest={onDeleteGuest}
-              onRegenCode={() => onRegenCode(hh)}
-              onDeleteHousehold={() => onDeleteHousehold(hh)}
-              onRenameHousehold={onRenameHousehold}
-              onChangeGroup={onChangeHouseholdGroup}
-              onToggleAccommodation={onToggleHouseholdAccommodation}
-              onCycleInviteState={onCycleInviteState}
-              onPrintPlaceCard={onPrintPlaceCard}
-            />
+              style={{ contentVisibility: "auto", containIntrinsicSize: "0 220px" }}
+            >
+              <HouseholdCard
+                household={hh}
+                members={guestsByHousehold.get(hh.id) ?? []}
+                coupleSlug={couple?.slug ?? null}
+                onCopyShare={() => {
+                  void copyShare(couple?.slug ?? null, hh.code);
+                }}
+                onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
+                onEditGuest={(g) =>
+                  setEditing({ guest: g, defaultHouseholdId: g.household_id })
+                }
+                onDeleteGuest={onDeleteGuest}
+                onRegenCode={() => onRegenCode(hh)}
+                onDeleteHousehold={() => onDeleteHousehold(hh)}
+                onRenameHousehold={onRenameHousehold}
+                onChangeGroup={onChangeHouseholdGroup}
+                onToggleAccommodation={onToggleHouseholdAccommodation}
+                onCycleInviteState={onCycleInviteState}
+                onPrintPlaceCard={onPrintPlaceCard}
+              />
+            </div>
           ))}
           {!virtualReveal && households.length > 100 && (
             <p className="text-center text-xs text-ink-500 dark:text-umber-300">
