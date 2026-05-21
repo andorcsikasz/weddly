@@ -20,7 +20,14 @@ import { purgeOneCouple, purgeOneUser } from "../../src/domain/purge";
 describe("Next-11 GDPR purge — growth_events / listing_claims / vendor_accounts", () => {
   test("purgeOneCouple wipes growth_events for the couple", async () => {
     wipeAll();
-    const { coupleId, userId } = await bootstrapCouple("purge-growth@weddly.test");
+    const { coupleId } = await bootstrapCouple("purge-growth@weddly.test");
+    // bootstrapCouple doesn't return userId — pull it from the DB by email
+    // so the second growth_event row can carry the partner_a id directly.
+    const userRow = db
+      .prepare("SELECT id FROM users WHERE email = ?")
+      .get("purge-growth@weddly.test") as { id: number } | undefined;
+    expect(userRow).toBeDefined();
+    const userId = userRow!.id;
     // Seed two events: one tagged with couple_id, one tagged with only
     // user_id (anonymous funnel). Both should disappear after couple purge —
     // the user_id event vanishes via the explicit user-purge step that
