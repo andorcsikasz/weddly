@@ -3,18 +3,14 @@ import { SUPPLIER_GROUPS, type SupplierCategory, type SupplierGroup } from "@sha
 import {
   AlertCircle,
   ArrowLeft,
-  AtSign,
   Briefcase,
   Check,
   Image as ImageIcon,
   Info,
   Link2,
   Mail,
-  MapPin,
-  MessageSquare,
   Plus,
   Sparkles,
-  Tag,
   Trash2,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
@@ -211,37 +207,28 @@ function PortfolioLinkRow({
   );
 }
 
-/** Numbered section header — round step badge + serif title + subtitle.
- *  Renders inline so the form scans like a three-step flow without forcing
- *  the user to click "Next". */
+/** Section header — small icon + serif title, optional subtitle.
+ *  Replaced the earlier numbered-step badge approach: a single linear form
+ *  shouldn't pretend to be a wizard, and the numbers added visual weight
+ *  without information. The icon alone carries the section marker. */
 function SectionHeader({
-  step,
   icon,
   title,
   sub,
 }: {
-  step: number;
   icon: ReactNode;
   title: string;
-  sub: string;
+  sub?: string;
 }) {
   return (
-    <header className="flex items-start gap-3">
-      <span
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 text-sm font-medium dark:bg-blush-400/15 dark:text-blush-200"
-        aria-hidden
-      >
-        {step}
-      </span>
-      <div className="min-w-0 flex-1">
-        <h3 className="flex items-center gap-2 font-serif text-xl text-ink-900 dark:text-paper-50">
-          <span className="text-blush-600 dark:text-blush-300" aria-hidden>
-            {icon}
-          </span>
-          {title}
-        </h3>
-        <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{sub}</p>
-      </div>
+    <header>
+      <h3 className="flex items-center gap-2 font-serif text-xl text-ink-900 dark:text-paper-50">
+        <span className="text-blush-600 dark:text-blush-300" aria-hidden>
+          {icon}
+        </span>
+        {title}
+      </h3>
+      {sub && <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{sub}</p>}
     </header>
   );
 }
@@ -397,37 +384,29 @@ function WaitlistContact() {
           </div>
         </div>
 
-        {/* Beta + future-monetization disclosure. */}
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-blush-200 bg-blush-50 p-4 text-sm text-ink-700 dark:border-blush-400/30 dark:bg-blush-400/10 dark:text-paper-100">
-          <Info
-            size={18}
-            className="mt-0.5 shrink-0 text-blush-600 dark:text-blush-300"
-            aria-hidden
-          />
-          <div className="flex-1">
-            <p className="font-medium text-ink-900 dark:text-paper-50">
-              {t("vendors.beta_notice_title")}
-            </p>
-            <p className="mt-1 leading-relaxed">{t("vendors.beta_notice_body")}</p>
-            <p className="mt-2 leading-relaxed">
-              <Link
-                to="/terms/vendor-subscription"
-                className="underline hover:text-ink-900 dark:hover:text-paper-50"
-              >
-                {t("vendors.beta_notice_terms_link")}
-              </Link>
-            </p>
-          </div>
-        </div>
+        {/* Beta + future-monetization disclosure. Compressed from a heavy
+            titled card to a single quiet line: the previous pill weight
+            competed with the form header and tripled the perceived form
+            length. Content stays legally complete; visual weight drops. */}
+        <p className="mt-5 flex items-start gap-2 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
+          <Info size={14} className="mt-0.5 shrink-0" aria-hidden />
+          <span>
+            {t("vendors.beta_notice_body")}{" "}
+            <Link
+              to="/terms/vendor-subscription"
+              className="underline hover:text-ink-900 dark:hover:text-paper-50"
+            >
+              {t("vendors.beta_notice_terms_link")}
+            </Link>
+          </span>
+        </p>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-7">
+        <form onSubmit={onSubmit} className="mt-6 space-y-6">
           {/* ── Section 1: business identity ─────────────────────────── */}
           <section className="space-y-3">
             <SectionHeader
-              step={1}
               icon={<Briefcase size={16} />}
               title={t("vendors.section_business_title")}
-              sub={t("vendors.section_business_sub")}
             />
             <div className="space-y-3">
               <div>
@@ -445,11 +424,7 @@ function WaitlistContact() {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="vendor-category"
-                  className="field-label inline-flex items-center gap-1.5"
-                >
-                  <Tag size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                <label htmlFor="vendor-category" className="field-label">
                   {t("vendors.form_category_label")}
                 </label>
                 <select
@@ -478,12 +453,7 @@ function WaitlistContact() {
 
           {/* ── Section 2: contact + region ──────────────────────────── */}
           <section className="space-y-3">
-            <SectionHeader
-              step={2}
-              icon={<Mail size={16} />}
-              title={t("vendors.section_contact_title")}
-              sub={t("vendors.section_contact_sub")}
-            />
+            <SectionHeader icon={<Mail size={16} />} title={t("vendors.section_contact_title")} />
             <div className="space-y-3">
               <div>
                 <label htmlFor="vendor-email" className="field-label">
@@ -501,11 +471,7 @@ function WaitlistContact() {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="vendor-location"
-                  className="field-label inline-flex items-center gap-1.5"
-                >
-                  <MapPin size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                <label htmlFor="vendor-location" className="field-label">
                   {t("vendors.form_location_label")}
                 </label>
                 <input
@@ -523,25 +489,19 @@ function WaitlistContact() {
           {/* ── Section 3: portfolio (category-aware) ────────────────── */}
           <section className="space-y-3">
             <SectionHeader
-              step={3}
               icon={<ImageIcon size={16} />}
               title={t("vendors.section_portfolio_title")}
               sub={t("vendors.section_portfolio_sub")}
             />
 
-            {/* Category-aware hint banner — copy comes from
+            {/* Category-aware hint — copy comes from
                 `vendors.portfolio_hint_<group>` and swaps as the category
-                dropdown changes. */}
-            <div className="rounded-xl border border-paper-300 bg-paper-50 px-3 py-2.5 text-sm leading-relaxed text-ink-700 dark:border-umber-700 dark:bg-umber-900/60 dark:text-paper-100">
-              <p className="flex items-start gap-2">
-                <Sparkles
-                  size={14}
-                  className="mt-0.5 shrink-0 text-blush-600 dark:text-blush-300"
-                  aria-hidden
-                />
-                <span>{t(portfolioHintKey)}</span>
-              </p>
-            </div>
+                dropdown changes. Inline italic line, no longer a pill —
+                the previous bordered banner doubled-up with the beta notice
+                and added visual weight without new info. */}
+            <p className="text-sm italic leading-relaxed text-ink-500 dark:text-umber-300">
+              {t(portfolioHintKey)}
+            </p>
 
             <div>
               <label htmlFor="vendor-website" className="field-label">
@@ -560,11 +520,7 @@ function WaitlistContact() {
             </div>
 
             <div>
-              <label
-                htmlFor="vendor-instagram"
-                className="field-label inline-flex items-center gap-1.5"
-              >
-                <AtSign size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+              <label htmlFor="vendor-instagram" className="field-label">
                 {t("vendors.instagram_label")}
               </label>
               <div className="relative">
@@ -590,10 +546,7 @@ function WaitlistContact() {
 
             <div>
               <div className="mb-2 flex items-baseline justify-between gap-2">
-                <span className="field-label mb-0 inline-flex items-center gap-1.5">
-                  <Link2 size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
-                  {t("vendors.portfolio_links_label")}
-                </span>
+                <span className="field-label mb-0">{t("vendors.portfolio_links_label")}</span>
                 <span className="inline-flex items-baseline gap-2 text-xs text-ink-500 dark:text-umber-300">
                   <span className="hidden sm:inline">{t("vendors.portfolio_count_hint")}</span>
                   <span className="tabular-nums">
@@ -629,11 +582,7 @@ function WaitlistContact() {
             </div>
 
             <div>
-              <label
-                htmlFor="vendor-message"
-                className="field-label inline-flex items-center gap-1.5"
-              >
-                <MessageSquare size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+              <label htmlFor="vendor-message" className="field-label">
                 {t("vendors.form_message_label")}
               </label>
               <textarea

@@ -825,7 +825,7 @@ const en: LocaleMessages = {
     back_to_landing: "Back to the landing page",
     beta_notice_title: "Free during beta — no hidden costs",
     beta_notice_body:
-      "Applying and being listed is free right now. If we introduce pricing later (subscription or featured placement), we'll share the terms 30 days before any fees take effect — no surprises, no spam.",
+      "Free during beta. If we introduce pricing later, we'll give 30 days' notice — no surprises, no spam.",
     beta_notice_terms_link: "Vendor subscription terms",
     privacy_consent_prefix: "I have read and accept the ",
     privacy_consent_link: "privacy policy",

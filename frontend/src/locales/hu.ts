@@ -830,7 +830,7 @@ const hu: LocaleMessages = {
     back_to_landing: "Vissza a főoldalra",
     beta_notice_title: "Béta alatt ingyenes — semmi rejtett költség",
     beta_notice_body:
-      "Most a jelentkezés és a listázás is díjmentes. Ha később bevezetünk árazást (előfizetés vagy kiemelt megjelenés), a feltételeket 30 nappal előre megosztjuk veletek — semmi meglepetés, semmi spam.",
+      "Béta alatt ingyenes. Ha később árazást vezetünk be, 30 nappal előre szólunk — semmi meglepetés, semmi spam.",
     beta_notice_terms_link: "Szolgáltatói ÁSZF",
     privacy_consent_prefix: "Elolvastam és elfogadom az ",
     privacy_consent_link: "adatkezelési tájékoztatót",
