@@ -589,11 +589,18 @@ describe("couples_lifecycle: partner view status transitions", () => {
       password: "supersafe123",
       full_name: "U",
     });
-    const r = await req<{ detail?: { code?: string } }>("GET", "/api/couples/partner", undefined, {
-      token: reg.data.token,
-    });
-    expect(r.status).toBe(403);
-    expect(r.data.detail?.code).toBe("email_unverified");
+    const r = await req<{ detail?: { code?: string } }>(
+      "GET",
+      "/api/couples/partner",
+      undefined,
+      { token: reg.data.token },
+    );
+    // GET /api/couples/partner downgraded to requireAuth in the P0-2 backend
+    // rollback — read-only on own workspace, no third-party fanout. The
+    // handler still throws 400 "No couple workspace yet" when the user
+    // hasn't onboarded; that's the new failure mode, not 403 email_unverified.
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).not.toBe("email_unverified");
   });
 });
 
@@ -1467,21 +1474,26 @@ describe("couples_lifecycle: places search proxy", () => {
     expect(Array.isArray(r.data.places)).toBe(true);
   });
 
-  test("requires verified email (403 email_unverified)", async () => {
+  test("unverified user can search places (read-only own-scope)", async () => {
+    // GET /api/places/search downgraded to requireAuth — read-only Nominatim
+    // proxy, no email fanout. Unverified users get the same result as
+    // verified ones. Without a couple workspace, the endpoint still returns
+    // a 200 with whatever Nominatim hands back (or an empty array in test).
     wipeAll();
     const reg = await req<RegisterResp>("POST", "/api/auth/register", {
       email: "places-unverif@weddly.test",
       password: "supersafe123",
       full_name: "U",
     });
-    const r = await req<{ detail?: { code?: string } }>(
+    const r = await req<{ places?: unknown[]; detail?: { code?: string } }>(
       "GET",
       "/api/places/search?q=bali",
       undefined,
       { token: reg.data.token },
     );
-    expect(r.status).toBe(403);
-    expect(r.data.detail?.code).toBe("email_unverified");
+    // Either 200 (search served) or 400 (no couple), but NOT 403 email_unverified.
+    expect([200, 400]).toContain(r.status);
+    expect(r.data.detail?.code).not.toBe("email_unverified");
   });
 
   test("rate-limited per user — bursting past 6 queries returns 429", async () => {

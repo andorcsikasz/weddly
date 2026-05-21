@@ -353,17 +353,22 @@ describe("budget lines: auth gates", () => {
     expect(r.status).toBe(401);
   });
 
-  test("unverified user gets 403 with code email_unverified on POST", async () => {
+  test("unverified user can POST budget line (own-workspace write)", async () => {
+    // POST /api/budget/lines downgraded from requireVerifiedAuth to
+    // requireAuth in the P0-2 backend rollback. Budget edits stay within
+    // the user's own workspace — no third-party email fanout — so the
+    // verification gate isn't load-bearing here. Without a couple, the
+    // endpoint returns 400 (no workspace), not 403 (no verified email).
     wipeAll();
     const tok = await registerUnverifiedUserAndGetToken("unv-budget@weddly.test");
-    const r = await req<{ detail: { code?: string } }>(
+    const r = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/budget/lines",
       { category: "other", label: "x", planned_huf: 1 },
       { token: tok },
     );
-    expect(r.status).toBe(403);
-    expect(r.data.detail?.code).toBe("email_unverified");
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).not.toBe("email_unverified");
   });
 });
 
@@ -639,17 +644,22 @@ describe("suppliers directory: vote validation + auth", () => {
     expect(r.status).toBe(401);
   });
 
-  test("PUT /vote with unverified user returns 403 email_unverified", async () => {
+  test("PUT /vote with unverified user but no couple → 403 no_couple", async () => {
+    // PUT /api/suppliers/:slug/vote downgraded in the P0-2 backend rollback.
+    // The endpoint still requires a couple workspace (vote is per-couple),
+    // so an unverified user without a workspace returns 403 no_couple — a
+    // different gate, same status code. Previously this returned
+    // email_unverified before the no_couple check ever ran.
     wipeAll();
     const tok = await registerUnverifiedUserAndGetToken("unv-vote@weddly.test");
-    const r = await req<{ detail: { code?: string } }>(
+    const r = await req<{ detail?: { code?: string } }>(
       "PUT",
       "/api/suppliers/normafa-rendezvenyhaz/vote",
       { value: 1 },
       { token: tok },
     );
     expect(r.status).toBe(403);
-    expect(r.data.detail?.code).toBe("email_unverified");
+    expect(r.data.detail?.code).toBe("no_couple");
   });
 
   test("PUT /vote without a couple workspace returns 403 no_couple", async () => {

@@ -307,7 +307,13 @@ describe("seating tables: requireVerifiedAuth", () => {
     expect(r.status).toBe(401);
   });
 
-  test("unverified user → 403 email_unverified", async () => {
+  test("unverified user can edit seating on their own workspace", async () => {
+    // POST /api/seating/tables was previously gated on verified email; the
+    // P0-2 backend rollback (consensus: own-workspace writes don't need
+    // verification, only third-party email fanout does) downgraded it to
+    // plain requireAuth. The test now asserts the new positive contract.
+    // The user still needs a couple workspace, so the 400 here is for the
+    // missing couple, not for the email gate.
     wipeAll();
     const reg = await req<{ token: string }>("POST", "/api/auth/register", {
       email: "st-unv@weddly.test",
@@ -321,8 +327,9 @@ describe("seating tables: requireVerifiedAuth", () => {
       { label: "T", shape: "round", seats: 4, x_mm: 0, y_mm: 0 },
       { token: reg.data.token },
     );
-    expect(r.status).toBe(403);
-    expect(r.data.detail?.code).toBe("email_unverified");
+    // No couple yet → 400 "No couple workspace". Not 403 email_unverified.
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).toBeUndefined();
   });
 
   test("anon GET /api/seating/plan → 401", async () => {
