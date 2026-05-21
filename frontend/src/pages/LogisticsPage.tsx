@@ -563,13 +563,21 @@ export default function LogisticsPage() {
           onDrop={dropOnSidebar}
         >
           <h2 className="text-lg">{t("logistics.sidebar_title")}</h2>
-          <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-            {t(
-              tab === "accommodation"
-                ? "logistics.sidebar_help_accommodation"
-                : "logistics.sidebar_help_transfer",
-            )}
-          </p>
+          {/* Drag-language only on devices that actually drag. On a
+           *  coarse-pointer device (touch / mobile) we'd previously stack
+           *  the desktop "drag a guest…" copy *above* the tap callout — two
+           *  contradictory instructions for the same gesture. Now the
+           *  paragraph hides whenever tapMode is live and the callout
+           *  carries the active-mode copy alone. */}
+          {!tapMode && (
+            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+              {t(
+                tab === "accommodation"
+                  ? "logistics.sidebar_help_accommodation"
+                  : "logistics.sidebar_help_transfer",
+              )}
+            </p>
+          )}
           {tapMode && (
             <div className="mt-3 rounded-lg border border-blush-200 bg-blush-50 px-3 py-2 text-xs text-blush-900 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300">
               {selectedGuestId !== null

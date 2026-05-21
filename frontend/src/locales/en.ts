@@ -1549,7 +1549,7 @@ const en: LocaleMessages = {
   },
   logistics: {
     title: "Logistics",
-    sub: "Drag and drop guests onto accommodations and transfer trips.",
+    sub: "Assign guests to accommodations and transfer trips.",
     tabs_aria: "Logistics tabs",
     tab_accommodation: "Accommodation",
     tab_transfer: "Transfer",
@@ -2648,9 +2648,6 @@ const en: LocaleMessages = {
     offline_drained_one: "1 response delivered.",
     offline_drained_other: "{n} responses delivered.",
     kiosk_banner: "Welcome-desk mode — tap and hold the corner to exit.",
-    kiosk_enter: "Turn on welcome-desk mode",
-    kiosk_enter_help:
-      "Handing a shared tablet to guests? Welcome-desk mode locks the page so they can check themselves in without navigating away or editing the form. To exit: hold the bottom-right corner, or press Shift+K.",
     kiosk_exit_hold: "Hold to exit welcome-desk (Shift+K also works)",
     kiosk_exit_confirmed: "Welcome-desk mode off.",
   },
@@ -2826,6 +2823,12 @@ const en: LocaleMessages = {
     workspaces_delete_confirm_mismatch: "It must match exactly: {name}",
     payments_title: "Payments",
     payments_body: "Payment history and billing settings will appear here soon.",
+    welcome_desk_title: "Welcome desk",
+    welcome_desk_body:
+      "Opens the RSVP page in a new tab locked into kiosk mode — hand the tablet to your greeter. Guests can't flip the switch themselves; it only starts from here.",
+    welcome_desk_button: "Turn on welcome-desk mode",
+    welcome_desk_no_slug:
+      "Give your couple a URL slug in Onboarding / Profile first so the welcome-desk link has somewhere to point.",
     display_title: "Display",
     display_body:
       "Tune how dense the interface feels. Comfortable bumps the smallest labels — helpful for older relatives or outdoor day-of use.",

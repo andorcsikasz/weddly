@@ -1564,7 +1564,7 @@ const hu: LocaleMessages = {
   },
   logistics: {
     title: "Logisztika",
-    sub: "Oszd be a vendégeket szállásokra és transzferre — drag and droppal.",
+    sub: "Oszd be a vendégeket szállásokra és transzferre.",
     tabs_aria: "Logisztika kategóriák",
     tab_accommodation: "Szállás",
     tab_transfer: "Transzfer",
@@ -2675,9 +2675,6 @@ const hu: LocaleMessages = {
     offline_drained_one: "1 visszajelzés sikeresen elküldve.",
     offline_drained_other: "{n} visszajelzés sikeresen elküldve.",
     kiosk_banner: "Üdvözlő pult mód — érintsd és tartsd lenyomva a sarokban a kilépéshez.",
-    kiosk_enter: "Üdvözlő pult mód be",
-    kiosk_enter_help:
-      "Egy közös tabletet adsz át a vendégeknek? Az üdvözlő pult mód zárolja az oldalt, hogy maguk jelentkezhessenek be, anélkül hogy elnavigálnának vagy beleszerkesztenének. Kilépés: tartsd a jobb alsó sarkot, vagy Shift+K.",
     kiosk_exit_hold: "Tartsd lenyomva a kilépéshez (Shift+K is működik)",
     kiosk_exit_confirmed: "Üdvözlő pult mód kikapcsolva.",
   },
@@ -2857,6 +2854,12 @@ const hu: LocaleMessages = {
     workspaces_delete_confirm_mismatch: "Egyezzen a beírt szöveg pontosan: {name}",
     payments_title: "Fizetések",
     payments_body: "A fizetési előzmények és számlázási beállítások hamarosan itt jelennek meg.",
+    welcome_desk_title: "Üdvözlő pult",
+    welcome_desk_body:
+      "Új lapon megnyitja az RSVP oldalt kiosk-zárral — add át a tabletet a fogadásnál. A vendégek nem férnek hozzá a kapcsolóhoz, csak innen indítható.",
+    welcome_desk_button: "Üdvözlő pult mód be",
+    welcome_desk_no_slug:
+      "Az üdvözlő pulthoz előbb adj egy URL-azonosítót a párnak az Onboarding/Profil beállításokban.",
     display_title: "Megjelenítés",
     display_body:
       "Állítsd be, mennyire legyen sűrű a szöveg. A kényelmes mód növeli a legapróbb feliratokat — hasznos a szülőknek vagy napsütésben.",

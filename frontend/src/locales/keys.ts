@@ -2987,14 +2987,10 @@ export interface LocaleMessages {
     offline_drained_one: string;
     offline_drained_other: string;
     /** Kiosk-lock copy. The /rsvp surface can be locked into a doorperson
-     *  mode so a borrowed phone is one mis-tap from /app. */
+     *  mode so a borrowed phone is one mis-tap from /app. Entry is only
+     *  via the launcher on /app/profile; the public /rsvp footer no longer
+     *  exposes a toggle. */
     kiosk_banner: string;
-    kiosk_enter: string;
-    /** Hover/focus tooltip on the "Turn on kiosk mode" toggle at the foot of
-     *  the public /rsvp page. Explains what locking the page is for (a
-     *  greeter handing a tablet to guests) so couples don't have to guess
-     *  before flipping it. */
-    kiosk_enter_help: string;
     kiosk_exit_hold: string;
     kiosk_exit_confirmed: string;
   };
@@ -3206,6 +3202,14 @@ export interface LocaleMessages {
     workspaces_primary_marker: string;
     payments_title: string;
     payments_body: string;
+    /** Welcome-desk launcher card on /app/profile. Owners opt in here to
+     *  open the public /rsvp page locked into kiosk mode (new tab); the
+     *  same control no longer appears on the public RSVP footer so that
+     *  arriving guests can't flip it themselves. */
+    welcome_desk_title: string;
+    welcome_desk_body: string;
+    welcome_desk_button: string;
+    welcome_desk_no_slug: string;
     /** Display preferences — density toggle for older relatives / outdoor
      *  day-of use who can't read the 10/11 px utility labels at default size. */
     display_title: string;

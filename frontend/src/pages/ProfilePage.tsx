@@ -14,7 +14,7 @@ import type {
   ExportKind,
 } from "@shared/types";
 import { CURRENCIES } from "@shared/types";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Tablet } from "lucide-react";
 import { type CSSProperties, type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -757,6 +757,28 @@ export default function ProfilePage() {
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
           {t("profile.payments_body")}
         </p>
+      </section>
+
+      <section className="card mt-6">
+        <h2 className="text-lg">{t("profile.welcome_desk_title")}</h2>
+        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+          {t("profile.welcome_desk_body")}
+        </p>
+        {couple?.slug ? (
+          <a
+            href={`/rsvp?couple=${encodeURIComponent(couple.slug)}&kiosk=1`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary mt-4 inline-flex"
+          >
+            <Tablet size={14} aria-hidden />
+            {t("profile.welcome_desk_button")}
+          </a>
+        ) : (
+          <p className="mt-3 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
+            {t("profile.welcome_desk_no_slug")}
+          </p>
+        )}
       </section>
 
       <section className="card mt-6 p-0">

@@ -56,15 +56,6 @@ export default function RsvpCheckinPage() {
 
   const coupleInputRef = useRef<HTMLInputElement>(null);
 
-  const enterKiosk = useCallback(() => {
-    try {
-      localStorage.setItem(KIOSK_STORAGE_KEY, "1");
-    } catch {
-      // ignore — kiosk mode still works for this tab via state
-    }
-    setKiosk(true);
-  }, []);
-
   const exitKiosk = useCallback(() => {
     try {
       localStorage.removeItem(KIOSK_STORAGE_KEY);
@@ -346,38 +337,12 @@ export default function RsvpCheckinPage() {
         </form>
       )}
 
-      {/* Kiosk mode controls. Off-state: a faint toggle at the foot of the
-          page lets a greeter lock the device before handing it over. On-state:
-          a 24px exit hotspot in the bottom-right corner. The hotspot is
-          aria-labelled and reachable via Shift+K so keyboard users aren't
-          stranded. */}
-      {kiosk ? (
-        <KioskExitHotspot onExit={exitKiosk} label={t("rsvp.kiosk_exit_hold")} />
-      ) : (
-        <div className="mt-10 text-center">
-          {/* Most couples don't know what "kiosk mode" means without context —
-              the hover/focus tooltip below explains why they'd flip it
-              (greeter at the wedding hands a tablet to guests) so they don't
-              accidentally lock themselves out of their own /rsvp. */}
-          <div className="group relative inline-block">
-            <button
-              type="button"
-              className="btn-ghost btn-sm text-ink-500 hover:text-ink-800"
-              onClick={enterKiosk}
-              aria-describedby="kiosk-enter-help"
-            >
-              {t("rsvp.kiosk_enter")}
-            </button>
-            <span
-              id="kiosk-enter-help"
-              role="tooltip"
-              className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-72 -translate-x-1/2 rounded-lg bg-ink-800 px-3 py-2 text-left text-xs leading-snug text-paper-100 opacity-0 shadow-pop transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
-            >
-              {t("rsvp.kiosk_enter_help")}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Kiosk mode controls. Kiosk can only be entered via the launcher on
+          /app/profile (which navigates here with `?kiosk=1`) — we no longer
+          expose a public-facing toggle on this page so an arriving guest
+          can't lock themselves into kiosk mode by accident. Exit stays a
+          long-press hotspot in the bottom-right + Shift+K. */}
+      {kiosk && <KioskExitHotspot onExit={exitKiosk} label={t("rsvp.kiosk_exit_hold")} />}
     </FullPage>
   );
 }
