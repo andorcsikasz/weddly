@@ -86,6 +86,11 @@ import type {
   UpdateSupplierCategoryInput,
   UpdateSupplierGroupInput,
 } from "@shared/supplier_taxonomy";
+import type {
+  ClaimVerifyView,
+  CompleteClaimInput,
+  StartClaimInput,
+} from "@shared/vendor_claim";
 import { apiFetch, getToken } from "./api";
 
 /** Public landing-page "try the demo" endpoint. Spins up a brand-new
@@ -794,6 +799,28 @@ export const adminUserApi = {
       "/api/admin/sidebar-badges/seen",
       { section },
     ),
+};
+
+/** Vendor listing-claim flow — P2.C. Three steps:
+ *  1. `start` — anonymous, hits the listing's email-on-file
+ *  2. `verify` — read-only token check, returns the claim view for the page
+ *  3. `complete` — atomic create user + vendor_account + flip listing, returns
+ *     a fresh AuthSession the caller must install via useAuth().setSession. */
+export const vendorClaimApi = {
+  start: (body: StartClaimInput) =>
+    apiFetch<{ ok: true; sent_to_masked: string }>(
+      "POST",
+      "/api/vendor/claim/start",
+      body,
+    ),
+  verify: (token: string) =>
+    apiFetch<{ claim: ClaimVerifyView }>(
+      "POST",
+      `/api/vendor/claim/verify/${encodeURIComponent(token)}`,
+      {},
+    ),
+  complete: (body: CompleteClaimInput) =>
+    apiFetch<AuthSession>("POST", "/api/vendor/claim/complete", body),
 };
 
 export const vendorWaitlistApi = {

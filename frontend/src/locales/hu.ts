@@ -208,6 +208,60 @@ const hu: LocaleMessages = {
       "Ez a hirdetés már nem létezik — valószínűleg törölte a csapat vagy lejárt a beküldés.",
     page_home: "Vissza a Weddly főoldalra",
   },
+  vendor_claim: {
+    button_label: "Ez a sajátom",
+    page_title: "Listing átvétele",
+    page_body: "Erősítsd meg, hogy a Weddly katalógus listingjének tulajdonosa vagy.",
+    page_invalid:
+      "Nem ismerjük fel ezt a linket. Lehet, hogy elgépelődött vagy egy régi e-mailből származik.",
+    page_expired:
+      "A link már lejárt. Indítsd újra az átvételt a Weddly katalógusban.",
+    page_cancelled: "Ezt az igénylést időközben visszavontuk — kezdd újra a katalógusból.",
+    page_already_verified:
+      "Ez a listing már át lett véve. Ha te voltál, jelentkezz be a vendor email címeddel.",
+    page_home: "Vissza a Weddly katalógusra",
+    modal_title: "Ez a saját listingem",
+    modal_body_intro:
+      "Igényelnéd a(z) {name} listing tulajdonjogát? Egy megerősítő emailt küldünk a listingen szereplő hivatalos címre.",
+    modal_body_email_hidden:
+      "Adatvédelmi okból a teljes címet nem mutatjuk — a megerősítés után te leszel a listing kezelője.",
+    modal_submit: "Megerősítő email küldése",
+    modal_submitting: "Küldés…",
+    modal_close: "Rendben",
+    modal_sent_body:
+      "Email úton van a {email} címre. Kattints rajta a megerősítéshez — a link 7 napig érvényes.",
+    modal_sent_hint:
+      "Ha nem érkezik meg pár percen belül, ellenőrizd a spam mappát, vagy próbáld újra később.",
+    modal_err_already_claimed: "Ezt a listinget már átvette valaki.",
+    modal_err_no_email: "Ezen a listingen nincs email cím, így nem tudjuk megerősíteni.",
+    modal_err_not_found: "Nem találjuk ezt a listinget.",
+    modal_err_rate_limited:
+      "Túl sok kérés érkezett — várj néhány percet, mielőtt újra próbálnád.",
+    form_title: "Hozd létre a vendor fiókod",
+    form_intro:
+      "Sikeresen megerősítetted, hogy a(z) {name} listing email címe ({email}) a tiéd. Állíts be egy jelszót — innentől te kezeled a listinget.",
+    form_name_label: "Teljes név",
+    form_password_label: "Jelszó",
+    form_password_hint: "Min. 8 karakter.",
+    form_submit: "Listing átvétele",
+    form_submitting: "Létrehozzuk…",
+    form_err_name: "Add meg a teljes neved.",
+    form_err_password: "A jelszó min. 8 karakter legyen.",
+    form_err_email_taken:
+      "Ezzel az email címmel már létezik fiók. Lépj kapcsolatba a Weddly csapatával.",
+    form_err_already_claimed: "Ezt a listinget időközben átvette valaki.",
+    success_toast: "Üdvözlünk a Weddly-n! A listing már a tiéd.",
+  },
+  vendor_home: {
+    page_title: "Vendor fiók",
+    page_body: "A te listingjeid a Weddly katalógusban.",
+    welcome: "Üdv, {name}!",
+    intro:
+      "Sikeresen átvetted a listingedet a Weddly katalógusban. A párok mostantól nálunk látnak téged a saját adataiddal.",
+    coming_soon:
+      "Hamarosan jönnek: listing szerkesztés, beérkező megkeresések, statisztikák. Most még ezt az oldalt csak az átvétel megerősítésére használjuk — szólunk emailben, amikor új funkció érkezik.",
+    back_to_directory: "Vissza a katalógusba",
+  },
   change_email: {
     page_title: "Új e-mail cím megerősítése",
     page_loading: "Megerősítjük…",

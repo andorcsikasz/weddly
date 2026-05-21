@@ -47,6 +47,7 @@ import {
   Store,
   StickyNote,
   Tent,
+  UserCheck,
   Users,
   UtensilsCrossed,
   Wallet,
@@ -56,6 +57,7 @@ import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DiyEntryModal } from "../components/DiyEntryModal";
+import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button, Skeleton } from "../components/ui";
@@ -83,6 +85,7 @@ import {
   subscribeSelection,
   unselectById,
 } from "../lib/supplier_selection";
+import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -189,6 +192,11 @@ export default function SuppliersPage() {
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
   // Report dialog state. `reporting` holds the numeric id + name; null when closed.
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
+  // Claim dialog state. `claimTarget` holds the public listing id (curated
+  // slug or `c{N}`) + name; null when closed. Surfaced to vendors who land
+  // on the public directory and recognise their own business.
+  const [claimTarget, setClaimTarget] = useState<{ id: string; name: string } | null>(null);
+  const { user } = useAuth();
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => readSaved());
   // Step-chain overflow detection. We render the right-edge fade only when
@@ -1457,6 +1465,16 @@ export default function SuppliersPage() {
                     <VoteRow supplier={s} onVote={onVote} t={t} />
                   </div>
                 </div>
+                {s.vendor_account_id === null && user?.role !== "vendor" && (
+                  <button
+                    type="button"
+                    onClick={() => setClaimTarget({ id: s.id, name: s.name })}
+                    className="mt-2 inline-flex items-center gap-1 self-start text-xs text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+                  >
+                    <UserCheck size={12} aria-hidden />
+                    {t("vendor_claim.button_label")}
+                  </button>
+                )}
               </article>
             );
           })}
@@ -1477,6 +1495,11 @@ export default function SuppliersPage() {
           // optimistic insert and let the modal's "check your inbox" toast
           // do the talking.
         }}
+      />
+      <ClaimListingModal
+        listingId={claimTarget?.id ?? null}
+        listingName={claimTarget?.name ?? ""}
+        onClose={() => setClaimTarget(null)}
       />
       <ReportSupplierDialog
         supplierId={reporting?.id ?? null}
