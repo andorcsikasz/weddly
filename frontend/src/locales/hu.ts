@@ -2421,6 +2421,7 @@ const hu: LocaleMessages = {
     analytics_nav_picks: "Választások",
     analytics_nav_engagement: "Engagement",
     analytics_nav_demo: "Demo",
+    analytics_jump_to_section: "Ugrás a szekcióhoz",
     analytics_money_couples_with_budget_short: "Költségvetést megadott",
     analytics_money_couples_with_actuals_short: "Tényleges kiadás",
     analytics_money_median_ceiling: "Medián keret",

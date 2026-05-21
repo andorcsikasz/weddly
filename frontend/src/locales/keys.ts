@@ -2669,6 +2669,9 @@ export interface LocaleMessages {
     analytics_nav_picks: string;
     analytics_nav_engagement: string;
     analytics_nav_demo: string;
+    /** aria-label for the mobile section dropdown that replaces the
+     *  anchor pills below the `sm:` breakpoint. */
+    analytics_jump_to_section: string;
     /** Compact KPI tile labels added in the 2026 redesign. */
     analytics_money_couples_with_budget_short: string;
     analytics_money_couples_with_actuals_short: string;

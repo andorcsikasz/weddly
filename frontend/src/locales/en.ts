@@ -2403,6 +2403,7 @@ const en: LocaleMessages = {
     analytics_nav_picks: "Picks",
     analytics_nav_engagement: "Engagement",
     analytics_nav_demo: "Demo",
+    analytics_jump_to_section: "Jump to section",
     analytics_money_couples_with_budget_short: "Budget set",
     analytics_money_couples_with_actuals_short: "Actuals logged",
     analytics_money_median_ceiling: "Median ceiling",

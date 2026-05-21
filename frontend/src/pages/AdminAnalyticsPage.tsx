@@ -23,6 +23,7 @@ import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Pill, type PillTone } from "../components/admin";
 import { Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminAnalyticsApi } from "../lib/endpoints";
@@ -32,16 +33,13 @@ import { useDocumentMeta } from "../lib/seo";
 
 type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status: "error" };
 
-// ─── Shared card chrome tokens ─────────────────────────────────────────────
-// One source of truth for the rounded-2xl + ring-1 surface used by every
-// inner card. Kept as a constant so a chrome tweak only touches one line.
-const CARD_CHROME =
-  "rounded-2xl bg-paper-50 p-4 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700";
-const TILE_CHROME =
-  "rounded-xl bg-paper-50 p-3 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700";
-const SECTION_TITLE = "text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500";
+// ─── Shared chrome tokens ──────────────────────────────────────────────────
+// CARD_CHROME / TILE_CHROME / SECTION_TITLE / KPI_LABEL constants were
+// retired in the May 2026 design pass — the chrome lives in
+// `.admin-card` / `.admin-tile` and uppercase labels go through
+// `.eyebrow`. Only CARD_TITLE survives because its shape (sm + semibold
+// + non-uppercase ink-900) doesn't fit either utility.
 const CARD_TITLE = "text-sm font-semibold text-ink-900 dark:text-paper-50";
-const KPI_LABEL = "text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300";
 
 // ─── Section anchor list (used by the sticky pills + scroll spy) ──────────
 
@@ -274,19 +272,62 @@ function PageHeader({
   }, []);
 
   return (
-    <header className="sticky top-14 z-10 -mx-4 mb-6 border-b border-paper-200 bg-paper-100/85 px-4 pb-3 pt-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10 dark:border-umber-700 dark:bg-umber-900/85">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="m-0 text-2xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-            {t("admin.analytics_title")}
-          </h1>
-          <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
-            {t("admin.analytics_sub")}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <header className="sticky top-14 z-10 -mx-4 mb-6 border-b border-paper-200 bg-paper-100/85 px-4 py-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10 dark:border-umber-700 dark:bg-umber-900/85">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="m-0 shrink-0 text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+          {t("admin.analytics_title")}
+        </h1>
+        {/* Subtitle is structurally present for screen readers but hidden
+         *  visually — the page chrome's job is navigation, not exposition. */}
+        <p className="sr-only">{t("admin.analytics_sub")}</p>
+
+        {/* Below sm: collapse the section pills to a native select so the
+         *  header stays single-row. The same scrollTo() handler runs on
+         *  change. */}
+        <label className="flex shrink-0 items-center sm:hidden">
+          <span className="sr-only">{t("admin.analytics_jump_to_section")}</span>
+          <select
+            value={activeId}
+            onChange={(ev) => scrollTo(ev.target.value as SectionId)}
+            aria-label={t("admin.analytics_jump_to_section")}
+            className="btn-lifted rounded-lg bg-paper-50 px-2 py-1 text-xs font-medium text-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 dark:bg-umber-800 dark:text-paper-100"
+          >
+            {SECTIONS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {t(s.labelKey)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <nav
+          aria-label={t("admin.analytics_title")}
+          className="hidden flex-wrap items-center gap-1.5 sm:flex"
+        >
+          {SECTIONS.map((s) => {
+            const active = activeId === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => scrollTo(s.id)}
+                aria-current={active ? "true" : undefined}
+                className={
+                  "btn-lifted rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 " +
+                  (active
+                    ? "bg-violet-600 text-white dark:bg-violet-500"
+                    : "bg-paper-200/70 text-ink-700 hover:bg-paper-300/80 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700")
+                }
+              >
+                {t(s.labelKey)}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-2">
           {lastLoadedLabel && (
-            <span className="text-xs text-ink-500 stat-num dark:text-umber-300">
+            <span className="hidden text-xs text-ink-500 dark:text-umber-300 sm:inline">
               {lastLoadedLabel}
             </span>
           )}
@@ -302,31 +343,6 @@ function PageHeader({
           </button>
         </div>
       </div>
-
-      <nav
-        aria-label={t("admin.analytics_title")}
-        className="mt-3 flex flex-wrap items-center gap-1.5"
-      >
-        {SECTIONS.map((s) => {
-          const active = activeId === s.id;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => scrollTo(s.id)}
-              aria-current={active ? "true" : undefined}
-              className={
-                "btn-lifted rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 " +
-                (active
-                  ? "bg-violet-600 text-white dark:bg-violet-500"
-                  : "bg-paper-200/70 text-ink-700 hover:bg-paper-300/80 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700")
-              }
-            >
-              {t(s.labelKey)}
-            </button>
-          );
-        })}
-      </nav>
     </header>
   );
 }
@@ -368,7 +384,7 @@ function SectionCard({
   return (
     <section className="card p-5">
       <header className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className={`m-0 ${SECTION_TITLE}`}>{title}</h2>
+        <h2 className="eyebrow m-0">{title}</h2>
         {subtitle && <span className="text-xs text-ink-500 dark:text-umber-300">{subtitle}</span>}
       </header>
       {children}
@@ -393,10 +409,10 @@ function KpiTile({
 }) {
   const containerCls = emphasis
     ? "rounded-xl bg-violet-50 p-3 ring-1 ring-violet-200 dark:bg-violet-500/10 dark:ring-violet-500/30"
-    : TILE_CHROME;
+    : "admin-tile";
   return (
     <div className={containerCls}>
-      <div className={`text-left ${KPI_LABEL}`}>{label}</div>
+      <div className="eyebrow text-left">{label}</div>
       <div className="stat-num mt-1 text-left text-2xl font-semibold text-ink-900 dark:text-paper-50">
         {value}
       </div>
@@ -423,7 +439,7 @@ function InnerCard({
   className?: string;
 }) {
   return (
-    <div className={`${CARD_CHROME}${className ? ` ${className}` : ""}`}>
+    <div className={`admin-card${className ? ` ${className}` : ""}`}>
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <h3 className={`m-0 ${CARD_TITLE}`}>{title}</h3>
         {subtitle && <span className="text-xs text-ink-500 dark:text-umber-300">{subtitle}</span>}
@@ -580,15 +596,11 @@ function PerCategoryTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className={`text-left ${KPI_LABEL}`}>
-            <th className="py-1 pr-2 font-medium">{t("admin.analytics_money_col_category")}</th>
-            <th className="py-1 pl-2 text-right font-medium">
-              {t("admin.analytics_money_col_avg_planned")}
-            </th>
-            <th className="py-1 pl-2 text-right font-medium">
-              {t("admin.analytics_money_col_avg_actual")}
-            </th>
-            <th className="py-1 pl-2 text-right font-medium">
+          <tr className="eyebrow text-left">
+            <th className="py-1 pr-2">{t("admin.analytics_money_col_category")}</th>
+            <th className="py-1 pl-2 text-right">{t("admin.analytics_money_col_avg_planned")}</th>
+            <th className="py-1 pl-2 text-right">{t("admin.analytics_money_col_avg_actual")}</th>
+            <th className="py-1 pl-2 text-right">
               {t("admin.analytics_money_col_couples_with_data")}
             </th>
           </tr>
@@ -688,7 +700,7 @@ function ActivitySection({
           ) : (
             <>
               <SignupsAreaChart points={a.signups_daily} max={dailyMax} />
-              <div className="mt-1 flex justify-between text-[10px] text-ink-500 stat-num dark:text-umber-300">
+              <div className="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-umber-300">
                 <span>{a.signups_daily[0]?.date ?? ""}</span>
                 <span>{a.signups_daily[a.signups_daily.length - 1]?.date ?? ""}</span>
               </div>
@@ -723,51 +735,35 @@ function ActivitySection({
           <InnerCard title={t("admin.analytics_activity_status_title")}>
             <div className="flex flex-wrap gap-1.5">
               {statusKeys.map((s) => (
-                <StatusBadge
-                  key={s}
-                  label={t(
-                    `admin.analytics_activity_status_${s}` as `admin.analytics_activity_status_${CoupleStatus}`,
-                  )}
-                  count={a.couples_by_status[s] ?? 0}
-                  tone={s}
-                  locale={locale}
-                />
+                <Pill key={s} tone={STATUS_TONE[s]}>
+                  <span>
+                    {t(
+                      `admin.analytics_activity_status_${s}` as `admin.analytics_activity_status_${CoupleStatus}`,
+                    )}
+                  </span>
+                  <span className="stat-num">
+                    {formatNumber(a.couples_by_status[s] ?? 0, locale)}
+                  </span>
+                </Pill>
               ))}
             </div>
           </InnerCard>
         </div>
       </div>
-
-      {/* Top audit-log actions — horizontal scrollable chip row sits below
-       *  the 2-col grid so it never crowds the funnel or the chart, while
-       *  staying inside the same single-viewport budget. */}
-      <div className="mt-3">
-        <h3 className={`mb-2 ${CARD_TITLE}`}>{t("admin.analytics_activity_top_actions_title")}</h3>
-        {a.top_actions.length === 0 ? (
-          <p className="text-sm text-ink-500 dark:text-umber-300">
-            {t("admin.analytics_activity_top_actions_empty")}
-          </p>
-        ) : (
-          <ul className="flex flex-wrap gap-1.5">
-            {a.top_actions.slice(0, 10).map((row) => (
-              <li
-                key={row.action}
-                className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-2.5 py-1 text-xs text-ink-700 ring-1 ring-ink-100 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700"
-              >
-                <span className="font-mono text-[10px] text-ink-600 dark:text-paper-200">
-                  {row.action}
-                </span>
-                <span className="stat-num font-semibold text-ink-900 dark:text-paper-50">
-                  {formatNumber(row.count, locale)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* `top_actions` chip row removed — raw audit-log action names with
+       *  counts were developer-log debris, not an admin signal. The
+       *  Engagement section's `top_features` rollup covers the same idea
+       *  with cleaner aggregation. */}
     </SectionCard>
   );
 }
+
+const STATUS_TONE: Record<CoupleStatus, PillTone> = {
+  active: "sage",
+  paused: "violet",
+  deleting: "blush",
+  archived: "paper",
+};
 
 function FunnelStep({
   label,
@@ -789,35 +785,6 @@ function FunnelStep({
         {formatNumber(count, locale)} · {clamped}%
       </span>
     </div>
-  );
-}
-
-function StatusBadge({
-  label,
-  count,
-  tone,
-  locale,
-}: {
-  label: string;
-  count: number;
-  tone: CoupleStatus;
-  locale: "hu" | "en";
-}) {
-  const cls =
-    tone === "active"
-      ? "border-sage-300 bg-sage-50 text-sage-900 dark:border-sage-500/30 dark:bg-sage-500/15 dark:text-sage-200"
-      : tone === "paused"
-        ? "border-violet-300 bg-violet-50 text-violet-950 dark:border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-200"
-        : tone === "deleting"
-          ? "border-blush-300 bg-blush-50 text-blush-800 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-200"
-          : "border-paper-300 bg-paper-100 text-ink-700 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100";
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}
-    >
-      <span>{label}</span>
-      <span className="stat-num">{formatNumber(count, locale)}</span>
-    </span>
   );
 }
 
@@ -895,17 +862,11 @@ function PicksSection({
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className={`text-left ${KPI_LABEL}`}>
-                        <th className="py-1 pr-2 font-medium">
-                          {t("admin.analytics_picks_col_supplier")}
-                        </th>
-                        <th className="py-1 px-2 font-medium">
-                          {t("admin.analytics_picks_col_category")}
-                        </th>
-                        <th className="py-1 px-2 font-medium">
-                          {t("admin.analytics_picks_col_source")}
-                        </th>
-                        <th className="py-1 pl-2 text-right font-medium">
+                      <tr className="eyebrow text-left">
+                        <th className="py-1 pr-2">{t("admin.analytics_picks_col_supplier")}</th>
+                        <th className="py-1 px-2">{t("admin.analytics_picks_col_category")}</th>
+                        <th className="py-1 px-2">{t("admin.analytics_picks_col_source")}</th>
+                        <th className="py-1 pl-2 text-right">
                           {t("admin.analytics_picks_col_pick_count")}
                         </th>
                       </tr>
@@ -947,14 +908,12 @@ function PicksSection({
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className={`text-left ${KPI_LABEL}`}>
-                        <th className="py-1 pr-2 font-medium">
-                          {t("admin.analytics_picks_col_category")}
-                        </th>
-                        <th className="py-1 px-2 text-right font-medium">
+                      <tr className="eyebrow text-left">
+                        <th className="py-1 pr-2">{t("admin.analytics_picks_col_category")}</th>
+                        <th className="py-1 px-2 text-right">
                           {t("admin.analytics_picks_col_picked")}
                         </th>
-                        <th className="py-1 pl-2 text-right font-medium">
+                        <th className="py-1 pl-2 text-right">
                           {t("admin.analytics_picks_col_coverage_pct")}
                         </th>
                       </tr>
@@ -987,7 +946,7 @@ function PicksSection({
               )}
               {sourceTotal > 0 && (
                 <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700">
-                  <div className={`mb-1.5 ${KPI_LABEL}`}>
+                  <div className="eyebrow mb-1.5">
                     {t("admin.analytics_picks_source_breakdown_title")}
                   </div>
                   <SourceMiniBar
@@ -1009,25 +968,15 @@ function PicksSection({
 
 function SourceBadge({ source }: { source: "curated" | "community" | "diy" }) {
   const { t } = useT();
-  const cls =
-    source === "curated"
-      ? "border-violet-300 bg-violet-50 text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-200"
-      : source === "community"
-        ? "border-sage-300 bg-sage-50 text-sage-900 dark:border-sage-500/30 dark:bg-sage-500/15 dark:text-sage-200"
-        : "border-blush-300 bg-blush-50 text-blush-800 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-200";
+  const tone: PillTone =
+    source === "curated" ? "violet" : source === "community" ? "sage" : "blush";
   const label =
     source === "curated"
       ? t("admin.analytics_source_curated")
       : source === "community"
         ? t("admin.analytics_source_community")
         : t("admin.analytics_source_diy");
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${cls}`}
-    >
-      {label}
-    </span>
-  );
+  return <Pill tone={tone}>{label}</Pill>;
 }
 
 /** Compact 3-segment horizontal bar — replaces the donut chart from the
@@ -1504,7 +1453,7 @@ function DemoSection({
               ) : (
                 <>
                   <SignupsAreaChart points={d.demos_daily} max={dailyMax} />
-                  <div className="mt-1 flex justify-between text-[10px] text-ink-500 stat-num dark:text-umber-300">
+                  <div className="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-umber-300">
                     <span>{d.demos_daily[0]?.date ?? ""}</span>
                     <span>{d.demos_daily[d.demos_daily.length - 1]?.date ?? ""}</span>
                   </div>
@@ -1759,7 +1708,7 @@ function SignupsAreaChart({
           className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-2 rounded-md border border-ink-100 bg-white px-2 py-1 text-[11px] font-medium text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
           style={{ left: `${hoveredLeftPct}%` }}
         >
-          <div className="stat-num">{hovered.date}</div>
+          <div>{hovered.date}</div>
           <div className="stat-num text-violet-600 dark:text-violet-300">{hovered.count}</div>
         </div>
       )}
