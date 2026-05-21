@@ -111,6 +111,16 @@ export function SeatingMap({
   const ROOM_W_MM = roomWidthMm;
   const ROOM_H_MM = roomHeightMm;
   const svgRef = useRef<SVGSVGElement | null>(null);
+  // Coarse-pointer = touch device. We relax `touch-action: none` on tables
+  // to `pan-y` so vertical page scroll still works when a finger lands on
+  // a table — the previous behaviour trapped mobile users inside the
+  // canvas. Detected lazily on mount; not re-evaluated on resize (a desktop
+  // user plugging in a tablet mid-session is not a real flow).
+  const [coarsePointer, setCoarsePointer] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    setCoarsePointer(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
   // We mirror table positions / dimensions locally so dragging is smooth
   // without round-tripping to the server. Keyed by table id; falls back to
   // the prop value when nothing is overridden.
@@ -609,6 +619,7 @@ export function SeatingMap({
                   filledSeats={filled}
                   babySeatedSet={babySeatsByTable?.get(table.id)}
                   isSelected={selectedId === table.id}
+                  coarsePointer={coarsePointer}
                   onPointerDown={(e) => startMove(e, table)}
                   onHandlePointerDown={(e, h) => startResize(e, table, h)}
                   onSeatsDelta={(delta) => onSeatsChange(table.id, delta)}
@@ -779,6 +790,12 @@ interface TableShapeProps {
   /** Seat indices currently occupied by a baby guest — overlay a Baby icon. */
   babySeatedSet?: Set<number>;
   isSelected: boolean;
+  /** True when the device has a coarse pointer (touch). We then relax the
+   *  drag's `touch-action: none` to `pan-y` so the user can still scroll the
+   *  page vertically when their finger lands on a table — the previous
+   *  blanket `none` hijacked all vertical scroll, trapping mobile users
+   *  inside the canvas. Horizontal drag still starts a table move. */
+  coarsePointer?: boolean;
   onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
   onHandlePointerDown: (e: React.PointerEvent<SVGElement>, handle: HandleDir) => void;
   onSeatsDelta: (delta: number) => void;
@@ -801,6 +818,7 @@ function TableShape({
   filledSeats,
   babySeatedSet,
   isSelected,
+  coarsePointer = false,
   onPointerDown,
   onHandlePointerDown,
   onSeatsDelta,
@@ -891,7 +909,16 @@ function TableShape({
       // here start a table move via Pointer Events. Empty canvas / between
       // tables keeps the SVG's default touch-action: auto so touch users can
       // pan-scroll the room in the expanded overlay.
-      style={{ cursor: "grab", touchAction: "none" }}
+      //
+      // BUT on coarse-pointer devices the table covers most of the visible
+      // SVG, and `touchAction: none` then traps every finger swipe — vertical
+      // page scroll dies the moment the user lands on a table. We drop to
+      // `pan-y` there so vertical page scrolling survives; horizontal drag
+      // still starts a table move (the common drag axis).
+      style={{
+        cursor: "grab",
+        touchAction: coarsePointer ? "pan-y" : "none",
+      }}
       // Keyboard a11y: focusable, Enter/Space mimics a click-to-select, and
       // arrow/[/]/Delete shortcuts are handled by the parent SeatingMap so a
       // single keydown listener can govern the whole canvas.
