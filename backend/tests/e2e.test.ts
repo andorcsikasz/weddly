@@ -10449,16 +10449,31 @@ async function fetchWithHost(path: string, host: string | null): Promise<Respons
   return await fetch(`${BASE}${path}`, { headers });
 }
 
-describe("seo: host detection", () => {
-  test("localeForHost is hu regardless of host (single-domain deployment)", () => {
-    // Post-consolidation: only weddly.hu is canonical. The locale comes from
-    // the user's language switcher, not the host. The function still takes a
-    // host to keep the call-site signature stable, but always returns "hu".
+describe("seo: locale detection", () => {
+  test("localeForHost defaults to hu when no Accept-Language is provided", () => {
+    // Back-compat baseline: legacy callers (and internal SEO renderers that
+    // don't have a header to forward) keep getting HU. The dynamic branch
+    // fires only when production server.ts forwards the real header.
     expect(localeForHost("weddly.hu")).toBe("hu");
     expect(localeForHost("weddly.xyz")).toBe("hu");
     expect(localeForHost("localhost:5173")).toBe("hu");
     expect(localeForHost(null)).toBe("hu");
     expect(localeForHost("")).toBe("hu");
+  });
+
+  test("localeForHost branches on Accept-Language first preference", () => {
+    // HU-preferring browsers (HU users) keep landing on the HU SSR variant.
+    expect(localeForHost("weddly.hu", "hu")).toBe("hu");
+    expect(localeForHost("weddly.hu", "hu-HU,hu;q=0.9")).toBe("hu");
+    expect(localeForHost("weddly.hu", "hu-HU,en;q=0.9")).toBe("hu");
+    // Non-HU primary → EN. This is the change that lets Googlebot (which
+    // sends `en-US,en;q=0.9` by default) index the EN landing.
+    expect(localeForHost("weddly.hu", "en-US,en;q=0.9")).toBe("en");
+    expect(localeForHost("weddly.hu", "en")).toBe("en");
+    expect(localeForHost("weddly.hu", "de-DE,de;q=0.9,en;q=0.5")).toBe("en");
+    // A courtesy fallback to HU in q-weighted positions DOESN'T promote
+    // the request to HU — primary preference wins.
+    expect(localeForHost("weddly.hu", "en-US,en;q=0.9,hu;q=0.5")).toBe("en");
   });
 
   test("canonicalHostFor always returns the single canonical host", () => {
@@ -10538,8 +10553,13 @@ describe("seo: renderIndexHtml meta injection", () => {
 <body><div id="root"></div></body>
 </html>`;
 
-  function render(host: string, pathname: string, isRsvp = false): string {
-    return renderIndexHtml(TEMPLATE, { host, pathname, isRsvp });
+  function render(
+    host: string,
+    pathname: string,
+    isRsvp = false,
+    acceptLanguage: string | null = null,
+  ): string {
+    return renderIndexHtml(TEMPLATE, { host, pathname, isRsvp, acceptLanguage });
   }
 
   test("root: HU lang, HU canonical, no EN hreflang (single-host)", () => {
@@ -10615,6 +10635,31 @@ describe("seo: renderIndexHtml meta injection", () => {
     // every render now resolves to the HU locale.
     expect(out).toContain(`<html lang="hu"`);
     expect(out).not.toContain("canonical");
+  });
+
+  test("EN-preferring Accept-Language flips lang + og:locale + meta to EN", () => {
+    const html = render("weddly.hu", "/", false, "en-US,en;q=0.9");
+    expect(html).toContain(`<html lang="en"`);
+    expect(html).toContain(`<meta property="og:locale" content="en_US" />`);
+    expect(html).toContain(`<meta property="og:locale:alternate" content="hu_HU" />`);
+    // EN brand description / title comes from the EN META block.
+    expect(html).toContain(`Weddly · Your shared wedding-planning workspace`);
+    // Canonical + hreflang still point at the single canonical host — single
+    // domain, no separate EN URL yet.
+    expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/" />`);
+  });
+
+  test("EN Accept-Language emits EN JSON-LD inLanguage + brand meta", () => {
+    const html = render("weddly.hu", "/", false, "en");
+    // WebSite schema's inLanguage flips to en-US for EN renders.
+    expect(html).toMatch(/"WebSite"[^}]*"inLanguage":"en-US"/);
+  });
+
+  test("HU-preferring Accept-Language keeps HU SSR (regression guard)", () => {
+    const html = render("weddly.hu", "/", false, "hu-HU,hu;q=0.9");
+    expect(html).toContain(`<html lang="hu"`);
+    expect(html).toContain(`<meta property="og:locale" content="hu_HU" />`);
+    expect(html).toContain(`Wēddly · Közös esküvőtervezés egy helyen`);
   });
 });
 

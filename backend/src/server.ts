@@ -240,12 +240,14 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   // changes), and stale HTML means users see old chunks 404 and old SSR
   // flashes long after the fix has shipped.
   if (existsSync(FRONTEND_INDEX)) {
-    const locale = localeForHost(host);
+    const acceptLanguage = req.headers.get("accept-language");
+    const locale = localeForHost(host, acceptLanguage);
     const template = await loadIndexHtmlSource(locale);
     const html = renderIndexHtml(template, {
       host,
       pathname,
       isRsvp: isRsvpRoute(pathname),
+      acceptLanguage,
     });
     return new Response(html, {
       headers: {

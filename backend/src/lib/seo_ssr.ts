@@ -6,9 +6,15 @@
 // weddly.hu, so search engines following the old hreflang chains would just
 // de-index the EN alternate.
 //
-// Today: weddly.hu is the only canonical. The locale switch is purely
-// client-side (localStorage + language switcher); the initial SSR'd HTML is
-// HU-locale by default for crawlers landing on the canonical host.
+// Today: weddly.hu is the only canonical. The locale of the SSR'd HTML
+// (which is what Googlebot indexes pre-JS) branches on the request's
+// `Accept-Language` header — HU-preferring clients see the HU landing +
+// HU meta; everyone else (the strategic international audience + most
+// crawlers, which advertise `en-US`) sees the EN variant. Clients still
+// flip locale at runtime via localStorage + the language switcher, so an
+// HU user landing on the EN SSR shell snaps back to HU after hydration.
+// `Host` is retained in the signal for the future host-based path (e.g.
+// adding a separate weddly.com EN-canonical) but ignored today.
 
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { lookupRouteSeo } from "../../../shared/seo_routes";
@@ -88,13 +94,33 @@ const META: Record<SeoLocale, LocaleMeta> = {
 const HEAD_START = "<!-- SEO_HEAD_START -->";
 const HEAD_END = "<!-- SEO_HEAD_END -->";
 
-/** SEO locale for a request. We no longer host EN on a separate TLD, so this
- *  always returns "hu" — the only locale the SSR'd HTML advertises to
- *  crawlers. EN-language users still get an EN UI client-side via the
- *  in-app language switcher, but that's not what Googlebot sees. The
- *  parameter is retained so callers don't all have to be rewritten. */
-export function localeForHost(_host: string | null | undefined): SeoLocale {
-  return "hu";
+/** Parse an `Accept-Language` header value and return whether the client's
+ *  top-preference language is Hungarian. Strict first-tag check: the user's
+ *  PRIMARY preference wins; secondary q-weighted fallbacks are ignored on
+ *  purpose so e.g. `en-US,en;q=0.9,hu;q=0.5` (most US browsers, with HU as
+ *  a courtesy fallback) renders EN — not HU. */
+function prefersHungarian(acceptLanguage: string | null | undefined): boolean {
+  if (!acceptLanguage) return false;
+  const first = acceptLanguage.split(",")[0]?.split(";")[0]?.trim().toLowerCase() ?? "";
+  return first === "hu" || first.startsWith("hu-");
+}
+
+/** SEO locale for a request. Branches on `Accept-Language` so HU-preferring
+ *  clients (HU users, hu-HU browsers) get the HU landing + HU meta and
+ *  everyone else (international users, EN crawlers including Googlebot) gets
+ *  the EN variant. The `host` parameter is retained for future host-based
+ *  routing (e.g. a separate weddly.com EN canonical) but ignored today.
+ *  `acceptLanguage=null/undefined` defaults to HU for back-compat with old
+ *  callers and the SEO test suite — production callers pass the real header. */
+export function localeForHost(
+  _host: string | null | undefined,
+  acceptLanguage: string | null | undefined = null,
+): SeoLocale {
+  // No header info → preserve historical "HU default" so existing callers /
+  // tests that pass only the host still get HU. Real production requests
+  // always carry Accept-Language, which is where the dynamic branch fires.
+  if (acceptLanguage == null) return "hu";
+  return prefersHungarian(acceptLanguage) ? "hu" : "en";
 }
 
 export function canonicalHostFor(_locale: SeoLocale): string {
@@ -223,6 +249,10 @@ function buildHeadBlock(opts: {
   host: string | null;
   pathname: string;
   isRsvp: boolean;
+  /** Forwarded from the request so the SSR'd `<head>` advertises the right
+   *  lang/og:locale to crawlers. Optional so server.ts can pass the real
+   *  header and the SEO test suite can omit it (keeping the HU baseline). */
+  acceptLanguage?: string | null;
   /** Couple-specific overrides for the `/w/:slug` route. When present, the
    *  `<title>` + meta description + OG/Twitter title+description switch
    *  to a personalised string and `cover_image_url` (if set) replaces
@@ -231,7 +261,7 @@ function buildHeadBlock(opts: {
    *  and show their cover image, not "Plan your wedding together". */
   weddingMeta?: WeddingSiteMeta | null;
 }): string {
-  const locale = localeForHost(opts.host);
+  const locale = localeForHost(opts.host, opts.acceptLanguage ?? null);
   const defaultMeta = META[locale];
   const altDefaultMeta = META[locale === "hu" ? "en" : "hu"];
   const canonicalHost = canonicalHostFor(locale);
@@ -371,9 +401,18 @@ const BODY_END = "<!-- SEO_BODY_END -->";
  *  `<!-- SEO_BODY_START -->` / `<!-- SEO_BODY_END -->`. */
 export function renderIndexHtml(
   template: string,
-  opts: { host: string | null; pathname: string; isRsvp: boolean },
+  opts: {
+    host: string | null;
+    pathname: string;
+    isRsvp: boolean;
+    /** Raw `Accept-Language` request header. Optional — when omitted, locale
+     *  resolution falls back to the historical HU default. Production
+     *  callers in server.ts forward the real header so the SSR'd HTML
+     *  advertises the right lang/og:locale per request. */
+    acceptLanguage?: string | null;
+  },
 ): string {
-  const locale = localeForHost(opts.host);
+  const locale = localeForHost(opts.host, opts.acceptLanguage ?? null);
   // Look up the couple meta once at the boundary — `buildHeadBlock` is a
   // pure string-builder so we keep the DB read here.
   const weddingMeta = lookupWeddingSiteMeta(opts.pathname);
