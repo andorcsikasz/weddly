@@ -163,6 +163,9 @@ export function GoogleSignInButton({
                 credential: resp.credential,
                 privacy_version: PRIVACY_VERSION,
                 terms_version: TERMS_VERSION,
+                // Carries the rendered UI locale to seed `users.locale` for
+                // brand-new accounts — see authApi.google docs.
+                locale,
               });
               setSession(session.token, session.user);
               navigate(redirectTo, { replace: true });

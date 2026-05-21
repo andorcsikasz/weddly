@@ -33,6 +33,10 @@ interface GoogleAuthBody {
    *  Ignored when the credential maps to an existing account. */
   privacy_version?: unknown;
   terms_version?: unknown;
+  /** UI locale to persist on the new users row — same contract as
+   *  /api/auth/register. Only 'hu' | 'en' are kept; the column is
+   *  nullable so the existing-account branch never touches it. */
+  locale?: unknown;
 }
 
 async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
@@ -121,14 +125,15 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
   // password_set = 0 — Google-only account. Stops the password-reset side
   // door from working on accounts the legitimate user never put a password
   // on, see [[security_google_only_password_reset]].
+  const persistedLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
   const result = db
     .prepare(
       `INSERT INTO users
          (email, password_hash, full_name, status, role, verified_email,
-          google_sub, password_set, created_at, updated_at)
-       VALUES (?, ?, ?, 'active', 'owner', 1, ?, 0, ?, ?)`,
+          google_sub, password_set, locale, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 1, ?, 0, ?, ?, ?)`,
     )
-    .run(identity.email, passwordHash, fullName, identity.sub, ts, ts);
+    .run(identity.email, passwordHash, fullName, identity.sub, persistedLocale, ts, ts);
   const userId = Number(result.lastInsertRowid);
 
   const ip = ctx.clientIp;

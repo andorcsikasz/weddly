@@ -100,5 +100,5 @@ PDF formats supported in v1: **A4** (seating chart), **A6** (place cards), **A3*
 - Don't add Redux / Zustand. Provider stack + `localStorage` is enough.
 - Don't add react-query. The single API client + React state is enough.
 - Don't add Zod / io-ts. TS is the contract; hand-write boundary guards.
-- Don't store per-user locale in the DB. Bilingual emails (HU hero + compact EN block) are the safer fallback.
+- `users.locale` is captured at signup (post-international-expansion) — surfaced on `/api/auth/me` and used by the frontend to override navigator.language detection on fresh devices. The local locale switcher still wins on the device where the user flipped it. Outbound email is still bilingual (HU hero + compact EN block); the per-locale email rewrite is a separate follow-up.
 - Don't introduce a frontend SSG framework. SPA + SSR meta injection on public routes is enough (see simpleraz seo_ssr.ts pattern when phase 2 lands).
