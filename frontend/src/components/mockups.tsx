@@ -912,13 +912,30 @@ export function VendorListingMockup({ className }: Common) {
         />
       </g>
 
-      {/* Cover image area */}
+      {/* Cover image area — pastel placeholder strip + universal photo-icon
+       *  glyph centered in the strip. Earlier revs decorated this with two
+       *  blush ellipses, but they read as floating blobs on mobile (the SVG
+       *  scales down past where their shapes are recognisable). The image-
+       *  frame glyph mirrors the production layout 1:1 — a real hero photo
+       *  drops into exactly this rect — and is category-neutral, so it
+       *  doesn't whisper "this product is for florists only" to caterers
+       *  and photographers browsing /vendors. */}
       <g className="text-blush-100">
         <path d="M 0 0 L 360 0 L 360 92 L 0 92 Z" fill="currentColor" />
       </g>
-      <g className="text-blush-300">
-        <ellipse cx="80" cy="92" rx="80" ry="36" fill="currentColor" opacity="0.6" />
-        <ellipse cx="280" cy="84" rx="60" ry="28" fill="currentColor" opacity="0.5" />
+      <g className="text-blush-400" opacity="0.55">
+        <rect
+          x="167"
+          y="30"
+          width="50"
+          height="36"
+          rx="3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+        />
+        <circle cx="178" cy="40" r="2.5" fill="currentColor" />
+        <path d="M 170 60 L 184 46 L 196 56 L 213 42 L 213 64 L 170 64 Z" fill="currentColor" />
       </g>
 
       {/* Logo badge */}
