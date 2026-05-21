@@ -22,7 +22,16 @@ import {
   User,
   Wand2,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  type FocusEvent as ReactFocusEvent,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -1019,7 +1028,9 @@ function QuickAddForm({
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [assignee, setAssignee] = useState("");
+  const [titleFocused, setTitleFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
   const assigneeListId = "planning-assignee-list";
 
   async function onSubmit(e: FormEvent) {
@@ -1034,15 +1045,43 @@ function QuickAddForm({
     setTitle("");
     setDueDate("");
     setAssignee("");
+    // Keep the form expanded after a successful submit — the realistic
+    // flow is "add five tasks in a row", and re-collapsing back to a
+    // single line every time forces the user to refocus / re-tap the
+    // details slot. Stays expanded as long as the user keeps interacting.
     inputRef.current?.focus();
   }
 
+  // Expand the form (reveal the assignee + date inputs below the title
+  // row) when the user is actively engaging with it OR has typed
+  // something — typing is the implicit signal that they're not just
+  // browsing past. Collapse once focus leaves AND the title is empty
+  // AND no value is sitting in assignee/date. Without the "active in
+  // form" check, tapping the native iOS date picker steals focus from
+  // the title input and collapses the form mid-pick.
   const placeholder =
     kind === "task" ? t("planning.task_placeholder") : t("planning.idea_placeholder");
+  const hasValue =
+    title.trim().length > 0 || (kind === "task" && (assignee.length > 0 || dueDate.length > 0));
+  const showDetails = kind === "task" && (titleFocused || hasValue);
+
+  function onFormBlur(e: ReactFocusEvent<HTMLFormElement>) {
+    // relatedTarget === the element gaining focus. If it's still inside
+    // the form, this is not a "real" blur (user just tabbed from title
+    // to assignee). Only collapse when focus genuinely leaves.
+    if (formRef.current && e.relatedTarget && formRef.current.contains(e.relatedTarget)) return;
+    setTitleFocused(false);
+  }
 
   return (
-    <form onSubmit={onSubmit} className="card flex flex-wrap items-end gap-3 p-3">
-      <div className="flex flex-1 min-w-[200px] items-center gap-2">
+    <form
+      ref={formRef}
+      onSubmit={onSubmit}
+      onFocus={() => setTitleFocused(true)}
+      onBlur={onFormBlur}
+      className="card p-3"
+    >
+      <div className="flex items-center gap-2">
         <Plus size={16} className="text-ink-400 dark:text-umber-300" aria-hidden="true" />
         <input
           ref={inputRef}
@@ -1051,12 +1090,19 @@ function QuickAddForm({
           onChange={(e) => setTitle(e.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="w-full bg-transparent text-sm outline-none placeholder:text-ink-400 dark:text-paper-50 dark:placeholder:text-umber-300"
+          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-ink-400 dark:text-paper-50 dark:placeholder:text-umber-300"
           maxLength={200}
         />
+        <button
+          type="submit"
+          disabled={!title.trim()}
+          className="btn-primary btn-sm shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {t("planning.add")}
+        </button>
       </div>
-      {kind === "task" && (
-        <>
+      {showDetails && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <input
             type="text"
             value={assignee}
@@ -1082,15 +1128,8 @@ function QuickAddForm({
             aria-label={t("planning.due_date_label")}
             className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
           />
-        </>
+        </div>
       )}
-      <button
-        type="submit"
-        disabled={!title.trim()}
-        className="btn-primary btn-sm disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {t("planning.add")}
-      </button>
     </form>
   );
 }
