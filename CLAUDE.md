@@ -66,6 +66,16 @@ See [docs/blueprint.md](./docs/blueprint.md#domain-primitives-v1) for the full t
 - No raw hex colors in components — every value comes from `tailwind.config.js` tokens.
 - No `window.confirm` / `alert()` — use the portal-mounted `<ConfirmDialog>` and `useToast()`.
 
+## Testing
+
+- **Every test file MUST start with `import "./setup"` (or `"../setup"`, `"../../setup"` depending on depth).** `backend/tests/setup.ts` boots the server and pins the test environment; skipping it means the test fetches against either nothing or, worse, the dev server.
+- **`bun test` autoloads `backend/.env` BEFORE `setup.ts` runs.** This is the trap that masked tests-against-the-dev-DB for three days in May 2026. The fix: `setup.ts` uses unconditional `process.env.X = "..."` assignments rather than `??` fallbacks — every dev value that could leak (PORT, DB_PATH, UPLOADS_DIR, RESEND_API_KEY, SENTRY_DSN, AMADEUS_*, SERVE_FRONTEND, EMAIL_FROM, JWT_SECRET, ADMIN_EMAILS, GOOGLE_CLIENT_ID, GOOGLE_TEST_BYPASS, FRONTEND_BASE_URL) gets pinned. If you add a new env var to `config.ts`, pin its test value in `setup.ts` too.
+- **Worktree-parallel testing escape hatches: `BUN_TEST_PORT` and `BUN_TEST_DB_PATH`** — set those on the `bun test` invocation to run two checkouts side by side. Plain `PORT`/`DB_PATH` env vars deliberately DON'T win (that's the regression guard from the May 2026 leak).
+- **Test DB lives at `./data/test-weddly.db`** and gets `rmSync`'d on every bun-test start. The dev DB at `./data/weddly.db` must never be touched by the suite.
+- **Backend test suite:** mostly under `backend/tests/api/<feature>.e2e.test.ts` (per-domain files). The legacy monolithic `backend/tests/e2e.test.ts` is gradually being split into the same per-domain shape — when adding new tests, put them in the per-domain file, not the monolith.
+- **Frontend tests run under happy-dom.** Two known limitations: `https://accounts.google.com/gsi/client` script loads are blocked (no impact on test outcome, just noisy logs) and `blob:` URL fetches throw `NotSupportedError`. For HU-locale tests, call `_preloadHuForTests()` in `beforeAll` — the HU translations tree is dynamically imported in production, so synchronous queries against HU labels need the preload.
+- **Major-change rule:** every new endpoint / schema change / money flow / state machine / auth change ships with E2E coverage in the same commit.
+
 ## Milestone workflow (auto-commit rule)
 
 When a self-contained feature, bug fix, or logical change is complete, follow this sequence before moving on — do not wait for the user to ask:
@@ -78,9 +88,9 @@ A "milestone" is a logical unit of work (Claude's judgment call), not every edit
 
 ## i18n
 
-- HU is default; EN is secondary. Detection: `localStorage["weddly.locale"]` → `navigator.language` → `"hu"`.
+- **EN is the default for non-HU clients.** Frontend detection: `localStorage["weddly.locale"]` → host match against `VITE_EN_CANONICAL_HOST` → `navigator.language` starts with "hu" → HU; else EN. SSR detection: backend reads the request `Accept-Language` header, branches HU vs EN per first preference, and serves the matching pre-rendered HTML body (`index.html` vs `index.en.html`) — Googlebot (which sends `en-US`) indexes the EN landing.
 - All literals go through `t("path.key")`. No inline strings.
-- Currency is always HUF via `Intl.NumberFormat("hu-HU", { style: "currency", currency: "HUF", maximumFractionDigits: 0 })`.
+- **Currency follows the user's locale at couple creation** — HU users get HUF, EN users get EUR (overridable in onboarding and via PATCH `/api/couples/current`). Format display amounts with `Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US", { style: "currency", currency: couple.currency, maximumFractionDigits: 0 })`.
 - Drift detection (`warnDrift()`) on init `console.warn`s missing keys.
 
 ## Print export
