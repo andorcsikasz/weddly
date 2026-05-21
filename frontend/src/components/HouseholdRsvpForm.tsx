@@ -727,11 +727,12 @@ export function HouseholdRsvpForm({
                             onClick={() => updateMember(d.id, { meal_choice: active ? null : m })}
                             className={
                               active
-                                ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                                : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                                ? "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-ink-700 bg-ink-700 px-1 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                                : "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-paper-300 bg-paper-50 px-1 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
                             }
                           >
-                            <Icon size={22} aria-hidden />
+                            <Icon size={20} aria-hidden />
+                            <span className="text-[11px] font-medium leading-tight">{label}</span>
                           </button>
                         );
                       })}
@@ -752,7 +753,7 @@ export function HouseholdRsvpForm({
                   <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
                     {t("rsvp.dietary_section_title")}
                   </p>
-                  <div className="grid grid-cols-6 gap-1.5 [&>button]:w-full">
+                  <div className="grid grid-cols-3 gap-1.5 [&>button]:w-full [&>button]:justify-center">
                     {(
                       ["milk_protein", "lactose", "gluten", "nut", "egg", "fish_shellfish"] as const
                     ).map((tag) => (
@@ -762,7 +763,6 @@ export function HouseholdRsvpForm({
                         onClick={() => toggleDietaryTag(d.id, tag)}
                         icon={<DietaryTagIcon tag={tag} />}
                         label={t(`rsvp.tag_${tag}`)}
-                        iconOnly
                       />
                     ))}
                   </div>
@@ -1062,17 +1062,18 @@ function AttachedDietary({
                 onClick={() => onMealChange(active ? null : m)}
                 className={
                   active
-                    ? "flex aspect-square items-center justify-center rounded-xl border-2 border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                    : "flex aspect-square items-center justify-center rounded-xl border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                    ? "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-ink-700 bg-ink-700 px-1 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                    : "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-paper-300 bg-paper-50 px-1 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
                 }
               >
-                <Icon size={22} aria-hidden />
+                <Icon size={20} aria-hidden />
+                <span className="text-[11px] font-medium leading-tight">{label}</span>
               </button>
             );
           })}
         </div>
       )}
-      <div className="grid grid-cols-6 gap-1.5 [&>button]:w-full">
+      <div className="grid grid-cols-3 gap-1.5 [&>button]:w-full [&>button]:justify-center">
         {(["milk_protein", "lactose", "gluten", "nut", "egg", "fish_shellfish"] as const).map(
           (tag) => (
             <Chip
@@ -1081,7 +1082,6 @@ function AttachedDietary({
               onClick={() => onToggleTag(tag)}
               icon={<DietaryTagIcon tag={tag} />}
               label={t(`rsvp.tag_${tag}`)}
-              iconOnly
             />
           ),
         )}
