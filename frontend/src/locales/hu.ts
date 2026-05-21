@@ -93,6 +93,9 @@ const hu: LocaleMessages = {
     guest_preview_title: "Vendégoldal előnézet — Wēddly",
     guest_preview_description:
       "Nézzétek meg, mit látnak az igennel visszajelölt vendégek, és osszátok meg velük a linket.",
+    wedding_site_title: "Esküvői oldal — Weddly",
+    wedding_site_description:
+      "A pár nyilvános esküvői oldala — dátum, helyszín, programterv és RSVP egy helyen.",
   },
   a11y: {
     close: "Bezárás",
@@ -169,6 +172,26 @@ const hu: LocaleMessages = {
     gate_continue_limited: "Tovább korlátozott hozzáféréssel →",
     gate_open_inbox: "{provider} megnyitása",
     banner_done: "Megerősítettem",
+  },
+  wedding_site: {
+    page_title: "Esküvői oldal",
+    loading: "Töltjük az oldalt…",
+    not_found_title: "Ezt az esküvőt nem találjuk",
+    not_found_body:
+      "A link talán elgépelődött, vagy a pár inaktiválta az oldalát. Próbáld újra a teljes címmel.",
+    network_error_title: "Hálózati hiba",
+    network_error_body:
+      "Nem értük el a Weddlyt. Frissítsd az oldalt, vagy próbáld újra később.",
+    back_home: "Vissza a főoldalra",
+    eyebrow: "Esküvő · Weddly",
+    date_tbd: "A dátum még kiderül",
+    venue_approx: "Helyszín — pontos cím a meghívóban",
+    schedule_title: "A nap menete",
+    rsvp_title: "Részt veszel?",
+    rsvp_body:
+      "Add meg a meghívódon szereplő kódot, hogy a páros lássa, számíthat-e rád. Pár másodperc az egész.",
+    rsvp_cta: "RSVP →",
+    footer_built_with: "Weddly · Az esküvő-tervező",
   },
   verify_supplier: {
     page_title: "Hirdetés megerősítése",

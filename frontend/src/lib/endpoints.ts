@@ -42,6 +42,7 @@ import type {
   WeddingStyleTag,
 } from "@shared/types";
 import type { GuestPortalView } from "@shared/guest_portal";
+import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type {
   CommunitySupplierAdminView,
@@ -519,6 +520,17 @@ export const guestPortalApi = {
     apiFetch<{ portal: GuestPortalView }>(
       "GET",
       `/api/guest/portal?couple=${encodeURIComponent(couple)}&code=${encodeURIComponent(code)}`,
+    ),
+};
+
+export const weddingWebsiteApi = {
+  /** Public — couple-branded landing page at /w/:slug. Same slug as the
+   *  guest portal; no household code required. 404 when the slug doesn't
+   *  match an active couple. */
+  get: (slug: string) =>
+    apiFetch<{ wedding: PublicWeddingWebsiteView }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
     ),
 };
 

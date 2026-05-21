@@ -78,6 +78,8 @@ export interface LocaleMessages {
     guest_portal_description: string;
     guest_preview_title: string;
     guest_preview_description: string;
+    wedding_site_title: string;
+    wedding_site_description: string;
   };
   /** Gantt-style task timeline + point-of-contact panel. */
   timeline: {
@@ -206,6 +208,26 @@ export interface LocaleMessages {
     gate_continue_limited: string;
     gate_open_inbox: string;
     banner_done: string;
+  };
+  /** Public couple-branded landing at `/w/:slug` — first version: names,
+   *  date, optional schedule, RSVP CTA. Followed by registry / story /
+   *  travel sections once the schema picks them up. */
+  wedding_site: {
+    page_title: string;
+    loading: string;
+    not_found_title: string;
+    not_found_body: string;
+    network_error_title: string;
+    network_error_body: string;
+    back_home: string;
+    eyebrow: string;
+    date_tbd: string;
+    venue_approx: string;
+    schedule_title: string;
+    rsvp_title: string;
+    rsvp_body: string;
+    rsvp_cta: string;
+    footer_built_with: string;
   };
   /** Public "confirm your community-supplier listing" page — reached from the
    *  email sent to the listing's contact_email after submission. */

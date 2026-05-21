@@ -93,6 +93,9 @@ const en: LocaleMessages = {
     guest_preview_title: "Guest page preview — Weddly",
     guest_preview_description:
       "Preview the read-only wedding page your RSVP-yes guests see, and share the link with them.",
+    wedding_site_title: "Wedding website — Weddly",
+    wedding_site_description:
+      "The couple's public wedding page — date, venue, schedule and RSVP in one place.",
   },
   a11y: {
     close: "Close",
@@ -170,6 +173,26 @@ const en: LocaleMessages = {
     gate_continue_limited: "Continue with limited access →",
     gate_open_inbox: "Open {provider}",
     banner_done: "I've verified",
+  },
+  wedding_site: {
+    page_title: "Wedding website",
+    loading: "Loading the page…",
+    not_found_title: "We couldn't find this wedding",
+    not_found_body:
+      "The link may have a typo, or the couple has taken their page offline. Try the full address again.",
+    network_error_title: "Network error",
+    network_error_body:
+      "We couldn't reach Weddly. Refresh the page or try again in a moment.",
+    back_home: "Back to the home page",
+    eyebrow: "Wedding · Weddly",
+    date_tbd: "Date to be confirmed",
+    venue_approx: "Venue — exact address on your invitation",
+    schedule_title: "Schedule",
+    rsvp_title: "Are you coming?",
+    rsvp_body:
+      "Enter the code on your invitation so the couple knows whether to count you in. Takes a moment.",
+    rsvp_cta: "RSVP →",
+    footer_built_with: "Weddly · Wedding planning",
   },
   verify_supplier: {
     page_title: "Confirm your listing",
