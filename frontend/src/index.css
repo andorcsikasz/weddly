@@ -270,6 +270,27 @@
     @apply btn bg-transparent text-ink-700 hover:bg-paper-200
       dark:text-paper-200 dark:hover:bg-umber-800;
   }
+  /* Success-state CTA. Used to be inline `bg-sage-700 text-white …` on
+     ~6 sites — DashboardPage demo launch, DemoLaunchCard, etc. — which
+     drifted on each rewrite. Centralised here so a single rim/shade
+     change ripples through all sage CTAs in one go. */
+  .btn-success {
+    @apply btn bg-sage-700 text-white hover:bg-sage-800
+      dark:bg-sage-600 dark:text-paper-50 dark:hover:bg-sage-500;
+    --btn-rim: #154124;
+    --btn-rim-hover: #0e2d18;
+    --btn-rim-active: #154124;
+  }
+  /* Destructive / "needs attention" CTA. Blush face + warmer rim so it
+     reads as an alert without escalating to red (which clashes with the
+     stationery palette). Used by the dashboard date-changed banner. */
+  .btn-alert {
+    @apply btn bg-blush-600 text-white hover:bg-blush-700
+      dark:bg-blush-500 dark:text-umber-900 dark:hover:bg-blush-400;
+    --btn-rim: theme("colors.blush.800");
+    --btn-rim-hover: theme("colors.blush.900");
+    --btn-rim-active: theme("colors.blush.700");
+  }
   .btn-outline {
     @apply btn border border-ink-200 bg-paper-50 text-ink-800 hover:bg-paper-100
       dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700;

@@ -82,11 +82,11 @@ export function DemoLaunchCard() {
         disabled={busy}
         aria-busy={busy}
         // Sage instead of ink-900 so the demo CTA stays visually distinct
-        // from the primary register/login buttons on the same page. Sage
-        // also ties the card to the in-app demo banner colour. The arbitrary
-        // `[--btn-rim:...]` props feed btn-lifted a sage-matched bottom rim
-        // so the lifted shadow stays in the same colour family.
-        className="btn btn-lifted btn-landing mt-5 inline-flex w-full items-center justify-center gap-1.5 bg-sage-700 text-paper-50 text-sm hover:bg-sage-800 disabled:cursor-wait disabled:opacity-80 dark:bg-sage-500 dark:text-umber-900 dark:hover:bg-sage-400 [--btn-rim:#154124] [--btn-rim-hover:#0e2e18] [--btn-rim-active:#19512b] dark:[--btn-rim:#1c6633] dark:[--btn-rim-hover:#19512b] dark:[--btn-rim-active:#237f3f]"
+        // Centralised `.btn-success` carries the sage face + sage rim so the
+        // lifted shadow stays in the same colour family. Was previously a
+        // 320-char inline mix of `bg-sage-700` + arbitrary `[--btn-rim:#…]`
+        // hex props — flagged by the design-system-critic agent.
+        className="btn-success btn-lifted btn-landing mt-5 inline-flex w-full items-center justify-center gap-1.5 text-sm disabled:cursor-wait disabled:opacity-80"
       >
         {busy ? (
           <>
