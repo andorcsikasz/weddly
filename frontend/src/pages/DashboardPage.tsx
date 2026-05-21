@@ -1338,9 +1338,11 @@ export default function DashboardPage() {
 
           {/* ── Quick links ───────────────────────────────────────────── */}
           {/* Compact icon-only strip mirroring the sidebar (minus the current
-           *  page) so the overview doubles as a hub. Tooltips + aria-labels
-           *  surface the destination names; full labels live in the sidebar. */}
-          <section>
+           *  page) so the overview doubles as a hub on mobile. Hidden on lg+
+           *  because the sidebar is permanently visible there and renders the
+           *  same destinations with full labels — the icon strip would just
+           *  duplicate navigation. */}
+          <section className="lg:hidden">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t("dashboard.quick_links_title")}
             </h2>

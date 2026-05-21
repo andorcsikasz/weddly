@@ -1,18 +1,17 @@
 import { CheckCircle2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { feedbackApi } from "../lib/endpoints";
-import { currencySymbol, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Button } from "./ui/Button";
 import { Dialog } from "./ui/Dialog";
 
 /**
- * Public feedback dialog. Three independent segments — message, 1–10
- * rating, monthly-value slider — plus an optional reply email. The slider
- * range is locale-derived: HU shows HUF (0–15 000 Ft, step 500), EN shows
- * EUR (0–50 €, step 5). The submitted value is interpreted in the same
- * currency the visitor saw; backend rows pair it with the `locale` column
- * so admins read the unit correctly downstream.
+ * Public feedback dialog. Two visible segments — message + 1–10 rating —
+ * plus an opt-in checkbox that reveals an email field for visitors who
+ * actually want a reply. The earlier monthly-value slider was removed:
+ * it surfaced a third numeric input that pushed the form over the
+ * "asks too many things" threshold without giving us decision-grade
+ * signal, and the EUR/HUF unit ambiguity made the admin column unreadable.
  */
 type FeedbackDialogProps = {
   open: boolean;
@@ -22,18 +21,11 @@ type FeedbackDialogProps = {
   source?: "landing" | "app";
 };
 
-const MONTHLY_RANGES = {
-  hu: { max: 15000, step: 500 },
-  en: { max: 50, step: 5 },
-} as const;
-
 export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDialogProps) {
   const { t, locale } = useT();
-  const monthlyRange = MONTHLY_RANGES[locale];
-  const monthlySymbol = currencySymbol(localeCurrency(locale), locale);
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState<number | null>(null);
-  const [monthly, setMonthly] = useState<number | null>(null);
+  const [wantReply, setWantReply] = useState(false);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +34,7 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
   function resetAndClose() {
     setMessage("");
     setRating(null);
-    setMonthly(null);
+    setWantReply(false);
     setEmail("");
     setError(null);
     setDone(false);
@@ -53,7 +45,7 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
     e.preventDefault();
     setError(null);
     const msg = message.trim();
-    if (!msg && rating === null && monthly === null) {
+    if (!msg && rating === null) {
       setError(t("landing.feedback_empty_error"));
       return;
     }
@@ -63,8 +55,7 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
         source,
         message: msg || undefined,
         rating: rating ?? undefined,
-        monthly_value_ft: monthly ?? undefined,
-        from_email: email.trim() || undefined,
+        from_email: wantReply ? email.trim() || undefined : undefined,
         locale,
       });
       setDone(true);
@@ -164,63 +155,40 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
             </p>
           </div>
 
-          {/* Segment 3 — monthly value slider. The scale-ends labels make it
-              obvious without dragging that the range is 0 → 15.000 Ft. */}
+          {/* Reply opt-in. The email field is hidden by default so the form
+              reads as "two questions" instead of three — most visitors want
+              to drop a thought, not start a thread, and surfacing the email
+              up-front was a measurable friction point. */}
           <div>
-            <p className="field-label">{t("landing.feedback_monthly_label")}</p>
-            <div className="mt-1">
+            <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
               <input
-                type="range"
-                min={0}
-                max={monthlyRange.max}
-                step={monthlyRange.step}
-                value={monthly ?? 0}
-                onChange={(e) => setMonthly(Number(e.target.value))}
-                className="range-fill w-full"
-                style={{
-                  background: `linear-gradient(to right, var(--color-mode-accent) 0%, var(--color-mode-accent) ${
-                    ((monthly ?? 0) / monthlyRange.max) * 100
-                  }%, var(--color-paper-200, #efe9d9) ${
-                    ((monthly ?? 0) / monthlyRange.max) * 100
-                  }%, var(--color-paper-200, #efe9d9) 100%)`,
+                type="checkbox"
+                className="h-4 w-4 rounded border-paper-400 accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600"
+                checked={wantReply}
+                onChange={(e) => {
+                  setWantReply(e.target.checked);
+                  if (!e.target.checked) setEmail("");
                 }}
-                aria-valuemin={0}
-                aria-valuemax={monthlyRange.max}
-                aria-valuenow={monthly ?? 0}
-                aria-label={t("landing.feedback_monthly_label")}
               />
-              <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
-                <span>{`0 ${monthlySymbol}`}</span>
-                <span>{`${monthlyRange.max.toLocaleString(locale === "hu" ? "hu" : "en")} ${monthlySymbol}`}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-sm">
-                <span className="text-ink-500 dark:text-umber-300">
-                  {monthly === null || monthly === 0
-                    ? t("landing.feedback_monthly_zero")
-                    : `${monthly.toLocaleString(locale === "hu" ? "hu" : "en")} ${monthlySymbol}`}
-                </span>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {t("landing.feedback_monthly_hint")}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Optional reply email */}
-          <div>
-            <label htmlFor="fb-email" className="field-label">
-              {t("landing.feedback_email_label")}
+              {t("landing.feedback_reply_optin")}
             </label>
-            <input
-              id="fb-email"
-              type="email"
-              className="input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              maxLength={200}
-            />
-            <p className="field-help">{t("landing.feedback_email_help")}</p>
+            {wantReply && (
+              <div className="mt-3">
+                <label htmlFor="fb-email" className="field-label">
+                  {t("landing.feedback_email_label")}
+                </label>
+                <input
+                  id="fb-email"
+                  type="email"
+                  className="input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  maxLength={200}
+                />
+                <p className="field-help">{t("landing.feedback_email_help")}</p>
+              </div>
+            )}
           </div>
 
           {error && (

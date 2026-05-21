@@ -49,7 +49,7 @@ import { SEO_FAQ } from "@shared/seo_faq";
 // SVGs mount when scrolled into view.
 const MOCKUP_AR_FEATURE = "480 / 360";
 const MOCKUP_AR_SUPPLIERS = "320 / 280";
-const MOCKUP_AR_WORKSPACE = "640 / 440";
+const MOCKUP_AR_WORKSPACE = "656 / 456";
 
 // Stash any `?ref=<source>` query param landing on a public page so the
 // signup form can later attach it to the register call (which the backend
@@ -133,12 +133,14 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Full-bleed mockup band — paper-100 background, mockup tilted
-            so its bottom is cropped by the section. Reads as "the product
-            peeking up." */}
+        {/* Full-bleed mockup band — paper-100 background, full screenshot
+            visible. The earlier "peeking up" treatment (negative margin
+            cropping the bottom of the mockup) read to first-time visitors
+            as a UI glitch instead of an intentional crop, so we landed the
+            mockup flush against the section's bottom padding. */}
         <div className="relative mt-2 overflow-hidden bg-paper-100 dark:bg-umber-900 pt-6 sm:pt-8 lg:pt-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="origin-bottom mb-0 sm:-mb-14 lg:-mb-20">
+            <div className="origin-bottom pb-6 sm:pb-10 lg:pb-14">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
                 {/* Rotation + heavy drop-shadow stripped: the page has
                     enough tilted/framed surfaces below (Budget polaroid

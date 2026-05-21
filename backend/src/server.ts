@@ -257,17 +257,17 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   return null;
 }
 
-// Domains we redirect to the canonical .hu host. We consolidated to one
+// Domains we redirect to the canonical apex host. We consolidated to one
 // Railway service + one SQLite volume in May 2026; .xyz now lives only as a
-// historical alias that bounces visitors to the .hu canonical so we don't
+// historical alias that bounces visitors to weddly.hu so we don't
 // accidentally accept signups against a database that has since been retired.
+// `www.weddly.hu` joined the redirect list when we moved the apex into
+// Railway's custom-domain set — every public URL (canonical, sitemap, OG,
+// email link) now resolves to the bare apex, and `www.` is a legacy alias.
 // The redirect runs ahead of every other handler so even an /api/* call is
 // bounced — third-party integrations have to update their base URL.
-//
-// app.weddly.* never existed as a live host; only the apex / www. of each
-// TLD did. Listing them keeps the redirect list honest.
-const LEGACY_HOSTS = new Set(["weddly.xyz", "www.weddly.xyz"]);
-const CANONICAL_HOST = "www.weddly.hu";
+const LEGACY_HOSTS = new Set(["weddly.xyz", "www.weddly.xyz", "www.weddly.hu"]);
+const CANONICAL_HOST = "weddly.hu";
 
 // 301 strips POST bodies (most clients downgrade to GET). 308 preserves the
 // method + body, which matters for `/api/*` POSTs from third-party

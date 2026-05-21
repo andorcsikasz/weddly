@@ -388,7 +388,7 @@ describe("<DashboardPage>", () => {
     globalThis.fetch = buildFetch({});
     renderPage("dashboard");
 
-    const heading = await screen.findByText(/jump back in/i);
+    const heading = await screen.findByText(/shortcuts/i);
     // Scope the link count to the quick-links section that follows the heading
     // so we don't accidentally match navigation links elsewhere on the page.
     const section = heading.closest("section");

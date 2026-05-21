@@ -673,9 +673,7 @@ export interface LocaleMessages {
     feedback_rating_hint: string;
     feedback_rating_low: string;
     feedback_rating_high: string;
-    feedback_monthly_label: string;
-    feedback_monthly_hint: string;
-    feedback_monthly_zero: string;
+    feedback_reply_optin: string;
     feedback_email_label: string;
     feedback_email_help: string;
     feedback_submit: string;

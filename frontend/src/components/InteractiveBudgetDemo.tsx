@@ -120,7 +120,7 @@ export function InteractiveBudgetDemo() {
           </p>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-start lg:gap-10">
+        <div className="mt-6 grid gap-6 md:grid-cols-[1fr_1.2fr] md:items-start md:gap-8 lg:gap-10">
           {/* Controls */}
           <div className="space-y-5">
             <div>
@@ -143,7 +143,7 @@ export function InteractiveBudgetDemo() {
                 step={1}
                 value={guests}
                 onChange={(e) => setGuests(clamp(Number(e.target.value), MIN_GUESTS, MAX_GUESTS))}
-                className="mt-2 w-full accent-blush-600"
+                className="mt-2 w-full rounded accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600"
                 aria-label={t("landing.demo_guests_label")}
                 aria-valuetext={`${guests}`}
               />
@@ -173,7 +173,7 @@ export function InteractiveBudgetDemo() {
                 step={range.step}
                 value={budget}
                 onChange={(e) => setBudget(clamp(Number(e.target.value), range.min, range.max))}
-                className="mt-2 w-full accent-blush-600"
+                className="mt-2 w-full rounded accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600"
                 aria-label={t("landing.demo_budget_label")}
                 aria-valuetext={formatMoney(budget, currency, locale)}
               />
