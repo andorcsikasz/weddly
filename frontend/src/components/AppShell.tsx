@@ -91,7 +91,7 @@ const ITEMS: NavItem[] = [
     group: "planning",
   },
   {
-    to: "/app/suppliers",
+    to: "/app/vendors",
     labelKey: "nav.suppliers",
     tabKey: "nav.tab_suppliers",
     icon: <Store size={18} />,

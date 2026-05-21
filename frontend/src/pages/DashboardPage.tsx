@@ -1361,7 +1361,7 @@ export default function DashboardPage() {
                 label={t("nav.schedule")}
               />
               <IconNavLink
-                to="/app/suppliers"
+                to="/app/vendors"
                 icon={<Store size={18} />}
                 label={t("nav.suppliers")}
               />

@@ -413,13 +413,22 @@ export default function App() {
             </Page>
           }
         />
+        {/* Canonical path is now `/app/vendors` (matches the public
+            `/vendors` route + the new vendor_accounts/listings model
+            landed in 3b08afb). The legacy `/app/suppliers` still mounts
+            the same page so external links keep working until we replace
+            it with a redirect. */}
         <Route
-          path="suppliers"
+          path="vendors"
           element={
             <Page>
               <SuppliersPage />
             </Page>
           }
+        />
+        <Route
+          path="suppliers"
+          element={<Navigate to="/app/vendors" replace />}
         />
         <Route
           path="planning"
