@@ -6,3 +6,4 @@ export { AdminPageHeader } from "./AdminPageHeader";
 export { AdminSectionHeader } from "./AdminSectionHeader";
 export { AdminFilterChip } from "./AdminFilterChip";
 export { AdminEmptyState } from "./AdminEmptyState";
+export { Pill, type PillTone } from "./Pill";

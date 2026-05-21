@@ -241,6 +241,17 @@
       0 1px 0 0 var(--btn-rim);
     transform: translateY(3px);
   }
+  /* The .btn base sets focus via Tailwind's ring utility (which writes
+     box-shadow), but .btn-lifted's literal box-shadow stack overwrites
+     the whole shadow chain — ring is wiped. Use `outline` instead so the
+     focus indicator survives the shadow stack. WCAG 2.4.7. */
+  .btn-lifted:focus-visible {
+    outline: 2px solid theme("colors.ink.700");
+    outline-offset: 3px;
+  }
+  html.dark .btn-lifted:focus-visible {
+    outline-color: theme("colors.blush.300");
+  }
 
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium
@@ -330,9 +341,13 @@
     @apply px-3 py-1.5 text-xs;
   }
   /* Landing-page button typography. Pair with `.btn-lifted` for the 3-D
-     Polymarket-style shadow stack. Colours stay on the underlying .btn-*. */
+     Polymarket-style shadow stack. Colours stay on the underlying .btn-*.
+     Dropped the `uppercase` modifier — it was competing with the page's
+     uppercase-tracked eyebrows for the same visual register. The lifted
+     shadow already differentiates buttons; weight + slight tracking is
+     enough on top. */
   .btn-landing {
-    @apply font-bold uppercase tracking-wider;
+    @apply font-semibold tracking-wide;
   }
 
   .input {
@@ -369,6 +384,30 @@
   .card-hover {
     @apply card transition hover:shadow-pop hover:-translate-y-0.5
       dark:hover:border-umber-600 dark:hover:bg-umber-700/60;
+  }
+
+  /* ── Admin shell primitives ─────────────────────────────────────────
+     Unified card chrome for the admin shell. The admin pages had drifted
+     into three competing languages — `.card` with shadow-soft + the
+     paper-300 border, a hand-rolled CARD_CHROME with ring-1 ring-ink-100,
+     and the border-2 status-tinted cards on the vendor waitlist. This
+     collapses them to one resting surface so a row of admin cards reads
+     as one rhythm regardless of which page rendered them. */
+  .admin-card {
+    @apply rounded-2xl bg-paper-50 p-4 ring-1 ring-ink-100
+      dark:bg-umber-900 dark:ring-umber-700;
+  }
+  /* Compact variant for KPI tiles inside a card. */
+  .admin-tile {
+    @apply rounded-xl bg-paper-50 p-3 ring-1 ring-ink-100
+      dark:bg-umber-900 dark:ring-umber-700;
+  }
+  /* Canonical uppercase eyebrow label — replaces ~30 hand-rolled
+     `text-[11px] uppercase tracking-wide / tracking-[0.08em]` strings
+     across the admin pages. */
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em]
+      text-ink-500 dark:text-umber-300;
   }
 
   .badge {
