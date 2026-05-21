@@ -17,6 +17,7 @@ import type {
 } from "@shared/wedding_website";
 import { db, now } from "../db";
 import { type CoupleRow } from "../domain/couples";
+import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { listScheduleEvents } from "../domain/schedule";
 import { normalizeSlugInput } from "../domain/slug";
 import { type Ctx, HttpError, json, type Router } from "../lib/http";
@@ -55,6 +56,13 @@ function handleGetWeddingWebsite(ctx: Ctx): Response {
 
   const slug = ctx.params.slug ?? "";
   const couple = resolveCoupleBySlug(slug);
+
+  // Funnel event — every successful /w/:slug fetch counts as a view of
+  // the public wedding page. Same shape as guest.portal.view; the slug
+  // itself is the URL, so we record couple_id in the payload.
+  recordGrowthEventFromRequest("wedding_site.view", ctx.req, {
+    couple_id: couple.id,
+  });
 
   const schedule: PublicWeddingScheduleEntry[] = listScheduleEvents(couple.id).map((e) => ({
     id: e.id,

@@ -2645,6 +2645,15 @@ export interface LocaleMessages {
     feedback_delete_confirm_body: string;
     feedback_anon: string;
     feedback_no_message: string;
+    feedback_filter_new: string;
+    feedback_filter_read: string;
+    feedback_filter_resolved: string;
+    feedback_filter_dismissed: string;
+    feedback_empty_title: string;
+    feedback_empty_body: string;
+    feedback_load_error_title: string;
+    feedback_load_error_body: string;
+    feedback_retry: string;
     /** /app/admin/analytics page — three orthogonal rollups (money,
      *  activity, picks) rendered as KPI tiles + tables + CSS bar charts.
      *  Read-only — no actions, no per-row drilldown. */

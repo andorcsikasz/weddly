@@ -32,7 +32,21 @@ export type GrowthEventKind =
   /** Brand-new signup that carried an explicit `?ref=<source>` query
    *  param from a public Weddly surface — `rsvp`, `site`, or `share`.
    *  `payload.referrer` holds the allow-listed source, not a raw URL. */
-  | "signup.from_referrer";
+  | "signup.from_referrer"
+  /** Every successful POST /api/auth/register — regardless of referrer.
+   *  Pairs with signup.from_referrer to compute attribution rate:
+   *  attributed / total = % of signups we can source. */
+  | "signup.completed"
+  /** Couple workspace created via POST /api/couples/onboard. Distinct
+   *  from signup.completed because there's a gap (verify-email, optional
+   *  drop-off) between the two; the funnel needs both to compute
+   *  signup → activation conversion. */
+  | "couple.created"
+  /** Public wedding website at /w/:slug was fetched. Same shape as
+   *  guest.portal.view but for the cover-letter URL the couple shares
+   *  on social. `payload.couple_id` carries the workspace; the slug
+   *  itself is not duplicated into payload (it's the URL). */
+  | "wedding_site.view";
 
 export interface GrowthEvent {
   id: number;

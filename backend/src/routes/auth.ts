@@ -157,6 +157,15 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     }
   }
 
+  // Every successful register fires `signup.completed` — pairs with the
+  // referrer-tagged events above so the dashboard can compute attribution
+  // rate (= signup.from_referrer / signup.completed). Without this base
+  // counter, attribution is just a number with no denominator.
+  recordGrowthEvent("signup.completed", {
+    user_id: userId,
+    user_agent: ctx.req.headers.get("user-agent"),
+  });
+
   // Welcome + verification — single email, both purposes. Soft verification:
   // we never block signup or login on this; the dashboard banner nags until
   // they click. Fire-and-forget so a mailer outage doesn't fail registration.

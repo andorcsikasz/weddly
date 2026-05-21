@@ -37,6 +37,7 @@ import {
 } from "../domain/couples";
 import { sendKind } from "../domain/emails";
 import { recordExport } from "../domain/exports";
+import { recordGrowthEvent } from "../domain/growth_events";
 import { generateInviteToken } from "../domain/invite_codes";
 import { ensurePartnerGuests, listGuestsByCouple, renamePartnerGuest } from "../domain/guests";
 import { renderSeatingChartPdf } from "../domain/pdf";
@@ -540,6 +541,15 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const row = getCoupleById(coupleId);
   if (!row) throw new HttpError(500, "Couple vanished after insert");
   const couple: Couple = toCouple(row);
+  // Funnel event: workspace is the first concrete activation surface
+  // after signup. Pairs with signup.completed to compute signup →
+  // activation conversion. user_id is set; couple_id is set to the
+  // brand-new id so the dashboard can group activation by cohort.
+  recordGrowthEvent("couple.created", {
+    user_id: userId,
+    couple_id: coupleId,
+    user_agent: ctx.req.headers.get("user-agent"),
+  });
   return json({ couple }, { status: 201 });
 }
 
