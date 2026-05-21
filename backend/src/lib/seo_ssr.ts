@@ -169,7 +169,11 @@ function buildJsonLd(opts: {
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
       url: origin,
-      offers: { "@type": "Offer", price: "0", priceCurrency: "HUF" },
+      // `priceCurrency` follows the SSR locale so the EN landing's structured
+      // data quotes EUR instead of HUF — a London or Berlin visitor reading
+      // the rich-result snippet shouldn't see a Hungarian-forint price tag,
+      // even though every Weddly plan is currently free during open beta.
+      offers: { "@type": "Offer", price: "0", priceCurrency: opts.locale === "hu" ? "HUF" : "EUR" },
     });
     blocks.push({
       "@context": "https://schema.org",

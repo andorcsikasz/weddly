@@ -286,6 +286,15 @@ addColumnIfMissing(
 // Default 'HUF' so legacy couples behave exactly as before.
 addColumnIfMissing("couples", "currency", "currency TEXT NOT NULL DEFAULT 'HUF'");
 
+// Country the couple is getting married in (ISO 3166-1 alpha-2). Captured
+// up-front from signup country selectors once those land; for now it's a
+// schema-only foundation so wedding-domain logic (legal-ceremony calendar,
+// localized supplier suggestions, postcode validators) can read it without
+// a future migration. Default 'HU' preserves the historical implicit
+// assumption while making future non-HU couples a 1-line frontend wiring
+// instead of a schema change + backfill.
+addColumnIfMissing("couples", "country", "country TEXT NOT NULL DEFAULT 'HU'");
+
 // "Have we actually paid this yet?" flag on DIY supplier entries. Default 0
 // (planned-only) — the mirrored budget line writes the price to
 // `planned_huf` but leaves `actual_huf` at 0 until the couple flips the
