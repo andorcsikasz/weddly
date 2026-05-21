@@ -682,7 +682,12 @@ export default function SuppliersPage() {
       <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <h1>{t("suppliers.title")}</h1>
-          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("suppliers.sub")}</p>
+          {/* Subtitle hidden on mobile — the page already has 7 rows of
+              chrome before the first supplier card, and the booking caveat
+              ("booking arrives in v2") isn't actionable on first scroll. */}
+          <p className="mt-1 hidden text-sm text-ink-500 sm:block dark:text-umber-300">
+            {t("suppliers.sub")}
+          </p>
         </div>
         {/* Controls stack under the title on mobile so the view-mode pills and
             "Drop your own" button don't compress the heading + sub-copy into a
@@ -827,7 +832,7 @@ export default function SuppliersPage() {
           clicking the $$$$ chip filters to band-4 suppliers only, not
           "up to 4". Click the same chip to clear. Suppliers with no
           declared value pass through so non-venue cards are not dropped. */}
-      <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-200 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-700/40 px-4 py-3">
+      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-2 sm:gap-x-6 sm:gap-y-3 sm:px-4 sm:py-3 dark:border-umber-700 dark:bg-umber-700/40">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
@@ -945,13 +950,19 @@ export default function SuppliersPage() {
           />
         )}
       </div>
-      <p className="mb-5 text-xs text-ink-500 dark:text-umber-300">{t("suppliers.chain_help")}</p>
+      <p className="mb-5 hidden text-xs text-ink-500 sm:block dark:text-umber-300">
+        {t("suppliers.chain_help")}
+      </p>
 
       {/* Sub-category pills (only when a group is selected). Each pill shows
           the count of suppliers in that category after the non-category
-          filters, so couples can pre-scan where the inventory lives. */}
+          filters, so couples can pre-scan where the inventory lives.
+          On mobile the row becomes a horizontal snap-scroller — wrapping
+          to a second/third line was the "ticketek szétcsúsztak" complaint
+          from the May 2026 mobile audit (compact, predictable horizontal
+          motion beats a chaotic two-line wrap at thumb width). */}
       {activeGroup && subCategories.length > 0 && (
-        <div className="mb-5 flex flex-wrap gap-2">
+        <div className="mb-3 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-5 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           <button
             type="button"
             onClick={() => setActiveCat(null)}
@@ -1002,15 +1013,19 @@ export default function SuppliersPage() {
             );
           })}
           {/* "Csinálom magam" — pre-fills the modal with the active sub-
-              category. Sits at the end of the pill row so its sage accent
-              reads as the personal twin of the dark category pills. */}
+              category. On sm+ it sits flush-right of the pill row via
+              `ml-auto` so its sage accent reads as the personal twin of
+              the dark category pills. On mobile the row is a horizontal
+              scroller — `ml-auto` is meaningless there, so the button
+              just rides as the last shrink-0 chip. shrink-0 keeps the
+              full label visible at the end of the scroll. */}
           <button
             type="button"
             onClick={() => {
               setDiyEditing(null);
               setDiyOpen(true);
             }}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition hover:border-sage-600 hover:bg-sage-100 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition hover:border-sage-600 hover:bg-sage-100 sm:ml-auto dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
           >
             <Pencil size={13} aria-hidden />
             {t("suppliers.diy_button_short")}

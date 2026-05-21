@@ -616,10 +616,7 @@ export default function GuestsPage() {
             // Native fallback when unsupported (older Safari) — the card
             // just renders normally. Saves render churn on N>60 lists
             // flagged by the a11y/perf-critic agent.
-            <div
-              key={hh.id}
-              style={{ contentVisibility: "auto", containIntrinsicSize: "0 220px" }}
-            >
+            <div key={hh.id} style={{ contentVisibility: "auto", containIntrinsicSize: "0 220px" }}>
               <HouseholdCard
                 household={hh}
                 members={guestsByHousehold.get(hh.id) ?? []}
@@ -628,9 +625,7 @@ export default function GuestsPage() {
                   void copyShare(couple?.slug ?? null, hh.code);
                 }}
                 onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
-                onEditGuest={(g) =>
-                  setEditing({ guest: g, defaultHouseholdId: g.household_id })
-                }
+                onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
                 onDeleteGuest={onDeleteGuest}
                 onRegenCode={() => onRegenCode(hh)}
                 onDeleteHousehold={() => onDeleteHousehold(hh)}
@@ -916,20 +911,19 @@ function HouseholdCard({
       className={`card overflow-hidden p-0 ${isHosts ? "!border-blush-300 dark:!border-blush-500/40" : ""}`}
     >
       <header
-        className={`flex flex-wrap items-center justify-between gap-3 ${isHosts ? "stationery" : "bg-paper-100/60 dark:bg-umber-700/60"} px-4 py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
+        className={`flex flex-wrap items-center justify-between gap-2 md:gap-3 ${isHosts ? "stationery" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-2 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
         {/* Metadata columns: label · group chip · slug · code · invited
             (+ delivered). Fixed-width tracks with `md:col-start-*` force
             every field to the same x across cards so the eye scans down
-            the column — including the group chip ("Bride's family" /
-            "Groom's family" / …), which used to ride inline after a
-            variable-width label. On mobile the grid collapses to a
-            single stacked column. The couple's own household (bride +
-            groom) renders just the label — chip / slug / code / invited
-            cells are skipped because the hosts don't check themselves
-            in. */}
-        <div className="grid min-w-0 flex-1 items-baseline gap-x-6 gap-y-1 text-xs text-ink-600 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_minmax(0,13rem)_8rem_5.5rem_auto]">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            the column. On mobile the grid switches to flex-wrap so the
+            five fields flow into ~2 rows instead of stacking into 5 —
+            the single-column stack used to take half the card vertically
+            for just metadata. The couple's own household (bride + groom)
+            renders just the label — chip / slug / code / invited cells
+            are skipped because the hosts don't check themselves in. */}
+        <div className="flex min-w-0 basis-full flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600 md:basis-auto md:flex-1 md:grid md:gap-x-6 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_minmax(0,13rem)_8rem_5.5rem_auto]">
+          <div className="flex min-w-0 basis-full flex-wrap items-center gap-2 md:basis-auto">
             <HouseholdLabelEditor
               household={household}
               count={members.length}
@@ -996,8 +990,14 @@ function HouseholdCard({
                 onClick={onCopyShare}
                 disabled={!coupleSlug}
                 title={t("guests.household_share_link")}
+                aria-label={t("guests.household_share_link")}
               >
-                {t("guests.household_share_link")}
+                {/* Mobile: icon-only — the full "Share check-in link" string
+                    forced the action cluster onto a second row and pushed
+                    the chevron under the household label. The icon keeps
+                    the affordance at thumb-width without wasting the row. */}
+                <Link2 size={14} className="md:hidden" aria-hidden />
+                <span className="hidden md:inline">{t("guests.household_share_link")}</span>
               </button>
               <button
                 type="button"
@@ -1039,19 +1039,38 @@ function HouseholdCard({
       {!collapsed && (
         <ul className="divide-y divide-paper-200 dark:divide-umber-700">
           {members.map((g) => (
-            <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-              <div className="flex min-w-0 items-center gap-3">
+            <li
+              key={g.id}
+              className="flex flex-col gap-1.5 px-3 py-2 md:flex-row md:items-center md:justify-between md:gap-3 md:px-4 md:py-2.5"
+            >
+              {/* Row 1 on mobile / left half on md.
+                  Mobile gets the full row width for the name: the InviteChip
+                  + tiny role/kind glyphs share the line, no actions on the
+                  right competing for px, so names like "Queen Elizabeth"
+                  render fully instead of "Que…". Meal icons drop to row 2
+                  on mobile, stay inline on md+. */}
+              <div className="flex min-w-0 items-center gap-2 md:gap-3">
                 <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-1.5 truncate text-sm text-ink-900 dark:text-paper-50">
                     <PartnerRoleIcon role={g.partner_role} />
                     <KindIcon kind={g.kind} />
                     <span className="truncate">{g.full_name}</span>
-                    <MealIcons meal={g.meal_choice} dietary={g.dietary} />
+                    <span className="hidden md:inline-flex">
+                      <MealIcons meal={g.meal_choice} dietary={g.dietary} />
+                    </span>
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              {/* Row 2 on mobile / right half on md.
+                  Indented to align with the name (matching the InviteChip
+                  width + gap on mobile) so the row reads as one logical
+                  block, not a free-floating control strip. */}
+              <div className="flex items-center gap-1.5 pl-[3.75rem] md:gap-2 md:pl-0">
+                <span className="md:hidden">
+                  <MealIcons meal={g.meal_choice} dietary={g.dietary} />
+                </span>
+                <span className="flex-1 md:hidden" />
                 <RsvpBadge status={g.rsvp_status} />
                 <button
                   type="button"
