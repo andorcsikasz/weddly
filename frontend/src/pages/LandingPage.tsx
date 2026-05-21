@@ -161,39 +161,11 @@ export default function LandingPage() {
           to register. */}
       <InteractiveBudgetDemo />
 
-      {/* ════════════════════════ Wordmark spine ════════════════════════
-          Stationery letterhead beat: faded WĒDDLY centred on a thin
-          band, flanked by italic serif tags. Gives the eye a horizontal
-          rest between the loud hero and the dark stats below. */}
-      <section className="stationery-light border-y border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4 sm:px-6">
-          <span className="hidden flex-1 font-serif text-sm italic text-blush-600 dark:text-blush-300 sm:block">
-            Est. MMXXVI
-          </span>
-          <Wordmark size="lg" className="mx-auto text-paper-400 dark:text-umber-600 sm:mx-0" />
-          <span className="hidden flex-1 text-right font-serif text-sm italic text-blush-600 dark:text-blush-300 sm:block">
-            {t("landing.brand_tagline_paper")}
-          </span>
-        </div>
-      </section>
-
-      {/* ════════════════════════ Stats — DARK BAND ════════════════════════
-          One huge number does the talking; the other stat runs as a
-          ledger entry underneath. Dark-stationery texture matches the
-          paper hairline pattern used elsewhere on the page. */}
-      <section className="stationery-dark text-paper-100">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
-          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.32em] text-paper-300 sm:mb-8">
-            {t("landing.stats_eyebrow")}
-          </p>
-          <p className="font-serif text-6xl leading-[0.85] tracking-[-0.03em] text-paper-100 sm:text-8xl lg:text-9xl">
-            {t("landing.stats_a_value")}
-          </p>
-          <p className="mt-5 font-serif text-xl text-paper-300 sm:mt-6 sm:text-3xl">
-            {t("landing.stats_a_label")}
-          </p>
-        </div>
-      </section>
+      {/* Wordmark spine + dark stats band were cut here — the spine
+          was "Est. MMXXVI · WĒDDLY · Paper letters" faux-letterpress
+          that earned no scroll-weight, and the stats band rendered
+          "Open beta" at text-9xl as a fake stat. Both flagged by the
+          density + IA agents as "AI's idea of tasteful." */}
 
       {/* ════════════════════════ 02 · Phases ════════════════════════
           Numbered timeline. Each phase has a giant italic numeral
@@ -490,7 +462,7 @@ export default function LandingPage() {
           the section doesn't dominate vertically on small viewports. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
-          <h2 className="font-serif text-3xl italic leading-[1] tracking-[-0.01em] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.faq_title")}
           </h2>
           <div className="mt-6 space-y-2 sm:mt-8">
