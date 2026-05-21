@@ -71,7 +71,7 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
 // `submitter_type` is layered on by the DIRECTORY map below — curated entries
 // never have a submitter, so it's always null. Keeping it off the literals
 // here keeps the 100+ entries terse.
-const RAW_DIRECTORY: Omit<DirectorySupplierBase, "submitter_type">[] = [
+const RAW_DIRECTORY: Omit<DirectorySupplierBase, "submitter_type" | "vendor_account_id">[] = [
   {
     id: "normafa-rendezvenyhaz",
     name: "Normafa Rendezvényház",
@@ -2848,5 +2848,8 @@ const RAW_DIRECTORY: Omit<DirectorySupplierBase, "submitter_type">[] = [
 export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
   const c = VENUE_COORDS[s.id];
   const withCoords = c ? { ...s, lat: c.lat, lng: c.lng } : s;
-  return { ...withCoords, submitter_type: null };
+  // `vendor_account_id` defaults to null at the code layer; the
+  // public-list handler in routes/suppliers.ts overlays the real value
+  // from the `listings` table (where claimed entries live) before responding.
+  return { ...withCoords, submitter_type: null, vendor_account_id: null };
 });

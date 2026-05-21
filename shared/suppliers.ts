@@ -104,6 +104,11 @@ export interface DirectorySupplierBase {
   submitter_type: "user" | "self" | null;
   /** 1 = $, 5 = $$$$$. Null for entries that haven't been priced yet. */
   price_band: 1 | 2 | 3 | 4 | 5 | null;
+  /** When a vendor has claimed this listing (P2.C flow), the FK to their
+   *  `vendor_accounts` row. Null on unclaimed curated + community entries.
+   *  Frontend uses `vendor_account_id == null` AS the "is claimable?" test —
+   *  no separate boolean to keep the contract small. */
+  vendor_account_id: number | null;
 }
 
 /** Wire shape returned by `/api/suppliers`. Adds per-request vote info on top

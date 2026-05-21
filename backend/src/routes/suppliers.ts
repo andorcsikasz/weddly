@@ -68,6 +68,26 @@ async function handleList(ctx: Ctx): Promise<Response> {
   const couple = ctx.userId ? getCoupleForUser(ctx.userId) : null;
   const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
 
+  // Overlay `vendor_account_id` from the unified `listings` table. Both
+  // curated and community entries default to null at the mapper layer; here
+  // we pull the actual claim state in one query so the public card knows
+  // whether to render the "Ez a sajátom" CTA. One IN(...) hop is cheaper
+  // than per-row lookups even at 200+ rows.
+  if (allBase.length > 0) {
+    const ids = allBase.map((b) => b.id);
+    const placeholders = ids.map(() => "?").join(",");
+    const rows = db
+      .prepare(
+        `SELECT id, vendor_account_id FROM listings WHERE id IN (${placeholders})`,
+      )
+      .all(...ids) as Array<{ id: string; vendor_account_id: number | null }>;
+    const accountByListing = new Map(rows.map((r) => [r.id, r.vendor_account_id]));
+    for (const b of allBase) {
+      const accountId = accountByListing.get(b.id);
+      if (accountId !== undefined) b.vendor_account_id = accountId;
+    }
+  }
+
   return json({ suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes)) });
 }
 

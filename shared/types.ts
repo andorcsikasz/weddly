@@ -8,7 +8,7 @@ export type Huf = number;
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export type UserStatus = "active" | "suspended";
-export type UserRole = "owner" | "partner" | "guest_admin" | "admin";
+export type UserRole = "owner" | "partner" | "guest_admin" | "admin" | "vendor";
 
 export interface User {
   id: number;
