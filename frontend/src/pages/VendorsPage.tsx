@@ -1,6 +1,7 @@
 import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import { SUPPLIER_GROUPS, type SupplierCategory, type SupplierGroup } from "@shared/suppliers";
 import {
+  AlertCircle,
   ArrowLeft,
   AtSign,
   Briefcase,
@@ -227,7 +228,7 @@ function SectionHeader({
   return (
     <header className="flex items-start gap-3">
       <span
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-900 text-paper-100 text-sm font-medium dark:bg-paper-100 dark:text-umber-900"
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 text-sm font-medium dark:bg-blush-400/15 dark:text-blush-200"
         aria-hidden
       >
         {step}
@@ -376,11 +377,12 @@ function WaitlistContact() {
   return (
     <div className="relative">
       {/* Decorative blush blob behind the card — gives the form some hero
-          weight without leaning on an illustration. Hidden in dark mode
-          where the soft glow muddies the umber background. */}
+          weight without leaning on an illustration. Smaller + tighter than
+          before to keep focus on the form itself. Hidden in dark mode where
+          the soft glow muddies the umber background. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-16 -right-10 h-56 w-56 rounded-full bg-blush-200/40 blur-3xl dark:hidden"
+        className="pointer-events-none absolute -top-10 -right-6 h-40 w-40 rounded-full bg-blush-200/35 blur-3xl dark:hidden"
       />
       <div className="relative rounded-3xl border border-paper-300 bg-white p-6 shadow-soft sm:p-10 dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
         <div className="flex items-start gap-3">
@@ -592,8 +594,11 @@ function WaitlistContact() {
                   <Link2 size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
                   {t("vendors.portfolio_links_label")}
                 </span>
-                <span className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
-                  {portfolioFilled}/{MAX_PORTFOLIO_LINKS}
+                <span className="inline-flex items-baseline gap-2 text-xs text-ink-500 dark:text-umber-300">
+                  <span className="hidden sm:inline">{t("vendors.portfolio_count_hint")}</span>
+                  <span className="tabular-nums">
+                    {portfolioFilled}/{MAX_PORTFOLIO_LINKS}
+                  </span>
                 </span>
               </div>
               <div className="space-y-2">
@@ -671,8 +676,12 @@ function WaitlistContact() {
               </span>
             </label>
             {errorMsg && (
-              <p className="text-sm text-blush-700 dark:text-blush-300" role="alert">
-                {errorMsg}
+              <p
+                className="flex items-start gap-2 rounded-lg border border-blush-300 bg-blush-50 px-3 py-2 text-sm text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
+                role="alert"
+              >
+                <AlertCircle size={16} aria-hidden className="mt-0.5 shrink-0" />
+                <span>{errorMsg}</span>
               </p>
             )}
             <button

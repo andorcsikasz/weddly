@@ -784,16 +784,16 @@ const en: LocaleMessages = {
     pill: "Early access",
     hero_title: "Reach the couples planning right now.",
     hero_sub:
-      "Weddly's curated directory is the first place couples look. Join the waitlist and we'll let you know when we open to suppliers.",
+      "Weddly's curated directory is where couples discover wedding suppliers. Join the waitlist and we'll notify you the moment we open in your category.",
     benefit_1_title: "A handpicked shortlist",
     benefit_1_body:
       "We cap listings per category, so couples meet a focused shortlist of suppliers who genuinely fit their plans.",
-    benefit_2_title: "Hungarian market, Hungarian data",
+    benefit_2_title: "Local expertise, not lead spam",
     benefit_2_body:
-      "Hungarian language, Hungarian regions, Hungarian rhythms — built around the way weddings actually run here.",
-    benefit_3_title: "Bookings and reviews in v2",
+      "Built around how weddings actually run in your market — language, regions, rhythms. Couples meet vendors who fit, not a paginated mass.",
+    benefit_3_title: "Direct contact today",
     benefit_3_body:
-      "v1 is a static directory with direct contact. Bookings, messaging and reviews join the platform in v2.",
+      "Couples reach you directly — phone, email, Instagram. Bookings, messaging and reviews join later, and we'll tell you when.",
     form_title: "Join the waitlist",
     form_sub: "Share a few details and we'll only ping you when we open to suppliers.",
     form_business_label: "Business name",
@@ -804,7 +804,7 @@ const en: LocaleMessages = {
     form_location_placeholder: "e.g. Budapest, or https://maps.app.goo.gl/…",
     form_website_label: "Website",
     form_website_placeholder: "e.g. example.com or https://example.com",
-    form_submit: "Join the waitlist",
+    form_submit: "Reserve your spot",
     form_submitting: "Sending…",
     form_success_title: "You're on the waitlist.",
     form_success_body:
@@ -818,20 +818,20 @@ const en: LocaleMessages = {
     contact_title: "Join the waitlist",
     contact_body:
       "Fill in the form below and we'll send a confirmation to the email you provide. When we open in your category, you'll be the first to hear from us.",
-    contact_cta: "Pre-register",
+    contact_cta: "Reserve your spot",
     contact_subject: "Vendor waitlist",
     back_to_landing: "Back to the landing page",
-    beta_notice_title: "Open beta — free",
+    beta_notice_title: "Free during beta — no hidden costs",
     beta_notice_body:
-      "Weddly's vendor directory is currently in open beta: applying and being listed is free of charge. After the beta we will introduce a monetisation model (e.g. subscription or featured placement). Everyone who joins now will be notified of the terms well before any fees take effect.",
+      "Applying and being listed is free right now. If we introduce pricing later (subscription or featured placement), we'll share the terms 30 days before any fees take effect — no surprises, no spam.",
     beta_notice_terms_link: "Vendor subscription terms",
     privacy_consent_prefix: "I have read and accept the ",
     privacy_consent_link: "privacy policy",
     privacy_consent_suffix: ", and I consent to the processing of the data I provide.",
     form_err_privacy_consent: "Please accept the privacy policy to submit your application.",
-    section_business_title: "About you",
+    section_business_title: "Your business",
     section_business_sub: "A few basics so we know who's applying.",
-    section_contact_title: "Contact & region",
+    section_contact_title: "Where you work",
     section_contact_sub: "How to reach you and where you work.",
     section_portfolio_title: "Portfolio",
     section_portfolio_sub:
@@ -840,6 +840,7 @@ const en: LocaleMessages = {
     portfolio_links_placeholder: "https://…",
     portfolio_link_remove: "Remove link",
     portfolio_add_link: "+ Add link",
+    portfolio_count_hint: "1–3 links is plenty.",
     portfolio_hint_default:
       "Gallery, website, Instagram post, Drive folder — anything you'd share.",
     portfolio_hint_venue_stay:

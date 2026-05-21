@@ -902,6 +902,7 @@ export interface LocaleMessages {
     portfolio_links_placeholder: string;
     portfolio_link_remove: string;
     portfolio_add_link: string;
+    portfolio_count_hint: string;
     portfolio_hint_default: string;
     portfolio_hint_venue_stay: string;
     portfolio_hint_food_drink: string;

@@ -789,16 +789,16 @@ const hu: LocaleMessages = {
     pill: "Korai hozzáférés",
     hero_title: "Érjétek el a most tervező párokat.",
     hero_sub:
-      "A Wēddly válogatott címjegyzéke az első hely, ahol a párok keresnek. Iratkozzatok fel a várólistára, és értesítünk, amint nyitunk a szolgáltatóknak.",
+      "A Wēddly válogatott címjegyzéke az első hely, ahol a párok esküvői szolgáltatókat keresnek. Csatlakozzatok a várólistára, és értesítünk, amint nyitunk a kategóriátokban.",
     benefit_1_title: "Válogatott válogatás",
     benefit_1_body:
       "Kategóriánként korlátozott a hely, így a párok pont azt böngészik, ami passzol hozzájuk — és ti pont azokat éritek el, akik most döntenek.",
     benefit_2_title: "Magyar piac, magyar adatok",
     benefit_2_body:
       "Magyar nyelv, magyar régiók, magyar pároknak — Budapesttől a Balatonon át az alföldi régiókig.",
-    benefit_3_title: "Foglalás és értékelés v2-ben",
+    benefit_3_title: "Most közvetlen kapcsolat",
     benefit_3_body:
-      "A v1 statikus címjegyzék — közvetlen kapcsolat. A foglalás, üzenetek és értékelések a v2-ben jönnek.",
+      "A párok telefonon, e-mailen, Instagramon érnek el titeket — semmi platformközi kommunikáció. A foglalás, üzenetek és értékelések később jönnek, és időben szólunk.",
     form_title: "Iratkozzatok fel",
     form_sub: "Pár adat, és csak a nyitásról értesítünk.",
     form_business_label: "Vállalkozás neve",
@@ -809,7 +809,7 @@ const hu: LocaleMessages = {
     form_location_placeholder: "pl. Budapest, vagy https://maps.app.goo.gl/…",
     form_website_label: "Weboldal",
     form_website_placeholder: "pl. example.com vagy https://example.com",
-    form_submit: "Felvesz a várólistára",
+    form_submit: "Csatlakozz a várólistára",
     form_submitting: "Küldés…",
     form_success_title: "Várólistán vagytok.",
     form_success_body:
@@ -823,12 +823,12 @@ const hu: LocaleMessages = {
     contact_title: "Várólistára fogadunk",
     contact_body:
       "Egyelőre nem onboardolunk szolgáltatókat. Töltsétek ki a lenti űrlapot, és visszaigazoló e-mailt küldünk a megadott címre. Amikor megnyitunk a kategóriátokban, elsőként ti hallotok rólunk.",
-    contact_cta: "Előregisztráció",
+    contact_cta: "Csatlakozz a várólistára",
     contact_subject: "Szolgáltatói várólista",
     back_to_landing: "Vissza a főoldalra",
-    beta_notice_title: "Nyílt béta — ingyenes",
+    beta_notice_title: "Béta alatt ingyenes — semmi rejtett költség",
     beta_notice_body:
-      "A Wēddly szolgáltatói címjegyzéke jelenleg nyílt bétában van: a jelentkezés és a listázás díjmentes. A béta lezárása után monetizációs modellt vezetünk be (pl. előfizetés vagy kiemelt megjelenés). A most jelentkezőket időben értesítjük a feltételekről, mielőtt bármilyen díj életbe lépne.",
+      "Most a jelentkezés és a listázás is díjmentes. Ha később bevezetünk árazást (előfizetés vagy kiemelt megjelenés), a feltételeket 30 nappal előre megosztjuk veletek — semmi meglepetés, semmi spam.",
     beta_notice_terms_link: "Szolgáltatói ÁSZF",
     privacy_consent_prefix: "Elolvastam és elfogadom az ",
     privacy_consent_link: "adatkezelési tájékoztatót",
@@ -845,6 +845,7 @@ const hu: LocaleMessages = {
     portfolio_links_placeholder: "https://…",
     portfolio_link_remove: "Link eltávolítása",
     portfolio_add_link: "+ Új link",
+    portfolio_count_hint: "1–3 link bőven elég.",
     portfolio_hint_default:
       "Galéria, weboldal, Instagram poszt, Drive mappa — bármi, amit megosztanátok.",
     portfolio_hint_venue_stay:
