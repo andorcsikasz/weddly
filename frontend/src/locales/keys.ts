@@ -2866,6 +2866,14 @@ export interface LocaleMessages {
     pick_yes: string;
     pick_no: string;
     pick_maybe: string;
+    /** Compact mobile-only variants of the pick_yes/no/maybe labels —
+     *  used inside the inline 3-col radio group so all three options fit
+     *  on one row at iPhone widths (~120px per cell). The verbose copy
+     *  ("Yes, count us in") stays for sm:+ where there is room and the
+     *  friendlier tone reads better. */
+    pick_yes_short: string;
+    pick_no_short: string;
+    pick_maybe_short: string;
     meal: string;
     dietary: string;
     plus_one_q: string;

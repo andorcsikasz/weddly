@@ -667,7 +667,7 @@ export function HouseholdRsvpForm({
             <div
               role="radiogroup"
               aria-label={t("rsvp.status_for_name", { name: d.full_name })}
-              className="grid gap-2 grid-cols-1 sm:grid-cols-3"
+              className="grid grid-cols-3 gap-2"
             >
               {STATUSES.map((s) => {
                 const selected = d.interacted && d.rsvp_status === s;
@@ -682,7 +682,13 @@ export function HouseholdRsvpForm({
                       selected ? STATUS_TONE_ACTIVE[s] : STATUS_TONE_IDLE[s]
                     }`}
                   >
-                    {t(`rsvp.pick_${s}`)}
+                    {/* Verbose copy is friendlier ("Yes, count us in")
+                        but at 393px / 3 = ~120px per cell the long
+                        labels overflow. Mobile gets the short variant;
+                        sm:+ swaps to the verbose copy where the row has
+                        the horizontal room to carry it. */}
+                    <span className="sm:hidden">{t(`rsvp.pick_${s}_short`)}</span>
+                    <span className="hidden sm:inline">{t(`rsvp.pick_${s}`)}</span>
                   </button>
                 );
               })}
