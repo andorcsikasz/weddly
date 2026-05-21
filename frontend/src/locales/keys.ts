@@ -2203,10 +2203,32 @@ export interface LocaleMessages {
     nav_taxonomy: string;
     /** Read-only analytics dashboard — money, activity, picks rollups. */
     nav_analytics: string;
+    /** Admin rail group subheads. Inbox = badge-bearing moderation
+     *  queues; Manage = CRM + config; Insights = read-only analytics. */
+    nav_group_inbox: string;
+    nav_group_manage: string;
+    nav_group_insights: string;
     /** /app/admin/categories page — supplier groups + categories CRUD. */
     taxonomy_title: string;
     taxonomy_sub: string;
     taxonomy_empty: string;
+    /** Empty-state headline shown above the longer `taxonomy_empty`
+     *  description when no groups exist yet. The empty-state surface on
+     *  this page uses the canonical icon + title + description + CTA
+     *  shape, so the existing one-liner becomes the description and this
+     *  new key acts as the louder headline. */
+    taxonomy_empty_title: string;
+    /** Inline filler for a group with zero categories — the page used to
+     *  render an italic em-dash, which clashed with the rest of the
+     *  admin shell's typography. */
+    taxonomy_group_empty: string;
+    /** Pill copy on each group header — "{n} kategória" / "{n} categories".
+     *  Hungarian doesn't inflect the noun after a numeral, so a single
+     *  template covers every count; English uses `_one`/`_other` via the
+     *  pickCount fallback in lib/i18n. */
+    taxonomy_category_count: string;
+    taxonomy_category_count_one: string;
+    taxonomy_category_count_other: string;
     taxonomy_add_group: string;
     taxonomy_add_category: string;
     taxonomy_group_slug: string;
@@ -2278,11 +2300,44 @@ export interface LocaleMessages {
     waitlist_modal_overwrite_confirm_title: string;
     waitlist_modal_overwrite_confirm_body: string;
     waitlist_modal_overwrite_confirm_ok: string;
+    /** Confirm dialog gating the destructive "reopen a decided
+     *  application" action. Title is the question, body explains what
+     *  the previous decision was (interpolated `{outcome}` + `{decided}`)
+     *  so the admin knows what they're erasing. */
+    waitlist_reopen_confirm_title: string;
+    waitlist_reopen_confirm_body: string;
+    waitlist_reopen_confirm_ok: string;
+    /** Screen-reader-only label for status pills on the card header.
+     *  The visible label is the localized status name; this prefix gives
+     *  AT users a "status:" cue so it doesn't read as just a noun. */
+    waitlist_status_sr_label: string;
     waitlist_toast_decided: string;
     waitlist_toast_reopened: string;
     /** /app/admin/users page — read-only directory of users + couples. */
     users_title: string;
     users_sub: string;
+    /** Sticky search bar above the workspaces list. Debounced client-side
+     *  filter — matches name / email / workspace id / slug / partner names
+     *  across the workspaces, demo, and orphans sub-lists. */
+    users_search_placeholder: string;
+    users_search_clear: string;
+    users_search_empty: string;
+    users_search_empty_help: string;
+    /** Toggle copy for the collapsed demo workspaces summary. The summary
+     *  line surfaces "{n} demo munkaterületek · utolsó 24h: {m}" with a
+     *  Megjelenítés / Elrejtés button on the right. */
+    demo_workspaces_show: string;
+    demo_workspaces_hide: string;
+    demo_workspaces_summary_one: string;
+    demo_workspaces_summary_other: string;
+    demo_workspaces_recent_24h: string;
+    /** Visible labels next to the icon-only action buttons in the workspace
+     *  row. Tooltips alone aren't reachable on touch devices, so we promote
+     *  each action to a labelled icon button at text-[11px]. */
+    action_verify_label: string;
+    action_flag_label: string;
+    action_unflag_label: string;
+    action_delete_label: string;
     users_section_users: string;
     users_section_couples: string;
     users_count_one: string;
@@ -2503,6 +2558,19 @@ export interface LocaleMessages {
     suppliers_card_field_notes_dirty: string;
     suppliers_card_notes_save_success: string;
     suppliers_card_empty_value: string;
+    /** Visible "delete" action verb (imperative). Used on the destructive
+     *  btn-alert buttons (per-row + bulk) on the supplier moderation page.
+     *  Distinct from `delete` (noun) which doubles as a confirm-dialog
+     *  label. */
+    delete_action: string;
+    bulk_delete_action: string;
+    /** SR labels for the source pill on supplier cards (curated vs
+     *  community). The moderation list is always community but the pill
+     *  is rendered explicitly so the moderator never has to assume. */
+    source_curated_sr: string;
+    source_community_sr: string;
+    /** Aria-label for the price-band pill ("$$$ ársáv / price band"). */
+    price_band_aria: string;
     /** /app/admin/suppliers — directory view toggle (moderation vs analytics). */
     suppliers_view_moderation: string;
     suppliers_view_directory: string;
@@ -2577,6 +2645,20 @@ export interface LocaleMessages {
     feedback_delete_confirm_body: string;
     feedback_anon: string;
     feedback_no_message: string;
+    /** Filter chip labels at the top of the inbox — multi-select; default
+     *  active = "new + read" ("untriaged"). */
+    feedback_filter_new: string;
+    feedback_filter_read: string;
+    feedback_filter_resolved: string;
+    feedback_filter_dismissed: string;
+    /** Empty-state and error-state copy. The empty state replaces the
+     *  one-liner with a real lucide icon + title + description pointing
+     *  to the public /visszajelzes form. */
+    feedback_empty_title: string;
+    feedback_empty_body: string;
+    feedback_load_error_title: string;
+    feedback_load_error_body: string;
+    feedback_retry: string;
     /** /app/admin/analytics page — three orthogonal rollups (money,
      *  activity, picks) rendered as KPI tiles + tables + CSS bar charts.
      *  Read-only — no actions, no per-row drilldown. */

@@ -3,9 +3,9 @@ import type {
   AdminSupplierGroup,
   SupplierTaxonomyGroup,
 } from "@shared/supplier_taxonomy";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { LayoutList, Pencil, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
-import { AdminEmptyState, AdminPageHeader } from "../components/admin";
+import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import { Button, Dialog, Skeleton, TextField, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierTaxonomyApi, supplierTaxonomyApi } from "../lib/endpoints";
@@ -104,11 +104,11 @@ export default function AdminCategoriesPage() {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, gi) => (
-            <section key={gi} className="card p-0 overflow-hidden">
+            <section key={gi} className="admin-card p-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
                 <div className="flex flex-col gap-1.5">
                   <Skeleton width={220} height={16} />
-                  <Skeleton width={90} height={10} />
+                  <Skeleton width={90} height={12} />
                 </div>
                 <div className="flex flex-wrap gap-1">
                   <Skeleton width={120} height={28} rounded="md" />
@@ -124,7 +124,7 @@ export default function AdminCategoriesPage() {
                   >
                     <div className="flex flex-col gap-1.5">
                       <Skeleton width={260} height={14} />
-                      <Skeleton width={140} height={10} />
+                      <Skeleton width={140} height={12} />
                     </div>
                     <div className="flex gap-1">
                       <Skeleton width={28} height={28} rounded="md" />
@@ -137,20 +137,37 @@ export default function AdminCategoriesPage() {
           ))}
         </div>
       ) : groups.length === 0 ? (
-        <AdminEmptyState>{t("admin.taxonomy_empty")}</AdminEmptyState>
+        <AdminEmptyState
+          icon={<LayoutList size={28} />}
+          title={t("admin.taxonomy_empty_title")}
+          description={t("admin.taxonomy_empty")}
+          action={
+            <button
+              type="button"
+              className="btn-primary btn-sm"
+              onClick={() => setEditing({ kind: "new-group" })}
+            >
+              <Plus size={14} />
+              <span>{t("admin.taxonomy_add_group")}</span>
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {groups.map((g) => (
-            <section key={g.id} className="card p-0 overflow-hidden">
+            <section key={g.id} className="admin-card p-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
-                <div>
+                <div className="flex flex-col gap-1">
                   <div className="font-medium text-ink-900 dark:text-paper-50">
                     {g.label_hu}
                     <span className="mx-2 text-ink-300 dark:text-umber-300">·</span>
                     <span className="text-ink-500 dark:text-umber-300">{g.label_en}</span>
                   </div>
-                  <div className="text-xs uppercase tracking-wide text-ink-400 dark:text-umber-300">
-                    {g.slug}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Pill tone="muted">{g.slug}</Pill>
+                    <Pill tone="paper">
+                      {t("admin.taxonomy_category_count", { n: g.categories.length })}
+                    </Pill>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -171,33 +188,34 @@ export default function AdminCategoriesPage() {
                   </button>
                   <button
                     type="button"
-                    className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                    className="btn-alert btn-sm"
                     onClick={() => onDeleteGroup(g)}
-                    aria-label={t("admin.taxonomy_delete")}
                   >
                     <Trash2 size={14} />
+                    <span>{t("admin.taxonomy_delete")}</span>
                   </button>
                 </div>
               </div>
               {g.categories.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-ink-500 dark:text-umber-300 italic">—</div>
+                <div className="px-4 py-3 text-sm text-ink-500 dark:text-umber-300">
+                  {t("admin.taxonomy_group_empty")}
+                </div>
               ) : (
                 <ul className="divide-y divide-paper-200 dark:divide-umber-700">
                   {g.categories.map((c) => (
                     <li
                       key={c.id}
-                      className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-700/40"
+                      className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
                     >
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <div className="text-ink-900 dark:text-paper-50">
                           {c.label_hu}
                           <span className="mx-2 text-ink-300 dark:text-umber-300">·</span>
                           <span className="text-ink-500 dark:text-umber-300">{c.label_en}</span>
                         </div>
-                        <div className="mt-0.5 text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
-                          {c.slug}
-                          <span className="mx-1.5 text-ink-300 dark:text-umber-300">→</span>
-                          {c.budget_category}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Pill tone="muted">{c.slug}</Pill>
+                          <Pill tone="violet">{c.budget_category}</Pill>
                         </div>
                       </div>
                       <div className="flex gap-1">
@@ -211,11 +229,11 @@ export default function AdminCategoriesPage() {
                         </button>
                         <button
                           type="button"
-                          className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                          className="btn-alert btn-sm"
                           onClick={() => onDeleteCategory(c)}
-                          aria-label={t("admin.taxonomy_delete")}
                         >
                           <Trash2 size={14} />
+                          <span>{t("admin.taxonomy_delete")}</span>
                         </button>
                       </div>
                     </li>

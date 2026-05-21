@@ -27,6 +27,13 @@ export interface PublicWeddingWebsiteView {
   /** ISO YYYY-MM-DD; null if the couple hasn't picked a date yet. */
   wedding_date: string | null;
   ceremony_kind: CeremonyKind | null;
+  /** Free-text venue name the couple set on /app/profile. Null when
+   *  unset — the page falls back to the approximate lat/lng pin only. */
+  venue_name: string | null;
+  /** Couple-pasted http(s) URL for the page's hero image. Null when
+   *  unset — the page falls back to the stationery palette without a
+   *  cover photo. */
+  cover_image_url: string | null;
   /** Coordinate centre for an approximate venue pin — radius is the
    *  privacy buffer the couple set (couples.location_radius_km). Both
    *  null until the couple sets a venue. */

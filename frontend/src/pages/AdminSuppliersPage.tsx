@@ -2,6 +2,7 @@ import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
 import {
   Check,
   ChevronDown,
+  Clock,
   ExternalLink,
   Eye,
   EyeOff,
@@ -14,7 +15,7 @@ import {
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AdminEmptyState, AdminFilterChip, AdminPageHeader } from "../components/admin";
+import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
 import { SupplierDirectoryView } from "../components/admin/SupplierDirectoryView";
 import { SegmentedControl, Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -109,6 +110,10 @@ function ModerationView() {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [enriching, setEnriching] = useState<number | null>(null);
+  // Track which row is auto-expanded on initial load. We only ever auto-pop
+  // the very first awaiting_review row so the moderator's first action is
+  // one click away — every other row stays collapsed until clicked.
+  const [autoExpandId, setAutoExpandId] = useState<number | null>(null);
 
   useEffect(() => {
     adminSupplierApi
@@ -117,6 +122,11 @@ function ModerationView() {
         // Newest first by created_at — matches the spec's default sort.
         const sorted = [...r.suppliers].sort((a, b) => b.created_at - a.created_at);
         setSuppliers(sorted);
+        // First awaiting_review row in the sorted list — the moderator's
+        // hottest triage candidate. Set only once on mount so re-renders
+        // (after approve/hide/etc.) don't keep re-expanding a different row.
+        const firstAwaiting = sorted.find((s) => s.status === "awaiting_review");
+        setAutoExpandId(firstAwaiting?.id ?? null);
       })
       .catch((e) => {
         toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -296,9 +306,7 @@ function ModerationView() {
     <>
       {/* Status filter chips. */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-          {t("admin.filter_status_label")}
-        </span>
+        <span className="eyebrow">{t("admin.filter_status_label")}</span>
         <AdminFilterChip
           label={t("admin.filter_status_all")}
           active={filter === "all"}
@@ -359,35 +367,25 @@ function ModerationView() {
           </button>
           <button
             type="button"
-            className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+            className="btn-alert btn-sm"
             onClick={onBulkDelete}
             disabled={selected.size === 0}
           >
-            <Trash2 size={14} /> {t("admin.bulk_delete")}
+            <Trash2 size={14} /> {t("admin.bulk_delete_action")}
           </button>
         </span>
       </div>
 
       {loading ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <article key={i} className="card flex flex-col gap-3 p-3">
-              <header className="flex flex-wrap items-center gap-2">
-                <Skeleton width={16} height={16} rounded="sm" />
-                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-                  <Skeleton width={180} height={18} />
-                  <Skeleton width={64} height={20} rounded="full" />
-                  <Skeleton width={44} height={20} rounded="full" />
-                  <Skeleton width={110} height={12} />
-                  <Skeleton width={80} height={12} />
-                </div>
-                <Skeleton width={16} height={16} rounded="sm" />
-              </header>
-              <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-2">
-                <Skeleton width={80} height={28} rounded="md" />
-                <Skeleton width={68} height={28} rounded="md" />
-                <Skeleton width={68} height={28} rounded="md" />
-              </footer>
+            <article key={i} className="admin-card flex items-center gap-2 py-2">
+              <Skeleton width={16} height={16} rounded="sm" />
+              <Skeleton width={180} height={16} />
+              <Skeleton width={64} height={20} rounded="full" />
+              <Skeleton width={70} height={20} rounded="full" />
+              <Skeleton width={110} height={12} />
+              <Skeleton width={16} height={16} rounded="sm" className="ml-auto" />
             </article>
           ))}
         </div>
@@ -396,7 +394,7 @@ function ModerationView() {
       ) : visibleSuppliers.length === 0 ? (
         <AdminEmptyState>{t("admin.empty_filtered")}</AdminEmptyState>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {visibleSuppliers.map((s) => (
             <SupplierCard
               key={s.id}
@@ -411,6 +409,7 @@ function ModerationView() {
               enriching={enriching === s.id}
               onSavedNotes={replaceSupplier}
               locale={locale}
+              initiallyExpanded={s.id === autoExpandId}
             />
           ))}
         </div>
@@ -419,6 +418,9 @@ function ModerationView() {
   );
 }
 
+/** Status pill — single tone+icon mapping for the four supplier lifecycle
+ *  states. awaiting_review picks up a clock glyph so it reads as the queue
+ *  the moderator should clear first. */
 function StatusPill({
   status,
   label,
@@ -426,78 +428,83 @@ function StatusPill({
   status: "active" | "hidden" | "pending" | "awaiting_review";
   label: string;
 }) {
-  const cls =
-    status === "active"
-      ? "border-violet-900 bg-violet-900 text-paper-100 dark:border-violet-500/50 dark:bg-violet-500/30 dark:text-violet-100"
-      : status === "awaiting_review"
-        ? "border-violet-700 bg-violet-100 text-violet-900 font-semibold dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200"
-        : status === "pending"
-          ? "border-violet-300 bg-violet-50 text-violet-950 dark:border-violet-400/30 dark:bg-violet-500/15 dark:text-violet-200"
-          : "border-paper-300 bg-paper-100 text-ink-500 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300";
+  if (status === "active") {
+    return (
+      <Pill tone="sage" srLabel={label}>
+        {label}
+      </Pill>
+    );
+  }
+  if (status === "awaiting_review") {
+    return (
+      <Pill tone="blush" icon={<Clock size={11} />} srLabel={label}>
+        {label}
+      </Pill>
+    );
+  }
+  if (status === "pending") {
+    return (
+      <Pill tone="blush" icon={<Clock size={11} />} srLabel={label}>
+        {label}
+      </Pill>
+    );
+  }
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}
-    >
+    <Pill tone="muted" srLabel={label}>
       {label}
-    </span>
+    </Pill>
   );
 }
 
-/** Renders the price-band as $..$$$$$ in a tabular-num span so widths line up
- *  across the grid. Curated entries set band on insert; we clamp to 1..5
- *  defensively on the server. */
+/** Price-band glyph pill — $..$$$$$. The earlier version pinned `stat-num`
+ *  on this so columns lined up; but $ is a glyph, not a digit, and
+ *  tabular-num just stretches the spacing weirdly. Plain Pill is enough. */
 function PriceBandPill({ band }: { band: 1 | 2 | 3 | 4 | 5 }) {
+  const { t } = useT();
   return (
-    <span className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-2 py-0.5 text-xs font-medium text-ink-700 dark:text-paper-100 stat-num">
+    <Pill tone="paper" srLabel={t("admin.price_band_aria", { band })}>
       {"$".repeat(band)}
-    </span>
+    </Pill>
   );
 }
 
-/** Field row inside a card section. `value` may be null/empty — we render a
- *  locale-specific em-dash so the column stays visually aligned. */
-function CardField({
+/** Definition-list row. Renders `label` on the left (8rem, the eyebrow
+ *  treatment) and `value` on the right, wrapping if long. Used inside the
+ *  expanded card body — replaces the old four-column CardField stacks. */
+function DefRow({
   label,
   value,
   href,
-  mono = false,
 }: {
   label: string;
   value: React.ReactNode;
   href?: string;
-  mono?: boolean;
 }) {
   const { t } = useT();
   const isEmpty = value == null || (typeof value === "string" && value.trim().length === 0);
   return (
-    <div className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        {label}
-      </span>
-      {isEmpty ? (
-        <span className="text-sm text-ink-400 dark:text-umber-300">
-          {t("admin.suppliers_card_empty_value")}
-        </span>
-      ) : href ? (
-        <a
-          href={href}
-          target="_blank"
-          rel="noreferrer noopener"
-          className={`mt-0.5 inline-flex items-center gap-1 text-sm text-ink-800 dark:text-paper-100 underline-offset-2 hover:underline ${
-            mono ? "stat-num" : ""
-          }`}
-        >
-          <span className="truncate">{value}</span>
-          <ExternalLink size={12} aria-hidden className="shrink-0" />
-        </a>
-      ) : (
-        <span
-          className={`mt-0.5 break-words text-sm text-ink-800 dark:text-paper-100 ${mono ? "stat-num" : ""}`}
-        >
-          {value}
-        </span>
-      )}
-    </div>
+    <>
+      <dt className="eyebrow self-center">{label}</dt>
+      <dd className="m-0 min-w-0 break-words text-xs text-ink-800 dark:text-paper-100">
+        {isEmpty ? (
+          <span className="text-ink-400 dark:text-umber-300">
+            {t("admin.suppliers_card_empty_value")}
+          </span>
+        ) : href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-1 underline-offset-2 hover:underline"
+          >
+            <span className="truncate">{value}</span>
+            <ExternalLink size={11} aria-hidden className="shrink-0" />
+          </a>
+        ) : (
+          value
+        )}
+      </dd>
+    </>
   );
 }
 
@@ -513,6 +520,9 @@ interface SupplierCardProps {
   enriching: boolean;
   onSavedNotes: (next: CommunitySupplierAdminView) => void;
   locale: string;
+  /** True only for the first awaiting_review row on initial load; lets the
+   *  moderator see the full detail surface for triage without an extra click. */
+  initiallyExpanded: boolean;
 }
 
 function SupplierCard({
@@ -527,18 +537,17 @@ function SupplierCard({
   enriching,
   onSavedNotes,
   locale,
+  initiallyExpanded,
 }: SupplierCardProps) {
   const { t } = useT();
   const toast = useToast();
   const [notesDraft, setNotesDraft] = useState<string>(s.admin_notes ?? "");
   const [notesSaving, setNotesSaving] = useState(false);
-  // Cards collapse by default — moderators rarely need the full CRM detail
-  // surface for every row at once. Click the chevron (or "Részletek") to
-  // expand. Pending/awaiting-review rows start expanded since those are the
-  // ones the admin actually has to read end-to-end before approving.
-  const [expanded, setExpanded] = useState<boolean>(
-    s.status === "pending" || s.status === "awaiting_review",
-  );
+  // Cards collapse by default. The parent flags exactly one row (the first
+  // awaiting_review submission) for auto-expand on mount so the moderator
+  // sees full detail + actions one click away. Everything else stays
+  // collapsed; the moderator can click any row to expand it.
+  const [expanded, setExpanded] = useState<boolean>(initiallyExpanded);
   const persisted = s.admin_notes ?? "";
   const dirty = notesDraft !== persisted;
 
@@ -564,14 +573,22 @@ function SupplierCard({
 
   return (
     <article
-      className={`card flex flex-col gap-3 p-3 transition ${
+      className={`admin-card !p-0 transition ${
         selected ? "ring-2 ring-violet-700 dark:ring-violet-400/60" : ""
       }`}
       aria-label={s.name}
     >
-      {/* Header row: select + name/city + status + price band + expand toggle.
-       *  This row is the entire card when collapsed. */}
-      <header className="flex flex-wrap items-center gap-2">
+      {/* Collapsed row — name + category pill + status pill + city.
+       *  The whole row is the click target (except the checkbox). Hover
+       *  state gives the moderator a clear "this row is interactive"
+       *  signal across an otherwise-static list. */}
+      <header
+        className={`flex flex-wrap items-center gap-2 px-3 py-2 transition-colors duration-150 ${
+          expanded
+            ? ""
+            : "hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+        } ${expanded ? "border-b border-paper-200 dark:border-umber-700" : ""}`}
+      >
         <label className="inline-flex items-center">
           <input
             type="checkbox"
@@ -582,33 +599,31 @@ function SupplierCard({
         </label>
         <button
           type="button"
-          className="min-w-0 flex-1 text-left"
+          className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-left"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-label={
             expanded ? t("admin.suppliers_card_collapse") : t("admin.suppliers_card_expand")
           }
         >
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h2 className="m-0 text-sm font-semibold text-ink-900 dark:text-paper-50">{s.name}</h2>
-            <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
-            <PriceBandPill band={s.price_band} />
-            <span className="text-xs text-ink-500 dark:text-umber-300">
-              {t(`suppliers.cat.${s.category}`)}
+          <h2 className="m-0 text-sm font-semibold text-ink-900 dark:text-paper-50">{s.name}</h2>
+          <Pill tone="violet">{t(`suppliers.cat.${s.category}`)}</Pill>
+          <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
+          {s.city ? (
+            <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+              <MapPin size={12} aria-hidden />
+              {s.city}
             </span>
-            {s.city ? (
-              <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-                <MapPin size={12} aria-hidden />
-                {s.city}
-              </span>
-            ) : null}
-            {s.open_report_count > 0 ? (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-violet-950 dark:text-violet-200">
-                <Flag size={12} aria-hidden />
-                {s.open_report_count}
-              </span>
-            ) : null}
-          </div>
+          ) : null}
+          {s.open_report_count > 0 ? (
+            <Pill
+              tone="blush"
+              icon={<Flag size={11} />}
+              srLabel={t("admin.suppliers_card_field_open_reports")}
+            >
+              {s.open_report_count}
+            </Pill>
+          ) : null}
         </button>
         <ChevronDown
           size={16}
@@ -620,122 +635,120 @@ function SupplierCard({
       </header>
 
       {expanded ? (
-        <>
-          {/* Body: three even columns on lg, stacking on small viewports. The
-           *  card stays vertically centred via items-stretch on the parent — each
-           *  column carries its own gap-3 so internal rhythm is consistent. */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-4 px-3 py-3">
+          {/* Body: three-column dl grid on lg, stacking on small viewports.
+           *  Each <dl> packs label/value pairs into a tight `grid-cols-[8rem_1fr]
+           *  gap-y-1 text-xs` rhythm — roughly half the vertical height of the
+           *  prior 4× CardField column stack. */}
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 lg:grid-cols-3">
             {/* Contact column */}
-            <section className="flex flex-col gap-3">
-              <h3 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                {t("admin.suppliers_card_section_contact")}
-              </h3>
-              <CardField
-                label={t("admin.suppliers_card_field_website")}
-                value={s.website}
-                href={s.website || undefined}
-              />
-              <CardField
-                label={t("admin.suppliers_card_field_contact_email")}
-                value={
-                  s.contact_email ? (
-                    <a
-                      href={`mailto:${decodeEntities(s.contact_email)}`}
-                      className="inline-flex items-center gap-1 hover:underline"
-                    >
-                      <Mail size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
-                      <span className="break-all">{decodeEntities(s.contact_email)}</span>
-                    </a>
-                  ) : null
-                }
-              />
-              <CardField
-                label={t("admin.suppliers_card_field_contact_phone")}
-                value={
-                  s.contact_phone ? (
-                    <a
-                      href={`tel:${decodeEntities(s.contact_phone).replace(/\s+/g, "")}`}
-                      className="inline-flex items-center gap-1 hover:underline"
-                    >
-                      <Phone size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
-                      <span>{decodeEntities(s.contact_phone)}</span>
-                    </a>
-                  ) : null
-                }
-              />
-              <CardField
-                label={t("admin.suppliers_card_field_submitter")}
-                value={
-                  <span className="inline-flex items-center gap-1">
-                    <User size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
-                    <span className="break-all">{s.submitter_email}</span>
-                  </span>
-                }
-              />
+            <section className="flex flex-col gap-2">
+              <h3 className="eyebrow m-0">{t("admin.suppliers_card_section_contact")}</h3>
+              <dl className="m-0 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-xs">
+                <DefRow
+                  label={t("admin.suppliers_card_field_website")}
+                  value={s.website}
+                  href={s.website || undefined}
+                />
+                <DefRow
+                  label={t("admin.suppliers_card_field_contact_email")}
+                  value={
+                    s.contact_email ? (
+                      <a
+                        href={`mailto:${decodeEntities(s.contact_email)}`}
+                        className="inline-flex items-center gap-1 hover:underline"
+                      >
+                        <Mail size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                        <span className="break-all">{decodeEntities(s.contact_email)}</span>
+                      </a>
+                    ) : null
+                  }
+                />
+                <DefRow
+                  label={t("admin.suppliers_card_field_contact_phone")}
+                  value={
+                    s.contact_phone ? (
+                      <a
+                        href={`tel:${decodeEntities(s.contact_phone).replace(/\s+/g, "")}`}
+                        className="inline-flex items-center gap-1 hover:underline"
+                      >
+                        <Phone size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                        <span>{decodeEntities(s.contact_phone)}</span>
+                      </a>
+                    ) : null
+                  }
+                />
+                <DefRow
+                  label={t("admin.suppliers_card_field_submitter")}
+                  value={
+                    <span className="inline-flex items-center gap-1">
+                      <User size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                      <span className="break-all">{s.submitter_email}</span>
+                    </span>
+                  }
+                />
+              </dl>
             </section>
 
             {/* Listing column */}
-            <section className="flex flex-col gap-3">
-              <h3 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                {t("admin.suppliers_card_section_listing")}
-              </h3>
-              <CardField
-                label={t("admin.suppliers_card_field_blurb")}
-                value={s.blurb ? <span className="whitespace-pre-line">{s.blurb}</span> : null}
-              />
-              {s.status === "hidden" && s.hide_reason ? (
-                <CardField
-                  label={t("admin.suppliers_card_field_hide_reason")}
-                  value={
-                    <span className="italic text-ink-600 dark:text-umber-200">{s.hide_reason}</span>
-                  }
+            <section className="flex flex-col gap-2">
+              <h3 className="eyebrow m-0">{t("admin.suppliers_card_section_listing")}</h3>
+              <dl className="m-0 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-xs">
+                <DefRow
+                  label={t("admin.suppliers_card_field_price_band")}
+                  value={<PriceBandPill band={s.price_band} />}
                 />
-              ) : null}
+                <DefRow
+                  label={t("admin.suppliers_card_field_blurb")}
+                  value={s.blurb ? <span className="whitespace-pre-line">{s.blurb}</span> : null}
+                />
+                {s.status === "hidden" && s.hide_reason ? (
+                  <DefRow
+                    label={t("admin.suppliers_card_field_hide_reason")}
+                    value={
+                      <span className="italic text-ink-600 dark:text-umber-200">{s.hide_reason}</span>
+                    }
+                  />
+                ) : null}
+              </dl>
             </section>
 
             {/* Meta + metrics column */}
-            <section className="flex flex-col gap-3">
-              <h3 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                {t("admin.suppliers_card_section_meta")}
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <CardField label={t("admin.suppliers_card_field_id")} value={`#${s.id}`} mono />
-                <CardField
+            <section className="flex flex-col gap-2">
+              <h3 className="eyebrow m-0">{t("admin.suppliers_card_section_meta")}</h3>
+              <dl className="m-0 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-xs">
+                <DefRow label={t("admin.suppliers_card_field_id")} value={`#${s.id}`} />
+                <DefRow
                   label={t("admin.suppliers_card_field_submitter_id")}
                   value={`#${s.submitter_user_id}`}
-                  mono
                 />
-                <CardField
+                <DefRow
                   label={t("admin.suppliers_card_field_submitted_at")}
                   value={formatDate(s.created_at, locale)}
                 />
-                <CardField
+                <DefRow
                   label={t("admin.suppliers_card_field_updated_at")}
                   value={formatDateTime(s.updated_at, locale)}
                 />
                 {s.hidden_at ? (
-                  <CardField
+                  <DefRow
                     label={t("admin.suppliers_card_field_hidden_at")}
                     value={formatDateTime(s.hidden_at, locale)}
                   />
                 ) : null}
-                <CardField
+                <DefRow
                   label={t("admin.suppliers_card_field_open_reports")}
                   value={
-                    <span
-                      className={
-                        s.open_report_count > 0
-                          ? "inline-flex items-center gap-1 font-semibold text-violet-950 dark:text-violet-200"
-                          : "inline-flex items-center gap-1 text-ink-500 dark:text-umber-300"
-                      }
-                    >
-                      <Flag size={12} aria-hidden />
-                      {s.open_report_count}
-                    </span>
+                    s.open_report_count > 0 ? (
+                      <Pill tone="blush" icon={<Flag size={11} />}>
+                        {s.open_report_count}
+                      </Pill>
+                    ) : (
+                      <span className="text-ink-500 dark:text-umber-300">0</span>
+                    )
                   }
-                  mono
                 />
-              </div>
+              </dl>
             </section>
           </div>
 
@@ -744,9 +757,7 @@ function SupplierCard({
            *  away doesn't silently drop a half-typed thought. */}
           <section className="flex flex-col gap-2 rounded-2xl bg-paper-50 p-4 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                {t("admin.suppliers_card_section_notes")}
-              </h3>
+              <h3 className="eyebrow m-0">{t("admin.suppliers_card_section_notes")}</h3>
               <span
                 className={`text-[10px] uppercase tracking-wide ${
                   dirty ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"
@@ -780,61 +791,63 @@ function SupplierCard({
               </button>
             </div>
           </section>
-        </>
-      ) : null}
 
-      {/* Footer: per-row action buttons. Keep the order familiar: Approve
-       *  (when applicable) → Enrich → Hide/Unhide → Delete. */}
-      <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-2">
-        {s.status === "awaiting_review" && (
-          <button
-            type="button"
-            className="btn-primary btn-sm"
-            onClick={onApprove}
-            aria-label={t("admin.approve")}
-          >
-            <Check size={14} /> {t("admin.approve")}
-          </button>
-        )}
-        <button
-          type="button"
-          className="btn-ghost btn-sm"
-          onClick={onEnrich}
-          disabled={enriching}
-          aria-label={t("admin.enrich")}
-          title={t("admin.enrich")}
-        >
-          <Sparkles size={14} />
-          <span>{enriching ? t("admin.enrich_running") : t("admin.enrich")}</span>
-        </button>
-        {s.status === "active" ? (
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={onHide}
-            aria-label={t("admin.hide")}
-          >
-            <EyeOff size={14} /> {t("admin.hide")}
-          </button>
-        ) : s.status === "hidden" ? (
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={onUnhide}
-            aria-label={t("admin.unhide")}
-          >
-            <Eye size={14} /> {t("admin.unhide")}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
-          onClick={onDelete}
-          aria-label={t("admin.delete")}
-        >
-          <Trash2 size={14} /> {t("admin.delete")}
-        </button>
-      </footer>
+          {/* Per-row action buttons. Keep the order familiar: Approve
+           *  (when applicable) → Enrich → Hide/Unhide → Delete. Footer
+           *  only renders inside the expanded body so the collapsed row
+           *  stays single-line. */}
+          <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-2">
+            {s.status === "awaiting_review" && (
+              <button
+                type="button"
+                className="btn-primary btn-sm"
+                onClick={onApprove}
+                aria-label={t("admin.approve")}
+              >
+                <Check size={14} /> {t("admin.approve")}
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={onEnrich}
+              disabled={enriching}
+              aria-label={t("admin.enrich")}
+              title={t("admin.enrich")}
+            >
+              <Sparkles size={14} />
+              <span>{enriching ? t("admin.enrich_running") : t("admin.enrich")}</span>
+            </button>
+            {s.status === "active" ? (
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={onHide}
+                aria-label={t("admin.hide")}
+              >
+                <EyeOff size={14} /> {t("admin.hide")}
+              </button>
+            ) : s.status === "hidden" ? (
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={onUnhide}
+                aria-label={t("admin.unhide")}
+              >
+                <Eye size={14} /> {t("admin.unhide")}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="btn-alert btn-sm"
+              onClick={onDelete}
+              aria-label={t("admin.delete")}
+            >
+              <Trash2 size={14} /> {t("admin.delete_action")}
+            </button>
+          </footer>
+        </div>
+      ) : null}
     </article>
   );
 }

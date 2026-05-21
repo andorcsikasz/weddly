@@ -1,7 +1,17 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
-import { Check, Flag, FlagOff, Lightbulb, Mail, MessageCircle, Trash2 } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { AdminEmptyState, AdminPageHeader, AdminSectionHeader } from "../components/admin";
+import {
+  Check,
+  Flag,
+  FlagOff,
+  Lightbulb,
+  Mail,
+  MessageCircle,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AdminEmptyState, AdminPageHeader, AdminSectionHeader, Pill } from "../components/admin";
 import { FlagUserDialog } from "../components/FlagUserDialog";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -42,6 +52,21 @@ function formatRelative(
   return formatDate(unixMs, locale);
 }
 
+/** Zero-padded 5-digit numeric workspace code (e.g. couple.id=7 → "00007").
+ *  Stable across reloads and trivially sortable; the human-meaningful
+ *  `slug` is still available on the type for other consumers. */
+function workspaceId(c: AdminCoupleView): string {
+  return String(c.id).padStart(5, "0");
+}
+
+function workspaceLabel(c: AdminCoupleView): string {
+  if (c.display_name && c.display_name.trim()) return c.display_name;
+  const a = c.bride_name?.trim();
+  const b = c.groom_name?.trim();
+  if (a && b) return `${a} & ${b}`;
+  return a || b || `#${c.id}`;
+}
+
 export default function AdminUsersPage() {
   const { t, locale } = useT();
   const { user: currentAdmin } = useAuth();
@@ -54,6 +79,25 @@ export default function AdminUsersPage() {
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
   const [purgingDeleting, setPurgingDeleting] = useState(false);
+
+  // Sticky client-side search across name / email / workspace id / slug.
+  // We keep the raw input separate from the debounced query so typing stays
+  // responsive (no re-filter on every keystroke when the list is large) but
+  // the search input itself is fully controlled. 150ms feels snappy without
+  // burning re-renders on each character — same pacing as the supplier
+  // directory filter.
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => {
+    const handle = window.setTimeout(() => setSearchQuery(searchInput.trim().toLowerCase()), 150);
+    return () => window.clearTimeout(handle);
+  }, [searchInput]);
+
+  // Collapsed-by-default demo summary. Real couples win the above-the-fold
+  // real estate; the demo list opens on demand. Stays collapsed across
+  // re-fetches because the state is component-local — that's intentional,
+  // an admin who opened it expects it to stay open while triaging.
+  const [demoOpen, setDemoOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,21 +136,61 @@ export default function AdminUsersPage() {
   // reflects actual signups, but surface them in their own section below.
   const realCouples = useMemo(() => visibleCouples.filter((c) => !c.is_demo), [visibleCouples]);
   const demoCouples = useMemo(() => visibleCouples.filter((c) => c.is_demo), [visibleCouples]);
+  // Demo activity in the last 24h — drives the collapsed summary headline so
+  // a glance tells the admin whether the bucket is hot.
+  const demoRecent24h = useMemo(() => {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    return demoCouples.filter((c) => c.last_seen_at != null && c.last_seen_at >= cutoff).length;
+  }, [demoCouples]);
 
-  function workspaceLabel(c: AdminCoupleView): string {
-    if (c.display_name && c.display_name.trim()) return c.display_name;
-    const a = c.bride_name?.trim();
-    const b = c.groom_name?.trim();
-    if (a && b) return `${a} & ${b}`;
-    return a || b || `#${c.id}`;
+  // ── Search predicates ───────────────────────────────────────────────────
+  // Match the workspace by id (padded code), slug, display name, bride/groom
+  // names, and every member's name + email. Match orphans by their own name +
+  // email. The query is already lower-cased + trimmed in the debounced state.
+  function matchesQuery(haystacks: (string | null | undefined)[], q: string): boolean {
+    if (q === "") return true;
+    for (const raw of haystacks) {
+      if (!raw) continue;
+      if (raw.toLowerCase().includes(q)) return true;
+    }
+    return false;
+  }
+  function coupleMatches(c: AdminCoupleView): boolean {
+    if (searchQuery === "") return true;
+    const members = c.partners
+      .map((p) => userById.get(p.id))
+      .filter((u): u is AdminUserView => u != null);
+    const memberFields: string[] = [];
+    for (const m of members) {
+      memberFields.push(m.full_name, m.email);
+    }
+    for (const p of c.partners) {
+      memberFields.push(p.full_name, p.email);
+    }
+    return matchesQuery(
+      [c.display_name, c.slug, c.bride_name, c.groom_name, workspaceId(c), ...memberFields],
+      searchQuery,
+    );
+  }
+  function orphanMatches(u: AdminUserView): boolean {
+    if (searchQuery === "") return true;
+    return matchesQuery([u.full_name, u.email], searchQuery);
   }
 
-  /** Zero-padded 5-digit numeric workspace code (e.g. couple.id=7 → "00007").
-   *  Stable across reloads and trivially sortable; the human-meaningful
-   *  `slug` is still available on the type for other consumers. */
-  function workspaceId(c: AdminCoupleView): string {
-    return String(c.id).padStart(5, "0");
-  }
+  const filteredRealCouples = useMemo(
+    () => (searchQuery === "" ? realCouples : realCouples.filter(coupleMatches)),
+    // coupleMatches closes over searchQuery + userById; both are deps already
+    // captured by the realCouples + searchQuery deps.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
+    [realCouples, searchQuery, userById],
+  );
+  const filteredOrphans = useMemo(
+    () => (searchQuery === "" ? orphans : orphans.filter(orphanMatches)),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
+    [orphans, searchQuery],
+  );
+  const isSearching = searchQuery !== "";
+  const totalFilteredHits = filteredRealCouples.length + filteredOrphans.length;
 
   async function onResendVerify(u: AdminUserView) {
     setPendingId(u.id);
@@ -275,51 +359,55 @@ export default function AdminUsersPage() {
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="font-medium text-ink-900 dark:text-paper-50">{u.full_name}</span>
           <span className="text-xs text-ink-500 dark:text-umber-300 break-all">{u.email}</span>
-          {u.is_admin && <Badge tone="violet">{t("admin.badge_admin")}</Badge>}
-          {u.status === "suspended" && (
-            <Badge tone="violet-soft">{t("admin.badge_suspended")}</Badge>
+          {u.is_admin && (
+            <Pill tone="violet" srLabel={t("admin.badge_admin")}>
+              {t("admin.badge_admin")}
+            </Pill>
           )}
-          {!u.verified_email && <Badge tone="muted">{t("admin.badge_unverified")}</Badge>}
+          {u.status === "suspended" && (
+            <Pill tone="muted" srLabel={t("admin.badge_suspended")}>
+              {t("admin.badge_suspended")}
+            </Pill>
+          )}
+          {!u.verified_email && <Pill tone="muted">{t("admin.badge_unverified")}</Pill>}
           {flag && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full border border-blush-300 bg-blush-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blush-800 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-200"
-              title={flag.reason}
-            >
-              <Flag size={11} aria-hidden />
-              {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
+            <span title={flag.reason}>
+              <Pill tone="blush" icon={<Flag size={11} aria-hidden />}>
+                {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
+              </Pill>
             </span>
           )}
           {u.activity.prior_flag_count > 0 && (
             <span
-              className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-300"
               title={t("admin.activity_prior_flags_tooltip", { n: u.activity.prior_flag_count })}
             >
-              <Flag size={10} aria-hidden />
-              {u.activity.prior_flag_count}
+              <Pill tone="paper" icon={<Flag size={11} aria-hidden />}>
+                {u.activity.prior_flag_count}
+              </Pill>
             </span>
           )}
           {u.activity.supplier_tip_count > 0 && (
             <span
-              className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200"
               title={t("admin.activity_supplier_tips_tooltip", {
                 n: u.activity.supplier_tip_count,
                 when: formatRelative(u.activity.supplier_tip_last_at, locale, t),
               })}
             >
-              <Lightbulb size={10} aria-hidden />
-              {t("admin.activity_supplier_tips", { n: u.activity.supplier_tip_count })}
+              <Pill tone="violet" icon={<Lightbulb size={11} aria-hidden />}>
+                {t("admin.activity_supplier_tips", { n: u.activity.supplier_tip_count })}
+              </Pill>
             </span>
           )}
           {u.activity.feedback_count > 0 && (
             <span
-              className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200"
               title={t("admin.activity_feedback_tooltip", {
                 n: u.activity.feedback_count,
                 when: formatRelative(u.activity.feedback_last_at, locale, t),
               })}
             >
-              <MessageCircle size={10} aria-hidden />
-              {t("admin.activity_feedback", { n: u.activity.feedback_count })}
+              <Pill tone="violet" icon={<MessageCircle size={11} aria-hidden />}>
+                {t("admin.activity_feedback", { n: u.activity.feedback_count })}
+              </Pill>
             </span>
           )}
           {opts.showLastActive && (
@@ -328,61 +416,58 @@ export default function AdminUsersPage() {
             </span>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           {!u.verified_email &&
             (verifySentIds.has(u.id) ? (
-              <span
-                className="inline-flex items-center gap-1 rounded-md bg-violet-100 dark:bg-violet-500/20 px-1.5 py-0.5 text-[11px] font-medium text-violet-950 dark:text-violet-200"
-                title={t("admin.resend_verify_sent_label")}
-              >
-                <Check size={12} aria-hidden />
-              </span>
+              <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
+                {t("admin.resend_verify_sent_label")}
+              </Pill>
             ) : (
               <button
                 type="button"
-                className="btn-ghost btn-sm"
+                className="btn-ghost btn-sm inline-flex items-center gap-1"
                 onClick={() => onResendVerify(u)}
                 disabled={isPending}
-                title={t("admin.resend_verify")}
                 aria-label={t("admin.resend_verify")}
               >
-                <Mail size={14} />
+                <Mail size={14} aria-hidden />
+                <span className="text-[11px]">{t("admin.action_verify_label")}</span>
               </button>
             ))}
           {!isSelf && !flag && (
             <button
               type="button"
-              className="btn-ghost btn-sm"
+              className="btn-ghost btn-sm inline-flex items-center gap-1"
               onClick={() => onFlag(u)}
               disabled={isPending}
-              title={t("admin.flag_user_button")}
               aria-label={t("admin.flag_user_button")}
             >
-              <Flag size={14} />
+              <Flag size={14} aria-hidden />
+              <span className="text-[11px]">{t("admin.action_flag_label")}</span>
             </button>
           )}
           {!isSelf && flag && (
             <button
               type="button"
-              className="btn-ghost btn-sm text-blush-800 dark:text-blush-300"
+              className="btn-ghost btn-sm inline-flex items-center gap-1 text-blush-800 dark:text-blush-300"
               onClick={() => onUnflag(u)}
               disabled={isPending}
-              title={t("admin.unflag_user_button")}
               aria-label={t("admin.unflag_user_button")}
             >
-              <FlagOff size={14} />
+              <FlagOff size={14} aria-hidden />
+              <span className="text-[11px]">{t("admin.action_unflag_label")}</span>
             </button>
           )}
           {!isSelf && (
             <button
               type="button"
-              className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+              className="btn-alert btn-sm inline-flex items-center gap-1"
               onClick={() => onDelete(u)}
               disabled={isPending}
-              title={t("admin.delete_user")}
               aria-label={t("admin.delete_user")}
             >
-              <Trash2 size={14} />
+              <Trash2 size={14} aria-hidden />
+              <span className="text-[11px]">{t("admin.action_delete_label")}</span>
             </button>
           )}
         </div>
@@ -398,7 +483,7 @@ export default function AdminUsersPage() {
         <>
           <section className="mb-6">
             <AdminSectionHeader title={t("admin.workspaces_section")} />
-            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300 md:grid">
+            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 eyebrow md:grid">
               <div>{t("admin.table_workspace_id")}</div>
               <div>{t("admin.table_workspace_name")}</div>
               <div>{t("admin.table_workspace_members")}</div>
@@ -407,10 +492,7 @@ export default function AdminUsersPage() {
             </div>
             <ul className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <li
-                  key={i}
-                  className="rounded-2xl bg-paper-50 px-5 py-4 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700"
-                >
+                <li key={i} className="admin-card">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
                     <Skeleton width={56} height={18} rounded="sm" />
                     <Skeleton width={160} height={16} />
@@ -430,7 +512,7 @@ export default function AdminUsersPage() {
             <AdminSectionHeader title={t("admin.orphans_section")} />
             <div className="card overflow-x-auto p-0">
               <table className="min-w-full text-sm">
-                <thead className="bg-paper-100 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:bg-umber-700/60 dark:text-umber-300">
+                <thead className="bg-paper-100 text-left eyebrow dark:bg-umber-700/60">
                   <tr>
                     <th className="px-3 py-2">{t("admin.table_name")}</th>
                     <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
@@ -461,235 +543,332 @@ export default function AdminUsersPage() {
         </>
       ) : (
         <>
-          {/* ── Workspaces (couples) — one card per couple ────────────────── */}
-          <section className="mb-6">
-            <AdminSectionHeader
-              title={t("admin.workspaces_section")}
-              count={t(
-                realCouples.length === 1
-                  ? "admin.workspaces_count_one"
-                  : "admin.workspaces_count_other",
-                { n: realCouples.length },
+          {/* ── Sticky search bar ──────────────────────────────────────────
+           *  Filters every list below (workspaces, demos, orphans). Sticky
+           *  so the search field stays in view while the admin scrolls a
+           *  long workspace list. Pad the top so it doesn't overlap the
+           *  page header on first paint, and add a subtle backdrop so the
+           *  fade behind it reads correctly in dark mode too. */}
+          <div className="sticky top-0 z-20 -mx-4 mb-4 bg-paper-50/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-paper-50/80 dark:bg-umber-900/95 dark:supports-[backdrop-filter]:bg-umber-900/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10">
+            <div className="relative">
+              <Search
+                size={14}
+                aria-hidden
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+              />
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder={t("admin.users_search_placeholder")}
+                aria-label={t("admin.users_search_placeholder")}
+                className="input pl-9 pr-9"
+              />
+              {searchInput !== "" && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-ink-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-800"
+                  onClick={() => {
+                    setSearchInput("");
+                    setSearchQuery("");
+                  }}
+                  aria-label={t("admin.users_search_clear")}
+                >
+                  <X size={14} aria-hidden />
+                </button>
               )}
-              actions={
-                deletingCount > 0 ? (
-                  <button
-                    type="button"
-                    className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                    onClick={onPurgeDeleting}
-                    disabled={purgingDeleting}
-                  >
-                    {t("admin.purge_deleting_button", { n: deletingCount })}
-                  </button>
-                ) : undefined
+            </div>
+          </div>
+
+          {/* When the search returns no hits in EITHER workspace or orphan
+           *  lists, hand off to the empty state. Demo workspaces are hidden
+           *  during active search regardless. */}
+          {isSearching && totalFilteredHits === 0 ? (
+            <AdminEmptyState
+              icon={<Search size={28} aria-hidden />}
+              title={t("admin.users_search_empty")}
+              description={t("admin.users_search_empty_help")}
+              action={
+                <button
+                  type="button"
+                  className="btn-outline btn-sm"
+                  onClick={() => {
+                    setSearchInput("");
+                    setSearchQuery("");
+                  }}
+                >
+                  {t("admin.users_search_clear")}
+                </button>
               }
             />
-            {realCouples.length === 0 ? (
-              <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
-            ) : (
-              <>
-                {/* Card-style row header — uses the same 4-column grid as the
-                 *  rows below so the labels line up exactly. Hidden on small
-                 *  screens (rows stack vertically there). */}
-                <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300 md:grid">
-                  <div>{t("admin.table_workspace_id")}</div>
-                  <div>{t("admin.table_workspace_name")}</div>
-                  <div>{t("admin.table_workspace_members")}</div>
-                  <div>{t("admin.table_workspace_created")}</div>
-                  <div>{t("admin.table_workspace_last_active")}</div>
-                </div>
-                <ul className="space-y-2">
-                  {realCouples.map((c) => {
-                    // Server returns partners scrubbed of users we already
-                    // know are missing (rare race); fall back to userById
-                    // for the freshest local state.
-                    const members = c.partners
-                      .map((p) => userById.get(p.id))
-                      .filter((u): u is AdminUserView => u != null);
-                    const statusLabel =
-                      c.status === "paused" ? t("admin.workspace_status_paused") : null;
-                    return (
-                      <li
-                        key={c.id}
-                        className="rounded-2xl bg-paper-50 px-5 py-2.5 ring-1 ring-ink-100 transition-colors duration-150 hover:bg-paper-100/60 dark:bg-umber-900 dark:ring-umber-700 dark:hover:bg-umber-800/60"
+          ) : (
+            <>
+              {/* ── Workspaces (couples) — one card per couple ──────────── */}
+              <section className="mb-6">
+                <AdminSectionHeader
+                  title={t("admin.workspaces_section")}
+                  count={t(
+                    filteredRealCouples.length === 1
+                      ? "admin.workspaces_count_one"
+                      : "admin.workspaces_count_other",
+                    { n: filteredRealCouples.length },
+                  )}
+                  actions={
+                    deletingCount > 0 ? (
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                        onClick={onPurgeDeleting}
+                        disabled={purgingDeleting}
                       >
-                        <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
-                          <div className="whitespace-nowrap">
-                            <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
-                              {workspaceId(c)}
-                            </code>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                            <span className="font-medium text-ink-900 dark:text-paper-50">
-                              {workspaceLabel(c)}
-                            </span>
-                            {statusLabel && <Badge tone="muted">{statusLabel}</Badge>}
-                            {members.length === 1 && (
-                              <span className="text-[11px] text-ink-500 dark:text-umber-300">
-                                {t("admin.workspace_solo_member")}
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            {members.length === 0 ? (
-                              <span className="text-xs text-ink-500 dark:text-umber-300">—</span>
-                            ) : (
-                              <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
-                                {members.map((u) => (
-                                  <li key={u.id} className="py-1 first:pt-0 last:pb-0">
-                                    {renderUserCell(u)}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                          <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                            {formatDate(c.created_at, locale)}
-                          </div>
-                          <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                            {formatRelative(c.last_seen_at, locale, t)}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            )}
-          </section>
-
-          {/* ── Demo workspaces — landing-page "try Shrek & Fiona" seedlings.
-           *  Kept separate from the real-couple list so signup numbers stay
-           *  honest. Compact one-line rows; the demo-purge worker on the
-           *  backend reaps these on its own schedule, so no destructive
-           *  action surface here. ───────────────────────────────────────── */}
-          {demoCouples.length > 0 && (
-            <section className="mb-6">
-              <AdminSectionHeader
-                title={t("admin.demo_workspaces_section")}
-                count={t(
-                  demoCouples.length === 1
-                    ? "admin.demo_workspaces_count_one"
-                    : "admin.demo_workspaces_count_other",
-                  { n: demoCouples.length },
-                )}
-                description={t("admin.demo_workspaces_help")}
-              />
-              <ul className="space-y-1.5">
-                {demoCouples.map((c) => {
-                  const members = c.partners
-                    .map((p) => userById.get(p.id))
-                    .filter((u): u is AdminUserView => u != null);
-                  const firstMemberEmail = members[0]?.email ?? "—";
-                  // Feature-usage chips: sort by event count desc, show the
-                  // top 6 inline + a "+N more" pill when the demo went deep.
-                  const counts = c.demo_feature_counts ?? {};
-                  const total = c.demo_total_events ?? 0;
-                  // The demo.start row is bookkeeping noise — strip it so the
-                  // chips only reflect what the visitor actually touched.
-                  const usable = Object.entries(counts).filter(([feature]) => feature !== "demo");
-                  const usableTotal = usable.reduce((s, [, n]) => s + n, 0);
-                  const sortedFeatures = usable.sort(
-                    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
-                  );
-                  const visible = sortedFeatures.slice(0, 6);
-                  const hidden = sortedFeatures.length - visible.length;
-                  return (
-                    <li
-                      key={c.id}
-                      className="rounded-2xl bg-paper-50/60 px-4 py-2 ring-1 ring-ink-100 transition-colors duration-150 hover:bg-paper-100/60 dark:bg-umber-900/60 dark:ring-umber-700 dark:hover:bg-umber-800/60"
-                    >
-                      <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_9rem_9rem] md:items-center">
-                        <div className="whitespace-nowrap">
-                          <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
-                            {workspaceId(c)}
-                          </code>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
-                          <Badge tone="muted">{t("admin.demo_badge")}</Badge>
-                          <span className="truncate">{workspaceLabel(c)}</span>
-                        </div>
-                        <div className="truncate text-xs text-ink-500 dark:text-umber-300">
-                          {firstMemberEmail}
-                        </div>
-                        <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                          {formatDate(c.created_at, locale)}
-                        </div>
-                        <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                          {formatRelative(c.last_seen_at, locale, t)}
-                        </div>
-                      </div>
-                      {c.demo_feature_counts !== null && (
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                          <span className="text-ink-500 dark:text-umber-300">
-                            {usableTotal === 0
-                              ? t("admin.demo_events_none")
-                              : t(
-                                  total === 1
-                                    ? "admin.demo_events_label_one"
-                                    : "admin.demo_events_label_other",
-                                  { n: total },
+                        {t("admin.purge_deleting_button", { n: deletingCount })}
+                      </button>
+                    ) : undefined
+                  }
+                />
+                {filteredRealCouples.length === 0 ? (
+                  <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
+                ) : (
+                  <>
+                    {/* Card-style row header — uses the same 4-column grid as the
+                     *  rows below so the labels line up exactly. Hidden on small
+                     *  screens (rows stack vertically there). */}
+                    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 eyebrow md:grid">
+                      <div>{t("admin.table_workspace_id")}</div>
+                      <div>{t("admin.table_workspace_name")}</div>
+                      <div>{t("admin.table_workspace_members")}</div>
+                      <div>{t("admin.table_workspace_created")}</div>
+                      <div>{t("admin.table_workspace_last_active")}</div>
+                    </div>
+                    <ul className="space-y-2">
+                      {filteredRealCouples.map((c) => {
+                        // Server returns partners scrubbed of users we already
+                        // know are missing (rare race); fall back to userById
+                        // for the freshest local state.
+                        const members = c.partners
+                          .map((p) => userById.get(p.id))
+                          .filter((u): u is AdminUserView => u != null);
+                        const statusLabel =
+                          c.status === "paused" ? t("admin.workspace_status_paused") : null;
+                        return (
+                          <li
+                            key={c.id}
+                            className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+                          >
+                            <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
+                              <div className="whitespace-nowrap">
+                                <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
+                                  {workspaceId(c)}
+                                </code>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                <span className="font-medium text-ink-900 dark:text-paper-50">
+                                  {workspaceLabel(c)}
+                                </span>
+                                {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
+                                {members.length === 1 && (
+                                  <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                                    {t("admin.workspace_solo_member")}
+                                  </span>
                                 )}
-                          </span>
-                          {visible.map(([feature, n]) => (
-                            <span
-                              key={feature}
-                              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100"
-                            >
-                              <span className="font-medium">{feature}</span>
-                              <span className="text-ink-500 dark:text-umber-300">{n}</span>
-                            </span>
-                          ))}
-                          {hidden > 0 && (
-                            <span className="text-ink-500 dark:text-umber-300">
-                              {t("admin.demo_feature_more", { n: hidden })}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
+                              </div>
+                              <div>
+                                {members.length === 0 ? (
+                                  <span className="text-xs text-ink-500 dark:text-umber-300">
+                                    —
+                                  </span>
+                                ) : (
+                                  <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
+                                    {members.map((u) => (
+                                      <li key={u.id} className="py-1 first:pt-0 last:pb-0">
+                                        {renderUserCell(u)}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                              <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+                                {formatDate(c.created_at, locale)}
+                              </div>
+                              <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+                                {formatRelative(c.last_seen_at, locale, t)}
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                )}
+              </section>
 
-          {/* ── Orphan users — no workspace yet ───────────────────────────── */}
-          <section>
-            <AdminSectionHeader
-              title={t("admin.orphans_section")}
-              count={t(
-                orphans.length === 1 ? "admin.orphans_count_one" : "admin.orphans_count_other",
-                { n: orphans.length },
+              {/* ── Demo workspaces — landing-page "try Shrek & Fiona" seedlings.
+               *  Collapsed by default to a one-line summary so the real-couple
+               *  list owns the above-the-fold space. The demo-purge worker on the
+               *  backend reaps these on its own schedule, so no destructive
+               *  action surface here. Suppressed entirely while the admin is
+               *  actively searching — the search results live in the workspaces
+               *  + orphans lists above. ────────────────────────────────────── */}
+              {!isSearching && demoCouples.length > 0 && (
+                <section className="mb-6">
+                  <div className="admin-card flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                      <Pill tone="muted">{t("admin.demo_badge")}</Pill>
+                      <span>
+                        {t(
+                          demoCouples.length === 1
+                            ? "admin.demo_workspaces_summary_one"
+                            : "admin.demo_workspaces_summary_other",
+                          { n: demoCouples.length },
+                        )}
+                      </span>
+                      <span className="text-ink-500 dark:text-umber-300">
+                        · {t("admin.demo_workspaces_recent_24h", { n: demoRecent24h })}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-ghost btn-sm"
+                      onClick={() => setDemoOpen((v) => !v)}
+                      aria-expanded={demoOpen}
+                    >
+                      {demoOpen
+                        ? t("admin.demo_workspaces_hide")
+                        : t("admin.demo_workspaces_show")}
+                    </button>
+                  </div>
+                  {demoOpen && (
+                    <>
+                      <div className="mt-3">
+                        <AdminSectionHeader
+                          title={t("admin.demo_workspaces_section")}
+                          description={t("admin.demo_workspaces_help")}
+                        />
+                      </div>
+                      <ul className="space-y-1.5">
+                        {demoCouples.map((c) => {
+                          const members = c.partners
+                            .map((p) => userById.get(p.id))
+                            .filter((u): u is AdminUserView => u != null);
+                          const firstMemberEmail = members[0]?.email ?? "—";
+                          // Feature-usage chips: sort by event count desc, show the
+                          // top 6 inline + a "+N more" pill when the demo went deep.
+                          const counts = c.demo_feature_counts ?? {};
+                          const total = c.demo_total_events ?? 0;
+                          // The demo.start row is bookkeeping noise — strip it so the
+                          // chips only reflect what the visitor actually touched.
+                          const usable = Object.entries(counts).filter(
+                            ([feature]) => feature !== "demo",
+                          );
+                          const usableTotal = usable.reduce((s, [, n]) => s + n, 0);
+                          const sortedFeatures = usable.sort(
+                            (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+                          );
+                          const visible = sortedFeatures.slice(0, 6);
+                          const hidden = sortedFeatures.length - visible.length;
+                          return (
+                            <li
+                              key={c.id}
+                              className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+                            >
+                              <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_9rem_9rem] md:items-center">
+                                <div className="whitespace-nowrap">
+                                  <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
+                                    {workspaceId(c)}
+                                  </code>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                                  <Pill tone="muted">{t("admin.demo_badge")}</Pill>
+                                  <span className="truncate">{workspaceLabel(c)}</span>
+                                </div>
+                                <div className="truncate text-xs text-ink-500 dark:text-umber-300">
+                                  {firstMemberEmail}
+                                </div>
+                                <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+                                  {formatDate(c.created_at, locale)}
+                                </div>
+                                <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+                                  {formatRelative(c.last_seen_at, locale, t)}
+                                </div>
+                              </div>
+                              {c.demo_feature_counts !== null && (
+                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                                  <span className="text-ink-500 dark:text-umber-300">
+                                    {usableTotal === 0
+                                      ? t("admin.demo_events_none")
+                                      : t(
+                                          total === 1
+                                            ? "admin.demo_events_label_one"
+                                            : "admin.demo_events_label_other",
+                                          { n: total },
+                                        )}
+                                  </span>
+                                  {visible.map(([feature, n]) => (
+                                    <Pill key={feature} tone="paper">
+                                      <span className="font-medium">{feature}</span>
+                                      <span className="ml-1 text-ink-500 dark:text-umber-300">
+                                        {n}
+                                      </span>
+                                    </Pill>
+                                  ))}
+                                  {hidden > 0 && (
+                                    <span className="text-ink-500 dark:text-umber-300">
+                                      {t("admin.demo_feature_more", { n: hidden })}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </>
+                  )}
+                </section>
               )}
-            />
-            {orphans.length === 0 ? (
-              <AdminEmptyState>{t("admin.orphans_empty")}</AdminEmptyState>
-            ) : (
-              <div className="card overflow-x-auto p-0">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-paper-100 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:bg-umber-700/60 dark:text-umber-300">
-                    <tr>
-                      <th className="px-3 py-2">{t("admin.table_name")}</th>
-                      <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orphans.map((u) => (
-                      <tr
-                        key={u.id}
-                        className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
-                      >
-                        <td className="px-3 py-2" colSpan={2}>
-                          {renderUserCell(u, { showLastActive: true })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
+
+              {/* ── Orphan users — no workspace yet ───────────────────────── */}
+              <section>
+                <AdminSectionHeader
+                  title={t("admin.orphans_section")}
+                  count={t(
+                    filteredOrphans.length === 1
+                      ? "admin.orphans_count_one"
+                      : "admin.orphans_count_other",
+                    { n: filteredOrphans.length },
+                  )}
+                />
+                {filteredOrphans.length === 0 ? (
+                  <AdminEmptyState>{t("admin.orphans_empty")}</AdminEmptyState>
+                ) : (
+                  <div className="card overflow-x-auto p-0">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-paper-100 text-left eyebrow dark:bg-umber-700/60">
+                        <tr>
+                          <th className="px-3 py-2">{t("admin.table_name")}</th>
+                          <th className="px-3 py-2 text-right">
+                            {t("admin.table_admin_actions")}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredOrphans.map((u) => (
+                          <tr
+                            key={u.id}
+                            className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
+                          >
+                            <td className="px-3 py-2" colSpan={2}>
+                              {renderUserCell(u, { showLastActive: true })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </>
+          )}
         </>
       )}
       <FlagUserDialog
@@ -702,27 +881,5 @@ export default function AdminUsersPage() {
         onConfirm={onFlagConfirm}
       />
     </>
-  );
-}
-
-function Badge({
-  children,
-  tone,
-}: {
-  children: ReactNode;
-  tone: "violet" | "violet-soft" | "muted";
-}) {
-  const cls =
-    tone === "violet"
-      ? "border-violet-900 bg-violet-900 text-paper-100 dark:border-violet-500/50 dark:bg-violet-500/30 dark:text-violet-100"
-      : tone === "violet-soft"
-        ? "border-violet-400 bg-violet-100 text-violet-950 dark:border-violet-400/40 dark:bg-violet-500/15 dark:text-violet-200"
-        : "border-paper-300 bg-paper-100 text-ink-500 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300";
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}
-    >
-      {children}
-    </span>
   );
 }

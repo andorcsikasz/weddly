@@ -14,9 +14,13 @@ import { db } from "../../src/db";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
 
 describe("GET /api/public/wedding/:slug — minimal coverage", () => {
-  test("active workspace returns the public view shape", async () => {
+  test("active + opted-in workspace returns the public view shape", async () => {
     wipeAll();
     const { coupleId } = await bootstrapCouple("public-wedding-active@weddly.test");
+    // Next-7 introduced couples.is_public, default 0. Every existing slug
+    // 404s until the couple opts in via the Profile toggle. Flip it here
+    // so the happy-path assertion runs against a published workspace.
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
     const slugRow = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
       | { slug: string }
       | undefined;
@@ -38,6 +42,24 @@ describe("GET /api/public/wedding/:slug — minimal coverage", () => {
     expect(keys.has("guests")).toBe(false);
     expect(keys.has("budget")).toBe(false);
     expect(keys.has("partner_a_id")).toBe(false);
+  });
+
+  test("active but private (is_public = 0) workspace 404s", async () => {
+    // GDPR Art. 25 — every couple is private by default. The 404 mirrors
+    // the unknown-slug response so a scanner can't tell "this slug exists
+    // but isn't published" from "this slug doesn't exist."
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("public-wedding-private@weddly.test");
+    const slugRow = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
+      | { slug: string }
+      | undefined;
+    expect(slugRow?.slug).toBeTruthy();
+    // No UPDATE — is_public defaults to 0.
+    const r = await req(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`,
+    );
+    expect(r.status).toBe(404);
   });
 
   test("archived workspace 404s (status !== 'active' guard)", async () => {

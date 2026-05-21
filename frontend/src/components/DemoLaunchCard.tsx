@@ -65,7 +65,7 @@ export function DemoLaunchCard() {
   return (
     <aside
       aria-labelledby="demo-card-title"
-      className="relative w-full max-w-[280px] rotate-[-3deg] rounded-2xl border border-paper-300 bg-paper-50 p-5 text-left shadow-[0_18px_40px_-20px_rgba(16,24,48,0.28)] transition-transform hover:rotate-[-1deg] dark:border-umber-700 dark:bg-umber-800 sm:p-6"
+      className="relative w-full max-w-[280px] rounded-2xl border border-paper-300 bg-paper-50 p-5 text-left shadow-soft dark:border-umber-700 dark:bg-umber-800 sm:p-6"
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
         {t("landing.demo_card_eyebrow")}

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { EucalyptusStem, WatercolorBlob } from "../components/botanical";
+import { EucalyptusStem } from "../components/botanical";
 import { SectionLabel, WatermarkNumeral } from "../components/editorial";
 import {
   PhaseAftermathArt,
@@ -31,7 +31,6 @@ import {
 import { LazyMount } from "../components/LazyMount";
 import {
   BudgetMockup,
-  CouplePortrait,
   GuestListMockup,
   SeatingMockup,
   WorkspaceMockup,
@@ -91,12 +90,9 @@ export default function LandingPage() {
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
       <section className="relative overflow-hidden">
-        {/* Soft watercolour wash bleeding from the right behind the
-            headline — adds depth without breaking the paper aesthetic. */}
-        <WatercolorBlob
-          variant={2}
-          className="pointer-events-none absolute -top-10 right-[-14rem] h-[36rem] w-[36rem] text-blush-100 sm:right-[-10rem]"
-        />
+        {/* WatercolorBlob removed — flagged as decoration-on-decoration
+            sitting behind an already-loud italic headline + tilted demo
+            sticker. The hero now leans on the typography alone. */}
         <div className="relative mx-auto max-w-7xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
           <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
@@ -144,9 +140,10 @@ export default function LandingPage() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="origin-bottom mb-0 sm:-mb-14 lg:-mb-20">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
-                <div className="rotate-[-1.5deg] drop-shadow-[0_30px_50px_rgba(16,24,48,0.18)]">
-                  <WorkspaceMockup className="h-auto w-full" />
-                </div>
+                {/* Rotation + heavy drop-shadow stripped: the page has
+                    enough tilted/framed surfaces below (Budget polaroid
+                    is the one literal "photo on paper" beat). */}
+                <WorkspaceMockup className="h-auto w-full drop-shadow-[0_18px_30px_rgba(16,24,48,0.12)]" />
               </LazyMount>
             </div>
           </div>
@@ -348,35 +345,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ════════════════════════ 08 · Testimonials ════════════════════════
-          One pull-quote dominates; two whispers underneath. */}
-      <section className="relative bg-paper-100/60 dark:bg-umber-900/60">
-        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
-            {t("landing.testimonials_eyebrow")}
-          </p>
-          <FeaturedTestimonial
-            quote={t("landing.t1_quote")}
-            name={t("landing.t1_name")}
-            meta={t("landing.t1_meta")}
-            variant={1}
-          />
-          <div className="mt-10 grid gap-x-12 gap-y-10 border-t border-paper-300 dark:border-umber-700 pt-8 sm:grid-cols-2">
-            <WhisperTestimonial
-              quote={t("landing.t2_quote")}
-              name={t("landing.t2_name")}
-              meta={t("landing.t2_meta")}
-              variant={2}
-            />
-            <WhisperTestimonial
-              quote={t("landing.t3_quote")}
-              name={t("landing.t3_name")}
-              meta={t("landing.t3_meta")}
-              variant={3}
-            />
-          </div>
-        </div>
-      </section>
+      {/* Testimonials section cut — three composite couples with the
+          "composite from beta interviews" disclaimer stamped three times
+          read as a confession of synthetic social proof. Bring it back
+          when we have one real beta couple willing to be named. */}
 
       {/* ════════════════════════ 09 · Audience — LEDGER ════════════════════════
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
@@ -470,13 +442,12 @@ export default function LandingPage() {
       {/* ════════════════════════ Closing ════════════════════════
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
-      <section className="stationery relative flex min-h-[50vh] items-center sm:min-h-[60vh]">
-        <EucalyptusStem
-          className="pointer-events-none absolute left-4 top-12 h-24 w-auto text-paper-400 dark:text-umber-600 opacity-70 sm:left-12 sm:top-20 sm:h-32"
-          flip
-        />
-        <EucalyptusStem className="pointer-events-none absolute bottom-12 right-4 h-24 w-auto text-paper-400 dark:text-umber-600 opacity-70 sm:bottom-20 sm:right-12 sm:h-32" />
-        <div className="mx-auto w-full max-w-3xl px-4 py-24 text-center sm:px-6 sm:py-32">
+      <section className="stationery relative flex min-h-[40vh] items-center sm:min-h-[50vh]">
+        {/* One eucalyptus stem only (was two). Botanical decoration kept
+            here as the single quiet ornament on the page after the
+            BotanicalCorners on the Why section were removed. */}
+        <EucalyptusStem className="pointer-events-none absolute bottom-12 right-4 h-20 w-auto text-paper-400 dark:text-umber-600 opacity-70 sm:bottom-20 sm:right-12 sm:h-28" />
+        <div className="mx-auto w-full max-w-3xl px-4 py-16 text-center sm:px-6 sm:py-20">
           <Wordmark size="md" className="text-paper-400 dark:text-umber-600" />
           <h2 className="mt-8 font-serif text-5xl italic leading-[0.96] tracking-tight text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
             {t("landing.closing_title")}
@@ -534,22 +505,21 @@ function MobileStickySignup() {
     };
   }, []);
 
+  // When `visible` is false we use the native `inert` attribute (HTML
+  // spec, supported in React 19+) which makes the whole subtree
+  // unfocusable + invisible to AT in one go — cleaner than aria-hidden
+  // on an ancestor of a focusable Link (an ARIA-in-HTML violation).
   return (
     <div
-      aria-hidden={!visible}
+      {...(visible ? {} : { inert: "" as unknown as boolean })}
       className={`pointer-events-none safe-bottom fixed inset-x-0 bottom-0 z-30 px-4 pb-3 pt-2 transition-opacity duration-200 lg:hidden ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
-      {/* Decorative paper-toned veil under the button so it stays legible
-          against the photo / mockup behind it. `pointer-events-none` on the
-          wrapper makes the rest of the bar non-blocking; only the CTA
-          itself receives taps. */}
       <div className="absolute inset-x-0 bottom-0 -z-10 h-[calc(100%+8px)] bg-gradient-to-t from-paper-50 via-paper-50/95 to-transparent dark:from-umber-900 dark:via-umber-900/95" />
       <Link
         to="/signup"
         className="btn-primary btn-lifted btn-landing btn-lg pointer-events-auto w-full"
-        tabIndex={visible ? 0 : -1}
       >
         {t("landing.cta_signup")}
       </Link>
@@ -612,64 +582,6 @@ function WhyPoint({ title, body }: { title: string; body: string }) {
         {body}
       </p>
     </li>
-  );
-}
-
-function FeaturedTestimonial({
-  quote,
-  name,
-  meta,
-  variant,
-}: {
-  quote: string;
-  name: string;
-  meta: string;
-  variant: 1 | 2 | 3;
-}) {
-  return (
-    <figure className="mt-8">
-      <blockquote className="font-serif text-2xl leading-[1.25] text-ink-900 dark:text-paper-50 sm:text-4xl sm:leading-[1.2] lg:text-5xl">
-        &ldquo;{quote}&rdquo;
-      </blockquote>
-      <figcaption className="mt-8 flex items-center gap-4">
-        <CouplePortrait variant={variant} className="h-14 w-14 shrink-0" />
-        <div>
-          <p className="font-serif text-base font-semibold text-ink-900 dark:text-paper-50 sm:text-lg">
-            {name}
-          </p>
-          <p className="text-xs uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
-            {meta}
-          </p>
-        </div>
-      </figcaption>
-    </figure>
-  );
-}
-
-function WhisperTestimonial({
-  quote,
-  name,
-  meta,
-  variant,
-}: {
-  quote: string;
-  name: string;
-  meta: string;
-  variant: 1 | 2 | 3;
-}) {
-  return (
-    <figure>
-      <blockquote className="font-serif text-base italic leading-relaxed text-ink-800 dark:text-paper-100">
-        &ldquo;{quote}&rdquo;
-      </blockquote>
-      <figcaption className="mt-4 flex items-center gap-3">
-        <CouplePortrait variant={variant} className="h-9 w-9 shrink-0" />
-        <div>
-          <p className="font-serif text-sm font-semibold text-ink-900 dark:text-paper-50">{name}</p>
-          <p className="text-xs text-ink-500 dark:text-umber-300">{meta}</p>
-        </div>
-      </figcaption>
-    </figure>
   );
 }
 

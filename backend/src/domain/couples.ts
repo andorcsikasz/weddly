@@ -58,6 +58,16 @@ export interface CoupleRow {
   rsvp_offers_accommodation: number;
   rsvp_collects_meal: number;
   is_demo: number;
+  /** Public wedding-website (/w/:slug) opt-in toggle. 0 = private (default),
+   *  1 = couple has explicitly published. Public endpoint 404s when 0 so
+   *  every existing couple stays private until they flip the toggle. */
+  is_public: number;
+  /** Free-text venue name shown on the public wedding site. Null when the
+   *  couple hasn't set one — the site falls back to the lat/lng pin only. */
+  venue_name: string | null;
+  /** Couple-pasted http(s) URL for the hero image on the public site.
+   *  No upload pipeline yet; this is BYO-URL with boundary validation. */
+  cover_image_url: string | null;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -196,6 +206,9 @@ export function toCouple(row: CoupleRow): Couple {
     rsvp_offers_accommodation: Boolean(row.rsvp_offers_accommodation),
     rsvp_collects_meal: Boolean(row.rsvp_collects_meal),
     is_demo: Boolean(row.is_demo),
+    is_public: Boolean(row.is_public),
+    venue_name: row.venue_name,
+    cover_image_url: row.cover_image_url,
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

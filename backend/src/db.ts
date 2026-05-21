@@ -517,6 +517,24 @@ db.exec(`
 addColumnIfMissing("couples", "is_demo", "is_demo INTEGER NOT NULL DEFAULT 0");
 db.exec("CREATE INDEX IF NOT EXISTS idx_couples_is_demo ON couples(is_demo, created_at)");
 
+// Public wedding website (`/w/:slug`) — Next-7 schema additions, settled
+// via 3-agent consensus (Agent C, moderating between privacy-default and
+// activation-default). Three nullable / off-by-default fields:
+//
+// - is_public: 0 (private) by default. GDPR Art. 25 — every existing slug
+//   stays NOT publicly readable until the couple flips the toggle on the
+//   /app/wedding-site editor. The public endpoint adds an `is_public = 1`
+//   guard alongside the existing `status = 'active'` check.
+// - venue_name: free-text TEXT. No `places` table to join to (it's an OSM
+//   autocomplete proxy route, not persistence). Sits next to the existing
+//   location_lat/lng on the same couple row.
+// - cover_image_url: plain http(s) URL the couple pastes in. No upload
+//   pipeline yet — that's a v2 storage decision once we see the access
+//   patterns. Validated at the boundary (≤2048 chars, http(s) scheme).
+addColumnIfMissing("couples", "is_public", "is_public INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("couples", "venue_name", "venue_name TEXT");
+addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
+
 export function now(): number {
   return Date.now();
 }

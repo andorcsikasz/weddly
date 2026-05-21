@@ -1,11 +1,14 @@
 // Admin triage for vendor waitlist submissions from /vendors.
 //
 // UX: a filter pill row at the top (Beérkezett / Átnézés alatt / Elfogadva /
-// Elutasítva) drives which color-tinted cards are visible below. Each card
-// has a "Megválaszolom" button that opens a modal pre-filled with a HU
-// subject + body draft (from `buildEmailDraft`) the admin can tweak before
-// sending. On Send the row transitions out of the inbox and the email goes
-// out via the existing mailer.
+// Elutasítva) drives which cards are visible below. Each card renders on the
+// same .admin-card chrome — status colour lives only on the <Pill> in the
+// header, not on the card border, so a list of mixed-status rows reads as
+// one rhythm instead of a Trello board. Decided cards expose two actions:
+// "Megválaszolom" (the safe primary path, edits the existing reply) keeps
+// its outline weight, and the destructive "Újranyitás" drops to ghost +
+// gates behind a useConfirm() dialog that spells out which prior decision
+// is about to be cleared.
 
 import type {
   VendorWaitlistAdminView,
@@ -13,32 +16,40 @@ import type {
   VendorWaitlistStatus,
 } from "@shared/vendor_waitlist";
 import { buildEmailDraft } from "@shared/vendor_waitlist";
-import { AtSign, ExternalLink, Link2, Mail, MessageSquare, RotateCcw } from "lucide-react";
+import {
+  AtSign,
+  Check,
+  Clock,
+  ExternalLink,
+  Link2,
+  Loader2,
+  Mail,
+  MessageSquare,
+  RotateCcw,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AdminEmptyState, AdminFilterChip, AdminPageHeader } from "../components/admin";
+import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
+import type { PillTone } from "../components/admin";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminVendorWaitlistApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
-/** Tailwind-token classnames per status. Every card on the page wears these
- *  so the inbox/under-review/accepted/rejected buckets are visually distinct
- *  at a glance. No raw hex colors per CLAUDE.md. */
-const STATUS_CARD_CLASSES: Record<VendorWaitlistStatus, string> = {
-  new: "bg-blush-50 border-blush-300 dark:bg-blush-400/15 dark:border-blush-400/40",
-  under_review: "bg-violet-50 border-violet-300 dark:bg-violet-500/15 dark:border-violet-400/40",
-  accepted: "bg-sage-50 border-sage-300 dark:bg-sage-400/15 dark:border-sage-400/40",
-  rejected: "bg-paper-100 border-paper-300 dark:bg-umber-800 dark:border-umber-700",
-};
-
-const STATUS_PILL_CLASSES: Record<VendorWaitlistStatus, string> = {
-  new: "border-blush-300 bg-blush-100 text-blush-800 dark:border-blush-400/40 dark:bg-blush-400/20 dark:text-blush-300",
-  under_review:
-    "border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200",
-  accepted:
-    "border-sage-300 bg-sage-100 text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300",
-  rejected:
-    "border-paper-300 bg-paper-200 text-ink-700 dark:border-umber-700 dark:bg-umber-700 dark:text-paper-100",
+/** Status → <Pill> mapping. The icon is part of the signal — colour alone
+ *  doesn't carry meaning for colourblind admins, so every status renders
+ *  its own glyph at 11px (matches the pill's 11px type). Order of the
+ *  tones echoes the lifecycle: blush (just arrived) → violet (under
+ *  consideration) → sage (accepted) → muted (rejected, decision over). */
+const STATUS_PILL: Record<
+  VendorWaitlistStatus,
+  { tone: PillTone; Icon: typeof Sparkles }
+> = {
+  new: { tone: "blush", Icon: Sparkles },
+  under_review: { tone: "violet", Icon: Clock },
+  accepted: { tone: "sage", Icon: Check },
+  rejected: { tone: "muted", Icon: X },
 };
 
 const STATUS_KEY: Record<VendorWaitlistStatus, string> = {
@@ -60,6 +71,16 @@ const EMPTY_KEY: Record<VendorWaitlistStatus, string> = {
   under_review: "admin.waitlist_empty_under_review",
   accepted: "admin.waitlist_empty_accepted",
   rejected: "admin.waitlist_empty_rejected",
+};
+
+/** The outcome states a decided card can sit in. Used by the reopen
+ *  confirm body when we need a human-readable label for the prior
+ *  decision being cleared. Maps to the same key set the modal uses for
+ *  its outcome radios so the wording stays identical across surfaces. */
+const OUTCOME_LABEL_KEY: Record<VendorWaitlistOutcome, string> = {
+  accepted: "admin.waitlist_modal_outcome_accepted",
+  under_review: "admin.waitlist_modal_outcome_under_review",
+  rejected: "admin.waitlist_modal_outcome_rejected",
 };
 
 const FILTERS: VendorWaitlistStatus[] = ["new", "under_review", "accepted", "rejected"];
@@ -98,7 +119,33 @@ export default function AdminVendorWaitlistPage() {
     setEntries((cur) => cur.map((e) => (e.id === entry.id ? entry : e)));
   }
 
+  const fmtDate = (ts: number) =>
+    new Date(ts).toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
   async function onReopen(entry: VendorWaitlistAdminView) {
+    // Reopen wipes the prior decision; gate the destructive action
+    // behind a confirm() that names the outcome + date being cleared so
+    // the admin knows exactly what they're undoing. The status of a
+    // decided row already encodes the outcome (accepted/under_review/
+    // rejected), so we cast it to the narrower union here.
+    const priorOutcome = entry.status as VendorWaitlistOutcome;
+    const outcomeLabel = t(OUTCOME_LABEL_KEY[priorOutcome]);
+    const decidedLabel = entry.outcome_at ? fmtDate(entry.outcome_at) : "—";
+    const ok = await confirm({
+      title: t("admin.waitlist_reopen_confirm_title"),
+      body: t("admin.waitlist_reopen_confirm_body", {
+        outcome: outcomeLabel,
+        decided: decidedLabel,
+      }),
+      confirmLabel: t("admin.waitlist_reopen_confirm_ok"),
+      cancelLabel: t("admin.waitlist_modal_cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
     setPendingId(entry.id);
     try {
       const r = await adminVendorWaitlistApi.reopen(entry.id);
@@ -115,13 +162,6 @@ export default function AdminVendorWaitlistPage() {
     () => entries.filter((e) => e.status === filter),
     [entries, filter],
   );
-
-  const fmtDate = (ts: number) =>
-    new Date(ts).toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
 
   return (
     <>
@@ -145,7 +185,7 @@ export default function AdminVendorWaitlistPage() {
         <ul className="grid gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i}>
-              <article className="rounded-2xl bg-paper-50 p-4 ring-1 ring-ink-100 dark:bg-umber-900 dark:ring-umber-700">
+              <article className="admin-card">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0 flex-1 flex flex-col gap-1">
                     <Skeleton width={200} height={18} />
@@ -217,9 +257,8 @@ function EntryCard({
   onReopen: () => void;
   pending: boolean;
 }) {
-  const cardCls = `rounded-2xl border p-4 transition-colors duration-150 ${STATUS_CARD_CLASSES[entry.status]}`;
   // Collapse "extra" detail (portfolio, message, sent-email body, admin
-  // notes) behind a single `<details>` so the resting card is a tight
+  // notes) behind a single <details> so the resting card is a tight
   // header + meta row + action button. The admin opens detail only when
   // triaging — most rows in "Elfogadva" / "Elutasítva" don't need it
   // expanded by default.
@@ -230,8 +269,10 @@ function EntryCard({
     !!entry.notes ||
     !!entry.instagram_handle ||
     !!entry.website;
+  const statusMeta = STATUS_PILL[entry.status];
+  const StatusIcon = statusMeta.Icon;
   return (
-    <article className={cardCls}>
+    <article className="admin-card">
       {/* Header row: name + meta on the left, status + action button on
        *  the right. Everything stays on one line at desktop widths and
        *  flows to two on narrow viewports. */}
@@ -250,7 +291,7 @@ function EntryCard({
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-600 dark:text-umber-200">
             <span>{fmtDate(entry.created_at)}</span>
-            <span className="rounded-full bg-white/60 dark:bg-umber-900/40 px-1.5 py-0.5">
+            <span className="rounded-full bg-paper-100 dark:bg-umber-800 px-1.5 py-0.5">
               {t(`suppliers.cat.${entry.category}`)}
             </span>
             {entry.location && <span className="truncate">{entry.location}</span>}
@@ -262,7 +303,13 @@ function EntryCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <StatusPill status={entry.status} label={t(STATUS_KEY[entry.status])} />
+          <Pill
+            tone={statusMeta.tone}
+            icon={<StatusIcon size={11} />}
+            srLabel={`${t("admin.waitlist_status_sr_label")}: `}
+          >
+            {t(STATUS_KEY[entry.status])}
+          </Pill>
           {entry.status === "new" ? (
             <Button
               type="button"
@@ -274,24 +321,29 @@ function EntryCard({
               <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
             </Button>
           ) : (
+            // Decided rows: "Megválaszolom" is the safe primary path
+            // (edits the existing reply), so it keeps outline weight.
+            // "Újranyitás" wipes the decision — drop to ghost and gate
+            // behind a confirm() in the parent. Same visual weight ≠
+            // same blast radius; the chrome should reflect that.
             <>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={onReopen}
+                onClick={onRespond}
                 disabled={pending}
               >
-                <RotateCcw size={14} aria-hidden /> {t("admin.waitlist_action_reopen")}
+                <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={onRespond}
-                disabled={pending}
+                onClick={onReopen}
+                loading={pending}
               >
-                <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
+                <RotateCcw size={14} aria-hidden /> {t("admin.waitlist_action_reopen")}
               </Button>
             </>
           )}
@@ -300,7 +352,7 @@ function EntryCard({
 
       {hasDetail && (
         <details className="mt-2 text-xs text-ink-700 dark:text-paper-100">
-          <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <summary className="cursor-pointer eyebrow">
             {t("admin.waitlist_card_more_label")}
           </summary>
           <div className="mt-2 flex flex-col gap-2">
@@ -325,10 +377,8 @@ function EntryCard({
               </a>
             )}
             {entry.portfolio_links.length > 0 && (
-              <div className="rounded-md bg-white/60 dark:bg-umber-900/40 p-2">
-                <p className="text-[11px] font-medium text-ink-800 dark:text-paper-50">
-                  {t("admin.waitlist_card_portfolio_label")}
-                </p>
+              <div className="admin-tile">
+                <p className="eyebrow">{t("admin.waitlist_card_portfolio_label")}</p>
                 <ul className="mt-1 grid gap-0.5">
                   {entry.portfolio_links.map((url) => (
                     <li key={url}>
@@ -347,46 +397,34 @@ function EntryCard({
               </div>
             )}
             {entry.message && (
-              <p className="rounded-md bg-white/60 dark:bg-umber-900/40 p-2 text-sm italic text-ink-700 dark:text-paper-100">
-                <span className="not-italic font-medium text-ink-800 dark:text-paper-50">
-                  {t("admin.waitlist_card_message_label")}:{" "}
-                </span>
-                {entry.message}
-              </p>
+              <div className="admin-tile">
+                <p className="eyebrow">{t("admin.waitlist_card_message_label")}</p>
+                <p className="mt-1 text-sm italic text-ink-700 dark:text-paper-100">
+                  {entry.message}
+                </p>
+              </div>
             )}
             {entry.sent_subject && (
-              <details className="text-xs text-ink-700 dark:text-paper-100">
-                <summary className="cursor-pointer font-medium text-ink-800 dark:text-paper-50">
-                  {t("admin.waitlist_card_sent_label")}: {entry.sent_subject}
+              <details className="admin-tile">
+                <summary className="cursor-pointer text-xs font-medium text-ink-800 dark:text-paper-50">
+                  <span className="eyebrow">{t("admin.waitlist_card_sent_label")}</span>{" "}
+                  · {entry.sent_subject}
                 </summary>
-                <pre className="mt-1 whitespace-pre-wrap rounded-md bg-white/60 dark:bg-umber-900/40 p-2 font-sans text-xs leading-relaxed">
+                <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-ink-700 dark:text-paper-100">
                   {entry.sent_body ?? ""}
                 </pre>
               </details>
             )}
             {entry.notes && (
-              <p className="rounded-md border border-dashed border-ink-300 bg-white/40 dark:border-umber-700 dark:bg-umber-900/30 p-2 text-xs text-ink-700 dark:text-paper-100">
-                <span className="font-medium text-ink-800 dark:text-paper-50">
-                  {t("admin.waitlist_card_notes_label")}:{" "}
-                </span>
-                {entry.notes}
-              </p>
+              <div className="admin-tile">
+                <p className="eyebrow">{t("admin.waitlist_card_notes_label")}</p>
+                <p className="mt-1 text-xs text-ink-700 dark:text-paper-100">{entry.notes}</p>
+              </div>
             )}
           </div>
         </details>
       )}
     </article>
-  );
-}
-
-function StatusPill({ status, label }: { status: VendorWaitlistStatus; label: string }) {
-  const cls = STATUS_PILL_CLASSES[status];
-  return (
-    <span
-      className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${cls}`}
-    >
-      {label}
-    </span>
   );
 }
 
@@ -436,7 +474,7 @@ function RespondDialog({
   );
 
   async function pickOutcome(next: VendorWaitlistOutcome) {
-    if (next === outcome) return;
+    if (next === outcome || submitting) return;
     const draft = buildEmailDraft(next, {
       business_name: entry.business_name,
       category_label: t(`suppliers.cat.${entry.category}`),
@@ -486,7 +524,7 @@ function RespondDialog({
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             {t("admin.waitlist_modal_cancel")}
           </Button>
-          <Button type="button" variant="primary" onClick={submit} disabled={submitting}>
+          <Button type="button" variant="primary" onClick={submit} loading={submitting}>
             {submitting ? t("admin.waitlist_modal_sending") : t("admin.waitlist_modal_send")}
           </Button>
         </>
@@ -501,6 +539,7 @@ function RespondDialog({
               current={outcome}
               label={t("admin.waitlist_modal_outcome_accepted")}
               onPick={pickOutcome}
+              submitting={submitting}
               tint="bg-sage-50 border-sage-300 text-sage-800 dark:bg-sage-400/15 dark:border-sage-400/40 dark:text-sage-300"
               activeTint="bg-sage-500 border-sage-600 text-white dark:bg-sage-400 dark:border-sage-400 dark:text-umber-900"
             />
@@ -509,6 +548,7 @@ function RespondDialog({
               current={outcome}
               label={t("admin.waitlist_modal_outcome_under_review")}
               onPick={pickOutcome}
+              submitting={submitting}
               tint="bg-violet-50 border-violet-300 text-violet-950 dark:bg-violet-500/15 dark:border-violet-400/40 dark:text-violet-200"
               activeTint="bg-violet-900 border-violet-900 text-white dark:bg-violet-500/40 dark:border-violet-400/60 dark:text-violet-100"
             />
@@ -517,6 +557,7 @@ function RespondDialog({
               current={outcome}
               label={t("admin.waitlist_modal_outcome_rejected")}
               onPick={pickOutcome}
+              submitting={submitting}
               tint="bg-paper-100 border-paper-300 text-ink-700 dark:bg-umber-700/60 dark:border-umber-700 dark:text-paper-100"
               activeTint="bg-ink-800 border-ink-800 text-paper-100 dark:bg-paper-50 dark:border-paper-50 dark:text-umber-900"
             />
@@ -576,11 +617,16 @@ function RespondDialog({
   );
 }
 
+/** Outcome radio in the triage modal. While the send-decide API call is
+ *  in flight we disable picking + show a Loader2 next to the active
+ *  outcome's label so a double-click can't fire a second submit and the
+ *  admin sees that the chip choice is locked, not just the Send button. */
 function OutcomeButton({
   outcome,
   current,
   label,
   onPick,
+  submitting,
   tint,
   activeTint,
 }: {
@@ -588,6 +634,7 @@ function OutcomeButton({
   current: VendorWaitlistOutcome;
   label: string;
   onPick: (o: VendorWaitlistOutcome) => void;
+  submitting: boolean;
   tint: string;
   activeTint: string;
 }) {
@@ -597,11 +644,16 @@ function OutcomeButton({
       type="button"
       role="radio"
       aria-checked={active}
+      aria-busy={submitting && active ? true : undefined}
+      disabled={submitting}
       onClick={() => onPick(outcome)}
-      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${
+      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
         active ? activeTint : tint
       }`}
     >
+      {submitting && active && (
+        <Loader2 size={12} className="motion-safe:animate-spin" aria-hidden />
+      )}
       {label}
     </button>
   );

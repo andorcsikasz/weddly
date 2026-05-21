@@ -145,6 +145,7 @@ export function InteractiveBudgetDemo() {
                 onChange={(e) => setGuests(clamp(Number(e.target.value), MIN_GUESTS, MAX_GUESTS))}
                 className="mt-2 w-full accent-blush-600"
                 aria-label={t("landing.demo_guests_label")}
+                aria-valuetext={`${guests}`}
               />
               <div className="mt-0.5 flex justify-between text-[11px] text-ink-500 dark:text-umber-300">
                 <span>{MIN_GUESTS}</span>
@@ -174,6 +175,7 @@ export function InteractiveBudgetDemo() {
                 onChange={(e) => setBudget(clamp(Number(e.target.value), range.min, range.max))}
                 className="mt-2 w-full accent-blush-600"
                 aria-label={t("landing.demo_budget_label")}
+                aria-valuetext={formatMoney(budget, currency, locale)}
               />
               <div className="mt-0.5 flex justify-between text-[11px] text-ink-500 dark:text-umber-300">
                 <span>{formatMoney(range.min, currency, locale)}</span>

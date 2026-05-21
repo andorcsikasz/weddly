@@ -210,7 +210,7 @@ function PublicHeader() {
           </Link>
           <Link
             to="/signup"
-            className="btn-primary shrink-0 whitespace-nowrap !py-2 px-3.5 text-sm sm:!py-1.5"
+            className="btn-primary shrink-0 whitespace-nowrap min-h-tap !py-2.5 px-4 text-sm sm:min-h-0 sm:!py-1.5"
           >
             {t("landing.cta_signup")}
           </Link>

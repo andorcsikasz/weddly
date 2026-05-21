@@ -179,33 +179,42 @@ const ITEMS: NavItem[] = [
 
 /** Admin nav — replaces the couple-facing rail when the user has flipped
  *  into admin view via the ProfileMenu. Distinct purple styling + striped
- *  texture so admin surfaces read as visually separate from couple pages. */
+ *  texture so admin surfaces read as visually separate from couple pages.
+ *
+ *  Items are grouped into three IA labelled sections so six equal-weight
+ *  rows don't blur the difference between "do work" and "look at numbers":
+ *   - `inbox` — badge-bearing moderation queues (suppliers, vendor
+ *     waitlist, feedback). What an admin opens the dashboard to clear.
+ *   - `manage` — CRM + taxonomy config (users, categories). Stable
+ *     edit-when-needed surfaces.
+ *   - `insights` — read-only rollups (analytics). Tail of the rail. */
+type AdminNavGroup = "inbox" | "manage" | "insights";
+
 /** Maps each admin nav row to the matching `AdminSidebarBadges` key.
  *  Items without a badgeKey never show a red index (e.g. Categories —
  *  admin-edited content with no inbox). */
 type AdminBadgeKey = "suppliers" | "users" | "vendor_waitlist" | "feedback";
-type AdminNavItem = NavItem & { badgeKey?: AdminBadgeKey };
+// `group` is re-typed (not intersected) — `NavItem.group` is
+// `NavGroup | undefined`, intersecting with `AdminNavGroup | undefined`
+// collapses to `never`. `Omit<NavItem, "group">` lets the admin variant
+// own that key.
+type AdminNavItem = Omit<NavItem, "group"> & {
+  badgeKey?: AdminBadgeKey;
+  group?: AdminNavGroup;
+};
 
 const ADMIN_ITEMS: AdminNavItem[] = [
+  // ── Inbox ─────────────────────────────────────────────────────────
+  // Badge-bearing moderation queues. Suppliers leads because pending
+  // submissions are the single most time-sensitive surface — couples
+  // are blocked on approval before their listings appear.
   {
     to: "/app/admin/suppliers",
     labelKey: "admin.nav_suppliers",
     tabKey: "admin.nav_suppliers",
     icon: <ShieldCheck size={18} />,
     badgeKey: "suppliers",
-  },
-  {
-    to: "/app/admin/users",
-    labelKey: "admin.nav_users",
-    tabKey: "admin.nav_users",
-    icon: <UserCog size={18} />,
-    badgeKey: "users",
-  },
-  {
-    to: "/app/admin/categories",
-    labelKey: "admin.nav_taxonomy",
-    tabKey: "admin.nav_taxonomy",
-    icon: <LayoutList size={18} />,
+    group: "inbox",
   },
   {
     to: "/app/admin/vendor-waitlist",
@@ -213,6 +222,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     tabKey: "admin.nav_waitlist",
     icon: <Inbox size={18} />,
     badgeKey: "vendor_waitlist",
+    group: "inbox",
   },
   {
     to: "/app/admin/feedback",
@@ -220,15 +230,38 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     tabKey: "admin.nav_feedback",
     icon: <MessageCircle size={18} />,
     badgeKey: "feedback",
+    group: "inbox",
   },
-  // Read-only analytics dashboard — no inbox, so no badge. Mounts at the
-  // tail of the admin rail so the moderation-heavy surfaces stay first.
-  // No `tabKey` so the mobile bottom-nav (max 5 slots) keeps the moderation
-  // surfaces; analytics is reachable from the desktop rail or by URL.
+  // ── Manage ────────────────────────────────────────────────────────
+  // CRM + config. Stable surfaces, edited as needed.
+  {
+    to: "/app/admin/users",
+    labelKey: "admin.nav_users",
+    tabKey: "admin.nav_users",
+    icon: <UserCog size={18} />,
+    badgeKey: "users",
+    group: "manage",
+  },
+  // Categories has no `tabKey` — the phone bottom-nav (5 slots) keeps the
+  // four moderation items + analytics; taxonomy CRUD is rarely done on a
+  // phone and stays reachable via desktop rail or direct URL.
+  {
+    to: "/app/admin/categories",
+    labelKey: "admin.nav_taxonomy",
+    icon: <LayoutList size={18} />,
+    group: "manage",
+  },
+  // ── Insights ──────────────────────────────────────────────────────
+  // Read-only rollups. Tail of the rail so moderation surfaces lead.
+  // `tabKey` is set so analytics survives on the phone bottom-nav too —
+  // previously it was unreachable on iPad portrait (sidebar hidden under
+  // 1024px) and on phone (no tabKey).
   {
     to: "/app/admin/analytics",
     labelKey: "admin.nav_analytics",
+    tabKey: "admin.nav_analytics",
     icon: <LineChart size={18} />,
+    group: "insights",
   },
 ];
 
@@ -479,18 +512,32 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+        {/*
+         * Sidebar visibility:
+         *   - Phone (<768px): hidden — bottom-nav is the spatial nav.
+         *   - Tablet (768–1023px): `md:flex md:w-14` icon-only rail so iPad
+         *     portrait keeps a sidebar (previously dead — `hidden lg:block`
+         *     plus `lg:hidden` bottom-nav left analytics unreachable).
+         *   - Laptop+ (≥1024px): expands to `w-56`, or stays `w-14` when
+         *     the user has explicitly collapsed it. `sidebarCollapsed` only
+         *     applies at lg+ — below that the rail is icon-only regardless.
+         */}
         <aside
-          className={`hidden shrink-0 transition-[width] duration-200 lg:block ${
-            sidebarCollapsed ? "w-14" : "w-56"
+          className={`hidden shrink-0 transition-[width] duration-200 md:flex md:w-14 ${
+            sidebarCollapsed ? "lg:w-14" : "lg:w-56"
           }`}
         >
           <div className="sticky top-20 flex flex-col gap-1">
-            {/* Collapse toggle — sits above the nav so it's the same affordance
-                in both couple and admin views. Aligns right when expanded so
-                the chevron sits flush with the rail edge; centered when
-                collapsed. */}
+            {/* Collapse toggle — sits above the nav so it's the same
+                affordance in both couple and admin views. Aligns right when
+                expanded so the chevron sits flush with the rail edge;
+                centered when collapsed. Hidden on tablet (md) because the
+                rail is forced icon-only there — there's nothing to collapse
+                into. */}
             <div
-              className={`flex pb-1 ${sidebarCollapsed ? "justify-center" : "justify-end pr-1"}`}
+              className={`hidden pb-1 lg:flex ${
+                sidebarCollapsed ? "justify-center" : "justify-end pr-1"
+              }`}
             >
               <button
                 type="button"
@@ -509,26 +556,50 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             {inAdminView ? (
               <nav className="flex flex-col gap-0.5">
+                {/* "Admin" eyebrow — only renders in the fully-expanded rail.
+                    Hidden at md (icon-only) and at lg+ when the user has
+                    collapsed the rail, matching SidebarGroupHeader behaviour. */}
                 {!sidebarCollapsed && (
-                  <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-950 dark:text-violet-300">
+                  <div className="hidden items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-950 lg:flex dark:text-violet-300">
                     <ShieldCheck size={11} aria-hidden="true" />
                     {t("admin.nav_label")}
                   </div>
                 )}
-                {displayItems.map((item) => {
-                  const badgeKey = (item as AdminNavItem).badgeKey;
-                  const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
-                  return (
-                    <AdminSideLink
-                      key={item.to}
-                      to={item.to}
-                      icon={item.icon}
-                      label={t(item.labelKey)}
-                      collapsed={sidebarCollapsed}
-                      badgeCount={badgeCount}
-                    />
-                  );
-                })}
+                {(() => {
+                  // Render admin items in declaration order, injecting a thin
+                  // `.eyebrow`-styled subhead whenever the `group` field flips.
+                  // Subheads only render in the fully-expanded rail; tablet
+                  // (icon-only) + collapsed laptop get a quiet hairline divider
+                  // so the grouping is still readable without labels.
+                  let lastGroup: AdminNavGroup | null = null;
+                  return displayItems.map((item) => {
+                    const adminItem = item as AdminNavItem;
+                    const itemGroup = adminItem.group ?? null;
+                    const showHeader = itemGroup !== null && itemGroup !== lastGroup;
+                    const isFirstGroupHeader = lastGroup === null;
+                    lastGroup = itemGroup;
+                    const badgeKey = adminItem.badgeKey;
+                    const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
+                    return (
+                      <div key={item.to}>
+                        {showHeader && itemGroup && (
+                          <AdminSidebarGroupHeader
+                            label={t(`admin.nav_group_${itemGroup}`)}
+                            collapsed={sidebarCollapsed}
+                            isFirst={isFirstGroupHeader}
+                          />
+                        )}
+                        <AdminSideLink
+                          to={item.to}
+                          icon={item.icon}
+                          label={t(item.labelKey)}
+                          collapsed={sidebarCollapsed}
+                          badgeCount={badgeCount}
+                        />
+                      </div>
+                    );
+                  });
+                })()}
               </nav>
             ) : (
               <nav className="flex flex-col gap-1">
@@ -575,13 +646,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      {/* Mobile bottom nav — couple view shows 4 tabKey-flagged items + a
+      {/* Phone bottom nav — couple view shows 4 tabKey-flagged items + a
           "More" button that opens a bottom sheet with the rest. Admin view
           keeps its existing 5-tab layout (the 5 admin pages all fit) and
-          inverts to a violet tint to mirror the desktop rail. */}
+          inverts to a violet tint to mirror the desktop rail.
+          `md:hidden` (was `lg:hidden`) — tablet now gets the icon-only rail
+          above instead of duplicating with a bottom nav. */}
       <nav
         data-coach-target="bottom-nav"
-        className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur lg:hidden border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95"
+        className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur md:hidden border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
           {displayItems
@@ -644,20 +717,76 @@ export function AppShell({ children }: { children: ReactNode }) {
 /** Section divider that sits between sidebar groups. Renders a label
  *  flanked by two thin hairlines when the rail is expanded, and a single
  *  centered hairline (no text) when it's collapsed — so the visual break
- *  is preserved without overflowing the narrow rail. */
+ *  is preserved without overflowing the narrow rail.
+ *
+ *  `collapsed` reflects the user's laptop-level preference; at md (tablet)
+ *  the rail is forced icon-only regardless, so the labelled header is
+ *  hidden via `lg:flex` and a hairline is shown via `md:block lg:hidden`. */
 function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: boolean }) {
-  if (collapsed) {
-    return <div className="mx-2 my-2 h-px bg-paper-300 dark:bg-umber-700" aria-hidden />;
-  }
   return (
-    <div className="mt-3 flex items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-      <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-      <span>{label}</span>
-      <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-    </div>
+    <>
+      {/* Hairline only — shown at md (icon-only rail) and at lg+ when the
+          user has collapsed the rail. */}
+      <div
+        className={`mx-2 my-2 h-px bg-paper-300 dark:bg-umber-700 ${
+          collapsed ? "" : "lg:hidden"
+        }`}
+        aria-hidden
+      />
+      {/* Labelled header — only renders in the fully-expanded rail. */}
+      {!collapsed && (
+        <div className="mt-3 hidden items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
+          <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+          <span>{label}</span>
+          <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+        </div>
+      )}
+    </>
   );
 }
 
+/** `.eyebrow`-styled subhead between admin nav groups. Only renders in the
+ *  fully-expanded laptop rail; tablet (icon-only) + collapsed laptop get a
+ *  quiet hairline divider instead so the grouping survives without labels.
+ *  `isFirst` suppresses the top hairline+margin so the first group's header
+ *  sits flush with the "Admin" eyebrow above it. */
+function AdminSidebarGroupHeader({
+  label,
+  collapsed,
+  isFirst,
+}: {
+  label: string;
+  collapsed?: boolean;
+  isFirst?: boolean;
+}) {
+  return (
+    <>
+      {/* Hairline-only fallback for icon-only modes. Skipped above the first
+          group so the "Admin" eyebrow already provides the visual break. */}
+      {!isFirst && (
+        <div
+          className={`mx-2 my-2 h-px bg-violet-200/50 dark:bg-violet-800/40 ${
+            collapsed ? "" : "lg:hidden"
+          }`}
+          aria-hidden
+        />
+      )}
+      {/* `.eyebrow` subhead — fully-expanded rail only. */}
+      {!collapsed && (
+        <div
+          className={`eyebrow hidden px-3 pb-1 lg:block ${isFirst ? "pt-1" : "pt-3"}`}
+          aria-hidden
+        >
+          {label}
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Couple-side sidebar link. The `collapsed` prop drives laptop+ behaviour;
+ *  at md (tablet) the rail is forced icon-only via responsive utilities so
+ *  iPad portrait still gets a usable sidebar. */
 function SideLink({
   to,
   icon,
@@ -669,16 +798,22 @@ function SideLink({
   label: string;
   collapsed?: boolean;
 }) {
+  // Base classes describe the icon-only shape used at md (tablet) and at
+  // lg+ when `collapsed` is true. `lg:` overrides flip to the padded row
+  // shape when the user has the laptop rail expanded.
+  const shape = collapsed
+    ? "h-10 w-10 justify-center"
+    : "h-10 w-10 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-2";
   return (
     <NavLink
       to={to}
       end={to === "/app"}
-      title={collapsed ? label : undefined}
-      aria-label={collapsed ? label : undefined}
+      // Always set title/aria-label — at md the label is always hidden, so
+      // screen readers + hover tooltips need it regardless of `collapsed`.
+      title={label}
+      aria-label={label}
       className={({ isActive }) =>
-        `flex items-center rounded-xl text-sm transition-colors ${
-          collapsed ? "h-10 w-10 justify-center" : "gap-3 px-3 py-2"
-        } ${
+        `flex items-center rounded-xl text-sm transition-colors ${shape} ${
           isActive
             ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
@@ -686,7 +821,8 @@ function SideLink({
       }
     >
       {icon}
-      {!collapsed && <span>{label}</span>}
+      {/* Label is hidden at md (icon-only) and at lg+ collapsed. */}
+      {!collapsed && <span className="hidden lg:inline">{label}</span>}
     </NavLink>
   );
 }
@@ -694,7 +830,11 @@ function SideLink({
 /** Sidebar link for admin pages. Inactive rows read as the regular
  *  neutral nav (ink-700) so the rail doesn't shout violet across every
  *  item; the active row alone fills a deep violet pill that signals
- *  "you are here". */
+ *  "you are here".
+ *
+ *  Like `SideLink`, the `collapsed` prop drives laptop+ behaviour while md
+ *  is always icon-only — tablet rail had been hidden entirely before this,
+ *  making analytics unreachable on iPad portrait. */
 function AdminSideLink({
   to,
   icon,
@@ -711,36 +851,46 @@ function AdminSideLink({
    *  In collapsed mode it shrinks to a 8px dot anchored to the icon. */
   badgeCount?: number;
 }) {
+  const shape = collapsed
+    ? "h-10 w-10 justify-center"
+    : "h-10 w-10 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-2";
   return (
     <NavLink
       to={to}
-      title={collapsed ? label : undefined}
-      aria-label={collapsed ? label : undefined}
+      // Always announced — labels are hidden at md and at lg+ collapsed,
+      // so SR users + tooltip hover both rely on title/aria-label here.
+      title={label}
+      aria-label={label}
       className={({ isActive }) =>
-        `flex items-center rounded-xl text-sm transition-colors ${
-          collapsed ? "h-10 w-10 justify-center" : "gap-3 px-3 py-2"
-        } ${
+        `flex items-center rounded-xl text-sm transition-colors ${shape} ${
           isActive
             ? "btn-lifted bg-violet-950 text-white dark:bg-violet-700"
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
         }`
       }
     >
-      {collapsed ? (
-        <span className="relative inline-flex">
-          {icon}
-          {badgeCount && badgeCount > 0 ? (
-            <span
-              aria-label={`${badgeCount} new`}
-              className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-blush-600"
-            />
-          ) : null}
-        </span>
-      ) : (
+      {/* Icon-only badge: an 8px dot anchored to the icon. Always rendered
+          at md (tablet); at lg+ it's swapped out for the labelled pill via
+          `lg:hidden`. */}
+      <span className={`relative inline-flex ${collapsed ? "" : "lg:hidden"}`}>
+        {icon}
+        {badgeCount && badgeCount > 0 ? (
+          <span
+            aria-label={`${badgeCount} new`}
+            className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-blush-600"
+          />
+        ) : null}
+      </span>
+      {/* Labelled row — only at lg+ expanded. */}
+      {!collapsed && (
         <>
-          {icon}
-          <span className="flex-1">{label}</span>
-          {badgeCount && badgeCount > 0 ? <SidebarBadge count={badgeCount} /> : null}
+          <span className="hidden lg:inline-flex">{icon}</span>
+          <span className="hidden flex-1 lg:inline">{label}</span>
+          {badgeCount && badgeCount > 0 ? (
+            <span className="hidden lg:inline-flex">
+              <SidebarBadge count={badgeCount} />
+            </span>
+          ) : null}
         </>
       )}
     </NavLink>
@@ -796,7 +946,7 @@ function MoreSheet({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-30 flex items-end justify-center bg-ink-900/40 backdrop-blur-sm lg:hidden"
+      className="fixed inset-0 z-30 flex items-end justify-center bg-ink-900/40 backdrop-blur-sm md:hidden"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

@@ -271,6 +271,15 @@ export interface Couple {
    *  and fire the conversion popup after a few minutes. Demo couples are
    *  auto-purged by the demo route's housekeeping sweep. */
   is_demo: boolean;
+  /** Couple has opted in to the public wedding website at `/w/:slug`.
+   *  Defaults to false — couples publish explicitly via the Profile
+   *  toggle; the public endpoint 404s when this is false. */
+  is_public: boolean;
+  /** Free-text venue name shown on the public wedding site. Null when
+   *  the couple hasn't set one. */
+  venue_name: string | null;
+  /** Couple-pasted http(s) URL for the wedding site's hero image. */
+  cover_image_url: string | null;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`

@@ -42,6 +42,11 @@ function resolveCoupleBySlug(slug: string): CoupleRow {
   // Don't expose archived / paused / purged workspaces publicly — those
   // couples explicitly stepped out of "wedding-in-progress" state.
   if (row.status !== "active") throw new HttpError(404, "Couple not found");
+  // Public wedding-site opt-in (Next-7). Every couple starts private; the
+  // /w/:slug route 404s the same way it does for an unknown slug until the
+  // couple flips the toggle on the Profile page. Same status code keeps
+  // slug-vs-publish unobservable to a scanner.
+  if (!row.is_public) throw new HttpError(404, "Couple not found");
   return row;
 }
 
@@ -72,6 +77,8 @@ function handleGetWeddingWebsite(ctx: Ctx): Response {
     groom_name: couple.groom_name || null,
     wedding_date: couple.wedding_date,
     ceremony_kind: ceremonyKind,
+    venue_name: couple.venue_name,
+    cover_image_url: couple.cover_image_url,
     location_lat: couple.location_lat,
     location_lng: couple.location_lng,
     location_radius_km: couple.location_radius_km,
