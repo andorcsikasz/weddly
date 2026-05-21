@@ -23,6 +23,7 @@ import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { recordEmailAttempt } from "../domain/emails/log";
 import {
+  cancelAllPendingClaims,
   createClaim,
   expireStaleClaim,
   getClaimByToken,
@@ -42,6 +43,11 @@ import { rateLimit } from "../lib/rate_limit";
 // bearer credential; rate-limit them to slow brute-force, not lock out
 // legitimate retries.
 const START_BUCKET = { capacity: 5, refillRate: 1 / 600 }; // 5 per 10 min per IP
+// Per-listing bucket — caps how many verify emails ANY caller can fire at a
+// single listing's contact inbox over time, regardless of how many IPs the
+// attacker rotates through. 3 per hour is well above legitimate retry need
+// (most vendors click the first link) and well below an inbox-spam threshold.
+const START_PER_LISTING_BUCKET = { capacity: 3, refillRate: 1 / 3600 };
 const VERIFY_BUCKET = { capacity: 30, refillRate: 1 / 60 }; // 30 per minute per IP
 
 // ── Email ──────────────────────────────────────────────────────────────────
@@ -154,6 +160,12 @@ async function handleStart(ctx: Ctx): Promise<Response> {
     });
   }
 
+  // Per-listing throttle: 3 verify emails per hour per listing, regardless
+  // of how many IPs the caller is rotating through. Lands AFTER the listing
+  // checks so probing for "does listing exist?" still 404s without burning
+  // the inbox-protect quota.
+  rateLimit(listingId, "vendor_claim:start:listing", START_PER_LISTING_BUCKET);
+
   const claim = createClaim(listingId, listing.contact_email);
   await sendClaimEmail(listing.contact_email, listing.name, claim.token);
 
@@ -221,8 +233,10 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   const listing = getListingById(claim.listing_id);
   if (!listing) throw new HttpError(410, "Listing no longer exists");
   if (listing.vendor_account_id !== null) {
-    // Race: another claim won. Bring our row in line.
-    markOtherPendingClaimsCancelled(claim.listing_id, -1);
+    // Pre-tx detection of "another claim already won". Cancel every pending
+    // sibling so the email links rendered in inboxes don't lead to a token
+    // that fails confusingly mid-form.
+    cancelAllPendingClaims(claim.listing_id);
     throw new HttpError(409, "Listing already claimed", { code: "already_claimed" });
   }
 
@@ -238,17 +252,43 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   const passwordHash = await hashPassword(password);
   const ts = now();
 
+  // Sentinel errors thrown from inside the tx so we can map them to HTTP
+  // responses cleanly outside. Using string sentinels rather than HttpError
+  // because the tx callback shouldn't depend on the route layer's error type.
+  const ERR_RACE_LISTING = "race:listing_already_claimed";
+  const ERR_RACE_CLAIM = "race:claim_not_pending";
+  const ERR_EMAIL_TAKEN = "race:email_taken";
+
   let newUserId = 0;
   let newVendorAccountId = 0;
 
   const tx = db.transaction(() => {
-    const userResult = db
-      .prepare(
-        `INSERT INTO users
-           (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
-         VALUES (?, ?, ?, 'active', 'vendor', 1, ?, ?)`,
-      )
-      .run(claim.email_sent_to, passwordHash, fullName, ts, ts);
+    // Re-check claim status inside the tx. If a sibling complete with the
+    // SAME token landed first, this row is now 'verified' or 'cancelled'.
+    const freshClaim = db
+      .prepare("SELECT status FROM listing_claims WHERE id = ?")
+      .get(claim.id) as { status: string } | undefined;
+    if (!freshClaim || freshClaim.status !== "pending") {
+      throw new Error(ERR_RACE_CLAIM);
+    }
+
+    // INSERT-into-users defends against the email-taken race: between the
+    // pre-tx getUserByEmail check and here, somebody else may have grabbed
+    // the address. UNIQUE constraint trips → tx rolls back.
+    let userResult;
+    try {
+      userResult = db
+        .prepare(
+          `INSERT INTO users
+             (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+           VALUES (?, ?, ?, 'active', 'vendor', 1, ?, ?)`,
+        )
+        .run(claim.email_sent_to, passwordHash, fullName, ts, ts);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("UNIQUE")) throw new Error(ERR_EMAIL_TAKEN);
+      throw e;
+    }
     newUserId = Number(userResult.lastInsertRowid);
 
     const account = createVendorAccount({
@@ -258,14 +298,38 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
     });
     newVendorAccountId = account.id;
 
-    db.prepare(
-      "UPDATE listings SET vendor_account_id = ?, updated_at = ? WHERE id = ? AND vendor_account_id IS NULL",
-    ).run(newVendorAccountId, ts, claim.listing_id);
+    // The conditional UPDATE is the inner-tx race guard: if a sibling complete
+    // with a DIFFERENT token already flipped vendor_account_id, this returns
+    // changes === 0 and we abort. Without this the orphan user + vendor_account
+    // we just inserted would leak into prod with no owning listing.
+    const upd = db
+      .prepare(
+        "UPDATE listings SET vendor_account_id = ?, updated_at = ? WHERE id = ? AND vendor_account_id IS NULL",
+      )
+      .run(newVendorAccountId, ts, claim.listing_id);
+    if (upd.changes === 0) throw new Error(ERR_RACE_LISTING);
 
     markClaimVerified(claim.id, newVendorAccountId);
     markOtherPendingClaimsCancelled(claim.listing_id, claim.id);
   });
-  tx();
+  try {
+    tx();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg === ERR_RACE_LISTING) {
+      cancelAllPendingClaims(claim.listing_id);
+      throw new HttpError(409, "Listing already claimed", { code: "already_claimed" });
+    }
+    if (msg === ERR_RACE_CLAIM) {
+      throw new HttpError(409, "Claim already completed", { code: "already_verified" });
+    }
+    if (msg === ERR_EMAIL_TAKEN) {
+      throw new HttpError(409, "An account with this email already exists", {
+        code: "email_taken",
+      });
+    }
+    throw e;
+  }
 
   addAuditLog({
     actor_user_id: newUserId,

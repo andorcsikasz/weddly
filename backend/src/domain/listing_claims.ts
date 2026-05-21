@@ -106,3 +106,13 @@ export function markOtherPendingClaimsCancelled(listingId: string, winningClaimI
     "UPDATE listing_claims SET status = 'cancelled' WHERE listing_id = ? AND status = 'pending' AND id != ?",
   ).run(listingId, winningClaimId);
 }
+
+/** Cancels EVERY pending claim for a listing — used when an external write
+ *  (concurrent claim race lost, admin direct edit) makes any pending claim
+ *  unfulfillable. Distinct from `markOtherPendingClaimsCancelled` because
+ *  there's no winning claim to exclude. Idempotent. */
+export function cancelAllPendingClaims(listingId: string): void {
+  db.prepare(
+    "UPDATE listing_claims SET status = 'cancelled' WHERE listing_id = ? AND status = 'pending'",
+  ).run(listingId);
+}
