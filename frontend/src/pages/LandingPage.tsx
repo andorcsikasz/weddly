@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BotanicalCorner, EucalyptusStem, WatercolorBlob } from "../components/botanical";
-import { PullQuote, SectionLabel, WatermarkNumeral } from "../components/editorial";
+import { EucalyptusStem, WatercolorBlob } from "../components/botanical";
+import { SectionLabel, WatermarkNumeral } from "../components/editorial";
 import {
   PhaseAftermathArt,
   PhaseGuestsArt,
@@ -295,24 +295,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ════════════════════════ 06 · Why — PULL-QUOTE + 2×2 ════════════════════════
-          Editorial pull-quote on top, then the four why-points as a 2×2
-          grid below with title + short body. Replaces the previous loose
-          "keyword strip" that floated under the quote with no weight. */}
-      <section className="stationery-light relative">
-        <BotanicalCorner
-          corner="tl"
-          className="pointer-events-none absolute left-4 top-8 h-20 w-20 text-paper-300 dark:text-umber-600 sm:h-28 sm:w-28 lg:left-10"
-        />
-        <BotanicalCorner
-          corner="br"
-          className="pointer-events-none absolute bottom-8 right-4 h-20 w-20 text-paper-300 dark:text-umber-600 sm:h-28 sm:w-28 lg:right-10"
-        />
+      {/* ════════════════════════ 06 · Why — 2×2 ════════════════════════
+          Plain section heading + 4 concrete points. The earlier italic
+          serif pull-quote ("Először a lényeg…") and the botanical corner
+          decorations were both flagged as AI-deck affectations; cut. */}
+      <section className="stationery-light">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("landing.why_eyebrow")}
           </p>
-          <PullQuote quote={t("landing.why_title")} className="mt-5" />
+          <h2 className="mx-auto mt-4 max-w-3xl text-center font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+            {t("landing.why_title")}
+          </h2>
           <ul className="mx-auto mt-10 grid max-w-4xl gap-x-10 gap-y-8 sm:mt-14 sm:grid-cols-2 sm:gap-y-10">
             <WhyPoint title={t("landing.why_a_title")} body={t("landing.why_a_body")} />
             <WhyPoint title={t("landing.why_b_title")} body={t("landing.why_b_body")} />

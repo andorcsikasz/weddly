@@ -566,10 +566,10 @@ const hu: LocaleMessages = {
     brand_signature: "Weddly, Budapest",
     cta_signup_sub: "A nyílt béta alatt szabadon használhatjátok.",
     // ── Interaktív "próbáld ki" költségvetés demo ─────────────────────
-    demo_eyebrow: "Próbáld ki — regisztráció nélkül",
+    demo_eyebrow: "Próbáld ki regisztráció nélkül",
     demo_title: "Mennyibe kerül a ti esküvőtök?",
     demo_body:
-      "Húzd a vendégszámot és a keretet — a kategóriák ugyanazzal a logikával számolódnak, mint a regisztráció után. Ha tetszik, a megadott számokkal indul a saját költségvetésetek.",
+      "Húzd a vendégszámot és a keretet. A kategóriák ugyanazzal a logikával számolódnak, mint a regisztráció után. Ha tetszik, a megadott számokkal indul a saját költségvetésetek.",
     demo_guests_label: "Vendégszám",
     demo_budget_label: "Tervezett keret",
     demo_per_guest_label: "Vendégenkénti költség",
@@ -595,7 +595,7 @@ const hu: LocaleMessages = {
     // FAQPage JSON-LD).
     closing_title: "Két perc, és minden a helyén.",
     closing_body:
-      "A nyílt béta alatt szabadon használhatjátok, és bármikor szüneteltethetitek a felületeteket — ott folytatjátok, ahol abbahagytátok.",
+      "A nyílt béta alatt szabadon használhatjátok, és bármikor szüneteltethetitek a felületeteket. Ahol abbahagytátok, ott folytatjátok.",
     // ── Soft-Modern redesign additions ───────────────────────────────
     nav_how: "Hogyan működik",
     nav_suppliers: "Szolgáltatók",
@@ -738,19 +738,19 @@ const hu: LocaleMessages = {
     pricing_bullet_3: "CSV / PDF export, korlátlanul",
     pricing_v2_note: "A v2-vel jön az árazás. A részleteket időben kihirdetjük.",
     why_eyebrow: "Miért Wēddly",
-    why_title: "Először a lényeg, aztán a tervezés.",
-    why_a_title: "Minden egy helyen, kézben tartva",
+    why_title: "Amit a Weddly tényleg jól csinál",
+    why_a_title: "Egy fül a böngészőben, nem nyolc",
     why_a_body:
-      "Költségvetés, vendégek, RSVP, ültetés, szolgáltatók — mind egy közös felületen. A teljes esküvő ott van kéznél, mindketten ugyanazt látjátok valós időben.",
-    why_b_title: "Estékből percek",
+      "Költségvetés, vendégek, RSVP, ültetés, szolgáltatók egy közös felületen. Mindketten ugyanazt látjátok.",
+    why_b_title: "Pár perc esténként, nem egy egész este",
     why_b_body:
-      "A beállítás pár perc, a változások egy helyen frissülnek, a vendégek pedig egy linkkel válaszolnak. Ami eddig esténként elvitte az időtöket, mostantól perceken belül kész.",
-    why_c_title: "Ihletet ad a következő lépéshez",
+      "A vendégszám átírása nem indít újra három táblázatot. Egy helyen állítod, mindenhol stimmel.",
+    why_c_title: "Megmondjuk, mi a következő",
     why_c_body:
-      "Válogatott magyar szolgáltatók, ültetési minták és kész kiindulópontok kategóriánként. A Wēddly mindig megmutatja, mi az a következő apró lépés, ami most viszi előre az esküvőt.",
-    why_d_title: "Ti a nagy napra figyeltek, a többire ott van a Wēddly",
+      "Ha elakadtok, a kezdőlap megmutatja az egy dolgot, amit ma érdemes elintézni.",
+    why_d_title: "A papírmunkát mi visszük",
     why_d_body:
-      "A szervezés gépezetét a Wēddly tartja kézben, hogy a figyelmetek az esküvőre, egymásra és a vendégeitekre maradjon. A nap az esküvőtökről szóljon, ne a szervezésről.",
+      "Mi figyelünk a határidőkre, a meghívókra, a nyomtatási méretekre. Ti az esküvőre.",
     mockup_aria_dashboard: "Wēddly vezérlőpult-előnézet",
     mockup_aria_budget: "Élő költségvetés-előnézet",
     mockup_aria_guests: "Vendéglista és RSVP előnézet",

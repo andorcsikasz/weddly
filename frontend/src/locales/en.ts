@@ -738,19 +738,18 @@ const en: LocaleMessages = {
     pricing_bullet_3: "CSV / PDF export, included",
     pricing_v2_note: "v2 introduces pricing. Details will be announced ahead of time.",
     why_eyebrow: "Why Weddly",
-    why_title: "Meaning first, planning simplified.",
-    why_a_title: "Everything in one place, in your hands",
+    why_title: "What Weddly is good at",
+    why_a_title: "One tab, not eight",
     why_a_body:
-      "Budget, guests, RSVPs, seating and printables share one home. Both of you open the same page and see the same picture, in real time.",
-    why_b_title: "Evenings turn into minutes",
+      "Budget, guests, RSVPs, seating, suppliers on a single page. You both see the same thing.",
+    why_b_title: "Minutes in the evening, not whole evenings",
     why_b_body:
-      "Setup takes minutes, every change updates in one place, and guests reply through a single link. The work that used to fill your evenings finishes inside a coffee break.",
-    why_c_title: "Inspiration for the next step",
-    why_c_body:
-      "Curated Hungarian suppliers, seating templates and ready-made starting points by category. Weddly always shows you the next small step that moves the wedding forward.",
-    why_d_title: "Your attention stays on the day itself",
+      "Changing the headcount doesn't mean opening three spreadsheets. Set it once, it lines up everywhere.",
+    why_c_title: "We tell you what's next",
+    why_c_body: "If you get stuck, the home page shows the one thing worth doing today.",
+    why_d_title: "We handle the paperwork",
     why_d_body:
-      "Weddly carries the organising, so your attention stays on the wedding, on each other and on your guests. Let the day be about the day.",
+      "We watch deadlines, invitations and print sizes. You focus on the wedding.",
     mockup_aria_dashboard: "Weddly dashboard preview",
     mockup_aria_budget: "Live budget mockup",
     mockup_aria_guests: "Guest list and RSVP mockup",
