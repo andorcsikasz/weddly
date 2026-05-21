@@ -196,21 +196,22 @@ function rangeFillStyle(
   };
 }
 
-/** Shared slider ceiling for every honeymoon cost card. Computed once per
- *  render from the couple's overall budget cap (if set) so the headroom
- *  scales with the wedding size. Falls back to a sensible default that
- *  fits a typical Hungarian honeymoon. */
-function honeymoonSliderMax(couple: Couple | null, totalPlanned: number): number {
-  // Up to 30% of the wedding cap — generous, but keeps the rails feeling
-  // bounded for a small wedding.
-  if (couple?.budget_goal.kind === "exact" && couple.budget_goal.exact_huf) {
-    return Math.max(500_000, Math.round(couple.budget_goal.exact_huf * 0.3));
-  }
-  if (couple?.budget_goal.kind === "range" && couple.budget_goal.max_huf) {
-    return Math.max(500_000, Math.round(couple.budget_goal.max_huf * 0.3));
-  }
-  // No cap → at least 500k, or 2× the biggest current line.
-  return Math.max(500_000, totalPlanned * 2);
+/** Shared slider ceiling for every honeymoon cost card. Soft-cap formula:
+ *    max( 500k floor,  30 % of overall budget,  biggest line × 1.2 )
+ *
+ *  The 30 % baseline scales with the couple's wedding cap so a small
+ *  wedding has tighter rails; the `biggestLine × 1.2` term keeps the rail
+ *  ahead of the largest line so a couple budgeting > 1.8 M HUF on a
+ *  honeymoon doesn't hit a hard wall mid-drag. (Originally `biggestLine`
+ *  was passed in as `totalPlanned` — same value, more honest name.) */
+function honeymoonSliderMax(couple: Couple | null, biggestLine: number): number {
+  const capBased =
+    couple?.budget_goal.kind === "exact" && couple.budget_goal.exact_huf
+      ? Math.round(couple.budget_goal.exact_huf * 0.3)
+      : couple?.budget_goal.kind === "range" && couple.budget_goal.max_huf
+        ? Math.round(couple.budget_goal.max_huf * 0.3)
+        : biggestLine * 2;
+  return Math.max(500_000, capBased, Math.round(biggestLine * 1.2));
 }
 
 /* ─── Page ─────────────────────────────────────────────────────────────── */

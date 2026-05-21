@@ -396,18 +396,24 @@ export function CostPlanningCard({
   const commitMin = (v: number) => onBoundsChange?.(v, maxCount);
   const commitMax = (v: number) => onBoundsChange?.(minCount, v);
 
-  // Anchor for the per-row slider WIDTH and `max`. 30 % of the couple's
-  // overall cap — at 5 M HUF cap that's a 1.5 M HUF ceiling per row, which
-  // matches the honeymoon page's `honeymoonSliderMax` and is a generous
-  // upper bound for any single wedding category (venue often runs higher,
-  // but those values go in via the table). Letting one row eat the whole
-  // budget makes the rail feel unbounded and lets the user accidentally
-  // drag past sane values. With no cap set we use 1.5 M directly. Stable
-  // across drags so the rail end doesn't chase the thumb.
+  // Anchor for the per-row slider WIDTH and `max`. Soft-cap formula:
+  //   max( 30% of overall budget,  largest row × 1.2,  100k )
+  // The 30 % baseline is the comfortable default — at a 5 M HUF cap that's
+  // 1.5 M HUF, generous for most categories. The `largest-row × 1.2` term
+  // is the soft-cap: when any single row's amount approaches the baseline,
+  // the rail extends so honeymoon (canonically 1.8 M+ HUF) can be dragged
+  // beyond the default without hitting a hard wall. The 1.2 factor keeps
+  // the thumb at ~83 % rather than pinned at the edge, signalling there's
+  // still headroom.
   const widthAnchor = useMemo(() => {
-    const ceiling = cap !== null && cap > 0 ? cap * 0.3 : 1_500_000;
-    return Math.max(ceiling, 100_000);
-  }, [cap]);
+    const baseline = cap !== null && cap > 0 ? cap * 0.3 : 1_500_000;
+    const maxRowAmount = Math.max(
+      ...buckets.map((b) => b.plannedDisplay),
+      ...customDisplays.map((c) => c.planned),
+      0,
+    );
+    return Math.max(baseline, Math.round(maxRowAmount * 1.2), 100_000);
+  }, [cap, buckets, customDisplays]);
 
   // If the user narrows the bounds below the current slider value, clamp
   // it back into range so the thumb doesn't pin off the track.

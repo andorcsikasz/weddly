@@ -651,7 +651,15 @@ describe("<BudgetPage>", () => {
     expect(patchCall).toBeDefined();
   });
 
-  it("typing in a planned HufInput and blurring fires PATCH /api/budget/lines/:id", async () => {
+  it("the planned HufInput in the table is read-only — the slider above is the sole edit surface", async () => {
+    // Behaviour change shipped alongside the cost-slider soft-caps:
+    // the BudgetPage table's `planned` column became read-only so the
+    // couple sees ONE place to edit the per-category plan (the
+    // CostPlanningCard slider) instead of two confusing input surfaces
+    // that wrote to the same `planned_huf`. Typing + blurring on the
+    // table input no longer fires a PATCH because the field never
+    // accepts the change. The slider-driven write path is exercised by
+    // the dedicated CostPlanningCard tests.
     const line = makeBudgetLine({
       id: 5001,
       category: "venue",
@@ -659,17 +667,17 @@ describe("<BudgetPage>", () => {
       label: "Venue",
     });
     installDefaultEndpoints({ lines: [line] });
-    onPatch((u) => u === "/api/budget/lines/5001", { line: { ...line, planned_huf: 2_000_000 } });
     renderBudget();
     await waitFor(() => expect(screen.getAllByText("Venue").length).toBeGreaterThan(0));
     await flush(2);
-    // Pick the first planned input (mobile or desktop — both wire up the same
-    // onCommit). Firing on every match would race two concurrent setLines
-    // updates and crash the next render with `undefined` rows.
     const plannedInputs = Array.from(
       document.querySelectorAll('input[data-budget-planned="true"]'),
     ) as HTMLInputElement[];
     expect(plannedInputs.length).toBeGreaterThan(0);
+    // Every planned input renders read-only — both mobile and desktop slot.
+    for (const inp of plannedInputs) {
+      expect(inp.readOnly).toBe(true);
+    }
     const target = plannedInputs[0]!;
     await act(async () => {
       fireEvent.change(target, { target: { value: "2000000" } });
@@ -679,7 +687,7 @@ describe("<BudgetPage>", () => {
     const patchCall = fetchCalls.find(
       (c) => c.method === "PATCH" && c.url === "/api/budget/lines/5001",
     );
-    expect(patchCall).toBeDefined();
+    expect(patchCall).toBeUndefined();
   });
 
   it("Add row affordance is rendered and reveals the label input on click", async () => {
