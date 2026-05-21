@@ -242,6 +242,56 @@ export interface LocaleMessages {
     page_missing: string;
     page_home: string;
   };
+  /** P2.C — vendor listing-claim flow. Button on directory cards + modal +
+   *  email-link landing page that completes the claim. */
+  vendor_claim: {
+    button_label: string;
+    page_title: string;
+    page_body: string;
+    page_invalid: string;
+    page_expired: string;
+    page_cancelled: string;
+    page_already_verified: string;
+    page_home: string;
+    modal_title: string;
+    /** Receives `{name}` — listing display name. */
+    modal_body_intro: string;
+    modal_body_email_hidden: string;
+    modal_submit: string;
+    modal_submitting: string;
+    modal_close: string;
+    /** Receives `{email}` — masked contact email. */
+    modal_sent_body: string;
+    modal_sent_hint: string;
+    modal_err_already_claimed: string;
+    modal_err_no_email: string;
+    modal_err_not_found: string;
+    modal_err_rate_limited: string;
+    form_title: string;
+    /** Receives `{name}` (listing) + `{email}` (email confirmed). */
+    form_intro: string;
+    form_name_label: string;
+    form_password_label: string;
+    form_password_hint: string;
+    form_submit: string;
+    form_submitting: string;
+    form_err_name: string;
+    form_err_password: string;
+    form_err_email_taken: string;
+    form_err_already_claimed: string;
+    success_toast: string;
+  };
+  /** Stub vendor landing page after a successful claim. Phase 2.5+ will
+   *  replace with a real dashboard. */
+  vendor_home: {
+    page_title: string;
+    page_body: string;
+    /** Receives `{name}` — vendor user's full name. */
+    welcome: string;
+    intro: string;
+    coming_soon: string;
+    back_to_directory: string;
+  };
   /** Page reached from the email_change_verify confirm link. */
   change_email: {
     page_title: string;

@@ -209,6 +209,60 @@ const en: LocaleMessages = {
       "That listing no longer exists — it may have been deleted or the submission has expired.",
     page_home: "Back to Weddly",
   },
+  vendor_claim: {
+    button_label: "This is my business",
+    page_title: "Claim your listing",
+    page_body: "Confirm you own this Weddly directory listing.",
+    page_invalid:
+      "We don't recognise this link. It may be mistyped or from an old email.",
+    page_expired: "This link has expired. Start the claim again from the Weddly directory.",
+    page_cancelled: "This claim has been cancelled — start fresh from the directory.",
+    page_already_verified:
+      "This listing has already been claimed. If that was you, sign in with the vendor email.",
+    page_home: "Back to the Weddly directory",
+    modal_title: "Claim this listing",
+    modal_body_intro:
+      "Want to claim ownership of {name}? We'll email a verification link to the address on file for this listing.",
+    modal_body_email_hidden:
+      "We don't show the full address for privacy — once you confirm, you'll manage the listing yourself.",
+    modal_submit: "Send verification email",
+    modal_submitting: "Sending…",
+    modal_close: "Got it",
+    modal_sent_body:
+      "Email sent to {email}. Click the link to confirm — it's valid for 7 days.",
+    modal_sent_hint:
+      "If nothing arrives in a few minutes, check spam, or try again later.",
+    modal_err_already_claimed: "This listing has already been claimed.",
+    modal_err_no_email:
+      "This listing has no contact email on file, so we can't verify your ownership.",
+    modal_err_not_found: "We can't find this listing.",
+    modal_err_rate_limited:
+      "Too many requests — please wait a few minutes before trying again.",
+    form_title: "Create your vendor account",
+    form_intro:
+      "You've confirmed ownership of {name} via {email}. Set a password to start managing the listing.",
+    form_name_label: "Full name",
+    form_password_label: "Password",
+    form_password_hint: "Min. 8 characters.",
+    form_submit: "Claim listing",
+    form_submitting: "Creating…",
+    form_err_name: "Please enter your full name.",
+    form_err_password: "Password must be at least 8 characters.",
+    form_err_email_taken:
+      "An account already exists with this email. Contact the Weddly team.",
+    form_err_already_claimed: "Someone else just claimed this listing.",
+    success_toast: "Welcome to Weddly! The listing is yours.",
+  },
+  vendor_home: {
+    page_title: "Vendor home",
+    page_body: "Your listings in the Weddly directory.",
+    welcome: "Welcome, {name}!",
+    intro:
+      "You've successfully claimed your listing in the Weddly directory. Couples will now see your business with the details you control.",
+    coming_soon:
+      "Coming soon: listing editor, lead inbox, view analytics. For now this page just confirms the claim — we'll email you when new features land.",
+    back_to_directory: "Back to the directory",
+  },
   change_email: {
     page_title: "Confirm your new email",
     page_loading: "Confirming…",
