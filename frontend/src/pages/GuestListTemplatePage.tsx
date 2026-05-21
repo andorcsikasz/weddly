@@ -51,7 +51,81 @@ export default function GuestListTemplatePage() {
           <p className="mt-2 text-sm italic text-ink-500 dark:text-umber-300">
             {t("tools.guest_list_template.preview_caption")}
           </p>
-          <div className="mt-6 overflow-x-auto rounded-xl border border-paper-300 dark:border-umber-700 bg-white dark:bg-umber-800">
+          {/* Mobile: render the same two sample rows as stacked label/value
+           *  cards. At 393px viewport the 8-column table squeezes headers
+           *  down to ~45px each — "HOUSEHOLD" wraps to "HOUS", email and
+           *  phone show as ellipses, and the whole table reads as broken
+           *  rather than comprehensive. A vertical &lt;dl&gt; per sample
+           *  guest keeps every label legible and teaches the template's
+           *  schema better than a squeezed table ever could. The desktop
+           *  view (sm:+) still gets the spreadsheet metaphor. */}
+          <div className="mt-6 grid gap-3 sm:hidden">
+            {[
+              {
+                title: "Kovács Anna",
+                muted: ["anna@…", "+36 30 …", "pending"],
+                values: [
+                  "Kovács",
+                  "Anna",
+                  "anna@…",
+                  "+36 30 …",
+                  "Kovács család",
+                  "vegetariánus",
+                  "Bence",
+                  "pending",
+                ],
+              },
+              {
+                title: "Nagy Zoltán",
+                muted: ["zoltan@…", "+36 70 …", "—", "pending"],
+                values: [
+                  "Nagy",
+                  "Zoltán",
+                  "zoltan@…",
+                  "+36 70 …",
+                  "Nagy család",
+                  "glutén-mentes",
+                  "—",
+                  "pending",
+                ],
+              },
+            ].map((row) => (
+              <dl
+                key={row.title}
+                className="overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700 bg-white dark:bg-umber-800"
+              >
+                <div className="border-b border-paper-300 bg-paper-50 px-4 py-2 text-sm font-medium text-ink-900 dark:border-umber-700 dark:bg-umber-700 dark:text-paper-50">
+                  {row.title}
+                </div>
+                <div className="divide-y divide-paper-200 dark:divide-umber-700">
+                  {columns.map((label, i) => {
+                    const value = row.values[i] ?? "";
+                    const muted = row.muted.includes(value);
+                    return (
+                      <div
+                        key={label}
+                        className="flex items-baseline justify-between gap-3 px-4 py-2 text-sm"
+                      >
+                        <dt className="text-[10px] font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                          {label}
+                        </dt>
+                        <dd
+                          className={
+                            muted
+                              ? "text-right text-ink-500 dark:text-umber-300"
+                              : "text-right text-ink-700 dark:text-paper-200"
+                          }
+                        >
+                          {value}
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </div>
+              </dl>
+            ))}
+          </div>
+          <div className="mt-6 hidden overflow-x-auto rounded-xl border border-paper-300 dark:border-umber-700 bg-white dark:bg-umber-800 sm:block">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-700">
