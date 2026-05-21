@@ -4,8 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#efe9d9" />
+    <!-- iOS PWA hints: lets Safari's "Add to Home Screen" present the app
+         in a chrome-less window once the guest installs from an /rsvp
+         page. The manifest covers Android/Chromium. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Weddly" />
     <!--
       The SEO head block below is rewritten per request by backend/src/lib/seo_ssr.ts.
       Single-host deployment (weddly.hu) as of May 2026 — the rewriter

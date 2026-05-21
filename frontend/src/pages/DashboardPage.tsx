@@ -901,7 +901,7 @@ export default function DashboardPage() {
               </button>
               <button
                 type="button"
-                className="btn btn-lg bg-sage-700 text-white shadow-soft hover:bg-sage-800"
+                className="btn-success btn-lg shadow-soft"
                 onClick={onNotifyDateChange}
                 disabled={notifyingDateChange || dismissingDateChange || notifyableGuests === 0}
               >

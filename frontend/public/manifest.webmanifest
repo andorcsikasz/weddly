@@ -1,0 +1,32 @@
+{
+  "name": "Weddly",
+  "short_name": "Weddly",
+  "description": "Wedding planning + RSVP — couples + guests in one place.",
+  "lang": "en",
+  "start_url": "/rsvp",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#efe9d9",
+  "theme_color": "#efe9d9",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
