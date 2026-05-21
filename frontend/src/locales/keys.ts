@@ -1310,6 +1310,11 @@ export interface LocaleMessages {
      *  can record a single post-midnight event without going through the
      *  wand. */
     field_next_day: string;
+    /** Small pill rendered next to the time on schedule rows whose start
+     *  falls past midnight (i.e. `starts_at_minutes >= 1440`). Surfaces
+     *  the "second calendar day" hint so couples and suppliers don't read
+     *  a 01:00 event as 1 AM the same morning. */
+    day_two_badge: string;
     wand_warning_existing: string;
     /** Receives `{count}` + `{total}`. */
     wand_select_label: string;

@@ -1243,6 +1243,7 @@ const hu: LocaleMessages = {
       "A zárás éjfél után van — az éjszakai programpontokat másnapra osztjuk be.",
     wand_window_error: "A kezdés és a zárás nem lehet ugyanaz az időpont.",
     field_next_day: "Másnap (éjfél után)",
+    day_two_badge: "másnap",
     wand_warning_existing: "Már vannak programpontok — az új sorok melléjük kerülnek.",
     wand_select_label: "{count} / {total} kiválasztva",
     wand_select_all: "Mind",

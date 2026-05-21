@@ -1231,6 +1231,7 @@ const en: LocaleMessages = {
       "End is past midnight — late-night events will be scheduled for the following day.",
     wand_window_error: "Start and end can't be the same time.",
     field_next_day: "Next day (after midnight)",
+    day_two_badge: "day 2",
     wand_warning_existing: "You already have events — these will be added alongside them.",
     wand_select_label: "{count} of {total} selected",
     wand_select_all: "Select all",
