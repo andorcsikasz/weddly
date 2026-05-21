@@ -940,7 +940,7 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
 }
 
 async function handleUpdateSlug(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -1075,7 +1075,7 @@ function parsePlanningCount(raw: unknown): number | null {
  *  rows. We keep generic `couple.update` only as a fallback when none of the
  *  recognised clusters match — historical entries still render. */
 async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple to update");
 
@@ -1706,7 +1706,7 @@ async function handleNotifyDateChange(ctx: Ctx): Promise<Response> {
  *  the choice so partners can see "X dismissed the date-change notice" in the
  *  recent-activity feed. No emails go out. */
 function handleDismissDateChange(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple to dismiss");
 
@@ -1741,7 +1741,7 @@ function handleDismissDateChange(ctx: Ctx): Response {
  *                   session row. Means they have an active token (web /
  *                   mobile). We don't track presence beyond this. */
 function handleGetPartner(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -1890,7 +1890,7 @@ interface ActivityRow {
 }
 
 function handleGetActivity(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -1940,7 +1940,7 @@ interface ListMyCouplesResponse {
 }
 
 function handleListMyCouples(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couples = listCouplesForUser(userId);
   const current = getCoupleForUser(userId);
   const payload: ListMyCouplesResponse = {

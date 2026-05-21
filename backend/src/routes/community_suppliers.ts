@@ -25,7 +25,7 @@ import { enrichSupplier } from "../domain/supplier_enrich";
 import { log } from "../lib/logger";
 import { addAuditLog } from "../lib/audit";
 import { getUserById } from "../domain/users";
-import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, requireAuth, requireVerifiedAuth, type Router } from "../lib/http";
 import { bilingualBody, sendEmail } from "../lib/mailer";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -375,7 +375,7 @@ interface ResolveBody {
 }
 
 async function handleResolveMapsUrl(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   // Strict per-user bucket — Nominatim's TOS asks for ≤ 1 req/sec, and even
   // typing speed shouldn't produce more than one resolve per ~2 seconds.
   rateLimit(`user:${userId}`, "maps_resolve", { capacity: 5, refillRate: 1 / 2 });
