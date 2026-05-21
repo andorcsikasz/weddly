@@ -116,6 +116,11 @@ export const authApi = {
     /** Current UI locale, persisted on users.locale so the user's preference
      *  survives across devices. Backend only stores 'hu' | 'en'. */
     locale?: "hu" | "en";
+    /** Funnel attribution: which public surface drove the signup. The
+     *  LandingPage extracts this from `?ref=<source>` and stashes to
+     *  sessionStorage; RegisterPage hands it off. Backend allow-list:
+     *  `rsvp` | `site` | `share`. */
+    referrer?: string;
   }) => apiFetch<AuthSession>("POST", "/api/auth/register", body),
   /** Sign in OR register with a Google Identity Services credential JWT.
    *  Both version stamps are required so the GDPR consent ledger lands when

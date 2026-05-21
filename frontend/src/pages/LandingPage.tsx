@@ -52,6 +52,14 @@ const MOCKUP_AR_FEATURE = "480 / 360";
 const MOCKUP_AR_SUPPLIERS = "320 / 280";
 const MOCKUP_AR_WORKSPACE = "640 / 440";
 
+// Stash any `?ref=<source>` query param landing on a public page so the
+// signup form can later attach it to the register call (which the backend
+// records on `signup_events.referrer_source`). Session-scoped on purpose:
+// a guest who landed from /rsvp into the landing → signup → register flow
+// should carry the attribution; a re-visit from organic search a week
+// later should not be tagged the same.
+const REFERRER_SESSION_KEY = "weddly.ref";
+
 export default function LandingPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.home_title", "seo.home_description");
@@ -59,6 +67,22 @@ export default function LandingPage() {
   // Single source of truth (shared/seo_faq.ts) — same array also feeds the
   // FAQPage JSON-LD in seo_ssr.ts, so they can't drift.
   const faqEntries = SEO_FAQ[locale];
+
+  // Capture the `?ref=<source>` query param once on mount. Only the
+  // values we expect — `rsvp`, `site` (from /w/:slug footers), `share` —
+  // make it into sessionStorage; anything else is dropped so a hostile
+  // ?ref=<xss> can't survive into the register payload.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref === "rsvp" || ref === "site" || ref === "share") {
+      try {
+        window.sessionStorage.setItem(REFERRER_SESSION_KEY, ref);
+      } catch {
+        // sessionStorage blocked — drop attribution rather than crash.
+      }
+    }
+  }, []);
 
   return (
     <PublicShell>

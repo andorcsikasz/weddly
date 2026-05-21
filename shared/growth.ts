@@ -25,8 +25,14 @@ export type GrowthEventKind =
    *  Frontend-only ping — answers "do couples actually share Weddly?". */
   | "rsvp.share_link.copied"
   /** Brand-new signup whose `Referer` header points at a `/rsvp/*` URL.
-   *  Direct readout of the "guests convert to new couples" hypothesis. */
-  | "signup.from_rsvp_referrer";
+   *  Direct readout of the "guests convert to new couples" hypothesis.
+   *  Legacy — superseded by `signup.from_referrer` below; both fire while
+   *  the frontend rolls out the explicit `?ref` param across CTAs. */
+  | "signup.from_rsvp_referrer"
+  /** Brand-new signup that carried an explicit `?ref=<source>` query
+   *  param from a public Weddly surface — `rsvp`, `site`, or `share`.
+   *  `payload.referrer` holds the allow-listed source, not a raw URL. */
+  | "signup.from_referrer";
 
 export interface GrowthEvent {
   id: number;

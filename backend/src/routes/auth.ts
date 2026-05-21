@@ -30,6 +30,11 @@ interface RegisterBody {
    *  persisted; anything else (or omitted) leaves the column null and the
    *  client falls back to its own navigator.language detection. */
   locale?: unknown;
+  /** Funnel attribution source — `rsvp` | `site` | `share`. The frontend
+   *  extracts this from `?ref=<source>` on a public page and threads it
+   *  here. Anything else is dropped at the boundary; the growth_events
+   *  row gets a null source rather than user-controlled junk. */
+  referrer?: unknown;
 }
 
 interface LoginBody {
@@ -125,18 +130,31 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     after: { email },
   });
 
-  // Funnel attribution: did this signup originate from an /rsvp/* landing?
-  // Best-effort — the Referer at the /api/auth/register call usually points
-  // at the /register page, not the original RSVP URL. The frontend can later
-  // pass a stronger source signal in the body; until then we capture what
-  // we have and let the admin dashboard apply the regex filter.
-  const referer = ctx.req.headers.get("referer");
-  if (referer && /\/rsvp\/[^?#]+/.test(referer)) {
-    recordGrowthEvent("signup.from_rsvp_referrer", {
+  // Funnel attribution: prefer the explicit body field over the Referer
+  // header, which often points at /register (the page being submitted)
+  // rather than the original /rsvp / /w landing. Allow-list keeps
+  // user-controlled strings out of the growth_events column.
+  const allowedRefs: ReadonlySet<string> = new Set(["rsvp", "site", "share"]);
+  const bodyRef = typeof body.referrer === "string" ? body.referrer : null;
+  const refSource = bodyRef && allowedRefs.has(bodyRef) ? bodyRef : null;
+  if (refSource) {
+    recordGrowthEvent("signup.from_referrer", {
       user_id: userId,
-      referrer: referer,
+      referrer: refSource,
       user_agent: ctx.req.headers.get("user-agent"),
     });
+  } else {
+    // Legacy fallback: Referer-based attribution for the /rsvp/* page that
+    // pre-dates the explicit body field. Drops off as the frontend updates
+    // every public CTA to thread `?ref=` through.
+    const referer = ctx.req.headers.get("referer");
+    if (referer && /\/rsvp\/[^?#]+/.test(referer)) {
+      recordGrowthEvent("signup.from_rsvp_referrer", {
+        user_id: userId,
+        referrer: referer,
+        user_agent: ctx.req.headers.get("user-agent"),
+      });
+    }
   }
 
   // Welcome + verification — single email, both purposes. Soft verification:

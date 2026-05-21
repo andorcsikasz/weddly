@@ -53,6 +53,17 @@ export default function RegisterPage() {
       // the "By continuing…" microcopy below the button names both
       // documents. Sending both version stamps means the audit ledger
       // gets a row per accepted document.
+      // Funnel attribution: LandingPage stashes `?ref=rsvp|site|share` into
+      // sessionStorage on first visit; carry that across the signup hop
+      // and into the backend so growth_events can pin the acquisition
+      // source instead of relying on the (often-empty) Referer header.
+      let referrer: string | undefined;
+      try {
+        const raw = window.sessionStorage.getItem("weddly.ref");
+        if (raw === "rsvp" || raw === "site" || raw === "share") referrer = raw;
+      } catch {
+        // sessionStorage blocked — drop attribution, keep the signup.
+      }
       const session = await authApi.register({
         email: email.trim(),
         password,
@@ -63,7 +74,16 @@ export default function RegisterPage() {
         // devices — backend persists to users.locale. Only the two values
         // the i18n layer actually supports flow through.
         locale,
+        referrer,
       });
+      // Clear after a successful register so a re-signup attempt on the
+      // same tab doesn't double-attribute. Failures keep the value so the
+      // user's retry still carries the source.
+      try {
+        window.sessionStorage.removeItem("weddly.ref");
+      } catch {
+        /* non-fatal */
+      }
       // Hold the session in transient state ONLY — we do NOT persist the
       // token to localStorage yet. If we did, hitting BACK from the
       // "check inbox" interstitial would let <RedirectIfAuthed> bounce
