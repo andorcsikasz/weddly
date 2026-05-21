@@ -105,26 +105,52 @@ function prefersHungarian(acceptLanguage: string | null | undefined): boolean {
   return first === "hu" || first.startsWith("hu-");
 }
 
-/** SEO locale for a request. Branches on `Accept-Language` so HU-preferring
- *  clients (HU users, hu-HU browsers) get the HU landing + HU meta and
- *  everyone else (international users, EN crawlers including Googlebot) gets
- *  the EN variant. The `host` parameter is retained for future host-based
- *  routing (e.g. a separate weddly.com EN canonical) but ignored today.
+/** Optional EN-canonical host (e.g. "weddly.com"). Activated by the
+ *  `EN_CANONICAL_HOST` env var; empty/unset = single-host mode (the
+ *  historical behaviour, just Accept-Language branching on weddly.hu).
+ *  Read fresh on every call so tests can flip the env around assertions
+ *  without restarting the server. */
+function enCanonicalHostEnv(): string {
+  return (process.env.EN_CANONICAL_HOST ?? "").trim().toLowerCase();
+}
+
+/** True when the request landed on the configured EN canonical host. Used
+ *  by `localeForHost` to force EN regardless of `Accept-Language`. */
+function hostIsEnCanonical(host: string | null | undefined): boolean {
+  const en = enCanonicalHostEnv();
+  if (!en || !host) return false;
+  return host.toLowerCase() === en;
+}
+
+/** SEO locale for a request. Two-tier signal:
+ *   1. Host-driven: visits to the EN canonical (e.g. `weddly.com`) always
+ *      render EN — that's the multi-host pair Google expects for an
+ *      `hreflang="en"` alternate to be meaningful.
+ *   2. Accept-Language: HU-preferring clients get HU; everyone else gets EN.
+ *      Strict first-tag check — see `prefersHungarian`.
  *  `acceptLanguage=null/undefined` defaults to HU for back-compat with old
- *  callers and the SEO test suite — production callers pass the real header. */
+ *  callers and the SEO test suite. Production callers always pass the
+ *  real header. */
 export function localeForHost(
-  _host: string | null | undefined,
+  host: string | null | undefined,
   acceptLanguage: string | null | undefined = null,
 ): SeoLocale {
-  // No header info → preserve historical "HU default" so existing callers /
-  // tests that pass only the host still get HU. Real production requests
-  // always carry Accept-Language, which is where the dynamic branch fires.
+  if (hostIsEnCanonical(host)) return "en";
   if (acceptLanguage == null) return "hu";
   return prefersHungarian(acceptLanguage) ? "hu" : "en";
 }
 
-export function canonicalHostFor(_locale: SeoLocale): string {
-  return CANONICAL_HOST;
+/** Canonical hostname for SEO link rels. When `EN_CANONICAL_HOST` is set
+ *  in the environment, EN renders point to that host (e.g. `weddly.com`)
+ *  so the `hreflang` pair can advertise distinct URLs across locales.
+ *  When unset, both locales return the HU apex — the single-host
+ *  fallback that keeps existing tests + deploys working unchanged. */
+export function canonicalHostFor(locale: SeoLocale): string {
+  if (locale === "en") {
+    const en = enCanonicalHostEnv();
+    if (en) return en;
+  }
+  return HU_HOST;
 }
 
 function escapeAttr(s: string): string {
@@ -272,6 +298,12 @@ function buildHeadBlock(opts: {
   const path = opts.pathname || "/";
   const canonicalUrl = `https://${canonicalHost}${path}`;
   const huUrl = `https://${CANONICAL_HOST}${path}`;
+  // EN canonical URL only differs from the HU one when `EN_CANONICAL_HOST`
+  // env is set. Otherwise we stay single-host and skip the EN hreflang
+  // link rel — emitting one that points back to the HU canonical would
+  // trigger Google's duplicate-canonical warning and erode the HU rank.
+  const enHostConfigured = enCanonicalHostEnv();
+  const enUrl = enHostConfigured ? `https://${enHostConfigured}${path}` : null;
   // Couple-specific OG image when the couple set a cover URL; falls back
   // to /og-rsvp.png on RSVP routes and the brand /og.png everywhere else.
   // External URLs are passed through as-is (couple-pasted Imgur / Cloudinary).
@@ -335,6 +367,7 @@ function buildHeadBlock(opts: {
     `<meta name="twitter:description" content="${escapeAttr(twDescription)}" />`,
     `<meta name="twitter:image" content="${ogImage}" />`,
     `<link rel="alternate" hreflang="hu" href="${huUrl}" />`,
+    ...(enUrl ? [`<link rel="alternate" hreflang="en" href="${enUrl}" />`] : []),
     `<link rel="alternate" hreflang="x-default" href="${huUrl}" />`,
     buildJsonLd({ locale, canonicalHost, pathname: path }),
   ].join("\n    ");
@@ -477,13 +510,19 @@ export function renderRobotsTxt(_host: string | null): string {
 const SITEMAP_LASTMOD = new Date().toISOString().slice(0, 10);
 
 export function renderSitemapXml(_host: string | null): string {
+  // Mirror the head-block hreflang policy: emit the EN alternate only when
+  // `EN_CANONICAL_HOST` is configured. Otherwise we stay single-host and
+  // each <url> just lists hu + x-default pointing at weddly.hu.
+  const enHostConfigured = enCanonicalHostEnv();
   const urls = PUBLIC_PATHS.map(({ path, priority, changefreq }) => {
     const here = `https://${CANONICAL_HOST}${path}`;
+    const enHere = enHostConfigured ? `https://${enHostConfigured}${path}` : null;
     return [
       "  <url>",
       `    <loc>${here}</loc>`,
       `    <lastmod>${SITEMAP_LASTMOD}</lastmod>`,
       `    <xhtml:link rel="alternate" hreflang="hu" href="${here}" />`,
+      ...(enHere ? [`    <xhtml:link rel="alternate" hreflang="en" href="${enHere}" />`] : []),
       `    <xhtml:link rel="alternate" hreflang="x-default" href="${here}" />`,
       `    <changefreq>${changefreq}</changefreq>`,
       `    <priority>${priority}</priority>`,

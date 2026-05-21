@@ -1,6 +1,6 @@
 import "./setup";
 
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import { db, now } from "../src/db";
 import { runEmailSweep } from "../src/domain/emails/worker";
@@ -10660,6 +10660,119 @@ describe("seo: renderIndexHtml meta injection", () => {
     expect(html).toContain(`<html lang="hu"`);
     expect(html).toContain(`<meta property="og:locale" content="hu_HU" />`);
     expect(html).toContain(`Wēddly · Közös esküvőtervezés egy helyen`);
+  });
+});
+
+// Multi-host activation via EN_CANONICAL_HOST. When the env is set (e.g.
+// `weddly.com`), the renderer pairs each HU URL with an EN alternate so
+// Google can index the two as language variants. Without the env, the
+// codebase stays single-host (asserted by every test above this block).
+describe("seo: multi-host (EN canonical configured)", () => {
+  const EN_HOST = "weddly.com";
+  const TEMPLATE = `<!doctype html>
+<html lang="hu">
+<head>
+<!-- SEO_HEAD_START -->
+<title>placeholder</title>
+<!-- SEO_HEAD_END -->
+</head>
+<body><div id="root"></div></body>
+</html>`;
+
+  beforeAll(() => {
+    process.env.EN_CANONICAL_HOST = EN_HOST;
+  });
+  afterAll(() => {
+    delete process.env.EN_CANONICAL_HOST;
+  });
+
+  test("canonicalHostFor('en') returns the EN host once configured", () => {
+    expect(canonicalHostFor("en")).toBe(EN_HOST);
+    expect(canonicalHostFor("hu")).toBe(HU_HOST);
+  });
+
+  test("visiting the EN canonical host forces EN locale regardless of Accept-Language", () => {
+    // Even with `Accept-Language: hu` the host-driven signal wins. Google's
+    // crawler that lands directly on weddly.com must see EN — not a
+    // confusing Hungarian render that breaks the hreflang pair.
+    const html = renderIndexHtml(TEMPLATE, {
+      host: EN_HOST,
+      pathname: "/",
+      isRsvp: false,
+      acceptLanguage: "hu-HU,hu;q=0.9",
+    });
+    expect(html).toContain(`<html lang="en"`);
+    expect(html).toContain(`<link rel="canonical" href="https://${EN_HOST}/" />`);
+    expect(html).toContain(`<meta property="og:locale" content="en_US" />`);
+  });
+
+  test("HU host still serves HU when the visitor's primary Accept-Language is HU", () => {
+    // Regression guard: enabling the EN host must NOT pull HU visitors away
+    // from the HU canonical. A `Accept-Language: hu` browser on weddly.hu
+    // keeps the HU SSR + HU canonical link rel.
+    const html = renderIndexHtml(TEMPLATE, {
+      host: "weddly.hu",
+      pathname: "/",
+      isRsvp: false,
+      acceptLanguage: "hu-HU,hu;q=0.9",
+    });
+    expect(html).toContain(`<html lang="hu"`);
+    expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/" />`);
+  });
+
+  test("HU render emits hreflang en pointing at the EN host", () => {
+    const html = renderIndexHtml(TEMPLATE, {
+      host: "weddly.hu",
+      pathname: "/about",
+      isRsvp: false,
+      acceptLanguage: "hu-HU",
+    });
+    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/about"`);
+    expect(html).toContain(`hreflang="en" href="https://${EN_HOST}/about"`);
+    expect(html).toContain(`hreflang="x-default" href="https://${HU_HOST}/about"`);
+  });
+
+  test("EN render also emits both alternates (canonical on EN host, hreflang hu pointing back)", () => {
+    const html = renderIndexHtml(TEMPLATE, {
+      host: EN_HOST,
+      pathname: "/about",
+      isRsvp: false,
+      acceptLanguage: null,
+    });
+    expect(html).toContain(`<link rel="canonical" href="https://${EN_HOST}/about" />`);
+    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/about"`);
+    expect(html).toContain(`hreflang="en" href="https://${EN_HOST}/about"`);
+  });
+
+  test("renderSitemapXml emits the EN alternate per <url> when EN_CANONICAL_HOST is set", () => {
+    const body = renderSitemapXml("weddly.hu");
+    expect(body).toContain(`<loc>https://${HU_HOST}/</loc>`);
+    expect(body).toContain(
+      `<xhtml:link rel="alternate" hreflang="en" href="https://${EN_HOST}/" />`,
+    );
+    expect(body).toContain(
+      `<xhtml:link rel="alternate" hreflang="en" href="https://${EN_HOST}/about" />`,
+    );
+    // x-default stays HU — the "fallback for unspecified-locale crawlers"
+    // signal that Google docs recommend on bilingual sites.
+    expect(body).toContain(
+      `<xhtml:link rel="alternate" hreflang="x-default" href="https://${HU_HOST}/"`,
+    );
+  });
+
+  test("OG image still uses the canonical host of the current locale (no cross-host leak)", () => {
+    const huHtml = renderIndexHtml(TEMPLATE, {
+      host: "weddly.hu",
+      pathname: "/",
+      isRsvp: false,
+    });
+    const enHtml = renderIndexHtml(TEMPLATE, {
+      host: EN_HOST,
+      pathname: "/",
+      isRsvp: false,
+    });
+    expect(huHtml).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
+    expect(enHtml).toContain(`<meta property="og:image" content="https://${EN_HOST}/og.png" />`);
   });
 });
 

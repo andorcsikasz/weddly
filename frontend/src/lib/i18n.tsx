@@ -41,17 +41,26 @@ interface I18nState {
 const I18nContext = createContext<I18nState | null>(null);
 
 function detectInitial(): Locale {
+  // Host-driven signal wins: visiting the EN canonical (e.g. weddly.com)
+  // forces EN regardless of localStorage or navigator.language. Matches
+  // the backend `localeForHost` policy so SSR + client agree on the first
+  // render. Build-time `VITE_EN_CANONICAL_HOST` is empty in single-host
+  // deploys (status quo) and populated once the user activates weddly.com.
+  if (typeof window !== "undefined") {
+    const enHost = (import.meta.env.VITE_EN_CANONICAL_HOST ?? "").trim().toLowerCase();
+    if (enHost && window.location.hostname.toLowerCase() === enHost) {
+      return "en";
+    }
+  }
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "hu" || saved === "en") return saved;
   } catch {
     // localStorage may be blocked
   }
-  // Single-host deployment — no host-based locale signal. Sniff
-  // navigator.language: an HU-speaking browser lands in HU, everything
-  // else (FR, DE, ES, EN, …) defaults to EN. This is the flip from the
-  // HU-default era; the international-expansion shift means an unsaved
-  // visitor is more likely to want EN than HU.
+  // Otherwise: sniff navigator.language. HU-speaking browser → HU, every-
+  // thing else (FR, DE, ES, EN, …) → EN. This is the post-international-
+  // expansion default; an unsaved visitor is more likely to want EN.
   if (typeof navigator !== "undefined" && navigator.language?.toLowerCase().startsWith("hu")) {
     return "hu";
   }
