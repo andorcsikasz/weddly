@@ -31,6 +31,7 @@ import {
   Printer,
   QrCode,
   Store,
+  Tablet,
   Users,
   Wallet,
   X,
@@ -1989,6 +1990,16 @@ function DayOfPanel({
                 <Clipboard size={14} />
                 {copied ? t("dashboard.day_of_checkin_copied") : t("dashboard.day_of_checkin_copy")}
               </button>
+              <a
+                href={`/rsvp?couple=${encodeURIComponent(couple.slug)}&kiosk=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+                title={t("dashboard.welcome_desk_help")}
+              >
+                <Tablet size={14} aria-hidden />
+                {t("dashboard.welcome_desk_open")}
+              </a>
             </div>
             {/* TODO(v2): inline SVG QR encoder. Avoiding a new heavy dep for
                 now — the URL above is the source of truth and most door-

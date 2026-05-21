@@ -880,6 +880,9 @@ export function HouseholdRsvpForm({
           <p className="mt-2 text-center text-sm text-ink-700 dark:text-paper-100">
             <strong>{t("rsvp.checkin_done_title")}</strong> — {t("rsvp.thanks_body")}
           </p>
+          <p className="mt-1 text-center text-xs text-ink-500 dark:text-umber-300">
+            {t("rsvp.thanks_email_hint")}
+          </p>
           {/* Post-RSVP referral surface — the cheapest viral loop in the
               product. A guest who just confirmed attendance is, by
               definition, thinking about weddings right now. Two small

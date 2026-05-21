@@ -1206,13 +1206,19 @@ export default function SeatingPage() {
             </p>
           </div>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <button type="button" className="btn-primary" onClick={addTable}>
-              <Plus size={16} aria-hidden /> {t("seating.add_table")}
-            </button>
-            {guests.length === 0 && (
-              <Link to="/app/guests" className="btn-outline">
-                <Users size={16} aria-hidden /> {t("seating.empty_cta_add_guests")}
-              </Link>
+            {guests.length === 0 ? (
+              <>
+                <Link to="/app/guests" className="btn-primary">
+                  <Users size={16} aria-hidden /> {t("seating.empty_cta_add_guests")}
+                </Link>
+                <button type="button" className="btn-outline" onClick={addTable}>
+                  <Plus size={16} aria-hidden /> {t("seating.empty_cta_fallback_table")}
+                </button>
+              </>
+            ) : (
+              <button type="button" className="btn-primary" onClick={addTable}>
+                <Plus size={16} aria-hidden /> {t("seating.empty_cta_add_table")}
+              </button>
             )}
           </div>
         </div>

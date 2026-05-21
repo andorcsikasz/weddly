@@ -11,14 +11,20 @@
 
 import type { GuestPortalView } from "@shared/guest_portal";
 import type { PublicCheckinView } from "@shared/types";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
-import { I18nProvider } from "@/lib/i18n";
+import { _preloadHuForTests, I18nProvider } from "@/lib/i18n";
 import GuestPortalPage from "@/pages/GuestPortalPage";
 import RsvpCheckinPage from "@/pages/RsvpCheckinPage";
+
+// HU is lazy-loaded via dynamic import in production; the suite asserts on
+// HU labels synchronously after render(), so preload the tree once.
+beforeAll(async () => {
+  await _preloadHuForTests();
+});
 
 const realFetch = globalThis.fetch;
 

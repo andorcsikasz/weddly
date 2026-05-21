@@ -346,7 +346,7 @@ describe("<GuestsPage>", () => {
     await waitFor(() => {
       expect(screen.getByText(/no guests yet/i)).toBeInTheDocument();
     });
-    expect(screen.getByText(/add one by hand or import a csv/i)).toBeInTheDocument();
+    expect(screen.getByText(/import the whole list from csv/i)).toBeInTheDocument();
   });
 
   it("renders one household card per household", async () => {
@@ -474,8 +474,9 @@ describe("<GuestsPage>", () => {
     // The CSV input has accept=".csv,text/csv" — find it via that attribute.
     const fileInput = document.querySelector('input[type="file"][accept*="csv"]');
     expect(fileInput).not.toBeNull();
-    // The visible label text matches "Import CSV".
-    expect(screen.getByText(/import csv/i)).toBeInTheDocument();
+    // "Import CSV" label is rendered in both the toolbar and the empty-state
+    // CTA cluster, so multiple matches are expected.
+    expect(screen.getAllByText(/import csv/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it("Per-row Print place card triggers a GET to /api/print/place-cards", async () => {
@@ -502,7 +503,11 @@ describe("<GuestsPage>", () => {
     installDefaultEndpoints({ guests: [], households: [] });
     renderGuests();
     await waitFor(() => expect(screen.getByText(/no guests yet/i)).toBeInTheDocument());
-    expect(screen.getByRole("button", { name: /download template/i })).toBeInTheDocument();
+    // The Download-template button is rendered in both the toolbar and the
+    // empty-state CTA cluster; assert at least one exists.
+    expect(
+      screen.getAllByRole("button", { name: /download template/i }).length,
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("button", { name: /^meals$/i })).toBeInTheDocument();
   });
 

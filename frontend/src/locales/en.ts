@@ -488,6 +488,8 @@ const en: LocaleMessages = {
     day_of_checkin_no_slug:
       "No couple identifier yet — set one on the Guests page so check-in works.",
     day_of_qr_todo: "(QR code coming in v2 — for now just share the link above)",
+    welcome_desk_open: "Open welcome-desk tablet",
+    welcome_desk_help: "Opens in a new tab in welcome-desk mode — hand the tablet to your greeter.",
     day_of_stats_yes: "Guests confirmed",
     day_of_stats_checked_in: "Checked in today",
     day_of_dietary_title: "Dietary at a glance",
@@ -1637,9 +1639,11 @@ const en: LocaleMessages = {
     no_unassigned: "Everyone is seated!",
     no_tables: "No tables yet",
     add_first_table: "Add one to get started.",
+    empty_cta_add_table: "Add your first table",
     empty_body_no_guests:
       "Seating is built around your guest list — start with guests, then we'll arrange tables around them.",
     empty_cta_add_guests: "Add guests",
+    empty_cta_fallback_table: "I'll start with tables anyway",
     drag_help: "Drag guests onto seats.",
     household_linked_aria: "{n}-member household, linked",
     household_unlink: "Separate household",
@@ -2566,6 +2570,8 @@ const en: LocaleMessages = {
     submitted: "Got it!",
     thanks_title: "Thank you!",
     thanks_body: "The couple sees your response — come back any time to update.",
+    thanks_email_hint:
+      "A confirmation email is on its way — if it doesn't arrive in a few minutes, check spam too.",
     thanks_open_site: "Open the wedding page →",
     thanks_plan_your_own: "Planning your own wedding? Try Weddly free →",
     update_response: "Update",
@@ -2638,12 +2644,12 @@ const en: LocaleMessages = {
     offline_saved: "Saved — we'll send it as soon as we're back online.",
     offline_drained_one: "1 response delivered.",
     offline_drained_other: "{n} responses delivered.",
-    kiosk_banner: "Kiosk mode — tap and hold the corner to exit.",
-    kiosk_enter: "Turn on kiosk mode",
+    kiosk_banner: "Welcome-desk mode — tap and hold the corner to exit.",
+    kiosk_enter: "Turn on welcome-desk mode",
     kiosk_enter_help:
-      "Handing a shared tablet to guests? Kiosk mode locks the page so they can check themselves in without navigating away or editing the form. To exit: hold the bottom-right corner, or press Shift+K.",
-    kiosk_exit_hold: "Hold to exit kiosk (Shift+K also works)",
-    kiosk_exit_confirmed: "Kiosk mode off.",
+      "Handing a shared tablet to guests? Welcome-desk mode locks the page so they can check themselves in without navigating away or editing the form. To exit: hold the bottom-right corner, or press Shift+K.",
+    kiosk_exit_hold: "Hold to exit welcome-desk (Shift+K also works)",
+    kiosk_exit_confirmed: "Welcome-desk mode off.",
   },
   notfound: {
     title: "Page not found",

@@ -491,6 +491,8 @@ const hu: LocaleMessages = {
     day_of_checkin_no_slug:
       "Még nincs páros azonosító — állítsd be a Vendégek oldalon a check-in elindításához.",
     day_of_qr_todo: "(QR-kód a v2-ben — addig csak a fenti link kell)",
+    welcome_desk_open: "Üdvözlő pult tablet megnyitása",
+    welcome_desk_help: "Új lapon nyílik, kiosk-zárral — add át a tabletet a fogadásnál.",
     day_of_stats_yes: "Visszajelzett vendég",
     day_of_stats_checked_in: "Ma bejelentkezett",
     day_of_dietary_title: "Étrendi összegzés",
@@ -1654,9 +1656,11 @@ const hu: LocaleMessages = {
     no_unassigned: "Mindenki le van ültetve!",
     no_tables: "Még nincsenek asztalok",
     add_first_table: "Adj hozzá egyet a kezdéshez.",
+    empty_cta_add_table: "Első asztal hozzáadása",
     empty_body_no_guests:
       "Az ültetésrendet a vendéglistára építjük rá — kezdj a vendégekkel, utána tudunk asztalokat tenni mellé.",
     empty_cta_add_guests: "Vendégek hozzáadása",
+    empty_cta_fallback_table: "Mégis asztallal kezdek",
     drag_help: "Húzd a vendégeket az ülőhelyekre.",
     household_linked_aria: "{n} fős háztartás összekapcsolva",
     household_unlink: "Háztartás szétválasztása",
@@ -2592,6 +2596,8 @@ const hu: LocaleMessages = {
     submitted: "Köszönjük!",
     thanks_title: "Megkaptuk!",
     thanks_body: "A pár látja a választást — bármikor visszajöhetsz módosítani.",
+    thanks_email_hint:
+      "Egy megerősítő email is érkezni fog — ha pár percen belül nem látod, nézd meg a spam mappát is.",
     thanks_open_site: "Esküvői oldal megnyitása →",
     thanks_plan_your_own: "Ti is most terveztek? Próbáljátok ki a Weddlyt ingyen →",
     update_response: "Frissítés",
@@ -2665,12 +2671,12 @@ const hu: LocaleMessages = {
     offline_saved: "Mentve — elküldjük, amint van internet.",
     offline_drained_one: "1 visszajelzés sikeresen elküldve.",
     offline_drained_other: "{n} visszajelzés sikeresen elküldve.",
-    kiosk_banner: "Kiosk mód — érintsd és tartsd lenyomva a sarokban a kilépéshez.",
-    kiosk_enter: "Kiosk mód be",
+    kiosk_banner: "Üdvözlő pult mód — érintsd és tartsd lenyomva a sarokban a kilépéshez.",
+    kiosk_enter: "Üdvözlő pult mód be",
     kiosk_enter_help:
-      "Egy közös tabletet adsz át a vendégeknek? A kiosk mód zárolja az oldalt, hogy maguk jelentkezhessenek be, anélkül hogy elnavigálnának vagy beleszerkesztenének. Kilépés: tartsd a jobb alsó sarkot, vagy Shift+K.",
+      "Egy közös tabletet adsz át a vendégeknek? Az üdvözlő pult mód zárolja az oldalt, hogy maguk jelentkezhessenek be, anélkül hogy elnavigálnának vagy beleszerkesztenének. Kilépés: tartsd a jobb alsó sarkot, vagy Shift+K.",
     kiosk_exit_hold: "Tartsd lenyomva a kilépéshez (Shift+K is működik)",
-    kiosk_exit_confirmed: "Kiosk mód kikapcsolva.",
+    kiosk_exit_confirmed: "Üdvözlő pult mód kikapcsolva.",
   },
   notfound: {
     title: "Nincs ilyen oldal",

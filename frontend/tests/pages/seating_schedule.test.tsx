@@ -280,7 +280,10 @@ describe("<SeatingPage>", () => {
   }
 
   it("renders the empty-tables card when no tables exist", async () => {
-    const mockFetch = installFetchMock(defaultSeatingRoutes());
+    // Seed at least one guest so the empty-state body shows the "Add one to
+    // get started." copy. Without guests the empty-tables card shows the
+    // upstream "go add guests first" guidance instead.
+    const mockFetch = installFetchMock(defaultSeatingRoutes({ guests: [makeGuest("Alice Solo")] }));
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
@@ -288,6 +291,9 @@ describe("<SeatingPage>", () => {
     // "No tables yet" → render the stationery empty card.
     expect(await screen.findByText("No tables yet")).toBeInTheDocument();
     expect(screen.getByText("Add one to get started.")).toBeInTheDocument();
+    // Empty-state CTA uses a distinct label from the toolbar button to avoid
+    // duplicate accessible names when both render simultaneously.
+    expect(screen.getByRole("button", { name: "Add your first table" })).toBeInTheDocument();
   });
 
   it("clicking 'Add table' fires POST /api/seating/tables with shape, seats, and position", async () => {
@@ -303,7 +309,9 @@ describe("<SeatingPage>", () => {
 
     await renderPage(<SeatingPage />);
 
-    const addButton = screen.getByRole("button", { name: /Add table/i });
+    // Exact-match the toolbar button; the empty-state CTA has a different
+    // label ("Add your first table") to keep accessible names distinct.
+    const addButton = screen.getByRole("button", { name: "Add table" });
     await act(async () => {
       fireEvent.click(addButton);
       await Promise.resolve();

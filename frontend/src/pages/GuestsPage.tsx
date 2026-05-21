@@ -29,6 +29,7 @@ import {
   Egg,
   Fish,
   Gem,
+  Heart,
   Home,
   Leaf,
   Link2,
@@ -46,6 +47,7 @@ import {
   Trash2,
   Upload,
   User,
+  User2,
   UserPlus,
   Users,
   Utensils,
@@ -2290,33 +2292,35 @@ function SegmentButton({
   );
 }
 
-/** Icon glyph for each guest group tag. Crown pairs with Gem (groom/bride) and
- *  the friend tags compose that side's symbol with Users so the side is
- *  readable at a glance. The full label sits in `title`/`aria-label` on the
- *  segmented button so a hover or screen-reader tap disambiguates. */
+/** Icon glyph for each guest group tag. Neutral User / User2 / Users variants
+ *  read as "his side / her side / both" without locking in a gendered crown-
+ *  vs-gem affordance the way the previous Crown/Gem mapping did. International
+ *  launches don't carry the HU bride/groom heraldry, and the partner glyphs
+ *  elsewhere on the page already cover the bride/groom emphasis where it's
+ *  contextually warranted. */
 function GroupIcon({ group }: { group: GuestGroupTag }) {
   const size = 16;
   switch (group) {
     case "his_family":
-      return <Crown size={size} aria-hidden />;
+      return <User size={size} aria-hidden />;
     case "her_family":
-      return <Gem size={size} aria-hidden />;
+      return <User2 size={size} aria-hidden />;
     case "his_friends":
       return (
         <>
-          <Crown size={size} aria-hidden />
+          <User size={size} aria-hidden />
           <Users size={size} aria-hidden />
         </>
       );
     case "her_friends":
       return (
         <>
-          <Gem size={size} aria-hidden />
+          <User2 size={size} aria-hidden />
           <Users size={size} aria-hidden />
         </>
       );
     case "shared_friends":
-      return <Users size={size} aria-hidden />;
+      return <Heart size={size} aria-hidden />;
     case "work":
       return <Briefcase size={size} aria-hidden />;
     case "other":

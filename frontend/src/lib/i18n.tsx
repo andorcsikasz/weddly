@@ -25,6 +25,13 @@ function loadHu(): Promise<LocaleMessages> {
   return huPromise;
 }
 
+/** Test-only: synchronously populate the HU locale tree so render() can assert
+ *  on HU labels without an extra waitFor(). Production code never calls this —
+ *  the lazy import keeps the HU chunk out of the initial bundle for EN users. */
+export async function _preloadHuForTests(): Promise<void> {
+  await loadHu();
+}
+
 interface I18nState {
   locale: Locale;
   setLocale: (l: Locale) => void;

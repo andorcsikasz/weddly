@@ -390,7 +390,6 @@ describe("auth (google)", () => {
   // GOOGLE_TEST_BYPASS=1; setup.ts sets that. mintTestBearer lives next to
   // the verifier so the format stays in one place.
   // Imported inside the describe to keep the top-of-file import block tidy.
-  // biome-ignore lint/style/useTopLevelRegex: dynamic import keeps test imports localised
   const importMint = () => import("../src/lib/google_oauth");
 
   test("first-time Google sign-in creates a verified user with a session", async () => {
@@ -2851,7 +2850,6 @@ describe("password reset", () => {
   test("forgot+reset are no-ops for Google-only accounts", async () => {
     wipeAll();
     // Sign up via Google — no local password is ever set.
-    // biome-ignore lint/style/useTopLevelRegex: dynamic import keeps test imports localised
     const { mintTestBearer } = await import("../src/lib/google_oauth");
     const credential = mintTestBearer({
       sub: "google-sub-pwreset",

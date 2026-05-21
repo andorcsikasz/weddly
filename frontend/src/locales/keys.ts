@@ -543,6 +543,8 @@ export interface LocaleMessages {
     day_of_checkin_no_slug: string;
     /** Inline TODO line shown where the QR code will eventually live. */
     day_of_qr_todo: string;
+    welcome_desk_open: string;
+    welcome_desk_help: string;
     day_of_stats_yes: string;
     day_of_stats_checked_in: string;
     day_of_dietary_title: string;
@@ -1817,8 +1819,10 @@ export interface LocaleMessages {
     no_unassigned: string;
     no_tables: string;
     add_first_table: string;
+    empty_cta_add_table: string;
     empty_body_no_guests: string;
     empty_cta_add_guests: string;
+    empty_cta_fallback_table: string;
     drag_help: string;
     /** Household-aware seating affordances: the badge that marks a guest as
      *  part of a linked household, the unlink/relink toggles, and the
@@ -2873,6 +2877,7 @@ export interface LocaleMessages {
     submitted: string;
     thanks_title: string;
     thanks_body: string;
+    thanks_email_hint: string;
     /** Post-submit referral copy — see HouseholdRsvpForm.tsx. */
     thanks_open_site: string;
     thanks_plan_your_own: string;

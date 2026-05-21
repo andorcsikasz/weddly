@@ -1448,7 +1448,6 @@ describe("POST /api/unsubscribe/:token — RFC 8058", () => {
 // ─── /api/auth/google ──────────────────────────────────────────────────────
 
 describe("POST /api/auth/google", () => {
-  // biome-ignore lint/style/useTopLevelRegex: dynamic import keeps test imports localised
   const importMint = () => import("../../src/lib/google_oauth");
 
   test("missing credential returns 400", async () => {

@@ -699,9 +699,10 @@ describe("<OnboardingWizard>", () => {
   });
 
   it("shows the retry banner (without clearing draft) when /api/couples/onboard fails", async () => {
-    // To exercise the submit failure path without manually clicking through 5
-    // steps, we seed the draft so loadDraft() jumps straight to a valid state,
-    // then click Next four times to reach step 5 (style), then Finish.
+    // To exercise the submit failure path without manually clicking through
+    // the full wizard, we seed the draft so loadDraft() jumps straight to a
+    // valid state, then click Next three times (0→1→2→3) to reach the final
+    // step where the Next button is replaced by "Let's go!".
     localStorage.setItem(
       "weddly.onboarding_draft",
       JSON.stringify({
@@ -738,13 +739,14 @@ describe("<OnboardingWizard>", () => {
       </ProviderStack>,
     );
     await waitFor(() => screen.getByLabelText(/bride/i));
-    // Click Next four times: 0→1→2→3→4 (each step is tbd-valid)
-    for (let i = 0; i < 4; i++) {
+    // Click Next three times: 0→1→2→3 (each step is tbd-valid). Step 3 is
+    // the final step where the Next button is replaced by the Finish button.
+    for (let i = 0; i < 3; i++) {
       fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
       // Allow re-render before next click.
       await flush();
     }
-    // Step 5 — finish button labeled "Let's go!".
+    // Final step — finish button labeled "Let's go!".
     const finishBtn = screen.getByRole("button", { name: /let's go!/i });
     fireEvent.click(finishBtn);
     await waitFor(() => {
