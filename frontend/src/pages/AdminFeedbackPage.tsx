@@ -77,7 +77,16 @@ export default function AdminFeedbackPage() {
       month: "short",
       day: "numeric",
     });
-  const fmtMoney = (huf: number) => huf.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB") + " Ft";
+  // The `monthly_value_ft` column is unit-tagged by `entry.locale`: HU rows
+  // are HUF (0–15 000 range), EN rows are EUR (0–50 range). Column name is
+  // historic — see FeedbackDialog.tsx for the per-locale slider range.
+  // Rendering always uses the *admin's* locale for number grouping (so
+  // 1 234 vs 1,234), but the *entry's* locale picks the symbol.
+  const fmtMoney = (amount: number, entryLocale: string | null) => {
+    const symbol = entryLocale === "en" ? "€" : "Ft";
+    const formatted = amount.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB");
+    return entryLocale === "en" ? `${symbol}${formatted}` : `${formatted} ${symbol}`;
+  };
 
   return (
     <>
@@ -201,7 +210,7 @@ export default function AdminFeedbackPage() {
                       <div className="mt-1 flex gap-3 text-xs text-ink-500 dark:text-umber-300 sm:hidden">
                         {e.rating !== null && <span>★ {e.rating}/10</span>}
                         {e.monthly_value_ft !== null && e.monthly_value_ft > 0 && (
-                          <span>{fmtMoney(e.monthly_value_ft)}</span>
+                          <span>{fmtMoney(e.monthly_value_ft, e.locale)}</span>
                         )}
                       </div>
                     </td>
@@ -219,7 +228,7 @@ export default function AdminFeedbackPage() {
                         <span className="text-ink-300 dark:text-umber-300">—</span>
                       ) : (
                         <span className="text-ink-900 dark:text-paper-50">
-                          {fmtMoney(e.monthly_value_ft)}
+                          {fmtMoney(e.monthly_value_ft, e.locale)}
                         </span>
                       )}
                     </td>
