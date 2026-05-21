@@ -1,12 +1,13 @@
-// Branded bilingual email template. Email-client safe — table layout, inline
-// styles, hex colors with web-safe fallbacks. Width capped at 560px so it reads
-// well on mobile and in the Gmail/Outlook/Apple Mail preview pane.
+// Branded locale-aware email template. Email-client safe — table layout,
+// inline styles, hex colors with web-safe fallbacks. Width capped at 560px so
+// it reads well on mobile and in the Gmail/Outlook/Apple Mail preview pane.
 //
-// One template, two locales: HU primary card on top, EN secondary card below
-// (per CLAUDE.md — never persist per-user locale, bilingual is the safer
-// fallback). Footer carries the unsubscribe link only when the email is
-// `lifecycle` category; transactional mail just shows a "you got this because"
-// hint.
+// Rendering modes:
+//   - `recipientLocale="hu"` → single HU card, HU footer
+//   - `recipientLocale="en"` → single EN card, EN footer
+//   - `recipientLocale=null/undefined` → bilingual fallback (HU primary on top,
+//     EN secondary below). Used for guests + pre-feature users whose
+//     `users.locale` was never captured.
 //
 // IMPORTANT: do not pull in CSS variables or media queries — most email
 // clients strip <style> blocks. Keep everything inline.
@@ -14,6 +15,7 @@
 import { CONFIG } from "../../config";
 
 export type EmailCategory = "transactional" | "lifecycle";
+export type RecipientLocale = "hu" | "en" | null;
 
 export interface LocaleBlock {
   /** Optional preheader (the gray inbox-preview text). Renders hidden in HTML. */
@@ -36,6 +38,11 @@ export interface RenderInput {
   /** When category=lifecycle, this is appended as ?token=… so the link is
    *  one-click. The route is /unsubscribe/:token on the frontend. */
   unsubscribeToken?: string;
+  /** Pick a single-language render when known. `null`/omitted falls back to
+   *  the historical bilingual HU+EN layout — used for guests (we don't have
+   *  per-guest locale yet) and users whose `users.locale` predates the
+   *  feature. */
+  recipientLocale?: RecipientLocale;
 }
 
 export interface RenderedEmail {
@@ -59,86 +66,121 @@ const COLOR = {
   enInk: "#5a5550",
 } as const;
 
-export function renderEmail(input: RenderInput): RenderedEmail {
-  const { hu, en, ctaUrl, category, unsubscribeToken } = input;
-  const fallbackSubject = hu.paragraphs[0] ?? hu.greeting;
+interface PickedBlock {
+  locale: "hu" | "en";
+  block: LocaleBlock;
+}
 
-  const text = renderText(input);
-  const html = renderHtml(input);
+/** Choose which language blocks render, in display order. `null` recipient
+ *  locale → bilingual fallback (HU primary, EN secondary) for back-compat
+ *  with guests + pre-feature users. */
+function pickBlocks(hu: LocaleBlock, en: LocaleBlock, locale: RecipientLocale): PickedBlock[] {
+  if (locale === "hu") return [{ locale: "hu", block: hu }];
+  if (locale === "en") return [{ locale: "en", block: en }];
+  return [
+    { locale: "hu", block: hu },
+    { locale: "en", block: en },
+  ];
+}
+
+export function renderEmail(input: RenderInput): RenderedEmail {
+  const { hu, en, recipientLocale } = input;
+  const blocks = pickBlocks(hu, en, recipientLocale ?? null);
+  // Subject fallback follows the primary block — for an EN-only render, the
+  // EN first paragraph stands in if the kind builder returned an empty
+  // subject; for bilingual (null locale) we keep the historical HU fallback
+  // so legacy callers see no behaviour change.
+  const primary = blocks[0]?.block ?? hu;
+  const fallbackSubject = primary.paragraphs[0] ?? primary.greeting;
+
+  const text = renderText(input, blocks);
+  const html = renderHtml(input, blocks);
   return { html, text, fallbackSubject };
 
-  // closures share `category` / `unsubscribeToken`, so keep them inline below
-  function renderText({ hu, en, ctaUrl, category, unsubscribeToken }: RenderInput): string {
+  function renderText(
+    { ctaUrl, category, unsubscribeToken }: RenderInput,
+    blocks: PickedBlock[],
+  ): string {
     const lines: string[] = [];
     // Plain-text counterpart of the brand header. The macron char (U+0112) is
     // valid UTF-8 and renders fine in every modern text-mode client; the only
     // place it might fail is a 1990s telnet reader, which we don't target.
     lines.push("WĒDDLY");
     lines.push("");
-    lines.push(hu.greeting);
-    lines.push("");
-    for (const p of hu.paragraphs) lines.push(p);
-    lines.push("");
-    lines.push(`${hu.cta}: ${ctaUrl}`);
-    if (hu.footnote) {
+    blocks.forEach(({ block }, i) => {
+      if (i > 0) {
+        lines.push("— — —");
+        lines.push("");
+      }
+      lines.push(block.greeting);
       lines.push("");
-      lines.push(hu.footnote);
-    }
-    lines.push("");
-    lines.push("— — —");
-    lines.push("");
-    lines.push(en.greeting);
-    lines.push("");
-    for (const p of en.paragraphs) lines.push(p);
-    lines.push("");
-    lines.push(`${en.cta}: ${ctaUrl}`);
-    if (en.footnote) {
+      for (const p of block.paragraphs) lines.push(p);
       lines.push("");
-      lines.push(en.footnote);
-    }
-    lines.push("");
-    lines.push("---");
-    if (category === "lifecycle" && unsubscribeToken) {
-      lines.push(
-        `Nem kérsz emlékeztetőket? Leiratkozás / Don't want updates? Unsubscribe: ${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`,
-      );
-    } else {
-      lines.push("You're getting this because it's about your Weddly account.");
-    }
-    lines.push("Weddly · weddly.hu");
+      lines.push(`${block.cta}: ${ctaUrl}`);
+      if (block.footnote) {
+        lines.push("");
+        lines.push(block.footnote);
+      }
+      lines.push("");
+    });
+    lines.push(footerText(blocks, category, unsubscribeToken));
     return lines.join("\n");
   }
 
-  function renderHtml({ hu, en, ctaUrl, category, unsubscribeToken }: RenderInput): string {
-    const preheader = hu.preheader ?? hu.paragraphs[0] ?? "";
-    // Long Hungarian compound names (couple display names, household labels)
-    // can otherwise force horizontal scroll on narrow mobile mail clients.
-    // word-break:break-word is well-supported across Gmail/Apple Mail; hyphens
-    // is best-effort but degrades gracefully.
-    const huParas = hu.paragraphs
-      .map(
-        (p) =>
-          `<p style="margin:0 0 14px 0;color:${COLOR.ink};font-size:16px;line-height:1.55;word-break:break-word;hyphens:auto;">${escapeHtml(p)}</p>`,
-      )
-      .join("");
-    const enParas = en.paragraphs
-      .map(
-        (p) =>
-          `<p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;word-break:break-word;hyphens:auto;">${escapeHtml(p)}</p>`,
-      )
-      .join("");
+  function footerText(
+    blocks: PickedBlock[],
+    category: EmailCategory,
+    unsubscribeToken?: string,
+  ): string {
+    const bilingual = blocks.length > 1;
+    const onlyEn = blocks.length === 1 && blocks[0]?.locale === "en";
+    const why = bilingual
+      ? category === "lifecycle"
+        ? "Időnkénti emlékeztetőket kapsz a Weddly-től. / You're getting occasional reminders from Weddly."
+        : "Ezt a fiókoddal kapcsolatban kaptad. / You're getting this because it's about your Weddly account."
+      : onlyEn
+        ? category === "lifecycle"
+          ? "You're getting occasional reminders from Weddly because you have an account with us."
+          : "You're getting this because it's about your Weddly account."
+        : category === "lifecycle"
+          ? "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk."
+          : "Ezt a levelet a fiókoddal kapcsolatban kaptad.";
+    const unsubLabel = bilingual
+      ? "Nem kérsz emlékeztetőket? Leiratkozás / Don't want updates? Unsubscribe"
+      : onlyEn
+        ? "Don't want updates? Unsubscribe"
+        : "Nem kérsz emlékeztetőket? Leiratkozás";
+    const out: string[] = ["---", why];
+    if (category === "lifecycle" && unsubscribeToken) {
+      out.push(`${unsubLabel}: ${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`);
+    }
+    out.push("Weddly · weddly.hu");
+    return out.join("\n");
+  }
 
-    const huFootnote = hu.footnote
-      ? `<p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;font-style:italic;">${escapeHtml(hu.footnote)}</p>`
-      : "";
-    const enFootnote = en.footnote
-      ? `<p style="margin:10px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;font-style:italic;">${escapeHtml(en.footnote)}</p>`
-      : "";
+  function renderHtml(
+    { ctaUrl, category, unsubscribeToken }: RenderInput,
+    blocks: PickedBlock[],
+  ): string {
+    const preheader = blocks[0]?.block.preheader ?? blocks[0]?.block.paragraphs[0] ?? "";
+    // First block always renders as the "primary" card (big bold greeting,
+    // filled CTA button). Subsequent blocks render as "secondary" cards
+    // (smaller, muted, link-style CTA, with the locale label above) — this
+    // is what historic bilingual rendering looked like, and we preserve it
+    // for the back-compat null-locale path.
+    const cards = blocks
+      .map(({ locale, block }, i) => renderCard(block, locale, i === 0, ctaUrl))
+      .join(
+        `<tr><td style="padding:18px 32px 0 32px;"><div style="border-top:1px solid ${COLOR.divider};font-size:0;line-height:0;height:1px;">&nbsp;</div></td></tr>`,
+      );
 
-    const footer = renderFooter(category, unsubscribeToken);
+    const footer = renderFooter(blocks, category, unsubscribeToken);
+    // `<html lang>` follows the first block so screen-reader pronunciation
+    // matches the language the body opens in.
+    const htmlLang = blocks[0]?.locale ?? "hu";
 
     return `<!doctype html>
-<html lang="hu">
+<html lang="${htmlLang}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -163,50 +205,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                 </span>
               </td>
             </tr>
-            <!-- HU primary card -->
-            <tr>
-              <td style="background-color:${COLOR.card};border-radius:14px;padding:32px 32px 28px 32px;box-shadow:0 1px 2px rgba(31,29,27,0.04),0 4px 18px rgba(31,29,27,0.06);">
-                <p style="margin:0 0 18px 0;color:${COLOR.ink};font-size:18px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
-                  ${escapeHtml(hu.greeting)}
-                </p>
-                ${huParas}
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0 0;">
-                  <tr>
-                    <td style="border-radius:8px;background-color:${COLOR.accent};">
-                      <a href="${escapeAttr(ctaUrl)}"
-                         style="display:inline-block;padding:13px 24px;font-size:15px;font-weight:600;color:${COLOR.accentInk};text-decoration:none;border-radius:8px;letter-spacing:0.01em;">
-                        ${escapeHtml(hu.cta)}
-                      </a>
-                    </td>
-                  </tr>
-                </table>
-                ${huFootnote}
-              </td>
-            </tr>
-            <!-- Divider -->
-            <tr>
-              <td style="padding:18px 32px 0 32px;">
-                <div style="border-top:1px solid ${COLOR.divider};font-size:0;line-height:0;height:1px;">&nbsp;</div>
-              </td>
-            </tr>
-            <!-- EN secondary card -->
-            <tr>
-              <td style="padding:14px 32px 0 32px;">
-                <p style="margin:0 0 12px 0;color:${COLOR.muted};font-size:11px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">
-                  English
-                </p>
-                <p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
-                  ${escapeHtml(en.greeting)}
-                </p>
-                ${enParas}
-                <p style="margin:8px 0 0 0;font-size:14px;line-height:1.5;">
-                  <a href="${escapeAttr(ctaUrl)}" style="color:${COLOR.accent};text-decoration:underline;font-weight:600;">
-                    ${escapeHtml(en.cta)} →
-                  </a>
-                </p>
-                ${enFootnote}
-              </td>
-            </tr>
+            ${cards}
             <!-- Footer -->
             <tr>
               <td style="padding:28px 32px 8px 32px;">
@@ -221,22 +220,113 @@ export function renderEmail(input: RenderInput): RenderedEmail {
 </html>`;
   }
 
-  function renderFooter(category: EmailCategory, unsubscribeToken?: string): string {
-    const why =
-      category === "lifecycle"
+  function renderCard(
+    block: LocaleBlock,
+    locale: "hu" | "en",
+    primary: boolean,
+    ctaUrl: string,
+  ): string {
+    if (primary) {
+      const paras = block.paragraphs
+        .map(
+          (p) =>
+            `<p style="margin:0 0 14px 0;color:${COLOR.ink};font-size:16px;line-height:1.55;word-break:break-word;hyphens:auto;">${escapeHtml(p)}</p>`,
+        )
+        .join("");
+      const footnote = block.footnote
+        ? `<p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
+        : "";
+      return `<tr>
+              <td style="background-color:${COLOR.card};border-radius:14px;padding:32px 32px 28px 32px;box-shadow:0 1px 2px rgba(31,29,27,0.04),0 4px 18px rgba(31,29,27,0.06);">
+                <p style="margin:0 0 18px 0;color:${COLOR.ink};font-size:18px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
+                  ${escapeHtml(block.greeting)}
+                </p>
+                ${paras}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0 0;">
+                  <tr>
+                    <td style="border-radius:8px;background-color:${COLOR.accent};">
+                      <a href="${escapeAttr(ctaUrl)}"
+                         style="display:inline-block;padding:13px 24px;font-size:15px;font-weight:600;color:${COLOR.accentInk};text-decoration:none;border-radius:8px;letter-spacing:0.01em;">
+                        ${escapeHtml(block.cta)}
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                ${footnote}
+              </td>
+            </tr>`;
+    }
+    // Secondary card — historic EN-below-HU bilingual fallback. The locale
+    // label sits above the greeting so the reader knows what they're looking
+    // at when the primary above was a different language.
+    const langLabel = locale === "en" ? "English" : "Magyar";
+    const paras = block.paragraphs
+      .map(
+        (p) =>
+          `<p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;word-break:break-word;hyphens:auto;">${escapeHtml(p)}</p>`,
+      )
+      .join("");
+    const footnote = block.footnote
+      ? `<p style="margin:10px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
+      : "";
+    return `<tr>
+              <td style="padding:14px 32px 0 32px;">
+                <p style="margin:0 0 12px 0;color:${COLOR.muted};font-size:11px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">
+                  ${langLabel}
+                </p>
+                <p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
+                  ${escapeHtml(block.greeting)}
+                </p>
+                ${paras}
+                <p style="margin:8px 0 0 0;font-size:14px;line-height:1.5;">
+                  <a href="${escapeAttr(ctaUrl)}" style="color:${COLOR.accent};text-decoration:underline;font-weight:600;">
+                    ${escapeHtml(block.cta)} →
+                  </a>
+                </p>
+                ${footnote}
+              </td>
+            </tr>`;
+  }
+
+  function renderFooter(
+    blocks: PickedBlock[],
+    category: EmailCategory,
+    unsubscribeToken?: string,
+  ): string {
+    const bilingual = blocks.length > 1;
+    const onlyEn = blocks.length === 1 && blocks[0]?.locale === "en";
+    const why = bilingual
+      ? category === "lifecycle"
         ? "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk. / You're receiving occasional reminders from Weddly because you have an account with us."
-        : "Ezt a levelet a fiókoddal kapcsolatban kaptad. / You got this email because it concerns your Weddly account.";
+        : "Ezt a levelet a fiókoddal kapcsolatban kaptad. / You got this email because it concerns your Weddly account."
+      : onlyEn
+        ? category === "lifecycle"
+          ? "You're receiving occasional reminders from Weddly because you have an account with us."
+          : "You got this email because it concerns your Weddly account."
+        : category === "lifecycle"
+          ? "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk."
+          : "Ezt a levelet a fiókoddal kapcsolatban kaptad.";
+    const unsubLabel = bilingual
+      ? "Leiratkozás / Unsubscribe"
+      : onlyEn
+        ? "Unsubscribe"
+        : "Leiratkozás";
+    const prefsLabel = bilingual
+      ? "Preferenciák / Email preferences"
+      : onlyEn
+        ? "Email preferences"
+        : "Preferenciák";
     const unsubLine =
       category === "lifecycle" && unsubscribeToken
         ? `<p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;">
             <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`)}"
                style="color:${COLOR.muted};text-decoration:underline;">
-              Leiratkozás / Unsubscribe
+              ${unsubLabel}
             </a>
             &nbsp;·&nbsp;
             <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/account/preferences`)}"
                style="color:${COLOR.muted};text-decoration:underline;">
-              Preferenciák / Email preferences
+              ${prefsLabel}
             </a>
           </p>`
         : "";

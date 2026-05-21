@@ -5,13 +5,22 @@
 
 import { CONFIG } from "../../config";
 import { type EmailKind, KIND_CATEGORY } from "./kinds";
-import { type LocaleBlock, type RenderedEmail, renderEmail } from "./template";
+import {
+  type LocaleBlock,
+  type RecipientLocale,
+  type RenderedEmail,
+  renderEmail,
+} from "./template";
 
 export interface BuildContext {
   /** Recipient's display name for the greeting. Falls back to "" if unknown. */
   recipientName: string;
   /** Used by the unsubscribe footer link (only rendered for lifecycle mail). */
   unsubscribeToken?: string;
+  /** Recipient's known locale (`users.locale`), or `null` for guests + users
+   *  whose locale was never captured. Picks single-card vs bilingual render
+   *  in `renderEmail`. */
+  recipientLocale?: RecipientLocale;
 }
 
 export interface BuiltEmail {
@@ -212,6 +221,7 @@ export function buildEmail<K extends EmailKind>(
     ctaUrl: built.ctaUrl,
     category,
     unsubscribeToken: context.unsubscribeToken,
+    recipientLocale: context.recipientLocale,
   });
   return { subject: built.subject, rendered };
 }

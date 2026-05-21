@@ -20,7 +20,29 @@ import { reportError } from "../../lib/observability";
 import { type EmailKind, KIND_CATEGORY } from "./kinds";
 import { recordEmailAttempt } from "./log";
 import { ensurePreferences } from "./preferences";
+import type { RecipientLocale } from "./template";
 import { buildEmail, type KindPayload } from "./templates";
+
+/** Map a raw `users.locale` value to one of the two locales our templates
+ *  cover. We have HU + EN copy today; anything else (DE/FR/ES …) renders as
+ *  EN until per-locale copy lands. `null` falls back to bilingual HU+EN. */
+function normalizeRecipientLocale(raw: string | null | undefined): RecipientLocale {
+  if (raw == null) return null;
+  const lc = raw.toLowerCase();
+  if (lc === "hu" || lc.startsWith("hu-") || lc.startsWith("hu_")) return "hu";
+  return "en";
+}
+
+interface UserLocaleRow {
+  locale: string | null;
+}
+
+function lookupUserLocale(userId: number): RecipientLocale {
+  const row = db.prepare("SELECT locale FROM users WHERE id = ?").get(userId) as
+    | UserLocaleRow
+    | undefined;
+  return normalizeRecipientLocale(row?.locale ?? null);
+}
 
 export interface SendTarget {
   /** The user who owns the inbox. `null` for guest-bound mail (no Weddly account). */
@@ -64,12 +86,16 @@ export async function sendKind<K extends EmailKind>(
   }
 
   let unsubscribeToken: string | undefined;
+  // Guest-bound mail (no user) keeps `null` → bilingual fallback render until
+  // we capture a per-guest locale. Lookup happens against `users.locale`.
+  const recipientLocale: RecipientLocale = target.user ? lookupUserLocale(target.user.id) : null;
   if (target.user) {
     const prefs = ensurePreferences(target.user.id);
     if (category === "lifecycle" && prefs.lifecycle_opt_out) {
       const built = buildEmail(kind, payload, {
         recipientName: recipient.name,
         unsubscribeToken: prefs.unsubscribe_token,
+        recipientLocale,
       });
       recordEmailAttempt({
         user_id: target.user.id,
@@ -88,6 +114,7 @@ export async function sendKind<K extends EmailKind>(
   const built = buildEmail(kind, payload, {
     recipientName: recipient.name,
     unsubscribeToken,
+    recipientLocale,
   });
 
   // RFC 8058 one-click unsubscribe headers. Gmail's bulk-sender requirements
