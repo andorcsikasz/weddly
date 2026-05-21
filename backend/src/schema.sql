@@ -796,6 +796,11 @@ CREATE INDEX IF NOT EXISTS idx_listings_source ON listings(source);
 CREATE INDEX IF NOT EXISTS idx_listings_category ON listings(category);
 CREATE INDEX IF NOT EXISTS idx_listings_vendor_account ON listings(vendor_account_id);
 CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
+-- Partial index covers `/api/suppliers?near_lat=&near_lng=&radius_km=` proximity
+-- queries. Curated listings ship lat/lng from VENUE_COORDS; community
+-- submissions may lack coordinates (no geocode pipeline yet), and excluding
+-- them from the index keeps it small until a geocode worker lands.
+CREATE INDEX IF NOT EXISTS idx_listings_latlng ON listings(lat, lng) WHERE lat IS NOT NULL AND lng IS NOT NULL;
 
 -- ── P2.B: Growth instrumentation ────────────────────────────────────────────
 --
@@ -849,3 +854,50 @@ CREATE TABLE IF NOT EXISTS listing_claims (
 );
 CREATE INDEX IF NOT EXISTS idx_listing_claims_listing ON listing_claims(listing_id);
 CREATE INDEX IF NOT EXISTS idx_listing_claims_status ON listing_claims(status, created_at DESC);
+
+-- ── Q3 prep: Supplier Outreach Inbox ────────────────────────────────────────
+--
+-- Schema-only foundation for the Q3 "couple picks 5 vendors → Weddly sends a
+-- localised outreach mail per vendor → replies aggregate to an in-app thread"
+-- feature. Tables created NOW (additive-only) so the future build doesn't ship
+-- a schema-migration commit; routes/outreach.ts is a `GET /api/outreach/health`
+-- stub today and grows into POST campaigns + inbound webhook in Q3.
+--
+-- Design (per the 5-agent debate Agent C verdict):
+--   campaign → N messages → 0..N replies per message
+--   `reply_token` is the per-message UNIQUE key embedded in the Reply-To
+--   header (`reply+{token}@…`) so the Resend inbound webhook can route the
+--   vendor's reply back to the correct campaign/couple without exposing the
+--   couple's own email to the vendor.
+--   The `Reply-To` strategy keeps deliverability-risk low: Weddly is the
+--   relay, the couple is the From-side identity that the vendor reads.
+CREATE TABLE IF NOT EXISTS outreach_campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  subject TEXT NOT NULL,
+  body_template TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_outreach_campaigns_couple ON outreach_campaigns(couple_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS outreach_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id INTEGER NOT NULL REFERENCES outreach_campaigns(id) ON DELETE CASCADE,
+  supplier_id TEXT NOT NULL,                                   -- listings.id-style public string
+  supplier_email TEXT NOT NULL,
+  sent_at INTEGER,
+  status TEXT NOT NULL DEFAULT 'queued',                       -- 'queued' | 'sent' | 'bounced' | 'replied'
+  reply_token TEXT NOT NULL UNIQUE,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_outreach_messages_campaign ON outreach_messages(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_outreach_messages_reply_token ON outreach_messages(reply_token);
+
+CREATE TABLE IF NOT EXISTS outreach_replies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id INTEGER NOT NULL REFERENCES outreach_messages(id) ON DELETE CASCADE,
+  from_email TEXT NOT NULL,
+  body TEXT NOT NULL,
+  received_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_outreach_replies_message ON outreach_replies(message_id, received_at DESC);

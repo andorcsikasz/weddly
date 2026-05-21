@@ -71,6 +71,20 @@ export function purgeOneCouple(
   db.prepare("DELETE FROM couple_suppliers WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM couple_picks WHERE couple_id = ?").run(coupleId);
+  // Q3 Outreach Inbox cascade — children-first so SQLite's FK enforcement
+  // doesn't complain. Tables are empty until the Q3 build wires sends, but
+  // the cascade is part of the GDPR contract and lands with the schema.
+  db.prepare(
+    `DELETE FROM outreach_replies WHERE message_id IN (
+       SELECT om.id FROM outreach_messages om
+       JOIN outreach_campaigns oc ON oc.id = om.campaign_id
+       WHERE oc.couple_id = ?
+     )`,
+  ).run(coupleId);
+  db.prepare(
+    "DELETE FROM outreach_messages WHERE campaign_id IN (SELECT id FROM outreach_campaigns WHERE couple_id = ?)",
+  ).run(coupleId);
+  db.prepare("DELETE FROM outreach_campaigns WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM supplier_votes WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM planning_items WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM schedule_events WHERE couple_id = ?").run(coupleId);

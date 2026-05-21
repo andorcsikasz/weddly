@@ -17,6 +17,7 @@ import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
 import { db } from "../db";
+import { haversineKm } from "../lib/geo";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -56,9 +57,34 @@ function withVotes(
 
 async function handleList(ctx: Ctx): Promise<Response> {
   const cat = ctx.url.searchParams.get("category");
+  // Optional geo proximity filter: `?near_lat=&near_lng=&radius_km=`. All three
+  // must parse to finite numbers to activate; partial / malformed input keeps
+  // the legacy un-filtered behaviour so the URL stays back-compat. Frontend
+  // opt-in only — the UI doesn't expose the toggle yet (the curated catalogue
+  // is HU-only, so EU couples would get empty sets), but the backend is ready
+  // for the "Near my venue" filter once non-HU listings populate.
+  const nearLatRaw = ctx.url.searchParams.get("near_lat");
+  const nearLngRaw = ctx.url.searchParams.get("near_lng");
+  const radiusKmRaw = ctx.url.searchParams.get("radius_km");
+  const nearLat = nearLatRaw !== null ? Number.parseFloat(nearLatRaw) : Number.NaN;
+  const nearLng = nearLngRaw !== null ? Number.parseFloat(nearLngRaw) : Number.NaN;
+  const radiusKm = radiusKmRaw !== null ? Number.parseFloat(radiusKmRaw) : Number.NaN;
+  const hasGeoFilter =
+    Number.isFinite(nearLat) &&
+    Number.isFinite(nearLng) &&
+    Number.isFinite(radiusKm) &&
+    radiusKm > 0;
+
   const curated = cat ? DIRECTORY.filter((s) => s.category === cat) : DIRECTORY;
   const community = listActiveCommunitySuppliers((cat as SupplierCategory | null) ?? null);
-  const allBase: DirectorySupplierBase[] = [...curated, ...community.map(toDirectorySupplierBase)];
+  let allBase: DirectorySupplierBase[] = [...curated, ...community.map(toDirectorySupplierBase)];
+
+  if (hasGeoFilter) {
+    allBase = allBase.filter((s) => {
+      if (s.lat == null || s.lng == null) return false;
+      return haversineKm(nearLat, nearLng, s.lat, s.lng) <= radiusKm;
+    });
+  }
 
   const scores = getScoresMap();
   // user_vote is now per-couple — both partners see the same "+1" once either
