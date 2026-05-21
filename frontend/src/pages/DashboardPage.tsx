@@ -946,7 +946,7 @@ export default function DashboardPage() {
       {/* ── KPI tiles — hidden in day-of mode; the DayOfPanel above
           surfaces a compact stat row instead. ──────────────────────── */}
       {!dayOfMode && (
-        <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {weddingPast ? (
             <PastWeddingTile
               label={t("dashboard.kpi_days_past")}
@@ -1406,7 +1406,7 @@ function KpiTile({
   const accentRing =
     accent === "blush" ? "text-blush-700 dark:text-blush-300" : "text-ink-700 dark:text-paper-100";
   return (
-    <div className="card p-4">
+    <div className="card p-3 sm:p-4">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span
           className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
@@ -1415,7 +1415,7 @@ function KpiTile({
         </span>
         {label}
       </div>
-      <div className="stat-num mt-2 text-center text-2xl font-bold leading-none text-ink-900 dark:text-paper-50">
+      <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
         {value}
       </div>
       <div className="mt-1 text-center text-xs font-semibold text-ink-500 dark:text-umber-300">
@@ -1492,14 +1492,14 @@ function BudgetKpiTile({
   }
 
   return (
-    <div className="card p-4">
+    <div className="card p-3 sm:p-4">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100">
           <Wallet size={14} aria-hidden="true" />
         </span>
         {label}
       </div>
-      <div className="stat-num mt-2 text-center text-2xl font-bold leading-none text-ink-900 dark:text-paper-50">
+      <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
         {formatMoney(totalActual, currency, locale)}
       </div>
       <div className="mt-1 flex items-baseline justify-center gap-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
@@ -1600,7 +1600,7 @@ function DaysToGoTile({
   }
 
   return (
-    <div className="card p-4">
+    <div className="card p-3 sm:p-4">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
           <CalendarHeart size={14} aria-hidden="true" />
@@ -1631,7 +1631,7 @@ function DaysToGoTile({
           aria-label={t("dashboard.kpi_days_edit_hint")}
           className="-mx-2 mt-1 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:hover:bg-umber-700"
         >
-          <div className="stat-num text-2xl font-bold leading-none text-ink-900 dark:text-paper-50">
+          <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
             {days !== null ? formatNumber(days, locale) : "—"}
           </div>
           <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">

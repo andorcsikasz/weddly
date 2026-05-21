@@ -1395,12 +1395,18 @@ function BudgetMobileCard({
         <CategoryCell category={category} />
         {actual > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
       </header>
-      <dl className="mt-3 space-y-2">
-        <div className="flex items-center gap-3">
-          <dt className="basis-20 shrink-0 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+      {/* Planned + Actual in a 2-col grid on mobile — the prior stacked
+          layout had each label+input on its own row, so a 13-category list
+          racked up an extra ~200px of vertical scroll. Labels sit above
+          inputs (each pair is a tight `dt/dd` column), which keeps the
+          two HufInputs aligned at the same x without giving up the row to
+          a label column. */}
+      <dl className="mt-3 grid grid-cols-2 gap-3">
+        <div className="min-w-0">
+          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.planned")}
           </dt>
-          <dd className="min-w-0 flex-1">
+          <dd>
             <HufInput
               value={planned}
               onCommit={onPlannedCommit}
@@ -1410,11 +1416,11 @@ function BudgetMobileCard({
             />
           </dd>
         </div>
-        <div className="flex items-center gap-3">
-          <dt className="basis-20 shrink-0 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        <div className="min-w-0">
+          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.actual")}
           </dt>
-          <dd className="min-w-0 flex-1">
+          <dd>
             <HufInput
               value={actual}
               onCommit={onActualCommit}
@@ -1426,7 +1432,7 @@ function BudgetMobileCard({
         </div>
       </dl>
       {canDelete && (
-        <div className="mt-2 flex justify-end">
+        <div className="mt-1 flex justify-end">
           <button
             type="button"
             className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
@@ -1466,12 +1472,12 @@ function BudgetMobileCustomCard({
         <CustomRowLabel icon={line.icon} label={line.label} />
         {line.actual_huf > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
       </header>
-      <dl className="mt-3 space-y-2">
-        <div className="flex items-center gap-3">
-          <dt className="basis-20 shrink-0 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+      <dl className="mt-3 grid grid-cols-2 gap-3">
+        <div className="min-w-0">
+          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.planned")}
           </dt>
-          <dd className="min-w-0 flex-1">
+          <dd>
             <HufInput
               value={line.planned_huf}
               onCommit={onPlannedCommit}
@@ -1480,11 +1486,11 @@ function BudgetMobileCustomCard({
             />
           </dd>
         </div>
-        <div className="flex items-center gap-3">
-          <dt className="basis-20 shrink-0 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        <div className="min-w-0">
+          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.actual")}
           </dt>
-          <dd className="min-w-0 flex-1">
+          <dd>
             <HufInput
               value={line.actual_huf}
               onCommit={onActualCommit}
@@ -1494,7 +1500,7 @@ function BudgetMobileCustomCard({
           </dd>
         </div>
       </dl>
-      <div className="mt-2 flex justify-end">
+      <div className="mt-1 flex justify-end">
         <button
           type="button"
           className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
