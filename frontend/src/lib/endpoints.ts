@@ -86,11 +86,7 @@ import type {
   UpdateSupplierCategoryInput,
   UpdateSupplierGroupInput,
 } from "@shared/supplier_taxonomy";
-import type {
-  ClaimVerifyView,
-  CompleteClaimInput,
-  StartClaimInput,
-} from "@shared/vendor_claim";
+import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import { apiFetch, getToken } from "./api";
 
 /** Public landing-page "try the demo" endpoint. Spins up a brand-new
@@ -813,11 +809,7 @@ export const adminUserApi = {
  *     a fresh AuthSession the caller must install via useAuth().setSession. */
 export const vendorClaimApi = {
   start: (body: StartClaimInput) =>
-    apiFetch<{ ok: true; sent_to_masked: string }>(
-      "POST",
-      "/api/vendor/claim/start",
-      body,
-    ),
+    apiFetch<{ ok: true; sent_to_masked: string }>("POST", "/api/vendor/claim/start", body),
   verify: (token: string) =>
     apiFetch<{ claim: ClaimVerifyView }>(
       "POST",

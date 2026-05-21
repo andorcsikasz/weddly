@@ -732,9 +732,7 @@ export default function AdminUsersPage() {
                       onClick={() => setDemoOpen((v) => !v)}
                       aria-expanded={demoOpen}
                     >
-                      {demoOpen
-                        ? t("admin.demo_workspaces_hide")
-                        : t("admin.demo_workspaces_show")}
+                      {demoOpen ? t("admin.demo_workspaces_hide") : t("admin.demo_workspaces_show")}
                     </button>
                   </div>
                   {demoOpen && (
@@ -846,9 +844,7 @@ export default function AdminUsersPage() {
                       <thead className="bg-paper-100 text-left eyebrow dark:bg-umber-700/60">
                         <tr>
                           <th className="px-3 py-2">{t("admin.table_name")}</th>
-                          <th className="px-3 py-2 text-right">
-                            {t("admin.table_admin_actions")}
-                          </th>
+                          <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
                         </tr>
                       </thead>
                       <tbody>

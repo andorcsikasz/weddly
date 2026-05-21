@@ -42,10 +42,7 @@ import { useT } from "../lib/i18n";
  *  its own glyph at 11px (matches the pill's 11px type). Order of the
  *  tones echoes the lifecycle: blush (just arrived) → violet (under
  *  consideration) → sage (accepted) → muted (rejected, decision over). */
-const STATUS_PILL: Record<
-  VendorWaitlistStatus,
-  { tone: PillTone; Icon: typeof Sparkles }
-> = {
+const STATUS_PILL: Record<VendorWaitlistStatus, { tone: PillTone; Icon: typeof Sparkles }> = {
   new: { tone: "blush", Icon: Sparkles },
   under_review: { tone: "violet", Icon: Clock },
   accepted: { tone: "sage", Icon: Check },
@@ -336,13 +333,7 @@ function EntryCard({
               >
                 <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
               </Button>
-              <Button
-                type="button"
-                variant="accent"
-                size="sm"
-                onClick={onReopen}
-                loading={pending}
-              >
+              <Button type="button" variant="accent" size="sm" onClick={onReopen} loading={pending}>
                 <RotateCcw size={14} aria-hidden /> {t("admin.waitlist_action_reopen")}
               </Button>
             </>
@@ -399,16 +390,14 @@ function EntryCard({
             {entry.message && (
               <div className="admin-tile">
                 <p className="eyebrow">{t("admin.waitlist_card_message_label")}</p>
-                <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
-                  {entry.message}
-                </p>
+                <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">{entry.message}</p>
               </div>
             )}
             {entry.sent_subject && (
               <details className="admin-tile">
                 <summary className="cursor-pointer text-xs font-medium text-ink-800 dark:text-paper-50">
-                  <span className="eyebrow">{t("admin.waitlist_card_sent_label")}</span>{" "}
-                  · {entry.sent_subject}
+                  <span className="eyebrow">{t("admin.waitlist_card_sent_label")}</span> ·{" "}
+                  {entry.sent_subject}
                 </summary>
                 <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-ink-700 dark:text-paper-100">
                   {entry.sent_body ?? ""}

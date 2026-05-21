@@ -34,10 +34,7 @@ type Props = {
   onClose: () => void;
 };
 
-type State =
-  | { kind: "idle" }
-  | { kind: "submitting" }
-  | { kind: "sent"; maskedEmail: string };
+type State = { kind: "idle" } | { kind: "submitting" } | { kind: "sent"; maskedEmail: string };
 
 export function ClaimListingModal({ listingId, listingName, onClose }: Props) {
   const { t } = useT();

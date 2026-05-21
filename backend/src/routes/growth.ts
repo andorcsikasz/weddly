@@ -19,7 +19,9 @@ const GROWTH_BUCKET = { capacity: 60, refillRate: 1 };
 async function handleRecord(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "growth:event", GROWTH_BUCKET);
 
-  const body = await readJson<RecordGrowthEventInput>(ctx.req).catch(() => ({}) as RecordGrowthEventInput);
+  const body = await readJson<RecordGrowthEventInput>(ctx.req).catch(
+    () => ({}) as RecordGrowthEventInput,
+  );
   const kindRaw = typeof body.kind === "string" ? body.kind : "";
   if (!FRONTEND_GROWTH_EVENT_KINDS.has(kindRaw as GrowthEventKind)) {
     throw new HttpError(400, "Unsupported event kind");

@@ -589,12 +589,9 @@ describe("couples_lifecycle: partner view status transitions", () => {
       password: "supersafe123",
       full_name: "U",
     });
-    const r = await req<{ detail?: { code?: string } }>(
-      "GET",
-      "/api/couples/partner",
-      undefined,
-      { token: reg.data.token },
-    );
+    const r = await req<{ detail?: { code?: string } }>("GET", "/api/couples/partner", undefined, {
+      token: reg.data.token,
+    });
     // GET /api/couples/partner downgraded to requireAuth in the P0-2 backend
     // rollback — read-only on own workspace, no third-party fanout. The
     // handler still throws 400 "No couple workspace yet" when the user

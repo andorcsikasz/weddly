@@ -13,11 +13,7 @@
 
 import { createHash } from "node:crypto";
 import { db, now } from "../db";
-import type {
-  GrowthEvent,
-  GrowthEventAggregate,
-  GrowthEventKind,
-} from "@shared/growth";
+import type { GrowthEvent, GrowthEventAggregate, GrowthEventKind } from "@shared/growth";
 
 const REFERRER_MAX_LEN = 500;
 const UA_HASH_PREFIX_LEN = 16;

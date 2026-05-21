@@ -46,8 +46,7 @@ const en: LocaleMessages = {
     guests_description:
       "Households, RSVP codes, meal picks and CSV imports — every guest detail in one tidy list.",
     suppliers_title: "Suppliers — Weddly",
-    suppliers_description:
-      "Wedding suppliers filtered by category, city and community feedback.",
+    suppliers_description: "Wedding suppliers filtered by category, city and community feedback.",
     budget_title: "Budget — Weddly",
     budget_description:
       "Planned vs actual spend by category, with snapshots and per-guest breakdowns.",
@@ -181,8 +180,7 @@ const en: LocaleMessages = {
     not_found_body:
       "The link may have a typo, or the couple has taken their page offline. Try the full address again.",
     network_error_title: "Network error",
-    network_error_body:
-      "We couldn't reach Weddly. Refresh the page or try again in a moment.",
+    network_error_body: "We couldn't reach Weddly. Refresh the page or try again in a moment.",
     back_home: "Back to the home page",
     eyebrow: "Wedding · Weddly",
     date_tbd: "Date to be confirmed",
@@ -213,8 +211,7 @@ const en: LocaleMessages = {
     button_label: "This is my business",
     page_title: "Claim your listing",
     page_body: "Confirm you own this Weddly directory listing.",
-    page_invalid:
-      "We don't recognise this link. It may be mistyped or from an old email.",
+    page_invalid: "We don't recognise this link. It may be mistyped or from an old email.",
     page_expired: "This link has expired. Start the claim again from the Weddly directory.",
     page_cancelled: "This claim has been cancelled — start fresh from the directory.",
     page_already_verified:
@@ -228,16 +225,13 @@ const en: LocaleMessages = {
     modal_submit: "Send verification email",
     modal_submitting: "Sending…",
     modal_close: "Got it",
-    modal_sent_body:
-      "Email sent to {email}. Click the link to confirm — it's valid for 7 days.",
-    modal_sent_hint:
-      "If nothing arrives in a few minutes, check spam, or try again later.",
+    modal_sent_body: "Email sent to {email}. Click the link to confirm — it's valid for 7 days.",
+    modal_sent_hint: "If nothing arrives in a few minutes, check spam, or try again later.",
     modal_err_already_claimed: "This listing has already been claimed.",
     modal_err_no_email:
       "This listing has no contact email on file, so we can't verify your ownership.",
     modal_err_not_found: "We can't find this listing.",
-    modal_err_rate_limited:
-      "Too many requests — please wait a few minutes before trying again.",
+    modal_err_rate_limited: "Too many requests — please wait a few minutes before trying again.",
     form_title: "Create your vendor account",
     form_intro:
       "You've confirmed ownership of {name} via {email}. Set a password to start managing the listing.",
@@ -248,8 +242,7 @@ const en: LocaleMessages = {
     form_submitting: "Creating…",
     form_err_name: "Please enter your full name.",
     form_err_password: "Password must be at least 8 characters.",
-    form_err_email_taken:
-      "An account already exists with this email. Contact the Weddly team.",
+    form_err_email_taken: "An account already exists with this email. Contact the Weddly team.",
     form_err_already_claimed: "Someone else just claimed this listing.",
     success_toast: "Welcome to Weddly! The listing is yours.",
   },
@@ -701,8 +694,7 @@ const en: LocaleMessages = {
     block_budget_bullet_2: "Both of you, in real time",
     block_budget_bullet_3: "Audit log of every change",
     block_guests_eyebrow: "Guest list & RSVP",
-    block_guests_title:
-      "One link per guest. Replies, meals, plus-ones, dietary, all in one place.",
+    block_guests_title: "One link per guest. Replies, meals, plus-ones, dietary, all in one place.",
     block_guests_body:
       "Each guest gets a personal RSVP page with their name pre-filled. They reply on their phone in under a minute; you see status, meal choice and song requests in the same list.",
     block_guests_bullet_1: "One link, one minute, by phone",
@@ -748,8 +740,7 @@ const en: LocaleMessages = {
     why_c_title: "We tell you what's next",
     why_c_body: "If you get stuck, the home page shows the one thing worth doing today.",
     why_d_title: "We handle the paperwork",
-    why_d_body:
-      "We watch deadlines, invitations and print sizes. You focus on the wedding.",
+    why_d_body: "We watch deadlines, invitations and print sizes. You focus on the wedding.",
     mockup_aria_dashboard: "Weddly dashboard preview",
     mockup_aria_budget: "Live budget mockup",
     mockup_aria_guests: "Guest list and RSVP mockup",
@@ -937,8 +928,7 @@ const en: LocaleMessages = {
     empty_idea: "No ideas yet. Jot anything down — you'll narrow it down later.",
     empty_schedule: "No schedule yet. Start with the ceremony time and build the day from there.",
     template_button: "Generate template",
-    template_button_hint:
-      "Typical wedding-day flow in one click — anchored to your ceremony time.",
+    template_button_hint: "Typical wedding-day flow in one click — anchored to your ceremony time.",
     template_dialog_title: "Schedule template",
     template_dialog_body:
       "When does the ceremony start? We'll line up the rest of the day around it.",

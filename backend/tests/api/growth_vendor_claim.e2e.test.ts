@@ -99,7 +99,12 @@ async function makeApprovedListing(
 
   // Admin approves → status='active', and listings dual-write keeps in sync
   const adminToken = await registerAdminAndGetToken();
-  const ap = await req("POST", `/api/admin/suppliers/${numericId}/approve`, {}, { token: adminToken });
+  const ap = await req(
+    "POST",
+    `/api/admin/suppliers/${numericId}/approve`,
+    {},
+    { token: adminToken },
+  );
   expect(ap.status).toBe(200);
 
   return { listingId: publicId, numericId, contactEmail };
@@ -282,18 +287,18 @@ describe("P2.C vendor claim — happy path", () => {
 
     // 2. Pull token directly from the DB (simulates clicking the email link)
     const claimRow = db
-      .prepare("SELECT id, status, email_sent_to, token, listing_id FROM listing_claims WHERE listing_id = ? ORDER BY id DESC LIMIT 1")
+      .prepare(
+        "SELECT id, status, email_sent_to, token, listing_id FROM listing_claims WHERE listing_id = ? ORDER BY id DESC LIMIT 1",
+      )
       .get(listingId) as ClaimVerifyRow | undefined;
     expect(claimRow).toBeTruthy();
     expect(claimRow?.status).toBe("pending");
     expect(claimRow?.email_sent_to).toBe(contactEmail);
 
     // 3. Verify endpoint returns the view without consuming
-    const verify = await req<{ claim: { listing_id: string; listing_name: string; email: string; status: string } }>(
-      "POST",
-      `/api/vendor/claim/verify/${claimRow!.token}`,
-      {},
-    );
+    const verify = await req<{
+      claim: { listing_id: string; listing_name: string; email: string; status: string };
+    }>("POST", `/api/vendor/claim/verify/${claimRow!.token}`, {});
     expect(verify.status).toBe(200);
     expect(verify.data.claim.listing_id).toBe(listingId);
     expect(verify.data.claim.listing_name).toBe("Claim Photo Studio");
@@ -301,35 +306,38 @@ describe("P2.C vendor claim — happy path", () => {
     expect(verify.data.claim.status).toBe("pending");
 
     // 4. Complete: creates user, vendor_account, flips listing
-    const complete = await req<{ token: string; user: { id: number; role: string; email: string } }>(
-      "POST",
-      "/api/vendor/claim/complete",
-      {
-        token: claimRow!.token,
-        password: "vendorpass123",
-        full_name: "Vendor Owner",
-      },
-    );
+    const complete = await req<{
+      token: string;
+      user: { id: number; role: string; email: string };
+    }>("POST", "/api/vendor/claim/complete", {
+      token: claimRow!.token,
+      password: "vendorpass123",
+      full_name: "Vendor Owner",
+    });
     expect(complete.status).toBe(201);
     expect(complete.data.user.role).toBe("vendor");
     expect(complete.data.user.email).toBe(contactEmail);
     expect(complete.data.token).toBeTruthy();
 
     // Verify the DB state after completion
-    const listing = db.prepare("SELECT vendor_account_id FROM listings WHERE id = ?").get(listingId) as
-      | { vendor_account_id: number | null }
-      | undefined;
+    const listing = db
+      .prepare("SELECT vendor_account_id FROM listings WHERE id = ?")
+      .get(listingId) as { vendor_account_id: number | null } | undefined;
     expect(listing?.vendor_account_id).not.toBeNull();
 
     const account = db
       .prepare("SELECT owner_user_id, display_name FROM vendor_accounts WHERE id = ?")
-      .get(listing!.vendor_account_id) as { owner_user_id: number; display_name: string } | undefined;
+      .get(listing!.vendor_account_id) as
+      | { owner_user_id: number; display_name: string }
+      | undefined;
     expect(account?.display_name).toBe("Claim Photo Studio");
     expect(account?.owner_user_id).toBe(complete.data.user.id);
 
     const finalClaim = db
       .prepare("SELECT status, verified_at, vendor_account_id FROM listing_claims WHERE id = ?")
-      .get(claimRow!.id) as { status: string; verified_at: number | null; vendor_account_id: number | null } | undefined;
+      .get(claimRow!.id) as
+      | { status: string; verified_at: number | null; vendor_account_id: number | null }
+      | undefined;
     expect(finalClaim?.status).toBe("verified");
     expect(finalClaim?.verified_at).not.toBeNull();
     expect(finalClaim?.vendor_account_id).toBe(listing!.vendor_account_id);
@@ -341,7 +349,9 @@ describe("P2.C vendor claim — error paths", () => {
     wipeAll();
     // Use a curated listing — those land in the DB with contact_email = null.
     const curatedRow = db
-      .prepare("SELECT id, contact_email FROM listings WHERE source = 'curated' AND contact_email IS NULL LIMIT 1")
+      .prepare(
+        "SELECT id, contact_email FROM listings WHERE source = 'curated' AND contact_email IS NULL LIMIT 1",
+      )
       .get() as { id: string; contact_email: string | null } | undefined;
     expect(curatedRow).toBeTruthy();
 
@@ -371,11 +381,9 @@ describe("P2.C vendor claim — error paths", () => {
     expect(done1.status).toBe(201);
 
     // Second start refuses with already_claimed.
-    const s2 = await req<{ detail?: { code?: string } }>(
-      "POST",
-      "/api/vendor/claim/start",
-      { listing_id: listingId },
-    );
+    const s2 = await req<{ detail?: { code?: string } }>("POST", "/api/vendor/claim/start", {
+      listing_id: listingId,
+    });
     expect(s2.status).toBe(409);
   });
 
@@ -402,11 +410,11 @@ describe("P2.C vendor claim — error paths", () => {
       .prepare("SELECT token FROM listing_claims WHERE listing_id = ? ORDER BY id DESC LIMIT 1")
       .get(listingId) as { token: string } | undefined;
 
-    const complete = await req(
-      "POST",
-      "/api/vendor/claim/complete",
-      { token: c!.token, password: "newpass123", full_name: "New Vendor" },
-    );
+    const complete = await req("POST", "/api/vendor/claim/complete", {
+      token: c!.token,
+      password: "newpass123",
+      full_name: "New Vendor",
+    });
     expect(complete.status).toBe(409);
   });
 });

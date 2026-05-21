@@ -584,9 +584,7 @@ function SupplierCard({
        *  signal across an otherwise-static list. */}
       <header
         className={`flex flex-wrap items-center gap-2 px-3 py-2 transition-colors duration-150 ${
-          expanded
-            ? ""
-            : "hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+          expanded ? "" : "hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
         } ${expanded ? "border-b border-paper-200 dark:border-umber-700" : ""}`}
       >
         <label className="inline-flex items-center">
@@ -758,11 +756,7 @@ function SupplierCard({
           <section className="admin-card flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <h3 className="eyebrow m-0">{t("admin.suppliers_card_section_notes")}</h3>
-              <span
-                className={`eyebrow ${
-                  dirty ? "text-blush-700 dark:text-blush-300" : ""
-                }`}
-              >
+              <span className={`eyebrow ${dirty ? "text-blush-700 dark:text-blush-300" : ""}`}>
                 {dirty
                   ? t("admin.suppliers_card_field_notes_dirty")
                   : t("admin.suppliers_card_field_notes_saved")}

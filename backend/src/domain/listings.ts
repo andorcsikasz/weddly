@@ -22,7 +22,13 @@ import { createHash } from "node:crypto";
 import { db, now } from "../db";
 import { DIRECTORY } from "./suppliers_data";
 import type { CommunitySupplierRow } from "./community_suppliers";
-import type { Listing, ListingSource, ListingStatus, ListingSubmitterType, VendorAccount } from "@shared/listings";
+import type {
+  Listing,
+  ListingSource,
+  ListingStatus,
+  ListingSubmitterType,
+  VendorAccount,
+} from "@shared/listings";
 import type { SupplierCategory } from "@shared/suppliers";
 
 export interface ListingRow {
@@ -304,9 +310,7 @@ export function backfillListings(): { curated: number; community: number } {
       curated++;
     }
 
-    const rows = db
-      .prepare("SELECT * FROM community_suppliers")
-      .all() as CommunitySupplierRow[];
+    const rows = db.prepare("SELECT * FROM community_suppliers").all() as CommunitySupplierRow[];
     for (const r of rows) {
       syncListingFromCommunityRow(r);
       community++;
@@ -337,9 +341,7 @@ export function listListingsByCategory(category: SupplierCategory | null): Listi
             "SELECT * FROM listings WHERE category = ? AND status = 'active' ORDER BY created_at DESC",
           )
           .all(category)
-      : db
-          .prepare("SELECT * FROM listings WHERE status = 'active' ORDER BY created_at DESC")
-          .all()
+      : db.prepare("SELECT * FROM listings WHERE status = 'active' ORDER BY created_at DESC").all()
   ) as ListingRow[];
   return rows.map(toListing);
 }

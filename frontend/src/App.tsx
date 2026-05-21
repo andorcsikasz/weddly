@@ -444,10 +444,7 @@ export default function App() {
             </Page>
           }
         />
-        <Route
-          path="suppliers"
-          element={<Navigate to="/app/vendors" replace />}
-        />
+        <Route path="suppliers" element={<Navigate to="/app/vendors" replace />} />
         <Route
           path="planning"
           element={

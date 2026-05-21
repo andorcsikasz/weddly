@@ -55,10 +55,7 @@ describe("GET /api/public/wedding/:slug — minimal coverage", () => {
       | undefined;
     expect(slugRow?.slug).toBeTruthy();
     // No UPDATE — is_public defaults to 0.
-    const r = await req(
-      "GET",
-      `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`,
-    );
+    const r = await req("GET", `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`);
     expect(r.status).toBe(404);
   });
 
@@ -70,10 +67,7 @@ describe("GET /api/public/wedding/:slug — minimal coverage", () => {
       | undefined;
     db.prepare("UPDATE couples SET status = 'archived' WHERE id = ?").run(coupleId);
 
-    const r = await req(
-      "GET",
-      `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`,
-    );
+    const r = await req("GET", `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`);
     expect(r.status).toBe(404);
   });
 
@@ -111,7 +105,7 @@ describe("/w/:slug SSR meta — couple-personalised <title> + OG tags", () => {
       "<!-- SEO_HEAD_START -->",
       "<title>placeholder</title>",
       "<!-- SEO_HEAD_END -->",
-      "</head><body><div id=\"root\"></div></body></html>",
+      '</head><body><div id="root"></div></body></html>',
     ].join("\n");
     const html = renderIndexHtml(template, {
       host: "weddly.hu",

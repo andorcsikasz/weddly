@@ -41,9 +41,7 @@ export default function VendorHomePage() {
       <div className="mx-auto max-w-2xl">
         <div className="card">
           <h1 className="text-2xl">{t("vendor_home.welcome", { name: user.full_name })}</h1>
-          <p className="mt-4 text-sm text-ink-700 dark:text-paper-100">
-            {t("vendor_home.intro")}
-          </p>
+          <p className="mt-4 text-sm text-ink-700 dark:text-paper-100">{t("vendor_home.intro")}</p>
           <p className="mt-4 text-sm text-ink-600 dark:text-umber-200">
             {t("vendor_home.coming_soon")}
           </p>

@@ -44,9 +44,7 @@ export function AdminEmptyState({
           {icon}
         </span>
       )}
-      {headline != null && (
-        <p className="text-sm text-ink-700 dark:text-paper-100">{headline}</p>
-      )}
+      {headline != null && <p className="text-sm text-ink-700 dark:text-paper-100">{headline}</p>}
       {description != null && (
         <p className="text-xs text-ink-500 dark:text-umber-300">{description}</p>
       )}

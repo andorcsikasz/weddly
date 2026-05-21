@@ -76,9 +76,7 @@ async function handleList(ctx: Ctx): Promise<Response> {
     const ids = allBase.map((b) => b.id);
     const placeholders = ids.map(() => "?").join(",");
     const rows = db
-      .prepare(
-        `SELECT id, vendor_account_id FROM listings WHERE id IN (${placeholders})`,
-      )
+      .prepare(`SELECT id, vendor_account_id FROM listings WHERE id IN (${placeholders})`)
       .all(...ids) as Array<{ id: string; vendor_account_id: number | null }>;
     const accountByListing = new Map(rows.map((r) => [r.id, r.vendor_account_id]));
     for (const b of allBase) {

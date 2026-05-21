@@ -180,8 +180,7 @@ const hu: LocaleMessages = {
     not_found_body:
       "A link talán elgépelődött, vagy a pár inaktiválta az oldalát. Próbáld újra a teljes címmel.",
     network_error_title: "Hálózati hiba",
-    network_error_body:
-      "Nem értük el a Weddlyt. Frissítsd az oldalt, vagy próbáld újra később.",
+    network_error_body: "Nem értük el a Weddlyt. Frissítsd az oldalt, vagy próbáld újra később.",
     back_home: "Vissza a főoldalra",
     eyebrow: "Esküvő · Weddly",
     date_tbd: "A dátum még kiderül",
@@ -214,8 +213,7 @@ const hu: LocaleMessages = {
     page_body: "Erősítsd meg, hogy a Weddly katalógus listingjének tulajdonosa vagy.",
     page_invalid:
       "Nem ismerjük fel ezt a linket. Lehet, hogy elgépelődött vagy egy régi e-mailből származik.",
-    page_expired:
-      "A link már lejárt. Indítsd újra az átvételt a Weddly katalógusban.",
+    page_expired: "A link már lejárt. Indítsd újra az átvételt a Weddly katalógusban.",
     page_cancelled: "Ezt az igénylést időközben visszavontuk — kezdd újra a katalógusból.",
     page_already_verified:
       "Ez a listing már át lett véve. Ha te voltál, jelentkezz be a vendor email címeddel.",
@@ -235,8 +233,7 @@ const hu: LocaleMessages = {
     modal_err_already_claimed: "Ezt a listinget már átvette valaki.",
     modal_err_no_email: "Ezen a listingen nincs email cím, így nem tudjuk megerősíteni.",
     modal_err_not_found: "Nem találjuk ezt a listinget.",
-    modal_err_rate_limited:
-      "Túl sok kérés érkezett — várj néhány percet, mielőtt újra próbálnád.",
+    modal_err_rate_limited: "Túl sok kérés érkezett — várj néhány percet, mielőtt újra próbálnád.",
     form_title: "Hozd létre a vendor fiókod",
     form_intro:
       "Sikeresen megerősítetted, hogy a(z) {name} listing email címe ({email}) a tiéd. Állíts be egy jelszót — innentől te kezeled a listinget.",
@@ -701,8 +698,7 @@ const hu: LocaleMessages = {
     block_budget_bullet_2: "Mindketten, valós időben",
     block_budget_bullet_3: "Auditnapló minden lépésről",
     block_guests_eyebrow: "Vendéglista és RSVP",
-    block_guests_title:
-      "Vendégenként egy link. Válaszok, étrend, kísérők, allergiák egy helyen.",
+    block_guests_title: "Vendégenként egy link. Válaszok, étrend, kísérők, allergiák egy helyen.",
     block_guests_body:
       "Minden vendég saját RSVP oldalt kap, a nevével előre kitöltve. Telefonon, egy perc alatt válaszolnak; ti pedig egy listában látjátok az állapotot, étrendet és dalkéréseket.",
     block_guests_bullet_1: "Egy link, egy perc, telefonról",
@@ -746,11 +742,9 @@ const hu: LocaleMessages = {
     why_b_body:
       "A vendégszám átírása nem indít újra három táblázatot. Egy helyen állítod, mindenhol stimmel.",
     why_c_title: "Megmondjuk, mi a következő",
-    why_c_body:
-      "Ha elakadtok, a kezdőlap megmutatja az egy dolgot, amit ma érdemes elintézni.",
+    why_c_body: "Ha elakadtok, a kezdőlap megmutatja az egy dolgot, amit ma érdemes elintézni.",
     why_d_title: "A papírmunkát mi visszük",
-    why_d_body:
-      "Mi figyelünk a határidőkre, a meghívókra, a nyomtatási méretekre. Ti az esküvőre.",
+    why_d_body: "Mi figyelünk a határidőkre, a meghívókra, a nyomtatási méretekre. Ti az esküvőre.",
     mockup_aria_dashboard: "Wēddly vezérlőpult-előnézet",
     mockup_aria_budget: "Élő költségvetés-előnézet",
     mockup_aria_guests: "Vendéglista és RSVP előnézet",
@@ -1330,7 +1324,8 @@ const hu: LocaleMessages = {
     group_work: "Munkahely",
     group_other: "Egyéb",
     empty_title: "Még nincsenek vendégek",
-    empty_body: "Add hozzá az elsőt, vagy importálj egy egész listát CSV-ből — a sablon segít a formátumban.",
+    empty_body:
+      "Add hozzá az elsőt, vagy importálj egy egész listát CSV-ből — a sablon segít a formátumban.",
     empty_cta_add: "Első vendég hozzáadása",
     saving: "Mentés…",
     import_done_one: "Importálva: {count} vendég",

@@ -7,15 +7,7 @@
 // with retry — so an API outage doesn't disguise itself as an empty inbox.
 
 import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
-import {
-  CheckCircle2,
-  Eye,
-  Inbox,
-  Mail,
-  RotateCcw,
-  Trash2,
-  X,
-} from "lucide-react";
+import { CheckCircle2, Eye, Inbox, Mail, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
@@ -103,9 +95,7 @@ export default function AdminFeedbackPage() {
 
   function removeEntry(id: number) {
     setLoadable((cur) =>
-      cur.status === "ok"
-        ? { status: "ok", data: cur.data.filter((e) => e.id !== id) }
-        : cur,
+      cur.status === "ok" ? { status: "ok", data: cur.data.filter((e) => e.id !== id) } : cur,
     );
   }
 

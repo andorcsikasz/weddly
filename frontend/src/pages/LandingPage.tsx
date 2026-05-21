@@ -325,10 +325,7 @@ export default function LandingPage() {
               {t("landing.suppliers_section_body")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/signup"
-                className="btn-primary btn-lifted btn-landing w-full sm:w-auto"
-              >
+              <Link to="/signup" className="btn-primary btn-lifted btn-landing w-full sm:w-auto">
                 {t("landing.suppliers_couple_cta")}
               </Link>
               <Link
@@ -412,10 +409,7 @@ export default function LandingPage() {
                 <IconRow icon={<Pause size={16} />}>{t("landing.pricing_bullet_2")}</IconRow>
                 <IconRow icon={<FileText size={16} />}>{t("landing.pricing_bullet_3")}</IconRow>
               </ul>
-              <Link
-                to="/signup"
-                className="btn-primary btn-lifted btn-landing btn-lg mt-8 w-full"
-              >
+              <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg mt-8 w-full">
                 {t("landing.cta_signup")}
               </Link>
             </div>

@@ -30,8 +30,7 @@ export interface PillProps {
 const TONE_CLASSES: Record<PillTone, string> = {
   ink: "bg-ink-800 text-paper-100 dark:bg-paper-100 dark:text-umber-900",
   paper: "bg-paper-100 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100",
-  violet:
-    "bg-violet-100 text-violet-950 dark:bg-violet-500/20 dark:text-violet-100",
+  violet: "bg-violet-100 text-violet-950 dark:bg-violet-500/20 dark:text-violet-100",
   blush:
     "bg-blush-50 text-blush-800 ring-1 ring-blush-300 dark:bg-blush-400/15 dark:text-blush-200 dark:ring-blush-400/40",
   sage: "bg-sage-100 text-sage-900 dark:bg-sage-400/15 dark:text-sage-200",
@@ -52,19 +51,12 @@ const DOT_CLASSES: Record<PillTone, string> = {
   muted: "bg-ink-300 dark:bg-umber-500",
 };
 
-const BASE_CLS =
-  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
+const BASE_CLS = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
 
 const DOT_BASE_CLS =
   "inline-flex items-center gap-1.5 text-[11px] font-medium text-ink-700 dark:text-paper-100";
 
-export function Pill({
-  tone = "paper",
-  icon,
-  children,
-  srLabel,
-  variant = "default",
-}: PillProps) {
+export function Pill({ tone = "paper", icon, children, srLabel, variant = "default" }: PillProps) {
   if (variant === "dot") {
     return (
       <span className={DOT_BASE_CLS}>

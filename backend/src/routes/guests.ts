@@ -26,7 +26,15 @@ import {
 } from "../domain/guests";
 import { createHousehold, getHouseholdById } from "../domain/households";
 import { getUserById } from "../domain/users";
-import { type Ctx, HttpError, json, readJson, requireAuth, requireVerifiedAuth, type Router } from "../lib/http";
+import {
+  type Ctx,
+  HttpError,
+  json,
+  readJson,
+  requireAuth,
+  requireVerifiedAuth,
+  type Router,
+} from "../lib/http";
 
 interface UpsertBody {
   full_name?: unknown;

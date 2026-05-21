@@ -88,9 +88,7 @@ describe("P2.A boot backfill", () => {
     // Snapshot the curated rows' updated_at before re-running. If the short-
     // circuit works, none of them should bump on a second invocation.
     const before = db
-      .prepare(
-        "SELECT id, updated_at FROM listings WHERE source = 'curated' ORDER BY id",
-      )
+      .prepare("SELECT id, updated_at FROM listings WHERE source = 'curated' ORDER BY id")
       .all() as { id: string; updated_at: number }[];
     expect(before.length).toBeGreaterThan(0);
 
@@ -100,9 +98,7 @@ describe("P2.A boot backfill", () => {
     backfillListings();
 
     const after = db
-      .prepare(
-        "SELECT id, updated_at FROM listings WHERE source = 'curated' ORDER BY id",
-      )
+      .prepare("SELECT id, updated_at FROM listings WHERE source = 'curated' ORDER BY id")
       .all() as { id: string; updated_at: number }[];
     expect(after.length).toBe(before.length);
     for (let i = 0; i < before.length; i++) {

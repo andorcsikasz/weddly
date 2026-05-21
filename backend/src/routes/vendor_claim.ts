@@ -11,11 +11,7 @@
 // See [[feedback_multi_agent_debate]] (path E synthesis) for why this ships
 // in P2.B/C — consuming the P2.A schema before it rots.
 
-import type {
-  ClaimVerifyView,
-  CompleteClaimInput,
-  StartClaimInput,
-} from "@shared/vendor_claim";
+import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type { AuthSession } from "@shared/types";
 import { hashPassword } from "../auth/password";
 import { issueSession } from "../auth/session";
@@ -52,11 +48,7 @@ const VERIFY_BUCKET = { capacity: 30, refillRate: 1 / 60 }; // 30 per minute per
 
 // ── Email ──────────────────────────────────────────────────────────────────
 
-async function sendClaimEmail(
-  toEmail: string,
-  listingName: string,
-  token: string,
-): Promise<void> {
+async function sendClaimEmail(toEmail: string, listingName: string, token: string): Promise<void> {
   const url = `${CONFIG.frontendBaseUrl}/vendor/claim/verify/${encodeURIComponent(token)}`;
   const { html, text } = bilingualBody({
     hu: {
@@ -265,9 +257,9 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   const tx = db.transaction(() => {
     // Re-check claim status inside the tx. If a sibling complete with the
     // SAME token landed first, this row is now 'verified' or 'cancelled'.
-    const freshClaim = db
-      .prepare("SELECT status FROM listing_claims WHERE id = ?")
-      .get(claim.id) as { status: string } | undefined;
+    const freshClaim = db.prepare("SELECT status FROM listing_claims WHERE id = ?").get(claim.id) as
+      | { status: string }
+      | undefined;
     if (!freshClaim || freshClaim.status !== "pending") {
       throw new Error(ERR_RACE_CLAIM);
     }

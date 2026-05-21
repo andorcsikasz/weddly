@@ -11,7 +11,11 @@
 //     A future iteration can add role coexistence, but v1 keeps it simple.
 
 import { randomBytes } from "node:crypto";
-import { CLAIM_TOKEN_TTL_MS, type ListingClaim, type ListingClaimStatus } from "@shared/vendor_claim";
+import {
+  CLAIM_TOKEN_TTL_MS,
+  type ListingClaim,
+  type ListingClaimStatus,
+} from "@shared/vendor_claim";
 import { db, now } from "../db";
 
 export interface ListingClaimRow {

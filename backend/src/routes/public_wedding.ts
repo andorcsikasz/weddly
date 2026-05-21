@@ -11,10 +11,7 @@
 // slow slug enumeration.
 
 import type { CeremonyKind } from "@shared/types";
-import type {
-  PublicWeddingScheduleEntry,
-  PublicWeddingWebsiteView,
-} from "@shared/wedding_website";
+import type { PublicWeddingScheduleEntry, PublicWeddingWebsiteView } from "@shared/wedding_website";
 import { db, now } from "../db";
 import { type CoupleRow } from "../domain/couples";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
