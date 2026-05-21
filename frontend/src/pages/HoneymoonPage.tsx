@@ -465,17 +465,25 @@ export default function HoneymoonPage() {
         </section>
       )}
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        <DaysTile
-          start={couple?.honeymoon_start_date ?? null}
-          end={couple?.honeymoon_end_date ?? null}
-          nights={nights}
-          locale={locale}
-          loaded={loaded}
-          onSave={(start, end) =>
-            saveTrip({ honeymoon_start_date: start, honeymoon_end_date: end })
-          }
-        />
+      {/* 1+2 mobile layout: the countdown tile gets a full row on mobile
+          (the date range + "122 days to go" pill needs the horizontal
+          room — at 1/3 width on a 393px phone they wrap or truncate),
+          then Destination + Budget share row 2 in a 2-col grid. On sm+
+          the three tiles become equal peers. Saves ~120px of vertical
+          chrome vs the prior single-column stack. */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="col-span-2 sm:col-span-1">
+          <DaysTile
+            start={couple?.honeymoon_start_date ?? null}
+            end={couple?.honeymoon_end_date ?? null}
+            nights={nights}
+            locale={locale}
+            loaded={loaded}
+            onSave={(start, end) =>
+              saveTrip({ honeymoon_start_date: start, honeymoon_end_date: end })
+            }
+          />
+        </div>
         <DestinationTile
           value={couple?.honeymoon_destination ?? null}
           loaded={loaded}
@@ -997,7 +1005,12 @@ function BudgetSummaryTile({
         </span>
       </div>
       <div className="mt-2 flex items-baseline justify-center gap-2">
-        <span className="font-serif text-3xl font-semibold tabular-nums text-paper-50 sm:text-4xl">
+        {/* Mobile (half-width cell after the 1+2 layout) needs a smaller
+            value font — text-3xl was clipping "HUF 320,000" at both edges
+            because the centered flex item overflowed the ~115px content
+            area. text-lg fits with room to spare; text-3xl/4xl restore
+            the hero feel at sm+/md+ widths where the cell is wider. */}
+        <span className="font-serif text-lg font-semibold tabular-nums text-paper-50 sm:text-3xl md:text-4xl">
           {loaded ? formatMoney(planned, currency, locale) : ""}
         </span>
       </div>
