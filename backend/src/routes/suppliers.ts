@@ -17,8 +17,7 @@ import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
 import { db } from "../db";
-import { getUserById } from "../domain/users";
-import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
@@ -96,7 +95,7 @@ interface VoteBody {
 }
 
 async function handleVote(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const supplierId = ctx.params.supplier_id?.trim();
   if (!supplierId) throw new HttpError(400, "supplier_id required");
   if (supplierId.length > 80) throw new HttpError(400, "supplier_id too long");

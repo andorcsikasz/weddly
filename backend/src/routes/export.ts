@@ -7,8 +7,8 @@ import { db } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser, toCouple } from "../domain/couples";
 import { recordExport } from "../domain/exports";
-import { type Ctx, HttpError, json, requireVerifiedAuth, type Router } from "../lib/http";
-import { getUserById, toUser, type UserRow } from "../domain/users";
+import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
+import { toUser, type UserRow } from "../domain/users";
 
 function rowsByCouple<T>(table: string, coupleId: number): T[] {
   return db
@@ -17,7 +17,7 @@ function rowsByCouple<T>(table: string, coupleId: number): T[] {
 }
 
 function handleExport(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 

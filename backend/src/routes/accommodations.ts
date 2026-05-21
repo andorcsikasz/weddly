@@ -16,19 +16,18 @@ import {
   updateAccommodation,
 } from "../domain/accommodations";
 import { getGuestByIdScoped } from "../domain/guests";
-import { getUserById } from "../domain/users";
 import { db, now } from "../db";
-import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 function handleList(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   return json({ accommodations: listAccommodations(couple.id) });
 }
 
 async function handleCreate(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -49,7 +48,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
 }
 
 async function handleUpdate(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -76,7 +75,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 }
 
 function handleDelete(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -106,7 +105,7 @@ interface AssignBody {
 }
 
 async function handleAssign(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 

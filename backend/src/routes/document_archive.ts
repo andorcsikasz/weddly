@@ -4,19 +4,18 @@
 
 import { getCoupleForUser } from "../domain/couples";
 import { deleteExport, getExport, listExports } from "../domain/exports";
-import { getUserById } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
-import { type Ctx, HttpError, json, requireVerifiedAuth, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 
 function handleList(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   return json({ exports: listExports(couple.id) });
 }
 
 function handleDownload(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -33,7 +32,7 @@ function handleDownload(ctx: Ctx): Response {
 }
 
 function handleDelete(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);

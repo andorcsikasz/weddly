@@ -4,8 +4,7 @@
 // (the policy is 1 req/sec globally — we give each user 1 query/sec with
 // a small burst).
 
-import { getUserById } from "../domain/users";
-import { type Ctx, HttpError, json, requireVerifiedAuth, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
 const USER_AGENT = "weddly-places-autocomplete/0.1 (admin@weddly.hu)";
@@ -66,7 +65,7 @@ function toSuggestion(r: NominatimResult): PlaceSuggestion | null {
 }
 
 async function handleSearch(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   // Per-user cap that respects Nominatim's 1 req/sec policy. 6-burst gives a
   // typist some headroom while debouncing on the client keeps the steady
   // state well below 1 query/sec.

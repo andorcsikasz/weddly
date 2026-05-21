@@ -15,18 +15,17 @@ import {
   toScheduleEvent,
   updateScheduleEvent,
 } from "../domain/schedule";
-import { getUserById } from "../domain/users";
-import { type Ctx, HttpError, json, readJson, requireVerifiedAuth, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 function handleList(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   return json({ events: listScheduleEvents(couple.id) });
 }
 
 async function handleCreate(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
@@ -51,7 +50,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
 }
 
 async function handleUpdate(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -103,7 +102,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
  *  same as the welcome drink, just an hour later" flow no longer needs the
  *  user to retype location + duration. */
 function handleDuplicate(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
@@ -138,7 +137,7 @@ function handleDuplicate(ctx: Ctx): Response {
 }
 
 function handleDelete(ctx: Ctx): Response {
-  const userId = requireVerifiedAuth(ctx, getUserById);
+  const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const id = Number(ctx.params.id);
