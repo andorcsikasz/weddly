@@ -3,11 +3,13 @@
 import { existsSync, rmSync } from "node:fs";
 
 process.env.NODE_ENV = "test";
-// Allow callers to override PORT + DB_PATH so two worktrees can run their
-// e2e suites side-by-side without colliding on :8791. Default to the
-// shared sentinel values when nothing's been pre-set.
-process.env.DB_PATH = process.env.DB_PATH ?? "./data/test-weddly.db";
-process.env.PORT = process.env.PORT ?? "8791";
+// Force-override PORT + DB_PATH so backend/.env (which sets dev PORT=8787 +
+// DB_PATH=./data/weddly.db) can't leak into the test suite. Without this,
+// `bun test` autoloads .env, the ?? fallback keeps the dev values, and tests
+// run against the dev DB on the dev port — pollution + port collision between
+// worker files. To run two worktrees in parallel, pass an explicit BUN_TEST_PORT.
+process.env.DB_PATH = process.env.BUN_TEST_DB_PATH ?? "./data/test-weddly.db";
+process.env.PORT = process.env.BUN_TEST_PORT ?? "8791";
 process.env.JWT_SECRET = "test-jwt-secret-0123456789abcdef0123456789abcdef0123456789abcdef";
 process.env.FRONTEND_BASE_URL = "http://localhost:5173";
 process.env.RESEND_API_KEY = ""; // ensure email is no-op
