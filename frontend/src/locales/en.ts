@@ -2477,6 +2477,8 @@ const en: LocaleMessages = {
     submitted: "Got it!",
     thanks_title: "Thank you!",
     thanks_body: "The couple sees your response — come back any time to update.",
+    thanks_open_site: "Open the wedding page →",
+    thanks_plan_your_own: "Planning your own wedding? Try Weddly free →",
     update_response: "Update",
     checkin_title: "RSVP check-in",
     checkin_intro: "Type the couple's name and the 4-digit code from your invite.",

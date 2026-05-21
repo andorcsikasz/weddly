@@ -2494,6 +2494,8 @@ const hu: LocaleMessages = {
     submitted: "Köszönjük!",
     thanks_title: "Megkaptuk!",
     thanks_body: "A pár látja a választást — bármikor visszajöhetsz módosítani.",
+    thanks_open_site: "Esküvői oldal megnyitása →",
+    thanks_plan_your_own: "Ti is most terveztek? Próbáljátok ki a Weddlyt ingyen →",
     update_response: "Frissítés",
     checkin_title: "RSVP check-in",
     checkin_intro: "Írd be a jegyes pár nevét és a 4 jegyű kódot a meghívóról.",

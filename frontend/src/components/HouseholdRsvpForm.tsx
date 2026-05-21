@@ -876,9 +876,38 @@ export function HouseholdRsvpForm({
         {submitting ? t("common.loading") : t("rsvp.checkin_complete")}
       </button>
       {done && (
-        <p className="mt-2 text-center text-sm text-ink-700 dark:text-paper-100">
-          <strong>{t("rsvp.checkin_done_title")}</strong> — {t("rsvp.thanks_body")}
-        </p>
+        <>
+          <p className="mt-2 text-center text-sm text-ink-700 dark:text-paper-100">
+            <strong>{t("rsvp.checkin_done_title")}</strong> — {t("rsvp.thanks_body")}
+          </p>
+          {/* Post-RSVP referral surface — the cheapest viral loop in the
+              product. A guest who just confirmed attendance is, by
+              definition, thinking about weddings right now. Two small
+              outbound CTAs: open the couple's public wedding website (so
+              they get the schedule/venue) and a soft pitch to plan their
+              own wedding on Weddly, ref-tagged so growth_events sees the
+              acquisition source. */}
+          <div className="mt-4 space-y-2 text-center">
+            {view.couple_slug && (
+              <a
+                href={`/w/${encodeURIComponent(view.couple_slug)}`}
+                className="btn-outline btn-sm inline-flex"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("rsvp.thanks_open_site")}
+              </a>
+            )}
+            <p className="text-xs text-ink-500 dark:text-umber-300">
+              <a
+                href="/?ref=rsvp"
+                className="font-serif italic underline-offset-4 hover:underline"
+              >
+                {t("rsvp.thanks_plan_your_own")}
+              </a>
+            </p>
+          </div>
+        </>
       )}
 
       {onNextGuest && (

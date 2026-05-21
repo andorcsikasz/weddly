@@ -2736,6 +2736,9 @@ export interface LocaleMessages {
     submitted: string;
     thanks_title: string;
     thanks_body: string;
+    /** Post-submit referral copy — see HouseholdRsvpForm.tsx. */
+    thanks_open_site: string;
+    thanks_plan_your_own: string;
     update_response: string;
     /** Airport check-in lookup screen. */
     checkin_title: string;
