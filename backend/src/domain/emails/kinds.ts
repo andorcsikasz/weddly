@@ -34,6 +34,7 @@ export type EmailKind =
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
   | "community_supplier_published" // admin approved the listing — it's now live
   | "community_supplier_rejected" // admin rejected a pending listing during moderation
+  | "community_supplier_reported" // first user report on a live listing — heads-up to the contact
   | "vendor_claim_verify" // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
   | "supplier_outreach"; // P2.E — couple-initiated cold outreach to a shortlisted vendor
@@ -110,6 +111,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Outreach: same recipient — moderation said no. Close the loop with a
   // reason instead of leaving the verified listing silently hidden.
   community_supplier_rejected: "outreach",
+  // Outreach: a couple reported wrong/missing info on the live listing.
+  // Send only on the FIRST report (cooldown built in via reportCount === 1)
+  // so a single bad-faith reporter can't spam the inbox.
+  community_supplier_reported: "outreach",
   // Outreach: anyone (no auth required) can hit /api/vendor/claim/start with a
   // listing id, and the listing's contact_email gets the mail — the recipient
   // didn't necessarily start the flow themselves.

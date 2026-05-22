@@ -241,6 +241,14 @@ export interface CommunitySupplierRejectedPayload {
   reason: string | null;
 }
 
+export interface CommunitySupplierReportedPayload {
+  /** Business / listing name surfaced in the email body. */
+  supplierName: string;
+  /** Reason slug the reporter picked (spam / fake / offensive / wrong_info /
+   *  other). Body humanises the slug into a sentence. */
+  reason: string;
+}
+
 export interface VendorClaimVerifyPayload {
   /** Listing name surfaced in the email body. */
   listingName: string;
@@ -307,6 +315,7 @@ export type KindPayload = {
   community_supplier_verify: CommunitySupplierVerifyPayload;
   community_supplier_published: CommunitySupplierPublishedPayload;
   community_supplier_rejected: CommunitySupplierRejectedPayload;
+  community_supplier_reported: CommunitySupplierReportedPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
   supplier_outreach: SupplierOutreachPayload;
@@ -1197,6 +1206,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
+  // First user-report on a live community listing. Heads-up to the contact
+  // so they can fix wrong info before the moderation queue swallows the
+  // listing for repeated reports. Only fires on the FIRST report (caller
+  // gates on reportCount === 1) to keep the inbox quiet.
+  community_supplier_reported: (p) => ({
+    subject: `Visszajelzés érkezett a hirdetésedre / Feedback on your listing`,
+    ctaUrl: CONFIG.frontendBaseUrl,
+    hu: {
+      preheader: `${p.supplierName} hirdetését jelentették.`,
+      greeting: "Szia!",
+      paragraphs: [
+        `Egy felhasználó visszajelzést küldött a(z) ${p.supplierName} hirdetésedről a Weddly katalógusban.`,
+        `Jelentés oka: ${humanReportReasonHu(p.reason)}`,
+        "Ez egy elsőjelzés — most még semmi nem változik a publikus megjelenésen. Ha tudod, hogy mi az amit pontosítani lehet (cím, leírás, képek), válaszolj erre az emailre és segítünk frissíteni.",
+      ],
+      cta: "Weddly megnyitása",
+    },
+    en: {
+      greeting: "Hi there,",
+      paragraphs: [
+        `A user sent feedback on your ${p.supplierName} listing in the Weddly directory.`,
+        `Report reason: ${humanReportReasonEn(p.reason)}`,
+        "This is a first signal — nothing changes on the public side yet. If you know what could be tightened up (address, description, photos), reply to this email and we'll help you update.",
+      ],
+      cta: "Open Weddly",
+    },
+  }),
+
   // Success confirmation after the vendor finishes the claim flow. Before
   // this, the verify click landed the vendor on a "set your password" page
   // and… nothing. This closes the loop with a Weddly-branded "you're in"
@@ -1356,6 +1393,40 @@ function appendEmailUtm(url: string, kind: EmailKind, category: EmailCategory): 
     // Builder handed us a non-URL (shouldn't happen, but don't crash the
     // mail-send path for an analytics nicety).
     return url;
+  }
+}
+
+function humanReportReasonHu(reason: string): string {
+  switch (reason) {
+    case "spam":
+      return "spam vagy reklám";
+    case "fake":
+      return "úgy tűnik, hamis adat";
+    case "offensive":
+      return "sértő tartalom";
+    case "wrong_info":
+      return "rossz vagy elavult adat";
+    case "other":
+      return "egyéb";
+    default:
+      return reason;
+  }
+}
+
+function humanReportReasonEn(reason: string): string {
+  switch (reason) {
+    case "spam":
+      return "spam or advertising";
+    case "fake":
+      return "looks fake";
+    case "offensive":
+      return "offensive content";
+    case "wrong_info":
+      return "wrong or outdated info";
+    case "other":
+      return "other";
+    default:
+      return reason;
   }
 }
 

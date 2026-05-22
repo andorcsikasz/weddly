@@ -428,6 +428,19 @@ async function handleReport(ctx: Ctx): Promise<Response> {
     });
   }
 
+  // Heads-up to the listing contact on the FIRST user report — gives them a
+  // chance to fix wrong info before the listing accumulates more reports
+  // and the auto-hide threshold kicks in. Cooldown is "first report only"
+  // (cheap, no schema needed); subsequent reports stay silent so a bad-
+  // faith reporter can't spam the vendor's inbox.
+  if (result.inserted && result.reportCount === 1 && supplier.contact_email) {
+    void sendKind(
+      "community_supplier_reported",
+      { supplierName: supplier.name, reason },
+      { user: null, guest: { email: supplier.contact_email, full_name: supplier.name } },
+    );
+  }
+
   return json({
     ok: true,
     duplicate: !result.inserted,
