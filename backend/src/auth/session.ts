@@ -58,6 +58,22 @@ export function verifySessionToken(token: string): number | null {
     db.prepare("UPDATE users SET last_seen_at = ? WHERE id = ?").run(ts, row.user_id);
   }
 
+  // Sliding refresh: once the session is past its half-life, extend it to a
+  // full TTL from now. Active users never see the SessionExpiredDialog; an
+  // idle session still ages out at created_at + TTL. Throttled to once per
+  // session per 5 minutes by piggybacking on the half-life check (the bump
+  // moves the midpoint forward by TTL/2, so the next eligible write is at
+  // least TTL/2 later — typically days).
+  const halfLife = row.created_at + Math.floor(CONFIG.sessionTtlMs / 2);
+  if (ts > halfLife) {
+    const newExpires = ts + CONFIG.sessionTtlMs;
+    db.prepare("UPDATE sessions SET created_at = ?, expires_at = ? WHERE id = ?").run(
+      ts,
+      newExpires,
+      id,
+    );
+  }
+
   return row.user_id;
 }
 

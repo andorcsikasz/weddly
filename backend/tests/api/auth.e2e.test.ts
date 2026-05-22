@@ -1721,3 +1721,84 @@ describe("cross-account isolation: email prefs", () => {
     expect(bAfter.data.lifecycle_opt_out).toBe(false);
   });
 });
+
+// ─── Sliding session refresh ────────────────────────────────────────────────
+
+describe("session sliding refresh", () => {
+  test("session within first half of TTL is NOT extended on use", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "slide-fresh@example.com",
+      password: "supersafe123",
+      full_name: "Slide",
+    });
+    const id = reg.data.token.split(".")[0]!;
+    const before = db.prepare("SELECT created_at, expires_at FROM sessions WHERE id = ?").get(id) as
+      | { created_at: number; expires_at: number }
+      | undefined;
+    expect(before).toBeDefined();
+
+    const me = await req("GET", "/api/auth/me", undefined, { token: reg.data.token });
+    expect(me.status).toBe(200);
+
+    const after = db.prepare("SELECT created_at, expires_at FROM sessions WHERE id = ?").get(id) as
+      | { created_at: number; expires_at: number }
+      | undefined;
+    expect(after?.created_at).toBe(before!.created_at);
+    expect(after?.expires_at).toBe(before!.expires_at);
+  });
+
+  test("session past half-life IS extended on next verified request", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "slide-old@example.com",
+      password: "supersafe123",
+      full_name: "Slide",
+    });
+    const id = reg.data.token.split(".")[0]!;
+
+    // Backdate the session so it's well past half-life: created 20 days ago,
+    // expires in 10 days. TTL is 30d, so created+TTL/2 was 5 days ago.
+    const TWENTY_DAYS = 20 * 24 * 60 * 60 * 1000;
+    const TEN_DAYS = 10 * 24 * 60 * 60 * 1000;
+    const tNow = Date.now();
+    const backdatedCreated = tNow - TWENTY_DAYS;
+    const stillValidExpires = tNow + TEN_DAYS;
+    db.prepare("UPDATE sessions SET created_at = ?, expires_at = ? WHERE id = ?").run(
+      backdatedCreated,
+      stillValidExpires,
+      id,
+    );
+
+    const me = await req("GET", "/api/auth/me", undefined, { token: reg.data.token });
+    expect(me.status).toBe(200);
+
+    const after = db.prepare("SELECT created_at, expires_at FROM sessions WHERE id = ?").get(id) as
+      | { created_at: number; expires_at: number }
+      | undefined;
+    expect(after).toBeDefined();
+    // created_at bumped to ~now (within a few seconds), expires_at ~ now + 30d.
+    expect(after!.created_at).toBeGreaterThan(backdatedCreated);
+    expect(after!.expires_at).toBeGreaterThan(stillValidExpires);
+    // Slack: at least 29 days from now to absorb test runtime.
+    const TWENTY_NINE_DAYS = 29 * 24 * 60 * 60 * 1000;
+    expect(after!.expires_at).toBeGreaterThan(Date.now() + TWENTY_NINE_DAYS);
+  });
+
+  test("expired session is NOT resurrected by sliding refresh", async () => {
+    wipeAll();
+    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "slide-dead@example.com",
+      password: "supersafe123",
+      full_name: "Slide",
+    });
+    const id = reg.data.token.split(".")[0]!;
+    db.prepare("UPDATE sessions SET expires_at = 1 WHERE id = ?").run(id);
+
+    const me = await req("GET", "/api/auth/me", undefined, { token: reg.data.token });
+    expect(me.status).toBe(401);
+
+    const row = db.prepare("SELECT id FROM sessions WHERE id = ?").get(id);
+    expect(row).toBeNull();
+  });
+});

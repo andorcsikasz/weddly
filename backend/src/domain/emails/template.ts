@@ -25,7 +25,13 @@ export interface LocaleBlock {
   /** Body paragraphs. Each becomes a <p>. Plain text — escaped before render. */
   paragraphs: string[];
   cta: string;
-  /** Small italic post-CTA note (e.g. "this link expires in 7 days"). Optional. */
+  /** Plain (non-italic) line rendered directly under the CTA button. Use for
+   *  load-bearing info that's part of the action — link expiry, single-use
+   *  warning, time-sensitive caveats. Reserves the `footnote` slot for truly
+   *  tertiary reassurance ("if you didn't ask for this, ignore it"). */
+  ctaSubtext?: string;
+  /** Small italic note rendered after the secondary links + below the CTA
+   *  block. Use for reassurance copy that's nice-to-have, not load-bearing. */
   footnote?: string;
   /** Low-stakes investigation links rendered as a row underneath the primary
    *  CTA. Gives a skeptical recipient (especially on outreach mail) a path
@@ -271,6 +277,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                     </td>
                   </tr>
                 </table>
+                ${renderCtaSubtext(block.ctaSubtext)}
                 ${renderPlainUrlNote(ctaUrl, category, locale)}
                 ${renderSecondaryLinks(block.secondaryLinks)}
                 ${footnote}
@@ -375,6 +382,14 @@ function escapeHtml(s: string): string {
 }
 function escapeAttr(s: string): string {
   return escapeHtml(s);
+}
+
+// Load-bearing copy directly under the CTA — link expiry, single-use
+// warnings. Same colour + size as the other shell text, no italics so the
+// reader doesn't mistake it for an aside.
+function renderCtaSubtext(text: string | undefined): string {
+  if (!text) return "";
+  return `<p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${escapeHtml(text)}</p>`;
 }
 
 // Investigation-link row under the CTA. Used for outreach mail mostly —

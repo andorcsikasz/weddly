@@ -1080,7 +1080,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       // agency-giving rather than "click here to commit to something you
       // didn't sign up for".
       cta: "Hirdetés átvétele",
-      footnote: "A link 7 napig érvényes.",
+      ctaSubtext: "A link 7 napig érvényes.",
+      secondaryLinks: [{ label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl }],
     },
     en: {
       greeting: "Hi there,",
@@ -1090,7 +1091,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If this wasn't you and you don't want a listing, just ignore this email — the listing won't publish without a click.",
       ],
       cta: "Claim your listing",
-      footnote: "Link expires in 7 days.",
+      ctaSubtext: "Link expires in 7 days.",
+      secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
     },
   }),
   // P2.C — vendor claim verify mail. Categorised as `outreach`: anyone (no
@@ -1109,7 +1111,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Ha nem te kezdeményezted, hagyd figyelmen kívül ezt az emailt — kattintás nélkül semmi sem történik.",
       ],
       cta: "Listing átvétele",
-      footnote: "A link 7 napig érvényes.",
+      ctaSubtext: "A link 7 napig érvényes.",
       secondaryLinks: [{ label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl }],
     },
     en: {
@@ -1120,7 +1122,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If you didn't request this, just ignore the email — nothing happens without clicking the link.",
       ],
       cta: "Claim your listing",
-      footnote: "Link expires in 7 days.",
+      ctaSubtext: "Link expires in 7 days.",
       secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
     },
   }),
