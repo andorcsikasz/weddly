@@ -139,6 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       <SessionExpiredDialog
         open={sessionExpired}
         email={user?.email ?? ""}
+        userId={user?.id ?? null}
+        passwordSet={user?.password_set ?? false}
+        hasGoogle={user?.has_google ?? false}
         onClose={() => setSessionExpired(false)}
         onLoggedIn={() => setSessionExpired(false)}
       />

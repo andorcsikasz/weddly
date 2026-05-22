@@ -24,6 +24,10 @@ export interface LocaleMessages {
     remove_item: string;
     /** Bare "Remove" word — short close-button aria-labels with no target. */
     remove: string;
+    /** Visually-hidden suffix appended to anchor labels that open in a new
+     *  tab — gives screen-reader users the same affordance sighted users
+     *  read from the underlined icon / browser chrome. */
+    opens_new_tab: string;
   };
   app: {
     name: string;
@@ -3151,6 +3155,10 @@ export interface LocaleMessages {
      *  within 4s actually fires the request — guards against an accidental
      *  click that would invalidate the partner's link. */
     partner_invite_cancel_confirm: string;
+    /** Visually-hidden aria-live announce that pairs with the armed state —
+     *  screen readers otherwise have no way to know the button is now
+     *  one click away from firing a destructive action. */
+    partner_invite_cancel_armed_announce: string;
     partner_invite_cancelling: string;
     /** Activity log — dark "what happened in the workspace" panel. The
      *  per-action `activity_action_*` keys cover the visible set defined
@@ -3243,6 +3251,9 @@ export interface LocaleMessages {
     activity_date_tbd: string;
     /** Empty fallback for unknown / missing values in a diff (e.g. cleared field). */
     activity_value_empty: string;
+    /** Separator between bride and groom names inside the activity feed.
+     *  HU prefers "és", EN prefers "&" — was hardcoded as " & ". */
+    activity_names_separator: string;
     /** Budget summary card on /app/profile — shows the cap + total paid with
      *  inline edits so couples don't have to bounce to /app/budget for a
      *  quick number tweak or a one-off payment record. */
@@ -3391,6 +3402,10 @@ export interface LocaleMessages {
      *  removes the row. */
     archive_delete: string;
     archive_delete_confirm: string;
+    /** Visually-hidden aria-live announce that pairs with the armed state
+     *  on each archive row — screen readers otherwise can't tell the
+     *  button is now armed for an irreversible delete. */
+    archive_delete_armed_announce: string;
     archive_deleting: string;
     archive_kind_json: string;
     archive_kind_seating_pdf: string;
@@ -3696,6 +3711,9 @@ export interface LocaleMessages {
     expired_body: string;
     sign_in: string;
     sign_out: string;
+    or_divider: string;
+    continue_with_google: string;
+    wrong_account: string;
   };
   /** Network resilience surface — toasts when fetch fails, timeouts, etc. */
   network: {

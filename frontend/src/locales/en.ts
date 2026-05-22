@@ -21,6 +21,7 @@ const en: LocaleMessages = {
     decrement: "Decrement",
     remove_item: "Remove {label}",
     remove: "Remove",
+    opens_new_tab: "(opens in a new tab)",
   },
   app: {
     name: "Weddly",
@@ -2788,6 +2789,8 @@ const en: LocaleMessages = {
     partner_invited_hint: "Typo in the email? Revoke and resend:",
     partner_invite_cancel: "Cancel invite",
     partner_invite_cancel_confirm: "Click again to cancel",
+    partner_invite_cancel_armed_announce:
+      "One more click will cancel the partner invite. Click cancel anywhere else to back out.",
     partner_invite_cancelling: "Cancelling…",
     activity_title: "What's been happening",
     activity_body:
@@ -2864,6 +2867,7 @@ const en: LocaleMessages = {
     activity_action_generic: "made a change",
     activity_date_tbd: "to be decided",
     activity_value_empty: "—",
+    activity_names_separator: " & ",
     budget_title: "Budget",
     budget_body:
       "Your two key numbers in one place: the planned cap and how much you've paid so far.",
@@ -2990,6 +2994,7 @@ const en: LocaleMessages = {
     archive_redownload: "Download",
     archive_delete: "Delete",
     archive_delete_confirm: "Click again to confirm",
+    archive_delete_armed_announce: "One more click will permanently delete this download.",
     archive_deleting: "Deleting…",
     archive_kind_json: "JSON",
     archive_kind_seating_pdf: "Seating",
@@ -3320,6 +3325,10 @@ const en: LocaleMessages = {
       "Sign in again to pick up where you left off. Anything you've typed is still here.",
     sign_in: "Sign in",
     sign_out: "Sign out",
+    or_divider: "or",
+    continue_with_google: "Continue with Google",
+    wrong_account:
+      "You signed in with a different account — switch back to the original account, or sign out.",
   },
   network: {
     offline_banner: "You're offline — changes will save once you're back online.",

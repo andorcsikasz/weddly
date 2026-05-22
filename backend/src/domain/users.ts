@@ -49,6 +49,11 @@ export function toUser(row: UserRow): User {
     couple_id: row.couple_id,
     verified_email: Boolean(row.verified_email),
     locale: normaliseLocale(row.locale),
+    // password_set is nullable on legacy rows; treat null as "yes, has a
+    // password" so password users from before the column existed still see
+    // the password form in the re-auth modal.
+    password_set: row.password_set !== 0,
+    has_google: Boolean(row.google_sub),
     created_at: row.created_at,
   };
 }

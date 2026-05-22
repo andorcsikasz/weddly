@@ -7,6 +7,7 @@
 // password form stays usable.
 
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
+import type { AuthSession } from "@shared/types";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../lib/api";
@@ -61,6 +62,10 @@ interface GsiAccountsId {
     use_fedcm_for_prompt?: boolean;
     /** Where to anchor the One Tap UI. "right" matches Google's docs. */
     prompt_parent_id?: string;
+    /** Pre-selects the matching Google account in the popup. Used by the
+     *  SessionExpiredDialog so the user doesn't have to pick the right
+     *  account from their account chooser. */
+    login_hint?: string;
   }) => void;
   renderButton: (
     el: HTMLElement,
@@ -105,7 +110,8 @@ interface Props {
    *  "signin_with" on the login page. Pure cosmetics; the backend handles
    *  both new-account and existing-account flows. */
   mode: "signup" | "signin";
-  /** Where to send the user after a successful auth. Defaults to /app. */
+  /** Where to send the user after a successful auth. Defaults to /app.
+   *  Ignored when `onSuccess` is provided (re-auth context). */
   redirectTo?: string;
   /** Also pop Google's One Tap dialog after init. Use on the login page so a
    *  returning visitor signed into Google in this browser is offered their
@@ -115,6 +121,16 @@ interface Props {
    *  for the previously-used account on subsequent visits — same UX as
    *  Gmail's "Stay signed in". Has no effect on first-time users. */
   autoSelect?: boolean;
+  /** Pre-select a specific Google account in the popup. Used by the
+   *  SessionExpiredDialog with the previously-signed-in email. */
+  loginHint?: string;
+  /** When provided, called with the fresh session instead of navigating.
+   *  Used by the SessionExpiredDialog so re-auth resumes the current page
+   *  rather than bouncing to /app. */
+  onSuccess?: (session: AuthSession) => void;
+  /** When provided, replaces the default toast on error so callers (the
+   *  SessionExpiredDialog) can render the message inside their own banner. */
+  onError?: (message: string) => void;
 }
 
 const CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "") as string;
@@ -124,6 +140,9 @@ export function GoogleSignInButton({
   redirectTo = "/app",
   oneTap = false,
   autoSelect = false,
+  loginHint,
+  onSuccess,
+  onError,
 }: Props) {
   const { t, locale } = useT();
   const { setSession } = useAuth();
@@ -167,8 +186,15 @@ export function GoogleSignInButton({
                 // brand-new accounts — see authApi.google docs.
                 locale,
               });
-              setSession(session.token, session.user);
-              navigate(redirectTo, { replace: true });
+              if (onSuccess) {
+                // Caller drives the post-auth side effects (e.g. the
+                // SessionExpiredDialog ID-locks then closes itself). We
+                // deliberately do NOT call setSession or navigate here.
+                onSuccess(session);
+              } else {
+                setSession(session.token, session.user);
+                navigate(redirectTo, { replace: true });
+              }
             } catch (err) {
               const msg =
                 err instanceof ApiError
@@ -178,7 +204,8 @@ export function GoogleSignInButton({
                       ? t("auth.google_unavailable")
                       : t("auth.google_failed")
                   : t("auth.google_failed");
-              toast.error(msg);
+              if (onError) onError(msg);
+              else toast.error(msg);
             }
           },
           auto_select: autoSelect,
@@ -188,6 +215,7 @@ export function GoogleSignInButton({
           // in Safari and Firefox. GSI handles the non-FedCM fallback for
           // older browsers internally.
           use_fedcm_for_prompt: true,
+          ...(loginHint ? { login_hint: loginHint } : {}),
         });
 
         // Width: button stretches to host width up to GSI's max of 400. We
@@ -240,7 +268,20 @@ export function GoogleSignInButton({
       // — otherwise the floating dialog can outlive its page.
       getGsi()?.cancel();
     };
-  }, [mode, redirectTo, oneTap, autoSelect, locale, navigate, setSession, t, toast]);
+  }, [
+    mode,
+    redirectTo,
+    oneTap,
+    autoSelect,
+    loginHint,
+    onSuccess,
+    onError,
+    locale,
+    navigate,
+    setSession,
+    t,
+    toast,
+  ]);
 
   if (hidden) return null;
   // Min-height matches Google's "large" button so the layout doesn't jump

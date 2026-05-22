@@ -21,6 +21,7 @@ const hu: LocaleMessages = {
     decrement: "Csökkentés",
     remove_item: "{label} eltávolítása",
     remove: "Eltávolítás",
+    opens_new_tab: "(új lapon nyílik meg)",
   },
   app: {
     name: "Wēddly",
@@ -2814,6 +2815,8 @@ const hu: LocaleMessages = {
     partner_invited_hint: "Rossz e-mail címet adtál meg? Vond vissza és küldd újra:",
     partner_invite_cancel: "Meghívó visszavonása",
     partner_invite_cancel_confirm: "Kattints újra a visszavonáshoz",
+    partner_invite_cancel_armed_announce:
+      "Még egy kattintás visszavonja a partner-meghívót. Bárhova máshova kattintva mégse vonod vissza.",
     partner_invite_cancelling: "Visszavonás…",
     activity_title: "Mi történt a munkaterületen",
     activity_body:
@@ -2893,6 +2896,7 @@ const hu: LocaleMessages = {
     activity_action_generic: "változtatott a munkaterületen",
     activity_date_tbd: "még nincs kitűzve",
     activity_value_empty: "—",
+    activity_names_separator: " és ",
     budget_title: "Költségvetés",
     budget_body:
       "A két legfontosabb számod egy helyen: a tervezett keret és az eddig kifizetett összeg.",
@@ -3021,6 +3025,7 @@ const hu: LocaleMessages = {
     archive_redownload: "Letöltés",
     archive_delete: "Törlés",
     archive_delete_confirm: "Kattints újra a törléshez",
+    archive_delete_armed_announce: "Még egy kattintás véglegesen törli ezt a letöltést.",
     archive_deleting: "Törlés…",
     archive_kind_json: "JSON",
     archive_kind_seating_pdf: "Ültetés",
@@ -3351,6 +3356,10 @@ const hu: LocaleMessages = {
       "Jelentkezz be újra, és ott folytatjátok, ahol abbahagytátok. Ami beírtál, megmarad.",
     sign_in: "Bejelentkezés",
     sign_out: "Kijelentkezés",
+    or_divider: "vagy",
+    continue_with_google: "Folytatás Google-fiókkal",
+    wrong_account:
+      "Másik fiókkal jelentkeztél be — térj vissza az eredeti fiókkal, vagy jelentkezz ki.",
   },
   network: {
     offline_banner: "Nincs internet — a változtatások mentésre várnak.",

@@ -26,6 +26,14 @@ export interface User {
    *  through a client that sends `locale` in the register body — the
    *  frontend then prefers `user.locale` over its own navigator detection. */
   locale: "hu" | "en" | null;
+  /** True when the user has a real local password (i.e. can sign in via the
+   *  email/password form). False for Google-only signups whose stored hash is
+   *  a synthetic placeholder. Drives the SessionExpiredDialog's choice of
+   *  re-auth method. */
+  password_set: boolean;
+  /** True when the user has a linked Google account (`users.google_sub` set).
+   *  Drives the SessionExpiredDialog's choice of re-auth method. */
+  has_google: boolean;
   created_at: UnixMs;
 }
 
@@ -552,6 +560,11 @@ export interface PublicCheckinView {
    *  household — useful for buffet weddings or households whose menu is
    *  fixed. Dietary chips below stay visible either way. */
   rsvp_collects_meal: boolean;
+  /** Mirrors `couples.is_public`. Lets the success card hide the
+   *  "Open wedding page" CTA when the /w/:slug page would 404 — clicking
+   *  through to a "not found" page after a successful RSVP read as broken
+   *  more than helpful. */
+  wedding_site_published: boolean;
 }
 
 /** Submit shape for the household check-in. The credential pair (slug+code)
