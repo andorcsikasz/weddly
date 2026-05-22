@@ -254,6 +254,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                 <p style="margin:0 0 18px 0;color:${COLOR.ink};font-size:18px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
                   ${escapeHtml(block.greeting)}
                 </p>
+                ${renderOutreachOrientation(category, locale)}
                 ${paras}
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0 0;">
                   <tr>
@@ -368,6 +369,21 @@ function escapeHtml(s: string): string {
 }
 function escapeAttr(s: string): string {
   return escapeHtml(s);
+}
+
+// Cold recipients don't necessarily know what Weddly is — the body dives
+// straight into "someone added you to our directory" without context.
+// Inject a one-line "what is Weddly" orientation between the greeting and
+// the first paragraph so the recipient has an anchor before the action ask.
+// Only renders for outreach category — transactional/lifecycle recipients
+// already have an account and don't need the intro.
+function renderOutreachOrientation(category: EmailCategory, locale: "hu" | "en"): string {
+  if (category !== "outreach") return "";
+  const copy =
+    locale === "hu"
+      ? "A Weddly egy esküvőtervező eszköz pároknak — vendéglista, ülésrend, költségvetés, RSVP egy helyen."
+      : "Weddly is a wedding-planning app for couples — guest list, seating, budget, RSVP in one place.";
+  return `<p style="margin:0 0 18px 0;color:${COLOR.muted};font-size:14px;line-height:1.5;font-style:italic;">${escapeHtml(copy)}</p>`;
 }
 
 // For unsolicited mail (outreach category), the CTA button hides its
