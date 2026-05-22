@@ -2146,6 +2146,11 @@ const en: LocaleMessages = {
     taxonomy_cancel: "Cancel",
     taxonomy_edit: "Edit",
     taxonomy_delete: "Delete",
+    taxonomy_hide: "Hide",
+    taxonomy_unhide: "Unhide",
+    taxonomy_hidden_badge: "Hidden",
+    taxonomy_hide_success: "Hidden — couples no longer see it.",
+    taxonomy_unhide_success: "Visible — couples see it again.",
     taxonomy_delete_group_confirm_title: "Delete group",
     taxonomy_delete_group_confirm_body:
       "Only allowed when the group has no categories. This can't be undone.",

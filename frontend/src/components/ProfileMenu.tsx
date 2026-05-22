@@ -126,7 +126,7 @@ export function ProfileMenu() {
           </div>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
           <Link
-            to="/app/profile"
+            to="/app/settings/account"
             role="menuitem"
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
           >

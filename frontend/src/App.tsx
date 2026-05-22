@@ -52,6 +52,7 @@ const MoodboardPage = lazy(() => import("./pages/MoodboardPage"));
 const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
 const PlanningPage = lazy(() => import("./pages/PlanningPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const SettingsLayout = lazy(() => import("./pages/SettingsLayout"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const RsvpCheckinPage = lazy(() => import("./pages/RsvpCheckinPage"));
 const RsvpPage = lazy(() => import("./pages/RsvpPage"));
@@ -547,15 +548,25 @@ export default function App() {
             </Page>
           }
         />
+        {/* Legacy /app/profile route — redirects to the new Settings hub.
+            Kept so any bookmarks, emailed deep-links, or old in-app
+            references (ProfileMenu, WorkspaceSwitcher) keep landing
+            users on a working page during the transition window. */}
+        <Route path="profile" element={<Navigate to="/app/settings/account" replace />} />
         <Route
-          path="profile"
+          path="settings"
           element={
             <Page>
-              <ProfilePage />
+              <SettingsLayout />
             </Page>
           }
-        />
-        <Route path="settings" element={<Navigate to="/app/profile" replace />} />
+        >
+          <Route index element={<Navigate to="account" replace />} />
+          <Route path="account" element={<ProfilePage tab="account" />} />
+          <Route path="workspace" element={<ProfilePage tab="workspace" />} />
+          <Route path="planning" element={<ProfilePage tab="planning" />} />
+          <Route path="data" element={<ProfilePage tab="data" />} />
+        </Route>
         <Route
           path="admin/suppliers"
           element={

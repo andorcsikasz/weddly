@@ -88,7 +88,21 @@ function saveBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function ProfilePage() {
+/** Discrete settings tabs the Settings hub renders. When set, only the
+ *  sections in that tab render. When undefined, the page renders the
+ *  full pre-restructure layout — kept as a fallback for callers that
+ *  haven't migrated to the per-tab Settings routes yet. */
+export type ProfileTab = "account" | "workspace" | "planning" | "data";
+
+export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
+  const showAccount = !tab || tab === "account";
+  const showWorkspace = !tab || tab === "workspace";
+  const showPlanning = !tab || tab === "planning";
+  const showData = !tab || tab === "data";
+  // Hero band only paints on the legacy all-tabs view — the SettingsLayout
+  // wraps each sub-page with its own hero, so re-rendering it inside the
+  // page body would double-stack.
+  const showHero = !tab;
   const { t, locale } = useT();
   const [density, setDensity] = useDensity();
   useDocumentMeta("seo.profile_title", "seo.profile_description");
@@ -534,350 +548,374 @@ export default function ProfilePage() {
        *  carry an h1, so the document outline still gets one. */}
       <h1 className="sr-only">{t("profile.title")}</h1>
 
-      <ProfileHero couple={couple} t={t} locale={locale} />
+      {showHero && <ProfileHero couple={couple} t={t} locale={locale} />}
 
-      <ZoneLabel>{t("profile.zone_workspace")}</ZoneLabel>
+      {!tab && <ZoneLabel>{t("profile.zone_workspace")}</ZoneLabel>}
 
-      <AccountSection
-        user={authUser}
-        t={t}
-        locale={locale}
-        onLocaleChange={setLocale}
-        onSaved={() => {
-          refreshAuth();
-        }}
-      />
+      {showAccount && (
+        <AccountSection
+          user={authUser}
+          t={t}
+          locale={locale}
+          onLocaleChange={setLocale}
+          onSaved={() => {
+            refreshAuth();
+          }}
+        />
+      )}
 
-      <section className="card mt-6">
-        <h2 className="flex items-center gap-2 text-lg">
-          <Heart size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
-          {t("profile.partner_title")}
-        </h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.partner_body")}</p>
-        {partner ? (
-          <>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <PartnerMonogram
-                fullName={partner.full_name ?? ""}
-                email={partner.email ?? ""}
-                joined={partner.status === "joined" || partner.status === "active"}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-ink-900 dark:text-paper-50">
-                  {partner.full_name ?? t("profile.partner_no_name")}
-                </p>
-                <p className="text-sm text-ink-600 break-all dark:text-umber-200">
-                  {partner.email ?? t("profile.partner_no_email")}
-                </p>
-              </div>
-              <PartnerStatusPill status={partner.status} t={t} />
-            </div>
-            {partner.status === "invited" && (
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <p className="text-xs text-ink-500 dark:text-umber-300">
-                  {t("profile.partner_invited_hint")}
-                </p>
-                <button
-                  type="button"
-                  className={`btn-sm ${
-                    armedCancelInvite
-                      ? "rounded-xl border border-blush-700 bg-blush-700 px-4 text-paper-50 transition-colors hover:bg-blush-800"
-                      : "btn-outline"
-                  }`}
-                  onClick={cancelPendingInvite}
-                  disabled={cancellingInvite}
-                >
-                  {cancellingInvite
-                    ? t("profile.partner_invite_cancelling")
-                    : armedCancelInvite
-                      ? t("profile.partner_invite_cancel_confirm")
-                      : t("profile.partner_invite_cancel")}
-                </button>
-                {/* SR announce — paired with the armed visual state so
-                 *  non-visual users know the next click fires immediately. */}
-                <span role="status" aria-live="polite" className="sr-only">
-                  {armedCancelInvite ? t("profile.partner_invite_cancel_armed_announce") : ""}
-                </span>
-              </div>
-            )}
-          </>
-        ) : (
-          <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
-            {t("profile.partner_none")}
-          </p>
-        )}
-      </section>
-
-      <WorkspacesPanel activeCoupleId={couple?.id ?? null} />
-
-      <ZoneLabel>{t("profile.zone_planning")}</ZoneLabel>
-
-      <section className="card mt-6">
-        {/* Header row: title left, currency picker right. The picker stays
-         *  inline with the heading so the section opens with one compact
-         *  band instead of a stacked label-on-top-of-pills layout. */}
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      {showWorkspace && (
+        <section className="card mt-6">
           <h2 className="flex items-center gap-2 text-lg">
-            <Wallet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
-            {t("profile.budget_title")}
+            <Heart size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("profile.partner_title")}
           </h2>
-          <CurrencyPicker currency={currency} onSelect={saveCurrency} t={t} locale={locale} />
-        </div>
-
-        {/* Two stat rows on a hairline-divided list. Each row: label +
-         *  action on the top line, the amount on its own line right below.
-         *  The amount sits on the left column so the two values stack
-         *  vertically and the eye reads them as a list of figures rather
-         *  than a label-value table. Edit + quick-add forms replace the
-         *  amount line in place so the row height doesn't double. */}
-        <ul className="mt-3 divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
-          <li className="py-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("profile.budget_cap_label")}
-              </span>
-              {!editingCap && (
-                <button
-                  ref={editCapTriggerRef}
-                  type="button"
-                  className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
-                  onClick={beginCapEdit}
-                  aria-label={t("common.edit")}
-                >
-                  {t("common.edit")}
-                </button>
-              )}
-            </div>
-            {editingCap ? (
-              <form
-                onSubmit={saveCap}
-                className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2"
-                aria-label={t("profile.budget_cap_label")}
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    step={1000}
-                    value={capInput}
-                    onChange={(ev) => setCapInput(ev.target.value)}
-                    placeholder={t("profile.budget_cap_placeholder")}
-                    className="input h-11 w-32 py-0 text-right text-base tabular-nums sm:h-8 sm:text-sm"
-                    autoFocus
-                    disabled={savingCap}
-                  />
-                  <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
-                </div>
-                <button
-                  type="submit"
-                  className="btn-sm btn-primary !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
-                  disabled={savingCap}
-                >
-                  {savingCap ? t("common.saving") : t("common.save")}
-                </button>
-                <button
-                  type="button"
-                  className="btn-sm btn-outline !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
-                  onClick={() => {
-                    setEditingCap(false);
-                    setCapError(null);
-                  }}
-                  disabled={savingCap}
-                >
-                  {t("common.cancel")}
-                </button>
-                {capError && (
-                  <p className="basis-full text-[11px] text-blush-700 dark:text-blush-300">
-                    {capError}
-                  </p>
-                )}
-              </form>
-            ) : (
-              <p className="mt-1 text-lg font-medium tabular-nums tracking-tight text-ink-900 dark:text-paper-50">
-                {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "—"}
-              </p>
-            )}
-          </li>
-
-          <li className="py-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("profile.budget_paid_label")}
-              </span>
-              {!addingPayment && (
-                <button
-                  ref={addPaymentTriggerRef}
-                  type="button"
-                  className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
-                  onClick={() => {
-                    setAddingPayment(true);
-                    setPaymentError(null);
-                  }}
-                >
-                  {t("profile.budget_payment_add")}
-                </button>
-              )}
-            </div>
-            {addingPayment ? (
-              <form
-                onSubmit={savePayment}
-                className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2"
-              >
-                <input
-                  type="text"
-                  value={paymentLabel}
-                  onChange={(ev) => setPaymentLabel(ev.target.value)}
-                  placeholder={t("profile.budget_payment_label_placeholder")}
-                  className="input h-11 flex-1 min-w-[8rem] py-0 text-base sm:h-8 sm:text-sm"
-                  maxLength={200}
-                  autoFocus
-                  disabled={savingPayment}
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+            {t("profile.partner_body")}
+          </p>
+          {partner ? (
+            <>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <PartnerMonogram
+                  fullName={partner.full_name ?? ""}
+                  email={partner.email ?? ""}
+                  joined={partner.status === "joined" || partner.status === "active"}
                 />
-                <div className="flex items-center gap-1">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-ink-900 dark:text-paper-50">
+                    {partner.full_name ?? t("profile.partner_no_name")}
+                  </p>
+                  <p className="text-sm text-ink-600 break-all dark:text-umber-200">
+                    {partner.email ?? t("profile.partner_no_email")}
+                  </p>
+                </div>
+                <PartnerStatusPill status={partner.status} t={t} />
+              </div>
+              {partner.status === "invited" && (
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <p className="text-xs text-ink-500 dark:text-umber-300">
+                    {t("profile.partner_invited_hint")}
+                  </p>
+                  <button
+                    type="button"
+                    className={`btn-sm ${
+                      armedCancelInvite
+                        ? "rounded-xl border border-blush-700 bg-blush-700 px-4 text-paper-50 transition-colors hover:bg-blush-800"
+                        : "btn-outline"
+                    }`}
+                    onClick={cancelPendingInvite}
+                    disabled={cancellingInvite}
+                  >
+                    {cancellingInvite
+                      ? t("profile.partner_invite_cancelling")
+                      : armedCancelInvite
+                        ? t("profile.partner_invite_cancel_confirm")
+                        : t("profile.partner_invite_cancel")}
+                  </button>
+                  {/* SR announce — paired with the armed visual state so
+                   *  non-visual users know the next click fires immediately. */}
+                  <span role="status" aria-live="polite" className="sr-only">
+                    {armedCancelInvite ? t("profile.partner_invite_cancel_armed_announce") : ""}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
+              {t("profile.partner_none")}
+            </p>
+          )}
+        </section>
+      )}
+
+      {showWorkspace && <WorkspacesPanel activeCoupleId={couple?.id ?? null} />}
+
+      {!tab && <ZoneLabel>{t("profile.zone_planning")}</ZoneLabel>}
+
+      {showPlanning && (
+        <section className="card mt-6">
+          {/* Header row: title left, currency picker right. The picker stays
+           *  inline with the heading so the section opens with one compact
+           *  band instead of a stacked label-on-top-of-pills layout. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <h2 className="flex items-center gap-2 text-lg">
+              <Wallet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+              {t("profile.budget_title")}
+            </h2>
+            <CurrencyPicker currency={currency} onSelect={saveCurrency} t={t} locale={locale} />
+          </div>
+
+          {/* Two stat rows on a hairline-divided list. Each row: label +
+           *  action on the top line, the amount on its own line right below.
+           *  The amount sits on the left column so the two values stack
+           *  vertically and the eye reads them as a list of figures rather
+           *  than a label-value table. Edit + quick-add forms replace the
+           *  amount line in place so the row height doesn't double. */}
+          <ul className="mt-3 divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
+            <li className="py-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  {t("profile.budget_cap_label")}
+                </span>
+                {!editingCap && (
+                  <button
+                    ref={editCapTriggerRef}
+                    type="button"
+                    className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                    onClick={beginCapEdit}
+                    aria-label={t("common.edit")}
+                  >
+                    {t("common.edit")}
+                  </button>
+                )}
+              </div>
+              {editingCap ? (
+                <form
+                  onSubmit={saveCap}
+                  className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2"
+                  aria-label={t("profile.budget_cap_label")}
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      step={1000}
+                      value={capInput}
+                      onChange={(ev) => setCapInput(ev.target.value)}
+                      placeholder={t("profile.budget_cap_placeholder")}
+                      className="input h-11 w-32 py-0 text-right text-base tabular-nums sm:h-8 sm:text-sm"
+                      autoFocus
+                      disabled={savingCap}
+                    />
+                    <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn-sm btn-primary !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
+                    disabled={savingCap}
+                  >
+                    {savingCap ? t("common.saving") : t("common.save")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-sm btn-outline !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
+                    onClick={() => {
+                      setEditingCap(false);
+                      setCapError(null);
+                    }}
+                    disabled={savingCap}
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  {capError && (
+                    <p className="basis-full text-[11px] text-blush-700 dark:text-blush-300">
+                      {capError}
+                    </p>
+                  )}
+                </form>
+              ) : (
+                <p className="mt-1 text-lg font-medium tabular-nums tracking-tight text-ink-900 dark:text-paper-50">
+                  {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "—"}
+                </p>
+              )}
+            </li>
+
+            <li className="py-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  {t("profile.budget_paid_label")}
+                </span>
+                {!addingPayment && (
+                  <button
+                    ref={addPaymentTriggerRef}
+                    type="button"
+                    className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                    onClick={() => {
+                      setAddingPayment(true);
+                      setPaymentError(null);
+                    }}
+                  >
+                    {t("profile.budget_payment_add")}
+                  </button>
+                )}
+              </div>
+              {addingPayment ? (
+                <form
+                  onSubmit={savePayment}
+                  className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2"
+                >
                   <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    step={1000}
-                    value={paymentAmount}
-                    onChange={(ev) => setPaymentAmount(ev.target.value)}
-                    placeholder={t("profile.budget_payment_amount_placeholder")}
-                    className="input h-11 w-28 py-0 text-right text-base tabular-nums sm:h-8 sm:text-sm"
+                    type="text"
+                    value={paymentLabel}
+                    onChange={(ev) => setPaymentLabel(ev.target.value)}
+                    placeholder={t("profile.budget_payment_label_placeholder")}
+                    className="input h-11 flex-1 min-w-[8rem] py-0 text-base sm:h-8 sm:text-sm"
+                    maxLength={200}
+                    autoFocus
                     disabled={savingPayment}
                   />
-                  <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
-                </div>
-                <button
-                  type="submit"
-                  className="btn-sm btn-primary !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
-                  disabled={savingPayment}
-                >
-                  {savingPayment ? t("common.saving") : t("profile.budget_payment_save")}
-                </button>
-                <button
-                  type="button"
-                  className="btn-sm btn-outline !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
-                  onClick={() => {
-                    setAddingPayment(false);
-                    setPaymentLabel("");
-                    setPaymentAmount("");
-                    setPaymentError(null);
-                  }}
-                  disabled={savingPayment}
-                >
-                  {t("common.cancel")}
-                </button>
-                {paymentError && (
-                  <p className="basis-full text-[11px] text-blush-700 dark:text-blush-300">
-                    {paymentError}
-                  </p>
-                )}
-              </form>
-            ) : (
-              <p className="mt-1 text-lg font-medium tabular-nums tracking-tight text-ink-900 dark:text-paper-50">
-                {formatMoney(totalPaidHuf, currency, locale)}
-              </p>
-            )}
-          </li>
-        </ul>
-      </section>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      step={1000}
+                      value={paymentAmount}
+                      onChange={(ev) => setPaymentAmount(ev.target.value)}
+                      placeholder={t("profile.budget_payment_amount_placeholder")}
+                      className="input h-11 w-28 py-0 text-right text-base tabular-nums sm:h-8 sm:text-sm"
+                      disabled={savingPayment}
+                    />
+                    <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn-sm btn-primary !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
+                    disabled={savingPayment}
+                  >
+                    {savingPayment ? t("common.saving") : t("profile.budget_payment_save")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-sm btn-outline !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
+                    onClick={() => {
+                      setAddingPayment(false);
+                      setPaymentLabel("");
+                      setPaymentAmount("");
+                      setPaymentError(null);
+                    }}
+                    disabled={savingPayment}
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  {paymentError && (
+                    <p className="basis-full text-[11px] text-blush-700 dark:text-blush-300">
+                      {paymentError}
+                    </p>
+                  )}
+                </form>
+              ) : (
+                <p className="mt-1 text-lg font-medium tabular-nums tracking-tight text-ink-900 dark:text-paper-50">
+                  {formatMoney(totalPaidHuf, currency, locale)}
+                </p>
+              )}
+            </li>
+          </ul>
+        </section>
+      )}
 
-      <section className="card mt-6">
-        <h2 className="flex items-center gap-2 text-lg">
-          <Sliders size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
-          {t("profile.display_title")}
-        </h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.display_body")}</p>
-        <DensitySlider density={density} setDensity={setDensity} t={t} />
-      </section>
-
-      <section className="card mt-6">
-        <h2 className="flex items-center gap-2 text-lg">
-          <Tablet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
-          {t("profile.welcome_desk_title")}
-        </h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
-          {t("profile.welcome_desk_body")}
-        </p>
-        {couple?.slug ? (
-          <a
-            href={`/rsvp?couple=${encodeURIComponent(couple.slug)}&kiosk=1`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary mt-4 inline-flex"
-          >
-            <Tablet size={14} aria-hidden />
-            {t("profile.welcome_desk_button")}
-            <span className="sr-only"> {t("common.opens_new_tab")}</span>
-          </a>
-        ) : (
-          <p className="mt-3 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
-            {t("profile.welcome_desk_no_slug")}
+      {showPlanning && (
+        <section className="card mt-6">
+          <h2 className="flex items-center gap-2 text-lg">
+            <Sliders size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("profile.display_title")}
+          </h2>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+            {t("profile.display_body")}
           </p>
-        )}
-      </section>
+          <DensitySlider density={density} setDensity={setDensity} t={t} />
+        </section>
+      )}
 
-      <ZoneLabel>{t("profile.zone_account")}</ZoneLabel>
+      {showWorkspace && (
+        <section className="card mt-6">
+          <h2 className="flex items-center gap-2 text-lg">
+            <Tablet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("profile.welcome_desk_title")}
+          </h2>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+            {t("profile.welcome_desk_body")}
+          </p>
+          {couple?.slug ? (
+            <a
+              href={`/rsvp?couple=${encodeURIComponent(couple.slug)}&kiosk=1`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-4 inline-flex"
+            >
+              <Tablet size={14} aria-hidden />
+              {t("profile.welcome_desk_button")}
+              <span className="sr-only"> {t("common.opens_new_tab")}</span>
+            </a>
+          ) : (
+            <p className="mt-3 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
+              {t("profile.welcome_desk_no_slug")}
+            </p>
+          )}
+        </section>
+      )}
 
-      <SecuritySection
-        t={t}
-        pwCurrent={pwCurrent}
-        setPwCurrent={setPwCurrent}
-        pwNext={pwNext}
-        setPwNext={setPwNext}
-        pwConfirm={pwConfirm}
-        setPwConfirm={setPwConfirm}
-        pwError={pwError}
-        pwSubmitting={pwSubmitting}
-        onChangePassword={changePassword}
-        newEmail={newEmail}
-        setNewEmail={setNewEmail}
-        emailPassword={emailPassword}
-        setEmailPassword={setEmailPassword}
-        emailError={emailError}
-        emailSubmitting={emailSubmitting}
-        onRequestEmailChange={requestEmailChange}
-      />
+      {!tab && <ZoneLabel>{t("profile.zone_account")}</ZoneLabel>}
 
-      <section className="card mt-6">
-        <h2 className="flex items-center gap-2 text-lg">
-          <Download size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
-          {t("profile.export_title")}
-        </h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.export_body")}</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={downloadExport}
-            disabled={exporting}
-          >
-            {exporting ? t("profile.export_downloading") : t("profile.export_button")}
-          </button>
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={downloadGuestCsv}
-            disabled={csvExporting}
-          >
-            {csvExporting ? t("profile.export_downloading") : t("profile.export_guest_csv_button")}
-          </button>
-        </div>
-      </section>
+      {showAccount && (
+        <SecuritySection
+          t={t}
+          pwCurrent={pwCurrent}
+          setPwCurrent={setPwCurrent}
+          pwNext={pwNext}
+          setPwNext={setPwNext}
+          pwConfirm={pwConfirm}
+          setPwConfirm={setPwConfirm}
+          pwError={pwError}
+          pwSubmitting={pwSubmitting}
+          onChangePassword={changePassword}
+          newEmail={newEmail}
+          setNewEmail={setNewEmail}
+          emailPassword={emailPassword}
+          setEmailPassword={setEmailPassword}
+          emailError={emailError}
+          emailSubmitting={emailSubmitting}
+          onRequestEmailChange={requestEmailChange}
+        />
+      )}
 
-      <DocumentsPanel
-        documents={documents}
-        locale={locale}
-        t={t}
-        redownloading={redownloading}
-        removing={removing}
-        armedDeleteId={armedDeleteId}
-        onRedownload={redownloadSaved}
-        onDelete={clickDelete}
-      />
+      {showData && (
+        <section className="card mt-6">
+          <h2 className="flex items-center gap-2 text-lg">
+            <Download size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("profile.export_title")}
+          </h2>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+            {t("profile.export_body")}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={downloadExport}
+              disabled={exporting}
+            >
+              {exporting ? t("profile.export_downloading") : t("profile.export_button")}
+            </button>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={downloadGuestCsv}
+              disabled={csvExporting}
+            >
+              {csvExporting
+                ? t("profile.export_downloading")
+                : t("profile.export_guest_csv_button")}
+            </button>
+          </div>
+        </section>
+      )}
 
-      {authUser && couple && (
+      {showData && (
+        <DocumentsPanel
+          documents={documents}
+          locale={locale}
+          t={t}
+          redownloading={redownloading}
+          removing={removing}
+          armedDeleteId={armedDeleteId}
+          onRedownload={redownloadSaved}
+          onDelete={clickDelete}
+        />
+      )}
+
+      {showAccount && authUser && couple && (
         <section className="card mt-6">
           <h2 className="flex items-center gap-2 text-lg">
             <LogOut size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
@@ -905,37 +943,44 @@ export default function ProfilePage() {
         </section>
       )}
 
-      <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40 dark:bg-blush-400/15">
-        <h2 className="flex items-center gap-2 text-lg text-blush-800 dark:text-blush-300">
-          <Trash2 size={18} aria-hidden />
-          {t("profile.delete_account_title")}
-        </h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
-          {t("profile.delete_account_body")}
-        </p>
-        {coupleStatus === "paused" && pauseReq ? (
-          <div className="mt-4 rounded-xl bg-blush-50 p-4 dark:bg-blush-400/15">
-            <p className="text-sm font-medium text-blush-800 dark:text-blush-300">
-              {t("profile.delete_account_pending")}
-            </p>
-            {scheduledYmd && (
-              <p className="mt-1 text-xs text-blush-700 dark:text-blush-300">
-                {t("profile.delete_account_pending_until", {
-                  date: formatDate(scheduledYmd, locale),
-                })}
+      {showAccount && (
+        <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40 dark:bg-blush-400/15">
+          <h2 className="flex items-center gap-2 text-lg text-blush-800 dark:text-blush-300">
+            <Trash2 size={18} aria-hidden />
+            {t("profile.delete_account_title")}
+          </h2>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+            {t("profile.delete_account_body")}
+          </p>
+          {coupleStatus === "paused" && pauseReq ? (
+            <div className="mt-4 rounded-xl bg-blush-50 p-4 dark:bg-blush-400/15">
+              <p className="text-sm font-medium text-blush-800 dark:text-blush-300">
+                {t("profile.delete_account_pending")}
               </p>
-            )}
-            <button type="button" className="btn-outline mt-4" onClick={cancelPause}>
-              {t("profile.cancel_delete_account")}
+              {scheduledYmd && (
+                <p className="mt-1 text-xs text-blush-700 dark:text-blush-300">
+                  {t("profile.delete_account_pending_until", {
+                    date: formatDate(scheduledYmd, locale),
+                  })}
+                </p>
+              )}
+              <button type="button" className="btn-outline mt-4" onClick={cancelPause}>
+                {t("profile.cancel_delete_account")}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn-accent mt-4"
+              onClick={startPause}
+              disabled={!couple}
+            >
+              {t("profile.delete_account_button")}
             </button>
-          </div>
-        ) : (
-          <button type="button" className="btn-accent mt-4" onClick={startPause} disabled={!couple}>
-            {t("profile.delete_account_button")}
-          </button>
-        )}
-        {error && <p className="field-error mt-3">{error}</p>}
-      </section>
+          )}
+          {error && <p className="field-error mt-3">{error}</p>}
+        </section>
+      )}
     </>
   );
 }
@@ -1048,7 +1093,7 @@ function ZoneLabel({ children }: { children: ReactNode }) {
  *  during the initial /api/couples/current fetch so the page never paints
  *  empty space. Wedding-day = today fires a celebratory line; past dates
  *  flip to "X days married" so the counter doesn't read negative. */
-function ProfileHero({
+export function ProfileHero({
   couple,
   t,
   locale,

@@ -2168,6 +2168,11 @@ const hu: LocaleMessages = {
     taxonomy_cancel: "Mégse",
     taxonomy_edit: "Szerkesztés",
     taxonomy_delete: "Törlés",
+    taxonomy_hide: "Elrejtés",
+    taxonomy_unhide: "Megjelenítés",
+    taxonomy_hidden_badge: "Rejtett",
+    taxonomy_hide_success: "Elrejtve — a párok már nem látják.",
+    taxonomy_unhide_success: "Megjelenítve — a párok újra látják.",
     taxonomy_delete_group_confirm_title: "Csoport törlése",
     taxonomy_delete_group_confirm_body:
       "Csak akkor törölhető, ha nincs alá rendelt kategória. Ez nem vonható vissza.",

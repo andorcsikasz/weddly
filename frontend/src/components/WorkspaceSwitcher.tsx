@@ -82,7 +82,7 @@ export function WorkspaceSwitcher() {
   if (memberships.length === 1) {
     return (
       <Link
-        to="/app/profile#workspaces"
+        to="/app/settings/workspace"
         aria-label={t("workspace.create_link")}
         title={t("workspace.create_link")}
         className="inline-flex h-7 w-7 items-center justify-center text-ink-700 transition-colors hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
@@ -175,7 +175,7 @@ export function WorkspaceSwitcher() {
           {!atCap && (
             <div className="border-t border-paper-200 dark:border-umber-700">
               <Link
-                to="/app/profile#workspaces"
+                to="/app/settings/workspace"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-ink-700 transition-colors hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700/60"
               >

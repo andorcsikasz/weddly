@@ -2392,6 +2392,14 @@ export interface LocaleMessages {
     taxonomy_cancel: string;
     taxonomy_edit: string;
     taxonomy_delete: string;
+    /** Soft-hide companion to delete — hides the group/category from the
+     *  public taxonomy without dropping the row. Admin keeps seeing them
+     *  with a "Hidden" badge + unhide button. */
+    taxonomy_hide: string;
+    taxonomy_unhide: string;
+    taxonomy_hidden_badge: string;
+    taxonomy_hide_success: string;
+    taxonomy_unhide_success: string;
     taxonomy_delete_group_confirm_title: string;
     taxonomy_delete_group_confirm_body: string;
     taxonomy_delete_group_blocked: string;
