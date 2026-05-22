@@ -343,6 +343,8 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
       to: existing.email,
       subject,
       body: emailBody,
+      outcome: outcome as VendorWaitlistOutcome,
+      full_name: existing.business_name,
     });
   } catch (e) {
     sendError = e instanceof Error ? e.message : String(e);

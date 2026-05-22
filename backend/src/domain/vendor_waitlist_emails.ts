@@ -13,7 +13,7 @@ import {
   type VendorWaitlistOutcome,
 } from "@shared/vendor_waitlist";
 import type { SupplierCategory } from "@shared/suppliers";
-import { sendEmail } from "../lib/mailer";
+import { sendKind } from "./emails/send";
 
 export { buildEmailDraftPure as buildEmailDraft };
 
@@ -63,31 +63,23 @@ export function buildDraftForEntry(
   });
 }
 
-/** Plain-text mail send for the triage outcome — the admin already edited the
- *  template inline in the modal, so we trust the strings as-is. Uses the same
- *  underlying mailer.ts dev-print path as the rest of the app (matches what
- *  `mailer.dev_print` shows in tests). Plain-text only — no HTML — keeps the
- *  triage email indistinguishable from a normal human reply. */
+/** Triage decision mail. The admin already edited the subject + body in the
+ *  modal; we slot those strings into the standard branded shell via
+ *  `sendKind("vendor_waitlist_decision", ...)`. Previously this path emitted a
+ *  raw plain-text reply with no brand chrome — that read as a low-effort,
+ *  context-less response and corroded trust. The vendor still sees their
+ *  admin-edited copy verbatim; the shell adds the brand header + footer so
+ *  it's clearly a Weddly response. */
 export async function sendDecisionEmail(input: {
   to: string;
   subject: string;
   body: string;
+  outcome: VendorWaitlistOutcome;
+  full_name?: string;
 }): Promise<void> {
-  await sendEmail({
-    to: input.to,
-    subject: input.subject,
-    text: input.body,
-    // Mirror the text into a minimal HTML wrapper so Resend's anti-spam
-    // heuristics don't downgrade plain-text-only mail. Keeps the visual
-    // identical (line breaks preserved).
-    html: `<div style="font-family:system-ui,sans-serif;white-space:pre-wrap;color:#111;">${escapeHtml(input.body)}</div>`,
-  });
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  await sendKind(
+    "vendor_waitlist_decision",
+    { subject: input.subject, body: input.body, outcome: input.outcome },
+    { user: null, guest: { email: input.to, full_name: input.full_name ?? "" } },
+  );
 }

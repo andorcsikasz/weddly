@@ -13,8 +13,9 @@
 // clients strip <style> blocks. Keep everything inline.
 
 import { CONFIG } from "../../config";
+import type { EmailCategory } from "./kinds";
 
-export type EmailCategory = "transactional" | "lifecycle";
+export type { EmailCategory };
 export type RecipientLocale = "hu" | "en" | null;
 
 export interface LocaleBlock {
@@ -134,17 +135,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   ): string {
     const bilingual = blocks.length > 1;
     const onlyEn = blocks.length === 1 && blocks[0]?.locale === "en";
-    const why = bilingual
-      ? category === "lifecycle"
-        ? "Időnkénti emlékeztetőket kapsz a Weddly-től. / You're getting occasional reminders from Weddly."
-        : "Ezt a fiókoddal kapcsolatban kaptad. / You're getting this because it's about your Weddly account."
-      : onlyEn
-        ? category === "lifecycle"
-          ? "You're getting occasional reminders from Weddly because you have an account with us."
-          : "You're getting this because it's about your Weddly account."
-        : category === "lifecycle"
-          ? "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk."
-          : "Ezt a levelet a fiókoddal kapcsolatban kaptad.";
+    const why = whyLineFor(category, bilingual, onlyEn);
     const unsubLabel = bilingual
       ? "Nem kérsz emlékeztetőket? Leiratkozás / Don't want updates? Unsubscribe"
       : onlyEn
@@ -258,7 +249,10 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     }
     // Secondary card — historic EN-below-HU bilingual fallback. The locale
     // label sits above the greeting so the reader knows what they're looking
-    // at when the primary above was a different language.
+    // at when the primary above was a different language. The `lang` attribute
+    // on the wrapper td matters for screen readers: without it, VoiceOver
+    // pronounces the secondary EN block with HU phonemes (and vice-versa)
+    // because the outer <html lang> only covers the primary block.
     const langLabel = locale === "en" ? "English" : "Magyar";
     const paras = block.paragraphs
       .map(
@@ -270,8 +264,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       ? `<p style="margin:10px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
       : "";
     return `<tr>
-              <td style="padding:14px 32px 0 32px;">
-                <p style="margin:0 0 12px 0;color:${COLOR.muted};font-size:11px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">
+              <td lang="${locale}" style="padding:14px 32px 0 32px;">
+                <p style="margin:0 0 12px 0;color:${COLOR.muted};font-size:11px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;" aria-hidden="true">
                   ${langLabel}
                 </p>
                 <p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
@@ -295,17 +289,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   ): string {
     const bilingual = blocks.length > 1;
     const onlyEn = blocks.length === 1 && blocks[0]?.locale === "en";
-    const why = bilingual
-      ? category === "lifecycle"
-        ? "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk. / You're receiving occasional reminders from Weddly because you have an account with us."
-        : "Ezt a levelet a fiókoddal kapcsolatban kaptad. / You got this email because it concerns your Weddly account."
-      : onlyEn
-        ? category === "lifecycle"
-          ? "You're receiving occasional reminders from Weddly because you have an account with us."
-          : "You got this email because it concerns your Weddly account."
-        : category === "lifecycle"
-          ? "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk."
-          : "Ezt a levelet a fiókoddal kapcsolatban kaptad.";
+    const why = whyLineForHtml(category, bilingual, onlyEn);
     const unsubLabel = bilingual
       ? "Leiratkozás / Unsubscribe"
       : onlyEn
@@ -350,4 +334,64 @@ function escapeHtml(s: string): string {
 }
 function escapeAttr(s: string): string {
   return escapeHtml(s);
+}
+
+// Per-category "why am I getting this email" copy. Outreach (cold mail to a
+// recipient with no Weddly account) explicitly states the no-account stance —
+// telling a vendor who's never heard of us that "this concerns your account"
+// reads as phishing.
+const WHY_LINE_TEXT: Record<EmailCategory, { hu: string; en: string; bilingual: string }> = {
+  lifecycle: {
+    hu: "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk.",
+    en: "You're getting occasional reminders from Weddly because you have an account with us.",
+    bilingual:
+      "Időnkénti emlékeztetőket kapsz a Weddly-től. / You're getting occasional reminders from Weddly.",
+  },
+  transactional: {
+    hu: "Ezt a levelet a fiókoddal kapcsolatban kaptad.",
+    en: "You're getting this because it's about your Weddly account.",
+    bilingual:
+      "Ezt a fiókoddal kapcsolatban kaptad. / You're getting this because it's about your Weddly account.",
+  },
+  outreach: {
+    hu: "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk — ha figyelmen kívül hagyod, nem történik semmi.",
+    en: "You're getting this from Weddly, a wedding-planning app. You don't have an account with us — if you ignore this, nothing happens.",
+    bilingual:
+      "Ezt a Weddly esküvőtervezőtől kaptad — nincs fiókod nálunk. / You're getting this from Weddly, a wedding-planning app — you don't have an account with us.",
+  },
+};
+
+// Same map, slightly longer HU copy for the HTML footer (the previous code
+// had separate strings for text and html footers — keep that split here).
+const WHY_LINE_HTML: Record<EmailCategory, { hu: string; en: string; bilingual: string }> = {
+  lifecycle: {
+    hu: "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk.",
+    en: "You're receiving occasional reminders from Weddly because you have an account with us.",
+    bilingual:
+      "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk. / You're receiving occasional reminders from Weddly because you have an account with us.",
+  },
+  transactional: {
+    hu: "Ezt a levelet a fiókoddal kapcsolatban kaptad.",
+    en: "You got this email because it concerns your Weddly account.",
+    bilingual:
+      "Ezt a levelet a fiókoddal kapcsolatban kaptad. / You got this email because it concerns your Weddly account.",
+  },
+  outreach: {
+    hu: "Ezt a levelet a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk — ha figyelmen kívül hagyod, nem történik semmi.",
+    en: "You're receiving this from Weddly, a wedding-planning app. You don't have an account with us — if you ignore this, nothing happens.",
+    bilingual:
+      "Ezt a levelet a Weddly-től kaptad, és nincs fiókod nálunk. / You're receiving this from Weddly and you don't have an account with us.",
+  },
+};
+
+function whyLineFor(category: EmailCategory, bilingual: boolean, onlyEn: boolean): string {
+  const lines = WHY_LINE_TEXT[category];
+  if (bilingual) return lines.bilingual;
+  return onlyEn ? lines.en : lines.hu;
+}
+
+function whyLineForHtml(category: EmailCategory, bilingual: boolean, onlyEn: boolean): string {
+  const lines = WHY_LINE_HTML[category];
+  if (bilingual) return lines.bilingual;
+  return onlyEn ? lines.en : lines.hu;
 }

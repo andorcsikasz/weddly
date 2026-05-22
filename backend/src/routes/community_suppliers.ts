@@ -19,7 +19,7 @@ import {
   markPendingAsAwaitingReview,
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
-import { recordEmailAttempt } from "../domain/emails/log";
+import { sendKind } from "../domain/emails/send";
 import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "../domain/maps_resolver";
 import { enrichSupplier } from "../domain/supplier_enrich";
 import { log } from "../lib/logger";
@@ -34,7 +34,6 @@ import {
   requireVerifiedAuth,
   type Router,
 } from "../lib/http";
-import { bilingualBody, sendEmail } from "../lib/mailer";
 import { rateLimit } from "../lib/rate_limit";
 
 const VALID_REPORT_REASONS: ReadonlySet<CommunitySupplierReportReason> = new Set([
@@ -204,64 +203,15 @@ async function sendVerificationEmail(
   supplierName: string,
   token: string,
 ): Promise<void> {
-  const url = `${CONFIG.frontendBaseUrl}/verify-supplier/${encodeURIComponent(token)}`;
-  const { html, text } = bilingualBody({
-    hu: {
-      greeting: "Szia!",
-      body:
-        `Valaki a Weddly esküvőtervezőn felvette a vállalkozásod (${supplierName}) ` +
-        "a közösségi szolgáltató-katalógusba. Ha tényleg szeretnéd, hogy szerepeljen, " +
-        "erősítsd meg az alábbi linkkel — addig nem látszik a páraknak. Ha nem te küldted " +
-        "és nem szeretnéd, hogy itt szerepelj, hagyd figyelmen kívül ezt az e-mailt: link " +
-        "kattintás nélkül a hirdetés nem kerül publikálásra.",
-      cta: "Hirdetés megerősítése",
-    },
-    en: {
-      greeting: "Hi there,",
-      body:
-        `Someone added your business (${supplierName}) to the community supplier ` +
-        "directory on Weddly. If you'd like the listing to go live, confirm via the link " +
-        "below — until then it's hidden from couples. If this wasn't you, just ignore " +
-        "this email: the listing won't publish without your confirmation.",
-      cta: "Confirm listing",
-    },
-    ctaUrl: url,
-  });
-
-  try {
-    await sendEmail({
-      to: toEmail,
-      subject: "Weddly: erősítsd meg a hirdetésed / confirm your listing",
-      html,
-      text,
-    });
-    recordEmailAttempt({
-      user_id: null,
-      couple_id: null,
-      kind: "community_supplier_verify",
-      category: "transactional",
-      to_email: toEmail,
-      subject: "Weddly: erősítsd meg a hirdetésed / confirm your listing",
-      status: "sent",
-      payload: { supplier_name: supplierName },
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    recordEmailAttempt({
-      user_id: null,
-      couple_id: null,
-      kind: "community_supplier_verify",
-      category: "transactional",
-      to_email: toEmail,
-      subject: "Weddly: erősítsd meg a hirdetésed / confirm your listing",
-      status: "failed",
-      error: msg,
-      payload: { supplier_name: supplierName },
-    });
-    // Don't rethrow — submission succeeds even if mail send hiccups; admin can
-    // re-send from the moderation queue later. The user already sees a "check
-    // your inbox" copy and can ask support if nothing arrives.
-  }
+  const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-supplier/${encodeURIComponent(token)}`;
+  // Fire-and-forget; `sendKind` swallows mailer errors, logs them via Sentry,
+  // and writes the `email_log` row itself — submission must succeed even if
+  // the mail send fails (admin can re-send from the moderation queue).
+  await sendKind(
+    "community_supplier_verify",
+    { supplierName, verifyUrl },
+    { user: null, guest: { email: toEmail, full_name: supplierName } },
+  );
 }
 
 async function handleSubmit(ctx: Ctx): Promise<Response> {

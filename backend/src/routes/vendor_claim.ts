@@ -3,10 +3,10 @@
 //   2. POST /api/vendor/claim/verify/:token      — anon; reads the claim view (doesn't consume)
 //   3. POST /api/vendor/claim/complete           — anon; atomic create + flip + session issue
 //
-// Each step is independently rate-limited per IP. Inline email pattern
-// mirrors routes/community_suppliers.ts — we don't go through sendKind here
-// because the claim flow's recipient isn't a Weddly user yet (no user_id /
-// preferences row to honour).
+// Each step is independently rate-limited per IP. The verify mail is sent via
+// `sendKind("vendor_claim_verify", ...)` with a guest target (no user_id) —
+// `send.ts` short-circuits the preferences lookup for guest sends and still
+// writes the `email_log` row + Sentry breadcrumb on failure.
 //
 // See [[feedback_multi_agent_debate]] (path E synthesis) for why this ships
 // in P2.B/C — consuming the P2.A schema before it rots.
@@ -17,7 +17,7 @@ import { hashPassword } from "../auth/password";
 import { issueSession } from "../auth/session";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
-import { recordEmailAttempt } from "../domain/emails/log";
+import { sendKind } from "../domain/emails/send";
 import {
   cancelAllPendingClaims,
   createClaim,
@@ -31,7 +31,6 @@ import { createVendorAccount } from "../domain/vendor_accounts";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
-import { bilingualBody, sendEmail } from "../lib/mailer";
 import { rateLimit } from "../lib/rate_limit";
 
 // Per-IP buckets — start is the spammable surface (no auth, sends email), so
@@ -49,56 +48,15 @@ const VERIFY_BUCKET = { capacity: 30, refillRate: 1 / 60 }; // 30 per minute per
 // ── Email ──────────────────────────────────────────────────────────────────
 
 async function sendClaimEmail(toEmail: string, listingName: string, token: string): Promise<void> {
-  const url = `${CONFIG.frontendBaseUrl}/vendor/claim/verify/${encodeURIComponent(token)}`;
-  const { html, text } = bilingualBody({
-    hu: {
-      greeting: "Szia!",
-      body:
-        `Valaki a Weddly esküvőtervezőn igényelte a(z) ${listingName} listing tulajdonjogát. ` +
-        "Ha tényleg te vagy, kattints az alábbi linkre — ezzel jelszót állíthatsz be, " +
-        "és innentől te szerkesztheted a saját adataidat a katalógusban. Ha nem te kezdeményezted " +
-        "az igénylést, hagyd figyelmen kívül ezt az emailt — kattintás nélkül semmi nem történik.",
-      cta: "Listing átvétele",
-    },
-    en: {
-      greeting: "Hi there,",
-      body:
-        `Someone requested ownership of the ${listingName} listing on Weddly. ` +
-        "If that was you, click the link below — you'll set a password and from then on " +
-        "manage the listing's contents yourself in the directory. If you didn't request " +
-        "this, just ignore the email — nothing happens without clicking the link.",
-      cta: "Claim the listing",
-    },
-    ctaUrl: url,
-  });
-  const subject = "Weddly: igényeld a listing tulajdonjogát / claim your listing";
-  try {
-    await sendEmail({ to: toEmail, subject, html, text });
-    recordEmailAttempt({
-      user_id: null,
-      couple_id: null,
-      kind: "vendor_claim_verify",
-      category: "transactional",
-      to_email: toEmail,
-      subject,
-      status: "sent",
-      payload: { listing_name: listingName },
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    recordEmailAttempt({
-      user_id: null,
-      couple_id: null,
-      kind: "vendor_claim_verify",
-      category: "transactional",
-      to_email: toEmail,
-      subject,
-      status: "failed",
-      error: msg,
-      payload: { listing_name: listingName },
-    });
-    // Swallow — the claim row still landed and admin can re-trigger.
-  }
+  const verifyUrl = `${CONFIG.frontendBaseUrl}/vendor/claim/verify/${encodeURIComponent(token)}`;
+  // Fire-and-forget; `sendKind` swallows mailer errors, logs them via Sentry,
+  // and writes the `email_log` row itself — the claim row still landed and
+  // admin can re-trigger if the mail send fails.
+  await sendKind(
+    "vendor_claim_verify",
+    { listingName, verifyUrl },
+    { user: null, guest: { email: toEmail, full_name: listingName } },
+  );
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

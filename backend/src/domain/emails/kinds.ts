@@ -25,10 +25,11 @@ export type EmailKind =
   | "wedding_today" // morning-of congratulations
   | "wedding_date_changed" // couple edited the wedding date, notify guests
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
+  | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
   | "vendor_claim_verify"; // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
 
-export type EmailCategory = "transactional" | "lifecycle";
+export type EmailCategory = "transactional" | "lifecycle" | "outreach";
 
 /**
  * Transactional = the user explicitly triggered the action and is waiting on
@@ -36,6 +37,12 @@ export type EmailCategory = "transactional" | "lifecycle";
  *
  * Lifecycle = system-initiated reminders. The user can opt out via the
  * unsubscribe footer link.
+ *
+ * Outreach = cold mail to a recipient who has no Weddly account and didn't
+ * trigger anything themselves — a couple added them to the supplier directory,
+ * or someone hit the public claim-start endpoint with their contact email.
+ * Drives the footer copy ("you don't have an account, ignore = nothing
+ * happens") so the recipient isn't told a false "this concerns your account".
  */
 export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   welcome_verify: "transactional",
@@ -63,13 +70,17 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: a guest explicitly opted into the wedding by RSVPing, and
   // the couple changing the date is an account-critical update for them.
   wedding_date_changed: "transactional",
-  // Transactional: vendor explicitly submitted the /vendors form and is
-  // waiting on a "we got it" reply.
-  vendor_waitlist_received: "transactional",
-  // Transactional: someone submitted a listing claiming this contact email;
-  // we ask the owner to confirm or ignore.
-  community_supplier_verify: "transactional",
-  // Transactional: vendor explicitly initiated a claim flow and is waiting on
-  // the verification link.
-  vendor_claim_verify: "transactional",
+  // Outreach: vendor submitted the /vendors form but has no Weddly account —
+  // the "fiókoddal kapcsolatban" footer line would be misleading.
+  vendor_waitlist_received: "outreach",
+  // Outreach: admin manually triages a vendor's own waitlist submission. The
+  // vendor expects the reply but still has no Weddly account.
+  vendor_waitlist_decision: "outreach",
+  // Outreach: a couple added this business to the community directory; the
+  // recipient never asked for anything and has no Weddly account.
+  community_supplier_verify: "outreach",
+  // Outreach: anyone (no auth required) can hit /api/vendor/claim/start with a
+  // listing id, and the listing's contact_email gets the mail — the recipient
+  // didn't necessarily start the flow themselves.
+  vendor_claim_verify: "outreach",
 };

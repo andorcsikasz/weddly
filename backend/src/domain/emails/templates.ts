@@ -165,6 +165,18 @@ export interface VendorWaitlistReceivedPayload {
   landingUrl: string;
 }
 
+export interface VendorWaitlistDecisionPayload {
+  /** Subject line the admin typed in the triage modal — used verbatim. */
+  subject: string;
+  /** Free-text body the admin edited in the modal. Multiple paragraphs are
+   *  separated by blank lines; the builder splits on `\n\s*\n` and renders one
+   *  `<p>` per chunk so HU and EN inline newlines don't blur together. */
+  body: string;
+  /** Triage outcome — drives a small contextual preheader so inbox preview
+   *  shows the gist before the body opens. */
+  outcome: "accepted" | "under_review" | "rejected";
+}
+
 export interface CommunitySupplierVerifyPayload {
   /** Business / listing name surfaced in the email body. */
   supplierName: string;
@@ -202,6 +214,7 @@ export type KindPayload = {
   wedding_today: WeddingTodayPayload;
   wedding_date_changed: WeddingDateChangedPayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
+  vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
 };
@@ -793,6 +806,29 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
+  // Admin-edited triage reply. The admin typed the subject + body in the
+  // moderation modal; we slot that text into the standard branded shell so the
+  // recipient sees a Weddly-branded mail rather than a context-less plain-text
+  // reply (which is what the previous raw `sendEmail` path used to emit).
+  vendor_waitlist_decision: (p) => {
+    const paragraphs = splitParagraphs(p.body);
+    return {
+      subject: p.subject,
+      ctaUrl: CONFIG.frontendBaseUrl,
+      hu: {
+        preheader: vendorWaitlistDecisionPreheader(p.outcome, "hu"),
+        greeting: "Szia!",
+        paragraphs,
+        cta: "Weddly megnyitása",
+      },
+      en: {
+        greeting: "Hi there,",
+        paragraphs,
+        cta: "Open Weddly",
+      },
+    };
+  },
+
   wedding_today: (p, ctx) => ({
     subject: "Ma van a nap / Today's the day 💛",
     ctaUrl: CONFIG.frontendBaseUrl,
@@ -839,11 +875,10 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "Link expires in 7 days.",
     },
   }),
-  // P2.C — vendor claim verify mail. Route `routes/vendor_claim.ts` actually
-  // sends this via `sendEmail` (the recipient isn't a Weddly user yet — no
-  // preferences row to honour); the builder below exists only so the type
-  // system stays exhaustive and a future migration to `sendKind` is a one-
-  // line change.
+  // P2.C — vendor claim verify mail. Categorised as `outreach`: anyone (no
+  // auth) can hit /api/vendor/claim/start with a listing id, so the recipient
+  // didn't necessarily start the flow themselves. The footer copy reflects
+  // that ("no Weddly account, ignore = nothing happens").
   vendor_claim_verify: (p) => ({
     subject: "Weddly: igényeld a listing tulajdonjogát / claim your listing",
     ctaUrl: p.verifyUrl,
@@ -927,4 +962,28 @@ function rsvpThanksDetailEn(p: RsvpThanksForGuestPayload): string {
     return "Sorry you can't make it — thanks for letting us know. The link below stays open if plans change.";
   }
   return "Thanks for letting us know. You can update your answer any time using the link below.";
+}
+
+// Splits the admin's free-text body on blank-line boundaries (`\n\s*\n`) into
+// paragraph chunks the renderer can wrap in <p> tags. Single newlines inside
+// a paragraph are preserved as a space — most admins type prose, not lists.
+function splitParagraphs(body: string): string[] {
+  return body
+    .split(/\n\s*\n+/)
+    .map((chunk) => chunk.replace(/\s*\n\s*/g, " ").trim())
+    .filter((chunk) => chunk.length > 0);
+}
+
+function vendorWaitlistDecisionPreheader(
+  outcome: "accepted" | "under_review" | "rejected",
+  locale: "hu" | "en",
+): string {
+  if (locale === "hu") {
+    if (outcome === "accepted") return "Megnéztük a jelentkezésed.";
+    if (outcome === "under_review") return "A jelentkezésed ellenőrzés alatt.";
+    return "Válasz a jelentkezésedre.";
+  }
+  if (outcome === "accepted") return "We reviewed your submission.";
+  if (outcome === "under_review") return "Your submission is under review.";
+  return "Response to your submission.";
 }
