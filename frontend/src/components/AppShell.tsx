@@ -23,7 +23,6 @@ import {
   ShieldCheck,
   Store,
   Sun,
-  UserCheck,
   UserCog,
   Users,
   X,
@@ -168,20 +167,14 @@ const ITEMS: NavItem[] = [
     group: "dreaming",
   },
   // ── Guest-facing area ──────────────────────────────────────────────
-  // Read-only "for guests" portal preview — what RSVP-yes guests see at
-  // /g/:slug/:code. Visually separated from the planning rail above.
+  // Single merged "Vendégoldal / Guest page" surface. Replaces the older
+  // split between the public wedding-site editor and the read-only post-
+  // RSVP portal preview — couples now manage both audiences from one
+  // page with labelled sections ("public" vs "unlocks after RSVP-yes").
+  // /app/wedding-site and /app/guest-portal still resolve via redirects.
   {
-    to: "/app/guest-portal",
-    labelKey: "nav.guest_portal",
-    icon: <UserCheck size={18} />,
-    group: "guest",
-  },
-  // Editor for the public wedding-website at /w/:slug. Sits with the other
-  // guest-facing surfaces — flipping the publish toggle here is the only
-  // way to make the site reachable; the public endpoint defaults to 404.
-  {
-    to: "/app/wedding-site",
-    labelKey: "nav.wedding_site",
+    to: "/app/guest-page",
+    labelKey: "nav.guest_page",
     icon: <Globe size={18} />,
     group: "guest",
   },

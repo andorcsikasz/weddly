@@ -80,8 +80,10 @@ export interface LocaleMessages {
     schedule_description: string;
     guest_portal_title: string;
     guest_portal_description: string;
-    guest_preview_title: string;
-    guest_preview_description: string;
+    /** Document title for the couple-facing /app/guest-page editor (merged
+     *  replacement for the older /app/wedding-site + /app/guest-portal pair). */
+    guest_page_title: string;
+    guest_page_description: string;
     wedding_site_title: string;
     wedding_site_description: string;
   };
@@ -1063,12 +1065,10 @@ export interface LocaleMessages {
     moodboard: string;
     media: string;
     print: string;
-    /** Read-only "for guests" surface — the couple-side preview that mirrors the public /g/:slug/:code page. */
-    guest_portal: string;
-    /** Editor for the public wedding-website at /w/:slug — toggle publish,
-     *  venue name and hero image. Sits next to guest_portal so both
-     *  guest-facing surfaces cluster in the sidebar's "for guests" rail. */
-    wedding_site: string;
+    /** Merged guest-facing surface — single sidebar entry pointing at
+     *  /app/guest-page. Replaces the older split between the wedding-site
+     *  editor and the gated guest-portal preview. */
+    guest_page: string;
     /** Sidebar group headers that bundle the rail into the four phases
      *  of the wedding journey. `guest` is the read-only portal preview;
      *  the other three carry the couple from decisions → wedding-day ops
@@ -1379,7 +1379,31 @@ export interface LocaleMessages {
     not_found_cta: string;
     load_error: string;
   };
-  /** Couple-facing /app/guest-portal preview wrapper around guest_portal. */
+  /** Couple-facing /app/guest-page editor — single merged surface that
+   *  combines the publish/venue/cover form (formerly /app/wedding-site)
+   *  with the read-only post-RSVP preview (formerly /app/guest-portal).
+   *  Section headers label which content is publicly visible vs which is
+   *  unlocked only after an RSVP-yes, so the couple never publishes the
+   *  wrong block to the wrong audience. */
+  guest_page_editor: {
+    title: string;
+    subtitle: string;
+    section_share_title: string;
+    section_share_body: string;
+    section_public_eyebrow: string;
+    section_public_title: string;
+    section_public_hint: string;
+    section_unlocked_eyebrow: string;
+    section_unlocked_title: string;
+    section_unlocked_hint: string;
+    section_unlocked_link_schedule: string;
+    section_unlocked_link_profile: string;
+    preview_title: string;
+    preview_subtitle: string;
+  };
+  /** Legacy share-panel + empty-preview copy reused by the merged
+   *  guest_page_editor surface above. Once Phase 3 wraps and we
+   *  re-author the share strings inline, this namespace can shrink. */
   guest_preview: {
     title: string;
     subtitle: string;

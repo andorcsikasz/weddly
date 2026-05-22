@@ -90,9 +90,9 @@ const en: LocaleMessages = {
     guest_portal_title: "Wedding info — Weddly",
     guest_portal_description:
       "Your invitation in one place: the date, the venue and the run-of-show — open it any time.",
-    guest_preview_title: "Guest page preview — Weddly",
-    guest_preview_description:
-      "Preview the read-only wedding page your RSVP-yes guests see, and share the link with them.",
+    guest_page_title: "Guest page — Weddly",
+    guest_page_description:
+      "The one page you share with guests — public info up top, more details unlock once they RSVP yes.",
     wedding_site_title: "Wedding website — Weddly",
     wedding_site_description:
       "The couple's public wedding page — date, venue, schedule and RSVP in one place.",
@@ -990,8 +990,7 @@ const en: LocaleMessages = {
     moodboard: "Moodboard",
     media: "Photos",
     print: "Print",
-    guest_portal: "Guest page",
-    wedding_site: "Wedding website",
+    guest_page: "Guest page",
     group_planning: "Plan",
     group_executing: "The day",
     group_dreaming: "Inspiration & memories",
@@ -1288,6 +1287,27 @@ const en: LocaleMessages = {
     not_found_body: "Double-check the link or use the RSVP check-in to look up your invitation.",
     not_found_cta: "Back to RSVP check-in",
     load_error: "Something went wrong loading the page. Please try again in a minute.",
+  },
+  guest_page_editor: {
+    title: "Guest page",
+    subtitle:
+      "The one page you share with guests. Anyone with the link sees the public block; the rest unlocks for guests who RSVP yes.",
+    section_share_title: "Share with guests",
+    section_share_body:
+      "This is the link you send. Paste it into WhatsApp, an email, or a save-the-date — anyone who opens it lands on your wedding page.",
+    section_public_eyebrow: "Visible to anyone with the link",
+    section_public_title: "Public content",
+    section_public_hint:
+      "Edit the venue name and cover image that show on the public landing. Keep the exact street address off this — it belongs on the post-RSVP block below.",
+    section_unlocked_eyebrow: "Unlocks after RSVP yes",
+    section_unlocked_title: "What confirmed guests see",
+    section_unlocked_hint:
+      "The day-of run-of-show and the exact venue location only appear once a guest RSVPs yes. Edit them on the dedicated pages below.",
+    section_unlocked_link_schedule: "Edit run-of-show",
+    section_unlocked_link_profile: "Edit venue location",
+    preview_title: "Live preview",
+    preview_subtitle:
+      "What a guest sees right now. Save your edits above to refresh the date, schedule and location pin shown here.",
   },
   guest_preview: {
     title: "Guest page preview",

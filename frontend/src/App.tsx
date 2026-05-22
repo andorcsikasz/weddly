@@ -42,7 +42,7 @@ const BudgetPage = lazy(() => import("./pages/BudgetPage"));
 const ChangeEmailPage = lazy(() => import("./pages/ChangeEmailPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const GuestPortalPage = lazy(() => import("./pages/GuestPortalPage"));
-const GuestPreviewPage = lazy(() => import("./pages/GuestPreviewPage"));
+const GuestPageEditorPage = lazy(() => import("./pages/GuestPageEditorPage"));
 const GuestsPage = lazy(() => import("./pages/GuestsPage"));
 const HoneymoonPage = lazy(() => import("./pages/HoneymoonPage"));
 const InvitePage = lazy(() => import("./pages/InvitePage"));
@@ -64,7 +64,6 @@ const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage"));
 const VendorHomePage = lazy(() => import("./pages/VendorHomePage"));
 const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
-const WeddingSiteEditorPage = lazy(() => import("./pages/WeddingSiteEditorPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
@@ -512,21 +511,18 @@ export default function App() {
           }
         />
         <Route
-          path="guest-portal"
+          path="guest-page"
           element={
             <Page>
-              <GuestPreviewPage />
+              <GuestPageEditorPage />
             </Page>
           }
         />
-        <Route
-          path="wedding-site"
-          element={
-            <Page>
-              <WeddingSiteEditorPage />
-            </Page>
-          }
-        />
+        {/* Legacy URLs from the older split — redirect into the merged
+         *  /app/guest-page so existing bookmarks and external links keep
+         *  resolving for at least one release after the merger. */}
+        <Route path="guest-portal" element={<Navigate to="/app/guest-page" replace />} />
+        <Route path="wedding-site" element={<Navigate to="/app/guest-page" replace />} />
         <Route
           path="moodboard"
           element={

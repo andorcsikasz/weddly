@@ -91,9 +91,9 @@ const hu: LocaleMessages = {
     guest_portal_title: "Esküvői infók — Wēddly",
     guest_portal_description:
       "A meghívótok egy helyen: a dátum, a helyszín és a menetrend — bármikor előkereshető.",
-    guest_preview_title: "Vendégoldal előnézet — Wēddly",
-    guest_preview_description:
-      "Nézzétek meg, mit látnak az igennel visszajelölt vendégek, és osszátok meg velük a linket.",
+    guest_page_title: "Vendégoldal — Wēddly",
+    guest_page_description:
+      "Egy oldal, amit megosztasz a vendégekkel — felül a nyilvános infók, lentebb pedig az RSVP után megnyíló részletek.",
     wedding_site_title: "Esküvői oldal — Weddly",
     wedding_site_description:
       "A pár nyilvános esküvői oldala — dátum, helyszín, programterv és RSVP egy helyen.",
@@ -994,8 +994,7 @@ const hu: LocaleMessages = {
     moodboard: "Moodboard",
     media: "Képek",
     print: "Nyomtatás",
-    guest_portal: "Vendégoldal",
-    wedding_site: "Esküvői weboldal",
+    guest_page: "Vendégoldal",
     group_planning: "Előkészületek",
     group_executing: "Az esküvő napja",
     group_dreaming: "Inspiráció és emlékek",
@@ -1296,6 +1295,27 @@ const hu: LocaleMessages = {
       "Ellenőrizzétek a linket, vagy használjátok az RSVP bejelentkezőt a meghívás megkereséséhez.",
     not_found_cta: "Vissza az RSVP bejelentkezőhöz",
     load_error: "Valami félresikerült az oldal betöltésekor. Próbáljátok újra egy perc múlva.",
+  },
+  guest_page_editor: {
+    title: "Vendégoldal",
+    subtitle:
+      "Ez az az oldal, amit megosztasz a vendégeitekkel. Akinek van a linked, az látja a nyilvános részt; az alsóbb információk csak az igennel visszajelölt vendégeknek nyílnak meg.",
+    section_share_title: "Megosztás a vendégekkel",
+    section_share_body:
+      "Ezt a linket küldd a vendégeknek. WhatsApp-on, e-mailben vagy save-the-date-en — aki megnyitja, a ti esküvői oldalatokra érkezik.",
+    section_public_eyebrow: "Bárki látja, akinek elküldöd a linket",
+    section_public_title: "Nyilvános tartalom",
+    section_public_hint:
+      "Itt állítod a helyszín nevét és a borítóképet, ami a nyilvános oldalon megjelenik. A pontos címet hagyd lentebb — az csak RSVP után jelenik meg.",
+    section_unlocked_eyebrow: "RSVP után nyílik meg",
+    section_unlocked_title: "Amit a visszajelölt vendégek látnak",
+    section_unlocked_hint:
+      "A részletes menetrend és a pontos helyszín koordinátája csak akkor jelenik meg, ha a vendég igennel visszajelölt. Ezeket külön oldalon szerkesztheted.",
+    section_unlocked_link_schedule: "Menetrend szerkesztése",
+    section_unlocked_link_profile: "Helyszín koordinátája",
+    preview_title: "Élő előnézet",
+    preview_subtitle:
+      "Ezt látja most a vendég. Mentsd el a fenti módosításokat, hogy itt is frissüljön a dátum, a menetrend és a térkép.",
   },
   guest_preview: {
     title: "Vendégoldal előnézet",
