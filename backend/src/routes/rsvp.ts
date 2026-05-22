@@ -110,6 +110,7 @@ function buildView(couple: CoupleRow, household: HouseholdRow): PublicCheckinVie
     // longer flow into the public view.
     rsvp_offers_accommodation: household.rsvp_offers_accommodation === 1,
     rsvp_collects_meal: household.rsvp_collects_meal === 1,
+    wedding_site_published: couple.is_public === 1,
   };
 }
 
@@ -228,6 +229,12 @@ function notifyCouple(
   members: GuestRow[],
   previous: GuestRow[],
 ) {
+  // Couples on digest mode opted out of per-event mail in Profile — the
+  // weekly cron sweep rolls these up into a single Monday digest. Skip the
+  // per-event send entirely; the email_log row would otherwise misrepresent
+  // intent ("we sent X mails" vs "we suppressed X mails for digest").
+  if ((couple as { rsvp_digest_mode?: string }).rsvp_digest_mode === "weekly") return;
+
   const guestPageUrl = `${CONFIG.frontendBaseUrl}/app/guests`;
   const prevById = new Map(previous.map((p) => [p.id, p]));
 
