@@ -3137,6 +3137,12 @@ export interface LocaleMessages {
     menu_label: string;
     menu_profile: string;
     no_name: string;
+    /** Three small-caps labels splitting the page into semantic zones —
+     *  break up the equal-weight card stack so the user can scan by
+     *  group instead of scrolling 12 indistinguishable rectangles. */
+    zone_workspace: string;
+    zone_planning: string;
+    zone_account: string;
     /** Profile hero band — top-of-page identity strip. Shows the couple's
      *  monogram, names, wedding date and a days-until counter so the page
      *  actually feels like a "Profile" instead of a settings dump. */

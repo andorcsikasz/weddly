@@ -14,11 +14,27 @@ import type {
   ExportKind,
 } from "@shared/types";
 import { CURRENCIES } from "@shared/types";
-import { ChevronDown, Tablet } from "lucide-react";
+import {
+  Archive,
+  ChevronDown,
+  Database,
+  Download,
+  Heart,
+  History,
+  LogOut,
+  ShieldCheck,
+  Sliders,
+  Tablet,
+  Trash2,
+  User as UserIcon,
+  Users as UsersIcon,
+  Wallet,
+} from "lucide-react";
 import {
   type CSSProperties,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
   useEffect,
   useRef,
   useState,
@@ -98,7 +114,8 @@ export default function ProfilePage() {
   const confirm = useConfirm();
   const toast = useToast();
   const navigate = useNavigate();
-  const { setSession, user: authUser, logout } = useAuth();
+  const { setSession, user: authUser, logout, refresh: refreshAuth } = useAuth();
+  const { setLocale } = useT();
   const [leaving, setLeaving] = useState(false);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
@@ -534,10 +551,29 @@ export default function ProfilePage() {
 
   return (
     <>
-      <h1>{t("profile.title")}</h1>
+      {/* Visually-hidden h1 — hero band IS the visual heading but doesn't
+       *  carry an h1, so the document outline still gets one. */}
+      <h1 className="sr-only">{t("profile.title")}</h1>
+
+      <ProfileHero couple={couple} t={t} locale={locale} />
+
+      <ZoneLabel>{t("profile.zone_workspace")}</ZoneLabel>
+
+      <AccountSection
+        user={authUser}
+        t={t}
+        locale={locale}
+        onLocaleChange={setLocale}
+        onSaved={() => {
+          refreshAuth();
+        }}
+      />
 
       <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.partner_title")}</h2>
+        <h2 className="flex items-center gap-2 text-lg">
+          <Heart size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+          {t("profile.partner_title")}
+        </h2>
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.partner_body")}</p>
         {partner ? (
           <>
@@ -595,12 +631,17 @@ export default function ProfilePage() {
 
       <WorkspacesPanel activeCoupleId={couple?.id ?? null} />
 
+      <ZoneLabel>{t("profile.zone_planning")}</ZoneLabel>
+
       <section className="card mt-6">
         {/* Header row: title left, currency picker right. The picker stays
          *  inline with the heading so the section opens with one compact
          *  band instead of a stacked label-on-top-of-pills layout. */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <h2 className="text-lg">{t("profile.budget_title")}</h2>
+          <h2 className="flex items-center gap-2 text-lg">
+            <Wallet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("profile.budget_title")}
+          </h2>
           <CurrencyPicker currency={currency} onSelect={saveCurrency} t={t} locale={locale} />
         </div>
 
@@ -764,20 +805,19 @@ export default function ProfilePage() {
       </section>
 
       <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.display_title")}</h2>
+        <h2 className="flex items-center gap-2 text-lg">
+          <Sliders size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+          {t("profile.display_title")}
+        </h2>
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.display_body")}</p>
         <DensitySlider density={density} setDensity={setDensity} t={t} />
       </section>
 
       <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.payments_title")}</h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
-          {t("profile.payments_body")}
-        </p>
-      </section>
-
-      <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.welcome_desk_title")}</h2>
+        <h2 className="flex items-center gap-2 text-lg">
+          <Tablet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+          {t("profile.welcome_desk_title")}
+        </h2>
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
           {t("profile.welcome_desk_body")}
         </p>
@@ -798,6 +838,8 @@ export default function ProfilePage() {
           </p>
         )}
       </section>
+
+      <ZoneLabel>{t("profile.zone_account")}</ZoneLabel>
 
       <SecuritySection
         t={t}
@@ -820,7 +862,10 @@ export default function ProfilePage() {
       />
 
       <section className="card mt-6">
-        <h2 className="text-lg">{t("profile.export_title")}</h2>
+        <h2 className="flex items-center gap-2 text-lg">
+          <Download size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+          {t("profile.export_title")}
+        </h2>
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("profile.export_body")}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
@@ -862,7 +907,10 @@ export default function ProfilePage() {
 
       {authUser && couple && (
         <section className="card mt-6">
-          <h2 className="text-lg">{t("profile.leave_couple_title")}</h2>
+          <h2 className="flex items-center gap-2 text-lg">
+            <LogOut size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("profile.leave_couple_title")}
+          </h2>
           {authUser.id === couple.partner_a_id ? (
             <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
               {t("profile.leave_couple_body_owner")}
@@ -886,7 +934,8 @@ export default function ProfilePage() {
       )}
 
       <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40 dark:bg-blush-400/15">
-        <h2 className="text-lg text-blush-800 dark:text-blush-300">
+        <h2 className="flex items-center gap-2 text-lg text-blush-800 dark:text-blush-300">
+          <Trash2 size={18} aria-hidden />
           {t("profile.delete_account_title")}
         </h2>
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
@@ -1005,6 +1054,19 @@ function CurrencyPicker({
         );
       })}
     </div>
+  );
+}
+
+/** Small-caps section divider that splits the long card stack into three
+ *  semantic zones (you & workspace / wedding planning / account & data).
+ *  Per the Agent 2 visual critique: equal-weight cards without grouping
+ *  read as a settings dump; a quiet label every few cards turns the page
+ *  into a list of zones with an internal hierarchy. */
+function ZoneLabel({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="mt-10 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 dark:text-umber-400">
+      {children}
+    </h2>
   );
 }
 
@@ -1380,7 +1442,8 @@ function SecuritySection({
         className="flex w-full items-start gap-4 px-6 py-5 text-left transition-colors hover:bg-paper-50/60 dark:hover:bg-umber-800/40"
       >
         <span className="flex-1">
-          <span className="block text-lg text-ink-900 dark:text-paper-50">
+          <span className="flex items-center gap-2 text-lg text-ink-900 dark:text-paper-50">
+            <ShieldCheck size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
             {t("profile.security_title")}
           </span>
           <span className="mt-1 block text-sm text-ink-500 dark:text-umber-300">
@@ -2038,7 +2101,8 @@ function DocumentsPanel({
         className="flex w-full items-start gap-4 px-6 py-5 text-left transition-colors hover:bg-paper-50/60 dark:hover:bg-umber-800/40"
       >
         <span className="flex-1">
-          <span className="block text-lg text-ink-900 dark:text-paper-50">
+          <span className="flex items-center gap-2 text-lg text-ink-900 dark:text-paper-50">
+            <Archive size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
             {t("profile.archive_title")}
           </span>
           <span className="mt-1 block text-sm text-ink-600 dark:text-umber-200">
@@ -2151,7 +2215,10 @@ function ActivityPanel({
         className="flex w-full items-start gap-4 border-b border-ink-800 px-6 py-4 text-left transition-colors hover:bg-ink-800/40"
       >
         <span className="flex-1">
-          <span className="block text-lg text-paper-50">{t("profile.activity_title")}</span>
+          <span className="flex items-center gap-2 text-lg text-paper-50">
+            <History size={18} className="text-ink-300" aria-hidden />
+            {t("profile.activity_title")}
+          </span>
           <span className="mt-1 block text-xs text-ink-200">{t("profile.activity_body")}</span>
         </span>
         <span className="flex shrink-0 items-center gap-2 pt-1 text-xs text-ink-200">
