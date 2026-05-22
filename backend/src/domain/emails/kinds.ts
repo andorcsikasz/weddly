@@ -10,6 +10,7 @@ export type EmailKind =
   | "email_change_verify" // sent to the NEW address with a confirm link
   | "email_change_warning" // sent to the OLD address letting them know a change is in flight
   | "partner_invite" // partner-B co-pilot invite link
+  | "partner_invite_accepted" // inviter gets a heads-up that partner B joined the workspace
   | "couple_paused" // workspace paused → 30-day delete countdown started
   | "account_purged" // 30-day window elapsed, all couple data deleted
   | "account_admin_purged" // an admin immediately deleted the account (no 30-day grace)
@@ -52,6 +53,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   email_change_verify: "transactional",
   email_change_warning: "transactional",
   partner_invite: "transactional",
+  // Transactional: the inviter clicked Invite Partner and is waiting to see
+  // whether/when partner B joins — this is the resolution of that action.
+  partner_invite_accepted: "transactional",
   couple_paused: "transactional",
   account_purged: "transactional",
   account_admin_purged: "transactional",

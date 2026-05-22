@@ -663,6 +663,16 @@ describe("onboarding + invites", () => {
       { token: b.data.token },
     );
     expect(reuse.status).toBe(410);
+
+    // Inviter gets a "your partner joined" heads-up — the email_log row
+    // must land on the inviter's address, not the accepter's.
+    const acceptedMail = db
+      .prepare(
+        "SELECT to_email, subject FROM email_log WHERE kind = 'partner_invite_accepted' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string; subject: string } | undefined;
+    expect(acceptedMail?.to_email).toBe("anna@weddly.test");
+    expect(acceptedMail?.subject).toContain("Bence");
   });
 
   test("invite endpoint requires onboarding first", async () => {

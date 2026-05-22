@@ -119,6 +119,16 @@ interface OnboardBody {
    *  meal-icon row (meat/fish/veg/vegan/child/none). When false the row is
    *  hidden — buffet weddings or couples who collect menu choices offline. */
   rsvp_collects_meal?: unknown;
+  /** Publish toggle for the public wedding website at `/w/:slug`.
+   *  Default off — couples opt in explicitly from the wedding-site editor. */
+  is_public?: unknown;
+  /** Free-text venue name shown on the public wedding site. Empty string
+   *  clears the column (couple goes back to "no venue set"). */
+  venue_name?: unknown;
+  /** http(s) URL the couple pastes for the wedding-site hero image. Empty
+   *  string clears. We validate scheme + length only — no fetch/probe at
+   *  the API boundary, that's a v2 concern once upload pipeline lands. */
+  cover_image_url?: unknown;
 }
 
 const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
@@ -804,6 +814,26 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
     note: `partner_b linked via invite ${row.id}`,
   });
 
+  // Heads-up to the inviter — they're the one who clicked Invite Partner and
+  // have been waiting to see whether/when partner B joined. Fire-and-forget;
+  // an email-send hiccup must not roll back the partner-join.
+  const inviter = getUserById(row.invited_by_user_id);
+  const accepter = getUserById(userId);
+  if (inviter && accepter) {
+    void sendKind(
+      "partner_invite_accepted",
+      {
+        partnerName: accepter.full_name || accepter.email,
+        coupleDisplayName: couple.display_name ?? undefined,
+        dashboardUrl: `${CONFIG.frontendBaseUrl}/app`,
+      },
+      {
+        user: { id: inviter.id, email: inviter.email, full_name: inviter.full_name ?? "" },
+        couple_id: couple.id,
+      },
+    );
+  }
+
   const refreshed = getCoupleById(couple.id) as CoupleRow;
   return json({ couple: toCouple(refreshed) });
 }
@@ -1075,6 +1105,48 @@ function parseRsvpCollectsMeal(raw: unknown): boolean {
     throw new HttpError(400, "rsvp_collects_meal must be a boolean");
   }
   return raw;
+}
+
+/** Publish toggle for the public wedding-website at `/w/:slug`. */
+function parseIsPublic(raw: unknown): boolean {
+  if (typeof raw !== "boolean") {
+    throw new HttpError(400, "is_public must be a boolean");
+  }
+  return raw;
+}
+
+/** Free-text venue name. Empty string → null (clears the column).
+ *  Trimmed, capped at 200 chars to match the schema's TEXT column expectation
+ *  and the display_name cap. */
+function parseVenueName(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "venue_name must be a string");
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > 200) throw new HttpError(400, "venue_name must be ≤200 chars");
+  return trimmed;
+}
+
+/** http(s) URL the couple pastes for the wedding-site hero image. Empty
+ *  string → null. We require an explicit http or https scheme (no
+ *  protocol-relative URLs, no data:, no javascript:), and cap the length at
+ *  2048 chars per the db.ts comment. URL constructor handles malformed input. */
+function parseCoverImageUrl(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "cover_image_url must be a string");
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > 2048) throw new HttpError(400, "cover_image_url too long");
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new HttpError(400, "cover_image_url must be a valid http(s) URL");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new HttpError(400, "cover_image_url must be http(s)");
+  }
+  return trimmed;
 }
 
 /** Cost-planning scenario count: integer 1..2000, or null to clear. */
@@ -1369,6 +1441,45 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.rsvp_collects_meal_update",
         before: { rsvp_collects_meal: prev },
         after: { rsvp_collects_meal: next },
+      });
+    }
+  }
+
+  if (body.is_public !== undefined) {
+    const next = parseIsPublic(body.is_public);
+    const prev = Boolean(couple.is_public);
+    if (next !== prev) {
+      updates.push({ col: "is_public", val: next ? 1 : 0 });
+      auditEntries.push({
+        action: "couple.is_public_update",
+        before: { is_public: prev },
+        after: { is_public: next },
+      });
+    }
+  }
+
+  if (body.venue_name !== undefined) {
+    const next = parseVenueName(body.venue_name);
+    const prev = couple.venue_name;
+    if (next !== prev) {
+      updates.push({ col: "venue_name", val: next });
+      auditEntries.push({
+        action: "couple.venue_name_update",
+        before: { venue_name: prev },
+        after: { venue_name: next },
+      });
+    }
+  }
+
+  if (body.cover_image_url !== undefined) {
+    const next = parseCoverImageUrl(body.cover_image_url);
+    const prev = couple.cover_image_url;
+    if (next !== prev) {
+      updates.push({ col: "cover_image_url", val: next });
+      auditEntries.push({
+        action: "couple.cover_image_url_update",
+        before: { cover_image_url: prev },
+        after: { cover_image_url: next },
       });
     }
   }
@@ -1842,6 +1953,9 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.guest_count_update",
   "couple.rsvp_offers_accommodation_update",
   "couple.rsvp_collects_meal_update",
+  "couple.is_public_update",
+  "couple.venue_name_update",
+  "couple.cover_image_url_update",
   // Guests
   "guest.create",
   "guest.update",

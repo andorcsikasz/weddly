@@ -65,6 +65,14 @@ export interface PartnerInvitePayload {
    *  when empty (e.g. a freshly-onboarded couple with no display name set). */
   coupleDisplayName?: string;
 }
+export interface PartnerInviteAcceptedPayload {
+  /** Display name of the partner who just clicked accept. */
+  partnerName: string;
+  /** Optional couple display name for the body ("Anna & Bence"). */
+  coupleDisplayName?: string;
+  /** Where to land in /app — usually the dashboard. */
+  dashboardUrl: string;
+}
 export interface CouplePausedPayload {
   /** Display name of the partner who clicked Pause. */
   requestedByName: string;
@@ -199,6 +207,7 @@ export type KindPayload = {
   email_change_verify: EmailChangeVerifyPayload;
   email_change_warning: EmailChangeWarningPayload;
   partner_invite: PartnerInvitePayload;
+  partner_invite_accepted: PartnerInviteAcceptedPayload;
   couple_paused: CouplePausedPayload;
   account_purged: AccountPurgedPayload;
   account_admin_purged: AccountAdminPurgedPayload;
@@ -433,6 +442,36 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "Join the workspace",
         footnote: "Link valid for 7 days. Got this by mistake? Ignore it — nothing happens.",
+      },
+    };
+  },
+
+  partner_invite_accepted: (p, ctx) => {
+    const coupleHu = p.coupleDisplayName
+      ? ` Mostantól ${p.coupleDisplayName} közös munkamenetében dolgoztok.`
+      : "";
+    const coupleEn = p.coupleDisplayName
+      ? ` You're now both working on ${p.coupleDisplayName}'s shared workspace.`
+      : "";
+    return {
+      subject: `${p.partnerName} csatlakozott / ${p.partnerName} joined your workspace`,
+      ctaUrl: p.dashboardUrl,
+      hu: {
+        preheader: `${p.partnerName} elfogadta a meghívót.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Jó hír: ${p.partnerName} elfogadta a meghívót, és csatlakozott az esküvőtervezőhöz.${coupleHu}`,
+          "Mostantól minden adatot együtt szerkesztetek — vendéglista, ülésrend, költségvetés, RSVP linkek. Ami valamelyikőtök változtat, a másikon azonnal látszik.",
+        ],
+        cta: "Vezérlőpult megnyitása",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `Good news — ${p.partnerName} accepted your invite and joined the wedding planner.${coupleEn}`,
+          "You'll both be editing the same data from here on — guest list, seating, budget, RSVP links. Changes made by either of you show up instantly on the other side.",
+        ],
+        cta: "Open dashboard",
       },
     };
   },
