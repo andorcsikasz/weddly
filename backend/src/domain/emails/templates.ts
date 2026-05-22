@@ -4,7 +4,7 @@
 // out of the dispatcher's plumbing code.
 
 import { CONFIG } from "../../config";
-import { type EmailKind, KIND_CATEGORY } from "./kinds";
+import { type EmailCategory, type EmailKind, KIND_CATEGORY } from "./kinds";
 import {
   type LocaleBlock,
   type RecipientLocale,
@@ -228,10 +228,11 @@ export function buildEmail<K extends EmailKind>(
 ): BuiltEmail {
   const built = BUILDERS[kind](payload as never, context);
   const category = KIND_CATEGORY[kind];
+  const ctaUrl = appendEmailUtm(built.ctaUrl, kind, category);
   const rendered = renderEmail({
     hu: built.hu,
     en: built.en,
-    ctaUrl: built.ctaUrl,
+    ctaUrl,
     category,
     unsubscribeToken: context.unsubscribeToken,
     recipientLocale: context.recipientLocale,
@@ -972,6 +973,29 @@ function splitParagraphs(body: string): string[] {
     .split(/\n\s*\n+/)
     .map((chunk) => chunk.replace(/\s*\n\s*/g, " ").trim())
     .filter((chunk) => chunk.length > 0);
+}
+
+// UTM tagging on every CTA. Centralised here so future kinds inherit it
+// without each builder having to remember. `utm_medium` mirrors the category
+// (transactional / lifecycle / outreach) so analytics dashboards can segment
+// without re-deriving from the campaign name. `utm_content=cta` reserves the
+// `cta` slot for the primary button — secondary links (when we add them) can
+// pass their own utm_content via a different helper.
+function appendEmailUtm(url: string, kind: EmailKind, category: EmailCategory): string {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    // Don't clobber tracking params the builder already set deliberately.
+    if (!u.searchParams.has("utm_source")) u.searchParams.set("utm_source", "email");
+    if (!u.searchParams.has("utm_medium")) u.searchParams.set("utm_medium", category);
+    if (!u.searchParams.has("utm_campaign")) u.searchParams.set("utm_campaign", kind);
+    if (!u.searchParams.has("utm_content")) u.searchParams.set("utm_content", "cta");
+    return u.toString();
+  } catch {
+    // Builder handed us a non-URL (shouldn't happen, but don't crash the
+    // mail-send path for an analytics nicety).
+    return url;
+  }
 }
 
 function vendorWaitlistDecisionPreheader(
