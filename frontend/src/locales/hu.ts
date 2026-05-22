@@ -1908,6 +1908,12 @@ const hu: LocaleMessages = {
     city_label: "Város",
     city_all: "Összes város",
     empty_filtered: "Erre a szűrésre nincs találat. Próbálj más szót vagy várost.",
+    accommodation_external_title: "Szállás partnerek vendégeknek",
+    accommodation_external_subtitle:
+      "A vendégeknek küldött szálláslinkekhez ezeket az oldalakat ajánljuk — mindegyik új lapon nyílik.",
+    accommodation_external_booking_blurb: "Hotelek és apartmanok világszerte",
+    accommodation_external_airbnb_blurb: "Apartmanok, házak, egyedi szállások",
+    accommodation_external_szallas_hu_blurb: "Magyar szállásfoglaló portál",
     price_legend: "Olcsóbb → Drágább",
     save_aria: "Mentés",
     unsave_aria: "Mentés visszavonása",

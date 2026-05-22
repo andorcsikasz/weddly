@@ -26,6 +26,7 @@ import {
   List,
   Map as MapIcon,
   Disc3,
+  ExternalLink,
   Flower2,
   Flag,
   Gem,
@@ -1043,6 +1044,78 @@ export default function SuppliersPage() {
             {t("suppliers.diy_button_short")}
           </button>
         </div>
+      )}
+
+      {activeCat === "accommodation" && (
+        <section
+          aria-labelledby="accommodation-external-heading"
+          className="mb-4 rounded-2xl border border-paper-200 bg-paper-50 p-4 sm:p-5 dark:border-umber-700 dark:bg-umber-800"
+        >
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300">
+              <BedDouble size={16} aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <h3
+                id="accommodation-external-heading"
+                className="text-sm font-semibold text-ink-900 dark:text-paper-100"
+              >
+                {t("suppliers.accommodation_external_title")}
+              </h3>
+              <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                {t("suppliers.accommodation_external_subtitle")}
+              </p>
+            </div>
+          </div>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+            {[
+              {
+                key: "booking",
+                href: "https://www.booking.com/",
+                label: "Booking.com",
+                blurb: t("suppliers.accommodation_external_booking_blurb"),
+              },
+              {
+                key: "airbnb",
+                href: "https://www.airbnb.com/",
+                label: "Airbnb",
+                blurb: t("suppliers.accommodation_external_airbnb_blurb"),
+              },
+              {
+                key: "szallas_hu",
+                href: "https://www.szallas.hu/",
+                label: "Szállás.hu",
+                blurb: t("suppliers.accommodation_external_szallas_hu_blurb"),
+              },
+            ].map((p) => (
+              <li key={p.key}>
+                <a
+                  href={p.href}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="group flex h-full items-start gap-3 rounded-xl border border-paper-200 bg-white px-3 py-3 transition hover:border-sage-400 hover:shadow-sm dark:border-umber-700 dark:bg-umber-900 dark:hover:border-sage-400/60"
+                >
+                  <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-600 transition group-hover:bg-sage-100 group-hover:text-sage-700 dark:bg-umber-800 dark:text-umber-200 dark:group-hover:bg-sage-400/20 dark:group-hover:text-sage-300">
+                    <BedDouble size={13} aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-ink-900 group-hover:text-sage-700 dark:text-paper-100 dark:group-hover:text-sage-300">
+                      {p.label}
+                      <ExternalLink
+                        size={12}
+                        aria-hidden
+                        className="text-ink-400 transition group-hover:text-sage-700 dark:text-umber-300 dark:group-hover:text-sage-300"
+                      />
+                    </span>
+                    <span className="mt-0.5 block text-xs text-ink-500 dark:text-umber-300">
+                      {p.blurb}
+                    </span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {viewMode === "map" ? (

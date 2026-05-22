@@ -2103,6 +2103,14 @@ export interface LocaleMessages {
     city_all: string;
     /** Empty result state when search/city filters out everything. */
     empty_filtered: string;
+    /** Accommodation category: external booking partner panel. v1 doesn't
+     *  list curated hotels, so we steer couples to trusted lodging sites
+     *  they can share with guests. */
+    accommodation_external_title: string;
+    accommodation_external_subtitle: string;
+    accommodation_external_booking_blurb: string;
+    accommodation_external_airbnb_blurb: string;
+    accommodation_external_szallas_hu_blurb: string;
     /** Price-band scale tooltip / legend. */
     price_legend: string;
     /** Saved-supplier star + filter chip. */

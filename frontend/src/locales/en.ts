@@ -1887,6 +1887,12 @@ const en: LocaleMessages = {
     city_label: "City",
     city_all: "All cities",
     empty_filtered: "No suppliers match this search. Try a different word or city.",
+    accommodation_external_title: "Lodging partners for your guests",
+    accommodation_external_subtitle:
+      "Share these trusted sites when you send accommodation links to guests — each opens in a new tab.",
+    accommodation_external_booking_blurb: "Hotels and apartments worldwide",
+    accommodation_external_airbnb_blurb: "Apartments, homes, unique stays",
+    accommodation_external_szallas_hu_blurb: "Hungarian lodging marketplace",
     price_legend: "Cheaper → Pricier",
     save_aria: "Save",
     unsave_aria: "Remove from saved",
