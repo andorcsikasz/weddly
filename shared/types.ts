@@ -279,6 +279,11 @@ export interface Couple {
    *  and fire the conversion popup after a few minutes. Demo couples are
    *  auto-purged by the demo route's housekeeping sweep. */
   is_demo: boolean;
+  /** Wedding-day "Welcome Desk" mode — true when the couple has flipped the
+   *  Settings → Workspace toggle to indicate a kiosk tablet is set up at the
+   *  entrance. Persistent so the status pill survives reloads + cross-device
+   *  views (no in-memory query-string state). */
+  welcome_desk_active: boolean;
   /** Couple has opted in to the public wedding website at `/w/:slug`.
    *  Defaults to false — couples publish explicitly via the Profile
    *  toggle; the public endpoint 404s when this is false. */

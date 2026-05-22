@@ -819,31 +819,11 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
       )}
 
       {showWorkspace && (
-        <section className="card mt-6">
-          <h2 className="flex items-center gap-2 text-lg">
-            <Tablet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
-            {t("profile.welcome_desk_title")}
-          </h2>
-          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
-            {t("profile.welcome_desk_body")}
-          </p>
-          {couple?.slug ? (
-            <a
-              href={`/rsvp?couple=${encodeURIComponent(couple.slug)}&kiosk=1`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary mt-4 inline-flex"
-            >
-              <Tablet size={14} aria-hidden />
-              {t("profile.welcome_desk_button")}
-              <span className="sr-only"> {t("common.opens_new_tab")}</span>
-            </a>
-          ) : (
-            <p className="mt-3 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
-              {t("profile.welcome_desk_no_slug")}
-            </p>
-          )}
-        </section>
+        <WelcomeDeskCard
+          couple={couple}
+          t={t}
+          onToggled={(updated) => setCouple(updated)}
+        />
       )}
 
       {!tab && <ZoneLabel>{t("profile.zone_account")}</ZoneLabel>}
@@ -1402,6 +1382,145 @@ function UserAvatarDisc({ fullName, email }: { fullName: string; email: string }
       className="flex h-12 w-12 items-center justify-center rounded-full bg-ink-900 text-sm font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-paper-50 dark:text-ink-900 dark:ring-umber-800"
     >
       {initials}
+    </span>
+  );
+}
+
+/** Wedding-day "Welcome Desk" card — the couple flips this when they set
+ *  up a kiosk tablet at the entrance. The toggle is the source of truth
+ *  for the status pill (green BE / muted KI) and decides whether the
+ *  "open RSVP in kiosk mode" launcher button is enabled. The kiosk link
+ *  itself doesn't change behavior; the persistent flag means the owner
+ *  can glance at /app/settings/workspace on any device and see whether
+ *  the tablet at the venue is currently live. */
+function WelcomeDeskCard({
+  couple,
+  t,
+  onToggled,
+}: {
+  couple: Couple | null;
+  t: T;
+  onToggled: (next: Couple) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const active = couple?.welcome_desk_active === true;
+
+  async function flip() {
+    if (!couple || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await coupleApi.update({ welcome_desk_active: !active });
+      onToggled(r.couple);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="card mt-6">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="flex items-center gap-2 text-lg">
+            <Tablet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("profile.welcome_desk_title")}
+          </h2>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+            {t("profile.welcome_desk_body")}
+          </p>
+        </div>
+        {/* Status pill — colour-codes the current state so the owner can
+         *  scan it from across the room. Green dot + "BE" when live;
+         *  muted neutral + "KI" when the kiosk isn't running. */}
+        <WelcomeDeskStatusPill active={active} t={t} />
+      </div>
+
+      {/* Toggle switch + state label. Native checkbox under the hood so
+       *  keyboard (Space) + screen readers (announced as "switch, on/off")
+       *  work for free; the visual is a sliding pill driven by `peer-*`. */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <label className="inline-flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            role="switch"
+            className="peer sr-only"
+            checked={active}
+            onChange={flip}
+            disabled={saving || !couple}
+            aria-label={t("profile.welcome_desk_toggle_aria")}
+          />
+          <span
+            aria-hidden
+            className={`relative h-7 w-12 rounded-full transition-colors ${
+              active
+                ? "bg-sage-500 dark:bg-sage-400"
+                : "bg-paper-300 dark:bg-umber-700"
+            } peer-focus-visible:ring-2 peer-focus-visible:ring-ink-700 peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-paper-100 dark:peer-focus-visible:ring-offset-umber-900`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                active ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </span>
+          <span className="text-sm font-medium text-ink-700 dark:text-paper-100">
+            {saving
+              ? t("common.saving")
+              : active
+                ? t("profile.welcome_desk_toggle_on")
+                : t("profile.welcome_desk_toggle_off")}
+          </span>
+        </label>
+
+        {/* Launcher — only visible when the toggle is on AND we have a
+         *  slug. Without the slug the public RSVP URL doesn't resolve, so
+         *  showing the button would just dead-end the user. */}
+        {active && couple?.slug && (
+          <a
+            href={`/rsvp?couple=${encodeURIComponent(couple.slug)}&kiosk=1`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary inline-flex"
+          >
+            <Tablet size={14} aria-hidden />
+            {t("profile.welcome_desk_button")}
+            <span className="sr-only"> {t("common.opens_new_tab")}</span>
+          </a>
+        )}
+      </div>
+
+      {/* No-slug fallback. We still surface the toggle above — flipping it
+       *  to "on" is the gesture, and the slug warning is informational. */}
+      {!couple?.slug && (
+        <p className="mt-3 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
+          {t("profile.welcome_desk_no_slug")}
+        </p>
+      )}
+
+      {error && <p className="field-error mt-3">{error}</p>}
+    </section>
+  );
+}
+
+/** Colour-coded status pill for the Welcome Desk card. Sage = live,
+ *  paper = inactive. Same shape as PartnerStatusPill so the two pills
+ *  on adjacent cards read as a family. */
+function WelcomeDeskStatusPill({ active, t }: { active: boolean; t: T }) {
+  const cls = active
+    ? "bg-sage-100 text-sage-800 border border-sage-200 dark:bg-sage-400/15 dark:text-sage-200 dark:border-sage-400/40"
+    : "bg-paper-200 text-ink-700 border border-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:border-umber-700";
+  const dot = active
+    ? "bg-sage-600 dark:bg-sage-300"
+    : "bg-ink-400 dark:bg-umber-400";
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${cls}`}
+    >
+      <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden />
+      {active ? t("profile.welcome_desk_status_on") : t("profile.welcome_desk_status_off")}
     </span>
   );
 }

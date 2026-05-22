@@ -58,6 +58,7 @@ export interface CoupleRow {
   rsvp_offers_accommodation: number;
   rsvp_collects_meal: number;
   is_demo: number;
+  welcome_desk_active: number;
   /** Public wedding-website (/w/:slug) opt-in toggle. 0 = private (default),
    *  1 = couple has explicitly published. Public endpoint 404s when 0 so
    *  every existing couple stays private until they flip the toggle. */
@@ -216,6 +217,7 @@ export function toCouple(row: CoupleRow): Couple {
     rsvp_collects_meal: Boolean(row.rsvp_collects_meal),
     is_demo: Boolean(row.is_demo),
     is_public: Boolean(row.is_public),
+    welcome_desk_active: Boolean(row.welcome_desk_active),
     venue_name: row.venue_name,
     cover_image_url: row.cover_image_url,
     guest_page_intro: row.guest_page_intro,

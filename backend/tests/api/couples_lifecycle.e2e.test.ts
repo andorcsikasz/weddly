@@ -1700,3 +1700,58 @@ describe("couples_lifecycle: multi-workspace + leave couple", () => {
     expect(r.status).toBe(404);
   });
 });
+
+describe("couples_lifecycle: welcome-desk mode toggle", () => {
+  test("welcome_desk_active defaults to false on a brand-new couple", async () => {
+    const { token } = await bootstrapCouple("welcome-desk-default@weddly.test");
+    const r = await req<{ couple: { welcome_desk_active: boolean } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.welcome_desk_active).toBe(false);
+  });
+
+  test("PATCH flips welcome_desk_active on and back off", async () => {
+    const { token } = await bootstrapCouple("welcome-desk-flip@weddly.test");
+
+    const on = await req<{ couple: { welcome_desk_active: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { welcome_desk_active: true },
+      { token },
+    );
+    expect(on.status).toBe(200);
+    expect(on.data.couple.welcome_desk_active).toBe(true);
+
+    // Survives a re-fetch — persistent across reloads, not in-memory only.
+    const fresh = await req<{ couple: { welcome_desk_active: boolean } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(fresh.data.couple.welcome_desk_active).toBe(true);
+
+    const off = await req<{ couple: { welcome_desk_active: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { welcome_desk_active: false },
+      { token },
+    );
+    expect(off.data.couple.welcome_desk_active).toBe(false);
+  });
+
+  test("rejects a non-boolean welcome_desk_active payload", async () => {
+    const { token } = await bootstrapCouple("welcome-desk-type@weddly.test");
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { welcome_desk_active: "yes" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+});

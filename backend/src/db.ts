@@ -583,6 +583,16 @@ addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 //   the data never reaches the client unless the credential allows it.
 addColumnIfMissing("couples", "guest_page_intro", "guest_page_intro TEXT");
 addColumnIfMissing("couples", "post_rsvp_content", "post_rsvp_content TEXT");
+// Wedding-day "Welcome Desk" mode — couple flips this to 1 when they set up
+// a kiosk tablet at the entrance so the Settings card can surface the
+// current status persistently (across devices, across reloads) instead of
+// relying on a query-string flag the owner had to remember each time.
+// 0 = inactive (default).
+addColumnIfMissing(
+  "couples",
+  "welcome_desk_active",
+  "welcome_desk_active INTEGER NOT NULL DEFAULT 0",
+);
 
 // Vendor listing hero image. Stored as a relative path under the public
 // `/uploads/` prefix (e.g. `/uploads/listings/v3/hero.webp`) — files live

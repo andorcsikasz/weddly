@@ -271,6 +271,9 @@ export const coupleApi = {
     /** Post-RSVP unlocked block (markdown, ≤8000 chars). Empty string
      *  clears the column. */
     post_rsvp_content?: string | null;
+    /** Wedding-day Welcome Desk mode toggle. Persistent on the couple
+     *  row so the Settings card shows a stable status across reloads. */
+    welcome_desk_active?: boolean;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */

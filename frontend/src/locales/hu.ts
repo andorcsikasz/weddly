@@ -3081,9 +3081,14 @@ const hu: LocaleMessages = {
     welcome_desk_title: "Üdvözlő pult",
     welcome_desk_body:
       "Új lapon megnyitja az RSVP oldalt kiosk-zárral — add át a tabletet a fogadásnál. A vendégek nem férnek hozzá a kapcsolóhoz, csak innen indítható.",
-    welcome_desk_button: "Üdvözlő pult mód be",
+    welcome_desk_button: "Kiosk oldal megnyitása",
     welcome_desk_no_slug:
       "Az üdvözlő pulthoz előbb adj egy URL-azonosítót a párnak az Onboarding/Profil beállításokban.",
+    welcome_desk_toggle_aria: "Üdvözlő pult mód",
+    welcome_desk_toggle_on: "Üdvözlő pult bekapcsolva",
+    welcome_desk_toggle_off: "Üdvözlő pult kikapcsolva",
+    welcome_desk_status_on: "BE",
+    welcome_desk_status_off: "KI",
     display_title: "Megjelenítés",
     display_body:
       "Állítsd be, mennyire legyen sűrű a szöveg. A kényelmes mód növeli a legapróbb feliratokat — hasznos a szülőknek vagy napsütésben.",

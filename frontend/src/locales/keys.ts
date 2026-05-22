@@ -3479,6 +3479,14 @@ export interface LocaleMessages {
     welcome_desk_body: string;
     welcome_desk_button: string;
     welcome_desk_no_slug: string;
+    /** Toggle states + status pill labels for the Welcome Desk card. The
+     *  toggle is a switch; the status pill is colour-coded (sage when on,
+     *  paper when off) so the couple can read the kiosk status at a glance. */
+    welcome_desk_toggle_aria: string;
+    welcome_desk_toggle_on: string;
+    welcome_desk_toggle_off: string;
+    welcome_desk_status_on: string;
+    welcome_desk_status_off: string;
     /** Display preferences — density toggle for older relatives / outdoor
      *  day-of use who can't read the 10/11 px utility labels at default size. */
     display_title: string;

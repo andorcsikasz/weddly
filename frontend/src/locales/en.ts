@@ -3050,9 +3050,14 @@ const en: LocaleMessages = {
     welcome_desk_title: "Welcome desk",
     welcome_desk_body:
       "Opens the RSVP page in a new tab locked into kiosk mode — hand the tablet to your greeter. Guests can't flip the switch themselves; it only starts from here.",
-    welcome_desk_button: "Turn on welcome-desk mode",
+    welcome_desk_button: "Open kiosk page",
     welcome_desk_no_slug:
       "Give your couple a URL slug in Onboarding / Profile first so the welcome-desk link has somewhere to point.",
+    welcome_desk_toggle_aria: "Welcome-desk mode",
+    welcome_desk_toggle_on: "Welcome-desk is on",
+    welcome_desk_toggle_off: "Welcome-desk is off",
+    welcome_desk_status_on: "ON",
+    welcome_desk_status_off: "OFF",
     display_title: "Display",
     display_body:
       "Tune how dense the interface feels. Comfortable bumps the smallest labels — helpful for older relatives or outdoor day-of use.",

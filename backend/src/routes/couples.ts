@@ -135,6 +135,10 @@ interface OnboardBody {
   /** Vendégoldal Phase 2 — post-RSVP unlocked content (markdown). Empty
    *  string clears. Cap ≤8000 chars. */
   post_rsvp_content?: unknown;
+  /** Wedding-day "Welcome Desk" mode toggle. Boolean. Persistent on the
+   *  couple row so the Settings card's status pill stays accurate across
+   *  reloads and devices. */
+  welcome_desk_active?: unknown;
 }
 
 const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
@@ -1168,6 +1172,13 @@ function parseIsPublic(raw: unknown): boolean {
   return raw;
 }
 
+function parseWelcomeDeskActive(raw: unknown): boolean {
+  if (typeof raw !== "boolean") {
+    throw new HttpError(400, "welcome_desk_active must be a boolean");
+  }
+  return raw;
+}
+
 /** Free-text venue name. Empty string → null (clears the column).
  *  Trimmed, capped at 200 chars to match the schema's TEXT column expectation
  *  and the display_name cap. */
@@ -1522,6 +1533,19 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.is_public_update",
         before: { is_public: prev },
         after: { is_public: next },
+      });
+    }
+  }
+
+  if (body.welcome_desk_active !== undefined) {
+    const next = parseWelcomeDeskActive(body.welcome_desk_active);
+    const prev = Boolean(couple.welcome_desk_active);
+    if (next !== prev) {
+      updates.push({ col: "welcome_desk_active", val: next ? 1 : 0 });
+      auditEntries.push({
+        action: "couple.welcome_desk_active_update",
+        before: { welcome_desk_active: prev },
+        after: { welcome_desk_active: next },
       });
     }
   }
