@@ -327,6 +327,11 @@ export interface GuestUpsert extends Partial<Guest> {
   /** Optional new household — paired with `household_id: null`, creates a
    *  household with this label and puts the guest in it. */
   new_household_label?: string;
+  /** Create-only opt-in for the new household's `rsvp_offers_accommodation`
+   *  flag. Set true to ask "needs accommodation?" on this household's public
+   *  RSVP form. Ignored unless a new household is being created via
+   *  `new_household_label`. */
+  new_household_offers_accommodation?: boolean;
   /** Tri-state flag for the "invited" checkbox: `true` stamps invited_at to
    *  now, `false` clears it, omitted leaves the field as-is. */
   invited?: boolean;

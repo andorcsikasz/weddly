@@ -71,6 +71,10 @@ interface UpsertBody {
   /** Used together with `household_id === null` to create a brand-new
    *  household and put this guest in it (e.g. "Kovács family"). */
   new_household_label?: unknown;
+  /** Create-only opt-in for the new household's `rsvp_offers_accommodation`
+   *  flag. Ignored unless the request actually spawns a new household via
+   *  `new_household_label`. */
+  new_household_offers_accommodation?: unknown;
 }
 
 interface ParsedGuest {
@@ -217,11 +221,16 @@ function resolveHouseholdForCreate(
     typeof body.new_household_label === "string" ? body.new_household_label.trim() : "";
   const autoCreated = labelRaw === "";
   const label = labelRaw || guestName;
+  // Only honour the accommodation opt-in for explicit new-household creates —
+  // the auto-spawned household-of-one path is a backend convenience and
+  // shouldn't pick up an RSVP-form flag the user never saw a toggle for.
+  const offersAccommodation = !autoCreated && body.new_household_offers_accommodation === true;
   const created = createHousehold({
     couple_id: coupleId,
     label,
     group_tag: guestGroupTag,
     auto_created: autoCreated,
+    rsvp_offers_accommodation: offersAccommodation,
   });
   return { id: created.id, group_tag: guestGroupTag };
 }
@@ -363,6 +372,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
       couple_id: couple.id,
       label: body.new_household_label.trim(),
       group_tag: parsed.group_tag,
+      rsvp_offers_accommodation: body.new_household_offers_accommodation === true,
     });
     nextHouseholdId = created.id;
     inheritedGroupTag = parsed.group_tag;

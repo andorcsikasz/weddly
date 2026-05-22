@@ -115,13 +115,17 @@ export function createHousehold(input: {
    *  households CRUD route + explicit `new_household_label` paths pass
    *  false (or omit, defaulting false). */
   auto_created?: boolean;
+  /** Initial value for the household's `rsvp_offers_accommodation` flag.
+   *  Couples can opt-in at creation time from the AddGuestDrawer; absent
+   *  (or false) preserves the schema default of OFF. */
+  rsvp_offers_accommodation?: boolean;
 }): HouseholdRow {
   const ts = now();
   const code = uniqueHouseholdCode(input.couple_id);
   const groupTag: GuestGroupTag = input.group_tag ?? "other";
   const result = db
     .prepare(
-      "INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, rsvp_offers_accommodation, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       input.couple_id,
@@ -130,6 +134,7 @@ export function createHousehold(input: {
       input.notes ?? null,
       groupTag,
       input.auto_created ? 1 : 0,
+      input.rsvp_offers_accommodation ? 1 : 0,
       ts,
       ts,
     );

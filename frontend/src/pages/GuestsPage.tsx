@@ -47,7 +47,6 @@ import {
   Trash2,
   Upload,
   User,
-  User2,
   UserPlus,
   Users,
   Utensils,
@@ -270,18 +269,13 @@ export default function GuestsPage() {
     }
   }
 
-  /** Per-household RSVP toggle switcher. Replaces the old couple-level
-   *  Profile-page panel: each household now decides for itself whether the
-   *  public RSVP form surfaces the "needs accommodation?" question and/or
-   *  the meal-choice icon row. Bulk-fans-out one PATCH per household so the
-   *  per-field audit log entries stay clean (no opaque "applied to N rows"
-   *  blob); the toggles in the meals dialog flip every household in unison.
-   *  Per-household nuance was removed when the panel moved out of the
-   *  household card — couples rarely want a different RSVP form per family. */
-  async function onBulkRsvpToggle(
-    field: "rsvp_offers_accommodation" | "rsvp_collects_meal",
-    next: boolean,
-  ) {
+  /** Bulk meal-collection switcher used by the meals dialog. Fans out one
+   *  PATCH per household so per-field audit-log entries stay clean. The
+   *  accommodation flag intentionally has no bulk variant — couples opt in
+   *  per-household via the Bed icon on each card (or at +guest creation
+   *  time on the AddGuestDrawer), so the meals dialog stays focused on the
+   *  meal-collection question. */
+  async function onBulkRsvpToggle(field: "rsvp_collects_meal", next: boolean) {
     try {
       await Promise.all(households.map((h) => householdApi.update(h.id, { [field]: next })));
       refresh();
@@ -1717,6 +1711,12 @@ function GuestDrawer({
     guest?.household_id ?? init.defaultHouseholdId ?? households[0]?.id ?? null,
   );
   const [newHouseholdLabel, setNewHouseholdLabel] = useState("");
+  // Per-household opt-in for the public RSVP "needs accommodation?" question,
+  // surfaced only in `new` mode — for existing households the Bed icon on
+  // the household card is the canonical edit surface. Plumbed through the
+  // backend as `new_household_offers_accommodation` so the household gets
+  // created with the flag set in a single round-trip.
+  const [newHouseholdOffersAccommodation, setNewHouseholdOffersAccommodation] = useState(false);
   // Create-only — when the couple has typed an email on a new guest, surface
   // a "send invite now" toggle that fires the `guest_invite` email on save.
   // Defaults off so the existing "create silently, send invites later in bulk"
@@ -1776,6 +1776,9 @@ function GuestDrawer({
       body.household_id = null;
       const label = newHouseholdLabel.trim();
       if (label) body.new_household_label = label;
+      if (newHouseholdOffersAccommodation) {
+        body.new_household_offers_accommodation = true;
+      }
     }
     if (!guest && sendInvite && (form.email ?? "").trim()) {
       body.send_invite = true;
@@ -1994,6 +1997,22 @@ function GuestDrawer({
                     to that household. The new-label input is cleared so
                     submit doesn't ALSO create a fresh household with the
                     same name. */}
+                <label className="mt-2 flex items-start gap-2 text-sm text-ink-700 dark:text-paper-100">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={newHouseholdOffersAccommodation}
+                    onChange={(e) => setNewHouseholdOffersAccommodation(e.target.checked)}
+                  />
+                  <span className="inline-flex items-center gap-1.5">
+                    <Bed
+                      size={14}
+                      aria-hidden
+                      className="shrink-0 text-ink-500 dark:text-umber-300"
+                    />
+                    {t("guests.rsvp_offers_accommodation_short")}
+                  </span>
+                </label>
                 {householdSuggestions.length > 0 && (
                   <ul className="mt-2 divide-y divide-paper-200 overflow-hidden rounded-xl border border-paper-300 bg-paper-50 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
                     {householdSuggestions.map((s) => {
@@ -2292,30 +2311,29 @@ function SegmentButton({
   );
 }
 
-/** Icon glyph for each guest group tag. Neutral User / User2 / Users variants
- *  read as "his side / her side / both" without locking in a gendered crown-
- *  vs-gem affordance the way the previous Crown/Gem mapping did. International
- *  launches don't carry the HU bride/groom heraldry, and the partner glyphs
- *  elsewhere on the page already cover the bride/groom emphasis where it's
- *  contextually warranted. */
+/** Icon glyph for each guest group tag. Crown for the groom side, Gem for
+ *  the bride side — mirrors `PartnerRoleIcon` so a household card chip and
+ *  the bride/groom row glyph read as the same visual language. The earlier
+ *  User / User2 silhouettes were near-identical at chip size and made the
+ *  two "családja" chips indistinguishable in the household list. */
 function GroupIcon({ group }: { group: GuestGroupTag }) {
   const size = 16;
   switch (group) {
     case "his_family":
-      return <User size={size} aria-hidden />;
+      return <Crown size={size} aria-hidden />;
     case "her_family":
-      return <User2 size={size} aria-hidden />;
+      return <Gem size={size} aria-hidden />;
     case "his_friends":
       return (
         <>
-          <User size={size} aria-hidden />
+          <Crown size={size} aria-hidden />
           <Users size={size} aria-hidden />
         </>
       );
     case "her_friends":
       return (
         <>
-          <User2 size={size} aria-hidden />
+          <Gem size={size} aria-hidden />
           <Users size={size} aria-hidden />
         </>
       );
@@ -2618,25 +2636,17 @@ function MealsDialog({
 }: {
   guests: Guest[];
   households: Household[];
-  /** Flips the named flag on every household in one fan-out. The
-   *  derived `mealOn` / `accommodationOn` below reflect "ALL households
-   *  have this on?" — mixed state renders as off, since toggling once
-   *  will pull every household into a consistent state anyway. */
-  onBulkRsvpToggle: (
-    field: "rsvp_offers_accommodation" | "rsvp_collects_meal",
-    next: boolean,
-  ) => Promise<void>;
+  /** Flips the meal-collection flag on every household in one fan-out.
+   *  `mealOn` reflects "ALL households have this on?" — mixed state renders
+   *  as off, since toggling once will pull every household into a consistent
+   *  state anyway. Accommodation is intentionally NOT here; that flag is set
+   *  per-household via the Bed icon on each household card. */
+  onBulkRsvpToggle: (field: "rsvp_collects_meal", next: boolean) => Promise<void>;
   onClose: () => void;
 }) {
   const { t } = useT();
   const toast = useToast();
-  // Bulk RSVP-form toggles — "ON" only when every household has the flag,
-  // matching the conservative read: a single household opting out should
-  // show the master toggle as off so flipping it on doesn't silently
-  // overwrite that household's opt-out without the user noticing.
   const mealOn = households.length > 0 && households.every((h) => h.rsvp_collects_meal);
-  const accommodationOn =
-    households.length > 0 && households.every((h) => h.rsvp_offers_accommodation);
 
   const stats = useMemo(() => {
     const mealCounts: Record<MealChoice, number> = {
@@ -2761,21 +2771,6 @@ function MealsDialog({
               <span className="font-medium">{t("guests.rsvp_collects_meal_label")}</span>
               <span className="block text-xs text-ink-500 dark:text-umber-300">
                 {t("guests.rsvp_collects_meal_help")}
-              </span>
-            </span>
-          </label>
-          <label className="mt-3 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-100">
-            <input
-              type="checkbox"
-              className="mt-0.5"
-              checked={accommodationOn}
-              disabled={households.length === 0}
-              onChange={(e) => void onBulkRsvpToggle("rsvp_offers_accommodation", e.target.checked)}
-            />
-            <span>
-              <span className="font-medium">{t("guests.rsvp_offers_accommodation_label")}</span>
-              <span className="block text-xs text-ink-500 dark:text-umber-300">
-                {t("guests.rsvp_offers_accommodation_help")}
               </span>
             </span>
           </label>
