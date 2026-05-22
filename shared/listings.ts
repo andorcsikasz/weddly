@@ -62,6 +62,11 @@ export interface Listing {
   lng: number | null;
   submitter_type: ListingSubmitterType;
   status: ListingStatus;
+  /** Public URL for the listing's hero image (e.g. `/uploads/listings/v3/hero.webp`).
+   *  Null when the vendor hasn't uploaded one — frontend falls back to a
+   *  monogram avatar. Only vendors who own the listing can write this field;
+   *  the file lives under `CONFIG.uploadsDir` on the persistent volume. */
+  hero_image_url: string | null;
   created_at: number;
   updated_at: number;
 }

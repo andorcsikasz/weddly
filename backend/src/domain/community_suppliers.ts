@@ -96,6 +96,9 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
     // Defaults to null; routes/suppliers.ts overlays the real value from the
     // `listings` table where claimed entries flip vendor_account_id.
     vendor_account_id: null,
+    // Defaults to null; routes/suppliers.ts overlays the real value from the
+    // `listings` table once the vendor uploads a hero image.
+    hero_image_url: null,
   };
 }
 

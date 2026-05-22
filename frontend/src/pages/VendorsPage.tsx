@@ -4,13 +4,19 @@ import {
   AlertCircle,
   ArrowLeft,
   Briefcase,
+  Building2,
   Check,
+  Globe,
   Image as ImageIcon,
   Info,
+  Instagram,
   Link2,
   Mail,
+  MapPin,
+  MessageSquare,
   Plus,
   Sparkles,
+  Tag,
   Trash2,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
@@ -207,28 +213,32 @@ function PortfolioLinkRow({
   );
 }
 
-/** Section header — small icon + serif title, optional subtitle.
- *  Replaced the earlier numbered-step badge approach: a single linear form
- *  shouldn't pretend to be a wizard, and the numbers added visual weight
- *  without information. The icon alone carries the section marker. */
+/** Section header — eyebrow style. Small icon + uppercase tracked title +
+ *  optional "opcionális" suffix. The previous serif h3 + subtitle pattern
+ *  read "landing page", not "pro form"; this collapses each section marker
+ *  to a single tight row that scans as structure, not as editorial copy. */
 function SectionHeader({
   icon,
   title,
-  sub,
+  optional,
+  optionalLabel,
 }: {
   icon: ReactNode;
   title: string;
-  sub?: string;
+  optional?: boolean;
+  optionalLabel?: string;
 }) {
   return (
-    <header>
-      <h3 className="flex items-center gap-2 font-serif text-xl text-ink-900 dark:text-paper-50">
-        <span className="text-blush-600 dark:text-blush-300" aria-hidden>
-          {icon}
+    <header className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
+      <span className="text-blush-600 dark:text-blush-300" aria-hidden>
+        {icon}
+      </span>
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em]">{title}</h3>
+      {optional && optionalLabel && (
+        <span className="text-[10px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
+          · {optionalLabel}
         </span>
-        {title}
-      </h3>
-      {sub && <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{sub}</p>}
+      )}
     </header>
   );
 }
@@ -371,24 +381,20 @@ function WaitlistContact() {
         aria-hidden
         className="pointer-events-none absolute -top-10 -right-6 h-40 w-40 rounded-full bg-blush-200/35 blur-3xl dark:hidden"
       />
-      <div className="relative rounded-3xl border border-paper-300 bg-white p-6 shadow-soft sm:p-10 dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
-        <div className="flex items-start gap-3">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-200">
-            <Sparkles size={18} aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-serif text-3xl text-ink-900 dark:text-paper-50 sm:text-4xl">
-              {t("vendors.contact_title")}
-            </h2>
-            <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("vendors.form_sub")}</p>
-          </div>
+      <div className="relative rounded-3xl border border-paper-400 bg-white p-6 shadow-soft sm:p-8 dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
+        {/* Compact form header — the round Sparkles badge + serif h2 felt
+            duplicate next to the page hero. Now: tight serif title with
+            mini Sparkles inline. Saves ~60px of vertical chrome. */}
+        <div>
+          <h2 className="flex items-center gap-2 font-serif text-2xl text-ink-900 dark:text-paper-50">
+            <Sparkles size={18} className="text-blush-600 dark:text-blush-300" aria-hidden />
+            {t("vendors.contact_title")}
+          </h2>
+          <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">{t("vendors.form_sub")}</p>
         </div>
 
-        {/* Beta + future-monetization disclosure. Compressed from a heavy
-            titled card to a single quiet line: the previous pill weight
-            competed with the form header and tripled the perceived form
-            length. Content stays legally complete; visual weight drops. */}
-        <p className="mt-5 flex items-start gap-2 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
+        {/* Beta disclosure — single quiet line. */}
+        <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
           <Info size={14} className="mt-0.5 shrink-0" aria-hidden />
           <span>
             {t("vendors.beta_notice_body")}{" "}
@@ -401,87 +407,118 @@ function WaitlistContact() {
           </span>
         </p>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-6">
+        <form onSubmit={onSubmit} className="mt-5 space-y-5">
           {/* ── Section 1: business identity ─────────────────────────── */}
           <section className="space-y-3">
             <SectionHeader
-              icon={<Briefcase size={16} />}
+              icon={<Briefcase size={12} />}
               title={t("vendors.section_business_title")}
             />
-            <div className="space-y-3">
+            <div className="grid gap-3 lg:grid-cols-2 lg:gap-x-4">
               <div>
                 <label htmlFor="vendor-business" className="field-label">
                   {t("vendors.form_business_label")}
+                  <RequiredMark />
                 </label>
-                <input
-                  id="vendor-business"
-                  className="input"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  maxLength={120}
-                  autoComplete="organization"
-                  required
-                />
+                <div className="relative">
+                  <Building2
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                    aria-hidden
+                  />
+                  <input
+                    id="vendor-business"
+                    className="input pl-9"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    maxLength={120}
+                    autoComplete="organization"
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <label htmlFor="vendor-category" className="field-label">
                   {t("vendors.form_category_label")}
+                  <RequiredMark />
                 </label>
-                <select
-                  id="vendor-category"
-                  className="input"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
-                  required
-                >
-                  <option value="" disabled>
-                    {t("vendors.form_category_placeholder")}
-                  </option>
-                  {SUPPLIER_GROUPS.map((g) => (
-                    <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
-                      {g.categories.map((c) => (
-                        <option key={c} value={c}>
-                          {t(`suppliers.cat.${c}`)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                <div className="relative">
+                  <Tag
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                    aria-hidden
+                  />
+                  <select
+                    id="vendor-category"
+                    className="input pl-9"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
+                    required
+                  >
+                    <option value="" disabled>
+                      {t("vendors.form_category_placeholder")}
+                    </option>
+                    {SUPPLIER_GROUPS.map((g) => (
+                      <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
+                        {g.categories.map((c) => (
+                          <option key={c} value={c}>
+                            {t(`suppliers.cat.${c}`)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </section>
 
           {/* ── Section 2: contact + region ──────────────────────────── */}
           <section className="space-y-3">
-            <SectionHeader icon={<Mail size={16} />} title={t("vendors.section_contact_title")} />
-            <div className="space-y-3">
+            <SectionHeader icon={<Mail size={12} />} title={t("vendors.section_contact_title")} />
+            <div className="grid gap-3 lg:grid-cols-2 lg:gap-x-4">
               <div>
                 <label htmlFor="vendor-email" className="field-label">
                   {t("vendors.form_email_label")}
+                  <RequiredMark />
                 </label>
-                <input
-                  id="vendor-email"
-                  type="email"
-                  className="input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  maxLength={200}
-                  autoComplete="email"
-                  required
-                />
+                <div className="relative">
+                  <Mail
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                    aria-hidden
+                  />
+                  <input
+                    id="vendor-email"
+                    type="email"
+                    className="input pl-9"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    maxLength={200}
+                    autoComplete="email"
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <label htmlFor="vendor-location" className="field-label">
                   {t("vendors.form_location_label")}
                 </label>
-                <input
-                  id="vendor-location"
-                  className="input"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  maxLength={500}
-                  placeholder={t("vendors.form_location_placeholder")}
-                />
+                <div className="relative">
+                  <MapPin
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                    aria-hidden
+                  />
+                  <input
+                    id="vendor-location"
+                    className="input pl-9"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    maxLength={500}
+                    placeholder={t("vendors.form_location_placeholder")}
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -489,58 +526,65 @@ function WaitlistContact() {
           {/* ── Section 3: portfolio (category-aware) ────────────────── */}
           <section className="space-y-3">
             <SectionHeader
-              icon={<ImageIcon size={16} />}
+              icon={<ImageIcon size={12} />}
               title={t("vendors.section_portfolio_title")}
-              sub={t("vendors.section_portfolio_sub")}
+              optional
+              optionalLabel={t("vendors.section_optional_label")}
             />
 
             {/* Category-aware hint — copy comes from
                 `vendors.portfolio_hint_<group>` and swaps as the category
-                dropdown changes. Inline italic line, no longer a pill —
-                the previous bordered banner doubled-up with the beta notice
-                and added visual weight without new info. */}
-            <p className="text-sm italic leading-relaxed text-ink-500 dark:text-umber-300">
+                dropdown changes. Quiet italic line, not a pill. */}
+            <p className="text-xs italic leading-relaxed text-ink-500 dark:text-umber-300">
               {t(portfolioHintKey)}
             </p>
 
-            <div>
-              <label htmlFor="vendor-website" className="field-label">
-                {t("vendors.form_website_label")}
-              </label>
-              <input
-                id="vendor-website"
-                className="input"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                maxLength={300}
-                placeholder={t("vendors.form_website_placeholder")}
-                inputMode="url"
-                autoComplete="url"
-              />
-            </div>
+            <div className="grid gap-3 lg:grid-cols-2 lg:gap-x-4">
+              <div>
+                <label htmlFor="vendor-website" className="field-label">
+                  {t("vendors.form_website_label")}
+                </label>
+                <div className="relative">
+                  <Globe
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                    aria-hidden
+                  />
+                  <input
+                    id="vendor-website"
+                    className="input pl-9"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    maxLength={300}
+                    placeholder={t("vendors.form_website_placeholder")}
+                    inputMode="url"
+                    autoComplete="url"
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label htmlFor="vendor-instagram" className="field-label">
-                {t("vendors.instagram_label")}
-              </label>
-              <div className="relative">
-                <span
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-                  aria-hidden
-                >
-                  @
-                </span>
-                <input
-                  id="vendor-instagram"
-                  className="input pl-7"
-                  value={instagram}
-                  onChange={(e) => setInstagram(e.target.value)}
-                  maxLength={31}
-                  placeholder={t("vendors.instagram_placeholder")}
-                  autoCapitalize="none"
-                  autoComplete="off"
-                  spellCheck={false}
-                />
+              <div>
+                <label htmlFor="vendor-instagram" className="field-label">
+                  {t("vendors.instagram_label")}
+                </label>
+                <div className="relative">
+                  <Instagram
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                    aria-hidden
+                  />
+                  <input
+                    id="vendor-instagram"
+                    className="input pl-9"
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
+                    maxLength={31}
+                    placeholder={t("vendors.instagram_placeholder")}
+                    autoCapitalize="none"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </div>
               </div>
             </div>
 
@@ -585,37 +629,47 @@ function WaitlistContact() {
               <label htmlFor="vendor-message" className="field-label">
                 {t("vendors.form_message_label")}
               </label>
-              <textarea
-                id="vendor-message"
-                className="input"
-                rows={2}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                maxLength={1000}
-                placeholder={t("vendors.form_message_placeholder")}
-              />
+              <div className="relative">
+                <MessageSquare
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-3 text-ink-400 dark:text-umber-300"
+                  aria-hidden
+                />
+                <textarea
+                  id="vendor-message"
+                  className="input pl-9"
+                  rows={2}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  maxLength={1000}
+                  placeholder={t("vendors.form_message_placeholder")}
+                />
+              </div>
             </div>
           </section>
 
-          {/* ── Consent + submit ─────────────────────────────────────── */}
-          <div className="space-y-4 border-t border-paper-200 pt-6 dark:border-umber-700">
+          {/* ── Consent + submit footer ─────────────────────────────
+              Pill background dropped — consent reads as a statement, not
+              a "collectible UI element". Submit is right-aligned on sm+
+              so the footer scans as a tight action row, not a column. */}
+          <div className="border-t border-paper-300 pt-5 dark:border-umber-700">
             <label
               htmlFor={consentId}
-              className="flex cursor-pointer items-start gap-2 rounded-xl border border-paper-200 bg-paper-50 p-3 text-sm text-ink-700 transition-colors hover:border-blush-300 hover:bg-blush-50 dark:border-umber-700 dark:bg-umber-900/60 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/10"
+              className="flex cursor-pointer items-start gap-2.5 text-xs leading-snug text-ink-600 dark:text-umber-200"
             >
               <input
                 id={consentId}
                 type="checkbox"
                 checked={privacyConsent}
                 onChange={(e) => setPrivacyConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-500 dark:border-umber-600"
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-paper-400 text-blush-600 focus:ring-2 focus:ring-blush-300 dark:border-umber-600"
                 aria-required="true"
               />
-              <span className="flex-1 leading-snug">
+              <span className="flex-1">
                 {t("vendors.privacy_consent_prefix")}
                 <Link
                   to="/privacy"
-                  className="underline hover:text-ink-900"
+                  className="underline underline-offset-2 hover:text-ink-900 dark:hover:text-paper-50"
                   target="_blank"
                   rel="noopener"
                 >
@@ -626,23 +680,36 @@ function WaitlistContact() {
             </label>
             {errorMsg && (
               <p
-                className="flex items-start gap-2 rounded-lg border border-blush-300 bg-blush-50 px-3 py-2 text-sm text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
+                className="mt-3 flex items-start gap-2 rounded-lg border border-blush-300 bg-blush-50 px-3 py-2 text-sm text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
                 role="alert"
               >
                 <AlertCircle size={16} aria-hidden className="mt-0.5 shrink-0" />
                 <span>{errorMsg}</span>
               </p>
             )}
-            <button
-              type="submit"
-              className="btn-primary btn-lg inline-flex w-full justify-center shadow-soft sm:w-auto"
-              disabled={submitting || !privacyConsent}
-            >
-              {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}
-            </button>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="submit"
+                className="btn-primary btn-lg inline-flex w-full justify-center shadow-soft sm:w-auto"
+                disabled={submitting || !privacyConsent}
+              >
+                {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}
+              </button>
+            </div>
           </div>
         </form>
       </div>
     </div>
+  );
+}
+
+/** Small blush asterisk for required labels — communicates "needed" at
+ *  a glance without leaning on color alone (still semantic via `required`
+ *  on the input). */
+function RequiredMark() {
+  return (
+    <span className="ml-0.5 text-blush-500 dark:text-blush-300" aria-hidden>
+      *
+    </span>
   );
 }

@@ -11,9 +11,15 @@
 // Name / category / status / lat-lng are deliberately NOT editable — those
 // flow through admin moderation (name) or the geocode worker (lat-lng).
 
+import { existsSync } from "node:fs";
+import { mkdir, unlink } from "node:fs/promises";
+import { join } from "node:path";
 import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
+import { CONFIG } from "../config";
+import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import {
+  getListingById,
   getListingByVendorAccountId,
   patchListing,
   toVendorAccount,
@@ -160,7 +166,145 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
   return json(view);
 }
 
+// ── Hero image upload ──────────────────────────────────────────────────────
+//
+// Vendor uploads ONE hero image per listing — the card on /app/suppliers and
+// /vendors switches from the monogram avatar to the photo. File lives on
+// the persistent `CONFIG.uploadsDir` volume; the public URL goes through the
+// `/uploads/*` static handler in server.ts. Multipart upload because the
+// existing JSON PATCH (handlePatchMe) doesn't transport binary, and an
+// image-CDN swap can replace just this endpoint without touching the
+// metadata pipeline.
+
+const MAX_HERO_BYTES = 4 * 1024 * 1024;
+const SUPPORTED_HERO_MIMES: Record<string, "jpg" | "png" | "webp"> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+/** Resolve an upload-relative URL (e.g. `/uploads/listings/v3/hero.png?v=…`)
+ *  back to its on-disk path. Returns null if the URL isn't shaped like an
+ *  uploads path — defends against `..`/absolute-path attempts even though
+ *  the values we ever write are under our own control. */
+function uploadRelToDisk(publicUrl: string | null): string | null {
+  if (!publicUrl) return null;
+  const noQuery = publicUrl.split("?")[0] ?? publicUrl;
+  if (!noQuery.startsWith("/uploads/")) return null;
+  const rel = noQuery.slice("/uploads/".length);
+  if (rel.includes("..") || rel.startsWith("/")) return null;
+  return join(CONFIG.uploadsDir, rel);
+}
+
+async function handleUploadHero(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+
+  // Bun parses multipart natively via `Request.formData()`. The field name
+  // is `file` to match the conventional <input type="file" name="file" />
+  // used by the vendor home page's upload widget.
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const raw = form.get("file");
+  if (!(raw instanceof File)) {
+    throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  }
+  if (raw.size <= 0) {
+    throw new HttpError(400, "Empty file", { code: "empty_file" });
+  }
+  if (raw.size > MAX_HERO_BYTES) {
+    throw new HttpError(413, `File too large (max ${MAX_HERO_BYTES / 1024 / 1024} MB)`, {
+      code: "file_too_large",
+    });
+  }
+  const ext = SUPPORTED_HERO_MIMES[raw.type];
+  if (!ext) {
+    throw new HttpError(415, `Unsupported image type: ${raw.type || "unknown"}`, {
+      code: "unsupported_type",
+    });
+  }
+
+  const dir = join(CONFIG.uploadsDir, "listings", listing.id);
+  await mkdir(dir, { recursive: true });
+
+  // Delete the previous hero file if the extension changed — Bun.write
+  // overwrites same-name files in place, so this only matters for ext
+  // transitions (e.g. PNG → WebP).
+  const previousDiskPath = uploadRelToDisk(listing.hero_image_url);
+  const newDiskPath = join(dir, `hero.${ext}`);
+  if (previousDiskPath && previousDiskPath !== newDiskPath && existsSync(previousDiskPath)) {
+    await unlink(previousDiskPath).catch(() => {
+      // Best-effort cleanup — the new file overwriting the column is the
+      // correctness contract; leaking a stale file under uploads doesn't
+      // surface to users and the next upload will overwrite it.
+    });
+  }
+
+  await Bun.write(newDiskPath, raw);
+
+  // Cache-bust suffix tied to the upload timestamp so the browser sees a
+  // fresh URL whenever the vendor uploads again. The static handler in
+  // server.ts strips the query before resolving the file path.
+  const ts = now();
+  const publicUrl = `/uploads/listings/${listing.id}/hero.${ext}?v=${ts}`;
+  db.prepare("UPDATE listings SET hero_image_url = ?, updated_at = ? WHERE id = ?").run(
+    publicUrl,
+    ts,
+    listing.id,
+  );
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_hero_upload",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id, hero_image_url: listing.hero_image_url },
+    after: { hero_image_url: publicUrl, bytes: raw.size, mime: raw.type },
+  });
+
+  const refreshed = getListingById(listing.id);
+  if (!refreshed) {
+    throw new HttpError(404, "Listing vanished mid-upload");
+  }
+  const view: VendorListingView = { listing: refreshed, account };
+  return json(view);
+}
+
+async function handleDeleteHero(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  if (!listing.hero_image_url) {
+    // Idempotent: deleting a non-existent hero is fine — the client may
+    // double-click or replay the action after a network blip.
+    const view: VendorListingView = { listing, account };
+    return json(view);
+  }
+  const diskPath = uploadRelToDisk(listing.hero_image_url);
+  if (diskPath && existsSync(diskPath)) {
+    await unlink(diskPath).catch(() => {});
+  }
+  const ts = now();
+  db.prepare("UPDATE listings SET hero_image_url = NULL, updated_at = ? WHERE id = ?").run(
+    ts,
+    listing.id,
+  );
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_hero_delete",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id, hero_image_url: listing.hero_image_url },
+    after: { hero_image_url: null },
+  });
+  const refreshed = getListingById(listing.id);
+  if (!refreshed) throw new HttpError(404, "Listing vanished mid-delete");
+  const view: VendorListingView = { listing: refreshed, account };
+  return json(view);
+}
+
 export function registerVendorListingRoutes(router: Router) {
   router.get("/api/vendor/listing/me", handleGetMe);
   router.patch("/api/vendor/listing/me", handlePatchMe);
+  router.post("/api/vendor/listing/me/hero", handleUploadHero);
+  router.delete("/api/vendor/listing/me/hero", handleDeleteHero);
 }

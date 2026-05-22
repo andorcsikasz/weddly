@@ -11,7 +11,7 @@
 // location (city, address), pricing (price_band), capacity. Name +
 // category are intentionally read-only — admin moderation surfaces those.
 
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
 import { Shell } from "../components/Shell";
@@ -104,6 +104,8 @@ export default function VendorHomePage() {
   const [form, setForm] = useState<FormState | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [heroBusy, setHeroBusy] = useState(false);
+  const heroInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -139,6 +141,38 @@ export default function VendorHomePage() {
 
   const onChange = (key: keyof FormState) => (e: { target: { value: string } }) => {
     setForm((prev) => (prev ? { ...prev, [key]: e.target.value } : prev));
+  };
+
+  const onHeroPick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset the input value so the SAME file can be picked again after a
+    // failed upload — the change event only fires when the path changes.
+    e.target.value = "";
+    if (!file || heroBusy) return;
+    setHeroBusy(true);
+    try {
+      const next = await vendorListingApi.uploadHero(file);
+      setView(next);
+      toast.success(t("vendor_home.hero_upload_success"));
+    } catch {
+      toast.error(t("vendor_home.hero_upload_failed"));
+    } finally {
+      setHeroBusy(false);
+    }
+  };
+
+  const onHeroDelete = async () => {
+    if (heroBusy) return;
+    setHeroBusy(true);
+    try {
+      const next = await vendorListingApi.deleteHero();
+      setView(next);
+      toast.success(t("vendor_home.hero_delete_success"));
+    } catch {
+      toast.error(t("vendor_home.hero_delete_failed"));
+    } finally {
+      setHeroBusy(false);
+    }
   };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -184,6 +218,63 @@ export default function VendorHomePage() {
                 {t("vendor_home.name_locked")}
               </p>
             </div>
+
+            <fieldset className="card space-y-3" disabled={saving || heroBusy}>
+              <legend className="font-semibold">{t("vendor_home.section_hero")}</legend>
+              <p className="text-sm text-ink-600 dark:text-umber-200">
+                {t("vendor_home.hero_intro")}
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-paper-100 ring-1 ring-paper-300 dark:bg-umber-800 dark:ring-umber-700">
+                  {view.listing.hero_image_url ? (
+                    <img
+                      src={view.listing.hero_image_url}
+                      alt={t("vendor_home.hero_current_alt")}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className="px-3 text-center text-[11px] text-ink-500 dark:text-umber-300"
+                      role="img"
+                      aria-label={t("vendor_home.hero_placeholder_alt")}
+                    >
+                      {t("vendor_home.hero_placeholder_alt")}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    ref={heroInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={onHeroPick}
+                  />
+                  <button
+                    type="button"
+                    className="btn-accent"
+                    onClick={() => heroInputRef.current?.click()}
+                    disabled={heroBusy}
+                  >
+                    {heroBusy
+                      ? t("vendor_home.hero_uploading")
+                      : view.listing.hero_image_url
+                        ? t("vendor_home.hero_replace")
+                        : t("vendor_home.hero_upload")}
+                  </button>
+                  {view.listing.hero_image_url && (
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={onHeroDelete}
+                      disabled={heroBusy}
+                    >
+                      {t("vendor_home.hero_delete")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </fieldset>
 
             <fieldset className="card space-y-3" disabled={saving}>
               <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>

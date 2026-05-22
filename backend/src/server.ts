@@ -213,8 +213,37 @@ function isRsvpRoute(pathname: string): boolean {
 }
 
 async function tryServeStatic(req: Request, pathname: string): Promise<Response | null> {
-  if (!CONFIG.serveFrontend) return null;
   if (pathname.startsWith("/api/")) return null;
+
+  // User-uploaded files (vendor hero images today, more later). Served BEFORE
+  // the SPA/SERVE_FRONTEND guard because uploads live on the persistent
+  // /data volume regardless of whether the frontend bundle ships from the
+  // same process. Path traversal guard: the resolved file path must stay
+  // under CONFIG.uploadsDir. Query strings (e.g. the `?v=<timestamp>`
+  // cache-bust suffix we bake into hero URLs) are stripped before resolving.
+  if (pathname.startsWith("/uploads/")) {
+    const cleanPath = pathname.split("?")[0] ?? pathname;
+    const rel = cleanPath.slice("/uploads/".length);
+    if (!rel || rel.includes("..")) return null;
+    const uploadPath = join(CONFIG.uploadsDir, decodeURIComponent(rel));
+    if (!uploadPath.startsWith(CONFIG.uploadsDir)) return null;
+    if (existsSync(uploadPath)) {
+      const f = Bun.file(uploadPath);
+      if (await f.exists()) {
+        // 30-day cache — URLs change when the vendor re-uploads (the route
+        // appends `?v=<timestamp>` to bust the cache), so a long max-age
+        // here is safe.
+        return new Response(f, {
+          headers: {
+            "Cache-Control": "public, max-age=2592000",
+          },
+        });
+      }
+    }
+    return null;
+  }
+
+  if (!CONFIG.serveFrontend) return null;
 
   const host = req.headers.get("host");
 

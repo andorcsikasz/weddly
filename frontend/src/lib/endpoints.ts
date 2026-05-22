@@ -88,7 +88,7 @@ import type {
 } from "@shared/supplier_taxonomy";
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
-import { apiFetch, getToken } from "./api";
+import { ApiError, apiFetch, getToken } from "./api";
 
 /** Public landing-page "try the demo" endpoint. Spins up a brand-new
  *  Shrek & Fiona workspace and returns a session token. No registration,
@@ -838,6 +838,41 @@ export const vendorListingApi = {
   me: () => apiFetch<VendorListingView>("GET", "/api/vendor/listing/me"),
   patch: (body: VendorListingEditInput) =>
     apiFetch<VendorListingView>("PATCH", "/api/vendor/listing/me", body),
+  /** Multipart-only — `apiFetch` is JSON-shaped, so the hero upload bypasses
+   *  it and posts FormData directly. The route accepts JPEG/PNG/WebP up to
+   *  4 MB; the server enforces the constraints + writes a cache-busted URL
+   *  back into the returned view. */
+  uploadHero: async (file: File): Promise<VendorListingView> => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch("/api/vendor/listing/me/hero", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      // The route's content-validation rejections (400 / 413 / 415) map to
+      // `client_error`; any 5xx is `server_error`. Both share the same
+      // user-facing toast in VendorHomePage; only the code matters for any
+      // future branching.
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Upload failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as VendorListingView;
+  },
+  deleteHero: () => apiFetch<VendorListingView>("DELETE", "/api/vendor/listing/me/hero"),
 };
 
 export const vendorWaitlistApi = {

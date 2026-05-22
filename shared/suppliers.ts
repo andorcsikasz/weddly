@@ -109,6 +109,11 @@ export interface DirectorySupplierBase {
    *  Frontend uses `vendor_account_id == null` AS the "is claimable?" test —
    *  no separate boolean to keep the contract small. */
   vendor_account_id: number | null;
+  /** Public URL for the listing's hero image (e.g. `/uploads/listings/v3/hero.webp`).
+   *  Null when the vendor hasn't uploaded one — card falls back to monogram
+   *  avatar. Surfaces on the public `/api/suppliers` cards alongside the
+   *  vendor-claim overlay. */
+  hero_image_url: string | null;
 }
 
 /** Wire shape returned by `/api/suppliers`. Adds per-request vote info on top

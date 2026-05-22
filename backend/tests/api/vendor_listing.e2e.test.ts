@@ -344,3 +344,231 @@ describe("P2.D vendor listing — PATCH /api/vendor/listing/me", () => {
     expect(parsed.fields).toContain("blurb_hu");
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hero-image upload + delete. Vendors can replace the monogram avatar on
+// their /app/suppliers and /vendors card with a single uploaded photo.
+// File lives under CONFIG.uploadsDir; the public URL goes through the
+// `/uploads/*` static handler in server.ts.
+
+const VENDOR_BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
+
+/** Build a minimal valid PNG blob for upload tests — just the PNG signature
+ *  + IHDR/IEND chunks. The server doesn't decode the image; it only checks
+ *  Content-Type + size, so this 67-byte payload satisfies every validation
+ *  the route runs. */
+function tinyPngBlob(): Blob {
+  // 1x1 transparent PNG. Generated once + frozen so the test doesn't depend
+  // on any image library.
+  const bytes = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+    0x89, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+    0x42, 0x60, 0x82,
+  ]);
+  return new Blob([bytes], { type: "image/png" });
+}
+
+async function uploadHero(
+  vendorToken: string,
+  blob: Blob,
+  filename = "hero.png",
+): Promise<Response> {
+  const form = new FormData();
+  form.append("file", blob, filename);
+  return await fetch(`${VENDOR_BASE}/api/vendor/listing/me/hero`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${vendorToken}`,
+      "x-test-client-ip": `10.0.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`,
+    },
+    body: form,
+  });
+}
+
+describe("P2.D vendor listing — POST /api/vendor/listing/me/hero", () => {
+  test("uploads an image and exposes a cache-busted /uploads URL", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-hero@weddly.test",
+      "vendor-hero@weddly.test",
+      "Hero Photo Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-hero@weddly.test",
+      "Vendor Owner",
+    );
+
+    const res = await uploadHero(vendorToken, tinyPngBlob());
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as VendorListingView;
+    expect(body.listing.id).toBe(listingId);
+    expect(body.listing.hero_image_url).toMatch(
+      new RegExp(
+        `^/uploads/listings/${listingId.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}/hero\\.png\\?v=\\d+$`,
+      ),
+    );
+  });
+
+  test("the uploaded URL surfaces on the public /api/suppliers card", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-public@weddly.test",
+      "vendor-public@weddly.test",
+      "Public Card Photo",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-public@weddly.test",
+      "Vendor Owner",
+    );
+    const upload = await uploadHero(vendorToken, tinyPngBlob());
+    expect(upload.status).toBe(200);
+    const uploadBody = (await upload.json()) as VendorListingView;
+    const expectedUrl = uploadBody.listing.hero_image_url;
+    expect(expectedUrl).toBeTruthy();
+
+    const list = await req<{ suppliers: Array<{ id: string; hero_image_url: string | null }> }>(
+      "GET",
+      "/api/suppliers",
+    );
+    expect(list.status).toBe(200);
+    const card = list.data.suppliers.find((s) => s.id === listingId);
+    expect(card).toBeDefined();
+    expect(card?.hero_image_url).toBe(expectedUrl);
+  });
+
+  test("a second upload overwrites the URL with a fresh cache-bust timestamp", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-replace@weddly.test",
+      "vendor-replace@weddly.test",
+      "Replace Photo Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-replace@weddly.test",
+      "Vendor Owner",
+    );
+    const first = await uploadHero(vendorToken, tinyPngBlob());
+    const firstBody = (await first.json()) as VendorListingView;
+    // Sleep 5 ms so the `now()` cache-bust marker differs across the pair.
+    await new Promise((r) => setTimeout(r, 5));
+    const second = await uploadHero(vendorToken, tinyPngBlob());
+    const secondBody = (await second.json()) as VendorListingView;
+    expect(secondBody.listing.hero_image_url).not.toBe(firstBody.listing.hero_image_url);
+    expect(secondBody.listing.hero_image_url).toMatch(
+      /^\/uploads\/listings\/.+\/hero\.png\?v=\d+$/,
+    );
+  });
+
+  test("anon → 401", async () => {
+    wipeAll();
+    const form = new FormData();
+    form.append("file", tinyPngBlob(), "hero.png");
+    const res = await fetch(`${VENDOR_BASE}/api/vendor/listing/me/hero`, {
+      method: "POST",
+      body: form,
+    });
+    expect(res.status).toBe(401);
+  });
+
+  test("couple-role user → 403", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("not-vendor-hero@weddly.test");
+    const form = new FormData();
+    form.append("file", tinyPngBlob(), "hero.png");
+    const res = await fetch(`${VENDOR_BASE}/api/vendor/listing/me/hero`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test("missing file field → 400", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-nofile@weddly.test",
+      "vendor-nofile@weddly.test",
+      "NoFile Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-nofile@weddly.test",
+      "Vendor Owner",
+    );
+    const form = new FormData();
+    form.append("other", "x");
+    const res = await fetch(`${VENDOR_BASE}/api/vendor/listing/me/hero`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${vendorToken}` },
+      body: form,
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("unsupported MIME (text/plain) → 415", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-badmime@weddly.test",
+      "vendor-badmime@weddly.test",
+      "BadMime Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-badmime@weddly.test",
+      "Vendor Owner",
+    );
+    const blob = new Blob(["not really an image"], { type: "text/plain" });
+    const form = new FormData();
+    form.append("file", blob, "evil.txt");
+    const res = await fetch(`${VENDOR_BASE}/api/vendor/listing/me/hero`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${vendorToken}` },
+      body: form,
+    });
+    expect(res.status).toBe(415);
+  });
+});
+
+describe("P2.D vendor listing — DELETE /api/vendor/listing/me/hero", () => {
+  test("clears hero_image_url after a prior upload", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-del@weddly.test",
+      "vendor-del@weddly.test",
+      "Delete Photo Studio",
+    );
+    const { vendorToken } = await claimListing(listingId, "vendor-del@weddly.test", "Vendor Owner");
+    const upload = await uploadHero(vendorToken, tinyPngBlob());
+    expect(upload.status).toBe(200);
+
+    const del = await req<VendorListingView>("DELETE", "/api/vendor/listing/me/hero", undefined, {
+      token: vendorToken,
+    });
+    expect(del.status).toBe(200);
+    expect(del.data.listing.hero_image_url).toBeNull();
+  });
+
+  test("idempotent: deleting when no hero exists is a no-op 200", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-noop@weddly.test",
+      "vendor-noop@weddly.test",
+      "NoOp Photo Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-noop@weddly.test",
+      "Vendor Owner",
+    );
+    const del = await req<VendorListingView>("DELETE", "/api/vendor/listing/me/hero", undefined, {
+      token: vendorToken,
+    });
+    expect(del.status).toBe(200);
+    expect(del.data.listing.hero_image_url).toBeNull();
+  });
+});

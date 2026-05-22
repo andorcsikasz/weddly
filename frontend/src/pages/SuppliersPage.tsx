@@ -721,7 +721,12 @@ export default function SuppliersPage() {
               </button>
             ))}
           </div>
-          <Button variant="primary" size="sm" onClick={() => setSubmitOpen(true)}>
+          <Button
+            variant="primary"
+            size="sm"
+            className="btn-lifted"
+            onClick={() => setSubmitOpen(true)}
+          >
             {t("suppliers.drop_your_own")}
           </Button>
         </div>
@@ -1076,6 +1081,10 @@ export default function SuppliersPage() {
                       isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                     }`}
                   >
+                    {/* DIY supplier card — couple-saved row from
+                        `couple_suppliers`, no `listings` join. The hero-image
+                        upload is vendor-only (P2.D), so the monogram fallback
+                        stays for this view. */}
                     <Avatar name={s.name} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -1131,6 +1140,8 @@ export default function SuppliersPage() {
                     <Pencil size={14} aria-hidden />
                   </button>
                   <div className="flex items-start gap-3 pr-8">
+                    {/* Same DIY supplier card as above (expanded layout) — no
+                        listings join, monogram fallback only. */}
                     <Avatar name={s.name} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -1187,7 +1198,7 @@ export default function SuppliersPage() {
                       : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
-                  <Avatar name={s.name} />
+                  <Avatar name={s.name} heroUrl={s.hero_image_url} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="truncate text-sm font-semibold">{s.name}</h3>
@@ -1355,7 +1366,7 @@ export default function SuppliersPage() {
                     corner. The right padding on the name reserves space for
                     the pinned-corner controls above. */}
                 <div className="flex items-start gap-3 pr-16">
-                  <Avatar name={s.name} />
+                  <Avatar name={s.name} heroUrl={s.hero_image_url} />
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-base font-semibold">{s.name}</h3>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
@@ -1693,13 +1704,23 @@ function ChainStep({
   );
 }
 
-function Avatar({ name }: { name: string }) {
+/** Round avatar slot on the supplier card. Renders the vendor's uploaded
+ *  hero image when one exists (P2.D image upload), falling back to a
+ *  monogram on unclaimed / curated rows the vendor hasn't filled. The slot
+ *  size matches the listing card's leading column on every viewport so the
+ *  layout doesn't shift between cards with and without an uploaded image. */
+function Avatar({ name, heroUrl }: { name: string; heroUrl?: string | null }) {
   const initial = name.charAt(0).toUpperCase();
-  return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100">
-      {initial}
-    </div>
-  );
+  const base =
+    "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100";
+  if (heroUrl) {
+    return (
+      <div className={base}>
+        <img src={heroUrl} alt={name} className="h-full w-full object-cover" loading="lazy" />
+      </div>
+    );
+  }
+  return <div className={base}>{initial}</div>;
 }
 
 /** Price-band scale: just N dollar signs ($ … $$$$$). No greyed

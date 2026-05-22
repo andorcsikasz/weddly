@@ -338,6 +338,18 @@ export interface LocaleMessages {
     label_price_band_help: string;
     label_capacity_min: string;
     label_capacity_max: string;
+    section_hero: string;
+    hero_intro: string;
+    hero_upload: string;
+    hero_replace: string;
+    hero_delete: string;
+    hero_uploading: string;
+    hero_upload_success: string;
+    hero_upload_failed: string;
+    hero_delete_success: string;
+    hero_delete_failed: string;
+    hero_placeholder_alt: string;
+    hero_current_alt: string;
     save: string;
     saving: string;
     save_success: string;
@@ -958,6 +970,9 @@ export interface LocaleMessages {
     section_contact_sub: string;
     section_portfolio_title: string;
     section_portfolio_sub: string;
+    /** Small "opcionális" / "optional" suffix shown after a section title
+     *  to communicate that the whole section is optional. */
+    section_optional_label: string;
     /** Portfolio submission block. The per-category help text is keyed
      *  through `portfolio_hint_<group>` (six groups, mirrors SUPPLIER_GROUPS)
      *  so the form swaps the helper text + placeholder as the category

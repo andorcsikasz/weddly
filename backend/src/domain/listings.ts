@@ -52,6 +52,7 @@ export interface ListingRow {
   submitter_type: string | null;
   status: string;
   content_hash: string | null;
+  hero_image_url: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -106,6 +107,7 @@ export function toListing(row: ListingRow): Listing {
     lng: row.lng,
     submitter_type: toListingSubmitterType(row.submitter_type),
     status: toListingStatus(row.status),
+    hero_image_url: row.hero_image_url,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
