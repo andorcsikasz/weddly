@@ -264,9 +264,17 @@ export default function GuestPageEditorPage() {
        *  shut and just compare the live preview below to what guests see.
        *  Open by default — the editor is the primary surface on this page. */}
       <details open className="group">
-        <summary className="cursor-pointer list-none select-none py-1 text-sm font-medium text-ink-700 transition hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50 [&::-webkit-details-marker]:hidden">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+        {/* Inline-block summary so the click target is the chevron + label,
+         *  not the full row width. Reduces accidental collapse from a stray
+         *  click between sections. Chevron is a lucide icon for consistent
+         *  rendering across OSes (no Unicode font-stack lottery). */}
+        <summary className="list-none [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex cursor-pointer select-none items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium text-ink-700 transition hover:text-ink-900 hover:bg-paper-100 dark:text-umber-200 dark:hover:text-paper-50 dark:hover:bg-umber-800">
+            <ChevronRight
+              size={14}
+              aria-hidden
+              className="transition-transform group-open:rotate-90"
+            />
             {t("guest_page_editor.editor_collapse_summary")}
           </span>
         </summary>
@@ -392,11 +400,11 @@ export default function GuestPageEditorPage() {
                           count: memberCount,
                         })}
                       </span>
-                      <code className="shrink-0 font-mono text-xs uppercase tracking-[0.15em] text-ink-600 dark:text-umber-200">
+                      <code className="hidden truncate font-mono text-xs uppercase tracking-[0.15em] text-ink-600 sm:inline dark:text-umber-200">
                         {hh.code}
                       </code>
                     </div>
-                    <div className="flex shrink-0 gap-1">
+                    <div className="flex shrink-0 gap-2">
                       <button
                         type="button"
                         className="btn-outline btn-sm"
@@ -412,24 +420,24 @@ export default function GuestPageEditorPage() {
                         type="button"
                         className="btn-outline btn-sm"
                         onClick={() => onShareHouseholdWhatsapp(hh)}
-                        title={t("guest_page_editor.share_per_household_whatsapp")}
                         aria-label={t("guest_page_editor.share_per_household_whatsapp_aria", {
                           label: hh.label,
                         })}
                       >
                         <MessageCircle size={14} aria-hidden />
+                        {t("guest_page_editor.share_per_household_whatsapp")}
                       </button>
                       <button
                         type="button"
                         className="btn-outline btn-sm"
                         onClick={() => onRotateHouseholdCode(hh)}
                         disabled={rotatingId === hh.id}
-                        title={t("guest_page_editor.share_per_household_rotate")}
                         aria-label={t("guest_page_editor.share_per_household_rotate_aria", {
                           label: hh.label,
                         })}
                       >
                         <RefreshCcw size={14} aria-hidden />
+                        {t("guest_page_editor.share_per_household_rotate")}
                       </button>
                     </div>
                   </li>
@@ -439,7 +447,11 @@ export default function GuestPageEditorPage() {
           </details>
         )}
 
-        {slug && households.length === 0 && !loading && (
+        {slug && loading && households.length === 0 && (
+          <p className="mt-3 text-sm text-ink-400 dark:text-umber-300">{t("common.loading")}</p>
+        )}
+
+        {slug && !loading && households.length === 0 && (
           <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
             {t("guest_page_editor.share_per_household_empty")}
           </p>
@@ -614,9 +626,11 @@ export default function GuestPageEditorPage() {
 
       {/* ── Divider into guest-view preview ─────────────────────────────
        *  Visual break so it's obvious where the editor ends and the
-       *  read-only "this is what your guest sees" view begins. */}
+       *  read-only "this is what your guest sees" view begins. The divider
+       *  is the only boundary signal now — the preview heading below was
+       *  redundant with this label and got removed in the polish pass. */}
       <div
-        className="my-8 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-400 dark:text-umber-300"
+        className="my-8 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200"
         role="separator"
         aria-label={t("guest_page_editor.preview_divider_label")}
       >
@@ -627,15 +641,9 @@ export default function GuestPageEditorPage() {
 
       {/* ── Live preview ────────────────────────────────────────────── */}
       <section>
-        <div className="mb-3 flex items-start gap-2">
-          <Info size={16} className="mt-0.5 text-ink-500 dark:text-umber-300" aria-hidden />
-          <div>
-            <h2 className="text-lg">{t("guest_page_editor.preview_title")}</h2>
-            <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-              {t("guest_page_editor.preview_subtitle")}
-            </p>
-          </div>
-        </div>
+        <p className="mb-3 text-sm text-ink-600 dark:text-umber-200">
+          {t("guest_page_editor.preview_subtitle")}
+        </p>
         {loading ? (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
         ) : preview ? (
