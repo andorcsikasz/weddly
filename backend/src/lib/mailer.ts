@@ -16,13 +16,31 @@ export interface SendEmailInput {
   headers?: Record<string, string>;
 }
 
+// Headers attached to every outgoing message:
+//   - `Auto-Submitted: auto-generated` — RFC 3834. Tells vacation auto-
+//     responders, ticket systems, and Exchange "do not auto-reply to this".
+//     Without it, every verification email risks bouncing back via OOO replies.
+//   - `X-Auto-Response-Suppress: All` — Outlook/Exchange equivalent. Belt-and-
+//     braces; some Microsoft tenants honour this and ignore Auto-Submitted.
+// Per-kind headers (e.g. List-Unsubscribe for lifecycle mail) override these
+// only by adding entries — never by removing them.
+const DEFAULT_HEADERS: Record<string, string> = {
+  "Auto-Submitted": "auto-generated",
+  "X-Auto-Response-Suppress": "All",
+};
+
 export async function sendEmail(input: SendEmailInput): Promise<void> {
+  const mergedHeaders: Record<string, string> = {
+    ...DEFAULT_HEADERS,
+    ...(input.headers ?? {}),
+  };
+
   if (!CONFIG.resendApiKey) {
     log.info("mailer.dev_print", {
       to: input.to,
       subject: input.subject,
       text: input.text,
-      headers: input.headers,
+      headers: mergedHeaders,
     });
     return;
   }
@@ -33,10 +51,8 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     subject: input.subject,
     html: input.html,
     text: input.text,
+    headers: mergedHeaders,
   };
-  if (input.headers && Object.keys(input.headers).length > 0) {
-    payload.headers = input.headers;
-  }
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
