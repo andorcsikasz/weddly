@@ -809,6 +809,13 @@ export interface LocaleMessages {
     mockup_date: string;
     mockup_live_budget_label: string;
     mockup_total_spend: string;
+    /** Pre-formatted amounts inside the budget SVG mockup. HU shows the
+     *  amount in Ft, EN in € so an English-speaking visitor never sees
+     *  a Hungarian-forint amount on the landing — that's the "mentally
+     *  walks away" friction point a strategic agent flagged. */
+    mockup_budget_spent: string;
+    mockup_budget_target: string;
+    mockup_budget_total_compact: string;
     mockup_yes_count: string;
     mockup_pending_count: string;
     mockup_seating_summary: string;

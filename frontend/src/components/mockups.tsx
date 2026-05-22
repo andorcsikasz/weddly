@@ -172,12 +172,12 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
       <g className="font-serif text-ink-900">
         <text x="184" y="140" fontSize="22" fill="currentColor">
-          2,8M
+          {t("landing.mockup_budget_spent")}
         </text>
       </g>
       <g className="font-sans text-ink-500">
         <text x="252" y="140" fontSize="14" fill="currentColor">
-          / 3,5M Ft
+          {t("landing.mockup_budget_target")}
         </text>
       </g>
       <g className="text-paper-200">
@@ -499,7 +499,7 @@ export function BudgetMockup({ className }: Common) {
       </g>
       <g className="font-serif text-ink-900">
         <text x="456" y="348" fontSize="16" fill="currentColor" textAnchor="end">
-          2,8M / 3,5M Ft
+          {t("landing.mockup_budget_total_compact")}
         </text>
       </g>
     </svg>
