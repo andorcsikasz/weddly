@@ -341,6 +341,16 @@ describe("P2.C vendor claim — happy path", () => {
     expect(finalClaim?.status).toBe("verified");
     expect(finalClaim?.verified_at).not.toBeNull();
     expect(finalClaim?.vendor_account_id).toBe(listing!.vendor_account_id);
+
+    // Success confirmation lands on the new vendor's address with the
+    // listing name in the subject — proof-of-account closing the claim loop.
+    const approvedMail = db
+      .prepare(
+        "SELECT to_email, subject FROM email_log WHERE kind = 'vendor_claim_approved' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string; subject: string } | undefined;
+    expect(approvedMail?.to_email).toBe(contactEmail);
+    expect(approvedMail?.subject).toContain("Claim Photo Studio");
   });
 });
 

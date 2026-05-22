@@ -297,6 +297,21 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   const userRow = getUserById(newUserId);
   if (!userRow) throw new HttpError(500, "User vanished after claim completion");
   const session: AuthSession = { token: sessionToken, user: toUser(userRow as UserRow) };
+
+  // Close the loop — the vendor just set their password and clicked through;
+  // without this confirmation they'd land on /vendor with no proof anywhere
+  // that an account was created on their behalf. Fire-and-forget.
+  void sendKind(
+    "vendor_claim_approved",
+    {
+      listingName: listing.name,
+      managerUrl: `${CONFIG.frontendBaseUrl}/vendor`,
+    },
+    {
+      user: { id: newUserId, email: userRow.email, full_name: userRow.full_name ?? "" },
+    },
+  );
+
   return json(session, { status: 201 });
 }
 

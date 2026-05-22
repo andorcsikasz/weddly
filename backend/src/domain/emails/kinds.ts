@@ -28,7 +28,8 @@ export type EmailKind =
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
   | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
-  | "vendor_claim_verify"; // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
+  | "vendor_claim_verify" // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
+  | "vendor_claim_approved"; // sent to the new vendor account once the claim flow completes
 
 export type EmailCategory = "transactional" | "lifecycle" | "outreach";
 
@@ -87,4 +88,8 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // listing id, and the listing's contact_email gets the mail — the recipient
   // didn't necessarily start the flow themselves.
   vendor_claim_verify: "outreach",
+  // Transactional: the vendor just completed the claim form (set their own
+  // password, clicked through) — this is the success confirmation closing
+  // that loop. They now have a Weddly vendor account.
+  vendor_claim_approved: "transactional",
 };

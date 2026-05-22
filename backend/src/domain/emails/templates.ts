@@ -199,6 +199,13 @@ export interface VendorClaimVerifyPayload {
   verifyUrl: string;
 }
 
+export interface VendorClaimApprovedPayload {
+  /** Listing name to acknowledge ("Your listing 'Bloom Studio' is live"). */
+  listingName: string;
+  /** Where the vendor manages their listing from now on — typically /vendor. */
+  managerUrl: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -226,6 +233,7 @@ export type KindPayload = {
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
+  vendor_claim_approved: VendorClaimApprovedPayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -947,6 +955,33 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Claim your listing",
       footnote: "Link expires in 7 days.",
+    },
+  }),
+  // Success confirmation after the vendor finishes the claim flow. Before
+  // this, the verify click landed the vendor on a "set your password" page
+  // and… nothing. This closes the loop with a Weddly-branded "you're in"
+  // mail that doubles as proof-of-account for their records.
+  vendor_claim_approved: (p, ctx) => ({
+    subject: `A listinged a tiéd / ${p.listingName} is yours`,
+    ctaUrl: p.managerUrl,
+    hu: {
+      preheader: `${p.listingName} mostantól a tiéd a Weddly-n.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Sikerült: ${p.listingName} mostantól a Weddly vendor fiókodhoz tartozik.`,
+        "Innentől te szerkesztheted az adatokat — leírás, árak, képek, elérhetőség. A párok ugyanazt látják mint te a publikus katalógusban.",
+        "Ha kérdés van vagy bármi nem stimmel, válaszolj erre az emailre — emberek olvassák.",
+      ],
+      cta: "Listing kezelése",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `Done — ${p.listingName} is now linked to your Weddly vendor account.`,
+        "From here on you can edit the listing yourself — description, pricing, photos, contact details. Couples browsing the directory will see exactly what you publish.",
+        "Questions or anything off? Reply to this email — a human reads it.",
+      ],
+      cta: "Manage your listing",
     },
   }),
 };
