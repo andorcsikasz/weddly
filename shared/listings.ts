@@ -85,3 +85,33 @@ export interface VendorAccount {
   created_at: number;
   updated_at: number;
 }
+
+/** Fields a vendor can self-serve edit on their claimed listing (P2.D).
+ *  Every field is optional so the client can PATCH partials — only present
+ *  keys get applied; `null` clears the value, undefined leaves it alone.
+ *
+ *  Deliberately excluded: `name` (brand-name changes go through admin review
+ *  to stop hostile renames), `category` (taxonomy is admin-curated), `status`
+ *  (admins toggle hidden/active), `lat`/`lng` (server-derived from address
+ *  once a geocode worker lands), and identity fields (`id`, `source`,
+ *  `vendor_account_id`, timestamps). */
+export interface VendorListingEditInput {
+  city?: string;
+  address?: string | null;
+  website?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  blurb_hu?: string | null;
+  blurb_en?: string | null;
+  price_band?: 1 | 2 | 3 | 4 | 5 | null;
+  capacity_min?: number | null;
+  capacity_max?: number | null;
+}
+
+/** Response shape for the GET + PATCH vendor self-serve listing endpoints —
+ *  the listing the caller owns, plus a denormalised vendor-account snapshot
+ *  so the editor has every public-facing field on hand in one round trip. */
+export interface VendorListingView {
+  listing: Listing;
+  account: VendorAccount;
+}

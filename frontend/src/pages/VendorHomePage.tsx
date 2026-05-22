@@ -1,28 +1,112 @@
-// Minimum vendor landing page — what a freshly-claimed vendor lands on after
-// the verify-and-complete flow. Phase 2.5+ will replace this with a real
-// dashboard (listing editor, lead inbox, analytics). For now, the page
-// confirms the claim worked and surfaces the next steps in plain copy.
+// Vendor self-serve listing editor (P2.D). The single screen a freshly-
+// claimed vendor lands on; they edit the public fields couples see. The
+// claim flow leaves them logged in here, so the GET hydrates the form from
+// the listing they just took over.
 //
-// Auth requirements: this page is for `role === 'vendor'` users only.
-// Non-vendor authenticated users get bounced to /app; anon users get bounced
-// to /login. The redirect avoids ambient onboarding flow side-effects that
-// would otherwise fire for `couple_id === null` users.
+// Auth: `role === 'vendor'` only. Other roles get bounced to `/app`; anon
+// users to `/login`. Backend enforces the same gate on every endpoint.
+//
+// Editable fields mirror the backend's `VendorListingEditInput`: marketing
+// copy (blurb_hu / blurb_en), public contact (email, phone, website),
+// location (city, address), pricing (price_band), capacity. Name +
+// category are intentionally read-only — admin moderation surfaces those.
 
-import { useEffect } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
 import { Shell } from "../components/Shell";
+import { TextField } from "../components/ui/TextField";
+import { useToast } from "../components/ui/ToastProvider";
 import { useAuth } from "../lib/auth";
+import { vendorListingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
+/** Form state mirrors the backend's editable fields with every value coerced
+ *  to string for the controlled inputs — empty string maps back to `null`
+ *  at PATCH time, matching the server's "trim → null" normalisation. */
+interface FormState {
+  blurb_hu: string;
+  blurb_en: string;
+  city: string;
+  address: string;
+  website: string;
+  contact_email: string;
+  contact_phone: string;
+  price_band: string;
+  capacity_min: string;
+  capacity_max: string;
+}
+
+function viewToForm(view: VendorListingView): FormState {
+  const l = view.listing;
+  return {
+    blurb_hu: l.blurb_hu ?? "",
+    blurb_en: l.blurb_en ?? "",
+    city: l.city,
+    address: l.address ?? "",
+    website: l.website ?? "",
+    contact_email: l.contact_email ?? "",
+    contact_phone: l.contact_phone ?? "",
+    price_band: l.price_band == null ? "" : String(l.price_band),
+    capacity_min: l.capacity_min == null ? "" : String(l.capacity_min),
+    capacity_max: l.capacity_max == null ? "" : String(l.capacity_max),
+  };
+}
+
+/** Coerce a controlled-form string back to the wire shape: empty → null,
+ *  number columns → Number(). Returns the diff vs. the freshly-loaded view
+ *  so the PATCH only carries fields the user actually touched — keeps
+ *  audit-log noise low and the network payload tight. */
+function formToPatch(form: FormState, baseline: VendorListingView): VendorListingEditInput {
+  const patch: VendorListingEditInput = {};
+  const baseStr = viewToForm(baseline);
+  const setNullable = (key: keyof FormState & keyof VendorListingEditInput): void => {
+    if (form[key] === baseStr[key]) return;
+    const trimmed = form[key].trim();
+    (patch as Record<string, unknown>)[key] = trimmed.length === 0 ? null : trimmed;
+  };
+  if (form.city !== baseStr.city) patch.city = form.city.trim();
+  setNullable("address");
+  setNullable("website");
+  setNullable("contact_email");
+  setNullable("contact_phone");
+  setNullable("blurb_hu");
+  setNullable("blurb_en");
+  if (form.price_band !== baseStr.price_band) {
+    const n = Number(form.price_band);
+    patch.price_band =
+      form.price_band.trim().length === 0 || !Number.isFinite(n)
+        ? null
+        : (Math.max(1, Math.min(5, Math.round(n))) as 1 | 2 | 3 | 4 | 5);
+  }
+  if (form.capacity_min !== baseStr.capacity_min) {
+    const n = Number(form.capacity_min);
+    patch.capacity_min =
+      form.capacity_min.trim().length === 0 || !Number.isFinite(n) ? null : Math.round(n);
+  }
+  if (form.capacity_max !== baseStr.capacity_max) {
+    const n = Number(form.capacity_max);
+    patch.capacity_max =
+      form.capacity_max.trim().length === 0 || !Number.isFinite(n) ? null : Math.round(n);
+  }
+  return patch;
+}
+
 export default function VendorHomePage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t } = useT();
+  const toast = useToast();
   const navigate = useNavigate();
   useDocumentMeta("vendor_home.page_title", "vendor_home.page_body");
 
+  const [view, setView] = useState<VendorListingView | null>(null);
+  const [form, setForm] = useState<FormState | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
-    if (loading) return;
+    if (authLoading) return;
     if (!user) {
       navigate("/login", { replace: true });
       return;
@@ -30,27 +114,194 @@ export default function VendorHomePage() {
     if (user.role !== "vendor") {
       navigate("/app", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, navigate]);
 
-  if (loading || !user || user.role !== "vendor") {
-    return null;
-  }
+  const loadView = useCallback(async () => {
+    try {
+      const next = await vendorListingApi.me();
+      setView(next);
+      setForm(viewToForm(next));
+      setLoadError(null);
+    } catch (err) {
+      const status = (err as { status?: number } | undefined)?.status;
+      if (status === 404) {
+        setLoadError(t("vendor_home.error_no_account"));
+      } else {
+        setLoadError(t("vendor_home.error_load"));
+      }
+    }
+  }, [t]);
+
+  useEffect(() => {
+    if (authLoading || !user || user.role !== "vendor") return;
+    void loadView();
+  }, [authLoading, user, loadView]);
+
+  const onChange = (key: keyof FormState) => (e: { target: { value: string } }) => {
+    setForm((prev) => (prev ? { ...prev, [key]: e.target.value } : prev));
+  };
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!form || !view || saving) return;
+    setSaving(true);
+    try {
+      const patch = formToPatch(form, view);
+      const next = await vendorListingApi.patch(patch);
+      setView(next);
+      setForm(viewToForm(next));
+      toast.success(t("vendor_home.save_success"));
+    } catch {
+      toast.error(t("vendor_home.save_failed"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (authLoading || !user || user.role !== "vendor") return null;
 
   return (
     <Shell>
-      <div className="mx-auto max-w-2xl">
-        <div className="card">
-          <h1 className="text-2xl">{t("vendor_home.welcome", { name: user.full_name })}</h1>
-          <p className="mt-4 text-sm text-ink-700 dark:text-paper-100">{t("vendor_home.intro")}</p>
-          <p className="mt-4 text-sm text-ink-600 dark:text-umber-200">
-            {t("vendor_home.coming_soon")}
-          </p>
-          <p className="mt-6">
-            <Link to="/vendors" className="btn-ghost">
-              {t("vendor_home.back_to_directory")}
-            </Link>
-          </p>
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-4">
+          <h1 className="font-serif text-3xl">
+            {t("vendor_home.welcome", { name: user.full_name })}
+          </h1>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("vendor_home.intro")}</p>
         </div>
+
+        {loadError && (
+          <div className="card mb-4" role="alert">
+            <p className="text-sm text-blush-700 dark:text-blush-300">{loadError}</p>
+          </div>
+        )}
+
+        {form && view && (
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="card">
+              <h2 className="text-lg font-semibold">{view.listing.name}</h2>
+              <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                {t("vendor_home.name_locked")}
+              </p>
+            </div>
+
+            <fieldset className="card space-y-3" disabled={saving}>
+              <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
+              <label className="block" htmlFor="vendor-blurb-hu">
+                <span className="field-label">{t("vendor_home.label_blurb_hu")}</span>
+                <textarea
+                  id="vendor-blurb-hu"
+                  className="input"
+                  rows={4}
+                  maxLength={2000}
+                  value={form.blurb_hu}
+                  onChange={onChange("blurb_hu")}
+                />
+              </label>
+              <label className="block" htmlFor="vendor-blurb-en">
+                <span className="field-label">{t("vendor_home.label_blurb_en")}</span>
+                <textarea
+                  id="vendor-blurb-en"
+                  className="input"
+                  rows={4}
+                  maxLength={2000}
+                  value={form.blurb_en}
+                  onChange={onChange("blurb_en")}
+                />
+              </label>
+              <p className="text-xs text-ink-500 dark:text-umber-300">
+                {t("vendor_home.label_blurb_hint")}
+              </p>
+            </fieldset>
+
+            <fieldset className="card space-y-3" disabled={saving}>
+              <legend className="font-semibold">{t("vendor_home.section_contact")}</legend>
+              <TextField
+                id="vendor-city"
+                label={t("vendor_home.label_city")}
+                value={form.city}
+                onChange={onChange("city")}
+                maxLength={80}
+                required
+              />
+              <TextField
+                id="vendor-address"
+                label={t("vendor_home.label_address")}
+                value={form.address}
+                onChange={onChange("address")}
+                maxLength={240}
+              />
+              <TextField
+                id="vendor-website"
+                label={t("vendor_home.label_website")}
+                value={form.website}
+                onChange={onChange("website")}
+                type="url"
+                maxLength={240}
+              />
+              <TextField
+                id="vendor-contact-email"
+                label={t("vendor_home.label_contact_email")}
+                helperText={t("vendor_home.label_contact_email_hint")}
+                value={form.contact_email}
+                onChange={onChange("contact_email")}
+                type="email"
+                maxLength={120}
+              />
+              <TextField
+                id="vendor-contact-phone"
+                label={t("vendor_home.label_contact_phone")}
+                value={form.contact_phone}
+                onChange={onChange("contact_phone")}
+                type="tel"
+                maxLength={40}
+              />
+            </fieldset>
+
+            <fieldset className="card space-y-3" disabled={saving}>
+              <legend className="font-semibold">{t("vendor_home.section_pricing")}</legend>
+              <TextField
+                id="vendor-price-band"
+                label={t("vendor_home.label_price_band")}
+                helperText={t("vendor_home.label_price_band_help")}
+                value={form.price_band}
+                onChange={onChange("price_band")}
+                type="number"
+                min={1}
+                max={5}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <TextField
+                  id="vendor-capacity-min"
+                  label={t("vendor_home.label_capacity_min")}
+                  value={form.capacity_min}
+                  onChange={onChange("capacity_min")}
+                  type="number"
+                  min={0}
+                  max={5000}
+                />
+                <TextField
+                  id="vendor-capacity-max"
+                  label={t("vendor_home.label_capacity_max")}
+                  value={form.capacity_max}
+                  onChange={onChange("capacity_max")}
+                  type="number"
+                  min={0}
+                  max={5000}
+                />
+              </div>
+            </fieldset>
+
+            <div className="flex items-center justify-between gap-3 pt-2">
+              <Link to="/vendors" className="btn-ghost">
+                {t("vendor_home.back_to_directory")}
+              </Link>
+              <button type="submit" className="btn-accent" disabled={saving}>
+                {saving ? t("vendor_home.saving") : t("vendor_home.save")}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </Shell>
   );

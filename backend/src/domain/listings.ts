@@ -333,6 +333,63 @@ export function getListingById(id: string): Listing | null {
   return row ? toListing(row) : null;
 }
 
+/** Pull the (at most one in v1) listing owned by a vendor account. Returns
+ *  the most-recently-updated row when an account owns multiple — the schema
+ *  permits N:1 but P2.D's UI presents a single listing. */
+export function getListingByVendorAccountId(vendorAccountId: number): Listing | null {
+  const row = db
+    .prepare("SELECT * FROM listings WHERE vendor_account_id = ? ORDER BY updated_at DESC LIMIT 1")
+    .get(vendorAccountId) as ListingRow | undefined;
+  return row ? toListing(row) : null;
+}
+
+/** Patch the editable fields on a listing. Caller is responsible for the
+ *  authorisation check (P2.D: vendor must own the listing via
+ *  `vendor_account_id`); this helper just runs the UPDATE. Returns the
+ *  freshly-read row so the caller can ship the updated view in one round
+ *  trip. Skips columns left undefined; explicit `null` clears the column. */
+export interface ListingPatch {
+  city?: string;
+  address?: string | null;
+  website?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  blurb_hu?: string | null;
+  blurb_en?: string | null;
+  price_band?: 1 | 2 | 3 | 4 | 5 | null;
+  capacity_min?: number | null;
+  capacity_max?: number | null;
+}
+
+export function patchListing(id: string, patch: ListingPatch): Listing | null {
+  const setClauses: string[] = [];
+  const params: Array<string | number | null> = [];
+  const push = (col: string, val: string | number | null | undefined) => {
+    if (val === undefined) return;
+    setClauses.push(`${col} = ?`);
+    params.push(val);
+  };
+  push("city", patch.city);
+  push("address", patch.address);
+  push("website", patch.website);
+  push("contact_email", patch.contact_email);
+  push("contact_phone", patch.contact_phone);
+  push("blurb_hu", patch.blurb_hu);
+  push("blurb_en", patch.blurb_en);
+  push("price_band", patch.price_band);
+  push("capacity_min", patch.capacity_min);
+  push("capacity_max", patch.capacity_max);
+  if (setClauses.length === 0) {
+    // No-op patch — return the row unchanged.
+    return getListingById(id);
+  }
+  setClauses.push("updated_at = ?");
+  params.push(now());
+  params.push(id);
+  db.prepare(`UPDATE listings SET ${setClauses.join(", ")} WHERE id = ?`).run(...params);
+  return getListingById(id);
+}
+
 export function listListingsByCategory(category: SupplierCategory | null): Listing[] {
   const rows = (
     category

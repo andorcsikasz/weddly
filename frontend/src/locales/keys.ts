@@ -229,6 +229,39 @@ export interface LocaleMessages {
     rsvp_cta: string;
     footer_built_with: string;
   };
+  /** Couple-facing editor for the public wedding-website at /w/:slug — flips
+   *  the publish toggle and edits venue name + hero image. Reachable at
+   *  /app/wedding-site from the sidebar's "For guests" group. */
+  wedding_site_editor: {
+    page_title: string;
+    intro: string;
+    /** Helper line shown above the public URL — explains what the link is for. */
+    url_label: string;
+    url_copied: string;
+    url_open: string;
+    url_no_slug: string;
+    /** Publish toggle card. */
+    publish_title: string;
+    publish_body_off: string;
+    publish_body_on: string;
+    publish_label_off: string;
+    publish_label_on: string;
+    /** Venue name + cover-image inputs. `cover_image_hint` explains the
+     *  http(s) requirement so a paste of a `data:` URL doesn't silently
+     *  fail at the boundary. */
+    venue_label: string;
+    venue_placeholder: string;
+    venue_hint: string;
+    cover_image_label: string;
+    cover_image_placeholder: string;
+    cover_image_hint: string;
+    cover_image_invalid: string;
+    /** Save state — single shared button at the foot of the form. */
+    save_button: string;
+    save_saving: string;
+    save_success: string;
+    save_error_generic: string;
+  };
   /** Public "confirm your community-supplier listing" page — reached from the
    *  email sent to the listing's contact_email after submission. */
   verify_supplier: {
@@ -281,16 +314,38 @@ export interface LocaleMessages {
     form_err_already_claimed: string;
     success_toast: string;
   };
-  /** Stub vendor landing page after a successful claim. Phase 2.5+ will
-   *  replace with a real dashboard. */
+  /** Vendor self-serve listing editor (P2.D). The single screen a vendor has
+   *  after the claim flow — edits the public listing fields couples see. */
   vendor_home: {
     page_title: string;
     page_body: string;
     /** Receives `{name}` — vendor user's full name. */
     welcome: string;
     intro: string;
-    coming_soon: string;
+    section_marketing: string;
+    section_contact: string;
+    section_pricing: string;
+    label_blurb_hu: string;
+    label_blurb_en: string;
+    label_blurb_hint: string;
+    label_city: string;
+    label_address: string;
+    label_website: string;
+    label_contact_email: string;
+    label_contact_email_hint: string;
+    label_contact_phone: string;
+    label_price_band: string;
+    label_price_band_help: string;
+    label_capacity_min: string;
+    label_capacity_max: string;
+    save: string;
+    saving: string;
+    save_success: string;
+    save_failed: string;
+    name_locked: string;
     back_to_directory: string;
+    error_load: string;
+    error_no_account: string;
   };
   /** Page reached from the email_change_verify confirm link. */
   change_email: {
@@ -953,6 +1008,10 @@ export interface LocaleMessages {
     print: string;
     /** Read-only "for guests" surface — the couple-side preview that mirrors the public /g/:slug/:code page. */
     guest_portal: string;
+    /** Editor for the public wedding-website at /w/:slug — toggle publish,
+     *  venue name and hero image. Sits next to guest_portal so both
+     *  guest-facing surfaces cluster in the sidebar's "for guests" rail. */
+    wedding_site: string;
     /** Sidebar group headers that bundle the rail into the four phases
      *  of the wedding journey. `guest` is the read-only portal preview;
      *  the other three carry the couple from decisions → wedding-day ops

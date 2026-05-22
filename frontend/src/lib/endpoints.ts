@@ -87,6 +87,7 @@ import type {
   UpdateSupplierGroupInput,
 } from "@shared/supplier_taxonomy";
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
+import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
 import { apiFetch, getToken } from "./api";
 
 /** Public landing-page "try the demo" endpoint. Spins up a brand-new
@@ -253,6 +254,12 @@ export const coupleApi = {
     currency?: Currency;
     rsvp_offers_accommodation?: boolean;
     rsvp_collects_meal?: boolean;
+    /** Publish toggle for the public wedding website at `/w/:slug`. */
+    is_public?: boolean;
+    /** Free-text venue name shown on the public wedding site. */
+    venue_name?: string | null;
+    /** http(s) URL the couple pastes for the wedding site's hero image. */
+    cover_image_url?: string | null;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
@@ -823,6 +830,14 @@ export const vendorClaimApi = {
     ),
   complete: (body: CompleteClaimInput) =>
     apiFetch<AuthSession>("POST", "/api/vendor/claim/complete", body),
+};
+
+/** Vendor self-serve listing editor — P2.D. The vendor lands on /vendor after
+ *  the claim flow finishes; this is the only screen they have today. */
+export const vendorListingApi = {
+  me: () => apiFetch<VendorListingView>("GET", "/api/vendor/listing/me"),
+  patch: (body: VendorListingEditInput) =>
+    apiFetch<VendorListingView>("PATCH", "/api/vendor/listing/me", body),
 };
 
 export const vendorWaitlistApi = {

@@ -46,6 +46,7 @@ import { registerFeedbackRoutes } from "./routes/feedback";
 import { registerGrowthRoutes } from "./routes/growth";
 import { registerGuestRoutes } from "./routes/guests";
 import { registerVendorClaimRoutes } from "./routes/vendor_claim";
+import { registerVendorListingRoutes } from "./routes/vendor_listing";
 import { registerHealthRoutes } from "./routes/health";
 import { registerHoneymoonRoutes } from "./routes/honeymoon";
 import { registerHouseholdRoutes } from "./routes/households";
@@ -120,6 +121,7 @@ registerUserCoupleRoutes(router);
 registerFeedbackRoutes(router);
 registerGrowthRoutes(router);
 registerVendorClaimRoutes(router);
+registerVendorListingRoutes(router);
 registerSeoRoutes(router);
 registerDemoRoutes(router);
 
