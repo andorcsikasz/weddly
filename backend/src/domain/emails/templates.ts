@@ -852,27 +852,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
   community_supplier_verify: (p) => ({
-    subject: "Weddly: erősítsd meg a hirdetésed / confirm your listing",
+    subject: "Weddly: vedd át a hirdetésed / claim your listing",
     ctaUrl: p.verifyUrl,
     hu: {
       preheader: `${p.supplierName} hozzá lett adva a Weddly katalógushoz.`,
       greeting: "Szia!",
       paragraphs: [
         `Valaki a Weddly-n hozzáadta a vállalkozásod (${p.supplierName}) a közösségi szolgáltató-katalógushoz.`,
-        "Ha tényleg szeretnéd, hogy a párok lássák, erősítsd meg az alábbi linkkel — addig nem jelenik meg.",
+        "Ha szeretnéd, hogy a párok lássák, vedd át a hirdetést az alábbi linkkel — addig nem jelenik meg.",
         "Ha nem te küldted és nem szeretnéd, hogy itt szerepelj, hagyd figyelmen kívül ezt a levelet. Kattintás nélkül a hirdetés nem kerül publikálásra.",
       ],
-      cta: "Hirdetés megerősítése",
+      // "Átvétele" instead of "megerősítése" — the recipient never asked for
+      // anything to confirm. "Take ownership" / "Claim" is the Yelp/GBP-
+      // standard verb for this exact directory-onboarding flow; reads as
+      // agency-giving rather than "click here to commit to something you
+      // didn't sign up for".
+      cta: "Hirdetés átvétele",
       footnote: "A link 7 napig érvényes.",
     },
     en: {
       greeting: "Hi there,",
       paragraphs: [
         `Someone added your business (${p.supplierName}) to the community supplier directory on Weddly.`,
-        "If you'd like couples to see the listing, confirm via the button below — until then it's hidden from the public.",
+        "If you'd like couples to see the listing, claim it via the button below — until then it stays hidden from the public.",
         "If this wasn't you and you don't want a listing, just ignore this email — the listing won't publish without a click.",
       ],
-      cta: "Confirm listing",
+      cta: "Claim your listing",
       footnote: "Link expires in 7 days.",
     },
   }),
@@ -881,14 +886,14 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // didn't necessarily start the flow themselves. The footer copy reflects
   // that ("no Weddly account, ignore = nothing happens").
   vendor_claim_verify: (p) => ({
-    subject: "Weddly: igényeld a listing tulajdonjogát / claim your listing",
+    subject: "Weddly: vedd át a listingedet / claim your listing",
     ctaUrl: p.verifyUrl,
     hu: {
-      preheader: `${p.listingName} tulajdonjogát igényelnéd?`,
+      preheader: `${p.listingName} listing átvétele.`,
       greeting: "Szia!",
       paragraphs: [
-        `Valaki a Weddly-n igényelte a(z) ${p.listingName} listing tulajdonjogát.`,
-        "Ha tényleg te vagy, kattints az alábbi linkre — ezzel jelszót állíthatsz be, és innentől te szerkesztheted a saját adataidat a katalógusban.",
+        `Valaki a Weddly-n szeretné átvenni a(z) ${p.listingName} listing tulajdonjogát.`,
+        "Ha te vagy, kattints az alábbi linkre — ezzel jelszót állíthatsz be, és innentől te szerkesztheted a saját adataidat a katalógusban.",
         "Ha nem te kezdeményezted, hagyd figyelmen kívül ezt az emailt — kattintás nélkül semmi sem történik.",
       ],
       cta: "Listing átvétele",
@@ -897,11 +902,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: "Hi there,",
       paragraphs: [
-        `Someone requested ownership of the ${p.listingName} listing on Weddly.`,
-        "If that was you, click the link below — you'll set a password and from then on manage the listing yourself in the directory.",
+        `Someone wants to claim the ${p.listingName} listing on Weddly.`,
+        "If that's you, click the link below — you'll set a password and from then on manage the listing yourself in the directory.",
         "If you didn't request this, just ignore the email — nothing happens without clicking the link.",
       ],
-      cta: "Claim the listing",
+      cta: "Claim your listing",
       footnote: "Link expires in 7 days.",
     },
   }),
