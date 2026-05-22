@@ -21,8 +21,9 @@ import {
   MessageCircle,
   RefreshCcw,
   Unlock,
+  Upload,
 } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { GuestPortalView } from "../components/GuestPortalView";
 import { useConfirm, useToast } from "../components/ui";
@@ -54,6 +55,13 @@ export default function GuestPageEditorPage() {
   // code, and we patch the local row rather than round-tripping the whole list.
   const [households, setHouseholds] = useState<Household[]>([]);
   const [rotatingId, setRotatingId] = useState<number | null>(null);
+  // Cover-image upload — the server persists the file and the new URL into
+  // the couples row in the same transaction, so the upload bypasses the
+  // dirty/save flow. We track only the in-flight bit + hidden file input
+  // ref; on success we patch the local `couple` + `coverImageUrl` to the
+  // returned `/uploads/couples/<id>/cover.<ext>?v=…` value.
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -217,6 +225,57 @@ export default function GuestPageEditorPage() {
       toast.success(t("guest_page_editor.share_per_household_copy_all_success"));
     } catch {
       toast.error(t("guest_preview.share_copy_failed"));
+    }
+  }
+
+  /** Pre-validate on the client so the user gets a HU/EN-localised error
+   *  instead of the raw server response. Server enforces the same limits as
+   *  the source of truth — these are mirrored constants for fast feedback. */
+  const COVER_MAX_BYTES = 4 * 1024 * 1024;
+  const COVER_MIME_OK = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+  async function onCoverFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset the input value so re-picking the SAME file (e.g. after the user
+    // edits it and re-tries) still fires onChange. Without this, identical
+    // filenames silently no-op.
+    e.target.value = "";
+    if (!file) return;
+
+    if (!COVER_MIME_OK.has(file.type)) {
+      toast.error(t("wedding_site_editor.cover_upload_error_type"));
+      return;
+    }
+    if (file.size > COVER_MAX_BYTES) {
+      toast.error(t("wedding_site_editor.cover_upload_error_too_large"));
+      return;
+    }
+
+    setCoverUploading(true);
+    try {
+      const r = await coupleApi.uploadCover(file);
+      setCouple(r.couple);
+      setCoverImageUrl(r.couple.cover_image_url ?? "");
+      toast.success(t("wedding_site_editor.cover_upload_success"));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // The upload endpoint stashes the granular `code` ("file_too_large",
+        // "unsupported_type", "bad_multipart", …) into ApiError.detail; the
+        // top-level err.code is the coarse "client_error" bucket from the
+        // multipart fetch wrapper in endpoints.ts.
+        const code = (err.detail as { code?: string } | null)?.code;
+        if (code === "file_too_large") {
+          toast.error(t("wedding_site_editor.cover_upload_error_too_large"));
+        } else if (code === "unsupported_type") {
+          toast.error(t("wedding_site_editor.cover_upload_error_type"));
+        } else {
+          toast.error(err.message || t("wedding_site_editor.cover_upload_error_generic"));
+        }
+      } else {
+        toast.error(t("wedding_site_editor.cover_upload_error_generic"));
+      }
+    } finally {
+      setCoverUploading(false);
     }
   }
 
@@ -533,10 +592,50 @@ export default function GuestPageEditorPage() {
             <label htmlFor="guest-page-cover" className="field-label">
               {t("wedding_site_editor.cover_image_label")}
             </label>
+            {/* Upload row — thumbnail of the current cover (if any) +
+             *  Tallózás button. Hidden <input type="file"> so we can style
+             *  the trigger as a regular outline button. Accept attribute
+             *  mirrors the server-side MIME allowlist. */}
+            <div className="flex items-center gap-3">
+              {coverImageUrl ? (
+                <img
+                  src={coverImageUrl}
+                  alt={t("wedding_site_editor.cover_upload_preview_alt")}
+                  className="h-14 w-20 shrink-0 rounded-md border border-paper-300 object-cover dark:border-umber-700"
+                />
+              ) : (
+                <div
+                  className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-paper-300 text-ink-400 dark:border-umber-700 dark:text-umber-300"
+                  aria-hidden
+                >
+                  <Upload size={18} />
+                </div>
+              )}
+              <input
+                ref={coverFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={onCoverFileChange}
+              />
+              <button
+                type="button"
+                className="btn-outline btn-sm"
+                disabled={coverUploading}
+                onClick={() => coverFileInputRef.current?.click()}
+              >
+                <Upload size={14} aria-hidden />
+                {coverUploading
+                  ? t("wedding_site_editor.cover_upload_uploading")
+                  : coverImageUrl
+                    ? t("wedding_site_editor.cover_upload_replace")
+                    : t("wedding_site_editor.cover_upload_button")}
+              </button>
+            </div>
             <input
               id="guest-page-cover"
               type="url"
-              className="input"
+              className="input mt-2"
               value={coverImageUrl}
               onChange={(e) => setCoverImageUrl(e.target.value)}
               placeholder={t("wedding_site_editor.cover_image_placeholder")}

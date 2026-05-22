@@ -275,6 +275,38 @@ export const coupleApi = {
      *  row so the Settings card shows a stable status across reloads. */
     welcome_desk_active?: boolean;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
+  /** Multipart cover-image upload — mirrors vendorListingApi.uploadHero.
+   *  Server writes the file to `${UPLOADS_DIR}/couples/<id>/cover.<ext>` and
+   *  persists the resulting `/uploads/...` URL into `couples.cover_image_url`
+   *  in the same transaction, so the returned couple is already the final
+   *  state. JSON-shaped `apiFetch` doesn't speak FormData, so we hit fetch
+   *  directly with the same auth header. Accepts JPEG/PNG/WebP up to 4 MB. */
+  uploadCover: async (file: File): Promise<{ couple: Couple }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch("/api/couples/current/cover", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Upload failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { couple: Couple };
+  },
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
   archive: () => apiFetch<{ couple: Couple }>("POST", "/api/couples/current/archive", {}),

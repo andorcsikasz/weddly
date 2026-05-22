@@ -279,6 +279,14 @@ export interface LocaleMessages {
     cover_image_placeholder: string;
     cover_image_hint: string;
     cover_image_invalid: string;
+    cover_upload_button: string;
+    cover_upload_uploading: string;
+    cover_upload_replace: string;
+    cover_upload_success: string;
+    cover_upload_error_generic: string;
+    cover_upload_error_too_large: string;
+    cover_upload_error_type: string;
+    cover_upload_preview_alt: string;
     /** Save state — single shared button at the foot of the form. */
     save_button: string;
     save_saving: string;

@@ -1,6 +1,9 @@
 // Onboarding + workspace mgmt: complete the onboarding wizard, fetch the
 // current couple, generate a partner-B invite, accept an invite.
 
+import { existsSync } from "node:fs";
+import { mkdir, unlink } from "node:fs/promises";
+import { join } from "node:path";
 import {
   type BudgetCategory,
   type BudgetGoal,
@@ -1656,6 +1659,100 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   return json({ couple: toCouple(refreshed) });
 }
 
+// ─── Cover image upload ───────────────────────────────────────────────────
+//
+// POST /api/couples/current/cover (multipart) lets the couple swap the
+// public-page hero from a local file instead of pasting a URL. File goes
+// onto the persistent `CONFIG.uploadsDir` volume; the public URL is served
+// by the `/uploads/*` static handler in server.ts. The PATCH path still
+// accepts a remote http(s) URL for couples who prefer hot-linking — they
+// just don't go through this endpoint.
+
+const MAX_COVER_BYTES = 4 * 1024 * 1024;
+const SUPPORTED_COVER_MIMES: Record<string, "jpg" | "png" | "webp"> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+/** Resolve `/uploads/couples/<id>/cover.<ext>?v=…` back to the on-disk path,
+ *  with a guard against `..` / absolute-path attempts. Returns null for any
+ *  URL that doesn't match the local uploads prefix — that covers couples on
+ *  legacy remote http(s) cover URLs we shouldn't try to unlink. */
+function coverUploadRelToDisk(publicUrl: string | null): string | null {
+  if (!publicUrl) return null;
+  const noQuery = publicUrl.split("?")[0] ?? publicUrl;
+  if (!noQuery.startsWith("/uploads/")) return null;
+  const rel = noQuery.slice("/uploads/".length);
+  if (rel.includes("..") || rel.startsWith("/")) return null;
+  return join(CONFIG.uploadsDir, rel);
+}
+
+async function handleUploadCover(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to update");
+
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const raw = form.get("file");
+  if (!(raw instanceof File)) {
+    throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  }
+  if (raw.size <= 0) {
+    throw new HttpError(400, "Empty file", { code: "empty_file" });
+  }
+  if (raw.size > MAX_COVER_BYTES) {
+    throw new HttpError(413, `File too large (max ${MAX_COVER_BYTES / 1024 / 1024} MB)`, {
+      code: "file_too_large",
+    });
+  }
+  const ext = SUPPORTED_COVER_MIMES[raw.type];
+  if (!ext) {
+    throw new HttpError(415, `Unsupported image type: ${raw.type || "unknown"}`, {
+      code: "unsupported_type",
+    });
+  }
+
+  const dir = join(CONFIG.uploadsDir, "couples", String(couple.id));
+  await mkdir(dir, { recursive: true });
+
+  // Best-effort cleanup if the extension is changing (Bun.write overwrites
+  // same-name files in place, so only ext transitions leak a stale file).
+  const previousDiskPath = coverUploadRelToDisk(couple.cover_image_url);
+  const newDiskPath = join(dir, `cover.${ext}`);
+  if (previousDiskPath && previousDiskPath !== newDiskPath && existsSync(previousDiskPath)) {
+    await unlink(previousDiskPath).catch(() => {
+      // Leaking a stale file under uploads doesn't surface to users.
+    });
+  }
+
+  await Bun.write(newDiskPath, raw);
+
+  const ts = now();
+  const publicUrl = `/uploads/couples/${couple.id}/cover.${ext}?v=${ts}`;
+  const previousUrl = couple.cover_image_url;
+  db.prepare("UPDATE couples SET cover_image_url = ?, updated_at = ? WHERE id = ?").run(
+    publicUrl,
+    ts,
+    couple.id,
+  );
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.cover_image_url_upload",
+    target_kind: "couple",
+    target_id: couple.id,
+    before: { cover_image_url: previousUrl },
+    after: { cover_image_url: publicUrl, bytes: raw.size, mime: raw.type },
+  });
+
+  const refreshed = getCoupleById(couple.id);
+  if (!refreshed) throw new HttpError(500, "Couple vanished mid-upload");
+  return json({ couple: toCouple(refreshed) });
+}
+
 // ─── Archive ───────────────────────────────────────────────────────────────
 //
 // `POST /api/couples/current/archive` flips `couples.status` to `archived`
@@ -2074,6 +2171,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.is_public_update",
   "couple.venue_name_update",
   "couple.cover_image_url_update",
+  "couple.cover_image_url_upload",
   "couple.guest_page_intro_update",
   "couple.post_rsvp_content_update",
   // Guests
@@ -2525,6 +2623,7 @@ export function registerCoupleRoutes(router: Router) {
   router.get("/api/couples/partner", handleGetPartner, true);
   router.get("/api/couples/activity", handleGetActivity, true);
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
+  router.post("/api/couples/current/cover", handleUploadCover, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.get("/api/users/me/couples", handleListMyCouples, true);
   router.post("/api/users/me/active-couple", handleSwitchActiveCouple, true);
