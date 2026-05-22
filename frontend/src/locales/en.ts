@@ -1887,6 +1887,7 @@ const en: LocaleMessages = {
     city_label: "City",
     city_all: "All cities",
     empty_filtered: "No suppliers match this search. Try a different word or city.",
+    nearby_banner: "Near {query} — showing the {anchor} area.",
     accommodation_external_title: "Lodging partners for your guests",
     accommodation_external_subtitle:
       "Share these trusted sites when you send accommodation links to guests — each opens in a new tab.",

@@ -2103,6 +2103,10 @@ export interface LocaleMessages {
     city_all: string;
     /** Empty result state when search/city filters out everything. */
     empty_filtered: string;
+    /** Shown above the result list when the typed city wasn't in the
+     *  directory but resolved to a known metro area (e.g. "Zsámbék" →
+     *  Budapest). Has `{query}` and `{anchor}` placeholders. */
+    nearby_banner: string;
     /** Accommodation category: external booking partner panel. v1 doesn't
      *  list curated hotels, so we steer couples to trusted lodging sites
      *  they can share with guests. */

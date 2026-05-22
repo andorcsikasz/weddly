@@ -1908,6 +1908,7 @@ const hu: LocaleMessages = {
     city_label: "Város",
     city_all: "Összes város",
     empty_filtered: "Erre a szűrésre nincs találat. Próbálj más szót vagy várost.",
+    nearby_banner: "{query} közelében — {anchor} környékét mutatjuk.",
     accommodation_external_title: "Szállás partnerek vendégeknek",
     accommodation_external_subtitle:
       "A vendégeknek küldött szálláslinkekhez ezeket az oldalakat ajánljuk — mindegyik új lapon nyílik.",

@@ -79,7 +79,12 @@ import type { BudgetLine, Currency } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
 import { formatMoney } from "../lib/format";
-import { distanceContextForQuery, metroKeysForCity } from "../lib/hu_metro_areas";
+import {
+  distanceContextForQuery,
+  metroKeysForCity,
+  metroKeysForQuery,
+  nearbyExpansionLabel,
+} from "../lib/hu_metro_areas";
 import {
   readSelection,
   type SelectionMap,
@@ -542,17 +547,25 @@ export default function SuppliersPage() {
         return guestsFilter >= min && guestsFilter <= max;
       });
     }
-    const q = normalize(query.trim());
+    const q = queryNorm;
     if (q) {
+      // Bidirectional metro expansion: the query may EITHER be the
+      // anchor name itself (e.g. "Budapest" → group key "budapest")
+      // OR a non-anchor town inside a group (e.g. "Zsámbék" → still
+      // group key "budapest"). Both should pull up the whole metro.
+      // `metroKeysForQuery` returns the matching group key(s) — empty
+      // when the query isn't a known town. Haystacks already include
+      // `metroKeysForCity(s.city)` for the supplier-side direction.
+      const expandedKeys = metroKeysForQuery(q);
       dir = dir.filter((s) => {
-        // metroKeysForCity expands the haystack with HU metro tags
-        // (e.g., Vasad → "budapest"), so typing "Budapest" surfaces the
-        // whole Bp agglomeration the booking.com way. Returns "" for
-        // cities outside the curated metro map — no false positives.
         const hay = normalize(
           `${s.name} ${s.city} ${s.blurb_hu} ${s.blurb_en} ${metroKeysForCity(s.city)}`,
         );
-        return hay.includes(q);
+        if (hay.includes(q)) return true;
+        for (const k of expandedKeys) {
+          if (hay.includes(k)) return true;
+        }
+        return false;
       });
     }
     // Saved-only view is a directory feature; DIY entries are always "yours"
@@ -1120,6 +1133,23 @@ export default function SuppliersPage() {
           </ul>
         </section>
       )}
+
+      {/* Booking.com-style nearby banner — appears when the typed town
+          isn't in the directory but resolves to a known metro (e.g.
+          "Zsámbék" → Budapest). Stays silent for direct anchor hits
+          (typing "Budapest" needs no extra explanation). */}
+      {(() => {
+        const expansionLabel = nearbyExpansionLabel(queryNorm);
+        if (!expansionLabel) return null;
+        return (
+          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blush-50 px-3 py-1 text-xs text-blush-700 dark:bg-blush-400/15 dark:text-blush-200">
+            <MapPin size={12} aria-hidden />
+            <span>
+              {t("suppliers.nearby_banner", { query: query.trim(), anchor: expansionLabel })}
+            </span>
+          </p>
+        );
+      })()}
 
       {viewMode === "map" ? (
         <Suspense

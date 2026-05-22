@@ -60,29 +60,52 @@ const METRO_AREAS_HU: MetroGroup[] = [
       // West / Buda hills
       { city: "Budaörs", km: 10 },
       { city: "Budakeszi", km: 15 },
+      { city: "Páty", km: 15 },
       { city: "Solymár", km: 15 },
       { city: "Törökbálint", km: 15 },
       { city: "Diósd", km: 18 },
+      { city: "Biatorbágy", km: 20 },
       { city: "Érd", km: 20 },
       { city: "Pilisborosjenő", km: 20 },
       { city: "Telki", km: 22 },
       { city: "Pilisvörösvár", km: 22 },
+      { city: "Herceghalom", km: 22 },
       { city: "Tárnok", km: 25 },
       { city: "Százhalombatta", km: 25 },
       { city: "Sóskút", km: 25 },
+      { city: "Zsámbék", km: 25 },
+      { city: "Perbál", km: 25 },
+      { city: "Piliscsaba", km: 25 },
+      { city: "Tinnye", km: 25 },
+      { city: "Tök", km: 28 },
+      { city: "Pilisszentkereszt", km: 28 },
+      { city: "Pilisszántó", km: 28 },
+      { city: "Mány", km: 30 },
       // North (Danube bend)
       { city: "Dunakeszi", km: 18 },
       { city: "Fót", km: 20 },
       { city: "Pomáz", km: 20 },
       { city: "Csömör", km: 22 },
+      { city: "Kistarcsa", km: 22 },
+      { city: "Kerepes", km: 22 },
+      { city: "Nagytarcsa", km: 22 },
       { city: "Szentendre", km: 22 },
+      { city: "Göd", km: 25 },
+      { city: "Sződliget", km: 25 },
+      { city: "Sződ", km: 25 },
+      { city: "Csomád", km: 25 },
       { city: "Mogyoród", km: 25 },
+      { city: "Vácrátót", km: 30 },
       { city: "Veresegyház", km: 30 },
       { city: "Gödöllő", km: 30 },
       { city: "Leányfalu", km: 30 },
+      { city: "Bag", km: 35 },
       { city: "Tahitótfalu", km: 35 },
       { city: "Vác", km: 35 },
+      { city: "Galgamácsa", km: 40 },
+      { city: "Aszód", km: 40 },
       { city: "Visegrád", km: 40 },
+      { city: "Dorog", km: 40 },
       { city: "Esztergom", km: 50 },
       // East (Pest county)
       { city: "Vecsés", km: 18 },
@@ -90,10 +113,19 @@ const METRO_AREAS_HU: MetroGroup[] = [
       { city: "Pécel", km: 22 },
       { city: "Maglód", km: 25 },
       { city: "Üllő", km: 30 },
+      { city: "Mende", km: 30 },
       { city: "Isaszeg", km: 30 },
       { city: "Péteri", km: 32 },
+      { city: "Tura", km: 45 },
+      { city: "Zsámbok", km: 45 },
+      { city: "Dány", km: 40 },
+      { city: "Valkó", km: 40 },
+      { city: "Gomba", km: 40 },
       { city: "Monor", km: 35 },
       { city: "Vasad", km: 40 },
+      { city: "Pilis", km: 40 },
+      { city: "Albertirsa", km: 50 },
+      { city: "Cegléd", km: 60 },
       // South (csepel + délpest)
       { city: "Szigetszentmiklós", km: 20 },
       { city: "Halásztelek", km: 22 },
@@ -103,10 +135,21 @@ const METRO_AREAS_HU: MetroGroup[] = [
       { city: "Dunavarsány", km: 30 },
       // West-southwest (Fejér county border, still <60km from Bp)
       { city: "Etyek", km: 30 },
+      { city: "Martonvásár", km: 30 },
+      { city: "Tordas", km: 35 },
       { city: "Bicske", km: 35 },
       { city: "Felcsút", km: 40 },
       { city: "Alcsútdoboz", km: 45 },
+      { city: "Velence", km: 45 },
+      { city: "Gárdony", km: 45 },
+      { city: "Sukoró", km: 45 },
+      { city: "Pákozd", km: 50 },
+      { city: "Agárd", km: 50 },
+      { city: "Pázmánd", km: 45 },
+      { city: "Lovasberény", km: 50 },
+      { city: "Csákvár", km: 50 },
       { city: "Tatabánya", km: 60 },
+      { city: "Tata", km: 65 },
     ],
   },
 
@@ -290,45 +333,111 @@ export function metroKeysForCity(city: string | null | undefined): string {
   return list ? list.join(" ") : "";
 }
 
+/** Find the metro group whose anchor OR any of its towns matches the
+ *  user's free-text query. Match precedence:
+ *    1. Exact match on anchor name (e.g. "budapest" → Budapest group)
+ *    2. Exact match on any non-anchor city (e.g. "zsambek" → Bp group)
+ *    3. Prefix match on anchor for queries ≥ 4 chars ("buda" → Bp)
+ *
+ *  Returns null when no town in the dictionary matches. The function is
+ *  internal — exposed indirectly via `metroKeysForQuery` and
+ *  `distanceContextForQuery`. */
+function findMatchingGroup(normalizedQuery: string): MetroGroup | null {
+  if (!normalizedQuery) return null;
+
+  // 1. Exact anchor name match
+  const anchorHit = ANCHOR_TO_GROUP.get(normalizedQuery);
+  if (anchorHit) return anchorHit;
+
+  // 2. Exact city-name match anywhere in any group. First hit wins —
+  //    a city in multiple groups (rare; e.g. border town) uses the
+  //    first group it was declared in.
+  for (const g of METRO_AREAS_HU) {
+    for (const c of g.cities) {
+      if (normalize(c.city) === normalizedQuery) return g;
+    }
+  }
+
+  // 3. Prefix match on anchor name (≥ 4 chars so "bu" doesn't match Bp)
+  if (normalizedQuery.length >= 4) {
+    for (const g of METRO_AREAS_HU) {
+      if (normalize(g.anchor).startsWith(normalizedQuery)) return g;
+    }
+  }
+
+  return null;
+}
+
+/** If the user's free-text query resolves to a known metro (either by
+ *  typing the anchor — "Budapest" — or any town within it — "Zsámbék",
+ *  "Vasad", "Alcsútdoboz"), return that group's tag(s) so the supplier
+ *  filter can match on the metro key rather than the literal town name.
+ *
+ *  Used in conjunction with `metroKeysForCity(s.city)`, which writes the
+ *  same tag into each supplier's haystack — so a query "Zsámbék" expands
+ *  to "budapest", which is present on every Bp-metro supplier. */
+export function metroKeysForQuery(normalizedQuery: string): string[] {
+  const g = findMatchingGroup(normalizedQuery);
+  return g ? [g.key] : [];
+}
+
 /** When the user's free-text query maps to a known anchor city (Budapest,
  *  Pécs, Balatonfüred, …), this returns the canonical anchor label and
  *  the approximate km from that anchor to the given supplier city. Cards
  *  use this to render a "+45 km" hint so couples notice which results
  *  are nearby-but-not-in-town.
  *
- *  Returns `null` in three cases:
+ *  Returns `null` when:
  *  - the query is empty,
- *  - the query doesn't match any anchor (e.g. user typed a supplier name
- *    or a region key like "balaton"),
+ *  - the query doesn't match any anchor (e.g. user typed a supplier name,
+ *    a non-anchor town like "Zsámbék", or a region key like "balaton"),
  *  - the supplier is the anchor itself (km = 0 → no badge worth showing),
  *  - the supplier is in a different metro group from the anchor.
  *
- *  The query is matched against the anchor name (folded) as an exact match
- *  OR a "starts with" prefix of length ≥ 4 — so "buda" → Budapest works
- *  but a 2-char fragment like "bu" doesn't accidentally anchor. */
+ *  Non-anchor city queries don't surface a distance because the badge
+ *  would need to read "+X km from Zsámbék" — but we only store km from
+ *  the group's anchor, so the reference would be wrong. The banner
+ *  above the result list (rendered by SuppliersPage when expansion
+ *  triggered) provides the "showing $anchor area" context instead. */
 export function distanceContextForQuery(
   normalizedQuery: string,
   supplierCity: string | null | undefined,
 ): { anchorLabel: string; km: number } | null {
   if (!normalizedQuery || !supplierCity) return null;
 
-  // Find the anchor whose normalized name matches the query.
-  let matchedGroup: MetroGroup | null = null;
-  for (const [anchorNorm, g] of ANCHOR_TO_GROUP) {
-    if (anchorNorm === normalizedQuery) {
-      matchedGroup = g;
-      break;
-    }
-    if (normalizedQuery.length >= 4 && anchorNorm.startsWith(normalizedQuery)) {
-      matchedGroup = g;
-      // keep looping — exact match wins over prefix
-    }
-  }
-  if (!matchedGroup) return null;
+  // Distance badge only fires for anchor-name queries — see jsdoc above.
+  const anchorHit = ANCHOR_TO_GROUP.get(normalizedQuery);
+  const prefixHit =
+    !anchorHit && normalizedQuery.length >= 4
+      ? METRO_AREAS_HU.find((g) => normalize(g.anchor).startsWith(normalizedQuery))
+      : null;
+  const group = anchorHit ?? prefixHit;
+  if (!group) return null;
 
   const supplierNorm = normalize(supplierCity);
-  const entry = matchedGroup.cities.find((c) => normalize(c.city) === supplierNorm);
+  const entry = group.cities.find((c) => normalize(c.city) === supplierNorm);
   if (!entry || entry.km <= 0) return null;
 
-  return { anchorLabel: matchedGroup.anchor, km: entry.km };
+  return { anchorLabel: group.anchor, km: entry.km };
+}
+
+/** When the query resolved via metro expansion (user typed a town that
+ *  isn't an anchor — "Zsámbék" → Bp metro), return the anchor label so
+ *  the page can show a "showing $anchor area" banner above the results.
+ *  Returns null when the query matches the anchor directly (no banner
+ *  needed — the user typed exactly what they meant). */
+export function nearbyExpansionLabel(normalizedQuery: string): string | null {
+  if (!normalizedQuery) return null;
+  // Direct anchor hit → no banner needed
+  if (ANCHOR_TO_GROUP.has(normalizedQuery)) return null;
+  // Prefix hit on an anchor name → also "direct enough", no banner
+  if (
+    normalizedQuery.length >= 4 &&
+    METRO_AREAS_HU.some((g) => normalize(g.anchor).startsWith(normalizedQuery))
+  ) {
+    return null;
+  }
+  // Non-anchor city match → show banner
+  const group = findMatchingGroup(normalizedQuery);
+  return group ? group.anchor : null;
 }
