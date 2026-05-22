@@ -241,6 +241,26 @@ export interface VendorClaimApprovedPayload {
   managerUrl: string;
 }
 
+export interface SupplierOutreachPayload {
+  /** "Anna & Bence" — couple's display name. Used in the From label and the
+   *  opening line so the vendor knows who's writing. */
+  coupleDisplayName: string;
+  /** Couple owner's email. Lands in the Reply-To header so the vendor's
+   *  reply goes straight to the couple's inbox (v1 has no inbound webhook). */
+  coupleReplyEmail: string;
+  /** Couple owner's full name. Surfaces in the closing line of the email. */
+  coupleReplyName: string;
+  /** Vendor business name. Renders in the greeting + the subject line. */
+  supplierName: string;
+  /** Subject line the couple typed in /app/outreach. */
+  subject: string;
+  /** Body text the couple typed in /app/outreach. Plain text — newlines
+   *  preserved by the renderer. */
+  body: string;
+  /** Where the couple can find the campaign in-app — footer link. */
+  outreachUrl: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -274,6 +294,7 @@ export type KindPayload = {
   community_supplier_published: CommunitySupplierPublishedPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
+  supplier_outreach: SupplierOutreachPayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -1087,6 +1108,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Listing átvétele",
       footnote: "A link 7 napig érvényes.",
+      secondaryLinks: [{ label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl }],
     },
     en: {
       greeting: "Hi there,",
@@ -1097,6 +1119,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Claim your listing",
       footnote: "Link expires in 7 days.",
+      secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
     },
   }),
   // Admin moderation flipped a verified community-submitted supplier to
@@ -1152,6 +1175,48 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Manage your listing",
     },
   }),
+
+  // Couple-initiated cold outreach to a shortlisted vendor. The body is
+  // free text the couple typed in /app/outreach; we wrap it in a Weddly
+  // header + footer and stamp the couple's own email in the Reply-To
+  // (handled at the mailer layer via the per-kind headers hook v1.5; v1
+  // includes the address in the body footer so the vendor can copy it
+  // manually if their client doesn't honour Reply-To). The first
+  // paragraph names the couple + acknowledges the cold-reach so the
+  // vendor doesn't read it as automated spam.
+  supplier_outreach: (p) => {
+    // Plain-text body uses real newlines; the renderer escapes them into
+    // <br>s on the HTML side via per-paragraph splitting.
+    const bodyParas = p.body
+      .split(/\n{2,}/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const huParas: string[] = [
+      `${p.coupleDisplayName} vagyunk a Weddly-n, és érdeklődnénk a szolgáltatásotok iránt.`,
+      ...bodyParas,
+      `Ha bármi felmerül, közvetlenül erre az e-mail címre válaszolhatsz: ${p.coupleReplyEmail} — ${p.coupleReplyName}.`,
+    ];
+    const enParas: string[] = [
+      `We're ${p.coupleDisplayName}, planning our wedding with Weddly, and reaching out about your services.`,
+      ...bodyParas,
+      `Reply directly to this email and it'll land in our inbox: ${p.coupleReplyEmail} — ${p.coupleReplyName}.`,
+    ];
+    return {
+      subject: `${p.coupleDisplayName} — ${p.subject}`,
+      ctaUrl: p.outreachUrl,
+      hu: {
+        preheader: p.subject,
+        greeting: `Szia ${p.supplierName}!`,
+        paragraphs: huParas,
+        cta: "Weddly-n keresztül érdeklődnek",
+      },
+      en: {
+        greeting: `Hi ${p.supplierName},`,
+        paragraphs: enParas,
+        cta: "Sent via Weddly",
+      },
+    };
+  },
 };
 
 function rsvpStatusHu(status: "yes" | "no" | "maybe"): string {

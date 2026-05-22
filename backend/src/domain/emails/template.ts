@@ -27,6 +27,11 @@ export interface LocaleBlock {
   cta: string;
   /** Small italic post-CTA note (e.g. "this link expires in 7 days"). Optional. */
   footnote?: string;
+  /** Low-stakes investigation links rendered as a row underneath the primary
+   *  CTA. Gives a skeptical recipient (especially on outreach mail) a path
+   *  to verify the sender without committing to the action. Only honoured
+   *  on the primary card — secondary cards already have a link-style CTA. */
+  secondaryLinks?: Array<{ label: string; url: string }>;
 }
 
 export interface RenderInput {
@@ -267,6 +272,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                   </tr>
                 </table>
                 ${renderPlainUrlNote(ctaUrl, category, locale)}
+                ${renderSecondaryLinks(block.secondaryLinks)}
                 ${footnote}
               </td>
             </tr>`;
@@ -369,6 +375,21 @@ function escapeHtml(s: string): string {
 }
 function escapeAttr(s: string): string {
   return escapeHtml(s);
+}
+
+// Investigation-link row under the CTA. Used for outreach mail mostly —
+// gives a skeptic an "is this real?" path without forcing them to click the
+// action button. Walnut underline, 14px, no italics so it reads as a real
+// link, not commentary.
+function renderSecondaryLinks(links: Array<{ label: string; url: string }> | undefined): string {
+  if (!links || links.length === 0) return "";
+  const rows = links
+    .map(
+      (l) =>
+        `<a href="${escapeAttr(l.url)}" style="color:${COLOR.accent};text-decoration:underline;font-weight:600;font-size:14px;line-height:1.5;display:inline-block;margin-right:18px;">${escapeHtml(l.label)} →</a>`,
+    )
+    .join("");
+  return `<p style="margin:14px 0 0 0;">${rows}</p>`;
 }
 
 // Cold recipients don't necessarily know what Weddly is — the body dives
