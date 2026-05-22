@@ -202,15 +202,25 @@ async function sendVerificationEmail(
   toEmail: string,
   supplierName: string,
   token: string,
+  submitterUserId: number,
 ): Promise<void> {
   const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-supplier/${encodeURIComponent(token)}`;
   // Fire-and-forget; `sendKind` swallows mailer errors, logs them via Sentry,
   // and writes the `email_log` row itself — submission must succeed even if
   // the mail send fails (admin can re-send from the moderation queue).
+  //
+  // `submitterUserId` biases the bilingual render — a HU-using couple's
+  // submission to a HU florist surfaces the HU block on top of the stack
+  // (with EN still rendering below as the safety net since we don't know
+  // the vendor's actual locale).
   await sendKind(
     "community_supplier_verify",
     { supplierName, verifyUrl },
-    { user: null, guest: { email: toEmail, full_name: supplierName } },
+    {
+      user: null,
+      guest: { email: toEmail, full_name: supplierName },
+      submitterUserId,
+    },
   );
 }
 
@@ -259,7 +269,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   // 'awaiting_review' — admin moderation is the remaining gate before public.
   if (input.contact_email) {
     const token = createVerificationToken(id);
-    await sendVerificationEmail(input.contact_email, input.name, token.token);
+    await sendVerificationEmail(input.contact_email, input.name, token.token, userId);
   } else {
     markPendingAsAwaitingReview(id);
   }

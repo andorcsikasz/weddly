@@ -54,6 +54,15 @@ export interface SendTarget {
    * Provide their address + name explicitly.
    */
   guest?: { email: string; full_name: string } | null;
+  /**
+   * User id whose `users.locale` should bias the bilingual render order
+   * when the recipient's own locale is unknown. Used for outreach mail
+   * (community supplier verify, vendor claim verify) — the submitter is
+   * a known Weddly user; the recipient isn't. Surface the submitter's
+   * language on top of the stack so a HU-using couple's submission lands
+   * a HU-first mail on the vendor's inbox.
+   */
+  submitterUserId?: number;
 }
 
 interface SendResult {
@@ -89,6 +98,13 @@ export async function sendKind<K extends EmailKind>(
   // Guest-bound mail (no user) keeps `null` → bilingual fallback render until
   // we capture a per-guest locale. Lookup happens against `users.locale`.
   const recipientLocale: RecipientLocale = target.user ? lookupUserLocale(target.user.id) : null;
+  // For guest sends with a known submitter, resolve the submitter's locale
+  // and bias the bilingual order toward it. Doesn't replace the bilingual
+  // fallback — just reorders.
+  const primaryLocaleHint: "hu" | "en" | undefined =
+    recipientLocale === null && target.submitterUserId
+      ? (lookupUserLocale(target.submitterUserId) ?? undefined)
+      : undefined;
   if (target.user) {
     const prefs = ensurePreferences(target.user.id);
     if (category === "lifecycle" && prefs.lifecycle_opt_out) {
@@ -96,6 +112,7 @@ export async function sendKind<K extends EmailKind>(
         recipientName: recipient.name,
         unsubscribeToken: prefs.unsubscribe_token,
         recipientLocale,
+        primaryLocaleHint,
       });
       recordEmailAttempt({
         user_id: target.user.id,
@@ -115,6 +132,7 @@ export async function sendKind<K extends EmailKind>(
     recipientName: recipient.name,
     unsubscribeToken,
     recipientLocale,
+    primaryLocaleHint,
   });
 
   // RFC 8058 one-click unsubscribe headers. Gmail's bulk-sender requirements

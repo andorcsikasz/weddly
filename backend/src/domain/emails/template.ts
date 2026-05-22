@@ -55,6 +55,11 @@ export interface RenderInput {
    *  per-guest locale yet) and users whose `users.locale` predates the
    *  feature. */
   recipientLocale?: RecipientLocale;
+  /** Surface the named language on TOP of the bilingual stack. Only used
+   *  when `recipientLocale` is null — when we don't know the recipient's
+   *  language but DO know the submitter's, lead with the submitter's
+   *  language and keep the other as a safety net below. */
+  primaryLocaleHint?: "hu" | "en";
 }
 
 export interface RenderedEmail {
@@ -84,11 +89,26 @@ interface PickedBlock {
 }
 
 /** Choose which language blocks render, in display order. `null` recipient
- *  locale → bilingual fallback (HU primary, EN secondary) for back-compat
- *  with guests + pre-feature users. */
-function pickBlocks(hu: LocaleBlock, en: LocaleBlock, locale: RecipientLocale): PickedBlock[] {
+ *  locale → bilingual fallback. `primaryLocaleHint` orders the bilingual
+ *  stack — when the caller knows what language the *submitter* uses (e.g.
+ *  the couple-of-record's `users.locale` for a community-listing verify
+ *  mail), surface that block on top. The opposite-language block still
+ *  renders below as a safety net since the recipient's actual locale is
+ *  unknown. HU-first remains the back-compat default. */
+function pickBlocks(
+  hu: LocaleBlock,
+  en: LocaleBlock,
+  locale: RecipientLocale,
+  primaryLocaleHint?: "hu" | "en",
+): PickedBlock[] {
   if (locale === "hu") return [{ locale: "hu", block: hu }];
   if (locale === "en") return [{ locale: "en", block: en }];
+  if (primaryLocaleHint === "en") {
+    return [
+      { locale: "en", block: en },
+      { locale: "hu", block: hu },
+    ];
+  }
   return [
     { locale: "hu", block: hu },
     { locale: "en", block: en },
@@ -96,8 +116,8 @@ function pickBlocks(hu: LocaleBlock, en: LocaleBlock, locale: RecipientLocale): 
 }
 
 export function renderEmail(input: RenderInput): RenderedEmail {
-  const { hu, en, recipientLocale } = input;
-  const blocks = pickBlocks(hu, en, recipientLocale ?? null);
+  const { hu, en, recipientLocale, primaryLocaleHint } = input;
+  const blocks = pickBlocks(hu, en, recipientLocale ?? null, primaryLocaleHint);
   // Subject fallback follows the primary block — for an EN-only render, the
   // EN first paragraph stands in if the kind builder returned an empty
   // subject; for bilingual (null locale) we keep the historical HU fallback

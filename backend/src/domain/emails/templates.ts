@@ -21,6 +21,11 @@ export interface BuildContext {
    *  whose locale was never captured. Picks single-card vs bilingual render
    *  in `renderEmail`. */
   recipientLocale?: RecipientLocale;
+  /** Surfaces the named language on TOP of the bilingual stack — used when
+   *  we don't know the recipient's locale (a vendor with no Weddly account)
+   *  but DO know the submitter's (the couple who triggered the mail). HU/EN
+   *  bilingual still renders both blocks; the hint just reorders them. */
+  primaryLocaleHint?: "hu" | "en";
 }
 
 export interface BuiltEmail {
@@ -314,6 +319,7 @@ export function buildEmail<K extends EmailKind>(
     category,
     unsubscribeToken: context.unsubscribeToken,
     recipientLocale: context.recipientLocale,
+    primaryLocaleHint: context.primaryLocaleHint,
   });
   return { subject: built.subject, rendered };
 }
