@@ -1136,15 +1136,17 @@ export default function SuppliersPage() {
       )}
 
       {/* Booking.com-style nearby banner — appears when the typed town
-          isn't in the directory but resolves to a known metro (e.g.
-          "Zsámbék" → Budapest). Stays silent for direct anchor hits
-          (typing "Budapest" needs no extra explanation). */}
+          isn't an anchor but resolves to a known metro (e.g. "Zsámbék"
+          → Budapest area). Neutral paper/ink palette instead of the
+          old blush variant: blush is the codebase's error colour
+          (ToastProvider, FieldError, AlertCircle pills) and the banner
+          was reading as a warning rather than a hint. */}
       {(() => {
         const expansionLabel = nearbyExpansionLabel(queryNorm);
         if (!expansionLabel) return null;
         return (
-          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blush-50 px-3 py-1 text-xs text-blush-700 dark:bg-blush-400/15 dark:text-blush-200">
-            <MapPin size={12} aria-hidden />
+          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
+            <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
             <span>
               {t("suppliers.nearby_banner", { query: query.trim(), anchor: expansionLabel })}
             </span>
@@ -1856,12 +1858,19 @@ function PriceBandDots({ band }: { band: number }) {
   return <span className="font-mono">{"$".repeat(filled)}</span>;
 }
 
-/** Small "+45 km" chip next to the supplier's city — appears only when
- *  the user's free-text query matches a known anchor city (Budapest,
- *  Pécs, Balatonfüred, …) AND the supplier is in the same metro group
- *  but a different town. Lets couples see at a glance which booking.com-
- *  style nearby results need travel. Title attribute carries the full
- *  "anchor → city" detail for accessibility / hover. */
+/** Small "~45 km" hint that slots into the supplier card's meta row
+ *  next to the city, with a `·` separator so it reads as another meta
+ *  token (category · city · ~45 km · price · capacity) rather than an
+ *  emphasised badge. Haversine distance from the typed query town
+ *  (Pázmánd, Budapest, Zsámbék — anything in the metro dictionary) to
+ *  the supplier's town. Renders nothing when:
+ *  - no query typed,
+ *  - the query / supplier city isn't in the dictionary,
+ *  - the two cities live in different metro groups (cross-metro km is
+ *    misleading and reads as a system bug),
+ *  - distance rounds below 5 km ("same town" from a couple's pov).
+ *  Title attribute carries the full "query → supplier: ~N km" detail
+ *  for hover / a11y. */
 function DistanceHint({
   queryNorm,
   city,
@@ -1872,12 +1881,17 @@ function DistanceHint({
   const ctx = distanceContextForQuery(queryNorm, city);
   if (!ctx) return null;
   return (
-    <span
-      className="rounded-full bg-blush-50 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-blush-700 dark:bg-blush-400/15 dark:text-blush-200"
-      title={`${ctx.anchorLabel} → ${city}: ~${ctx.km} km`}
-    >
-      +{ctx.km} km
-    </span>
+    <>
+      <span aria-hidden className="text-paper-400 dark:text-umber-300">
+        ·
+      </span>
+      <span
+        className="whitespace-nowrap normal-case tracking-normal text-ink-500 dark:text-umber-300"
+        title={`${ctx.fromLabel} → ${city}: ~${ctx.km} km`}
+      >
+        ~{ctx.km} km
+      </span>
+    </>
   );
 }
 
