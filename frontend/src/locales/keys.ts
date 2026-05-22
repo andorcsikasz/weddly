@@ -1427,6 +1427,30 @@ export interface LocaleMessages {
     post_rsvp_hint: string;
     preview_title: string;
     preview_subtitle: string;
+    /** Per-household share section — lists each household with a personal
+     *  link the couple can copy or send via WhatsApp. */
+    share_per_household_title: string;
+    share_per_household_subtitle: string;
+    share_per_household_summary: string;
+    share_per_household_empty: string;
+    share_per_household_member_count_one: string;
+    share_per_household_member_count_other: string;
+    share_per_household_copy_link: string;
+    share_per_household_copy_link_aria: string;
+    share_per_household_whatsapp: string;
+    share_per_household_whatsapp_aria: string;
+    share_per_household_rotate: string;
+    share_per_household_rotate_aria: string;
+    share_per_household_rotate_confirm_title: string;
+    share_per_household_rotate_confirm_body: string;
+    share_per_household_rotate_confirm_action: string;
+    share_per_household_rotate_success: string;
+    share_per_household_rotate_error: string;
+    share_per_household_copy_all: string;
+    share_per_household_copy_all_aria: string;
+    share_per_household_copy_all_success: string;
+    /** WhatsApp deep-link template with {guest_name} and {link} placeholders. */
+    whatsapp_message_template: string;
   };
   /** Legacy share-panel + empty-preview copy reused by the merged
    *  guest_page_editor surface above. Once Phase 3 wraps and we
@@ -3304,6 +3328,7 @@ export interface LocaleMessages {
     activity_action_household_update: string;
     activity_action_household_delete: string;
     activity_action_household_regen_code: string;
+    activity_action_household_code_rotate: string;
     activity_action_budget_line_create: string;
     activity_action_budget_line_update: string;
     activity_action_budget_line_delete: string;

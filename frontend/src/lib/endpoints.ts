@@ -493,6 +493,16 @@ export const householdApi = {
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/households/${id}`),
   regenerateCode: (id: number) =>
     apiFetch<{ household: Household }>("POST", `/api/households/${id}/regenerate-code`, {}),
+  /** Rotate the household's share code (Phase 3 guest-page share UI). Same
+   *  effect as `regenerateCode` but rate-limited per couple and returns just
+   *  `{ household: { id, code } }` — the full Household view isn't needed
+   *  on the share row; only the fresh code is. */
+  rotateCode: (id: number) =>
+    apiFetch<{ household: { id: number; code: string } }>(
+      "PATCH",
+      `/api/households/${id}/rotate-code`,
+      {},
+    ),
 };
 
 export const budgetApi = {

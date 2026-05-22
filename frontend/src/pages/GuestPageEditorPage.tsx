@@ -5,19 +5,29 @@
 // thing they share with guests, with a public top section (anyone with the
 // link) and a deeper post-RSVP-yes block that unlocks for confirmed guests.
 
-import type { Couple } from "@shared/types";
+import type { Couple, Household } from "@shared/types";
 import type {
   GuestPortalView as GuestPortalViewType,
   GuestScheduleEntry,
 } from "@shared/guest_portal";
 import type { ScheduleEvent } from "@shared/schedule";
-import { Check, Clipboard, Copy, ExternalLink, Globe, Info, Lock, Unlock } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import {
+  Clipboard,
+  Copy,
+  ExternalLink,
+  Globe,
+  Info,
+  Lock,
+  MessageCircle,
+  RefreshCcw,
+  Unlock,
+} from "lucide-react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { GuestPortalView } from "../components/GuestPortalView";
-import { useToast } from "../components/ui";
+import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { coupleApi, scheduleApi } from "../lib/endpoints";
+import { coupleApi, householdApi, scheduleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -25,6 +35,7 @@ export default function GuestPageEditorPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.guest_page_title", "seo.guest_page_description");
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [couple, setCouple] = useState<Couple | null>(null);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
@@ -36,11 +47,18 @@ export default function GuestPageEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Per-household share rows — Phase 3 of the guest-page merger. Hidden behind
+  // a <details> below the main share block so the page doesn't grow vertically
+  // for couples that don't need it. We keep these in their own state slice (vs
+  // refetching with the couple) because rotating a code returns just the new
+  // code, and we patch the local row rather than round-tripping the whole list.
+  const [households, setHouseholds] = useState<Household[]>([]);
+  const [rotatingId, setRotatingId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([coupleApi.current(), scheduleApi.list()])
-      .then(([cR, sR]) => {
+    Promise.all([coupleApi.current(), scheduleApi.list(), householdApi.list()])
+      .then(([cR, sR, hR]) => {
         if (cancelled) return;
         if (cR.couple) {
           setCouple(cR.couple);
@@ -51,6 +69,10 @@ export default function GuestPageEditorPage() {
           setPostRsvpContent(cR.couple.post_rsvp_content ?? "");
         }
         setEvents(sR.events);
+        // Hide the host-couple's own household — they don't need a personal
+        // RSVP link to themselves. Other auto-created singletons stay visible
+        // since they represent real guests the couple still has to brief.
+        setHouseholds(hR.households.filter((h) => !h.is_couple_household));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -114,6 +136,85 @@ export default function GuestPageEditorPage() {
           ? t("guest_preview.share_copied")
           : t("wedding_site_editor.url_copied"),
       );
+    } catch {
+      toast.error(t("guest_preview.share_copy_failed"));
+    }
+  }
+
+  /** Build the per-household personal share URL. Uses the Phase 2 nested
+   *  route shape (/w/:slug/:code) so once Phase 2 lands the link goes
+   *  straight to the public landing with the household preselected. If
+   *  Phase 2 hasn't shipped yet the URL 404s on hit — acceptable, since
+   *  the surfaces ship in the same PR sequence. */
+  const buildHouseholdUrl = useCallback(
+    (code: string) => (slug ? `${window.location.origin}/w/${slug}/${code}` : ""),
+    [slug],
+  );
+
+  async function onCopyHouseholdLink(hh: Household) {
+    const link = buildHouseholdUrl(hh.code);
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success(t("guest_preview.share_copied"));
+    } catch {
+      toast.error(t("guest_preview.share_copy_failed"));
+    }
+  }
+
+  function onShareHouseholdWhatsapp(hh: Household) {
+    const link = buildHouseholdUrl(hh.code);
+    if (!link) return;
+    const message = t("guest_page_editor.whatsapp_message_template", {
+      guest_name: hh.label,
+      link,
+    });
+    // wa.me is the official WhatsApp deep-link host — opens the share-sheet
+    // on mobile, the desktop client (or web) on a laptop. Open in a new tab
+    // so the planner stays on the editor.
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  async function onRotateHouseholdCode(hh: Household) {
+    const ok = await confirm({
+      title: t("guest_page_editor.share_per_household_rotate_confirm_title"),
+      body: t("guest_page_editor.share_per_household_rotate_confirm_body"),
+      confirmLabel: t("guest_page_editor.share_per_household_rotate_confirm_action"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setRotatingId(hh.id);
+    try {
+      const r = await householdApi.rotateCode(hh.id);
+      // Patch the local row in-place; the rest of the household payload is
+      // unchanged so we don't need a full re-fetch.
+      setHouseholds((prev) =>
+        prev.map((row) => (row.id === hh.id ? { ...row, code: r.household.code } : row)),
+      );
+      toast.success(t("guest_page_editor.share_per_household_rotate_success"));
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : t("guest_page_editor.share_per_household_rotate_error");
+      toast.error(msg);
+    } finally {
+      setRotatingId(null);
+    }
+  }
+
+  async function onCopyAllHouseholdLinks() {
+    if (households.length === 0 || !slug) return;
+    // Tab-separated so a paste into Sheets / Excel / Numbers lights up the
+    // two columns cleanly. Power-user escape hatch — most couples reach
+    // for the per-row Copy / WhatsApp buttons above.
+    const lines = households.map((hh) => `${hh.label}\t${buildHouseholdUrl(hh.code)}`);
+    const blob = lines.join("\n");
+    try {
+      await navigator.clipboard.writeText(blob);
+      toast.success(t("guest_page_editor.share_per_household_copy_all_success"));
     } catch {
       toast.error(t("guest_preview.share_copy_failed"));
     }
@@ -236,6 +337,112 @@ export default function GuestPageEditorPage() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* ── Per-household share (Phase 3 of the guest-page merger) ─────
+         *  Subordinate to the main share block — hidden in a <details>
+         *  so couples that just want the single public URL don't have to
+         *  scroll past a list. Once expanded, each household gets a row
+         *  with a personal /w/:slug/:code link, copy + WhatsApp buttons,
+         *  and a rotate-code action. */}
+        {slug && households.length > 0 && (
+          <details className="mt-5 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-umber-900/60">
+            <summary className="cursor-pointer text-sm font-medium text-ink-800 dark:text-paper-100">
+              {t("guest_page_editor.share_per_household_summary")}
+            </summary>
+            <div className="mt-4">
+              <h3 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+                {t("guest_page_editor.share_per_household_title")}
+              </h3>
+              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                {t("guest_page_editor.share_per_household_subtitle")}
+              </p>
+              <div className="mt-3">
+                <button
+                  type="button"
+                  className="btn-outline btn-sm"
+                  onClick={onCopyAllHouseholdLinks}
+                  aria-label={t("guest_page_editor.share_per_household_copy_all_aria")}
+                >
+                  <Copy size={14} aria-hidden />
+                  {t("guest_page_editor.share_per_household_copy_all")}
+                </button>
+              </div>
+              <ul className="mt-4 flex flex-col gap-3">
+                {households.map((hh) => {
+                  const link = buildHouseholdUrl(hh.code);
+                  const memberCount = hh.member_ids.length;
+                  return (
+                    <li
+                      key={hh.id}
+                      className="rounded-lg border border-paper-300 bg-white px-3 py-3 dark:border-umber-700 dark:bg-umber-800"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <div>
+                          <div className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                            {hh.label}
+                          </div>
+                          <div className="text-xs text-ink-500 dark:text-umber-300">
+                            {t("guest_page_editor.share_per_household_member_count", {
+                              count: memberCount,
+                            })}
+                          </div>
+                        </div>
+                        <code className="font-mono text-xs uppercase tracking-[0.15em] text-ink-600 dark:text-umber-200">
+                          {hh.code}
+                        </code>
+                      </div>
+                      <div className="mt-2 truncate font-mono text-xs text-ink-500 dark:text-umber-300">
+                        {link}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="btn-outline btn-sm"
+                          onClick={() => onCopyHouseholdLink(hh)}
+                          aria-label={t("guest_page_editor.share_per_household_copy_link_aria", {
+                            label: hh.label,
+                          })}
+                        >
+                          <Copy size={14} aria-hidden />
+                          {t("guest_page_editor.share_per_household_copy_link")}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-outline btn-sm"
+                          onClick={() => onShareHouseholdWhatsapp(hh)}
+                          aria-label={t("guest_page_editor.share_per_household_whatsapp_aria", {
+                            label: hh.label,
+                          })}
+                        >
+                          <MessageCircle size={14} aria-hidden />
+                          {t("guest_page_editor.share_per_household_whatsapp")}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-outline btn-sm"
+                          onClick={() => onRotateHouseholdCode(hh)}
+                          disabled={rotatingId === hh.id}
+                          aria-label={t("guest_page_editor.share_per_household_rotate_aria", {
+                            label: hh.label,
+                          })}
+                        >
+                          <RefreshCcw size={14} aria-hidden />
+                          {t("guest_page_editor.share_per_household_rotate")}
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </details>
+        )}
+
+        {slug && households.length === 0 && !loading && (
+          <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
+            {t("guest_page_editor.share_per_household_empty")}
+          </p>
         )}
       </section>
 

@@ -1338,6 +1338,32 @@ const hu: LocaleMessages = {
     preview_title: "Élő előnézet",
     preview_subtitle:
       "Ezt látja most a vendég. Mentsd el a fenti módosításokat, hogy itt is frissüljön a dátum, a menetrend és a térkép.",
+    share_per_household_title: "Személyes linkek háztartásonként",
+    share_per_household_subtitle:
+      "Minden háztartásnak saját linkje van. Aki a saját linkjén keresztül érkezik, annak automatikusan a háztartása töltődik be az RSVP űrlapon — nem kell kódot beírni.",
+    share_per_household_summary: "Háztartásonkénti személyes linkek mutatása",
+    share_per_household_empty:
+      "Először adjatok hozzá háztartást a Vendégek oldalon — itt akkor jelennek meg a személyes linkek, ha van legalább egy.",
+    share_per_household_member_count_one: "1 vendég",
+    share_per_household_member_count_other: "{count} vendég",
+    share_per_household_copy_link: "Link másolása",
+    share_per_household_copy_link_aria: "Személyes link másolása ehhez: {label}",
+    share_per_household_whatsapp: "WhatsApp",
+    share_per_household_whatsapp_aria: "Megosztás WhatsAppon — {label}",
+    share_per_household_rotate: "Új kód",
+    share_per_household_rotate_aria: "Új kód generálása ehhez: {label}",
+    share_per_household_rotate_confirm_title: "Új kódot generálsz ennek a háztartásnak?",
+    share_per_household_rotate_confirm_body:
+      "A jelenlegi link azonnal érvénytelenné válik. Aki már megnyitotta, az tudja folytatni, de akinek még nem küldted el, annak az új linket kell elküldened.",
+    share_per_household_rotate_confirm_action: "Új kód",
+    share_per_household_rotate_success: "Új kód generálva. A régi link már nem működik.",
+    share_per_household_rotate_error: "Nem sikerült új kódot generálni. Próbáld újra.",
+    share_per_household_copy_all: "Minden link másolása",
+    share_per_household_copy_all_aria:
+      "Minden háztartás linkjének másolása tabulátorral elválasztott listaként",
+    share_per_household_copy_all_success: "Az összes személyes linket a vágólapra másoltuk.",
+    whatsapp_message_template:
+      "Szia {guest_name}! Itt a személyes linked az esküvői oldalunkhoz — nyisd meg, és visszajelölheted is rajta: {link}",
   },
   guest_preview: {
     title: "Vendégoldal előnézet",
@@ -2934,6 +2960,7 @@ const hu: LocaleMessages = {
     activity_action_household_update: "háztartást módosított: {label}",
     activity_action_household_delete: "háztartást törölt: {label}",
     activity_action_household_regen_code: "új RSVP-kódot generált egy háztartáshoz",
+    activity_action_household_code_rotate: "új megosztási kódot generált egy háztartáshoz",
     activity_action_budget_line_create: "költségvetési sort vett fel: {label}",
     activity_action_budget_line_update: "költségvetési sort módosított: {label}",
     activity_action_budget_line_delete: "költségvetési sort törölt: {label}",

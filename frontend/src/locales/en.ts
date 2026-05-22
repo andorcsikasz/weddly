@@ -1330,6 +1330,31 @@ const en: LocaleMessages = {
     preview_title: "Live preview",
     preview_subtitle:
       "What a guest sees right now. Save your edits above to refresh the date, schedule and location pin shown here.",
+    share_per_household_title: "Personal guest links",
+    share_per_household_subtitle:
+      "Each household has its own link. Sending the personal link auto-fills their household on the RSVP form — no codes to type.",
+    share_per_household_summary: "Show personal links per household",
+    share_per_household_empty:
+      "Add a household on the Guests page first — personal links appear here once you have at least one party set up.",
+    share_per_household_member_count_one: "1 guest",
+    share_per_household_member_count_other: "{count} guests",
+    share_per_household_copy_link: "Copy link",
+    share_per_household_copy_link_aria: "Copy personal link for {label}",
+    share_per_household_whatsapp: "WhatsApp",
+    share_per_household_whatsapp_aria: "Share {label}'s link on WhatsApp",
+    share_per_household_rotate: "Rotate code",
+    share_per_household_rotate_aria: "Rotate the share code for {label}",
+    share_per_household_rotate_confirm_title: "Rotate this household's code?",
+    share_per_household_rotate_confirm_body:
+      "The current link stops working immediately. Anyone who already opened it stays in, but you'll need to re-send the new link to anyone you haven't reached yet.",
+    share_per_household_rotate_confirm_action: "Rotate code",
+    share_per_household_rotate_success: "New code generated. The old link no longer works.",
+    share_per_household_rotate_error: "Could not rotate the code. Please try again.",
+    share_per_household_copy_all: "Copy all links",
+    share_per_household_copy_all_aria: "Copy a tab-separated list of every household's link",
+    share_per_household_copy_all_success: "Copied all personal links to your clipboard.",
+    whatsapp_message_template:
+      "Hi {guest_name}! Here's your personal link to our wedding page — open it to see the details and RSVP: {link}",
   },
   guest_preview: {
     title: "Guest page preview",
@@ -2907,6 +2932,7 @@ const en: LocaleMessages = {
     activity_action_household_update: "updated a household: {label}",
     activity_action_household_delete: "removed a household: {label}",
     activity_action_household_regen_code: "regenerated a household RSVP code",
+    activity_action_household_code_rotate: "rotated a household share code",
     activity_action_budget_line_create: "added a budget line: {label}",
     activity_action_budget_line_update: "updated a budget line: {label}",
     activity_action_budget_line_delete: "removed a budget line: {label}",
