@@ -153,14 +153,16 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     { ctaUrl, category, unsubscribeToken }: RenderInput,
     blocks: PickedBlock[],
   ): string {
-    const preheader = blocks[0]?.block.preheader ?? blocks[0]?.block.paragraphs[0] ?? "";
+    const preheader = capPreheader(
+      blocks[0]?.block.preheader ?? blocks[0]?.block.paragraphs[0] ?? "",
+    );
     // First block always renders as the "primary" card (big bold greeting,
     // filled CTA button). Subsequent blocks render as "secondary" cards
     // (smaller, muted, link-style CTA, with the locale label above) — this
     // is what historic bilingual rendering looked like, and we preserve it
     // for the back-compat null-locale path.
     const cards = blocks
-      .map(({ locale, block }, i) => renderCard(block, locale, i === 0, ctaUrl))
+      .map(({ locale, block }, i) => renderCard(block, locale, i === 0, ctaUrl, category))
       .join(
         `<tr><td style="padding:18px 32px 0 32px;"><div style="border-top:1px solid ${COLOR.divider};font-size:0;line-height:0;height:1px;">&nbsp;</div></td></tr>`,
       );
@@ -235,6 +237,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     locale: "hu" | "en",
     primary: boolean,
     ctaUrl: string,
+    category: EmailCategory,
   ): string {
     if (primary) {
       const paras = block.paragraphs
@@ -262,6 +265,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                     </td>
                   </tr>
                 </table>
+                ${renderPlainUrlNote(ctaUrl, category, locale)}
                 ${footnote}
               </td>
             </tr>`;
@@ -338,9 +342,15 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     // demographic (40-55 y/o on a phone, presbyopic, no Dynamic Type for HTML
     // email). 13px is the standard floor where pixel-fitted hinting still
     // looks crisp without bumping copy density too far.
+    // Bilingual help label so a HU vendor on a cold mail isn't left guessing
+    // what "Questions?" means, and the EN-only render stays clean.
+    const helpLabel = bilingual ? "Kérdés? / Questions?" : onlyEn ? "Questions?" : "Kérdés?";
     return `
       <p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${why}</p>
       ${unsubLine}
+      <p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
+        ${helpLabel} <a href="mailto:${escapeAttr(CONFIG.supportEmail)}" style="color:${COLOR.muted};text-decoration:underline;">${escapeHtml(CONFIG.supportEmail)}</a>
+      </p>
       <p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;letter-spacing:0.04em;">
         <span style="font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:0.24em;">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">weddly.hu</a>
       </p>
@@ -358,6 +368,32 @@ function escapeHtml(s: string): string {
 }
 function escapeAttr(s: string): string {
   return escapeHtml(s);
+}
+
+// For unsolicited mail (outreach category), the CTA button hides its
+// destination — a textbook phishing shape. Render the URL in plain text
+// underneath so a skeptical recipient can verify the domain before clicking.
+// Transactional + lifecycle mails (recipient has a Weddly account) skip this
+// — the extra line is noise when there's no trust gap to bridge.
+function renderPlainUrlNote(ctaUrl: string, category: EmailCategory, locale: "hu" | "en"): string {
+  if (category !== "outreach") return "";
+  const label =
+    locale === "hu" ? "Vagy másold be a böngészőbe:" : "Or copy this link into your browser:";
+  return `<p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;word-break:break-all;">
+            ${escapeHtml(label)}<br />
+            <span style="color:${COLOR.enInk};">${escapeHtml(ctaUrl)}</span>
+          </p>`;
+}
+
+// Preheader is the gray "inbox preview" text. Gmail iOS truncates around 90
+// chars and Apple Mail around 140; cap at 90 so the preview is consistent
+// across clients and we never spill into the visible body (which leaks the
+// preheader trick — looks broken). One-line cap, no ellipsis: clients add
+// their own "…" when they truncate further.
+function capPreheader(s: string): string {
+  const trimmed = s.trim().replace(/\s+/g, " ");
+  if (trimmed.length <= 90) return trimmed;
+  return `${trimmed.slice(0, 89).trimEnd()}…`;
 }
 
 // Per-category "why am I getting this email" copy. Outreach (cold mail to a

@@ -17,6 +17,11 @@ export interface SendEmailInput {
 }
 
 // Headers attached to every outgoing message:
+//   - `Reply-To: <support>` — Without this, a recipient hitting Reply lands
+//     on whatever Resend uses as Return-Path (typically a no-reply bounce
+//     address). Pointing Reply-To at a real, monitored mailbox lets vendors
+//     and guests respond to verification + RSVP mail without copy-pasting an
+//     address out of the body.
 //   - `Auto-Submitted: auto-generated` — RFC 3834. Tells vacation auto-
 //     responders, ticket systems, and Exchange "do not auto-reply to this".
 //     Without it, every verification email risks bouncing back via OOO replies.
@@ -24,14 +29,17 @@ export interface SendEmailInput {
 //     braces; some Microsoft tenants honour this and ignore Auto-Submitted.
 // Per-kind headers (e.g. List-Unsubscribe for lifecycle mail) override these
 // only by adding entries — never by removing them.
-const DEFAULT_HEADERS: Record<string, string> = {
-  "Auto-Submitted": "auto-generated",
-  "X-Auto-Response-Suppress": "All",
-};
+function defaultHeaders(): Record<string, string> {
+  return {
+    "Reply-To": CONFIG.supportEmail,
+    "Auto-Submitted": "auto-generated",
+    "X-Auto-Response-Suppress": "All",
+  };
+}
 
 export async function sendEmail(input: SendEmailInput): Promise<void> {
   const mergedHeaders: Record<string, string> = {
-    ...DEFAULT_HEADERS,
+    ...defaultHeaders(),
     ...(input.headers ?? {}),
   };
 

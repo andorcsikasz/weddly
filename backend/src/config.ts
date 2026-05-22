@@ -47,6 +47,12 @@ export const CONFIG = {
   /** Resend API key. When unset, `sendEmail()` logs the link to stdout instead. */
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   emailFrom: process.env.EMAIL_FROM ?? DEFAULT_EMAIL_FROM,
+  /** Reply-to + footer "questions?" address. Recipients hitting Reply on any
+   *  outgoing mail land here; the footer also surfaces it as a visible link
+   *  ("Kérdés? hello@weddly.hu"). Defaults to the same mailbox as EMAIL_FROM
+   *  so a single misconfiguration doesn't strand replies on a non-existent
+   *  inbox. */
+  supportEmail: process.env.SUPPORT_EMAIL ?? "hello@weddly.hu",
   /** Comma-separated email allowlist. Members get `is_admin: true` on the User
    *  DTO and access to /app/admin/* routes. Reversible via env edit. */
   adminEmails: (process.env.ADMIN_EMAILS ?? "andor.csikasz@gmail.com")
