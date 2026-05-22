@@ -3089,16 +3089,6 @@ const hu: LocaleMessages = {
     welcome_desk_toggle_off: "Üdvözlő pult kikapcsolva",
     welcome_desk_status_on: "BE",
     welcome_desk_status_off: "KI",
-    display_title: "Megjelenítés",
-    display_body:
-      "Állítsd be, mennyire legyen sűrű a szöveg. A kényelmes mód növeli a legapróbb feliratokat — hasznos a szülőknek vagy napsütésben.",
-    density_label: "Sűrűség",
-    density_compact: "Tömör",
-    density_compact_help: "Több fér el a képernyőn — eredeti, sűrű elrendezés.",
-    density_default: "Alapértelmezett",
-    density_default_help: "Kiegyensúlyozott méret — kényelmes olvasás, kevés helyveszteség.",
-    density_comfortable: "Kényelmes",
-    density_comfortable_help: "Nagyobb apró feliratok — szülőknek, idősebb segítőknek ajánljuk.",
     rsvp_title: "RSVP beállítások",
     rsvp_body:
       "Ezek a beállítások szabályozzák, milyen kérdéseket látnak a vendégek a visszajelzéskor.",
@@ -3178,9 +3168,9 @@ const hu: LocaleMessages = {
     leave_couple_failed: "Nem sikerült kilépni. Próbáld újra.",
   },
   error_boundary: {
-    title: "Hoppá, valami félrement",
-    body: "Ez az oldal megakadt. Próbáld újra, vagy menj vissza a kezdőlapra — az adataid biztonságban vannak.",
-    try_again: "Újra próbálom",
+    title: "Ez most nem jött össze",
+    body: "Megpróbáltuk újratölteni az oldalt, de még mindig akadozik. Frissíts még egyszer, vagy ugorj vissza a kezdőlapra — az adataidnak nincs baja.",
+    try_again: "Frissítés",
     go_home: "Vissza a kezdőlapra",
   },
   register: {

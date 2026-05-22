@@ -17,21 +17,15 @@ import { CURRENCIES } from "@shared/types";
 import {
   Archive,
   ChevronDown,
-  Database,
   Download,
   Heart,
-  History,
   LogOut,
   ShieldCheck,
-  Sliders,
   Tablet,
   Trash2,
-  User as UserIcon,
-  Users as UsersIcon,
   Wallet,
 } from "lucide-react";
 import {
-  type CSSProperties,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
@@ -44,7 +38,6 @@ import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { type Density, useDensity } from "../lib/density";
 import {
   authApi,
   budgetApi,
@@ -104,7 +97,6 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   // page body would double-stack.
   const showHero = !tab;
   const { t, locale } = useT();
-  const [density, setDensity] = useDensity();
   useDocumentMeta("seo.profile_title", "seo.profile_description");
   const promptEntry = useEntryPrompt();
   const confirm = useConfirm();
@@ -802,19 +794,6 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
               )}
             </li>
           </ul>
-        </section>
-      )}
-
-      {showPlanning && (
-        <section className="card mt-6">
-          <h2 className="flex items-center gap-2 text-lg">
-            <Sliders size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
-            {t("profile.display_title")}
-          </h2>
-          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
-            {t("profile.display_body")}
-          </p>
-          <DensitySlider density={density} setDensity={setDensity} t={t} />
         </section>
       )}
 
@@ -1702,105 +1681,6 @@ function SecuritySection({
   );
 }
 
-/** Three-step density slider on the Profile Display card. The slider
- *  drives a 0/1/2 index mapped onto compact / default / comfortable,
- *  with the three labels under the track and a one-line description of
- *  the currently-active value below. Native `<input type="range">` so
- *  keyboard nav + screen readers come for free; we paint the filled
- *  portion of the track with the same gradient trick the cost-planning
- *  sliders use (`.range-fill` class + inline custom property). */
-function DensitySlider({
-  density,
-  setDensity,
-  t,
-}: {
-  density: Density;
-  setDensity: (d: Density) => void;
-  t: T;
-}) {
-  const VALUES: Density[] = ["compact", "default", "comfortable"];
-  const idx = Math.max(0, VALUES.indexOf(density));
-  const pct = (idx / (VALUES.length - 1)) * 100;
-  // Type-sample sizes for the "Aa" tick labels below the track. Going
-  // text-xs → text-base → text-2xl gives the user an immediate "this is
-  // how big the small labels will read in each mode" preview without
-  // forcing them to commit a choice first.
-  const SAMPLE_CLASSES: Record<Density, string> = {
-    compact: "text-xs",
-    default: "text-base",
-    comfortable: "text-2xl",
-  };
-  return (
-    <div className="mt-4">
-      <label htmlFor="density-slider" className="field-label">
-        {t("profile.density_label")}
-      </label>
-      {/* The thumb (14px) sits centred on the 6px track by default. The
-       *  inline gradient paints the filled-portion colour on the input's
-       *  background; the .range-fill class handles the height + the
-       *  thumb's vertical-centre alignment via the WebKit / Moz
-       *  pseudo-elements declared in index.css. */}
-      <input
-        id="density-slider"
-        type="range"
-        min={0}
-        max={VALUES.length - 1}
-        step={1}
-        value={idx}
-        list="density-ticks"
-        onChange={(e) => {
-          const next = VALUES[Number(e.target.value)];
-          if (next) setDensity(next);
-        }}
-        aria-valuetext={t(`profile.density_${density}` as const)}
-        className="range-fill mt-2 block w-full"
-        style={
-          {
-            background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${pct}%, var(--range-fill-remainder) ${pct}%, var(--range-fill-remainder) 100%)`,
-          } as CSSProperties
-        }
-      />
-      <datalist id="density-ticks">
-        {VALUES.map((_, i) => (
-          <option key={i} value={i} />
-        ))}
-      </datalist>
-      {/* "Aa" tick row replaces the old wordy "Tömör / Alapértelmezett /
-       *  Kényelmes" labels with a type sample at each stop's actual size.
-       *  Items align to the END of their column so the visual baseline
-       *  stays consistent regardless of glyph height (the bigger "Aa"
-       *  has more ascender / descender headroom than the smaller ones). */}
-      <div className="mt-3 grid grid-cols-3 items-end">
-        {VALUES.map((value) => {
-          const active = value === density;
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setDensity(value)}
-              aria-label={t(`profile.density_${value}` as const)}
-              title={t(`profile.density_${value}` as const)}
-              className={`flex justify-center pt-1 leading-none transition-colors ${SAMPLE_CLASSES[value]} ${
-                active
-                  ? "font-semibold text-ink-900 dark:text-paper-50"
-                  : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
-              }`}
-            >
-              Aa
-            </button>
-          );
-        })}
-      </div>
-      <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
-        <span className="font-medium text-ink-700 dark:text-paper-100">
-          {t(`profile.density_${density}` as const)}
-        </span>
-        <span className="mx-1">·</span>
-        {t(`profile.density_${density}_help` as const)}
-      </p>
-    </div>
-  );
-}
 
 /** Single initial-disc above the partner card — just the invited
  *  partner's monogram in blush, no self-overlap. The signed-in user's

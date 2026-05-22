@@ -3487,17 +3487,6 @@ export interface LocaleMessages {
     welcome_desk_toggle_off: string;
     welcome_desk_status_on: string;
     welcome_desk_status_off: string;
-    /** Display preferences — density toggle for older relatives / outdoor
-     *  day-of use who can't read the 10/11 px utility labels at default size. */
-    display_title: string;
-    display_body: string;
-    density_label: string;
-    density_compact: string;
-    density_compact_help: string;
-    density_default: string;
-    density_default_help: string;
-    density_comfortable: string;
-    density_comfortable_help: string;
     /** "Wedding RSVP" settings card on /app/profile. Today it carries a
      *  single opt-in: whether the RSVP flow asks guests if they need
      *  accommodation. Default off so couples who don't offer it don't ask. */
