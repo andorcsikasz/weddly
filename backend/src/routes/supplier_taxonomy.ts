@@ -10,6 +10,7 @@ import type {
   UpdateSupplierGroupInput,
 } from "@shared/supplier_taxonomy";
 import {
+  buildAdminTaxonomy,
   buildTaxonomy,
   categoriesInGroup,
   createCategory,
@@ -67,10 +68,23 @@ function parseOptInt(raw: unknown, field: string): number | undefined {
   return n;
 }
 
+function parseOptBool(raw: unknown, field: string): boolean | undefined {
+  if (raw === undefined) return undefined;
+  if (typeof raw !== "boolean") throw new HttpError(400, `${field} must be a boolean`);
+  return raw;
+}
+
 // ─── Public read ─────────────────────────────────────────────────────────────
 
 function handleGetTaxonomy(_ctx: Ctx): Response {
   return json(buildTaxonomy());
+}
+
+// ─── Admin read (includes hidden) ───────────────────────────────────────────
+
+function handleGetAdminTaxonomy(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(buildAdminTaxonomy());
 }
 
 // ─── Admin: groups ───────────────────────────────────────────────────────────
@@ -115,14 +129,27 @@ async function handleUpdateGroup(ctx: Ctx): Promise<Response> {
   if (body.label_en !== undefined) patch.label_en = parseLabel(body.label_en, "label_en");
   const sortOrder = parseOptInt(body.sort_order, "sort_order");
   if (sortOrder !== undefined) patch.sort_order = sortOrder;
+  const hidden = parseOptBool(body.hidden, "hidden");
+  if (hidden !== undefined) patch.hidden = hidden;
 
   try {
     const row = updateGroup(id, patch);
     if (!row) throw new HttpError(404, "Group not found");
+    // `admin.supplier_group_hide` / `_unhide` audits land separately from
+    // the generic update so the timeline reads cleanly when an admin is
+    // just toggling visibility — most of the noise on this table is
+    // labels + sort, the visibility flip is the one event worth its own
+    // row.
+    const action =
+      hidden === true
+        ? "admin.supplier_group_hide"
+        : hidden === false
+          ? "admin.supplier_group_unhide"
+          : "admin.supplier_group_update";
     addAuditLog({
       actor_user_id: admin.id,
       couple_id: null,
-      action: "admin.supplier_group_update",
+      action,
       target_kind: "supplier_group",
       target_id: id,
       before: { slug: before.slug, label_hu: before.label_hu, label_en: before.label_en },
@@ -232,14 +259,22 @@ async function handleUpdateCategory(ctx: Ctx): Promise<Response> {
   }
   const sortOrder = parseOptInt(body.sort_order, "sort_order");
   if (sortOrder !== undefined) patch.sort_order = sortOrder;
+  const hidden = parseOptBool(body.hidden, "hidden");
+  if (hidden !== undefined) patch.hidden = hidden;
 
   try {
     const row = updateCategory(id, patch);
     if (!row) throw new HttpError(404, "Category not found");
+    const action =
+      hidden === true
+        ? "admin.supplier_category_hide"
+        : hidden === false
+          ? "admin.supplier_category_unhide"
+          : "admin.supplier_category_update";
     addAuditLog({
       actor_user_id: admin.id,
       couple_id: null,
-      action: "admin.supplier_category_update",
+      action,
       target_kind: "supplier_category",
       target_id: id,
       before: { slug: before.slug, label_hu: before.label_hu, label_en: before.label_en },
@@ -282,6 +317,7 @@ function handleDeleteCategory(ctx: Ctx): Response {
 
 export function registerSupplierTaxonomyRoutes(router: Router) {
   router.get("/api/supplier-categories", handleGetTaxonomy);
+  router.get("/api/admin/supplier-taxonomy", handleGetAdminTaxonomy, true);
   router.post("/api/admin/supplier-groups", handleCreateGroup, true);
   router.patch("/api/admin/supplier-groups/:id", handleUpdateGroup, true);
   router.delete("/api/admin/supplier-groups/:id", handleDeleteGroup, true);

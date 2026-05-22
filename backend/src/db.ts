@@ -580,6 +580,15 @@ addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 // — couples / curated entries see read-only.
 addColumnIfMissing("listings", "hero_image_url", "hero_image_url TEXT");
 
+// Soft-hide for the admin-editable supplier taxonomy. Couples no longer
+// see hidden groups / categories on the public dropdowns + directory
+// surfaces, but the rows stay in the DB so existing community-supplier
+// references (`community_suppliers.category = slug`) don't orphan. Admin
+// can still find and unhide them from /app/admin/categories. Default 0
+// preserves the legacy "everything visible" behaviour for seeded rows.
+addColumnIfMissing("supplier_groups", "hidden", "hidden INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("supplier_categories", "hidden", "hidden INTEGER NOT NULL DEFAULT 0");
+
 export function now(): number {
   return Date.now();
 }

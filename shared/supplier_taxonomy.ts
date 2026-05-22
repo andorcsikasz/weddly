@@ -11,6 +11,12 @@ export interface AdminSupplierGroup {
   label_hu: string;
   label_en: string;
   sort_order: number;
+  /** When true, the group + all its categories are filtered out of the
+   *  public taxonomy endpoint (couple-facing dropdowns + the directory).
+   *  Admin keeps seeing them on /app/admin/categories so they can unhide.
+   *  Reversible alternative to delete — community-supplier rows referencing
+   *  a hidden category don't orphan. */
+  hidden: boolean;
 }
 
 export interface AdminSupplierCategory {
@@ -23,6 +29,11 @@ export interface AdminSupplierCategory {
    *  (see SUPPLIER_TO_BUDGET in shared/suppliers.ts for the legacy map). */
   budget_category: string;
   sort_order: number;
+  /** When true, the category is filtered out of the public taxonomy
+   *  endpoint. Admin keeps the row to allow unhide; community-supplier
+   *  references survive (the slug still resolves). Soft-delete companion
+   *  to the hard DELETE which is gated on those references being zero. */
+  hidden: boolean;
 }
 
 /** Wire shape for the public `GET /api/supplier-categories` endpoint and
@@ -49,6 +60,9 @@ export interface UpdateSupplierGroupInput {
   label_hu?: string;
   label_en?: string;
   sort_order?: number;
+  /** Toggle visibility on the public taxonomy endpoint. True hides the
+   *  group + every category under it; false brings them back. */
+  hidden?: boolean;
 }
 
 export interface CreateSupplierCategoryInput {
@@ -67,4 +81,8 @@ export interface UpdateSupplierCategoryInput {
   label_en?: string;
   budget_category?: string;
   sort_order?: number;
+  /** Toggle visibility on the public taxonomy endpoint. True hides only
+   *  this category; the parent group stays visible if it has other
+   *  non-hidden categories. */
+  hidden?: boolean;
 }

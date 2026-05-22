@@ -3,12 +3,12 @@ import type {
   AdminSupplierGroup,
   SupplierTaxonomyGroup,
 } from "@shared/supplier_taxonomy";
-import { LayoutList, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, LayoutList, Pencil, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import { Button, Dialog, Skeleton, TextField, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { adminSupplierTaxonomyApi, supplierTaxonomyApi } from "../lib/endpoints";
+import { adminSupplierTaxonomyApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 type EditTarget =
@@ -27,7 +27,10 @@ export default function AdminCategoriesPage() {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await supplierTaxonomyApi.list();
+      // Admin endpoint includes hidden rows so the editor can render the
+      // hide/unhide toggle alongside the rest. The public consumer keeps
+      // hitting `/api/supplier-categories` and never sees hidden entries.
+      const r = await adminSupplierTaxonomyApi.list();
       setGroups(r.groups);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -35,6 +38,32 @@ export default function AdminCategoriesPage() {
       setLoading(false);
     }
   }, [toast, t]);
+
+  async function onToggleHideGroup(g: AdminSupplierGroup) {
+    const nextHidden = !g.hidden;
+    try {
+      await adminSupplierTaxonomyApi.updateGroup(g.id, { hidden: nextHidden });
+      toast.success(
+        nextHidden ? t("admin.taxonomy_hide_success") : t("admin.taxonomy_unhide_success"),
+      );
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  async function onToggleHideCategory(c: AdminSupplierCategory) {
+    const nextHidden = !c.hidden;
+    try {
+      await adminSupplierTaxonomyApi.updateCategory(c.id, { hidden: nextHidden });
+      toast.success(
+        nextHidden ? t("admin.taxonomy_hide_success") : t("admin.taxonomy_unhide_success"),
+      );
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
 
   useEffect(() => {
     refresh();
@@ -155,7 +184,10 @@ export default function AdminCategoriesPage() {
       ) : (
         <div className="space-y-3">
           {groups.map((g) => (
-            <section key={g.id} className="admin-card p-0 overflow-hidden">
+            <section
+              key={g.id}
+              className={`admin-card p-0 overflow-hidden ${g.hidden ? "opacity-60" : ""}`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
                 <div className="flex flex-col gap-1">
                   <div className="font-medium text-ink-900 dark:text-paper-50">
@@ -168,6 +200,7 @@ export default function AdminCategoriesPage() {
                     <Pill tone="paper">
                       {t("admin.taxonomy_category_count", { n: g.categories.length })}
                     </Pill>
+                    {g.hidden && <Pill tone="violet">{t("admin.taxonomy_hidden_badge")}</Pill>}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -188,6 +221,14 @@ export default function AdminCategoriesPage() {
                   </button>
                   <button
                     type="button"
+                    className="btn-ghost btn-sm"
+                    onClick={() => onToggleHideGroup(g)}
+                  >
+                    {g.hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                    <span>{g.hidden ? t("admin.taxonomy_unhide") : t("admin.taxonomy_hide")}</span>
+                  </button>
+                  <button
+                    type="button"
                     className="btn-alert btn-sm"
                     onClick={() => onDeleteGroup(g)}
                   >
@@ -205,7 +246,9 @@ export default function AdminCategoriesPage() {
                   {g.categories.map((c) => (
                     <li
                       key={c.id}
-                      className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+                      className={`flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60 ${
+                        c.hidden ? "opacity-60" : ""
+                      }`}
                     >
                       <div className="flex flex-col gap-1">
                         <div className="text-ink-900 dark:text-paper-50">
@@ -216,6 +259,9 @@ export default function AdminCategoriesPage() {
                         <div className="flex flex-wrap items-center gap-1.5">
                           <Pill tone="muted">{c.slug}</Pill>
                           <Pill tone="violet">{c.budget_category}</Pill>
+                          {c.hidden && (
+                            <Pill tone="violet">{t("admin.taxonomy_hidden_badge")}</Pill>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-1">
@@ -226,6 +272,16 @@ export default function AdminCategoriesPage() {
                           aria-label={t("admin.taxonomy_edit")}
                         >
                           <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm"
+                          onClick={() => onToggleHideCategory(c)}
+                        >
+                          {c.hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                          <span>
+                            {c.hidden ? t("admin.taxonomy_unhide") : t("admin.taxonomy_hide")}
+                          </span>
                         </button>
                         <button
                           type="button"

@@ -20,6 +20,8 @@ export interface SupplierGroupRow {
   label_hu: string;
   label_en: string;
   sort_order: number;
+  /** 0 / 1; mapped to boolean on the DTO. */
+  hidden: number;
   created_at: number;
   updated_at: number;
 }
@@ -32,6 +34,8 @@ export interface SupplierCategoryRow {
   label_en: string;
   budget_category: string;
   sort_order: number;
+  /** 0 / 1; mapped to boolean on the DTO. */
+  hidden: number;
   created_at: number;
   updated_at: number;
 }
@@ -43,6 +47,7 @@ export function toGroup(row: SupplierGroupRow): AdminSupplierGroup {
     label_hu: row.label_hu,
     label_en: row.label_en,
     sort_order: row.sort_order,
+    hidden: row.hidden === 1,
   };
 }
 
@@ -55,6 +60,7 @@ export function toCategory(row: SupplierCategoryRow): AdminSupplierCategory {
     label_en: row.label_en,
     budget_category: row.budget_category,
     sort_order: row.sort_order,
+    hidden: row.hidden === 1,
   };
 }
 
@@ -90,16 +96,45 @@ export function getCategoryById(id: number): SupplierCategoryRow | null {
 // every supplier-dropdown render and on app boot. The 500-user load test
 // pushed `GET /api/supplier-categories` to p95 ≈ 2.1s under contention even
 // though the on-disk data hadn't changed for the duration of the run.
-// Memoise the rebuilt response in-process and invalidate on any admin
-// mutation via invalidateTaxonomyCache(). Pure additive — no API change.
-let cachedTaxonomy: SupplierTaxonomy | null = null;
+// Memoise both rebuilt responses (public-filtered + admin-full) in-process
+// and invalidate them on any admin mutation via invalidateTaxonomyCache().
+let cachedPublicTaxonomy: SupplierTaxonomy | null = null;
+let cachedAdminTaxonomy: SupplierTaxonomy | null = null;
 
 export function invalidateTaxonomyCache(): void {
-  cachedTaxonomy = null;
+  cachedPublicTaxonomy = null;
+  cachedAdminTaxonomy = null;
 }
 
+/** Public taxonomy — filters out hidden groups + hidden categories. A
+ *  hidden GROUP masks every category under it regardless of the per-
+ *  category flag, so the couple-facing dropdowns never surface a
+ *  hidden branch even partially. */
 export function buildTaxonomy(): SupplierTaxonomy {
-  if (cachedTaxonomy) return cachedTaxonomy;
+  if (cachedPublicTaxonomy) return cachedPublicTaxonomy;
+  const groups = listGroups().filter((g) => g.hidden !== 1);
+  const categories = listCategories().filter((c) => c.hidden !== 1);
+  const byGroup = new Map<number, AdminSupplierCategory[]>();
+  for (const c of categories) {
+    const arr = byGroup.get(c.group_id) ?? [];
+    arr.push(toCategory(c));
+    byGroup.set(c.group_id, arr);
+  }
+  cachedPublicTaxonomy = {
+    groups: groups.map((g) => ({
+      ...toGroup(g),
+      categories: byGroup.get(g.id) ?? [],
+    })),
+  };
+  return cachedPublicTaxonomy;
+}
+
+/** Admin taxonomy — every group + every category, hidden flag intact.
+ *  Used by `/api/admin/supplier-taxonomy` so /app/admin/categories can
+ *  render hidden rows with a badge + unhide button. Same shape as the
+ *  public taxonomy so the admin page can reuse the existing UI. */
+export function buildAdminTaxonomy(): SupplierTaxonomy {
+  if (cachedAdminTaxonomy) return cachedAdminTaxonomy;
   const groups = listGroups();
   const categories = listCategories();
   const byGroup = new Map<number, AdminSupplierCategory[]>();
@@ -108,13 +143,13 @@ export function buildTaxonomy(): SupplierTaxonomy {
     arr.push(toCategory(c));
     byGroup.set(c.group_id, arr);
   }
-  cachedTaxonomy = {
+  cachedAdminTaxonomy = {
     groups: groups.map((g) => ({
       ...toGroup(g),
       categories: byGroup.get(g.id) ?? [],
     })),
   };
-  return cachedTaxonomy;
+  return cachedAdminTaxonomy;
 }
 
 /** Bumps the next sort_order so newly created rows land at the end. */
@@ -162,21 +197,24 @@ interface UpdateGroupInput {
   label_hu?: string;
   label_en?: string;
   sort_order?: number;
+  hidden?: boolean;
 }
 
 export function updateGroup(id: number, patch: UpdateGroupInput): SupplierGroupRow | null {
   const cur = getGroupById(id);
   if (!cur) return null;
   const ts = now();
+  const nextHidden = patch.hidden === undefined ? cur.hidden : patch.hidden ? 1 : 0;
   db.prepare(
     `UPDATE supplier_groups
-        SET slug = ?, label_hu = ?, label_en = ?, sort_order = ?, updated_at = ?
+        SET slug = ?, label_hu = ?, label_en = ?, sort_order = ?, hidden = ?, updated_at = ?
       WHERE id = ?`,
   ).run(
     patch.slug ?? cur.slug,
     patch.label_hu ?? cur.label_hu,
     patch.label_en ?? cur.label_en,
     patch.sort_order ?? cur.sort_order,
+    nextHidden,
     ts,
     id,
   );
@@ -239,16 +277,18 @@ interface UpdateCategoryInput {
   label_en?: string;
   budget_category?: string;
   sort_order?: number;
+  hidden?: boolean;
 }
 
 export function updateCategory(id: number, patch: UpdateCategoryInput): SupplierCategoryRow | null {
   const cur = getCategoryById(id);
   if (!cur) return null;
   const ts = now();
+  const nextHidden = patch.hidden === undefined ? cur.hidden : patch.hidden ? 1 : 0;
   db.prepare(
     `UPDATE supplier_categories
         SET group_id = ?, slug = ?, label_hu = ?, label_en = ?,
-            budget_category = ?, sort_order = ?, updated_at = ?
+            budget_category = ?, sort_order = ?, hidden = ?, updated_at = ?
       WHERE id = ?`,
   ).run(
     patch.group_id ?? cur.group_id,
@@ -257,6 +297,7 @@ export function updateCategory(id: number, patch: UpdateCategoryInput): Supplier
     patch.label_en ?? cur.label_en,
     patch.budget_category ?? cur.budget_category,
     patch.sort_order ?? cur.sort_order,
+    nextHidden,
     ts,
     id,
   );

@@ -961,6 +961,10 @@ export const supplierTaxonomyApi = {
 };
 
 export const adminSupplierTaxonomyApi = {
+  /** Admin view of the taxonomy — includes hidden groups + categories so
+   *  the editor can render them with a "Hidden" badge + unhide button.
+   *  The public `supplierTaxonomyApi.list()` filters hidden rows out. */
+  list: () => apiFetch<SupplierTaxonomy>("GET", "/api/admin/supplier-taxonomy"),
   createGroup: (body: CreateSupplierGroupInput) =>
     apiFetch<{ group: AdminSupplierGroup }>("POST", "/api/admin/supplier-groups", body),
   updateGroup: (id: number, body: UpdateSupplierGroupInput) =>
