@@ -15,7 +15,14 @@ import type {
 } from "@shared/types";
 import { CURRENCIES } from "@shared/types";
 import { ChevronDown, Tablet } from "lucide-react";
-import { type CSSProperties, type FormEvent, useEffect, useState } from "react";
+import {
+  type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
@@ -58,7 +65,15 @@ function formatBytes(n: number): string {
 
 function formatTimestamp(ms: number, locale: Locale): string {
   const d = new Date(ms);
-  const dateStr = formatDate(d.toISOString().slice(0, 10), locale);
+  // Build the date portion from LOCAL fields, not from the UTC ISO string.
+  // The old `d.toISOString().slice(0, 10)` mixed UTC date with local time —
+  // a 00:30 CET event (= 23:30 UTC prev day) rendered as "yesterday 00:30"
+  // because the date came from UTC and the time from local. Now both sides
+  // agree.
+  const yyyy = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const dateStr = formatDate(`${yyyy}-${mo}-${dd}`, locale);
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${dateStr} ${hh}:${mm}`;
@@ -114,6 +129,12 @@ export default function ProfilePage() {
   const [capInput, setCapInput] = useState("");
   const [savingCap, setSavingCap] = useState(false);
   const [capError, setCapError] = useState<string | null>(null);
+  /** Refs on the Edit + Add-payment trigger buttons so cancel/save restores
+   *  focus to the originator instead of dropping to <body>. Inline forms
+   *  un-mount when toggled off, so without this an SR / keyboard user
+   *  silently loses their place on the page. */
+  const editCapTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const addPaymentTriggerRef = useRef<HTMLButtonElement | null>(null);
   /** Quick-payment state — drops a new budget_line in the "other" category
    *  with `planned_huf = actual_huf = amount` so the spend shows up on the
    *  budget page under "Egyéb" with the user-supplied label. */
@@ -318,6 +339,20 @@ export default function ProfilePage() {
     const timer = window.setTimeout(() => setArmedDeleteId(null), 4000);
     return () => window.clearTimeout(timer);
   }, [armedDeleteId]);
+
+  // Focus restore — when the inline cap-edit / add-payment forms close, the
+  // form unmounts and focus drops to <body>, stranding keyboard + SR users.
+  // The prev-ref tracks the transition so the effect only fires on close.
+  const editingCapPrev = useRef(false);
+  useEffect(() => {
+    if (editingCapPrev.current && !editingCap) editCapTriggerRef.current?.focus();
+    editingCapPrev.current = editingCap;
+  }, [editingCap]);
+  const addingPaymentPrev = useRef(false);
+  useEffect(() => {
+    if (addingPaymentPrev.current && !addingPayment) addPaymentTriggerRef.current?.focus();
+    addingPaymentPrev.current = addingPayment;
+  }, [addingPayment]);
 
   // Same auto-disarm window for the cancel-invite button.
   useEffect(() => {
@@ -531,7 +566,7 @@ export default function ProfilePage() {
                   type="button"
                   className={`btn-sm ${
                     armedCancelInvite
-                      ? "rounded-xl border border-blush-500 bg-blush-500 px-4 text-paper-100 transition-colors hover:bg-blush-600"
+                      ? "rounded-xl border border-blush-700 bg-blush-700 px-4 text-paper-50 transition-colors hover:bg-blush-800"
                       : "btn-outline"
                   }`}
                   onClick={cancelPendingInvite}
@@ -543,6 +578,11 @@ export default function ProfilePage() {
                       ? t("profile.partner_invite_cancel_confirm")
                       : t("profile.partner_invite_cancel")}
                 </button>
+                {/* SR announce — paired with the armed visual state so
+                 *  non-visual users know the next click fires immediately. */}
+                <span role="status" aria-live="polite" className="sr-only">
+                  {armedCancelInvite ? t("profile.partner_invite_cancel_armed_announce") : ""}
+                </span>
               </div>
             )}
           </>
@@ -561,32 +601,7 @@ export default function ProfilePage() {
          *  band instead of a stacked label-on-top-of-pills layout. */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h2 className="text-lg">{t("profile.budget_title")}</h2>
-          <div
-            role="radiogroup"
-            aria-label={t("profile.budget_currency_label")}
-            className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
-          >
-            {CURRENCIES.map((c) => {
-              const active = c === currency;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={c}
-                  onClick={() => saveCurrency(c)}
-                  className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    active
-                      ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                      : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
-                  }`}
-                >
-                  {currencySymbol(c, locale)}
-                </button>
-              );
-            })}
-          </div>
+          <CurrencyPicker currency={currency} onSelect={saveCurrency} t={t} locale={locale} />
         </div>
 
         {/* Two stat rows on a hairline-divided list. Each row: label +
@@ -603,6 +618,7 @@ export default function ProfilePage() {
               </span>
               {!editingCap && (
                 <button
+                  ref={editCapTriggerRef}
                   type="button"
                   className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
                   onClick={beginCapEdit}
@@ -671,6 +687,7 @@ export default function ProfilePage() {
               </span>
               {!addingPayment && (
                 <button
+                  ref={addPaymentTriggerRef}
                   type="button"
                   className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
                   onClick={() => {
@@ -773,6 +790,7 @@ export default function ProfilePage() {
           >
             <Tablet size={14} aria-hidden />
             {t("profile.welcome_desk_button")}
+            <span className="sr-only"> {t("common.opens_new_tab")}</span>
           </a>
         ) : (
           <p className="mt-3 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
@@ -781,126 +799,25 @@ export default function ProfilePage() {
         )}
       </section>
 
-      <section className="card mt-6 p-0">
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5">
-            <div className="min-w-0">
-              <h2 className="text-lg">{t("profile.security_title")}</h2>
-              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
-                {t("profile.security_summary")}
-              </p>
-            </div>
-            <ChevronDown
-              size={18}
-              className="shrink-0 text-ink-500 transition-transform group-open:rotate-180 dark:text-umber-300"
-              aria-hidden
-            />
-          </summary>
-          <div className="grid gap-6 border-t border-paper-200 px-6 py-5 md:grid-cols-2 dark:border-umber-700">
-            <form className="grid gap-2" onSubmit={changePassword} noValidate>
-              <h3 className="text-sm font-medium text-ink-800 dark:text-paper-100">
-                {t("profile.security_pw_heading")}
-              </h3>
-              <div>
-                <label htmlFor="pw-current" className="field-label">
-                  {t("profile.security_pw_current")}
-                </label>
-                <input
-                  id="pw-current"
-                  type="password"
-                  className="input"
-                  autoComplete="current-password"
-                  value={pwCurrent}
-                  onChange={(e) => setPwCurrent(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="pw-new" className="field-label">
-                  {t("profile.security_pw_new")}
-                </label>
-                <input
-                  id="pw-new"
-                  type="password"
-                  className="input"
-                  autoComplete="new-password"
-                  value={pwNext}
-                  onChange={(e) => setPwNext(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="pw-confirm" className="field-label">
-                  {t("profile.security_pw_confirm")}
-                </label>
-                <input
-                  id="pw-confirm"
-                  type="password"
-                  className="input"
-                  autoComplete="new-password"
-                  value={pwConfirm}
-                  onChange={(e) => setPwConfirm(e.target.value)}
-                  required
-                />
-              </div>
-              {pwError && <p className="field-error">{pwError}</p>}
-              <button
-                type="submit"
-                className="btn-primary mt-1 justify-self-start"
-                disabled={pwSubmitting}
-              >
-                {pwSubmitting
-                  ? t("profile.security_pw_submitting")
-                  : t("profile.security_pw_submit")}
-              </button>
-            </form>
-
-            <form className="grid gap-2" onSubmit={requestEmailChange} noValidate>
-              <h3 className="text-sm font-medium text-ink-800 dark:text-paper-100">
-                {t("profile.security_email_heading")}
-              </h3>
-              <div>
-                <label htmlFor="new-email" className="field-label">
-                  {t("profile.security_email_new")}
-                </label>
-                <input
-                  id="new-email"
-                  type="email"
-                  className="input"
-                  autoComplete="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="email-pw" className="field-label">
-                  {t("profile.security_email_password")}
-                </label>
-                <input
-                  id="email-pw"
-                  type="password"
-                  className="input"
-                  autoComplete="current-password"
-                  value={emailPassword}
-                  onChange={(e) => setEmailPassword(e.target.value)}
-                  required
-                />
-              </div>
-              {emailError && <p className="field-error">{emailError}</p>}
-              <button
-                type="submit"
-                className="btn-outline mt-1 justify-self-start"
-                disabled={emailSubmitting}
-              >
-                {emailSubmitting
-                  ? t("profile.security_email_submitting")
-                  : t("profile.security_email_submit")}
-              </button>
-            </form>
-          </div>
-        </details>
-      </section>
+      <SecuritySection
+        t={t}
+        pwCurrent={pwCurrent}
+        setPwCurrent={setPwCurrent}
+        pwNext={pwNext}
+        setPwNext={setPwNext}
+        pwConfirm={pwConfirm}
+        setPwConfirm={setPwConfirm}
+        pwError={pwError}
+        pwSubmitting={pwSubmitting}
+        onChangePassword={changePassword}
+        newEmail={newEmail}
+        setNewEmail={setNewEmail}
+        emailPassword={emailPassword}
+        setEmailPassword={setEmailPassword}
+        emailError={emailError}
+        emailSubmitting={emailSubmitting}
+        onRequestEmailChange={requestEmailChange}
+      />
 
       <section className="card mt-6">
         <h2 className="text-lg">{t("profile.export_title")}</h2>
@@ -999,6 +916,271 @@ export default function ProfilePage() {
         {error && <p className="field-error mt-3">{error}</p>}
       </section>
     </>
+  );
+}
+
+/** Accessible currency picker — APG-conformant radiogroup. Arrow keys move
+ *  selection (with wrap), Home/End jump to ends, roving tabIndex keeps the
+ *  whole group as a single tab stop. Mobile sizing bumps each pill above the
+ *  iOS 44pt floor; on desktop it stays a compact inline band so the section
+ *  header doesn't double-stack. The visible label is the currency symbol
+ *  (€, $, Ft, …) but the SR `aria-label` carries the three-letter code so
+ *  screen readers say "Euro" / "United States dollar" via Intl, not "Ft". */
+function CurrencyPicker({
+  currency,
+  onSelect,
+  t,
+  locale,
+}: {
+  currency: Currency;
+  onSelect: (next: Currency) => void;
+  t: T;
+  locale: Locale;
+}) {
+  const refs = useRef<Array<HTMLButtonElement | null>>([]);
+  const activeIdx = Math.max(0, CURRENCIES.indexOf(currency));
+  function focusAt(i: number) {
+    const wrapped = (i + CURRENCIES.length) % CURRENCIES.length;
+    const next = CURRENCIES[wrapped];
+    if (next === undefined) return;
+    refs.current[wrapped]?.focus();
+    onSelect(next);
+  }
+  function onKeyDown(ev: ReactKeyboardEvent<HTMLButtonElement>, i: number) {
+    if (ev.key === "ArrowRight" || ev.key === "ArrowDown") {
+      ev.preventDefault();
+      focusAt(i + 1);
+    } else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") {
+      ev.preventDefault();
+      focusAt(i - 1);
+    } else if (ev.key === "Home") {
+      ev.preventDefault();
+      focusAt(0);
+    } else if (ev.key === "End") {
+      ev.preventDefault();
+      focusAt(CURRENCIES.length - 1);
+    }
+  }
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t("profile.budget_currency_label")}
+      className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+    >
+      {CURRENCIES.map((c, i) => {
+        const active = c === currency;
+        // Intl currency long-name for SR users — fall back to the raw code
+        // if the locale's ICU data doesn't carry the long form.
+        let aria: string = c;
+        try {
+          const dn = new Intl.DisplayNames([locale === "hu" ? "hu" : "en"], { type: "currency" });
+          aria = dn.of(c) ?? c;
+        } catch {
+          /* DisplayNames not supported — keep the 3-char code as label. */
+        }
+        return (
+          <button
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            key={c}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={aria}
+            tabIndex={i === activeIdx ? 0 : -1}
+            onClick={() => onSelect(c)}
+            onKeyDown={(ev) => onKeyDown(ev, i)}
+            // Mobile: 44px-tall tap target with comfortable padding. Desktop
+            // (sm+): collapse to the compact pill band the inline header
+            // layout was designed for.
+            className={`min-w-[44px] whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors sm:px-2.5 sm:py-1 sm:text-[11px] ${
+              active
+                ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+            }`}
+          >
+            {currencySymbol(c, locale)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Security section — replaces the previous `<details>/<summary>` pattern
+ *  with an explicit `<button aria-expanded aria-controls>` toggle so the
+ *  disclosure state is announced consistently across VoiceOver, NVDA, and
+ *  TalkBack (Safari's native `<details>` announcement is inconsistent).
+ *  Visually identical to the prior card; lift was a pure a11y refactor. */
+function SecuritySection({
+  t,
+  pwCurrent,
+  setPwCurrent,
+  pwNext,
+  setPwNext,
+  pwConfirm,
+  setPwConfirm,
+  pwError,
+  pwSubmitting,
+  onChangePassword,
+  newEmail,
+  setNewEmail,
+  emailPassword,
+  setEmailPassword,
+  emailError,
+  emailSubmitting,
+  onRequestEmailChange,
+}: {
+  t: T;
+  pwCurrent: string;
+  setPwCurrent: (v: string) => void;
+  pwNext: string;
+  setPwNext: (v: string) => void;
+  pwConfirm: string;
+  setPwConfirm: (v: string) => void;
+  pwError: string | null;
+  pwSubmitting: boolean;
+  onChangePassword: (e: FormEvent) => void;
+  newEmail: string;
+  setNewEmail: (v: string) => void;
+  emailPassword: string;
+  setEmailPassword: (v: string) => void;
+  emailError: string | null;
+  emailSubmitting: boolean;
+  onRequestEmailChange: (e: FormEvent) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="card mt-6 p-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="security-panel-body"
+        className="flex w-full items-start gap-4 px-6 py-5 text-left transition-colors hover:bg-paper-50/60 dark:hover:bg-umber-800/40"
+      >
+        <span className="flex-1">
+          <span className="block text-lg text-ink-900 dark:text-paper-50">
+            {t("profile.security_title")}
+          </span>
+          <span className="mt-1 block text-sm text-ink-500 dark:text-umber-300">
+            {t("profile.security_summary")}
+          </span>
+        </span>
+        <ChevronDown
+          size={18}
+          className={`shrink-0 text-ink-500 transition-transform dark:text-umber-300 ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <div
+          id="security-panel-body"
+          className="grid gap-6 border-t border-paper-200 px-6 py-5 md:grid-cols-2 dark:border-umber-700"
+        >
+          <form className="grid gap-2" onSubmit={onChangePassword} noValidate>
+            <h3 className="text-sm font-medium text-ink-800 dark:text-paper-100">
+              {t("profile.security_pw_heading")}
+            </h3>
+            <div>
+              <label htmlFor="pw-current" className="field-label">
+                {t("profile.security_pw_current")}
+              </label>
+              <input
+                id="pw-current"
+                type="password"
+                className="input"
+                autoComplete="current-password"
+                value={pwCurrent}
+                onChange={(e) => setPwCurrent(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="pw-new" className="field-label">
+                {t("profile.security_pw_new")}
+              </label>
+              <input
+                id="pw-new"
+                type="password"
+                className="input"
+                autoComplete="new-password"
+                value={pwNext}
+                onChange={(e) => setPwNext(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="pw-confirm" className="field-label">
+                {t("profile.security_pw_confirm")}
+              </label>
+              <input
+                id="pw-confirm"
+                type="password"
+                className="input"
+                autoComplete="new-password"
+                value={pwConfirm}
+                onChange={(e) => setPwConfirm(e.target.value)}
+                required
+              />
+            </div>
+            {pwError && <p className="field-error">{pwError}</p>}
+            <button
+              type="submit"
+              className="btn-primary mt-1 justify-self-start"
+              disabled={pwSubmitting}
+            >
+              {pwSubmitting ? t("profile.security_pw_submitting") : t("profile.security_pw_submit")}
+            </button>
+          </form>
+
+          <form className="grid gap-2" onSubmit={onRequestEmailChange} noValidate>
+            <h3 className="text-sm font-medium text-ink-800 dark:text-paper-100">
+              {t("profile.security_email_heading")}
+            </h3>
+            <div>
+              <label htmlFor="new-email" className="field-label">
+                {t("profile.security_email_new")}
+              </label>
+              <input
+                id="new-email"
+                type="email"
+                className="input"
+                autoComplete="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="email-pw" className="field-label">
+                {t("profile.security_email_password")}
+              </label>
+              <input
+                id="email-pw"
+                type="password"
+                className="input"
+                autoComplete="current-password"
+                value={emailPassword}
+                onChange={(e) => setEmailPassword(e.target.value)}
+                required
+              />
+            </div>
+            {emailError && <p className="field-error">{emailError}</p>}
+            <button
+              type="submit"
+              className="btn-outline mt-1 justify-self-start"
+              disabled={emailSubmitting}
+            >
+              {emailSubmitting
+                ? t("profile.security_email_submitting")
+                : t("profile.security_email_submit")}
+            </button>
+          </form>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1268,12 +1450,14 @@ function formatWeddingDateSide(side: Record<string, unknown>, locale: Locale, t:
 }
 
 /** Bride & Groom — both sides always carry both names so a single field
- *  edit still produces a paired "Anna & Béla → Anna & Botond" diff. */
-function formatNamesSide(side: Record<string, unknown>): string {
+ *  edit still produces a paired "Anna & Béla → Anna & Botond" diff.
+ *  Separator is i18n'd so HU reads "Anna és Béla" instead of the EN "&". */
+function formatNamesSide(side: Record<string, unknown>, t: T): string {
   const bride = asString(side.bride_name) ?? "";
   const groom = asString(side.groom_name) ?? "";
   if (!bride && !groom) return "—";
-  return `${bride} & ${groom}`.trim();
+  const sep = t("profile.activity_names_separator");
+  return `${bride}${sep}${groom}`.trim();
 }
 
 /** Localized ceremony kind label. Backend stores raw enum strings; falls
@@ -1310,8 +1494,8 @@ function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): 
   }
   if (action === "couple.names_update" && before && after) {
     return tWithFallback(t, "profile.activity_action_couple_names_update", {
-      before: formatNamesSide(before),
-      after: formatNamesSide(after),
+      before: formatNamesSide(before, t),
+      after: formatNamesSide(after, t),
     });
   }
   if (action === "couple.ceremony_kind_update" && before && after) {
@@ -1557,6 +1741,12 @@ function DocumentsPanel({
           id="documents-panel-body"
           className="border-t border-paper-200 px-6 py-4 dark:border-umber-700"
         >
+          {/* SR announce — fires when any row goes from "Delete" to armed
+           *  "Click again to confirm". Single live region for the whole list
+           *  is enough since only one row can be armed at a time. */}
+          <span role="status" aria-live="polite" className="sr-only">
+            {armedDeleteId !== null ? t("profile.archive_delete_armed_announce") : ""}
+          </span>
           {documents.length === 0 ? (
             <p className="text-sm text-ink-500 dark:text-umber-300">{t("profile.archive_empty")}</p>
           ) : (
@@ -1588,7 +1778,7 @@ function DocumentsPanel({
                       type="button"
                       className={`h-8 rounded-xl border px-3 text-xs transition-colors ${
                         armedDeleteId === doc.id
-                          ? "border-blush-500 bg-blush-500 text-white hover:bg-blush-600"
+                          ? "border-blush-700 bg-blush-700 text-paper-50 hover:bg-blush-800"
                           : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
                       }`}
                       onClick={() => onDelete(doc)}
