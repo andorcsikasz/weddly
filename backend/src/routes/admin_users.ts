@@ -431,6 +431,23 @@ async function handleUnflagUser(ctx: Ctx): Promise<Response> {
       before: { flag_id: resolved.id },
       after: { note_length: note.length },
     });
+
+    // Close the loop on the original "you're under review" mail. Without
+    // this, the user's last communication from us was a threat to delete
+    // their account — and they're left wondering whether the resolution
+    // ever happened.
+    const userRow = db.prepare("SELECT id, email, full_name FROM users WHERE id = ?").get(userId) as
+      | { id: number; email: string; full_name: string | null }
+      | undefined;
+    if (userRow && userRow.email && !userRow.email.endsWith("@purged.local")) {
+      void sendKind(
+        "account_flag_cleared",
+        { note },
+        {
+          user: { id: userRow.id, email: userRow.email, full_name: userRow.full_name ?? "" },
+        },
+      );
+    }
   }
 
   const view = listOneUserAdminView(userId);

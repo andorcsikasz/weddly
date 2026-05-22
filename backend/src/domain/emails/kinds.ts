@@ -16,6 +16,7 @@ export type EmailKind =
   | "account_purged" // 30-day window elapsed, all couple data deleted
   | "account_admin_purged" // an admin immediately deleted the account (no 30-day grace)
   | "account_flagged" // admin flagged the account — 7-day window to reply or it gets purged
+  | "account_flag_cleared" // admin resolved the flag — user is no longer under review
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
   | "rsvp_received_household_for_couple" // aggregated notification: whole party RSVP'd in one go
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
@@ -67,6 +68,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   account_purged: "transactional",
   account_admin_purged: "transactional",
   account_flagged: "transactional",
+  // Transactional: the user got the original "you're under review" mail and
+  // is implicitly waiting on either a reply window or a resolution — this
+  // mail closes that loop.
+  account_flag_cleared: "transactional",
   rsvp_received_for_couple: "transactional",
   rsvp_received_household_for_couple: "transactional",
   rsvp_thanks_for_guest: "transactional",

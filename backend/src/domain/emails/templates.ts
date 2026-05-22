@@ -104,6 +104,11 @@ export interface AccountFlaggedPayload {
   deadlineDateHu: string;
   deadlineDateEn: string;
 }
+export interface AccountFlagClearedPayload {
+  /** Optional admin note when the flag was cleared. Verbatim when present.
+   *  Empty string when admin chose not to add one — body softens accordingly. */
+  note: string;
+}
 export interface RsvpReceivedForCouplePayload {
   guestName: string;
   rsvpStatus: "yes" | "no" | "maybe";
@@ -233,6 +238,7 @@ export type KindPayload = {
   account_purged: AccountPurgedPayload;
   account_admin_purged: AccountAdminPurgedPayload;
   account_flagged: AccountFlaggedPayload;
+  account_flag_cleared: AccountFlagClearedPayload;
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
   rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
@@ -640,6 +646,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If we don't hear back by then, your account and all associated data (guest list, seating, budget, RSVPs) will be automatically and permanently deleted.",
       ],
       cta: "Weddly",
+    },
+  }),
+
+  // Admin cleared the flag on a previously-flagged user. The flagged mail
+  // promised "we'll delete your account if we don't hear back by X" — this
+  // closes that loop so the user isn't left with the original threatening
+  // message as the last communication from us.
+  account_flag_cleared: (p, ctx) => ({
+    subject: "Fiók ellenőrzés lezárva / Account review cleared",
+    ctaUrl: CONFIG.frontendBaseUrl,
+    hu: {
+      preheader: "A fiókodon álló jelölést feloldottuk.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "A korábban a fiókodra tett ellenőrzési jelölést feloldottuk — minden szolgáltatás megint elérhető, és semmilyen adatot nem törlünk.",
+        ...(p.note ? [`Megjegyzés tőlünk: „${p.note}"`] : []),
+        "Ha bármi kérdés van ezzel kapcsolatban, válaszolj erre az e-mailre.",
+      ],
+      cta: "Weddly megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "The review flag that was on your account has been cleared — every feature is available again, and no data will be deleted.",
+        ...(p.note ? [`Note from us: "${p.note}"`] : []),
+        "If anything's unclear, just reply to this email.",
+      ],
+      cta: "Open Weddly",
     },
   }),
 

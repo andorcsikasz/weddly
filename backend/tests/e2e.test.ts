@@ -4728,7 +4728,18 @@ describe("admin users + couples directory", () => {
     expect(clear.status).toBe(200);
     expect(clear.data.cleared).toBe(true);
 
-    // Idempotent — second unflag returns cleared:false.
+    // Closing the loop — the original "you're under review" mail now has a
+    // matching "cleared" mail so the user isn't left with the threatening
+    // message as the last communication.
+    const clearedMail = db
+      .prepare(
+        "SELECT to_email FROM email_log WHERE kind = 'account_flag_cleared' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string } | undefined;
+    expect(clearedMail?.to_email).toBe("unflag@weddly.test");
+
+    // Idempotent — second unflag returns cleared:false and does NOT fire
+    // another email.
     const noop = await req<{ cleared: boolean }>(
       "POST",
       `/api/admin/users/${reg.data.user.id}/unflag`,
@@ -4736,6 +4747,11 @@ describe("admin users + couples directory", () => {
       { token: adminToken },
     );
     expect(noop.data.cleared).toBe(false);
+
+    const mailCount = db
+      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE kind = 'account_flag_cleared'")
+      .get() as { n: number };
+    expect(mailCount.n).toBe(1);
   });
 
   test("admin flag: hourly sweep auto-purges past-deadline flags", async () => {
