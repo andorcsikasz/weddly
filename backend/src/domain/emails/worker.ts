@@ -43,6 +43,7 @@ export function runEmailSweep(): {
   weddings: number;
   rsvpDeadlines: number;
   weddingFollowups: number;
+  mealFollowups: number;
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
@@ -50,7 +51,8 @@ export function runEmailSweep(): {
   const weddings = sweepWeddingDay(ts);
   const rsvpDeadlines = sweepRsvpDeadline(ts);
   const weddingFollowups = sweepWeddingFollowup(ts);
-  return { nudges, milestones, weddings, rsvpDeadlines, weddingFollowups };
+  const mealFollowups = sweepRsvpMealFollowup(ts);
+  return { nudges, milestones, weddings, rsvpDeadlines, weddingFollowups, mealFollowups };
 }
 
 function sweepOnboardingNudges(ts: number): number {
@@ -224,6 +226,61 @@ function sweepWeddingFollowup(ts: number): number {
   return count;
 }
 
+interface MealFollowupRow {
+  guest_id: number;
+  guest_email: string;
+  guest_name: string;
+  invite_code: string;
+  couple_id: number;
+  couple_display_name: string;
+}
+
+function sweepRsvpMealFollowup(ts: number): number {
+  // One-shot nudge to guests who RSVP'd yes but skipped the meal pick. The
+  // 24h cooldown after rsvp_responded_at gives second-attempt RSVPs (where
+  // the guest just submits then re-opens to add the meal) a chance to land
+  // naturally. meal_followup_sent_at is the one-shot stamp — once set, the
+  // sweep ignores the row forever.
+  const cooldownCutoff = ts - 24 * 60 * 60 * 1000;
+  const rows = db
+    .prepare(
+      `SELECT g.id AS guest_id, g.email AS guest_email, g.full_name AS guest_name,
+              g.invite_code, c.id AS couple_id, c.display_name AS couple_display_name
+         FROM guests g
+         JOIN couples c ON c.id = g.couple_id
+        WHERE g.rsvp_status = 'yes'
+          AND (g.meal_choice IS NULL OR g.meal_choice = '')
+          AND g.email IS NOT NULL AND g.email != ''
+          AND g.meal_followup_sent_at IS NULL
+          AND g.rsvp_responded_at IS NOT NULL
+          AND g.rsvp_responded_at <= ?
+          AND c.status = 'active'`,
+    )
+    .all(cooldownCutoff) as MealFollowupRow[];
+
+  let count = 0;
+  const stampUpdate = db.prepare("UPDATE guests SET meal_followup_sent_at = ? WHERE id = ?");
+  for (const r of rows) {
+    // Stamp BEFORE fire-and-forget — if the mailer hiccups silently, we'd
+    // rather skip than spam. The stamp turns this into a true one-shot.
+    stampUpdate.run(ts, r.guest_id);
+    void sendKind(
+      "rsvp_followup_missing_meal",
+      {
+        coupleDisplayName: r.couple_display_name,
+        rsvpPageUrl: `${CONFIG.frontendBaseUrl}/rsvp/${r.invite_code}`,
+      },
+      {
+        user: null,
+        guest: { email: r.guest_email, full_name: r.guest_name },
+        couple_id: r.couple_id,
+      },
+    );
+    count++;
+  }
+  return count;
+}
+
 function partnersForWeddingDate(date: string): CouplePartnerRow[] {
   return db
     .prepare(
@@ -260,7 +317,15 @@ export function startEmailWorker(): void {
   // Fire once on boot so a long downtime catches up immediately.
   try {
     const r = runEmailSweep();
-    if (r.nudges + r.milestones + r.weddings + r.rsvpDeadlines + r.weddingFollowups > 0) {
+    if (
+      r.nudges +
+        r.milestones +
+        r.weddings +
+        r.rsvpDeadlines +
+        r.weddingFollowups +
+        r.mealFollowups >
+      0
+    ) {
       log.info("emails.boot_sweep", r);
     }
   } catch (e) {
@@ -270,7 +335,15 @@ export function startEmailWorker(): void {
     () => {
       try {
         const r = runEmailSweep();
-        if (r.nudges + r.milestones + r.weddings + r.rsvpDeadlines + r.weddingFollowups > 0) {
+        if (
+          r.nudges +
+            r.milestones +
+            r.weddings +
+            r.rsvpDeadlines +
+            r.weddingFollowups +
+            r.mealFollowups >
+          0
+        ) {
           log.info("emails.hourly_sweep", r);
         }
       } catch (e) {

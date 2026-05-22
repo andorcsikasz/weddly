@@ -181,6 +181,14 @@ export interface GuestInvitePayload {
 export interface OnboardingNudgePayload {
   onboardingUrl: string;
 }
+export interface RsvpFollowupMissingMealPayload {
+  /** Couple display name so the guest knows which wedding this is about
+   *  (people may have several invites in flight). */
+  coupleDisplayName: string;
+  /** Where to go to fill in the meal pick — same `/rsvp/:code` link they
+   *  used the first time. */
+  rsvpPageUrl: string;
+}
 export interface MilestonePayload {
   /** Couple's friendly display name — "Anna & Bence". */
   coupleDisplayName: string;
@@ -341,6 +349,7 @@ export type KindPayload = {
   wedding_today_followup: WeddingTodayFollowupPayload;
   wedding_date_changed: WeddingDateChangedPayload;
   rsvp_deadline_approaching: RsvpDeadlineApproachingPayload;
+  rsvp_followup_missing_meal: RsvpFollowupMissingMealPayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
@@ -1076,6 +1085,30 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     };
   },
+
+  rsvp_followup_missing_meal: (p, ctx) => ({
+    subject: `Egy gyors apróság maradt / One small thing — ${p.coupleDisplayName}`,
+    ctaUrl: p.rsvpPageUrl,
+    hu: {
+      preheader: "Egy ételválasztás még hiányzik a visszajelzésedből.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Köszi, hogy visszajeleztél ${p.coupleDisplayName} esküvőjére — egy mező maradt csak ki: az ételválasztás.`,
+        "Egy kattintás a visszajelzés-oldalon, és kész — a párnak így pontosabb fejszámot tudnak adni a catering-nek.",
+      ],
+      cta: "Ételválasztás megadása",
+      footnote: "Csak egyszer küldjük ezt — ha most kihagyod, akkor sem fog ismét rád szólni.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `Thanks for RSVP'ing to ${p.coupleDisplayName}'s wedding — one field is still open: your meal choice.`,
+        "A single click on the RSVP page sorts it. Helps the couple give a cleaner headcount to their caterer.",
+      ],
+      cta: "Pick your meal",
+      footnote: "We only send this nudge once — ignoring it is fine, we won't ask again.",
+    },
+  }),
 
   rsvp_deadline_approaching: (p, ctx) => ({
     subject: `${p.pendingCount} vendég még nem válaszolt / ${p.pendingCount} guests haven't RSVP'd`,

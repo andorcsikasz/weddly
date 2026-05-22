@@ -3514,6 +3514,50 @@ describe("email pipeline", () => {
     expect(sweep.rsvpDeadlines).toBe(0);
   });
 
+  test("rsvp meal followup fires once per guest after a yes-without-meal RSVP", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("meal-followup@weddly.test");
+    const guest = await req<{ guest: { id: number; invite_code: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Forgetful Guest", email: "forget@weddly.test" },
+      { token },
+    );
+    // Simulate a yes RSVP with no meal pick, responded 25h ago (past cooldown).
+    db.prepare(
+      "UPDATE guests SET rsvp_status = 'yes', meal_choice = NULL, rsvp_responded_at = ? WHERE id = ?",
+    ).run(now() - 25 * 60 * 60 * 1000, guest.data.guest.id);
+
+    const sweep = runEmailSweep();
+    expect(sweep.mealFollowups).toBe(1);
+    const log = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'rsvp_followup_missing_meal'")
+      .get() as { to_email: string } | undefined;
+    expect(log?.to_email).toBe("forget@weddly.test");
+
+    // One-shot — second sweep doesn't re-fire even though meal is still null.
+    const again = runEmailSweep();
+    expect(again.mealFollowups).toBe(0);
+  });
+
+  test("rsvp meal followup skips guests inside 24h cooldown", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("meal-cooldown@weddly.test");
+    const guest = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Just RSVPd", email: "fresh@weddly.test" },
+      { token },
+    );
+    // Yes RSVP just now — 24h cooldown means no nudge yet.
+    db.prepare(
+      "UPDATE guests SET rsvp_status = 'yes', meal_choice = NULL, rsvp_responded_at = ? WHERE id = ?",
+    ).run(now() - 60 * 60 * 1000, guest.data.guest.id);
+
+    const sweep = runEmailSweep();
+    expect(sweep.mealFollowups).toBe(0);
+  });
+
   test("wedding_today_followup fires T+7 with the feedback CTA", async () => {
     wipeAll();
     const { coupleId } = await bootstrapCouple("followup@weddly.test");

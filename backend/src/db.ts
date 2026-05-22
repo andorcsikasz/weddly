@@ -375,6 +375,12 @@ addColumnIfMissing("users", "locale", "locale TEXT");
 // `new_device_signin` mail.
 addColumnIfMissing("users", "known_devices_json", "known_devices_json TEXT NOT NULL DEFAULT '[]'");
 
+// One-shot stamp so the cron sweep doesn't re-send the "you forgot to pick
+// a meal" nudge every hour. NULL until we send, then frozen — the guest is
+// expected to revisit the RSVP link if they actually want to update their
+// meal choice, not get pestered.
+addColumnIfMissing("guests", "meal_followup_sent_at", "meal_followup_sent_at INTEGER");
+
 // Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
 // Default 0 (off) so couples who don't offer accommodation don't pester
 // guests with an irrelevant checkbox. When the couple flips it on from the
