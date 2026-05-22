@@ -2643,6 +2643,14 @@ describe("pause / breakup", () => {
       token,
     });
     expect(s2.data.couple_status).toBe("active");
+
+    // Cancel-pause fires a notification — mirroring the pause one.
+    const cancelMail = db
+      .prepare(
+        "SELECT to_email FROM email_log WHERE kind = 'couple_pause_cancelled' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string } | undefined;
+    expect(cancelMail?.to_email).toBeTruthy();
   });
 });
 

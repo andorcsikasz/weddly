@@ -155,6 +155,28 @@ function handleCancel(ctx: Ctx): Response {
     target_id: active.id,
   });
 
+  // Mirror the pause-notification: both partners get the cancellation news
+  // since either could have clicked Cancel from Profile. Without this, the
+  // OTHER partner is left thinking the workspace is still on the delete
+  // countdown they got mail about.
+  const partners = db
+    .prepare("SELECT id, email, full_name FROM users WHERE couple_id = ?")
+    .all(couple.id) as Array<{ id: number; email: string; full_name: string }>;
+  const canceller = partners.find((p) => p.id === userId);
+  const cancelledByName = canceller?.full_name?.trim() || "Your partner";
+  const dashboardUrl = `${CONFIG.frontendBaseUrl}/app`;
+  for (const p of partners) {
+    if (!p.email || p.email.endsWith("@purged.local")) continue;
+    void sendKind(
+      "couple_pause_cancelled",
+      { cancelledByName, dashboardUrl },
+      {
+        user: { id: p.id, email: p.email, full_name: p.full_name },
+        couple_id: couple.id,
+      },
+    );
+  }
+
   return json({ ok: true });
 }
 

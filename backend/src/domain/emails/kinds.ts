@@ -12,6 +12,7 @@ export type EmailKind =
   | "partner_invite" // partner-B co-pilot invite link
   | "partner_invite_accepted" // inviter gets a heads-up that partner B joined the workspace
   | "couple_paused" // workspace paused → 30-day delete countdown started
+  | "couple_pause_cancelled" // either partner cancelled the pause; both get a heads-up
   | "account_purged" // 30-day window elapsed, all couple data deleted
   | "account_admin_purged" // an admin immediately deleted the account (no 30-day grace)
   | "account_flagged" // admin flagged the account — 7-day window to reply or it gets purged
@@ -59,6 +60,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // whether/when partner B joins — this is the resolution of that action.
   partner_invite_accepted: "transactional",
   couple_paused: "transactional",
+  // Transactional: the pause was an explicit action one partner took and
+  // both received notification of; the cancel is the resolution of that
+  // action and both partners deserve to know.
+  couple_pause_cancelled: "transactional",
   account_purged: "transactional",
   account_admin_purged: "transactional",
   account_flagged: "transactional",

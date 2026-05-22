@@ -81,6 +81,12 @@ export interface CouplePausedPayload {
   /** Page where either partner can cancel the pause. */
   cancelUrl: string;
 }
+export interface CouplePauseCancelledPayload {
+  /** Display name of the partner who clicked Cancel-pause. */
+  cancelledByName: string;
+  /** Where to land in the app — usually the dashboard. */
+  dashboardUrl: string;
+}
 export interface AccountPurgedPayload {
   /** Display name the workspace had at purge time ("Anna & Bence"). */
   coupleDisplayName: string;
@@ -223,6 +229,7 @@ export type KindPayload = {
   partner_invite: PartnerInvitePayload;
   partner_invite_accepted: PartnerInviteAcceptedPayload;
   couple_paused: CouplePausedPayload;
+  couple_pause_cancelled: CouplePauseCancelledPayload;
   account_purged: AccountPurgedPayload;
   account_admin_purged: AccountAdminPurgedPayload;
   account_flagged: AccountFlaggedPayload;
@@ -515,6 +522,30 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Cancel the pause",
       footnote: "Both partners get this notification so either of you can act.",
+    },
+  }),
+
+  couple_pause_cancelled: (p, ctx) => ({
+    subject: "Esküvőtervező visszaállítva / Workspace pause cancelled",
+    ctaUrl: p.dashboardUrl,
+    hu: {
+      preheader: `${p.cancelledByName} visszavonta a szüneteltetést.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `${p.cancelledByName} visszavonta a közös esküvőtervezőtök szüneteltetését — a 30 napos visszaszámlálás leállt, és minden adat helyén marad.`,
+        "Mostantól újra szerkeszthettek mindent: vendéglistát, ülésrendet, költségvetést.",
+      ],
+      cta: "Vissza a Weddly-re",
+      footnote: "Ezt az értesítést mindketten megkapjátok.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `${p.cancelledByName} cancelled the pause on your shared wedding workspace — the 30-day delete countdown is off, and all of your data stays in place.`,
+        "You can both edit the guest list, seating, and budget again from here.",
+      ],
+      cta: "Back to Weddly",
+      footnote: "Both partners get this notification.",
     },
   }),
 
