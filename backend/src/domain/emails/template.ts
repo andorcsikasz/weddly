@@ -175,7 +175,26 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- Pin the colour scheme to "light" — Apple Mail honours both meta tags,
+         Gmail iOS partially. Until we hand-tune a dark palette, this keeps the
+         cream + walnut brand identity readable; the auto-invert otherwise
+         flips the cream bg to muddy brown and the walnut CTA loses contrast. -->
+    <meta name="color-scheme" content="light only" />
+    <meta name="supported-color-schemes" content="light" />
     <title>Weddly</title>
+    <style>
+      /* Mobile overrides — Apple Mail + Gmail iOS app respect <style>; Gmail
+         web strips it, but the inline styles still apply as the fallback.
+         Tighter inner padding gains ~24px of horizontal room on a 360–375px
+         viewport; the larger CTA + 1.2 line-height gives a comfortable
+         ≥50px tap target (the inline value is borderline 44px). */
+      @media (max-width: 480px) {
+        .wd-card { padding: 24px 20px 22px 20px !important; }
+        .wd-cta { padding: 15px 26px !important; font-size: 16px !important; line-height: 1.2 !important; }
+        .wd-secondary { padding: 14px 20px 0 20px !important; }
+        .wd-footer { padding: 24px 20px 8px 20px !important; }
+      }
+    </style>
   </head>
   <body style="margin:0;padding:0;background-color:${COLOR.bg};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:${COLOR.ink};">
     <!-- Preheader: shown in inbox preview, hidden in body -->
@@ -199,7 +218,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
             ${cards}
             <!-- Footer -->
             <tr>
-              <td style="padding:28px 32px 8px 32px;">
+              <td class="wd-footer" style="padding:28px 32px 8px 32px;">
                 ${footer}
               </td>
             </tr>
@@ -228,7 +247,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         ? `<p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
         : "";
       return `<tr>
-              <td style="background-color:${COLOR.card};border-radius:14px;padding:32px 32px 28px 32px;box-shadow:0 1px 2px rgba(31,29,27,0.04),0 4px 18px rgba(31,29,27,0.06);">
+              <td class="wd-card" style="background-color:${COLOR.card};border-radius:14px;padding:32px 32px 28px 32px;box-shadow:0 1px 2px rgba(31,29,27,0.04),0 4px 18px rgba(31,29,27,0.06);">
                 <p style="margin:0 0 18px 0;color:${COLOR.ink};font-size:18px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
                   ${escapeHtml(block.greeting)}
                 </p>
@@ -236,8 +255,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0 0;">
                   <tr>
                     <td style="border-radius:8px;background-color:${COLOR.accent};">
-                      <a href="${escapeAttr(ctaUrl)}"
-                         style="display:inline-block;padding:13px 24px;font-size:15px;font-weight:600;color:${COLOR.accentInk};text-decoration:none;border-radius:8px;letter-spacing:0.01em;">
+                      <a href="${escapeAttr(ctaUrl)}" class="wd-cta"
+                         style="display:inline-block;padding:13px 24px;font-size:15px;font-weight:600;color:${COLOR.accentInk};text-decoration:none;border-radius:8px;letter-spacing:0.01em;line-height:1.2;">
                         ${escapeHtml(block.cta)}
                       </a>
                     </td>
@@ -264,8 +283,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       ? `<p style="margin:10px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
       : "";
     return `<tr>
-              <td lang="${locale}" style="padding:14px 32px 0 32px;">
-                <p style="margin:0 0 12px 0;color:${COLOR.muted};font-size:11px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;" aria-hidden="true">
+              <td class="wd-secondary" lang="${locale}" style="padding:14px 32px 0 32px;">
+                <p style="margin:0 0 12px 0;color:${COLOR.muted};font-size:12px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;" aria-hidden="true">
                   ${langLabel}
                 </p>
                 <p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
@@ -302,7 +321,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         : "Preferenciák";
     const unsubLine =
       category === "lifecycle" && unsubscribeToken
-        ? `<p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;">
+        ? `<p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
             <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`)}"
                style="color:${COLOR.muted};text-decoration:underline;">
               ${unsubLabel}
@@ -314,10 +333,15 @@ export function renderEmail(input: RenderInput): RenderedEmail {
             </a>
           </p>`
         : "";
+    // Footer body copy is bumped to 13px (from the previous 11/12px) — that
+    // was below the 14px legibility floor for the median wedding-vendor
+    // demographic (40-55 y/o on a phone, presbyopic, no Dynamic Type for HTML
+    // email). 13px is the standard floor where pixel-fitted hinting still
+    // looks crisp without bumping copy density too far.
     return `
-      <p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:12px;line-height:1.5;">${why}</p>
+      <p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${why}</p>
       ${unsubLine}
-      <p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:11px;line-height:1.5;letter-spacing:0.04em;">
+      <p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;letter-spacing:0.04em;">
         <span style="font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:0.24em;">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">weddly.hu</a>
       </p>
     `;
