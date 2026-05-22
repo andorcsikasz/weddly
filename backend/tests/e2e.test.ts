@@ -3392,6 +3392,42 @@ describe("email pipeline", () => {
     expect(log?.kind).toBe("milestone_t30");
   });
 
+  test("rsvp deadline nudge fires at T-14 with the pending-guest count", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("rsvp-nudge@weddly.test");
+    // Wedding in exactly 14 days; two guests still pending RSVP.
+    const target = isoUtcDate(now() + 14 * 86_400_000);
+    db.prepare("UPDATE couples SET wedding_date = ? WHERE id = ?").run(target, coupleId);
+    await req("POST", "/api/guests", { full_name: "Will Not Respond" }, { token });
+    await req("POST", "/api/guests", { full_name: "Also Pending" }, { token });
+
+    const sweep = runEmailSweep();
+    expect(sweep.rsvpDeadlines).toBe(1);
+
+    const log = db
+      .prepare(
+        "SELECT subject FROM email_log WHERE couple_id = ? AND kind = 'rsvp_deadline_approaching' ORDER BY id DESC LIMIT 1",
+      )
+      .get(coupleId) as { subject: string } | undefined;
+    // Subject mentions the pending count — 2 guests pending in this fixture.
+    expect(log?.subject).toContain("2");
+
+    // Idempotent — second sweep doesn't re-send.
+    const again = runEmailSweep();
+    expect(again.rsvpDeadlines).toBe(0);
+  });
+
+  test("rsvp deadline nudge skips couples with no pending RSVPs", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("rsvp-clean@weddly.test");
+    const target = isoUtcDate(now() + 14 * 86_400_000);
+    db.prepare("UPDATE couples SET wedding_date = ? WHERE id = ?").run(target, coupleId);
+    // Zero guests = nothing to chase.
+
+    const sweep = runEmailSweep();
+    expect(sweep.rsvpDeadlines).toBe(0);
+  });
+
   test("RSVP submission triggers couple notification + guest thank-you", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("rsvpmail@weddly.test");

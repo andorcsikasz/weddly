@@ -171,6 +171,17 @@ export interface WeddingDateChangedPayload {
   rsvpPageUrl: string;
 }
 
+export interface RsvpDeadlineApproachingPayload {
+  /** Couple's display name — "Anna & Bence". */
+  coupleDisplayName: string;
+  /** Pre-formatted wedding date the body references. */
+  weddingDate: string;
+  /** Number of guests whose RSVP status is still pending. */
+  pendingCount: number;
+  /** Where to land in /app — usually the guests page. */
+  guestsUrl: string;
+}
+
 export interface VendorWaitlistReceivedPayload {
   /** What the vendor typed for their business — used to humanise the body. */
   businessName: string;
@@ -249,6 +260,7 @@ export type KindPayload = {
   milestone_t7: MilestonePayload;
   wedding_today: WeddingTodayPayload;
   wedding_date_changed: WeddingDateChangedPayload;
+  rsvp_deadline_approaching: RsvpDeadlineApproachingPayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
@@ -900,6 +912,30 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     };
   },
+
+  rsvp_deadline_approaching: (p, ctx) => ({
+    subject: `${p.pendingCount} vendég még nem válaszolt / ${p.pendingCount} guests haven't RSVP'd`,
+    ctaUrl: p.guestsUrl,
+    hu: {
+      preheader: `${p.coupleDisplayName} — 2 hét az esküvőig.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Két hét múlva van az esküvőtök (${p.weddingDate}), és ${p.pendingCount} vendég még nem küldte el az RSVP-jét.`,
+        "A vendéglistán egy kattintás emlékeztetőt küldeni mindenkinek, aki még nem válaszolt. Most a jó pillanat — innentől kezdve egyre nehezebb lesz pontos fejszámot adni a helyszínnek és a catering-nek.",
+      ],
+      cta: "Vendéglista megnyitása",
+      footnote: "Ezt az emlékeztetőt csak egyszer küldjük, T-14 napon.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `Your wedding is two weeks away (${p.weddingDate}), and ${p.pendingCount} guests still haven't sent their RSVP.`,
+        "On the guest list, one click sends a reminder to everyone who hasn't replied yet. Now's the right moment — it gets harder from here to give the venue and caterer a clean headcount.",
+      ],
+      cta: "Open guest list",
+      footnote: "We only send this nudge once, at T-14 days.",
+    },
+  }),
 
   vendor_waitlist_received: (p, ctx) => ({
     subject: "Várólistára kerültél / You're on the Weddly vendor waitlist",

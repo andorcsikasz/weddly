@@ -37,12 +37,18 @@ interface CouplePartnerRow {
 }
 
 /** Run all lifecycle sweeps. Returns counts so tests can assert behavior. */
-export function runEmailSweep(): { nudges: number; milestones: number; weddings: number } {
+export function runEmailSweep(): {
+  nudges: number;
+  milestones: number;
+  weddings: number;
+  rsvpDeadlines: number;
+} {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
   const milestones = sweepMilestones(ts);
   const weddings = sweepWeddingDay(ts);
-  return { nudges, milestones, weddings };
+  const rsvpDeadlines = sweepRsvpDeadline(ts);
+  return { nudges, milestones, weddings, rsvpDeadlines };
 }
 
 function sweepOnboardingNudges(ts: number): number {
@@ -110,6 +116,57 @@ function sweepMilestones(ts: number): number {
   return count;
 }
 
+function sweepRsvpDeadline(ts: number): number {
+  // T-14 RSVP nudge — runs once per (couple, partner). Sent only when there
+  // are still pending RSVPs (no guests = nothing to chase; everyone-replied
+  // = nothing useful to say). The unique index on email_dispatches enforces
+  // single-fire idempotency, so a restart inside the day's window doesn't
+  // double-send.
+  const today = startOfDayUtc(ts);
+  const target = ymd(today + 14 * 86_400_000);
+  const rows = partnersForWeddingDate(target);
+  let count = 0;
+  for (const r of rows) {
+    if (
+      !markDispatched({
+        kind: "rsvp_deadline_approaching",
+        couple_id: r.couple_id,
+        user_id: r.user_id,
+      })
+    )
+      continue;
+    const pending = countPendingGuests(r.couple_id);
+    if (pending <= 0) continue;
+    void sendKind(
+      "rsvp_deadline_approaching",
+      {
+        coupleDisplayName: r.display_name,
+        weddingDate: r.wedding_date,
+        pendingCount: pending,
+        guestsUrl: `${CONFIG.frontendBaseUrl}/app/guests`,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    );
+    count++;
+  }
+  return count;
+}
+
+function countPendingGuests(coupleId: number): number {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS n
+         FROM guests
+        WHERE couple_id = ?
+          AND (rsvp_status IS NULL OR rsvp_status = 'pending')`,
+    )
+    .get(coupleId) as { n: number };
+  return row.n;
+}
+
 function sweepWeddingDay(ts: number): number {
   const target = ymd(startOfDayUtc(ts));
   const rows = partnersForWeddingDate(target);
@@ -166,7 +223,7 @@ export function startEmailWorker(): void {
   // Fire once on boot so a long downtime catches up immediately.
   try {
     const r = runEmailSweep();
-    if (r.nudges + r.milestones + r.weddings > 0) {
+    if (r.nudges + r.milestones + r.weddings + r.rsvpDeadlines > 0) {
       log.info("emails.boot_sweep", r);
     }
   } catch (e) {
@@ -176,7 +233,7 @@ export function startEmailWorker(): void {
     () => {
       try {
         const r = runEmailSweep();
-        if (r.nudges + r.milestones + r.weddings > 0) {
+        if (r.nudges + r.milestones + r.weddings + r.rsvpDeadlines > 0) {
           log.info("emails.hourly_sweep", r);
         }
       } catch (e) {

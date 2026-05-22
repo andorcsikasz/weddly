@@ -27,6 +27,7 @@ export type EmailKind =
   | "milestone_t7" // 7 days before
   | "wedding_today" // morning-of congratulations
   | "wedding_date_changed" // couple edited the wedding date, notify guests
+  | "rsvp_deadline_approaching" // T-14 nudge listing how many guests haven't RSVPd yet
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
   | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
@@ -86,6 +87,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: a guest explicitly opted into the wedding by RSVPing, and
   // the couple changing the date is an account-critical update for them.
   wedding_date_changed: "transactional",
+  rsvp_deadline_approaching: "lifecycle",
   // Outreach: vendor submitted the /vendors form but has no Weddly account —
   // the "fiókoddal kapcsolatban" footer line would be misleading.
   vendor_waitlist_received: "outreach",
