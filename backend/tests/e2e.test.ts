@@ -3514,6 +3514,44 @@ describe("email pipeline", () => {
     expect(sweep.rsvpDeadlines).toBe(0);
   });
 
+  test("admin_moderation_digest fires once per admin per week with queue counts", async () => {
+    wipeAll();
+    // Bootstrap the admin user (env ADMIN_EMAILS allowlist puts admin@test.test).
+    await req("POST", "/api/auth/register", {
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Admin",
+    });
+    await verifyUserEmail("admin@test.test");
+    // Seed one queue item so the digest has non-zero counts.
+    await req("POST", "/api/vendors/waitlist", {
+      business_name: "Queued",
+      email: "queued@example.test",
+      category: "decor_floral",
+      message: "x",
+    });
+
+    // Bypass the Monday-only gate for the test.
+    process.env.EMAIL_TEST_FORCE_ADMIN_DIGEST = "1";
+    try {
+      const sweep = runEmailSweep();
+      expect(sweep.adminDigests).toBe(1);
+
+      const log = db
+        .prepare(
+          "SELECT subject FROM email_log WHERE kind = 'admin_moderation_digest' ORDER BY id DESC LIMIT 1",
+        )
+        .get() as { subject: string } | undefined;
+      expect(log?.subject).toMatch(/moderation queue/i);
+
+      // Second sweep inside the 7-day cooldown skips.
+      const again = runEmailSweep();
+      expect(again.adminDigests).toBe(0);
+    } finally {
+      process.env.EMAIL_TEST_FORCE_ADMIN_DIGEST = undefined;
+    }
+  });
+
   test("rsvp meal followup fires once per guest after a yes-without-meal RSVP", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("meal-followup@weddly.test");

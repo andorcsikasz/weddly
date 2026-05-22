@@ -181,6 +181,15 @@ export interface GuestInvitePayload {
 export interface OnboardingNudgePayload {
   onboardingUrl: string;
 }
+export interface AdminModerationDigestPayload {
+  awaitingReviewSuppliers: number;
+  newVendorWaitlistEntries: number;
+  pendingListingClaims: number;
+  unresolvedUserFlags: number;
+  /** Where to land in the admin app — typically /app/admin. */
+  adminUrl: string;
+}
+
 export interface RsvpFollowupMissingMealPayload {
   /** Couple display name so the guest knows which wedding this is about
    *  (people may have several invites in flight). */
@@ -350,6 +359,7 @@ export type KindPayload = {
   wedding_date_changed: WeddingDateChangedPayload;
   rsvp_deadline_approaching: RsvpDeadlineApproachingPayload;
   rsvp_followup_missing_meal: RsvpFollowupMissingMealPayload;
+  admin_moderation_digest: AdminModerationDigestPayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
@@ -1082,6 +1092,49 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "Open details",
         footnote: "Reply to this email if anything's unclear.",
+      },
+    };
+  },
+
+  admin_moderation_digest: (p, ctx) => {
+    const total =
+      p.awaitingReviewSuppliers +
+      p.newVendorWaitlistEntries +
+      p.pendingListingClaims +
+      p.unresolvedUserFlags;
+    return {
+      subject: `Weddly moderation queue — ${total} pending`,
+      ctaUrl: p.adminUrl,
+      hu: {
+        preheader: `${total} moderációs tétel vár ránk a héten.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Itt a heti moderációs összefoglaló — ${total} tétel várja a beavatkozást:`,
+          [
+            `• ${p.awaitingReviewSuppliers} elfogadásra váró közösségi szolgáltató`,
+            `• ${p.newVendorWaitlistEntries} új vendor-jelentkezés`,
+            `• ${p.pendingListingClaims} függő listing-igénylés`,
+            `• ${p.unresolvedUserFlags} aktív user-flag`,
+          ].join("\n"),
+          "Bármelyik tétel egy kattintásra van az admin oldalról.",
+        ],
+        cta: "Admin felület megnyitása",
+        footnote: "Heti egyszer küldjük ezt az összefoglalót, hétfő reggel.",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `Weekly moderation digest — ${total} items waiting:`,
+          [
+            `• ${p.awaitingReviewSuppliers} suppliers awaiting review`,
+            `• ${p.newVendorWaitlistEntries} new vendor waitlist submissions`,
+            `• ${p.pendingListingClaims} pending listing claims`,
+            `• ${p.unresolvedUserFlags} active user flags`,
+          ].join("\n"),
+          "Everything is one click away from the admin console.",
+        ],
+        cta: "Open admin",
+        footnote: "Sent once a week, Monday morning.",
       },
     };
   },

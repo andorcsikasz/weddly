@@ -44,6 +44,7 @@ export function runEmailSweep(): {
   rsvpDeadlines: number;
   weddingFollowups: number;
   mealFollowups: number;
+  adminDigests: number;
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
@@ -52,7 +53,16 @@ export function runEmailSweep(): {
   const rsvpDeadlines = sweepRsvpDeadline(ts);
   const weddingFollowups = sweepWeddingFollowup(ts);
   const mealFollowups = sweepRsvpMealFollowup(ts);
-  return { nudges, milestones, weddings, rsvpDeadlines, weddingFollowups, mealFollowups };
+  const adminDigests = sweepAdminModerationDigest(ts);
+  return {
+    nudges,
+    milestones,
+    weddings,
+    rsvpDeadlines,
+    weddingFollowups,
+    mealFollowups,
+    adminDigests,
+  };
 }
 
 function sweepOnboardingNudges(ts: number): number {
@@ -226,6 +236,91 @@ function sweepWeddingFollowup(ts: number): number {
   return count;
 }
 
+interface AdminUserRow {
+  id: number;
+  email: string;
+  full_name: string | null;
+}
+
+function sweepAdminModerationDigest(ts: number): number {
+  // Weekly digest to every admin on the allowlist. Day-of-week gate (Monday)
+  // + a 7-day idempotency window via email_dispatches MAX(dispatched_at) so
+  // the hourly cron only fires once per admin per week. Production runs
+  // hourly; in tests callers usually invoke runEmailSweep directly so the
+  // day-of-week check would block them — `EMAIL_TEST_FORCE_ADMIN_DIGEST=1`
+  // is the test escape hatch.
+  const todayUtc = new Date(ts);
+  const isMonday = todayUtc.getUTCDay() === 1;
+  const force = process.env.EMAIL_TEST_FORCE_ADMIN_DIGEST === "1";
+  if (!isMonday && !force) return 0;
+
+  const adminEmails = CONFIG.adminEmails;
+  if (adminEmails.length === 0) return 0;
+
+  // Pull counts ONCE (not per-admin) — the same queue applies to every
+  // recipient.
+  const awaitingReviewSuppliers = scalar(
+    "SELECT COUNT(*) AS n FROM community_suppliers WHERE status = 'awaiting_review'",
+  );
+  const newVendorWaitlistEntries = scalar(
+    "SELECT COUNT(*) AS n FROM vendor_waitlist WHERE status = 'new'",
+  );
+  const pendingListingClaims = scalar(
+    "SELECT COUNT(*) AS n FROM listing_claims WHERE status = 'pending'",
+  );
+  const unresolvedUserFlags = scalar(
+    "SELECT COUNT(*) AS n FROM user_flags WHERE resolved_at IS NULL",
+  );
+  const total =
+    awaitingReviewSuppliers + newVendorWaitlistEntries + pendingListingClaims + unresolvedUserFlags;
+  // Skip the mail entirely when the queue is empty — admins don't need a
+  // ping that says "nothing to do".
+  if (total === 0) return 0;
+
+  const oneWeekAgo = ts - 7 * 24 * 60 * 60 * 1000;
+  let count = 0;
+  for (const email of adminEmails) {
+    const userRow = db
+      .prepare("SELECT id, email, full_name FROM users WHERE LOWER(email) = ?")
+      .get(email) as AdminUserRow | undefined;
+    if (!userRow) continue;
+    // Per-admin 7-day cooldown via email_dispatches. Different from the
+    // markDispatched-style hard idempotency because we DO want to fire every
+    // week — just not multiple times in the same week.
+    const lastSent = db
+      .prepare(
+        "SELECT MAX(dispatched_at) AS at FROM email_dispatches WHERE kind = 'admin_moderation_digest' AND user_id = ?",
+      )
+      .get(userRow.id) as { at: number | null };
+    if (lastSent.at !== null && lastSent.at > oneWeekAgo) continue;
+
+    db.prepare(
+      `INSERT INTO email_dispatches (couple_id, user_id, kind, dispatched_at)
+       VALUES (NULL, ?, 'admin_moderation_digest', ?)`,
+    ).run(userRow.id, ts);
+    void sendKind(
+      "admin_moderation_digest",
+      {
+        awaitingReviewSuppliers,
+        newVendorWaitlistEntries,
+        pendingListingClaims,
+        unresolvedUserFlags,
+        adminUrl: `${CONFIG.frontendBaseUrl}/app/admin`,
+      },
+      {
+        user: { id: userRow.id, email: userRow.email, full_name: userRow.full_name ?? "" },
+      },
+    );
+    count++;
+  }
+  return count;
+}
+
+function scalar(sql: string): number {
+  const row = db.prepare(sql).get() as { n: number };
+  return row.n;
+}
+
 interface MealFollowupRow {
   guest_id: number;
   guest_email: string;
@@ -323,7 +418,8 @@ export function startEmailWorker(): void {
         r.weddings +
         r.rsvpDeadlines +
         r.weddingFollowups +
-        r.mealFollowups >
+        r.mealFollowups +
+        r.adminDigests >
       0
     ) {
       log.info("emails.boot_sweep", r);

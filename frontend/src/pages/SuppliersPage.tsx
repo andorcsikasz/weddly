@@ -78,6 +78,7 @@ import type { BudgetLine, Currency } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
 import { formatMoney } from "../lib/format";
+import { metroKeysForCity } from "../lib/hu_metro_areas";
 import {
   readSelection,
   type SelectionMap,
@@ -540,7 +541,13 @@ export default function SuppliersPage() {
     const q = normalize(query.trim());
     if (q) {
       dir = dir.filter((s) => {
-        const hay = normalize(`${s.name} ${s.city} ${s.blurb_hu} ${s.blurb_en}`);
+        // metroKeysForCity expands the haystack with HU metro tags
+        // (e.g., Vasad → "budapest"), so typing "Budapest" surfaces the
+        // whole Bp agglomeration the booking.com way. Returns "" for
+        // cities outside the curated metro map — no false positives.
+        const hay = normalize(
+          `${s.name} ${s.city} ${s.blurb_hu} ${s.blurb_en} ${metroKeysForCity(s.city)}`,
+        );
         return hay.includes(q);
       });
     }

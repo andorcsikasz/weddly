@@ -33,6 +33,7 @@ export type EmailKind =
   | "wedding_date_changed" // couple edited the wedding date, notify guests
   | "rsvp_deadline_approaching" // T-14 nudge listing how many guests haven't RSVPd yet
   | "rsvp_followup_missing_meal" // guest RSVP'd yes but skipped meal pick — one-shot nudge
+  | "admin_moderation_digest" // weekly digest of the moderation queue (admin recipients only)
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
   | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
@@ -112,6 +113,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // /rsvp/:code page. Outreach footer copy ("no account, ignore = nothing
   // happens") is the truthful framing.
   rsvp_followup_missing_meal: "outreach",
+  // Transactional: admin asked to be admin (allowlist opt-in); the weekly
+  // digest is internal operations correspondence, never opt-out.
+  admin_moderation_digest: "transactional",
   // Outreach: vendor submitted the /vendors form but has no Weddly account —
   // the "fiókoddal kapcsolatban" footer line would be misleading.
   vendor_waitlist_received: "outreach",
