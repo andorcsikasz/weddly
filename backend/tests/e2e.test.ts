@@ -5620,6 +5620,15 @@ describe("round-2: leave couple", () => {
     );
     expect(meB.data.user.couple_id).toBeNull();
 
+    // Owner gets a "partner left" heads-up so they're not surprised by the
+    // disappearance in their next /app session.
+    const leftMail = db
+      .prepare(
+        "SELECT to_email, subject FROM email_log WHERE kind = 'partner_left_workspace' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string; subject: string } | undefined;
+    expect(leftMail?.to_email.toLowerCase()).toBe("leavea@weddly.test");
+
     // No couple to leave anymore → 404.
     const noCouple = await req("POST", "/api/users/me/leave-couple", {}, { token: b.data.token });
     expect(noCouple.status).toBe(404);

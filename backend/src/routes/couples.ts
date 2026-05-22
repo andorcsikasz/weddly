@@ -872,7 +872,7 @@ async function handleDeclineInvite(ctx: Ctx): Promise<Response> {
     void sendKind(
       "partner_invite_declined",
       {
-        invitedEmail: row.invited_email,
+        invitedEmail: row.invited_email ?? "",
         reinviteUrl: `${CONFIG.frontendBaseUrl}/app/profile`,
       },
       {

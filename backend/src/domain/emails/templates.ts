@@ -31,6 +31,13 @@ export interface BuildContext {
 export interface BuiltEmail {
   subject: string;
   rendered: RenderedEmail;
+  /** Optional per-message Reply-To override. When set, the dispatcher
+   *  appends `Reply-To: <this>` to the outgoing headers so the recipient's
+   *  reply lands here instead of the global support inbox. Used today
+   *  by `supplier_outreach` to route vendor replies to the couple owner
+   *  directly while we wait on the v1.5 inbound webhook + reply.weddly.xyz
+   *  MX setup. */
+  replyTo?: string;
 }
 
 // ─── Per-kind input shapes — each kind has its own narrow payload. ──────────
@@ -88,6 +95,14 @@ export interface PartnerInviteDeclinedPayload {
   /** Address the original invite was sent to. Lets the inviter recognise
    *  which invite this was about when they sent multiple. */
   invitedEmail: string;
+  /** Where to (re-)issue an invite — typically /app/profile. */
+  reinviteUrl: string;
+}
+export interface PartnerLeftWorkspacePayload {
+  /** Display name of the partner who left. */
+  partnerName: string;
+  /** Optional couple display name for the body ("Anna & Bence"). */
+  coupleDisplayName?: string;
   /** Where to (re-)issue an invite — typically /app/profile. */
   reinviteUrl: string;
 }
@@ -307,6 +322,7 @@ export type KindPayload = {
   partner_invite: PartnerInvitePayload;
   partner_invite_accepted: PartnerInviteAcceptedPayload;
   partner_invite_declined: PartnerInviteDeclinedPayload;
+  partner_left_workspace: PartnerLeftWorkspacePayload;
   couple_paused: CouplePausedPayload;
   couple_pause_cancelled: CouplePauseCancelledPayload;
   account_purged: AccountPurgedPayload;
@@ -355,7 +371,7 @@ export function buildEmail<K extends EmailKind>(
     recipientLocale: context.recipientLocale,
     primaryLocaleHint: context.primaryLocaleHint,
   });
-  return { subject: built.subject, rendered };
+  return { subject: built.subject, rendered, replyTo: built.replyTo };
 }
 
 interface RawTemplate {
@@ -363,6 +379,10 @@ interface RawTemplate {
   hu: LocaleBlock;
   en: LocaleBlock;
   ctaUrl: string;
+  /** See `BuiltEmail.replyTo`. Per-kind builders set this to override the
+   *  global Reply-To default; left undefined the dispatcher falls back to
+   *  `CONFIG.supportEmail` like every other kind. */
+  replyTo?: string;
 }
 
 type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext) => RawTemplate;
@@ -634,6 +654,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Send a new invite",
     },
   }),
+
+  partner_left_workspace: (p, ctx) => {
+    const coupleHu = p.coupleDisplayName ? ` ${p.coupleDisplayName} ` : " ";
+    const coupleEn = p.coupleDisplayName ? ` ${p.coupleDisplayName}'s ` : " ";
+    return {
+      subject: `${p.partnerName} kilépett / ${p.partnerName} left your workspace`,
+      ctaUrl: p.reinviteUrl,
+      hu: {
+        preheader: `${p.partnerName} kilépett a közös munkamenetből.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `${p.partnerName} kilépett${coupleHu}esküvőtervezőjéből — innentől már nem szerkeszthet, és nem jelenik meg a vendéglistában, ülésrendben, költségvetésben.`,
+          "Minden adat helyén marad. Ha másik személyt szeretnél meghívni közös tervezésre, küldhetsz új meghívót a Profil oldalon. Egyedül is szépen folytatódik a tervezés — minden funkció elérhető.",
+        ],
+        cta: "Új partner meghívása",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `${p.partnerName} left${coupleEn}wedding planner — from here on they can't edit, and won't appear in the guest list, seating, or budget views.`,
+          "All your data stays in place. If you'd like to invite someone else to plan together, you can issue a fresh invite from your Profile page. Solo planning keeps working fully — nothing's gated behind a partner.",
+        ],
+        cta: "Invite a new partner",
+      },
+    };
+  },
 
   couple_paused: (p, ctx) => ({
     subject: "Esküvőtervező szüneteltetve / Workspace paused",
@@ -1351,6 +1397,14 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     return {
       subject: `${p.coupleDisplayName} — ${p.subject}`,
       ctaUrl: p.outreachUrl,
+      // Reply-To override sends the vendor's reply straight to the couple
+      // owner's inbox instead of CONFIG.supportEmail. v1 has no inbound
+      // webhook, so this header IS the entire reply pipeline: any plumbing
+      // change here without the matching DNS work would silently drop
+      // replies. The footer line in the body also surfaces the address so
+      // a client that strips Reply-To (a few legacy webmails do) still
+      // gives the vendor a way to copy + paste the right destination.
+      replyTo: p.coupleReplyEmail,
       hu: {
         preheader: p.subject,
         greeting: `Szia ${p.supplierName}!`,

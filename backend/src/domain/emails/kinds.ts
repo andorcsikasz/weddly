@@ -13,6 +13,7 @@ export type EmailKind =
   | "partner_invite" // partner-B co-pilot invite link
   | "partner_invite_accepted" // inviter gets a heads-up that partner B joined the workspace
   | "partner_invite_declined" // invitee clicked "no thanks" — inviter heads-up so they can re-send to a new address
+  | "partner_left_workspace" // partner B left the workspace — owner heads-up
   | "couple_paused" // workspace paused → 30-day delete countdown started
   | "couple_pause_cancelled" // either partner cancelled the pause; both get a heads-up
   | "account_purged" // 30-day window elapsed, all couple data deleted
@@ -75,6 +76,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // inviter needs to know to either re-send to a different address or move
   // on.
   partner_invite_declined: "transactional",
+  // Transactional: the owner had a partner in the workspace; that partner
+  // self-unlinked via /api/users/me/leave-couple. Owner deserves to know.
+  partner_left_workspace: "transactional",
   couple_paused: "transactional",
   // Transactional: the pause was an explicit action one partner took and
   // both received notification of; the cancel is the resolution of that

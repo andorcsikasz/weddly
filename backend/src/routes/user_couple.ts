@@ -2,9 +2,12 @@
 // out keeps `auth.ts` focused on credentials and `couples.ts` focused on the
 // workspace itself.
 
+import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { getCoupleForUser, removeCoupleMember } from "../domain/couples";
+import { getCoupleById, getCoupleForUser, removeCoupleMember } from "../domain/couples";
+import { sendKind } from "../domain/emails";
+import { getUserById } from "../domain/users";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 
 /** POST /api/users/me/leave-couple — partner B disengages from the
@@ -55,6 +58,27 @@ async function handleLeaveCouple(ctx: Ctx): Promise<Response> {
     target_id: couple.id,
     note: `partner_b ${userId} left the workspace`,
   });
+
+  // Heads-up to the owner. They invited this person and now the workspace
+  // looks subtly different — guest list mentions, audit logs change shape.
+  // Fire-and-forget; leaving must succeed even if the mailer hiccups.
+  const owner = couple.partner_a_id ? getUserById(couple.partner_a_id) : null;
+  const leaver = getUserById(userId);
+  const freshCouple = getCoupleById(couple.id);
+  if (owner && leaver) {
+    void sendKind(
+      "partner_left_workspace",
+      {
+        partnerName: leaver.full_name || leaver.email,
+        coupleDisplayName: freshCouple?.display_name ?? undefined,
+        reinviteUrl: `${CONFIG.frontendBaseUrl}/app/profile`,
+      },
+      {
+        user: { id: owner.id, email: owner.email, full_name: owner.full_name ?? "" },
+        couple_id: couple.id,
+      },
+    );
+  }
 
   return json({ ok: true });
 }
