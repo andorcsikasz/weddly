@@ -365,6 +365,16 @@ addColumnIfMissing("users", "password_set", "password_set INTEGER NOT NULL DEFAU
 // Validation lives in the routes that write to it; here it's just TEXT.
 addColumnIfMissing("users", "locale", "locale TEXT");
 
+// Inline known-device list for the "new device sign-in" security alert.
+// Stored as a JSON array of `{fp: string, last_seen_at: number}` records,
+// capped to the most recent ~10 devices. The fingerprint is a SHA-256 of
+// `user-agent-family + ip-first-two-octets`, truncated to 16 hex chars —
+// irreversible, /16 IP prefix (~city-level), no raw PII. First sign-in is
+// silently registered without emailing (otherwise every new user gets an
+// alert about themselves). Subsequent unrecognised fingerprints trigger a
+// `new_device_signin` mail.
+addColumnIfMissing("users", "known_devices_json", "known_devices_json TEXT NOT NULL DEFAULT '[]'");
+
 // Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
 // Default 0 (off) so couples who don't offer accommodation don't pester
 // guests with an irrelevant checkbox. When the couple flips it on from the
@@ -543,6 +553,15 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_couples_is_demo ON couples(is_demo, crea
 addColumnIfMissing("couples", "is_public", "is_public INTEGER NOT NULL DEFAULT 0");
 addColumnIfMissing("couples", "venue_name", "venue_name TEXT");
 addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
+
+// Vendor listing hero image. Stored as a relative path under the public
+// `/uploads/` prefix (e.g. `/uploads/listings/v3/hero.webp`) — files live
+// on the persistent `CONFIG.uploadsDir` volume and the server.ts static
+// handler serves the `/uploads/*` URL space. Null = vendor hasn't uploaded
+// one yet; the supplier card falls back to the monogram avatar. Only
+// vendors who own the listing can upload + delete via `vendor_listing.ts`
+// — couples / curated entries see read-only.
+addColumnIfMissing("listings", "hero_image_url", "hero_image_url TEXT");
 
 export function now(): number {
   return Date.now();

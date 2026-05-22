@@ -10,6 +10,7 @@ import { addAuditLog } from "../lib/audit";
 import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
 import { recordGrowthEvent } from "../domain/growth_events";
+import { deviceFingerprint, recordKnownDevice } from "../domain/known_devices";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
@@ -211,8 +212,31 @@ async function handleLogin(ctx: Ctx): Promise<Response> {
   if (!ok) throw new HttpError(401, "Invalid credentials");
 
   const token = issueSession(row.id);
+  alertOnNewDevice(ctx, row);
   const session: AuthSession = { token, user: toUser(row) };
   return json(session);
+}
+
+/** Check this sign-in's device fingerprint against the user's known list.
+ *  Silently records first-ever device; fires `new_device_signin` when the
+ *  fingerprint is unrecognised. Fire-and-forget — sign-in must succeed even
+ *  if the mailer hiccups. */
+function alertOnNewDevice(ctx: Ctx, row: UserRow): void {
+  const fp = deviceFingerprint(ctx.req.headers.get("user-agent"), ctx.clientIp);
+  const result = recordKnownDevice(row.id, fp);
+  if (result.kind !== "new") return;
+  const signedInAt = new Date(now()).toLocaleString("hu-HU", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  void sendKind(
+    "new_device_signin",
+    { signedInAt, forgotUrl: `${CONFIG.frontendBaseUrl}/forgot-password` },
+    { user: { id: row.id, email: row.email, full_name: row.full_name } },
+  );
 }
 
 function handleLogout(ctx: Ctx): Response {

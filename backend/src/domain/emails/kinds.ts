@@ -7,6 +7,7 @@ export type EmailKind =
   | "verify_resend" // user clicked "resend verification" in dashboard
   | "password_reset"
   | "password_changed" // security confirmation after a successful reset / change
+  | "new_device_signin" // sign-in from a device fingerprint we haven't seen before
   | "email_change_verify" // sent to the NEW address with a confirm link
   | "email_change_warning" // sent to the OLD address letting them know a change is in flight
   | "partner_invite" // partner-B co-pilot invite link
@@ -55,6 +56,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   verify_resend: "transactional",
   password_reset: "transactional",
   password_changed: "transactional",
+  // Transactional: the user (or someone with their password) just signed in
+  // — they're either expecting this mail or they need it RIGHT NOW. Either
+  // way, never lifecycle.
+  new_device_signin: "transactional",
   email_change_verify: "transactional",
   email_change_warning: "transactional",
   partner_invite: "transactional",

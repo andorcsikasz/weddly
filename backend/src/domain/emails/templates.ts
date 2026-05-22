@@ -45,6 +45,12 @@ export interface PasswordChangedPayload {
   /** Pre-formatted change timestamp, locale-friendly. */
   changedAt: string;
 }
+export interface NewDeviceSigninPayload {
+  /** Pre-formatted sign-in timestamp, locale-friendly. */
+  signedInAt: string;
+  /** Where to start a password reset if this wasn't them. */
+  forgotUrl: string;
+}
 export interface EmailChangeVerifyPayload {
   /** Click-through link confirming the change, sent to the NEW address. */
   confirmUrl: string;
@@ -240,6 +246,7 @@ export type KindPayload = {
   verify_resend: VerifyResendPayload;
   password_reset: PasswordResetPayload;
   password_changed: PasswordChangedPayload;
+  new_device_signin: NewDeviceSigninPayload;
   email_change_verify: EmailChangeVerifyPayload;
   email_change_warning: EmailChangeWarningPayload;
   partner_invite: PartnerInvitePayload;
@@ -394,6 +401,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         `Your Weddly password was just changed (${p.changedAt}).`,
         "We've signed out all of your existing sessions, so you'll need to log back in everywhere with the new password.",
         "If this wasn't you, request a fresh password immediately using the link below — that will lock out whoever just got in.",
+      ],
+      cta: "Reset password now",
+      footnote: "If this was you, you can safely ignore this email.",
+    },
+  }),
+
+  new_device_signin: (p, ctx) => ({
+    subject: "Új eszközről jelentkeztél be / New device sign-in",
+    ctaUrl: p.forgotUrl,
+    hu: {
+      preheader: `Új eszközről nyitottak meg sessiont (${p.signedInAt}).`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Bejelentkezést észleltünk a Weddly fiókodba egy olyan eszközről, amit eddig nem láttunk (${p.signedInAt}).`,
+        "Ha te voltál (új gép, új telefon, böngészőcsere, vagy más hálózat) — minden rendben, nincs teendő.",
+        "Ha NEM te voltál, ez azt jelenti, hogy valaki más belépett a fiókodba a jelszavaddal. Kérj azonnal új jelszót a lenti linkkel — ezzel azonnal kilépteted őt mindenhonnan.",
+      ],
+      cta: "Új jelszó kérése",
+      footnote: "Ha te voltál, nyugodtan figyelmen kívül hagyhatod ezt a levelet.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `We noticed a sign-in to your Weddly account from a device we haven't seen before (${p.signedInAt}).`,
+        "If it was you (new computer, new phone, different browser, different network) — all good, nothing to do.",
+        "If it wasn't, someone else just got into your account with your password. Reset your password now using the link below — that will sign them out everywhere.",
       ],
       cta: "Reset password now",
       footnote: "If this was you, you can safely ignore this email.",
