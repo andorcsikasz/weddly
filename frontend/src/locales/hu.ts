@@ -2387,6 +2387,11 @@ const hu: LocaleMessages = {
     filter_status_hidden: "Elrejtett",
     approve: "Jóváhagyás",
     approve_success: "Szolgáltató jóváhagyva — már látszik a listán.",
+    approve_direct_hint: "Nincs megadott e-mail — közvetlenül publikálható.",
+    send_verify: "Visszaigazolás küldése",
+    send_verify_hint:
+      "Csak ezután megy ki a hirdetésnek a visszaigazoló e-mail. Submit önmagában nem küld.",
+    send_verify_success: "Visszaigazoló e-mail kiküldve a szolgáltatónak.",
     enrich: "Adatok kinyerése",
     enrich_running: "Töltés…",
     enrich_filled: "{n} mező kitöltve a weboldalról.",
@@ -2802,6 +2807,13 @@ const hu: LocaleMessages = {
     title: "Nincs ilyen oldal",
     body: "A link talán hibás, vagy az oldalt áthelyeztük.",
     go_home: "Vissza a főoldalra",
+  },
+  settings: {
+    tabs_aria_label: "Beállítások szekciók",
+    tab_account: "Fiók",
+    tab_workspace: "Munkaterület",
+    tab_planning: "Tervezés",
+    tab_data: "Adatok",
   },
   profile: {
     title: "Profil",

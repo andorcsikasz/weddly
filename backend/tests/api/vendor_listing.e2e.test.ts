@@ -17,6 +17,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 import { db } from "../../src/db";
+import { createVerificationToken } from "../../src/domain/community_suppliers";
 import type { Listing, VendorAccount, VendorListingView } from "@shared/listings";
 
 interface ClaimRow {
@@ -69,6 +70,7 @@ async function makeApprovedListing(
   const publicId = submit.data.supplier.id;
   const numericId = Number(publicId.slice(1));
 
+  createVerificationToken(numericId);
   const vtok = db
     .prepare(
       "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",

@@ -11,12 +11,10 @@ import type { SupplierCategory } from "@shared/suppliers";
 import { CONFIG } from "../config";
 import {
   consumeVerificationToken,
-  createVerificationToken,
   findActiveByWebsite,
   getCommunitySupplierById,
   insertCommunitySupplier,
   insertReport,
-  markPendingAsAwaitingReview,
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
 import { sendKind } from "../domain/emails/send";
@@ -198,31 +196,10 @@ function shouldCheckDuplicate(website: string): boolean {
   return website.length > 0;
 }
 
-async function sendVerificationEmail(
-  toEmail: string,
-  supplierName: string,
-  token: string,
-  submitterUserId: number,
-): Promise<void> {
-  const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-supplier/${encodeURIComponent(token)}`;
-  // Fire-and-forget; `sendKind` swallows mailer errors, logs them via Sentry,
-  // and writes the `email_log` row itself — submission must succeed even if
-  // the mail send fails (admin can re-send from the moderation queue).
-  //
-  // `submitterUserId` biases the bilingual render — a HU-using couple's
-  // submission to a HU florist surfaces the HU block on top of the stack
-  // (with EN still rendering below as the safety net since we don't know
-  // the vendor's actual locale).
-  await sendKind(
-    "community_supplier_verify",
-    { supplierName, verifyUrl },
-    {
-      user: null,
-      guest: { email: toEmail, full_name: supplierName },
-      submitterUserId,
-    },
-  );
-}
+// The verify-mail kickoff now lives in routes/admin_suppliers.ts:handleSendVerify.
+// Submission alone no longer fires the cold mail — admin must release it
+// explicitly so a logged-in couple can't blast verifications at any business
+// by submitting them to the catalogue.
 
 async function handleSubmit(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
@@ -262,18 +239,12 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     );
   }
 
-  // When the submitter gave a contact email: issue a fresh verification token
-  // and mail it. The supplier stays in 'pending' until the link is clicked,
-  // at which point it flips to 'awaiting_review' for admin moderation.
-  // When no email was given: nothing to verify, so we move straight to
-  // 'awaiting_review' — admin moderation is the remaining gate before public.
-  if (input.contact_email) {
-    const token = createVerificationToken(id);
-    await sendVerificationEmail(input.contact_email, input.name, token.token, userId);
-  } else {
-    markPendingAsAwaitingReview(id);
-  }
-
+  // Submission lands silently in 'pending' for admin triage — no outbound
+  // mail to the vendor yet. Previously the verify mail fired on submit,
+  // which meant any logged-in couple could blast verification mail at any
+  // business's contact_email by submitting them to the catalogue. Admin
+  // must explicitly click "Send verify" in /app/admin/suppliers to release
+  // the mail (handleSendVerify below).
   addAuditLog({
     actor_user_id: userId,
     couple_id: null,
@@ -286,7 +257,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
       category: input.category,
       price_band: input.price_band,
       website: input.website,
-      status: input.contact_email ? "pending" : "awaiting_review",
+      status: "pending",
     },
   });
 

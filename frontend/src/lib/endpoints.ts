@@ -990,6 +990,15 @@ export const adminSupplierApi = {
       `/api/admin/suppliers/${id}/approve`,
       {},
     ),
+  /** Admin-gated kickoff of the verify mail. Submissions land as 'pending'
+   *  now and stay quiet until admin clicks this — prevents anyone with a
+   *  Weddly account from blasting verifications at arbitrary inboxes. */
+  sendVerify: (id: number) =>
+    apiFetch<{ supplier: CommunitySupplierAdminView }>(
+      "POST",
+      `/api/admin/suppliers/${id}/send-verify`,
+      {},
+    ),
   enrich: (id: number) =>
     apiFetch<{ supplier: CommunitySupplierAdminView; fields_filled: number }>(
       "POST",

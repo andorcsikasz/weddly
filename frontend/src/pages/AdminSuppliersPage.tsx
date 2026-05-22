@@ -212,6 +212,16 @@ function ModerationView() {
     }
   }
 
+  async function onSendVerify(supplier: CommunitySupplierAdminView) {
+    try {
+      const r = await adminSupplierApi.sendVerify(supplier.id);
+      replaceSupplier(r.supplier);
+      toast.success(t("admin.send_verify_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   async function onEnrich(supplier: CommunitySupplierAdminView) {
     setEnriching(supplier.id);
     try {
@@ -402,6 +412,7 @@ function ModerationView() {
               selected={selected.has(s.id)}
               onToggleSelect={() => toggleRow(s.id)}
               onApprove={() => onApprove(s)}
+              onSendVerify={() => onSendVerify(s)}
               onHide={() => onHide(s)}
               onUnhide={() => onUnhide(s)}
               onEnrich={() => onEnrich(s)}
@@ -513,6 +524,7 @@ interface SupplierCardProps {
   selected: boolean;
   onToggleSelect: () => void;
   onApprove: () => void;
+  onSendVerify: () => void;
   onHide: () => void;
   onUnhide: () => void;
   onEnrich: () => void;
@@ -530,6 +542,7 @@ function SupplierCard({
   selected,
   onToggleSelect,
   onApprove,
+  onSendVerify,
   onHide,
   onUnhide,
   onEnrich,
@@ -791,12 +804,34 @@ function SupplierCard({
            *  only renders inside the expanded body so the collapsed row
            *  stays single-line. */}
           <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-2">
+            {s.status === "pending" && s.contact_email && (
+              <button
+                type="button"
+                className="btn-primary btn-sm"
+                onClick={onSendVerify}
+                aria-label={t("admin.send_verify")}
+                title={t("admin.send_verify_hint")}
+              >
+                {t("admin.send_verify")}
+              </button>
+            )}
             {s.status === "awaiting_review" && (
               <button
                 type="button"
                 className="btn-primary btn-sm"
                 onClick={onApprove}
                 aria-label={t("admin.approve")}
+              >
+                <Check size={14} /> {t("admin.approve")}
+              </button>
+            )}
+            {s.status === "pending" && !s.contact_email && (
+              <button
+                type="button"
+                className="btn-primary btn-sm"
+                onClick={onApprove}
+                aria-label={t("admin.approve")}
+                title={t("admin.approve_direct_hint")}
               >
                 <Check size={14} /> {t("admin.approve")}
               </button>

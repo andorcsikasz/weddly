@@ -3,6 +3,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
 import { db } from "../../src/db";
+import { createVerificationToken } from "../../src/domain/community_suppliers";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Helpers — admin bootstrap + a few light shapes used across tests.
@@ -60,6 +61,7 @@ async function insertSupplierAwaitingReview(token: string): Promise<number> {
   );
   expect(r.status).toBe(201);
   const numericId = Number(r.data.supplier.id.slice(1));
+  createVerificationToken(numericId);
   const tokenRow = db
     .prepare(
       "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
@@ -734,6 +736,89 @@ describe("admin suppliers — list, approve, hide/unhide", () => {
       { token: adminToken },
     );
     expect(r.status).toBe(400);
+  });
+
+  test("send-verify — mints token + fires verify mail on pending submission with email", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token } = await bootstrapCouple("send-verify@weddly.test");
+    // Bare submit — no token minted, no mail fired.
+    const r = await req<SubmitVendorTipResult>(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        submitter_type: "user",
+        name: "Verify Hall",
+        city: "Budapest",
+        address: "X",
+        website: "https://verify-hall.test",
+        contact_email: "hello@verify-hall.test",
+        blurb: "x",
+        price_band: 2,
+      },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    const id = Number(r.data.supplier.id.slice(1));
+    const beforeCount = (
+      db
+        .prepare("SELECT COUNT(*) AS n FROM community_supplier_verifications WHERE supplier_id = ?")
+        .get(id) as { n: number }
+    ).n;
+    expect(beforeCount).toBe(0);
+
+    // Admin releases the verify mail.
+    const send = await req(
+      "POST",
+      `/api/admin/suppliers/${id}/send-verify`,
+      {},
+      { token: adminToken },
+    );
+    expect(send.status).toBe(200);
+
+    // Token now exists + a community_supplier_verify mail landed in email_log.
+    const tokenCount = (
+      db
+        .prepare("SELECT COUNT(*) AS n FROM community_supplier_verifications WHERE supplier_id = ?")
+        .get(id) as { n: number }
+    ).n;
+    expect(tokenCount).toBe(1);
+    const mail = db
+      .prepare(
+        "SELECT to_email FROM email_log WHERE kind = 'community_supplier_verify' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string } | undefined;
+    expect(mail?.to_email).toBe("hello@verify-hall.test");
+  });
+
+  test("send-verify — refuses when no contact_email", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token } = await bootstrapCouple("no-email-submit@weddly.test");
+    const r = await req<SubmitVendorTipResult>(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        submitter_type: "user",
+        name: "No Email Hall",
+        city: "Budapest",
+        address: "X",
+        website: "https://no-email-hall.test",
+        contact_email: null,
+        blurb: "x",
+        price_band: 2,
+      },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    const id = Number(r.data.supplier.id.slice(1));
+    const send = await req(
+      "POST",
+      `/api/admin/suppliers/${id}/send-verify`,
+      {},
+      { token: adminToken },
+    );
+    expect(send.status).toBe(409);
   });
 
   test("hide → unhide → hide cycle", async () => {

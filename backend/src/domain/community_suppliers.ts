@@ -333,15 +333,19 @@ export function markPendingAsAwaitingReview(supplierId: number): void {
   syncListingFromCommunityId(supplierId);
 }
 
-/** Admin approval: flip `awaiting_review` → `active`. No-op if the row is
- *  already active. Hidden rows are NOT auto-approved — admin has to explicitly
- *  unhide first. Returns the new status. */
+/** Admin approval: flip `awaiting_review` or `pending` → `active`. The
+ *  caller (admin route) gates which `pending` rows are eligible — typically
+ *  only those without a contact_email, so admin doesn't accidentally publish
+ *  a business whose ownership wasn't verified. No-op if already active;
+ *  hidden rows have to be explicitly unhidden first. */
 export function approveSupplier(id: number): CommunitySupplierStatus {
   const ts = now();
   const cur = getCommunitySupplierById(id);
   if (!cur) throw new Error("supplier not found");
   if (cur.status === "active") return "active";
-  if (cur.status !== "awaiting_review") return cur.status as CommunitySupplierStatus;
+  if (cur.status !== "awaiting_review" && cur.status !== "pending") {
+    return cur.status as CommunitySupplierStatus;
+  }
   db.prepare("UPDATE community_suppliers SET status = 'active', updated_at = ? WHERE id = ?").run(
     ts,
     id,

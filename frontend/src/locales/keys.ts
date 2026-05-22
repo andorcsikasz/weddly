@@ -2654,6 +2654,10 @@ export interface LocaleMessages {
     /** Per-row admin actions for community suppliers. */
     approve: string;
     approve_success: string;
+    approve_direct_hint: string;
+    send_verify: string;
+    send_verify_hint: string;
+    send_verify_success: string;
     enrich: string;
     enrich_running: string;
     enrich_filled: string;
@@ -3143,6 +3147,16 @@ export interface LocaleMessages {
     title: string;
     body: string;
     go_home: string;
+  };
+  /** Settings hub at /app/settings — four-tab restructure of the old
+   *  /app/profile dumping ground. Tab labels live here; everything else
+   *  (per-section copy) still lives under `profile.*`. */
+  settings: {
+    tabs_aria_label: string;
+    tab_account: string;
+    tab_workspace: string;
+    tab_planning: string;
+    tab_data: string;
   };
   profile: {
     title: string;

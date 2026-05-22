@@ -21,6 +21,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 import { db } from "../../src/db";
+import { createVerificationToken } from "../../src/domain/community_suppliers";
 
 // ── small helpers ──────────────────────────────────────────────────────────
 
@@ -751,6 +752,7 @@ describe("suppliers directory: vote validation + auth", () => {
     expect(submit.status).toBe(201);
     const numericId = Number(submit.data.supplier.id.slice(1));
     // Email-verify + admin-approve so the supplier is voteable.
+    createVerificationToken(numericId);
     const tokenRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
@@ -926,7 +928,7 @@ function communityPayload(overrides: Record<string, unknown> = {}): Record<strin
 }
 
 describe("community suppliers: input validation", () => {
-  test("POST without contact_email triggers awaiting_review immediately", async () => {
+  test("POST without contact_email lands as pending (admin gate before publish)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("cs-no-email@weddly.test");
     interface SubmitResp {
@@ -945,10 +947,12 @@ describe("community suppliers: input validation", () => {
         status: string;
       }
     ).status;
-    expect(status).toBe("awaiting_review");
+    // Every submission lands as 'pending' now — admin reviews + either
+    // sends verify (if contact_email) or approves directly.
+    expect(status).toBe("pending");
   });
 
-  test("POST with contact_email creates a verification token", async () => {
+  test("POST with contact_email does NOT create a verification token (admin must release)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("cs-with-email@weddly.test");
     interface SubmitResp {
@@ -962,18 +966,14 @@ describe("community suppliers: input validation", () => {
     );
     expect(r.status).toBe(201);
     const numericId = Number(r.data.supplier.id.slice(1));
-    const tokenRow = db
-      .prepare(
-        "SELECT token, expires_at, consumed_at FROM community_supplier_verifications WHERE supplier_id = ?",
-      )
-      .get(numericId) as { token: string; expires_at: number; consumed_at: number | null };
-    expect(tokenRow.token.length).toBe(64);
-    expect(tokenRow.consumed_at).toBeNull();
-    // TTL ≈ 7 days from now (allow a wide window).
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    const delta = tokenRow.expires_at - Date.now();
-    expect(delta).toBeGreaterThan(sevenDays - 60_000);
-    expect(delta).toBeLessThanOrEqual(sevenDays + 60_000);
+    const tokenCount = (
+      db
+        .prepare("SELECT COUNT(*) AS n FROM community_supplier_verifications WHERE supplier_id = ?")
+        .get(numericId) as { n: number }
+    ).n;
+    // Token only gets minted once admin clicks "Send verify" in
+    // /app/admin/suppliers — submit alone leaves the table empty.
+    expect(tokenCount).toBe(0);
   });
 
   test("POST rejects invalid submitter_type", async () => {
@@ -1088,6 +1088,7 @@ describe("community suppliers: verify endpoint", () => {
     );
     expect(submit.status).toBe(201);
     const numericId = Number(submit.data.supplier.id.slice(1));
+    createVerificationToken(numericId);
     const tokenRow = db
       .prepare("SELECT token FROM community_supplier_verifications WHERE supplier_id = ?")
       .get(numericId) as { token: string };
@@ -1121,6 +1122,7 @@ describe("community suppliers: verify endpoint", () => {
     );
     expect(submit.status).toBe(201);
     const numericId = Number(submit.data.supplier.id.slice(1));
+    createVerificationToken(numericId);
     const tokenRow = db
       .prepare("SELECT id, token FROM community_supplier_verifications WHERE supplier_id = ?")
       .get(numericId) as { id: number; token: string };
@@ -1150,6 +1152,7 @@ describe("community suppliers: verify endpoint", () => {
       { token },
     );
     const numericId = Number(submit.data.supplier.id.slice(1));
+    createVerificationToken(numericId);
     const tokenRow = db
       .prepare("SELECT token FROM community_supplier_verifications WHERE supplier_id = ?")
       .get(numericId) as { token: string };
@@ -1261,6 +1264,7 @@ describe("community suppliers: report endpoint", () => {
     );
     const numericId = Number(submit.data.supplier.id.slice(1));
     // Promote past both gates so the public list shows it.
+    createVerificationToken(numericId);
     const tokRow = db
       .prepare("SELECT token FROM community_supplier_verifications WHERE supplier_id = ?")
       .get(numericId) as { token: string };

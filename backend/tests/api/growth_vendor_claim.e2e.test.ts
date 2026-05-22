@@ -14,6 +14,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 import { db } from "../../src/db";
+import { createVerificationToken } from "../../src/domain/community_suppliers";
 
 interface GrowthRow {
   kind: string;
@@ -88,7 +89,9 @@ async function makeApprovedListing(
   const publicId = submit.data.supplier.id;
   const numericId = Number(publicId.slice(1));
 
-  // Verify email so the listing flips to awaiting_review
+  // Verify email so the listing flips to awaiting_review. Admin-gated
+  // release: mint the token directly.
+  createVerificationToken(numericId);
   const vtok = db
     .prepare(
       "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",

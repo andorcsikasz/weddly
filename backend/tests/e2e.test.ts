@@ -3,6 +3,7 @@ import "./setup";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import { db, now } from "../src/db";
+import { createVerificationToken } from "../src/domain/community_suppliers";
 import { runEmailSweep } from "../src/domain/emails/worker";
 import { runPurgeSweep } from "../src/domain/purge";
 import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
@@ -3824,9 +3825,13 @@ describe("community suppliers", () => {
     expect(after.data.suppliers.length).toBe(beforeLen);
     expect(after.data.suppliers.find((s) => s.id === r.data.supplier.id)).toBeUndefined();
 
-    // The verification token went to the contact_email's inbox (stdout in
-    // tests). Pull it directly from the DB and consume it.
+    // Submit alone no longer releases the verify mail — admin must click
+    // "Send verify" first. Tests that need the full flow short-circuit by
+    // creating the token directly; the admin path is exercised separately
+    // in the verification-gate describe.
     const supplierId = Number(r.data.supplier.id.slice(1));
+    createVerificationToken(supplierId);
+
     const tokenRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
@@ -4004,6 +4009,7 @@ describe("community suppliers", () => {
     // public-list assertion below exercises the hide-via-admin flow rather
     // than the pending/awaiting-review invisibility paths (those are covered
     // in their own describe blocks).
+    createVerificationToken(numericId);
     const verifyRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
@@ -4154,7 +4160,11 @@ describe("community suppliers", () => {
     );
     expect(earlyApprove.status).toBe(409);
 
-    // Verify email → row moves to awaiting_review (still NOT public).
+    // Verify email → row moves to awaiting_review (still NOT public). Submit
+    // alone no longer creates a token (admin must release the verify mail
+    // first); short-circuit by minting the token directly so this test can
+    // exercise the consumeVerificationToken flow.
+    createVerificationToken(numericId);
     const tokenRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
@@ -4446,6 +4456,7 @@ describe("community supplier reports", () => {
     // approve so the rest of the test exercises the report flow rather than the
     // gate. The admin registration is idempotent across helper calls — the
     // second one hits 409 which we silently tolerate.
+    createVerificationToken(numericId);
     const tokenRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
@@ -6469,6 +6480,7 @@ describe("round-2: community supplier email privacy", () => {
     // both gates so the privacy assertion runs against a public-visible row.
     // (Each gate is exercised in its own describe block.)
     const supplierId = Number(submit.data.supplier.id.slice(1));
+    createVerificationToken(supplierId);
     const tokenRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
@@ -6532,6 +6544,9 @@ describe("community supplier verification gate", () => {
     expect(r.status).toBe(201);
     expect(r.data.pending).toBe(true);
     const supplierId = Number(r.data.supplier.id.slice(1));
+    // Submit alone no longer releases the verify mail — mint a token directly
+    // for the verification-gate tests that exercise the consume flow.
+    createVerificationToken(supplierId);
     const tokenRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
@@ -8403,6 +8418,7 @@ describe("loop A: per-couple supplier votes + self-vote block", () => {
     // endpoint sees an active listing — voting on awaiting_review / pending
     // listings has no UX meaning since they're invisible publicly.
     const numericId = Number(supplierPublicId.slice(1));
+    createVerificationToken(numericId);
     const verifyRow = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",

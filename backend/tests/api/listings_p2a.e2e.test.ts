@@ -13,6 +13,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 import { db } from "../../src/db";
+import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { backfillListings } from "../../src/domain/listings";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 
@@ -168,6 +169,9 @@ describe("P2.A community supplier dual-write", () => {
     expect(readListing(publicId)?.status).toBe("pending");
 
     // Consume the email verification token → awaiting_review on listings.
+    // Admin-gated release: mint the token directly (the admin path is
+    // covered in admin_suppliers tests).
+    createVerificationToken(numericId);
     const tok = db
       .prepare(
         "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",

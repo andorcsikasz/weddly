@@ -3,6 +3,7 @@
 
 import {
   approveSupplier,
+  createVerificationToken,
   deleteCommunitySupplier,
   dismissReportsForSupplier,
   getCommunitySupplierById,
@@ -145,7 +146,22 @@ function handleApprove(ctx: Ctx): Response {
 
   const before = getCommunitySupplierById(id);
   if (!before) throw new HttpError(404, "Supplier not found");
-  if (before.status !== "awaiting_review") {
+  // Two valid entry points to approval:
+  //  - awaiting_review: vendor has clicked the verify link, now admin signs off
+  //  - pending + no contact_email: nothing to verify, admin can publish direct
+  // A `pending` row WITH a contact_email is an error — admin should click
+  // "Send verify" first so the vendor proves they own the inbox before we
+  // publish their business in the directory.
+  const directApprovableNoEmail =
+    before.status === "pending" && !getCommunitySupplierWithEmail(id)?.contact_email;
+  if (before.status !== "awaiting_review" && !directApprovableNoEmail) {
+    if (before.status === "pending") {
+      throw new HttpError(
+        409,
+        "This listing has a contact email — click 'Send verify' first so the vendor confirms ownership before we publish.",
+        { code: "send_verify_first" },
+      );
+    }
     throw new HttpError(
       409,
       `Cannot approve from status="${before.status}" — only "awaiting_review" rows are approvable.`,
@@ -183,6 +199,61 @@ function handleApprove(ctx: Ctx): Response {
 
   const counts = openReportCountsForAll();
   return json({ supplier: toAdminView(after, counts.get(id) ?? 0) });
+}
+
+async function handleSendVerify(ctx: Ctx): Promise<Response> {
+  // Admin-gated verify-mail kickoff. Submission alone no longer sends the
+  // verify mail — any logged-in couple could otherwise blast verification
+  // mail at any business's contact_email by submitting them to the
+  // directory. Admin reviews the row first and explicitly releases the mail.
+  //
+  // Stays at status='pending' (vendor still has to click) but issues a
+  // fresh token + fires the cold-mail. Idempotent re-clicks generate a new
+  // token (the old one stays valid until its own expiry; consumeVerification
+  // is single-use, so the first click wins regardless).
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+
+  const supplier = getCommunitySupplierWithEmail(id);
+  if (!supplier) throw new HttpError(404, "Supplier not found");
+  if (!supplier.contact_email) {
+    throw new HttpError(409, "Listing has no contact email — approve directly instead", {
+      code: "no_contact_email",
+    });
+  }
+  if (supplier.status !== "pending") {
+    throw new HttpError(
+      409,
+      `Cannot send verify from status="${supplier.status}" — only 'pending' rows are eligible.`,
+      { code: "invalid_status_for_send_verify" },
+    );
+  }
+
+  const token = createVerificationToken(id);
+  void sendKind(
+    "community_supplier_verify",
+    {
+      supplierName: supplier.name,
+      verifyUrl: `${CONFIG.frontendBaseUrl}/verify-supplier/${token.token}`,
+    },
+    {
+      user: null,
+      guest: { email: supplier.contact_email, full_name: supplier.name },
+      submitterUserId: supplier.submitter_user_id,
+    },
+  );
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.community.send_verify",
+    target_kind: "community_supplier",
+    target_id: id,
+    after: { to_email: supplier.contact_email },
+  });
+
+  const counts = openReportCountsForAll();
+  return json({ supplier: toAdminView(supplier, counts.get(id) ?? 0) });
 }
 
 async function handleUnhide(ctx: Ctx): Promise<Response> {
@@ -371,6 +442,7 @@ export function registerAdminSupplierRoutes(router: Router) {
   router.get("/api/admin/suppliers/directory.csv", handleDirectoryCsv, true);
   router.get("/api/admin/suppliers/:id/reports", handleListReports, true);
   router.post("/api/admin/suppliers/:id/approve", handleApprove, true);
+  router.post("/api/admin/suppliers/:id/send-verify", handleSendVerify, true);
   router.post("/api/admin/suppliers/:id/enrich", handleEnrich, true);
   router.post("/api/admin/suppliers/:id/hide", handleHide, true);
   router.post("/api/admin/suppliers/:id/unhide", handleUnhide, true);

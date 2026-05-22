@@ -2365,6 +2365,11 @@ const en: LocaleMessages = {
     filter_status_hidden: "Hidden",
     approve: "Approve",
     approve_success: "Approved — supplier is now in the public directory.",
+    approve_direct_hint: "No contact email — publish directly.",
+    send_verify: "Send verify email",
+    send_verify_hint:
+      "Releases the verification mail to the supplier. Submission alone does not send it.",
+    send_verify_success: "Verify email sent to the supplier.",
     enrich: "Fetch from website",
     enrich_running: "Fetching…",
     enrich_filled: "Filled {n} field(s) from the website.",
@@ -2776,6 +2781,13 @@ const en: LocaleMessages = {
     title: "Page not found",
     body: "The link you followed might be broken, or the page may have been moved.",
     go_home: "Back to home",
+  },
+  settings: {
+    tabs_aria_label: "Settings sections",
+    tab_account: "Account",
+    tab_workspace: "Workspace",
+    tab_planning: "Planning",
+    tab_data: "Data",
   },
   profile: {
     title: "Profile",
