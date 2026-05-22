@@ -79,7 +79,7 @@ import type { BudgetLine, Currency } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
 import { formatMoney } from "../lib/format";
-import { metroKeysForCity } from "../lib/hu_metro_areas";
+import { distanceContextForQuery, metroKeysForCity } from "../lib/hu_metro_areas";
 import {
   readSelection,
   type SelectionMap,
@@ -218,6 +218,9 @@ export default function SuppliersPage() {
 
   // Filter state lives in URL params so back-button restores it.
   const query = params.get("q") ?? "";
+  // Pre-normalized form used both by the free-text filter and by the
+  // per-card distance badge (avoids re-folding per supplier).
+  const queryNorm = useMemo(() => normalize(query.trim()), [query]);
   const cityFilter = params.get("city") ?? "";
   const showSavedOnly = params.get("saved") === "1";
   const showPickedOnly = params.get("picked") === "1";
@@ -894,7 +897,7 @@ export default function SuppliersPage() {
             inputMode="numeric"
             min={1}
             step={1}
-            className="h-9 w-16 rounded-full border border-paper-300 bg-paper-50 px-2 text-center text-sm tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:border-ink-300 focus:border-ink-400 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
+            className="h-9 w-14 rounded-full border border-transparent bg-transparent px-2 text-center text-sm tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:bg-paper-50 hover:border-paper-300 focus:border-paper-400 focus:bg-paper-50 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:bg-umber-800 dark:hover:border-umber-700 dark:focus:border-umber-600 dark:focus:bg-umber-800"
             placeholder={t("suppliers.guests_filter_placeholder")}
             value={guestsFilter ?? ""}
             onChange={(e) => setGuestsFilter(e.target.value)}
@@ -946,7 +949,7 @@ export default function SuppliersPage() {
                     onClick={() => pickGroup(activeGroup === g.id ? null : g.id)}
                     label={t(`suppliers.group.${g.id}`)}
                     count={groupCounts.get(g.id) ?? 0}
-                    icon={<Icon size={16} />}
+                    icon={<Icon size={14} />}
                     progress={progress}
                     t={t}
                   />
@@ -1312,6 +1315,7 @@ export default function SuppliersPage() {
                         ·
                       </span>
                       <span className="uppercase tracking-wide">{s.city}</span>
+                      <DistanceHint queryNorm={queryNorm} city={s.city} />
                       {s.price_band !== null && (
                         <>
                           <span aria-hidden className="text-paper-400 dark:text-umber-300">
@@ -1458,6 +1462,7 @@ export default function SuppliersPage() {
                         ·
                       </span>
                       <span className="uppercase tracking-wide">{s.city}</span>
+                      <DistanceHint queryNorm={queryNorm} city={s.city} />
                       {s.price_band !== null && (
                         <>
                           <span aria-hidden className="text-paper-400 dark:text-umber-300">
@@ -1737,12 +1742,16 @@ function ChainStep({
             : "border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
       }`}
     >
-      <span className="flex items-center gap-1.5">
-        {!isAll && icon}
+      <span className="flex items-center justify-center gap-1.5 leading-none">
+        {!isAll && (
+          <span className="inline-flex items-center" aria-hidden>
+            {icon}
+          </span>
+        )}
         <span className="font-medium">{label}</span>
         {count !== undefined && (
           <span
-            className={`text-[10px] font-medium tabular-nums ${
+            className={`inline-flex items-center text-[11px] font-medium tabular-nums ${
               active
                 ? "text-paper-100/80 dark:text-umber-900/80"
                 : allDone
@@ -1808,6 +1817,31 @@ function Avatar({ name, heroUrl }: { name: string; heroUrl?: string | null }) {
 function PriceBandDots({ band }: { band: number }) {
   const filled = Math.max(0, Math.min(5, band));
   return <span className="font-mono">{"$".repeat(filled)}</span>;
+}
+
+/** Small "+45 km" chip next to the supplier's city — appears only when
+ *  the user's free-text query matches a known anchor city (Budapest,
+ *  Pécs, Balatonfüred, …) AND the supplier is in the same metro group
+ *  but a different town. Lets couples see at a glance which booking.com-
+ *  style nearby results need travel. Title attribute carries the full
+ *  "anchor → city" detail for accessibility / hover. */
+function DistanceHint({
+  queryNorm,
+  city,
+}: {
+  queryNorm: string;
+  city: string | null | undefined;
+}) {
+  const ctx = distanceContextForQuery(queryNorm, city);
+  if (!ctx) return null;
+  return (
+    <span
+      className="rounded-full bg-blush-50 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-blush-700 dark:bg-blush-400/15 dark:text-blush-200"
+      title={`${ctx.anchorLabel} → ${city}: ~${ctx.km} km`}
+    >
+      +{ctx.km} km
+    </span>
+  );
 }
 
 /** Per-card toggle that adds / removes a supplier from the side-by-side
