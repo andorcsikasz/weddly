@@ -340,7 +340,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Még egy lépés van hátra: erősítsd meg az e-mail címed. Ez azért fontos, hogy később, ha elfelejtenéd a jelszót, vissza tudd állítani — különben elveszhet a teljes esküvőtervező munkád.",
       ],
       cta: "E-mail cím megerősítése",
-      footnote: "A link 7 napig érvényes. Akkor is bejelentkezhetsz, ha most még nem kattintasz.",
+      ctaSubtext: "A link 7 napig érvényes.",
+      footnote: "Akkor is bejelentkezhetsz, ha most még nem kattintasz.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -350,7 +351,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "One quick thing: please confirm your email so you can recover your account if you ever lose your password.",
       ],
       cta: "Confirm your email",
-      footnote: "The link is valid for 7 days. You can keep using Weddly while you wait.",
+      ctaSubtext: "The link is valid for 7 days.",
+      footnote: "You can keep using Weddly while you wait.",
     },
   }),
 
@@ -364,7 +366,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Ha nem te kérted, hagyd figyelmen kívül ezt a levelet — a régi linket továbbra is használhatod, amíg le nem jár.",
       ],
       cta: "E-mail cím megerősítése",
-      footnote: "A link 7 napig érvényes.",
+      ctaSubtext: "A link 7 napig érvényes.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -373,7 +375,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If you didn't ask for this, you can safely ignore it.",
       ],
       cta: "Confirm your email",
-      footnote: "Valid for seven days.",
+      ctaSubtext: "Valid for seven days.",
     },
   }),
 
@@ -388,8 +390,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Ha nem te kérted, ne kattints rá és ne add meg senkinek — a fiókod a régi jelszóval továbbra is biztonságban van.",
       ],
       cta: "Új jelszó beállítása",
-      footnote:
-        "Egyszer használható link. Ha lejárna, indítsd újra a folyamatot a bejelentkezésnél.",
+      ctaSubtext: "Egyszer használható, 1 órán át érvényes link.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -398,7 +399,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If you didn't request this, you can ignore the email — your account is still safe.",
       ],
       cta: "Set a new password",
-      footnote: "Single-use link. Restart from the login page if it expires.",
+      ctaSubtext: "Single-use link, valid for 1 hour.",
     },
   }),
 
@@ -525,8 +526,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "Magyar nyelvű, ingyenes a nyilvános béta alatt, és semmilyen szállítóhoz nem köt — az adatok a tiétek maradnak.",
         ],
         cta: "Csatlakozom a tervezéshez",
-        footnote:
-          "A link 7 napig érvényes. Ha véletlenül kaptad, hagyd figyelmen kívül — semmi sem fog történni.",
+        ctaSubtext: "A link 7 napig érvényes.",
+        footnote: "Ha véletlenül kaptad, hagyd figyelmen kívül — semmi sem fog történni.",
       },
       en: {
         greeting: "Hello,",
@@ -536,7 +537,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "Free during the open beta, no vendor lock-in — your data stays yours.",
         ],
         cta: "Join the workspace",
-        footnote: "Link valid for 7 days. Got this by mistake? Ignore it — nothing happens.",
+        ctaSubtext: "Link valid for 7 days.",
+        footnote: "Got this by mistake? Ignore it — nothing happens.",
       },
     };
   },

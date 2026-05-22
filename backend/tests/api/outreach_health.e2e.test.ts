@@ -1,8 +1,8 @@
-// Outreach Inbox schema-prep stub. The full Q3 build (POST campaigns,
-// inbound reply webhook, in-app inbox UI) lands later; this commit only
-// reserves the schema + the route. The health endpoint exists so future-us
-// can confirm the tables are query-able in a deployment before wiring real
-// send pipelines on top.
+// Outreach Inbox health endpoint. The schema landed in a47199a as a Q3
+// reservation; this file followed the prep stage. With the v1 send +
+// list + detail endpoints now live, the stage marker flips to "v1" and
+// `ready` to true. v1.5 (inbound webhook + reply archival) will bump the
+// stage marker again.
 
 import "../setup";
 
@@ -10,7 +10,7 @@ import { describe, expect, test } from "bun:test";
 import { req } from "../helpers";
 
 interface OutreachHealth {
-  stage: "schema-prep" | "v1";
+  stage: "schema-prep" | "v1" | "v1.5";
   ready: boolean;
   tables: {
     outreach_campaigns: boolean;
@@ -19,12 +19,12 @@ interface OutreachHealth {
   };
 }
 
-describe("GET /api/outreach/health — Q3 schema-prep marker", () => {
-  test("reports schema-prep stage with all three tables present", async () => {
+describe("GET /api/outreach/health — Q3 status marker", () => {
+  test("reports v1 stage with all three tables present once send + list ship", async () => {
     const r = await req<OutreachHealth>("GET", "/api/outreach/health");
     expect(r.status).toBe(200);
-    expect(r.data.stage).toBe("schema-prep");
-    expect(r.data.ready).toBe(false);
+    expect(r.data.stage).toBe("v1");
+    expect(r.data.ready).toBe(true);
     expect(r.data.tables.outreach_campaigns).toBe(true);
     expect(r.data.tables.outreach_messages).toBe(true);
     expect(r.data.tables.outreach_replies).toBe(true);

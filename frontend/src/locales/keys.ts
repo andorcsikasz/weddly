@@ -359,6 +359,44 @@ export interface LocaleMessages {
     error_load: string;
     error_no_account: string;
   };
+  /** Supplier Outreach Inbox (P2.E v1) — the in-app surface where a couple
+   *  sends a localised cold-outreach mail to up to 5 shortlisted vendors
+   *  per campaign and browses the sent history. Replies arrive in the
+   *  couple's own email today; v1.5 wires the in-app thread. */
+  outreach: {
+    page_title: string;
+    page_body: string;
+    heading: string;
+    subheading: string;
+    new_campaign: string;
+    reply_note: string;
+    empty_title: string;
+    empty_body: string;
+    recipient_count: string;
+    recipients_header: string;
+    detail_loading: string;
+    error_load: string;
+    error_detail: string;
+    send: string;
+    sending: string;
+    send_success: string;
+    status_queued: string;
+    status_sent: string;
+    status_bounced: string;
+    status_replied: string;
+    compose_title: string;
+    label_subject: string;
+    label_body: string;
+    label_supplier_ids: string;
+    label_supplier_ids_placeholder: string;
+    label_supplier_ids_help: string;
+    err_no_suppliers: string;
+    err_too_many_suppliers: string;
+    err_rate_limited: string;
+    err_supplier_not_found: string;
+    err_supplier_no_email: string;
+    err_generic: string;
+  };
   /** Page reached from the email_change_verify confirm link. */
   change_email: {
     page_title: string;

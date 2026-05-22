@@ -57,12 +57,14 @@ const RsvpCheckinPage = lazy(() => import("./pages/RsvpCheckinPage"));
 const RsvpPage = lazy(() => import("./pages/RsvpPage"));
 const SchedulePage = lazy(() => import("./pages/SchedulePage"));
 const SeatingPage = lazy(() => import("./pages/SeatingPage"));
+const OutreachPage = lazy(() => import("./pages/OutreachPage"));
 const SuppliersPage = lazy(() => import("./pages/SuppliersPage"));
 const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage"));
 const VendorHomePage = lazy(() => import("./pages/VendorHomePage"));
 const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
+const WeddingSiteEditorPage = lazy(() => import("./pages/WeddingSiteEditorPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
@@ -490,6 +492,14 @@ export default function App() {
         />
         <Route path="suppliers" element={<Navigate to="/app/vendors" replace />} />
         <Route
+          path="outreach"
+          element={
+            <Page>
+              <OutreachPage />
+            </Page>
+          }
+        />
+        <Route
           path="planning"
           element={
             <Page>
@@ -510,6 +520,14 @@ export default function App() {
           element={
             <Page>
               <GuestPreviewPage />
+            </Page>
+          }
+        />
+        <Route
+          path="wedding-site"
+          element={
+            <Page>
+              <WeddingSiteEditorPage />
             </Page>
           }
         />

@@ -88,6 +88,11 @@ import type {
 } from "@shared/supplier_taxonomy";
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
+import type {
+  CreateOutreachCampaignInput,
+  OutreachCampaign,
+  OutreachCampaignDetail,
+} from "@shared/outreach";
 import { ApiError, apiFetch, getToken } from "./api";
 
 /** Public landing-page "try the demo" endpoint. Spins up a brand-new
@@ -873,6 +878,17 @@ export const vendorListingApi = {
     return JSON.parse(text) as VendorListingView;
   },
   deleteHero: () => apiFetch<VendorListingView>("DELETE", "/api/vendor/listing/me/hero"),
+};
+
+/** Supplier Outreach Inbox (P2.E v1). Couple-facing endpoints; the
+ *  vendor's reply lands in the couple's own email inbox today (Reply-To
+ *  is the couple owner's address) — the in-app `/app/outreach` surface
+ *  shows sent history only until the v1.5 inbound webhook ships. */
+export const outreachApi = {
+  list: () => apiFetch<{ campaigns: OutreachCampaign[] }>("GET", "/api/outreach/campaigns"),
+  detail: (id: number) => apiFetch<OutreachCampaignDetail>("GET", `/api/outreach/campaigns/${id}`),
+  create: (body: CreateOutreachCampaignInput) =>
+    apiFetch<OutreachCampaignDetail>("POST", "/api/outreach/campaigns", body),
 };
 
 export const vendorWaitlistApi = {

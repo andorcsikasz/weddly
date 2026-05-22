@@ -34,7 +34,8 @@ export type EmailKind =
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
   | "community_supplier_published" // admin approved the listing — it's now live
   | "vendor_claim_verify" // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
-  | "vendor_claim_approved"; // sent to the new vendor account once the claim flow completes
+  | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
+  | "supplier_outreach"; // P2.E — couple-initiated cold outreach to a shortlisted vendor
 
 export type EmailCategory = "transactional" | "lifecycle" | "outreach";
 
@@ -113,4 +114,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // password, clicked through) — this is the success confirmation closing
   // that loop. They now have a Weddly vendor account.
   vendor_claim_approved: "transactional",
+  // Outreach: the recipient is a shortlisted vendor; the couple initiated
+  // the message via /app/outreach but the vendor has no Weddly account.
+  // Reply-To is the couple's own email, so a reply goes straight to them
+  // outside Weddly (in v1 — the inbound webhook + in-app threading land
+  // in v1.5 once the reply-domain DNS is provisioned).
+  supplier_outreach: "outreach",
 };
