@@ -1336,6 +1336,14 @@ const en: LocaleMessages = {
     post_rsvp_hint:
       "Only revealed when at least one of the household members has RSVP'd yes. The exact venue pin unlocks at the same moment.",
     editor_collapse_summary: "Edit",
+    todo_pill: "Missing",
+    todo_summary_prefix: "Still to fill:",
+    todo_item_cover: "cover image",
+    todo_item_intro: "welcome text",
+    todo_item_post_rsvp: "confirmed-guest details",
+    todo_item_coords: "venue coordinates",
+    todo_item_schedule: "schedule",
+    todo_item_venue: "venue name",
     preview_divider_label: "Guest view below",
     preview_title: "Live preview",
     preview_subtitle:

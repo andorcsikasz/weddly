@@ -1434,6 +1434,18 @@ export interface LocaleMessages {
     post_rsvp_placeholder: string;
     post_rsvp_hint: string;
     editor_collapse_summary: string;
+    /** Inline indicators flagging which guest-page fields the couple still
+     *  has to fill in — pill next to each empty label, plus a one-line
+     *  summary at the top of the editor that survives the <details> being
+     *  collapsed. */
+    todo_pill: string;
+    todo_summary_prefix: string;
+    todo_item_cover: string;
+    todo_item_intro: string;
+    todo_item_post_rsvp: string;
+    todo_item_coords: string;
+    todo_item_schedule: string;
+    todo_item_venue: string;
     preview_divider_label: string;
     preview_title: string;
     preview_subtitle: string;

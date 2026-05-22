@@ -12,6 +12,7 @@ import type {
 } from "@shared/guest_portal";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
+  AlertCircle,
   ChevronRight,
   Clipboard,
   Copy,
@@ -31,6 +32,19 @@ import { ApiError } from "../lib/api";
 import { coupleApi, householdApi, scheduleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+/** Inline "Missing" indicator next to a field label or jump-to button when
+ *  the underlying value is empty. Pure visual — no click target. The
+ *  blush palette is Weddly's "needs attention" semantic (same family the
+ *  publish toggle and the locked-section eyebrow use). */
+function TodoPill({ label }: { label: string }) {
+  return (
+    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blush-100 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-blush-800 dark:bg-blush-900/40 dark:text-blush-200">
+      <AlertCircle size={10} aria-hidden />
+      {label}
+    </span>
+  );
+}
 
 export default function GuestPageEditorPage() {
   const { t, locale } = useT();
@@ -105,6 +119,29 @@ export default function GuestPageEditorPage() {
   const postRsvpChanged = postRsvpContent !== (couple?.post_rsvp_content ?? "");
   const publishChanged = isPublic !== Boolean(couple?.is_public);
   const dirty = venueChanged || coverChanged || publishChanged || introChanged || postRsvpChanged;
+
+  // Completeness flags — derived from the live form state for fields the
+  // couple edits in this page, and from the loaded couple/events for the
+  // ones that live on sibling pages (coords, schedule). We use these to
+  // (1) flag empty fields inline next to their label and (2) build a
+  // one-line summary above the editor that survives <details> being
+  // collapsed. Venue name is included since the public landing falls back
+  // to a generic title without one; the cover image, welcome text, and
+  // post-RSVP block are optional but visually-impactful.
+  const todoCover = coverTrimmed.length === 0;
+  const todoIntro = guestPageIntro.trim().length === 0;
+  const todoPostRsvp = postRsvpContent.trim().length === 0;
+  const todoVenue = venueTrimmed.length === 0;
+  const todoCoords = couple ? couple.location_lat === null || couple.location_lng === null : false;
+  const todoSchedule = !loading && events.length === 0;
+  const todoSummaryItems: string[] = [];
+  if (todoVenue) todoSummaryItems.push(t("guest_page_editor.todo_item_venue"));
+  if (todoCover) todoSummaryItems.push(t("guest_page_editor.todo_item_cover"));
+  if (todoIntro) todoSummaryItems.push(t("guest_page_editor.todo_item_intro"));
+  if (todoPostRsvp) todoSummaryItems.push(t("guest_page_editor.todo_item_post_rsvp"));
+  if (todoSchedule) todoSummaryItems.push(t("guest_page_editor.todo_item_schedule"));
+  if (todoCoords) todoSummaryItems.push(t("guest_page_editor.todo_item_coords"));
+  const todoPillLabel = t("guest_page_editor.todo_pill");
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -316,6 +353,22 @@ export default function GuestPageEditorPage() {
           {t("guest_page_editor.subtitle")}
         </p>
       </header>
+
+      {/* ── Outstanding-items summary ────────────────────────────────────
+       *  Sits OUTSIDE the collapsible editor so the planner still sees the
+       *  list of unfilled fields when the editor is folded shut. Hidden
+       *  entirely once everything's filled. Plain text — the inline pills
+       *  next to each label are the actionable signal; this row is just
+       *  a glance-able overview. */}
+      {!loading && todoSummaryItems.length > 0 && (
+        <div className="mb-4 flex items-start gap-2 rounded-xl border border-blush-300 bg-blush-50 px-3 py-2 text-sm text-blush-800 dark:border-blush-400/40 dark:bg-blush-900/20 dark:text-blush-200">
+          <AlertCircle size={16} aria-hidden className="mt-0.5 shrink-0" />
+          <p>
+            <span className="font-medium">{t("guest_page_editor.todo_summary_prefix")}</span>{" "}
+            {todoSummaryItems.join(" · ")}
+          </p>
+        </div>
+      )}
 
       {/* ── Editor block (collapsible) ───────────────────────────────────
        *  Everything from the share artefact through the save button lives
@@ -574,6 +627,7 @@ export default function GuestPageEditorPage() {
           <div className="mt-3">
             <label htmlFor="guest-page-venue" className="field-label">
               {t("wedding_site_editor.venue_label")}
+              {todoVenue && <TodoPill label={todoPillLabel} />}
             </label>
             <input
               id="guest-page-venue"
@@ -591,6 +645,7 @@ export default function GuestPageEditorPage() {
           <div className="mt-3">
             <label htmlFor="guest-page-cover" className="field-label">
               {t("wedding_site_editor.cover_image_label")}
+              {todoCover && <TodoPill label={todoPillLabel} />}
             </label>
             {/* Upload row — thumbnail of the current cover (if any) +
              *  Tallózás button. Hidden <input type="file"> so we can style
@@ -650,6 +705,7 @@ export default function GuestPageEditorPage() {
           <div className="mt-3">
             <label htmlFor="guest-page-intro" className="field-label">
               {t("guest_page_editor.intro_label")}
+              {todoIntro && <TodoPill label={todoPillLabel} />}
             </label>
             <textarea
               id="guest-page-intro"
@@ -677,21 +733,24 @@ export default function GuestPageEditorPage() {
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
             {t("guest_page_editor.section_unlocked_hint")}
           </p>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            <li>
+          <ul className="mt-3 flex flex-wrap items-center gap-2">
+            <li className="inline-flex items-center">
               <Link to="/app/schedule" className="btn-outline btn-sm">
                 {t("guest_page_editor.section_unlocked_link_schedule")}
               </Link>
+              {todoSchedule && <TodoPill label={todoPillLabel} />}
             </li>
-            <li>
+            <li className="inline-flex items-center">
               <Link to="/app/settings/workspace" className="btn-outline btn-sm">
                 {t("guest_page_editor.section_unlocked_link_profile")}
               </Link>
+              {todoCoords && <TodoPill label={todoPillLabel} />}
             </li>
           </ul>
           <div className="mt-3">
             <label htmlFor="guest-page-post-rsvp" className="field-label">
               {t("guest_page_editor.post_rsvp_label")}
+              {todoPostRsvp && <TodoPill label={todoPillLabel} />}
             </label>
             <textarea
               id="guest-page-post-rsvp"

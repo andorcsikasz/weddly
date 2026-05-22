@@ -1344,6 +1344,14 @@ const hu: LocaleMessages = {
     post_rsvp_hint:
       "Csak az látja, akinek legalább egy fős vendége igennel visszajelölt. A pontos helyszín-pin is itt nyílik meg.",
     editor_collapse_summary: "Szerkesztés",
+    todo_pill: "Hiányzik",
+    todo_summary_prefix: "Még kitöltendő:",
+    todo_item_cover: "borítókép",
+    todo_item_intro: "üdvözlő szöveg",
+    todo_item_post_rsvp: "részletek visszajelölteknek",
+    todo_item_coords: "helyszín koordinátái",
+    todo_item_schedule: "menetrend",
+    todo_item_venue: "helyszín neve",
     preview_divider_label: "Innen a vendégoldal",
     preview_title: "Élő előnézet",
     preview_subtitle:
