@@ -71,15 +71,31 @@
       .seo-prerender { display: none !important; }
     </style>
     <!--
-      Fonts are intentionally NOT loaded from third-party hosts (rsms.me,
-      Google Fonts) so that the landing page can render without leaking
-      visitor IPs to font CDNs. The Tailwind sans + serif stacks fall
-      back to the host OS fonts (Inter / Cormorant if installed locally,
-      otherwise the platform UI sans / Georgia for the display serif).
-      If we ever want pixel-identical typography across platforms, ship
-      WOFF2 files from /public/fonts and re-introduce @font-face rules
-      in src/index.css — but keep them self-hosted.
+      Fonts are self-hosted from /public/fonts (no third-party CDN, no
+      visitor-IP leak). @font-face declarations live in src/index.css.
+      Two faces are preloaded below — the latin Inter Variable file
+      (used by every body text / heading) and the latin Cormorant 400
+      italic (used by editorial surfaces). The latin-ext extension
+      files and Cormorant 600 are lazy-loaded by unicode-range when a
+      page actually contains Hungarian/Polish/Czech diacritics or the
+      uppercase eyebrow weight. To refresh, install @fontsource-variable/
+      inter + @fontsource/cormorant-garamond, copy WOFF2 from
+      node_modules/.bun/@fontsource*/files/, then `bun remove` them.
     -->
+    <link
+      rel="preload"
+      href="/fonts/inter-latin-wght-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/cormorant-garamond-latin-400-italic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
   </head>
   <body class="min-h-screen antialiased">
     <div id="root"></div>

@@ -2,6 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Self-hosted fonts ────────────────────────────────────────────────
+ * Sourced from @fontsource (Inter Variable 5.2.8, Cormorant Garamond
+ * 5.2.11), copied as WOFF2 to /public/fonts/ on 2026-05-23. Files are
+ * served same-origin so no third-party CDN sees visitor IPs. To refresh
+ * versions, `bun add` the packages, copy fresh files from
+ * node_modules/.bun/@fontsource*/files/, then remove the packages —
+ * we don't need them at runtime.
+ *
+ * Subset strategy: each face is declared twice with a unicode-range so
+ * the browser only fetches the latin-ext file when content actually
+ * contains Hungarian/Polish/Czech diacritics. EN-only visitors get just
+ * the lighter latin subset.
+ *
+ * font-display: swap → accept a brief flash of fallback text rather
+ * than blocking the LCP on the font fetch.
+ */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond-latin-400-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond-latin-ext-400-italic.woff2") format("woff2");
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond-latin-ext-600-normal.woff2") format("woff2");
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 /* ── Base ──────────────────────────────────────────────────────────── */
 @layer base {
   :root {
@@ -123,12 +195,29 @@
     color: theme("colors.paper.50");
   }
 
+  /* ── Heading defaults ───────────────────────────────────────────────
+     The workspace (`/app/*`) is a tool, not a magazine — couples manage
+     guest lists, budgets, seating, RSVP analytics, often outdoors in
+     sun glare on day-of-event. Italic Cormorant on every H1/H2/H3 fights
+     that job (a11y regression on small italic serif, mobile crowding on
+     HU compounds like "Vendéglista", competitive signal: vizufoto.hu /
+     Linear / Notion all ship heavy sans display).
+     So the default for unscoped headings is heavy Inter sans with the
+     vizufoto-style tight tracking. Surfaces that should keep the
+     editorial italic serif voice opt in via `[data-editorial]` (landing,
+     vendors marketing, public wedding-website, RSVP guest forms, vendor
+     home, save-the-date / invite previews). Admin keeps its own opt-in
+     via `[data-admin-shell]` (unchanged below).
+     If you need the heavy sans display elsewhere as a composable class,
+     use `.heading-display` / `.heading-section` / `.eyebrow-serif`
+     defined in the components layer. */
   h1,
-  h2 {
-    font-family: theme("fontFamily.serif");
-    font-weight: 600;
+  h2,
+  h3 {
+    font-family: theme("fontFamily.sans");
+    font-weight: 800;
+    letter-spacing: -0.02em;
     color: theme("colors.ink.900");
-    letter-spacing: -0.01em;
   }
 
   /* Default h1 starts at text-3xl on phones and grows to text-4xl at sm+ so
@@ -137,7 +226,7 @@
      classes inline; this is just the safer default for utility-less <h1>s. */
   h1 {
     font-size: 1.875rem;
-    line-height: 1.1;
+    line-height: 1.05;
   }
   @media (min-width: 640px) {
     h1 {
@@ -147,21 +236,41 @@
 
   h2 {
     font-size: 1.5rem;
-    line-height: 1.2;
+    line-height: 1.15;
+    font-weight: 700;
   }
 
   h3 {
     font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Editorial scope ────────────────────────────────────────────────
+     Opt-in on surfaces where Cormorant italic IS the brand voice —
+     anywhere the user pauses and feels something, or anywhere the couple
+     sends to guests (public landing, RSVP form, wedding-website, place
+     cards, save-the-date previews, vendor marketing). Wrapped on the
+     root of `PublicShell` and `Shell`. Inside this scope H1/H2 return to
+     the pre-flip italic Cormorant treatment. */
+  [data-editorial] h1,
+  [data-editorial] h2 {
+    font-family: theme("fontFamily.serif");
     font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  [data-editorial] h3 {
+    font-family: theme("fontFamily.serif");
+    font-weight: 600;
+    letter-spacing: 0;
   }
 
   /* ── Admin shell typography ─────────────────────────────────────────
-     The admin section is an operational tool, not editorial copy — the
-     Cormorant serif we use on h1/h2 makes the dashboard feel inconsistent
-     next to the Inter sans body text and stat-num numbers. Inside the
-     admin shell (data-admin-shell on the <main> in AppShell.tsx) every
-     heading drops back to the sans stack so all four text styles —
-     headings, body, labels, stat-num numbers — share one family. */
+     The admin section is an operational tool. It already opts out via
+     [data-admin-shell] — the rules below set a slightly tighter
+     letter-spacing than the new workspace default (which is already
+     -0.02em). Keep admin headings at the older -0.01em to preserve
+     compactness in the dense ops tables. */
   [data-admin-shell] h1,
   [data-admin-shell] h2,
   [data-admin-shell] h3,
@@ -194,6 +303,30 @@
 
 /* ── Components ────────────────────────────────────────────────────── */
 @layer components {
+  /* ── Typography primitives ──────────────────────────────────────────
+     Three composable heading registers, replacing the ad-hoc
+     `font-serif text-4xl italic …` strings that drifted across 28
+     pages. Compose with size utilities (e.g. `heading-display text-4xl
+     sm:text-5xl`).
+       .heading-display  — vizufoto-style heavy sans hero (Image #1).
+                           Use for the biggest H1 on the page.
+       .heading-section  — section-header weight; bold sans.
+       .eyebrow-serif    — uppercase tracked serif eyebrow label
+                           (Image #3 "♛ THE COUPLE" treatment). Pair
+                           with a small icon or rule. There's also a
+                           sans .eyebrow above for utilitarian section
+                           labels — use .eyebrow-serif when you want
+                           the editorial register. */
+  .heading-display {
+    @apply font-sans font-extrabold tracking-tight leading-[1.05] text-ink-900 dark:text-paper-50;
+  }
+  .heading-section {
+    @apply font-sans font-bold tracking-tight leading-tight text-ink-900 dark:text-paper-50;
+  }
+  .eyebrow-serif {
+    @apply font-serif font-semibold uppercase tracking-[0.18em] text-[12px] text-ink-700 dark:text-paper-200;
+  }
+
   /* Polymarket-style 3-D lifted button. Colours come from whatever the
      consumer applies — this utility only stacks shadow + inner highlight +
      bottom rim so the button reads as a physical surface that depresses

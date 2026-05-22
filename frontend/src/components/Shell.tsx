@@ -6,7 +6,7 @@ import { Wordmark } from "./Wordmark";
 
 export function Shell({ children, hideHeader }: { children: ReactNode; hideHeader?: boolean }) {
   return (
-    <div className="min-h-full">
+    <div data-editorial className="min-h-full">
       {!hideHeader && <Header />}
       <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">{children}</main>
     </div>
