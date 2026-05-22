@@ -70,14 +70,14 @@ export default function VendorsPage() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-16 sm:px-6 sm:pt-20 sm:pb-20 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-blush-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-blush-500" />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-blush-700 dark:border-blush-400/30 dark:bg-blush-400/15 dark:text-blush-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-blush-500 dark:bg-blush-300" />
             {t("vendors.pill")}
           </span>
-          <h1 className="mt-5 font-serif text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl">
+          <h1 className="mt-5 font-serif text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0">
+          <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0 dark:text-umber-200">
             {t("vendors.hero_sub")}
           </p>
           <div className="mt-9 flex justify-center lg:justify-start">
@@ -92,7 +92,7 @@ export default function VendorsPage() {
       </section>
 
       {/* Benefits */}
-      <section className="bg-paper-100/60">
+      <section className="bg-paper-100/60 dark:bg-umber-900/40">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="grid gap-6 lg:grid-cols-3">
             <Benefit
@@ -127,7 +127,7 @@ export default function VendorsPage() {
       <section className="mx-auto max-w-2xl px-4 py-12 text-center sm:px-6">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900"
+          className="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
         >
           <ArrowLeft size={14} />
           {t("vendors.back_to_landing")}
@@ -149,8 +149,8 @@ function Benefit({
   return (
     <article className="card">
       <div className="mb-4">{art}</div>
-      <h3 className="font-serif text-xl text-ink-900">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-600">{body}</p>
+      <h3 className="font-serif text-xl text-ink-900 dark:text-paper-50">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
     </article>
   );
 }
