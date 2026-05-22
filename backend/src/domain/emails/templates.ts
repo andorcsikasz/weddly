@@ -232,6 +232,15 @@ export interface CommunitySupplierPublishedPayload {
   listingUrl: string;
 }
 
+export interface CommunitySupplierRejectedPayload {
+  /** Business / listing name surfaced in the email body. */
+  supplierName: string;
+  /** Optional admin-typed reason. Rendered verbatim when present, omitted
+   *  cleanly when blank so the body doesn't show "Reason: " with nothing
+   *  after it. */
+  reason: string | null;
+}
+
 export interface VendorClaimVerifyPayload {
   /** Listing name surfaced in the email body. */
   listingName: string;
@@ -297,6 +306,7 @@ export type KindPayload = {
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
   community_supplier_published: CommunitySupplierPublishedPayload;
+  community_supplier_rejected: CommunitySupplierRejectedPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
   supplier_outreach: SupplierOutreachPayload;
@@ -1155,6 +1165,35 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Couples can find you from here. If anything needs updating (phone, website, description), just reply to this email — a human reads it.",
       ],
       cta: "Open your listing",
+    },
+  }),
+
+  // Admin moderation rejected a verified community-submitted supplier
+  // (awaiting_review → hidden). Closes the verify → moderation loop with
+  // a concrete answer + optional admin-typed reason; otherwise the
+  // verified listing sits silently hidden and the submitter has no
+  // recourse.
+  community_supplier_rejected: (p) => ({
+    subject: `Hirdetésed nem került jóváhagyásra / Listing not approved`,
+    ctaUrl: CONFIG.frontendBaseUrl,
+    hu: {
+      preheader: `${p.supplierName} hirdetése nem ment át a moderáción.`,
+      greeting: "Szia!",
+      paragraphs: [
+        `Megnéztük, és ${p.supplierName} hirdetése jelenleg nem fér bele a Weddly katalógusunkba.`,
+        ...(p.reason ? [`A döntés indoka: „${p.reason}"`] : []),
+        "Ha úgy gondolod, hogy ez tévedés, válaszolj erre az e-mailre — emberek olvassák.",
+      ],
+      cta: "Weddly megnyitása",
+    },
+    en: {
+      greeting: "Hi there,",
+      paragraphs: [
+        `We've reviewed the listing and ${p.supplierName} doesn't fit Weddly's directory at this time.`,
+        ...(p.reason ? [`Reason from our team: "${p.reason}"`] : []),
+        "If you think this is a mistake, just reply to this email — a human reads it.",
+      ],
+      cta: "Open Weddly",
     },
   }),
 

@@ -94,6 +94,20 @@ async function handleHide(ctx: Ctx): Promise<Response> {
 
   const after = getCommunitySupplierWithEmail(id);
   if (!after) throw new HttpError(500, "Failed to read updated supplier");
+
+  // Notify the submitter only when this hide is a moderation rejection
+  // (`awaiting_review` → `hidden`). Hiding an already-active listing for
+  // spam reports is a different flow — the recipient shouldn't be
+  // congratulated with a rejection mail. Skipped when no contact email
+  // was provided.
+  if (before.status === "awaiting_review" && after.contact_email) {
+    void sendKind(
+      "community_supplier_rejected",
+      { supplierName: after.name, reason },
+      { user: null, guest: { email: after.contact_email, full_name: after.name } },
+    );
+  }
+
   const counts = openReportCountsForAll();
   return json({ supplier: toAdminView(after, counts.get(id) ?? 0) });
 }
