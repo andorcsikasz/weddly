@@ -113,6 +113,7 @@ describe("admin gate — 403 for verified non-admin token on every /api/admin/* 
     { method: "GET", path: "/api/admin/analytics/money" },
     { method: "GET", path: "/api/admin/analytics/activity" },
     { method: "GET", path: "/api/admin/analytics/picks" },
+    { method: "GET", path: "/api/admin/analytics/growth-funnel" },
     // vendor_waitlist.ts (admin half)
     { method: "GET", path: "/api/admin/vendor-waitlist" },
     {
@@ -182,6 +183,7 @@ describe("admin gate — 401 with no token on every /api/admin/* route", () => {
     { method: "GET", path: "/api/admin/analytics/money" },
     { method: "GET", path: "/api/admin/analytics/activity" },
     { method: "GET", path: "/api/admin/analytics/picks" },
+    { method: "GET", path: "/api/admin/analytics/growth-funnel" },
     { method: "GET", path: "/api/admin/vendor-waitlist" },
     { method: "GET", path: "/api/admin/feedback" },
     {

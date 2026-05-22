@@ -8,6 +8,8 @@ import type {
   AdminAnalyticsStats,
   AdminDemoAnalytics,
   AdminEngagementAnalytics,
+  AdminGrowthFunnelAnalytics,
+  AdminGrowthFunnelStep,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
 } from "@shared/admin_analytics";
@@ -889,10 +891,130 @@ function handleEngagement(ctx: Ctx): Response {
   return json(engagementAnalytics());
 }
 
+// ─── /api/admin/analytics/growth-funnel ────────────────────────────────────
+//
+// Read-side consumer for the growth_events table (P6b). Computes the funnel
+// the founder's 60-day commitment metric is built on:
+//   signup.completed → couple.created → wedding_site.view
+//                    → rsvp.page.view → rsvp.submitted
+// Plus: top 7d attributed referrers, and the "stalled couple" outreach list
+// (couples that created a workspace but haven't gotten a single site view yet).
+
+/** Funnel order — keep aligned with the dashboard column layout. */
+const GROWTH_FUNNEL_KINDS = [
+  "signup.completed",
+  "couple.created",
+  "wedding_site.view",
+  "rsvp.page.view",
+  "rsvp.submitted",
+] as const;
+
+function growthFunnelAnalytics(): AdminGrowthFunnelAnalytics {
+  const nowTs = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const window24 = nowTs - dayMs;
+  const window7d = nowTs - 7 * dayMs;
+
+  // Per-kind counts across (total, 24h, 7d). One pass over the table.
+  const rows = db
+    .prepare(
+      `SELECT kind,
+              COUNT(*) AS total,
+              SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS last_24h,
+              SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS last_7d,
+              MAX(created_at) AS last_event_at
+         FROM growth_events
+        GROUP BY kind`,
+    )
+    .all(window24, window7d) as Array<{
+    kind: string;
+    total: number;
+    last_24h: number;
+    last_7d: number;
+    last_event_at: number | null;
+  }>;
+  const byKind = new Map(rows.map((r) => [r.kind, r] as const));
+
+  // Build the funnel: each step's 7d count + conversion vs. the previous step.
+  // Conversion null on step 0; null when prev=0 (avoids "NaN%" on a fresh deploy).
+  const steps: AdminGrowthFunnelStep[] = GROWTH_FUNNEL_KINDS.map((kind, idx) => {
+    const row = byKind.get(kind);
+    const count_7d = row?.last_7d ?? 0;
+    const count_24h = row?.last_24h ?? 0;
+    let conversion_from_prev: number | null = null;
+    if (idx > 0) {
+      const prevKind = GROWTH_FUNNEL_KINDS[idx - 1];
+      const prevCount = (prevKind && byKind.get(prevKind)?.last_7d) ?? 0;
+      conversion_from_prev = prevCount > 0 ? Math.min(1, count_7d / prevCount) : null;
+    }
+    return { kind, count_7d, count_24h, conversion_from_prev };
+  });
+
+  // Top referrers from the last 7 days. `payload.referrer` is the curated
+  // allow-list value (e.g. "rsvp" / "site" / "share"), not a raw URL.
+  const refRows = db
+    .prepare(
+      `SELECT payload_json
+         FROM growth_events
+        WHERE kind = 'signup.from_referrer' AND created_at >= ?
+          AND payload_json IS NOT NULL`,
+    )
+    .all(window7d) as Array<{ payload_json: string }>;
+  const refCounts = new Map<string, number>();
+  for (const r of refRows) {
+    try {
+      const p = JSON.parse(r.payload_json) as { referrer?: unknown };
+      const src = typeof p.referrer === "string" && p.referrer.length > 0 ? p.referrer : null;
+      if (!src) continue;
+      refCounts.set(src, (refCounts.get(src) ?? 0) + 1);
+    } catch {
+      // ignore malformed legacy rows
+    }
+  }
+  const referrers_7d = [...refCounts.entries()]
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  // "Stalled" couples — created in last 7d, no wedding_site.view yet. The
+  // sub-select pulls couple_ids with a recent `couple.created` row and
+  // EXCEPT removes the ones with any wedding_site.view event ever. Caps at
+  // 100 rows so the response stays small; admin tools paginate further.
+  const stalledRows = db
+    .prepare(
+      `SELECT DISTINCT couple_id
+         FROM growth_events
+        WHERE kind = 'couple.created' AND created_at >= ? AND couple_id IS NOT NULL
+        EXCEPT
+       SELECT DISTINCT couple_id
+         FROM growth_events
+        WHERE kind = 'wedding_site.view' AND couple_id IS NOT NULL
+        LIMIT 100`,
+    )
+    .all(window7d) as Array<{ couple_id: number }>;
+  const stalled_couple_ids = stalledRows.map((r) => r.couple_id);
+
+  const kinds = rows.map((r) => ({
+    kind: r.kind,
+    total: r.total,
+    last_24h: r.last_24h,
+    last_7d: r.last_7d,
+    last_event_at: r.last_event_at,
+  }));
+
+  return { steps, referrers_7d, stalled_couple_ids, kinds };
+}
+
+function handleGrowthFunnel(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(growthFunnelAnalytics());
+}
+
 export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/money", handleMoney, true);
   router.get("/api/admin/analytics/activity", handleActivity, true);
   router.get("/api/admin/analytics/picks", handlePicks, true);
   router.get("/api/admin/analytics/engagement", handleEngagement, true);
   router.get("/api/admin/analytics/demo", handleDemo, true);
+  router.get("/api/admin/analytics/growth-funnel", handleGrowthFunnel, true);
 }

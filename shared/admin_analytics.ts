@@ -211,3 +211,51 @@ export interface AdminDemoAnalytics {
    *  `top_features` so the frontend can reuse its bar-list component. */
   top_features: Array<{ feature: string; count: number; demos: number }>;
 }
+
+// ─── /api/admin/analytics/growth-funnel ─────────────────────────────────────
+//
+// Consumer view for the `growth_events` table. The table has been collecting
+// rows since P2.B but until P6b nothing read from it — this endpoint flips
+// that into a 7-day funnel ratio so the founder can answer "of the people
+// who signed up, how many got far enough to share their wedding site, and
+// how many guests actually opened it?".
+
+/** One row in the conversion funnel. `count_7d` is the raw event count in
+ *  the trailing 7-day window; `conversion_from_prev` is `count_7d` divided
+ *  by the previous step's `count_7d`, clamped to 0..1, null on step 0 and
+ *  whenever the previous step has zero events (avoids divide-by-zero
+ *  flicker on a fresh deploy). */
+export interface AdminGrowthFunnelStep {
+  /** GrowthEventKind from shared/growth.ts. Typed as string to keep this
+   *  module free of cross-shared imports — the front-end maps to a label. */
+  kind: string;
+  count_7d: number;
+  count_24h: number;
+  /** total / prev_total, 0..1. Null for the first step + null when prev=0. */
+  conversion_from_prev: number | null;
+}
+
+export interface AdminGrowthFunnelAnalytics {
+  /** Funnel in order: signup.completed → couple.created → wedding_site.view
+   *  → rsvp.page.view → rsvp.submitted. Missing kinds (never recorded yet)
+   *  surface as zero counts so the dashboard still renders a row. */
+  steps: AdminGrowthFunnelStep[];
+  /** Top-N attributed referrers from `signup.from_referrer` events in the
+   *  last 7 days. Reads `payload.referrer` (a curated allowlist value, not
+   *  a raw URL). Empty list when nothing's attributed yet. */
+  referrers_7d: Array<{ source: string; count: number }>;
+  /** Couples created in last 7d that haven't recorded a `wedding_site.view`
+   *  yet — the highest-leverage outreach list for "you've got a workspace,
+   *  here's how to share it". Just the couple_ids; admin tools resolve them
+   *  to display_names via the existing /api/admin/couples endpoint. */
+  stalled_couple_ids: number[];
+  /** Same-shape per-kind aggregate as `aggregateGrowthEvents()` so the
+   *  admin debug pane can show every recorded kind, not just the funnel. */
+  kinds: Array<{
+    kind: string;
+    total: number;
+    last_24h: number;
+    last_7d: number;
+    last_event_at: number | null;
+  }>;
+}
