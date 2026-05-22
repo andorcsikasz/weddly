@@ -42,13 +42,15 @@ export function runEmailSweep(): {
   milestones: number;
   weddings: number;
   rsvpDeadlines: number;
+  weddingFollowups: number;
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
   const milestones = sweepMilestones(ts);
   const weddings = sweepWeddingDay(ts);
   const rsvpDeadlines = sweepRsvpDeadline(ts);
-  return { nudges, milestones, weddings, rsvpDeadlines };
+  const weddingFollowups = sweepWeddingFollowup(ts);
+  return { nudges, milestones, weddings, rsvpDeadlines, weddingFollowups };
 }
 
 function sweepOnboardingNudges(ts: number): number {
@@ -187,6 +189,41 @@ function sweepWeddingDay(ts: number): number {
   return count;
 }
 
+function sweepWeddingFollowup(ts: number): number {
+  // T+7 days after the wedding — NPS / "how was it?" nudge. Mirrors
+  // sweepWeddingDay but on the trailing edge. The couple row is still
+  // active (we don't purge after the wedding date), so partnersForWeddingDate
+  // returns the same partner pairs that ran through the T+0 sweep a week
+  // earlier.
+  const today = startOfDayUtc(ts);
+  const target = ymd(today - 7 * 86_400_000);
+  const rows = partnersForWeddingDate(target);
+  let count = 0;
+  for (const r of rows) {
+    if (
+      !markDispatched({
+        kind: "wedding_today_followup",
+        couple_id: r.couple_id,
+        user_id: r.user_id,
+      })
+    )
+      continue;
+    void sendKind(
+      "wedding_today_followup",
+      {
+        coupleDisplayName: r.display_name,
+        feedbackUrl: `${CONFIG.frontendBaseUrl}/feedback`,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    );
+    count++;
+  }
+  return count;
+}
+
 function partnersForWeddingDate(date: string): CouplePartnerRow[] {
   return db
     .prepare(
@@ -223,7 +260,7 @@ export function startEmailWorker(): void {
   // Fire once on boot so a long downtime catches up immediately.
   try {
     const r = runEmailSweep();
-    if (r.nudges + r.milestones + r.weddings + r.rsvpDeadlines > 0) {
+    if (r.nudges + r.milestones + r.weddings + r.rsvpDeadlines + r.weddingFollowups > 0) {
       log.info("emails.boot_sweep", r);
     }
   } catch (e) {
@@ -233,7 +270,7 @@ export function startEmailWorker(): void {
     () => {
       try {
         const r = runEmailSweep();
-        if (r.nudges + r.milestones + r.weddings + r.rsvpDeadlines > 0) {
+        if (r.nudges + r.milestones + r.weddings + r.rsvpDeadlines + r.weddingFollowups > 0) {
           log.info("emails.hourly_sweep", r);
         }
       } catch (e) {

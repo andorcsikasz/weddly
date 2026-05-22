@@ -170,6 +170,12 @@ export interface MilestonePayload {
 export interface WeddingTodayPayload {
   coupleDisplayName: string;
 }
+export interface WeddingTodayFollowupPayload {
+  /** "Anna & Bence" — couple's display name. */
+  coupleDisplayName: string;
+  /** Where to leave feedback / NPS. Typically a Weddly form route. */
+  feedbackUrl: string;
+}
 export interface WeddingDateChangedPayload {
   /** "Anna & Bence" — couple's display name. */
   coupleDisplayName: string;
@@ -308,6 +314,7 @@ export type KindPayload = {
   milestone_t30: MilestonePayload;
   milestone_t7: MilestonePayload;
   wedding_today: WeddingTodayPayload;
+  wedding_today_followup: WeddingTodayFollowupPayload;
   wedding_date_changed: WeddingDateChangedPayload;
   rsvp_deadline_approaching: RsvpDeadlineApproachingPayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
@@ -1066,6 +1073,30 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     };
   },
+
+  wedding_today_followup: (p, ctx) => ({
+    subject: `Milyen volt? / How was the wedding? — ${p.coupleDisplayName}`,
+    ctaUrl: p.feedbackUrl,
+    hu: {
+      preheader: `Köszönjük, hogy a Weddly-vel terveztetek.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Reméljük, hogy ${p.coupleDisplayName} szuper hétvégét töltöttetek el a hozzátok közel állókkal.`,
+        "Egy kérésünk lenne — ha pár perced van, mondd el, milyen volt a Weddly tervezőként. Mi vált be, mi hiányzott, mit változtatnál. A visszajelzéseitek alapján fejlesztjük a következő funkciókat.",
+      ],
+      cta: "Visszajelzés küldése",
+      footnote: "Pár perc az egész — válaszolhatsz erre az e-mailre is.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `We hope ${p.coupleDisplayName} had a wonderful weekend with the people who matter most.`,
+        "One ask — if you have a few minutes, tell us what Weddly was like as a planner. What worked, what didn't, what you'd change. Your feedback shapes what we build next.",
+      ],
+      cta: "Share feedback",
+      footnote: "Quick to do — you can also just reply to this email.",
+    },
+  }),
 
   wedding_today: (p, ctx) => ({
     subject: "Ma van a nap / Today's the day 💛",

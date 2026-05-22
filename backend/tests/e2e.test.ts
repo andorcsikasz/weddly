@@ -3481,6 +3481,25 @@ describe("email pipeline", () => {
     expect(sweep.rsvpDeadlines).toBe(0);
   });
 
+  test("wedding_today_followup fires T+7 with the feedback CTA", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("followup@weddly.test");
+    // Wedding was exactly 7 days ago.
+    const past = isoUtcDate(now() - 7 * 86_400_000);
+    db.prepare("UPDATE couples SET wedding_date = ? WHERE id = ?").run(past, coupleId);
+
+    const sweep = runEmailSweep();
+    expect(sweep.weddingFollowups).toBe(1);
+    const log = db
+      .prepare("SELECT kind FROM email_log WHERE couple_id = ? AND kind = 'wedding_today_followup'")
+      .get(coupleId) as { kind: string } | undefined;
+    expect(log?.kind).toBe("wedding_today_followup");
+
+    // Idempotent — running the sweep again the same day doesn't re-send.
+    const again = runEmailSweep();
+    expect(again.weddingFollowups).toBe(0);
+  });
+
   test("RSVP submission triggers couple notification + guest thank-you", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("rsvpmail@weddly.test");

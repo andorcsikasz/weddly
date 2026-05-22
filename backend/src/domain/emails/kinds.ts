@@ -27,6 +27,7 @@ export type EmailKind =
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
   | "wedding_today" // morning-of congratulations
+  | "wedding_today_followup" // T+7 days — quick how-was-it / NPS nudge
   | "wedding_date_changed" // couple edited the wedding date, notify guests
   | "rsvp_deadline_approaching" // T-14 nudge listing how many guests haven't RSVPd yet
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
@@ -92,6 +93,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   milestone_t30: "lifecycle",
   milestone_t7: "lifecycle",
   wedding_today: "lifecycle",
+  wedding_today_followup: "lifecycle",
   // Transactional: a guest explicitly opted into the wedding by RSVPing, and
   // the couple changing the date is an account-critical update for them.
   wedding_date_changed: "transactional",
