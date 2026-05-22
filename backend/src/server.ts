@@ -21,6 +21,7 @@ import {
 } from "./lib/http";
 import { log, makeLogger } from "./lib/logger";
 import { localeForHost, renderIndexHtml } from "./lib/seo_ssr";
+import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { registerAccommodationRoutes } from "./routes/accommodations";
@@ -427,6 +428,11 @@ if (process.env.NODE_ENV !== "test") {
   // Tidy any abandoned demo couples left over from a previous boot — keeps
   // the table sparse even when /api/demo/start hasn't been hit in days.
   runDemoBootSweep();
+  // Boot-time guard against re-introducing the legacy `sendEmail` direct-call
+  // pattern. The May 2026 "phishy email" bug lived for months because nothing
+  // flagged it; this scan emits a `mailer.integrity.violation` warning at boot
+  // when anything outside the central dispatcher imports sendEmail.
+  assertEmailIntegrityAtBoot(join(import.meta.dir, "..", ".."));
 }
 
 log.info("server.listening", {
