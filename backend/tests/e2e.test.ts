@@ -10774,6 +10774,79 @@ describe("seo: multi-host (EN canonical configured)", () => {
     expect(huHtml).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
     expect(enHtml).toContain(`<meta property="og:image" content="https://${EN_HOST}/og.png" />`);
   });
+
+  test("HU tool slug pairs to its EN slug across hosts via hreflang link rels", () => {
+    const huPath = "/eszkozok/eskuvo-koltsegvetes-kalkulator";
+    const enPath = "/tools/wedding-budget-calculator";
+    // Visitor lands on the HU slug on the HU host — the canonical points to
+    // the same URL, the EN alternate points to the paired EN slug on the EN
+    // host. This is the bidirectional pair Google needs to index the two
+    // pages as locale variants of each other.
+    const huHtml = renderIndexHtml(TEMPLATE, {
+      host: "weddly.hu",
+      pathname: huPath,
+      isRsvp: false,
+      acceptLanguage: "hu-HU",
+    });
+    expect(huHtml).toContain(`<link rel="canonical" href="https://${HU_HOST}${huPath}" />`);
+    expect(huHtml).toContain(`hreflang="hu" href="https://${HU_HOST}${huPath}"`);
+    expect(huHtml).toContain(`hreflang="en" href="https://${EN_HOST}${enPath}"`);
+
+    // Visitor lands on the EN slug on the EN host — canonical points to the
+    // same URL, alternates reference the HU pair. Symmetric to the above.
+    const enHtml = renderIndexHtml(TEMPLATE, {
+      host: EN_HOST,
+      pathname: enPath,
+      isRsvp: false,
+    });
+    expect(enHtml).toContain(`<link rel="canonical" href="https://${EN_HOST}${enPath}" />`);
+    expect(enHtml).toContain(`hreflang="hu" href="https://${HU_HOST}${huPath}"`);
+    expect(enHtml).toContain(`hreflang="en" href="https://${EN_HOST}${enPath}"`);
+  });
+
+  test("mismatched slug+host combos canonicalise to the right pair", () => {
+    // Visitor lands on `weddly.com/eszkozok/...` (EN host, HU slug) — the
+    // canonical sends them to the paired EN slug on the EN host. The HU
+    // alternate stays a HU URL on the HU host. No silent re-route, just a
+    // strong canonical signal to Google.
+    const html = renderIndexHtml(TEMPLATE, {
+      host: EN_HOST,
+      pathname: "/eszkozok/eskuvo-koltsegvetes-kalkulator",
+      isRsvp: false,
+    });
+    expect(html).toContain(
+      `<link rel="canonical" href="https://${EN_HOST}/tools/wedding-budget-calculator" />`,
+    );
+    expect(html).toContain(
+      `hreflang="hu" href="https://${HU_HOST}/eszkozok/eskuvo-koltsegvetes-kalkulator"`,
+    );
+  });
+
+  test("sitemap emits a parallel <url> for each paired EN slug", () => {
+    const body = renderSitemapXml("weddly.hu");
+    // HU canonical row stays.
+    expect(body).toContain(`<loc>https://${HU_HOST}/eszkozok/eskuvo-koltsegvetes-kalkulator</loc>`);
+    // EN canonical row appears separately so Google indexes the EN slug
+    // as its own <loc> rather than only as an alternate.
+    expect(body).toContain(`<loc>https://${EN_HOST}/tools/wedding-budget-calculator</loc>`);
+    expect(body).toContain(`<loc>https://${EN_HOST}/tools/wedding-countdown</loc>`);
+    expect(body).toContain(`<loc>https://${EN_HOST}/tools/guest-list-template</loc>`);
+    expect(body).toContain(`<loc>https://${EN_HOST}/tools/seating-chart-builder</loc>`);
+    expect(body).toContain(`<loc>https://${EN_HOST}/tools/rsvp-text-generator</loc>`);
+  });
+
+  test("non-paired paths (e.g. /about) keep the same path on both hosts", () => {
+    // `/about` has no slug pair — same URL path on both locales. The EN
+    // alternate just points to the same path on the EN host, not a
+    // translated slug.
+    const html = renderIndexHtml(TEMPLATE, {
+      host: "weddly.hu",
+      pathname: "/about",
+      isRsvp: false,
+    });
+    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/about"`);
+    expect(html).toContain(`hreflang="en" href="https://${EN_HOST}/about"`);
+  });
 });
 
 describe("demo: /api/demo/start", () => {

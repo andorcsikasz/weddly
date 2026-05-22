@@ -272,10 +272,61 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   },
 };
 
+/** HU/EN slug pairs for the public tool pages. Both halves of each pair
+ *  mount the same React component in `App.tsx`, share the same bilingual
+ *  ROUTE_SEO entry (keyed by the HU path), and reference each other via
+ *  `hreflang` link rels so Google can index the EN slug under the EN
+ *  canonical host (`weddly.com`) while keeping the HU SEO weight on the
+ *  HU canonical (`weddly.hu`). When the multi-host setup is OFF, EN slugs
+ *  still resolve client-side but the SSR doesn't pair them — single-host
+ *  fallback behaviour. */
+export const SLUG_PAIRS: ReadonlyArray<{ hu: string; en: string }> = [
+  {
+    hu: "/eszkozok/eskuvo-koltsegvetes-kalkulator",
+    en: "/tools/wedding-budget-calculator",
+  },
+  {
+    hu: "/eszkozok/eskuvo-visszaszamlalo",
+    en: "/tools/wedding-countdown",
+  },
+  {
+    hu: "/eszkozok/vendeglista-sablon",
+    en: "/tools/guest-list-template",
+  },
+  {
+    hu: "/eszkozok/ultetesi-rend-keszito",
+    en: "/tools/seating-chart-builder",
+  },
+  {
+    hu: "/eszkozok/rsvp-szoveg-generator",
+    en: "/tools/rsvp-text-generator",
+  },
+];
+
+const HU_TO_EN_SLUG = new Map(SLUG_PAIRS.map((p) => [p.hu, p.en]));
+const EN_TO_HU_SLUG = new Map(SLUG_PAIRS.map((p) => [p.en, p.hu]));
+
+/** Resolve a path to its HU canonical version. EN slug → its HU pair; any
+ *  other path (no pair, or already HU) is returned unchanged. Used by
+ *  `seo_ssr.ts` to build the `hreflang="hu"` href regardless of which
+ *  slug the visitor landed on. */
+export function huPathFor(path: string): string {
+  return EN_TO_HU_SLUG.get(path) ?? path;
+}
+
+/** Resolve a path to its EN canonical version. HU slug → its EN pair; any
+ *  other path is returned unchanged. Used by `seo_ssr.ts` to build the
+ *  `hreflang="en"` href when the multi-host setup is active. */
+export function enPathFor(path: string): string {
+  return HU_TO_EN_SLUG.get(path) ?? path;
+}
+
 /** Hungarian-alias `/impresszum` resolves to the same SEO entry as `/imprint`.
- *  Done at lookup time rather than duplicating the entry so the copy stays
- *  in one place. */
+ *  EN tool slugs resolve to their HU pair's bilingual entry — the visitor's
+ *  locale picks which copy renders. Done at lookup time rather than
+ *  duplicating the entry so the copy stays in one place. */
 export function lookupRouteSeo(pathname: string): RouteSeo | null {
-  const path = pathname === "/impresszum" ? "/imprint" : pathname;
-  return ROUTE_SEO[path] ?? null;
+  const aliased = pathname === "/impresszum" ? "/imprint" : pathname;
+  const resolved = EN_TO_HU_SLUG.get(aliased) ?? aliased;
+  return ROUTE_SEO[resolved] ?? null;
 }

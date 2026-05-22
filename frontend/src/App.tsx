@@ -142,10 +142,22 @@ export default function App() {
           </Page>
         }
       />
-      {/* SEO tool pages mounted at /eszkozok/* — each one targets a long-
-       *  tail HU search query the landing alone can't rank for. */}
+      {/* SEO tool pages mounted at /eszkozok/* (HU) and /tools/* (EN).
+       *  Each slug pair targets a long-tail search query in its locale and
+       *  shares the bilingual ROUTE_SEO entry — the visitor's locale picks
+       *  the copy that renders. The hreflang link rel in seo_ssr.ts pairs
+       *  the two slugs so Google indexes them as alternates of each other
+       *  on the multi-host weddly.hu ↔ weddly.com setup. */}
       <Route
         path="/eszkozok/eskuvo-koltsegvetes-kalkulator"
+        element={
+          <Page>
+            <BudgetCalculatorPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/tools/wedding-budget-calculator"
         element={
           <Page>
             <BudgetCalculatorPage />
@@ -161,7 +173,23 @@ export default function App() {
         }
       />
       <Route
+        path="/tools/wedding-countdown"
+        element={
+          <Page>
+            <CountdownPage />
+          </Page>
+        }
+      />
+      <Route
         path="/eszkozok/vendeglista-sablon"
+        element={
+          <Page>
+            <GuestListTemplatePage />
+          </Page>
+        }
+      />
+      <Route
+        path="/tools/guest-list-template"
         element={
           <Page>
             <GuestListTemplatePage />
@@ -177,7 +205,23 @@ export default function App() {
         }
       />
       <Route
+        path="/tools/seating-chart-builder"
+        element={
+          <Page>
+            <SeatingChartPage />
+          </Page>
+        }
+      />
+      <Route
         path="/eszkozok/rsvp-szoveg-generator"
+        element={
+          <Page>
+            <RsvpGeneratorPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/tools/rsvp-text-generator"
         element={
           <Page>
             <RsvpGeneratorPage />

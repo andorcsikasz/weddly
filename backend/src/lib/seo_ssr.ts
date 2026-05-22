@@ -17,7 +17,7 @@
 // adding a separate weddly.com EN-canonical) but ignored today.
 
 import { SEO_FAQ } from "../../../shared/seo_faq";
-import { lookupRouteSeo } from "../../../shared/seo_routes";
+import { enPathFor, huPathFor, lookupRouteSeo } from "../../../shared/seo_routes";
 import { db } from "../db";
 import { normalizeSlugInput } from "../domain/slug";
 
@@ -296,14 +296,26 @@ function buildHeadBlock(opts: {
   const altDefaultMeta = META[locale === "hu" ? "en" : "hu"];
   const canonicalHost = canonicalHostFor(locale);
   const path = opts.pathname || "/";
-  const canonicalUrl = `https://${canonicalHost}${path}`;
-  const huUrl = `https://${CANONICAL_HOST}${path}`;
+  // Slug-pair lookup so the HU canonical always points to the HU slug and
+  // the EN canonical always points to the EN slug, even if the visitor
+  // landed on the "wrong" half of the pair (e.g. `weddly.com/eszkozok/X`
+  // → canonical sends them to the EN slug on the EN host).
+  const huPath = huPathFor(path);
+  const enPath = enPathFor(path);
+  const huUrl = `https://${CANONICAL_HOST}${huPath}`;
   // EN canonical URL only differs from the HU one when `EN_CANONICAL_HOST`
   // env is set. Otherwise we stay single-host and skip the EN hreflang
   // link rel — emitting one that points back to the HU canonical would
   // trigger Google's duplicate-canonical warning and erode the HU rank.
   const enHostConfigured = enCanonicalHostEnv();
-  const enUrl = enHostConfigured ? `https://${enHostConfigured}${path}` : null;
+  const enUrl = enHostConfigured ? `https://${enHostConfigured}${enPath}` : null;
+  // Canonical follows the locale of the current render: HU render → HU URL
+  // with HU slug; EN render (only meaningful when multi-host is active) →
+  // EN URL with EN slug. Falls back to the path-on-canonical-host shape
+  // for non-paired routes — `huPathFor`/`enPathFor` return `path` itself
+  // for anything outside `SLUG_PAIRS`, so /about, /signup, /vendors etc.
+  // keep their historical canonical exactly.
+  const canonicalUrl = locale === "en" && enUrl ? enUrl : huUrl;
   // Couple-specific OG image when the couple set a cover URL; falls back
   // to /og-rsvp.png on RSVP routes and the brand /og.png everywhere else.
   // External URLs are passed through as-is (couple-pasted Imgur / Cloudinary).
@@ -514,21 +526,48 @@ export function renderSitemapXml(_host: string | null): string {
   // `EN_CANONICAL_HOST` is configured. Otherwise we stay single-host and
   // each <url> just lists hu + x-default pointing at weddly.hu.
   const enHostConfigured = enCanonicalHostEnv();
-  const urls = PUBLIC_PATHS.map(({ path, priority, changefreq }) => {
-    const here = `https://${CANONICAL_HOST}${path}`;
-    const enHere = enHostConfigured ? `https://${enHostConfigured}${path}` : null;
+
+  function buildUrlBlock(
+    loc: string,
+    huHref: string,
+    enHref: string | null,
+    priority: string,
+    changefreq: string,
+  ): string {
     return [
       "  <url>",
-      `    <loc>${here}</loc>`,
+      `    <loc>${loc}</loc>`,
       `    <lastmod>${SITEMAP_LASTMOD}</lastmod>`,
-      `    <xhtml:link rel="alternate" hreflang="hu" href="${here}" />`,
-      ...(enHere ? [`    <xhtml:link rel="alternate" hreflang="en" href="${enHere}" />`] : []),
-      `    <xhtml:link rel="alternate" hreflang="x-default" href="${here}" />`,
+      `    <xhtml:link rel="alternate" hreflang="hu" href="${huHref}" />`,
+      ...(enHref ? [`    <xhtml:link rel="alternate" hreflang="en" href="${enHref}" />`] : []),
+      // x-default stays HU per Google's docs: it's the fallback for crawlers
+      // that don't advertise a locale preference, and the HU canonical is
+      // the historical default for this product.
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${huHref}" />`,
       `    <changefreq>${changefreq}</changefreq>`,
       `    <priority>${priority}</priority>`,
       "  </url>",
     ].join("\n");
-  }).join("\n");
+  }
+
+  const blocks: string[] = [];
+  for (const { path, priority, changefreq } of PUBLIC_PATHS) {
+    const huPath = huPathFor(path);
+    const enPath = enPathFor(path);
+    const huHere = `https://${CANONICAL_HOST}${huPath}`;
+    const enHere = enHostConfigured ? `https://${enHostConfigured}${enPath}` : null;
+    // 1. HU canonical <url>: <loc> on weddly.hu/{huPath}, alternates point at
+    //    self (hu) + paired EN URL when multi-host is on.
+    blocks.push(buildUrlBlock(huHere, huHere, enHere, priority, changefreq));
+    // 2. When multi-host is on AND the path has a distinct EN slug pair,
+    //    emit a parallel <url> for the EN canonical so the EN slug gets its
+    //    own <loc> entry instead of only appearing as an alternate. This is
+    //    the bidirectional pair Google expects per their hreflang docs.
+    if (enHere && enPath !== huPath) {
+      blocks.push(buildUrlBlock(enHere, huHere, enHere, priority, changefreq));
+    }
+  }
+  const urls = blocks.join("\n");
 
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
