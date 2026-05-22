@@ -38,6 +38,7 @@ import {
   PartyPopper,
   Pencil,
   Phone,
+  Plus,
   Scale,
   Scissors,
   Search,
@@ -746,14 +747,20 @@ export default function SuppliersPage() {
               </button>
             ))}
           </div>
-          <Button
-            variant="primary"
-            size="sm"
-            className="btn-lifted"
+          {/* "Tipp leadása" is a community contribution, not a primary
+              action — using btn-primary made it visually compete with
+              the view toggle next to it (taller, dark navy) when it's
+              actually a secondary affordance. Now: dashed outline at
+              the toggle's exact height, Plus icon to reinforce
+              "add new" semantics, ink-toned not navy. */}
+          <button
+            type="button"
             onClick={() => setSubmitOpen(true)}
+            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
           >
+            <Plus size={12} aria-hidden />
             {t("suppliers.drop_your_own")}
-          </Button>
+          </button>
         </div>
       </header>
 
@@ -917,15 +924,6 @@ export default function SuppliersPage() {
             onChange={(e) => setGuestsFilter(e.target.value)}
             aria-label={t("suppliers.guests_filter_label")}
           />
-          {guestsFilter !== null && (
-            <button
-              type="button"
-              onClick={() => setGuestsFilter("")}
-              className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
-            >
-              {t("suppliers.guests_filter_clear")}
-            </button>
-          )}
         </label>
       </div>
 
@@ -1084,25 +1082,47 @@ export default function SuppliersPage() {
               </p>
             </div>
           </div>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+          {/* Brand-coloured partner tiles — full bleed brand colour, white
+              wordmark, external-link icon top-right. The previous treatment
+              (generic bed icon + grey outline) read as "more of the same
+              Weddly UI"; couples scan recognisable brands faster when the
+              card USES the brand. Brand colours go via Tailwind arbitrary
+              value (`bg-[#003580]`) — they're external-company-owned and
+              shouldn't pollute the design tokens. */}
+          <ul className="mt-3 grid gap-3 sm:grid-cols-3">
             {[
               {
                 key: "booking",
                 href: "https://www.booking.com/",
-                label: "Booking.com",
-                blurb: t("suppliers.accommodation_external_booking_blurb"),
+                wordmark: (
+                  <span className="text-xl font-bold tracking-tight text-white">
+                    Booking
+                    <span className="text-[#febb02]">.</span>
+                    com
+                  </span>
+                ),
+                bgClass: "bg-[#003580] hover:bg-[#002a66]",
               },
               {
                 key: "airbnb",
                 href: "https://www.airbnb.com/",
-                label: "Airbnb",
-                blurb: t("suppliers.accommodation_external_airbnb_blurb"),
+                wordmark: (
+                  <span className="text-xl font-bold lowercase tracking-tight text-white">
+                    airbnb
+                  </span>
+                ),
+                bgClass: "bg-[#FF5A5F] hover:bg-[#e64a4f]",
               },
               {
                 key: "szallas_hu",
                 href: "https://www.szallas.hu/",
-                label: "Szállás.hu",
-                blurb: t("suppliers.accommodation_external_szallas_hu_blurb"),
+                wordmark: (
+                  <span className="text-xl font-bold tracking-tight text-white">
+                    Szállás
+                    <span className="opacity-70">.hu</span>
+                  </span>
+                ),
+                bgClass: "bg-[#0e7c66] hover:bg-[#0a5e4e]",
               },
             ].map((p) => (
               <li key={p.key}>
@@ -1110,24 +1130,14 @@ export default function SuppliersPage() {
                   href={p.href}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group flex h-full items-start gap-3 rounded-xl border border-paper-200 bg-white px-3 py-3 transition hover:border-sage-400 hover:shadow-sm dark:border-umber-700 dark:bg-umber-900 dark:hover:border-sage-400/60"
+                  className={`group relative flex h-full items-center justify-between rounded-xl px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${p.bgClass}`}
                 >
-                  <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-600 transition group-hover:bg-sage-100 group-hover:text-sage-700 dark:bg-umber-800 dark:text-umber-200 dark:group-hover:bg-sage-400/20 dark:group-hover:text-sage-300">
-                    <BedDouble size={13} aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5 text-sm font-semibold text-ink-900 group-hover:text-sage-700 dark:text-paper-100 dark:group-hover:text-sage-300">
-                      {p.label}
-                      <ExternalLink
-                        size={12}
-                        aria-hidden
-                        className="text-ink-400 transition group-hover:text-sage-700 dark:text-umber-300 dark:group-hover:text-sage-300"
-                      />
-                    </span>
-                    <span className="mt-0.5 block text-xs text-ink-500 dark:text-umber-300">
-                      {p.blurb}
-                    </span>
-                  </span>
+                  {p.wordmark}
+                  <ExternalLink
+                    size={16}
+                    aria-hidden
+                    className="absolute right-3 top-3 text-white/70 transition group-hover:text-white"
+                  />
                 </a>
               </li>
             ))}
@@ -1781,16 +1791,22 @@ function ChainStep({
             : "border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
       }`}
     >
-      <span className="flex items-center justify-center gap-1.5 leading-none">
+      {/* Explicit h-4 row + leading-none on every child forces all three
+          elements (icon, label, count) to share the same 16px box so
+          they vertical-center identically regardless of intrinsic font
+          metrics. Count uses the same text-xs as the label so number
+          and text baselines align — text-[11px] was 1px shorter and
+          drifted up. */}
+      <span className="flex h-4 items-center justify-center gap-1.5">
         {!isAll && (
-          <span className="inline-flex items-center" aria-hidden>
+          <span className="flex h-4 items-center leading-none" aria-hidden>
             {icon}
           </span>
         )}
-        <span className="font-medium">{label}</span>
+        <span className="flex h-4 items-center font-medium leading-none">{label}</span>
         {count !== undefined && (
           <span
-            className={`inline-flex items-center text-[11px] font-medium tabular-nums ${
+            className={`flex h-4 items-center font-medium tabular-nums leading-none ${
               active
                 ? "text-paper-100/80 dark:text-umber-900/80"
                 : allDone
