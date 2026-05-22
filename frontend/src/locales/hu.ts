@@ -1335,6 +1335,8 @@ const hu: LocaleMessages = {
       "Olyan részletek, amik csak a vendégeknek mennek: parkolás, dress code, ajándékok, szállás-tippek, gyerekprogram…",
     post_rsvp_hint:
       "Csak az látja, akinek legalább egy fős vendége igennel visszajelölt. A pontos helyszín-pin is itt nyílik meg.",
+    editor_collapse_summary: "Szerkesztés",
+    preview_divider_label: "Innen a vendégoldal",
     preview_title: "Élő előnézet",
     preview_subtitle:
       "Ezt látja most a vendég. Mentsd el a fenti módosításokat, hogy itt is frissüljön a dátum, a menetrend és a térkép.",

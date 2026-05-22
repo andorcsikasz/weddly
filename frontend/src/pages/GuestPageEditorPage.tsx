@@ -12,11 +12,11 @@ import type {
 } from "@shared/guest_portal";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
+  ChevronRight,
   Clipboard,
   Copy,
   ExternalLink,
   Globe,
-  Info,
   Lock,
   MessageCircle,
   RefreshCcw,
@@ -258,6 +258,19 @@ export default function GuestPageEditorPage() {
         </p>
       </header>
 
+      {/* ── Editor block (collapsible) ───────────────────────────────────
+       *  Everything from the share artefact through the save button lives
+       *  inside one <details>, so the couple can fold the whole editor
+       *  shut and just compare the live preview below to what guests see.
+       *  Open by default — the editor is the primary surface on this page. */}
+      <details open className="group">
+        <summary className="cursor-pointer list-none select-none py-1 text-sm font-medium text-ink-700 transition hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50 [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+            {t("guest_page_editor.editor_collapse_summary")}
+          </span>
+        </summary>
+        <div className="mt-3">
       {/* ── Share ────────────────────────────────────────────────────────
        *  Two pieces side-by-side: the public /w/:slug URL (one share artefact
        *  for save-the-dates / Instagram bio) and the slug + /rsvp pair the
@@ -348,92 +361,81 @@ export default function GuestPageEditorPage() {
             <summary className="cursor-pointer text-sm font-medium text-ink-800 dark:text-paper-100">
               {t("guest_page_editor.share_per_household_summary")}
             </summary>
-            <div className="mt-3">
-              <h3 className="text-base font-semibold text-ink-900 dark:text-paper-50">
-                {t("guest_page_editor.share_per_household_title")}
-              </h3>
-              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+            <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+              <p className="min-w-[16rem] flex-1 text-xs text-ink-600 dark:text-umber-200">
                 {t("guest_page_editor.share_per_household_subtitle")}
               </p>
-              <div className="mt-3">
-                <button
-                  type="button"
-                  className="btn-outline btn-sm"
-                  onClick={onCopyAllHouseholdLinks}
-                  aria-label={t("guest_page_editor.share_per_household_copy_all_aria")}
-                >
-                  <Copy size={14} aria-hidden />
-                  {t("guest_page_editor.share_per_household_copy_all")}
-                </button>
-              </div>
-              <ul className="mt-4 flex flex-col gap-3">
-                {households.map((hh) => {
-                  const link = buildHouseholdUrl(hh.code);
-                  const memberCount = hh.member_ids.length;
-                  return (
-                    <li
-                      key={hh.id}
-                      className="rounded-lg border border-paper-300 bg-white px-3 py-3 dark:border-umber-700 dark:bg-umber-800"
-                    >
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <div>
-                          <div className="text-sm font-medium text-ink-900 dark:text-paper-50">
-                            {hh.label}
-                          </div>
-                          <div className="text-xs text-ink-500 dark:text-umber-300">
-                            {t("guest_page_editor.share_per_household_member_count", {
-                              count: memberCount,
-                            })}
-                          </div>
-                        </div>
-                        <code className="font-mono text-xs uppercase tracking-[0.15em] text-ink-600 dark:text-umber-200">
-                          {hh.code}
-                        </code>
-                      </div>
-                      <div className="mt-2 truncate font-mono text-xs text-ink-500 dark:text-umber-300">
-                        {link}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          className="btn-outline btn-sm"
-                          onClick={() => onCopyHouseholdLink(hh)}
-                          aria-label={t("guest_page_editor.share_per_household_copy_link_aria", {
-                            label: hh.label,
-                          })}
-                        >
-                          <Copy size={14} aria-hidden />
-                          {t("guest_page_editor.share_per_household_copy_link")}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-outline btn-sm"
-                          onClick={() => onShareHouseholdWhatsapp(hh)}
-                          aria-label={t("guest_page_editor.share_per_household_whatsapp_aria", {
-                            label: hh.label,
-                          })}
-                        >
-                          <MessageCircle size={14} aria-hidden />
-                          {t("guest_page_editor.share_per_household_whatsapp")}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-outline btn-sm"
-                          onClick={() => onRotateHouseholdCode(hh)}
-                          disabled={rotatingId === hh.id}
-                          aria-label={t("guest_page_editor.share_per_household_rotate_aria", {
-                            label: hh.label,
-                          })}
-                        >
-                          <RefreshCcw size={14} aria-hidden />
-                          {t("guest_page_editor.share_per_household_rotate")}
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <button
+                type="button"
+                className="btn-outline btn-sm shrink-0"
+                onClick={onCopyAllHouseholdLinks}
+                aria-label={t("guest_page_editor.share_per_household_copy_all_aria")}
+              >
+                <Copy size={14} aria-hidden />
+                {t("guest_page_editor.share_per_household_copy_all")}
+              </button>
             </div>
+            <ul className="mt-2 flex flex-col gap-1.5">
+              {households.map((hh) => {
+                const memberCount = hh.member_ids.length;
+                return (
+                  <li
+                    key={hh.id}
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border border-paper-300 bg-white px-3 py-2 dark:border-umber-700 dark:bg-umber-800"
+                  >
+                    <div className="flex min-w-0 flex-1 items-baseline gap-2">
+                      <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+                        {hh.label}
+                      </span>
+                      <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
+                        {t("guest_page_editor.share_per_household_member_count", {
+                          count: memberCount,
+                        })}
+                      </span>
+                      <code className="shrink-0 font-mono text-xs uppercase tracking-[0.15em] text-ink-600 dark:text-umber-200">
+                        {hh.code}
+                      </code>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        className="btn-outline btn-sm"
+                        onClick={() => onCopyHouseholdLink(hh)}
+                        title={t("guest_page_editor.share_per_household_copy_link")}
+                        aria-label={t("guest_page_editor.share_per_household_copy_link_aria", {
+                          label: hh.label,
+                        })}
+                      >
+                        <Copy size={14} aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-outline btn-sm"
+                        onClick={() => onShareHouseholdWhatsapp(hh)}
+                        title={t("guest_page_editor.share_per_household_whatsapp")}
+                        aria-label={t("guest_page_editor.share_per_household_whatsapp_aria", {
+                          label: hh.label,
+                        })}
+                      >
+                        <MessageCircle size={14} aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-outline btn-sm"
+                        onClick={() => onRotateHouseholdCode(hh)}
+                        disabled={rotatingId === hh.id}
+                        title={t("guest_page_editor.share_per_household_rotate")}
+                        aria-label={t("guest_page_editor.share_per_household_rotate_aria", {
+                          label: hh.label,
+                        })}
+                      >
+                        <RefreshCcw size={14} aria-hidden />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </details>
         )}
 
@@ -453,46 +455,52 @@ export default function GuestPageEditorPage() {
               : "border-paper-300 dark:border-umber-700"
           }`}
         >
-          <h2 className="text-lg">{t("wedding_site_editor.publish_title")}</h2>
-          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
-            {isPublic
-              ? t("wedding_site_editor.publish_body_on")
-              : t("wedding_site_editor.publish_body_off")}
-          </p>
-          <label className="mt-4 inline-flex cursor-pointer items-center gap-3">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isPublic}
-              onClick={() => setIsPublic((v) => !v)}
-              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
-                isPublic ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                  isPublic ? "translate-x-6" : "translate-x-1"
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg">{t("wedding_site_editor.publish_title")}</h2>
+              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                {isPublic
+                  ? t("wedding_site_editor.publish_body_on")
+                  : t("wedding_site_editor.publish_body_off")}
+              </p>
+            </div>
+            <label className="inline-flex shrink-0 cursor-pointer items-center gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isPublic}
+                onClick={() => setIsPublic((v) => !v)}
+                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                  isPublic ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
                 }`}
-              />
-            </button>
-            <span className="text-sm font-medium text-ink-800 dark:text-paper-100">
-              {isPublic
-                ? t("wedding_site_editor.publish_label_on")
-                : t("wedding_site_editor.publish_label_off")}
-            </span>
-          </label>
+              >
+                <span
+                  className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    isPublic ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-ink-800 dark:text-paper-100">
+                {isPublic
+                  ? t("wedding_site_editor.publish_label_on")
+                  : t("wedding_site_editor.publish_label_off")}
+              </span>
+            </label>
+          </div>
         </section>
 
         {/* ── Public content (anyone with the link) ──────────────────── */}
         <section className="card mt-6">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
-            <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h2 className="text-lg">{t("guest_page_editor.section_public_title")}</h2>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
+              <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
+            </span>
           </div>
-          <h2 className="mt-1 text-lg">{t("guest_page_editor.section_public_title")}</h2>
-          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
             {t("guest_page_editor.section_public_hint")}
           </p>
-          <div className="mt-5">
+          <div className="mt-3">
             <label htmlFor="guest-page-venue" className="field-label">
               {t("wedding_site_editor.venue_label")}
             </label>
@@ -509,7 +517,7 @@ export default function GuestPageEditorPage() {
               {t("wedding_site_editor.venue_hint")}
             </p>
           </div>
-          <div className="mt-5">
+          <div className="mt-3">
             <label htmlFor="guest-page-cover" className="field-label">
               {t("wedding_site_editor.cover_image_label")}
             </label>
@@ -528,14 +536,14 @@ export default function GuestPageEditorPage() {
               {t("wedding_site_editor.cover_image_hint")}
             </p>
           </div>
-          <div className="mt-5">
+          <div className="mt-3">
             <label htmlFor="guest-page-intro" className="field-label">
               {t("guest_page_editor.intro_label")}
             </label>
             <textarea
               id="guest-page-intro"
               className="input"
-              rows={5}
+              rows={4}
               value={guestPageIntro}
               onChange={(e) => setGuestPageIntro(e.target.value)}
               placeholder={t("guest_page_editor.intro_placeholder")}
@@ -549,14 +557,16 @@ export default function GuestPageEditorPage() {
 
         {/* ── Post-RSVP unlocked content ────────────────────────────── */}
         <section className="card mt-6">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
-            <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h2 className="text-lg">{t("guest_page_editor.section_unlocked_title")}</h2>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+              <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
+            </span>
           </div>
-          <h2 className="mt-1 text-lg">{t("guest_page_editor.section_unlocked_title")}</h2>
-          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
             {t("guest_page_editor.section_unlocked_hint")}
           </p>
-          <ul className="mt-4 flex flex-wrap gap-2">
+          <ul className="mt-3 flex flex-wrap gap-2">
             <li>
               <Link to="/app/schedule" className="btn-outline btn-sm">
                 {t("guest_page_editor.section_unlocked_link_schedule")}
@@ -568,14 +578,14 @@ export default function GuestPageEditorPage() {
               </Link>
             </li>
           </ul>
-          <div className="mt-5">
+          <div className="mt-3">
             <label htmlFor="guest-page-post-rsvp" className="field-label">
               {t("guest_page_editor.post_rsvp_label")}
             </label>
             <textarea
               id="guest-page-post-rsvp"
               className="input"
-              rows={6}
+              rows={5}
               value={postRsvpContent}
               onChange={(e) => setPostRsvpContent(e.target.value)}
               placeholder={t("guest_page_editor.post_rsvp_placeholder")}
@@ -599,9 +609,24 @@ export default function GuestPageEditorPage() {
           </button>
         </div>
       </form>
+        </div>
+      </details>
+
+      {/* ── Divider into guest-view preview ─────────────────────────────
+       *  Visual break so it's obvious where the editor ends and the
+       *  read-only "this is what your guest sees" view begins. */}
+      <div
+        className="my-8 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-400 dark:text-umber-300"
+        role="separator"
+        aria-label={t("guest_page_editor.preview_divider_label")}
+      >
+        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+        <span>{t("guest_page_editor.preview_divider_label")}</span>
+        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+      </div>
 
       {/* ── Live preview ────────────────────────────────────────────── */}
-      <section className="mt-10">
+      <section>
         <div className="mb-3 flex items-start gap-2">
           <Info size={16} className="mt-0.5 text-ink-500 dark:text-umber-300" aria-hidden />
           <div>

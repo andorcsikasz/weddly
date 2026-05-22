@@ -396,17 +396,33 @@ export function CostPlanningCard({
   const commitMin = (v: number) => onBoundsChange?.(v, maxCount);
   const commitMax = (v: number) => onBoundsChange?.(minCount, v);
 
-  // Anchor for the per-row slider WIDTH (visual rail) and `dragMax` (input's
-  // hard max). When a budget cap is set, the rail spans the whole budget so
-  // every row reads as a fraction of the total at a glance, and the drag stop
-  // is the cap itself — pulling a row to the right end means "this category
-  // alone uses the entire budget". The rail extends 3 % past the cap so a
-  // thin non-draggable tail sits at the right edge, visually signalling the
-  // ceiling without making the thumb hit a hard wall mid-rail.
-  // Fallback (no cap set): keep the soft-cap formula so the slider still
+  // Shared denominator for the per-row slider's rail (both visual fill and
+  // input.max — keeping them in sync is what stops the thumb from drifting
+  // ahead of the painted fill).
+  //
+  // Dynamic-expansion model: the rail defaults to **25 % of the budget cap**
+  // — at a 6 M cap that's 1.5 M, generous for most categories and tight
+  // enough that small rows still read as a meaningful fraction of the rail.
+  // When any row is pulled into the last 5 % of the current rail, the rail
+  // stretches so that row stays at 95 % of the rail, up to a hard ceiling
+  // of **75 % of cap**. That gives the "gently grow as you drag" feel and
+  // means a single category can never visually claim the entire budget on
+  // its own.
+  //
+  // Fallback (no cap set): keep the old soft-cap formula so the slider still
   // tracks the largest row with some headroom.
   const widthAnchor = useMemo(() => {
-    if (cap !== null && cap > 0) return Math.round(cap * 1.03);
+    if (cap !== null && cap > 0) {
+      const minRail = cap * 0.25;
+      const maxRail = cap * 0.75;
+      const largestRow = Math.max(
+        ...buckets.map((b) => b.plannedDisplay),
+        ...customDisplays.map((c) => c.planned),
+        0,
+      );
+      const expanded = largestRow / 0.95;
+      return Math.round(Math.min(maxRail, Math.max(minRail, expanded)));
+    }
     const maxRowAmount = Math.max(
       ...buckets.map((b) => b.plannedDisplay),
       ...customDisplays.map((c) => c.planned),
@@ -414,7 +430,6 @@ export function CostPlanningCard({
     );
     return Math.max(1_500_000, Math.round(maxRowAmount * 1.2), 100_000);
   }, [cap, buckets, customDisplays]);
-  const dragMax = cap !== null && cap > 0 ? cap : widthAnchor;
 
   // If the user narrows the bounds below the current slider value, clamp
   // it back into range so the thumb doesn't pin off the track.
@@ -572,7 +587,6 @@ export function CostPlanningCard({
             scaleFactor={b.scales ? factor : 1}
             count={count}
             widthAnchor={widthAnchor}
-            dragMax={dragMax}
             currency={currency}
             onEditPlanned={onEditPlanned}
             onToggleFreeze={onToggleFreeze}
@@ -593,7 +607,6 @@ export function CostPlanningCard({
             scaleFactor={c.scales ? factor : 1}
             count={count}
             widthAnchor={widthAnchor}
-            dragMax={dragMax}
             currency={currency}
             onEditPlanned={onEditCustomRowPlanned}
             onRemove={onRemoveCustomRow}
@@ -662,7 +675,6 @@ function CategoryRowInner({
   scaleFactor,
   count,
   widthAnchor,
-  dragMax,
   currency,
   onEditPlanned,
   onToggleFreeze,
@@ -687,16 +699,11 @@ function CategoryRowInner({
    *  unit price stable when only the headcount changes. */
   scaleFactor: number;
   count: number;
-  /** Shared denominator for the visual rail. The slider's CSS width is scaled
-   *  relative to this so the rows read like a horizontal bar chart. Set 3 %
-   *  above the budget cap so a thin non-draggable tail sits past `dragMax`.
-   *  Floored upstream so it never hits zero. */
+  /** Shared denominator for the slider — drives both the visual fill stop and
+   *  `<input type="range">.max`. Dynamic: defaults to 25 % of the budget cap,
+   *  expands gently up to 75 % of cap as a row is pulled toward the rail's
+   *  right edge. Floored upstream so it never hits zero. */
   widthAnchor: number;
-  /** Hard right stop for `<input type="range">`. Equals the couple's budget
-   *  cap when set, so a row can be dragged up to (but not past) "this single
-   *  category eats the entire budget". When the cap is null, matches the
-   *  visual rail. */
-  dragMax: number;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
   onToggleFreeze?: (category: BudgetCategory) => void | Promise<void>;
   /** Drag handler — fires on each slider change with the row's category and
@@ -906,7 +913,7 @@ function CategoryRowInner({
     <input
       type="range"
       min={0}
-      max={dragMax}
+      max={rowMax}
       step={step}
       value={liveDisplay}
       disabled={sliderDisabled}
@@ -999,7 +1006,6 @@ function CustomRowInner({
   scaleFactor,
   count,
   widthAnchor,
-  dragMax,
   currency,
   onEditPlanned,
   onRemove,
@@ -1015,7 +1021,6 @@ function CustomRowInner({
   /** Current headcount slider value — used to compute the per-guest hint. */
   count: number;
   widthAnchor: number;
-  dragMax: number;
   currency: Currency;
   onEditPlanned?: (lineId: number, plannedHuf: number) => void | Promise<void>;
   onRemove?: (lineId: number) => void | Promise<void>;
@@ -1090,7 +1095,7 @@ function CustomRowInner({
         <input
           type="range"
           min={0}
-          max={dragMax}
+          max={rowMax}
           step={step}
           value={liveDisplay}
           disabled={!onEditPlanned || saving}

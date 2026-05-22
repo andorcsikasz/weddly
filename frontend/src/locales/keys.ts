@@ -1425,6 +1425,8 @@ export interface LocaleMessages {
     post_rsvp_label: string;
     post_rsvp_placeholder: string;
     post_rsvp_hint: string;
+    editor_collapse_summary: string;
+    preview_divider_label: string;
     preview_title: string;
     preview_subtitle: string;
     /** Per-household share section — lists each household with a personal

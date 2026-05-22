@@ -1327,6 +1327,8 @@ const en: LocaleMessages = {
       "Things only guests need to see: parking, dress code, gifts, accommodation tips, kids' programme…",
     post_rsvp_hint:
       "Only revealed when at least one of the household members has RSVP'd yes. The exact venue pin unlocks at the same moment.",
+    editor_collapse_summary: "Edit",
+    preview_divider_label: "Guest view below",
     preview_title: "Live preview",
     preview_subtitle:
       "What a guest sees right now. Save your edits above to refresh the date, schedule and location pin shown here.",
