@@ -6,6 +6,7 @@ import type {
   BudgetGoal,
   BudgetLine,
   Couple,
+  CoupleActivityEntry,
   CoupleInvite,
   Currency,
   DietarySummary,
@@ -38,6 +39,7 @@ import {
 } from "lucide-react";
 import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { ActivityPanel } from "../components/ActivityPanel";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
@@ -192,6 +194,10 @@ export default function DashboardPage() {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [datePickerDraft, setDatePickerDraft] = useState("");
   const [datePickerSaving, setDatePickerSaving] = useState(false);
+  /** Couple-wide audit feed — moved here from /app/profile per the 5-agent
+   *  debate. The Dashboard is the natural home for "what just changed"
+   *  context; under Profile (a settings page) it was invisible. */
+  const [activity, setActivity] = useState<CoupleActivityEntry[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -206,7 +212,7 @@ export default function DashboardPage() {
       hydrateCostPlanningCount(couple);
       const seeded = readCostPlanningCount(couple.id);
       if (seeded !== null) setPlanningCount(seeded);
-      const [guestsR, linesR, planR, inviteR] = await Promise.all([
+      const [guestsR, linesR, planR, inviteR, activityR] = await Promise.all([
         guestApi.list(),
         budgetApi.listLines(),
         seatingApi.plan(),
@@ -215,8 +221,10 @@ export default function DashboardPage() {
         // is only useful before an invite is sent — afterwards the user
         // manages the invite from the Profile partner card).
         couple.partner_b_id ? Promise.resolve({ invite: null }) : coupleApi.currentInvite(),
+        coupleApi.activity(),
       ]);
       setInvite(inviteR.invite);
+      setActivity(activityR.entries);
       setData({
         couple,
         guests: guestsR.guests,
@@ -1383,6 +1391,17 @@ export default function DashboardPage() {
           </section>
         </>
       )}
+
+      {/* Couple-wide audit feed at the bottom of the dashboard. Collapsed
+       *  by default; opens to a 14-day stream of who-changed-what. Moved
+       *  here from /app/profile per the agent debate — "what changed"
+       *  belongs on the overview, not in account settings. */}
+      <ActivityPanel
+        entries={activity}
+        currentUserId={currentUser?.id ?? null}
+        locale={locale}
+        t={t}
+      />
     </>
   );
 }

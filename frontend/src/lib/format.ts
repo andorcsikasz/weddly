@@ -158,6 +158,22 @@ export function maxIsoDate(a: string, b: string): string {
   return a > b ? a : b;
 }
 
+/** Render a millisecond timestamp as "{date} HH:MM" in the user's local
+ *  timezone. Both the date portion and the time portion are read from
+ *  LOCAL Date fields — a previous version sliced `toISOString()` for the
+ *  date (UTC) while reading `getHours()` (local), which made a 00:30 CET
+ *  event render as "yesterday 00:30" because UTC was the previous day. */
+export function formatTimestamp(ms: number, locale: Locale = "hu"): string {
+  const d = new Date(ms);
+  const yyyy = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const dateStr = formatDate(`${yyyy}-${mo}-${dd}`, locale);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${dateStr} ${hh}:${mm}`;
+}
+
 export function formatDate(ymd: string | null, locale: Locale = "hu"): string {
   if (!ymd) return "";
   const d = new Date(`${ymd}T00:00:00`);
