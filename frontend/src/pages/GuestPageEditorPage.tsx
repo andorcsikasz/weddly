@@ -31,6 +31,8 @@ export default function GuestPageEditorPage() {
   const [isPublic, setIsPublic] = useState(false);
   const [venueName, setVenueName] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [guestPageIntro, setGuestPageIntro] = useState("");
+  const [postRsvpContent, setPostRsvpContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +47,8 @@ export default function GuestPageEditorPage() {
           setIsPublic(cR.couple.is_public);
           setVenueName(cR.couple.venue_name ?? "");
           setCoverImageUrl(cR.couple.cover_image_url ?? "");
+          setGuestPageIntro(cR.couple.guest_page_intro ?? "");
+          setPostRsvpContent(cR.couple.post_rsvp_content ?? "");
         }
         setEvents(sR.events);
       })
@@ -62,10 +66,15 @@ export default function GuestPageEditorPage() {
 
   const venueTrimmed = venueName.trim();
   const coverTrimmed = coverImageUrl.trim();
+  // Don't trim the markdown blocks — leading whitespace can be meaningful
+  // in markdown (lists, code fences). The backend treats an empty string
+  // as "clear the column" so the dirty check just compares to current.
   const venueChanged = venueTrimmed !== (couple?.venue_name ?? "");
   const coverChanged = coverTrimmed !== (couple?.cover_image_url ?? "");
+  const introChanged = guestPageIntro !== (couple?.guest_page_intro ?? "");
+  const postRsvpChanged = postRsvpContent !== (couple?.post_rsvp_content ?? "");
   const publishChanged = isPublic !== Boolean(couple?.is_public);
-  const dirty = venueChanged || coverChanged || publishChanged;
+  const dirty = venueChanged || coverChanged || publishChanged || introChanged || postRsvpChanged;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -77,11 +86,16 @@ export default function GuestPageEditorPage() {
       if (publishChanged) body.is_public = isPublic;
       if (venueChanged) body.venue_name = venueTrimmed === "" ? null : venueTrimmed;
       if (coverChanged) body.cover_image_url = coverTrimmed === "" ? null : coverTrimmed;
+      if (introChanged) body.guest_page_intro = guestPageIntro === "" ? null : guestPageIntro;
+      if (postRsvpChanged)
+        body.post_rsvp_content = postRsvpContent === "" ? null : postRsvpContent;
       const r = await coupleApi.update(body);
       setCouple(r.couple);
       setIsPublic(r.couple.is_public);
       setVenueName(r.couple.venue_name ?? "");
       setCoverImageUrl(r.couple.cover_image_url ?? "");
+      setGuestPageIntro(r.couple.guest_page_intro ?? "");
+      setPostRsvpContent(r.couple.post_rsvp_content ?? "");
       toast.success(t("wedding_site_editor.save_success"));
     } catch (err) {
       const msg =
@@ -309,6 +323,23 @@ export default function GuestPageEditorPage() {
               {t("wedding_site_editor.cover_image_hint")}
             </p>
           </div>
+          <div className="mt-5">
+            <label htmlFor="guest-page-intro" className="field-label">
+              {t("guest_page_editor.intro_label")}
+            </label>
+            <textarea
+              id="guest-page-intro"
+              className="input"
+              rows={5}
+              value={guestPageIntro}
+              onChange={(e) => setGuestPageIntro(e.target.value)}
+              placeholder={t("guest_page_editor.intro_placeholder")}
+              maxLength={4000}
+            />
+            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+              {t("guest_page_editor.intro_hint")}
+            </p>
+          </div>
         </section>
 
         {/* ── Post-RSVP unlocked content ────────────────────────────── */}
@@ -332,6 +363,23 @@ export default function GuestPageEditorPage() {
               </Link>
             </li>
           </ul>
+          <div className="mt-5">
+            <label htmlFor="guest-page-post-rsvp" className="field-label">
+              {t("guest_page_editor.post_rsvp_label")}
+            </label>
+            <textarea
+              id="guest-page-post-rsvp"
+              className="input"
+              rows={6}
+              value={postRsvpContent}
+              onChange={(e) => setPostRsvpContent(e.target.value)}
+              placeholder={t("guest_page_editor.post_rsvp_placeholder")}
+              maxLength={8000}
+            />
+            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+              {t("guest_page_editor.post_rsvp_hint")}
+            </p>
+          </div>
         </section>
 
         {error && (

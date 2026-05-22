@@ -571,6 +571,19 @@ addColumnIfMissing("couples", "is_public", "is_public INTEGER NOT NULL DEFAULT 0
 addColumnIfMissing("couples", "venue_name", "venue_name TEXT");
 addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 
+// Vendégoldal Phase 2 — markdown blocks the couple authors for the guest
+// page. Both nullable / NULL by default; the editor surfaces them in the
+// Public and Post-RSVP sections respectively.
+//
+// - guest_page_intro: pre-RSVP welcome block. Shown to anyone with the
+//   link (`/w/:slug`) AND to invited guests on `/w/:slug/:code` before
+//   they RSVP yes. Plain text / lightweight markdown — no upload pipe.
+// - post_rsvp_content: unlocked only after at least one household member
+//   RSVPs yes. Server omits the field from the response at lower tiers so
+//   the data never reaches the client unless the credential allows it.
+addColumnIfMissing("couples", "guest_page_intro", "guest_page_intro TEXT");
+addColumnIfMissing("couples", "post_rsvp_content", "post_rsvp_content TEXT");
+
 // Vendor listing hero image. Stored as a relative path under the public
 // `/uploads/` prefix (e.g. `/uploads/listings/v3/hero.webp`) — files live
 // on the persistent `CONFIG.uploadsDir` volume and the server.ts static

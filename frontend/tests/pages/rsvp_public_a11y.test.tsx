@@ -1,15 +1,20 @@
 // Focused component tests for the public RSVP surface — the lookup form on
-// /rsvp, the household editor that follows a successful lookup, and the
-// /g/:slug/:code guest portal. Locale switching + a11y plumbing land here
-// too so we don't ship a regression that breaks screen-reader users or
-// invisibly defaults the wrong language for our HU-first audience.
+// /rsvp and the household editor that follows a successful lookup. Locale
+// switching + a11y plumbing land here too so we don't ship a regression
+// that breaks screen-reader users or invisibly defaults the wrong language
+// for our HU-first audience.
 //
 // All HTTP is mocked through globalThis.fetch — the page only knows about
-// `rsvpApi` / `guestPortalApi` which both go through `apiFetch`, which
-// goes through `fetch`. Mocking at the network boundary means we exercise
-// the real endpoints.ts wrappers without standing up a backend.
+// `rsvpApi` which goes through `apiFetch`, which goes through `fetch`.
+// Mocking at the network boundary means we exercise the real
+// endpoints.ts wrappers without standing up a backend.
+//
+// The old `/g/:slug/:code` guest-portal tests were retired when Phase 2 of
+// the Vendégoldal merger landed — that route now redirects into the
+// unified `/w/:slug/:code` WeddingWebsitePage (see App.tsx). New
+// coverage for the merged surface lives in the backend e2e tests where
+// the tier-aware payload is exercised end-to-end.
 
-import type { GuestPortalView } from "@shared/guest_portal";
 import type { PublicCheckinView } from "@shared/types";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -17,7 +22,6 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { _preloadHuForTests, I18nProvider } from "@/lib/i18n";
-import GuestPortalPage from "@/pages/GuestPortalPage";
 import RsvpCheckinPage from "@/pages/RsvpCheckinPage";
 
 // HU is lazy-loaded via dynamic import in production; the suite asserts on
@@ -74,52 +78,6 @@ function makeView(overrides: Partial<PublicCheckinView> = {}): PublicCheckinView
   };
 }
 
-function makePortal(overrides: Partial<GuestPortalView> = {}): GuestPortalView {
-  return {
-    couple_slug: "ANNABENCE",
-    couple_display_name: "Anna & Bence",
-    wedding_date: "2026-09-12",
-    ceremony_kind: "civil",
-    location_lat: 47.4979,
-    location_lng: 19.0402,
-    location_radius_km: 5,
-    schedule: [
-      {
-        id: 1,
-        label: "Ceremony",
-        starts_at_minutes: 14 * 60, // 14:00
-        duration_minutes: 45,
-        location: "Garden pavilion",
-        notes: null,
-      },
-      {
-        id: 2,
-        label: "Reception",
-        starts_at_minutes: 16 * 60, // 16:00
-        duration_minutes: null,
-        location: null,
-        notes: "Welcome drinks served",
-      },
-    ],
-    household_code: "1234",
-    household_label: "Kovács család",
-    members: [
-      {
-        id: 11,
-        full_name: "Anna Kovács",
-        kind: "adult",
-        rsvp_status: "yes",
-        meal_choice: "meat",
-        dietary: null,
-        accommodation_needed: false,
-        song_request: null,
-      },
-    ],
-    fetched_at: Date.now(),
-    ...overrides,
-  };
-}
-
 /** Render the check-in page wrapped in the same provider stack the public
  *  route uses in App.tsx. NOTE: no AuthProvider — the page is public. */
 function renderCheckin(initialEntries: string[] = ["/rsvp"]) {
@@ -132,22 +90,6 @@ function renderCheckin(initialEntries: string[] = ["/rsvp"]) {
               <Route path="/rsvp" element={<RsvpCheckinPage />} />
             </Routes>
           </ConfirmDialogProvider>
-        </ToastProvider>
-      </I18nProvider>
-    </MemoryRouter>,
-  );
-}
-
-/** Render the guest portal with a `/g/:slug/:code` route so `useParams`
- *  resolves cleanly. */
-function renderPortal(slug = "ANNABENCE", code = "1234") {
-  return render(
-    <MemoryRouter initialEntries={[`/g/${slug}/${code}`]}>
-      <I18nProvider>
-        <ToastProvider>
-          <Routes>
-            <Route path="/g/:slug/:code" element={<GuestPortalPage />} />
-          </Routes>
         </ToastProvider>
       </I18nProvider>
     </MemoryRouter>,
@@ -521,78 +463,6 @@ describe("RsvpCheckinPage — lookup form", () => {
       expect(screen.getByText("ANNABENCE")).toBeInTheDocument();
       expect(screen.getByText("1234")).toBeInTheDocument();
     });
-  });
-});
-
-// ── GuestPortalPage ───────────────────────────────────────────────────────
-
-describe("GuestPortalPage", () => {
-  it("renders schedule events in the order returned by the API", async () => {
-    globalThis.fetch = mock(async () =>
-      jsonResponse(200, { portal: makePortal() }),
-    ) as unknown as typeof fetch;
-
-    renderPortal();
-    await waitFor(() => expect(screen.getByText("Ceremony")).toBeInTheDocument());
-    expect(screen.getByText("Reception")).toBeInTheDocument();
-    // 14:00 + 16:00 both rendered. They share the same column so the order
-    // is implicit in the rendered DOM ordering — assert that ceremony
-    // appears before reception.
-    const html = document.body.innerHTML;
-    expect(html.indexOf("Ceremony")).toBeLessThan(html.indexOf("Reception"));
-  });
-
-  it("schedule_empty copy renders when the couple's run-of-show is empty", async () => {
-    globalThis.fetch = mock(async () =>
-      jsonResponse(200, { portal: makePortal({ schedule: [] }) }),
-    ) as unknown as typeof fetch;
-
-    renderPortal();
-    await waitFor(() => {
-      // HU schedule_empty: "A pár még nem tette közzé a menetrendet…"
-      expect(screen.getByText(/még nem tette közzé/i)).toBeInTheDocument();
-    });
-  });
-
-  it("renders the household section with member RSVP status chips", async () => {
-    globalThis.fetch = mock(async () =>
-      jsonResponse(200, { portal: makePortal() }),
-    ) as unknown as typeof fetch;
-
-    renderPortal();
-    await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
-    // household_title interpolates {label} — HU: "A ti foglalásotok — Kovács család".
-    expect(screen.getByText(/Kovács család/)).toBeInTheDocument();
-  });
-
-  it("renders an external Google Maps link when location coords exist", async () => {
-    globalThis.fetch = mock(async () =>
-      jsonResponse(200, { portal: makePortal() }),
-    ) as unknown as typeof fetch;
-
-    renderPortal();
-    await waitFor(() => {
-      // location_open_map HU = "Megnyitás térképen"
-      const link = screen.getByRole("link", { name: /megnyitás térképen/i });
-      expect(link).toBeInTheDocument();
-      expect(link.getAttribute("href")).toContain("google.com/maps");
-      expect(link.getAttribute("target")).toBe("_blank");
-    });
-  });
-
-  it("403 not_rsvpd response routes the user to the RSVP gate with a back-to-RSVP link", async () => {
-    globalThis.fetch = mock(async () =>
-      jsonResponse(403, { error: "Not RSVP'd", detail: { code: "not_rsvpd" } }),
-    ) as unknown as typeof fetch;
-
-    renderPortal();
-    await waitFor(() => {
-      // gate_title HU = "Először jelöljétek igennel a meghívást"
-      expect(screen.getByText(/először jelöljétek igennel/i)).toBeInTheDocument();
-    });
-    const cta = screen.getByRole("link", { name: /ugrás az rsvp-re/i });
-    expect(cta.getAttribute("href")).toContain("/rsvp?couple=ANNABENCE");
-    expect(cta.getAttribute("href")).toContain("code=1234");
   });
 });
 

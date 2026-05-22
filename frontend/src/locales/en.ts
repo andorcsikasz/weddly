@@ -191,6 +191,18 @@ const en: LocaleMessages = {
     rsvp_body:
       "Enter the code on your invitation so the couple knows whether to count you in. Takes a moment.",
     rsvp_cta: "RSVP →",
+    invited_eyebrow: "Your invitation",
+    rsvp_personal_title: "We're counting on you",
+    rsvp_personal_body:
+      "Reply in a couple of taps — we've pre-filled your household code for you.",
+    rsvp_personal_cta: "Reply →",
+    rsvp_manage_cta: "Update your RSVP",
+    confirmed_title: "For confirmed guests",
+    confirmed_open_map: "Open the exact venue in maps",
+    rsvp_status_pending: "pending",
+    rsvp_status_yes: "coming",
+    rsvp_status_no: "can't make it",
+    rsvp_status_maybe: "maybe",
     footer_built_with: "Weddly · Wedding planning",
   },
   wedding_site_editor: {
@@ -1305,6 +1317,16 @@ const en: LocaleMessages = {
       "The day-of run-of-show and the exact venue location only appear once a guest RSVPs yes. Edit them on the dedicated pages below.",
     section_unlocked_link_schedule: "Edit run-of-show",
     section_unlocked_link_profile: "Edit venue location",
+    intro_label: "Welcome note (everyone sees this)",
+    intro_placeholder:
+      'A short paragraph for your guests — e.g. "Thanks for being part of our day. You\'ll find every detail you need here as we get closer."',
+    intro_hint:
+      "Visible to anyone with the link. Leave blank if you don't want a public welcome note.",
+    post_rsvp_label: "Details for confirmed guests",
+    post_rsvp_placeholder:
+      "Things only guests need to see: parking, dress code, gifts, accommodation tips, kids' programme…",
+    post_rsvp_hint:
+      "Only revealed when at least one of the household members has RSVP'd yes. The exact venue pin unlocks at the same moment.",
     preview_title: "Live preview",
     preview_subtitle:
       "What a guest sees right now. Save your edits above to refresh the date, schedule and location pin shown here.",

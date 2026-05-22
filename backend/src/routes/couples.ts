@@ -129,6 +129,12 @@ interface OnboardBody {
    *  string clears. We validate scheme + length only — no fetch/probe at
    *  the API boundary, that's a v2 concern once upload pipeline lands. */
   cover_image_url?: unknown;
+  /** Vendégoldal Phase 2 — pre-RSVP welcome block (markdown). Empty
+   *  string clears. Cap ≤4000 chars. */
+  guest_page_intro?: unknown;
+  /** Vendégoldal Phase 2 — post-RSVP unlocked content (markdown). Empty
+   *  string clears. Cap ≤8000 chars. */
+  post_rsvp_content?: unknown;
 }
 
 const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
@@ -1196,6 +1202,21 @@ function parseCoverImageUrl(raw: unknown): string | null {
   return trimmed;
 }
 
+/** Free-text markdown block author authors for the merged Vendégoldal.
+ *  Empty string → null (clears the column). Cap chosen large enough to
+ *  hold a 2-3 paragraph welcome message without enabling someone to
+ *  paste a novel into the public payload — same approach as venue_name. */
+function parseMarkdownBlock(raw: unknown, field: string, maxLength: number): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, `${field} must be a string`);
+  // Don't trim — markdown leading/trailing whitespace can be meaningful for
+  // code fences, lists, etc. Strip only the empty-string case so the
+  // "clear" gesture from the editor maps to NULL in storage.
+  if (raw.length === 0) return null;
+  if (raw.length > maxLength) throw new HttpError(400, `${field} must be ≤${maxLength} chars`);
+  return raw;
+}
+
 /** Cost-planning scenario count: integer 1..2000, or null to clear. */
 function parsePlanningCount(raw: unknown): number | null {
   if (raw === null || raw === undefined || raw === "") return null;
@@ -1527,6 +1548,32 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.cover_image_url_update",
         before: { cover_image_url: prev },
         after: { cover_image_url: next },
+      });
+    }
+  }
+
+  if (body.guest_page_intro !== undefined) {
+    const next = parseMarkdownBlock(body.guest_page_intro, "guest_page_intro", 4000);
+    const prev = couple.guest_page_intro;
+    if (next !== prev) {
+      updates.push({ col: "guest_page_intro", val: next });
+      auditEntries.push({
+        action: "couple.guest_page_intro_update",
+        before: { guest_page_intro: prev },
+        after: { guest_page_intro: next },
+      });
+    }
+  }
+
+  if (body.post_rsvp_content !== undefined) {
+    const next = parseMarkdownBlock(body.post_rsvp_content, "post_rsvp_content", 8000);
+    const prev = couple.post_rsvp_content;
+    if (next !== prev) {
+      updates.push({ col: "post_rsvp_content", val: next });
+      auditEntries.push({
+        action: "couple.post_rsvp_content_update",
+        before: { post_rsvp_content: prev },
+        after: { post_rsvp_content: next },
       });
     }
   }
@@ -2003,6 +2050,8 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.is_public_update",
   "couple.venue_name_update",
   "couple.cover_image_url_update",
+  "couple.guest_page_intro_update",
+  "couple.post_rsvp_content_update",
   // Guests
   "guest.create",
   "guest.update",

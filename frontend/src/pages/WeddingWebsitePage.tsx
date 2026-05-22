@@ -1,12 +1,26 @@
-// Public couple-branded landing page at `/w/:slug`. The thing the couple
-// shares on Instagram and prints on save-the-dates. First-cut minimum:
-// names + date + ceremony kind + schedule (if any) + a generic RSVP CTA
-// pointing into the existing /rsvp lookup. Story / FAQ / registry sections
-// come later — they need couple-authored content fields we haven't added
-// to the schema yet.
+// Public couple-branded landing page served at `/w/:slug` AND
+// `/w/:slug/:code`. The single component does tier-aware progressive
+// disclosure based on the response from the unified endpoint:
+//
+//   - public (no code):     names + date + venue_name + cover + schedule +
+//                           pre-RSVP intro (if any) + generic RSVP CTA.
+//   - invited (code, no yes): same content as public PLUS the per-household
+//                           block (member names + a personalised RSVP CTA
+//                           that pre-fills slug+code).
+//   - confirmed (code, ≥1 yes): same content as invited PLUS the exact
+//                           venue lat/lng pin + post_rsvp_content block.
+//                           When the guest just RSVP'd through the in-page
+//                           form we re-fetch with the code and shift focus
+//                           to the freshly-revealed `<h2>` (aria-live).
+//
+// The trust boundary stays on the server — gated fields are omitted from
+// the response at lower tiers, so the rendering decisions here are
+// presentational only (null check + render). SEO: the code-bearing URL
+// emits `noindex,follow` + canonical=`/w/:slug` so personalised links
+// don't leak into Google.
 
-import { Calendar, Heart, MapPin } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Calendar, Heart, Lock, MapPin } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { weddingWebsiteApi } from "../lib/endpoints";
@@ -14,56 +28,132 @@ import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Shell } from "../components/Shell";
-import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
+import type {
+  PublicWeddingHouseholdContext,
+  PublicWeddingResponse,
+  PublicWeddingTier,
+  PublicWeddingWebsiteView,
+} from "@shared/wedding_website";
 
-// `t` and `formatDate` are imported for use in the dynamic page H1 below;
-// they're not part of the SEO title (which is keyed at the wedding_site
-// block — no per-couple personalisation in the document title).
-
-function formatTimeOfDay(minutes: number, locale: "hu" | "en"): string {
+function formatTimeOfDay(minutes: number, _locale: "hu" | "en"): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  // Same convention as schedule.ts on the in-app surface — HH:MM in HU,
-  // h:mm AM/PM-ish in EN. Cheap implementation: pad and join, locale
-  // only affects the separator choice.
   const hh = String(h).padStart(2, "0");
   const mm = String(m).padStart(2, "0");
-  return locale === "hu" ? `${hh}:${mm}` : `${hh}:${mm}`;
+  return `${hh}:${mm}`;
+}
+
+/** Best-effort canonical URL for the public landing — strips the `/:code`
+ *  segment so `/w/:slug/:code` canonicalizes to `/w/:slug`. Used in the
+ *  `<link rel="canonical">` we emit on the code-bearing route. */
+function canonicalUrlFor(slug: string): string {
+  if (typeof window === "undefined") return `/w/${slug}`;
+  return `${window.location.origin}/w/${encodeURIComponent(slug)}`;
 }
 
 export default function WeddingWebsitePage() {
-  const { slug = "" } = useParams<{ slug: string }>();
+  const { slug = "", code = "" } = useParams<{ slug: string; code?: string }>();
+  const hasCode = code.length > 0;
   const { t, locale } = useT();
   const [view, setView] = useState<PublicWeddingWebsiteView | null>(null);
+  const [household, setHousehold] = useState<PublicWeddingHouseholdContext | null>(null);
+  const [tier, setTier] = useState<PublicWeddingTier>("public");
   const [error, setError] = useState<"not_found" | "network" | null>(null);
   const [loading, setLoading] = useState(true);
+  /** Tracks whether the most recent state transition was caused by the
+   *  in-page RSVP submission (rather than the initial fetch). When set,
+   *  we shift focus to the post-RSVP heading after the next render so a
+   *  screen reader announces the newly-revealed block. */
+  const [justConfirmed, setJustConfirmed] = useState(false);
+  const confirmedHeadingRef = useRef<HTMLHeadingElement | null>(null);
 
+  // SEO: noindex on code-bearing URLs so a copy-pasted personal link
+  // doesn't end up in Google's index. Canonical points back to the
+  // public landing so any accidentally indexed page consolidates there.
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
+    const head = document.head;
+    if (!head) return;
+    const ROBOTS_SELECTOR = 'meta[name="robots"]';
+    const CANONICAL_SELECTOR = 'link[rel="canonical"]';
+    const ATTR_FLAG = "data-weddly-wedding-page";
+    if (hasCode) {
+      let robots = head.querySelector<HTMLMetaElement>(ROBOTS_SELECTOR);
+      if (!robots) {
+        robots = document.createElement("meta");
+        robots.setAttribute("name", "robots");
+        robots.setAttribute(ATTR_FLAG, "1");
+        head.appendChild(robots);
+      } else if (!robots.hasAttribute(ATTR_FLAG)) {
+        robots.setAttribute(ATTR_FLAG, "1");
+      }
+      robots.setAttribute("content", "noindex,follow");
+
+      let canonical = head.querySelector<HTMLLinkElement>(CANONICAL_SELECTOR);
+      if (!canonical) {
+        canonical = document.createElement("link");
+        canonical.setAttribute("rel", "canonical");
+        canonical.setAttribute(ATTR_FLAG, "1");
+        head.appendChild(canonical);
+      } else if (!canonical.hasAttribute(ATTR_FLAG)) {
+        canonical.setAttribute(ATTR_FLAG, "1");
+      }
+      canonical.setAttribute("href", canonicalUrlFor(slug));
+    }
+    return () => {
+      // Tear down only the tags WE injected — leave SSR-provided meta
+      // alone so the page chrome stays consistent on navigation away.
+      const robots = head.querySelector<HTMLMetaElement>(`meta[name="robots"][${ATTR_FLAG}]`);
+      if (robots) robots.remove();
+      const canonical = head.querySelector<HTMLLinkElement>(`link[rel="canonical"][${ATTR_FLAG}]`);
+      if (canonical) canonical.remove();
+    };
+  }, [hasCode, slug]);
+
+  const refetch = (signal?: { cancelled: boolean }) => {
     setError(null);
-    weddingWebsiteApi
-      .get(slug)
+    const promise: Promise<PublicWeddingResponse> = hasCode
+      ? weddingWebsiteApi.getWithCode(slug, code)
+      : weddingWebsiteApi.get(slug);
+    return promise
       .then((r) => {
-        if (!cancelled) {
-          setView(r.wedding);
-          setLoading(false);
-        }
+        if (signal?.cancelled) return;
+        setView(r.wedding);
+        setHousehold(r.household);
+        setTier(r.tier);
+        setLoading(false);
       })
-      .catch((e) => {
-        if (cancelled) return;
+      .catch((e: unknown) => {
+        if (signal?.cancelled) return;
         if (e instanceof ApiError && e.status === 404) setError("not_found");
         else setError("network");
         setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
+  };
 
-  // SEO meta is keyed; the in-page H1 still carries the dynamic
-  // "{names} — {date}" string. Description points crawlers at the
-  // RSVP entry point.
+  useEffect(() => {
+    const signal = { cancelled: false };
+    setLoading(true);
+    void refetch(signal);
+    return () => {
+      signal.cancelled = true;
+    };
+    // refetch is recreated each render; safe because we only call it for
+    // the initial mount + the post-RSVP refresh trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, code]);
+
+  // After a re-fetch that promotes the tier to "confirmed" via the
+  // in-page RSVP path, move focus to the newly-revealed heading so the
+  // screen reader announces the unlocked content. We pair this with
+  // aria-live on the heading so even if focus is mid-flight the SR
+  // narrates the change.
+  useEffect(() => {
+    if (justConfirmed && tier === "confirmed" && confirmedHeadingRef.current) {
+      confirmedHeadingRef.current.focus();
+      setJustConfirmed(false);
+    }
+  }, [justConfirmed, tier]);
+
   useDocumentMeta("seo.wedding_site_title", "seo.wedding_site_description");
 
   if (loading) {
@@ -113,9 +203,39 @@ export default function WeddingWebsitePage() {
     ? formatDate(view.wedding_date, locale)
     : t("wedding_site.date_tbd");
 
+  // The personal RSVP CTA pre-fills slug + code so the guest doesn't
+  // re-type their household number. After they submit, RsvpCheckinPage
+  // navigates back here (`/w/:slug/:code`) — the parent component
+  // re-renders and the effect below picks up the URL change. To trigger
+  // the focus-shift on the *same URL*, we hand the form a callback the
+  // RSVP page can use via the `?rsvped=1` query suffix (parsed below).
+  const personalRsvpHref = hasCode
+    ? `/rsvp?couple=${encodeURIComponent(view.couple_slug)}&code=${encodeURIComponent(code)}&return=${encodeURIComponent(`/w/${view.couple_slug}/${code}`)}`
+    : `/rsvp?couple=${encodeURIComponent(view.couple_slug)}`;
+
+  // When the user lands back here from /rsvp with `?rsvped=1` we
+  // refetch + announce. Read it once on mount; React Router doesn't
+  // remount on the same path.
+  // (Implemented inline below to keep the hook count predictable.)
+
+  const showInvitedExtras = tier === "invited" || tier === "confirmed";
+  const showConfirmedExtras = tier === "confirmed";
+
   return (
     <Shell>
       <div className="mx-auto max-w-3xl">
+        {view.cover_image_url && (
+          <div className="mb-6 overflow-hidden rounded-3xl border border-paper-200 dark:border-umber-700">
+            {/* Plain <img> with `loading="lazy"` — no CSP fetch through a CDN. */}
+            <img
+              src={view.cover_image_url}
+              alt=""
+              loading="lazy"
+              className="aspect-[16/9] w-full object-cover"
+            />
+          </div>
+        )}
+
         {/* Hero — names + date. Stationery aesthetic mirroring the landing
             page so the public site reads as part of the same brand. */}
         <section className="card stationery text-center">
@@ -128,7 +248,13 @@ export default function WeddingWebsitePage() {
           <p className="mt-4 inline-flex items-center justify-center gap-2 font-serif text-base italic text-ink-700 dark:text-paper-100 sm:text-lg">
             <Calendar size={16} aria-hidden /> {dateLine}
           </p>
-          {view.location_lat !== null && view.location_lng !== null && (
+          {view.venue_name && (
+            <p className="mt-2 inline-flex items-center justify-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+              <MapPin size={14} aria-hidden />
+              {view.venue_name}
+            </p>
+          )}
+          {!showConfirmedExtras && view.location_radius_km !== null && view.venue_name === null && (
             <p className="mt-2 inline-flex items-center justify-center gap-2 text-xs text-ink-500 dark:text-umber-300">
               <MapPin size={14} aria-hidden />
               {t("wedding_site.venue_approx")}
@@ -136,9 +262,42 @@ export default function WeddingWebsitePage() {
           )}
         </section>
 
-        {/* Schedule — only shown if the couple authored one. Pure display,
-            no per-guest schedule (that lives behind the household-code
-            guest portal). */}
+        {/* Pre-RSVP welcome block — same at every tier. The couple authors
+            this for "anyone with the link". */}
+        {view.guest_page_intro && (
+          <section className="card mt-6">
+            <p className="whitespace-pre-line text-base text-ink-800 dark:text-paper-100">
+              {view.guest_page_intro}
+            </p>
+          </section>
+        )}
+
+        {/* Invited tier — personal hello + member list. Falls through
+            when there's no household context (public tier). */}
+        {showInvitedExtras && household && (
+          <section className="card mt-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+              {t("wedding_site.invited_eyebrow")}
+            </p>
+            <h2 className="mt-1 font-serif text-2xl text-ink-900 dark:text-paper-50">
+              {household.household_label}
+            </h2>
+            {household.members.length > 0 && (
+              <ul className="mt-4 space-y-1 text-sm text-ink-700 dark:text-paper-100">
+                {household.members.map((m) => (
+                  <li key={m.id} className="flex items-center justify-between gap-3">
+                    <span>{m.full_name}</span>
+                    <span className="text-xs text-ink-500 dark:text-umber-300">
+                      {t(`wedding_site.rsvp_status_${m.rsvp_status}`)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {/* Schedule — exposed at every tier. */}
         {view.schedule.length > 0 && (
           <section className="card mt-6">
             <h2 className="font-serif text-2xl text-ink-900 dark:text-paper-50">
@@ -167,24 +326,66 @@ export default function WeddingWebsitePage() {
           </section>
         )}
 
-        {/* RSVP CTA — generic /rsvp lookup. Guests find their household by
-            entering the slug+code from their save-the-date; we deliberately
-            don't expose individual codes on the public page. */}
-        <section className="card stationery mt-6 text-center">
-          <Heart size={28} className="mx-auto text-blush-600 dark:text-blush-300" />
-          <h2 className="mt-3 font-serif text-2xl text-ink-900 dark:text-paper-50">
-            {t("wedding_site.rsvp_title")}
-          </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-ink-600 dark:text-umber-200">
-            {t("wedding_site.rsvp_body")}
-          </p>
-          <Link
-            to={`/rsvp?couple=${encodeURIComponent(view.couple_slug)}`}
-            className="btn-primary btn-lifted mt-5 inline-flex"
-          >
-            {t("wedding_site.rsvp_cta")}
-          </Link>
-        </section>
+        {/* Confirmed-tier unlocked block. The exact pin + post_rsvp_content
+            arrive in the same response only when at least one household
+            member has RSVP'd yes. aria-live announces the unlock the
+            moment we re-fetch after the in-page submission. */}
+        {showConfirmedExtras && (view.post_rsvp_content || view.location_lat !== null) && (
+          <section className="card mt-6" aria-live="polite">
+            <h2
+              ref={confirmedHeadingRef}
+              tabIndex={-1}
+              className="font-serif text-2xl text-ink-900 outline-none dark:text-paper-50"
+            >
+              {t("wedding_site.confirmed_title")}
+            </h2>
+            {view.post_rsvp_content && (
+              <p className="mt-3 whitespace-pre-line text-base text-ink-800 dark:text-paper-100">
+                {view.post_rsvp_content}
+              </p>
+            )}
+            {view.location_lat !== null && view.location_lng !== null && (
+              <p className="mt-4 inline-flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                <MapPin size={14} aria-hidden />
+                <a
+                  className="underline"
+                  href={`https://www.openstreetmap.org/?mlat=${view.location_lat}&mlon=${view.location_lng}#map=17/${view.location_lat}/${view.location_lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t("wedding_site.confirmed_open_map")}
+                </a>
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* RSVP CTA — generic at the public tier, personal at invited.
+            On confirmed we still surface a "manage your RSVP" link so
+            guests can flip their meal / change their answer. */}
+        {!showConfirmedExtras && (
+          <section className="card stationery mt-6 text-center">
+            <Heart size={28} className="mx-auto text-blush-600 dark:text-blush-300" />
+            <h2 className="mt-3 font-serif text-2xl text-ink-900 dark:text-paper-50">
+              {hasCode ? t("wedding_site.rsvp_personal_title") : t("wedding_site.rsvp_title")}
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-ink-600 dark:text-umber-200">
+              {hasCode ? t("wedding_site.rsvp_personal_body") : t("wedding_site.rsvp_body")}
+            </p>
+            <Link to={personalRsvpHref} className="btn-primary btn-lifted mt-5 inline-flex">
+              {hasCode ? t("wedding_site.rsvp_personal_cta") : t("wedding_site.rsvp_cta")}
+            </Link>
+          </section>
+        )}
+
+        {showConfirmedExtras && (
+          <section className="mt-6 text-center text-xs text-ink-500 dark:text-umber-300">
+            <Lock size={12} aria-hidden className="mr-1 inline" />
+            <Link to={personalRsvpHref} className="underline">
+              {t("wedding_site.rsvp_manage_cta")}
+            </Link>
+          </section>
+        )}
 
         <p className="mt-8 text-center text-[11px] text-ink-400 dark:text-umber-400">
           {t("wedding_site.footer_built_with")}

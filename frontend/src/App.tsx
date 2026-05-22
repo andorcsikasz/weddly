@@ -1,5 +1,5 @@
 import { lazy, Suspense, type JSX, type ReactNode } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
@@ -41,7 +41,6 @@ const AdminVendorWaitlistPage = lazy(() => import("./pages/AdminVendorWaitlistPa
 const BudgetPage = lazy(() => import("./pages/BudgetPage"));
 const ChangeEmailPage = lazy(() => import("./pages/ChangeEmailPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const GuestPortalPage = lazy(() => import("./pages/GuestPortalPage"));
 const GuestPageEditorPage = lazy(() => import("./pages/GuestPageEditorPage"));
 const GuestsPage = lazy(() => import("./pages/GuestsPage"));
 const HoneymoonPage = lazy(() => import("./pages/HoneymoonPage"));
@@ -97,6 +96,20 @@ function RequireAdmin({ children }: { children: JSX.Element }) {
   if (loading) return null;
   if (user && !user.is_admin) return <Navigate to="/app" replace />;
   return children;
+}
+
+/** Legacy `/g/:slug/:code` → `/w/:slug/:code`. The merged Vendégoldal
+ *  endpoint now serves both audiences (anonymous + invited + confirmed)
+ *  from a single React component, so we forward old guest-portal links
+ *  to the unified surface. `replace` so the back button doesn't bounce. */
+function GuestPageRedirect() {
+  const { slug = "", code = "" } = useParams<{ slug: string; code: string }>();
+  return (
+    <Navigate
+      to={`/w/${encodeURIComponent(slug)}/${encodeURIComponent(code)}`}
+      replace
+    />
+  );
 }
 
 function RedirectIfAuthed({ children }: { children: JSX.Element }) {
@@ -379,16 +392,22 @@ export default function App() {
           </Page>
         }
       />
+      {/* Legacy `/g/:slug/:code` redirects into the merged
+       *  `/w/:slug/:code` so personalised links keep working. The
+       *  unified WeddingWebsitePage handles every tier (public,
+       *  invited, confirmed) in-place — see Phase 2 of the
+       *  Vendégoldal merger. */}
+      <Route path="/g/:slug/:code" element={<GuestPageRedirect />} />
       <Route
-        path="/g/:slug/:code"
+        path="/w/:slug"
         element={
           <Page>
-            <GuestPortalPage />
+            <WeddingWebsitePage />
           </Page>
         }
       />
       <Route
-        path="/w/:slug"
+        path="/w/:slug/:code"
         element={
           <Page>
             <WeddingWebsitePage />

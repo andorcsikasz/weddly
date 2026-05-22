@@ -42,7 +42,7 @@ import type {
   WeddingStyleTag,
 } from "@shared/types";
 import type { GuestPortalView } from "@shared/guest_portal";
-import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
+import type { PublicWeddingResponse } from "@shared/wedding_website";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type {
   CommunitySupplierAdminView,
@@ -265,6 +265,12 @@ export const coupleApi = {
     venue_name?: string | null;
     /** http(s) URL the couple pastes for the wedding site's hero image. */
     cover_image_url?: string | null;
+    /** Pre-RSVP welcome block on the merged Vendégoldal (markdown,
+     *  ≤4000 chars). Empty string clears the column. */
+    guest_page_intro?: string | null;
+    /** Post-RSVP unlocked block (markdown, ≤8000 chars). Empty string
+     *  clears the column. */
+    post_rsvp_content?: string | null;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
@@ -557,13 +563,24 @@ export const guestPortalApi = {
 };
 
 export const weddingWebsiteApi = {
-  /** Public — couple-branded landing page at /w/:slug. Same slug as the
-   *  guest portal; no household code required. 404 when the slug doesn't
-   *  match an active couple. */
+  /** Public — couple-branded landing page at /w/:slug. Returns the
+   *  `public` tier shape (anonymous visitor). 404 when the slug doesn't
+   *  match an active couple OR the couple hasn't opted in via
+   *  `is_public = 1`. The legacy `r.wedding` shape is preserved for
+   *  callers that don't care about tier/household. */
   get: (slug: string) =>
-    apiFetch<{ wedding: PublicWeddingWebsiteView }>(
+    apiFetch<PublicWeddingResponse>(
       "GET",
       `/api/public/wedding/${encodeURIComponent(slug)}`,
+    ),
+  /** Public — code-bearing variant served at /w/:slug/:code. Returns
+   *  `invited` (valid code, nobody RSVP'd yes yet) or `confirmed` (≥1
+   *  yes) tier. Works even on private (`is_public = 0`) couples —
+   *  personal codes are the credential. */
+  getWithCode: (slug: string, code: string) =>
+    apiFetch<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(code)}`,
     ),
 };
 

@@ -288,6 +288,12 @@ export interface Couple {
   venue_name: string | null;
   /** Couple-pasted http(s) URL for the wedding site's hero image. */
   cover_image_url: string | null;
+  /** Pre-RSVP welcome block on the merged Vendégoldal (`/w/:slug`).
+   *  Visible at every tier of the public endpoint. Null when unset. */
+  guest_page_intro: string | null;
+  /** Post-RSVP unlocked block. Server omits from the public-wedding
+   *  endpoint unless the caller's tier is `confirmed`. Null when unset. */
+  post_rsvp_content: string | null;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`

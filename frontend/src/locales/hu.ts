@@ -191,6 +191,18 @@ const hu: LocaleMessages = {
     rsvp_body:
       "Add meg a meghívódon szereplő kódot, hogy a páros lássa, számíthat-e rád. Pár másodperc az egész.",
     rsvp_cta: "RSVP →",
+    invited_eyebrow: "A meghívó",
+    rsvp_personal_title: "Számítunk rátok",
+    rsvp_personal_body:
+      "Egyetlen kattintással válaszolhattok — a háztartás kódját már beírtuk helyettetek.",
+    rsvp_personal_cta: "Válaszadás →",
+    rsvp_manage_cta: "Válasz módosítása",
+    confirmed_title: "Csak a visszajelölt vendégeknek",
+    confirmed_open_map: "Pontos helyszín megnyitása térképen",
+    rsvp_status_pending: "függőben",
+    rsvp_status_yes: "ott leszek",
+    rsvp_status_no: "nem tudok jönni",
+    rsvp_status_maybe: "talán",
     footer_built_with: "Weddly · Az esküvő-tervező",
   },
   wedding_site_editor: {
@@ -1313,6 +1325,16 @@ const hu: LocaleMessages = {
       "A részletes menetrend és a pontos helyszín koordinátája csak akkor jelenik meg, ha a vendég igennel visszajelölt. Ezeket külön oldalon szerkesztheted.",
     section_unlocked_link_schedule: "Menetrend szerkesztése",
     section_unlocked_link_profile: "Helyszín koordinátája",
+    intro_label: "Üdvözlő szöveg (mindenki látja)",
+    intro_placeholder:
+      "Pár sor a vendégeknek — pl. „Köszönjük, hogy velünk ünnepeltek. Itt találtok minden infót, ami a napon kell.”",
+    intro_hint:
+      "Bárki látja, aki megnyitja a linket. Hagyd üresen, ha nem akarsz nyilvános köszöntőt.",
+    post_rsvp_label: "Részletek a visszajelölteknek",
+    post_rsvp_placeholder:
+      "Olyan részletek, amik csak a vendégeknek mennek: parkolás, dress code, ajándékok, szállás-tippek, gyerekprogram…",
+    post_rsvp_hint:
+      "Csak az látja, akinek legalább egy fős vendége igennel visszajelölt. A pontos helyszín-pin is itt nyílik meg.",
     preview_title: "Élő előnézet",
     preview_subtitle:
       "Ezt látja most a vendég. Mentsd el a fenti módosításokat, hogy itt is frissüljön a dátum, a menetrend és a térkép.",

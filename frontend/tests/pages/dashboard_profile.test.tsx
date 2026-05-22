@@ -87,6 +87,8 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     is_public: false,
     venue_name: null,
     cover_image_url: null,
+    guest_page_intro: null,
+    post_rsvp_content: null,
     created_at: Date.now() - 86_400_000,
     onboarded_at: Date.now() - 86_400_000,
     updated_at: Date.now(),

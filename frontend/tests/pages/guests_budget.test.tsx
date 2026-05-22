@@ -195,6 +195,8 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     is_public: false,
     venue_name: null,
     cover_image_url: null,
+    guest_page_intro: null,
+    post_rsvp_content: null,
     created_at: 0,
     onboarded_at: 1,
     updated_at: 1,

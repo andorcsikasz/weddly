@@ -68,6 +68,15 @@ export interface CoupleRow {
   /** Couple-pasted http(s) URL for the hero image on the public site.
    *  No upload pipeline yet; this is BYO-URL with boundary validation. */
   cover_image_url: string | null;
+  /** Pre-RSVP welcome block (Vendégoldal Phase 2). Visible at every tier
+   *  of the public wedding endpoint — the couple authors it for "anyone
+   *  with the link". Null when unset. */
+  guest_page_intro: string | null;
+  /** Post-RSVP unlocked content (Vendégoldal Phase 2). Server omits it
+   *  from the public-wedding response unless the caller's tier is
+   *  `confirmed` (valid household code + at least one RSVP yes). Null
+   *  when unset. */
+  post_rsvp_content: string | null;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -209,6 +218,8 @@ export function toCouple(row: CoupleRow): Couple {
     is_public: Boolean(row.is_public),
     venue_name: row.venue_name,
     cover_image_url: row.cover_image_url,
+    guest_page_intro: row.guest_page_intro,
+    post_rsvp_content: row.post_rsvp_content,
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

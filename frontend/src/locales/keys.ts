@@ -233,6 +233,23 @@ export interface LocaleMessages {
     rsvp_title: string;
     rsvp_body: string;
     rsvp_cta: string;
+    /** Phase 2 — copy used on `/w/:slug/:code` when the household
+     *  hasn't RSVP'd yes yet. Same component as the public route. */
+    invited_eyebrow: string;
+    rsvp_personal_title: string;
+    rsvp_personal_body: string;
+    rsvp_personal_cta: string;
+    rsvp_manage_cta: string;
+    /** Heading + map-link copy for the post-RSVP unlocked block.
+     *  Read only when at least one household member has RSVP'd yes. */
+    confirmed_title: string;
+    confirmed_open_map: string;
+    /** Per-member RSVP-status labels (pending / yes / no / maybe).
+     *  Used by the household member list in invited/confirmed tier. */
+    rsvp_status_pending: string;
+    rsvp_status_yes: string;
+    rsvp_status_no: string;
+    rsvp_status_maybe: string;
     footer_built_with: string;
   };
   /** Couple-facing editor for the public wedding-website at /w/:slug — flips
@@ -1398,6 +1415,16 @@ export interface LocaleMessages {
     section_unlocked_hint: string;
     section_unlocked_link_schedule: string;
     section_unlocked_link_profile: string;
+    /** Phase 2 (Vendégoldal merger) — markdown textarea bound to
+     *  `couples.guest_page_intro`. Lives under the Public section. */
+    intro_label: string;
+    intro_placeholder: string;
+    intro_hint: string;
+    /** Phase 2 — markdown textarea bound to `couples.post_rsvp_content`.
+     *  Lives under the Post-RSVP section. */
+    post_rsvp_label: string;
+    post_rsvp_placeholder: string;
+    post_rsvp_hint: string;
     preview_title: string;
     preview_subtitle: string;
   };
