@@ -58,7 +58,6 @@ const RsvpCheckinPage = lazy(() => import("./pages/RsvpCheckinPage"));
 const RsvpPage = lazy(() => import("./pages/RsvpPage"));
 const SchedulePage = lazy(() => import("./pages/SchedulePage"));
 const SeatingPage = lazy(() => import("./pages/SeatingPage"));
-const OutreachPage = lazy(() => import("./pages/OutreachPage"));
 const SuppliersPage = lazy(() => import("./pages/SuppliersPage"));
 const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
@@ -492,14 +491,10 @@ export default function App() {
           }
         />
         <Route path="suppliers" element={<Navigate to="/app/vendors" replace />} />
-        <Route
-          path="outreach"
-          element={
-            <Page>
-              <OutreachPage />
-            </Page>
-          }
-        />
+        {/* Outreach Inbox now lives as a section on /app/vendors — the
+            legacy URL keeps redirecting so emailed deep-links + bookmarks
+            still land on the same workspace. */}
+        <Route path="outreach" element={<Navigate to="/app/vendors" replace />} />
         <Route
           path="planning"
           element={

@@ -1053,8 +1053,6 @@ export interface LocaleMessages {
     /** Day-of run-of-show timeline page — sidebar only. */
     schedule: string;
     suppliers: string;
-    /** Couple-initiated cold outreach to a shortlisted vendor (P2.E v1). */
-    outreach: string;
     /** Free-form planning surface (tasks / ideas / wedding-day schedule). */
     planning: string;
     /** Gantt-style timeline + point-of-contact panel — sidebar only. */

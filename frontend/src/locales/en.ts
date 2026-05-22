@@ -984,7 +984,6 @@ const en: LocaleMessages = {
     logistics: "Logistics",
     schedule: "Schedule",
     suppliers: "Suppliers",
-    outreach: "Outreach",
     planning: "Planning",
     timeline: "Timeline",
     honeymoon: "Honeymoon",

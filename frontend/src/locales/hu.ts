@@ -988,7 +988,6 @@ const hu: LocaleMessages = {
     logistics: "Logisztika",
     schedule: "Programterv",
     suppliers: "Szolgáltatók",
-    outreach: "Megkeresések",
     planning: "Tervezés",
     timeline: "Idővonal",
     honeymoon: "Nászút",

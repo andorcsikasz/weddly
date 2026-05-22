@@ -887,8 +887,9 @@ export const vendorListingApi = {
 
 /** Supplier Outreach Inbox (P2.E v1). Couple-facing endpoints; the
  *  vendor's reply lands in the couple's own email inbox today (Reply-To
- *  is the couple owner's address) — the in-app `/app/outreach` surface
- *  shows sent history only until the v1.5 inbound webhook ships. */
+ *  is the couple owner's address) — the in-app outreach section on
+ *  /app/vendors shows sent history only until the v1.5 inbound webhook
+ *  ships. */
 export const outreachApi = {
   list: () => apiFetch<{ campaigns: OutreachCampaign[] }>("GET", "/api/outreach/campaigns"),
   detail: (id: number) => apiFetch<OutreachCampaignDetail>("GET", `/api/outreach/campaigns/${id}`),

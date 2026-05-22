@@ -59,6 +59,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSearchParams } from "react-router-dom";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { ClaimListingModal } from "../components/ClaimListingModal";
+import { OutreachInbox } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button, Skeleton } from "../components/ui";
@@ -1626,6 +1627,12 @@ export default function SuppliersPage() {
           )}
         </div>
       )}
+
+      {/* Outreach Inbox — the "shop → message" flow lives on the same
+          page as the directory so couples can shortlist + reach out
+          without leaving. Previously lived at /app/outreach; that URL
+          now redirects here. */}
+      <OutreachInbox />
 
       <SubmitSupplierModal
         open={submitOpen}
