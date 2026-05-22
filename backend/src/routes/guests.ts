@@ -299,6 +299,13 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   // mailer (no Resend key in dev, transient 5xx in prod) doesn't roll back
   // the guest create. `sendKind` is fire-and-forget and records its own
   // attempt in `email_log` — the route stays synchronous and fast.
+  //
+  // We don't have per-guest locale (would need a column the user can edit
+  // alongside the address), but the inviting couple's `users.locale` is the
+  // best proxy: guests at a wedding are almost always in the same locale
+  // bubble as the couple. Surface it on top of the bilingual stack instead
+  // of defaulting to HU-on-top for every couple. EN safety net still renders
+  // below for the rare cross-locale guest.
   if (willSendInvite && parsed.email) {
     const rsvpUrl = `${CONFIG.frontendBaseUrl}/rsvp/${code}`;
     void sendKind(
@@ -313,6 +320,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
         user: null,
         guest: { email: parsed.email, full_name: parsed.full_name },
         couple_id: couple.id,
+        submitterUserId: userId,
       },
     );
   }
