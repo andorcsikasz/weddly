@@ -20,6 +20,7 @@ import {
   Cookie,
   Egg,
   Fish,
+  Globe,
   Leaf,
   Milk,
   Nut,
@@ -536,9 +537,14 @@ export function HouseholdRsvpForm({
     function finishSuccessUi() {
       setDone(true);
       if (autoNextRef.current) clearTimeout(autoNextRef.current);
+      // Only auto-reset in welcome-desk mode (parent passed onNextGuest).
+      // Solo guests need the success card to stick around so they can read
+      // it, tap the "Open wedding page" CTA, and dismiss the form on their
+      // own terms — a 3s vanish read as broken in the original UX.
+      if (!onNextGuest) return;
       autoNextRef.current = setTimeout(() => {
         setDone(false);
-        if (onNextGuest) onNextGuest();
+        onNextGuest();
       }, 3000);
     }
 
@@ -891,19 +897,24 @@ export function HouseholdRsvpForm({
           </p>
           {/* Post-RSVP referral surface — the cheapest viral loop in the
               product. A guest who just confirmed attendance is, by
-              definition, thinking about weddings right now. Two small
-              outbound CTAs: open the couple's public wedding website (so
-              they get the schedule/venue) and a soft pitch to plan their
-              own wedding on Weddly, ref-tagged so growth_events sees the
-              acquisition source. */}
-          <div className="mt-4 space-y-2 text-center">
-            {view.couple_slug && (
+              definition, thinking about weddings right now. Two outbound
+              CTAs: open the couple's public wedding website (so they get
+              the schedule/venue — primary), and a soft pitch to plan
+              their own wedding on Weddly (ref-tagged so growth_events
+              sees the acquisition source). The site CTA only shows when
+              the couple has flipped `is_public` on, otherwise it would
+              land guests on a "not found" page right after a successful
+              RSVP — that read as broken, which is why this used to be a
+              quiet `btn-outline btn-sm` link. */}
+          <div className="mt-5 space-y-3 text-center">
+            {view.couple_slug && view.wedding_site_published && (
               <a
                 href={`/w/${encodeURIComponent(view.couple_slug)}`}
-                className="btn-outline btn-sm inline-flex"
+                className="btn-primary btn-lg inline-flex w-full justify-center"
                 target="_blank"
                 rel="noopener noreferrer"
               >
+                <Globe size={18} aria-hidden />
                 {t("rsvp.thanks_open_site")}
               </a>
             )}

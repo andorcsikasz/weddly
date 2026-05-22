@@ -156,3 +156,148 @@ describe("/w/:slug SSR meta — couple-personalised <title> + OG tags", () => {
     expect(html).not.toContain("Bence");
   });
 });
+
+// Couple-facing editor at /app/wedding-site flips couples.is_public via
+// PATCH /api/couples/current. Without this PATCH allowlist, the public
+// endpoint stayed 404'd for every couple — there's no other UI to enable
+// it. These tests pin the contract end-to-end: PATCH → public 200, plus
+// the boundary parsers (URL scheme, length cap, strict boolean).
+describe("PATCH /api/couples/current — wedding-site fields (is_public, venue_name, cover_image_url)", () => {
+  test("flipping is_public to true makes the public endpoint return 200", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("ws-editor-publish@weddly.test");
+    const slugRow = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
+      | { slug: string }
+      | undefined;
+    expect(slugRow?.slug).toBeTruthy();
+
+    // Before PATCH: 404 (default is_public = 0).
+    const before = await req("GET", `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`);
+    expect(before.status).toBe(404);
+
+    const patch = await req<{ couple: { is_public: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { is_public: true },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.is_public).toBe(true);
+
+    const after = await req("GET", `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`);
+    expect(after.status).toBe(200);
+  });
+
+  test("flipping is_public back to false re-hides the page (404)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("ws-editor-unpublish@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slugRow = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
+      | { slug: string }
+      | undefined;
+
+    const before = await req("GET", `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`);
+    expect(before.status).toBe(200);
+
+    const patch = await req<{ couple: { is_public: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { is_public: false },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.is_public).toBe(false);
+
+    const after = await req("GET", `/api/public/wedding/${encodeURIComponent(slugRow!.slug)}`);
+    expect(after.status).toBe(404);
+  });
+
+  test("venue_name + cover_image_url persist and round-trip on GET /api/couples/current", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("ws-editor-fields@weddly.test");
+    const cover = "https://images.example/cover.jpg";
+    const patch = await req<{ couple: { venue_name: string; cover_image_url: string } }>(
+      "PATCH",
+      "/api/couples/current",
+      { venue_name: "Sári Udvar", cover_image_url: cover },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.venue_name).toBe("Sári Udvar");
+    expect(patch.data.couple.cover_image_url).toBe(cover);
+
+    const fresh = await req<{ couple: { venue_name: string; cover_image_url: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(fresh.data.couple.venue_name).toBe("Sári Udvar");
+    expect(fresh.data.couple.cover_image_url).toBe(cover);
+  });
+
+  test("empty string clears venue_name + cover_image_url (back to null)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("ws-editor-clear@weddly.test");
+    db.prepare("UPDATE couples SET venue_name = ?, cover_image_url = ? WHERE id = ?").run(
+      "Old",
+      "https://example.com/x.jpg",
+      coupleId,
+    );
+
+    const patch = await req<{
+      couple: { venue_name: string | null; cover_image_url: string | null };
+    }>("PATCH", "/api/couples/current", { venue_name: "", cover_image_url: "" }, { token });
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.venue_name).toBeNull();
+    expect(patch.data.couple.cover_image_url).toBeNull();
+  });
+
+  test("cover_image_url must be http(s) — data: / javascript: rejected with 400", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("ws-editor-bad-url@weddly.test");
+
+    const dataUrl = await req(
+      "PATCH",
+      "/api/couples/current",
+      { cover_image_url: "data:image/png;base64,iVBORw0KGgo=" },
+      { token },
+    );
+    expect(dataUrl.status).toBe(400);
+
+    const jsUrl = await req(
+      "PATCH",
+      "/api/couples/current",
+      { cover_image_url: "javascript:alert(1)" },
+      { token },
+    );
+    expect(jsUrl.status).toBe(400);
+
+    const malformed = await req(
+      "PATCH",
+      "/api/couples/current",
+      { cover_image_url: "not a url" },
+      { token },
+    );
+    expect(malformed.status).toBe(400);
+  });
+
+  test("is_public requires a strict boolean — truthy strings rejected with 400", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("ws-editor-strict-bool@weddly.test");
+    const r = await req("PATCH", "/api/couples/current", { is_public: "true" }, { token });
+    expect(r.status).toBe(400);
+  });
+
+  test("venue_name longer than 200 chars rejected with 400", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("ws-editor-long-venue@weddly.test");
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { venue_name: "x".repeat(201) },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+});

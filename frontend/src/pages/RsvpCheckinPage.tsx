@@ -243,7 +243,11 @@ export default function RsvpCheckinPage() {
             setError(null);
             setErrorField(null);
           }}
-          onNextGuest={resetForNextGuest}
+          // Welcome-desk only — a single guest who just RSVP'd shouldn't have
+          // the success card vanish after 3s. The form keys its auto-reset
+          // timer off this prop being defined, so leaving it undefined keeps
+          // the post-RSVP CTA (wedding site / "plan your own") on screen.
+          onNextGuest={kiosk ? resetForNextGuest : undefined}
         />
       ) : (
         <form className="card stationery animate-fade-in-up" onSubmit={onSubmitLookup}>
