@@ -181,6 +181,19 @@ export interface GuestInvitePayload {
 export interface OnboardingNudgePayload {
   onboardingUrl: string;
 }
+export interface RsvpWeeklyDigestForCouplePayload {
+  /** Couple's friendly display name — "Anna & Bence". */
+  coupleDisplayName: string;
+  /** Counts since the last digest (or, on first send, since couple flipped
+   *  the toggle). Builder humanises them into a sentence; zero-row digests
+   *  are skipped by the sweep so we never send "0 yes / 0 no". */
+  yesCount: number;
+  noCount: number;
+  maybeCount: number;
+  /** Page where the couple can see the full RSVP list. */
+  guestsUrl: string;
+}
+
 export interface AdminModerationDigestPayload {
   awaitingReviewSuppliers: number;
   newVendorWaitlistEntries: number;
@@ -360,6 +373,7 @@ export type KindPayload = {
   rsvp_deadline_approaching: RsvpDeadlineApproachingPayload;
   rsvp_followup_missing_meal: RsvpFollowupMissingMealPayload;
   admin_moderation_digest: AdminModerationDigestPayload;
+  rsvp_weekly_digest_for_couple: RsvpWeeklyDigestForCouplePayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
@@ -1092,6 +1106,41 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "Open details",
         footnote: "Reply to this email if anything's unclear.",
+      },
+    };
+  },
+
+  rsvp_weekly_digest_for_couple: (p, ctx) => {
+    const total = p.yesCount + p.noCount + p.maybeCount;
+    return {
+      subject: `Heti RSVP összegzés / Weekly RSVP digest — ${p.coupleDisplayName}`,
+      ctaUrl: p.guestsUrl,
+      hu: {
+        preheader: `${total} új visszajelzés a múlt héten.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `A múlt héten ${total} új RSVP érkezett ${p.coupleDisplayName} esküvőjére:`,
+          [`• ${p.yesCount} jön`, `• ${p.noCount} nem tud jönni`, `• ${p.maybeCount} talán`].join(
+            "\n",
+          ),
+          "A részletes lista — étel, +1, szállásigény, zenekívánság — a vendéglistán.",
+        ],
+        cta: "Vendéglista megnyitása",
+        footnote: "Ezt heti egyszer küldjük, mert a Profil oldalon a digest módot választottad.",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `${total} new RSVPs came in this week for ${p.coupleDisplayName}'s wedding:`,
+          [
+            `• ${p.yesCount} attending`,
+            `• ${p.noCount} can't make it`,
+            `• ${p.maybeCount} maybe`,
+          ].join("\n"),
+          "Meal, +1, accommodation, and song details are on the guest list.",
+        ],
+        cta: "Open guest list",
+        footnote: "Sent weekly because you chose digest mode in Profile.",
       },
     };
   },

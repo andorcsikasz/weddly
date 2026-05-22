@@ -381,6 +381,17 @@ addColumnIfMissing("users", "known_devices_json", "known_devices_json TEXT NOT N
 // meal choice, not get pestered.
 addColumnIfMissing("guests", "meal_followup_sent_at", "meal_followup_sent_at INTEGER");
 
+// Per-couple toggle for RSVP-notification cadence. Default 'per_event' is
+// the legacy behaviour — a separate mail for every RSVP. 'weekly' suppresses
+// the per-event mail and rolls up activity into a single Monday digest.
+// Stored as TEXT (not boolean) so we can grow the union if a "daily" middle
+// ground turns out to be wanted.
+addColumnIfMissing(
+  "couples",
+  "rsvp_digest_mode",
+  "rsvp_digest_mode TEXT NOT NULL DEFAULT 'per_event'",
+);
+
 // Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
 // Default 0 (off) so couples who don't offer accommodation don't pester
 // guests with an irrelevant checkbox. When the couple flips it on from the

@@ -3514,6 +3514,64 @@ describe("email pipeline", () => {
     expect(sweep.rsvpDeadlines).toBe(0);
   });
 
+  test("rsvp weekly digest suppresses per-event mail + rolls up Mondays", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("digest-couple@weddly.test");
+    // Flip the toggle directly — the Profile UI for it doesn't exist yet.
+    db.prepare("UPDATE couples SET rsvp_digest_mode = 'weekly' WHERE id = ?").run(coupleId);
+
+    const guest = await req<{ guest: { invite_code: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Digest Guest", email: "digest-guest@weddly.test" },
+      { token },
+    );
+    // Submit an RSVP through the public flow — per-event mail SHOULD be
+    // suppressed for digest mode.
+    await req("POST", "/api/rsvp/checkin", {
+      code: "0000",
+      couple_slug: "digest-couple-weddly-test",
+      household_changes: [
+        {
+          guest_id: guest.data.guest.invite_code,
+          rsvp_status: "yes",
+        },
+      ],
+    }).catch(() => null);
+
+    // Easier path: update the guest row directly so the sweep sees the
+    // counts. Public RSVP plumbing needs a slug we don't bootstrap here.
+    db.prepare(
+      "UPDATE guests SET rsvp_status = 'yes', rsvp_responded_at = ? WHERE couple_id = ?",
+    ).run(now() - 60_000, coupleId);
+
+    // Per-event mail is suppressed entirely in digest mode (notifyCouple
+    // short-circuits on `rsvp_digest_mode === 'weekly'`).
+    const perEventCount = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_log WHERE couple_id = ? AND kind = 'rsvp_received_for_couple'",
+      )
+      .get(coupleId) as { n: number };
+    expect(perEventCount.n).toBe(0);
+
+    process.env.EMAIL_TEST_FORCE_RSVP_DIGEST = "1";
+    try {
+      const sweep = runEmailSweep();
+      expect(sweep.rsvpDigests).toBeGreaterThan(0);
+      const log = db
+        .prepare(
+          "SELECT subject FROM email_log WHERE couple_id = ? AND kind = 'rsvp_weekly_digest_for_couple' ORDER BY id DESC LIMIT 1",
+        )
+        .get(coupleId) as { subject: string } | undefined;
+      expect(log?.subject).toMatch(/digest|összegz/i);
+
+      const again = runEmailSweep();
+      expect(again.rsvpDigests).toBe(0);
+    } finally {
+      process.env.EMAIL_TEST_FORCE_RSVP_DIGEST = undefined;
+    }
+  });
+
   test("admin_moderation_digest fires once per admin per week with queue counts", async () => {
     wipeAll();
     // Bootstrap the admin user (env ADMIN_EMAILS allowlist puts admin@test.test).

@@ -70,6 +70,7 @@ import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
+import { registerUserProfileRoutes } from "./routes/user_profile";
 
 seedSupplierTaxonomy();
 // Boot-time mirror of suppliers_data.ts + community_suppliers into the
@@ -119,6 +120,7 @@ registerAdminUserRoutes(router);
 registerAdminAnalyticsRoutes(router);
 registerVendorWaitlistRoutes(router);
 registerUserCoupleRoutes(router);
+registerUserProfileRoutes(router);
 registerFeedbackRoutes(router);
 registerGrowthRoutes(router);
 registerVendorClaimRoutes(router);

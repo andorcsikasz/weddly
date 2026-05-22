@@ -45,6 +45,7 @@ export function runEmailSweep(): {
   weddingFollowups: number;
   mealFollowups: number;
   adminDigests: number;
+  rsvpDigests: number;
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
@@ -54,6 +55,7 @@ export function runEmailSweep(): {
   const weddingFollowups = sweepWeddingFollowup(ts);
   const mealFollowups = sweepRsvpMealFollowup(ts);
   const adminDigests = sweepAdminModerationDigest(ts);
+  const rsvpDigests = sweepRsvpWeeklyDigest(ts);
   return {
     nudges,
     milestones,
@@ -62,6 +64,7 @@ export function runEmailSweep(): {
     weddingFollowups,
     mealFollowups,
     adminDigests,
+    rsvpDigests,
   };
 }
 
@@ -225,6 +228,92 @@ function sweepWeddingFollowup(ts: number): number {
       {
         coupleDisplayName: r.display_name,
         feedbackUrl: `${CONFIG.frontendBaseUrl}/feedback`,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    );
+    count++;
+  }
+  return count;
+}
+
+interface DigestCoupleRow {
+  couple_id: number;
+  display_name: string;
+  user_id: number;
+  email: string;
+  full_name: string;
+}
+
+function sweepRsvpWeeklyDigest(ts: number): number {
+  // Weekly RSVP rollup for couples that flipped rsvp_digest_mode = 'weekly'
+  // in Profile. Same Monday + 7-day cooldown pattern as admin_moderation_digest.
+  // Skips couples whose roll-up window had zero new RSVPs — no value in a
+  // "0 yes / 0 no" mail.
+  const todayUtc = new Date(ts);
+  const isMonday = todayUtc.getUTCDay() === 1;
+  const force = process.env.EMAIL_TEST_FORCE_RSVP_DIGEST === "1";
+  if (!isMonday && !force) return 0;
+
+  const oneWeekAgo = ts - 7 * 24 * 60 * 60 * 1000;
+  // One row per (couple, partner). The same couple can produce 2 mails — one
+  // per partner — because the email_dispatches index is keyed on user_id too.
+  const rows = db
+    .prepare(
+      `SELECT c.id AS couple_id, c.display_name,
+              u.id AS user_id, u.email, u.full_name
+         FROM couples c
+         JOIN users u ON u.couple_id = c.id
+        WHERE c.status = 'active'
+          AND c.rsvp_digest_mode = 'weekly'
+          AND u.status = 'active'`,
+    )
+    .all() as DigestCoupleRow[];
+
+  let count = 0;
+  for (const r of rows) {
+    const lastSent = db
+      .prepare(
+        "SELECT MAX(dispatched_at) AS at FROM email_dispatches WHERE kind = 'rsvp_weekly_digest_for_couple' AND user_id = ?",
+      )
+      .get(r.user_id) as { at: number | null };
+    if (lastSent.at !== null && lastSent.at > oneWeekAgo) continue;
+
+    const counts = db
+      .prepare(
+        `SELECT
+            SUM(CASE WHEN rsvp_status = 'yes' THEN 1 ELSE 0 END) AS yes_count,
+            SUM(CASE WHEN rsvp_status = 'no' THEN 1 ELSE 0 END) AS no_count,
+            SUM(CASE WHEN rsvp_status = 'maybe' THEN 1 ELSE 0 END) AS maybe_count
+           FROM guests
+          WHERE couple_id = ?
+            AND rsvp_responded_at IS NOT NULL
+            AND rsvp_responded_at > ?`,
+      )
+      .get(r.couple_id, oneWeekAgo) as {
+      yes_count: number | null;
+      no_count: number | null;
+      maybe_count: number | null;
+    };
+    const yesCount = counts.yes_count ?? 0;
+    const noCount = counts.no_count ?? 0;
+    const maybeCount = counts.maybe_count ?? 0;
+    if (yesCount + noCount + maybeCount === 0) continue;
+
+    db.prepare(
+      `INSERT INTO email_dispatches (couple_id, user_id, kind, dispatched_at)
+       VALUES (?, ?, 'rsvp_weekly_digest_for_couple', ?)`,
+    ).run(r.couple_id, r.user_id, ts);
+    void sendKind(
+      "rsvp_weekly_digest_for_couple",
+      {
+        coupleDisplayName: r.display_name,
+        yesCount,
+        noCount,
+        maybeCount,
+        guestsUrl: `${CONFIG.frontendBaseUrl}/app/guests`,
       },
       {
         user: { id: r.user_id, email: r.email, full_name: r.full_name },
@@ -419,7 +508,8 @@ export function startEmailWorker(): void {
         r.rsvpDeadlines +
         r.weddingFollowups +
         r.mealFollowups +
-        r.adminDigests >
+        r.adminDigests +
+        r.rsvpDigests >
       0
     ) {
       log.info("emails.boot_sweep", r);

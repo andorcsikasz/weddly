@@ -1008,6 +1008,325 @@ function CurrencyPicker({
   );
 }
 
+/** Top-of-page identity strip. Replaces the bare "Profile" h1 with a
+ *  wedding-themed band: couple monogram, names, the wedding date, and a
+ *  big tabular-nums days-until counter. Renders a graceful placeholder
+ *  during the initial /api/couples/current fetch so the page never paints
+ *  empty space. Wedding-day = today fires a celebratory line; past dates
+ *  flip to "X days married" so the counter doesn't read negative. */
+function ProfileHero({
+  couple,
+  t,
+  locale,
+}: {
+  couple: Couple | null;
+  t: T;
+  locale: Locale;
+}) {
+  if (!couple) {
+    return (
+      <section
+        aria-hidden="true"
+        className="mt-2 h-24 animate-pulse rounded-2xl bg-paper-200 dark:bg-umber-800"
+      />
+    );
+  }
+  const bride = couple.bride_name?.trim() || "";
+  const groom = couple.groom_name?.trim() || "";
+  const sep = t("profile.activity_names_separator");
+  const namesLine = bride && groom ? `${bride}${sep}${groom}` : bride || groom || "";
+  const days = daysUntilWedding(couple.wedding_date);
+  return (
+    <section className="mt-2 overflow-hidden rounded-2xl bg-paper-200 shadow-pop dark:bg-umber-800">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 px-6 py-5 sm:px-8 sm:py-6">
+        <CoupleMonogram bride={bride} groom={groom} />
+        <div className="min-w-0 flex-1">
+          <p className="font-serif text-2xl leading-tight tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+            {namesLine || t("profile.title")}
+          </p>
+          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+            {couple.wedding_date
+              ? formatDate(couple.wedding_date, locale)
+              : t("profile.hero_date_tbd")}
+          </p>
+        </div>
+        {days !== null && (
+          <div className="ml-auto text-right">
+            <p className="font-serif text-3xl leading-none tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
+              {Math.abs(days)}
+            </p>
+            <p className="mt-1 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              {heroDaysLabel(days, t)}
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** Whole-number days between today (local midnight) and the wedding date.
+ *  Null when the date is TBD. Negative once the wedding is in the past. */
+function daysUntilWedding(yyyyMmDd: string | null): number | null {
+  if (!yyyyMmDd) return null;
+  const parts = yyyyMmDd.split("-").map(Number);
+  if (parts.length !== 3) return null;
+  const [y, m, d] = parts as [number, number, number];
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+  const target = new Date(y, m - 1, d).getTime();
+  const today = new Date();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  return Math.round((target - todayMidnight) / 86_400_000);
+}
+
+/** Pluralisation-aware caption under the big days-until number. */
+function heroDaysLabel(days: number, t: T): string {
+  if (days === 0) return t("profile.hero_days_today");
+  if (days === 1) return t("profile.hero_days_one");
+  if (days < 0) return t("profile.hero_days_past", { n: Math.abs(days) });
+  return t("profile.hero_days_until", { n: days });
+}
+
+/** Two-letter couple monogram for the hero. Bride initial + groom
+ *  initial; falls back to "??" when both names are missing. Ink disc
+ *  keeps the visual weight calm — blush on the disc historically read
+ *  as an error state per the agent debate. */
+function CoupleMonogram({ bride, groom }: { bride: string; groom: string }) {
+  const a = bride.trim()[0]?.toUpperCase() ?? "";
+  const b = groom.trim()[0]?.toUpperCase() ?? "";
+  const initials = a + b || "??";
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-ink-900 text-base font-semibold uppercase text-paper-50 ring-2 ring-paper-50 sm:h-16 sm:w-16 sm:text-lg dark:bg-paper-50 dark:text-ink-900 dark:ring-umber-800"
+    >
+      {initials}
+    </span>
+  );
+}
+
+/** "Your account" card — the actual *user* identity surface that was
+ *  missing from the page. Email is read-only (lives in the Security card),
+ *  display name is inline-editable, language is a two-button toggle that
+ *  both updates `users.locale` server-side AND flips the UI locale
+ *  immediately so the user sees the change before reload. */
+function AccountSection({
+  user,
+  t,
+  locale,
+  onLocaleChange,
+  onSaved,
+}: {
+  user: { id: number; email: string; full_name: string; locale: "hu" | "en" | null } | null;
+  t: T;
+  locale: Locale;
+  onLocaleChange: (next: Locale) => void;
+  onSaved: () => void;
+}) {
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [savingLocale, setSavingLocale] = useState<Locale | null>(null);
+  const nameTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const toast = useToast();
+
+  const editingNamePrev = useRef(false);
+  useEffect(() => {
+    if (editingNamePrev.current && !editingName) nameTriggerRef.current?.focus();
+    editingNamePrev.current = editingName;
+  }, [editingName]);
+
+  if (!user) {
+    return (
+      <section
+        aria-hidden="true"
+        className="card mt-6 h-32 animate-pulse bg-paper-200 dark:bg-umber-800"
+      />
+    );
+  }
+
+  function beginNameEdit() {
+    if (!user) return;
+    setNameInput(user.full_name ?? "");
+    setNameError(null);
+    setEditingName(true);
+  }
+
+  async function saveName(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = nameInput.trim();
+    if (trimmed.length < 1 || trimmed.length > 200) {
+      setNameError(t("profile.account_name_save_error"));
+      return;
+    }
+    setSavingName(true);
+    setNameError(null);
+    try {
+      await userApi.updateProfile({ full_name: trimmed });
+      toast.success(t("profile.account_name_save_success"));
+      setEditingName(false);
+      onSaved();
+    } catch (err) {
+      setNameError(err instanceof ApiError ? err.message : t("profile.account_name_save_error"));
+    } finally {
+      setSavingName(false);
+    }
+  }
+
+  async function saveLocale(next: Locale) {
+    if (next === locale) return;
+    setSavingLocale(next);
+    try {
+      onLocaleChange(next);
+      await userApi.updateProfile({ locale: next });
+      toast.success(t("profile.account_locale_save_success"));
+      onSaved();
+    } catch (err) {
+      onLocaleChange(locale);
+      toast.error(err instanceof ApiError ? err.message : t("common.error_generic"));
+    } finally {
+      setSavingLocale(null);
+    }
+  }
+
+  return (
+    <section className="card mt-6">
+      <div className="flex flex-wrap items-center gap-4">
+        <UserAvatarDisc fullName={user.full_name} email={user.email} />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg">{t("profile.account_title")}</h2>
+          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+            {t("profile.account_body")}
+          </p>
+        </div>
+      </div>
+
+      <ul className="mt-4 divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
+        <li className="py-3">
+          <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("profile.account_email_label")}
+          </span>
+          <p className="mt-1 break-all text-base text-ink-800 dark:text-paper-100">{user.email}</p>
+        </li>
+
+        <li className="py-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              {t("profile.account_name_label")}
+            </span>
+            {!editingName && (
+              <button
+                ref={nameTriggerRef}
+                type="button"
+                className="text-xs font-medium text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                onClick={beginNameEdit}
+                aria-label={t("common.edit")}
+              >
+                {t("common.edit")}
+              </button>
+            )}
+          </div>
+          {editingName ? (
+            <form
+              onSubmit={saveName}
+              className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2"
+              aria-label={t("profile.account_name_label")}
+            >
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(ev) => setNameInput(ev.target.value)}
+                placeholder={t("profile.account_name_placeholder")}
+                className="input h-11 min-w-[10rem] flex-1 py-0 text-base sm:h-8 sm:text-sm"
+                maxLength={200}
+                autoFocus
+                disabled={savingName}
+              />
+              <button
+                type="submit"
+                className="btn-sm btn-primary !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
+                disabled={savingName}
+              >
+                {savingName ? t("common.saving") : t("common.save")}
+              </button>
+              <button
+                type="button"
+                className="btn-sm btn-outline !px-3 !py-2 !text-sm sm:!py-1 sm:!text-xs"
+                onClick={() => {
+                  setEditingName(false);
+                  setNameError(null);
+                }}
+                disabled={savingName}
+              >
+                {t("common.cancel")}
+              </button>
+              {nameError && (
+                <p className="basis-full text-[11px] text-blush-700 dark:text-blush-300">
+                  {nameError}
+                </p>
+              )}
+            </form>
+          ) : (
+            <p className="mt-1 text-base text-ink-800 dark:text-paper-100">
+              {user.full_name?.trim() || t("profile.partner_no_name")}
+            </p>
+          )}
+        </li>
+
+        <li className="py-3">
+          <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("profile.account_locale_label")}
+          </span>
+          <p className="mt-1 text-[11px] text-ink-500 dark:text-umber-300">
+            {t("profile.account_locale_help")}
+          </p>
+          <div
+            role="radiogroup"
+            aria-label={t("profile.account_locale_label")}
+            className="mt-2 inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+          >
+            {(["hu", "en"] as const).map((l) => {
+              const active = l === locale;
+              return (
+                <button
+                  key={l}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => saveLocale(l)}
+                  disabled={savingLocale !== null}
+                  className={`min-w-[80px] px-4 py-3 text-sm font-medium transition-colors sm:py-1.5 sm:text-xs ${
+                    active
+                      ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                      : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+                  }`}
+                >
+                  {t(`profile.account_locale_${l}`)}
+                </button>
+              );
+            })}
+          </div>
+        </li>
+      </ul>
+    </section>
+  );
+}
+
+/** Single-disc avatar for the signed-in user. */
+function UserAvatarDisc({ fullName, email }: { fullName: string; email: string }) {
+  const initials = getInitials(fullName, email);
+  return (
+    <span
+      aria-hidden="true"
+      title={fullName || email}
+      className="flex h-12 w-12 items-center justify-center rounded-full bg-ink-900 text-sm font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-paper-50 dark:text-ink-900 dark:ring-umber-800"
+    >
+      {initials}
+    </span>
+  );
+}
+
 /** Security section — replaces the previous `<details>/<summary>` pattern
  *  with an explicit `<button aria-expanded aria-controls>` toggle so the
  *  disclosure state is announced consistently across VoiceOver, NVDA, and

@@ -34,6 +34,7 @@ export type EmailKind =
   | "rsvp_deadline_approaching" // T-14 nudge listing how many guests haven't RSVPd yet
   | "rsvp_followup_missing_meal" // guest RSVP'd yes but skipped meal pick — one-shot nudge
   | "admin_moderation_digest" // weekly digest of the moderation queue (admin recipients only)
+  | "rsvp_weekly_digest_for_couple" // weekly RSVP roll-up for couples on digest mode
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
   | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
@@ -116,6 +117,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: admin asked to be admin (allowlist opt-in); the weekly
   // digest is internal operations correspondence, never opt-out.
   admin_moderation_digest: "transactional",
+  // Lifecycle: couple opted into digest mode in Profile → the digest is a
+  // friendly weekly summary, not a load-bearing notification. Honours the
+  // unsubscribe footer so a couple who flipped to digest can also flip
+  // off entirely without going back into Profile.
+  rsvp_weekly_digest_for_couple: "lifecycle",
   // Outreach: vendor submitted the /vendors form but has no Weddly account —
   // the "fiókoddal kapcsolatban" footer line would be misleading.
   vendor_waitlist_received: "outreach",

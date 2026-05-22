@@ -419,9 +419,14 @@ export const scheduleApi = {
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/schedule/${id}`),
 };
 
-/** Per-user couple membership — today, just leaving a partner-B seat. */
+/** Per-user couple membership + self-edit endpoints. */
 export const userApi = {
   leaveCouple: () => apiFetch<{ ok: true }>("POST", "/api/users/me/leave-couple", {}),
+  /** Patch the signed-in user's display name and/or persisted UI locale.
+   *  Omitted fields stay untouched; an explicit `locale: null` clears the
+   *  preference (client then falls back to navigator detection). */
+  updateProfile: (body: { full_name?: string; locale?: "hu" | "en" | null }) =>
+    apiFetch<{ user: import("@shared/types").User }>("PATCH", "/api/users/me", body),
 };
 
 export interface PlanningItemCreate {
