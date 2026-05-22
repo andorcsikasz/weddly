@@ -266,55 +266,53 @@ export default function GuestPageEditorPage() {
         <h2 className="text-lg flex items-center gap-2">
           <Globe size={18} aria-hidden /> {t("guest_page_editor.section_share_title")}
         </h2>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+        <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
           {t("guest_page_editor.section_share_body")}
         </p>
 
         {publicUrl ? (
-          <>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => copyText(publicUrl, "url_copied")}
-              className="mt-4 inline-block w-full max-w-2xl rounded-2xl border border-ink-200 bg-white px-4 py-3 text-left font-mono text-base tabular-nums text-ink-900 transition hover:border-ink-400 sm:text-lg dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:border-umber-600"
+              className="flex-1 min-w-0 rounded-xl border border-ink-200 bg-white px-3 py-2 text-left font-mono text-sm tabular-nums text-ink-900 transition hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:border-umber-600"
               aria-label={t("wedding_site_editor.url_copied")}
             >
-              {publicUrl}
+              <span className="block truncate">{publicUrl}</span>
             </button>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="btn-outline btn-sm"
-                onClick={() => copyText(publicUrl, "url_copied")}
-              >
-                <Clipboard size={14} aria-hidden />
-                {t("wedding_site_editor.url_copied")}
-              </button>
-              <a
-                href={publicUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-outline btn-sm inline-flex"
-              >
-                <ExternalLink size={14} aria-hidden />
-                {t("wedding_site_editor.url_open")}
-              </a>
-            </div>
-          </>
+            <button
+              type="button"
+              className="btn-outline btn-sm"
+              onClick={() => copyText(publicUrl, "url_copied")}
+            >
+              <Clipboard size={14} aria-hidden />
+              {t("wedding_site_editor.url_copied")}
+            </button>
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-outline btn-sm inline-flex"
+            >
+              <ExternalLink size={14} aria-hidden />
+              {t("wedding_site_editor.url_open")}
+            </a>
+          </div>
         ) : (
-          <p className="mt-4 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
+          <p className="mt-3 rounded-xl border border-blush-300 bg-white px-3 py-2 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
             {t("wedding_site_editor.url_no_slug")}
           </p>
         )}
 
         {slug && (
-          <div className="mt-5 grid gap-3 border-t border-paper-300 pt-4 sm:grid-cols-2 dark:border-umber-700">
-            <div>
-              <div className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+          <div className="mt-3 grid gap-x-4 gap-y-2 border-t border-paper-300 pt-3 sm:grid-cols-2 dark:border-umber-700">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
                 {t("guest_preview.share_slug_label")}
-              </div>
+              </span>
               <button
                 type="button"
-                className="mt-1 inline-flex items-center gap-2 rounded-md border border-paper-300 px-2.5 py-1 font-mono text-sm uppercase tracking-[0.2em] text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
+                className="inline-flex items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 font-mono text-sm uppercase tracking-[0.2em] text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
                 onClick={() => copyText(slug, "share_copied")}
                 aria-label={t("guest_preview.share_copy_slug_aria")}
               >
@@ -322,18 +320,18 @@ export default function GuestPageEditorPage() {
                 <Copy size={14} aria-hidden />
               </button>
             </div>
-            <div>
-              <div className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300 shrink-0">
                 {t("guest_preview.share_link_label")}
-              </div>
+              </span>
               <button
                 type="button"
-                className="mt-1 inline-flex items-center gap-2 rounded-md border border-paper-300 px-2.5 py-1 text-sm text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
+                className="inline-flex min-w-0 items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 text-sm text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
                 onClick={() => copyText(rsvpUrl, "share_copied")}
                 aria-label={t("guest_preview.share_copy_link_aria")}
               >
                 <span className="truncate">{rsvpUrl}</span>
-                <Copy size={14} aria-hidden />
+                <Copy size={14} aria-hidden className="shrink-0" />
               </button>
             </div>
           </div>
@@ -346,11 +344,11 @@ export default function GuestPageEditorPage() {
          *  with a personal /w/:slug/:code link, copy + WhatsApp buttons,
          *  and a rotate-code action. */}
         {slug && households.length > 0 && (
-          <details className="mt-5 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-umber-900/60">
+          <details className="mt-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-2 dark:border-umber-700 dark:bg-umber-900/60">
             <summary className="cursor-pointer text-sm font-medium text-ink-800 dark:text-paper-100">
               {t("guest_page_editor.share_per_household_summary")}
             </summary>
-            <div className="mt-4">
+            <div className="mt-3">
               <h3 className="text-base font-semibold text-ink-900 dark:text-paper-50">
                 {t("guest_page_editor.share_per_household_title")}
               </h3>
@@ -440,7 +438,7 @@ export default function GuestPageEditorPage() {
         )}
 
         {slug && households.length === 0 && !loading && (
-          <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
+          <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
             {t("guest_page_editor.share_per_household_empty")}
           </p>
         )}
