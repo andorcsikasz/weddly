@@ -11,7 +11,7 @@ import type {
 } from "@shared/types";
 import { db, now } from "../db";
 import { type GuestRow, isGuestGroupTag, isMealChoice, isRsvpStatus, toGuest } from "./guests";
-import { generateHouseholdCode } from "./invite_codes";
+import { generateHouseholdCode, normalizeHouseholdCode } from "./invite_codes";
 
 export interface HouseholdRow {
   id: number;
@@ -46,10 +46,14 @@ export function getHouseholdById(id: number, coupleId: number): HouseholdRow | n
 }
 
 export function getHouseholdByCoupleAndCode(coupleId: number, code: string): HouseholdRow | null {
+  // Crockford codes are case-insensitive. Stored values are uppercased on
+  // write (see uniqueHouseholdCode), so an uppercase lookup catches both
+  // legacy 4-digit codes (digits have no case) and post-bump 8-char codes.
+  const normalized = normalizeHouseholdCode(code);
   return (
-    (db.prepare("SELECT * FROM households WHERE couple_id = ? AND code = ?").get(coupleId, code) as
-      | HouseholdRow
-      | undefined) ?? null
+    (db
+      .prepare("SELECT * FROM households WHERE couple_id = ? AND code = ?")
+      .get(coupleId, normalized) as HouseholdRow | undefined) ?? null
   );
 }
 
@@ -94,8 +98,13 @@ export function listMembers(householdId: number): GuestRow[] {
     .all(householdId) as GuestRow[];
 }
 
-/** Generate a 4-digit code that's unused for this couple. Retries on the
- *  (rare) collision, then bails loudly. */
+/** Generate a Crockford base32 code (8 chars) that's unused for this couple.
+ *  Retries on the (vanishingly rare) collision — the 32^8 keyspace is large
+ *  enough that even after thousands of households the probability of a clash
+ *  is well below 1e-8 — then bails loudly so we never silently re-issue a
+ *  duplicate. The stored value is the generator's uppercase form; lookups go
+ *  through `normalizeHouseholdCode` so a guest typing the code in mixed case
+ *  still resolves. */
 export function uniqueHouseholdCode(coupleId: number): string {
   const stmt = db.prepare("SELECT 1 FROM households WHERE couple_id = ? AND code = ?");
   for (let i = 0; i < 32; i++) {

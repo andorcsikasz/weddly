@@ -1874,7 +1874,10 @@ describe("households + airport check-in", () => {
     expect(list.data.households.length).toBe(1);
     const solo = list.data.households[0]!;
     expect(solo.label).toBe("Anna Solo");
-    expect(solo.code).toMatch(/^\d{4}$/);
+    // Post-May-2026 the code generator produces an 8-char Crockford string.
+    // Pre-bump rows would still match a `[1-9]\d{3}` shape — the explicit
+    // OR captures both so legacy fixtures don't choke.
+    expect(solo.code).toMatch(/^([1-9]\d{3}|[0-9A-HJKMNP-TV-Z]{8})$/);
     expect(solo.member_ids.length).toBe(1);
   });
 
@@ -2135,7 +2138,9 @@ describe("households + airport check-in", () => {
       { token },
     );
     expect(hh.status).toBe(201);
-    expect(hh.data.household.code).toMatch(/^\d{4}$/);
+    // Crockford 8-char code post-May-2026 bump (legacy 4-digit form still
+    // accepted by the same OR for any pre-bump fixture).
+    expect(hh.data.household.code).toMatch(/^([1-9]\d{3}|[0-9A-HJKMNP-TV-Z]{8})$/);
 
     const a = await req<{ guest: { id: number } }>(
       "POST",

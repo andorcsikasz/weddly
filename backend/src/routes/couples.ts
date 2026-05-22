@@ -2063,6 +2063,12 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "household.update",
   "household.delete",
   "household.regen_code",
+  // The post-Phase-3 share-with-guests surface uses PATCH /rotate-code; the
+  // POST /regenerate-code endpoint stays around for the /app/guests legacy
+  // affordance, and both produce their own audit entry so the activity
+  // feed can distinguish "rotated from the share UI" vs "regenerated via
+  // the guests page".
+  "household.code_rotate",
   // Per-household RSVP toggles migrated off the couple-level pair in May
   // 2026 (couple.rsvp_*_update still listed above for legacy entries).
   "household.rsvp_offers_accommodation_update",

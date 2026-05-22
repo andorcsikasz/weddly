@@ -681,7 +681,8 @@ describe("rsvp state graph: legacy per-guest invite path", () => {
       rsvp: { members: { full_name: string }[]; household_code: string };
     }>("GET", `/api/rsvp/${g.data.guest.invite_code}`);
     expect(r.status).toBe(200);
-    expect(r.data.rsvp.household_code).toMatch(/^\d{4}$/);
+    // Crockford 8-char post-May-2026; legacy 4-digit form preserved by OR.
+    expect(r.data.rsvp.household_code).toMatch(/^([1-9]\d{3}|[0-9A-HJKMNP-TV-Z]{8})$/);
     expect(r.data.rsvp.members.length).toBe(1);
   });
 

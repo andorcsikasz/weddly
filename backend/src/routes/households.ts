@@ -18,6 +18,7 @@ import {
 } from "../domain/households";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { rateLimit } from "../lib/rate_limit";
 
 function viewOf(
   row: { id: number },
@@ -259,10 +260,52 @@ function handleRegenCode(ctx: Ctx): Response {
   return json({ household: viewOf({ id }, couple) });
 }
 
+/** PATCH /api/households/:id/rotate-code — same effect as the legacy POST
+ *  /regenerate-code route, but per-couple rate-limited and routed through the
+ *  Phase 3 share-with-guests surface in /app/guest-page. We rate-limit by
+ *  couple (not IP) so a couple sharing an office WiFi can't accidentally lock
+ *  themselves out of rotating their own codes. Capacity 10 with a 1/min
+ *  refill is generous for the real workflow (rotate per household ~ once)
+ *  while still catching an automated abuser. */
+const ROTATE_BUCKET = { capacity: 10, refillRate: 1 / 60 } as const;
+
+function handleRotateCode(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const id = Number(ctx.params.id);
+  if (!Number.isFinite(id)) throw new HttpError(400, "Invalid id");
+
+  // Couple-scoped bucket — every rotate-code attempt by anyone tied to this
+  // couple workspace pulls from the same pool. Keeps a misbehaving script
+  // from hammering the endpoint while still letting two co-planners on the
+  // same IP rotate their respective households without contention.
+  rateLimit(`couple:${couple.id}`, "household:rotate_code", ROTATE_BUCKET);
+
+  const existing = getHouseholdById(id, couple.id);
+  if (!existing) throw new HttpError(404, "Household not found");
+
+  const newCode = regenerateHouseholdCode(id, couple.id);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "household.code_rotate",
+    target_kind: "household",
+    target_id: id,
+    before: { code: existing.code },
+    after: { code: newCode },
+  });
+  // Slim payload (id + code only) — the frontend share UI just needs the
+  // fresh code to refresh its row. Avoid round-tripping the full household
+  // view so we don't drag the (potentially heavy) member list along.
+  return json({ household: { id, code: newCode } });
+}
+
 export function registerHouseholdRoutes(router: Router) {
   router.get("/api/households", handleList, true);
   router.post("/api/households", handleCreate, true);
   router.patch("/api/households/:id", handleUpdate, true);
   router.delete("/api/households/:id", handleDelete, true);
   router.post("/api/households/:id/regenerate-code", handleRegenCode, true);
+  router.patch("/api/households/:id/rotate-code", handleRotateCode, true);
 }

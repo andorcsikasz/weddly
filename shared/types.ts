@@ -826,8 +826,19 @@ export const PAUSE_DELETE_WINDOW_MS = 1000 * 60 * 60 * 24 * 30;
 /** Length of guest invite codes (e.g. "A4F2K9"). */
 export const INVITE_CODE_LENGTH = 6;
 
-/** Length of household check-in codes (always 4 digits, no leading zero). */
-export const HOUSEHOLD_CODE_LENGTH = 4;
+/** Legacy length of household check-in codes (4 digits). Kept for reference —
+ *  rows generated before May 2026 still carry this shape and continue to
+ *  resolve. New rows use the 8-char Crockford form below. */
+export const HOUSEHOLD_CODE_LENGTH_LEGACY = 4;
+
+/** Length of household check-in codes (Crockford base32, 8 chars).
+ *  ~40 bits of entropy, enough to make blind enumeration impractical without
+ *  ballooning the share URL. Case-insensitive on lookup. */
+export const HOUSEHOLD_CODE_LENGTH = 8;
+
+/** Crockford base32 alphabet — digits 0-9 plus A-Z minus I, L, O, U so the
+ *  glyphs stay readable when typed off a card. Case-insensitive on lookup. */
+export const HOUSEHOLD_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
 /** Slug constraints. Couple-level identifier, uppercase A-Z + digits. */
 export const COUPLE_SLUG_MIN_LENGTH = 3;

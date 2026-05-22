@@ -1002,7 +1002,7 @@ describe("households: validation + delete guard", () => {
     expect(b.data.household.notes).toBeNull();
   });
 
-  test("POST /api/households produces a 4-digit code starting at 1000", async () => {
+  test("POST /api/households produces an 8-char Crockford code", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("hh-code@weddly.test");
     const r = await req<{ household: { code: string } }>(
@@ -1012,7 +1012,10 @@ describe("households: validation + delete guard", () => {
       { token },
     );
     expect(r.status).toBe(201);
-    expect(r.data.household.code).toMatch(/^[1-9]\d{3}$/);
+    // Post-May-2026 the household code is 8 Crockford base32 chars (no I / L
+    // / O / U). The legacy 4-digit shape stays valid for pre-bump rows but
+    // freshly-minted ones must match the new form.
+    expect(r.data.household.code).toMatch(/^[0-9A-HJKMNP-TV-Z]{8}$/);
   });
 
   test("PATCH /api/households/:id rsvp_offers_accommodation rejects non-boolean", async () => {
@@ -1768,7 +1771,8 @@ describe("rsvp legacy per-guest code", () => {
     expect(r.status).toBe(200);
     expect(r.data.rsvp.couple_slug).toBeTruthy();
     expect(r.data.rsvp.household_label).toBe("Anna");
-    expect(r.data.rsvp.household_code).toMatch(/^\d{4}$/);
+    // Crockford 8-char post-May-2026; legacy 4-digit form preserved by OR.
+    expect(r.data.rsvp.household_code).toMatch(/^([1-9]\d{3}|[0-9A-HJKMNP-TV-Z]{8})$/);
     expect(r.data.rsvp.members.length).toBe(1);
   });
 
@@ -2047,7 +2051,7 @@ describe("households: cross-couple public lookup isolation", () => {
     expect(bg.status).toBe(201);
   });
 
-  test("regenerate-code returns a new 4-digit code distinct from the old one", async () => {
+  test("regenerate-code returns a new Crockford code distinct from the old one", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("regen-newcode@weddly.test");
     const hh = await req<{ household: { id: number; code: string } }>(
@@ -2064,7 +2068,7 @@ describe("households: cross-couple public lookup isolation", () => {
       { token },
     );
     expect(r.status).toBe(200);
-    expect(r.data.household.code).toMatch(/^[1-9]\d{3}$/);
+    expect(r.data.household.code).toMatch(/^[0-9A-HJKMNP-TV-Z]{8}$/);
     expect(r.data.household.code).not.toBe(old);
   });
 
