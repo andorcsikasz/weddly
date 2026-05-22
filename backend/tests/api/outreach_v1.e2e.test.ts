@@ -22,6 +22,7 @@ import {
   type OutreachCampaignDetail,
 } from "@shared/outreach";
 import { db } from "../../src/db";
+import { buildEmail } from "../../src/domain/emails/templates";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 // Curated suppliers that ship with a `contact_email` in suppliers_data.ts.
@@ -313,6 +314,35 @@ describe("GET /api/outreach/campaigns/:id — detail view", () => {
     const { token } = await bootstrapCouple("outreach-bad-id@weddly.test");
     const r = await req("GET", "/api/outreach/campaigns/not-a-number", undefined, { token });
     expect(r.status).toBe(400);
+  });
+});
+
+describe("supplier_outreach email builder sets Reply-To to the couple owner", () => {
+  test("buildEmail exposes the couple's address as replyTo so sendEmail overrides the default", () => {
+    // Direct builder unit test — the dispatcher (`send.ts`) plumbs
+    // `built.replyTo` into the outgoing headers map, where it overrides
+    // the global `CONFIG.supportEmail` Reply-To default. Without this the
+    // vendor's reply lands in Weddly's support inbox instead of the
+    // couple's, which silently breaks the entire outreach feature loop.
+    const built = buildEmail(
+      "supplier_outreach",
+      {
+        coupleDisplayName: "Anna & Bence",
+        coupleReplyEmail: "anna.bence@example.test",
+        coupleReplyName: "Anna",
+        supplierName: "Etyeki Kúria",
+        subject: "June 14, 2027",
+        body: "Are you free that weekend? About 110 guests.",
+        outreachUrl: "https://weddly.hu/app/outreach",
+      },
+      {
+        recipientName: "Etyeki Kúria",
+      },
+    );
+    expect(built.replyTo).toBe("anna.bence@example.test");
+    // Footer fallback still surfaces the address in the body so a client
+    // that strips Reply-To gives the vendor a copyable address.
+    expect(built.rendered.text).toContain("anna.bence@example.test");
   });
 });
 

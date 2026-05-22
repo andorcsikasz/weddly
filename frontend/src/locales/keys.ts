@@ -1053,6 +1053,8 @@ export interface LocaleMessages {
     /** Day-of run-of-show timeline page — sidebar only. */
     schedule: string;
     suppliers: string;
+    /** Couple-initiated cold outreach to a shortlisted vendor (P2.E v1). */
+    outreach: string;
     /** Free-form planning surface (tasks / ideas / wedding-day schedule). */
     planning: string;
     /** Gantt-style timeline + point-of-contact panel — sidebar only. */
@@ -3127,6 +3129,29 @@ export interface LocaleMessages {
     menu_label: string;
     menu_profile: string;
     no_name: string;
+    /** Profile hero band — top-of-page identity strip. Shows the couple's
+     *  monogram, names, wedding date and a days-until counter so the page
+     *  actually feels like a "Profile" instead of a settings dump. */
+    hero_days_until: string;
+    hero_days_one: string;
+    hero_days_today: string;
+    hero_days_past: string;
+    hero_date_tbd: string;
+    /** Account section — surfaces the signed-in user's own identity so the
+     *  page has somewhere to read "Your account" instead of jumping straight
+     *  to partner / workspace. */
+    account_title: string;
+    account_body: string;
+    account_email_label: string;
+    account_name_label: string;
+    account_name_placeholder: string;
+    account_name_save_error: string;
+    account_name_save_success: string;
+    account_locale_label: string;
+    account_locale_help: string;
+    account_locale_hu: string;
+    account_locale_en: string;
+    account_locale_save_success: string;
     /** Prominent verify-email section, shown when verified_email = false. */
     verify_title: string;
     verify_body: string;
@@ -3330,8 +3355,6 @@ export interface LocaleMessages {
      *  user's original onboarding workspace as the primary so the
      *  missing delete button reads as intentional, not buggy. */
     workspaces_primary_marker: string;
-    payments_title: string;
-    payments_body: string;
     /** Welcome-desk launcher card on /app/profile. Owners opt in here to
      *  open the public /rsvp page locked into kiosk mode (new tab); the
      *  same control no longer appears on the public RSVP footer so that

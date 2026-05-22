@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Coins,
   GanttChartSquare,
+  Globe,
   Image as ImageIcon,
   Inbox,
   Languages,
@@ -20,6 +21,7 @@ import {
   MoreHorizontal,
   Plane,
   ShieldCheck,
+  Mail,
   Store,
   Sun,
   UserCheck,
@@ -95,6 +97,17 @@ const ITEMS: NavItem[] = [
     labelKey: "nav.suppliers",
     tabKey: "nav.tab_suppliers",
     icon: <Store size={18} />,
+    group: "planning",
+  },
+  // Outreach Inbox (P2.E v1) — couple-initiated cold mail to shortlisted
+  // vendors. Sits right under the directory so the "shop → message" flow
+  // reads top-down on the desktop sidebar. Mobile bottom-nav stays at the
+  // 5 core flows; outreach is reachable via the desktop nav + the
+  // /app/outreach URL.
+  {
+    to: "/app/outreach",
+    labelKey: "nav.outreach",
+    icon: <Mail size={18} />,
     group: "planning",
   },
   // Free-form planning surface — desktop-only so the mobile bottom nav stays
@@ -173,6 +186,15 @@ const ITEMS: NavItem[] = [
     to: "/app/guest-portal",
     labelKey: "nav.guest_portal",
     icon: <UserCheck size={18} />,
+    group: "guest",
+  },
+  // Editor for the public wedding-website at /w/:slug. Sits with the other
+  // guest-facing surfaces — flipping the publish toggle here is the only
+  // way to make the site reachable; the public endpoint defaults to 404.
+  {
+    to: "/app/wedding-site",
+    labelKey: "nav.wedding_site",
+    icon: <Globe size={18} />,
     group: "guest",
   },
 ];
