@@ -14,6 +14,8 @@ import {
   toAdminView,
   updateAdminNotes,
 } from "../domain/community_suppliers";
+import { CONFIG } from "../config";
+import { sendKind } from "../domain/emails";
 import { enrichSupplier } from "../domain/supplier_enrich";
 import { listDirectoryForAdmin, parseDirectoryFilters } from "../domain/supplier_views";
 import { requireAdmin } from "../domain/users";
@@ -150,6 +152,21 @@ function handleApprove(ctx: Ctx): Response {
 
   const after = getCommunitySupplierWithEmail(id);
   if (!after) throw new HttpError(500, "Failed to read updated supplier");
+
+  // Close the verify → moderation → live loop. The recipient last heard from
+  // us when they clicked the verify link; without this, they have no signal
+  // that moderation actually approved them. Fire-and-forget, guest target.
+  if (after.contact_email) {
+    void sendKind(
+      "community_supplier_published",
+      {
+        supplierName: after.name,
+        listingUrl: CONFIG.frontendBaseUrl,
+      },
+      { user: null, guest: { email: after.contact_email, full_name: after.name } },
+    );
+  }
+
   const counts = openReportCountsForAll();
   return json({ supplier: toAdminView(after, counts.get(id) ?? 0) });
 }

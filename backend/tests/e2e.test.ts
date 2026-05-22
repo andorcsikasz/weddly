@@ -3578,6 +3578,17 @@ describe("community suppliers", () => {
     const afterApprove = await req<ListResponse>("GET", "/api/suppliers");
     expect(afterApprove.data.suppliers.length).toBe(beforeLen + 1);
     expect(afterApprove.data.suppliers.find((s) => s.id === r.data.supplier.id)).toBeDefined();
+
+    // Approval fires the "your listing is live" mail to the supplier's
+    // contact_email — the recipient last heard from us at verify-time and
+    // gets the moderation-pass confirmation here.
+    const publishedMail = db
+      .prepare(
+        "SELECT to_email, subject FROM email_log WHERE kind = 'community_supplier_published' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string; subject: string } | undefined;
+    expect(publishedMail?.to_email).toBeTruthy();
+    expect(publishedMail?.subject.toLowerCase()).toContain("live");
   });
 
   test("validation rejects bad inputs", async () => {

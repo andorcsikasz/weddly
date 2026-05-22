@@ -28,6 +28,7 @@ export type EmailKind =
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
   | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
+  | "community_supplier_published" // admin approved the listing — it's now live
   | "vendor_claim_verify" // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_approved"; // sent to the new vendor account once the claim flow completes
 
@@ -84,6 +85,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Outreach: a couple added this business to the community directory; the
   // recipient never asked for anything and has no Weddly account.
   community_supplier_verify: "outreach",
+  // Outreach: same recipient (no Weddly account) — the listing they
+  // confirmed has now passed admin moderation and is publicly visible.
+  community_supplier_published: "outreach",
   // Outreach: anyone (no auth required) can hit /api/vendor/claim/start with a
   // listing id, and the listing's contact_email gets the mail — the recipient
   // didn't necessarily start the flow themselves.

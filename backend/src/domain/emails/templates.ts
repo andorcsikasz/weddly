@@ -192,6 +192,13 @@ export interface CommunitySupplierVerifyPayload {
   verifyUrl: string;
 }
 
+export interface CommunitySupplierPublishedPayload {
+  /** Business / listing name surfaced in the email body. */
+  supplierName: string;
+  /** Public URL where couples will see the listing. */
+  listingUrl: string;
+}
+
 export interface VendorClaimVerifyPayload {
   /** Listing name surfaced in the email body. */
   listingName: string;
@@ -232,6 +239,7 @@ export type KindPayload = {
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
+  community_supplier_published: CommunitySupplierPublishedPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
 };
@@ -957,6 +965,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "Link expires in 7 days.",
     },
   }),
+  // Admin moderation flipped a verified community-submitted supplier to
+  // 'active' — it's now visible to couples. Closes the verify → moderation
+  // → live loop the recipient last heard about when they clicked the verify
+  // link.
+  community_supplier_published: (p) => ({
+    subject: `Élesedett a hirdetésed / ${p.supplierName} is now live`,
+    ctaUrl: p.listingUrl,
+    hu: {
+      preheader: `${p.supplierName} mostantól látszik a Weddly katalógusban.`,
+      greeting: "Szia!",
+      paragraphs: [
+        `Megnéztük és átengedtük: ${p.supplierName} mostantól szerepel a Weddly publikus szolgáltató-katalógusban.`,
+        "A párok mostantól rátalálhatnak. Ha bármi adat változna (telefonszám, weboldal, leírás), válaszolj erre az emailre — emberek olvassák.",
+      ],
+      cta: "Hirdetés megnyitása",
+    },
+    en: {
+      greeting: "Hi there,",
+      paragraphs: [
+        `We've reviewed your listing and ${p.supplierName} is now visible in Weddly's public supplier directory.`,
+        "Couples can find you from here. If anything needs updating (phone, website, description), just reply to this email — a human reads it.",
+      ],
+      cta: "Open your listing",
+    },
+  }),
+
   // Success confirmation after the vendor finishes the claim flow. Before
   // this, the verify click landed the vendor on a "set your password" page
   // and… nothing. This closes the loop with a Weddly-branded "you're in"
