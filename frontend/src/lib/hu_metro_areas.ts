@@ -30,6 +30,12 @@
 // Coordinates are rounded to 2 decimals (~1 km precision) — they're a
 // UX hint, not a routing engine. The Haversine result is rounded to a
 // 5 km bucket for display so couples don't read "47 km" as a promise.
+//
+// Haversine is crow-flies, so it under-reports drive time across natural
+// barriers — Siófok ↔ Tihany reads ~5 km here but is ~30 km by road (no
+// Balaton bridge), and Danube-bend crossings are similar. The 5-km bucket
+// + the "~" prefix in the UI already disclaim this; flagged here so future
+// regional fudge factors have a home.
 
 /** Diacritic-folded lower-case form — matches the same normalization
  *  used in SuppliersPage so haystack assembly stays consistent. */
@@ -432,13 +438,18 @@ export function distanceContextForQuery(
     !queryRec && normalizedQuery.length >= 4
       ? METRO_AREAS_HU.find((g) => normalize(g.anchor).startsWith(normalizedQuery))
       : null;
+  const fallbackAnchorCity = fallbackAnchorGroup
+    ? fallbackAnchorGroup.cities.find(
+        (c) => normalize(c.city) === normalize(fallbackAnchorGroup.anchor),
+      )
+    : null;
   const queryCoords = queryRec
     ? { city: queryRec.city, lat: queryRec.lat, lng: queryRec.lng, groupKey: queryRec.groupKey }
-    : fallbackAnchorGroup
+    : fallbackAnchorGroup && fallbackAnchorCity
       ? {
           city: fallbackAnchorGroup.anchor,
-          lat: fallbackAnchorGroup.cities[0]?.lat ?? 0,
-          lng: fallbackAnchorGroup.cities[0]?.lng ?? 0,
+          lat: fallbackAnchorCity.lat,
+          lng: fallbackAnchorCity.lng,
           groupKey: fallbackAnchorGroup.key,
         }
       : null;
