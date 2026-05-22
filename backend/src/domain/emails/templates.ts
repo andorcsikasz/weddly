@@ -84,6 +84,13 @@ export interface PartnerInviteAcceptedPayload {
   /** Where to land in /app — usually the dashboard. */
   dashboardUrl: string;
 }
+export interface PartnerInviteDeclinedPayload {
+  /** Address the original invite was sent to. Lets the inviter recognise
+   *  which invite this was about when they sent multiple. */
+  invitedEmail: string;
+  /** Where to (re-)issue an invite — typically /app/profile. */
+  reinviteUrl: string;
+}
 export interface CouplePausedPayload {
   /** Display name of the partner who clicked Pause. */
   requestedByName: string;
@@ -299,6 +306,7 @@ export type KindPayload = {
   email_change_warning: EmailChangeWarningPayload;
   partner_invite: PartnerInvitePayload;
   partner_invite_accepted: PartnerInviteAcceptedPayload;
+  partner_invite_declined: PartnerInviteDeclinedPayload;
   couple_paused: CouplePausedPayload;
   couple_pause_cancelled: CouplePauseCancelledPayload;
   account_purged: AccountPurgedPayload;
@@ -604,6 +612,28 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     };
   },
+
+  partner_invite_declined: (p, ctx) => ({
+    subject: "A meghívót visszautasították / Partner invite declined",
+    ctaUrl: p.reinviteUrl,
+    hu: {
+      preheader: `${p.invitedEmail} nem fogadta el a meghívót.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `A ${p.invitedEmail} címre küldött meghívót visszautasították — nem csatlakozik most az esküvőtervezőhöz.`,
+        "Ha rossz címre küldted, vagy más személyt szeretnél meghívni, küldhetsz új meghívót a Profil oldalon. Egyébként szépen tovább tudsz tervezni egyedül is — minden funkció elérhető marad.",
+      ],
+      cta: "Új meghívó küldése",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `The invite you sent to ${p.invitedEmail} was declined — they won't be joining the planner.`,
+        "If you sent it to the wrong address or want to invite someone else, you can issue a fresh invite from your Profile page. Otherwise the planner stays fully usable solo — nothing's gated behind a partner.",
+      ],
+      cta: "Send a new invite",
+    },
+  }),
 
   couple_paused: (p, ctx) => ({
     subject: "Esküvőtervező szüneteltetve / Workspace paused",

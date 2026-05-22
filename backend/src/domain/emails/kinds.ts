@@ -12,6 +12,7 @@ export type EmailKind =
   | "email_change_warning" // sent to the OLD address letting them know a change is in flight
   | "partner_invite" // partner-B co-pilot invite link
   | "partner_invite_accepted" // inviter gets a heads-up that partner B joined the workspace
+  | "partner_invite_declined" // invitee clicked "no thanks" — inviter heads-up so they can re-send to a new address
   | "couple_paused" // workspace paused → 30-day delete countdown started
   | "couple_pause_cancelled" // either partner cancelled the pause; both get a heads-up
   | "account_purged" // 30-day window elapsed, all couple data deleted
@@ -70,6 +71,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: the inviter clicked Invite Partner and is waiting to see
   // whether/when partner B joins — this is the resolution of that action.
   partner_invite_accepted: "transactional",
+  // Transactional: same resolution arc as accept, just the other branch. The
+  // inviter needs to know to either re-send to a different address or move
+  // on.
+  partner_invite_declined: "transactional",
   couple_paused: "transactional",
   // Transactional: the pause was an explicit action one partner took and
   // both received notification of; the cancel is the resolution of that

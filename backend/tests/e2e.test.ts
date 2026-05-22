@@ -728,6 +728,39 @@ describe("onboarding + invites", () => {
     expect(acceptedMail?.subject).toContain("Bence");
   });
 
+  test("decline invite: consumes token + mails the inviter (no auth required)", async () => {
+    wipeAll();
+    const a = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "decliner-inviter@weddly.test",
+      password: "supersafe123",
+      full_name: "Inviter",
+    });
+    await verifyUserEmail("decliner-inviter@weddly.test");
+    await req("POST", "/api/couples/onboard", { display_name: "I & D" }, { token: a.data.token });
+    const inv = await req<{ invite: { token: string } }>(
+      "POST",
+      "/api/couples/invites",
+      { invited_email: "wrong-address@weddly.test" },
+      { token: a.data.token },
+    );
+
+    // Public decline — no Authorization header.
+    const decline = await req("POST", `/api/invites/${inv.data.invite.token}/decline`, {});
+    expect(decline.status).toBe(200);
+
+    // Token now consumed — accept rejected as 410.
+    const reuse = await req("POST", `/api/invites/${inv.data.invite.token}/accept`, {});
+    expect(reuse.status).toBe(401); // requires auth before it gets to the consume check
+
+    // Inviter receives the decline mail at their address.
+    const declineMail = db
+      .prepare(
+        "SELECT to_email FROM email_log WHERE kind = 'partner_invite_declined' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string } | undefined;
+    expect(declineMail?.to_email).toBe("decliner-inviter@weddly.test");
+  });
+
   test("invite endpoint requires onboarding first", async () => {
     wipeAll();
     const u = await req<{ token: string }>("POST", "/api/auth/register", {

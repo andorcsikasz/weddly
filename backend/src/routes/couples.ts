@@ -838,6 +838,53 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   return json({ couple: toCouple(refreshed) });
 }
 
+async function handleDeclineInvite(ctx: Ctx): Promise<Response> {
+  // Auth optional: a recipient who isn't a Weddly user can also decline the
+  // invite (the link came to their email, the token is the bearer). The
+  // route consumes the token + notifies the inviter — no partner_b state
+  // changes since the decline IS the absence of a join.
+  const token = ctx.params.token;
+  if (!token) throw new HttpError(400, "Missing token");
+
+  const row = db.prepare("SELECT * FROM couple_invites WHERE token = ?").get(token) as
+    | InviteRow
+    | undefined;
+  if (!row) throw new HttpError(404, "Invite not found");
+  if (row.consumed_at) throw new HttpError(410, "Invite already used");
+  if (row.expires_at < now()) throw new HttpError(410, "Invite expired");
+
+  const ts = now();
+  db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
+
+  addAuditLog({
+    actor_user_id: null,
+    couple_id: row.couple_id,
+    action: "invite.decline",
+    target_kind: "couple_invite",
+    target_id: row.id,
+    note: `declined for ${row.invited_email}`,
+  });
+
+  // Heads-up to the inviter. Fire-and-forget; consuming the token must
+  // succeed even if the mailer hiccups.
+  const inviter = getUserById(row.invited_by_user_id);
+  if (inviter) {
+    void sendKind(
+      "partner_invite_declined",
+      {
+        invitedEmail: row.invited_email,
+        reinviteUrl: `${CONFIG.frontendBaseUrl}/app/profile`,
+      },
+      {
+        user: { id: inviter.id, email: inviter.email, full_name: inviter.full_name ?? "" },
+        couple_id: row.couple_id,
+      },
+    );
+  }
+
+  return json({ ok: true });
+}
+
 /** Lists every pending partner-invite addressed to the current user's
  *  email (`couple_invites.invited_email`, case-insensitive). Powers the
  *  dashboard banner that surfaces "your partner has already started a
@@ -2412,6 +2459,9 @@ export function registerCoupleRoutes(router: Router) {
   router.get("/api/invites/:token", handleGetInvite); // public — pre-signup
   router.post("/api/invites/:token/accept", handleAcceptInvite, true);
   router.post("/api/invites/:token/accept-merge", handleAcceptInviteMerge, true);
+  // Public — token in the path acts as bearer; the recipient might not be
+  // a Weddly user (they can decline without signing up).
+  router.post("/api/invites/:token/decline", handleDeclineInvite, false);
   router.post("/api/couples/current/archive", handleArchive, true);
   router.post("/api/couples/current/notify-date-change", handleNotifyDateChange, true);
   router.post("/api/couples/current/dismiss-date-change", handleDismissDateChange, true);
