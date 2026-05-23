@@ -7,7 +7,7 @@
  * 5.2.11), copied as WOFF2 to /public/fonts/ on 2026-05-23. Files are
  * served same-origin so no third-party CDN sees visitor IPs. To refresh
  * versions, `bun add` the packages, copy fresh files from
- * node_modules/.bun/@fontsource*/files/, then remove the packages —
+ * node_modules/.bun/@fontsource-…/files/, then remove the packages —
  * we don't need them at runtime.
  *
  * Subset strategy: each face is declared twice with a unicode-range so
