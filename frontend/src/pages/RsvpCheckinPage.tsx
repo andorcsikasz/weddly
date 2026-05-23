@@ -418,7 +418,7 @@ function FullPage({ children }: { children: React.ReactNode }) {
   // itself directly over the submit button when a guest taps a meal/dietary
   // input — they can scroll past the form and still see the CTA.
   return (
-    <div data-editorial className="min-h-full bg-paper-100 px-4 pb-32 pt-8 sm:pt-16">
+    <div className="min-h-full bg-paper-100 px-4 pb-32 pt-8 sm:pt-16">
       <div className="mx-auto max-w-md">{children}</div>
     </div>
   );

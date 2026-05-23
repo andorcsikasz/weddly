@@ -77,10 +77,7 @@ function useHeaderHidden(): boolean {
 export function PublicShell({ children }: { children: ReactNode }) {
   const { t } = useT();
   return (
-    <div
-      data-editorial
-      className="flex min-h-full flex-col bg-paper-50 text-ink-800 dark:bg-umber-900 dark:text-paper-100"
-    >
+    <div className="flex min-h-full flex-col bg-paper-50 text-ink-800 dark:bg-umber-900 dark:text-paper-100">
       <a
         href="#main-content"
         className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-blush-400"
