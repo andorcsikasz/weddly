@@ -366,32 +366,14 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         {/* LEFT — form */}
         <form id="submit-supplier-form" onSubmit={onSubmit} className="space-y-6">
-          {/* Hero: Maps-link smart-fill. Blush gradient + sparkle so it reads
-              as "the magic button", not just another input. Collapses to a
-              quiet success row once resolved. */}
-          <MapsLinkHero
-            value={mapsLink}
-            onChange={setMapsLink}
-            onResolve={() => resolveMapsLink(mapsLink)}
-            resolving={resolving}
-            state={resolveState}
-            t={t}
-          />
-
-          {/* WHO — category chips + name */}
+          {/* WHO — name first (the single highest-signal field), then the
+              compact Maps smart-fill helper, then the category grid. The
+              Maps Hero is rendered in `compact` mode here so it reads as a
+              helper line under the name, not a hero strip above it. */}
           <section className="space-y-3" aria-labelledby="section-who-heading">
             <SectionHeading id="section-who-heading">
               {t("suppliers.submit.section_who")}
             </SectionHeading>
-            <CategoryChipGrid
-              value={form.category}
-              onPick={(c) => setField("category", c)}
-              invalid={Boolean(errors.category)}
-              t={t}
-            />
-            {errors.category && (
-              <FieldError id="submit-supplier-category-error">{errors.category}</FieldError>
-            )}
             <TextField
               id="submit-supplier-name"
               label={t("suppliers.submit.name_label")}
@@ -402,6 +384,24 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
               errorText={errors.name}
               placeholder={t("suppliers.submit.name_placeholder")}
             />
+            <MapsLinkHero
+              value={mapsLink}
+              onChange={setMapsLink}
+              onResolve={() => resolveMapsLink(mapsLink)}
+              resolving={resolving}
+              state={resolveState}
+              compact
+              t={t}
+            />
+            <CategoryChipGrid
+              value={form.category}
+              onPick={(c) => setField("category", c)}
+              invalid={Boolean(errors.category)}
+              t={t}
+            />
+            {errors.category && (
+              <FieldError id="submit-supplier-category-error">{errors.category}</FieldError>
+            )}
             {/* Self-vs-recommendation switch. The boolean drives the trust
                 pill on the public card — "Szolgáltató" badge when the vendor
                 checks this, "Közösségi" otherwise. Defaults to off so the
@@ -607,6 +607,7 @@ function MapsLinkHero({
   onResolve,
   resolving,
   state,
+  compact = false,
   t,
 }: {
   value: string;
@@ -619,6 +620,9 @@ function MapsLinkHero({
     | { kind: "partial" }
     | { kind: "rate_limited" }
     | { kind: "failed" };
+  /** Tighter padding + smaller icon and copy. Used when the helper sits
+   *  inside a section instead of being a full-width hero strip. */
+  compact?: boolean;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const inputId = "submit-supplier-maps-link";
@@ -628,7 +632,7 @@ function MapsLinkHero({
 
   return (
     <div
-      className={`rounded-2xl border p-4 transition-colors ${
+      className={`${compact ? "rounded-xl p-2.5" : "rounded-2xl p-4"} border transition-colors ${
         ok
           ? "border-sage-300 bg-sage-50/60 dark:border-sage-400/40 dark:bg-sage-400/15"
           : error
@@ -636,26 +640,32 @@ function MapsLinkHero({
             : "border-blush-200 bg-gradient-to-br from-blush-50 via-paper-50 to-sage-50 dark:border-blush-400/40 dark:from-blush-400/10 dark:via-umber-800 dark:to-sage-400/10"
       }`}
     >
-      <div className="flex items-start gap-3">
+      <div className={`flex items-start ${compact ? "gap-2" : "gap-3"}`}>
         <span
           aria-hidden
-          className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-            ok ? "bg-sage-500 text-white" : "bg-blush-600 text-white"
-          }`}
+          className={`mt-0.5 inline-flex shrink-0 items-center justify-center rounded-full ${
+            compact ? "h-5 w-5" : "h-7 w-7"
+          } ${ok ? "bg-sage-500 text-white" : "bg-blush-600 text-white"}`}
         >
-          {ok ? <Check size={14} /> : <Sparkles size={14} />}
+          {ok ? (
+            <Check size={compact ? 11 : 14} />
+          ) : (
+            <Sparkles size={compact ? 11 : 14} />
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <label
             htmlFor={inputId}
-            className="block text-sm font-semibold text-ink-900 dark:text-paper-50"
+            className={`block font-semibold text-ink-900 dark:text-paper-50 ${compact ? "text-xs" : "text-sm"}`}
           >
             {t("suppliers.submit.magic_title")}
           </label>
-          <p className="mt-0.5 text-xs text-ink-600 dark:text-umber-200">
+          <p
+            className={`mt-0.5 text-ink-600 dark:text-umber-200 ${compact ? "text-[11px]" : "text-xs"}`}
+          >
             {t("suppliers.submit.magic_help")}
           </p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <div className={`flex flex-col gap-2 sm:flex-row ${compact ? "mt-2" : "mt-3"}`}>
             <input
               id={inputId}
               type="url"
@@ -874,14 +884,16 @@ function LivePreviewCard({
   const blurbDisplay = blurb || t("suppliers.submit.preview_placeholder_blurb");
 
   return (
-    <div className="card relative mt-1 overflow-hidden border-l-4 border-l-blush-400 !p-4 shadow-sm">
-      {/* "Pending" ribbon — sets expectations that this is what the listing
-          will look like AFTER email confirmation. */}
-      <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-400/15 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-blush-700 dark:text-blush-300">
-        <Sparkles size={9} aria-hidden />
-        {t("suppliers.submit.preview_pending_pill")}
-      </span>
-      <div className="flex items-start gap-3 pr-16">
+    <div className="card mt-1 overflow-hidden border-l-4 border-l-blush-400 !p-4 shadow-sm">
+      {/* "Pending" pill — its own top row so the long HU label
+          ("MEGERŐSÍTÉSRE VÁR") can't crash into the supplier name. */}
+      <div className="mb-2 flex justify-end">
+        <span className="inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-400/15 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-blush-700 dark:text-blush-300">
+          <Sparkles size={9} aria-hidden />
+          {t("suppliers.submit.preview_pending_pill")}
+        </span>
+      </div>
+      <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 dark:border-umber-700 bg-paper-100 dark:bg-umber-700/60 font-serif text-lg text-ink-700 dark:text-paper-100">
           {initial}
         </div>

@@ -910,7 +910,15 @@ function HouseholdCard({
       className={`card overflow-hidden p-0 ${isHosts ? "!border-blush-300 dark:!border-blush-500/40" : ""}`}
     >
       <header
-        className={`flex flex-wrap items-center justify-between gap-2 md:gap-3 ${isHosts ? "stationery" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-2 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
+        /* `items-start md:items-center` keeps the action-icon cluster
+         *  pinned to the top-right of the card on mobile (where the
+         *  metadata column wraps to multiple rows below it) while the
+         *  desktop layout — metadata on a single grid row alongside
+         *  the icons — stays vertically centered. `flex-nowrap` is the
+         *  load-bearing change: the prior `flex-wrap` + `basis-full`
+         *  on the metadata block pushed the icons onto their own row
+         *  below the metadata, which is exactly what the user flagged. */
+        className={`flex flex-nowrap items-start justify-between gap-2 md:items-center md:gap-3 ${isHosts ? "stationery" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-2 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
         {/* Metadata columns: label · group chip · slug · code · invited
             (+ delivered). Fixed-width tracks with `md:col-start-*` force
@@ -921,7 +929,7 @@ function HouseholdCard({
             for just metadata. The couple's own household (bride + groom)
             renders just the label — chip / slug / code / invited cells
             are skipped because the hosts don't check themselves in. */}
-        <div className="flex min-w-0 basis-full flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600 md:basis-auto md:flex-1 md:grid md:gap-x-6 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_minmax(0,13rem)_8rem_5.5rem_auto]">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600 md:grid md:gap-x-6 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_minmax(0,13rem)_8rem_5.5rem_auto]">
           <div className="flex min-w-0 basis-full flex-wrap items-center gap-2 md:basis-auto">
             <HouseholdLabelEditor
               household={household}
@@ -982,7 +990,7 @@ function HouseholdCard({
             </span>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5 md:gap-1">
           {!isHosts && (
             <>
               <AccommodationToggle
@@ -1046,61 +1054,57 @@ function HouseholdCard({
           {members.map((g) => (
             <li
               key={g.id}
-              className="flex flex-col gap-1.5 px-3 py-2 md:flex-row md:items-center md:justify-between md:gap-3 md:px-4 md:py-2.5"
+              /* Single non-wrapping row at every viewport — the prior two-
+               *  row mobile layout (name on row 1, meal-icons + actions on
+               *  row 2 with `pl-[3.75rem]` indent) used twice the height
+               *  per guest and visually dis-aligned the action cluster
+               *  depending on whether the guest had a meal/dietary icon.
+               *  Now: invite-pip → name (with role + kind + meal icons all
+               *  inline) → flexible spacer → RSVP badge + edit/print/
+               *  delete pinned right. Same layout for every guest. */
+              className="flex items-center gap-2 px-3 py-2 md:gap-3 md:px-4 md:py-2.5"
             >
-              {/* Row 1 on mobile / left half on md.
-                  Mobile gets the full row width for the name: the InviteChip
-                  + tiny role/kind glyphs share the line, no actions on the
-                  right competing for px, so names like "Queen Elizabeth"
-                  render fully instead of "Que…". Meal icons drop to row 2
-                  on mobile, stay inline on md+. */}
-              <div className="flex min-w-0 items-center gap-2 md:gap-3">
-                <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 truncate text-sm text-ink-900 dark:text-paper-50">
-                    <PartnerRoleIcon role={g.partner_role} />
-                    <KindIcon kind={g.kind} />
-                    <span className="truncate">{g.full_name}</span>
-                    <span className="hidden md:inline-flex">
-                      <MealIcons meal={g.meal_choice} dietary={g.dietary} />
-                    </span>
-                  </p>
-                </div>
-              </div>
-              {/* Row 2 on mobile / right half on md.
-                  Indented to align with the name (matching the InviteChip
-                  width + gap on mobile) so the row reads as one logical
-                  block, not a free-floating control strip. */}
-              <div className="flex items-center gap-1.5 pl-[3.75rem] md:gap-2 md:pl-0">
-                <span className="md:hidden">
+              <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
+              <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-sm text-ink-900 dark:text-paper-50">
+                <PartnerRoleIcon role={g.partner_role} />
+                <KindIcon kind={g.kind} />
+                <span className="truncate">{g.full_name}</span>
+                <span className="inline-flex shrink-0">
                   <MealIcons meal={g.meal_choice} dietary={g.dietary} />
                 </span>
-                <span className="flex-1 md:hidden" />
+              </p>
+              {/* Action cluster — tight gap, pinned right, identical
+               *  position for every guest. `shrink-0` + small icon-buttons
+               *  keep them on the same line as the name on phones; names
+               *  that overrun get the ellipsis. */}
+              <div className="flex shrink-0 items-center gap-0.5">
                 <RsvpBadge status={g.rsvp_status} />
                 <button
                   type="button"
-                  className="btn-ghost btn-sm"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
                   onClick={() => onEditGuest(g)}
                   aria-label={t("guests.edit")}
+                  title={t("guests.edit")}
                 >
-                  <Pencil size={14} />
+                  <Pencil size={14} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
-                  className="btn-ghost btn-sm"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
                   onClick={() => void onPrintPlaceCard(g)}
                   aria-label={t("guests.print_place_card")}
                   title={t("guests.print_place_card")}
                 >
-                  <Printer size={14} />
+                  <Printer size={14} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
-                  className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-blush-700 hover:bg-blush-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 focus-visible:ring-offset-2 dark:text-blush-300 dark:hover:bg-blush-400/15"
                   onClick={() => onDeleteGuest(g.id)}
                   aria-label={t("guests.delete")}
+                  title={t("guests.delete")}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={14} aria-hidden="true" />
                 </button>
               </div>
             </li>
@@ -1287,19 +1291,23 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
       title={`${label} — ${nextHint}`}
       aria-label={`${label}. ${nextHint}`}
       aria-pressed={state !== "not_invited"}
-      className={`inline-flex h-8 min-w-[3.5rem] shrink-0 items-center justify-center rounded-full border px-2 text-[11px] font-medium uppercase tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 sm:h-6 sm:min-w-0 sm:w-9 sm:px-0 sm:text-xs ${cls}`}
+      /* Single small dot at every viewport — the prior `h-8 min-w-[3.5rem]`
+       *  chip with the "Meghívva" / "Átadva" / "—" text was a full-width
+       *  pill on mobile that ate the row before the name even rendered.
+       *  The header already carries the "0/2 meghívva" tally so the per-
+       *  member text was redundant; cycling tap target stays at the
+       *  WCAG-min 24px chip + the surrounding row hit area. */
+      className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${cls}`}
     >
-      {/* Mobile: visible short label, icon kept screen-reader-only.
-          sm+: icon-only — the title attribute carries the meaning on hover. */}
-      <span className="sm:sr-only">{shortLabel}</span>
+      <span className="sr-only">{shortLabel}</span>
       {state === "delivered" ? (
-        <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" className="hidden sm:inline" />
+        <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" />
       ) : state === "invited" ? (
-        <Check size={14} strokeWidth={2.5} aria-hidden="true" className="hidden sm:inline" />
+        <Check size={14} strokeWidth={2.5} aria-hidden="true" />
       ) : (
         <span
           aria-hidden="true"
-          className="hidden h-1.5 w-1.5 rounded-full bg-current opacity-50 sm:block"
+          className="h-1.5 w-1.5 rounded-full bg-current opacity-50"
         />
       )}
     </button>
