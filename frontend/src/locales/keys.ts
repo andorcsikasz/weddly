@@ -3364,6 +3364,10 @@ export interface LocaleMessages {
     hero_days_today: string;
     hero_days_past: string;
     hero_date_tbd: string;
+    /** Short caption shown under the big days-until number on phones,
+     *  where the verbose "Még X nap az esküvőig" wouldn't fit and is
+     *  also redundant with the number already shown above. */
+    hero_days_caption_short: string;
     /** Account section — surfaces the signed-in user's own identity so the
      *  page has somewhere to read "Your account" instead of jumping straight
      *  to partner / workspace. */

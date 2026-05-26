@@ -2973,6 +2973,7 @@ const en: LocaleMessages = {
     hero_days_today: "Your wedding day — today",
     hero_days_past: "{n} days married",
     hero_date_tbd: "Wedding date to be decided",
+    hero_days_caption_short: "Days until your wedding",
     account_title: "Your account",
     account_body:
       "How you appear inside Weddly. Email and password live in the Security card below.",

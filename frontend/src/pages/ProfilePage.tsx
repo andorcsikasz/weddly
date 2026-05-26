@@ -567,21 +567,31 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
           </p>
           {partner ? (
             <>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
+              {/* The previous layout was a single `flex-wrap items-center`
+               *  row where the status pill stole ~120px and the long
+               *  partner email fell back to `break-all` — producing the
+               *  ugly mid-word "saraazawiasa@gma\nil.com" wrap. New shape:
+               *  monogram on the left, name+pill share the top line of
+               *  the column, email gets the full column width on its own
+               *  line with `truncate` so it shows an ellipsis instead of
+               *  ever wrapping. */}
+              <div className="mt-4 flex items-start gap-3">
                 <PartnerMonogram
                   fullName={partner.full_name ?? ""}
                   email={partner.email ?? ""}
                   joined={partner.status === "joined" || partner.status === "active"}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-ink-900 dark:text-paper-50">
-                    {partner.full_name ?? t("profile.partner_no_name")}
-                  </p>
-                  <p className="text-sm text-ink-600 break-all dark:text-umber-200">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="min-w-0 truncate font-medium text-ink-900 dark:text-paper-50">
+                      {partner.full_name ?? t("profile.partner_no_name")}
+                    </p>
+                    <PartnerStatusPill status={partner.status} t={t} />
+                  </div>
+                  <p className="mt-0.5 truncate text-sm text-ink-600 dark:text-umber-200">
                     {partner.email ?? t("profile.partner_no_email")}
                   </p>
                 </div>
-                <PartnerStatusPill status={partner.status} t={t} />
               </div>
               {partner.status === "invited" && (
                 <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -1072,24 +1082,38 @@ export function ProfileHero({
   const days = daysUntilWedding(couple.wedding_date);
   return (
     <section className="mt-2 overflow-hidden rounded-2xl bg-paper-200 shadow-pop dark:bg-umber-800">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 px-6 py-5 sm:px-8 sm:py-6">
+      {/* Single-row flex on mobile so the three columns sit side-by-side
+       *  instead of wrap-stacking — the previous `flex-wrap items-center
+       *  gap-y-4` plus `text-2xl` serif squeezed the names column to ~100px
+       *  on a 360px viewport, which forced each word ("Andor", "és",
+       *  "Sári") onto its own line. Smaller name font + `truncate` keeps
+       *  the names on one line; the days counter shrinks too and uses a
+       *  one-word caption below `sm:` so it doesn't steal back the width. */}
+      <div className="flex items-center gap-3 px-4 py-4 sm:gap-6 sm:px-8 sm:py-6">
         <CoupleMonogram bride={bride} groom={groom} />
         <div className="min-w-0 flex-1">
-          <p className="font-serif text-2xl leading-tight tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+          <p className="truncate font-serif text-xl leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
             {namesLine || t("profile.title")}
           </p>
-          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+          <p className="mt-0.5 truncate text-xs text-ink-600 sm:mt-1 sm:text-sm dark:text-umber-200">
             {couple.wedding_date
               ? formatDate(couple.wedding_date, locale)
               : t("profile.hero_date_tbd")}
           </p>
         </div>
         {days !== null && (
-          <div className="ml-auto text-right">
-            <p className="font-serif text-3xl leading-none tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
+          <div className="shrink-0 text-right">
+            <p className="font-serif text-2xl leading-none tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
               {Math.abs(days)}
             </p>
-            <p className="mt-1 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {/* Long "Még 361 nap az esküvőig" / "361 days until your
+             *  wedding" caption stays on tablet+ but mobile gets a single
+             *  word — the big number above carries the count already and
+             *  the verbose caption was the chief width-thief. */}
+            <p className="mt-0.5 text-[10px] uppercase tracking-wide text-ink-500 sm:hidden dark:text-umber-300">
+              {t("profile.hero_days_caption_short")}
+            </p>
+            <p className="mt-1 hidden text-[11px] uppercase tracking-wide text-ink-500 sm:block dark:text-umber-300">
               {heroDaysLabel(days, t)}
             </p>
           </div>
@@ -1241,7 +1265,17 @@ function AccountSection({
           <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("profile.account_email_label")}
           </span>
-          <p className="mt-1 break-all text-base text-ink-800 dark:text-paper-100">{user.email}</p>
+          {/* `truncate` over the prior `break-all` so long addresses end
+           *  with an ellipsis instead of breaking mid-character (e.g.
+           *  `andor.csikasz@gma…l.com`). `title` keeps the full address
+           *  available on hover / long-press for users who need to read
+           *  the whole thing. */}
+          <p
+            className="mt-1 truncate text-base text-ink-800 dark:text-paper-100"
+            title={user.email}
+          >
+            {user.email}
+          </p>
         </li>
 
         <li className="py-3">
@@ -1739,7 +1773,9 @@ function PartnerStatusPill({
       "bg-ink-700 text-paper-100 border border-ink-800 dark:bg-paper-50 dark:text-umber-900 dark:border-paper-100",
   }[status];
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${cls}`}>
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium ${cls}`}
+    >
       {t(`profile.partner_status_${status}`)}
     </span>
   );

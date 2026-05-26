@@ -3002,6 +3002,7 @@ const hu: LocaleMessages = {
     hero_days_today: "Ma van az esküvő napja",
     hero_days_past: "{n} napja házasok",
     hero_date_tbd: "Még nincs kitűzve az időpont",
+    hero_days_caption_short: "Nap az esküvőig",
     account_title: "A fiókod",
     account_body:
       "Így jelensz meg a Weddly-n. Az e-mailed és jelszavad a Biztonság kártyában kezelhető.",
