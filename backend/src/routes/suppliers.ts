@@ -6,6 +6,7 @@ import type {
   DirectorySupplier,
   DirectorySupplierBase,
   SupplierCategory,
+  SupplierDetail,
   SupplierEventInput,
 } from "@shared/suppliers";
 import {
@@ -16,6 +17,10 @@ import { getCoupleForUser } from "../domain/couples";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
+import { getReviewSummary } from "../domain/reviews";
+import { countNonDeletedComments } from "../domain/supplier_comments";
+import { getAvailability } from "../domain/supplier_bookings";
+import { isAdminEmail } from "../domain/users";
 import { db } from "../db";
 import { haversineKm } from "../lib/geo";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -213,10 +218,119 @@ async function handleRecordEvents(ctx: Ctx): Promise<Response> {
   return json({ recorded: written });
 }
 
+function resolveSupplierBase(supplierId: string): DirectorySupplierBase | null {
+  const curated = DIRECTORY.find((s) => s.id === supplierId);
+  if (curated) return curated;
+  if (!supplierId.startsWith("c")) return null;
+  const community = listActiveCommunitySuppliers().find((c) => `c${c.id}` === supplierId);
+  return community ? toDirectorySupplierBase(community) : null;
+}
+
+/** GET /api/suppliers/:supplier_id — detail-page payload. v1 is admin-only on
+ *  the route layer (the detail page itself is admin-gated); flipping the auth
+ *  rule to requireAuth in Phase 3 makes the same shape couple-friendly. */
+async function handleDetail(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const supplierId = ctx.params.supplier_id?.trim();
+  if (!supplierId) throw new HttpError(400, "supplier_id required");
+  const base = resolveSupplierBase(supplierId);
+  if (!base) throw new HttpError(404, "Unknown supplier");
+
+  // Overlay vendor_account_id + hero from listings (same shape the list view
+  // uses). Curated entries default to null and only flip when the vendor
+  // claims the listing.
+  const listing = db
+    .prepare("SELECT vendor_account_id, hero_image_url FROM listings WHERE id = ?")
+    .get(supplierId) as
+    | { vendor_account_id: number | null; hero_image_url: string | null }
+    | undefined;
+  if (listing) {
+    base.vendor_account_id = listing.vendor_account_id;
+    base.hero_image_url = listing.hero_image_url;
+  }
+
+  // Vote overlay so the detail page can keep the up/down hint above the
+  // stars during the migration window (v1 retains both surfaces).
+  const scores = getScoresMap();
+  const couple = getCoupleForUser(userId);
+  const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
+  const directory: DirectorySupplier = {
+    ...base,
+    votes_score: scores.get(base.id) ?? 0,
+    user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
+  };
+
+  const reviewsSummary = getReviewSummary(supplierId);
+  const availability = getAvailability(supplierId);
+
+  // Admin viewer gets two extra fields. Non-admins (Phase 3) only see
+  // bookable + the public review summary.
+  const userRow = db
+    .prepare("SELECT email FROM users WHERE id = ?")
+    .get(userId) as { email: string } | undefined;
+  const viewerIsAdmin = userRow ? isAdminEmail(userRow.email) : false;
+
+  const payload: SupplierDetail = {
+    ...directory,
+    reviews_summary: reviewsSummary,
+    bookable: availability.bookable,
+    ...(viewerIsAdmin
+      ? {
+          comments_count: countNonDeletedComments(supplierId),
+          next_available: availability.next_available,
+        }
+      : {}),
+  };
+  return json(payload);
+}
+
+/** GET /r/supplier/:supplier_id — tracked website redirect for unclaimed
+ *  curated/community suppliers. Records a `website_click` event so the
+ *  vendor-acquisition team can see demand signal without us cold-emailing the
+ *  vendor. 302 to the listing's website; 404 when the supplier doesn't exist
+ *  or has no website on file. No auth — couples (Phase 3) and anonymous
+ *  visitors both can use it. */
+async function handleRedirect(ctx: Ctx): Promise<Response> {
+  const supplierId = ctx.params.supplier_id?.trim();
+  if (!supplierId) return new Response("Not found", { status: 404 });
+  const base = resolveSupplierBase(supplierId);
+  if (!base || !base.website) return new Response("Not found", { status: 404 });
+
+  const coupleId = ctx.userId ? (getCoupleForUser(ctx.userId)?.id ?? null) : null;
+  // Reuse the existing suppliers event ingest path. Single event so the
+  // counter increments in the same Map the admin directory reads from.
+  recordSupplierEventsSafe(
+    [{ supplier_id: supplierId, type: "website_click" }],
+    ctx.userId ?? null,
+    coupleId,
+  );
+
+  // Defend against open-redirect: only forward to absolute http(s) URLs.
+  let target = base.website.trim();
+  if (!target.startsWith("http://") && !target.startsWith("https://")) {
+    target = `https://${target}`;
+  }
+  return new Response(null, { status: 302, headers: { Location: target } });
+}
+
+function recordSupplierEventsSafe(
+  events: SupplierEventInput[],
+  userId: number | null,
+  coupleId: number | null,
+): void {
+  try {
+    recordSupplierEvents(events, userId, coupleId);
+  } catch {
+    // Telemetry must never block a redirect — swallow.
+  }
+}
+
 export function registerSupplierRoutes(router: Router) {
   router.get("/api/suppliers", handleList);
+  router.get("/api/suppliers/:supplier_id", handleDetail, true);
   router.post("/api/suppliers/events", handleRecordEvents);
   router.put("/api/suppliers/:supplier_id/vote", handleVote, true);
+  router.get("/r/supplier/:supplier_id", handleRedirect);
   // Silence the unused-import warning for VALID_CATEGORIES; it's left here
   // so a future "validate cat param" path is one line away.
   void VALID_CATEGORIES;

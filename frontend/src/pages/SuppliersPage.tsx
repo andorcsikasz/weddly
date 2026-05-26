@@ -57,7 +57,7 @@ import {
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { OutreachInbox } from "../components/OutreachInbox";
@@ -1327,7 +1327,16 @@ export default function SuppliersPage() {
                   <Avatar name={s.name} heroUrl={s.hero_image_url} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                      {user?.is_admin ? (
+                        <Link
+                          to={`/app/suppliers/${encodeURIComponent(s.id)}`}
+                          className="truncate text-sm font-semibold hover:underline"
+                        >
+                          {s.name}
+                        </Link>
+                      ) : (
+                        <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                      )}
                       {s.source === "community" && s.submitter_type === "self" && (
                         <span
                           className="hidden shrink-0 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 sm:inline-flex"
@@ -1495,7 +1504,16 @@ export default function SuppliersPage() {
                 <div className="flex items-start gap-3 pr-16">
                   <Avatar name={s.name} heroUrl={s.hero_image_url} />
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                    {user?.is_admin ? (
+                      <Link
+                        to={`/app/suppliers/${encodeURIComponent(s.id)}`}
+                        className="block truncate text-base font-semibold hover:underline"
+                      >
+                        {s.name}
+                      </Link>
+                    ) : (
+                      <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                    )}
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                       <span className="inline-flex items-center gap-1 uppercase tracking-wide">
                         <Icon size={12} aria-hidden />

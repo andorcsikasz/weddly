@@ -139,6 +139,16 @@ export function wipeAll(): void {
     "couple_currency_history",
     "consent_log",
     "supplier_views",
+    // Admin-only supplier detail tables — wipe in child-before-parent order
+    // (review_tags references supplier_reviews via FK; the latter has no FK
+    // to anything we wipe afterwards). Aggregates table is keyed by
+    // supplier_id string so no FK ordering concern.
+    "supplier_review_tags",
+    "supplier_reviews",
+    "supplier_comments",
+    "supplier_bookings",
+    "vendor_unavailable_dates",
+    "supplier_aggregates",
     // Wipe the taxonomy AFTER the community/couple supplier tables that
     // reference it (FK on category slug) — then seedSupplierTaxonomy at the
     // bottom of this function repopulates the 6 default groups / 14

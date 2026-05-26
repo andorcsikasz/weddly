@@ -2432,6 +2432,87 @@ export interface LocaleMessages {
       /** Per-column actions on the comparison card header. */
       remove_column: string;
     };
+    /** Admin-only supplier detail page (admin-gated route, v1 dogfood). Wired
+     *  up at /app/suppliers/:supplier_id; the directory card links here only
+     *  for admin viewers. */
+    detail: {
+      adminTitle: string;
+      back: string;
+      claimed: string;
+      unclaimed: string;
+      reviews: {
+        title: string;
+        yourRating: string;
+        bodyPlaceholder: string;
+        tagsLabel: string;
+        publishedLabel: string;
+        submit: string;
+        submitted: string;
+        empty: string;
+        alreadyReviewed: string;
+        deleted: string;
+        deleteConfirmTitle: string;
+        deleteConfirmBody: string;
+      };
+      comments: {
+        title: string;
+        placeholder: string;
+        submit: string;
+        submitted: string;
+        empty: string;
+        deleteConfirmTitle: string;
+        deleteConfirmBody: string;
+        visibility: {
+          admin_internal: string;
+          public: string;
+          vendor_only: string;
+        };
+      };
+      calendar: {
+        title: string;
+        unclaimedNote: string;
+        visitWebsite: string;
+        nextAvailable: string;
+        fullyBooked: string;
+        blockedCount: string;
+        noBookings: string;
+        downloadIcs: string;
+        status: {
+          requested: string;
+          vendor_seen: string;
+          confirmed: string;
+          declined: string;
+          cancelled: string;
+          expired: string;
+        };
+      };
+      adminMeta: {
+        title: string;
+        id: string;
+        source: string;
+        vendorAccount: string;
+        commentsCount: string;
+        redirect: string;
+      };
+    };
+    /** Review tag labels shared between the composer (admin selects up to 5)
+     *  and the card-rendered top-tag chips. */
+    reviewTags: {
+      parking: string;
+      accessible: string;
+      english_speaking: string;
+      flexible: string;
+      value: string;
+      responsive: string;
+      punctual: string;
+      pet_friendly: string;
+      lgbt_friendly: string;
+      kid_friendly: string;
+      outdoor_space: string;
+      vegan_options: string;
+      kosher: string;
+      halal: string;
+    };
   };
   admin: {
     nav_label: string;
@@ -2533,7 +2614,15 @@ export interface LocaleMessages {
     waitlist_card_more_label: string;
     waitlist_card_sent_label: string;
     waitlist_card_portfolio_label: string;
+    waitlist_card_portfolio_other_label: string;
     waitlist_card_instagram_label: string;
+    waitlist_card_channel_row_label: string;
+    waitlist_card_channel_website: string;
+    waitlist_card_channel_instagram: string;
+    waitlist_card_channel_youtube: string;
+    waitlist_card_channel_facebook: string;
+    waitlist_card_channel_visit: string;
+    waitlist_card_channel_none: string;
     waitlist_action_respond: string;
     waitlist_action_reopen: string;
     waitlist_modal_title: string;

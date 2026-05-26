@@ -86,6 +86,15 @@ export function purgeOneCouple(
   ).run(coupleId);
   db.prepare("DELETE FROM outreach_campaigns WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM supplier_votes WHERE couple_id = ?").run(coupleId);
+  // Supplier detail page — couple-authored reviews, Q&A comments by the
+  // couple's users, and booking inquiries. Editorial reviews (couple_id NULL)
+  // belong to admins, not to this workspace, so they stay untouched.
+  // supplier_review_tags cascades via FK ON DELETE CASCADE.
+  db.prepare("DELETE FROM supplier_reviews WHERE couple_id = ?").run(coupleId);
+  db.prepare(
+    "DELETE FROM supplier_comments WHERE author_user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+  ).run(coupleId);
+  db.prepare("DELETE FROM supplier_bookings WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM planning_items WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM schedule_events WHERE couple_id = ?").run(coupleId);
   db.prepare("DELETE FROM budget_lines WHERE couple_id = ?").run(coupleId);

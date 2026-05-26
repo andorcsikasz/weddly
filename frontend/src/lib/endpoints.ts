@@ -72,10 +72,20 @@ import type {
 } from "@shared/admin_analytics";
 import type {
   AdminDirectoryFilters,
+  CommentListResponse,
+  CreateBookingBody,
+  CreateCommentBody,
+  CreateReviewBody,
   DirectorySupplier,
+  ReviewListResponse,
+  SupplierAvailability,
+  SupplierBooking,
   SupplierCategory,
+  SupplierComment,
+  SupplierDetail,
   SupplierDirectoryAdminRow,
   SupplierEventInput,
+  SupplierReview,
 } from "@shared/suppliers";
 import type {
   AdminSupplierCategory,
@@ -806,6 +816,79 @@ export const supplierApi = {
    *  so we make one POST per page instead of one per row. */
   recordEvents: (events: SupplierEventInput[]) =>
     apiFetch<{ recorded: number }>("POST", "/api/suppliers/events", { events }),
+  /** Fetch the detail-page payload (reviews summary, comments count for admin,
+   *  next available date for admin, bookable flag). Admin-only on the route
+   *  in v1; will downgrade to requireAuth in Phase 3. */
+  detail: (supplierId: string) =>
+    apiFetch<SupplierDetail>("GET", `/api/suppliers/${encodeURIComponent(supplierId)}`),
+};
+
+export const reviewApi = {
+  list: (supplierId: string, opts?: { cursor?: string | null; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (opts?.cursor) qs.set("cursor", opts.cursor);
+    if (opts?.limit) qs.set("limit", String(opts.limit));
+    const tail = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch<ReviewListResponse>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/reviews${tail}`,
+    );
+  },
+  create: (supplierId: string, body: CreateReviewBody) =>
+    apiFetch<SupplierReview>(
+      "POST",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/reviews`,
+      body,
+    ),
+  update: (reviewId: number, body: Partial<CreateReviewBody>) =>
+    apiFetch<SupplierReview>("PATCH", `/api/reviews/${reviewId}`, body),
+  remove: (reviewId: number) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/reviews/${reviewId}`),
+};
+
+export const supplierCommentApi = {
+  list: (supplierId: string, opts?: { cursor?: string | null; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (opts?.cursor) qs.set("cursor", opts.cursor);
+    if (opts?.limit) qs.set("limit", String(opts.limit));
+    const tail = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch<CommentListResponse>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/comments${tail}`,
+    );
+  },
+  create: (supplierId: string, body: CreateCommentBody) =>
+    apiFetch<SupplierComment>(
+      "POST",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/comments`,
+      body,
+    ),
+  remove: (commentId: number) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/comments/${commentId}`),
+};
+
+export const supplierBookingApi = {
+  availability: (supplierId: string) =>
+    apiFetch<SupplierAvailability>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/availability`,
+    ),
+  list: (supplierId: string) =>
+    apiFetch<{ items: SupplierBooking[] }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/bookings`,
+    ),
+  create: (supplierId: string, body: CreateBookingBody & { couple_id: number }) =>
+    apiFetch<SupplierBooking>(
+      "POST",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/bookings`,
+      body,
+    ),
+  updateStatus: (bookingId: number, status: SupplierBooking["status"]) =>
+    apiFetch<SupplierBooking>("PATCH", `/api/bookings/${bookingId}`, { status }),
+  /** Returns the .ics URL. The actual download is handled by the browser via
+   *  a plain <a download> — apiFetch is JSON-only. */
+  icsUrl: (bookingId: number) => `/api/bookings/${bookingId}/ics`,
 };
 
 export const coupleSupplierApi = {

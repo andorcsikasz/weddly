@@ -901,3 +901,117 @@ CREATE TABLE IF NOT EXISTS outreach_replies (
   received_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_outreach_replies_message ON outreach_replies(message_id, received_at DESC);
+
+-- ── Supplier detail page: reviews + Q&A + bookings ──────────────────────────
+--
+-- Admin-only in v1 (every write endpoint behind requireAdmin). Phase 3 flips
+-- writes to requireAuth + engagement-proof gate (couple_picks / couple_supplier_costs).
+-- Five-agent design debate concluded:
+--   - schema lives now, content (editorial reviews) deferred to Phase 3
+--   - author_user_id NOT NULL + couple_id NULL: admin authors leave couple_id NULL,
+--     couple authors populate it; partial unique on (supplier_id, couple_id)
+--     enforces "one review per couple per supplier" without blocking admins
+--   - supplier_id stays the public string id (curated slug or "c{N}") — no FK
+--     because curated suppliers live in code (domain/suppliers_data.ts)
+--   - tag pool is hardcoded in shared/suppliers.ts (controlled vocabulary, not taxonomy)
+--   - booking inquiries CLAIMED-VENDORS-ONLY in v1; unclaimed redirect via
+--     supplier_views.website_click event (no separate table needed)
+
+CREATE TABLE IF NOT EXISTS supplier_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id TEXT NOT NULL,                                   -- curated slug or "c{N}"
+  author_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  couple_id INTEGER REFERENCES couples(id) ON DELETE CASCADE,  -- NULL = admin/editorial
+  rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  body TEXT,                                                   -- nullable: rating-only review allowed
+  published INTEGER NOT NULL DEFAULT 0,                        -- 0 = draft/hidden, 1 = surfaced publicly
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER                                           -- soft-delete tombstone
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_reviews_supplier
+  ON supplier_reviews(supplier_id, published, deleted_at);
+CREATE INDEX IF NOT EXISTS idx_supplier_reviews_author
+  ON supplier_reviews(author_user_id);
+-- Partial unique: one review per couple per supplier. Admin reviews (couple_id NULL)
+-- are exempted so two admins can both seed an editorial entry for the same supplier.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_reviews_couple_unique
+  ON supplier_reviews(supplier_id, couple_id) WHERE couple_id IS NOT NULL;
+
+-- Multi-select tags per review. Vocabulary is enforced application-side from
+-- SUPPLIER_REVIEW_TAGS (shared/suppliers.ts) — keeping the DDL free of CHECK
+-- clauses so we can add a tag in code without a schema bump.
+CREATE TABLE IF NOT EXISTS supplier_review_tags (
+  review_id INTEGER NOT NULL REFERENCES supplier_reviews(id) ON DELETE CASCADE,
+  tag TEXT NOT NULL,
+  PRIMARY KEY (review_id, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_review_tags_tag ON supplier_review_tags(tag);
+
+-- Q&A threads on a supplier. `visibility` separates admin-only notes (v1 default)
+-- from public Q&A (Phase 3 flip). `parent_id` enables one-level reply (top-level
+-- question + one answer); deeper nesting is intentionally rejected at write time.
+CREATE TABLE IF NOT EXISTS supplier_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id TEXT NOT NULL,
+  parent_id INTEGER REFERENCES supplier_comments(id) ON DELETE CASCADE,
+  author_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  visibility TEXT NOT NULL DEFAULT 'admin_internal',           -- 'admin_internal' | 'public' | 'vendor_only'
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_comments_supplier
+  ON supplier_comments(supplier_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_supplier_comments_parent
+  ON supplier_comments(parent_id);
+
+-- Booking inquiries. v1 = claimed-vendors-only (vendor_account_id NOT NULL
+-- enforced at the route layer, not the DDL — the column is nullable so a
+-- Phase-3 "inquiry to unclaimed via contact_email" flow can populate it later).
+-- event_date is day-granular ISO 'YYYY-MM-DD'; no time-of-day in v1.
+CREATE TABLE IF NOT EXISTS supplier_bookings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id TEXT NOT NULL,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  vendor_account_id INTEGER REFERENCES vendor_accounts(id) ON DELETE SET NULL,
+  event_date TEXT NOT NULL,                                    -- 'YYYY-MM-DD'
+  status TEXT NOT NULL DEFAULT 'requested',                    -- 'requested' | 'vendor_seen' | 'confirmed' | 'declined' | 'cancelled' | 'expired'
+  notes TEXT,
+  amount_huf INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_bookings_supplier
+  ON supplier_bookings(supplier_id, event_date);
+CREATE INDEX IF NOT EXISTS idx_supplier_bookings_couple
+  ON supplier_bookings(couple_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_supplier_bookings_vendor
+  ON supplier_bookings(vendor_account_id, status);
+
+-- Vendor-published blocked dates. Sparse-row model: every row = one closed day.
+-- Only claimed vendors can populate (enforced at the route layer via their
+-- vendor_account_id session). UNIQUE prevents double-blocking the same day.
+CREATE TABLE IF NOT EXISTS vendor_unavailable_dates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  blocked_date TEXT NOT NULL,                                  -- 'YYYY-MM-DD'
+  reason TEXT,
+  created_at INTEGER NOT NULL,
+  UNIQUE(vendor_account_id, blocked_date)
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_unavailable_dates_vendor
+  ON vendor_unavailable_dates(vendor_account_id, blocked_date);
+
+-- Denormalised supplier rollup. One row per supplier_id (lazy upsert from the
+-- domain layer on every review write). Saves an aggregation pass on the
+-- directory list endpoint and the detail GET. `top_tags` is a JSON array of
+-- {tag, count} sorted desc — frontend reads as-is for the card pill row.
+CREATE TABLE IF NOT EXISTS supplier_aggregates (
+  supplier_id TEXT PRIMARY KEY,
+  avg_rating REAL,
+  reviews_count INTEGER NOT NULL DEFAULT 0,
+  top_tags TEXT NOT NULL DEFAULT '[]',                         -- JSON [{tag, count}, …]
+  updated_at INTEGER NOT NULL
+);

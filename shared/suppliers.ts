@@ -191,3 +191,165 @@ export interface AdminDirectoryFilters {
   from?: number | null;
   to?: number | null;
 }
+
+// ─── Supplier detail page (admin-only v1) ───────────────────────────────────
+//
+// Reviews, Q&A comments and booking inquiries that hang off the supplier
+// detail page. v1 is admin-only on the write side; Phase 3 flips to couple
+// authors with an engagement-proof gate (must have couple_picks or
+// couple_supplier_costs row for the supplier). See schema.sql for the table
+// shapes and the 5-agent debate doc for the design rationale.
+
+/** Hardcoded review tag vocabulary. Controlled list, not an admin-managed
+ *  taxonomy — adding a tag is a 4-line code change (constant + HU key + EN
+ *  key + test) which is cheaper than a CRUD interface for a list that moves
+ *  ~once a quarter. Couples pick max 5 tags per review. */
+export const SUPPLIER_REVIEW_TAGS = [
+  "parking",
+  "accessible",
+  "english_speaking",
+  "flexible",
+  "value",
+  "responsive",
+  "punctual",
+  "pet_friendly",
+  "lgbt_friendly",
+  "kid_friendly",
+  "outdoor_space",
+  "vegan_options",
+  "kosher",
+  "halal",
+] as const;
+export type SupplierReviewTag = (typeof SUPPLIER_REVIEW_TAGS)[number];
+export const MAX_REVIEW_TAGS = 5;
+export const REVIEW_BODY_MAX_CHARS = 4000;
+export const COMMENT_BODY_MAX_CHARS = 1500;
+
+export type CommentVisibility = "admin_internal" | "public" | "vendor_only";
+export type BookingStatus =
+  | "requested"
+  | "vendor_seen"
+  | "confirmed"
+  | "declined"
+  | "cancelled"
+  | "expired";
+
+/** A review on a supplier. `author.displayName` is pre-resolved server-side:
+ *  - admin authors (couple_id null) render as "Weddly editors"
+ *  - couple authors render as the couple's display name (or anonymised when
+ *    the privacy setting requires) */
+export interface SupplierReview {
+  id: number;
+  supplier_id: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  body: string | null;
+  tags: SupplierReviewTag[];
+  published: boolean;
+  /** True when the row's `couple_id` is null — i.e. authored by an admin under
+   *  the "Weddly editors" voice. Drives the badge on the card. */
+  editorial: boolean;
+  author: {
+    display_name: string;
+  };
+  created_at: number;
+  updated_at: number;
+}
+
+export interface CreateReviewBody {
+  rating: number;
+  body?: string | null;
+  tags?: string[];
+  published?: boolean;
+}
+
+export interface ReviewListResponse {
+  items: SupplierReview[];
+  nextCursor: string | null;
+  summary: ReviewSummary;
+}
+
+/** Card- and detail-page-friendly rollup. Stays null until the supplier has
+ *  ≥3 published reviews (cold-start gate) so a single 1-star doesn't read as
+ *  the supplier's whole reputation. */
+export interface ReviewSummary {
+  avg_rating: number | null;
+  reviews_count: number;
+  /** 1★…5★ histogram. Always 5 entries, indexed 0=1★ through 4=5★. */
+  histogram: [number, number, number, number, number];
+  /** Top tags by mention count, capped to 5. Each item: {tag, count}. Empty
+   *  when no reviews carry tags. */
+  top_tags: Array<{ tag: SupplierReviewTag; count: number }>;
+}
+
+export interface SupplierComment {
+  id: number;
+  supplier_id: string;
+  parent_id: number | null;
+  visibility: CommentVisibility;
+  body: string;
+  author: {
+    display_name: string;
+    /** True for admin authors — frontend renders the "Weddly" badge. */
+    is_admin: boolean;
+  };
+  created_at: number;
+  updated_at: number;
+}
+
+export interface CreateCommentBody {
+  body: string;
+  parent_id?: number | null;
+  visibility?: CommentVisibility;
+}
+
+export interface CommentListResponse {
+  items: SupplierComment[];
+  nextCursor: string | null;
+}
+
+export interface SupplierBooking {
+  id: number;
+  supplier_id: string;
+  couple_id: number;
+  vendor_account_id: number | null;
+  event_date: string;
+  status: BookingStatus;
+  notes: string | null;
+  amount_huf: number | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface CreateBookingBody {
+  event_date: string;
+  notes?: string | null;
+  amount_huf?: number | null;
+}
+
+export interface SupplierAvailability {
+  /** Sorted ascending list of 'YYYY-MM-DD' dates the vendor has blocked. */
+  unavailable_dates: string[];
+  /** Earliest available date from "today" that is NOT blocked and has no
+   *  pending booking. Null when the supplier is unclaimed (no vendor calendar
+   *  to consult). */
+  next_available: string | null;
+  /** True when the supplier is claimed by a vendor and therefore accepts
+   *  booking inquiries. v1 rejects inquiries on unclaimed listings. */
+  bookable: boolean;
+}
+
+/** Returned by `GET /api/suppliers/:id`. Wraps the standard DirectorySupplier
+ *  with the detail-page-only fields. Admin-only fields (comments_count,
+ *  next_available) are omitted server-side when the caller isn't admin. */
+export interface SupplierDetail extends DirectorySupplier {
+  reviews_summary: ReviewSummary;
+  /** Number of non-deleted comments on this supplier. Admin-only field —
+   *  undefined when the caller is not admin. */
+  comments_count?: number;
+  /** Earliest available date if the supplier is claimed; null otherwise.
+   *  Admin-only field. */
+  next_available?: string | null;
+  /** Whether the supplier accepts booking inquiries today (claimed + has a
+   *  vendor_account_id). Always present so the CTA logic can branch. */
+  bookable: boolean;
+}

@@ -58,6 +58,7 @@ const RsvpPage = lazy(() => import("./pages/RsvpPage"));
 const SchedulePage = lazy(() => import("./pages/SchedulePage"));
 const SeatingPage = lazy(() => import("./pages/SeatingPage"));
 const SuppliersPage = lazy(() => import("./pages/SuppliersPage"));
+const SupplierDetailPage = lazy(() => import("./pages/SupplierDetailPage"));
 const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage"));
@@ -104,12 +105,7 @@ function RequireAdmin({ children }: { children: JSX.Element }) {
  *  to the unified surface. `replace` so the back button doesn't bounce. */
 function GuestPageRedirect() {
   const { slug = "", code = "" } = useParams<{ slug: string; code: string }>();
-  return (
-    <Navigate
-      to={`/w/${encodeURIComponent(slug)}/${encodeURIComponent(code)}`}
-      replace
-    />
-  );
+  return <Navigate to={`/w/${encodeURIComponent(slug)}/${encodeURIComponent(code)}`} replace />;
 }
 
 function RedirectIfAuthed({ children }: { children: JSX.Element }) {
@@ -583,6 +579,16 @@ export default function App() {
             <Page>
               <RequireAdmin>
                 <AdminSuppliersPage />
+              </RequireAdmin>
+            </Page>
+          }
+        />
+        <Route
+          path="suppliers/:supplier_id"
+          element={
+            <Page>
+              <RequireAdmin>
+                <SupplierDetailPage />
               </RequireAdmin>
             </Page>
           }
