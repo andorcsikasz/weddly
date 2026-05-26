@@ -20,6 +20,7 @@ import {
   CalendarClock,
   CalendarHeart,
   Camera,
+  ChevronDown,
   Clipboard,
   ClipboardList,
   Clock,
@@ -1040,9 +1041,21 @@ export default function DashboardPage() {
         <>
           {/* ── Two-column body: tasks + breakdowns ────────────────────── */}
           <section className="mb-8 grid gap-4 lg:grid-cols-3">
-            {/* Tasks (spans 2/3 on lg). */}
-            <div className="card lg:col-span-2">
-              <div className="mb-4 flex items-baseline justify-between">
+            {/* Tasks (spans 2/3 on lg). On phones this collapses behind a
+             *  disclosure so the dashboard's first scroll isn't dominated
+             *  by an 8-item checklist — the progress chip in the summary
+             *  carries the "are we done?" signal at a glance. */}
+            <MobileCollapsibleCard
+              className="card lg:col-span-2 p-0 md:p-6"
+              bodyClassName="px-4 pb-4 md:px-0 md:pb-0"
+              title={t("dashboard.tasks_title")}
+              trailing={
+                <span>
+                  {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
+                </span>
+              }
+            >
+              <div className="mb-4 hidden items-baseline justify-between md:flex">
                 <h2>{t("dashboard.tasks_title")}</h2>
                 <span className="text-xs text-ink-500 dark:text-umber-300">
                   {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
@@ -1125,12 +1138,26 @@ export default function DashboardPage() {
                   );
                 })}
               </ul>
-            </div>
+            </MobileCollapsibleCard>
 
             {/* RSVP breakdown — stretches to match the tasks column. */}
             <div className="grid gap-4">
-              <div className="card flex h-full flex-col">
-                <h3 className="text-sm font-semibold text-ink-700 dark:text-paper-100">
+              <MobileCollapsibleCard
+                className="card flex h-full flex-col p-0 md:p-6"
+                bodyClassName="flex flex-1 flex-col px-4 pb-4 md:px-0 md:pb-0"
+                title={t("dashboard.rsvp_breakdown_title")}
+                trailing={
+                  totalGuests > 0 ? (
+                    <span>
+                      {t("dashboard.rsvp_responded_of_total", {
+                        responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
+                        total: formatNumber(totalGuests, locale),
+                      })}
+                    </span>
+                  ) : null
+                }
+              >
+                <h3 className="hidden text-sm font-semibold text-ink-700 md:block dark:text-paper-100">
                   {t("dashboard.rsvp_breakdown_title")}
                 </h3>
                 <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
@@ -1190,14 +1217,14 @@ export default function DashboardPage() {
                   />
                 </ul>
                 {totalGuests > 0 && (
-                  <p className="mt-4 border-t border-paper-200 pt-3 text-center text-xs text-ink-500 dark:border-umber-700 dark:text-umber-300">
+                  <p className="mt-4 hidden border-t border-paper-200 pt-3 text-center text-xs text-ink-500 md:block dark:border-umber-700 dark:text-umber-300">
                     {t("dashboard.rsvp_responded_of_total", {
                       responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
                       total: formatNumber(totalGuests, locale),
                     })}
                   </p>
                 )}
-              </div>
+              </MobileCollapsibleCard>
             </div>
           </section>
 
@@ -1741,6 +1768,74 @@ function Segment({
   return <div className={className} style={{ width: `${pct}%` }} aria-hidden="true" />;
 }
 
+/** Wrap a dashboard section so it renders as a collapsible disclosure on
+ *  phones (default closed) and as a plain block on tablet+ (no summary,
+ *  no chevron, always open). The user-facing intent is "let the dashboard
+ *  breathe on mobile" without losing the section on a desktop where the
+ *  cards already sit side-by-side.
+ *
+ *  The render switches forks per viewport so the title is mounted exactly
+ *  once — earlier prototypes rendered both a summary chip and a body h2
+ *  with the same copy and tripped `getByText` duplicate-match assertions
+ *  whenever CSS wasn't loaded (test env). */
+function MobileCollapsibleCard({
+  title,
+  trailing,
+  className,
+  bodyClassName,
+  children,
+}: {
+  title: ReactNode;
+  trailing?: ReactNode;
+  className?: string;
+  bodyClassName?: string;
+  children: ReactNode;
+}) {
+  // Initial: assume desktop so SSR + initial paint don't flash a
+  // collapsed section on wide viewports. Real viewport is measured in
+  // the `useEffect` below and pulls `isWide` to false on phones — one
+  // tick of paint, then the disclosure folds.
+  const [isWide, setIsWide] = useState(true);
+  const [userOpen, setUserOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    setIsWide(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsWide(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  if (isWide) {
+    return <div className={className}>{children}</div>;
+  }
+
+  const open = userOpen;
+  return (
+    <details
+      className={className}
+      open={open}
+      onToggle={(e) => setUserOpen((e.target as HTMLDetailsElement).open)}
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+        <div className="min-w-0 flex-1 text-base font-medium text-ink-900 dark:text-paper-50">
+          {title}
+        </div>
+        <div className="flex shrink-0 items-center gap-2 text-xs text-ink-500 dark:text-umber-300">
+          {trailing}
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={`transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </div>
+      </summary>
+      <div className={bodyClassName}>{children}</div>
+    </details>
+  );
+}
+
 function RsvpRow({
   status,
   swatch,
@@ -1973,15 +2068,29 @@ function DayOfPanel({
 
   return (
     <div className="mx-auto mb-8 max-w-3xl">
-      {/* Hero — Today / Tomorrow + big check-in URL + (TODO) QR. */}
-      <section
-        className="card mb-6 border-2 border-blush-200 bg-blush-50/40 text-center dark:border-blush-400/40 dark:bg-blush-400/15"
-        aria-label={t("dashboard.day_of_mode_title")}
+      {/* Hero — Today / Tomorrow + big check-in URL + (TODO) QR. On phones
+       *  the section collapses behind a disclosure so the dashboard's
+       *  first scroll isn't a tall blush slab — the day-of label still
+       *  reads in the summary and the check-in URL is one tap away. */}
+      <MobileCollapsibleCard
+        className="card mb-6 border-2 border-blush-200 bg-blush-50/40 text-center md:p-6 dark:border-blush-400/40 dark:bg-blush-400/15"
+        bodyClassName="px-4 pb-4 md:px-0 md:pb-0"
+        title={
+          <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+            <QrCode size={14} aria-hidden="true" />
+            {t("dashboard.day_of_mode_title")}
+          </span>
+        }
+        trailing={
+          <span className="font-mono text-[11px] uppercase">
+            {isToday ? t("dashboard.day_of_today_label") : t("dashboard.day_of_tomorrow_label")}
+          </span>
+        }
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+        <p className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-blush-700 md:block dark:text-blush-300">
           {t("dashboard.day_of_mode_title")}
         </p>
-        <p className="mt-2 text-3xl font-serif text-ink-900 dark:text-paper-50">
+        <p className="mt-2 hidden text-3xl font-serif text-ink-900 md:block dark:text-paper-50">
           {isToday ? t("dashboard.day_of_today_label") : t("dashboard.day_of_tomorrow_label")}
         </p>
         <h2 className="mt-6 flex items-center justify-center gap-2 text-base font-semibold text-ink-900 dark:text-paper-50">
@@ -2032,7 +2141,7 @@ function DayOfPanel({
             {t("dashboard.day_of_checkin_no_slug")}
           </p>
         )}
-      </section>
+      </MobileCollapsibleCard>
 
       {/* Live stats — two big numbers. Big type so a glance at arm's
           length reads cleanly. */}

@@ -519,20 +519,22 @@ export function CostPlanningCard({
         </div>
       </div>
 
-      {/* Big centred live count — number large, "vendég" small below. The
-       *  negative top margin pulls the number up flush under the eyebrow row
-       *  so there's no empty band between them. */}
-      <div className="-mt-3 text-center">
-        <div className="font-serif text-4xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
+      {/* Big centred live count — number large, "vendég" small below. On
+       *  desktop the negative top margin pulls the number flush under the
+       *  eyebrow row, but on phones that overlap reads as crowded against
+       *  the overage pill that wraps to its own line — so mobile gets a
+       *  positive top gap and a touch more breathing room under the label. */}
+      <div className="mt-3 text-center sm:-mt-3">
+        <div className="font-serif text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
           {formatNumber(count, locale)}
         </div>
-        <div className="mt-0.5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        <div className="mt-2 text-xs uppercase tracking-wide text-ink-500 sm:mt-0.5 dark:text-umber-300">
           {t("budget.cost_planning_unit_label")}
         </div>
       </div>
 
       {/* Headcount slider — compact single block. */}
-      <div className="mt-4">
+      <div className="mt-6 sm:mt-4">
         <input
           type="range"
           min={minCount}
@@ -822,8 +824,15 @@ function CategoryRowInner({
       ) : (
         <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
       )}
-      <span className={`truncate ${frozen ? "text-blush-700 dark:text-blush-300" : ""}`}>
-        {categoryLabel}
+      {/* 8-char compact label on phones (with ellipsis) so the row's
+       *  left column can shrink from 7rem → 5rem and hand 2rem of width
+       *  back to the slider rail. The full label still renders on `sm:`
+       *  upwards where the column has room. */}
+      <span className={`min-w-0 truncate ${frozen ? "text-blush-700 dark:text-blush-300" : ""}`}>
+        <span className="sm:hidden">
+          {categoryLabel.length > 8 ? `${categoryLabel.slice(0, 8)}…` : categoryLabel}
+        </span>
+        <span className="hidden sm:inline">{categoryLabel}</span>
       </span>
     </>
   );
@@ -956,7 +965,11 @@ function CategoryRowInner({
       <li>
         <Link
           to={linkTo}
-          className="grid grid-cols-[7rem_minmax(0,1fr)_5.5rem] items-center gap-2 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
+          /* Mobile columns shrunk to `5rem` (label, with 8-char truncation)
+           * and `4.5rem` (amount, sans the "actual/" prefix that's hidden
+           * `<sm`) — the slider rail picks up the extra 3rem and the
+           * progress is readable at a glance instead of squashed. */
+          className="grid grid-cols-[5rem_minmax(0,1fr)_4.5rem] items-center gap-2 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
           aria-label={categoryLabel}
         >
           <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
@@ -977,7 +990,7 @@ function CategoryRowInner({
   return (
     <li
       id={`cat-${category}`}
-      className="grid grid-cols-[7rem_minmax(0,1fr)_5.5rem] scroll-mt-24 items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm"
+      className="grid grid-cols-[5rem_minmax(0,1fr)_4.5rem] scroll-mt-24 items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm"
     >
       {leftTile}
       <div className="w-full">
@@ -1075,7 +1088,7 @@ function CustomRowInner({
   }
 
   return (
-    <li className="grid grid-cols-[7rem_minmax(0,1fr)_5.5rem] items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm">
+    <li className="grid grid-cols-[5rem_minmax(0,1fr)_4.5rem] items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm">
       <span className="flex items-center gap-1.5 text-ink-700 dark:text-paper-100">
         {onRemove ? (
           <button
@@ -1089,7 +1102,15 @@ function CustomRowInner({
         ) : (
           <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
         )}
-        <span className="truncate">{line.label}</span>
+        {/* 8-char compact label on phones; full label on tablet+. Same
+         *  pattern as CategoryRow so custom rows scan with identical
+         *  rhythm. */}
+        <span className="min-w-0 truncate">
+          <span className="sm:hidden">
+            {line.label.length > 8 ? `${line.label.slice(0, 8)}…` : line.label}
+          </span>
+          <span className="hidden sm:inline">{line.label}</span>
+        </span>
       </span>
       <div className="w-full">
         <input

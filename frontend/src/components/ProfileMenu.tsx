@@ -3,16 +3,27 @@
 // Closes on outside click, Escape, route change, or item selection.
 
 import type { CouplePartnerView } from "@shared/types";
-import { ArrowLeftRight, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Languages,
+  LogOut,
+  MessageCircle,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { coupleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
-export function ProfileMenu() {
+/** `onOpenFeedback` is supplied by AppShell so the mobile entry point for
+ *  the feedback dialog (otherwise hidden inside the header on phones)
+ *  lives here in the profile dropdown. Omit on screens that don't host
+ *  a feedback dialog. */
+export function ProfileMenu({ onOpenFeedback }: { onOpenFeedback?: () => void } = {}) {
   const { user, logout } = useAuth();
-  const { t } = useT();
+  const { t, locale, setLocale } = useT();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -133,6 +144,41 @@ export function ProfileMenu() {
             <UserRound size={16} aria-hidden="true" />
             <span>{t("profile.menu_profile")}</span>
           </Link>
+          {/* Mobile-only entries — feedback + language toggles are hidden
+           *  from the header on phones; their canonical home below `sm`
+           *  is here in the profile dropdown. Tablet+ users keep using
+           *  the inline header icons (these stay hidden via `sm:hidden`). */}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              setLocale(locale === "hu" ? "en" : "hu");
+            }}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Languages size={16} aria-hidden="true" />
+              <span>{t("nav.switch_language")}</span>
+            </span>
+            <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {locale} → {locale === "hu" ? "en" : "hu"}
+            </span>
+          </button>
+          {onOpenFeedback && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onOpenFeedback();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              <MessageCircle size={16} aria-hidden="true" />
+              <span>{t("landing.nav_feedback")}</span>
+            </button>
+          )}
           {user.is_admin && (
             <>
               <Link

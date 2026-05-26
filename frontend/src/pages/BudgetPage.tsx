@@ -1402,9 +1402,26 @@ function BudgetMobileCard({
   const delta = actual - planned;
   return (
     <article id={id} data-category={category} className="card scroll-mt-24 p-3">
-      <header className="flex items-start justify-between gap-3">
+      <header className="flex items-start justify-between gap-2">
         <CategoryCell category={category} />
-        {actual > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
+        {/* Delta + bin sit together on the header row so the bin never
+         *  earns its own line at the bottom of the card — saving ~36 px
+         *  of vertical per category × 13 categories. Icon-only on mobile
+         *  per the explicit "icon alone enough" instruction. */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {actual > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
+          {canDelete && (
+            <button
+              type="button"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+              onClick={onDelete}
+              aria-label={t("budget.delete")}
+              title={t("budget.delete")}
+            >
+              <Trash2 size={14} aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </header>
       {/* Planned + Actual in a 2-col grid on mobile — the prior stacked
           layout had each label+input on its own row, so a 13-category list
@@ -1442,18 +1459,6 @@ function BudgetMobileCard({
           </dd>
         </div>
       </dl>
-      {canDelete && (
-        <div className="mt-1 flex justify-end">
-          <button
-            type="button"
-            className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
-            onClick={onDelete}
-            aria-label={t("budget.delete")}
-          >
-            <Trash2 size={14} /> {t("budget.delete")}
-          </button>
-        </div>
-      )}
     </article>
   );
 }
@@ -1479,9 +1484,23 @@ function BudgetMobileCustomCard({
   const delta = line.actual_huf - line.planned_huf;
   return (
     <article data-budget-line-id={line.id} data-category="other-custom" className="card p-3">
-      <header className="flex items-start justify-between gap-3">
+      <header className="flex items-start justify-between gap-2">
         <CustomRowLabel icon={line.icon} label={line.label} />
-        {line.actual_huf > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
+        {/* Bin lives inline with the delta pill — see BudgetMobileCard
+         *  for the rationale. Custom lines are always deletable so the
+         *  icon is unconditional here. */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {line.actual_huf > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
+          <button
+            type="button"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+            onClick={onDelete}
+            aria-label={t("budget.delete")}
+            title={t("budget.delete")}
+          >
+            <Trash2 size={14} aria-hidden="true" />
+          </button>
+        </div>
       </header>
       <dl className="mt-3 grid grid-cols-2 gap-3">
         <div className="min-w-0">
@@ -1511,16 +1530,6 @@ function BudgetMobileCustomCard({
           </dd>
         </div>
       </dl>
-      <div className="mt-1 flex justify-end">
-        <button
-          type="button"
-          className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
-          onClick={onDelete}
-          aria-label={t("budget.delete")}
-        >
-          <Trash2 size={14} /> {t("budget.delete")}
-        </button>
-      </div>
     </article>
   );
 }

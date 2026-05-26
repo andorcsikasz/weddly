@@ -85,7 +85,11 @@ export function WorkspaceSwitcher() {
         to="/app/settings/workspace"
         aria-label={t("workspace.create_link")}
         title={t("workspace.create_link")}
-        className="inline-flex h-7 w-7 items-center justify-center text-ink-700 transition-colors hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+        /* Hidden on phones — the single-workspace shortcut next to the
+         *  wordmark is one icon too many on small viewports. The same
+         *  destination is one tap away from the profile dropdown via
+         *  Settings → Workspace, so this is decorative on mobile. */
+        className="hidden h-7 w-7 items-center justify-center text-ink-700 transition-colors hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
       >
         <Plus size={14} aria-hidden="true" />
       </Link>
