@@ -368,12 +368,7 @@ export default function AdminUsersPage() {
     }
   }
 
-  function renderUserCell(
-    u: AdminUserView,
-    opts: { showLastActive?: boolean; remindCouple?: AdminCoupleView } = {},
-  ) {
-    const isSelf = currentAdmin?.id === u.id;
-    const isPending = pendingId === u.id;
+  function renderUserInfo(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
     const flag = u.active_flag;
     // Days-remaining countdown for the flag badge. Min 0 — we never display
     // a negative count; once the deadline passes the hourly sweep removes
@@ -382,144 +377,149 @@ export default function AdminUsersPage() {
       ? Math.max(0, Math.ceil((flag.scheduled_delete_at - Date.now()) / (24 * 60 * 60 * 1000)))
       : 0;
     return (
-      // Outer row stays single-line so the flag + trash + verify cluster
-      // sits in the same vertical column across every workspace card. The
-      // previous `flex-wrap` dropped the action group below the email when
-      // the email was long (which was most of them), giving the column an
-      // uneven "icons hanging out below random rows" look the user flagged.
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="font-medium text-ink-900 dark:text-paper-50">{u.full_name}</span>
-          <span className="text-xs text-ink-500 dark:text-umber-300 break-all">{u.email}</span>
-          {u.is_admin && (
-            <Pill tone="violet" srLabel={t("admin.badge_admin")}>
-              {t("admin.badge_admin")}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span className="font-medium text-ink-900 dark:text-paper-50">{u.full_name}</span>
+        <span className="text-xs text-ink-500 dark:text-umber-300 break-all">{u.email}</span>
+        {u.is_admin && (
+          <Pill tone="violet" srLabel={t("admin.badge_admin")}>
+            {t("admin.badge_admin")}
+          </Pill>
+        )}
+        {u.status === "suspended" && (
+          <Pill tone="muted" srLabel={t("admin.badge_suspended")}>
+            {t("admin.badge_suspended")}
+          </Pill>
+        )}
+        {!u.verified_email && <Pill tone="muted">{t("admin.badge_unverified")}</Pill>}
+        {flag && (
+          <span title={flag.reason}>
+            <Pill tone="blush" icon={<Flag size={11} aria-hidden />}>
+              {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
             </Pill>
-          )}
-          {u.status === "suspended" && (
-            <Pill tone="muted" srLabel={t("admin.badge_suspended")}>
-              {t("admin.badge_suspended")}
+          </span>
+        )}
+        {u.activity.prior_flag_count > 0 && (
+          <span title={t("admin.activity_prior_flags_tooltip", { n: u.activity.prior_flag_count })}>
+            <Pill tone="paper" icon={<Flag size={11} aria-hidden />}>
+              {u.activity.prior_flag_count}
             </Pill>
-          )}
-          {!u.verified_email && <Pill tone="muted">{t("admin.badge_unverified")}</Pill>}
-          {flag && (
-            <span title={flag.reason}>
-              <Pill tone="blush" icon={<Flag size={11} aria-hidden />}>
-                {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
-              </Pill>
-            </span>
-          )}
-          {u.activity.prior_flag_count > 0 && (
-            <span
-              title={t("admin.activity_prior_flags_tooltip", { n: u.activity.prior_flag_count })}
-            >
-              <Pill tone="paper" icon={<Flag size={11} aria-hidden />}>
-                {u.activity.prior_flag_count}
-              </Pill>
-            </span>
-          )}
-          {u.activity.supplier_tip_count > 0 && (
-            <span
-              title={t("admin.activity_supplier_tips_tooltip", {
-                n: u.activity.supplier_tip_count,
-                when: formatRelative(u.activity.supplier_tip_last_at, locale, t),
-              })}
-            >
-              <Pill tone="violet" icon={<Lightbulb size={11} aria-hidden />}>
-                {t("admin.activity_supplier_tips", { n: u.activity.supplier_tip_count })}
-              </Pill>
-            </span>
-          )}
-          {u.activity.feedback_count > 0 && (
-            <span
-              title={t("admin.activity_feedback_tooltip", {
-                n: u.activity.feedback_count,
-                when: formatRelative(u.activity.feedback_last_at, locale, t),
-              })}
-            >
-              <Pill tone="violet" icon={<MessageCircle size={11} aria-hidden />}>
-                {t("admin.activity_feedback", { n: u.activity.feedback_count })}
-              </Pill>
-            </span>
-          )}
-          {opts.showLastActive && (
-            <span className="text-[11px] text-ink-500 dark:text-umber-300">
-              {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
-            </span>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {opts.remindCouple &&
-            (remindSentCoupleIds.has(opts.remindCouple.id) ? (
-              <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
-                {t("admin.remind_invite_partner_sent_label")}
-              </Pill>
-            ) : (
-              <button
-                type="button"
-                className="btn-ghost btn-sm inline-flex items-center"
-                onClick={() => opts.remindCouple && onRemindInvitePartner(opts.remindCouple)}
-                disabled={remindPendingCoupleId === opts.remindCouple.id}
-                title={t("admin.remind_invite_partner_tooltip")}
-                aria-label={t("admin.remind_invite_partner_aria")}
-              >
-                <Mail size={14} aria-hidden />
-              </button>
-            ))}
-          {!u.verified_email &&
-            (verifySentIds.has(u.id) ? (
-              <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
-                {t("admin.resend_verify_sent_label")}
-              </Pill>
-            ) : (
-              <button
-                type="button"
-                className="btn-ghost btn-sm inline-flex items-center"
-                onClick={() => onResendVerify(u)}
-                disabled={isPending}
-                title={t("admin.resend_verify")}
-                aria-label={t("admin.resend_verify")}
-              >
-                <Mail size={14} aria-hidden />
-              </button>
-            ))}
-          {!isSelf && !flag && (
+          </span>
+        )}
+        {u.activity.supplier_tip_count > 0 && (
+          <span
+            title={t("admin.activity_supplier_tips_tooltip", {
+              n: u.activity.supplier_tip_count,
+              when: formatRelative(u.activity.supplier_tip_last_at, locale, t),
+            })}
+          >
+            <Pill tone="violet" icon={<Lightbulb size={11} aria-hidden />}>
+              {t("admin.activity_supplier_tips", { n: u.activity.supplier_tip_count })}
+            </Pill>
+          </span>
+        )}
+        {u.activity.feedback_count > 0 && (
+          <span
+            title={t("admin.activity_feedback_tooltip", {
+              n: u.activity.feedback_count,
+              when: formatRelative(u.activity.feedback_last_at, locale, t),
+            })}
+          >
+            <Pill tone="violet" icon={<MessageCircle size={11} aria-hidden />}>
+              {t("admin.activity_feedback", { n: u.activity.feedback_count })}
+            </Pill>
+          </span>
+        )}
+        {opts.showLastActive && (
+          <span className="text-[11px] text-ink-500 dark:text-umber-300">
+            {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  /** Right-side per-user action cluster. Rendered into the dedicated
+   *  "MŰVELETEK" grid column on the workspace list and the orphans table
+   *  so every row's icons line up in the same vertical column. */
+  function renderUserActions(
+    u: AdminUserView,
+    opts: { remindCouple?: AdminCoupleView } = {},
+  ) {
+    const isSelf = currentAdmin?.id === u.id;
+    const isPending = pendingId === u.id;
+    const flag = u.active_flag;
+    return (
+      <div className="flex shrink-0 items-center justify-end gap-1.5">
+        {opts.remindCouple &&
+          (remindSentCoupleIds.has(opts.remindCouple.id) ? (
+            <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
+              {t("admin.remind_invite_partner_sent_label")}
+            </Pill>
+          ) : (
             <button
               type="button"
               className="btn-ghost btn-sm inline-flex items-center"
-              onClick={() => onFlag(u)}
-              disabled={isPending}
-              title={t("admin.flag_user_button")}
-              aria-label={t("admin.flag_user_button")}
+              onClick={() => opts.remindCouple && onRemindInvitePartner(opts.remindCouple)}
+              disabled={remindPendingCoupleId === opts.remindCouple.id}
+              title={t("admin.remind_invite_partner_tooltip")}
+              aria-label={t("admin.remind_invite_partner_aria")}
             >
-              <Flag size={14} aria-hidden />
+              <Mail size={14} aria-hidden />
             </button>
-          )}
-          {!isSelf && flag && (
+          ))}
+        {!u.verified_email &&
+          (verifySentIds.has(u.id) ? (
+            <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
+              {t("admin.resend_verify_sent_label")}
+            </Pill>
+          ) : (
             <button
               type="button"
-              className="btn-ghost btn-sm inline-flex items-center text-blush-800 dark:text-blush-300"
-              onClick={() => onUnflag(u)}
+              className="btn-ghost btn-sm inline-flex items-center"
+              onClick={() => onResendVerify(u)}
               disabled={isPending}
-              title={t("admin.unflag_user_button")}
-              aria-label={t("admin.unflag_user_button")}
+              title={t("admin.resend_verify")}
+              aria-label={t("admin.resend_verify")}
             >
-              <FlagOff size={14} aria-hidden />
+              <Mail size={14} aria-hidden />
             </button>
-          )}
-          {!isSelf && (
-            <button
-              type="button"
-              className="btn-alert btn-sm inline-flex items-center"
-              onClick={() => onDelete(u)}
-              disabled={isPending}
-              title={t("admin.delete_user")}
-              aria-label={t("admin.delete_user")}
-            >
-              <Trash2 size={14} aria-hidden />
-            </button>
-          )}
-        </div>
+          ))}
+        {!isSelf && !flag && (
+          <button
+            type="button"
+            className="btn-ghost btn-sm inline-flex items-center"
+            onClick={() => onFlag(u)}
+            disabled={isPending}
+            title={t("admin.flag_user_button")}
+            aria-label={t("admin.flag_user_button")}
+          >
+            <Flag size={14} aria-hidden />
+          </button>
+        )}
+        {!isSelf && flag && (
+          <button
+            type="button"
+            className="btn-ghost btn-sm inline-flex items-center text-blush-800 dark:text-blush-300"
+            onClick={() => onUnflag(u)}
+            disabled={isPending}
+            title={t("admin.unflag_user_button")}
+            aria-label={t("admin.unflag_user_button")}
+          >
+            <FlagOff size={14} aria-hidden />
+          </button>
+        )}
+        {!isSelf && (
+          <button
+            type="button"
+            className="btn-alert btn-sm inline-flex items-center"
+            onClick={() => onDelete(u)}
+            disabled={isPending}
+            title={t("admin.delete_user")}
+            aria-label={t("admin.delete_user")}
+          >
+            <Trash2 size={14} aria-hidden />
+          </button>
+        )}
       </div>
     );
   }
@@ -532,17 +532,18 @@ export default function AdminUsersPage() {
         <>
           <section className="mb-6">
             <AdminSectionHeader title={t("admin.workspaces_section")} />
-            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 eyebrow md:grid">
+            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem_auto] gap-4 px-5 eyebrow md:grid">
               <div>{t("admin.table_workspace_id")}</div>
               <div>{t("admin.table_workspace_name")}</div>
               <div>{t("admin.table_workspace_members")}</div>
               <div>{t("admin.table_workspace_created")}</div>
               <div>{t("admin.table_workspace_last_active")}</div>
+              <div className="text-right">{t("admin.table_admin_actions")}</div>
             </div>
             <ul className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <li key={i} className="admin-card">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem_auto] md:items-center">
                     <Skeleton width={56} height={18} rounded="sm" />
                     <Skeleton width={160} height={16} />
                     <div className="flex flex-col gap-1.5">
@@ -551,6 +552,10 @@ export default function AdminUsersPage() {
                     </div>
                     <Skeleton width={96} height={12} />
                     <Skeleton width={80} height={12} />
+                    <div className="flex justify-end gap-1.5">
+                      <Skeleton width={28} height={28} rounded="md" />
+                      <Skeleton width={28} height={28} rounded="md" />
+                    </div>
                   </div>
                 </li>
               ))}
@@ -682,12 +687,13 @@ export default function AdminUsersPage() {
                     {/* Card-style row header — uses the same 4-column grid as the
                      *  rows below so the labels line up exactly. Hidden on small
                      *  screens (rows stack vertically there). */}
-                    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] gap-4 px-5 eyebrow md:grid">
+                    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem_auto] gap-4 px-5 eyebrow md:grid">
                       <div>{t("admin.table_workspace_id")}</div>
                       <div>{t("admin.table_workspace_name")}</div>
                       <div>{t("admin.table_workspace_members")}</div>
                       <div>{t("admin.table_workspace_created")}</div>
                       <div>{t("admin.table_workspace_last_active")}</div>
+                      <div className="text-right">{t("admin.table_admin_actions")}</div>
                     </div>
                     <ul className="space-y-2">
                       {filteredRealCouples.map((c) => {
@@ -704,7 +710,7 @@ export default function AdminUsersPage() {
                             key={c.id}
                             className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
                           >
-                            <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem] md:items-center">
+                            <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem_auto] md:items-center">
                               <div className="whitespace-nowrap">
                                 <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                                   {workspaceId(c)}
@@ -730,9 +736,7 @@ export default function AdminUsersPage() {
                                   <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
                                     {members.map((u) => (
                                       <li key={u.id} className="py-1 first:pt-0 last:pb-0">
-                                        {renderUserCell(u, {
-                                          remindCouple: members.length === 1 ? c : undefined,
-                                        })}
+                                        {renderUserInfo(u)}
                                       </li>
                                     ))}
                                   </ul>
@@ -743,6 +747,19 @@ export default function AdminUsersPage() {
                               </div>
                               <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
                                 {formatRelative(c.last_seen_at, locale, t)}
+                              </div>
+                              <div>
+                                {members.length === 0 ? null : (
+                                  <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
+                                    {members.map((u) => (
+                                      <li key={u.id} className="py-1 first:pt-0 last:pb-0">
+                                        {renderUserActions(u, {
+                                          remindCouple: members.length === 1 ? c : undefined,
+                                        })}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
                               </div>
                             </div>
                           </li>
@@ -904,8 +921,11 @@ export default function AdminUsersPage() {
                             key={u.id}
                             className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
                           >
-                            <td className="px-3 py-2" colSpan={2}>
-                              {renderUserCell(u, { showLastActive: true })}
+                            <td className="px-3 py-2">
+                              {renderUserInfo(u, { showLastActive: true })}
+                            </td>
+                            <td className="px-3 py-2 text-right align-middle">
+                              {renderUserActions(u)}
                             </td>
                           </tr>
                         ))}
