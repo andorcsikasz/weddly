@@ -1,11 +1,9 @@
-// Admin-only supplier detail page. v1 surface for the locked-in spec:
-//   - Hero with claim + rating chip
-//   - Reviews section (compose + list, with star picker and tag chips)
-//   - Q&A comments section (compose + list, with visibility selector)
-//   - Calendar / availability (read-only in v1; booking inquiry CTA shows
-//     only when the supplier is claimed — unclaimed surfaces the tracked
-//     /r/supplier/:id redirect instead)
-//   - Admin meta block (claim status, redirect link, raw ids)
+// Admin-only supplier detail page. v1 surface for the locked-in spec, now in
+// the editorial two-column layout: main scroll column on the left (hero,
+// about, reviews, Q&A, bookings, admin meta) and a sticky right rail with
+// the Información / Kapcsolat / Foglaltság cards. Inspired by the reference
+// vendor pages couples already browse on competitor sites — same shape so the
+// design transfers cleanly when the page opens up to couples in Phase 3.
 //
 // Route is wrapped in <RequireAdmin> at App.tsx, so this page assumes
 // `user.is_admin === true`. The data-fetching layer still calls admin-only
@@ -14,6 +12,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Globe,
+  Mail,
+  MapPin,
+  Phone,
+  Sparkles,
+  Star,
+  Trash2,
+} from "lucide-react";
 import type {
   CommentVisibility,
   SupplierAvailability,
@@ -24,15 +34,20 @@ import type {
   SupplierReviewTag,
 } from "@shared/suppliers";
 import {
+  COMMENT_BODY_MAX_CHARS,
   MAX_REVIEW_TAGS,
   REVIEW_BODY_MAX_CHARS,
-  COMMENT_BODY_MAX_CHARS,
   SUPPLIER_REVIEW_TAGS,
 } from "@shared/suppliers";
-import { AdminPageHeader, Pill } from "../components/admin";
+import { Pill } from "../components/admin";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { reviewApi, supplierApi, supplierBookingApi, supplierCommentApi } from "../lib/endpoints";
+import {
+  reviewApi,
+  supplierApi,
+  supplierBookingApi,
+  supplierCommentApi,
+} from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
@@ -45,6 +60,27 @@ function formatDate(unixMs: number, locale: string): string {
     month: "short",
     day: "numeric",
   }).format(d);
+}
+
+function StarRow({ value, size = 14 }: { value: number; size?: number }) {
+  // Filled (rose) for n ≤ value, hollow (ink-300) otherwise. Used both in the
+  // header rating chip and on each review card.
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          size={size}
+          aria-hidden
+          className={
+            n <= value
+              ? "fill-rose-500 stroke-rose-500"
+              : "stroke-ink-300 dark:stroke-umber-500"
+          }
+        />
+      ))}
+    </span>
+  );
 }
 
 function StarPicker({
@@ -71,22 +107,6 @@ function StarPicker({
         </button>
       ))}
     </div>
-  );
-}
-
-function RatingChip({ avg, count }: { avg: number | null; count: number }) {
-  if (avg === null || count < 3) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-ink-100/60 px-3 py-1 text-xs text-ink-600 dark:bg-umber-700/40 dark:text-umber-200">
-        New · No rating yet
-      </span>
-    );
-  }
-  const rounded = Math.round(avg * 10) / 10;
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-200">
-      ★ {rounded.toFixed(1)} · {count} reviews
-    </span>
   );
 }
 
@@ -139,7 +159,7 @@ export default function SupplierDetailPage() {
 
   if (loading || !detail) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <Skeleton className="mb-4 h-8 w-1/2" />
         <Skeleton className="mb-2 h-4 w-1/3" />
         <Skeleton className="h-64 w-full" />
@@ -147,91 +167,155 @@ export default function SupplierDetailPage() {
     );
   }
 
+  const ratingAvg = detail.reviews_summary.avg_rating;
+  const ratingCount = detail.reviews_summary.reviews_count;
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="mb-4 text-sm text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-umber-100"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-umber-100"
       >
-        ← {t("suppliers.detail.back")}
+        <ChevronLeft size={14} aria-hidden />
+        {t("suppliers.detail.back")}
       </button>
 
-      {/* Hero */}
-      <section className="mb-8">
-        {detail.hero_image_url && (
-          <div className="mb-4 overflow-hidden rounded-lg">
-            <img src={detail.hero_image_url} alt="" className="aspect-video w-full object-cover" />
-          </div>
-        )}
-        <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-          {t(`suppliers.cat.${detail.category}`)} · {detail.city}
-        </div>
-        <h1 className="mt-1 font-cormorant text-4xl italic text-ink-900 dark:text-cream-50">
-          {detail.name}
-        </h1>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <RatingChip
-            avg={detail.reviews_summary.avg_rating}
-            count={detail.reviews_summary.reviews_count}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        {/* ─── MAIN COLUMN ────────────────────────────────────────────────── */}
+        <div className="min-w-0">
+          {/* Hero */}
+          <section className="mb-10">
+            {detail.hero_image_url && (
+              <div className="mb-5 overflow-hidden rounded-xl">
+                <img
+                  src={detail.hero_image_url}
+                  alt=""
+                  className="aspect-[16/9] w-full object-cover"
+                />
+              </div>
+            )}
+            <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              {t(`suppliers.cat.${detail.category}`)} · {detail.city}
+            </div>
+            <h1 className="mt-1 font-cormorant text-4xl italic leading-tight text-ink-900 dark:text-cream-50 sm:text-5xl">
+              {detail.name}
+            </h1>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {ratingAvg !== null && ratingCount >= 3 ? (
+                <span className="inline-flex items-center gap-2 text-sm">
+                  <StarRow value={Math.round(ratingAvg)} size={16} />
+                  <span className="font-medium text-ink-900 dark:text-cream-50">
+                    {ratingAvg.toFixed(1)}
+                  </span>
+                  <span className="text-ink-500 dark:text-umber-300">·</span>
+                  <span className="text-ink-600 dark:text-umber-200">{ratingCount}</span>
+                </span>
+              ) : (
+                <span className="text-sm italic text-ink-500 dark:text-umber-300">
+                  {t("suppliers.detail.info.ratingEmpty")}
+                </span>
+              )}
+              {detail.vendor_account_id ? (
+                <Pill tone="sage">{t("suppliers.detail.claimed")}</Pill>
+              ) : (
+                <Pill tone="muted">{t("suppliers.detail.unclaimed")}</Pill>
+              )}
+            </div>
+          </section>
+
+          {/* About / blurb */}
+          <section className="mb-10">
+            <h2 className="mb-3 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
+              {t("suppliers.detail.about.title")}
+            </h2>
+            <BlurbBody detail={detail} locale={locale} t={t} />
+            {detail.reviews_summary.top_tags.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {detail.reviews_summary.top_tags.map((tt) => (
+                  <span
+                    key={tt.tag}
+                    className="rounded-full bg-ink-900 px-3 py-1 text-xs text-cream-50 dark:bg-cream-50 dark:text-ink-900"
+                  >
+                    {t(`suppliers.reviewTags.${tt.tag}`)} · {tt.count}
+                  </span>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Reviews */}
+          <ReviewsSection
+            supplierId={supplierId}
+            reviews={reviews ?? []}
+            avg={ratingAvg}
+            count={ratingCount}
+            onChange={refresh}
+            confirm={confirm}
+            toast={toast}
+            locale={locale}
+            t={t}
           />
-          {detail.vendor_account_id ? (
-            <Pill tone="sage">{t("suppliers.detail.claimed")}</Pill>
-          ) : (
-            <Pill tone="muted">{t("suppliers.detail.unclaimed")}</Pill>
-          )}
+
+          {/* Q&A */}
+          <CommentsSection
+            supplierId={supplierId}
+            comments={comments ?? []}
+            onChange={refresh}
+            confirm={confirm}
+            toast={toast}
+            locale={locale}
+            t={t}
+          />
+
+          {/* Bookings list (the mini-calendar moved to the right rail) */}
+          <BookingsSection bookings={bookings} bookable={detail.bookable} t={t} />
+
+          {/* Admin meta */}
+          <AdminMetaSection detail={detail} t={t} />
         </div>
-        {detail.reviews_summary.top_tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {detail.reviews_summary.top_tags.map((tt) => (
-              <span
-                key={tt.tag}
-                className="rounded-full bg-cream-100 px-2.5 py-1 text-xs text-ink-700 dark:bg-umber-700/40 dark:text-umber-100"
-              >
-                {t(`suppliers.reviewTags.${tt.tag}`)} · {tt.count}
-              </span>
-            ))}
-          </div>
-        )}
-      </section>
 
-      {/* Reviews */}
-      <ReviewsSection
-        supplierId={supplierId}
-        reviews={reviews ?? []}
-        onChange={refresh}
-        confirm={confirm}
-        toast={toast}
-        locale={locale}
-        t={t}
-      />
+        {/* ─── SIDEBAR (sticky on lg+) ───────────────────────────────────── */}
+        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <InfoCard
+            detail={detail}
+            avg={ratingAvg}
+            count={ratingCount}
+            locale={locale}
+            t={t}
+          />
+          <ContactCard detail={detail} t={t} />
+          <BusyCalendarCard availability={availability} locale={locale} t={t} />
+        </aside>
+      </div>
+    </div>
+  );
+}
 
-      {/* Q&A */}
-      <CommentsSection
-        supplierId={supplierId}
-        comments={comments ?? []}
-        onChange={refresh}
-        confirm={confirm}
-        toast={toast}
-        locale={locale}
-        t={t}
-      />
+// ─── Main-column sections ────────────────────────────────────────────────────
 
-      {/* Calendar / Booking */}
-      <CalendarSection
-        supplierId={supplierId}
-        detail={detail}
-        availability={availability}
-        bookings={bookings}
-        onChange={refresh}
-        toast={toast}
-        confirm={confirm}
-        locale={locale}
-        t={t}
-      />
-
-      {/* Admin meta */}
-      <AdminMetaSection detail={detail} t={t} />
+function BlurbBody({
+  detail,
+  locale,
+  t,
+}: {
+  detail: SupplierDetail;
+  locale: string;
+  t: (k: string) => string;
+}) {
+  const blurb = (locale === "hu" ? detail.blurb_hu : detail.blurb_en).trim();
+  if (!blurb) {
+    return (
+      <p className="text-sm italic text-ink-500 dark:text-umber-300">
+        {t("suppliers.detail.about.empty")}
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-3 text-sm leading-relaxed text-ink-700 dark:text-paper-100">
+      {blurb.split(/\n\s*\n/).map((para, i) => (
+        <p key={i}>{para.trim()}</p>
+      ))}
     </div>
   );
 }
@@ -245,7 +329,12 @@ interface SectionCtx {
   t: (k: string, vars?: Record<string, string | number>) => string;
 }
 
-function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierReview[] }) {
+function ReviewsSection({
+  reviews,
+  avg,
+  count,
+  ...ctx
+}: SectionCtx & { reviews: SupplierReview[]; avg: number | null; count: number }) {
   const { supplierId, onChange, toast, confirm, locale, t } = ctx;
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [body, setBody] = useState("");
@@ -277,7 +366,8 @@ function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierRev
       toast.success(t("suppliers.detail.reviews.submitted"));
       await onChange();
     } catch (e) {
-      const code = e instanceof ApiError ? (e.detail as { code?: string } | undefined)?.code : null;
+      const code =
+        e instanceof ApiError ? (e.detail as { code?: string } | undefined)?.code : null;
       const msg =
         code === "already_reviewed"
           ? t("suppliers.detail.reviews.alreadyReviewed")
@@ -310,11 +400,19 @@ function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierRev
 
   return (
     <section className="mb-10">
-      <h2 className="mb-3 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
-        {t("suppliers.detail.reviews.title")}
-      </h2>
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
+          {t("suppliers.detail.reviews.title")} ({count})
+        </h2>
+        {avg !== null && count >= 3 && (
+          <span className="inline-flex items-center gap-2 text-sm">
+            <StarRow value={Math.round(avg)} size={14} />
+            <span className="font-medium">{avg.toFixed(1)}</span>
+          </span>
+        )}
+      </div>
 
-      <div className="mb-6 rounded-lg border border-ink-200/60 bg-cream-50 p-4 dark:border-umber-700/60 dark:bg-umber-800/40">
+      <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
         <div className="mb-3 flex items-center gap-3">
           <span className="text-sm text-ink-600 dark:text-umber-200">
             {t("suppliers.detail.reviews.yourRating")}:
@@ -330,7 +428,7 @@ function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierRev
           onChange={(e) => setBody(e.target.value)}
         />
         <div className="mb-3">
-          <div className="mb-1 text-xs text-ink-500 dark:text-umber-300">
+          <div className="mb-1.5 text-xs text-ink-500 dark:text-umber-300">
             {t("suppliers.detail.reviews.tagsLabel", { max: MAX_REVIEW_TAGS })}
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -344,7 +442,7 @@ function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierRev
                   className={`rounded-full px-2.5 py-1 text-xs transition ${
                     on
                       ? "bg-rose-500 text-white"
-                      : "bg-ink-100 text-ink-700 hover:bg-ink-200 dark:bg-umber-700/60 dark:text-umber-100"
+                      : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50 dark:bg-umber-700/60 dark:text-umber-100 dark:ring-umber-600"
                   }`}
                 >
                   {t(`suppliers.reviewTags.${tag}`)}
@@ -378,25 +476,35 @@ function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierRev
           {t("suppliers.detail.reviews.empty")}
         </p>
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-3">
           {reviews.map((r) => (
             <li
               key={r.id}
-              className="rounded-lg border border-ink-200/60 bg-white p-4 dark:border-umber-700/60 dark:bg-umber-900"
+              className="rounded-xl border border-ink-200/60 bg-white p-5 dark:border-umber-700/60 dark:bg-umber-900"
             >
-              <div className="mb-1 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{r.author.display_name}</span>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <StarRow value={r.rating} size={14} />
+                  <span className="text-sm font-medium text-ink-900 dark:text-cream-50">
+                    {r.author.display_name}
+                  </span>
                   {r.editorial && <Pill tone="violet">Editorial</Pill>}
                   {!r.published && <Pill tone="blush">Draft</Pill>}
                 </div>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {formatDate(r.created_at, locale)}
-                </span>
-              </div>
-              <div className="mb-2 text-rose-500">
-                {"★".repeat(r.rating)}
-                <span className="text-ink-300">{"☆".repeat(5 - r.rating)}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-ink-500 dark:text-umber-300">
+                    {formatDate(r.created_at, locale)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => remove(r.id)}
+                    aria-label={t("common.delete")}
+                    title={t("common.delete")}
+                    className="text-ink-400 hover:text-rose-600 dark:text-umber-400"
+                  >
+                    <Trash2 size={14} aria-hidden />
+                  </button>
+                </div>
               </div>
               {r.body && (
                 <p className="mb-2 whitespace-pre-line text-sm text-ink-800 dark:text-umber-100">
@@ -404,7 +512,7 @@ function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierRev
                 </p>
               )}
               {r.tags.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-1">
+                <div className="mt-2 flex flex-wrap gap-1">
                   {r.tags.map((tag) => (
                     <span
                       key={tag}
@@ -415,13 +523,6 @@ function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierRev
                   ))}
                 </div>
               )}
-              <button
-                type="button"
-                onClick={() => remove(r.id)}
-                className="text-xs text-ink-500 hover:text-rose-600 dark:text-umber-300"
-              >
-                {t("common.delete")}
-              </button>
             </li>
           ))}
         </ul>
@@ -430,7 +531,10 @@ function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierRev
   );
 }
 
-function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: SupplierComment[] }) {
+function CommentsSection({
+  comments,
+  ...ctx
+}: SectionCtx & { comments: SupplierComment[] }) {
   const { supplierId, onChange, toast, confirm, locale, t } = ctx;
   const [body, setBody] = useState("");
   const [visibility, setVisibility] = useState<CommentVisibility>("admin_internal");
@@ -471,11 +575,11 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
 
   return (
     <section className="mb-10">
-      <h2 className="mb-3 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
+      <h2 className="mb-4 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
         {t("suppliers.detail.comments.title")}
       </h2>
 
-      <div className="mb-6 rounded-lg border border-ink-200/60 bg-cream-50 p-4 dark:border-umber-700/60 dark:bg-umber-800/40">
+      <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
         <textarea
           className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
           placeholder={t("suppliers.detail.comments.placeholder")}
@@ -516,30 +620,36 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
           {comments.map((c) => (
             <li
               key={c.id}
-              className="rounded-lg border border-ink-200/60 bg-white p-4 dark:border-umber-700/60 dark:bg-umber-900"
+              className="rounded-xl border border-ink-200/60 bg-white p-5 dark:border-umber-700/60 dark:bg-umber-900"
             >
               <div className="mb-1 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{c.author.display_name}</span>
+                  <span className="text-sm font-medium text-ink-900 dark:text-cream-50">
+                    {c.author.display_name}
+                  </span>
                   {c.author.is_admin && <Pill tone="violet">Weddly</Pill>}
                   <Pill tone="muted">
                     {t(`suppliers.detail.comments.visibility.${c.visibility}`)}
                   </Pill>
                 </div>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {formatDate(c.created_at, locale)}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-ink-500 dark:text-umber-300">
+                    {formatDate(c.created_at, locale)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => remove(c.id)}
+                    aria-label={t("common.delete")}
+                    title={t("common.delete")}
+                    className="text-ink-400 hover:text-rose-600 dark:text-umber-400"
+                  >
+                    <Trash2 size={14} aria-hidden />
+                  </button>
+                </div>
               </div>
               <p className="whitespace-pre-line text-sm text-ink-800 dark:text-umber-100">
                 {c.body}
               </p>
-              <button
-                type="button"
-                onClick={() => remove(c.id)}
-                className="mt-2 text-xs text-ink-500 hover:text-rose-600 dark:text-umber-300"
-              >
-                {t("common.delete")}
-              </button>
             </li>
           ))}
         </ul>
@@ -548,92 +658,338 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
   );
 }
 
-function CalendarSection({
-  detail,
-  availability,
+function BookingsSection({
   bookings,
-  ...ctx
-}: SectionCtx & {
-  detail: SupplierDetail;
-  availability: SupplierAvailability | null;
+  bookable,
+  t,
+}: {
   bookings: SupplierBooking[];
+  bookable: boolean;
+  t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
-  const { locale, t } = ctx;
-  const unavailable = useMemo(
-    () => new Set(availability?.unavailable_dates ?? []),
-    [availability?.unavailable_dates],
-  );
-
+  if (!bookable && bookings.length === 0) return null;
   return (
     <section className="mb-10">
-      <h2 className="mb-3 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
+      <h2 className="mb-4 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
         {t("suppliers.detail.calendar.title")}
       </h2>
-
-      {!detail.bookable ? (
-        <div className="rounded-lg border border-ink-200/60 bg-cream-50 p-4 text-sm dark:border-umber-700/60 dark:bg-umber-800/40">
-          <p className="mb-2">{t("suppliers.detail.calendar.unclaimedNote")}</p>
-          <a
-            href={`/r/supplier/${encodeURIComponent(detail.id)}`}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 text-sm text-rose-600 underline"
-          >
-            {t("suppliers.detail.calendar.visitWebsite")} →
-          </a>
-        </div>
+      {bookings.length === 0 ? (
+        <p className="text-sm italic text-ink-500 dark:text-umber-300">
+          {t("suppliers.detail.calendar.noBookings")}
+        </p>
       ) : (
-        <>
-          <div className="mb-3 text-sm text-ink-600 dark:text-umber-200">
-            {availability?.next_available
-              ? t("suppliers.detail.calendar.nextAvailable", {
-                  date: formatDate(
-                    new Date(`${availability.next_available}T00:00:00Z`).getTime(),
-                    locale,
-                  ),
-                })
-              : t("suppliers.detail.calendar.fullyBooked")}
-          </div>
-          {unavailable.size > 0 && (
-            <div className="mb-3 text-xs text-ink-500 dark:text-umber-300">
-              {t("suppliers.detail.calendar.blockedCount", { n: unavailable.size })}
-            </div>
-          )}
-          {bookings.length === 0 ? (
-            <p className="text-sm italic text-ink-500 dark:text-umber-300">
-              {t("suppliers.detail.calendar.noBookings")}
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {bookings.map((b) => (
-                <li
-                  key={b.id}
-                  className="flex items-center justify-between rounded-lg border border-ink-200/60 bg-white p-3 text-sm dark:border-umber-700/60 dark:bg-umber-900"
+        <ul className="space-y-2">
+          {bookings.map((b) => (
+            <li
+              key={b.id}
+              className="flex items-center justify-between rounded-xl border border-ink-200/60 bg-white p-4 text-sm dark:border-umber-700/60 dark:bg-umber-900"
+            >
+              <div>
+                <div className="font-medium text-ink-900 dark:text-cream-50">{b.event_date}</div>
+                <div className="text-xs text-ink-500 dark:text-umber-300">
+                  {t(`suppliers.detail.calendar.status.${b.status}`)}
+                </div>
+              </div>
+              {b.status === "confirmed" && (
+                <a
+                  href={supplierBookingApi.icsUrl(b.id)}
+                  download
+                  className="text-xs text-rose-600 underline"
                 >
-                  <div>
-                    <div className="font-medium">{b.event_date}</div>
-                    <div className="text-xs text-ink-500 dark:text-umber-300">
-                      {t(`suppliers.detail.calendar.status.${b.status}`)}
-                    </div>
-                  </div>
-                  {b.status === "confirmed" && (
-                    <a
-                      href={supplierBookingApi.icsUrl(b.id)}
-                      download
-                      className="text-xs text-rose-600 underline"
-                    >
-                      {t("suppliers.detail.calendar.downloadIcs")}
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
+                  {t("suppliers.detail.calendar.downloadIcs")}
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );
 }
+
+// ─── Right-rail sidebar cards ────────────────────────────────────────────────
+
+function SidebarCard({
+  icon,
+  title,
+  children,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-ink-200/60 bg-white p-5 shadow-sm dark:border-umber-700/60 dark:bg-umber-900">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-cream-50">
+        {icon}
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function SidebarRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-1.5">
+      <span className="mt-0.5 text-ink-500 dark:text-umber-400">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-400">
+          {label}
+        </div>
+        <div className="text-sm text-ink-800 dark:text-umber-100">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({
+  detail,
+  avg,
+  count,
+  locale,
+  t,
+}: {
+  detail: SupplierDetail;
+  avg: number | null;
+  count: number;
+  locale: string;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+}) {
+  return (
+    <SidebarCard title={t("suppliers.detail.info.title")}>
+      <SidebarRow
+        icon={<MapPin size={14} aria-hidden />}
+        label={t("suppliers.detail.info.location")}
+        value={detail.address ? `${detail.city} · ${detail.address}` : detail.city}
+      />
+      <SidebarRow
+        icon={<Star size={14} aria-hidden />}
+        label={t("suppliers.detail.info.rating")}
+        value={
+          avg !== null && count >= 3 ? (
+            t("suppliers.detail.info.ratingValue", {
+              avg: locale === "hu" ? avg.toFixed(1).replace(".", ",") : avg.toFixed(1),
+              n: count,
+            })
+          ) : (
+            <span className="italic text-ink-500 dark:text-umber-300">
+              {t("suppliers.detail.info.ratingEmpty")}
+            </span>
+          )
+        }
+      />
+      <SidebarRow
+        icon={<Sparkles size={14} aria-hidden />}
+        label={t("suppliers.detail.info.category")}
+        value={t(`suppliers.cat.${detail.category}`)}
+      />
+      {detail.price_band !== null && (
+        <SidebarRow
+          icon={<span className="font-mono text-xs">$</span>}
+          label={t("suppliers.detail.info.priceBand")}
+          value={<span className="font-mono">{"$".repeat(detail.price_band)}</span>}
+        />
+      )}
+    </SidebarCard>
+  );
+}
+
+function ContactCard({
+  detail,
+  t,
+}: {
+  detail: SupplierDetail;
+  t: (k: string) => string;
+}) {
+  const hasAny = Boolean(detail.website || detail.contact_email || detail.contact_phone);
+  return (
+    <SidebarCard title={t("suppliers.detail.contact.title")}>
+      {!hasAny && (
+        <p className="text-sm italic text-ink-500 dark:text-umber-300">
+          {t("suppliers.detail.contact.empty")}
+        </p>
+      )}
+      {detail.website && (
+        <a
+          href={`/r/supplier/${encodeURIComponent(detail.id)}`}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+        >
+          <Globe size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+          {t("suppliers.detail.contact.website")}
+        </a>
+      )}
+      {detail.contact_email && (
+        <a
+          href={`mailto:${detail.contact_email}`}
+          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+        >
+          <Mail size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+          {detail.contact_email}
+        </a>
+      )}
+      {detail.contact_phone && (
+        <a
+          href={`tel:${detail.contact_phone}`}
+          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+        >
+          <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+          {detail.contact_phone}
+        </a>
+      )}
+    </SidebarCard>
+  );
+}
+
+// ─── Mini busy-calendar ──────────────────────────────────────────────────────
+
+function ymd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function BusyCalendarCard({
+  availability,
+  locale,
+  t,
+}: {
+  availability: SupplierAvailability | null;
+  locale: string;
+  t: (k: string) => string;
+}) {
+  const today = useMemo(() => new Date(), []);
+  const [cursor, setCursor] = useState<{ year: number; month: number }>({
+    year: today.getFullYear(),
+    month: today.getMonth(),
+  });
+
+  const blocked = useMemo(
+    () => new Set(availability?.unavailable_dates ?? []),
+    [availability?.unavailable_dates],
+  );
+
+  const monthLabel = useMemo(() => {
+    const d = new Date(cursor.year, cursor.month, 1);
+    return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      month: "long",
+      year: "numeric",
+    }).format(d);
+  }, [cursor, locale]);
+
+  // Build a 6-row × 7-col grid starting on Monday (HU + EN both treat Monday
+  // as week-start in this admin context; couples reading the public site can
+  // get a Sunday-start later if EU/US locale flips).
+  const cells = useMemo(() => {
+    const firstOfMonth = new Date(cursor.year, cursor.month, 1);
+    // JS getDay: 0=Sun..6=Sat. We want Mon=0..Sun=6.
+    const firstWeekday = (firstOfMonth.getDay() + 6) % 7;
+    const gridStart = new Date(cursor.year, cursor.month, 1 - firstWeekday);
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(gridStart);
+      d.setDate(gridStart.getDate() + i);
+      return d;
+    });
+  }, [cursor]);
+
+  const dayLabels = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      weekday: "narrow",
+    });
+    // 2026-05-25 is a Monday — use it as the anchor for Mon..Sun ordering.
+    const monday = new Date(2026, 4, 25);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return fmt.format(d);
+    });
+  }, [locale]);
+
+  const goto = (offset: number) => {
+    setCursor((c) => {
+      const d = new Date(c.year, c.month + offset, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+  };
+
+  const hasAny = blocked.size > 0;
+
+  return (
+    <SidebarCard
+      icon={<CalendarIcon size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />}
+      title={t("suppliers.detail.busy.title")}
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => goto(-1)}
+          aria-label={t("suppliers.detail.busy.prevMonth")}
+          className="rounded p-1 text-ink-500 hover:bg-ink-100 dark:text-umber-300 dark:hover:bg-umber-800"
+        >
+          <ChevronLeft size={14} aria-hidden />
+        </button>
+        <span className="text-sm font-medium capitalize text-ink-800 dark:text-umber-100">
+          {monthLabel}
+        </span>
+        <button
+          type="button"
+          onClick={() => goto(1)}
+          aria-label={t("suppliers.detail.busy.nextMonth")}
+          className="rounded p-1 text-ink-500 hover:bg-ink-100 dark:text-umber-300 dark:hover:bg-umber-800"
+        >
+          <ChevronRight size={14} aria-hidden />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] text-ink-500 dark:text-umber-400">
+        {dayLabels.map((l, i) => (
+          <div key={i} className="py-1 uppercase">
+            {l}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5">
+        {cells.map((d, i) => {
+          const inMonth = d.getMonth() === cursor.month;
+          const iso = ymd(d);
+          const isBlocked = blocked.has(iso);
+          const isToday = ymd(d) === ymd(today);
+          return (
+            <div
+              key={i}
+              className={`flex h-8 items-center justify-center rounded text-xs transition ${
+                !inMonth
+                  ? "text-ink-300 dark:text-umber-500"
+                  : isBlocked
+                    ? "bg-rose-200/70 font-medium text-rose-800 line-through dark:bg-rose-400/30 dark:text-rose-100"
+                    : "text-ink-700 dark:text-umber-200"
+              } ${isToday && inMonth && !isBlocked ? "ring-1 ring-rose-400" : ""}`}
+              title={isBlocked ? iso : undefined}
+            >
+              {d.getDate()}
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex items-center gap-2 text-[11px] text-ink-500 dark:text-umber-300">
+        <span className="inline-block h-3 w-3 rounded bg-rose-200/70 dark:bg-rose-400/30" />
+        {hasAny ? t("suppliers.detail.busy.legendBooked") : t("suppliers.detail.busy.empty")}
+      </div>
+    </SidebarCard>
+  );
+}
+
+// ─── Admin meta ──────────────────────────────────────────────────────────────
 
 function AdminMetaSection({
   detail,
@@ -643,8 +999,10 @@ function AdminMetaSection({
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
-    <section className="mb-10 rounded-lg border border-dashed border-ink-300/60 bg-ink-50/40 p-4 text-sm dark:border-umber-600/60 dark:bg-umber-800/30">
-      <AdminPageHeader title={t("suppliers.detail.adminMeta.title")} />
+    <section className="mt-10 rounded-xl border border-dashed border-ink-300/60 bg-ink-50/40 p-5 text-sm dark:border-umber-600/60 dark:bg-umber-800/30">
+      <h2 className="mb-3 font-cormorant text-xl italic text-ink-900 dark:text-cream-50">
+        {t("suppliers.detail.adminMeta.title")}
+      </h2>
       <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div>
           <dt className="text-xs uppercase tracking-wide text-ink-500">

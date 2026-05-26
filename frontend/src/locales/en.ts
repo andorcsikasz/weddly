@@ -2251,6 +2251,33 @@ const en: LocaleMessages = {
         commentsCount: "Comments",
         redirect: "Tracked redirect",
       },
+      info: {
+        title: "Information",
+        location: "Location",
+        rating: "Rating",
+        ratingValue: "{avg} / 5.0 ({n} reviews)",
+        ratingEmpty: "No ratings yet",
+        category: "Category",
+        priceBand: "Price band",
+      },
+      contact: {
+        title: "Contact",
+        website: "Website",
+        email: "Email",
+        phone: "Phone",
+        empty: "No contact details on file",
+      },
+      busy: {
+        title: "Availability",
+        legendBooked: "Booked days",
+        empty: "No availability recorded yet",
+        prevMonth: "Previous month",
+        nextMonth: "Next month",
+      },
+      about: {
+        title: "About",
+        empty: "The supplier hasn't written an introduction yet.",
+      },
     },
     reviewTags: {
       parking: "Parking",

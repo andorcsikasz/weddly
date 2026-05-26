@@ -2500,6 +2500,35 @@ export interface LocaleMessages {
         commentsCount: string;
         redirect: string;
       };
+      /** Right-rail sidebar cards on the redesigned detail page — Información,
+       *  Kapcsolat, Foglaltság — plus the long-form Bemutatkozás section. */
+      info: {
+        title: string;
+        location: string;
+        rating: string;
+        ratingValue: string;
+        ratingEmpty: string;
+        category: string;
+        priceBand: string;
+      };
+      contact: {
+        title: string;
+        website: string;
+        email: string;
+        phone: string;
+        empty: string;
+      };
+      busy: {
+        title: string;
+        legendBooked: string;
+        empty: string;
+        prevMonth: string;
+        nextMonth: string;
+      };
+      about: {
+        title: string;
+        empty: string;
+      };
     };
     /** Review tag labels shared between the composer (admin selects up to 5)
      *  and the card-rendered top-tag chips. */

@@ -2276,6 +2276,33 @@ const hu: LocaleMessages = {
         commentsCount: "Kommentek",
         redirect: "Tracked redirect",
       },
+      info: {
+        title: "Információ",
+        location: "Helyszín",
+        rating: "Értékelés",
+        ratingValue: "{avg} / 5,0 ({n} értékelés)",
+        ratingEmpty: "Még nincs értékelés",
+        category: "Kategória",
+        priceBand: "Ár sáv",
+      },
+      contact: {
+        title: "Kapcsolat",
+        website: "Weboldal",
+        email: "E-mail",
+        phone: "Telefon",
+        empty: "Nincs megadott kapcsolat",
+      },
+      busy: {
+        title: "Foglaltság",
+        legendBooked: "Foglalt napok",
+        empty: "Nincs rögzített foglaltság",
+        prevMonth: "Előző hónap",
+        nextMonth: "Következő hónap",
+      },
+      about: {
+        title: "Bemutatkozás",
+        empty: "A szolgáltató még nem írt bemutatkozást.",
+      },
     },
     reviewTags: {
       parking: "Parkolás",
