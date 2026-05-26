@@ -2973,6 +2973,13 @@ const en: LocaleMessages = {
     hero_days_past: "{n} days married",
     hero_date_tbd: "Wedding date to be decided",
     hero_days_caption_short: "Days until your wedding",
+    hero_name_edit: "Edit names",
+    hero_name_bride_placeholder: "Partner 1",
+    hero_name_groom_placeholder: "Partner 2",
+    hero_name_save_error: "Couldn't save the names — each one must be 1–100 characters.",
+    hero_name_save_success: "Names updated.",
+    hero_name_locked_caption: "Editable again in {n} days",
+    hero_name_locked_error: "The names were changed too recently — try again in {n} days.",
     account_title: "Your account",
     account_body:
       "How you appear inside Weddly. Email and password live in the Security card below.",

@@ -78,6 +78,10 @@ export interface CoupleRow {
    *  `confirmed` (valid household code + at least one RSVP yes). Null
    *  when unset. */
   post_rsvp_content: string | null;
+  /** Unix-ms stamp of the last bride/groom rename via PATCH
+   *  /api/couples/current. Drives the 7-day rename cooldown. NULL for
+   *  couples that have never used the gated rename path. */
+  names_last_changed_at: number | null;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -225,6 +229,7 @@ export function toCouple(row: CoupleRow): Couple {
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,
+    names_last_changed_at: row.names_last_changed_at,
   };
 }
 

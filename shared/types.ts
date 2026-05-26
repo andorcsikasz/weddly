@@ -304,6 +304,11 @@ export interface Couple {
   /** Server timestamp of the last write — clients use this as the `If-Match`
    *  value for optimistic concurrency on `PATCH /api/couples/current`. */
   updated_at: UnixMs;
+  /** Unix-ms timestamp of the most recent bride/groom rename. Null when the
+   *  couple has never been renamed via the gated endpoint (legacy /
+   *  onboarding writes don't stamp it). Drives the 7-day rename cooldown on
+   *  the workspace hero card. */
+  names_last_changed_at: UnixMs | null;
 }
 
 /** One Nominatim hit reshaped into the honeymoon destination autocomplete.

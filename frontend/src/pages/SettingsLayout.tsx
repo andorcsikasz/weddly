@@ -33,7 +33,7 @@ export default function SettingsLayout() {
   return (
     <>
       <h1 className="sr-only">{t("profile.title")}</h1>
-      <ProfileHero couple={couple} t={t} locale={locale} />
+      <ProfileHero couple={couple} t={t} locale={locale} onUpdated={setCouple} />
 
       {/* Horizontal tab nav. Mobile gets a scrollable strip; desktop a
        *  static row. NavLink's `isActive` paints the ink underline.

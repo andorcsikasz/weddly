@@ -93,6 +93,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     created_at: Date.now() - 86_400_000,
     onboarded_at: Date.now() - 86_400_000,
     updated_at: Date.now(),
+    names_last_changed_at: null,
     ...overrides,
   };
 }

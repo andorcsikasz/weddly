@@ -612,6 +612,15 @@ addColumnIfMissing("listings", "hero_image_url", "hero_image_url TEXT");
 addColumnIfMissing("supplier_groups", "hidden", "hidden INTEGER NOT NULL DEFAULT 0");
 addColumnIfMissing("supplier_categories", "hidden", "hidden INTEGER NOT NULL DEFAULT 0");
 
+// Unix-ms timestamp of the last bride/groom name change. Drives a 7-day
+// rename cooldown surfaced on the workspace hero card — once a couple
+// renames themselves, the API rejects further bride/groom/display_name
+// PATCHes until 7 days have passed so the audit trail + outbound emails
+// don't churn on accidental edits. NULL means "never renamed via the
+// gated endpoint" (legacy rows + onboarding writes) and is treated as
+// out-of-cooldown.
+addColumnIfMissing("couples", "names_last_changed_at", "names_last_changed_at INTEGER");
+
 export function now(): number {
   return Date.now();
 }

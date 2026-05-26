@@ -201,6 +201,7 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     created_at: 0,
     onboarded_at: 1,
     updated_at: 1,
+    names_last_changed_at: null,
     ...over,
   };
 }

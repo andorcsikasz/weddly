@@ -266,6 +266,12 @@ const VALID_BUDGET_KINDS: ReadonlySet<BudgetKind> = new Set(["exact", "range", "
 const MIN_YEAR = 2024;
 const MAX_YEAR = 2100;
 
+/** Mandatory wait between two bride/groom renames via PATCH
+ *  /api/couples/current. The workspace hero card shows a lock badge +
+ *  countdown until this elapses. Kept here (not in CONFIG) so the test
+ *  suite can import the same constant when stamping fake past timestamps. */
+export const COUPLE_NAMES_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+
 function asObject(raw: unknown, field: string): Record<string, unknown> | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== "object" || Array.isArray(raw)) {
@@ -1302,27 +1308,43 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       body.groom_name !== undefined
         ? parsePartnerName(body.groom_name, "groom_name")
         : couple.groom_name;
-    const newDisplay = `${newBride} & ${newGroom}`;
-    updates.push(
-      { col: "bride_name", val: newBride },
-      { col: "groom_name", val: newGroom },
-      { col: "display_name", val: newDisplay },
-    );
-    auditEntries.push({
-      action: "couple.names_update",
-      before: {
-        bride_name: couple.bride_name,
-        groom_name: couple.groom_name,
-        display_name: couple.display_name,
-      },
-      after: {
-        bride_name: newBride,
-        groom_name: newGroom,
-        display_name: newDisplay,
-      },
-    });
-    renameBride = newBride !== couple.bride_name && newBride.length > 0;
-    renameGroom = newGroom !== couple.groom_name && newGroom.length > 0;
+    const brideDiffers = newBride !== couple.bride_name;
+    const groomDiffers = newGroom !== couple.groom_name;
+    // No-op rename (identical strings) sails through without the cooldown
+    // gate — a save that doesn't change anything shouldn't lock the couple
+    // out for a week. Cooldown only fires on a real diff.
+    if (brideDiffers || groomDiffers) {
+      const lastChanged = couple.names_last_changed_at;
+      if (lastChanged !== null && Date.now() - lastChanged < COUPLE_NAMES_COOLDOWN_MS) {
+        throw new HttpError(429, "Couple names were changed recently — try again later", {
+          code: "names_cooldown",
+          last_changed_at: lastChanged,
+          editable_at: lastChanged + COUPLE_NAMES_COOLDOWN_MS,
+        });
+      }
+      const newDisplay = `${newBride} & ${newGroom}`;
+      updates.push(
+        { col: "bride_name", val: newBride },
+        { col: "groom_name", val: newGroom },
+        { col: "display_name", val: newDisplay },
+        { col: "names_last_changed_at", val: Date.now() },
+      );
+      auditEntries.push({
+        action: "couple.names_update",
+        before: {
+          bride_name: couple.bride_name,
+          groom_name: couple.groom_name,
+          display_name: couple.display_name,
+        },
+        after: {
+          bride_name: newBride,
+          groom_name: newGroom,
+          display_name: newDisplay,
+        },
+      });
+      renameBride = brideDiffers && newBride.length > 0;
+      renameGroom = groomDiffers && newGroom.length > 0;
+    }
     nextBride = newBride;
     nextGroom = newGroom;
   }

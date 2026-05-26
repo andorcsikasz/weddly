@@ -19,7 +19,9 @@ import {
   ChevronDown,
   Download,
   Heart,
+  Lock,
   LogOut,
+  Pencil,
   ShieldCheck,
   Tablet,
   Trash2,
@@ -540,7 +542,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
        *  carry an h1, so the document outline still gets one. */}
       <h1 className="sr-only">{t("profile.title")}</h1>
 
-      {showHero && <ProfileHero couple={couple} t={t} locale={locale} />}
+      {showHero && <ProfileHero couple={couple} t={t} locale={locale} onUpdated={setCouple} />}
 
       {!tab && <ZoneLabel>{t("profile.zone_workspace")}</ZoneLabel>}
 
@@ -1052,21 +1054,64 @@ function ZoneLabel({ children }: { children: ReactNode }) {
   );
 }
 
+/** Mandatory wait between two bride/groom renames. Kept in sync with the
+ *  backend `COUPLE_NAMES_COOLDOWN_MS` constant in routes/couples.ts — the
+ *  UI shows a lock badge + countdown so the partner who tries to rename
+ *  during the window understands why it's blocked. */
+const NAMES_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** `null` when the couple is free to rename; otherwise the days-remaining
+ *  count + the unix-ms timestamp at which the next rename unlocks. */
+function nameCooldownState(couple: Couple): { daysLeft: number; editableAt: number } | null {
+  const ts = couple.names_last_changed_at;
+  if (!ts) return null;
+  const editableAt = ts + NAMES_COOLDOWN_MS;
+  const now = Date.now();
+  if (now >= editableAt) return null;
+  const daysLeft = Math.max(1, Math.ceil((editableAt - now) / (24 * 60 * 60 * 1000)));
+  return { daysLeft, editableAt };
+}
+
 /** Top-of-page identity strip. Replaces the bare "Profile" h1 with a
  *  wedding-themed band: couple monogram, names, the wedding date, and a
  *  big tabular-nums days-until counter. Renders a graceful placeholder
  *  during the initial /api/couples/current fetch so the page never paints
  *  empty space. Wedding-day = today fires a celebratory line; past dates
- *  flip to "X days married" so the counter doesn't read negative. */
+ *  flip to "X days married" so the counter doesn't read negative.
+ *
+ *  The names line is click-to-edit (pencil → two inline inputs); once a
+ *  rename lands the row locks for 7 days and renders a lock badge plus a
+ *  small countdown caption so the partner who tries again knows why. */
 export function ProfileHero({
   couple,
   t,
   locale,
+  onUpdated,
 }: {
   couple: Couple | null;
   t: T;
   locale: Locale;
+  /** Called with the refreshed couple after a successful rename so the
+   *  parent page can update its in-memory state (and rebroadcast the new
+   *  `names_last_changed_at` to other surfaces). Optional — when the
+   *  parent doesn't pass one (legacy callers) the hero still saves, the
+   *  parent just won't see the update until the next /current fetch. */
+  onUpdated?: (next: Couple) => void;
 }) {
+  const toast = useToast();
+  const [editing, setEditing] = useState(false);
+  const [brideInput, setBrideInput] = useState("");
+  const [groomInput, setGroomInput] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const editTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const editingPrev = useRef(false);
+  useEffect(() => {
+    if (editingPrev.current && !editing) editTriggerRef.current?.focus();
+    editingPrev.current = editing;
+  }, [editing]);
+
   if (!couple) {
     return (
       <section
@@ -1080,6 +1125,70 @@ export function ProfileHero({
   const sep = t("profile.activity_names_separator");
   const namesLine = bride && groom ? `${bride}${sep}${groom}` : bride || groom || "";
   const days = daysUntilWedding(couple.wedding_date);
+  const cooldown = nameCooldownState(couple);
+  const locked = cooldown !== null;
+
+  function beginEdit() {
+    if (locked) return;
+    setBrideInput(couple?.bride_name ?? "");
+    setGroomInput(couple?.groom_name ?? "");
+    setError(null);
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setError(null);
+  }
+
+  async function saveNames(e: FormEvent) {
+    e.preventDefault();
+    if (!couple) return;
+    const nextBride = brideInput.trim();
+    const nextGroom = groomInput.trim();
+    if (
+      nextBride.length < 1 ||
+      nextBride.length > 100 ||
+      nextGroom.length < 1 ||
+      nextGroom.length > 100
+    ) {
+      setError(t("profile.hero_name_save_error"));
+      return;
+    }
+    if (nextBride === couple.bride_name && nextGroom === couple.groom_name) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await coupleApi.update({
+        bride_name: nextBride,
+        groom_name: nextGroom,
+      });
+      onUpdated?.(r.couple);
+      toast.success(t("profile.hero_name_save_success"));
+      setEditing(false);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 429) {
+        const detail = err.detail as { code?: string; editable_at?: number } | null;
+        if (detail?.code === "names_cooldown" && typeof detail.editable_at === "number") {
+          const daysLeft = Math.max(
+            1,
+            Math.ceil((detail.editable_at - Date.now()) / (24 * 60 * 60 * 1000)),
+          );
+          setError(t("profile.hero_name_locked_error", { n: daysLeft }));
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <section className="mt-2 overflow-hidden rounded-2xl bg-paper-200 shadow-pop dark:bg-umber-800">
       {/* Single-row flex on mobile so the three columns sit side-by-side
@@ -1092,16 +1201,93 @@ export function ProfileHero({
       <div className="flex items-center gap-3 px-4 py-4 sm:gap-6 sm:px-8 sm:py-6">
         <CoupleMonogram bride={bride} groom={groom} />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-serif text-xl leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
-            {namesLine || t("profile.title")}
-          </p>
-          <p className="mt-0.5 truncate text-xs text-ink-600 sm:mt-1 sm:text-sm dark:text-umber-200">
-            {couple.wedding_date
-              ? formatDate(couple.wedding_date, locale)
-              : t("profile.hero_date_tbd")}
-          </p>
+          {editing ? (
+            <form
+              onSubmit={saveNames}
+              className="flex flex-wrap items-center gap-2"
+              aria-label={t("profile.hero_name_edit")}
+            >
+              <input
+                type="text"
+                value={brideInput}
+                onChange={(ev) => setBrideInput(ev.target.value)}
+                placeholder={t("profile.hero_name_bride_placeholder")}
+                className="input h-10 min-w-[8rem] flex-1 py-0 text-sm"
+                maxLength={100}
+                autoFocus
+                disabled={saving}
+                aria-label={t("profile.hero_name_bride_placeholder")}
+              />
+              <input
+                type="text"
+                value={groomInput}
+                onChange={(ev) => setGroomInput(ev.target.value)}
+                placeholder={t("profile.hero_name_groom_placeholder")}
+                className="input h-10 min-w-[8rem] flex-1 py-0 text-sm"
+                maxLength={100}
+                disabled={saving}
+                aria-label={t("profile.hero_name_groom_placeholder")}
+              />
+              <button
+                type="submit"
+                className="btn-sm btn-primary !px-3 !py-1.5 !text-xs"
+                disabled={saving}
+              >
+                {saving ? t("common.saving") : t("common.save")}
+              </button>
+              <button
+                type="button"
+                className="btn-sm btn-outline !px-3 !py-1.5 !text-xs"
+                onClick={cancelEdit}
+                disabled={saving}
+              >
+                {t("common.cancel")}
+              </button>
+              {error && (
+                <p className="basis-full text-[11px] text-blush-700 dark:text-blush-300">{error}</p>
+              )}
+            </form>
+          ) : (
+            <>
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="truncate font-serif text-xl leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+                  {namesLine || t("profile.title")}
+                </p>
+                {locked ? (
+                  <span
+                    className="inline-flex shrink-0 items-center text-ink-400 dark:text-umber-300"
+                    title={t("profile.hero_name_locked_caption", { n: cooldown.daysLeft })}
+                    aria-label={t("profile.hero_name_locked_caption", { n: cooldown.daysLeft })}
+                  >
+                    <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                ) : (
+                  <button
+                    ref={editTriggerRef}
+                    type="button"
+                    onClick={beginEdit}
+                    className="inline-flex shrink-0 items-center rounded-full p-1 text-ink-400 hover:bg-paper-100 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                    aria-label={t("profile.hero_name_edit")}
+                    title={t("profile.hero_name_edit")}
+                  >
+                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+              <p className="mt-0.5 truncate text-xs text-ink-600 sm:mt-1 sm:text-sm dark:text-umber-200">
+                {couple.wedding_date
+                  ? formatDate(couple.wedding_date, locale)
+                  : t("profile.hero_date_tbd")}
+              </p>
+              {locked && (
+                <p className="mt-0.5 truncate text-[11px] text-ink-500 dark:text-umber-300">
+                  {t("profile.hero_name_locked_caption", { n: cooldown.daysLeft })}
+                </p>
+              )}
+            </>
+          )}
         </div>
-        {days !== null && (
+        {days !== null && !editing && (
           <div className="shrink-0 text-right">
             <p className="font-serif text-2xl leading-none tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
               {Math.abs(days)}
