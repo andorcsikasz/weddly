@@ -154,8 +154,7 @@ export default function GuestPageEditorPage() {
       if (venueChanged) body.venue_name = venueTrimmed === "" ? null : venueTrimmed;
       if (coverChanged) body.cover_image_url = coverTrimmed === "" ? null : coverTrimmed;
       if (introChanged) body.guest_page_intro = guestPageIntro === "" ? null : guestPageIntro;
-      if (postRsvpChanged)
-        body.post_rsvp_content = postRsvpContent === "" ? null : postRsvpContent;
+      if (postRsvpChanged) body.post_rsvp_content = postRsvpContent === "" ? null : postRsvpContent;
       const r = await coupleApi.update(body);
       setCouple(r.couple);
       setIsPublic(r.couple.is_public);
@@ -391,394 +390,396 @@ export default function GuestPageEditorPage() {
           </span>
         </summary>
         <div className="mt-3">
-      {/* ── Share ────────────────────────────────────────────────────────
-       *  Two pieces side-by-side: the public /w/:slug URL (one share artefact
-       *  for save-the-dates / Instagram bio) and the slug + /rsvp pair the
-       *  couple uses to brief individual guests on how to RSVP. */}
-      <section className="card">
-        <h2 className="text-lg flex items-center gap-2">
-          <Globe size={18} aria-hidden /> {t("guest_page_editor.section_share_title")}
-        </h2>
-        <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-          {t("guest_page_editor.section_share_body")}
-        </p>
-
-        {publicUrl ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => copyText(publicUrl, "url_copied")}
-              className="flex-1 min-w-0 rounded-xl border border-ink-200 bg-white px-3 py-2 text-left font-mono text-sm tabular-nums text-ink-900 transition hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:border-umber-600"
-              aria-label={t("wedding_site_editor.url_copied")}
-            >
-              <span className="block truncate">{publicUrl}</span>
-            </button>
-            <button
-              type="button"
-              className="btn-outline btn-sm"
-              onClick={() => copyText(publicUrl, "url_copied")}
-            >
-              <Clipboard size={14} aria-hidden />
-              {t("wedding_site_editor.url_copied")}
-            </button>
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-outline btn-sm inline-flex"
-            >
-              <ExternalLink size={14} aria-hidden />
-              {t("wedding_site_editor.url_open")}
-            </a>
-          </div>
-        ) : (
-          <p className="mt-3 rounded-xl border border-blush-300 bg-white px-3 py-2 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
-            {t("wedding_site_editor.url_no_slug")}
-          </p>
-        )}
-
-        {slug && (
-          <div className="mt-3 grid gap-x-4 gap-y-2 border-t border-paper-300 pt-3 sm:grid-cols-2 dark:border-umber-700">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
-                {t("guest_preview.share_slug_label")}
-              </span>
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 font-mono text-sm uppercase tracking-[0.2em] text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                onClick={() => copyText(slug, "share_copied")}
-                aria-label={t("guest_preview.share_copy_slug_aria")}
-              >
-                {slug}
-                <Copy size={14} aria-hidden />
-              </button>
-            </div>
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300 shrink-0">
-                {t("guest_preview.share_link_label")}
-              </span>
-              <button
-                type="button"
-                className="inline-flex min-w-0 items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 text-sm text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                onClick={() => copyText(rsvpUrl, "share_copied")}
-                aria-label={t("guest_preview.share_copy_link_aria")}
-              >
-                <span className="truncate">{rsvpUrl}</span>
-                <Copy size={14} aria-hidden className="shrink-0" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Per-household share (Phase 3 of the guest-page merger) ─────
-         *  Subordinate to the main share block — hidden in a <details>
-         *  so couples that just want the single public URL don't have to
-         *  scroll past a list. Once expanded, each household gets a row
-         *  with a personal /w/:slug/:code link, copy + WhatsApp buttons,
-         *  and a rotate-code action. */}
-        {slug && households.length > 0 && (
-          <details className="mt-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-2 dark:border-umber-700 dark:bg-umber-900/60">
-            <summary className="cursor-pointer text-sm font-medium text-ink-800 dark:text-paper-100">
-              {t("guest_page_editor.share_per_household_summary")}
-            </summary>
-            <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-              <p className="min-w-[16rem] flex-1 text-xs text-ink-600 dark:text-umber-200">
-                {t("guest_page_editor.share_per_household_subtitle")}
-              </p>
-              <button
-                type="button"
-                className="btn-outline btn-sm shrink-0"
-                onClick={onCopyAllHouseholdLinks}
-                aria-label={t("guest_page_editor.share_per_household_copy_all_aria")}
-              >
-                <Copy size={14} aria-hidden />
-                {t("guest_page_editor.share_per_household_copy_all")}
-              </button>
-            </div>
-            <ul className="mt-2 flex flex-col gap-1.5">
-              {households.map((hh) => {
-                const memberCount = hh.member_ids.length;
-                return (
-                  <li
-                    key={hh.id}
-                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border border-paper-300 bg-white px-3 py-2 dark:border-umber-700 dark:bg-umber-800"
-                  >
-                    <div className="flex min-w-0 flex-1 items-baseline gap-2">
-                      <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-                        {hh.label}
-                      </span>
-                      <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
-                        {t("guest_page_editor.share_per_household_member_count", {
-                          count: memberCount,
-                        })}
-                      </span>
-                      <code className="hidden truncate font-mono text-xs uppercase tracking-[0.15em] text-ink-600 sm:inline dark:text-umber-200">
-                        {hh.code}
-                      </code>
-                    </div>
-                    <div className="flex shrink-0 gap-2">
-                      <button
-                        type="button"
-                        className="btn-outline btn-sm"
-                        onClick={() => onCopyHouseholdLink(hh)}
-                        title={t("guest_page_editor.share_per_household_copy_link")}
-                        aria-label={t("guest_page_editor.share_per_household_copy_link_aria", {
-                          label: hh.label,
-                        })}
-                      >
-                        <Copy size={14} aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-outline btn-sm"
-                        onClick={() => onShareHouseholdWhatsapp(hh)}
-                        aria-label={t("guest_page_editor.share_per_household_whatsapp_aria", {
-                          label: hh.label,
-                        })}
-                      >
-                        <MessageCircle size={14} aria-hidden />
-                        {t("guest_page_editor.share_per_household_whatsapp")}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-outline btn-sm"
-                        onClick={() => onRotateHouseholdCode(hh)}
-                        disabled={rotatingId === hh.id}
-                        aria-label={t("guest_page_editor.share_per_household_rotate_aria", {
-                          label: hh.label,
-                        })}
-                      >
-                        <RefreshCcw size={14} aria-hidden />
-                        {t("guest_page_editor.share_per_household_rotate")}
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </details>
-        )}
-
-        {slug && loading && households.length === 0 && (
-          <p className="mt-3 text-sm text-ink-400 dark:text-umber-300">{t("common.loading")}</p>
-        )}
-
-        {slug && !loading && households.length === 0 && (
-          <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
-            {t("guest_page_editor.share_per_household_empty")}
-          </p>
-        )}
-      </section>
-
-      <form onSubmit={onSubmit}>
-        {/* ── Publish toggle ──────────────────────────────────────────── */}
-        <section
-          className={`card mt-6 border-2 ${
-            isPublic
-              ? "border-sage-400 dark:border-sage-500"
-              : "border-paper-300 dark:border-umber-700"
-          }`}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <h2 className="text-lg">{t("wedding_site_editor.publish_title")}</h2>
-              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-                {isPublic
-                  ? t("wedding_site_editor.publish_body_on")
-                  : t("wedding_site_editor.publish_body_off")}
-              </p>
-            </div>
-            <label className="inline-flex shrink-0 cursor-pointer items-center gap-3">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isPublic}
-                onClick={() => setIsPublic((v) => !v)}
-                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
-                  isPublic ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
-                }`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                    isPublic ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-              <span className="text-sm font-medium text-ink-800 dark:text-paper-100">
-                {isPublic
-                  ? t("wedding_site_editor.publish_label_on")
-                  : t("wedding_site_editor.publish_label_off")}
-              </span>
-            </label>
-          </div>
-        </section>
-
-        {/* ── Public content (anyone with the link) ──────────────────── */}
-        <section className="card mt-6">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h2 className="text-lg">{t("guest_page_editor.section_public_title")}</h2>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
-              <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-            {t("guest_page_editor.section_public_hint")}
-          </p>
-          <div className="mt-3">
-            <label htmlFor="guest-page-venue" className="field-label">
-              {t("wedding_site_editor.venue_label")}
-              {todoVenue && <TodoPill label={todoPillLabel} />}
-            </label>
-            <input
-              id="guest-page-venue"
-              type="text"
-              className="input"
-              value={venueName}
-              onChange={(e) => setVenueName(e.target.value)}
-              placeholder={t("wedding_site_editor.venue_placeholder")}
-              maxLength={200}
-            />
-            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-              {t("wedding_site_editor.venue_hint")}
+          {/* ── Share ────────────────────────────────────────────────────────
+           *  Two pieces side-by-side: the public /w/:slug URL (one share artefact
+           *  for save-the-dates / Instagram bio) and the slug + /rsvp pair the
+           *  couple uses to brief individual guests on how to RSVP. */}
+          <section className="card">
+            <h2 className="text-lg flex items-center gap-2">
+              <Globe size={18} aria-hidden /> {t("guest_page_editor.section_share_title")}
+            </h2>
+            <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+              {t("guest_page_editor.section_share_body")}
             </p>
-          </div>
-          <div className="mt-3">
-            <label htmlFor="guest-page-cover" className="field-label">
-              {t("wedding_site_editor.cover_image_label")}
-              {todoCover && <TodoPill label={todoPillLabel} />}
-            </label>
-            {/* Upload row — thumbnail of the current cover (if any) +
-             *  Tallózás button. Hidden <input type="file"> so we can style
-             *  the trigger as a regular outline button. Accept attribute
-             *  mirrors the server-side MIME allowlist. */}
-            <div className="flex items-center gap-3">
-              {coverImageUrl ? (
-                <img
-                  src={coverImageUrl}
-                  alt={t("wedding_site_editor.cover_upload_preview_alt")}
-                  className="h-14 w-20 shrink-0 rounded-md border border-paper-300 object-cover dark:border-umber-700"
-                />
-              ) : (
-                <div
-                  className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-paper-300 text-ink-400 dark:border-umber-700 dark:text-umber-300"
-                  aria-hidden
+
+            {publicUrl ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => copyText(publicUrl, "url_copied")}
+                  className="flex-1 min-w-0 rounded-xl border border-ink-200 bg-white px-3 py-2 text-left font-mono text-sm tabular-nums text-ink-900 transition hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:border-umber-600"
+                  aria-label={t("wedding_site_editor.url_copied")}
                 >
-                  <Upload size={18} />
+                  <span className="block truncate">{publicUrl}</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-outline btn-sm"
+                  onClick={() => copyText(publicUrl, "url_copied")}
+                >
+                  <Clipboard size={14} aria-hidden />
+                  {t("wedding_site_editor.url_copied")}
+                </button>
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-outline btn-sm inline-flex"
+                >
+                  <ExternalLink size={14} aria-hidden />
+                  {t("wedding_site_editor.url_open")}
+                </a>
+              </div>
+            ) : (
+              <p className="mt-3 rounded-xl border border-blush-300 bg-white px-3 py-2 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
+                {t("wedding_site_editor.url_no_slug")}
+              </p>
+            )}
+
+            {slug && (
+              <div className="mt-3 grid gap-x-4 gap-y-2 border-t border-paper-300 pt-3 sm:grid-cols-2 dark:border-umber-700">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+                    {t("guest_preview.share_slug_label")}
+                  </span>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 font-mono text-sm uppercase tracking-[0.2em] text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
+                    onClick={() => copyText(slug, "share_copied")}
+                    aria-label={t("guest_preview.share_copy_slug_aria")}
+                  >
+                    {slug}
+                    <Copy size={14} aria-hidden />
+                  </button>
                 </div>
-              )}
-              <input
-                ref={coverFileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="sr-only"
-                onChange={onCoverFileChange}
-              />
-              <button
-                type="button"
-                className="btn-outline btn-sm"
-                disabled={coverUploading}
-                onClick={() => coverFileInputRef.current?.click()}
-              >
-                <Upload size={14} aria-hidden />
-                {coverUploading
-                  ? t("wedding_site_editor.cover_upload_uploading")
-                  : coverImageUrl
-                    ? t("wedding_site_editor.cover_upload_replace")
-                    : t("wedding_site_editor.cover_upload_button")}
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300 shrink-0">
+                    {t("guest_preview.share_link_label")}
+                  </span>
+                  <button
+                    type="button"
+                    className="inline-flex min-w-0 items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 text-sm text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
+                    onClick={() => copyText(rsvpUrl, "share_copied")}
+                    aria-label={t("guest_preview.share_copy_link_aria")}
+                  >
+                    <span className="truncate">{rsvpUrl}</span>
+                    <Copy size={14} aria-hidden className="shrink-0" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Per-household share (Phase 3 of the guest-page merger) ─────
+             *  Subordinate to the main share block — hidden in a <details>
+             *  so couples that just want the single public URL don't have to
+             *  scroll past a list. Once expanded, each household gets a row
+             *  with a personal /w/:slug/:code link, copy + WhatsApp buttons,
+             *  and a rotate-code action. */}
+            {slug && households.length > 0 && (
+              <details className="mt-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-2 dark:border-umber-700 dark:bg-umber-900/60">
+                <summary className="cursor-pointer text-sm font-medium text-ink-800 dark:text-paper-100">
+                  {t("guest_page_editor.share_per_household_summary")}
+                </summary>
+                <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+                  <p className="min-w-[16rem] flex-1 text-xs text-ink-600 dark:text-umber-200">
+                    {t("guest_page_editor.share_per_household_subtitle")}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-outline btn-sm shrink-0"
+                    onClick={onCopyAllHouseholdLinks}
+                    aria-label={t("guest_page_editor.share_per_household_copy_all_aria")}
+                  >
+                    <Copy size={14} aria-hidden />
+                    {t("guest_page_editor.share_per_household_copy_all")}
+                  </button>
+                </div>
+                <ul className="mt-2 flex flex-col gap-1.5">
+                  {households.map((hh) => {
+                    const memberCount = hh.member_ids.length;
+                    return (
+                      <li
+                        key={hh.id}
+                        className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border border-paper-300 bg-white px-3 py-2 dark:border-umber-700 dark:bg-umber-800"
+                      >
+                        <div className="flex min-w-0 flex-1 items-baseline gap-2">
+                          <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+                            {hh.label}
+                          </span>
+                          <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
+                            {t("guest_page_editor.share_per_household_member_count", {
+                              count: memberCount,
+                            })}
+                          </span>
+                          <code className="hidden truncate font-mono text-xs uppercase tracking-[0.15em] text-ink-600 sm:inline dark:text-umber-200">
+                            {hh.code}
+                          </code>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            className="btn-outline btn-sm"
+                            onClick={() => onCopyHouseholdLink(hh)}
+                            title={t("guest_page_editor.share_per_household_copy_link")}
+                            aria-label={t("guest_page_editor.share_per_household_copy_link_aria", {
+                              label: hh.label,
+                            })}
+                          >
+                            <Copy size={14} aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-outline btn-sm"
+                            onClick={() => onShareHouseholdWhatsapp(hh)}
+                            aria-label={t("guest_page_editor.share_per_household_whatsapp_aria", {
+                              label: hh.label,
+                            })}
+                          >
+                            <MessageCircle size={14} aria-hidden />
+                            {t("guest_page_editor.share_per_household_whatsapp")}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-outline btn-sm"
+                            onClick={() => onRotateHouseholdCode(hh)}
+                            disabled={rotatingId === hh.id}
+                            aria-label={t("guest_page_editor.share_per_household_rotate_aria", {
+                              label: hh.label,
+                            })}
+                          >
+                            <RefreshCcw size={14} aria-hidden />
+                            {t("guest_page_editor.share_per_household_rotate")}
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </details>
+            )}
+
+            {slug && loading && households.length === 0 && (
+              <p className="mt-3 text-sm text-ink-400 dark:text-umber-300">{t("common.loading")}</p>
+            )}
+
+            {slug && !loading && households.length === 0 && (
+              <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
+                {t("guest_page_editor.share_per_household_empty")}
+              </p>
+            )}
+          </section>
+
+          <form onSubmit={onSubmit}>
+            {/* ── Publish toggle ──────────────────────────────────────────── */}
+            <section
+              className={`card mt-6 border-2 ${
+                isPublic
+                  ? "border-sage-400 dark:border-sage-500"
+                  : "border-paper-300 dark:border-umber-700"
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg">{t("wedding_site_editor.publish_title")}</h2>
+                  <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                    {isPublic
+                      ? t("wedding_site_editor.publish_body_on")
+                      : t("wedding_site_editor.publish_body_off")}
+                  </p>
+                </div>
+                <label className="inline-flex shrink-0 cursor-pointer items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isPublic}
+                    onClick={() => setIsPublic((v) => !v)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                      isPublic ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        isPublic ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm font-medium text-ink-800 dark:text-paper-100">
+                    {isPublic
+                      ? t("wedding_site_editor.publish_label_on")
+                      : t("wedding_site_editor.publish_label_off")}
+                  </span>
+                </label>
+              </div>
+            </section>
+
+            {/* ── Public content (anyone with the link) ──────────────────── */}
+            <section className="card mt-6">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2 className="text-lg">{t("guest_page_editor.section_public_title")}</h2>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
+                  <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                {t("guest_page_editor.section_public_hint")}
+              </p>
+              <div className="mt-3">
+                <label htmlFor="guest-page-venue" className="field-label">
+                  {t("wedding_site_editor.venue_label")}
+                  {todoVenue && <TodoPill label={todoPillLabel} />}
+                </label>
+                <input
+                  id="guest-page-venue"
+                  type="text"
+                  className="input"
+                  value={venueName}
+                  onChange={(e) => setVenueName(e.target.value)}
+                  placeholder={t("wedding_site_editor.venue_placeholder")}
+                  maxLength={200}
+                />
+                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                  {t("wedding_site_editor.venue_hint")}
+                </p>
+              </div>
+              <div className="mt-3">
+                <label htmlFor="guest-page-cover" className="field-label">
+                  {t("wedding_site_editor.cover_image_label")}
+                  {todoCover && <TodoPill label={todoPillLabel} />}
+                </label>
+                {/* Upload row — thumbnail of the current cover (if any) +
+                 *  Tallózás button. Hidden <input type="file"> so we can style
+                 *  the trigger as a regular outline button. Accept attribute
+                 *  mirrors the server-side MIME allowlist. */}
+                <div className="flex items-center gap-3">
+                  {coverImageUrl ? (
+                    <img
+                      src={coverImageUrl}
+                      alt={t("wedding_site_editor.cover_upload_preview_alt")}
+                      className="h-14 w-20 shrink-0 rounded-md border border-paper-300 object-cover dark:border-umber-700"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-paper-300 text-ink-400 dark:border-umber-700 dark:text-umber-300"
+                      aria-hidden
+                    >
+                      <Upload size={18} />
+                    </div>
+                  )}
+                  <input
+                    ref={coverFileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    onChange={onCoverFileChange}
+                  />
+                  <button
+                    type="button"
+                    className="btn-outline btn-sm"
+                    disabled={coverUploading}
+                    onClick={() => coverFileInputRef.current?.click()}
+                  >
+                    <Upload size={14} aria-hidden />
+                    {coverUploading
+                      ? t("wedding_site_editor.cover_upload_uploading")
+                      : coverImageUrl
+                        ? t("wedding_site_editor.cover_upload_replace")
+                        : t("wedding_site_editor.cover_upload_button")}
+                  </button>
+                </div>
+                <input
+                  id="guest-page-cover"
+                  type="url"
+                  className="input mt-2"
+                  value={coverImageUrl}
+                  onChange={(e) => setCoverImageUrl(e.target.value)}
+                  placeholder={t("wedding_site_editor.cover_image_placeholder")}
+                  maxLength={2048}
+                  inputMode="url"
+                  autoComplete="off"
+                />
+                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                  {t("wedding_site_editor.cover_image_hint")}
+                </p>
+              </div>
+              <div className="mt-3">
+                <label htmlFor="guest-page-intro" className="field-label">
+                  {t("guest_page_editor.intro_label")}
+                  {todoIntro && <TodoPill label={todoPillLabel} />}
+                </label>
+                <textarea
+                  id="guest-page-intro"
+                  className="input"
+                  rows={4}
+                  value={guestPageIntro}
+                  onChange={(e) => setGuestPageIntro(e.target.value)}
+                  placeholder={t("guest_page_editor.intro_placeholder")}
+                  maxLength={4000}
+                />
+                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                  {t("guest_page_editor.intro_hint")}
+                </p>
+              </div>
+            </section>
+
+            {/* ── Post-RSVP unlocked content ────────────────────────────── */}
+            <section className="card mt-6">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2 className="text-lg">{t("guest_page_editor.section_unlocked_title")}</h2>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+                  <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                {t("guest_page_editor.section_unlocked_hint")}
+              </p>
+              <ul className="mt-3 flex flex-wrap items-center gap-2">
+                <li className="inline-flex items-center">
+                  <Link to="/app/schedule" className="btn-outline btn-sm">
+                    {t("guest_page_editor.section_unlocked_link_schedule")}
+                  </Link>
+                  {todoSchedule && <TodoPill label={todoPillLabel} />}
+                </li>
+                <li className="inline-flex items-center">
+                  <Link to="/app/settings/workspace" className="btn-outline btn-sm">
+                    {t("guest_page_editor.section_unlocked_link_profile")}
+                  </Link>
+                  {todoCoords && <TodoPill label={todoPillLabel} />}
+                </li>
+              </ul>
+              <div className="mt-3">
+                <label htmlFor="guest-page-post-rsvp" className="field-label">
+                  {t("guest_page_editor.post_rsvp_label")}
+                  {todoPostRsvp && <TodoPill label={todoPillLabel} />}
+                </label>
+                <textarea
+                  id="guest-page-post-rsvp"
+                  className="input"
+                  rows={5}
+                  value={postRsvpContent}
+                  onChange={(e) => setPostRsvpContent(e.target.value)}
+                  placeholder={t("guest_page_editor.post_rsvp_placeholder")}
+                  maxLength={8000}
+                />
+                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                  {t("guest_page_editor.post_rsvp_hint")}
+                </p>
+              </div>
+            </section>
+
+            {error && (
+              <p className="field-error mt-4" role="alert">
+                {error}
+              </p>
+            )}
+
+            <div className="mt-6">
+              <button type="submit" className="btn-primary" disabled={!dirty || saving}>
+                {saving
+                  ? t("wedding_site_editor.save_saving")
+                  : t("wedding_site_editor.save_button")}
               </button>
             </div>
-            <input
-              id="guest-page-cover"
-              type="url"
-              className="input mt-2"
-              value={coverImageUrl}
-              onChange={(e) => setCoverImageUrl(e.target.value)}
-              placeholder={t("wedding_site_editor.cover_image_placeholder")}
-              maxLength={2048}
-              inputMode="url"
-              autoComplete="off"
-            />
-            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-              {t("wedding_site_editor.cover_image_hint")}
-            </p>
-          </div>
-          <div className="mt-3">
-            <label htmlFor="guest-page-intro" className="field-label">
-              {t("guest_page_editor.intro_label")}
-              {todoIntro && <TodoPill label={todoPillLabel} />}
-            </label>
-            <textarea
-              id="guest-page-intro"
-              className="input"
-              rows={4}
-              value={guestPageIntro}
-              onChange={(e) => setGuestPageIntro(e.target.value)}
-              placeholder={t("guest_page_editor.intro_placeholder")}
-              maxLength={4000}
-            />
-            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-              {t("guest_page_editor.intro_hint")}
-            </p>
-          </div>
-        </section>
-
-        {/* ── Post-RSVP unlocked content ────────────────────────────── */}
-        <section className="card mt-6">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h2 className="text-lg">{t("guest_page_editor.section_unlocked_title")}</h2>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
-              <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-            {t("guest_page_editor.section_unlocked_hint")}
-          </p>
-          <ul className="mt-3 flex flex-wrap items-center gap-2">
-            <li className="inline-flex items-center">
-              <Link to="/app/schedule" className="btn-outline btn-sm">
-                {t("guest_page_editor.section_unlocked_link_schedule")}
-              </Link>
-              {todoSchedule && <TodoPill label={todoPillLabel} />}
-            </li>
-            <li className="inline-flex items-center">
-              <Link to="/app/settings/workspace" className="btn-outline btn-sm">
-                {t("guest_page_editor.section_unlocked_link_profile")}
-              </Link>
-              {todoCoords && <TodoPill label={todoPillLabel} />}
-            </li>
-          </ul>
-          <div className="mt-3">
-            <label htmlFor="guest-page-post-rsvp" className="field-label">
-              {t("guest_page_editor.post_rsvp_label")}
-              {todoPostRsvp && <TodoPill label={todoPillLabel} />}
-            </label>
-            <textarea
-              id="guest-page-post-rsvp"
-              className="input"
-              rows={5}
-              value={postRsvpContent}
-              onChange={(e) => setPostRsvpContent(e.target.value)}
-              placeholder={t("guest_page_editor.post_rsvp_placeholder")}
-              maxLength={8000}
-            />
-            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-              {t("guest_page_editor.post_rsvp_hint")}
-            </p>
-          </div>
-        </section>
-
-        {error && (
-          <p className="field-error mt-4" role="alert">
-            {error}
-          </p>
-        )}
-
-        <div className="mt-6">
-          <button type="submit" className="btn-primary" disabled={!dirty || saving}>
-            {saving ? t("wedding_site_editor.save_saving") : t("wedding_site_editor.save_button")}
-          </button>
-        </div>
-      </form>
+          </form>
         </div>
       </details>
 

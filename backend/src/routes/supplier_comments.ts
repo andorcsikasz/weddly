@@ -18,11 +18,7 @@ import {
 } from "../domain/supplier_comments";
 import { requireAdmin } from "../domain/users";
 
-const VALID_VISIBILITIES = new Set<CommentVisibility>([
-  "admin_internal",
-  "public",
-  "vendor_only",
-]);
+const VALID_VISIBILITIES = new Set<CommentVisibility>(["admin_internal", "public", "vendor_only"]);
 
 function parseVisibility(raw: unknown): CommentVisibility {
   if (raw === undefined || raw === null) return "admin_internal";

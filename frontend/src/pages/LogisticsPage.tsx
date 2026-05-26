@@ -1315,113 +1315,113 @@ function TransferTable({
       </ul>
 
       <div className="card hidden overflow-x-auto p-0 md:block">
-      <table className="min-w-full text-sm">
-        <thead>
-          <tr className="border-b border-paper-300 bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-300">
-            <th className="px-3 py-2">{t("logistics.transfer_label")}</th>
-            <th className="px-3 py-2">{t("logistics.transfer_direction")}</th>
-            <th className="px-3 py-2">{t("logistics.transfer_depart_at")}</th>
-            <th className="px-3 py-2">{t("logistics.transfer_capacity")}</th>
-            <th className="px-3 py-2">{t("logistics.transfer_assigned")}</th>
-            <th className="px-3 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {rowsForRender.map(({ tr, assigned, atCapacity, overCapacity }) => {
-            return (
-              <tr
-                key={tr.id}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  if (hoverTransferId !== tr.id) setHoverTransferId(tr.id);
-                }}
-                onDragLeave={(e) => {
-                  if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-                  if (hoverTransferId === tr.id) setHoverTransferId(null);
-                }}
-                onDrop={(e) => onDrop(e, tr)}
-                onClick={(e) => {
-                  if (!tapArmed) return;
-                  const target = e.target as HTMLElement;
-                  if (target.closest("button") || target.closest("a")) return;
-                  onTapTransfer(tr);
-                }}
-                className={`border-b border-paper-200 last:border-b-0 dark:border-umber-700 ${
-                  hoverTransferId === tr.id
-                    ? overCapacity
-                      ? "bg-rose-50 dark:bg-rose-400/10"
-                      : atCapacity
-                        ? "bg-emerald-50 dark:bg-emerald-400/10"
-                        : "bg-blush-50 dark:bg-blush-400/15"
-                    : ""
-                } ${tapArmed ? "cursor-pointer hover:bg-blush-50/60 dark:hover:bg-blush-400/10" : ""}`}
-              >
-                <td className="px-3 py-2 align-top font-medium">{tr.label}</td>
-                <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
-                  {tr.direction ?? "—"}
-                </td>
-                <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
-                  {tr.depart_at ? formatDepartAt(tr.depart_at) : "—"}
-                </td>
-                <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
-                  <span
-                    className={
-                      overCapacity
-                        ? "font-semibold text-rose-600 dark:text-rose-400"
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="border-b border-paper-300 bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-300">
+              <th className="px-3 py-2">{t("logistics.transfer_label")}</th>
+              <th className="px-3 py-2">{t("logistics.transfer_direction")}</th>
+              <th className="px-3 py-2">{t("logistics.transfer_depart_at")}</th>
+              <th className="px-3 py-2">{t("logistics.transfer_capacity")}</th>
+              <th className="px-3 py-2">{t("logistics.transfer_assigned")}</th>
+              <th className="px-3 py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rowsForRender.map(({ tr, assigned, atCapacity, overCapacity }) => {
+              return (
+                <tr
+                  key={tr.id}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (hoverTransferId !== tr.id) setHoverTransferId(tr.id);
+                  }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                    if (hoverTransferId === tr.id) setHoverTransferId(null);
+                  }}
+                  onDrop={(e) => onDrop(e, tr)}
+                  onClick={(e) => {
+                    if (!tapArmed) return;
+                    const target = e.target as HTMLElement;
+                    if (target.closest("button") || target.closest("a")) return;
+                    onTapTransfer(tr);
+                  }}
+                  className={`border-b border-paper-200 last:border-b-0 dark:border-umber-700 ${
+                    hoverTransferId === tr.id
+                      ? overCapacity
+                        ? "bg-rose-50 dark:bg-rose-400/10"
                         : atCapacity
-                          ? "font-semibold text-emerald-700 dark:text-emerald-400"
-                          : undefined
-                    }
-                  >
-                    {assigned.length}
-                    {tr.capacity !== null ? `/${tr.capacity}` : ""}
-                  </span>
-                </td>
-                <td className="px-3 py-2 align-top">
-                  {assigned.length === 0 ? (
-                    <span className="text-xs text-ink-400 dark:text-umber-400">
-                      {t("logistics.drop_guest_here")}
+                          ? "bg-emerald-50 dark:bg-emerald-400/10"
+                          : "bg-blush-50 dark:bg-blush-400/15"
+                      : ""
+                  } ${tapArmed ? "cursor-pointer hover:bg-blush-50/60 dark:hover:bg-blush-400/10" : ""}`}
+                >
+                  <td className="px-3 py-2 align-top font-medium">{tr.label}</td>
+                  <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
+                    {tr.direction ?? "—"}
+                  </td>
+                  <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
+                    {tr.depart_at ? formatDepartAt(tr.depart_at) : "—"}
+                  </td>
+                  <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
+                    <span
+                      className={
+                        overCapacity
+                          ? "font-semibold text-rose-600 dark:text-rose-400"
+                          : atCapacity
+                            ? "font-semibold text-emerald-700 dark:text-emerald-400"
+                            : undefined
+                      }
+                    >
+                      {assigned.length}
+                      {tr.capacity !== null ? `/${tr.capacity}` : ""}
                     </span>
-                  ) : (
-                    <div className="flex flex-wrap gap-1">
-                      {assigned.map((g) => (
-                        <AssignedGuestChip
-                          key={g.id}
-                          guest={g}
-                          onUnassign={onUnassign}
-                          onDragStart={onDragStartGuest}
-                        />
-                      ))}
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    {assigned.length === 0 ? (
+                      <span className="text-xs text-ink-400 dark:text-umber-400">
+                        {t("logistics.drop_guest_here")}
+                      </span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {assigned.map((g) => (
+                          <AssignedGuestChip
+                            key={g.id}
+                            guest={g}
+                            onUnassign={onUnassign}
+                            onDragStart={onDragStartGuest}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(tr)}
+                        className="rounded-md p-1.5 text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700"
+                        aria-label={t("common.edit")}
+                        title={t("common.edit")}
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(tr)}
+                        className="rounded-md p-1.5 text-ink-500 hover:bg-paper-200 hover:text-rose-600 dark:text-umber-300 dark:hover:bg-umber-700"
+                        aria-label={t("common.delete")}
+                        title={t("common.delete")}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                  )}
-                </td>
-                <td className="px-3 py-2 align-top">
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(tr)}
-                      className="rounded-md p-1.5 text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700"
-                      aria-label={t("common.edit")}
-                      title={t("common.edit")}
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(tr)}
-                      className="rounded-md p-1.5 text-ink-500 hover:bg-paper-200 hover:text-rose-600 dark:text-umber-300 dark:hover:bg-umber-700"
-                      aria-label={t("common.delete")}
-                      title={t("common.delete")}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </>
   );

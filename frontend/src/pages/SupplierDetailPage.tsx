@@ -32,12 +32,7 @@ import {
 import { AdminPageHeader, Pill } from "../components/admin";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import {
-  reviewApi,
-  supplierApi,
-  supplierBookingApi,
-  supplierCommentApi,
-} from "../lib/endpoints";
+import { reviewApi, supplierApi, supplierBookingApi, supplierCommentApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
@@ -111,9 +106,7 @@ export default function SupplierDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = detail
-      ? `${detail.name} · ${t("suppliers.detail.adminTitle")}`
-      : "Supplier";
+    document.title = detail ? `${detail.name} · ${t("suppliers.detail.adminTitle")}` : "Supplier";
   }, [detail, t]);
 
   const refresh = useCallback(async () => {
@@ -168,11 +161,7 @@ export default function SupplierDetailPage() {
       <section className="mb-8">
         {detail.hero_image_url && (
           <div className="mb-4 overflow-hidden rounded-lg">
-            <img
-              src={detail.hero_image_url}
-              alt=""
-              className="aspect-video w-full object-cover"
-            />
+            <img src={detail.hero_image_url} alt="" className="aspect-video w-full object-cover" />
           </div>
         )}
         <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -182,7 +171,10 @@ export default function SupplierDetailPage() {
           {detail.name}
         </h1>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <RatingChip avg={detail.reviews_summary.avg_rating} count={detail.reviews_summary.reviews_count} />
+          <RatingChip
+            avg={detail.reviews_summary.avg_rating}
+            count={detail.reviews_summary.reviews_count}
+          />
           {detail.vendor_account_id ? (
             <Pill tone="sage">{t("suppliers.detail.claimed")}</Pill>
           ) : (
@@ -253,10 +245,7 @@ interface SectionCtx {
   t: (k: string, vars?: Record<string, string | number>) => string;
 }
 
-function ReviewsSection({
-  reviews,
-  ...ctx
-}: SectionCtx & { reviews: SupplierReview[] }) {
+function ReviewsSection({ reviews, ...ctx }: SectionCtx & { reviews: SupplierReview[] }) {
   const { supplierId, onChange, toast, confirm, locale, t } = ctx;
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [body, setBody] = useState("");
@@ -288,8 +277,7 @@ function ReviewsSection({
       toast.success(t("suppliers.detail.reviews.submitted"));
       await onChange();
     } catch (e) {
-      const code =
-        e instanceof ApiError ? (e.detail as { code?: string } | undefined)?.code : null;
+      const code = e instanceof ApiError ? (e.detail as { code?: string } | undefined)?.code : null;
       const msg =
         code === "already_reviewed"
           ? t("suppliers.detail.reviews.alreadyReviewed")
@@ -442,10 +430,7 @@ function ReviewsSection({
   );
 }
 
-function CommentsSection({
-  comments,
-  ...ctx
-}: SectionCtx & { comments: SupplierComment[] }) {
+function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: SupplierComment[] }) {
   const { supplierId, onChange, toast, confirm, locale, t } = ctx;
   const [body, setBody] = useState("");
   const [visibility, setVisibility] = useState<CommentVisibility>("admin_internal");

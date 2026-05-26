@@ -384,17 +384,14 @@ describe("/api/public/wedding tier ladder", () => {
   test("empty string clears guest_page_intro / post_rsvp_content (back to null)", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("phase2-clear@weddly.test");
-    db.prepare(
-      "UPDATE couples SET guest_page_intro = ?, post_rsvp_content = ? WHERE id = ?",
-    ).run("old intro", "old details", coupleId);
+    db.prepare("UPDATE couples SET guest_page_intro = ?, post_rsvp_content = ? WHERE id = ?").run(
+      "old intro",
+      "old details",
+      coupleId,
+    );
     const patch = await req<{
       couple: { guest_page_intro: string | null; post_rsvp_content: string | null };
-    }>(
-      "PATCH",
-      "/api/couples/current",
-      { guest_page_intro: "", post_rsvp_content: "" },
-      { token },
-    );
+    }>("PATCH", "/api/couples/current", { guest_page_intro: "", post_rsvp_content: "" }, { token });
     expect(patch.status).toBe(200);
     expect(patch.data.couple.guest_page_intro).toBeNull();
     expect(patch.data.couple.post_rsvp_content).toBeNull();
@@ -519,10 +516,7 @@ describe("/api/public/wedding tier ladder", () => {
     const { household_code, guest_id } = await createHouseholdWithGuest(token, "Direct");
 
     // 1. No code, private couple → 404 (same as before).
-    const publicAttempt = await req(
-      "GET",
-      `/api/public/wedding/${encodeURIComponent(slug)}`,
-    );
+    const publicAttempt = await req("GET", `/api/public/wedding/${encodeURIComponent(slug)}`);
     expect(publicAttempt.status).toBe(404);
 
     // 2. Valid code, no yes, private couple → invited tier 200. The code
@@ -557,10 +551,7 @@ describe("/api/public/wedding tier ladder", () => {
     const { coupleId } = await bootstrapCouple("phase2-unknown-code@weddly.test");
     db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
     const slug = await getSlug(coupleId);
-    const r = await req(
-      "GET",
-      `/api/public/wedding/${encodeURIComponent(slug)}/9999`,
-    );
+    const r = await req("GET", `/api/public/wedding/${encodeURIComponent(slug)}/9999`);
     expect(r.status).toBe(404);
   });
 

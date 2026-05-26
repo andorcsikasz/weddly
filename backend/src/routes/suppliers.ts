@@ -265,9 +265,9 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
 
   // Admin viewer gets two extra fields. Non-admins (Phase 3) only see
   // bookable + the public review summary.
-  const userRow = db
-    .prepare("SELECT email FROM users WHERE id = ?")
-    .get(userId) as { email: string } | undefined;
+  const userRow = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as
+    | { email: string }
+    | undefined;
   const viewerIsAdmin = userRow ? isAdminEmail(userRow.email) : false;
 
   const payload: SupplierDetail = {

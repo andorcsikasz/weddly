@@ -1050,9 +1050,7 @@ export default function DashboardPage() {
               bodyClassName="px-4 pb-4 md:px-0 md:pb-0"
               title={t("dashboard.tasks_title")}
               trailing={
-                <span>
-                  {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
-                </span>
+                <span>{t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}</span>
               }
             >
               <div className="mb-4 hidden items-baseline justify-between md:flex">

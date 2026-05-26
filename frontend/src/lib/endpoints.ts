@@ -842,8 +842,7 @@ export const reviewApi = {
     ),
   update: (reviewId: number, body: Partial<CreateReviewBody>) =>
     apiFetch<SupplierReview>("PATCH", `/api/reviews/${reviewId}`, body),
-  remove: (reviewId: number) =>
-    apiFetch<{ ok: true }>("DELETE", `/api/reviews/${reviewId}`),
+  remove: (reviewId: number) => apiFetch<{ ok: true }>("DELETE", `/api/reviews/${reviewId}`),
 };
 
 export const supplierCommentApi = {
@@ -863,8 +862,7 @@ export const supplierCommentApi = {
       `/api/suppliers/${encodeURIComponent(supplierId)}/comments`,
       body,
     ),
-  remove: (commentId: number) =>
-    apiFetch<{ ok: true }>("DELETE", `/api/comments/${commentId}`),
+  remove: (commentId: number) => apiFetch<{ ok: true }>("DELETE", `/api/comments/${commentId}`),
 };
 
 export const supplierBookingApi = {

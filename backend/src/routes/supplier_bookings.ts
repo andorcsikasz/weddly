@@ -87,9 +87,9 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   }
   // Guard that the couple actually exists — otherwise a booking row points
   // at a phantom workspace and survives the FK cascade silently.
-  const couple = db
-    .prepare("SELECT id FROM couples WHERE id = ?")
-    .get(coupleId) as { id: number } | undefined;
+  const couple = db.prepare("SELECT id FROM couples WHERE id = ?").get(coupleId) as
+    | { id: number }
+    | undefined;
   if (!couple) throw new HttpError(404, "Couple not found");
 
   try {
@@ -164,12 +164,12 @@ async function handleIcs(ctx: Ctx): Promise<Response> {
   // Resolve supplier display name. Curated suppliers live in code; community
   // and claimed entries pull from `listings`. Fallback to the id to guarantee
   // the .ics is always producible.
-  const listing = db
-    .prepare("SELECT name FROM listings WHERE id = ?")
-    .get(row.supplier_id) as { name: string } | undefined;
-  const couple = db
-    .prepare("SELECT display_name FROM couples WHERE id = ?")
-    .get(row.couple_id) as { display_name: string | null } | undefined;
+  const listing = db.prepare("SELECT name FROM listings WHERE id = ?").get(row.supplier_id) as
+    | { name: string }
+    | undefined;
+  const couple = db.prepare("SELECT display_name FROM couples WHERE id = ?").get(row.couple_id) as
+    | { display_name: string | null }
+    | undefined;
   const ics = buildIcsForBooking({
     booking: toBooking(row),
     supplierName: listing?.name ?? row.supplier_id,

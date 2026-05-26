@@ -798,11 +798,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
       )}
 
       {showWorkspace && (
-        <WelcomeDeskCard
-          couple={couple}
-          t={t}
-          onToggled={(updated) => setCouple(updated)}
-        />
+        <WelcomeDeskCard couple={couple} t={t} onToggled={(updated) => setCouple(updated)} />
       )}
 
       {!tab && <ZoneLabel>{t("profile.zone_account")}</ZoneLabel>}
@@ -1434,9 +1430,7 @@ function WelcomeDeskCard({
           <span
             aria-hidden
             className={`relative h-7 w-12 rounded-full transition-colors ${
-              active
-                ? "bg-sage-500 dark:bg-sage-400"
-                : "bg-paper-300 dark:bg-umber-700"
+              active ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
             } peer-focus-visible:ring-2 peer-focus-visible:ring-ink-700 peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-paper-100 dark:peer-focus-visible:ring-offset-umber-900`}
           >
             <span
@@ -1491,9 +1485,7 @@ function WelcomeDeskStatusPill({ active, t }: { active: boolean; t: T }) {
   const cls = active
     ? "bg-sage-100 text-sage-800 border border-sage-200 dark:bg-sage-400/15 dark:text-sage-200 dark:border-sage-400/40"
     : "bg-paper-200 text-ink-700 border border-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:border-umber-700";
-  const dot = active
-    ? "bg-sage-600 dark:bg-sage-300"
-    : "bg-ink-400 dark:bg-umber-400";
+  const dot = active ? "bg-sage-600 dark:bg-sage-300" : "bg-ink-400 dark:bg-umber-400";
   return (
     <span
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${cls}`}
@@ -1680,7 +1672,6 @@ function SecuritySection({
     </section>
   );
 }
-
 
 /** Single initial-disc above the partner card — just the invited
  *  partner's monogram in blush, no self-overlap. The signed-in user's

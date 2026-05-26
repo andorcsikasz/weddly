@@ -67,12 +67,10 @@ describe("supplier reviews (admin v1)", () => {
     // Admin author has no couple → couple_id NULL → editorial flag set.
     expect(create.data.editorial).toBe(true);
 
-    const list = await req<{ items: Array<{ id: number; published: boolean }>; summary: { avg_rating: number | null; reviews_count: number } }>(
-      "GET",
-      `/api/suppliers/${encodeURIComponent(sid)}/reviews`,
-      undefined,
-      { token },
-    );
+    const list = await req<{
+      items: Array<{ id: number; published: boolean }>;
+      summary: { avg_rating: number | null; reviews_count: number };
+    }>("GET", `/api/suppliers/${encodeURIComponent(sid)}/reviews`, undefined, { token });
     expect(list.status).toBe(200);
     expect(list.data.items.length).toBe(1);
     // Cold-start gate: avg is null below 3 published reviews.
@@ -95,19 +93,24 @@ describe("supplier reviews (admin v1)", () => {
          (supplier_id, author_user_id, couple_id, rating, body, published, created_at, updated_at)
        VALUES (?, ?, NULL, ?, NULL, 1, ?, ?)`,
     );
-    const adminUserId = (db.prepare("SELECT id FROM users WHERE email = ?").get(
-      "admin@test.test",
-    ) as { id: number }).id;
+    const adminUserId = (
+      db.prepare("SELECT id FROM users WHERE email = ?").get("admin@test.test") as { id: number }
+    ).id;
     stmt.run(sid, adminUserId, 5, now, now);
     stmt.run(sid, adminUserId, 3, now, now);
 
     // One more through the API to trigger the recompute.
-    const create = await req("POST", `/api/suppliers/${encodeURIComponent(sid)}/reviews`, {
-      rating: 4,
-      body: null,
-      tags: [],
-      published: true,
-    }, { token });
+    const create = await req(
+      "POST",
+      `/api/suppliers/${encodeURIComponent(sid)}/reviews`,
+      {
+        rating: 4,
+        body: null,
+        tags: [],
+        published: true,
+      },
+      { token },
+    );
     expect(create.status).toBe(201);
 
     const list = await req<{ summary: { avg_rating: number | null; reviews_count: number } }>(
@@ -134,9 +137,9 @@ describe("supplier reviews (admin v1)", () => {
     const del = await req("DELETE", `/api/reviews/${reviewId}`, undefined, { token });
     expect(del.status).toBe(200);
 
-    const row = db
-      .prepare("SELECT deleted_at FROM supplier_reviews WHERE id = ?")
-      .get(reviewId) as { deleted_at: number | null } | undefined;
+    const row = db.prepare("SELECT deleted_at FROM supplier_reviews WHERE id = ?").get(reviewId) as
+      | { deleted_at: number | null }
+      | undefined;
     expect(row?.deleted_at).not.toBeNull();
 
     const list = await req<{ items: unknown[] }>(
@@ -210,12 +213,11 @@ describe("supplier bookings (admin v1)", () => {
   test("availability response signals unclaimed via bookable=false", async () => {
     const token = await registerAdmin();
     const sid = curatedSupplierId();
-    const r = await req<{ bookable: boolean; unavailable_dates: string[]; next_available: string | null }>(
-      "GET",
-      `/api/suppliers/${encodeURIComponent(sid)}/availability`,
-      undefined,
-      { token },
-    );
+    const r = await req<{
+      bookable: boolean;
+      unavailable_dates: string[];
+      next_available: string | null;
+    }>("GET", `/api/suppliers/${encodeURIComponent(sid)}/availability`, undefined, { token });
     expect(r.status).toBe(200);
     expect(r.data.bookable).toBe(false);
     expect(r.data.unavailable_dates).toEqual([]);
@@ -257,12 +259,7 @@ describe("GET /api/suppliers/:supplier_id detail endpoint", () => {
       comments_count?: number;
       next_available?: string | null;
       bookable: boolean;
-    }>(
-      "GET",
-      `/api/suppliers/${encodeURIComponent(sid)}`,
-      undefined,
-      { token },
-    );
+    }>("GET", `/api/suppliers/${encodeURIComponent(sid)}`, undefined, { token });
     expect(r.status).toBe(200);
     expect(r.data.id).toBe(sid);
     expect(r.data.reviews_summary.reviews_count).toBe(0);
@@ -278,12 +275,7 @@ describe("GET /api/suppliers/:supplier_id detail endpoint", () => {
       reviews_summary: { reviews_count: number };
       comments_count?: number;
       bookable: boolean;
-    }>(
-      "GET",
-      `/api/suppliers/${encodeURIComponent(sid)}`,
-      undefined,
-      { token },
-    );
+    }>("GET", `/api/suppliers/${encodeURIComponent(sid)}`, undefined, { token });
     expect(r.status).toBe(200);
     expect(r.data.reviews_summary.reviews_count).toBe(0);
     expect(r.data.comments_count).toBeUndefined();

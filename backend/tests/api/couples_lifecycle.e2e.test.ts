@@ -1746,12 +1746,7 @@ describe("couples_lifecycle: welcome-desk mode toggle", () => {
 
   test("rejects a non-boolean welcome_desk_active payload", async () => {
     const { token } = await bootstrapCouple("welcome-desk-type@weddly.test");
-    const r = await req(
-      "PATCH",
-      "/api/couples/current",
-      { welcome_desk_active: "yes" },
-      { token },
-    );
+    const r = await req("PATCH", "/api/couples/current", { welcome_desk_active: "yes" }, { token });
     expect(r.status).toBe(400);
   });
 });
