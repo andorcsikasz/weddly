@@ -428,6 +428,29 @@ export default function BudgetPage() {
     }
   }, []);
 
+  /** Toggle the cost-planning headcount lock. Persists alongside the live
+   *  count so the next time the page mounts the slider stays where the
+   *  user left it. We also pin the active drag-display count into
+   *  `planning_count` on lock so a partner opening the page on a fresh
+   *  device sees the same number rather than the legacy baseline. */
+  const toggleCountLock = useCallback(async () => {
+    const c = coupleRef.current;
+    if (!c) return;
+    const next = !c.planning_count_locked;
+    const liveCount = effectiveCountRef.current;
+    try {
+      const r = await coupleApi.update(
+        next
+          ? { planning_count_locked: true, planning_count: liveCount }
+          : { planning_count_locked: false },
+      );
+      setCouple(r.couple);
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, () => toggleCountLock());
+    }
+  }, []);
+
   // Reads through refs so identity stays stable across headcount-slider
   // drags (where `effectiveCount` would otherwise change every tick).
   const toggleFreeze = useCallback(
@@ -732,6 +755,8 @@ export default function BudgetPage() {
         boundsMax={bounds.max}
         cap={cap}
         count={effectiveCount}
+        countLocked={couple?.planning_count_locked ?? false}
+        onCountLockToggle={toggleCountLock}
         currency={currency}
         onCountChange={setCount}
         onBoundsChange={saveBounds}

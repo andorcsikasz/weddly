@@ -1851,3 +1851,61 @@ describe("couples_lifecycle: 7-day name-rename cooldown", () => {
     expect(second.data.couple.names_last_changed_at).toBeGreaterThan(eightDaysAgo);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+//   COUPLES — planning_count_locked (cost-planning headcount slider lock)
+// ════════════════════════════════════════════════════════════════════════════
+
+describe("couples_lifecycle: planning_count_locked", () => {
+  test("defaults to false and round-trips via PATCH", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("plan-lock-default@weddly.test");
+
+    const me = await req<{ couple: { planning_count_locked: boolean } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(me.status).toBe(200);
+    expect(me.data.couple.planning_count_locked).toBe(false);
+
+    const on = await req<{ couple: { planning_count_locked: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { planning_count_locked: true, planning_count: 95 },
+      { token },
+    );
+    expect(on.status).toBe(200);
+    expect(on.data.couple.planning_count_locked).toBe(true);
+
+    // Survives a fresh GET — persistent, not in-memory only.
+    const fresh = await req<{ couple: { planning_count_locked: boolean; planning_count: number } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(fresh.data.couple.planning_count_locked).toBe(true);
+    expect(fresh.data.couple.planning_count).toBe(95);
+
+    const off = await req<{ couple: { planning_count_locked: boolean } }>(
+      "PATCH",
+      "/api/couples/current",
+      { planning_count_locked: false },
+      { token },
+    );
+    expect(off.data.couple.planning_count_locked).toBe(false);
+  });
+
+  test("rejects a non-boolean payload", async () => {
+    const { token } = await bootstrapCouple("plan-lock-type@weddly.test");
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { planning_count_locked: "yes" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+});

@@ -82,6 +82,10 @@ export interface CoupleRow {
    *  /api/couples/current. Drives the 7-day rename cooldown. NULL for
    *  couples that have never used the gated rename path. */
   names_last_changed_at: number | null;
+  /** 0 = unlocked (default), 1 = the cost-planning headcount slider on
+   *  /app/budget is pinned to the current `planning_count` and the slider
+   *  collapses out of view. Per-row planned amounts still drag freely. */
+  planning_count_locked: number;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -230,6 +234,7 @@ export function toCouple(row: CoupleRow): Couple {
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,
     names_last_changed_at: row.names_last_changed_at,
+    planning_count_locked: Boolean(row.planning_count_locked),
   };
 }
 

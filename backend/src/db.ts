@@ -621,6 +621,18 @@ addColumnIfMissing("supplier_categories", "hidden", "hidden INTEGER NOT NULL DEF
 // out-of-cooldown.
 addColumnIfMissing("couples", "names_last_changed_at", "names_last_changed_at INTEGER");
 
+// "Lock" flag for the cost-planning headcount slider on /app/budget.
+// 0 = unlocked (default — the slider sits under the big "90 vendég"
+// number and the per-guest categories rescale on drag). 1 = locked,
+// rendered as a closed lock badge next to the number and the slider
+// collapses out of view. Per-row planned amounts still drag on their
+// own sliders; only the global headcount factor is pinned.
+addColumnIfMissing(
+  "couples",
+  "planning_count_locked",
+  "planning_count_locked INTEGER NOT NULL DEFAULT 0",
+);
+
 export function now(): number {
   return Date.now();
 }

@@ -110,6 +110,10 @@ interface OnboardBody {
   honeymoon_end_date?: unknown;
   /** Cost-planning scenario count. Integer 1..2000 or null. */
   planning_count?: unknown;
+  /** When true, the /app/budget cost-planning page pins the headcount
+   *  slider to the current `planning_count` and collapses the rail out
+   *  of view. Per-row planned amounts still drag freely. */
+  planning_count_locked?: unknown;
   /** Categories the couple has frozen on the cost-planning panel. */
   frozen_categories?: unknown;
   /** Display currency for every money field on this couple. */
@@ -1498,6 +1502,22 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       before: { planning_count: couple.planning_count },
       after: { planning_count: val },
     });
+  }
+
+  if (body.planning_count_locked !== undefined) {
+    if (typeof body.planning_count_locked !== "boolean") {
+      throw new HttpError(400, "planning_count_locked must be a boolean");
+    }
+    const next = body.planning_count_locked;
+    const prev = Boolean(couple.planning_count_locked);
+    if (next !== prev) {
+      updates.push({ col: "planning_count_locked", val: next ? 1 : 0 });
+      auditEntries.push({
+        action: "couple.planning_count_locked_update",
+        before: { planning_count_locked: prev },
+        after: { planning_count_locked: next },
+      });
+    }
   }
 
   if (body.frozen_categories !== undefined) {

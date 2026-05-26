@@ -309,6 +309,11 @@ export interface Couple {
    *  onboarding writes don't stamp it). Drives the 7-day rename cooldown on
    *  the workspace hero card. */
   names_last_changed_at: UnixMs | null;
+  /** Cost-planning headcount slider lock. False = unlocked (default), true =
+   *  the slider on /app/budget is pinned to the current `planning_count`
+   *  and the slider rail collapses out of view. Per-row planned amounts
+   *  still drag freely; only the global per-guest rescale factor is pinned. */
+  planning_count_locked: boolean;
 }
 
 /** One Nominatim hit reshaped into the honeymoon destination autocomplete.

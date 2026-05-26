@@ -265,6 +265,8 @@ export const coupleApi = {
     honeymoon_start_date?: string | null;
     honeymoon_end_date?: string | null;
     planning_count?: number | null;
+    /** Pin/unpin the cost-planning headcount slider on /app/budget. */
+    planning_count_locked?: boolean;
     frozen_categories?: BudgetCategory[];
     currency?: Currency;
     rsvp_offers_accommodation?: boolean;

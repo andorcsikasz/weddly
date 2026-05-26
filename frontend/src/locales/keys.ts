@@ -1790,6 +1790,13 @@ export interface LocaleMessages {
     cost_planning_baseline_note: string;
     /** Standalone "vendég" / "guests" label rendered under the big count tile. */
     cost_planning_unit_label: string;
+    /** Aria-label + tooltip on the big guest-count tile when it's currently
+     *  unlocked. Clicking the tile pins the headcount slider; the lock badge
+     *  rotates from open → closed and the slider tucks itself away. */
+    cost_planning_count_lock_aria: string;
+    /** Aria-label + tooltip on the same tile when the headcount is already
+     *  pinned. Clicking unlocks and re-expands the slider. */
+    cost_planning_count_unlock_aria: string;
     lines_title: string;
     lines_sub: string;
     lines_empty: string;

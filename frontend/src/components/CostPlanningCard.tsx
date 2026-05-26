@@ -17,6 +17,7 @@ import {
   Heart,
   Home,
   Lock,
+  LockOpen,
   Mail,
   MoreHorizontal,
   Music,
@@ -189,6 +190,8 @@ export function CostPlanningCard({
   boundsMax,
   cap,
   count,
+  countLocked = false,
+  onCountLockToggle,
   currency = "HUF",
   onCountChange,
   onBoundsChange,
@@ -216,6 +219,15 @@ export function CostPlanningCard({
   boundsMax: number;
   cap: number | null;
   count: number;
+  /** When true, the headcount slider collapses out of view and clicking
+   *  the big number unlocks it instead of entering edit mode. Defaults
+   *  to false for legacy callers (Dashboard) that don't surface the
+   *  lock affordance yet. */
+  countLocked?: boolean;
+  /** Toggles the lock flag. Called with no args; the parent flips
+   *  `planning_count_locked` server-side via coupleApi.update. Optional
+   *  — when omitted the big number is a non-interactive display. */
+  onCountLockToggle?: () => void | Promise<void>;
   onCountChange: (n: number) => void;
   /** Called when the user commits a new min or max on the bounds inputs.
    *  The parent persists `guest_count_goal = { kind: "range", min, max }`
@@ -523,48 +535,107 @@ export function CostPlanningCard({
        *  desktop the negative top margin pulls the number flush under the
        *  eyebrow row, but on phones that overlap reads as crowded against
        *  the overage pill that wraps to its own line — so mobile gets a
-       *  positive top gap and a touch more breathing room under the label. */}
+       *  positive top gap and a touch more breathing room under the label.
+       *
+       *  Click-to-lock: when `onCountLockToggle` is wired the big number
+       *  becomes a button. Hovering reveals an open-lock badge to the
+       *  right; clicking pins the headcount and flips the badge to
+       *  closed-lock, while the slider beneath collapses with a smooth
+       *  max-height transition so the panel feels like it tucked the
+       *  knob away rather than greying it out. */}
       <div className="mt-3 text-center sm:-mt-3">
-        <div className="font-serif text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
-          {formatNumber(count, locale)}
-        </div>
+        {onCountLockToggle ? (
+          <button
+            type="button"
+            onClick={() => void onCountLockToggle()}
+            className="group inline-flex items-center gap-2 rounded-md px-2 py-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-200 dark:focus-visible:ring-paper-50"
+            aria-pressed={countLocked}
+            aria-label={t(
+              countLocked
+                ? "budget.cost_planning_count_unlock_aria"
+                : "budget.cost_planning_count_lock_aria",
+            )}
+            title={t(
+              countLocked
+                ? "budget.cost_planning_count_unlock_aria"
+                : "budget.cost_planning_count_lock_aria",
+            )}
+          >
+            <span className="font-serif text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
+              {formatNumber(count, locale)}
+            </span>
+            {countLocked ? (
+              <Lock
+                size={16}
+                className="shrink-0 text-ink-500 transition dark:text-umber-200"
+                aria-hidden
+              />
+            ) : (
+              <LockOpen
+                size={16}
+                className="shrink-0 text-ink-400 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-umber-300"
+                aria-hidden
+              />
+            )}
+          </button>
+        ) : (
+          <div className="font-serif text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
+            {formatNumber(count, locale)}
+          </div>
+        )}
         <div className="mt-2 text-xs uppercase tracking-wide text-ink-500 sm:mt-0.5 dark:text-umber-300">
           {t("budget.cost_planning_unit_label")}
         </div>
       </div>
 
-      {/* Headcount slider — compact single block. */}
-      <div className="mt-6 sm:mt-4">
-        <input
-          type="range"
-          min={minCount}
-          max={maxCount}
-          step={1}
-          value={count}
-          onChange={(e) => onCountChange(Number(e.target.value))}
-          className="range-fill block w-full"
-          style={rangeFillStyle(count, minCount, maxCount)}
-          aria-label={t("budget.cost_planning_title")}
-        />
-        <div className="mt-1 flex items-center justify-between text-[11px] text-ink-400 dark:text-umber-300">
-          <CountInput
-            value={minCount}
-            min={10}
-            max={maxCount - 5}
-            onCommit={commitMin}
-            ariaLabel={t("budget.slider_min_aria")}
-            readOnly={!onBoundsChange}
+      {/* Headcount slider — compact single block. Wrapped in a
+       *  max-height + opacity transition so flipping `countLocked`
+       *  smoothly tucks the slider away (and brings it back) rather
+       *  than yanking the panel layout. `aria-hidden` + `pointer-events
+       *  -none` while collapsed keep keyboard users and screen readers
+       *  from landing on an invisible control. */}
+      <div
+        className={`grid overflow-hidden transition-[grid-template-rows,opacity,margin] duration-300 ease-in-out ${
+          countLocked
+            ? "mt-0 grid-rows-[0fr] opacity-0"
+            : "mt-6 grid-rows-[1fr] opacity-100 sm:mt-4"
+        }`}
+        aria-hidden={countLocked}
+      >
+        <div className={`min-h-0 ${countLocked ? "pointer-events-none" : ""}`}>
+          <input
+            type="range"
+            min={minCount}
+            max={maxCount}
+            step={1}
+            value={count}
+            onChange={(e) => onCountChange(Number(e.target.value))}
+            className="range-fill block w-full"
+            style={rangeFillStyle(count, minCount, maxCount)}
+            aria-label={t("budget.cost_planning_title")}
+            tabIndex={countLocked ? -1 : undefined}
+            disabled={countLocked}
           />
-          {/* Midpoint of bounds, snapped to 5 — the geometric centre of the slider. */}
-          <span className="stat-num">{formatNumber(midCount, locale)}</span>
-          <CountInput
-            value={maxCount}
-            min={minCount + 5}
-            max={2000}
-            onCommit={commitMax}
-            ariaLabel={t("budget.slider_max_aria")}
-            readOnly={!onBoundsChange}
-          />
+          <div className="mt-1 flex items-center justify-between text-[11px] text-ink-400 dark:text-umber-300">
+            <CountInput
+              value={minCount}
+              min={10}
+              max={maxCount - 5}
+              onCommit={commitMin}
+              ariaLabel={t("budget.slider_min_aria")}
+              readOnly={!onBoundsChange || countLocked}
+            />
+            {/* Midpoint of bounds, snapped to 5 — the geometric centre of the slider. */}
+            <span className="stat-num">{formatNumber(midCount, locale)}</span>
+            <CountInput
+              value={maxCount}
+              min={minCount + 5}
+              max={2000}
+              onCommit={commitMax}
+              ariaLabel={t("budget.slider_max_aria")}
+              readOnly={!onBoundsChange || countLocked}
+            />
+          </div>
         </div>
       </div>
 
@@ -897,9 +968,15 @@ function CategoryRowInner({
 
   // Frozen rows render the amount in blush so the whole row (label, slider,
   // amount) shares one palette and reads as a single locked unit.
+  //
+  // Zero rows (no planned amount yet) drop to a soft placeholder tint so the
+  // "0 Ft" reads as "not filled in" instead of competing with the real
+  // numbers — the eye skips to the rows that actually carry value.
   const amountColorClass = frozen
     ? "text-blush-700 dark:text-blush-300"
-    : "text-ink-700 dark:text-paper-100";
+    : liveDisplay === 0
+      ? "text-ink-300 dark:text-umber-500"
+      : "text-ink-700 dark:text-paper-100";
   const amountTile =
     amountLinkTo && !linkTo ? (
       <Link
