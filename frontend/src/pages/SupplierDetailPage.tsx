@@ -171,7 +171,13 @@ export default function SupplierDetailPage() {
   const ratingCount = detail.reviews_summary.reviews_count;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+    // data-admin-shell opts every h1..h6 inside into the sans typography
+    // override defined in index.css. Mirrors the /app/admin/* shell so the
+    // admin-only detail page reads as an operational tool, not editorial copy.
+    <div
+      data-admin-shell="true"
+      className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10"
+    >
       <button
         type="button"
         onClick={() => navigate(-1)}
@@ -198,7 +204,7 @@ export default function SupplierDetailPage() {
             <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t(`suppliers.cat.${detail.category}`)} · {detail.city}
             </div>
-            <h1 className="mt-1 font-cormorant text-4xl italic leading-tight text-ink-900 dark:text-cream-50 sm:text-5xl">
+            <h1 className="mt-1 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
               {detail.name}
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -226,7 +232,7 @@ export default function SupplierDetailPage() {
 
           {/* About / blurb */}
           <section className="mb-10">
-            <h2 className="mb-3 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
+            <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
               {t("suppliers.detail.about.title")}
             </h2>
             <BlurbBody detail={detail} locale={locale} t={t} />
@@ -401,7 +407,7 @@ function ReviewsSection({
   return (
     <section className="mb-10">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
+        <h2 className="text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
           {t("suppliers.detail.reviews.title")} ({count})
         </h2>
         {avg !== null && count >= 3 && (
@@ -575,7 +581,7 @@ function CommentsSection({
 
   return (
     <section className="mb-10">
-      <h2 className="mb-4 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
+      <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
         {t("suppliers.detail.comments.title")}
       </h2>
 
@@ -670,7 +676,7 @@ function BookingsSection({
   if (!bookable && bookings.length === 0) return null;
   return (
     <section className="mb-10">
-      <h2 className="mb-4 font-cormorant text-2xl italic text-ink-900 dark:text-cream-50">
+      <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
         {t("suppliers.detail.calendar.title")}
       </h2>
       {bookings.length === 0 ? (
@@ -1000,7 +1006,7 @@ function AdminMetaSection({
 }) {
   return (
     <section className="mt-10 rounded-xl border border-dashed border-ink-300/60 bg-ink-50/40 p-5 text-sm dark:border-umber-600/60 dark:bg-umber-800/30">
-      <h2 className="mb-3 font-cormorant text-xl italic text-ink-900 dark:text-cream-50">
+      <h2 className="mb-3 text-base font-semibold uppercase tracking-wide text-ink-700 dark:text-umber-200">
         {t("suppliers.detail.adminMeta.title")}
       </h2>
       <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
