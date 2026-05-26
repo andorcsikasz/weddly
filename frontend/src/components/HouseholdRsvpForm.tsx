@@ -673,7 +673,11 @@ export function HouseholdRsvpForm({
             <div
               role="radiogroup"
               aria-label={t("rsvp.status_for_name", { name: d.full_name })}
-              className="grid grid-cols-3 gap-2"
+              /* 393px / 3 cells = 131px each — with `gap-2` (8px) and
+               * `px-3` the long labels would overflow, so mobile uses
+               * `gap-1 px-2` to claw back ~14px per cell. `min-h-tap`
+               * keeps the radio thumb-tappable. */
+              className="grid grid-cols-3 gap-1 sm:gap-2"
             >
               {STATUSES.map((s) => {
                 const selected = d.interacted && d.rsvp_status === s;
@@ -684,7 +688,7 @@ export function HouseholdRsvpForm({
                     role="radio"
                     aria-checked={selected}
                     onClick={() => void pickStatus(d, s)}
-                    className={`rounded-xl px-3 py-2 text-sm font-medium ${
+                    className={`min-h-tap rounded-xl px-2 py-2 text-sm font-medium sm:px-3 ${
                       selected ? STATUS_TONE_ACTIVE[s] : STATUS_TONE_IDLE[s]
                     }`}
                   >
@@ -775,13 +779,17 @@ export function HouseholdRsvpForm({
                 </div>
 
                 {view.rsvp_offers_accommodation && (
-                  <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                  <label className="flex min-h-tap cursor-pointer items-center gap-3 py-1 text-sm text-ink-700 dark:text-paper-100">
                     <input
                       type="checkbox"
                       checked={d.accommodation_needed}
                       onChange={(e) =>
                         updateMember(d.id, { accommodation_needed: e.target.checked })
                       }
+                      /* h-5 w-5 = 20px box; combined with the parent
+                       * `min-h-tap` label this gives a 44px-tall row that
+                       * passes WCAG without bloating the form. */
+                      className="h-5 w-5 cursor-pointer accent-ink-700"
                     />
                     {t("rsvp.checkin_member_accommodation")}
                   </label>

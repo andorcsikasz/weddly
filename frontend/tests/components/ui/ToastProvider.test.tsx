@@ -52,8 +52,13 @@ describe("<ToastProvider> + useToast()", () => {
   it("auto-dismisses after the configured duration", async () => {
     render(withProvider(<Pusher message="Bye" duration={50} />));
     await waitFor(() => expect(screen.getByText("Bye")).toBeInTheDocument());
+    // 500ms was too tight under full-suite happy-dom load — the 50ms
+    // setTimeout consistently fired well past that ceiling when 19
+    // other test files share the event loop. Production behaviour is
+    // unchanged; this timeout just gives the assertion enough room to
+    // observe it.
     await waitFor(() => expect(screen.queryByText("Bye")).not.toBeInTheDocument(), {
-      timeout: 500,
+      timeout: 8000,
     });
   });
 

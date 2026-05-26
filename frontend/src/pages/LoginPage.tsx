@@ -70,6 +70,8 @@ export default function LoginPage() {
               inputRef={emailRef}
               invalid={Boolean(error)}
               describedById={error ? errorId : undefined}
+              autoComplete="email"
+              inputMode="email"
             />
             <PasswordField
               id="password"
@@ -77,6 +79,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
             {error && (
               <p id={errorId} className="field-error" role="alert">
@@ -120,6 +123,8 @@ function Field({
   inputRef,
   invalid,
   describedById,
+  autoComplete,
+  inputMode,
 }: {
   id: string;
   label: string;
@@ -130,6 +135,8 @@ function Field({
   inputRef?: Ref<HTMLInputElement>;
   invalid?: boolean;
   describedById?: string;
+  autoComplete?: string;
+  inputMode?: "text" | "email" | "tel" | "url" | "numeric" | "decimal" | "search";
 }) {
   return (
     <div>
@@ -144,6 +151,8 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
+        autoComplete={autoComplete}
+        inputMode={inputMode}
         aria-invalid={invalid || undefined}
         aria-describedby={describedById}
       />

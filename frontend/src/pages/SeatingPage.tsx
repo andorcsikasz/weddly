@@ -1223,7 +1223,7 @@ export default function SeatingPage() {
           </div>
         </div>
       ) : (
-        <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="mb-6 grid gap-4 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_320px]">
           <SeatingMap
             tables={tables}
             assignments={assignments}
@@ -1308,7 +1308,7 @@ export default function SeatingPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-6 md:grid-cols-[1fr_260px] lg:grid-cols-[1fr_280px]">
         <div>
           {tables.length > 0 && (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1372,7 +1372,7 @@ export default function SeatingPage() {
               {t("seating.no_unassigned")}
             </p>
           ) : (
-            <ul className="mt-3 max-h-[60vh] space-y-3 overflow-y-auto pl-1 pt-2">
+            <ul className="mt-3 max-h-[60vh] space-y-3 overflow-y-auto overscroll-contain pl-1 pt-2">
               {partnerSlots.map((slot) =>
                 slot.guest ? (
                   <li key={slot.role}>
@@ -1488,7 +1488,11 @@ export default function SeatingPage() {
             src={preview.url}
             title={preview.label}
             aria-label={preview.label}
-            className="block h-[70vh] w-full rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900"
+            /* `h-[85vh]` on phones leaves room for the close + open-in-tab
+             * fallback while still giving readers a usable preview window;
+             * `sm:h-[70vh]` keeps laptop screens from going almost full-
+             * height. */
+            className="block h-[85vh] w-full rounded-xl border border-paper-300 bg-paper-50 sm:h-[70vh] dark:border-umber-700 dark:bg-umber-900"
           />
           <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
             <a href={preview.url} target="_blank" rel="noopener noreferrer" className="underline">

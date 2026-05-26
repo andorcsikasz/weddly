@@ -514,7 +514,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-24 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+      <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-28 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
         {/*
          * Sidebar visibility:
          *   - Phone (<768px): hidden — bottom-nav is the spatial nav.
@@ -657,7 +657,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           above instead of duplicating with a bottom nav. */}
       <nav
         data-coach-target="bottom-nav"
-        className="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur md:hidden border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95"
+        /* `safe-edges` adds left/right insets too, so the nav doesn't run
+         * under the Dynamic Island on iPhone landscape. `will-change` +
+         * `translate-z` keeps iOS Safari from re-compositing the bar every
+         * time the address bar slides; without it the icons jitter during
+         * scroll on the iOS 17+ minimal UI. */
+        style={{ transform: "translateZ(0)", willChange: "transform" }}
+        className="safe-edges fixed bottom-0 left-0 right-0 z-20 border-t backdrop-blur md:hidden border-paper-300 bg-paper-50/95 dark:border-umber-700 dark:bg-umber-900/95"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
           {displayItems
@@ -956,7 +962,10 @@ function MoreSheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="safe-bottom w-full rounded-t-2xl border-t border-paper-300 bg-paper-50 px-4 pb-3 pt-4 shadow-pop dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100"
+        /* `overscroll-contain` stops the page underneath from scrolling
+         * when the user momentum-scrolls inside the sheet — iOS Safari
+         * otherwise treats the body-overflow lock as a soft hint. */
+        className="safe-edges w-full overflow-y-auto overscroll-contain rounded-t-2xl border-t border-paper-300 bg-paper-50 px-4 pb-3 pt-4 shadow-pop dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100"
       >
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-semibold">{title}</h2>
@@ -964,7 +973,7 @@ function MoreSheet({
             type="button"
             onClick={onClose}
             aria-label={closeLabel}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
           >
             <X size={18} aria-hidden="true" />
           </button>

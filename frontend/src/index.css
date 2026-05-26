@@ -34,7 +34,26 @@
   html,
   body,
   #root {
-    height: 100%;
+    /* `min-height` + `100svh` (small viewport height) keeps the tree from
+     * collapsing to 0 on iOS Safari when the address bar hides — the older
+     * `height: 100%` chain breaks at that moment because the body suddenly
+     * outgrows its `height: 100%` parent. `100svh` is the spec answer; we
+     * fall back to `100vh` for browsers older than the dvh-svh-lvh wave. */
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  /* Mute the grey rectangle iOS Safari paints over taps on links/buttons;
+   * the design system already provides focus-visible + hover affordances
+   * and that rectangle reads as a glitch on top of them. */
+  button,
+  a,
+  [role="button"],
+  input,
+  textarea,
+  select,
+  label {
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* SSR prerender body (frontend/scripts/prerender.ts) — what crawlers see
@@ -656,6 +675,15 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  /* Side insets matter once you handle iPhone landscape — the Dynamic
+   * Island plus rounded corner clips fixed nav buttons against the screen
+   * edge. Bundle left+right here so any fixed element that already uses
+   * `.safe-bottom` can swap in `.safe-edges` and pick up all three. */
+  .safe-edges {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
   }
 
   /* Loading placeholder — a soft base with a brighter highlight that sweeps

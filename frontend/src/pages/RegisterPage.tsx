@@ -194,6 +194,7 @@ export default function RegisterPage() {
                 className={`input ${error ? "input-invalid" : ""}`}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? errorId : undefined}
                 required
@@ -209,6 +210,8 @@ export default function RegisterPage() {
                 className={`input ${error ? "input-invalid" : ""}`}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                inputMode="email"
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? errorId : undefined}
                 required
@@ -221,6 +224,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
+              autoComplete="new-password"
               helperText={t("auth.short_password")}
             />
             <PasswordField
@@ -230,6 +234,7 @@ export default function RegisterPage() {
               onChange={(e) => setPasswordConfirm(e.target.value)}
               required
               minLength={8}
+              autoComplete="new-password"
               errorText={
                 passwordConfirm.length > 0 && passwordConfirm !== password
                   ? t("auth.password_mismatch")

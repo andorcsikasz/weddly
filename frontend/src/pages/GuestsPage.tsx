@@ -501,7 +501,10 @@ export default function GuestsPage() {
           list of matches instead of the grouped household view. */}
       {(guests.length > 0 || query) && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[200px]">
+          {/* `min-w-0` on mobile lets the search input shrink past 200px so
+           * the optional "Clear" pill stays on the same line; the desktop
+           * `sm:min-w-[200px]` floor protects laptop readability. */}
+          <div className="relative w-full min-w-0 flex-1 sm:w-auto sm:min-w-[200px]">
             <Search
               size={14}
               aria-hidden
@@ -941,7 +944,13 @@ function HouseholdCard({
             </div>
           )}
           {!isHosts && coupleSlug && (
-            <span className="font-mono uppercase md:col-start-3">{coupleSlug}</span>
+            /* The slug is identical for every household in the workspace
+             * — at phone widths it just steals a row from the code/
+             * invited cells. The full RSVP URL is one tap away via the
+             * share button, so the inline slug is desktop-only. */
+            <span className="hidden font-mono uppercase md:col-start-3 md:inline">
+              {coupleSlug}
+            </span>
           )}
           {!isHosts && (
             <span className="font-mono text-base text-ink-900 tracking-[0.3em] dark:text-paper-50 md:col-start-4">

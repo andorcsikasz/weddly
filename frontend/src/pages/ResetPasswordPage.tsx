@@ -59,6 +59,7 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
+                autoComplete="new-password"
               />
               <PasswordField
                 id="password_confirm"
@@ -67,6 +68,7 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setPasswordConfirm(e.target.value)}
                 required
                 minLength={8}
+                autoComplete="new-password"
                 errorText={
                   passwordConfirm.length > 0 && passwordConfirm !== password
                     ? t("auth.password_mismatch")

@@ -45,7 +45,7 @@ export function PasswordField({
           ref={ref}
           id={id}
           type={visible ? "text" : "password"}
-          className={["input pr-11", invalid ? "input-invalid" : "", className ?? ""]
+          className={["input pr-12", invalid ? "input-invalid" : "", className ?? ""]
             .filter(Boolean)
             .join(" ")}
           aria-describedby={describedBy}
@@ -58,7 +58,11 @@ export function PasswordField({
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? t("auth.hide_password") : t("auth.show_password")}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-50"
+          /* `min-w-tap` (44px from tailwind.config) gives the toggle a
+           * thumb-sized hit area without pushing the icon away from the
+           * right edge. Previously `px-3` gave ~28px width — fine on a
+           * trackpad, miss-prone on phones. */
+          className="absolute inset-y-0 right-0 inline-flex min-w-tap items-center justify-center text-ink-500 hover:text-ink-800 focus:outline-none focus-visible:rounded-r focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:text-paper-50"
           tabIndex={-1}
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}

@@ -59,7 +59,7 @@ export function WatermarkNumeral({
   return (
     <span
       aria-hidden="true"
-      className={`pointer-events-none absolute select-none font-serif italic leading-none text-paper-200 dark:text-umber-800 text-[16rem] sm:text-[20rem] lg:text-[24rem] ${watermarkPositionClasses[position]} ${className}`}
+      className={`pointer-events-none absolute select-none font-serif italic leading-none text-paper-200 dark:text-umber-800 text-[9rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] ${watermarkPositionClasses[position]} ${className}`}
     >
       {value}
     </span>
@@ -81,7 +81,7 @@ export function PullQuote({ quote, attribution, className = "" }: PullQuoteProps
   return (
     <blockquote className={`mx-auto flex flex-col items-center text-center ${className}`}>
       <span className="block h-px w-32 bg-paper-400 dark:bg-umber-600" aria-hidden="true" />
-      <p className="mt-8 max-w-4xl font-serif text-4xl italic leading-[1.15] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+      <p className="mt-6 max-w-4xl font-serif text-2xl italic leading-[1.15] text-ink-900 dark:text-paper-50 sm:mt-8 sm:text-4xl md:text-5xl lg:text-6xl">
         {quote}
       </p>
       {attribution ? (
@@ -158,7 +158,7 @@ export function DropCap({ children, className = "" }: DropCapProps) {
     >
       <span
         aria-hidden="true"
-        className="float-left mr-3 mt-1 font-serif text-7xl leading-none text-blush-700 dark:text-blush-300 sm:text-8xl"
+        className="float-left mr-3 mt-1 font-serif text-5xl leading-none text-blush-700 dark:text-blush-300 sm:text-7xl md:text-8xl"
       >
         {first}
       </span>

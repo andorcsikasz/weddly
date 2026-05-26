@@ -154,25 +154,47 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={describedById}
-        className={`card relative flex max-h-[90vh] w-full flex-col ${size === "xl" ? "max-w-5xl" : size === "lg" ? "max-w-3xl" : "max-w-md"} rounded-b-none rounded-t-2xl p-0 shadow-pop sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
+        /* `max-h-[100dvh]` over `90vh` keeps the footer reachable on iOS
+         * Safari when the URL bar collapses; vh-units freeze at the
+         * largest viewport and would clip below the home indicator. The
+         * mobile variant fills the available height so the dialog behaves
+         * like a near-fullscreen sheet without rebuilding the layout. */
+        className={`card relative flex max-h-[100dvh] w-full flex-col ${size === "xl" ? "sm:max-w-5xl" : size === "lg" ? "sm:max-w-3xl" : "sm:max-w-md"} rounded-b-none rounded-t-2xl p-0 shadow-pop sm:max-h-[90vh] sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
       >
-        <div className="flex shrink-0 items-start gap-4 px-6 pt-6">
-          <h2 id={titleId} className="flex-1 text-xl">
+        <div className="flex shrink-0 items-start gap-3 px-4 pt-4 sm:px-6 sm:pt-6">
+          <h2 id={titleId} className="flex-1 pt-1 text-xl">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="btn-ghost btn-sm -mr-2 -mt-1"
+            /* 44×44 tap target — the previous `btn-sm -mr-2 -mt-1` made
+             *  the X around 28px and pushed it toward the screen edge
+             *  where it overlapped the iOS Safari address-bar
+             *  reload-pull on /onboarding and any full-screen modal. */
+            className="-mr-2 -mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-600 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
             aria-label={t("a11y.close")}
           >
-            <X size={18} aria-hidden="true" />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
-        <div className="mt-3 flex-1 overflow-y-auto px-6 pb-2 text-sm text-ink-700 dark:text-paper-100">
+        <div
+          /* When any input inside the dialog gains focus, scroll it
+           *  toward the dialog's vertical center. iOS Safari otherwise
+           *  parks the focused field at the bottom of the visible region
+           *  where the virtual keyboard immediately covers it. */
+          onFocus={(e) => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            if (target.matches("input, textarea, select, [contenteditable='true']")) {
+              target.scrollIntoView({ block: "center", behavior: "smooth" });
+            }
+          }}
+          className="mt-3 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 text-sm text-ink-700 sm:px-6 dark:text-paper-100"
+        >
           {children}
         </div>
-        <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-paper-200 px-6 py-4 sm:flex-row sm:justify-end dark:border-umber-700">
+        <div className="safe-bottom flex shrink-0 flex-col-reverse gap-2 border-t border-paper-200 px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-umber-700">
           {footer}
         </div>
       </div>

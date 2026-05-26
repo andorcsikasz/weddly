@@ -130,7 +130,7 @@ export function WorkspaceSwitcher() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          className="absolute left-0 top-full z-30 mt-1 w-64 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
           <ul className="max-h-72 overflow-y-auto py-1">
             {memberships.map((m) => {

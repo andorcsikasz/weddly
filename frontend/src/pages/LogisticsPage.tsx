@@ -1207,8 +1207,114 @@ function TransferTable({
   onTapTransfer: (tr: Transfer) => void;
   t: (k: string) => string;
 }) {
+  // Shared per-row state used by both the desktop `<table>` and the mobile
+  // card stack — keeps capacity colouring + assignment lookups consistent.
+  const rowsForRender = transfers.map((tr) => {
+    const assigned = guestsByTransfer.get(tr.id) ?? [];
+    const atCapacity = tr.capacity !== null && assigned.length === tr.capacity;
+    const overCapacity = tr.capacity !== null && assigned.length > tr.capacity;
+    return { tr, assigned, atCapacity, overCapacity };
+  });
+
   return (
-    <div className="card overflow-x-auto p-0">
+    <>
+      {/* Mobile card stack — the 6-column table was illegible on phones
+       *  (cells clipped at ~10rem, direction text cut mid-word). Cards
+       *  put label + capacity badge as the header, direction + depart
+       *  underneath, and the guest chips full-width below. */}
+      <ul className="space-y-3 md:hidden">
+        {rowsForRender.map(({ tr, assigned, atCapacity, overCapacity }) => (
+          <li
+            key={tr.id}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (hoverTransferId !== tr.id) setHoverTransferId(tr.id);
+            }}
+            onDragLeave={(e) => {
+              if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+              if (hoverTransferId === tr.id) setHoverTransferId(null);
+            }}
+            onDrop={(e) => onDrop(e, tr)}
+            onClick={(e) => {
+              if (!tapArmed) return;
+              const target = e.target as HTMLElement;
+              if (target.closest("button") || target.closest("a")) return;
+              onTapTransfer(tr);
+            }}
+            className={`card p-4 transition-colors ${
+              hoverTransferId === tr.id
+                ? overCapacity
+                  ? "bg-rose-50 dark:bg-rose-400/10"
+                  : atCapacity
+                    ? "bg-emerald-50 dark:bg-emerald-400/10"
+                    : "bg-blush-50 dark:bg-blush-400/15"
+                : ""
+            } ${tapArmed ? "cursor-pointer" : ""}`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-ink-900 dark:text-paper-50">{tr.label}</p>
+                <p className="mt-0.5 text-xs text-ink-600 dark:text-umber-200">
+                  {tr.direction ?? "—"}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                  {tr.depart_at ? formatDepartAt(tr.depart_at) : "—"}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${
+                  overCapacity
+                    ? "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300"
+                    : atCapacity
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+                      : "bg-paper-200 text-ink-700 dark:bg-umber-700 dark:text-paper-200"
+                }`}
+              >
+                {assigned.length}
+                {tr.capacity !== null ? `/${tr.capacity}` : ""}
+              </span>
+            </div>
+            <div className="mt-3">
+              {assigned.length === 0 ? (
+                <span className="text-xs text-ink-400 dark:text-umber-400">
+                  {t("logistics.drop_guest_here")}
+                </span>
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {assigned.map((g) => (
+                    <AssignedGuestChip
+                      key={g.id}
+                      guest={g}
+                      onUnassign={onUnassign}
+                      onDragStart={onDragStartGuest}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="mt-3 flex justify-end gap-1">
+              <button
+                type="button"
+                onClick={() => onEdit(tr)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700"
+                aria-label={t("common.edit")}
+              >
+                <Pencil size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(tr)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-rose-600 dark:text-umber-300 dark:hover:bg-umber-700"
+                aria-label={t("common.delete")}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="card hidden overflow-x-auto p-0 md:block">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="border-b border-paper-300 bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-300">
@@ -1221,13 +1327,7 @@ function TransferTable({
           </tr>
         </thead>
         <tbody>
-          {transfers.map((tr) => {
-            const assigned = guestsByTransfer.get(tr.id) ?? [];
-            // Same tri-state colour scheme as AccommodationCard:
-            // emerald == exactly at capacity (good, full), rose only when
-            // the assigned count has overflowed past it.
-            const atCapacity = tr.capacity !== null && assigned.length === tr.capacity;
-            const overCapacity = tr.capacity !== null && assigned.length > tr.capacity;
+          {rowsForRender.map(({ tr, assigned, atCapacity, overCapacity }) => {
             return (
               <tr
                 key={tr.id}
@@ -1322,7 +1422,8 @@ function TransferTable({
           })}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }
 

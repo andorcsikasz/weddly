@@ -642,7 +642,10 @@ export function SeatingMap({
         {createPortal(
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4 backdrop-blur-sm"
-            onMouseDown={(e) => {
+            /* `onPointerDown` catches both touch and mouse — the old
+             * `onMouseDown` left mobile users stranded in expanded mode
+             * (ESC works but isn't reachable from a phone keyboard). */
+            onPointerDown={(e) => {
               if (e.target === e.currentTarget) setExpanded(false);
             }}
           >

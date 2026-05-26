@@ -96,7 +96,11 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-7xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
           <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
-              <h1 className="max-w-[14ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+              {/* Cap with `max-w-[18ch]` on mobile — HU translations are
+               * 30–40% longer than EN and the old 14ch limit was wrapping
+               * the title to 4+ lines on 360px phones. Desktop still gets
+               * the tighter 14ch column for visual rhythm. */}
+              <h1 className="max-w-[18ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                 {t("landing.hero_title")}
               </h1>
               <div className="mt-8 sm:max-w-md">
@@ -508,7 +512,7 @@ function MobileStickySignup() {
   return (
     <div
       {...(visible ? {} : { inert: "" as unknown as boolean })}
-      className={`pointer-events-none safe-bottom fixed inset-x-0 bottom-0 z-30 px-4 pb-3 pt-2 transition-opacity duration-200 lg:hidden ${
+      className={`pointer-events-none safe-edges fixed inset-x-0 bottom-0 z-30 px-4 pb-4 pt-2 transition-opacity duration-200 lg:hidden ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
