@@ -368,7 +368,10 @@ export default function AdminUsersPage() {
     }
   }
 
-  function renderUserCell(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
+  function renderUserCell(
+    u: AdminUserView,
+    opts: { showLastActive?: boolean; remindCouple?: AdminCoupleView } = {},
+  ) {
     const isSelf = currentAdmin?.id === u.id;
     const isPending = pendingId === u.id;
     const flag = u.active_flag;
@@ -445,7 +448,24 @@ export default function AdminUsersPage() {
             </span>
           )}
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
+          {opts.remindCouple &&
+            (remindSentCoupleIds.has(opts.remindCouple.id) ? (
+              <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
+                {t("admin.remind_invite_partner_sent_label")}
+              </Pill>
+            ) : (
+              <button
+                type="button"
+                className="btn-ghost btn-sm inline-flex items-center"
+                onClick={() => opts.remindCouple && onRemindInvitePartner(opts.remindCouple)}
+                disabled={remindPendingCoupleId === opts.remindCouple.id}
+                title={t("admin.remind_invite_partner_tooltip")}
+                aria-label={t("admin.remind_invite_partner_aria")}
+              >
+                <Mail size={14} aria-hidden />
+              </button>
+            ))}
           {!u.verified_email &&
             (verifySentIds.has(u.id) ? (
               <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
@@ -696,27 +716,9 @@ export default function AdminUsersPage() {
                                 </span>
                                 {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
                                 {members.length === 1 && (
-                                  <>
-                                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
-                                      {t("admin.workspace_solo_member")}
-                                    </span>
-                                    {remindSentCoupleIds.has(c.id) ? (
-                                      <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
-                                        {t("admin.remind_invite_partner_sent_label")}
-                                      </Pill>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        className="inline-flex items-center rounded p-1 text-ink-600 hover:bg-paper-200/70 dark:text-umber-300 dark:hover:bg-umber-700/60"
-                                        onClick={() => onRemindInvitePartner(c)}
-                                        disabled={remindPendingCoupleId === c.id}
-                                        title={t("admin.remind_invite_partner_tooltip")}
-                                        aria-label={t("admin.remind_invite_partner_aria")}
-                                      >
-                                        <Mail size={12} aria-hidden />
-                                      </button>
-                                    )}
-                                  </>
+                                  <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                                    {t("admin.workspace_solo_member")}
+                                  </span>
                                 )}
                               </div>
                               <div>
@@ -728,7 +730,9 @@ export default function AdminUsersPage() {
                                   <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
                                     {members.map((u) => (
                                       <li key={u.id} className="py-1 first:pt-0 last:pb-0">
-                                        {renderUserCell(u)}
+                                        {renderUserCell(u, {
+                                          remindCouple: members.length === 1 ? c : undefined,
+                                        })}
                                       </li>
                                     ))}
                                   </ul>
