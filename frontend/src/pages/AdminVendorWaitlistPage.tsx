@@ -17,10 +17,11 @@ import type {
 } from "@shared/vendor_waitlist";
 import { buildEmailDraft } from "@shared/vendor_waitlist";
 import {
-  AtSign,
   Check,
   Clock,
-  ExternalLink,
+  Facebook,
+  Globe,
+  Instagram,
   Link2,
   Loader2,
   Mail,
@@ -28,6 +29,7 @@ import {
   RotateCcw,
   Sparkles,
   X,
+  Youtube,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
@@ -81,6 +83,116 @@ const OUTCOME_LABEL_KEY: Record<VendorWaitlistOutcome, string> = {
 };
 
 const FILTERS: VendorWaitlistStatus[] = ["new", "under_review", "accepted", "rejected"];
+
+type ChannelKey = "website" | "instagram" | "youtube" | "facebook";
+
+interface ChannelDetection {
+  website: string | null;
+  instagram: string | null;
+  youtube: string | null;
+  facebook: string | null;
+  /** Portfolio links the host-matcher didn't claim — Pinterest, Behance,
+   *  Drive folders, etc. Rendered (still gated behind <details>) so the
+   *  admin can audit them too. */
+  others: string[];
+}
+
+/** Strip `www.` and lowercase the hostname for prefix/suffix matching.
+ *  Returns null for unparseable URLs (the row is still preserved in
+ *  `others` so we don't silently drop content). */
+function safeHost(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./i, "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+const YT_HOSTS = ["youtube.com", "m.youtube.com", "youtu.be"];
+const FB_HOSTS = ["facebook.com", "m.facebook.com", "fb.com", "fb.me"];
+const IG_HOSTS = ["instagram.com"];
+
+function hostMatches(host: string, list: readonly string[]): boolean {
+  return list.some((h) => host === h || host.endsWith(`.${h}`));
+}
+
+/** Split a waitlist entry's links into known social channels + an "others"
+ *  bucket so the admin card can render a fixed-position icon row for the
+ *  big four. `instagram_handle` (a bare handle field) wins over a portfolio
+ *  IG URL — both can be present but the dedicated field is canonical. */
+function detectChannels(entry: VendorWaitlistAdminView): ChannelDetection {
+  let youtube: string | null = null;
+  let facebook: string | null = null;
+  let igFromLinks: string | null = null;
+  const others: string[] = [];
+
+  for (const url of entry.portfolio_links) {
+    const host = safeHost(url);
+    if (!host) {
+      others.push(url);
+      continue;
+    }
+    if (!youtube && hostMatches(host, YT_HOSTS)) {
+      youtube = url;
+    } else if (!facebook && hostMatches(host, FB_HOSTS)) {
+      facebook = url;
+    } else if (!igFromLinks && hostMatches(host, IG_HOSTS)) {
+      igFromLinks = url;
+    } else {
+      others.push(url);
+    }
+  }
+
+  const instagram = entry.instagram_handle
+    ? `https://instagram.com/${entry.instagram_handle}`
+    : igFromLinks;
+
+  return { website: entry.website, instagram, youtube, facebook, others };
+}
+
+/** Per-channel icon + brand-tinted active class. Dim state shares one token
+ *  pair (`text-ink-300` / `dark:text-umber-500`) so every blank slot reads
+ *  identically — colour only appears when the vendor actually submitted a
+ *  link. YouTube uses Tailwind core red (the one channel where colour
+ *  recognition is universal); Facebook stays ink-toned because the palette
+ *  has no true brand blue and the icon shape is enough. */
+const CHANNEL_META: Record<
+  ChannelKey,
+  {
+    Icon: typeof Globe;
+    activeClass: string;
+    hoverClass: string;
+    labelKey: string;
+  }
+> = {
+  website: {
+    Icon: Globe,
+    activeClass: "text-ink-700 dark:text-paper-100",
+    hoverClass: "hover:text-ink-900 dark:hover:text-paper-50",
+    labelKey: "admin.waitlist_card_channel_website",
+  },
+  instagram: {
+    Icon: Instagram,
+    activeClass: "text-blush-500 dark:text-blush-400",
+    hoverClass: "hover:text-blush-700 dark:hover:text-blush-300",
+    labelKey: "admin.waitlist_card_channel_instagram",
+  },
+  youtube: {
+    Icon: Youtube,
+    activeClass: "text-red-600 dark:text-red-500",
+    hoverClass: "hover:text-red-700 dark:hover:text-red-400",
+    labelKey: "admin.waitlist_card_channel_youtube",
+  },
+  facebook: {
+    Icon: Facebook,
+    activeClass: "text-ink-700 dark:text-ink-300",
+    hoverClass: "hover:text-ink-900 dark:hover:text-paper-50",
+    labelKey: "admin.waitlist_card_channel_facebook",
+  },
+};
+
+const CHANNEL_DIM_CLASS = "text-ink-300 dark:text-umber-500";
+const CHANNEL_ORDER: ChannelKey[] = ["website", "instagram", "youtube", "facebook"];
 
 export default function AdminVendorWaitlistPage() {
   const { t, locale } = useT();
@@ -248,24 +360,22 @@ function EntryCard({
   pending,
 }: {
   entry: VendorWaitlistAdminView;
-  t: (k: string) => string;
+  t: (k: string, vars?: Record<string, string>) => string;
   fmtDate: (ts: number) => string;
   onRespond: () => void;
   onReopen: () => void;
   pending: boolean;
 }) {
-  // Collapse "extra" detail (portfolio, message, sent-email body, admin
-  // notes) behind a single <details> so the resting card is a tight
-  // header + meta row + action button. The admin opens detail only when
-  // triaging — most rows in "Elfogadva" / "Elutasítva" don't need it
-  // expanded by default.
+  // The four big-social channels move to a fixed icon row on the resting
+  // card (always-visible glanceable signal); their freeform siblings —
+  // Pinterest, Behance, Drive folders, etc. — stay collapsed inside
+  // <details> as `channels.others`. Detection runs once per render via
+  // useMemo so the host-parse cost doesn't repeat as filter chips toggle.
+  const channels = useMemo(() => detectChannels(entry), [entry]);
+  const hasChannelRow =
+    !!channels.website || !!channels.instagram || !!channels.youtube || !!channels.facebook;
   const hasDetail =
-    entry.portfolio_links.length > 0 ||
-    !!entry.message ||
-    !!entry.sent_subject ||
-    !!entry.notes ||
-    !!entry.instagram_handle ||
-    !!entry.website;
+    channels.others.length > 0 || !!entry.message || !!entry.sent_subject || !!entry.notes;
   const statusMeta = STATUS_PILL[entry.status];
   const StatusIcon = statusMeta.Icon;
   return (
@@ -298,6 +408,7 @@ function EntryCard({
               </span>
             )}
           </div>
+          {hasChannelRow && <ChannelRow channels={channels} t={t} />}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Pill
@@ -347,31 +458,11 @@ function EntryCard({
             {t("admin.waitlist_card_more_label")}
           </summary>
           <div className="mt-2 flex flex-col gap-2">
-            {entry.website && (
-              <a
-                href={entry.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex max-w-full items-center gap-1 truncate text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
-              >
-                <ExternalLink size={12} aria-hidden /> {entry.website}
-              </a>
-            )}
-            {entry.instagram_handle && (
-              <a
-                href={`https://instagram.com/${entry.instagram_handle}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
-              >
-                <AtSign size={12} aria-hidden /> {entry.instagram_handle}
-              </a>
-            )}
-            {entry.portfolio_links.length > 0 && (
+            {channels.others.length > 0 && (
               <div className="admin-tile">
-                <p className="eyebrow">{t("admin.waitlist_card_portfolio_label")}</p>
+                <p className="eyebrow">{t("admin.waitlist_card_portfolio_other_label")}</p>
                 <ul className="mt-1 grid gap-0.5">
-                  {entry.portfolio_links.map((url) => (
+                  {channels.others.map((url) => (
                     <li key={url}>
                       <a
                         href={url}
@@ -414,6 +505,64 @@ function EntryCard({
         </details>
       )}
     </article>
+  );
+}
+
+/** Fixed-position four-slot channel row on the resting card. Always renders
+ *  all four slots in the same order — the absence of colour is information
+ *  too, and a steady position lets the admin scan a list of cards quickly.
+ *  Active slots are real <a> links opening in a new tab; dim slots render
+ *  as `<span>` with an sr-only "no X link provided" affordance so colour
+ *  isn't the only signal. */
+function ChannelRow({
+  channels,
+  t,
+}: {
+  channels: ChannelDetection;
+  t: (k: string, vars?: Record<string, string>) => string;
+}) {
+  return (
+    <div
+      role="list"
+      aria-label={t("admin.waitlist_card_channel_row_label")}
+      className="mt-1 flex items-center gap-3 text-[11px]"
+    >
+      {CHANNEL_ORDER.map((key) => {
+        const meta = CHANNEL_META[key];
+        const Icon = meta.Icon;
+        const url = channels[key];
+        const channelName = t(meta.labelKey);
+        if (url) {
+          return (
+            <a
+              key={key}
+              role="listitem"
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={channelName}
+              aria-label={t("admin.waitlist_card_channel_visit", { channel: channelName })}
+              className={`inline-flex items-center rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${meta.activeClass} ${meta.hoverClass}`}
+            >
+              <Icon size={14} aria-hidden />
+            </a>
+          );
+        }
+        return (
+          <span
+            key={key}
+            role="listitem"
+            title={t("admin.waitlist_card_channel_none", { channel: channelName })}
+            className={`inline-flex items-center ${CHANNEL_DIM_CLASS}`}
+          >
+            <Icon size={14} aria-hidden />
+            <span className="sr-only">
+              {t("admin.waitlist_card_channel_none", { channel: channelName })}
+            </span>
+          </span>
+        );
+      })}
+    </div>
   );
 }
 

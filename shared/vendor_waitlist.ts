@@ -94,28 +94,35 @@ export function buildEmailDraft(
   const category = entry.category_label || "";
   if (outcome === "accepted") {
     return {
-      subject: `Wēddly: szívesen szerepelnétek nálunk — mi a következő lépés`,
+      subject: `Wēddly: szívesen látnánk titeket a katalógusban`,
       body:
         `Szia ${name}!\n\n` +
         `Köszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára (${category}). ` +
-        `Megnéztük a profilotokat — szívesen bemutatnánk titeket a Weddly-n tervező pároknak.\n\n` +
-        `A következő lépés: küldjetek vissza pár adatot (rövid bemutatkozás, 4-6 portfólió kép, ` +
-        `kapcsolat, irányár), és mi felvesszük a katalógusunkba. Hamarosan jövünk a részletes ` +
-        `onboarding e-maillel.\n\n` +
-        `Ha bármi kérdésetek van, válaszoljatok erre az e-mailre — emberek olvassák.\n\n` +
+        `A csapatunk személyesen átnézte a profilotokat, és örömmel jelezzük: szerepeltetnénk ` +
+        `titeket a Wēddly-n tervező pároknak ajánlott szolgáltatók között.\n\n` +
+        `Nincs most tőletek semmi tennivaló — a regisztrációkor megadott adatok és képek alapján ` +
+        `összerakjuk a profilotokat. Ha van időtök, lépjetek be és nézzétek át, hogy minden úgy ` +
+        `néz-e ki, ahogy szeretnétek.\n\n` +
+        `A Wēddly még béta szakaszban van, ezért minden őszinte visszajelzés aranyat ér nekünk — ` +
+        `legyen szó a felületről, az árazásról vagy arról, mit hiányoltok egy ilyen eszközből.\n\n` +
+        `Ha bármi kérdésetek van, vagy csak megosztanátok velünk valamit, válaszoljatok nyugodtan ` +
+        `erre az e-mailre — személyesen olvassuk.\n\n` +
         `Üdv,\nA Wēddly csapata`,
     };
   }
   if (outcome === "under_review") {
     return {
-      subject: `Wēddly: alaposabban átnézzük a jelentkezéseteket`,
+      subject: `Wēddly: pár nap, és jelzünk a döntéssel`,
       body:
         `Szia ${name}!\n\n` +
         `Köszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára (${category}). ` +
-        `Egy-két napon belül alaposabban átnézzük a profilotokat, és e-mailben jelzünk vissza ` +
-        `a végleges döntéssel.\n\n` +
-        `Ha addig van bármi, amit szeretnétek megosztani magatokról (portfólió, referenciák), ` +
-        `nyugodtan válaszoljatok erre a levélre.\n\n` +
+        `A csapatunk a következő napokban alaposabban átnézi a profilotokat, és e-mailben jelzünk ` +
+        `vissza a végleges döntéssel.\n\n` +
+        `Ha addig van bármi, amit szeretnétek megosztani magatokról — friss portfólió, ` +
+        `referenciák, vagy bármi, amit fontosnak tartotok —, nyugodtan válaszoljatok erre ` +
+        `a levélre.\n\n` +
+        `A Wēddly még béta szakaszban van; ha bekerültök a katalógusba, nagyon hálásak leszünk ` +
+        `minden visszajelzésért, amit a felülettel kapcsolatban megosztotok velünk.\n\n` +
         `Üdv,\nA Wēddly csapata`,
     };
   }
@@ -125,10 +132,10 @@ export function buildEmailDraft(
     body:
       `Szia ${name}!\n\n` +
       `Köszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára (${category}). ` +
-      `Most még nem tudunk továbblépni veletek — egy szűk, kategóriánkénti listát építünk, ` +
-      `és ebben a körben máshogy alakult a válogatás.\n\n` +
-      `Ez nem végleges nem: amint újra nyitunk a kategóriátokban, jelzünk. Ha addig változik ` +
-      `valami nálatok (új portfólió, új fókusz), küldjétek el bátran.\n\n` +
+      `A csapatunk személyesen átnézte a profilotokat, és most még nem tudunk továbblépni ` +
+      `veletek — jelenleg szűken válogatunk a kategóriátokban.\n\n` +
+      `Ez nem örökre szól: amint újra nyitunk a kategóriátokban, jelzünk. Ha addig változik ` +
+      `valami nálatok (új portfólió, új fókusz), küldjétek el bátran — szívesen átnézzük újra.\n\n` +
       `Üdv,\nA Wēddly csapata`,
   };
 }
