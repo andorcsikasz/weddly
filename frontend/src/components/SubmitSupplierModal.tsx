@@ -554,9 +554,6 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
             <TrustLine icon={<Check size={12} aria-hidden />}>
               {t("suppliers.submit.trust_email_private")}
             </TrustLine>
-            <TrustLine icon={<Sparkles size={12} aria-hidden />}>
-              {t("suppliers.submit.trust_no_fees")}
-            </TrustLine>
           </ul>
         </form>
 

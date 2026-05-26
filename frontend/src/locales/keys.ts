@@ -2265,7 +2265,6 @@ export interface LocaleMessages {
       intro: string;
       trust_review: string;
       trust_email_private: string;
-      trust_no_fees: string;
       next_steps_title: string;
       next_steps_body: string;
       next_steps_review_title: string;

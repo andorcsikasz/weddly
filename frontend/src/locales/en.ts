@@ -2020,7 +2020,6 @@ const en: LocaleMessages = {
       intro: "A few details is all it takes — other couples will find them faster.",
       trust_review: "Our team reviews it before it shows in the directory",
       trust_email_private: "Your email stays private",
-      trust_no_fees: "Free, forever — no commissions",
       next_steps_title: "Check your inbox!",
       next_steps_body:
         "We sent a confirmation link to the email above. Click it and the listing will appear in the directory.",

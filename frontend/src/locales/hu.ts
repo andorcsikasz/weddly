@@ -2044,7 +2044,6 @@ const hu: LocaleMessages = {
       intro: "Pár adat — és más párok is könnyebben rátalálnak.",
       trust_review: "Csapatunk átnézi mielőtt megjelenik a párok listáján",
       trust_email_private: "Az e-mail címed nem lesz nyilvános",
-      trust_no_fees: "Örökre ingyenes — semmilyen jutalékot nem kérünk",
       next_steps_title: "Megerősítő linket küldtünk!",
       next_steps_body:
         "Nézd meg a megadott e-mail fiókot, kattints a linkre, és a hirdetés megjelenik a párok számára.",
