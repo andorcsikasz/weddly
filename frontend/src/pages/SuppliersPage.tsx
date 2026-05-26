@@ -1616,6 +1616,17 @@ export default function SuppliersPage() {
                         <Mail size={14} />
                       </a>
                     )}
+                    {s.vendor_account_id === null && user?.role !== "vendor" && (
+                      <button
+                        type="button"
+                        onClick={() => setClaimTarget({ id: s.id, name: s.name })}
+                        className="btn-ghost btn-sm"
+                        aria-label={t("vendor_claim.button_label")}
+                        title={t("vendor_claim.button_label")}
+                      >
+                        <UserCheck size={14} aria-hidden />
+                      </button>
+                    )}
                   </div>
                   <div className="ml-auto flex items-center gap-1">
                     <CompareToggle
@@ -1637,16 +1648,6 @@ export default function SuppliersPage() {
                     <VoteRow supplier={s} onVote={onVote} t={t} />
                   </div>
                 </div>
-                {s.vendor_account_id === null && user?.role !== "vendor" && (
-                  <button
-                    type="button"
-                    onClick={() => setClaimTarget({ id: s.id, name: s.name })}
-                    className="mt-2 inline-flex items-center gap-1 self-start text-xs text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
-                  >
-                    <UserCheck size={12} aria-hidden />
-                    {t("vendor_claim.button_label")}
-                  </button>
-                )}
               </article>
             );
           })}
