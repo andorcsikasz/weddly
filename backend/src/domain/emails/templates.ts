@@ -181,6 +181,13 @@ export interface GuestInvitePayload {
 export interface OnboardingNudgePayload {
   onboardingUrl: string;
 }
+export interface PartnerInviteReminderPayload {
+  /** Deep link straight to the dashboard's invite-partner anchor, so the
+   *  recipient lands on the form they need to fill out. */
+  invitePartnerUrl: string;
+  /** Optional couple display name for a warmer body ("Anna & Bence"). */
+  coupleDisplayName?: string;
+}
 export interface RsvpWeeklyDigestForCouplePayload {
   /** Couple's friendly display name — "Anna & Bence". */
   coupleDisplayName: string;
@@ -352,6 +359,7 @@ export type KindPayload = {
   partner_invite: PartnerInvitePayload;
   partner_invite_accepted: PartnerInviteAcceptedPayload;
   partner_invite_declined: PartnerInviteDeclinedPayload;
+  partner_invite_reminder: PartnerInviteReminderPayload;
   partner_left_workspace: PartnerLeftWorkspacePayload;
   couple_paused: CouplePausedPayload;
   couple_pause_cancelled: CouplePauseCancelledPayload;
@@ -710,6 +718,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "All your data stays in place. If you'd like to invite someone else to plan together, you can issue a fresh invite from your Profile page. Solo planning keeps working fully — nothing's gated behind a partner.",
         ],
         cta: "Invite a new partner",
+      },
+    };
+  },
+
+  partner_invite_reminder: (p, ctx) => {
+    const coupleHu = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    return {
+      subject: "Hívd meg a párodat a Weddly-re / Invite your partner to Weddly",
+      ctaUrl: p.invitePartnerUrl,
+      hu: {
+        preheader: "Egy pár klikk, és együtt tervezhettek mindent.",
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Észrevettük, hogy egyedül használod a Weddly-t${coupleHu} — pedig a tervező igazán akkor erős, amikor a pároddal együtt szerkesztitek.`,
+          "Pár kattintás, és máris közös munkamenetben dolgoztok: vendéglista, ülésrend, költségvetés, RSVP linkek. Ami valamelyikőtök változtat, a másikon azonnal látszik — semmi táblázat-pingpong.",
+          "A lenti gomb visszavisz a vezérlőpultodra, közvetlenül a meghívó űrlaphoz.",
+        ],
+        cta: "Pár meghívása",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `We noticed you're using Weddly on your own${coupleEn} — but the planner really shines when you and your partner are editing together.`,
+          "A couple of clicks and you're both in one shared workspace: guest list, seating, budget, RSVP links. Whatever either of you changes shows up instantly on the other side — no more spreadsheet ping-pong.",
+          "The button below takes you straight to the invite form on your dashboard.",
+        ],
+        cta: "Invite my partner",
       },
     };
   },

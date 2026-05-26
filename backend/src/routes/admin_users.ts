@@ -230,6 +230,60 @@ function parseId(ctx: Ctx): number {
   return id;
 }
 
+/**
+ * Admin-triggered nudge for solo couples: a single-member workspace gets a
+ * lifecycle email reminding the owner to invite their partner. Idempotent
+ * from the admin's perspective (re-clicking just sends another mail), but
+ * each send is audit-logged so we can spot a runaway click.
+ */
+function handleRemindInvitePartner(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const coupleId = parseId(ctx);
+
+  const couple = db.prepare("SELECT * FROM couples WHERE id = ?").get(coupleId) as
+    | CoupleRow
+    | undefined;
+  if (!couple) throw new HttpError(404, "Couple not found");
+  if (couple.status === "deleting") throw new HttpError(400, "Workspace is already purged");
+  if (couple.partner_b_id) throw new HttpError(400, "Workspace already has two partners");
+
+  // Surface the actual workspace members (not just partner_a/_b on the row) so
+  // we send to the single human in the workspace even if the schema state
+  // drifted. There must be exactly one to qualify as "solo".
+  const members = partnersForCouple(coupleId);
+  if (members.length === 0) throw new HttpError(400, "Workspace has no members to nudge");
+  if (members.length > 1) throw new HttpError(400, "Workspace is not solo");
+  const target = members[0]!;
+  if (target.email.endsWith("@purged.local")) {
+    throw new HttpError(400, "Cannot nudge a purged user");
+  }
+
+  const coupleDisplayName =
+    couple.display_name && couple.display_name !== "Purged workspace"
+      ? couple.display_name
+      : undefined;
+  const invitePartnerUrl = `${CONFIG.frontendBaseUrl}/app/dashboard#invite-partner`;
+
+  void sendKind(
+    "partner_invite_reminder",
+    { invitePartnerUrl, coupleDisplayName },
+    {
+      user: { id: target.id, email: target.email, full_name: target.full_name },
+      couple_id: couple.id,
+    },
+  );
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: couple.id,
+    action: "admin.remind_invite_partner",
+    target_kind: "user",
+    target_id: target.id,
+  });
+
+  return json({ ok: true });
+}
+
 function handleResendVerify(ctx: Ctx): Response {
   const admin = requireAdmin(ctx);
   const userId = parseId(ctx);
@@ -566,4 +620,5 @@ export function registerAdminUserRoutes(router: Router) {
   router.post("/api/admin/users/:id/flag", handleFlagUser, true);
   router.post("/api/admin/users/:id/unflag", handleUnflagUser, true);
   router.post("/api/admin/couples/purge-deleting", handlePurgeDeletingCouples, true);
+  router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
 }

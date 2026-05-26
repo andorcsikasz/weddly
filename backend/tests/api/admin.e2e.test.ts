@@ -100,6 +100,7 @@ describe("admin gate — 403 for verified non-admin token on every /api/admin/* 
     },
     { method: "POST", path: "/api/admin/users/1/unflag", body: {} },
     { method: "POST", path: "/api/admin/couples/purge-deleting", body: {} },
+    { method: "POST", path: "/api/admin/couples/1/remind-invite-partner", body: {} },
     // admin_suppliers.ts
     { method: "GET", path: "/api/admin/suppliers" },
     { method: "GET", path: "/api/admin/suppliers/directory" },
@@ -651,6 +652,84 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
     );
     expect(r.status).toBe(200);
     expect(r.data.purged).toBe(1);
+  });
+});
+
+describe("admin couples — remind-invite-partner nudge", () => {
+  test("solo couple → email_log row + audit log + 200", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { coupleId } = await bootstrapCouple("solo@weddly.test");
+    const target = db.prepare("SELECT id FROM users WHERE email = ?").get("solo@weddly.test") as {
+      id: number;
+    };
+
+    const r = await req<{ ok: boolean }>(
+      "POST",
+      `/api/admin/couples/${coupleId}/remind-invite-partner`,
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.ok).toBe(true);
+
+    const log = db
+      .prepare("SELECT kind, to_email FROM email_log WHERE user_id = ? ORDER BY id DESC LIMIT 1")
+      .get(target.id) as { kind: string; to_email: string } | undefined;
+    expect(log).toBeDefined();
+    expect(log?.kind).toBe("partner_invite_reminder");
+    expect(log?.to_email).toBe("solo@weddly.test");
+
+    const audit = db
+      .prepare(
+        "SELECT action, target_id FROM audit_log WHERE action = 'admin.remind_invite_partner' AND target_id = ?",
+      )
+      .get(target.id) as { action: string; target_id: number } | undefined;
+    expect(audit).toBeDefined();
+  });
+
+  test("unknown couple id → 404", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req(
+      "POST",
+      "/api/admin/couples/99999/remind-invite-partner",
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(404);
+  });
+
+  test("couple with two partners → 400", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { coupleId } = await bootstrapCouple("owner@weddly.test");
+    // Forge a partner_b by attaching a second registered user to the row.
+    const partnerB = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "partner@weddly.test",
+      password: "supersafe123",
+      full_name: "Partner",
+    });
+    db.prepare("UPDATE couples SET partner_b_id = ? WHERE id = ?").run(
+      partnerB.data.user.id,
+      coupleId,
+    );
+    db.prepare("UPDATE users SET couple_id = ? WHERE id = ?").run(coupleId, partnerB.data.user.id);
+    const r = await req(
+      "POST",
+      `/api/admin/couples/${coupleId}/remind-invite-partner`,
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("bad id → 400", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req(
+      "POST",
+      "/api/admin/couples/notanumber/remind-invite-partner",
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(400);
   });
 });
 

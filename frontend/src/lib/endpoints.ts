@@ -614,10 +614,7 @@ export const weddingWebsiteApi = {
    *  `is_public = 1`. The legacy `r.wedding` shape is preserved for
    *  callers that don't care about tier/household. */
   get: (slug: string) =>
-    apiFetch<PublicWeddingResponse>(
-      "GET",
-      `/api/public/wedding/${encodeURIComponent(slug)}`,
-    ),
+    apiFetch<PublicWeddingResponse>("GET", `/api/public/wedding/${encodeURIComponent(slug)}`),
   /** Public — code-bearing variant served at /w/:slug/:code. Returns
    *  `invited` (valid code, nobody RSVP'd yes yet) or `confirmed` (≥1
    *  yes) tier. Works even on private (`is_public = 0`) couples —
@@ -875,6 +872,11 @@ export const adminUserApi = {
   /** One-shot bulk re-purge of every couple flagged `status="deleting"`. */
   purgeDeleting: () =>
     apiFetch<{ purged: number }>("POST", "/api/admin/couples/purge-deleting", {}),
+  /** Manually nudge a solo workspace owner to invite their partner. The
+   *  recipient gets a lifecycle email pointing at the dashboard's invite
+   *  form. Idempotent server-side; the admin can re-click freely. */
+  remindInvitePartner: (coupleId: number) =>
+    apiFetch<{ ok: true }>("POST", `/api/admin/couples/${coupleId}/remind-invite-partner`, {}),
   /** Unread-style counts for the admin nav rail. AppShell polls this
    *  every ~30s while the admin is signed in and renders a small red
    *  badge next to each section with count > 0. */

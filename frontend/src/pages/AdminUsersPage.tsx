@@ -79,6 +79,11 @@ export default function AdminUsersPage() {
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
   const [purgingDeleting, setPurgingDeleting] = useState(false);
+  // Solo-workspace "nudge partner invite" — track which couple is currently
+  // mid-request (button spinner) and which we've already nudged this session
+  // (swap the icon for a checkmark so the admin sees their click landed).
+  const [remindPendingCoupleId, setRemindPendingCoupleId] = useState<number | null>(null);
+  const [remindSentCoupleIds, setRemindSentCoupleIds] = useState<Set<number>>(new Set());
 
   // Sticky client-side search across name / email / workspace id / slug.
   // We keep the raw input separate from the debounced query so typing stays
@@ -339,6 +344,30 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function onRemindInvitePartner(c: AdminCoupleView) {
+    const ok = await confirm({
+      title: t("admin.remind_invite_partner_confirm_title"),
+      body: t("admin.remind_invite_partner_confirm_body", { workspace: workspaceLabel(c) }),
+      confirmLabel: t("admin.remind_invite_partner_confirm"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setRemindPendingCoupleId(c.id);
+    try {
+      await adminUserApi.remindInvitePartner(c.id);
+      setRemindSentCoupleIds((prev) => {
+        const next = new Set(prev);
+        next.add(c.id);
+        return next;
+      });
+      toast.success(t("admin.remind_invite_partner_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setRemindPendingCoupleId(null);
+    }
+  }
+
   function renderUserCell(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
     const isSelf = currentAdmin?.id === u.id;
     const isPending = pendingId === u.id;
@@ -425,49 +454,49 @@ export default function AdminUsersPage() {
             ) : (
               <button
                 type="button"
-                className="btn-ghost btn-sm inline-flex items-center gap-1"
+                className="btn-ghost btn-sm inline-flex items-center"
                 onClick={() => onResendVerify(u)}
                 disabled={isPending}
+                title={t("admin.resend_verify")}
                 aria-label={t("admin.resend_verify")}
               >
                 <Mail size={14} aria-hidden />
-                <span className="text-[11px]">{t("admin.action_verify_label")}</span>
               </button>
             ))}
           {!isSelf && !flag && (
             <button
               type="button"
-              className="btn-ghost btn-sm inline-flex items-center gap-1"
+              className="btn-ghost btn-sm inline-flex items-center"
               onClick={() => onFlag(u)}
               disabled={isPending}
+              title={t("admin.flag_user_button")}
               aria-label={t("admin.flag_user_button")}
             >
               <Flag size={14} aria-hidden />
-              <span className="text-[11px]">{t("admin.action_flag_label")}</span>
             </button>
           )}
           {!isSelf && flag && (
             <button
               type="button"
-              className="btn-ghost btn-sm inline-flex items-center gap-1 text-blush-800 dark:text-blush-300"
+              className="btn-ghost btn-sm inline-flex items-center text-blush-800 dark:text-blush-300"
               onClick={() => onUnflag(u)}
               disabled={isPending}
+              title={t("admin.unflag_user_button")}
               aria-label={t("admin.unflag_user_button")}
             >
               <FlagOff size={14} aria-hidden />
-              <span className="text-[11px]">{t("admin.action_unflag_label")}</span>
             </button>
           )}
           {!isSelf && (
             <button
               type="button"
-              className="btn-alert btn-sm inline-flex items-center gap-1"
+              className="btn-alert btn-sm inline-flex items-center"
               onClick={() => onDelete(u)}
               disabled={isPending}
+              title={t("admin.delete_user")}
               aria-label={t("admin.delete_user")}
             >
               <Trash2 size={14} aria-hidden />
-              <span className="text-[11px]">{t("admin.action_delete_label")}</span>
             </button>
           )}
         </div>
@@ -667,9 +696,27 @@ export default function AdminUsersPage() {
                                 </span>
                                 {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
                                 {members.length === 1 && (
-                                  <span className="text-[11px] text-ink-500 dark:text-umber-300">
-                                    {t("admin.workspace_solo_member")}
-                                  </span>
+                                  <>
+                                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                                      {t("admin.workspace_solo_member")}
+                                    </span>
+                                    {remindSentCoupleIds.has(c.id) ? (
+                                      <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
+                                        {t("admin.remind_invite_partner_sent_label")}
+                                      </Pill>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        className="inline-flex items-center rounded p-1 text-ink-600 hover:bg-paper-200/70 dark:text-umber-300 dark:hover:bg-umber-700/60"
+                                        onClick={() => onRemindInvitePartner(c)}
+                                        disabled={remindPendingCoupleId === c.id}
+                                        title={t("admin.remind_invite_partner_tooltip")}
+                                        aria-label={t("admin.remind_invite_partner_aria")}
+                                      >
+                                        <Mail size={12} aria-hidden />
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                               <div>

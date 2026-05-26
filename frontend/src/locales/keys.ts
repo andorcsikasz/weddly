@@ -2582,13 +2582,6 @@ export interface LocaleMessages {
     demo_workspaces_summary_one: string;
     demo_workspaces_summary_other: string;
     demo_workspaces_recent_24h: string;
-    /** Visible labels next to the icon-only action buttons in the workspace
-     *  row. Tooltips alone aren't reachable on touch devices, so we promote
-     *  each action to a labelled icon button at text-[11px]. */
-    action_verify_label: string;
-    action_flag_label: string;
-    action_unflag_label: string;
-    action_delete_label: string;
     users_section_users: string;
     users_section_couples: string;
     users_count_one: string;
@@ -2648,6 +2641,16 @@ export interface LocaleMessages {
     last_active_hours: string;
     last_active_days: string;
     workspace_solo_member: string;
+    /** Admin-triggered nudge on solo workspaces: small Mail icon button next
+     *  to the "Solo member" badge that emails the lone partner a reminder
+     *  to invite their other half. */
+    remind_invite_partner_tooltip: string;
+    remind_invite_partner_aria: string;
+    remind_invite_partner_confirm_title: string;
+    remind_invite_partner_confirm_body: string;
+    remind_invite_partner_confirm: string;
+    remind_invite_partner_success: string;
+    remind_invite_partner_sent_label: string;
     workspace_status_paused: string;
     workspace_status_deleting: string;
     /** One-shot bulk purge of every couple in `status="deleting"` — already
