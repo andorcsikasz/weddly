@@ -1325,7 +1325,11 @@ function AddCustomRow({
             else if (e.key === "Escape") reset();
           }}
           aria-label={t("budget.custom_row_label_placeholder")}
-          className="input h-11 min-h-0 flex-1 py-1 text-base sm:h-9 sm:flex-none sm:basis-44 sm:text-sm"
+          /* `h-9` on every viewport — the prior `h-11` mobile size made
+           *  the placeholder + input chrome read as a desktop hero form
+           *  inside a tiny phone card. Keeping `text-base` (16px) is the
+           *  iOS auto-zoom guardrail; only the height shrinks. */
+          className="input h-9 min-h-0 flex-1 py-1 text-base sm:flex-none sm:basis-44 sm:text-sm"
         />
         <input
           type="text"
@@ -1343,7 +1347,7 @@ function AddCustomRow({
             else if (e.key === "Escape") reset();
           }}
           aria-label={t("budget.custom_row_amount_placeholder")}
-          className="input h-11 min-h-0 flex-1 py-1 text-right text-base tabular-nums sm:h-9 sm:flex-none sm:basis-32 sm:text-sm"
+          className="input h-9 min-h-0 flex-1 py-1 text-right text-base tabular-nums sm:flex-none sm:basis-32 sm:text-sm"
         />
         <button
           type="button"

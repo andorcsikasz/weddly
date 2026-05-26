@@ -1426,7 +1426,7 @@ function BudgetMobileCard({
   const { t } = useT();
   const delta = actual - planned;
   return (
-    <article id={id} data-category={category} className="card scroll-mt-24 p-3">
+    <article id={id} data-category={category} className="card scroll-mt-24 p-2.5">
       <header className="flex items-start justify-between gap-2">
         <CategoryCell category={category} />
         {/* Delta + bin sit together on the header row so the bin never
@@ -1450,13 +1450,11 @@ function BudgetMobileCard({
       </header>
       {/* Planned + Actual in a 2-col grid on mobile — the prior stacked
           layout had each label+input on its own row, so a 13-category list
-          racked up an extra ~200px of vertical scroll. Labels sit above
-          inputs (each pair is a tight `dt/dd` column), which keeps the
-          two HufInputs aligned at the same x without giving up the row to
-          a label column. */}
-      <dl className="mt-3 grid grid-cols-2 gap-3">
+          racked up an extra ~200px of vertical scroll. Tightened gaps
+          (`mt-2 gap-2 mb-0.5`) cut another ~12 px per card × 13 cards. */}
+      <dl className="mt-2 grid grid-cols-2 gap-2">
         <div className="min-w-0">
-          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.planned")}
           </dt>
           <dd>
@@ -1470,7 +1468,7 @@ function BudgetMobileCard({
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.actual")}
           </dt>
           <dd>
@@ -1508,7 +1506,7 @@ function BudgetMobileCustomCard({
   const { t } = useT();
   const delta = line.actual_huf - line.planned_huf;
   return (
-    <article data-budget-line-id={line.id} data-category="other-custom" className="card p-3">
+    <article data-budget-line-id={line.id} data-category="other-custom" className="card p-2.5">
       <header className="flex items-start justify-between gap-2">
         <CustomRowLabel icon={line.icon} label={line.label} />
         {/* Bin lives inline with the delta pill — see BudgetMobileCard
@@ -1527,9 +1525,9 @@ function BudgetMobileCustomCard({
           </button>
         </div>
       </header>
-      <dl className="mt-3 grid grid-cols-2 gap-3">
+      <dl className="mt-2 grid grid-cols-2 gap-2">
         <div className="min-w-0">
-          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.planned")}
           </dt>
           <dd>
@@ -1542,7 +1540,7 @@ function BudgetMobileCustomCard({
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.actual")}
           </dt>
           <dd>

@@ -2425,6 +2425,12 @@ function TableCard({
                   // unless a guest is queued for placement, to avoid a
                   // forest of Tab stops for the keyboard-only user.
                   const seatFocusable = selectedGuestId !== null || guest !== undefined;
+                  // When the guest in this seat is the currently-selected
+                  // one, lift the highlight ring to the seat <li> so the
+                  // whole tile reads as selected — previously the ring sat
+                  // on `<DraggableGuest>` and only outlined the text.
+                  const seatIsSelected =
+                    guest !== undefined && selectedGuestId === guest.id;
                   return (
                     <li
                       key={idx}
@@ -2449,7 +2455,7 @@ function TableCard({
                         .replace("{seat}", String(idx + 1))}
                       className={
                         guest
-                          ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer" : ""}`
+                          ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer" : ""} ${seatIsSelected ? "ring-2 ring-blush-500 dark:ring-blush-400/60" : ""}`
                           : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer ring-1 ring-blush-200 dark:ring-blush-400/40" : ""}`
                       }
                     >
@@ -2557,7 +2563,12 @@ function DraggableGuest({
             ? "rounded-lg border border-blush-300 bg-blush-50 px-2 py-1.5 text-sm font-medium text-ink-900 hover:border-blush-500 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-paper-50 dark:hover:border-blush-400"
             : "rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600",
         tapMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
-        selected ? "ring-2 ring-blush-500 dark:ring-blush-400/60" : "",
+        // In `compact` mode this row sits inside a seat <li> which already
+        // shows the selection ring on the whole tile (see TableCard
+        // `seatIsSelected`). Drawing the same ring around the text inside
+        // would double up + outline only the name — which is the bug
+        // flagged in the seat-selection screenshot.
+        selected && !compact ? "ring-2 ring-blush-500 dark:ring-blush-400/60" : "",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-umber-300",
       ]
         .filter(Boolean)

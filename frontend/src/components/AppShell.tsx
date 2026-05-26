@@ -697,7 +697,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-haspopup="dialog"
               aria-expanded={moreOpen}
               className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] ${
-                moreOpen ? "text-ink-900 dark:text-paper-50" : "text-ink-500"
+                moreOpen ? "text-ink-900 dark:text-paper-50" : "text-ink-500 dark:text-umber-200"
               }`}
             >
               <MoreHorizontal size={18} aria-hidden="true" />
@@ -1023,8 +1023,19 @@ function BottomLink({
    *  the icon so it sits above the label like a notification dot. */
   badgeCount?: number;
 }) {
-  const active = variant === "admin" ? "text-violet-950" : "text-ink-900";
-  const idle = variant === "admin" ? "text-ink-500" : "text-ink-500";
+  // Light mode keeps the original navy / violet pair. Dark mode flips to
+  // a cream / blush palette so the labels actually read against the
+  // umber-900 nav bar — the prior `text-ink-500` (deep navy) was
+  // effectively invisible on dark, per the "dark dashboard nem látszik
+  // jól" report.
+  const active =
+    variant === "admin"
+      ? "text-violet-950 dark:text-violet-200"
+      : "text-ink-900 dark:text-paper-50";
+  const idle =
+    variant === "admin"
+      ? "text-ink-500 dark:text-umber-200"
+      : "text-ink-500 dark:text-umber-200";
   return (
     <NavLink
       to={to}

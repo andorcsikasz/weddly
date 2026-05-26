@@ -248,17 +248,21 @@ export default function MoodboardPage() {
         </div>
       ) : (
         <>
-          <div className="card mb-4 flex flex-wrap items-center justify-between gap-3">
+          {/* Source-pin card — slimmed on mobile (`p-3` + `flex-nowrap` so
+           *  the Pinterest link + Csere / Eltávolítás buttons share one
+           *  row instead of stacking with the desktop `p-6`). The card
+           *  utility class still wins on tablet+ via the `sm:` overrides. */}
+          <div className="card mb-4 flex flex-nowrap items-center justify-between gap-2 p-3 sm:gap-3 sm:p-6">
             <a
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-ink-700 underline-offset-4 hover:underline dark:text-paper-100"
+              className="inline-flex min-w-0 items-center gap-1.5 truncate text-sm text-ink-700 underline-offset-4 hover:underline dark:text-paper-100"
             >
-              <ExternalLink size={14} aria-hidden="true" />
-              {t("moodboard.open_in_pinterest")}
+              <ExternalLink size={14} aria-hidden="true" className="shrink-0" />
+              <span className="truncate">{t("moodboard.open_in_pinterest")}</span>
             </a>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 className="btn-ghost btn-sm"
@@ -273,9 +277,11 @@ export default function MoodboardPage() {
                 type="button"
                 className="btn-ghost btn-sm inline-flex items-center gap-1"
                 onClick={clear}
+                aria-label={t("moodboard.clear")}
+                title={t("moodboard.clear")}
               >
                 <Trash2 size={14} aria-hidden="true" />
-                {t("moodboard.clear")}
+                <span className="hidden sm:inline">{t("moodboard.clear")}</span>
               </button>
             </div>
           </div>
