@@ -38,6 +38,7 @@ import {
 import { DemoLaunchCard } from "../components/DemoLaunchCard";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
+import { publicStatsApi } from "../lib/endpoints";
 import { currencySymbol, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -164,11 +165,12 @@ export default function LandingPage() {
           to register. */}
       <InteractiveBudgetDemo />
 
-      {/* Wordmark spine + dark stats band were cut here — the spine
-          was "Est. MMXXVI · WĒDDLY · Paper letters" faux-letterpress
-          that earned no scroll-weight, and the stats band rendered
-          "Open beta" at text-9xl as a fake stat. Both flagged by the
-          density + IA agents as "AI's idea of tasteful." */}
+      {/* ════════════════════════ Live counters ════════════════════════
+          Two real numbers — onboarded couples + RSVPs collected — fed by
+          GET /api/public/stats (60s server-side cache). Hides itself when
+          both are 0 so a freshly-seeded environment doesn't broadcast
+          "0 pár". This replaces the earlier fake "Open beta" stats band. */}
+      <LiveStatsBand />
 
       {/* ════════════════════════ 02 · Phases ════════════════════════
           Numbered timeline. Each phase has a giant italic numeral
@@ -523,6 +525,65 @@ function MobileStickySignup() {
       >
         {t("landing.cta_signup")}
       </Link>
+    </div>
+  );
+}
+
+/** Two-number stats strip fed by GET /api/public/stats. Self-hiding when the
+ *  fetch fails OR both counters are 0 — a "0 pár · 0 RSVP" sign reads worse
+ *  than no band at all. Numbers are formatted with the user's locale grouping
+ *  (`Intl.NumberFormat`), and the eyebrow + labels come from the i18n bundle
+ *  so EN/HU stay in sync. */
+function LiveStatsBand() {
+  const { t, locale } = useT();
+  const [stats, setStats] = useState<{ couples: number; rsvps: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    publicStatsApi
+      .get()
+      .then((r) => {
+        if (!cancelled) setStats({ couples: r.couples, rsvps: r.rsvps });
+      })
+      .catch(() => {
+        // Public counter — never block the page on a fetch failure.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!stats) return null;
+  if (stats.couples === 0 && stats.rsvps === 0) return null;
+
+  const fmt = new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US");
+
+  return (
+    <section className="relative bg-paper-100 dark:bg-umber-900">
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+          {t("landing.counter_eyebrow")}
+        </p>
+        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-2 gap-6 sm:gap-12">
+          <StatCounter value={fmt.format(stats.couples)} label={t("landing.counter_couples_label")} />
+          <StatCounter value={fmt.format(stats.rsvps)} label={t("landing.counter_rsvps_label")} />
+        </div>
+        <p className="mt-8 text-center font-serif text-xs italic text-ink-500 dark:text-umber-300">
+          {t("landing.counter_footnote")}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function StatCounter({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="text-center">
+      <div className="font-serif text-5xl italic leading-[0.95] text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
+        {value}
+      </div>
+      <div className="mt-3 font-serif text-sm text-ink-600 dark:text-umber-200 sm:text-base">
+        {label}
+      </div>
     </div>
   );
 }

@@ -887,6 +887,10 @@ export interface LocaleMessages {
     stats_c_value: string;
     stats_c_label: string;
     stats_footnote: string;
+    counter_eyebrow: string;
+    counter_couples_label: string;
+    counter_rsvps_label: string;
+    counter_footnote: string;
     product_eyebrow: string;
     product_title: string;
     block_budget_eyebrow: string;

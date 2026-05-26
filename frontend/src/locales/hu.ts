@@ -810,6 +810,13 @@ const hu: LocaleMessages = {
     stats_c_label: "magyar elsőként, angollal kiegészítve",
     stats_footnote:
       "A számok a nyílt béta aktuális állapotát mutatják, és a fejlődéssel frissülnek.",
+    // Live counter band (couples on the platform + RSVPs collected). Fed by
+    // GET /api/public/stats; the band hides itself when both numbers are 0
+    // so a freshly-seeded environment doesn't broadcast a "0 pár" sign.
+    counter_eyebrow: "Élő számok",
+    counter_couples_label: "Tervezgető pár",
+    counter_rsvps_label: "Beérkezett RSVP",
+    counter_footnote: "Valós idejű adat. Frissül 60 másodpercenként.",
     product_eyebrow: "Mit tartalmaz",
     product_title: "Azok az elemek, amiket valóban használni fogtok",
     block_budget_eyebrow: "Élő költségvetés",
@@ -1113,7 +1120,7 @@ const hu: LocaleMessages = {
       "9 alap ötlet, amit a magyar esküvőkön szoktak megfontolni. Innen szűrhetitek tovább.",
     idea_template_dialog_title: "Ötlet-sablon",
     idea_template_dialog_body:
-      "Hozzáadjuk a listához. Mindegyikhez automatikusan megjelenik, hogy ti melyikőtök vetette fel.",
+      "Hozzáadjuk a listához — mindegyiknél automatikusan jelöljük, hogy melyikőtök vette fel.",
     template_ideas_done_one: "{count} ötlet hozzáadva",
     template_ideas_done_other: "{count} ötlet hozzáadva",
     // Dice (🎲) randomiser on the Idea tab.

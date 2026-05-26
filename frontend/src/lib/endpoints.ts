@@ -105,6 +105,12 @@ import type {
 } from "@shared/outreach";
 import { ApiError, apiFetch, getToken } from "./api";
 
+/** Public landing-page counters — real onboarded couples + guests who have
+ *  submitted any RSVP (yes / no / maybe). Cached server-side for 60s. */
+export const publicStatsApi = {
+  get: () => apiFetch<{ couples: number; rsvps: number; ts: number }>("GET", "/api/public/stats"),
+};
+
 /** Public landing-page "try the demo" endpoint. Spins up a brand-new
  *  Shrek & Fiona workspace and returns a session token. No registration,
  *  no email. The returned `couple.is_demo` is what the /app UI keys off
