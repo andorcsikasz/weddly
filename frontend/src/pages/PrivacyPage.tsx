@@ -61,12 +61,14 @@ export function LegalHeader({
   versionLabel?: string;
 }) {
   return (
-    <header className="border-b border-paper-300 pb-8">
-      <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700">
+    <header className="border-b border-paper-300 pb-8 dark:border-umber-700">
+      <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
         {updatedLabel}: {updatedDate}
         {version && versionLabel ? ` · ${versionLabel}: ${version}` : ""}
       </p>
-      <h1 className="mt-3 font-serif text-4xl leading-[1.05] text-ink-900 sm:text-5xl">{title}</h1>
+      <h1 className="mt-3 font-serif text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
+        {title}
+      </h1>
     </header>
   );
 }
@@ -79,11 +81,11 @@ export function SecondaryLanguageDivider({ label }: { label: string }) {
   return (
     <div
       role="separator"
-      className="my-12 flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.32em] text-ink-500"
+      className="my-12 flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.32em] text-ink-500 dark:text-umber-300"
     >
-      <span aria-hidden className="h-px flex-1 bg-paper-300" />
+      <span aria-hidden className="h-px flex-1 bg-paper-300 dark:bg-umber-700" />
       <span>{label}</span>
-      <span aria-hidden className="h-px flex-1 bg-paper-300" />
+      <span aria-hidden className="h-px flex-1 bg-paper-300 dark:bg-umber-700" />
     </div>
   );
 }
@@ -92,7 +94,10 @@ export function BackLink() {
   const { t } = useT();
   return (
     <p className="mt-16 text-sm">
-      <Link to="/" className="inline-flex items-center gap-1.5 text-ink-600 hover:text-ink-900">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1.5 text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
+      >
         <ArrowLeft size={14} aria-hidden />
         {t("vendors.back_to_landing")}
       </Link>
@@ -113,7 +118,9 @@ export function LegalSection({
     <section
       lang={sectionLocale}
       className={`mt-8 space-y-6 text-base leading-relaxed ${
-        secondary ? "text-ink-700" : "text-ink-800"
+        secondary
+          ? "text-ink-700 dark:text-paper-200"
+          : "text-ink-800 dark:text-paper-100"
       }`}
     >
       {children}
@@ -122,7 +129,11 @@ export function LegalSection({
 }
 
 export function H2({ children }: { children: ReactNode }) {
-  return <h2 className="mt-10 font-serif text-2xl text-ink-900 sm:text-3xl">{children}</h2>;
+  return (
+    <h2 className="mt-10 font-serif text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
+      {children}
+    </h2>
+  );
 }
 
 /** Visible "this hasn't been reviewed by a lawyer yet" banner. Mounted above
@@ -134,9 +145,9 @@ export function LegalDraftBanner() {
     <aside
       role="note"
       lang="hu"
-      className="mt-8 rounded-2xl border border-blush-300 bg-blush-50 px-5 py-4 text-sm text-ink-800"
+      className="mt-8 rounded-2xl border border-blush-300 bg-blush-50 px-5 py-4 text-sm text-ink-800 dark:border-blush-300/30 dark:bg-blush-300/10 dark:text-paper-100"
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blush-700">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blush-700 dark:text-blush-300">
         {t("legal.draft_banner_label")}
       </p>
       <p className="mt-2 leading-relaxed">{t("legal.draft_banner_body")}</p>

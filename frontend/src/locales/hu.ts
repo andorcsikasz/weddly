@@ -3602,10 +3602,9 @@ const hu: LocaleMessages = {
     paragraph_contact_cta: "Üzenet írása",
     paragraph_principles_title: "Amiben hiszünk",
     principle_calm:
-      "A nyugalom többet ér, mint a trükközés. Az esemény az esküvő; az eszköz álljon félre.",
+      "A nyugalom fontosabb, mint a hatásvadászat. A főszereplő az esküvő, nem az eszköz.",
     principle_no_lock_in:
-      "Az adataitok a tiétek. Export, szüneteltetés, törlés — ti döntötök, ügyfélszolgálatra nincs szükség.",
-    principle_hungarian: "Magyar elsőként, angollal kiegészítve. A hazai esküvők ritmusára szabva.",
+      "Az adataitok a tiétek. Exportáljátok, szüneteltessétek vagy töröljétek, ahogy szeretnétek; ehhez nem kell ügyfélszolgálat.",
     en_section_label: "English",
     founder_placeholder: "Csíkász Andor",
   },

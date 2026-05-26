@@ -4005,7 +4005,6 @@ export interface LocaleMessages {
     paragraph_principles_title: string;
     principle_calm: string;
     principle_no_lock_in: string;
-    principle_hungarian: string;
     en_section_label: string;
     /** Placeholder founder name — replace before going public. */
     founder_placeholder: string;

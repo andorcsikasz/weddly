@@ -24,7 +24,7 @@ export default function AboutPage() {
         />
         <section
           lang={locale}
-          className="mt-14 space-y-10 text-ink-800 [hyphens:auto] [text-wrap:pretty]"
+          className="mt-14 space-y-10 text-ink-800 dark:text-paper-100 [hyphens:auto] [text-wrap:pretty]"
         >
           <p className="text-lg leading-relaxed sm:text-xl sm:leading-relaxed">{madeIn}</p>
           <p className="text-base leading-loose sm:text-lg sm:leading-loose">
@@ -34,12 +34,11 @@ export default function AboutPage() {
           <div className="space-y-6 pt-6">
             <H2>{t("about.paragraph_principles_title")}</H2>
             <ul className="space-y-5 text-base leading-loose sm:text-lg sm:leading-loose">
-              {[
-                t("about.principle_calm"),
-                t("about.principle_no_lock_in"),
-                t("about.principle_hungarian"),
-              ].map((principle) => (
-                <li key={principle} className="border-l-2 border-ink-300 pl-4">
+              {[t("about.principle_calm"), t("about.principle_no_lock_in")].map((principle) => (
+                <li
+                  key={principle}
+                  className="border-l-2 border-paper-300 pl-4 dark:border-umber-700"
+                >
                   {principle}
                 </li>
               ))}

@@ -3562,11 +3562,9 @@ const en: LocaleMessages = {
     paragraph_contact_cta: "Write a message",
     paragraph_principles_title: "What we believe",
     principle_calm:
-      "Calm beats clever. The wedding is the event; the tool should stay out of the way.",
+      "Calm beats clever. The wedding is the event; the tool stays out of the way.",
     principle_no_lock_in:
-      "Your data is yours. Export, pause, or delete on your own terms — no support ticket required.",
-    principle_hungarian:
-      "Hungarian-first, English-supported. Built around the way weddings actually run here.",
+      "Your data is yours. Export, pause, or delete on your own terms; no support ticket required.",
     en_section_label: "English",
     founder_placeholder: "Andor Csíkász",
   },
