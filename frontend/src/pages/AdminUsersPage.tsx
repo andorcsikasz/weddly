@@ -441,10 +441,7 @@ export default function AdminUsersPage() {
   /** Right-side per-user action cluster. Rendered into the dedicated
    *  "MŰVELETEK" grid column on the workspace list and the orphans table
    *  so every row's icons line up in the same vertical column. */
-  function renderUserActions(
-    u: AdminUserView,
-    opts: { remindCouple?: AdminCoupleView } = {},
-  ) {
+  function renderUserActions(u: AdminUserView, opts: { remindCouple?: AdminCoupleView } = {}) {
     const isSelf = currentAdmin?.id === u.id;
     const isPending = pendingId === u.id;
     const flag = u.active_flag;
@@ -532,26 +529,32 @@ export default function AdminUsersPage() {
         <>
           <section className="mb-6">
             <AdminSectionHeader title={t("admin.workspaces_section")} />
-            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem_auto] gap-4 px-5 eyebrow md:grid">
+            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] gap-4 px-5 eyebrow md:grid">
               <div>{t("admin.table_workspace_id")}</div>
               <div>{t("admin.table_workspace_name")}</div>
               <div>{t("admin.table_workspace_members")}</div>
-              <div>{t("admin.table_workspace_created")}</div>
-              <div>{t("admin.table_workspace_last_active")}</div>
+              <div>
+                <div>{t("admin.table_workspace_created")}</div>
+                <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+                  {t("admin.table_workspace_last_active")}
+                </div>
+              </div>
               <div className="text-right">{t("admin.table_admin_actions")}</div>
             </div>
             <ul className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <li key={i} className="admin-card">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem_auto] md:items-center">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
                     <Skeleton width={56} height={18} rounded="sm" />
                     <Skeleton width={160} height={16} />
                     <div className="flex flex-col gap-1.5">
                       <Skeleton width="80%" height={14} />
                       <Skeleton width="60%" height={12} />
                     </div>
-                    <Skeleton width={96} height={12} />
-                    <Skeleton width={80} height={12} />
+                    <div className="flex flex-col gap-1">
+                      <Skeleton width={96} height={12} />
+                      <Skeleton width={72} height={11} />
+                    </div>
                     <div className="flex justify-end gap-1.5">
                       <Skeleton width={28} height={28} rounded="md" />
                       <Skeleton width={28} height={28} rounded="md" />
@@ -687,12 +690,16 @@ export default function AdminUsersPage() {
                     {/* Card-style row header — uses the same 4-column grid as the
                      *  rows below so the labels line up exactly. Hidden on small
                      *  screens (rows stack vertically there). */}
-                    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem_auto] gap-4 px-5 eyebrow md:grid">
+                    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] gap-4 px-5 eyebrow md:grid">
                       <div>{t("admin.table_workspace_id")}</div>
                       <div>{t("admin.table_workspace_name")}</div>
                       <div>{t("admin.table_workspace_members")}</div>
-                      <div>{t("admin.table_workspace_created")}</div>
-                      <div>{t("admin.table_workspace_last_active")}</div>
+                      <div>
+                        <div>{t("admin.table_workspace_created")}</div>
+                        <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+                          {t("admin.table_workspace_last_active")}
+                        </div>
+                      </div>
                       <div className="text-right">{t("admin.table_admin_actions")}</div>
                     </div>
                     <ul className="space-y-2">
@@ -710,7 +717,7 @@ export default function AdminUsersPage() {
                             key={c.id}
                             className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
                           >
-                            <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_9rem_9rem_auto] md:items-center">
+                            <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
                               <div className="whitespace-nowrap">
                                 <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                                   {workspaceId(c)}
@@ -743,10 +750,10 @@ export default function AdminUsersPage() {
                                 )}
                               </div>
                               <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                                {formatDate(c.created_at, locale)}
-                              </div>
-                              <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                                {formatRelative(c.last_seen_at, locale, t)}
+                                <div>{formatDate(c.created_at, locale)}</div>
+                                <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+                                  {formatRelative(c.last_seen_at, locale, t)}
+                                </div>
                               </div>
                               <div>
                                 {members.length === 0 ? null : (
@@ -837,7 +844,7 @@ export default function AdminUsersPage() {
                               key={c.id}
                               className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
                             >
-                              <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_9rem_9rem] md:items-center">
+                              <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_10rem] md:items-center">
                                 <div className="whitespace-nowrap">
                                   <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                                     {workspaceId(c)}
@@ -851,10 +858,10 @@ export default function AdminUsersPage() {
                                   {firstMemberEmail}
                                 </div>
                                 <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                                  {formatDate(c.created_at, locale)}
-                                </div>
-                                <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                                  {formatRelative(c.last_seen_at, locale, t)}
+                                  <div>{formatDate(c.created_at, locale)}</div>
+                                  <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+                                    {formatRelative(c.last_seen_at, locale, t)}
+                                  </div>
                                 </div>
                               </div>
                               {c.demo_feature_counts !== null && (
