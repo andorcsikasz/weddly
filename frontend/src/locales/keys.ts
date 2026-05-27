@@ -2532,6 +2532,9 @@ export interface LocaleMessages {
       /** aria-label / title for the price-band dot row — receives `{band}`
        *  (1..5) and `{max}` (always 5). */
       priceBandAria: string;
+      /** Spoken label for the verified-checkmark glyph next to the supplier
+       *  name. Shown only on claimed listings (vendor_account_id !== null). */
+      verifiedAria: string;
       /** Hero-image fallback copy when the listing has no photo yet. */
       hero: {
         noPhotoYet: string;

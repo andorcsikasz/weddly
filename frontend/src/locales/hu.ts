@@ -2287,6 +2287,7 @@ const hu: LocaleMessages = {
       reviewsCount: "{n} értékelés",
       starsAria: "{rating} csillag az {max}-ből",
       priceBandAria: "Ár sáv: {band} az {max}-ből",
+      verifiedAria: "Hitelesített szolgáltató",
       hero: {
         noPhotoYet: "Még nincs feltöltött fotó",
         noPhotoClaim: "Igényeld a hirdetést és tölts fel képeket",

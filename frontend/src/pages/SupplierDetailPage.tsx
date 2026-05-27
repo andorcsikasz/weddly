@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  BadgeCheck,
   Bookmark,
   BookmarkCheck,
   Calendar as CalendarIcon,
@@ -73,18 +74,6 @@ function writeSavedSet(set: Set<string>): void {
   } catch {
     // ignore quota / private mode
   }
-}
-
-/** Two-letter monogram from a supplier name, used as a hero fallback when
- *  the listing has no image yet. Splits on whitespace; uses the first
- *  letter of the first two words, or the first two letters of a single
- *  word. Falls back to "??" so the JSX always renders something. */
-function nameMonogram(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return "??";
-  const parts = trimmed.split(/\s+/);
-  if (parts.length >= 2) return `${parts[0]!.charAt(0)}${parts[1]!.charAt(0)}`.toUpperCase();
-  return parts[0]!.slice(0, 2).toUpperCase();
 }
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
@@ -291,8 +280,15 @@ export default function SupplierDetailPage() {
             <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t(`suppliers.cat.${detail.category}`)} · {detail.city}
             </div>
-            <h1 className="mt-1 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
-              {detail.name}
+            <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
+              <span>{detail.name}</span>
+              {detail.vendor_account_id !== null && (
+                <BadgeCheck
+                  size={28}
+                  aria-label={t("suppliers.detail.verifiedAria")}
+                  className="shrink-0 fill-paper-500 stroke-white dark:stroke-ink-900"
+                />
+              )}
             </h1>
             {/* Single rating row — the sidebar's duplicate RATING row was
                 removed (it was repeating this exact value two columns
@@ -322,9 +318,10 @@ export default function SupplierDetailPage() {
                 </span>
               )}
               {detail.price_band !== null && <PriceBandDots band={detail.price_band} t={t} />}
-              {detail.vendor_account_id ? (
-                <Pill tone="sage">{t("suppliers.detail.claimed")}</Pill>
-              ) : (
+              {/* Verified vendors get the BadgeCheck next to the name (above);
+                  unclaimed listings keep a quiet muted pill so the missing
+                  state still carries a clear label, not silence. */}
+              {detail.vendor_account_id === null && (
                 <Pill tone="muted">{t("suppliers.detail.unclaimed")}</Pill>
               )}
             </div>
@@ -647,7 +644,7 @@ function ReviewsSection({
             type="button"
             disabled={submitting}
             onClick={submit}
-            className="rounded-md bg-ink-900 px-4 py-2 text-sm text-cream-50 disabled:opacity-50 dark:bg-cream-50 dark:text-ink-900"
+            className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "…" : t("suppliers.detail.reviews.submit")}
           </button>
@@ -784,7 +781,7 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
             type="button"
             disabled={submitting || !body.trim()}
             onClick={submit}
-            className="rounded-md bg-ink-900 px-4 py-2 text-sm text-cream-50 disabled:opacity-50 dark:bg-cream-50 dark:text-ink-900"
+            className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "…" : t("suppliers.detail.comments.submit")}
           </button>
@@ -895,15 +892,21 @@ function SidebarCard({
   children,
 }: {
   icon?: React.ReactNode;
-  title: string;
+  /** Optional. Section header dropped entirely when omitted — used by the
+   *  Address and Contact cards where the rows already say what they are
+   *  (pin + street, phone + number, etc.). The Foglaltság card keeps a
+   *  title because the month nav needs context. */
+  title?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-ink-200/60 bg-white p-5 shadow-sm dark:border-umber-700/60 dark:bg-umber-900">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-cream-50">
-        {icon}
-        {title}
-      </h3>
+      {title && (
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-cream-50">
+          {icon}
+          {title}
+        </h3>
+      )}
       {children}
     </div>
   );
@@ -956,7 +959,10 @@ function HeroImage({
       </div>
     );
   }
-  const monogram = nameMonogram(detail.name);
+  // Empty-state hero. Generic photo icon (not a monogram of the supplier
+  // name) because the page is admin-only in v1 and we want the placeholder
+  // to read as "there's no photo here yet" rather than as a stylised brand
+  // mark. The dashed border keeps the upload affordance visible.
   return (
     <div
       role="img"
@@ -964,11 +970,13 @@ function HeroImage({
       className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl border-2 border-dashed border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800/60"
     >
       <div className="flex flex-col items-center gap-3 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-paper-200 font-semibold text-2xl text-paper-700 dark:bg-umber-700 dark:text-paper-200">
-          {monogram}
-        </span>
-        <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-          <ImageIcon size={12} aria-hidden />
+        <ImageIcon
+          size={48}
+          strokeWidth={1.5}
+          aria-hidden
+          className="text-paper-500 dark:text-umber-500"
+        />
+        <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
           {t(
             detail.vendor_account_id
               ? "suppliers.detail.hero.noPhotoYet"
@@ -1027,7 +1035,7 @@ function InfoCard({
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
-    <SidebarCard title={t("suppliers.detail.info.title")}>
+    <SidebarCard>
       <SidebarRow
         icon={<MapPin size={14} aria-hidden />}
         value={detail.address ? `${detail.city} · ${detail.address}` : detail.city}
@@ -1045,7 +1053,7 @@ function ContactCard({
 }) {
   const hasAny = Boolean(detail.website || detail.contact_email || detail.contact_phone);
   return (
-    <SidebarCard title={t("suppliers.detail.contact.title")}>
+    <SidebarCard>
       {!hasAny && (
         <p className="text-sm italic text-ink-500 dark:text-umber-300">
           {t("suppliers.detail.contact.empty")}

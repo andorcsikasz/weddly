@@ -2259,6 +2259,7 @@ const en: LocaleMessages = {
       reviewsCount: "{n} reviews",
       starsAria: "{rating} out of {max} stars",
       priceBandAria: "Price band: {band} of {max}",
+      verifiedAria: "Verified supplier",
       hero: {
         noPhotoYet: "No photos yet",
         noPhotoClaim: "Claim this listing to add photos",
