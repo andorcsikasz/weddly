@@ -45,6 +45,7 @@ import { Link } from "react-router-dom";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { TASK_TEMPLATE_GROUPS, localizeText } from "../lib/planning_templates";
 import { ApiError } from "../lib/api";
+import { type AirportOrigin, searchAirportOrigins } from "../lib/airport_origins";
 import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -1244,31 +1245,7 @@ function FlightEstimateCard({
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(estimate.fetched_at));
-  const toast = useToast();
   const [editingOrigin, setEditingOrigin] = useState(false);
-  const [draftOrigin, setDraftOrigin] = useState(currentOrigin ?? "");
-
-  useEffect(() => {
-    setDraftOrigin(currentOrigin ?? "");
-  }, [currentOrigin]);
-
-  async function commitOrigin() {
-    const trimmed = draftOrigin.trim().toUpperCase();
-    setEditingOrigin(false);
-    // Empty → null (revert to locale default). Otherwise validate IATA.
-    if (trimmed.length === 0) {
-      if (currentOrigin === null) return;
-      await onOriginSave(null);
-      return;
-    }
-    if (!/^[A-Z]{3}$/.test(trimmed)) {
-      toast.error(t("honeymoon.flight_estimate_origin_invalid"));
-      setDraftOrigin(currentOrigin ?? "");
-      return;
-    }
-    if (trimmed === currentOrigin) return;
-    await onOriginSave(trimmed);
-  }
 
   return (
     <section
@@ -1292,33 +1269,15 @@ function FlightEstimateCard({
                 {t("honeymoon.flight_estimate_origin_label")}:
               </span>
               {editingOrigin ? (
-                <input
-                  type="text"
-                  value={draftOrigin}
-                  onChange={(e) =>
-                    setDraftOrigin(
-                      e.target.value
-                        .toUpperCase()
-                        .replace(/[^A-Z]/g, "")
-                        .slice(0, 3),
-                    )
-                  }
-                  onBlur={commitOrigin}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      commitOrigin();
-                    } else if (e.key === "Escape") {
-                      e.preventDefault();
-                      setDraftOrigin(currentOrigin ?? "");
-                      setEditingOrigin(false);
-                    }
+                <OriginAutocomplete
+                  currentIata={currentOrigin}
+                  onCommit={async (iata) => {
+                    setEditingOrigin(false);
+                    if (iata === currentOrigin) return;
+                    await onOriginSave(iata);
                   }}
-                  maxLength={3}
-                  placeholder={t("honeymoon.flight_estimate_origin_placeholder")}
-                  className="w-14 rounded border border-paper-300 bg-white px-1.5 py-0.5 text-center text-xs font-semibold uppercase tabular-nums tracking-wider text-ink-900 focus:border-blush-500 focus:outline-none dark:border-umber-600 dark:bg-umber-800 dark:text-paper-50"
-                  aria-label={t("honeymoon.flight_estimate_origin_edit_aria")}
-                  autoFocus
+                  onCancel={() => setEditingOrigin(false)}
+                  t={t}
                 />
               ) : (
                 <button
@@ -1390,6 +1349,157 @@ function FlightEstimateCard({
         {t("honeymoon.flight_estimate_attribution", { updated })}
       </p>
     </section>
+  );
+}
+
+/** Inline IATA picker for the flight estimate card. Accepts free-text city
+ *  names ("Budapest", "Bécs") OR raw 3-letter IATA codes ("BUD"). Surfaces
+ *  the top 5 curated airports as a dropdown so couples don't need to know
+ *  IATA codes by heart. Click / Enter commits the selection; clearing the
+ *  input commits null (revert to locale default). */
+function OriginAutocomplete({
+  currentIata,
+  onCommit,
+  onCancel,
+  t,
+}: {
+  currentIata: string | null;
+  onCommit: (iata: string | null) => Promise<void>;
+  onCancel: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const toast = useToast();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [draft, setDraft] = useState(currentIata ?? "");
+  const [suggestions, setSuggestions] = useState<AirportOrigin[]>([]);
+  const [highlight, setHighlight] = useState(-1);
+  // Single-shot guard: blur fires after Enter / click commits, and we don't
+  // want a stale draft re-running the commit logic.
+  const committed = useRef(false);
+
+  useEffect(() => {
+    setSuggestions(draft.trim().length >= 1 ? searchAirportOrigins(draft, 5) : []);
+    setHighlight(-1);
+  }, [draft]);
+
+  function pick(iata: string) {
+    if (committed.current) return;
+    committed.current = true;
+    void onCommit(iata);
+  }
+
+  function commitTyped() {
+    if (committed.current) return;
+    const raw = draft.trim();
+    // Empty input → revert to locale default (null on the row).
+    if (raw.length === 0) {
+      committed.current = true;
+      void onCommit(null);
+      return;
+    }
+    // Prefer the highlighted suggestion. If nothing is highlighted but a
+    // dropdown row exists, take the top hit — typing "Buda" + Enter should
+    // snap to BUD without forcing the user to press ↓ first.
+    const picked =
+      (highlight >= 0 ? suggestions[highlight] : null) ?? suggestions[0] ?? null;
+    if (picked) {
+      committed.current = true;
+      void onCommit(picked.iata);
+      return;
+    }
+    // No suggestion → fall back to direct IATA mode (3 uppercase letters).
+    const upper = raw.toUpperCase();
+    if (/^[A-Z]{3}$/.test(upper)) {
+      committed.current = true;
+      void onCommit(upper);
+      return;
+    }
+    // Reject ambiguous input — toast the error, revert the draft, and bail.
+    toast.error(t("honeymoon.flight_estimate_origin_invalid"));
+    committed.current = true;
+    onCancel();
+  }
+
+  // Click-outside cancels (same UX as the destination tile).
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) commitTyped();
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, suggestions, highlight]);
+
+  function onKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (suggestions.length === 0) return;
+      setHighlight((h) => (h + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (suggestions.length === 0) return;
+      setHighlight((h) => (h <= 0 ? suggestions.length - 1 : h - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      commitTyped();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      committed.current = true;
+      onCancel();
+    }
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={onKey}
+        placeholder={t("honeymoon.flight_estimate_origin_placeholder")}
+        className="w-32 rounded border border-paper-300 bg-white px-1.5 py-0.5 text-xs font-medium text-ink-900 focus:border-blush-500 focus:outline-none dark:border-umber-600 dark:bg-umber-800 dark:text-paper-50"
+        aria-label={t("honeymoon.flight_estimate_origin_edit_aria")}
+        autoFocus
+      />
+      {suggestions.length > 0 && (
+        <ul
+          className="absolute left-0 top-full z-20 mt-1 w-64 overflow-hidden rounded-lg border border-paper-300 bg-white shadow-pop dark:border-umber-600 dark:bg-umber-800"
+          role="listbox"
+        >
+          {suggestions.map((s, i) => (
+            <li key={s.iata} role="option" aria-selected={i === highlight}>
+              <button
+                type="button"
+                // Click handler can't use onClick alone — the outer
+                // mousedown listener would commitTyped() and clobber the
+                // selection. Bind onMouseDown so we run before the outside
+                // click handler fires.
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  pick(s.iata);
+                }}
+                onMouseEnter={() => setHighlight(i)}
+                className={`flex w-full items-baseline gap-2 px-2.5 py-1.5 text-left text-xs ${
+                  i === highlight
+                    ? "bg-blush-50 dark:bg-blush-400/15"
+                    : "hover:bg-paper-100 dark:hover:bg-umber-700"
+                }`}
+              >
+                <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-[11px] font-semibold tracking-wider text-ink-900 tabular-nums dark:bg-paper-50/10 dark:text-paper-50">
+                  {s.iata}
+                </span>
+                <span className="min-w-0 truncate text-ink-700 dark:text-paper-100">
+                  {s.city}
+                </span>
+                <span className="ml-auto shrink-0 text-[11px] text-ink-400 dark:text-umber-300">
+                  {s.country}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
