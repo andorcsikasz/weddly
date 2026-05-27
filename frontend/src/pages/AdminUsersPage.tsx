@@ -720,7 +720,7 @@ export default function AdminUsersPage() {
                       </div>
                       <div className="text-right">{t("admin.table_admin_actions")}</div>
                     </div>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5">
                       {filteredRealCouples.map((c) => {
                         // Server returns partners scrubbed of users we already
                         // know are missing (rare race); fall back to userById
@@ -733,9 +733,9 @@ export default function AdminUsersPage() {
                         return (
                           <li
                             key={c.id}
-                            className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+                            className="admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
                           >
-                            <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-start">
+                            <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-start">
                               <div className="whitespace-nowrap">
                                 <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                                   {workspaceId(c)}
