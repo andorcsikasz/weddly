@@ -10,29 +10,47 @@
 // endpoints — a Phase-3 flip is a single auth-rule edit on the backend +
 // removing the RequireAdmin wrap.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ComponentType, type SVGProps, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   BadgeCheck,
+  BedDouble,
   Bookmark,
   BookmarkCheck,
+  Brush,
+  Building2,
+  Bus,
+  Cake,
   Calendar as CalendarIcon,
+  Camera,
+  ChefHat,
   ChevronLeft,
   ChevronRight,
+  Disc3,
+  Flower2,
+  Gem,
   Globe,
-  ImageIcon,
+  Hand,
+  Lightbulb,
   Mail,
   MapPin,
+  PartyPopper,
   Phone,
   Send,
   ShieldCheck,
+  Shirt,
+  Speaker,
   Star,
+  StickyNote,
+  Tent,
   Trash2,
+  Wine,
 } from "lucide-react";
 import type {
   CommentVisibility,
   SupplierAvailability,
   SupplierBooking,
+  SupplierCategory,
   SupplierComment,
   SupplierDetail,
   SupplierReview,
@@ -47,6 +65,7 @@ import {
 import { Pill } from "../components/admin";
 import { ComposeDialog } from "../components/OutreachInbox";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
+import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import {
   reviewApi,
@@ -61,6 +80,32 @@ import { useT } from "../lib/i18n";
  *  sync across `/app/suppliers` (the list) and `/app/suppliers/:id` (this
  *  page). Kept in lockstep with `SAVED_LS_KEY` in `pages/SuppliersPage.tsx`. */
 const SAVED_LS_KEY = "weddly.suppliers.saved";
+
+type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
+
+// Per-category glyph for the empty-state hero. Mirrors the mapping in
+// SuppliersPage.tsx so the placeholder reads as "same brand, this category".
+const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
+  venue: Building2,
+  accommodation: BedDouble,
+  tent_pavilion: Tent,
+  catering: ChefHat,
+  cake_dessert: Cake,
+  bar_drinks: Wine,
+  decor_floral: Flower2,
+  lighting: Lightbulb,
+  music_dj: Disc3,
+  sound_tech: Speaker,
+  photo_video: Camera,
+  entertainment: PartyPopper,
+  attire: Shirt,
+  hair_makeup: Brush,
+  nails: Hand,
+  rings: Gem,
+  stationery: StickyNote,
+  wedding_website: Globe,
+  transport: Bus,
+};
 
 function readSavedSet(): Set<string> {
   try {
@@ -423,8 +468,8 @@ export default function SupplierDetailPage() {
               vendor_account_id is set, the slot disappears. Armed-confirm
               pattern (first click arms, second click fires) calls the
               existing /api/vendor/claim/start flow, which emails the
-              listing's contact_email AND records a listing_claims row so
-              admins see the request in the moderation queue. */}
+              listing's contact_email AND records a listing_claims row
+              admins can see in the moderation queue. */}
           {detail.vendor_account_id === null && (
             <ClaimCtaSection supplierId={detail.id} toast={toast} t={t} />
           )}
@@ -554,7 +599,7 @@ function ReviewsSection({
   };
 
   const submit = async () => {
-    if (rating === 0) return; // guard: button is disabled too but be defensive
+    if (rating === 0) return; // guard: button is also disabled but be defensive
     setSubmitting(true);
     try {
       await reviewApi.create(supplierId, {
@@ -940,11 +985,13 @@ function ClaimCtaSection({
       setPhase("armed");
       return;
     }
-    // armed: second click fires the request
+    // armed --> fire
     setPhase("sending");
     try {
       await vendorClaimApi.start({ listing_id: supplierId });
       toast.success(t("suppliers.detail.claim.sentToast"), 6_000);
+      // Stay in "idle" so the slot is still visible (vendor might re-trigger
+      // if they didn't get the email). The success toast carries the receipt.
       setPhase("idle");
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : "Claim failed";
@@ -1070,22 +1117,24 @@ function HeroImage({
       </div>
     );
   }
-  // Empty-state hero. Generic photo icon (not a monogram of the supplier
-  // name) because the page is admin-only in v1 and we want the placeholder
-  // to read as "there's no photo here yet" rather than as a stylised brand
-  // mark. The dashed border keeps the upload affordance visible.
+  // Unified empty-state hero: Weddly wordmark + the category glyph on a
+  // paper-toned card. Same template for every supplier (only the glyph
+  // varies by category), so unclaimed listings read as "Weddly placeholder
+  // for this category" rather than as a bespoke per-supplier monogram.
+  const CategoryGlyph = CATEGORY_ICON[detail.category];
   return (
     <div
       role="img"
       aria-label={t("suppliers.detail.hero.noPhotoAria")}
       className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl border-2 border-dashed border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800/60"
     >
-      <div className="flex flex-col items-center gap-3 text-center">
-        <ImageIcon
-          size={48}
-          strokeWidth={1.5}
+      <div className="flex flex-col items-center gap-4 text-center">
+        <Wordmark size="lg" className="text-ink-700 dark:text-cream-100" />
+        <CategoryGlyph
+          size={72}
+          strokeWidth={1.25}
           aria-hidden
-          className="text-paper-500 dark:text-umber-500"
+          className="text-paper-600 dark:text-umber-400"
         />
         <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
           {t(

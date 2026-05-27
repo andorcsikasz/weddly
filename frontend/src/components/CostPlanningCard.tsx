@@ -602,7 +602,7 @@ export function CostPlanningCard({
         }`}
         aria-hidden={countLocked}
       >
-        <div className={`min-h-0 ${countLocked ? "pointer-events-none" : ""}`}>
+        <div className={`min-h-0 py-1.5 ${countLocked ? "pointer-events-none" : ""}`}>
           <input
             type="range"
             min={minCount}

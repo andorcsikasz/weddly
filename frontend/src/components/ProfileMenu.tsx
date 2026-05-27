@@ -5,6 +5,7 @@
 import type { CouplePartnerView } from "@shared/types";
 import {
   ArrowLeftRight,
+  Home,
   Languages,
   LogOut,
   MessageCircle,
@@ -143,6 +144,14 @@ export function ProfileMenu({ onOpenFeedback }: { onOpenFeedback?: () => void } 
           >
             <UserRound size={16} aria-hidden="true" />
             <span>{t("profile.menu_profile")}</span>
+          </Link>
+          <Link
+            to="/"
+            role="menuitem"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <Home size={16} aria-hidden="true" />
+            <span>{t("profile.menu_landing")}</span>
           </Link>
           {/* Mobile-only entries — feedback + language toggles are hidden
            *  from the header on phones; their canonical home below `sm`

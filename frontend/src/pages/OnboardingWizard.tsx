@@ -930,11 +930,7 @@ function ExistingCoupleWelcome({ couple }: { couple: Couple }) {
             <p className="text-xs text-ink-500 dark:text-umber-300">
               {t("onboarding.welcome_existing_edit_hint")}
             </p>
-            <Link
-              to="/app"
-              replace
-              className="btn-accent btn-lg w-full sm:w-auto sm:min-w-[16rem]"
-            >
+            <Link to="/app" replace className="btn-accent btn-lg w-full sm:w-auto sm:min-w-[16rem]">
               {t("onboarding.welcome_existing_continue")}
             </Link>
           </div>
