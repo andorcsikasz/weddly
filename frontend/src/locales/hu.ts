@@ -1234,7 +1234,7 @@ const hu: LocaleMessages = {
     flight_estimate_title: "Repjegy becslés",
     flight_estimate_basis: "{origin} → {destination} · {adults} fő · oda-vissza",
     flight_estimate_empty: "Erre az időszakra most nincs élő ajánlat, nézz vissza később.",
-    flight_estimate_attribution: "Amadeus · frissítve {updated}",
+    flight_estimate_attribution: "Google Flights · frissítve {updated}",
     flight_estimate_origin_label: "Indulás",
     flight_estimate_origin_placeholder: "BUD",
     flight_estimate_origin_invalid: "Adj meg egy 3 betűs IATA kódot (pl. BUD, VIE)",
@@ -3477,8 +3477,8 @@ const hu: LocaleMessages = {
       "Railway Corp. (USA) — alkalmazás-hosztolás, az SQLite adatbázis és a feltöltött fájlok tárolása. DPF/SCC adattovábbítás.",
     subprocessors_resend:
       "Resend Inc. (USA) — tranzakciós e-mailek (regisztráció, jelszóvisszaállítás, partnermeghívó, RSVP-megerősítés) kézbesítése. DPF/SCC adattovábbítás.",
-    subprocessors_amadeus:
-      "Amadeus IT Group (EU) — repülőjegy-becslés a nászút-tervező widgethez. Csak az általatok megadott útvonalat és dátumot kapja meg, semmilyen személyes adatot nem.",
+    subprocessors_serpapi:
+      "SerpApi (USA) — Google Flights ajánlatok lekérdezése a nászút-tervező widgethez. Csak az általatok megadott útvonalat és dátumot kapja meg, semmilyen személyes adatot nem.",
     subprocessors_osm:
       "OpenStreetMap Foundation (Egyesült Királyság) — a Nominatim szolgáltatás a helységnév-keresőt szolgálja ki. Csak a beírt keresőkifejezést és a tipikus webszerver-naplókat látja (IP, User-Agent).",
     subprocessors_pinterest:

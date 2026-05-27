@@ -3921,7 +3921,7 @@ export interface LocaleMessages {
     subprocessors_intro: string;
     subprocessors_railway: string;
     subprocessors_resend: string;
-    subprocessors_amadeus: string;
+    subprocessors_serpapi: string;
     subprocessors_osm: string;
     subprocessors_pinterest: string;
     subprocessors_sentry: string;

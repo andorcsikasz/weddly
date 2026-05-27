@@ -220,7 +220,7 @@ function PrivacyBodyForLocale({
       <ul className="ml-5 list-disc space-y-2">
         <li>{strings.subprocessors_railway}</li>
         <li>{strings.subprocessors_resend}</li>
-        <li>{strings.subprocessors_amadeus}</li>
+        <li>{strings.subprocessors_serpapi}</li>
         <li>{strings.subprocessors_osm}</li>
         <li>{strings.subprocessors_pinterest}</li>
         <li>{strings.subprocessors_sentry}</li>

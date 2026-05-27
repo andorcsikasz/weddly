@@ -1223,7 +1223,7 @@ const en: LocaleMessages = {
     flight_estimate_title: "Flight estimate",
     flight_estimate_basis: "{origin} → {destination} · {adults} adults · round-trip",
     flight_estimate_empty: "No live offer right now for these dates. Try checking again later.",
-    flight_estimate_attribution: "From Amadeus · updated {updated}",
+    flight_estimate_attribution: "Google Flights · updated {updated}",
     flight_estimate_origin_label: "From",
     flight_estimate_origin_placeholder: "VIE",
     flight_estimate_origin_invalid: "Enter a 3-letter IATA code (e.g. BUD, VIE)",
@@ -3439,8 +3439,8 @@ const en: LocaleMessages = {
       "Railway Corp. (USA) — application hosting; storage of the SQLite database and uploaded files. DPF/SCC for the transfer.",
     subprocessors_resend:
       "Resend Inc. (USA) — delivery of transactional email (registration, password reset, partner invite, RSVP receipts). DPF/SCC for the transfer.",
-    subprocessors_amadeus:
-      "Amadeus IT Group (EU) — flight price estimates for the honeymoon planner widget. Receives only the route and date you enter; no personal data.",
+    subprocessors_serpapi:
+      "SerpApi (USA) — Google Flights queries for the honeymoon planner widget. Receives only the route and date you enter; no personal data.",
     subprocessors_osm:
       "OpenStreetMap Foundation (United Kingdom) — the Nominatim service powers location autocomplete. Sees only the typed query and the usual web-server logs (IP, User-Agent).",
     subprocessors_pinterest:

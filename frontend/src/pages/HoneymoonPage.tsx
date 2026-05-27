@@ -1333,7 +1333,12 @@ function FlightEstimateCard({
             </span>
             <span aria-hidden="true">→</span>
             <span>
-              {estimate.destination_text}
+              {/* Nominatim breadcrumbs ("Ronda, Serranía de Ronda, Málaga,
+               *  Andalúzia, Spanyolország") are too long for the card chrome
+               *  — crop to the first segment so we render "Ronda (AGP)"
+               *  rather than the full address. */}
+              {(estimate.destination_text.split(",")[0] ?? estimate.destination_text).trim() ||
+                estimate.destination_text}
               {estimate.destination_iata ? ` (${estimate.destination_iata})` : ""}
             </span>
             <span aria-hidden="true">·</span>
