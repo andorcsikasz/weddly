@@ -5,7 +5,7 @@
 // before render to keep them order-independent.
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "bun:test";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { _preloadHuForTests, I18nProvider } from "@/lib/i18n";
 import CoupleCardsPage from "@/pages/CoupleCardsPage";
@@ -75,8 +75,7 @@ describe("CoupleCardsPage: card view", () => {
 
     const rootsDeck = COUPLE_CARD_DECKS.find((d) => d.id === "roots");
     expect(rootsDeck).toBeDefined();
-    const rendered = screen.getByRole("article");
-    const text = within(rendered).getByText(/.+/).textContent ?? "";
+    const text = screen.getByTestId("couple-card-question").textContent ?? "";
     expect(rootsDeck?.questionsHu).toContain(text);
   });
 
@@ -87,7 +86,7 @@ describe("CoupleCardsPage: card view", () => {
 
     expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
     const deepDeck = COUPLE_CARD_DECKS.find((d) => d.id === "deepwater");
-    const text = within(screen.getByRole("article")).getByText(/.+/).textContent ?? "";
+    const text = screen.getByTestId("couple-card-question").textContent ?? "";
     expect(deepDeck?.questionsHu).toContain(text);
   });
 
@@ -95,11 +94,11 @@ describe("CoupleCardsPage: card view", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
 
-    const firstQuestion = within(screen.getByRole("article")).getByText(/.+/).textContent;
+    const firstQuestion = screen.getByTestId("couple-card-question").textContent;
     fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
 
     expect(screen.getByText(`2 / ${DECK_SIZE}`)).toBeInTheDocument();
-    const secondQuestion = within(screen.getByRole("article")).getByText(/.+/).textContent;
+    const secondQuestion = screen.getByTestId("couple-card-question").textContent;
     expect(secondQuestion).not.toBe(firstQuestion);
   });
 
@@ -132,7 +131,7 @@ describe("CoupleCardsPage: localStorage persistence", () => {
     fireEvent.click(screen.getByRole("button", { name: /Hétköznapok/i }));
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
     fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
-    const stoppedAt = within(screen.getByRole("article")).getByText(/.+/).textContent;
+    const stoppedAt = screen.getByTestId("couple-card-question").textContent;
     expect(screen.getByText(`2 / ${DECK_SIZE}`)).toBeInTheDocument();
 
     // Unmount → remount. The page resets `selectedDeck` to Roots (showcase
@@ -145,7 +144,7 @@ describe("CoupleCardsPage: localStorage persistence", () => {
     fireEvent.click(screen.getByRole("button", { name: /Hétköznapok/i }));
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
     expect(screen.getByText(`2 / ${DECK_SIZE}`)).toBeInTheDocument();
-    expect(within(screen.getByRole("article")).getByText(/.+/).textContent).toBe(stoppedAt);
+    expect(screen.getByTestId("couple-card-question").textContent).toBe(stoppedAt);
   });
 
   it("wraps from card 25 back to card 1 when 'next' fires past the deck end", () => {

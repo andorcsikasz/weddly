@@ -164,7 +164,6 @@ export default function CoupleCardsPage() {
         <CardView
           deckId={activeDeckDef.id}
           deckTitle={t(activeDeckDef.titleKey)}
-          deckBlurb={t(activeDeckDef.blurbKey)}
           question={currentQuestion}
           cardNumber={currentNumber}
           onNext={nextCard}
@@ -331,7 +330,6 @@ function DeckShowcase({
 function CardView({
   deckId,
   deckTitle,
-  deckBlurb,
   question,
   cardNumber,
   onNext,
@@ -340,7 +338,6 @@ function CardView({
 }: {
   deckId: DeckId;
   deckTitle: string;
-  deckBlurb: string;
   question: string | null;
   cardNumber: number | null;
   onNext: () => void;
@@ -360,25 +357,45 @@ function CardView({
           {t("tools.couple_cards.back_to_decks")}
         </button>
 
-        <div className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blush-600 dark:text-blush-300">
-            {deckTitle}
+        {/* Card-position label only — the deck title is printed on the
+            card face itself, so the header line stays unfussy. */}
+        {cardNumber !== null ? (
+          <p className="mt-6 text-center text-xs uppercase tracking-[0.24em] text-ink-500 dark:text-umber-300">
+            {t("tools.couple_cards.card_position", { n: cardNumber, total: DECK_SIZE })}
           </p>
-          {cardNumber !== null ? (
-            <p className="text-xs text-ink-500 dark:text-umber-300">
-              {t("tools.couple_cards.card_position", { n: cardNumber, total: DECK_SIZE })}
-            </p>
-          ) : null}
-        </div>
-        <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-paper-200">{deckBlurb}</p>
+        ) : null}
 
+        {/* "We're Not Really Strangers"-inspired card face: white stock,
+            heavily rounded corners, capslock red type centred in the card,
+            tiny brand + deck line at the bottom. The dark border is dropped
+            so the card reads as a real printable physical card rather than
+            a UI tile, and the white background is kept in dark mode too —
+            the surface has its own visual identity. */}
         <article
           key={`${deckId}-${cardNumber ?? 0}`}
-          className="couple-card mt-8 flex min-h-[20rem] flex-col justify-center rounded-3xl border border-paper-300 bg-white px-7 py-12 shadow-md dark:border-umber-700 dark:bg-umber-800 sm:min-h-[24rem] sm:px-12 sm:py-16"
+          className="couple-card relative mx-auto mt-8 flex aspect-[3/2] max-w-2xl flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 sm:px-12 sm:py-12"
         >
-          <p className="font-serif text-2xl italic leading-snug text-ink-900 dark:text-paper-50 sm:text-3xl lg:text-4xl">
+          {/* Optical-centring spacer: with justify-between, the question
+              sits between this empty span and the brand line below, which
+              looks balanced regardless of how many lines the question wraps
+              to. */}
+          <span aria-hidden="true" className="block h-1" />
+
+          <p
+            data-testid="couple-card-question"
+            className="text-center font-sans text-lg font-bold uppercase leading-[1.15] tracking-[0.04em] text-blush-700 sm:text-2xl lg:text-3xl"
+          >
             {question ?? t("tools.couple_cards.card_empty")}
           </p>
+
+          <div className="text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blush-700 sm:text-xs">
+              {t("app.name")} · {t("tools.couple_cards.page_h1")}
+            </p>
+            <p className="mt-1 text-[9px] uppercase tracking-[0.2em] text-blush-600 sm:text-[10px]">
+              {deckTitle}
+            </p>
+          </div>
         </article>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
