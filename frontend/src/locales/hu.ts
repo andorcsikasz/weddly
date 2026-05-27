@@ -817,6 +817,7 @@ const hu: LocaleMessages = {
     footer_couples_signup: "Regisztráció",
     footer_couples_signin: "Bejelentkezés",
     footer_couples_features: "Funkciók",
+    footer_couples_cards: "100 kérdés",
     footer_vendors_waitlist: "Várólista",
     footer_vendors_about: "Hogyan működik",
     footer_guests_enter: "Kód megadása",
@@ -829,6 +830,11 @@ const hu: LocaleMessages = {
     footer_about_link: "Rólunk",
     footer_band_cta: "Vendég vagyok, van meghívókódom",
     skip_to_main: "Ugrás a tartalomra",
+    couple_cards_eyebrow: "Mielőtt igent mondtok",
+    couple_cards_title: "100 kérdés a házasság előtt",
+    couple_cards_lead:
+      "Négy pakli, paklinként 25 kártya. Válasszatok paklit, húzzatok egyet, és menjetek bele a beszélgetésbe.",
+    couple_cards_cta: "Húzzatok egy kártyát",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
     stats_eyebrow: "Nyílt béta",
     // A korábbi "200+ pár a várólistán" szám kitalált adat volt; átírtuk

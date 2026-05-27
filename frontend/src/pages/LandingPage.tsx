@@ -60,6 +60,7 @@ import { SEO_FAQ } from "@shared/seo_faq";
 import type { BlogPost } from "@shared/blog_posts";
 import { blogApi } from "../lib/endpoints";
 import { BlogCover } from "./BlogIndexPage";
+import { COUPLE_CARD_DECKS, DECK_SIZE } from "../lib/couple_cards";
 
 // Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
 // these to reserve layout space, so the page doesn't jump as below-fold
@@ -493,6 +494,12 @@ export default function LandingPage() {
           the primary "Start planning" call to action above the fold. */}
       <BlogTeaser />
 
+      {/* ════════════════════════ 11.6 · Couple-cards teaser ═══════════════
+          Four decks of 25 conversation cards. Mini grid mirrors the deck
+          picker on the tool page; each tile and the bottom CTA navigate
+          to the same tool slug (locale-aware). */}
+      <CoupleCardsTeaser />
+
       {/* ════════════════════════ Closing ════════════════════════
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
@@ -630,42 +637,27 @@ function LiveStatsBand() {
   );
 }
 
+/** One ivory plinth per stat (not per digit) — a hairline-bordered card on
+ *  off-white paper, with a barely-there inset hairline at 50% height that
+ *  whispers the split-flap reference without becoming the headline.
+ *  Whole number sits centered inside in upright Cormorant with tabular
+ *  figures so 1s and 8s align. */
 function StatCounter({ value, label }: { value: string; label: string }) {
-  const chars = Array.from(value);
   return (
     <div className="text-center">
-      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-        {chars.map((ch, i) => (
-          <FlipDigit key={`${i}-${ch}`} char={ch} />
-        ))}
+      <div className="relative mx-auto flex aspect-[4/5] w-32 items-center justify-center overflow-hidden rounded-md border border-ink-200 bg-paper-50 shadow-soft sm:w-40 lg:w-48 dark:border-umber-700 dark:bg-umber-800">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-8 top-1/2 h-px -translate-y-1/2 bg-paper-300/60 dark:bg-umber-700"
+        />
+        <span className="relative font-serif text-6xl font-medium tabular-nums leading-none text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
+          {value}
+        </span>
       </div>
       <div className="mt-5 font-serif text-sm text-ink-600 dark:text-umber-200 sm:mt-6 sm:text-base">
         {label}
       </div>
     </div>
-  );
-}
-
-/** Split-flap "flip card" digit — dark panel, cream numeral, and a thin
- *  hairline seam across the middle that reads as the flap fold. Non-digit
- *  characters (grouping separators) render bare so commas/dots don't sit
- *  inside a card. */
-function FlipDigit({ char }: { char: string }) {
-  if (!/\d/.test(char)) {
-    return (
-      <span className="font-serif text-4xl leading-none text-ink-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
-        {char}
-      </span>
-    );
-  }
-  return (
-    <span
-      className="relative inline-flex h-14 w-10 items-center justify-center overflow-hidden rounded-md bg-ink-900 font-serif text-3xl tabular-nums leading-none text-paper-50 shadow-pop ring-1 ring-ink-950/60 sm:h-20 sm:w-14 sm:text-5xl sm:rounded-lg lg:h-24 lg:w-16 lg:text-6xl"
-      aria-hidden={false}
-    >
-      {char}
-      <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-ink-950/80" />
-    </span>
   );
 }
 
@@ -778,6 +770,62 @@ function IconRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
       </span>
       <span className="font-serif text-base text-ink-800 dark:text-paper-100">{children}</span>
     </li>
+  );
+}
+
+/** Couple-cards teaser: a static mini-grid of the four decks with a single
+ *  CTA into the tool page. Tiles and the CTA share the same locale-aware
+ *  destination, so an EN visitor lands on the EN canonical slug. */
+function CoupleCardsTeaser() {
+  const { t, locale } = useT();
+  const toolPath =
+    locale === "hu"
+      ? "/eszkozok/100-kerdes-eskuvo-elott"
+      : "/tools/100-questions-before-marriage";
+  return (
+    <section className="relative bg-white dark:bg-umber-900">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
+        <header className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
+            {t("landing.couple_cards_eyebrow")}
+          </p>
+          <h2 className="mt-3 font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
+            {t("landing.couple_cards_title")}
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
+            {t("landing.couple_cards_lead")}
+          </p>
+        </header>
+        <ul className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 lg:gap-6">
+          {COUPLE_CARD_DECKS.map((deck, idx) => (
+            <li key={deck.id} className="h-full">
+              <Link
+                to={toolPath}
+                className="group flex h-full flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 px-6 py-7 transition-all hover:-translate-y-0.5 hover:border-paper-400 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-white dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600 dark:focus-visible:ring-offset-umber-900 sm:px-7 sm:py-8"
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.24em] text-blush-800 dark:text-blush-300">
+                  {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                </span>
+                <span className="font-serif text-2xl italic leading-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-3xl">
+                  {t(deck.titleKey)}
+                </span>
+                <span className="text-sm leading-relaxed text-ink-600 dark:text-paper-200">
+                  {t(deck.blurbKey)}
+                </span>
+                <span className="mt-auto text-xs text-ink-500 dark:text-umber-300">
+                  {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-12 flex justify-center">
+          <Link to={toolPath} className="btn-primary btn-lifted btn-landing btn-lg">
+            {t("landing.couple_cards_cta")}
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
 

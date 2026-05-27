@@ -299,8 +299,12 @@ function PublicHeader() {
 }
 
 function PublicFooter() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const askGuestCode = useGuestCodePrompt();
+  const couplesCardsPath =
+    locale === "hu"
+      ? "/eszkozok/100-kerdes-eskuvo-elott"
+      : "/tools/100-questions-before-marriage";
   return (
     <footer className="mt-24 border-t border-paper-300 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-950/60">
       {/* Band: guest CTA. A single paper chip that names the audience and action. */}
@@ -333,6 +337,7 @@ function PublicFooter() {
           <FooterLink to="/login">{t("landing.footer_couples_signin")}</FooterLink>
           <FooterAnchor href="#phases">{t("landing.footer_couples_features")}</FooterAnchor>
           <FooterLink to="/blog">{t("blog.eyebrow")}</FooterLink>
+          <FooterLink to={couplesCardsPath}>{t("landing.footer_couples_cards")}</FooterLink>
         </FooterColumn>
         <FooterColumn title={t("landing.footer_vendors")}>
           <FooterLink to="/vendors">{t("landing.footer_vendors_waitlist")}</FooterLink>

@@ -908,6 +908,7 @@ export interface LocaleMessages {
     footer_couples_signup: string;
     footer_couples_signin: string;
     footer_couples_features: string;
+    footer_couples_cards: string;
     footer_vendors_waitlist: string;
     footer_vendors_about: string;
     footer_guests_enter: string;
@@ -923,6 +924,10 @@ export interface LocaleMessages {
     footer_about_link: string;
     footer_band_cta: string;
     skip_to_main: string;
+    couple_cards_eyebrow: string;
+    couple_cards_title: string;
+    couple_cards_lead: string;
+    couple_cards_cta: string;
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: string;
     stats_a_value: string;

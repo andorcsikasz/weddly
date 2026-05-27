@@ -811,6 +811,7 @@ const en: LocaleMessages = {
     footer_couples_signup: "Sign up",
     footer_couples_signin: "Sign in",
     footer_couples_features: "Features",
+    footer_couples_cards: "100 questions",
     footer_vendors_waitlist: "Join the waitlist",
     footer_vendors_about: "How it works",
     footer_guests_enter: "Enter your code",
@@ -823,6 +824,11 @@ const en: LocaleMessages = {
     footer_about_link: "About",
     footer_band_cta: "I'm a guest with an invite code",
     skip_to_main: "Skip to main content",
+    couple_cards_eyebrow: "Before you say yes",
+    couple_cards_title: "100 questions before you marry",
+    couple_cards_lead:
+      "Four decks, 25 cards each. Pick a deck, draw a card, and let the conversation begin.",
+    couple_cards_cta: "Draw a card",
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: "Open beta",
     // Honest beta label — the previous "200+ couples on the waitlist"
