@@ -408,7 +408,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     read_minutes: 9,
     category: { hu: "Idézetek", en: "Verses" },
     hu: {
-      title: "Bibliai idézetek esküvőre: igék szeretetről, házasságról és közös útról",
+      title: "Bibliai idézetek esküvőre: Igék szeretetről, házasságról és közös útról",
       lead: "A legszebb bibliai igék esküvőre: szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
       seo_title: "Bibliai idézetek esküvőre: 30+ ige szeretetről és házasságról",
       seo_description:
@@ -2452,7 +2452,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "5. Something old, new, borrowed, blue" },
         {
           type: "p",
-          text: "The \"something old, something new, something borrowed, something blue\" tradition turns up at many weddings. Not required, but a nice symbolic touch.",
+          text: 'The "something old, something new, something borrowed, something blue" tradition turns up at many weddings. Not required, but a nice symbolic touch.',
         },
         {
           type: "ul",
@@ -2512,7 +2512,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
           type: "p",
           text: "No. More and more couples drop, shorten, or restyle it if it doesn't suit them.",
         },
-        { type: "h3", text: "What does \"something borrowed\" mean?" },
+        { type: "h3", text: 'What does "something borrowed" mean?' },
         {
           type: "p",
           text: "A lucky item from someone you love, returned after the day. It can be a hair piece, a veil, a piece of jewellery, anything small.",
@@ -2913,7 +2913,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Walking in together is also lovely: modern, intimate, and well suited to couples who don't want the classic \"giving away\" framing.",
+          text: 'Walking in together is also lovely: modern, intimate, and well suited to couples who don\'t want the classic "giving away" framing.',
         },
         { type: "h2", text: "Music for the ceremony" },
         { type: "p", text: "Plan music for these moments:" },
