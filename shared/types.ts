@@ -138,6 +138,11 @@ export interface AdminCoupleView {
   /** Total audit-log events for the demo workspace. Sum of the values in
    *  `demo_feature_counts`. Null for non-demo couples. */
   demo_total_events: number | null;
+  /** Timestamp the admin last clicked "remind partner invite" on this
+   *  workspace's solo member. Null = never reminded. Drives the disabled
+   *  sage Mail+Check state on the workspace row so a refresh doesn't
+   *  re-arm the button. */
+  invite_partner_reminded_at: UnixMs | null;
 }
 
 // ─── Couples (the workspace) ─────────────────────────────────────────────────

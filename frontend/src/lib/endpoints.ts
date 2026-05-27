@@ -1034,11 +1034,17 @@ export const adminUserApi = {
   /** One-shot bulk re-purge of every couple flagged `status="deleting"`. */
   purgeDeleting: () =>
     apiFetch<{ purged: number }>("POST", "/api/admin/couples/purge-deleting", {}),
-  /** Manually nudge a solo workspace owner to invite their partner. The
-   *  recipient gets a lifecycle email pointing at the dashboard's invite
-   *  form. Idempotent server-side; the admin can re-click freely. */
+  /** Manually nudge a solo workspace owner to invite their partner. One
+   *  send per workspace — the server stamps `couples.invite_partner_reminded_at`
+   *  and returns 409 with `code: "already_reminded"` on a second attempt.
+   *  Returns the timestamp so the UI can flip the icon to its sage Mail+Check
+   *  "sent" state without a re-fetch. */
   remindInvitePartner: (coupleId: number) =>
-    apiFetch<{ ok: true }>("POST", `/api/admin/couples/${coupleId}/remind-invite-partner`, {}),
+    apiFetch<{ ok: true; reminded_at: number }>(
+      "POST",
+      `/api/admin/couples/${coupleId}/remind-invite-partner`,
+      {},
+    ),
   /** Unread-style counts for the admin nav rail. AppShell polls this
    *  every ~30s while the admin is signed in and renders a small red
    *  badge next to each section with count > 0. */

@@ -194,6 +194,7 @@ function toAdminCouple(
     is_demo: c.is_demo,
     demo_feature_counts: featureCounts,
     demo_total_events: totalEvents,
+    invite_partner_reminded_at: row.invite_partner_reminded_at ?? null,
   };
 }
 
@@ -232,9 +233,10 @@ function parseId(ctx: Ctx): number {
 
 /**
  * Admin-triggered nudge for solo couples: a single-member workspace gets a
- * lifecycle email reminding the owner to invite their partner. Idempotent
- * from the admin's perspective (re-clicking just sends another mail), but
- * each send is audit-logged so we can spot a runaway click.
+ * lifecycle email reminding the owner to invite their partner. One-shot per
+ * workspace — couples.invite_partner_reminded_at is stamped on success so
+ * subsequent clicks (and re-mounts of the admin page) refuse with 409 and
+ * the icon stays in its sage "sent" state across sessions.
  */
 function handleRemindInvitePartner(ctx: Ctx): Response {
   const admin = requireAdmin(ctx);
@@ -246,6 +248,11 @@ function handleRemindInvitePartner(ctx: Ctx): Response {
   if (!couple) throw new HttpError(404, "Couple not found");
   if (couple.status === "deleting") throw new HttpError(400, "Workspace is already purged");
   if (couple.partner_b_id) throw new HttpError(400, "Workspace already has two partners");
+  if (couple.invite_partner_reminded_at) {
+    throw new HttpError(409, "Partner invite reminder already sent for this workspace", {
+      code: "already_reminded",
+    });
+  }
 
   // Surface the actual workspace members (not just partner_a/_b on the row) so
   // we send to the single human in the workspace even if the schema state
@@ -273,6 +280,9 @@ function handleRemindInvitePartner(ctx: Ctx): Response {
     },
   );
 
+  const ts = Date.now();
+  db.prepare("UPDATE couples SET invite_partner_reminded_at = ? WHERE id = ?").run(ts, couple.id);
+
   addAuditLog({
     actor_user_id: admin.id,
     couple_id: couple.id,
@@ -281,7 +291,7 @@ function handleRemindInvitePartner(ctx: Ctx): Response {
     target_id: target.id,
   });
 
-  return json({ ok: true });
+  return json({ ok: true, reminded_at: ts });
 }
 
 function handleResendVerify(ctx: Ctx): Response {

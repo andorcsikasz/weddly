@@ -633,6 +633,11 @@ addColumnIfMissing(
   "planning_count_locked INTEGER NOT NULL DEFAULT 0",
 );
 
+// Stamp set when an admin clicks the "remind partner invite" mail icon on
+// the admin workspace list. One-shot: subsequent admin clicks are refused
+// so the lone partner doesn't get pestered. NULL = never reminded.
+addColumnIfMissing("couples", "invite_partner_reminded_at", "invite_partner_reminded_at INTEGER");
+
 export function now(): number {
   return Date.now();
 }

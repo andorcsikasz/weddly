@@ -86,6 +86,10 @@ export interface CoupleRow {
    *  /app/budget is pinned to the current `planning_count` and the slider
    *  collapses out of view. Per-row planned amounts still drag freely. */
   planning_count_locked: number;
+  /** Timestamp the admin last clicked the "remind partner invite" mail
+   *  icon on the admin workspace list. NULL = never reminded. Used to
+   *  enforce a one-shot send so the lone partner isn't pestered. */
+  invite_partner_reminded_at: number | null;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);

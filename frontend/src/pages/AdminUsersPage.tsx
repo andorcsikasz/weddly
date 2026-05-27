@@ -79,11 +79,10 @@ export default function AdminUsersPage() {
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
   const [purgingDeleting, setPurgingDeleting] = useState(false);
-  // Solo-workspace "nudge partner invite" — track which couple is currently
-  // mid-request (button spinner) and which we've already nudged this session
-  // (swap the icon for a checkmark so the admin sees their click landed).
+  // Solo-workspace "nudge partner invite" — local pending state for the
+  // button spinner. The "already sent" check reads couples.invite_partner_reminded_at
+  // off the AdminCoupleView so a refresh keeps the sage Mail+Check state.
   const [remindPendingCoupleId, setRemindPendingCoupleId] = useState<number | null>(null);
-  const [remindSentCoupleIds, setRemindSentCoupleIds] = useState<Set<number>>(new Set());
 
   // Sticky client-side search across name / email / workspace id / slug.
   // We keep the raw input separate from the debounced query so typing stays
@@ -354,12 +353,13 @@ export default function AdminUsersPage() {
     if (!ok) return;
     setRemindPendingCoupleId(c.id);
     try {
-      await adminUserApi.remindInvitePartner(c.id);
-      setRemindSentCoupleIds((prev) => {
-        const next = new Set(prev);
-        next.add(c.id);
-        return next;
-      });
+      const r = await adminUserApi.remindInvitePartner(c.id);
+      // Persist the stamp into the local couples cache so the row's
+      // sage Mail+Check state survives the rest of this session without
+      // a re-fetch; a hard refresh re-reads it from the server.
+      setCouples((cur) =>
+        cur.map((x) => (x.id === c.id ? { ...x, invite_partner_reminded_at: r.reminded_at } : x)),
+      );
       toast.success(t("admin.remind_invite_partner_success"));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -448,7 +448,7 @@ export default function AdminUsersPage() {
     return (
       <div className="flex shrink-0 items-center justify-end gap-1.5">
         {opts.remindCouple &&
-          (remindSentCoupleIds.has(opts.remindCouple.id) ? (
+          (opts.remindCouple.invite_partner_reminded_at != null ? (
             <button
               type="button"
               disabled

@@ -698,6 +698,31 @@ describe("admin couples — remind-invite-partner nudge", () => {
     expect(r.status).toBe(404);
   });
 
+  test("second send for the same couple → 409 already_reminded", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { coupleId } = await bootstrapCouple("once@weddly.test");
+    const first = await req(
+      "POST",
+      `/api/admin/couples/${coupleId}/remind-invite-partner`,
+      {},
+      { token: adminToken },
+    );
+    expect(first.status).toBe(200);
+    const second = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/admin/couples/${coupleId}/remind-invite-partner`,
+      {},
+      { token: adminToken },
+    );
+    expect(second.status).toBe(409);
+    expect(second.data.detail?.code).toBe("already_reminded");
+
+    const row = db
+      .prepare("SELECT invite_partner_reminded_at AS t FROM couples WHERE id = ?")
+      .get(coupleId) as { t: number | null };
+    expect(typeof row.t).toBe("number");
+  });
+
   test("couple with two partners → 400", async () => {
     const adminToken = await bootstrapAdmin();
     const { coupleId } = await bootstrapCouple("owner@weddly.test");
