@@ -1305,10 +1305,7 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
       ) : state === "invited" ? (
         <Check size={14} strokeWidth={2.5} aria-hidden="true" />
       ) : (
-        <span
-          aria-hidden="true"
-          className="h-1.5 w-1.5 rounded-full bg-current opacity-50"
-        />
+        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-50" />
       )}
     </button>
   );

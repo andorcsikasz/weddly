@@ -647,11 +647,7 @@ function MapsLinkHero({
             compact ? "h-5 w-5" : "h-7 w-7"
           } ${ok ? "bg-sage-500 text-white" : "bg-blush-600 text-white"}`}
         >
-          {ok ? (
-            <Check size={compact ? 11 : 14} />
-          ) : (
-            <Sparkles size={compact ? 11 : 14} />
-          )}
+          {ok ? <Check size={compact ? 11 : 14} /> : <Sparkles size={compact ? 11 : 14} />}
         </span>
         <div className="min-w-0 flex-1">
           <label
