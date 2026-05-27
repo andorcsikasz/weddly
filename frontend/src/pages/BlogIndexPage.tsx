@@ -6,7 +6,7 @@ import { useDocumentMeta } from "../lib/seo";
 import { listBlogPosts } from "@shared/blog_posts";
 
 /**
- * /blog — magazine-style index of every published post. Posts come from
+ * /blog: magazine-style index of every published post. Posts come from
  * the static `BLOG_POSTS` array in shared/; when the editorial pipeline
  * lands this will swap for an MD or DB-backed feed without changing the
  * layout. Each card carries an eyebrow category, date, read-time and the

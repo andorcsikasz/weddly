@@ -31,8 +31,8 @@ export function useDocumentMeta(titleKey: string, descriptionKey: string) {
 
 /**
  * Literal-string variant for pages whose title/description aren't fixed
- * i18n keys — e.g. /blog/:slug, where the meta comes from the post record
- * the page resolved at runtime. Same DOM writes as `useDocumentMeta`; the
+ * i18n keys (e.g. /blog/:slug, where the meta comes from the post record
+ * the page resolved at runtime). Same DOM writes as `useDocumentMeta`; the
  * caller is responsible for picking the right locale's string.
  */
 export function useDocumentMetaLiteral(title: string, description: string) {

@@ -44,7 +44,7 @@ const PUBLIC_PATHS: ReadonlyArray<{ path: string; priority: string; changefreq: 
   { path: "/eszkozok/rsvp-szoveg-generator", priority: "0.8", changefreq: "monthly" },
   { path: "/signup", priority: "0.7", changefreq: "monthly" },
   // Blog index + each post. The post URLs share the same path on HU + EN
-  // (no slug-pair translation — content is bilingual under one slug, the
+  // (no slug-pair translation; content is bilingual under one slug, the
   // visitor's locale picks which copy renders) and the post slugs come from
   // BLOG_POSTS so adding a new post automatically appears in the sitemap.
   { path: "/blog", priority: "0.6", changefreq: "weekly" },

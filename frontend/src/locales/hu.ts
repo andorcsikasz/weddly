@@ -3612,10 +3612,10 @@ const hu: LocaleMessages = {
     eyebrow: "Magazin",
     index_title: "Esküvős magazin",
     index_lead:
-      "Rövid, gyakorlati írások az esküvőtervezés legtöbb idő- és pénzigényes részeiről — költségvetés, ültetés, RSVP. Minden poszt egy konkrét döntésen segít át.",
-    index_seo_title: "Esküvős magazin — Wēddly",
+      "Rövid, gyakorlati írások az esküvőtervezés legtöbb idő- és pénzigényes részeiről: költségvetés, ültetés, RSVP. Minden poszt egy konkrét döntésen segít át.",
+    index_seo_title: "Esküvős magazin · Wēddly",
     index_seo_description:
-      "Gyakorlati cikkek pároknak, akik magyar esküvőt terveznek — költségvetés-felosztás, ültetési tippek, RSVP utánajárás, és még sok más.",
+      "Gyakorlati cikkek pároknak, akik magyar esküvőt terveznek: költségvetés-felosztás, ültetési tippek, RSVP utánajárás, és még sok más.",
     read_minutes: "{n} perces olvasás",
     related_eyebrow: "Még a magazinból",
     back_to_index: "Vissza a magazinhoz",

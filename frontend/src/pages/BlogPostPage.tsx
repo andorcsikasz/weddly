@@ -7,10 +7,10 @@ import { getBlogPost, listBlogPosts, type BlogBlock } from "@shared/blog_posts";
 import NotFoundPage from "./NotFoundPage";
 
 /**
- * /blog/:slug — single post layout. Renders the locale-specific copy of the
+ * /blog/:slug: single post layout. Renders the locale-specific copy of the
  * post resolved from the URL slug; unknown slugs fall through to the
  * existing 404 page so we don't have to duplicate that shell. The body is
- * a small block list (p / h2 / ul) rather than a markdown renderer — see
+ * a small block list (p / h2 / ul) rather than a markdown renderer. See
  * shared/blog_posts.ts for the schema.
  */
 export default function BlogPostPage() {
@@ -18,7 +18,7 @@ export default function BlogPostPage() {
   const { t, locale } = useT();
   const post = getBlogPost(slug);
 
-  // Hooks must run unconditionally — call the meta hook with safe fallbacks
+  // Hooks must run unconditionally. Call the meta hook with safe fallbacks
   // when the post is missing, then short-circuit to <NotFoundPage /> below.
   const copy = post?.[locale];
   useDocumentMetaLiteral(copy?.seo_title ?? "", copy?.seo_description ?? "");
