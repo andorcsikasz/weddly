@@ -99,12 +99,17 @@ export function listAllPostsForAdmin(): BlogPostRow[] {
     .all() as BlogPostRow[];
 }
 
-/** Idempotent first-boot seeder. Inserts every SEED_BLOG_POSTS row that
- *  doesn't already exist by slug. Runs once per boot from server.ts; safe
- *  to call multiple times because the UNIQUE(slug) index dedupes. */
+/** Idempotent slug-level seeder. Runs on every boot from server.ts. For
+ *  each entry in SEED_BLOG_POSTS, inserts the row if its slug isn't in the
+ *  table yet; existing rows (admin-edited or otherwise) are left untouched.
+ *
+ *  The earlier "skip when table has any rows" version only ran on a fully
+ *  empty DB, which meant new seed posts added in later deploys never
+ *  reached production. The slug-level check makes the seeder additive
+ *  across releases without ever overwriting admin edits. */
 export function seedBlogPostsIfEmpty(): void {
-  const count = db.prepare("SELECT COUNT(*) AS n FROM blog_posts").get() as { n: number };
-  if (count.n > 0) return;
+  const existing = db.prepare("SELECT slug FROM blog_posts").all() as { slug: string }[];
+  const have = new Set(existing.map((r) => r.slug));
 
   const ts = now();
   const insert = db.prepare(`
@@ -118,6 +123,7 @@ export function seedBlogPostsIfEmpty(): void {
 
   let inserted = 0;
   for (const post of SEED_BLOG_POSTS) {
+    if (have.has(post.slug)) continue;
     insert.run(
       post.slug,
       post.published_at,
@@ -139,7 +145,7 @@ export function seedBlogPostsIfEmpty(): void {
     );
     inserted += 1;
   }
-  log.info("blog.seeded", { inserted });
+  if (inserted > 0) log.info("blog.seeded", { inserted });
 }
 
 export interface BlogPostWritePayload {

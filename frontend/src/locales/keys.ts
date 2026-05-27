@@ -418,9 +418,40 @@ export interface LocaleMessages {
     compose_title: string;
     label_subject: string;
     label_body: string;
-    label_supplier_ids: string;
-    label_supplier_ids_placeholder: string;
-    label_supplier_ids_help: string;
+    label_suppliers: string;
+    /** Picker input placeholder when the recipient list is empty. */
+    suppliers_picker_placeholder: string;
+    /** Help text under the picker — receives `{max}` (per-campaign cap). */
+    suppliers_picker_help: string;
+    /** Shown in the input when the cap is reached — receives `{max}`. */
+    suppliers_picker_capped: string;
+    /** No-results state — receives `{q}` (the current query). */
+    suppliers_picker_no_matches: string;
+    /** aria-label for the chip's × button — receives `{name}`. */
+    suppliers_remove_aria: string;
+    /** "n / max" counter next to the picker label. */
+    suppliers_count: string;
+    /** Label above the quick-fill template chips. */
+    tpl_section_label: string;
+    /** Substitute used in templates when wedding_date is missing. */
+    tpl_placeholder_date: string;
+    /** Substitute used in templates when target_guest_count is missing. */
+    tpl_placeholder_guests: string;
+    /** Quick-fill chip labels. */
+    tpl_quote: string;
+    tpl_availability: string;
+    tpl_details: string;
+    tpl_intro: string;
+    /** Subject lines. Each takes `{date}`. */
+    tpl_quote_subject: string;
+    tpl_availability_subject: string;
+    tpl_details_subject: string;
+    tpl_intro_subject: string;
+    /** Body templates. Each takes `{date}` and `{guests}`. */
+    tpl_quote_body: string;
+    tpl_availability_body: string;
+    tpl_details_body: string;
+    tpl_intro_body: string;
     err_no_suppliers: string;
     err_too_many_suppliers: string;
     err_rate_limited: string;
@@ -4080,11 +4111,18 @@ export interface LocaleMessages {
     body_empty: string;
     block_p: string;
     block_h2: string;
+    block_h3: string;
     block_ul: string;
+    block_cta: string;
     add_p: string;
     add_h2: string;
+    add_h3: string;
     add_ul: string;
+    add_cta: string;
     add_ul_item: string;
+    cta_lead: string;
+    cta_label: string;
+    cta_href: string;
     move_up: string;
     move_down: string;
     remove_block: string;

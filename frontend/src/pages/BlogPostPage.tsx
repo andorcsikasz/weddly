@@ -149,14 +149,42 @@ function Block({ block }: { block: BlogBlock }) {
       </h2>
     );
   }
+  if (block.type === "h3") {
+    return (
+      <h3 className="!mt-8 !mb-1 font-serif text-xl text-ink-900 dark:text-paper-50 sm:text-2xl">
+        {block.text}
+      </h3>
+    );
+  }
+  if (block.type === "ul") {
+    return (
+      <ul className="!my-4 space-y-2 pl-5">
+        {block.items.map((item, i) => (
+          <li key={i} className="list-disc leading-relaxed">
+            {item}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  // CTA: external links open in a new tab, internal /paths stay in-app.
+  // The whole block reads as a quiet call-out card so it doesn't compete
+  // with the rest of the body but is unmissable at end-of-article.
+  const isExternal = /^https?:\/\//.test(block.href);
   return (
-    <ul className="!my-4 space-y-2 pl-5">
-      {block.items.map((item, i) => (
-        <li key={i} className="list-disc leading-relaxed">
-          {item}
-        </li>
-      ))}
-    </ul>
+    <aside className="!my-10 rounded-2xl border border-paper-300 bg-paper-100/60 p-6 dark:border-umber-700 dark:bg-umber-800/60 sm:p-8">
+      <p className="text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
+        {block.lead}
+      </p>
+      <a
+        href={block.href}
+        target={isExternal ? "_blank" : undefined}
+        rel={isExternal ? "noreferrer" : undefined}
+        className="btn-primary btn-lifted mt-5 inline-flex"
+      >
+        {block.label}
+      </a>
+    </aside>
   );
 }
 

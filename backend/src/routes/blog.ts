@@ -93,7 +93,7 @@ function parseBlocks(raw: unknown, field: string): BlogBlock[] {
       throw new HttpError(400, `${field}: block must be an object`);
     }
     const b = block as Record<string, unknown>;
-    if (b.type === "p" || b.type === "h2") {
+    if (b.type === "p" || b.type === "h2" || b.type === "h3") {
       if (typeof b.text !== "string") {
         throw new HttpError(400, `${field}: ${b.type} block needs text`);
       }
@@ -113,6 +113,19 @@ function parseBlocks(raw: unknown, field: string): BlogBlock[] {
         items.push(item);
       }
       out.push({ type: "ul", items });
+    } else if (b.type === "cta") {
+      if (typeof b.lead !== "string" || typeof b.href !== "string" || typeof b.label !== "string") {
+        throw new HttpError(400, `${field}: cta block needs lead, href, label`);
+      }
+      if (b.lead.length > 2000) throw new HttpError(400, `${field}: cta lead too long`);
+      if (b.label.length > 200) throw new HttpError(400, `${field}: cta label too long`);
+      if (b.href.length > 2048) throw new HttpError(400, `${field}: cta href too long`);
+      // Restrict href to internal paths (/foo) or http(s) URLs so the admin
+      // can't drop in javascript: or data: URIs.
+      const hrefOk =
+        b.href.startsWith("/") || b.href.startsWith("http://") || b.href.startsWith("https://");
+      if (!hrefOk) throw new HttpError(400, `${field}: cta href must be / or http(s)`);
+      out.push({ type: "cta", lead: b.lead, href: b.href, label: b.label });
     } else {
       throw new HttpError(400, `${field}: unknown block type ${String(b.type)}`);
     }

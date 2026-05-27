@@ -533,10 +533,12 @@ function BlockEditor({
     onChange(copy);
   }
   function add(type: BlogBlock["type"]) {
-    if (type === "p" || type === "h2") {
+    if (type === "p" || type === "h2" || type === "h3") {
       onChange([...blocks, { type, text: "" }]);
-    } else {
+    } else if (type === "ul") {
       onChange([...blocks, { type: "ul", items: [""] }]);
+    } else {
+      onChange([...blocks, { type: "cta", lead: "", href: "/signup", label: "" }]);
     }
   }
 
@@ -584,17 +586,22 @@ function BlockEditor({
               </div>
             </div>
             <div className="mt-2">
-              {block.type === "p" || block.type === "h2" ? (
+              {block.type === "p" || block.type === "h2" || block.type === "h3" ? (
                 <textarea
-                  rows={block.type === "h2" ? 1 : 4}
+                  rows={block.type === "p" ? 4 : 1}
                   value={block.text}
                   onChange={(e) => update(idx, { type: block.type, text: e.target.value })}
                   className="input"
                 />
-              ) : (
+              ) : block.type === "ul" ? (
                 <UlEditor
                   items={block.items}
                   onChange={(next) => update(idx, { type: "ul", items: next })}
+                />
+              ) : (
+                <CtaEditor
+                  value={block}
+                  onChange={(next) => update(idx, next)}
                 />
               )}
             </div>
@@ -608,9 +615,65 @@ function BlockEditor({
         <Button type="button" variant="ghost" size="sm" onClick={() => add("h2")}>
           + {t("admin_blog.add_h2")}
         </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => add("h3")}>
+          + {t("admin_blog.add_h3")}
+        </Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => add("ul")}>
           + {t("admin_blog.add_ul")}
         </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => add("cta")}>
+          + {t("admin_blog.add_cta")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function CtaEditor({
+  value,
+  onChange,
+}: {
+  value: Extract<BlogBlock, { type: "cta" }>;
+  onChange: (next: Extract<BlogBlock, { type: "cta" }>) => void;
+}) {
+  const { t } = useT();
+  return (
+    <div className="space-y-2">
+      <label className="block">
+        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {t("admin_blog.cta_lead")}
+        </span>
+        <textarea
+          rows={2}
+          value={value.lead}
+          onChange={(e) => onChange({ ...value, lead: e.target.value })}
+          className="input"
+        />
+      </label>
+      <div className="grid grid-cols-[1fr_2fr] gap-2">
+        <label className="block">
+          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("admin_blog.cta_label")}
+          </span>
+          <input
+            type="text"
+            value={value.label}
+            onChange={(e) => onChange({ ...value, label: e.target.value })}
+            className="input"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("admin_blog.cta_href")}
+          </span>
+          <input
+            type="text"
+            value={value.href}
+            onChange={(e) => onChange({ ...value, href: e.target.value })}
+            className="input font-mono"
+            placeholder="/signup"
+          />
+        </label>
       </div>
     </div>
   );

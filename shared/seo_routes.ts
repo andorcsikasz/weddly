@@ -349,7 +349,14 @@ export function enPathFor(path: string): string {
  *  circuits the static lookup so admin edits land in the SSR'd <head>
  *  without a rebuild. */
 export function lookupRouteSeo(pathname: string): RouteSeo | null {
-  const aliased = pathname === "/impresszum" ? "/imprint" : pathname;
+  // Normalise trailing slash before the lookup. Visitors sometimes land on
+  // `/blog/` (linked or typed) and Googlebot crawls both shapes, so the
+  // SSR head builder has to recognise either form. Root `/` is preserved.
+  let normalised = pathname;
+  if (normalised.length > 1 && normalised.endsWith("/")) {
+    normalised = normalised.slice(0, -1);
+  }
+  const aliased = normalised === "/impresszum" ? "/imprint" : normalised;
   const resolved = EN_TO_HU_SLUG.get(aliased) ?? aliased;
   return ROUTE_SEO[resolved] ?? null;
 }
