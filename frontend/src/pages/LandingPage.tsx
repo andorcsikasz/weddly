@@ -16,7 +16,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { lazy, type ReactNode, useEffect, useState } from "react";
+import { lazy, type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { EucalyptusStem } from "../components/botanical";
 import { SectionLabel, WatermarkNumeral } from "../components/editorial";
@@ -614,8 +614,6 @@ function LiveStatsBand() {
   if (!stats) return null;
   if (stats.couples === 0 && stats.rsvps === 0) return null;
 
-  const fmt = new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US");
-
   return (
     <section className="relative bg-paper-100 dark:bg-umber-900">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
@@ -624,10 +622,15 @@ function LiveStatsBand() {
         </p>
         <div className="mx-auto mt-8 grid max-w-3xl grid-cols-2 gap-6 sm:gap-12">
           <StatCounter
-            value={fmt.format(stats.couples)}
+            value={stats.couples}
+            locale={locale}
             label={t("landing.counter_couples_label")}
           />
-          <StatCounter value={fmt.format(stats.rsvps)} label={t("landing.counter_rsvps_label")} />
+          <StatCounter
+            value={stats.rsvps}
+            locale={locale}
+            label={t("landing.counter_rsvps_label")}
+          />
         </div>
         <p className="mt-8 text-center font-serif text-xs italic text-ink-600 dark:text-umber-300">
           {t("landing.counter_footnote")}
@@ -641,8 +644,23 @@ function LiveStatsBand() {
  *  off-white paper, with a barely-there inset hairline at 50% height that
  *  whispers the split-flap reference without becoming the headline.
  *  Whole number sits centered inside in upright Cormorant with tabular
- *  figures so 1s and 8s align. */
-function StatCounter({ value, label }: { value: string; label: string }) {
+ *  figures so 1s and 8s align. Mounts with a count-up animation: the first
+ *  85% of the duration spins through random digits at a steady fast cadence,
+ *  the last 15% eases out so the final value lands readable. */
+function StatCounter({
+  value,
+  locale,
+  label,
+}: {
+  value: number;
+  locale: string;
+  label: string;
+}) {
+  const display = useFlipTo(value);
+  const fmt = useMemo(
+    () => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US"),
+    [locale],
+  );
   return (
     <div className="text-center">
       <div className="relative mx-auto flex aspect-[4/5] w-32 items-center justify-center overflow-hidden rounded-md border border-ink-200 bg-paper-50 shadow-soft sm:w-40 lg:w-48 dark:border-umber-700 dark:bg-umber-800">
@@ -651,7 +669,7 @@ function StatCounter({ value, label }: { value: string; label: string }) {
           className="pointer-events-none absolute inset-x-8 top-1/2 h-px -translate-y-1/2 bg-paper-300/60 dark:bg-umber-700"
         />
         <span className="relative font-serif text-6xl font-medium tabular-nums leading-none text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
-          {value}
+          {fmt.format(display)}
         </span>
       </div>
       <div className="mt-5 font-serif text-sm text-ink-600 dark:text-umber-200 sm:mt-6 sm:text-base">
@@ -659,6 +677,74 @@ function StatCounter({ value, label }: { value: string; label: string }) {
       </div>
     </div>
   );
+}
+
+/** Count-up "flip" animation. First 85% of the duration shuffles random
+ *  N-digit numbers at a steady ~55ms cadence (illegible blur, as requested);
+ *  the last 15% drops to a slowing cadence that ramps from ~70ms toward
+ *  ~290ms, with the random offset around `target` shrinking each tick so
+ *  the final 2-3 values are readable before the card settles. Respects
+ *  prefers-reduced-motion (renders the target immediately). */
+function useFlipTo(target: number, duration = 1800): number {
+  const [display, setDisplay] = useState(() => {
+    const safe = Math.max(0, target);
+    const len = Math.max(1, String(safe).length);
+    return Math.floor(Math.random() * 10 ** len);
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      setDisplay(target);
+      return;
+    }
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setDisplay(target);
+      return;
+    }
+    if (target <= 0) {
+      setDisplay(target);
+      return;
+    }
+
+    const len = String(target).length;
+    const max = 10 ** len;
+    const fastPhaseEnd = duration * 0.85;
+    let startTime = 0;
+    let lastTick = 0;
+    let raf = 0;
+
+    const step = (now: number) => {
+      if (!startTime) startTime = now;
+      const elapsed = now - startTime;
+
+      if (elapsed >= duration) {
+        setDisplay(target);
+        return;
+      }
+
+      const inFast = elapsed < fastPhaseEnd;
+      const slowProgress = inFast ? 0 : (elapsed - fastPhaseEnd) / (duration - fastPhaseEnd);
+      const cadence = inFast ? 55 : 70 + slowProgress * 220;
+
+      if (now - lastTick >= cadence) {
+        lastTick = now;
+        if (inFast) {
+          setDisplay(Math.floor(Math.random() * max));
+        } else {
+          const variance = Math.max(1, Math.round((1 - slowProgress) * 6));
+          const offset = Math.floor((Math.random() - 0.5) * (variance * 2 + 1));
+          setDisplay(Math.max(0, target + offset));
+        }
+      }
+
+      raf = requestAnimationFrame(step);
+    };
+
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  return display;
 }
 
 /** Blog teaser: three most recent published posts pulled live from
