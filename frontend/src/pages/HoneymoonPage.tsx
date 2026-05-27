@@ -508,7 +508,13 @@ export default function HoneymoonPage() {
         />
       </section>
 
-      {flightEstimate && (
+      {/* Card only renders when at least one live offer came back. Google
+       *  Flights returns nothing for dates much beyond ~12 months out, so
+       *  for an early-bird honeymoon there's nothing to surface yet — and
+       *  the user shouldn't see a "No live offer" stub that suggests we
+       *  broke something. The card reappears automatically once airlines
+       *  open inventory for the dates. */}
+      {flightEstimate && flightEstimate.offers.length > 0 && (
         <FlightEstimateCard
           estimate={flightEstimate}
           locale={locale}

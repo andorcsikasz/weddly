@@ -24,9 +24,17 @@ import { log as logger } from "../lib/logger";
  *  assumption. Couples can sanity-check the per-person split themselves. */
 const DEFAULT_ADULTS = 2;
 
-/** TTL after which a cached row is considered stale and refreshed on next
- *  read. 12 hours balances freshness against the API budget. */
-const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+/** TTL for rows that carry at least one offer. 12 h is the sweet spot
+ *  between freshness for active honeymooners and SerpApi's 100-search/month
+ *  free tier. */
+const CACHE_TTL_OFFERS_MS = 12 * 60 * 60 * 1000;
+
+/** TTL for "no offer" rows. Google Flights returns nothing for dates much
+ *  further than ~12 months out — couples who set a 2027 honeymoon today
+ *  would otherwise re-query SerpApi on every page view through the entire
+ *  pre-inventory window. 24 h keeps the empty row stale-tolerant without
+ *  pinning the card blank for a full week if inventory shows up sooner. */
+const CACHE_TTL_EMPTY_MS = 24 * 60 * 60 * 1000;
 
 /** How many offers we surface on the card. The Amadeus client requests more
  *  candidates internally and dedups by carrier; the slice happens server-side
@@ -82,12 +90,36 @@ function readCache(
       .get(origin, destinationText, departDate, returnDate, adults) as EstimateRow | undefined) ??
     null;
   if (!row) return null;
-  // Rows with no offers are treated as cache misses on read so a transient
-  // upstream blip (deploy misconfig, momentary SerpApi 5xx that slipped
-  // past our null check) doesn't keep an empty card pinned for 12 h. The
-  // write path also skips these, so this is belt + suspenders.
-  if (parseOffers(row.offers_json).length === 0) return null;
+  // Two TTLs: full-offer rows stay fresh for 12 h, empty rows for 24 h so
+  // we don't hammer SerpApi for couples sitting on far-future dates that
+  // Google Flights won't have inventory for yet.
+  const isEmpty = parseOffers(row.offers_json).length === 0;
+  const ttl = isEmpty ? CACHE_TTL_EMPTY_MS : CACHE_TTL_OFFERS_MS;
+  if (Date.now() - row.fetched_at > ttl) return null;
   return row;
+}
+
+/** Look up just the resolved IATA on this route, ignoring TTL. We use this
+ *  to skip the destination → IATA lookup on stale-cache misses: the route
+ *  hasn't changed, only the offers may have, so re-resolving via SerpApi
+ *  search is wasted budget. */
+function readStaleDestinationIata(
+  origin: string,
+  destinationText: string,
+  departDate: string,
+  returnDate: string,
+  adults: number,
+): string | null {
+  const row = db
+    .prepare(
+      `SELECT destination_iata FROM flight_estimates
+        WHERE origin = ? AND destination_text = ? AND depart_date = ?
+          AND return_date = ? AND adults = ?`,
+    )
+    .get(origin, destinationText, departDate, returnDate, adults) as
+    | { destination_iata: string | null }
+    | undefined;
+  return row?.destination_iata ?? null;
 }
 
 function writeCache(row: EstimateRow): void {
@@ -158,19 +190,29 @@ export async function getFlightEstimate(couple: CoupleRow): Promise<FlightEstima
   // the card stays hidden, same contract as missing destination.
   if (destination.trim().toUpperCase() === origin) return null;
 
-  // Fresh cache hit → return immediately.
+  // Fresh cache hit → return immediately. readCache enforces the TTL
+  // (12 h for rows with offers, 24 h for empty rows) so a hit here is
+  // always still fresh.
   const cached = readCache(origin, destination, departDate, returnDate, adults);
   const now = Date.now();
-  if (cached && now - cached.fetched_at < CACHE_TTL_MS) {
-    return toEstimate(cached);
-  }
+  if (cached) return toEstimate(cached);
+  // Stale row still gives us the resolved IATA for free — avoid burning a
+  // SerpApi search call on the IATA fallback when we already know the
+  // answer from a previous fetch on this exact route + dates.
+  const staleIata = readStaleDestinationIata(
+    origin,
+    destination,
+    departDate,
+    returnDate,
+    adults,
+  );
 
   // No (or stale) cache → upstream lookup. If SerpApi isn't configured we
   // bail before even trying the network so dev environments without a key
   // don't spam the warning log.
   if (!serpapiConfigured()) return null;
 
-  let destinationIata: string | null = cached?.destination_iata ?? null;
+  let destinationIata: string | null = staleIata;
   if (!destinationIata) {
     // Curated lookup first — zero API cost, covers the top ~150 honeymoon
     // destinations. Only fall back to SerpApi's google search engine when
@@ -201,11 +243,10 @@ export async function getFlightEstimate(couple: CoupleRow): Promise<FlightEstima
     limit: OFFER_LIMIT,
   });
 
-  // null = upstream FAILED (network, auth, quota). Render the card in
-  // its "no offer right now" state (the user gets visible feedback that
-  // the planner tried) but DON'T cache: the next page view should retry
-  // rather than wait 12 h on a misconfig. Logged at warn so prod alerts
-  // catch a sustained outage even though the UX stays graceful.
+  // null = upstream FAILED (network, auth, quota). Don't cache so the next
+  // page view retries instead of waiting out a TTL on a misconfig. Return
+  // an empty estimate so the route still has the resolved IATA in the
+  // shape (frontend hides the card on offers.length === 0 either way).
   if (offers === null) {
     logger.warn("flight_estimate.upstream_failed", { destination, destinationIata });
     return toEstimate({
@@ -234,11 +275,12 @@ export async function getFlightEstimate(couple: CoupleRow): Promise<FlightEstima
     offers_json: JSON.stringify(offers),
     fetched_at: now,
   };
-  // Only persist when we actually have offers to surface. Caching an empty
-  // result for 12 h is more painful than the marginal extra SerpApi calls
-  // on the rare genuinely-no-inventory route, and saves us from a frozen
-  // card if the empty came from a transient upstream issue we missed.
-  if (offers.length > 0) writeCache(row);
+  // Cache both outcomes. Rows with offers expire after 12 h; empty rows
+  // (Google Flights returned "no inventory" — common for far-future dates
+  // until airlines open the date) expire after 24 h. The two TTLs keep
+  // the SerpApi budget controlled while still self-healing once inventory
+  // shows up.
+  writeCache(row);
   return toEstimate(row);
 }
 
