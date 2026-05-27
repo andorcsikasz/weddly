@@ -2998,6 +2998,311 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       ],
     },
   },
+  // ── 10b. Esküvőszervezési checklist 6 hónapra ──────────────────────
+  {
+    slug: "eskuvoszervezesi-checklist-6-honapra",
+    published_at: "2026-04-30",
+    read_minutes: 6,
+    category: { hu: "Tervezés", en: "Planning" },
+    hu: {
+      title: "Esküvőszervezési checklist 6 hónapra: mit mikor intézzetek?",
+      lead: "Ha fél évetek van az esküvőig: tömör menetrend a nagy döntésektől a finomhangolásig, hogy ne torlódjon össze minden az utolsó hetekre.",
+      seo_title: "Esküvőszervezési checklist 6 hónapra · Wēddly",
+      seo_description:
+        "Esküvőszervezési checklist 6 hónapra: lépésről lépésre, mit érdemes intézni hat, négy, kettő és egy hónappal az esküvő előtt.",
+      body: [
+        {
+          type: "p",
+          text: "Ha hat hónap van az esküvőig, az még bőven kezelhető. Több párnak ennyi ideje van, és gyakran ettől még fókuszáltabb, kevésbé szétfutó lesz a szervezés. A trükk: ami egy 12 hónapos checklist elején még ráérős döntés, az itt már sürgős. Ha az első néhány hét rendben telik, a többi rész megnyugszik magától.",
+        },
+        {
+          type: "p",
+          text: "Mutatjuk, mit érdemes a hat hónap minden szakaszában elintézni, hogy ne torlódjon össze minden az utolsó hetekre.",
+        },
+        { type: "h2", text: "6 hónappal az esküvő előtt" },
+        {
+          type: "p",
+          text: "Ezek azok a döntések, amelyek nélkül a többi nem indulhat. A 12 hónapos verzióban ezt három hónapra szétosztva intézitek; itt egy hét, maximum két alatt érdemes túl lenni rajtuk.",
+        },
+        {
+          type: "ul",
+          items: [
+            "dátum kiválasztása,",
+            "esküvői stílus meghatározása,",
+            "költségvetési keret,",
+            "vendégszám-becslés,",
+            "helyszín leszerződése,",
+            "fő szolgáltatók (fotós, zene) lefoglalása,",
+            "házasságkötési szándék bejelentése az anyakönyvvezetőnél.",
+          ],
+        },
+        { type: "h3", text: "Pro tipp" },
+        {
+          type: "p",
+          text: "Az első hét csak a helyszínről és a dátumról szóljon. Ne keverjétek össze a dekoros, ruhás, ültetéses gondolatokkal, amíg ez a kettő nincs lefoglalva. A többi minden ehhez igazodik.",
+        },
+        { type: "h2", text: "4 hónappal az esküvő előtt" },
+        {
+          type: "p",
+          text: "A nagy döntések után jönnek azok a részletek, amelyek időt és próbát igényelnek.",
+        },
+        {
+          type: "ul",
+          items: [
+            "vendéglista első verziója,",
+            "meghívók megtervezése,",
+            "RSVP folyamat előkészítése,",
+            "ruha és öltöny próba megkezdése,",
+            "dekorációs irány véglegesítése,",
+            "ceremóniamester vagy szertartásvezető lefoglalása,",
+            "menü- és italajánlatok bekérése.",
+          ],
+        },
+        {
+          type: "p",
+          text: "A költségvetést ekkor már nem becslésekkel, hanem valós ajánlatokkal érdemes frissíteni. Sok pár itt veszi észre először, hogy egy-két tételen szorítani kell.",
+        },
+        { type: "h2", text: "2-3 hónappal az esküvő előtt" },
+        {
+          type: "p",
+          text: "Itt indul a válaszok és pontosítások időszaka. Ami eddig terv volt, az most kapja meg a végleges formáját.",
+        },
+        {
+          type: "ul",
+          items: [
+            "meghívók kiküldése,",
+            "RSVP határidő meghatározása (a hat hónapos időkereten belül érdemes 4-5 héttel az esküvő elé tenni),",
+            "menüválasztások gyűjtése,",
+            "szállás és transzfer egyeztetése,",
+            "első ültetési verzió elkészítése,",
+            "nyomtatványok (asztalszámok, ültetőkártyák) megtervezése,",
+            "tanúk értesítése a hivatalos teendőkről.",
+          ],
+        },
+        { type: "h3", text: "Pro tipp" },
+        {
+          type: "p",
+          text: "A meghívót ne hagyjátok az utolsó pillanatra. Egy hat hónapos időkereten belül a kiküldés legkésőbb a harmadik hónap végén legyen, mert a vendégek többségének kell pár hét a válaszadáshoz.",
+        },
+        { type: "h2", text: "1 hónappal az esküvő előtt" },
+        {
+          type: "p",
+          text: "Ez már a véglegesítés időszaka. Új ötletek helyett az számít, hogy mindenki ugyanazt az aktuális információt lássa.",
+        },
+        {
+          type: "ul",
+          items: [
+            "végleges vendégszám leadása,",
+            "ültetési rend véglegesítése,",
+            "asztalszámok és ültetőkártyák nyomtatása,",
+            "szolgáltatói napi forgatókönyv egyeztetése,",
+            "fizetési határidők ellenőrzése,",
+            "családi és tanúi tájékoztatás (érkezés, szerep, időzítés).",
+          ],
+        },
+        { type: "h2", text: "1 héttel az esküvő előtt" },
+        {
+          type: "p",
+          text: "Itt már csak a finomhangolás maradjon.",
+        },
+        {
+          type: "ul",
+          items: [
+            "utolsó vendégváltozások kezelése,",
+            "nyomtatott anyagok ellenőrzése,",
+            "szolgáltatók visszaigazolása,",
+            "vészcsomag összeállítása,",
+            "pihenés.",
+          ],
+        },
+        {
+          type: "p",
+          text: "Igen, a pihenés is teendő. Hat hónap kondenzált szervezés után az utolsó hét legyen lassabb, mint az előzőek.",
+        },
+        { type: "h2", text: "Rövid összefoglaló" },
+        {
+          type: "p",
+          text: "Hat hónap elég. A trükk, hogy az első két-három hét fókuszált legyen: helyszín, dátum, fő szolgáltatók. Ha ez megvan, a többi a kondenzált, de áttekinthető ütemterv szerint halad. Egy közös checklist, egy friss vendéglista, egy költségvetés, ami együtt mozog veletek, és egy hely, ahol mindketten ugyanazt látjátok. Ennyi elég.",
+        },
+        {
+          type: "cta",
+          lead: "A Wēddly segít egy helyen tartani a költségvetést, vendéglistát, RSVP válaszokat és ültetési rendet, hogy ne külön táblázatokból kelljen szerveznetek az esküvőt.",
+          href: "/signup",
+          label: "Tegyétek a helyére ingyen",
+        },
+        { type: "h2", text: "Gyakori kérdések" },
+        { type: "h3", text: "Lehet-e 6 hónap alatt megszervezni egy esküvőt?" },
+        {
+          type: "p",
+          text: "Igen, ha az első néhány hét fókuszált. A legtöbb pár hat hónap alatt is szépen összerakja, főleg ha a vendégszám nem extrém nagy.",
+        },
+        { type: "h3", text: "Mikor küldjük ki a meghívót 6 hónapos időkereten belül?" },
+        {
+          type: "p",
+          text: "Legkésőbb az esküvő előtt 8-12 héttel, hogy a vendégeknek legyen idejük válaszolni, és a végleges vendégszámra is maradjon idő a véglegesítésre.",
+        },
+        { type: "h3", text: "Mit nem érdemes 6 hónap alatt vállalni?" },
+        {
+          type: "p",
+          text: "Egyedi szabású menyasszonyi ruhát, ha az adott szabónak hosszú a várólistája. Niche fotós vagy zenekar, akik egy évvel előre be vannak táblázva. Sok külföldi vendéggel járó esküvőt, ahol a meghívóra valódi save-the-date előzmény kellene. Ezekre 8-12 hónap reálisabb.",
+        },
+        { type: "h3", text: "Mikor legyen végleges az ültetési rend?" },
+        {
+          type: "p",
+          text: "A végleges RSVP válaszok után, jellemzően az esküvő előtti 2-3 hétben.",
+        },
+      ],
+    },
+    en: {
+      title: "Wedding planning checklist for 6 months: what to handle, when",
+      lead: "If you've got six months until the wedding: a compressed timeline from the big decisions to the final week, so nothing piles up at the end.",
+      seo_title: "Wedding planning checklist for 6 months · Weddly",
+      seo_description:
+        "A practical 6-month wedding planning checklist: what to handle six, four, two and one month before the wedding, and the final week.",
+      body: [
+        {
+          type: "p",
+          text: "Six months until the wedding is plenty manageable. Plenty of couples have exactly that, and the tighter window often makes planning more focused, less sprawling. The trick: what's still a leisurely decision on a 12-month checklist becomes urgent here. If the first weeks go well, the rest tends to settle by itself.",
+        },
+        {
+          type: "p",
+          text: "Below: what to handle at each stage so nothing piles up at the end.",
+        },
+        { type: "h2", text: "6 months out" },
+        {
+          type: "p",
+          text: "These are the decisions everything else depends on. On a 12-month plan you'd spread them across the first quarter; here you want them settled in a week or two.",
+        },
+        {
+          type: "ul",
+          items: [
+            "pick the date,",
+            "decide the style,",
+            "set a budget ceiling,",
+            "estimate guest count,",
+            "sign the venue,",
+            "book the key vendors (photo, music),",
+            "file the notice of marriage with the registrar.",
+          ],
+        },
+        { type: "h3", text: "Pro tip" },
+        {
+          type: "p",
+          text: "Let the first week be only about the venue and the date. Don't mix in dress, decor or seating thoughts until those two are locked. Everything else lines up against them.",
+        },
+        { type: "h2", text: "4 months out" },
+        {
+          type: "p",
+          text: "After the big calls, the details that need lead time and fittings.",
+        },
+        {
+          type: "ul",
+          items: [
+            "first guest-list draft,",
+            "invitation design,",
+            "RSVP flow setup,",
+            "first dress and suit fittings,",
+            "decor direction,",
+            "officiant or celebrant booked,",
+            "menu and bar quotes requested.",
+          ],
+        },
+        {
+          type: "p",
+          text: "Update the budget from real quotes now, not estimates. This is usually where one or two lines start needing to be trimmed.",
+        },
+        { type: "h2", text: "2-3 months out" },
+        {
+          type: "p",
+          text: "Replies and refinements. What was a plan turns into the final form.",
+        },
+        {
+          type: "ul",
+          items: [
+            "invitations sent,",
+            "RSVP deadline set (with a 6-month window, aim for 4-5 weeks before the wedding),",
+            "collect meal choices,",
+            "lock accommodation and transport,",
+            "first seating draft,",
+            "design printed pieces (table numbers, place cards),",
+            "brief witnesses on their official tasks.",
+          ],
+        },
+        { type: "h3", text: "Pro tip" },
+        {
+          type: "p",
+          text: "Don't leave the invitation to the last minute. On a 6-month timeline, send no later than the end of month three; most guests need a few weeks to reply.",
+        },
+        { type: "h2", text: "1 month out" },
+        {
+          type: "p",
+          text: "Finalisation phase. Less about new ideas, more about everyone reading the same current information.",
+        },
+        {
+          type: "ul",
+          items: [
+            "submit final headcount,",
+            "lock the seating chart,",
+            "print table numbers and place cards,",
+            "agree the vendor run-of-show,",
+            "check payment deadlines,",
+            "brief family and witnesses on arrival, role and timing.",
+          ],
+        },
+        { type: "h2", text: "1 week out" },
+        {
+          type: "p",
+          text: "Only fine-tuning left.",
+        },
+        {
+          type: "ul",
+          items: [
+            "handle last guest changes,",
+            "review printed pieces,",
+            "vendor confirmations,",
+            "pack the emergency kit,",
+            "rest.",
+          ],
+        },
+        {
+          type: "p",
+          text: "Yes, rest is on the list. After six months of compressed planning, the last week should be slower than the ones before.",
+        },
+        { type: "h2", text: "Summary" },
+        {
+          type: "p",
+          text: "Six months is enough. The trick is to make the first two or three weeks focused: venue, date, key vendors. With those locked, the rest moves along a tighter but still readable timeline. A shared checklist, a guest list that stays current, a budget that moves with you, and one spot you both look at. That's enough.",
+        },
+        {
+          type: "cta",
+          lead: "Weddly keeps your budget, guest list, RSVPs and seating chart together, so you don't have to plan from disconnected spreadsheets.",
+          href: "/signup",
+          label: "Set it up for free",
+        },
+        { type: "h2", text: "FAQ" },
+        { type: "h3", text: "Can a wedding be planned in 6 months?" },
+        {
+          type: "p",
+          text: "Yes, if the first few weeks are focused. Most couples can pull it off in six months, especially if the guest count isn't extreme.",
+        },
+        { type: "h3", text: "When should invitations go out on a 6-month timeline?" },
+        {
+          type: "p",
+          text: "No later than 8-12 weeks before the wedding, so guests have time to reply and you have time to finalise the headcount.",
+        },
+        { type: "h3", text: "What's harder to pull off in 6 months?" },
+        {
+          type: "p",
+          text: "A custom-tailored bridal dress where the maker has a long waitlist. Niche photographers or bands booked a year out. Big international weddings where save-the-dates would normally precede the invitation. For those, 8-12 months is more realistic.",
+        },
+        { type: "h3", text: "When should the seating chart be final?" },
+        {
+          type: "p",
+          text: "After the final RSVPs, typically 2-3 weeks before the wedding.",
+        },
+      ],
+    },
+  },
   // ── 11. Esküvői ügyintézés lépésről lépésre ───────────────────────
   {
     slug: "eskuvoi-ugyintezes-lepesrol-lepesre",
