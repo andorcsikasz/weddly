@@ -1337,6 +1337,21 @@ export interface LocaleMessages {
     /** Compact party summary shown next to the origin badge — receives
      *  `{adults}`. Always round-trip in v1, so the string bakes that in. */
     flight_estimate_party: string;
+    /** Per-offer expand chrome — opens / closes the segment detail block. */
+    flight_estimate_expand: string;
+    flight_estimate_collapse: string;
+    /** Section labels inside the expanded view. `_layover` and
+     *  `_overnight_layover` take `{airport}` + `{duration}` (e.g. "FRA · 2h
+     *  15m"); `_aircraft` takes `{model}`; `_class` takes `{class}`. */
+    flight_estimate_layover: string;
+    flight_estimate_layover_overnight: string;
+    flight_estimate_aircraft: string;
+    flight_estimate_class: string;
+    /** Baggage row — SerpApi doesn't ship structured allowances in the
+     *  free tier, so we link out to Google Flights for the real numbers
+     *  rather than guess. */
+    flight_estimate_baggage_unknown: string;
+    flight_estimate_view_on_google: string;
     /** Honeymoon-scoped todo checklist that mirrors planning_items
      *  filtered by topic='honeymoon'. `todo_sub_count` receives
      *  `{done}` + `{total}` numbers; the empty body + CTA point to

@@ -15,12 +15,18 @@ import type {
 } from "@shared/types";
 import {
   BedDouble,
+  Briefcase,
   Calendar,
   Check,
+  ChevronDown,
+  ChevronUp,
   Circle,
   CheckCircle2,
+  Clock,
   Compass,
+  ExternalLink,
   Map as MapIcon,
+  ArrowRightLeft,
   AlertTriangle,
   MapPin,
   Plane,
@@ -1312,49 +1318,158 @@ function FlightEstimateCard({
         </div>
       </header>
 
-      {estimate.offers.length === 0 ? (
-        <p className="mt-3 text-sm text-ink-600 dark:text-umber-200">
-          {t("honeymoon.flight_estimate_empty")}
-        </p>
-      ) : (
-        <ul className="mt-3 space-y-2">
-          {estimate.offers.map((offer, idx) => (
-            <li
-              key={`${offer.carrier}-${offer.depart_iso}-${idx}`}
-              className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-xl border border-paper-200 bg-white/60 px-3 py-2 dark:border-umber-700 dark:bg-umber-900/40"
-            >
-              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
-                <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
-                  {offer.carrier || "—"}
-                </span>
-                <span className="text-ink-800 tabular-nums dark:text-paper-100">
-                  {formatOfferTime(offer.depart_iso, locale)} →{" "}
-                  {formatOfferTime(offer.arrival_iso, locale)}
-                </span>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {formatDurationLabel(offer.duration_min, t)}
-                </span>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {formatStopsLabel(offer.stops, t)}
-                </span>
-              </div>
-              <span className="stat-num text-base font-semibold text-ink-900 sm:text-lg dark:text-paper-50">
-                ~{" "}
-                {new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
-                  style: "currency",
-                  currency: offer.currency,
-                  maximumFractionDigits: 0,
-                }).format(offer.price)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="mt-3 space-y-2">
+        {estimate.offers.map((offer, idx) => (
+          <FlightOfferRow
+            key={`${offer.carrier}-${offer.depart_iso}-${idx}`}
+            offer={offer}
+            locale={locale}
+            t={t}
+          />
+        ))}
+      </ul>
 
       <p className="mt-2 text-[11px] text-ink-400 dark:text-umber-300">
         {t("honeymoon.flight_estimate_attribution", { updated })}
       </p>
     </section>
+  );
+}
+
+/** One row in the FlightEstimateCard's offer list. Compact when collapsed
+ *  (carrier · times · duration · stops · price); clicking the chevron
+ *  expands a segment-by-segment breakdown with layovers and a Google
+ *  Flights deeplink for the parts we can't surface (baggage allowance). */
+function FlightOfferRow({
+  offer,
+  locale,
+  t,
+}: {
+  offer: FlightOffer;
+  locale: "hu" | "en";
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const priceLabel = new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    style: "currency",
+    currency: offer.currency,
+    maximumFractionDigits: 0,
+  }).format(offer.price);
+  const hasSegments = offer.segments.length > 0;
+
+  return (
+    <li className="rounded-xl border border-paper-200 bg-white/60 dark:border-umber-700 dark:bg-umber-900/40">
+      <button
+        type="button"
+        onClick={() => hasSegments && setOpen((v) => !v)}
+        className={`flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-3 py-2 text-left ${
+          hasSegments ? "cursor-pointer" : "cursor-default"
+        }`}
+        aria-expanded={open}
+        aria-label={
+          hasSegments
+            ? open
+              ? t("honeymoon.flight_estimate_collapse")
+              : t("honeymoon.flight_estimate_expand")
+            : undefined
+        }
+      >
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+          <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
+            {offer.carrier || "—"}
+          </span>
+          <span className="text-ink-800 tabular-nums dark:text-paper-100">
+            {formatOfferTime(offer.depart_iso, locale)} →{" "}
+            {formatOfferTime(offer.arrival_iso, locale)}
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+            <Clock size={12} aria-hidden="true" />
+            {formatDurationLabel(offer.duration_min, t)}
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+            <ArrowRightLeft size={12} aria-hidden="true" />
+            {formatStopsLabel(offer.stops, t)}
+          </span>
+        </div>
+        <span className="flex items-center gap-2">
+          <span className="stat-num text-base font-semibold text-ink-900 sm:text-lg dark:text-paper-50">
+            ~ {priceLabel}
+          </span>
+          {hasSegments && (
+            <span
+              aria-hidden="true"
+              className="inline-flex h-5 w-5 items-center justify-center text-ink-400 dark:text-umber-300"
+            >
+              {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </span>
+          )}
+        </span>
+      </button>
+      {open && hasSegments && (
+        <div className="border-t border-paper-200 bg-white/40 px-3 py-3 dark:border-umber-700 dark:bg-umber-900/30">
+          <ol className="space-y-3 text-xs">
+            {offer.segments.map((seg, i) => (
+              <li key={`${seg.flight_number}-${seg.depart_iso}-${i}`}>
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-[11px] font-semibold tracking-wider text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
+                    {seg.flight_number || seg.carrier || "—"}
+                  </span>
+                  <span className="text-ink-800 tabular-nums dark:text-paper-100">
+                    {formatOfferTime(seg.depart_iso, locale)} {seg.depart_iata}{" "}
+                    <span aria-hidden="true">→</span>{" "}
+                    {formatOfferTime(seg.arrival_iso, locale)} {seg.arrival_iata}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-ink-500 dark:text-umber-300">
+                    <Clock size={11} aria-hidden="true" />
+                    {formatDurationLabel(seg.duration_min, t)}
+                  </span>
+                </div>
+                <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink-500 dark:text-umber-300">
+                  {seg.airline_name && <span>{seg.airline_name}</span>}
+                  {seg.airplane && (
+                    <span>{t("honeymoon.flight_estimate_aircraft", { model: seg.airplane })}</span>
+                  )}
+                  {seg.travel_class && (
+                    <span>{t("honeymoon.flight_estimate_class", { class: seg.travel_class })}</span>
+                  )}
+                </div>
+                {offer.layovers[i] && (
+                  <p className="mt-2 ml-1 inline-flex items-center gap-1.5 rounded bg-blush-50 px-2 py-0.5 text-[11px] text-blush-700 dark:bg-blush-400/15 dark:text-blush-200">
+                    <ArrowRightLeft size={11} aria-hidden="true" />
+                    {t(
+                      offer.layovers[i]?.overnight
+                        ? "honeymoon.flight_estimate_layover_overnight"
+                        : "honeymoon.flight_estimate_layover",
+                      {
+                        airport: offer.layovers[i]?.iata ?? "",
+                        duration: formatDurationLabel(offer.layovers[i]?.duration_min ?? 0, t),
+                      },
+                    )}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-paper-200 pt-2 dark:border-umber-700">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-500 dark:text-umber-300">
+              <Briefcase size={12} aria-hidden="true" />
+              {t("honeymoon.flight_estimate_baggage_unknown")}
+            </span>
+            {offer.booking_url && (
+              <a
+                href={offer.booking_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded border border-paper-300 bg-white px-2 py-0.5 text-[11px] font-medium text-ink-700 hover:border-blush-400 hover:text-blush-700 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
+              >
+                {t("honeymoon.flight_estimate_view_on_google")}
+                <ExternalLink size={11} aria-hidden="true" />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+    </li>
   );
 }
 

@@ -964,6 +964,38 @@ export interface PlanningItem {
   updated_at: UnixMs;
 }
 
+/** A single segment within a flight offer's outbound itinerary. */
+export interface FlightSegment {
+  /** Operating carrier IATA on this segment (e.g. "LH"). */
+  carrier: string;
+  /** Carrier display name from SerpApi (e.g. "Lufthansa"). */
+  airline_name: string;
+  /** Marketing flight number ("LH 1234"). Empty when SerpApi didn't surface
+   *  a parseable value. */
+  flight_number: string;
+  depart_iata: string;
+  depart_name: string;
+  depart_iso: string;
+  arrival_iata: string;
+  arrival_name: string;
+  arrival_iso: string;
+  /** Segment duration in minutes (gate-to-gate). */
+  duration_min: number;
+  /** Aircraft type if SerpApi included it (e.g. "Airbus A320"). */
+  airplane: string;
+  /** Cabin class if known ("Economy" / "Business" / …). */
+  travel_class: string;
+}
+
+/** Layover between two FlightSegments. */
+export interface FlightLayover {
+  iata: string;
+  airport_name: string;
+  duration_min: number;
+  /** True when SerpApi flags this as an overnight transfer. */
+  overnight: boolean;
+}
+
 /** A single flight option in the FlightEstimate.offers list. Pricing is for
  *  the full party (adults * leg fare) round-trip, in `currency` whole units. */
 export interface FlightOffer {
@@ -972,8 +1004,7 @@ export interface FlightOffer {
   /** ISO 4217 — echoed per-offer so the UI doesn't have to look up the
    *  parent estimate when rendering a row. */
   currency: string;
-  /** Operating IATA carrier code on the outbound first segment (e.g. "LH").
-   *  Empty string when Amadeus didn't populate it. */
+  /** Operating IATA carrier code on the outbound first segment (e.g. "LH"). */
   carrier: string;
   /** ISO timestamps for the outbound leg — the card uses them to render
    *  "Mon 10:15 → 14:40" without re-parsing on every render. */
@@ -983,6 +1014,16 @@ export interface FlightOffer {
   duration_min: number;
   /** Outbound stops (0 = direct). */
   stops: number;
+  /** Per-segment breakdown for the expandable row. Always at least one
+   *  entry; legacy cached rows that pre-date this field deserialise to []. */
+  segments: FlightSegment[];
+  /** Layovers between segments; `segments.length - 1` entries on healthy
+   *  payloads. Empty array on direct flights. */
+  layovers: FlightLayover[];
+  /** Google Flights search-URL deeplink to view full details + book.
+   *  Constructed server-side from the route + dates so the frontend doesn't
+   *  need to know the URL format. */
+  booking_url: string;
 }
 
 /** Round-trip flight cost estimate shown on /app/honeymoon. Figures are

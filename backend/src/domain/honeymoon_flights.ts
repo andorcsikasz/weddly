@@ -157,13 +157,29 @@ function parseOffers(json: string | null): FlightOffer[] {
   try {
     const arr = JSON.parse(json);
     if (!Array.isArray(arr)) return [];
-    return arr.filter(
-      (o): o is FlightOffer =>
-        typeof o === "object" &&
-        o !== null &&
-        typeof (o as FlightOffer).price === "number" &&
-        typeof (o as FlightOffer).currency === "string",
-    );
+    // Backfill the segments / layovers / booking_url fields that were added
+    // after the original cache table was populated — pre-feature rows still
+    // round-trip cleanly, the expand affordance just shows nothing extra.
+    return arr
+      .filter(
+        (o): o is Partial<FlightOffer> =>
+          typeof o === "object" &&
+          o !== null &&
+          typeof (o as FlightOffer).price === "number" &&
+          typeof (o as FlightOffer).currency === "string",
+      )
+      .map((o): FlightOffer => ({
+        price: o.price ?? 0,
+        currency: o.currency ?? "",
+        carrier: o.carrier ?? "",
+        depart_iso: o.depart_iso ?? "",
+        arrival_iso: o.arrival_iso ?? "",
+        duration_min: o.duration_min ?? 0,
+        stops: o.stops ?? 0,
+        segments: Array.isArray(o.segments) ? o.segments : [],
+        layovers: Array.isArray(o.layovers) ? o.layovers : [],
+        booking_url: o.booking_url ?? "",
+      }));
   } catch {
     return [];
   }

@@ -41,6 +41,33 @@ export interface FlightOfferQuote {
   duration_min: number;
   /** Outbound stops (0 = direct). */
   stops: number;
+  segments: FlightSegmentQuote[];
+  layovers: FlightLayoverQuote[];
+  /** Google Flights search-URL the user can click to see full details +
+   *  baggage allowance + booking flow. */
+  booking_url: string;
+}
+
+export interface FlightSegmentQuote {
+  carrier: string;
+  airline_name: string;
+  flight_number: string;
+  depart_iata: string;
+  depart_name: string;
+  depart_iso: string;
+  arrival_iata: string;
+  arrival_name: string;
+  arrival_iso: string;
+  duration_min: number;
+  airplane: string;
+  travel_class: string;
+}
+
+export interface FlightLayoverQuote {
+  iata: string;
+  airport_name: string;
+  duration_min: number;
+  overnight: boolean;
 }
 
 interface SerpSegment {
@@ -49,11 +76,20 @@ interface SerpSegment {
   duration?: number;
   airline?: string;
   flight_number?: string;
+  airplane?: string;
+  travel_class?: string;
+}
+
+interface SerpLayover {
+  duration?: number;
+  name?: string;
+  id?: string;
+  overnight?: boolean;
 }
 
 interface SerpFlight {
   flights?: SerpSegment[];
-  layovers?: unknown[];
+  layovers?: SerpLayover[];
   total_duration?: number;
   price?: number;
 }
@@ -144,15 +180,41 @@ export async function getTopOffers(opts: {
       });
       return [];
     }
+    const bookingUrl = buildGoogleFlightsUrl(
+      opts.origin,
+      opts.destination,
+      opts.departDate,
+      opts.returnDate,
+    );
     const parsed: FlightOfferQuote[] = [];
     for (const f of all) {
       const rawPrice = typeof f.price === "number" ? f.price : 0;
       if (!rawPrice || rawPrice <= 0) continue;
-      const segments = f.flights ?? [];
-      if (segments.length === 0) continue;
-      const first = segments[0];
-      const last = segments[segments.length - 1];
+      const rawSegments = f.flights ?? [];
+      if (rawSegments.length === 0) continue;
+      const first = rawSegments[0];
+      const last = rawSegments[rawSegments.length - 1];
       if (!first || !last) continue;
+      const segments: FlightSegmentQuote[] = rawSegments.map((s) => ({
+        carrier: carrierFromFlight(s),
+        airline_name: s.airline ?? "",
+        flight_number: s.flight_number ?? "",
+        depart_iata: s.departure_airport?.id ?? "",
+        depart_name: s.departure_airport?.name ?? "",
+        depart_iso: toIso(s.departure_airport?.time),
+        arrival_iata: s.arrival_airport?.id ?? "",
+        arrival_name: s.arrival_airport?.name ?? "",
+        arrival_iso: toIso(s.arrival_airport?.time),
+        duration_min: s.duration ?? 0,
+        airplane: s.airplane ?? "",
+        travel_class: s.travel_class ?? "",
+      }));
+      const layovers: FlightLayoverQuote[] = (f.layovers ?? []).map((l) => ({
+        iata: l.id ?? "",
+        airport_name: l.name ?? "",
+        duration_min: l.duration ?? 0,
+        overnight: Boolean(l.overnight),
+      }));
       parsed.push({
         price: Math.round(rawPrice),
         currency: opts.currency,
@@ -160,7 +222,10 @@ export async function getTopOffers(opts: {
         depart_iso: toIso(first.departure_airport?.time),
         arrival_iso: toIso(last.arrival_airport?.time),
         duration_min: f.total_duration ?? 0,
-        stops: Math.max(segments.length - 1, 0),
+        stops: Math.max(rawSegments.length - 1, 0),
+        segments,
+        layovers,
+        booking_url: bookingUrl,
       });
     }
     parsed.sort((a, b) => a.price - b.price);
@@ -183,6 +248,20 @@ export async function getTopOffers(opts: {
     logger.warn("serpapi.flights_throw", { route, error: String(e) });
     return null;
   }
+}
+
+/** Build a Google Flights search-URL the user can click to see full
+ *  itinerary details + baggage allowance + the actual booking flow.
+ *  Google Flights deeplinks are not officially documented; a search query
+ *  with the route + dates is the most stable form. */
+function buildGoogleFlightsUrl(
+  origin: string,
+  destination: string,
+  departDate: string,
+  returnDate: string,
+): string {
+  const q = `Flights from ${origin} to ${destination} on ${departDate} returning ${returnDate}`;
+  return `https://www.google.com/travel/flights?q=${encodeURIComponent(q)}&hl=en&curr=HUF`;
 }
 
 /** Defensive body reader for the `!r.ok` path. SerpApi sometimes returns
