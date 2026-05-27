@@ -3185,7 +3185,7 @@ const hu: LocaleMessages = {
     activity_action_generic: "változtatott a munkaterületen",
     activity_date_tbd: "még nincs kitűzve",
     activity_value_empty: "—",
-    activity_names_separator: " és ",
+    activity_names_separator: " & ",
     budget_title: "Költségvetés",
     budget_body:
       "A két legfontosabb számod egy helyen: a tervezett keret és az eddig kifizetett összeg.",
