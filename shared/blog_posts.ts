@@ -1,8 +1,8 @@
-// Placeholder blog content for the public /blog index + /blog/:slug pages.
-// Authored as bilingual TypeScript records so the SSR <head> builder, the
-// React blog pages and the sitemap can all read the same source of truth
-// without a database round-trip. When the editorial pipeline lands we'll
-// swap this for either MD files in shared/blog/ or a `blog_posts` table.
+// Blog post shapes shared between the React frontend and the backend's
+// SSR meta builder. The live source of truth is the `blog_posts` SQLite
+// table; the `SEED_BLOG_POSTS` array below is only consumed by the
+// first-boot seeder in `domain/blog.ts`, so an empty DB starts the admin
+// with a usable set of posts instead of a blank screen.
 
 import type { SeoLocale } from "./seo_routes";
 
@@ -20,6 +20,8 @@ export interface BlogPostLocale {
 }
 
 export interface BlogPost {
+  /** Numeric primary key (admin-only; absent on seed records). */
+  id?: number;
   slug: string;
   /** ISO date `YYYY-MM-DD`. Used for ordering + the visible byline. */
   published_at: string;
@@ -27,11 +29,17 @@ export interface BlogPost {
   read_minutes: number;
   /** Eyebrow label shown above the title (category tag). One per locale. */
   category: Record<SeoLocale, string>;
+  /** Hero cover image. Either a local `/uploads/blog/...` path or an
+   *  external http(s) URL the admin pasted in. Null = no image set. */
+  cover_image_url?: string | null;
+  /** Draft (false) vs live (true). Drafts are hidden from public lists +
+   *  return 404 on /blog/:slug, but still visible in the admin index. */
+  is_published?: boolean;
   hu: BlogPostLocale;
   en: BlogPostLocale;
 }
 
-export const BLOG_POSTS: BlogPost[] = [
+export const SEED_BLOG_POSTS: BlogPost[] = [
   {
     slug: "eskuvoi-koltsegvetes-felosztas",
     published_at: "2026-05-15",
@@ -300,13 +308,3 @@ export const BLOG_POSTS: BlogPost[] = [
   },
 ];
 
-/** Look up a post by slug. Returns null for unknown slugs. */
-export function getBlogPost(slug: string): BlogPost | null {
-  return BLOG_POSTS.find((p) => p.slug === slug) ?? null;
-}
-
-/** Posts sorted newest-first by `published_at`. Re-sorting in place is
- *  unsafe (callers share the reference), so this returns a copy. */
-export function listBlogPosts(): BlogPost[] {
-  return [...BLOG_POSTS].sort((a, b) => b.published_at.localeCompare(a.published_at));
-}

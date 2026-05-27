@@ -1015,3 +1015,33 @@ CREATE TABLE IF NOT EXISTS supplier_aggregates (
   top_tags TEXT NOT NULL DEFAULT '[]',                         -- JSON [{tag, count}, …]
   updated_at INTEGER NOT NULL
 );
+
+-- Public-facing blog posts. One row per post (slug-keyed); HU + EN copy live
+-- in parallel columns so the admin can edit both languages from one form.
+-- Bodies are stored as JSON-stringified BlogBlock[] (see shared/blog_posts.ts
+-- for the block schema). cover_image_url points either to /uploads/blog/…
+-- (local upload) or to an external http(s) URL (admin paste-in).
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,
+  published_at TEXT NOT NULL,                                  -- 'YYYY-MM-DD'
+  read_minutes INTEGER NOT NULL DEFAULT 5,
+  cover_image_url TEXT,
+  is_published INTEGER NOT NULL DEFAULT 1,                     -- 0 = draft, 1 = live
+  hu_category TEXT NOT NULL DEFAULT '',
+  hu_title TEXT NOT NULL DEFAULT '',
+  hu_lead TEXT NOT NULL DEFAULT '',
+  hu_seo_title TEXT NOT NULL DEFAULT '',
+  hu_seo_description TEXT NOT NULL DEFAULT '',
+  hu_body_json TEXT NOT NULL DEFAULT '[]',                     -- JSON BlogBlock[]
+  en_category TEXT NOT NULL DEFAULT '',
+  en_title TEXT NOT NULL DEFAULT '',
+  en_lead TEXT NOT NULL DEFAULT '',
+  en_seo_title TEXT NOT NULL DEFAULT '',
+  en_seo_description TEXT NOT NULL DEFAULT '',
+  en_body_json TEXT NOT NULL DEFAULT '[]',                     -- JSON BlogBlock[]
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_blog_posts_published
+  ON blog_posts(is_published, published_at DESC);

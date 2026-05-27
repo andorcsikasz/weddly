@@ -1353,6 +1353,8 @@ export interface LocaleMessages {
     sub: string;
     coming_soon_title: string;
     coming_soon_body: string;
+    share_drive: string;
+    share_icloud: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   moodboard: {
@@ -2564,6 +2566,8 @@ export interface LocaleMessages {
     nav_users: string;
     nav_waitlist: string;
     nav_taxonomy: string;
+    /** Admin blog CRUD page (/app/admin/blog). */
+    nav_blog: string;
     /** Read-only analytics dashboard — money, activity, picks rollups. */
     nav_analytics: string;
     /** Admin rail group subheads. Inbox = badge-bearing moderation
@@ -4002,8 +4006,8 @@ export interface LocaleMessages {
     /** Placeholder founder name — replace before going public. */
     founder_placeholder: string;
   };
-  /** Public-facing magazine index and post pages. Body content lives in
-   *  shared/blog_posts.ts; these are the chrome strings around it. */
+  /** Public-facing blog index and post pages. Body content lives in the
+   *  `blog_posts` DB table; these are the chrome strings around it. */
   blog: {
     eyebrow: string;
     index_title: string;
@@ -4019,6 +4023,72 @@ export interface LocaleMessages {
     section_title: string;
     section_lead: string;
     section_cta: string;
+    /** Tri-state loading / error / empty messages for the public blog
+     *  surfaces (index, post, landing teaser) — the API is fetched at
+     *  runtime so we need real strings for each branch. */
+    loading: string;
+    load_failed: string;
+    empty: string;
+  };
+  /** Admin-only blog CRUD page chrome (/app/admin/blog). */
+  admin_blog: {
+    seo_title: string;
+    seo_description: string;
+    page_title: string;
+    page_subtitle: string;
+    new_post: string;
+    edit_post: string;
+    new_post_subtitle: string;
+    empty_title: string;
+    empty_body: string;
+    col_title: string;
+    col_slug: string;
+    col_status: string;
+    col_date: string;
+    status_published: string;
+    status_draft: string;
+    edit: string;
+    delete: string;
+    cancel: string;
+    save: string;
+    saving: string;
+    saved: string;
+    save_failed: string;
+    deleted: string;
+    delete_confirm_title: string;
+    delete_confirm_body: string;
+    back_to_list: string;
+    field_slug: string;
+    field_published_at: string;
+    field_read_minutes: string;
+    field_publish_state: string;
+    publish_toggle: string;
+    section_cover: string;
+    section_cover_help: string;
+    cover_constraints: string;
+    cover_remove: string;
+    cover_uploaded: string;
+    save_before_upload: string;
+    locale_hu: string;
+    locale_en: string;
+    field_category: string;
+    field_title: string;
+    field_lead: string;
+    field_seo_title: string;
+    field_seo_description: string;
+    section_body: string;
+    body_empty: string;
+    block_p: string;
+    block_h2: string;
+    block_ul: string;
+    add_p: string;
+    add_h2: string;
+    add_ul: string;
+    add_ul_item: string;
+    move_up: string;
+    move_down: string;
+    remove_block: string;
+    remove_item: string;
   };
   /** Re-login modal that pops on 401 mid-session. Copy stays short — the
    *  user is mid-task and just needs to resume. */

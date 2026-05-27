@@ -35,6 +35,7 @@ const AppShellLayout = lazy(() =>
   import("./components/AppShell").then((m) => ({ default: m.AppShellLayout })),
 );
 const AdminAnalyticsPage = lazy(() => import("./pages/AdminAnalyticsPage"));
+const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage"));
 const AdminFeedbackPage = lazy(() => import("./pages/AdminFeedbackPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
 const AdminSuppliersPage = lazy(() => import("./pages/AdminSuppliersPage"));
@@ -647,6 +648,16 @@ export default function App() {
             <Page>
               <RequireAdmin>
                 <AdminFeedbackPage />
+              </RequireAdmin>
+            </Page>
+          }
+        />
+        <Route
+          path="admin/blog"
+          element={
+            <Page>
+              <RequireAdmin>
+                <AdminBlogPage />
               </RequireAdmin>
             </Page>
           }

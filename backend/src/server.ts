@@ -31,6 +31,7 @@ import { registerAdminUserRoutes } from "./routes/admin_users";
 import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAuthGoogleRoutes } from "./routes/auth_google";
+import { registerBlogRoutes, seedBlogPostsIfEmpty } from "./routes/blog";
 import { registerBudgetRoutes } from "./routes/budget";
 import { registerCommunitySupplierRoutes } from "./routes/community_suppliers";
 import { registerCouplePauseRoutes } from "./routes/couple_pause";
@@ -76,6 +77,9 @@ import { registerUserCoupleRoutes } from "./routes/user_couple";
 import { registerUserProfileRoutes } from "./routes/user_profile";
 
 seedSupplierTaxonomy();
+// First-boot seed of the public blog. Idempotent — short-circuits when
+// the table already has rows so subsequent reboots don't touch DB state.
+seedBlogPostsIfEmpty();
 // Boot-time mirror of suppliers_data.ts + community_suppliers into the
 // unified `listings` table. Idempotent; content_hash short-circuit means
 // unchanged rows are no-ops on every subsequent boot.
@@ -98,6 +102,7 @@ registerExportRoutes(router);
 registerDocumentArchiveRoutes(router);
 registerGuestRoutes(router);
 registerHouseholdRoutes(router);
+registerBlogRoutes(router);
 registerBudgetRoutes(router);
 registerHoneymoonRoutes(router);
 registerMoodboardRoutes(router);

@@ -1,5 +1,3 @@
-import { BLOG_POSTS } from "./blog_posts";
-
 // Per-route SEO metadata for the public, indexable surfaces.
 //
 // The landing page (/) is handled by the default META in seo_ssr.ts and the
@@ -346,31 +344,12 @@ export function enPathFor(path: string): string {
  *  locale picks which copy renders. Done at lookup time rather than
  *  duplicating the entry so the copy stays in one place.
  *
- *  `/blog/:slug` paths resolve dynamically against `BLOG_POSTS`. Each
- *  post supplies its own bilingual title + description + h1 + intro so
- *  Googlebot sees a distinct page per post in the HTML-only crawl. */
+ *  `/blog/:slug` is NOT handled here. The backend's `seo_ssr.ts` reads the
+ *  per-post meta from the `blog_posts` table at request time and short-
+ *  circuits the static lookup so admin edits land in the SSR'd <head>
+ *  without a rebuild. */
 export function lookupRouteSeo(pathname: string): RouteSeo | null {
   const aliased = pathname === "/impresszum" ? "/imprint" : pathname;
-  const blogMatch = /^\/blog\/([^/?#]+)\/?$/.exec(aliased);
-  if (blogMatch) {
-    const slug = decodeURIComponent(blogMatch[1] ?? "");
-    const post = BLOG_POSTS.find((p) => p.slug === slug);
-    if (!post) return null;
-    return {
-      hu: {
-        title: post.hu.seo_title,
-        description: post.hu.seo_description,
-        h1: post.hu.title,
-        intro: post.hu.lead,
-      },
-      en: {
-        title: post.en.seo_title,
-        description: post.en.seo_description,
-        h1: post.en.title,
-        intro: post.en.lead,
-      },
-    };
-  }
   const resolved = EN_TO_HU_SLUG.get(aliased) ?? aliased;
   return ROUTE_SEO[resolved] ?? null;
 }

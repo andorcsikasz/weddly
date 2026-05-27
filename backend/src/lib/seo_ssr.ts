@@ -16,9 +16,8 @@
 // `Host` is retained in the signal for the future host-based path (e.g.
 // adding a separate weddly.com EN-canonical) but ignored today.
 
-import { BLOG_POSTS } from "../../../shared/blog_posts";
 import { SEO_FAQ } from "../../../shared/seo_faq";
-import { enPathFor, huPathFor, lookupRouteSeo } from "../../../shared/seo_routes";
+import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
 import { db } from "../db";
 import { normalizeSlugInput } from "../domain/slug";
 
@@ -28,10 +27,20 @@ export const CANONICAL_HOST = HU_HOST;
 
 export type SeoLocale = "hu" | "en";
 
-/** Public, indexable paths. Anything under /app, /onboarding, /invite/,
- *  /rsvp/, /reset-password/ is private-by-token and stays in robots.txt
- *  Disallow. Keep in sync with frontend/src/App.tsx public routes. */
-const PUBLIC_PATHS: ReadonlyArray<{ path: string; priority: string; changefreq: string }> = [
+interface SitemapPath {
+  path: string;
+  priority: string;
+  changefreq: string;
+}
+
+/** Static public paths. Blog post URLs are added dynamically at sitemap
+ *  render time (see `publishedBlogPostPaths`) so admin edits ship into the
+ *  sitemap without a backend redeploy.
+ *
+ *  Anything under /app, /onboarding, /invite/, /rsvp/, /reset-password/ is
+ *  private-by-token and stays in robots.txt Disallow. Keep in sync with
+ *  frontend/src/App.tsx public routes. */
+const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
   // Tool pages — high SEO value (each targets a long-tail HU query the
   // landing can't rank for on its own) so they get a higher priority than
@@ -43,16 +52,7 @@ const PUBLIC_PATHS: ReadonlyArray<{ path: string; priority: string; changefreq: 
   { path: "/eszkozok/ultetesi-rend-keszito", priority: "0.8", changefreq: "monthly" },
   { path: "/eszkozok/rsvp-szoveg-generator", priority: "0.8", changefreq: "monthly" },
   { path: "/signup", priority: "0.7", changefreq: "monthly" },
-  // Blog index + each post. The post URLs share the same path on HU + EN
-  // (no slug-pair translation; content is bilingual under one slug, the
-  // visitor's locale picks which copy renders) and the post slugs come from
-  // BLOG_POSTS so adding a new post automatically appears in the sitemap.
   { path: "/blog", priority: "0.6", changefreq: "weekly" },
-  ...BLOG_POSTS.map((post) => ({
-    path: `/blog/${post.slug}`,
-    priority: "0.5",
-    changefreq: "monthly",
-  })),
   { path: "/vendors", priority: "0.6", changefreq: "monthly" },
   { path: "/about", priority: "0.5", changefreq: "monthly" },
   { path: "/login", priority: "0.5", changefreq: "monthly" },
@@ -61,6 +61,70 @@ const PUBLIC_PATHS: ReadonlyArray<{ path: string; priority: string; changefreq: 
   { path: "/subscription-terms", priority: "0.3", changefreq: "yearly" },
   { path: "/imprint", priority: "0.3", changefreq: "yearly" },
 ];
+
+/** Per-post URLs read from the `blog_posts` table at request time. Drafts
+ *  (`is_published = 0`) are excluded so a half-written post doesn't end up
+ *  in Google's index before the admin flips it live. */
+function publishedBlogPostPaths(): SitemapPath[] {
+  const rows = db
+    .prepare("SELECT slug FROM blog_posts WHERE is_published = 1 ORDER BY published_at DESC")
+    .all() as { slug: string }[];
+  return rows.map((r) => ({
+    path: `/blog/${r.slug}`,
+    priority: "0.5",
+    changefreq: "monthly",
+  }));
+}
+
+/** `/blog/:slug` SSR meta lookup. Returns null for non-blog paths and for
+ *  any slug that doesn't resolve (or whose post is a draft). The shared
+ *  `lookupRouteSeo` no longer knows about blog posts — keeping the DB read
+ *  here means admin edits land in the SSR'd <head> on the next request
+ *  without a backend redeploy. */
+function lookupBlogPostSeo(pathname: string): RouteSeo | null {
+  const match = /^\/blog\/([^/?#]+)\/?$/.exec(pathname);
+  if (!match) return null;
+  const slug = match[1] ?? "";
+  if (!slug) return null;
+  const row = db
+    .prepare(
+      "SELECT hu_title, hu_lead, hu_seo_title, hu_seo_description, en_title, en_lead, en_seo_title, en_seo_description FROM blog_posts WHERE slug = ? AND is_published = 1",
+    )
+    .get(slug) as
+    | {
+        hu_title: string;
+        hu_lead: string;
+        hu_seo_title: string;
+        hu_seo_description: string;
+        en_title: string;
+        en_lead: string;
+        en_seo_title: string;
+        en_seo_description: string;
+      }
+    | undefined;
+  if (!row) return null;
+  return {
+    hu: {
+      title: row.hu_seo_title,
+      description: row.hu_seo_description,
+      h1: row.hu_title,
+      intro: row.hu_lead,
+    },
+    en: {
+      title: row.en_seo_title,
+      description: row.en_seo_description,
+      h1: row.en_title,
+      intro: row.en_lead,
+    },
+  };
+}
+
+/** Resolve route SEO: tries the blog DB first, then the static route map.
+ *  Wraps `lookupRouteSeo` so the rest of seo_ssr.ts doesn't have to care
+ *  whether a path is blog-backed or static. */
+function resolveRouteSeo(pathname: string): RouteSeo | null {
+  return lookupBlogPostSeo(pathname) ?? lookupRouteSeo(pathname);
+}
 
 interface LocaleMeta {
   lang: string;
@@ -362,7 +426,7 @@ function buildHeadBlock(opts: {
         : `${wm.display_name} — schedule, venue and RSVP in one place.`;
     twDescription = description;
   } else {
-    const routeSeo = lookupRouteSeo(path);
+    const routeSeo = resolveRouteSeo(path);
     title = routeSeo ? routeSeo[locale].title : defaultMeta.title;
     description = routeSeo ? routeSeo[locale].description : defaultMeta.description;
     twDescription = routeSeo ? routeSeo[locale].description : defaultMeta.twDescription;
@@ -402,7 +466,7 @@ function buildHeadBlock(opts: {
  *  to give Googlebot a distinct <h1> + paragraph on each public URL
  *  instead of nine copies of the landing's hero. */
 function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
-  const routeSeo = lookupRouteSeo(pathname);
+  const routeSeo = resolveRouteSeo(pathname);
   if (!routeSeo) return null;
   const entry = routeSeo[locale];
   // Footer link target for the imprint route depends on locale (HU mounts at
@@ -562,7 +626,11 @@ export function renderSitemapXml(_host: string | null): string {
   }
 
   const blocks: string[] = [];
-  for (const { path, priority, changefreq } of PUBLIC_PATHS) {
+  const allPaths: ReadonlyArray<SitemapPath> = [
+    ...STATIC_PUBLIC_PATHS,
+    ...publishedBlogPostPaths(),
+  ];
+  for (const { path, priority, changefreq } of allPaths) {
     const huPath = huPathFor(path);
     const enPath = enPathFor(path);
     const huHere = `https://${CANONICAL_HOST}${huPath}`;

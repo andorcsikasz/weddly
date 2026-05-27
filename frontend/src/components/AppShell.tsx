@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Camera,
   ChevronsLeft,
+  BookOpen,
   ChevronsRight,
   ClipboardList,
   Coins,
@@ -252,6 +253,12 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     to: "/app/admin/categories",
     labelKey: "admin.nav_taxonomy",
     icon: <LayoutList size={18} />,
+    group: "manage",
+  },
+  {
+    to: "/app/admin/blog",
+    labelKey: "admin.nav_blog",
+    icon: <BookOpen size={18} />,
     group: "manage",
   },
   // ── Insights ──────────────────────────────────────────────────────

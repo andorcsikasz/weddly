@@ -44,7 +44,9 @@ import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
 import { SEO_FAQ } from "@shared/seo_faq";
-import { listBlogPosts } from "@shared/blog_posts";
+import type { BlogPost } from "@shared/blog_posts";
+import { blogApi } from "../lib/endpoints";
+import { BlogCover } from "./BlogIndexPage";
 
 // Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
 // these to reserve layout space, so the page doesn't jump as below-fold
@@ -601,15 +603,31 @@ function StatCounter({ value, label }: { value: string; label: string }) {
   );
 }
 
-/** Magazine teaser: three most recent posts from shared/blog_posts.ts, each
- *  linking into /blog/:slug, with a "Browse the magazine" CTA into the
- *  index. Editorial card layout mirrors BlogIndexPage so the section reads
- *  like an excerpt of the destination, not a separate widget. Self-hides
- *  if the catalogue is empty so the landing never shows a stub. */
+/** Blog teaser: three most recent published posts pulled live from
+ *  GET /api/blog/posts. Tile-style layout mirrors `/blog` so the section
+ *  reads like an excerpt of the index. Self-hides if the fetch fails or
+ *  the catalogue is empty so the landing never shows a stub. */
 function BlogTeaser() {
   const { t, locale } = useT();
-  const posts = listBlogPosts().slice(0, 3);
-  if (posts.length === 0) return null;
+  const [posts, setPosts] = useState<BlogPost[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    blogApi
+      .list()
+      .then((r) => {
+        if (!cancelled) setPosts(r.posts.slice(0, 3));
+      })
+      .catch(() => {
+        if (!cancelled) setPosts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!posts || posts.length === 0) return null;
+
   const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
     year: "numeric",
     month: "long",
@@ -618,7 +636,7 @@ function BlogTeaser() {
   });
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <header className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("blog.section_eyebrow")}
@@ -640,21 +658,24 @@ function BlogTeaser() {
               <li key={post.slug}>
                 <Link
                   to={`/blog/${post.slug}`}
-                  className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:focus-visible:ring-offset-umber-900"
+                  className="group block overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
-                    {post.category[locale]}
-                  </p>
-                  <h3 className="mt-3 font-serif text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
-                    {copy.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
-                    {copy.lead}
-                  </p>
-                  <div className="mt-4 flex items-center gap-3 text-xs text-ink-500 dark:text-umber-300">
-                    <time dateTime={post.published_at}>{dateLabel}</time>
-                    <span aria-hidden>·</span>
-                    <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
+                  <BlogCover url={post.cover_image_url ?? null} alt={copy.title} />
+                  <div className="p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
+                      {post.category[locale]}
+                    </p>
+                    <h3 className="mt-3 font-serif text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
+                      {copy.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+                      {copy.lead}
+                    </p>
+                    <div className="mt-4 flex items-center gap-3 text-xs text-ink-500 dark:text-umber-300">
+                      <time dateTime={post.published_at}>{dateLabel}</time>
+                      <span aria-hidden>·</span>
+                      <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
+                    </div>
                   </div>
                 </Link>
               </li>

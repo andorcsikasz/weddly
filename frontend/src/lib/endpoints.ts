@@ -41,6 +41,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
+import type { BlogPost } from "@shared/blog_posts";
 import type { GuestPortalView } from "@shared/guest_portal";
 import type { PublicWeddingResponse } from "@shared/wedding_website";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
@@ -110,6 +111,78 @@ import { ApiError, apiFetch, getToken } from "./api";
 export const publicStatsApi = {
   get: () => apiFetch<{ couples: number; rsvps: number; ts: number }>("GET", "/api/public/stats"),
 };
+
+/** Public blog index + per-slug detail. Drafts (`is_published = false`) are
+ *  excluded server-side, so any post the caller receives is safe to render. */
+export const blogApi = {
+  list: () => apiFetch<{ posts: BlogPost[] }>("GET", "/api/blog/posts"),
+  get: (slug: string) =>
+    apiFetch<{ post: BlogPost }>("GET", `/api/blog/posts/${encodeURIComponent(slug)}`),
+};
+
+/** Admin-only CRUD on blog posts. Mirrors `blogApi` but includes drafts +
+ *  write operations. Server gates every endpoint with `requireAdmin`. */
+export const adminBlogApi = {
+  list: () => apiFetch<{ posts: BlogPost[] }>("GET", "/api/admin/blog/posts"),
+  get: (id: number) => apiFetch<{ post: BlogPost }>("GET", `/api/admin/blog/posts/${id}`),
+  create: (payload: AdminBlogPostPayload) =>
+    apiFetch<{ post: BlogPost }>("POST", "/api/admin/blog/posts", payload),
+  update: (id: number, payload: AdminBlogPostPayload) =>
+    apiFetch<{ post: BlogPost }>("PUT", `/api/admin/blog/posts/${id}`, payload),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/blog/posts/${id}`),
+  clearCover: (id: number) =>
+    apiFetch<{ post: BlogPost }>("DELETE", `/api/admin/blog/posts/${id}/cover`),
+  uploadCover: async (id: number, file: File): Promise<{ post: BlogPost }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch(`/api/admin/blog/posts/${id}/cover`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Upload failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { post: BlogPost };
+  },
+};
+
+export interface AdminBlogPostPayload {
+  slug: string;
+  published_at: string;
+  read_minutes: number;
+  cover_image_url: string | null;
+  is_published: boolean;
+  hu: {
+    category: string;
+    title: string;
+    lead: string;
+    seo_title: string;
+    seo_description: string;
+    body: import("@shared/blog_posts").BlogBlock[];
+  };
+  en: {
+    category: string;
+    title: string;
+    lead: string;
+    seo_title: string;
+    seo_description: string;
+    body: import("@shared/blog_posts").BlogBlock[];
+  };
+}
 
 /** Public landing-page "try the demo" endpoint. Spins up a brand-new
  *  Shrek & Fiona workspace and returns a session token. No registration,
