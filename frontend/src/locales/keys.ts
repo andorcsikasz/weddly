@@ -4113,13 +4113,18 @@ export interface LocaleMessages {
     block_h2: string;
     block_h3: string;
     block_ul: string;
+    block_blockquote: string;
     block_cta: string;
     add_p: string;
     add_h2: string;
     add_h3: string;
     add_ul: string;
+    add_blockquote: string;
     add_cta: string;
     add_ul_item: string;
+    blockquote_text: string;
+    blockquote_text_placeholder: string;
+    blockquote_cite: string;
     cta_lead: string;
     cta_label: string;
     cta_href: string;

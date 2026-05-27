@@ -11,6 +11,9 @@ export type BlogBlock =
   | { type: "h2"; text: string }
   | { type: "h3"; text: string }
   | { type: "ul"; items: string[] }
+  /** Pulled-out quote. `text` carries the quote body (paragraphs split on
+   *  `\n\n`); `cite` is the source attribution (e.g. "1Korinthus 13,4-8"). */
+  | { type: "blockquote"; text: string; cite: string }
   | { type: "cta"; lead: string; href: string; label: string };
 
 export interface BlogPostLocale {
@@ -42,6 +45,544 @@ export interface BlogPost {
 }
 
 export const SEED_BLOG_POSTS: BlogPost[] = [
+  // ── 0. Bibliai idézetek ────────────────────────────────────────────
+  {
+    slug: "bibliai-idezetek-eskuvore",
+    published_at: "2026-05-27",
+    read_minutes: 9,
+    category: { hu: "Idézetek", en: "Verses" },
+    hu: {
+      title: "Bibliai idézetek esküvőre: Károli igék szeretetről, házasságról és közös útról",
+      lead: "Összegyűjtöttük a legszebb bibliai igéket Károli nyelvezetben: szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
+      seo_title: "Bibliai idézetek esküvőre: 30+ Károli ige szeretetről és házasságról",
+      seo_description:
+        "Összegyűjtöttük a legszebb bibliai idézeteket esküvőre Károli nyelvezetben: igék szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
+      body: [
+        {
+          type: "p",
+          text: "Sokan keresnek esküvőre bibliai idézetet, amit beleírnak a meghívóba, az esküvői weboldalra vagy a fogadalom mellé. Ez a poszt egy bővített, kategóriákra bontott Károli-gyűjtemény: igék szeretetről, házasságról, közös útról, tiszteletről és megbocsátásról.",
+        },
+        {
+          type: "p",
+          text: "A Károli fordítást azért használjuk, mert a magyar esküvői hagyományban ez a klasszikus, ünnepélyes hangulat. Ha modernebb fordítást kerestek, a Magyar Bibliatársulat új fordítása vagy az Egyszerű fordítás is jó alternatíva. A blog végén GYIK-ben kitérünk erre is.",
+        },
+        { type: "h2", text: "Rövid bibliai idézetek esküvői meghívóra" },
+        {
+          type: "p",
+          text: "Ezeket a rövid igéket jól lehet használni meghívón, ültetőkártyán, esküvői weboldal nyitólapon vagy a vendégkönyv mottójaként.",
+        },
+        {
+          type: "ul",
+          items: [
+            "„Ezek között pedig legnagyobb a szeretet.” — 1Korinthus 13,13",
+            "„Minden dolgotok szeretetben menjen végbe!” — 1Korinthus 16,14",
+            "„Szeretteim, szeressük egymást.” — 1János 4,7",
+            "„Az Isten szeretet.” — 1János 4,8",
+            "„A szeretetben nincsen félelem.” — 1János 4,18",
+            "„Nem jó az embernek egyedül lenni.” — 1Mózes 2,18",
+            "„Lesznek ketten egy testté.” — Márk 10,8",
+            "„Amit az Isten egybe szerkesztett, ember el ne válassza.” — Márk 10,9",
+            "„A hármas kötél nem hamar szakad el.” — Prédikátor 4,12",
+            "„Az én szerelmesem enyém, és én az övé.” — Énekek éneke 2,16",
+            "„Erős a szeretet, mint a halál.” — Énekek éneke 8,6",
+            "„Sok vizek el nem olthatnák e szeretetet.” — Énekek éneke 8,7",
+            "„A tiszteletadásban egymást megelőzők legyetek.” — Róma 12,10",
+            "„Legyetek pedig egymáshoz jóságosak, irgalmasok.” — Efézus 4,32",
+            "„Öltözzétek föl a szeretetet.” — Kolossé 3,14",
+          ],
+        },
+        { type: "h2", text: "Bibliai idézetek a szeretetről" },
+        { type: "h3", text: "1Korinthus 13,1-3" },
+        {
+          type: "blockquote",
+          text: "Ha embereknek vagy angyaloknak nyelvén szólok is, szeretet pedig nincsen én bennem, olyanná lettem, mint a zengő érc vagy pengő cimbalom.\n\nÉs ha jövendőt tudok is mondani, és minden titkot és minden tudományt ismerek is; és ha egész hitem van is, úgyannyira, hogy hegyeket mozdíthatok ki helyökről, szeretet pedig nincsen én bennem, semmi vagyok.\n\nÉs ha vagyonomat mind felétetem is, és ha testemet tűzre adom is, szeretet pedig nincsen én bennem, semmi hasznom abból.",
+          cite: "1Korinthus 13,1-3",
+        },
+        {
+          type: "p",
+          text: "Ez a rész erősen indítja a szeretet himnuszát: azt mondja, hogy minden képesség, teljesítmény és áldozat üres szeretet nélkül. Esküvői blogban jó bevezető a szeretet valódi jelentéséhez.",
+        },
+        { type: "h3", text: "1Korinthus 13,4-8" },
+        {
+          type: "blockquote",
+          text: "A szeretet hosszútűrő, kegyes; a szeretet nem irígykedik, a szeretet nem kérkedik, nem fuvalkodik fel.\n\nNem cselekszik éktelenül, nem keresi a maga hasznát, nem gerjed haragra, nem rójja fel a gonoszt,\n\nNem örül a hamisságnak, de együtt örül az igazsággal;\n\nMindent elfedez, mindent hiszen, mindent remél, mindent eltűr.\n\nA szeretet soha el nem fogy.",
+          cite: "1Korinthus 13,4-8",
+        },
+        {
+          type: "p",
+          text: "Ez a legismertebb esküvői bibliai szakasz. Nem csak romantikus érzésként írja le a szeretetet, hanem türelemként, jóságként, hűségként és kitartásként.",
+        },
+        { type: "h3", text: "1Korinthus 13,11-13" },
+        {
+          type: "blockquote",
+          text: "Mikor gyermek valék, úgy szóltam, mint gyermek, úgy gondolkodtam, mint gyermek, úgy értettem, mint gyermek: minekutána pedig férfiúvá lettem, elhagytam a gyermekhez illő dolgokat.\n\nMert most tükör által homályosan látunk, akkor pedig színről színre; most rész szerint van bennem az ismeret, akkor pedig úgy ismerek majd, amint én is megismertettem.\n\nMost azért megmarad a hit, remény, szeretet, e három; ezek között pedig legnagyobb a szeretet.",
+          cite: "1Korinthus 13,11-13",
+        },
+        {
+          type: "p",
+          text: "Ez a rész a szeretetet az érettséghez kapcsolja. Szép üzenet egy esküvőn: a házasságban a szeretet nem gyermeki rajongás marad, hanem érett döntéssé és hűséggé válik.",
+        },
+        { type: "h3", text: "1János 4,7-8" },
+        {
+          type: "blockquote",
+          text: "Szeretteim, szeressük egymást: mert a szeretet az Istentől van; és mindaz, aki szeret, az Istentől született, és ismeri az Istent.\n\nAki nem szeret, nem ismerte meg az Istent; mert az Isten szeretet.",
+          cite: "1János 4,7-8",
+        },
+        {
+          type: "p",
+          text: "Ez az egyik legerősebb bibliai szakasz arról, hogy a szeretet nem pusztán emberi érzés, hanem Istentől ered. Templomi esküvőn különösen szép választás.",
+        },
+        { type: "h3", text: "1János 4,11-12" },
+        {
+          type: "blockquote",
+          text: "Szeretteim, ha így szeretett minket az Isten, nekünk is szeretnünk kell egymást.\n\nAz Istent soha senki nem látta: Ha szeretjük egymást, az Isten bennünk marad, és az ő szeretete teljessé lett bennünk.",
+          cite: "1János 4,11-12",
+        },
+        {
+          type: "p",
+          text: "A szeretet itt nemcsak kimondott szó, hanem láthatóvá váló jelenlét egymás életében.",
+        },
+        { type: "h3", text: "1János 4,16-18" },
+        {
+          type: "blockquote",
+          text: "És mi megismertük és elhittük az Istennek irántunk való szeretetét.\n\nAz Isten szeretet; és aki a szeretetben marad, az Istenben marad, és az Isten is ő benne.\n\nA szeretetben nincsen félelem; sőt a teljes szeretet kiűzi a félelmet.",
+          cite: "1János 4,16-18",
+        },
+        {
+          type: "p",
+          text: "A házasság egyik alapja a bizalom. Ez az ige jól használható olyan részben, amely a közös jövőről, biztonságról és egymásban való megnyugvásról szól.",
+        },
+        { type: "h2", text: "Bibliai idézetek házasságról" },
+        { type: "h3", text: "1Mózes 2,18" },
+        {
+          type: "blockquote",
+          text: "És monda az Úr Isten: Nem jó az embernek egyedül lenni; szerzek néki segítő társat, hozzá illőt.",
+          cite: "1Mózes 2,18",
+        },
+        {
+          type: "p",
+          text: "A házasság bibliai gondolatának egyik alapja: az ember kapcsolatra, társra és közös életre teremtetett.",
+        },
+        { type: "h3", text: "1Mózes 2,21-24" },
+        {
+          type: "blockquote",
+          text: "Bocsáta tehát az Úr Isten mély álmot az emberre, és ez elaluvék. Akkor kivőn egyet annak oldalbordái közül, és hússal tölté be annak helyét.\n\nÉs alkotá az Úr Isten azt az oldalbordát, amelyet kivett vala az emberből, asszonynyá, és vivé az emberhez.\n\nÉs monda az ember: Ez már csontomból való csont, és testemből való test.\n\nAnnakokáért elhagyja a férfiú az ő atyját és az ő anyját, és ragaszkodik feleségéhez: és lesznek egy testté.",
+          cite: "1Mózes 2,21-24",
+        },
+        {
+          type: "p",
+          text: "Hosszabb szertartási olvasmánynak jó. Nemcsak a házasság tényét mondja ki, hanem megmutatja az összetartozás, ragaszkodás és új családdá válás bibliai alapját.",
+        },
+        { type: "h3", text: "Máté 19,4-6" },
+        {
+          type: "blockquote",
+          text: "Ő pedig felelvén, monda: Nem olvastátok-é, hogy a teremtő kezdettől fogva férfiúvá és asszonynyá teremté őket,\n\nÉs ezt mondá: Annak okáért elhagyja a férfiú atyját és anyját; és ragaszkodik feleségéhez, és lesznek ketten egy testté.\n\nÚgy hogy többé nem kettő, hanem egy test. Amit azért az Isten egybeszerkesztett, ember el ne válassza.",
+          cite: "Máté 19,4-6",
+        },
+        {
+          type: "p",
+          text: "Az egyik legerősebb bibliai szakasz a házasság szövetségi jellegéről. Ünnepélyes, templomi esküvőhöz kifejezetten illik.",
+        },
+        { type: "h3", text: "Márk 10,6-9" },
+        {
+          type: "blockquote",
+          text: "De a teremtés kezdete óta férfiúvá és asszonnyá teremté őket az Isten.\n\nAnnakokáért elhagyja az ember az ő atyját és anyját; és ragaszkodik a feleségéhez,\n\nÉs lesznek ketten egy testté! Azért többé nem két, hanem egy test.\n\nAnnakokáért amit az Isten egybe szerkesztett, ember el ne válassza.",
+          cite: "Márk 10,6-9",
+        },
+        {
+          type: "p",
+          text: "A Máté 19 párhuzamos szakasza. Ha több házasságról szóló igét mutattok, elég az egyiket hosszabban idézni, a másikat pedig alternatívaként ajánlani.",
+        },
+        { type: "h3", text: "Efézus 5,21" },
+        {
+          type: "blockquote",
+          text: "Engedelmesek legyetek egymásnak Isten félelmében.",
+          cite: "Efézus 5,21",
+        },
+        {
+          type: "p",
+          text: "Modern blogban ezt érdemes külön kiemelni, mert az Efézus 5 házassági szakaszának kulcsa a kölcsönösség: egymás iránti alázat, figyelem és tisztelet.",
+        },
+        { type: "h3", text: "Efézus 5,25" },
+        {
+          type: "blockquote",
+          text: "Ti férfiak, szeressétek a ti feleségeteket, miképpen a Krisztus is szerette az egyházat, és Önmagát adta azért.",
+          cite: "Efézus 5,25",
+        },
+        {
+          type: "p",
+          text: "Ezt érzékenyen érdemes magyarázni. A hangsúly nem uralmon van, hanem önátadó, felelősségteljes szereteten.",
+        },
+        { type: "h3", text: "Efézus 5,28-33" },
+        {
+          type: "blockquote",
+          text: "Úgy kell a férfiaknak szeretni az ő feleségöket, mint az ő tulajdon testöket. Aki szereti az ő feleségét, önmagát szereti.\n\nMert soha senki az ő tulajdon testét nem gyűlölte; hanem táplálgatja és ápolgatja azt, miképpen az Úr is az egyházat.\n\nAnnakokáért elhagyja az ember atyját és anyját, és ragaszkodik az ő feleségéhez; és lesznek ketten egy testté.\n\nHanem azért ti is egyen-egyen, ki-ki az ő feleségét úgy szeresse, mint önmagát.",
+          cite: "Efézus 5,28-33",
+        },
+        {
+          type: "p",
+          text: "Hosszabb, komolyabb, teológiai szakasz. Jól működik, ha magyarázattal együtt szerepel: a házasságban a szeretet gondoskodó, önátadó és felelősségteljes.",
+        },
+        { type: "h2", text: "Bibliai idézetek közös útról és kitartásról" },
+        { type: "h3", text: "Prédikátor 4,9-10" },
+        {
+          type: "blockquote",
+          text: "Sokkal jobban van dolga a kettőnek, hogynem az egynek; mert azoknak jó jutalmok van az ő munkájokból.\n\nMert ha elesnek is, az egyik felemeli a társát.",
+          cite: "Prédikátor 4,9-10",
+        },
+        {
+          type: "p",
+          text: "Emberközeli idézet. Nem tökéletes életet ígér, hanem azt mutatja meg, miért ajándék a társ: van, aki felemel.",
+        },
+        { type: "h3", text: "Prédikátor 4,11-12" },
+        {
+          type: "blockquote",
+          text: "Hogyha együtt feküsznek is ketten, megmelegszenek; az egyedülvaló pedig mimódon melegedhetik meg?\n\nÉs ha az egyiket megtámadja is valaki, ketten ellene állhatnak annak; és a hármas kötél nem hamar szakad el.",
+          cite: "Prédikátor 4,11-12",
+        },
+        {
+          type: "p",
+          text: "A „hármas kötél” keresztény esküvőn különösen erős kép: a pár és Isten kapcsolatát is jelképezheti.",
+        },
+        { type: "h3", text: "Ruth 1,16-17" },
+        {
+          type: "blockquote",
+          text: "Ne unszolj engem, hogy elhagyjalak, hogy visszaforduljak tőled. Mert ahová te mégy, oda megyek, és ahol te megszállsz, ott szállok meg; néped az én népem, és Istened az én Istenem.\n\nAhol te meghalsz, ott halok meg, ott temessenek el engem is.",
+          cite: "Ruth 1,16-17",
+        },
+        {
+          type: "p",
+          text: "Bár eredetileg nem házastársi fogadalom, esküvőn sokan használják a hűség, ragaszkodás és közös sorsvállalás képe miatt.",
+        },
+        { type: "h3", text: "Zsoltárok 143,8" },
+        {
+          type: "blockquote",
+          text: "Korán hallasd velem kegyelmedet, mert bízom benned; jelentsd meg nékem az útat, melyen járjak, mert hozzád emelem lelkemet.",
+          cite: "Zsoltárok 143,8",
+        },
+        {
+          type: "p",
+          text: "Szép választás közös életkezdéshez: útmutatásról, bizalomról és Istenre figyelésről szól.",
+        },
+        { type: "h3", text: "Példabeszédek 3,3-4" },
+        {
+          type: "blockquote",
+          text: "Az irgalmasság és igazság ne hagyjanak el téged: kösd azokat a te nyakadra, írd be azokat a te szívednek táblájára;\n\nÍgy nyersz kedvességet és jó értelmet Istennek és embernek szemei előtt.",
+          cite: "Példabeszédek 3,3-4",
+        },
+        {
+          type: "p",
+          text: "A házasságban nemcsak érzésekre van szükség, hanem hűségre, igazságra és irgalmasságra is.",
+        },
+        { type: "h2", text: "Bibliai idézetek tiszteletről és megbocsátásról" },
+        { type: "h3", text: "Efézus 4,1-3" },
+        {
+          type: "blockquote",
+          text: "Kérlek azért titeket én, ki fogoly vagyok az Úrban, hogy járjatok úgy, mint illik elhívatásotokhoz, melylyel elhívattatok.\n\nTeljes alázatossággal és szelídséggel, hosszútűréssel, elszenvedvén egymást szeretetben,\n\nIgyekezvén megtartani a Lélek egységét a békességnek kötelében.",
+          cite: "Efézus 4,1-3",
+        },
+        {
+          type: "p",
+          text: "Az egyik legjobb idézet a házasság hétköznapi oldalához: alázat, szelídség, türelem, békesség.",
+        },
+        { type: "h3", text: "Efézus 4,25-26" },
+        {
+          type: "blockquote",
+          text: "Azért levetvén a hazugságot, szóljatok igazságot, kiki az ő felebarátjával: mert egymásnak tagjai vagyunk.\n\nÁm haragudjatok, de ne vétkezzetek: a nap le ne menjen a ti haragotokon.",
+          cite: "Efézus 4,25-26",
+        },
+        {
+          type: "p",
+          text: "Nagyon gyakorlati házassági üzenet: őszinteség, konfliktuskezelés, gyors megbékélés.",
+        },
+        { type: "h3", text: "Efézus 4,31-32" },
+        {
+          type: "blockquote",
+          text: "Minden mérgesség és fölgerjedés és harag és lárma és káromkodás kivettessék közületek minden gonoszsággal együtt;\n\nLegyetek pedig egymáshoz jóságosak, irgalmasok, megengedvén egymásnak, miképpen az Isten is a Krisztusban megengedett néktek.",
+          cite: "Efézus 4,31-32",
+        },
+        {
+          type: "p",
+          text: "A megbocsátásról szóló egyik legjobb újszövetségi idézet. Nem tipikus meghívós szöveg, de nagyon jó blogba vagy szertartási tanításba.",
+        },
+        { type: "h3", text: "Róma 12,9-10" },
+        {
+          type: "blockquote",
+          text: "A szeretet képmutatás nélkül való legyen. Iszonyodjatok a gonosztól, ragaszkodjatok a jóhoz.\n\nAtyafiúi szeretettel egymás iránt gyöngédek; a tiszteletadásban egymást megelőzők legyetek.",
+          cite: "Róma 12,9-10",
+        },
+        {
+          type: "p",
+          text: "A szeretet mellé odateszi a tiszteletet. Kiegyensúlyozott, emberközeli ige.",
+        },
+        { type: "h3", text: "Kolossé 3,12-14" },
+        {
+          type: "blockquote",
+          text: "Öltözzétek föl azért mint az Istennek választottai, szentek és szeretettek, könyörületes szívet, jóságosságot, alázatosságot, szelídséget, hosszútűrést;\n\nElszenvedvén egymást és megbocsátván kölcsönösen egymásnak, ha valakinek valaki ellen panasza volna; miképen a Krisztus is megbocsátott néktek, akképen ti is;\n\nMindezeknek fölébe pedig öltözzétek föl a szeretetet, mint amely a tökéletességnek kötele.",
+          cite: "Kolossé 3,12-14",
+        },
+        {
+          type: "p",
+          text: "Gyönyörű házassági program: jóság, alázat, szelídség, türelem, megbocsátás, szeretet.",
+        },
+        { type: "h2", text: "Romantikus bibliai idézetek az Énekek énekéből" },
+        { type: "h3", text: "Énekek éneke 2,10-13" },
+        {
+          type: "blockquote",
+          text: "Szóla az én szerelmesem, és monda nékem: Kelj fel én mátkám, én szépem, és jőjj.\n\nMert ímé a tél elmúlt, az eső elmúlt, elment.\n\nVirágok láttatnak a földön, az éneklésnek ideje eljött.",
+          cite: "Énekek éneke 2,10-13",
+        },
+        {
+          type: "p",
+          text: "Költői, tavaszias, romantikus idézet. Különösen jól illik szabadtéri, tavaszi vagy finoman elegáns esküvőkhöz.",
+        },
+        { type: "h3", text: "Énekek éneke 2,16" },
+        {
+          type: "blockquote",
+          text: "Az én szerelmesem enyém, és én az övé.",
+          cite: "Énekek éneke 2,16",
+        },
+        { type: "p", text: "Rövid, romantikus, meghívóra is jól illik." },
+        { type: "h3", text: "Énekek éneke 4,7" },
+        {
+          type: "blockquote",
+          text: "Mindenestől szép vagy, én mátkám, és semmi szeplő nincs benned!",
+          cite: "Énekek éneke 4,7",
+        },
+        {
+          type: "p",
+          text: "Bensőséges idézet. Inkább meghívóra, fogadalom mellé vagy kreatív esküvői weboldalra illik.",
+        },
+        { type: "h3", text: "Énekek éneke 8,6-7" },
+        {
+          type: "blockquote",
+          text: "Tégy engem mint egy pecsétet a te szívedre, mint egy pecsétet a te karodra; mert erős a szeretet, mint a halál.\n\nSok vizek el nem olthatnák e szeretetet, a folyóvizek sem boríthatnák el azt.",
+          cite: "Énekek éneke 8,6-7",
+        },
+        {
+          type: "p",
+          text: "Az egyik legszebb költői bibliai idézet a szeretetről. Kifejezetten jó elegáns meghívóra vagy szertartásfüzetbe.",
+        },
+        { type: "h2", text: "Melyik bibliai idézet illik hozzátok?" },
+        {
+          type: "p",
+          text: "Néhány gondolat a választáshoz: gondoljatok arra, milyen hangulatot szeretnétek megütni. A klasszikus, ünnepélyes Károli-szöveg illik a templomi esküvőhöz; az Énekek éneke költőibb, jobban illik szabadtéri, romantikus szertartáshoz. Ha rövid igét akartok a meghívóra, az 1Korinthus 13,13 vagy az Énekek éneke 2,16 mindig jól mutat.",
+        },
+        {
+          type: "p",
+          text: "Ha vegyes vallású vendégkör jön, érdemes egy olyan igét választani, amely Istentől függetlenül is érthető emberközeli üzenetet hordoz — például a Prédikátor 4 vagy a Kolossé 3.",
+        },
+        {
+          type: "cta",
+          lead: "Ha az esküvőtök szervezésében is rendet szeretnétek (vendéglista, költségvetés, RSVP, ültetés egy helyen), próbáljátok ki a Wēddly-t.",
+          href: "/signup",
+          label: "Ingyenes indítás",
+        },
+        { type: "h2", text: "Gyakori kérdések" },
+        { type: "h3", text: "Melyik a legismertebb bibliai idézet esküvőre?" },
+        {
+          type: "p",
+          text: "Az egyik legismertebb az 1Korinthus 13, különösen a szeretet himnusza: „A szeretet hosszútűrő, kegyes…” és a záró gondolat: „legnagyobb a szeretet”.",
+        },
+        { type: "h3", text: "Melyik bibliai idézet jó esküvői meghívóra?" },
+        {
+          type: "p",
+          text: "Rövid meghívóra jó választás az 1Korinthus 13,13, az 1János 4,7, a Prédikátor 4,12 vagy az Énekek éneke 2,16.",
+        },
+        { type: "h3", text: "Melyik bibliai idézet szól a házasságról?" },
+        {
+          type: "p",
+          text: "A házasságról szóló legismertebb igék közé tartozik az 1Mózes 2,24, a Máté 19,4-6 és a Márk 10,6-9.",
+        },
+        { type: "h3", text: "Melyik bibliai idézet szól a szeretetről?" },
+        {
+          type: "p",
+          text: "Az 1Korinthus 13, az 1János 4 és az Énekek éneke 8 különösen szép szakaszokat tartalmaz a szeretetről.",
+        },
+        { type: "h3", text: "Károli vagy új fordítású idézetet válasszunk?" },
+        {
+          type: "p",
+          text: "A Károli ünnepélyesebb, klasszikusabb hangulatú. Az új fordítás közérthetőbb és modernebb. Esküvői blogban érdemes Károlit idézni, és mellé rövid, saját magyarázatot írni.",
+        },
+      ],
+    },
+    en: {
+      title: "Bible verses for your wedding: love, marriage and shared life",
+      lead: "A curated set of Bible verses (KJV) for invitations, ceremonies and vows: love, marriage, faithfulness and forgiveness.",
+      seo_title: "Bible verses for weddings: KJV passages on love and marriage · Weddly",
+      seo_description:
+        "A curated set of Bible verses for weddings in the KJV translation: love, marriage, faithfulness, forgiveness and shared life.",
+      body: [
+        {
+          type: "p",
+          text: "Many couples want a Bible verse on the invitation, on the wedding website, or as part of the vows. Below is a curated KJV set, grouped by theme: love, marriage, shared life, respect and forgiveness.",
+        },
+        { type: "h2", text: "Short verses for invitations" },
+        {
+          type: "ul",
+          items: [
+            "\"The greatest of these is love.\" — 1 Corinthians 13:13",
+            "\"Let all your things be done with charity.\" — 1 Corinthians 16:14",
+            "\"Beloved, let us love one another.\" — 1 John 4:7",
+            "\"God is love.\" — 1 John 4:8",
+            "\"There is no fear in love.\" — 1 John 4:18",
+            "\"It is not good that the man should be alone.\" — Genesis 2:18",
+            "\"They twain shall be one flesh.\" — Mark 10:8",
+            "\"What God hath joined together, let not man put asunder.\" — Mark 10:9",
+            "\"A threefold cord is not quickly broken.\" — Ecclesiastes 4:12",
+            "\"I am my beloved's, and my beloved is mine.\" — Song of Solomon 2:16",
+            "\"Love is strong as death.\" — Song of Solomon 8:6",
+          ],
+        },
+        { type: "h2", text: "On love" },
+        { type: "h3", text: "1 Corinthians 13:4-8" },
+        {
+          type: "blockquote",
+          text: "Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up,\n\nDoth not behave itself unseemly, seeketh not her own, is not easily provoked, thinketh no evil;\n\nRejoiceth not in iniquity, but rejoiceth in the truth;\n\nBeareth all things, believeth all things, hopeth all things, endureth all things.\n\nCharity never faileth.",
+          cite: "1 Corinthians 13:4-8",
+        },
+        {
+          type: "p",
+          text: "The best-known wedding passage. It describes love not as feeling but as patience, kindness, faithfulness and endurance.",
+        },
+        { type: "h3", text: "1 John 4:7-8" },
+        {
+          type: "blockquote",
+          text: "Beloved, let us love one another: for love is of God; and every one that loveth is born of God, and knoweth God.\n\nHe that loveth not knoweth not God; for God is love.",
+          cite: "1 John 4:7-8",
+        },
+        {
+          type: "p",
+          text: "Roots love not in feeling but in God. A natural fit for a church or faith-led ceremony.",
+        },
+        { type: "h2", text: "On marriage" },
+        { type: "h3", text: "Genesis 2:18, 24" },
+        {
+          type: "blockquote",
+          text: "And the Lord God said, It is not good that the man should be alone; I will make him an help meet for him.\n\nTherefore shall a man leave his father and his mother, and shall cleave unto his wife: and they shall be one flesh.",
+          cite: "Genesis 2:18, 24",
+        },
+        {
+          type: "p",
+          text: "The biblical foundation for marriage: people are created for partnership and shared life.",
+        },
+        { type: "h3", text: "Mark 10:6-9" },
+        {
+          type: "blockquote",
+          text: "But from the beginning of the creation God made them male and female.\n\nFor this cause shall a man leave his father and mother, and cleave to his wife;\n\nAnd they twain shall be one flesh: so then they are no more twain, but one flesh.\n\nWhat therefore God hath joined together, let not man put asunder.",
+          cite: "Mark 10:6-9",
+        },
+        {
+          type: "p",
+          text: "The strongest passage on the covenant nature of marriage. A fitting reading for a formal ceremony.",
+        },
+        { type: "h3", text: "Ephesians 5:21, 25" },
+        {
+          type: "blockquote",
+          text: "Submitting yourselves one to another in the fear of God.\n\nHusbands, love your wives, even as Christ also loved the church, and gave himself for it.",
+          cite: "Ephesians 5:21, 25",
+        },
+        {
+          type: "p",
+          text: "Read together, the key is mutual love and self-giving service, not hierarchy.",
+        },
+        { type: "h2", text: "On shared life and endurance" },
+        { type: "h3", text: "Ecclesiastes 4:9-12" },
+        {
+          type: "blockquote",
+          text: "Two are better than one; because they have a good reward for their labour.\n\nFor if they fall, the one will lift up his fellow: but woe to him that is alone when he falleth; for he hath not another to help him up.\n\nAnd if one prevail against him, two shall withstand him; and a threefold cord is not quickly broken.",
+          cite: "Ecclesiastes 4:9-12",
+        },
+        {
+          type: "p",
+          text: "Why partnership matters: someone to lift you up. The \"threefold cord\" is often read at Christian weddings as the couple plus God.",
+        },
+        { type: "h3", text: "Ruth 1:16-17" },
+        {
+          type: "blockquote",
+          text: "Intreat me not to leave thee, or to return from following after thee: for whither thou goest, I will go; and where thou lodgest, I will lodge: thy people shall be my people, and thy God my God:\n\nWhere thou diest, will I die, and there will I be buried.",
+          cite: "Ruth 1:16-17",
+        },
+        {
+          type: "p",
+          text: "Not originally a marriage vow, but the imagery of faithfulness and shared destiny makes it a wedding favourite.",
+        },
+        { type: "h2", text: "On respect, patience and forgiveness" },
+        { type: "h3", text: "Ephesians 4:1-3" },
+        {
+          type: "blockquote",
+          text: "I therefore, the prisoner of the Lord, beseech you that ye walk worthy of the vocation wherewith ye are called,\n\nWith all lowliness and meekness, with longsuffering, forbearing one another in love;\n\nEndeavouring to keep the unity of the Spirit in the bond of peace.",
+          cite: "Ephesians 4:1-3",
+        },
+        {
+          type: "p",
+          text: "The everyday side of marriage: humility, patience, peace.",
+        },
+        { type: "h3", text: "Colossians 3:12-14" },
+        {
+          type: "blockquote",
+          text: "Put on therefore, as the elect of God, holy and beloved, bowels of mercies, kindness, humbleness of mind, meekness, longsuffering;\n\nForbearing one another, and forgiving one another, if any man have a quarrel against any: even as Christ forgave you, so also do ye.\n\nAnd above all these things put on charity, which is the bond of perfectness.",
+          cite: "Colossians 3:12-14",
+        },
+        {
+          type: "p",
+          text: "A beautiful programme for married life: kindness, humility, patience, forgiveness, love.",
+        },
+        { type: "h2", text: "Romantic passages from Song of Solomon" },
+        { type: "h3", text: "Song of Solomon 2:10-13" },
+        {
+          type: "blockquote",
+          text: "My beloved spake, and said unto me, Rise up, my love, my fair one, and come away.\n\nFor, lo, the winter is past, the rain is over and gone;\n\nThe flowers appear on the earth; the time of the singing of birds is come.",
+          cite: "Song of Solomon 2:10-13",
+        },
+        {
+          type: "p",
+          text: "Poetic, spring-tinted, romantic — a natural fit for outdoor or quietly elegant ceremonies.",
+        },
+        { type: "h3", text: "Song of Solomon 8:6-7" },
+        {
+          type: "blockquote",
+          text: "Set me as a seal upon thine heart, as a seal upon thine arm: for love is strong as death;\n\nMany waters cannot quench love, neither can the floods drown it.",
+          cite: "Song of Solomon 8:6-7",
+        },
+        {
+          type: "p",
+          text: "One of the most beautiful poetic verses on love. Works particularly well on elegant invitations or printed orders of service.",
+        },
+        { type: "h2", text: "How to choose" },
+        {
+          type: "p",
+          text: "Match the verse to the mood. A classic, formal ceremony pairs naturally with 1 Corinthians 13 or Ephesians 5; an outdoor, poetic ceremony sits better with Song of Solomon. For an invitation, a short verse (1 Corinthians 13:13, Song of Solomon 2:16) almost always works.",
+        },
+        {
+          type: "p",
+          text: "If your guest list is mixed, choose a passage with a humane, universally understandable message such as Ecclesiastes 4 or Colossians 3.",
+        },
+        {
+          type: "cta",
+          lead: "If you also want to organise the practical side of the wedding (guest list, budget, RSVP, seating) in one place, try Weddly.",
+          href: "/signup",
+          label: "Start free",
+        },
+        { type: "h2", text: "FAQ" },
+        { type: "h3", text: "What's the best-known wedding Bible passage?" },
+        {
+          type: "p",
+          text: "1 Corinthians 13, particularly the \"love is patient, love is kind\" passage and the closing line: \"the greatest of these is love.\"",
+        },
+        { type: "h3", text: "Which short verse works for an invitation?" },
+        {
+          type: "p",
+          text: "Good short options: 1 Corinthians 13:13, 1 John 4:7, Ecclesiastes 4:12, and Song of Solomon 2:16.",
+        },
+        { type: "h3", text: "Which passage best fits the marriage vows?" },
+        {
+          type: "p",
+          text: "Genesis 2:24, Mark 10:6-9 and Ephesians 5 are the strongest scriptural anchors for the covenant nature of marriage.",
+        },
+      ],
+    },
+  },
   // ── 1. Költségvetés ────────────────────────────────────────────────
   {
     slug: "eskuvoi-koltsegvetes-keszitese",

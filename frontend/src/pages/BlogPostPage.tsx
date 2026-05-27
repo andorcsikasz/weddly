@@ -167,6 +167,26 @@ function Block({ block }: { block: BlogBlock }) {
       </ul>
     );
   }
+  if (block.type === "blockquote") {
+    // Multi-paragraph quotes (e.g. a longer scripture passage) are stored
+    // with `\n\n` separators. Split here so each paragraph reads cleanly
+    // instead of collapsing into one wall of italics.
+    const paragraphs = block.text.split(/\n\n+/).map((s) => s.trim()).filter(Boolean);
+    return (
+      <figure className="!my-8 border-l-2 border-blush-400 pl-5 dark:border-blush-300 sm:pl-6">
+        <blockquote className="space-y-3 font-serif text-lg italic leading-relaxed text-ink-800 dark:text-paper-100 sm:text-xl">
+          {paragraphs.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+        </blockquote>
+        {block.cite ? (
+          <figcaption className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-ink-500 dark:text-umber-300">
+            {block.cite}
+          </figcaption>
+        ) : null}
+      </figure>
+    );
+  }
   // CTA: external links open in a new tab, internal /paths stay in-app.
   // The whole block reads as a quiet call-out card so it doesn't compete
   // with the rest of the body but is unmissable at end-of-article.

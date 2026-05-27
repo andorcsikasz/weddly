@@ -537,6 +537,8 @@ function BlockEditor({
       onChange([...blocks, { type, text: "" }]);
     } else if (type === "ul") {
       onChange([...blocks, { type: "ul", items: [""] }]);
+    } else if (type === "blockquote") {
+      onChange([...blocks, { type: "blockquote", text: "", cite: "" }]);
     } else {
       onChange([...blocks, { type: "cta", lead: "", href: "/signup", label: "" }]);
     }
@@ -598,6 +600,11 @@ function BlockEditor({
                   items={block.items}
                   onChange={(next) => update(idx, { type: "ul", items: next })}
                 />
+              ) : block.type === "blockquote" ? (
+                <BlockquoteEditor
+                  value={block}
+                  onChange={(next) => update(idx, next)}
+                />
               ) : (
                 <CtaEditor
                   value={block}
@@ -621,10 +628,51 @@ function BlockEditor({
         <Button type="button" variant="ghost" size="sm" onClick={() => add("ul")}>
           + {t("admin_blog.add_ul")}
         </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => add("blockquote")}>
+          + {t("admin_blog.add_blockquote")}
+        </Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => add("cta")}>
           + {t("admin_blog.add_cta")}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function BlockquoteEditor({
+  value,
+  onChange,
+}: {
+  value: Extract<BlogBlock, { type: "blockquote" }>;
+  onChange: (next: Extract<BlogBlock, { type: "blockquote" }>) => void;
+}) {
+  const { t } = useT();
+  return (
+    <div className="space-y-2">
+      <label className="block">
+        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {t("admin_blog.blockquote_text")}
+        </span>
+        <textarea
+          rows={5}
+          value={value.text}
+          onChange={(e) => onChange({ ...value, text: e.target.value })}
+          className="input"
+          placeholder={t("admin_blog.blockquote_text_placeholder")}
+        />
+      </label>
+      <label className="block">
+        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {t("admin_blog.blockquote_cite")}
+        </span>
+        <input
+          type="text"
+          value={value.cite}
+          onChange={(e) => onChange({ ...value, cite: e.target.value })}
+          className="input"
+          placeholder="1Korinthus 13,4-8"
+        />
+      </label>
     </div>
   );
 }

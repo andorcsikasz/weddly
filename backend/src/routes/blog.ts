@@ -113,6 +113,13 @@ function parseBlocks(raw: unknown, field: string): BlogBlock[] {
         items.push(item);
       }
       out.push({ type: "ul", items });
+    } else if (b.type === "blockquote") {
+      if (typeof b.text !== "string" || typeof b.cite !== "string") {
+        throw new HttpError(400, `${field}: blockquote needs text and cite`);
+      }
+      if (b.text.length > 4000) throw new HttpError(400, `${field}: blockquote text too long`);
+      if (b.cite.length > 200) throw new HttpError(400, `${field}: blockquote cite too long`);
+      out.push({ type: "blockquote", text: b.text, cite: b.cite });
     } else if (b.type === "cta") {
       if (typeof b.lead !== "string" || typeof b.href !== "string" || typeof b.label !== "string") {
         throw new HttpError(400, `${field}: cta block needs lead, href, label`);
