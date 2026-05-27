@@ -1,6 +1,7 @@
-import { ArrowLeft, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { BlogCoverArt } from "../components/BlogCoverArt";
 import { PublicShell } from "../components/PublicShell";
 import { blogApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -61,9 +62,9 @@ export default function BlogIndexPage() {
           // across each row, so titles or leads of different lengths
           // don't produce jagged columns.
           <ul className="mt-12 grid items-stretch gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-16">
-            {posts.map((post) => (
+            {posts.map((post, i) => (
               <li key={post.slug} className="h-full">
-                <BlogTile post={post} locale={locale} t={t} />
+                <BlogTile post={post} locale={locale} t={t} index={i + 1} />
               </li>
             ))}
           </ul>
@@ -87,10 +88,12 @@ function BlogTile({
   post,
   locale,
   t,
+  index,
 }: {
   post: BlogPost;
   locale: "hu" | "en";
   t: (key: string, vars?: Record<string, string | number>) => string;
+  index: number;
 }) {
   const copy = post[locale];
   return (
@@ -98,7 +101,12 @@ function BlogTile({
       to={`/blog/${post.slug}`}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
     >
-      <BlogCover url={post.cover_image_url ?? null} alt={copy.title} />
+      <BlogCover
+        url={post.cover_image_url ?? null}
+        alt={copy.title}
+        category={post.category[locale]}
+        index={index}
+      />
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
           {post.category[locale]}
@@ -117,7 +125,20 @@ function BlogTile({
   );
 }
 
-export function BlogCover({ url, alt }: { url: string | null; alt: string }) {
+export function BlogCover({
+  url,
+  alt,
+  category,
+  index,
+}: {
+  url: string | null;
+  alt: string;
+  /** Category eyebrow shown on the SVG fallback cover. */
+  category?: string;
+  /** 1-indexed position in the feed, baked into the fallback cover as a
+   *  zero-padded italic numeral (01, 02…). */
+  index?: number;
+}) {
   if (url) {
     return (
       <div className="aspect-[16/10] w-full overflow-hidden bg-paper-200 dark:bg-umber-700">
@@ -130,9 +151,12 @@ export function BlogCover({ url, alt }: { url: string | null; alt: string }) {
       </div>
     );
   }
+  // No upload: render the unified SVG cover. Stays inside the same 16:10
+  // box as a real photo would, so the grid layout doesn't shift when the
+  // admin uploads images post by post.
   return (
-    <div className="flex aspect-[16/10] w-full items-center justify-center bg-gradient-to-br from-paper-200 to-paper-300 text-paper-400 dark:from-umber-700 dark:to-umber-800 dark:text-umber-600">
-      <ImageIcon size={28} strokeWidth={1.5} aria-hidden />
+    <div className="aspect-[16/10] w-full overflow-hidden bg-paper-100 dark:bg-umber-800">
+      <BlogCoverArt category={category} index={index} className="h-full w-full" />
     </div>
   );
 }

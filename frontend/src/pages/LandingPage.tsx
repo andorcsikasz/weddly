@@ -703,7 +703,7 @@ function BlogTeaser() {
             many lines the title or lead wraps to. Result: three perfectly
             even tiles instead of jagged ones. */}
         <ul className="mt-10 grid gap-x-8 gap-y-10 sm:mt-14 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
-          {posts.map((post) => {
+          {posts.map((post, i) => {
             const copy = post[locale];
             const [y, m, d] = post.published_at.split("-").map(Number);
             const dateLabel =
@@ -714,7 +714,12 @@ function BlogTeaser() {
                   to={`/blog/${post.slug}`}
                   className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
                 >
-                  <BlogCover url={post.cover_image_url ?? null} alt={copy.title} />
+                  <BlogCover
+                    url={post.cover_image_url ?? null}
+                    alt={copy.title}
+                    category={post.category[locale]}
+                    index={i + 1}
+                  />
                   <div className="flex flex-1 flex-col p-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                       {post.category[locale]}

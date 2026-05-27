@@ -152,11 +152,13 @@ export default function BlogPostPage() {
               </div>
             </header>
 
-            {post.cover_image_url ? (
-              <figure className="mt-10 overflow-hidden rounded-2xl">
-                <BlogCover url={post.cover_image_url} alt={copy.title} />
-              </figure>
-            ) : null}
+            <figure className="mt-10 overflow-hidden rounded-2xl">
+              <BlogCover
+                url={post.cover_image_url ?? null}
+                alt={copy.title}
+                category={post.category[locale]}
+              />
+            </figure>
 
             <section
               lang={locale}
