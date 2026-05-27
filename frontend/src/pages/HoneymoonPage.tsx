@@ -748,7 +748,7 @@ function DestinationTile({
   const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="card-hover stationery-ink relative flex h-full flex-col justify-center !p-4">
+    <div className="card-hover stationery-ink relative flex h-full flex-col !p-4">
       <div className="flex items-center gap-2 text-paper-200">
         <MapPin size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
@@ -769,7 +769,7 @@ function DestinationTile({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-1.5 block w-full text-center"
+          className="flex flex-1 w-full items-center justify-center"
           aria-label={t("honeymoon.edit_destination")}
         >
           {value ? (
@@ -1012,7 +1012,7 @@ function BudgetSummaryTile({
   return (
     <Link
       to="/app/budget"
-      className="card-hover stationery-ink relative flex h-full flex-col justify-center overflow-hidden !p-4"
+      className="card-hover stationery-ink relative flex h-full flex-col overflow-hidden !p-4"
     >
       <div className="flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
@@ -1020,27 +1020,29 @@ function BudgetSummaryTile({
           {t("honeymoon.tile_budget")}
         </span>
       </div>
-      <div className="mt-1.5 flex items-baseline justify-center gap-2">
-        {/* Mobile (half-width cell after the 1+2 layout) needs a smaller
-            value font — text-3xl was clipping "HUF 320,000" at both edges
-            because the centered flex item overflowed the ~115px content
-            area. text-lg fits with room to spare; text-2xl/3xl restore
-            the hero feel at sm+/md+ widths where the cell is wider. */}
-        <span className="font-serif text-lg font-semibold leading-none tabular-nums text-paper-50 sm:text-2xl md:text-3xl">
-          {loaded ? formatMoney(planned, currency, locale) : ""}
-        </span>
+      <div className="flex flex-1 flex-col justify-center">
+        <div className="flex items-baseline justify-center gap-2">
+          {/* Mobile (half-width cell after the 1+2 layout) needs a smaller
+              value font — text-3xl was clipping "HUF 320,000" at both edges
+              because the centered flex item overflowed the ~115px content
+              area. text-lg fits with room to spare; text-2xl/3xl restore
+              the hero feel at sm+/md+ widths where the cell is wider. */}
+          <span className="font-serif text-lg font-semibold leading-none tabular-nums text-paper-50 sm:text-2xl md:text-3xl">
+            {loaded ? formatMoney(planned, currency, locale) : ""}
+          </span>
+        </div>
+        <p className="mt-1 text-center text-xs text-paper-300">
+          {actual > 0
+            ? t("honeymoon.budget_actual_inline", {
+                actual: formatMoney(actual, currency, locale),
+              })
+            : count === 0
+              ? loaded
+                ? t("honeymoon.budget_no_lines")
+                : ""
+              : t("honeymoon.budget_lines_count", { count })}
+        </p>
       </div>
-      <p className="mt-1 text-center text-xs text-paper-300">
-        {actual > 0
-          ? t("honeymoon.budget_actual_inline", {
-              actual: formatMoney(actual, currency, locale),
-            })
-          : count === 0
-            ? loaded
-              ? t("honeymoon.budget_no_lines")
-              : ""
-            : t("honeymoon.budget_lines_count", { count })}
-      </p>
     </Link>
   );
 }
