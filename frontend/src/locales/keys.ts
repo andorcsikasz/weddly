@@ -1300,6 +1300,19 @@ export interface LocaleMessages {
     flight_estimate_basis: string;
     flight_estimate_empty: string;
     flight_estimate_attribution: string;
+    /** Origin IATA badge inside the flight estimate card. The badge value
+     *  itself is the 3-letter code; the label sits above it. The edit
+     *  control reuses the badge — click swaps to a 3-letter input. */
+    flight_estimate_origin_label: string;
+    flight_estimate_origin_placeholder: string;
+    flight_estimate_origin_invalid: string;
+    flight_estimate_origin_edit_aria: string;
+    /** Per-offer row chrome — stops + outbound duration. `_stops_other`
+     *  takes `{count}`; `_duration` takes `{hours}` + `{minutes}`. */
+    flight_estimate_direct: string;
+    flight_estimate_stops_one: string;
+    flight_estimate_stops_other: string;
+    flight_estimate_duration: string;
     /** Honeymoon-scoped todo checklist that mirrors planning_items
      *  filtered by topic='honeymoon'. `todo_sub_count` receives
      *  `{done}` + `{total}` numbers; the empty body + CTA point to
@@ -2483,6 +2496,28 @@ export interface LocaleMessages {
       back: string;
       claimed: string;
       unclaimed: string;
+      /** "{n} értékelés" / "{n} reviews" — header rating chip suffix. */
+      reviewsCount: string;
+      /** aria-label for StarRow — receives `{rating}` (locale-formatted)
+       *  and `{max}` (always 5). */
+      starsAria: string;
+      /** aria-label / title for the price-band dot row — receives `{band}`
+       *  (1..5) and `{max}` (always 5). */
+      priceBandAria: string;
+      /** Hero-image fallback copy when the listing has no photo yet. */
+      hero: {
+        noPhotoYet: string;
+        noPhotoClaim: string;
+        noPhotoAria: string;
+      };
+      /** Primary actions in the hero + sticky bottom bar. */
+      cta: {
+        sendInquiry: string;
+        inquireDisabled: string;
+        inquireSent: string;
+        save: string;
+        savedActive: string;
+      };
       reviews: {
         title: string;
         yourRating: string;
@@ -2542,11 +2577,7 @@ export interface LocaleMessages {
       info: {
         title: string;
         location: string;
-        rating: string;
-        ratingValue: string;
         ratingEmpty: string;
-        category: string;
-        priceBand: string;
       };
       contact: {
         title: string;

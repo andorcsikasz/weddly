@@ -13,14 +13,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  Bookmark,
+  BookmarkCheck,
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   Globe,
+  ImageIcon,
   Mail,
   MapPin,
   Phone,
-  Sparkles,
+  Send,
   Star,
   Trash2,
 } from "lucide-react";
@@ -40,10 +43,49 @@ import {
   SUPPLIER_REVIEW_TAGS,
 } from "@shared/suppliers";
 import { Pill } from "../components/admin";
+import { ComposeDialog } from "../components/OutreachInbox";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { reviewApi, supplierApi, supplierBookingApi, supplierCommentApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+/** Same localStorage shape the directory uses, so the heart icon stays in
+ *  sync across `/app/suppliers` (the list) and `/app/suppliers/:id` (this
+ *  page). Kept in lockstep with `SAVED_LS_KEY` in `pages/SuppliersPage.tsx`. */
+const SAVED_LS_KEY = "weddly.suppliers.saved";
+
+function readSavedSet(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SAVED_LS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed))
+      return new Set(parsed.filter((v): v is string => typeof v === "string"));
+  } catch {
+    // ignore
+  }
+  return new Set();
+}
+
+function writeSavedSet(set: Set<string>): void {
+  try {
+    localStorage.setItem(SAVED_LS_KEY, JSON.stringify(Array.from(set)));
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+/** Two-letter monogram from a supplier name, used as a hero fallback when
+ *  the listing has no image yet. Splits on whitespace; uses the first
+ *  letter of the first two words, or the first two letters of a single
+ *  word. Falls back to "??" so the JSX always renders something. */
+function nameMonogram(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "??";
+  const parts = trimmed.split(/\s+/);
+  if (parts.length >= 2) return `${parts[0]!.charAt(0)}${parts[1]!.charAt(0)}`.toUpperCase();
+  return parts[0]!.slice(0, 2).toUpperCase();
+}
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
 
@@ -57,18 +99,38 @@ function formatDate(unixMs: number, locale: string): string {
   }).format(d);
 }
 
-function StarRow({ value, size = 14 }: { value: number; size?: number }) {
-  // Filled (rose) for n ≤ value, hollow (ink-300) otherwise. Used both in the
-  // header rating chip and on each review card.
+function StarRow({
+  value,
+  size = 14,
+  ariaLabel,
+}: {
+  value: number;
+  size?: number;
+  /** Optional spoken label (e.g. "4 out of 5"). Skipped on decorative rows
+   *  rendered next to a separately-narrated numeric rating. */
+  ariaLabel?: string;
+}) {
+  // Filled stars use the warm `paper-500` token (#bfae7b — the project's
+  // gold/oat accent). Rose / amber would both work universally but rose
+  // collides with the error/blush palette, and amber isn't in the design
+  // tokens; paper is the in-palette match for the universal "rating star"
+  // convention. Inactive strokes stay light so the row reads as a coherent
+  // 5-slot scale.
   return (
-    <span className="inline-flex items-center gap-0.5">
+    <span
+      className="inline-flex items-center gap-0.5"
+      role={ariaLabel ? "img" : undefined}
+      aria-label={ariaLabel}
+    >
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
           size={size}
           aria-hidden
           className={
-            n <= value ? "fill-rose-500 stroke-rose-500" : "stroke-ink-300 dark:stroke-umber-500"
+            n <= value
+              ? "fill-paper-500 stroke-paper-500"
+              : "stroke-paper-300 dark:stroke-umber-500"
           }
         />
       ))}
@@ -93,7 +155,7 @@ function StarPicker({
           aria-checked={value === n}
           onClick={() => onChange(n as 1 | 2 | 3 | 4 | 5)}
           className={`text-2xl leading-none transition ${
-            n <= value ? "text-rose-500" : "text-ink-300 hover:text-rose-300"
+            n <= value ? "text-paper-600" : "text-paper-300 hover:text-paper-500"
           }`}
         >
           {n <= value ? "★" : "☆"}
@@ -150,6 +212,27 @@ export default function SupplierDetailPage() {
     void refresh();
   }, [refresh]);
 
+  // Saved-to-shortlist state. Persisted in localStorage under the same
+  // key the directory page uses, so toggling here flips the heart on the
+  // index card too. Re-hydrated when the supplier id changes.
+  const [savedSet, setSavedSet] = useState<Set<string>>(() => readSavedSet());
+  useEffect(() => setSavedSet(readSavedSet()), [supplierId]);
+  const isSaved = supplierId ? savedSet.has(supplierId) : false;
+  const toggleSaved = useCallback(() => {
+    if (!supplierId) return;
+    setSavedSet((cur) => {
+      const next = new Set(cur);
+      if (next.has(supplierId)) next.delete(supplierId);
+      else next.add(supplierId);
+      writeSavedSet(next);
+      return next;
+    });
+  }, [supplierId]);
+
+  // Outreach compose modal — opens with the current supplier pre-attached
+  // so the user can write a tailored inquiry without re-picking a vendor.
+  const [composeOpen, setComposeOpen] = useState(false);
+
   if (loading || !detail) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
@@ -162,16 +245,33 @@ export default function SupplierDetailPage() {
 
   const ratingAvg = detail.reviews_summary.avg_rating;
   const ratingCount = detail.reviews_summary.reviews_count;
+  const ratingDisplay =
+    ratingAvg !== null && ratingCount >= 3
+      ? locale === "hu"
+        ? ratingAvg.toFixed(1).replace(".", ",")
+        : ratingAvg.toFixed(1)
+      : null;
+  const canInquire = Boolean(detail.contact_email);
+  const inquireLabel = t("suppliers.detail.cta.sendInquiry");
+  const saveLabel = t(isSaved ? "suppliers.detail.cta.savedActive" : "suppliers.detail.cta.save");
 
   return (
     // data-admin-shell opts every h1..h6 inside into the sans typography
     // override defined in index.css. Mirrors the /app/admin/* shell so the
     // admin-only detail page reads as an operational tool, not editorial copy.
-    <div data-admin-shell="true" className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+    <div
+      data-admin-shell="true"
+      className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-6 xl:px-10"
+    >
       <button
         type="button"
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-umber-100"
+        onClick={() => {
+          // navigate(-1) sends a deep-link user back to about:blank; fall
+          // through to the directory index when there's nothing to pop.
+          if (window.history.length > 1) navigate(-1);
+          else navigate("/app/suppliers");
+        }}
+        className="mb-4 inline-flex items-center gap-1 rounded-md text-sm text-ink-500 transition hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-300 dark:hover:text-umber-100"
       >
         <ChevronLeft size={14} aria-hidden />
         {t("suppliers.detail.back")}
@@ -179,44 +279,87 @@ export default function SupplierDetailPage() {
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
         {/* ─── MAIN COLUMN ────────────────────────────────────────────────── */}
-        <div className="min-w-0">
-          {/* Hero */}
+        <main className="min-w-0">
+          {/* Hero. Always renders SOMETHING — a 16:9 photo when the vendor
+              uploaded one, or a paper-toned monogram placeholder so the
+              page never opens with bare text on white. The placeholder
+              also carries a quiet "claim listing to add photos" hint when
+              the vendor hasn't claimed yet, turning an empty slot into an
+              acquisition surface. */}
           <section className="mb-10">
-            {detail.hero_image_url && (
-              <div className="mb-5 overflow-hidden rounded-xl">
-                <img
-                  src={detail.hero_image_url}
-                  alt=""
-                  className="aspect-[16/9] w-full object-cover"
-                />
-              </div>
-            )}
-            <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            <HeroImage detail={detail} t={t} />
+            <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t(`suppliers.cat.${detail.category}`)} · {detail.city}
             </div>
             <h1 className="mt-1 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
               {detail.name}
             </h1>
+            {/* Single rating row — the sidebar's duplicate RATING row was
+                removed (it was repeating this exact value two columns
+                away). Source of truth lives here, in the header. */}
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              {ratingAvg !== null && ratingCount >= 3 ? (
+              {ratingDisplay !== null && ratingAvg !== null ? (
                 <span className="inline-flex items-center gap-2 text-sm">
-                  <StarRow value={Math.round(ratingAvg)} size={16} />
+                  <StarRow
+                    value={Math.round(ratingAvg)}
+                    size={16}
+                    ariaLabel={t("suppliers.detail.starsAria", {
+                      rating: ratingDisplay,
+                      max: 5,
+                    })}
+                  />
                   <span className="font-medium text-ink-900 dark:text-cream-50">
-                    {ratingAvg.toFixed(1)}
+                    {ratingDisplay}
                   </span>
                   <span className="text-ink-500 dark:text-umber-300">·</span>
-                  <span className="text-ink-600 dark:text-umber-200">{ratingCount}</span>
+                  <span className="text-ink-600 dark:text-umber-200">
+                    {t("suppliers.detail.reviewsCount", { n: ratingCount })}
+                  </span>
                 </span>
               ) : (
                 <span className="text-sm italic text-ink-500 dark:text-umber-300">
                   {t("suppliers.detail.info.ratingEmpty")}
                 </span>
               )}
+              {detail.price_band !== null && <PriceBandDots band={detail.price_band} t={t} />}
               {detail.vendor_account_id ? (
                 <Pill tone="sage">{t("suppliers.detail.claimed")}</Pill>
               ) : (
                 <Pill tone="muted">{t("suppliers.detail.unclaimed")}</Pill>
               )}
+            </div>
+
+            {/* Primary actions. Send inquiry is the conversion target; save
+                is the deferral path. Both render on desktop here AND in
+                the sticky bottom bar on mobile (see end of this file). */}
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setComposeOpen(true)}
+                disabled={!canInquire}
+                title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
+                className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send size={14} aria-hidden />
+                {inquireLabel}
+              </button>
+              <button
+                type="button"
+                onClick={toggleSaved}
+                aria-pressed={isSaved}
+                className={
+                  isSaved
+                    ? "inline-flex items-center gap-1.5 rounded-full border border-paper-500 bg-paper-100 px-3 py-1.5 text-sm font-medium text-paper-700 transition hover:border-paper-600 dark:border-paper-400 dark:bg-paper-400/15 dark:text-paper-200 dark:hover:border-paper-400"
+                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                }
+              >
+                {isSaved ? (
+                  <BookmarkCheck size={14} aria-hidden className="fill-paper-500" />
+                ) : (
+                  <Bookmark size={14} aria-hidden />
+                )}
+                {saveLabel}
+              </button>
             </div>
           </section>
 
@@ -231,9 +374,12 @@ export default function SupplierDetailPage() {
                 {detail.reviews_summary.top_tags.map((tt) => (
                   <span
                     key={tt.tag}
-                    className="rounded-full bg-ink-900 px-3 py-1 text-xs text-cream-50 dark:bg-cream-50 dark:text-ink-900"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
                   >
-                    {t(`suppliers.reviewTags.${tt.tag}`)} · {tt.count}
+                    {t(`suppliers.reviewTags.${tt.tag}`)}
+                    <span className="tabular-nums text-ink-400 dark:text-umber-300">
+                      · {tt.count}
+                    </span>
                   </span>
                 ))}
               </div>
@@ -269,15 +415,63 @@ export default function SupplierDetailPage() {
 
           {/* Admin meta */}
           <AdminMetaSection detail={detail} t={t} />
-        </div>
+        </main>
 
         {/* ─── SIDEBAR (sticky on lg+) ───────────────────────────────────── */}
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <InfoCard detail={detail} avg={ratingAvg} count={ratingCount} locale={locale} t={t} />
+          <InfoCard detail={detail} t={t} />
           <ContactCard detail={detail} t={t} />
           <BusyCalendarCard availability={availability} locale={locale} t={t} />
         </aside>
       </div>
+
+      {/* Mobile sticky action bar. On <lg the right rail is far below the
+          fold (after reviews + Q&A + bookings + admin meta), which leaves
+          the user with no persistent CTA. The bar pins Send inquiry + Save
+          to the bottom of the viewport so the conversion path is always
+          one thumb-reach away. `pb-24` on the outer container reserves
+          the height so this never occludes the last article. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-paper-200 bg-paper-50/95 px-4 py-3 backdrop-blur lg:hidden dark:border-umber-700 dark:bg-umber-900/95">
+        <div className="mx-auto flex max-w-6xl items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleSaved}
+            aria-pressed={isSaved}
+            aria-label={saveLabel}
+            className={
+              isSaved
+                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-500 bg-paper-100 text-paper-700 dark:border-paper-400 dark:bg-paper-400/15 dark:text-paper-200"
+                : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+            }
+          >
+            {isSaved ? (
+              <BookmarkCheck size={18} aria-hidden className="fill-paper-500" />
+            ) : (
+              <Bookmark size={18} aria-hidden />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setComposeOpen(true)}
+            disabled={!canInquire}
+            className="btn-accent flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Send size={16} aria-hidden />
+            {inquireLabel}
+          </button>
+        </div>
+      </div>
+
+      {composeOpen && (
+        <ComposeDialog
+          initialSuppliers={[{ id: detail.id, name: detail.name, city: detail.city }]}
+          onClose={() => setComposeOpen(false)}
+          onSent={() => {
+            setComposeOpen(false);
+            toast.success(t("suppliers.detail.cta.inquireSent"));
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -721,70 +915,123 @@ function SidebarRow({
   value,
 }: {
   icon: React.ReactNode;
-  label: string;
+  /** Optional micro-label. When omitted, the row collapses to one line:
+   *  `icon + value`. Labels were dropping value when every row carried an
+   *  all-caps stamp ("LOCATION", "RATING") that simply re-named the icon
+   *  next to it. */
+  label?: string;
   value: React.ReactNode;
 }) {
   return (
     <div className="flex items-start gap-3 py-1.5">
       <span className="mt-0.5 text-ink-500 dark:text-umber-400">{icon}</span>
       <div className="min-w-0 flex-1">
-        <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-400">
-          {label}
-        </div>
+        {label && <div className="text-xs text-ink-500 dark:text-umber-400">{label}</div>}
         <div className="text-sm text-ink-800 dark:text-umber-100">{value}</div>
       </div>
     </div>
   );
 }
 
-function InfoCard({
+/** 16:9 hero. When a vendor has uploaded a `hero_image_url` we render it;
+ *  otherwise we draw a paper-toned monogram card so the page never opens
+ *  on bare text. The empty state doubles as an acquisition surface: a
+ *  small hint nudges unclaimed listings toward the vendor-claim flow. */
+function HeroImage({
   detail,
-  avg,
-  count,
-  locale,
   t,
 }: {
   detail: SupplierDetail;
-  avg: number | null;
-  count: number;
-  locale: string;
+  t: (k: string) => string;
+}) {
+  if (detail.hero_image_url) {
+    return (
+      <div className="overflow-hidden rounded-2xl">
+        <img
+          src={detail.hero_image_url}
+          alt={detail.name}
+          loading="lazy"
+          className="aspect-[16/9] w-full object-cover"
+        />
+      </div>
+    );
+  }
+  const monogram = nameMonogram(detail.name);
+  return (
+    <div
+      role="img"
+      aria-label={t("suppliers.detail.hero.noPhotoAria")}
+      className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl border-2 border-dashed border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800/60"
+    >
+      <div className="flex flex-col items-center gap-3 text-center">
+        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-paper-200 font-semibold text-2xl text-paper-700 dark:bg-umber-700 dark:text-paper-200">
+          {monogram}
+        </span>
+        <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <ImageIcon size={12} aria-hidden />
+          {t(
+            detail.vendor_account_id
+              ? "suppliers.detail.hero.noPhotoYet"
+              : "suppliers.detail.hero.noPhotoClaim",
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Five-dot price-band display. Active dots in `paper-600` (gold-oat),
+ *  inactive in `paper-300` — same scale the directory filter uses, just
+ *  rendered as a self-explanatory glyph row instead of "$  PRICE BAND
+ *  $$$". The wrapper carries the semantic label so screen readers still
+ *  hear "Price band: 3 of 5" without forcing sighted users to read it. */
+function PriceBandDots({
+  band,
+  t,
+}: {
+  band: 1 | 2 | 3 | 4 | 5;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+}) {
+  return (
+    <span
+      role="img"
+      aria-label={t("suppliers.detail.priceBandAria", { band, max: 5 })}
+      className="inline-flex items-center gap-0.5 font-mono text-sm"
+      title={t("suppliers.detail.priceBandAria", { band, max: 5 })}
+    >
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span
+          key={n}
+          aria-hidden
+          className={
+            n <= band ? "text-paper-700 dark:text-paper-300" : "text-paper-300 dark:text-umber-600"
+          }
+        >
+          $
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Right-rail info card. Slimmer than the original — CATEGORY moved out
+ *  (duplicated the kicker above the H1), RATING moved out (duplicated the
+ *  header chip), PRICE BAND moved into the header next to the rating
+ *  (where it can sit as a single glyph row). What's left is just the one
+ *  fact the header doesn't carry: the full street address. */
+function InfoCard({
+  detail,
+  t,
+}: {
+  detail: SupplierDetail;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
     <SidebarCard title={t("suppliers.detail.info.title")}>
       <SidebarRow
         icon={<MapPin size={14} aria-hidden />}
-        label={t("suppliers.detail.info.location")}
         value={detail.address ? `${detail.city} · ${detail.address}` : detail.city}
       />
-      <SidebarRow
-        icon={<Star size={14} aria-hidden />}
-        label={t("suppliers.detail.info.rating")}
-        value={
-          avg !== null && count >= 3 ? (
-            t("suppliers.detail.info.ratingValue", {
-              avg: locale === "hu" ? avg.toFixed(1).replace(".", ",") : avg.toFixed(1),
-              n: count,
-            })
-          ) : (
-            <span className="italic text-ink-500 dark:text-umber-300">
-              {t("suppliers.detail.info.ratingEmpty")}
-            </span>
-          )
-        }
-      />
-      <SidebarRow
-        icon={<Sparkles size={14} aria-hidden />}
-        label={t("suppliers.detail.info.category")}
-        value={t(`suppliers.cat.${detail.category}`)}
-      />
-      {detail.price_band !== null && (
-        <SidebarRow
-          icon={<span className="font-mono text-xs">$</span>}
-          label={t("suppliers.detail.info.priceBand")}
-          value={<span className="font-mono">{"$".repeat(detail.price_band)}</span>}
-        />
-      )}
     </SidebarCard>
   );
 }

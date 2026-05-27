@@ -2253,6 +2253,21 @@ const hu: LocaleMessages = {
       back: "Vissza",
       claimed: "Igényelt szolgáltató",
       unclaimed: "Még nincs igényelve",
+      reviewsCount: "{n} értékelés",
+      starsAria: "{rating} csillag az {max}-ből",
+      priceBandAria: "Ár sáv: {band} az {max}-ből",
+      hero: {
+        noPhotoYet: "Még nincs feltöltött fotó",
+        noPhotoClaim: "Igényeld a hirdetést és tölts fel képeket",
+        noPhotoAria: "A szolgáltatónak még nincs feltöltött fotója",
+      },
+      cta: {
+        sendInquiry: "Megkeresés küldése",
+        inquireDisabled: "A szolgáltatónak nincs publikus e-mail címe",
+        inquireSent: "Megkeresés elküldve",
+        save: "Mentés",
+        savedActive: "Mentve",
+      },
       reviews: {
         title: "Értékelések",
         yourRating: "Értékelésed",
@@ -2309,13 +2324,9 @@ const hu: LocaleMessages = {
         redirect: "Tracked redirect",
       },
       info: {
-        title: "Információ",
+        title: "Cím",
         location: "Helyszín",
-        rating: "Értékelés",
-        ratingValue: "{avg} / 5,0 ({n} értékelés)",
         ratingEmpty: "Még nincs értékelés",
-        category: "Kategória",
-        priceBand: "Ár sáv",
       },
       contact: {
         title: "Kapcsolat",

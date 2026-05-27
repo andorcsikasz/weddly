@@ -2225,6 +2225,21 @@ const en: LocaleMessages = {
       back: "Back",
       claimed: "Claimed supplier",
       unclaimed: "Not yet claimed",
+      reviewsCount: "{n} reviews",
+      starsAria: "{rating} out of {max} stars",
+      priceBandAria: "Price band: {band} of {max}",
+      hero: {
+        noPhotoYet: "No photos yet",
+        noPhotoClaim: "Claim this listing to add photos",
+        noPhotoAria: "Supplier has no photos uploaded yet",
+      },
+      cta: {
+        sendInquiry: "Send inquiry",
+        inquireDisabled: "This supplier has no public email",
+        inquireSent: "Inquiry sent",
+        save: "Save",
+        savedActive: "Saved",
+      },
       reviews: {
         title: "Reviews",
         yourRating: "Your rating",
@@ -2281,13 +2296,9 @@ const en: LocaleMessages = {
         redirect: "Tracked redirect",
       },
       info: {
-        title: "Information",
+        title: "Address",
         location: "Location",
-        rating: "Rating",
-        ratingValue: "{avg} / 5.0 ({n} reviews)",
         ratingEmpty: "No ratings yet",
-        category: "Category",
-        priceBand: "Price band",
       },
       contact: {
         title: "Contact",

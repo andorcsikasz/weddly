@@ -248,19 +248,30 @@ function fold(s: string): string {
     .toLowerCase();
 }
 
-function ComposeDialog({
+/** Public seed entry — supply a chip to pre-populate the recipient picker.
+ *  Used by the supplier detail page so the "Send inquiry" CTA opens the
+ *  composer with the current vendor already attached. */
+export type OutreachInitialSupplier = { id: string; name: string; city: string };
+
+export function ComposeDialog({
   onClose,
   onSent,
+  initialSuppliers,
 }: {
   onClose: () => void;
   onSent: (created: OutreachCampaignDetail) => void | Promise<void>;
+  /** Pre-seed the recipient picker with one or more chips. Capped to the
+   *  per-campaign limit; extras are silently dropped. */
+  initialSuppliers?: OutreachInitialSupplier[];
 }) {
   const { t, locale } = useT();
   const toast = useToast();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   // Picked recipients: id + name (name for the chip, id for the API).
-  const [selected, setSelected] = useState<Array<{ id: string; name: string; city: string }>>([]);
+  const [selected, setSelected] = useState<Array<{ id: string; name: string; city: string }>>(() =>
+    (initialSuppliers ?? []).slice(0, OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP),
+  );
   const [supplierQuery, setSupplierQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
