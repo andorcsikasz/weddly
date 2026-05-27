@@ -286,11 +286,10 @@ export default function LandingPage() {
 
       {/* ════════════════════════ 05 · Seating — EDGE BLEED ════════════════════════
           Narrow copy column on the left, mockup blown up to bleed off
-          the right edge of the viewport. Blush-100 background breaks the
-          paper-50/white monotony with a brand-aligned warm tone so this
-          mid-page beat reads as a distinct chapter, not another beige
-          slab. Text colour stays ink-900 (high contrast on #fbe9e3). */}
-      <section className="relative overflow-hidden bg-blush-100 dark:bg-umber-900">
+          the right edge of the viewport. Stationery hairline background
+          breaks the paper-50/white monotony with a subtle diagonal
+          texture so this mid-page beat reads as a distinct chapter. */}
+      <section className="stationery-light relative overflow-hidden">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
