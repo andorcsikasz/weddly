@@ -754,12 +754,22 @@ function ScheduleWandDialog({
           </label>
           <label className="block text-sm">
             <span className="field-label">{t("schedule.wand_end_label")}</span>
-            <input
-              className="input"
-              type="time"
-              value={endText}
-              onChange={(e) => setEndText(e.target.value)}
-            />
+            <div className="relative">
+              <input
+                className="input"
+                type="time"
+                value={endText}
+                onChange={(e) => setEndText(e.target.value)}
+              />
+              {windowValid && overnight && (
+                <span
+                  aria-label={t("schedule.field_next_day")}
+                  className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2 select-none rounded-full bg-blush-100 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-blush-700 dark:bg-blush-400/20 dark:text-blush-300"
+                >
+                  +1
+                </span>
+              )}
+            </div>
           </label>
         </div>
         {!windowValid && (
