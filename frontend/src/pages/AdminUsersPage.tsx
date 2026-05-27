@@ -449,9 +449,18 @@ export default function AdminUsersPage() {
       <div className="flex shrink-0 items-center justify-end gap-1.5">
         {opts.remindCouple &&
           (remindSentCoupleIds.has(opts.remindCouple.id) ? (
-            <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
-              {t("admin.remind_invite_partner_sent_label")}
-            </Pill>
+            <button
+              type="button"
+              disabled
+              className="btn-ghost btn-sm relative inline-flex items-center text-sage-700 dark:text-sage-300"
+              title={t("admin.remind_invite_partner_sent_label")}
+              aria-label={t("admin.remind_invite_partner_sent_label")}
+            >
+              <Mail size={14} aria-hidden />
+              <span className="pointer-events-none absolute -right-0.5 -bottom-0.5 inline-flex h-3 w-3 items-center justify-center rounded-full bg-sage-500 text-paper-50 ring-1 ring-paper-50 dark:ring-umber-900">
+                <Check size={8} strokeWidth={3} aria-hidden />
+              </span>
+            </button>
           ) : (
             <button
               type="button"
@@ -466,9 +475,18 @@ export default function AdminUsersPage() {
           ))}
         {!u.verified_email &&
           (verifySentIds.has(u.id) ? (
-            <Pill tone="sage" icon={<Check size={11} aria-hidden />}>
-              {t("admin.resend_verify_sent_label")}
-            </Pill>
+            <button
+              type="button"
+              disabled
+              className="btn-ghost btn-sm relative inline-flex items-center text-sage-700 dark:text-sage-300"
+              title={t("admin.resend_verify_sent_label")}
+              aria-label={t("admin.resend_verify_sent_label")}
+            >
+              <Mail size={14} aria-hidden />
+              <span className="pointer-events-none absolute -right-0.5 -bottom-0.5 inline-flex h-3 w-3 items-center justify-center rounded-full bg-sage-500 text-paper-50 ring-1 ring-paper-50 dark:ring-umber-900">
+                <Check size={8} strokeWidth={3} aria-hidden />
+              </span>
+            </button>
           ) : (
             <button
               type="button"
