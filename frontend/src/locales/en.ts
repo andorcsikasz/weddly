@@ -706,13 +706,13 @@ const en: LocaleMessages = {
     brand_tagline_paper: "Paper letters · Stationery",
     brand_signature: "Weddly",
     cta_signup_sub: "Available throughout the open beta.",
-    wsite_eyebrow: "Your own wedding site",
+    // wsite_title + wsite_body are surfaced by the SEO prerender SSR body
+    // (frontend/scripts/prerender.ts). They no longer have a dedicated
+    // landing section; the wedding-site value-prop is one bullet in the
+    // Guests block instead.
     wsite_title: "One page for your guests, with your names on it.",
     wsite_body:
       "Your site builds itself from your plan. Share it with guests; they RSVP, browse the schedule, find the venue, right from there.",
-    wsite_bullet_1: "Your own URL (weddly.hu/w/your-names)",
-    wsite_bullet_2: "RSVP, menu, parking, dress code in one place",
-    wsite_bullet_3: "Hungarian and English, mobile-friendly",
     // ── Interactive "try it" budget demo ──────────────────────────────
     demo_eyebrow: "Try it, no signup",
     demo_title: "How much will your wedding cost?",
@@ -861,6 +861,7 @@ const en: LocaleMessages = {
     block_guests_bullet_1: "One link, one minute, by phone",
     block_guests_bullet_2: "Filter by status, meal, plus-one",
     block_guests_bullet_3: "CSV export, any time",
+    block_guests_bullet_4: "Shared on your own wedding site (weddly.hu/w/your-names)",
     block_seating_eyebrow: "Seating",
     block_seating_title: "Drag it. Print it at A3.",
     block_seating_body:

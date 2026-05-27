@@ -711,13 +711,13 @@ const hu: LocaleMessages = {
     brand_tagline_paper: "Budapest · Papírlevelek",
     brand_signature: "Weddly, Budapest",
     cta_signup_sub: "A nyílt béta alatt szabadon használhatjátok.",
-    wsite_eyebrow: "Saját esküvői oldal",
+    // wsite_title + wsite_body are surfaced by the SEO prerender SSR body
+    // (frontend/scripts/prerender.ts). They no longer have a dedicated
+    // landing section; the wedding-site value-prop is one bullet in the
+    // Guests block instead.
     wsite_title: "Egy oldal a vendégeknek, a ti nevetekkel.",
     wsite_body:
       "Az oldalatok automatikusan elkészül a tervetekből. Megoszthatjátok a vendégekkel, ők innen jelzik a részvételt, böngészik a programot.",
-    wsite_bullet_1: "Saját webcím (weddly.hu/w/nevetek)",
-    wsite_bullet_2: "RSVP, étrend, parkolás, dress code egy helyen",
-    wsite_bullet_3: "Magyar és angol nyelven, mobilon is",
     // ── Interaktív "próbáld ki" költségvetés demo ─────────────────────
     demo_eyebrow: "Próbáld ki regisztráció nélkül",
     demo_title: "Mennyibe kerül a ti esküvőtök?",
@@ -870,6 +870,7 @@ const hu: LocaleMessages = {
     block_guests_bullet_1: "Egy link, egy perc, telefonról",
     block_guests_bullet_2: "Szűrés állapot, étrend, kísérő szerint",
     block_guests_bullet_3: "CSV export, bármikor",
+    block_guests_bullet_4: "Saját esküvői oldalon megosztva (weddly.hu/w/nevetek)",
     block_seating_eyebrow: "Ültetés",
     block_seating_title: "Húzd a helyére. Nyomtasd A3-ra.",
     block_seating_body:

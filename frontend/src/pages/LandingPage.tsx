@@ -4,6 +4,7 @@ import {
   Download,
   FileText,
   Filter,
+  Globe,
   Heart,
   History,
   LayoutGrid,
@@ -20,13 +21,6 @@ import { lazy, type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { EucalyptusStem } from "../components/botanical";
 import { SectionLabel, WatermarkNumeral } from "../components/editorial";
-import {
-  PhaseAftermathArt,
-  PhaseGuestsArt,
-  PhasePlanArt,
-  PhaseSeatingArt,
-  PhaseSuppliersArt,
-} from "../components/illustrations";
 import { LazyMount } from "../components/LazyMount";
 import { WorkspaceMockup } from "../components/mockups";
 
@@ -188,47 +182,23 @@ export default function LandingPage() {
           "0 pár". This replaces the earlier fake "Open beta" stats band. */}
       <LiveStatsBand />
 
-      {/* ════════════════════════ 02 · Phases ════════════════════════
-          Numbered timeline. Each phase has a giant italic numeral
-          bleeding behind its title; one continuous rule line at the
-          numeral baseline serves as the literal timeline. */}
+      {/* ════════════════════════ 02 · Phases — CHIP STRIP ════════════════════════
+          A single hairline-ruled line listing the five phase labels. The
+          four feature blocks below elaborate; this strip just orients.
+          The `id="phases"` anchor is preserved so the footer link and the
+          interactive-budget "#phases" jump still land somewhere real. */}
       <section id="phases" className="relative scroll-mt-20 bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-7xl px-4 pt-10 pb-10 sm:px-6 sm:pt-20 sm:pb-16">
-          <SectionLabel num="—" label={t("landing.product_eyebrow")} />
-          <h2 className="mt-6 max-w-3xl font-serif text-3xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-            {t("landing.phases_title")}
-          </h2>
-          <ol className="mt-12 grid gap-x-6 gap-y-7 sm:gap-y-12 sm:grid-cols-2 lg:grid-cols-5 lg:gap-x-4">
-            <PhaseStep
-              n={1}
-              art={<PhasePlanArt className="h-12 w-12" />}
-              title={t("landing.phase_plan_title")}
-              body={t("landing.phase_plan_body")}
-            />
-            <PhaseStep
-              n={2}
-              art={<PhaseSuppliersArt className="h-12 w-12" />}
-              title={t("landing.phase_suppliers_title")}
-              body={t("landing.phase_suppliers_body")}
-            />
-            <PhaseStep
-              n={3}
-              art={<PhaseGuestsArt className="h-12 w-12" />}
-              title={t("landing.phase_guests_title")}
-              body={t("landing.phase_guests_body")}
-            />
-            <PhaseStep
-              n={4}
-              art={<PhaseSeatingArt className="h-12 w-12" />}
-              title={t("landing.phase_seating_title")}
-              body={t("landing.phase_seating_body")}
-            />
-            <PhaseStep
-              n={5}
-              art={<PhaseAftermathArt className="h-12 w-12" />}
-              title={t("landing.phase_aftermath_title")}
-              body={t("landing.phase_aftermath_body")}
-            />
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+          <ol className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 border-y border-paper-300 py-5 font-serif text-base text-ink-700 dark:border-umber-700 dark:text-paper-100 sm:gap-x-5 sm:py-6 sm:text-lg">
+            <li>{t("landing.phase_plan_title")}</li>
+            <li aria-hidden className="text-paper-400 dark:text-umber-600">·</li>
+            <li>{t("landing.phase_suppliers_title")}</li>
+            <li aria-hidden className="text-paper-400 dark:text-umber-600">·</li>
+            <li>{t("landing.phase_guests_title")}</li>
+            <li aria-hidden className="text-paper-400 dark:text-umber-600">·</li>
+            <li>{t("landing.phase_seating_title")}</li>
+            <li aria-hidden className="text-paper-400 dark:text-umber-600">·</li>
+            <li>{t("landing.phase_aftermath_title")}</li>
           </ol>
         </div>
       </section>
@@ -281,6 +251,7 @@ export default function LandingPage() {
             <IconRow icon={<Smartphone size={16} />}>{t("landing.block_guests_bullet_1")}</IconRow>
             <IconRow icon={<Filter size={16} />}>{t("landing.block_guests_bullet_2")}</IconRow>
             <IconRow icon={<Download size={16} />}>{t("landing.block_guests_bullet_3")}</IconRow>
+            <IconRow icon={<Globe size={16} />}>{t("landing.block_guests_bullet_4")}</IconRow>
           </ul>
         </div>
       </section>
@@ -318,42 +289,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ════════════════════════ 05.5 · Wedding site teaser ════════════════════════
-          Surfaces /w/:slug as a hero feature on the landing. Joy/Zola
-          anchor their landings on a free wedding-website builder, and
-          Weddly has the same product live but it was previously buried in
-          the suppliers section. Single column, eyebrow + italic title +
-          body + three bullets, no mockup yet (the WeddingWebsitePage
-          screenshot is a future asset). */}
-      <section className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
-            {t("landing.wsite_eyebrow")}
-          </p>
-          <h2 className="mt-4 font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-            {t("landing.wsite_title")}
-          </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
-            {t("landing.wsite_body")}
-          </p>
-          <ul className="mx-auto mt-8 max-w-md space-y-3 text-left">
-            <IconRow icon={<Sparkles size={16} />}>{t("landing.wsite_bullet_1")}</IconRow>
-            <IconRow icon={<Mail size={16} />}>{t("landing.wsite_bullet_2")}</IconRow>
-            <IconRow icon={<Smartphone size={16} />}>{t("landing.wsite_bullet_3")}</IconRow>
-          </ul>
-        </div>
-      </section>
-
       {/* ════════════════════════ 06 · Why — 2×2 ════════════════════════
           Plain section heading + 4 concrete points. The earlier italic
           serif pull-quote ("Először a lényeg…") and the botanical corner
           decorations were both flagged as AI-deck affectations; cut. */}
       <section className="stationery-light">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
-            {t("landing.why_eyebrow")}
-          </p>
-          <h2 className="mx-auto mt-4 max-w-3xl text-center font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="mx-auto max-w-3xl text-center font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.why_title")}
           </h2>
           <ul className="mx-auto mt-10 grid max-w-4xl gap-x-10 gap-y-8 sm:mt-14 sm:grid-cols-2 sm:gap-y-10">
@@ -370,7 +312,7 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <SectionLabel num="—" label={t("landing.phase_suppliers_title")} />
-            <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-5xl">
+            <h2 className="mt-5 font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
               {t("landing.suppliers_section_title")}
             </h2>
             <p className="mt-5 max-w-xl text-base text-ink-600 dark:text-umber-200 sm:text-lg">
@@ -617,10 +559,7 @@ function LiveStatsBand() {
   return (
     <section className="relative bg-paper-100 dark:bg-umber-900">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
-          {t("landing.counter_eyebrow")}
-        </p>
-        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-2 gap-6 sm:gap-12">
+        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-6 sm:gap-12">
           <StatCounter
             value={stats.couples}
             locale={locale}
@@ -872,10 +811,7 @@ function CoupleCardsTeaser() {
     <section className="relative bg-white dark:bg-umber-900">
       <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
         <header className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
-            {t("landing.couple_cards_eyebrow")}
-          </p>
-          <h2 className="mt-3 font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
+          <h2 className="font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
             {t("landing.couple_cards_title")}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
@@ -912,40 +848,6 @@ function CoupleCardsTeaser() {
         </div>
       </div>
     </section>
-  );
-}
-
-function PhaseStep({
-  n,
-  art,
-  title,
-  body,
-}: {
-  n: number;
-  art: ReactNode;
-  title: string;
-  body: string;
-}) {
-  return (
-    // Mobile: art sits to the left of the title + body so each phase is one
-    // compact row rather than a 200 px stack — cuts the section's mobile
-    // height in half while keeping the numeral / illustration visual identity.
-    // `sm:` flips back to the original vertical card layout for the desktop grid.
-    <li className="relative flex flex-row items-start gap-4 sm:flex-col sm:gap-0">
-      {/* Big italic numeral floated behind the title — the visual
-          anchor for each phase. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-1 -top-8 select-none font-serif text-5xl italic leading-none text-blush-200 dark:text-umber-700 sm:-left-2 sm:-top-10 sm:text-7xl lg:-top-12 lg:text-8xl"
-      >
-        0{n}
-      </span>
-      <div className="relative shrink-0">{art}</div>
-      <div className="relative min-w-0 flex-1">
-        <h3 className="font-serif text-xl text-ink-900 dark:text-paper-50 sm:mt-3">{title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
-      </div>
-    </li>
   );
 }
 

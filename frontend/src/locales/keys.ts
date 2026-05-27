@@ -791,14 +791,12 @@ export interface LocaleMessages {
     cta_signup: string;
     cta_login: string;
     cta_signup_sub: string;
-    /** Mini "your own wedding site" teaser. Surfaces the /w/:slug feature
-     *  that competitors (Joy/Zola) anchor their landings on. */
-    wsite_eyebrow: string;
+    /** Wedding-site copy surfaced by the SEO prerender SSR body
+     *  (frontend/scripts/prerender.ts). The dedicated landing section was
+     *  cut; the React landing now mentions the wedding-site feature as one
+     *  bullet inside the Guests block. */
     wsite_title: string;
     wsite_body: string;
-    wsite_bullet_1: string;
-    wsite_bullet_2: string;
-    wsite_bullet_3: string;
     /** Top-of-fold brand tagline — was hardcoded "Budapest · Paper letters"
      *  before the EN parity pass. HU keeps the Budapest reference because
      *  it's accurate for HU readers; EN reads as a neutral product line. */
@@ -955,6 +953,7 @@ export interface LocaleMessages {
     block_guests_bullet_1: string;
     block_guests_bullet_2: string;
     block_guests_bullet_3: string;
+    block_guests_bullet_4: string;
     block_seating_eyebrow: string;
     block_seating_title: string;
     block_seating_body: string;
@@ -4066,8 +4065,12 @@ export interface LocaleMessages {
     last_updated_label: string;
     last_updated_date: string;
     intro: string;
+    operator_title: string;
+    operator_body: string;
     scope_title: string;
     scope_body: string;
+    acceptance_title: string;
+    acceptance_body: string;
     fees_title: string;
     fees_body: string;
     billing_title: string;
@@ -4076,21 +4079,49 @@ export interface LocaleMessages {
     vat_body: string;
     term_title: string;
     term_body: string;
-    /** Korm. rendelet 45/2014. (II. 26.) — 14-day withdrawal right for
+    refund_title: string;
+    refund_body: string;
+    /** Korm. rendelet 45/2014. (II. 26.) 14-day withdrawal right for
      *  consumer-type subscribers + the immediate-start waiver clause. */
     withdrawal_title: string;
     withdrawal_body: string;
+    sla_title: string;
+    sla_body: string;
+    ranking_title: string;
+    ranking_body: string;
+    differential_title: string;
+    differential_body: string;
+    data_access_title: string;
+    data_access_body: string;
+    ip_title: string;
+    ip_body: string;
+    indemnification_title: string;
+    indemnification_body: string;
+    moderation_title: string;
+    moderation_body: string;
     liability_title: string;
     liability_body: string;
     data_title: string;
     data_body: string;
+    complaints_title: string;
+    complaints_body: string;
+    mediation_title: string;
+    mediation_body: string;
+    force_majeure_title: string;
+    force_majeure_body: string;
+    assignment_title: string;
+    assignment_body: string;
     changes_title: string;
     changes_body: string;
     termination_title: string;
     termination_body: string;
+    offboarding_title: string;
+    offboarding_body: string;
+    transitional_title: string;
+    transitional_body: string;
     governing_law_title: string;
     governing_law_body: string;
-    /** EU 524/2013 — link to the online dispute resolution platform. */
+    /** EU 524/2013 link to the online dispute resolution platform. */
     odr_title: string;
     odr_body: string;
     contact_title: string;
