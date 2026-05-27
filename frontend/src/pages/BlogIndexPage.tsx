@@ -57,9 +57,12 @@ export default function BlogIndexPage() {
         ) : posts.length === 0 ? (
           <p className="mt-10 text-sm text-ink-500 dark:text-umber-300">{t("blog.empty")}</p>
         ) : (
-          <ul className="mt-12 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-16">
+          // `items-stretch` + `h-full` per tile equalises card heights
+          // across each row, so titles or leads of different lengths
+          // don't produce jagged columns.
+          <ul className="mt-12 grid items-stretch gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-16">
             {posts.map((post) => (
-              <li key={post.slug}>
+              <li key={post.slug} className="h-full">
                 <BlogTile post={post} locale={locale} t={t} />
               </li>
             ))}
@@ -93,10 +96,10 @@ function BlogTile({
   return (
     <Link
       to={`/blog/${post.slug}`}
-      className="group block overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
     >
       <BlogCover url={post.cover_image_url ?? null} alt={copy.title} />
-      <div className="p-5 sm:p-6">
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
           {post.category[locale]}
         </p>
@@ -104,7 +107,7 @@ function BlogTile({
           {copy.title}
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{copy.lead}</p>
-        <div className="mt-5 flex items-center gap-3 text-xs text-ink-500 dark:text-umber-300">
+        <div className="mt-auto flex items-center gap-3 pt-5 text-xs text-ink-500 dark:text-umber-300">
           <time dateTime={post.published_at}>{formatDate(post.published_at, locale)}</time>
           <span aria-hidden>·</span>
           <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
