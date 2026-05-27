@@ -87,6 +87,17 @@ export default {
           900: "#1a1410",
           950: "#0f0a07",
         },
+        // WNRS-red — the saturated true red used on the couple-cards tool
+        // surface (white-on-red cover card, red-on-white question card).
+        // Kept out of the `blush` palette on purpose: blush is the warm
+        // earthy CTA accent (still used in chips, hero, supplier branding),
+        // while wnrs.red is a single product-surface token specific to the
+        // conversation-cards face. Hex hits PMS 186 C, the actual WNRS
+        // pantone, so the cards read as a direct visual quote.
+        wnrs: {
+          red: "#c8102e",
+          redInk: "#a30d25",
+        },
       },
       fontFamily: {
         // Self-hosted/system stack — we used to pull Inter from rsms.me and
@@ -108,6 +119,21 @@ export default {
           "system-ui",
           "sans-serif",
         ],
+        // Condensed display stack for the couple-cards tool. Prefers any
+        // locally-installed Helvetica Neue Bold Condensed; falls back to
+        // Arial Narrow on Windows, then the regular sans stack. Self-host
+        // none of these — same no-CDN policy as the other families.
+        display: [
+          '"Helvetica Neue"',
+          "HelveticaNeue",
+          '"Arial Narrow"',
+          '"Inter Variable"',
+          "Inter",
+          "-apple-system",
+          '"Segoe UI"',
+          "system-ui",
+          "sans-serif",
+        ],
       },
       boxShadow: {
         soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",
@@ -123,6 +149,11 @@ export default {
       animation: {
         "fade-in": "fadeIn 200ms ease-out",
         "fade-in-up": "fadeInUp 280ms ease-out",
+        // Couple-cards "next card" enter: slide in from the right + fade.
+        // Pairs with the React `key={cardNumber}` remount so each new
+        // card animates from scratch. 260ms matches the existing fade-up
+        // cadence — fast enough to feel like a deal, slow enough to read.
+        "card-deal": "cardDeal 260ms ease-out",
         // Skeleton/loading shimmer — a translucent highlight that sweeps
         // left-to-right across a placeholder block to signal "loading".
         // 1.6s feels lively without being hectic; longer reads as stalled.
@@ -133,6 +164,10 @@ export default {
         fadeInUp: {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        cardDeal: {
+          "0%": { opacity: "0", transform: "translateX(16px) scale(0.985)" },
+          "100%": { opacity: "1", transform: "translateX(0) scale(1)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },

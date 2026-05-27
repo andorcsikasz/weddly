@@ -4139,6 +4139,7 @@ const hu: LocaleMessages = {
       card_position: "{n} / {total}",
       card_empty: "Húzzatok egy kártyát.",
       next_card: "Következő kártya",
+      flip_card: "Húzzatok új kérdést",
       draw_card: "Húzzatok egy kártyát",
       reshuffle: "Új keverés",
       back_to_decks: "Vissza a paklikhoz",

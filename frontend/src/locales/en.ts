@@ -4102,6 +4102,7 @@ const en: LocaleMessages = {
       card_position: "{n} / {total}",
       card_empty: "Draw a card.",
       next_card: "Next card",
+      flip_card: "Draw the next question",
       draw_card: "Draw a card",
       reshuffle: "Reshuffle",
       back_to_decks: "Back to decks",

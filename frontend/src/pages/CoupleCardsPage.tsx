@@ -5,14 +5,19 @@
 //
 // Pure client state, no backend. Data lives in lib/couple_cards.ts.
 
-import { ArrowLeft, Lock, RefreshCcw, Shuffle, Unlock } from "lucide-react";
+import { ArrowLeft, Lock, Unlock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { COUPLE_CARD_DECKS, DECK_SIZE, type DeckId } from "../lib/couple_cards";
 import { useDocumentMeta } from "../lib/seo";
 
-const STORAGE_KEY = "weddly.couple_cards.v1";
+// Bumped v1 → v2 when the deck behaviour switched from "deterministic
+// Fisher-Yates with manual reshuffle" to "bag-shuffle: random order per
+// pass, auto-reshuffle every 25 cards". The v1 schema (`{ order, index }`)
+// is silently ignored; we don't read the legacy key so stale data in old
+// browsers can't crash the new validator.
+const STORAGE_KEY = "weddly.couple_cards.v2";
 
 interface DeckProgress {
   order: number[];
@@ -43,15 +48,34 @@ function saveProgress(map: ProgressMap) {
 }
 
 /** Fisher-Yates shuffle of indices [0, size). Returns a brand-new array
- *  so callers can store it without aliasing concerns. */
-function shuffledIndices(size: number): number[] {
+ *  so callers can store it without aliasing concerns.
+ *
+ *  When `avoidFirst` is supplied (the previously-surfaced card), we keep
+ *  shuffling until the top of the new deck isn't a repeat. Guarantees
+ *  the deal feels random across deck-boundaries: a visitor who just saw
+ *  card X never sees X again as the first card of the next bag. With 25
+ *  unique values the probability of a single re-roll is 1/25, so the loop
+ *  almost always terminates on the first pass. */
+function shuffledIndices(size: number, avoidFirst?: number): number[] {
   const arr = Array.from({ length: size }, (_, i) => i);
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const a = arr[i] as number;
-    const b = arr[j] as number;
-    arr[i] = b;
-    arr[j] = a;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const a = arr[i] as number;
+      const b = arr[j] as number;
+      arr[i] = b;
+      arr[j] = a;
+    }
+    if (avoidFirst === undefined || arr[0] !== avoidFirst) return arr;
+  }
+  // After 8 unlucky shuffles in a row, swap slot 0 with slot 1 by hand
+  // and return. This branch is statistically unreachable but keeps the
+  // function from ever spinning forever.
+  if (avoidFirst !== undefined && arr[0] === avoidFirst && arr.length > 1) {
+    const a = arr[0] as number;
+    const b = arr[1] as number;
+    arr[0] = b;
+    arr[1] = a;
   }
   return arr;
 }
@@ -151,28 +175,29 @@ export default function CoupleCardsPage() {
   // the overlay (handled by the render branch below).
   const closeDeck = useCallback(() => setActiveDeck(null), []);
 
+  // "Bag shuffle": step through a Fisher-Yates permutation until it's
+  // exhausted, then automatically reshuffle for the next round. The first
+  // card of the new bag is guaranteed not to be a repeat of the last
+  // card of the old bag (avoidFirst). Counter still reads "N / 25 in this
+  // round" — when it ticks back to 1, the round flips and the deck looks
+  // fresh.
   const nextCard = useCallback(() => {
     if (!activeDeck) return;
     setProgress((prev) => {
       const current = prev[activeDeck];
       if (!current) return prev;
-      // Cycle back to the start when the deck is exhausted. The shuffle
-      // is preserved across the wrap-around so the user sees the same
-      // ordering twice before a manual reshuffle, a deliberate choice:
-      // the localStorage-eq prompt becomes "reshuffle if you want a new
-      // shuffle", not "every wrap-around silently gives a new mix".
-      const nextIndex = (current.index + 1) % DECK_SIZE;
-      return { ...prev, [activeDeck]: { ...current, index: nextIndex } };
+      if (current.index + 1 < DECK_SIZE) {
+        return { ...prev, [activeDeck]: { ...current, index: current.index + 1 } };
+      }
+      // Round complete. Reshuffle for the next pass, but avoid putting
+      // the just-seen card back at the top.
+      const lastSeen = current.order[current.index];
+      return {
+        ...prev,
+        [activeDeck]: { order: shuffledIndices(DECK_SIZE, lastSeen), index: 0 },
+      };
     });
     setViewedCount((c) => c + 1);
-  }, [activeDeck]);
-
-  const reshuffle = useCallback(() => {
-    if (!activeDeck) return;
-    setProgress((prev) => ({
-      ...prev,
-      [activeDeck]: { order: shuffledIndices(DECK_SIZE), index: 0 },
-    }));
   }, [activeDeck]);
 
   const currentQuestion = useMemo(() => {
@@ -198,7 +223,6 @@ export default function CoupleCardsPage() {
       question={currentQuestion}
       cardNumber={currentNumber}
       onNext={nextCard}
-      onReshuffle={reshuffle}
       onBack={closeDeck}
     />
   ) : null;
@@ -378,24 +402,29 @@ function DeckShowcase({
                 third with reduced opacity so it reads as caption-weight
                 copy without crowding the headline. Dark mode keeps the
                 same red — the surface owns its colour identity. */}
+            {/* Selected card face: WNRS-red, white display-sans, all caps.
+                The cover of the deck reads as a direct visual quote of the
+                "LEVEL 1 / (PERCEPTION)" card the user referenced — same
+                hierarchy: level label up top, parenthesised deck name in
+                the centre, brand line at the bottom edge. Cormorant italic
+                is reserved for the Weddly page chrome (eyebrow + h1); the
+                card itself adopts the condensed display sans wholesale. */}
             <button
               type="button"
               onClick={onOpen}
-              className="relative z-10 flex aspect-[3/2] w-full flex-col justify-between rounded-2xl bg-blush-700 px-7 py-7 text-left text-white shadow-[0_24px_50px_-22px_rgba(157,59,39,0.6)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
+              className="relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-7 py-8 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
             >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.32em] text-white/80">
-                {t("tools.couple_cards.deck_number_label", { n: selectedIdx + 1 })}
-              </span>
-              <div className="flex flex-1 flex-col justify-center">
-                <h3 className="font-serif text-4xl italic leading-[0.95] text-white sm:text-6xl">
-                  {t(selected.titleKey)}
+              <span aria-hidden="true" className="block h-1" />
+              <div className="flex flex-1 flex-col items-center justify-center">
+                <h3 className="font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                  {t("tools.couple_cards.deck_number_label", { n: selectedIdx + 1 })}
                 </h3>
-                <p className="mt-3 max-w-md text-sm leading-relaxed text-white/85 sm:mt-4 sm:text-base">
-                  {t(selected.blurbKey)}
+                <p className="mt-3 font-display text-base font-bold uppercase tracking-[0.04em] text-white sm:mt-4 sm:text-xl">
+                  ({t(selected.titleKey)})
                 </p>
               </div>
-              <span className="self-end text-[10px] uppercase tracking-[0.24em] text-white/75">
-                {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+              <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-white sm:text-xs">
+                {t("app.name")} · {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
               </span>
             </button>
           </div>
@@ -424,7 +453,6 @@ function CardView({
   question,
   cardNumber,
   onNext,
-  onReshuffle,
   onBack,
 }: {
   deckId: DeckId;
@@ -432,7 +460,6 @@ function CardView({
   question: string | null;
   cardNumber: number | null;
   onNext: () => void;
-  onReshuffle: () => void;
   onBack: () => void;
 }) {
   const { t } = useT();
@@ -448,63 +475,70 @@ function CardView({
           {t("tools.couple_cards.back_to_decks")}
         </button>
 
-        {/* Card-position label only — the deck title is printed on the
-            card face itself, so the header line stays unfussy. */}
+        {/* Card-position label: the counter still means something with
+            the new bag-shuffle (it counts the position inside the current
+            25-card round), and clicking back to 1 / 25 is the visible
+            "round complete, deck reshuffled" feedback. */}
         {cardNumber !== null ? (
-          <p className="mt-6 text-center text-xs uppercase tracking-[0.24em] text-ink-500 dark:text-umber-300">
+          <p className="mt-6 text-center font-display text-[11px] font-bold uppercase tracking-[0.32em] text-wnrs-red">
             {t("tools.couple_cards.card_position", { n: cardNumber, total: DECK_SIZE })}
           </p>
         ) : null}
 
-        {/* "We're Not Really Strangers"-inspired card face: white stock,
-            heavily rounded corners, capslock red type centred in the card,
-            tiny brand + deck line at the bottom. The dark border is dropped
-            so the card reads as a real printable physical card rather than
-            a UI tile, and the white background is kept in dark mode too —
-            the surface has its own visual identity. */}
-        <article
-          key={`${deckId}-${cardNumber ?? 0}`}
-          className="couple-card relative mx-auto mt-8 flex aspect-[3/2] max-w-2xl flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 sm:px-12 sm:py-12"
+        {/* The whole card face is the primary action: click anywhere on
+            it to draw the next card. Wrapping the article in a <button>
+            gives keyboard activation, focus rings and screen-reader role
+            for free — no need for a custom role="button" + tabIndex
+            hand-rolled handler. Bag-shuffle (see nextCard in the parent
+            page) guarantees the next card isn't a repeat of the last
+            inside the same 25-card round. */}
+        <button
+          type="button"
+          onClick={onNext}
+          aria-label={t("tools.couple_cards.flip_card")}
+          className="couple-card group relative mx-auto mt-8 flex aspect-[3/2] w-full max-w-2xl cursor-pointer flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 text-left shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-12 sm:py-12"
         >
-          {/* Optical-centring spacer: with justify-between, the question
-              sits between this empty span and the brand line below, which
-              looks balanced regardless of how many lines the question wraps
-              to. */}
-          <span aria-hidden="true" className="block h-1" />
-
-          <p
-            data-testid="couple-card-question"
-            className="text-center font-sans text-lg font-bold uppercase leading-[1.15] tracking-[0.04em] text-blush-700 sm:text-2xl lg:text-3xl"
+          {/* Re-mount the inner article on every card flip so the keyed
+              `animate-card-deal` enter animation fires for each new
+              question. Article tags also keep the page semantically
+              clean — the question is the article, the button is the
+              affordance around it. */}
+          <article
+            key={`${deckId}-${cardNumber ?? 0}`}
+            className="flex h-full w-full animate-card-deal flex-col items-center justify-between"
           >
-            {question ?? t("tools.couple_cards.card_empty")}
-          </p>
+            <span aria-hidden="true" className="block h-1" />
 
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blush-700 sm:text-xs">
-              {t("app.name")} · {t("tools.couple_cards.page_h1")}
+            <p
+              data-testid="couple-card-question"
+              className="text-balance text-center font-display text-lg font-bold uppercase leading-[1.15] tracking-[0.02em] text-wnrs-red sm:text-2xl lg:text-3xl"
+            >
+              {question ?? t("tools.couple_cards.card_empty")}
             </p>
-            <p className="mt-1 text-[9px] uppercase tracking-[0.2em] text-blush-600 sm:text-[10px]">
-              {deckTitle}
-            </p>
-          </div>
-        </article>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="text-center">
+              <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-wnrs-red sm:text-xs">
+                {t("app.name")} · {t("tools.couple_cards.page_h1")}
+              </p>
+              <p className="mt-1 font-display text-[9px] uppercase tracking-[0.24em] text-wnrs-redInk sm:text-[10px]">
+                {deckTitle}
+              </p>
+            </div>
+          </article>
+        </button>
+
+        {/* Secondary "next" affordance for visitors who don't realise the
+            card itself is clickable. Tertiary visual weight so the card
+            stays the headline action. Reshuffle is gone — bag-shuffle
+            auto-reshuffles every 25 cards, so manual reshuffle has no
+            meaning. */}
+        <div className="mt-8 flex justify-center">
           <button
             type="button"
             onClick={onNext}
-            className="btn-primary btn-lg inline-flex items-center gap-2 shadow-sm"
+            className="inline-flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.24em] text-ink-600 transition-colors hover:text-ink-900 dark:text-paper-200 dark:hover:text-paper-50"
           >
-            <Shuffle size={16} aria-hidden="true" />
             {t("tools.couple_cards.next_card")}
-          </button>
-          <button
-            type="button"
-            onClick={onReshuffle}
-            className="inline-flex items-center gap-2 rounded-md border border-paper-300 bg-paper-50 px-4 py-2 text-sm text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
-          >
-            <RefreshCcw size={14} aria-hidden="true" />
-            {t("tools.couple_cards.reshuffle")}
           </button>
         </div>
       </div>

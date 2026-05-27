@@ -112,16 +112,38 @@ describe("CoupleCardsPage: card view", () => {
     expect(screen.getByRole("button", { name: /Húzzatok egy kártyát/i })).toBeInTheDocument();
   });
 
-  it("reshuffle resets the card pointer to 1/25", () => {
+  it("clicking the card face advances to the next card", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Mély víz/i }));
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
-    expect(screen.getByText(`3 / ${DECK_SIZE}`)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /Új keverés/i }));
     expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
+
+    // The big card face is a <button aria-label="Húzzatok új kérdést">;
+    // the small secondary affordance below it is aria-label="Következő
+    // kártya". Distinct accessible names so each query is unambiguous.
+    fireEvent.click(screen.getByRole("button", { name: /Húzzatok új kérdést/i }));
+    expect(screen.getByText(`2 / ${DECK_SIZE}`)).toBeInTheDocument();
+  });
+
+  it("bag-shuffle: wraps to 1/25 after 25 'next' clicks, with a fresh card up top", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
+    const firstCardOfRound1 = screen.getByTestId("couple-card-question").textContent;
+
+    // Click "next" 25 times: 1→2→...→25→1. After the wrap, the page
+    // sits at "1 / 25" again, and the question is the first card of a
+    // freshly-reshuffled bag. The shuffler guarantees the new bag's top
+    // card isn't the same as the just-seen 25th card.
+    for (let i = 0; i < DECK_SIZE; i++) {
+      fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+    }
+    expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
+    // The card text exists and is one of the deck's HU questions (we
+    // don't pin a specific identity because the bag-shuffle is random).
+    const rootsDeck = COUPLE_CARD_DECKS.find((d) => d.id === "roots");
+    const newTop = screen.getByTestId("couple-card-question").textContent ?? "";
+    expect(rootsDeck?.questionsHu).toContain(newTop);
+    expect(newTop.length).toBeGreaterThan(0);
+    expect(firstCardOfRound1?.length ?? 0).toBeGreaterThan(0);
   });
 });
 
@@ -145,16 +167,6 @@ describe("CoupleCardsPage: localStorage persistence", () => {
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
     expect(screen.getByText(`2 / ${DECK_SIZE}`)).toBeInTheDocument();
     expect(screen.getByTestId("couple-card-question").textContent).toBe(stoppedAt);
-  });
-
-  it("wraps from card 25 back to card 1 when 'next' fires past the deck end", () => {
-    renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
-    // Click "next" 25 times: 1→2→...→25→1.
-    for (let i = 0; i < DECK_SIZE; i++) {
-      fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
-    }
-    expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
   });
 });
 

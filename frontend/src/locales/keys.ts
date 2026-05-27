@@ -4516,6 +4516,7 @@ export interface LocaleMessages {
       card_position: string;
       card_empty: string;
       next_card: string;
+      flip_card: string;
       draw_card: string;
       reshuffle: string;
       back_to_decks: string;
