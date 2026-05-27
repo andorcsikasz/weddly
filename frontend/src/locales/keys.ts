@@ -2626,7 +2626,6 @@ export interface LocaleMessages {
       responsive: string;
       punctual: string;
       pet_friendly: string;
-      lgbt_friendly: string;
       kid_friendly: string;
       outdoor_space: string;
       vegan_options: string;
@@ -3471,6 +3470,7 @@ export interface LocaleMessages {
     title: string;
     menu_label: string;
     menu_profile: string;
+    menu_landing: string;
     no_name: string;
     /** Three small-caps labels splitting the page into semantic zones —
      *  break up the equal-weight card stack so the user can scan by

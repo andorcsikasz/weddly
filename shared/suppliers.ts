@@ -213,7 +213,6 @@ export const SUPPLIER_REVIEW_TAGS = [
   "responsive",
   "punctual",
   "pet_friendly",
-  "lgbt_friendly",
   "kid_friendly",
   "outdoor_space",
   "vegan_options",
