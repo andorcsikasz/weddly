@@ -62,9 +62,9 @@ export default function BlogIndexPage() {
           // across each row, so titles or leads of different lengths
           // don't produce jagged columns.
           <ul className="mt-12 grid items-stretch gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-16">
-            {posts.map((post, i) => (
+            {posts.map((post) => (
               <li key={post.slug} className="h-full">
-                <BlogTile post={post} locale={locale} t={t} index={i + 1} />
+                <BlogTile post={post} locale={locale} t={t} />
               </li>
             ))}
           </ul>
@@ -88,12 +88,10 @@ function BlogTile({
   post,
   locale,
   t,
-  index,
 }: {
   post: BlogPost;
   locale: "hu" | "en";
   t: (key: string, vars?: Record<string, string | number>) => string;
-  index: number;
 }) {
   const copy = post[locale];
   return (
@@ -106,7 +104,6 @@ function BlogTile({
         alt={copy.title}
         slug={post.slug}
         category={post.category[locale]}
-        index={index}
       />
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
@@ -131,7 +128,6 @@ export function BlogCover({
   alt,
   slug,
   category,
-  index,
 }: {
   url: string | null;
   alt: string;
@@ -139,9 +135,6 @@ export function BlogCover({
   slug?: string;
   /** Category eyebrow shown on the SVG fallback cover. */
   category?: string;
-  /** 1-indexed position in the feed, baked into the fallback cover as a
-   *  zero-padded italic numeral (01, 02…). */
-  index?: number;
 }) {
   if (url) {
     return (
@@ -160,7 +153,7 @@ export function BlogCover({
   // admin uploads images post by post.
   return (
     <div className="aspect-[16/10] w-full overflow-hidden bg-paper-100 dark:bg-umber-800">
-      <BlogCoverArt slug={slug} category={category} index={index} className="h-full w-full" />
+      <BlogCoverArt slug={slug} category={category} className="h-full w-full" />
     </div>
   );
 }

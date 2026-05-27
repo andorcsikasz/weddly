@@ -694,7 +694,7 @@ function BlogTeaser() {
             many lines the title or lead wraps to. Result: three perfectly
             even tiles instead of jagged ones. */}
         <ul className="mt-10 grid gap-x-8 gap-y-10 sm:mt-14 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
-          {posts.map((post, i) => {
+          {posts.map((post) => {
             const copy = post[locale];
             const [y, m, d] = post.published_at.split("-").map(Number);
             const dateLabel =
@@ -710,7 +710,6 @@ function BlogTeaser() {
                     alt={copy.title}
                     slug={post.slug}
                     category={post.category[locale]}
-                    index={i + 1}
                   />
                   <div className="flex flex-1 flex-col p-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">

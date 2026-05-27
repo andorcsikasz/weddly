@@ -1,14 +1,14 @@
 // Default blog cover art. One unified composition used across every post
 // that doesn't have a hand-uploaded cover image: paper background, thin
-// inner frame, a content-themed lucide icon top-centre, a faded WĒDDLY
-// watermark behind it, category eyebrow + numeral in the corners, and
-// a eucalyptus sprig bottom-right. The icon is the one element that
-// changes per post; the rest stays identical so the feed reads as a
-// series of magazine inside-covers from the same publication.
+// inner frame, faded Wēddly wordmark anchoring the centre, category
+// eyebrow top-left, and a content-themed lucide icon top-right. The icon
+// is the one per-post differentiator; everything else stays identical so
+// the feed reads as a series of magazine inside-covers from the same
+// publication.
 //
-// All colours match Tailwind tokens (paper-100/300/400/500, ink-500,
-// blush-700) so light/dark mode are handled by swapping the SVG fills
-// via CSS classes rather than per-instance overrides.
+// All colours match Tailwind tokens (paper-100/300/500, ink-500) so light/
+// dark mode are handled by swapping the SVG fills via CSS classes rather
+// than per-instance overrides.
 
 import {
   BookOpen,
@@ -51,14 +51,10 @@ interface BlogCoverArtProps {
   slug?: string;
   /** Category eyebrow (top-left). Pass the post's locale-specific label. */
   category?: string;
-  /** Italic numeral (top-right). Pass the post's index in the feed; we
-   *  zero-pad to two digits. Omit to render the wordmark on its own. */
-  index?: number;
   className?: string;
 }
 
-export function BlogCoverArt({ slug, category, index, className }: BlogCoverArtProps) {
-  const numeral = index != null ? String(index).padStart(2, "0") : null;
+export function BlogCoverArt({ slug, category, className }: BlogCoverArtProps) {
   const Icon = (slug && ICON_BY_SLUG[slug]) || Heart;
   return (
     <svg
@@ -84,39 +80,28 @@ export function BlogCoverArt({ slug, category, index, className }: BlogCoverArtP
       />
 
       {/* Faded wordmark, big italic serif, centred. paper-300 fill so it
-          sits behind the icon as a quiet brand anchor. */}
+          sits behind the eyebrow + icon as a quiet brand anchor. */}
       <text
         x="400"
-        y="320"
+        y="290"
         textAnchor="middle"
         fontFamily="Cormorant, 'Cormorant Garamond', Georgia, serif"
         fontStyle="italic"
         fontWeight="500"
-        fontSize="130"
+        fontSize="140"
         letterSpacing="6"
         fill="#e3d9bf"
       >
         Wēddly
       </text>
 
-      {/* Content icon. lucide-react renders a nested <svg>; the surrounding
-          <g transform> positions it in the parent viewport. blush-700 stroke
-          so it pops against the cream paper without competing with the
-          wordmark behind. The icon is the one per-post differentiator. */}
-      <g transform="translate(340, 140)">
-        <Icon width={120} height={120} stroke="#9d3b27" strokeWidth={1.4} fill="none" />
+      {/* Content icon top-right. Same paper-300 stroke as the wordmark so
+          they share a tonal family; the icon reads as a quiet content
+          marker rather than competing accent. lucide-react renders a
+          nested <svg>; the surrounding <g transform> positions it. */}
+      <g transform="translate(668, 48)">
+        <Icon width={72} height={72} stroke="#e3d9bf" strokeWidth={1.6} fill="none" />
       </g>
-
-      {/* Thin blush rule under the icon, hints at the brand accent. */}
-      <line
-        x1="350"
-        y1="282"
-        x2="450"
-        y2="282"
-        stroke="#9d3b27"
-        strokeWidth="0.8"
-        opacity="0.45"
-      />
 
       {/* Category eyebrow top-left. Tracked uppercase sans, ink-500. */}
       {category ? (
@@ -130,21 +115,6 @@ export function BlogCoverArt({ slug, category, index, className }: BlogCoverArtP
           fill="#46577a"
         >
           {category.toUpperCase()}
-        </text>
-      ) : null}
-
-      {/* Italic serif numeral top-right. paper-500. */}
-      {numeral ? (
-        <text
-          x="740"
-          y="90"
-          textAnchor="end"
-          fontFamily="Cormorant, 'Cormorant Garamond', Georgia, serif"
-          fontStyle="italic"
-          fontSize="42"
-          fill="#bfae7b"
-        >
-          {numeral}
         </text>
       ) : null}
 
