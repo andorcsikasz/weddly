@@ -544,7 +544,7 @@ export default function AdminUsersPage() {
             <ul className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <li key={i} className="admin-card">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-start">
                     <Skeleton width={56} height={18} rounded="sm" />
                     <Skeleton width={160} height={16} />
                     <div className="flex flex-col gap-1.5">
@@ -717,7 +717,7 @@ export default function AdminUsersPage() {
                             key={c.id}
                             className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
                           >
-                            <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
+                            <div className="grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-start">
                               <div className="whitespace-nowrap">
                                 <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                                   {workspaceId(c)}
