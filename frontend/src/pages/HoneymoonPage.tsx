@@ -641,7 +641,7 @@ function DaysTile({
   }, [start, end]);
 
   return (
-    <div ref={wrapperRef} className="card-hover stationery-ink relative !p-5">
+    <div ref={wrapperRef} className="card-hover stationery-ink relative !p-4">
       <div className="flex items-center gap-2 text-paper-200">
         <Calendar size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
@@ -650,7 +650,7 @@ function DaysTile({
       </div>
 
       {editing ? (
-        <div className="mt-3 space-y-2">
+        <div className="mt-2 space-y-2">
           <label className="block">
             <span className="text-[11px] uppercase tracking-wide text-paper-200">
               {t("honeymoon.start_label")}
@@ -689,10 +689,10 @@ function DaysTile({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-2 block w-full text-center"
+          className="mt-1.5 block w-full text-center"
           aria-label={t("honeymoon.edit_dates")}
         >
-          <span className="font-serif text-4xl font-semibold tabular-nums text-paper-50">
+          <span className="font-serif text-3xl font-semibold leading-none tabular-nums text-paper-50">
             {nights !== null ? nights : loaded ? "—" : ""}
           </span>
           <span className="ml-2 text-sm text-paper-200">
@@ -704,7 +704,7 @@ function DaysTile({
           </span>
           {dateRange && <p className="mt-1 text-xs text-paper-300">{dateRange}</p>}
           {countdown && (
-            <p className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-400/40 bg-blush-400/15 px-2.5 py-0.5 text-[11px] font-medium text-blush-200">
+            <p className="mt-1.5 inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-400/40 bg-blush-400/15 px-2.5 py-0.5 text-[11px] font-medium text-blush-200">
               {countdown.kind === "future" &&
                 t("honeymoon.countdown_future", { count: countdown.days })}
               {countdown.kind === "today" && t("honeymoon.countdown_today")}
@@ -733,7 +733,7 @@ function DestinationTile({
   const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="card-hover stationery-ink relative flex h-full flex-col justify-center !p-5">
+    <div className="card-hover stationery-ink relative flex h-full flex-col justify-center !p-4">
       <div className="flex items-center gap-2 text-paper-200">
         <MapPin size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
@@ -754,7 +754,7 @@ function DestinationTile({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-2 block w-full text-center"
+          className="mt-1.5 block w-full text-center"
           aria-label={t("honeymoon.edit_destination")}
         >
           {value ? (
@@ -997,7 +997,7 @@ function BudgetSummaryTile({
   return (
     <Link
       to="/app/budget"
-      className="card-hover stationery-ink relative flex h-full flex-col justify-center overflow-hidden !p-5"
+      className="card-hover stationery-ink relative flex h-full flex-col justify-center overflow-hidden !p-4"
     >
       <div className="flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
@@ -1005,13 +1005,13 @@ function BudgetSummaryTile({
           {t("honeymoon.tile_budget")}
         </span>
       </div>
-      <div className="mt-2 flex items-baseline justify-center gap-2">
+      <div className="mt-1.5 flex items-baseline justify-center gap-2">
         {/* Mobile (half-width cell after the 1+2 layout) needs a smaller
             value font — text-3xl was clipping "HUF 320,000" at both edges
             because the centered flex item overflowed the ~115px content
-            area. text-lg fits with room to spare; text-3xl/4xl restore
+            area. text-lg fits with room to spare; text-2xl/3xl restore
             the hero feel at sm+/md+ widths where the cell is wider. */}
-        <span className="font-serif text-lg font-semibold tabular-nums text-paper-50 sm:text-3xl md:text-4xl">
+        <span className="font-serif text-lg font-semibold leading-none tabular-nums text-paper-50 sm:text-2xl md:text-3xl">
           {loaded ? formatMoney(planned, currency, locale) : ""}
         </span>
       </div>
