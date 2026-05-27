@@ -120,10 +120,7 @@ function parseBlocks(raw: unknown, field: string): BlogBlock[] {
   return out;
 }
 
-function parseLocalePayload(
-  raw: unknown,
-  locale: "hu" | "en",
-): BlogPostWritePayload["hu"] {
+function parseLocalePayload(raw: unknown, locale: "hu" | "en"): BlogPostWritePayload["hu"] {
   if (!raw || typeof raw !== "object") {
     throw new HttpError(400, `${locale} payload missing`);
   }

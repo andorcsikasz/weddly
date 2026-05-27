@@ -307,4 +307,3 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     },
   },
 ];
-

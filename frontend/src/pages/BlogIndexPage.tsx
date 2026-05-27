@@ -103,9 +103,7 @@ function BlogTile({
         <h2 className="mt-3 font-serif text-2xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-[1.6rem]">
           {copy.title}
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
-          {copy.lead}
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{copy.lead}</p>
         <div className="mt-5 flex items-center gap-3 text-xs text-ink-500 dark:text-umber-300">
           <time dateTime={post.published_at}>{formatDate(post.published_at, locale)}</time>
           <span aria-hidden>·</span>

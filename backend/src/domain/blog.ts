@@ -88,9 +88,7 @@ export function getBlogPostById(id: number): BlogPostRow | null {
 /** Published posts sorted newest-first. Public list + sitemap call this. */
 export function listPublishedPosts(): BlogPostRow[] {
   return db
-    .prepare(
-      "SELECT * FROM blog_posts WHERE is_published = 1 ORDER BY published_at DESC, id DESC",
-    )
+    .prepare("SELECT * FROM blog_posts WHERE is_published = 1 ORDER BY published_at DESC, id DESC")
     .all() as BlogPostRow[];
 }
 

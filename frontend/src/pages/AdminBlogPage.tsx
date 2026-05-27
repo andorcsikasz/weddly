@@ -18,7 +18,6 @@ import type { BlogBlock, BlogPost } from "@shared/blog_posts";
 type View = { kind: "list" } | { kind: "edit"; postId: number } | { kind: "new" };
 
 export default function AdminBlogPage() {
-  const { t } = useT();
   useDocumentMeta("admin_blog.seo_title", "admin_blog.seo_description");
   const [view, setView] = useState<View>({ kind: "list" });
 
@@ -37,10 +36,6 @@ export default function AdminBlogPage() {
       onSaved={(id) => setView({ kind: "edit", postId: id })}
     />
   );
-
-  // (`useT` lint guard so the function isn't flagged unused when the
-  // editor branch handles its own i18n.)
-  void t;
 }
 
 // ─── List view ──────────────────────────────────────────────────────────
@@ -419,7 +414,12 @@ function BlogEditor({
               {t("admin_blog.cover_constraints")}
             </p>
             {coverUrl && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => void handleClearCover()}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void handleClearCover()}
+              >
                 {t("admin_blog.cover_remove")}
               </Button>
             )}
@@ -501,10 +501,7 @@ function LocalePanel({
       </div>
 
       <h3 className="mt-6 text-sm font-semibold">{t("admin_blog.section_body")}</h3>
-      <BlockEditor
-        blocks={value.body}
-        onChange={(next) => onChange({ ...value, body: next })}
-      />
+      <BlockEditor blocks={value.body} onChange={(next) => onChange({ ...value, body: next })} />
     </section>
   );
 }
