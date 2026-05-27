@@ -177,13 +177,13 @@ function Block({ block }: { block: BlogBlock }) {
       .filter(Boolean);
     return (
       <figure className="!my-8 border-l-2 border-blush-400 pl-5 dark:border-blush-300 sm:pl-6">
-        <blockquote className="space-y-3 font-serif text-lg italic leading-relaxed text-ink-800 dark:text-paper-100 sm:text-xl">
+        <blockquote className="space-y-3 font-serif italic leading-relaxed text-ink-800 dark:text-paper-100">
           {paragraphs.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
         </blockquote>
         {block.cite ? (
-          <figcaption className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-ink-500 dark:text-umber-300">
+          <figcaption className="mt-3 font-serif italic text-ink-500 dark:text-umber-300">
             {block.cite}
           </figcaption>
         ) : null}

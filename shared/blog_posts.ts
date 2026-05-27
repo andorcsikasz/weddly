@@ -64,7 +64,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Ez a poszt nem dogmatikus oktatás. Inkább annak a végiggondolása, mit mond a Szentírás a házasság értelméről, és miért lehet ez ma is segítő olvasat — akár vallásos, akár csak érdeklődő olvasónak.",
+          text: "Nem dogmát szeretnénk kibontani, csak együtt végiggondolni, mit mond a Szentírás a házasság értelméről — és miért szólhat ez ma is, akár hívő, akár csak kereső szívvel olvasod.",
         },
         { type: "h2", text: "1. A teremtési rend: nem jó egyedül" },
         {
@@ -78,7 +78,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A „segítő társ“ kifejezés a héberben (ézer kenegdó) sokkal többet jelent, mint asszisztens vagy kiegészítő. Egyenrangú, szembenálló társat jelent, aki kiegészíti, megtükrözi, korrigálja a másikat. A házasság itt nem hierarchia, hanem találkozás.",
+          text: "Az ézer kenegdó — így hangzik héberül a „segítő társ” — nem asszisztenst sejtet, hanem szembenálló, egyenrangú társat. Olyat, aki kiegészít, tükröt tart, finoman korrigál. A házasság itt nem rangsor, hanem találkozás.",
         },
         {
           type: "blockquote",
@@ -92,7 +92,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "2. A házasság szövetség, nem szerződés" },
         {
           type: "p",
-          text: "A Bibliában a házasság leggyakoribb kategóriája a szövetség (héberül berít). Ez nem szerződés, ami a felek érdekét védi, hanem feltétel nélküli elköteleződés Isten színe előtt. Egy szerződés akkor szűnik meg, ha a másik fél megszegi. Egy szövetség akkor is érvényben marad, ha az egyik fél hibázik — a hűség nem teljesítményhez, hanem személyhez szól.",
+          text: "A Biblia újra és újra ugyanahhoz a szóhoz tér vissza, amikor a házasságról beszél: szövetség (héberül berít). Ez nem szerződés, ami a felek érdekét védi, hanem feltétel nélküli elköteleződés Isten színe előtt. A szerződés megszűnik, ha a másik fél megszegi. A szövetség akkor is áll, ha az egyik fél hibázik — mert a hűség nem a teljesítményhez, hanem a személyhez szól.",
         },
         {
           type: "blockquote",
@@ -101,7 +101,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Malakiás próféta ezzel a mondattal mondja ki, hogy a házasság előtt Isten áll bizonyságként. A „szövetséges feleség“ kifejezés (béríthekha) a Bibliában máshol Isten és népe kapcsolatára van használva. A házasság a Szentírás logikájában ehhez hasonlítható szövetség: nem csak két emberre tartozó megegyezés, hanem nyilvánosan, harmadik fél előtt tett elköteleződés.",
+          text: "Malakiás itt kimondja, hogy a házasság előtt Isten áll tanúként. A „szövetséges feleség” (béríthekha) ugyanaz a szó, amit a Biblia Isten és népe kapcsolatára használ — ehhez méri a házasságot. Nem csak kettőtök ügye, hanem nyilvánosan, harmadik szem előtt kimondott elköteleződés.",
         },
         {
           type: "p",
@@ -119,11 +119,11 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Jézus tehát nem új tanítást ad, hanem az eredeti teremtési rendet erősíti meg: a házasság szövetség, amit Isten köt össze. Az „egy test“ kifejezés nem csak testi egységet jelent, hanem a teljes élet összekapcsolódását.",
+          text: "Jézus tehát nem új tanítást ad, hanem az eredeti teremtési rendet erősíti meg: a házasság szövetség, amit Isten köt össze. Az „egy test” kifejezés nem csak testi egységet jelent, hanem a teljes élet összekapcsolódását.",
         },
         {
           type: "p",
-          text: "Ez a szakasz a templomi esküvőkön gyakori felolvasás, és pontosan ezért: kimondja, hogy a házasság nem önállóan létrehozott, hanem belekapcsolódik egy nagyobb rendbe.",
+          text: "Nem véletlen, hogy a templomi esküvőkön ezt a részt szokták felolvasni: arról szól, hogy a házasság nem a semmiből születik, hanem belesimul valami régebbi, nagyobb rendbe.",
         },
         { type: "h2", text: "4. A házasság programja: Pál apostol levelei" },
         {
@@ -137,7 +137,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A 21. vers a teljes szakasz kulcsa: kölcsönös engedelmesség. A 25. vers a férjnek nem uralmat, hanem áldozati szeretetet ad parancsba — Krisztus mintájára, aki „önmagát adta“ az egyházért. Ez a hangsúly, ha kihagyjuk, eltorzul a szakasz.",
+          text: "A nyitány adja a kulcsot: engedelmeskedjetek egymásnak. Csak ezután szól külön a férjekhez — és náluk sem uralomról, hanem áldozati szeretetről beszél Krisztus mintájára, aki „önmagát adta” az egyházért. Ha ez a sorrend elcsúszik, a szakasz egészen másról kezd szólni.",
         },
         {
           type: "p",
@@ -155,7 +155,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "5. A nehéz részek: megbocsátás és kitartás" },
         {
           type: "p",
-          text: "A Biblia nem idealizálja a házasságot. Tudja, hogy a két ember között lesz konfliktus, sérelem, kifáradás. A megoldás nem a konfliktus elkerülése, hanem annak helyes kezelése.",
+          text: "A Biblia nem szépíti meg a házasságot. Számít vele, hogy két ember között lesznek súrlódások, sebek, fáradtság. Nem azt ígéri, hogy ezek elkerülhetők — azt, hogy van rá mód, hogyan menjünk át rajtuk.",
         },
         {
           type: "blockquote",
@@ -164,7 +164,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Pál nem azt mondja, hogy „ne haragudjatok“ — azt mondja, hogy ne hagyjátok elmérgesedni. A „ne menjen le a nap a haragotokon“ gyakorlati tanács: a konfliktust nem érdemes magunkkal vinni a következő napba. Időben rendezni, kimondani, megbocsátani.",
+          text: "Pál nem azt mondja, hogy ne haragudjunk — azt mondja, ne hagyjuk elmérgesedni. Ne menjen le a nap a haragunkon: ne vigyük át holnapra azt, ami ma még helyrehozható egy kimondott szóval, egy bocsánatkéréssel.",
         },
         {
           type: "p",
@@ -173,7 +173,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "6. A közös út: Isten harmadik fonalként" },
         {
           type: "p",
-          text: "A Prédikátor könyvének egy klasszikus szakasza nem közvetlenül a házasságról szól, de a magyarázók régóta a házassági szövetség képeként olvassák.",
+          text: "A Prédikátor egyik legszebb szakasza nem szól közvetlenül a házasságról, mégis a hagyomány régóta annak a képeként hallja.",
         },
         {
           type: "blockquote",
@@ -182,7 +182,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A „hármas kötél“ a keresztény értelmezésben a pár és Isten közös fonatát jelenti. A házasság ebben az olvasatban nem csak két ember kapcsolata, hanem három személyre szövődő közös jövő.",
+          text: "A „hármas kötél” képében a keresztény olvasat a pár és Isten összefonódó szálát látja. A házasság így nem két ember magánügye, hanem három szálból szövődő közös jövő — és éppen ezért bírja ki a húzást.",
         },
         {
           type: "p",
@@ -191,22 +191,22 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "7. Mit jelent ez a gyakorlatban?" },
         {
           type: "p",
-          text: "Akár vallásosan élitek meg a házasságot, akár csak gondolkodtok ezekről a kérdéseken, három gyakorlati következtetés vehető ki belőle.",
+          text: "Akár hitből élitek meg a házasságot, akár csak gondolkodtok ezekről a kérdéseken, három dolog talán így is megáll.",
         },
         { type: "h3", text: "A házasság nem csak két emberre tartozik" },
         {
           type: "p",
-          text: "A bibliai logika szerint a házasság szövetség, és minden szövetséghez harmadik fél kell, aki előtt megkötitek. Ez magyarázza meg, miért fontos a nyilvános eskü, a tanúk és — hívő olvasatban — Isten jelenléte.",
+          text: "A Biblia szerint a házasság szövetség — és szövetséget mindig harmadik fél előtt kötünk. Ezért kell hozzá a nyilvános eskü, a tanúk és — hívő szemmel — Isten jelenléte.",
         },
         { type: "h3", text: "A szeretet döntés, nem hangulat" },
         {
           type: "p",
-          text: "A Biblia által leírt szeretet (héberül cheszed, görögül agapé) nem érzelmi állapot, hanem hűséges döntés. Ez különösen szabadító üzenet a hétköznapokban: a házasság nem áll meg azon, hogy mindketten mindig „érzitek“. Áll a döntésen, amit reggelente megújítotok.",
+          text: "A szeretet, amiről a Biblia beszél (héberül cheszed, görögül agapé) nem hangulat, hanem hűséges döntés. És ez különös módon felszabadító: a házasságnak nem kell minden reggel azon múlnia, hogy „érzitek”-e. Áll azon a döntésen, amit reggelente újra meghoztok.",
         },
         { type: "h3", text: "A megbocsátás napi gyakorlat" },
         {
           type: "p",
-          text: "Két ember együttélése folyamatos sérelem-kezelés. A Biblia nem azt mondja, hogy ne legyen konfliktus — azt, hogy ne aludjatok rá. A „ne menjen le a nap a ti haragotokon“ a leggyakorlatibb házassági tanács, ami a Bibliában szerepel.",
+          text: "Két ember együttélése folyamatos kis sebek és kis bocsánatkérések sora. A Biblia nem azt kéri, hogy ne legyen konfliktus — azt, hogy ne aludjatok rá. „Ne menjen le a nap a ti haragotokon” — talán ennél földhözragadtabb tanácsot nem is ad a Szentírás a házasságról.",
         },
         {
           type: "cta",
@@ -250,7 +250,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "This post isn't dogmatic instruction. It's a thoughtful read of what Scripture says about the meaning of marriage and why it can still help today — whether you're religious or simply curious.",
+          text: "Not dogma, then — just a slow walk through what Scripture says about the meaning of marriage, and why it can still speak today, whether you come with faith or only with curiosity.",
         },
         { type: "h2", text: "1. Creation: it is not good to be alone" },
         {
@@ -264,7 +264,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: 'The Hebrew "help meet" (ezer kenegdo) is far stronger than "assistant". It means an equal counterpart who completes, mirrors and corrects. Marriage here isn\'t hierarchy; it\'s encounter.',
+          text: 'The Hebrew behind "help meet" — ezer kenegdo — carries more weight than the word "assistant" suggests. It means an equal counterpart, someone who stands across from you, completes, mirrors, gently corrects. Marriage here isn\'t a hierarchy; it\'s an encounter.',
         },
         {
           type: "blockquote",
@@ -278,7 +278,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "2. Marriage is a covenant, not a contract" },
         {
           type: "p",
-          text: "The Bible's recurring category for marriage is covenant (Hebrew berit). A contract protects each party's interest and dissolves on breach. A covenant is unconditional commitment in the presence of God — faithfulness tied to a person, not to performance.",
+          text: "The Bible keeps returning to one word when it speaks of marriage: covenant (Hebrew berit). A contract protects each side's interest and dissolves on breach. A covenant is unconditional commitment in the presence of God — faithfulness bound to a person, not to performance.",
         },
         {
           type: "blockquote",
@@ -287,7 +287,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Malachi anchors marriage in God's witness. \"Wife of thy covenant\" uses the same vocabulary the Bible uses for God's covenant with his people. Marriage, in this logic, is a public commitment made before a third party.",
+          text: "Malachi roots marriage in God's witness. \"Wife of thy covenant\" — the very word Scripture uses for God's bond with his people. By that measure, marriage isn't only between you two; it's a vow made in the open, before a third presence.",
         },
         { type: "h2", text: "3. Jesus reaffirms the original order" },
         {
@@ -315,7 +315,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Verse 21 sets the tone: mutual submission. Verse 25 commands the husband to sacrificial love modelled on Christ, not domination. Without that opening framing, the passage gets distorted.",
+          text: "The opening line sets the key: mutual submission. Only then does Paul turn to husbands — and even there, it's sacrificial love modelled on Christ, not domination. If that order slips, the passage starts to say something else entirely.",
         },
         { type: "p", text: "Colossians 3 turns to the daily work of marriage." },
         {
@@ -330,7 +330,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "5. Conflict and forgiveness" },
         {
           type: "p",
-          text: "The Bible doesn't idealise marriage. It assumes there will be conflict, hurt, fatigue. The answer isn't avoidance but proper handling.",
+          text: "The Bible doesn't pretty up marriage. It assumes there will be conflict, hurt, tiredness. It doesn't promise you can avoid these — only that there is a way through them.",
         },
         {
           type: "blockquote",
@@ -339,7 +339,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Paul doesn't say \"don't be angry\". He says don't let it fester. \"Don't carry it into tomorrow\" is one of the most practical pieces of marriage advice in Scripture. Resolve it, speak it, forgive.",
+          text: "Paul doesn't say \"don't be angry\". He says don't let it fester. Don't let the sun go down on it — don't carry into tomorrow what could still be put right today with a word, a forgiveness.",
         },
         { type: "h2", text: "6. The threefold cord" },
         {
@@ -353,23 +353,23 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: 'In the Christian reading, the "threefold cord" is the couple plus God. Marriage here isn\'t a two-person relationship but a three-thread shared future. This is why many couples treat the church ceremony less as formality and more as stepping into the covenant.',
+          text: 'In the Christian reading, that "threefold cord" is the two of you plus God — three strands twisted into one. Marriage here isn\'t a private bond between two; it\'s a shared future woven of three. Which is why so many couples step into a church ceremony not as formality, but as stepping into the covenant itself.',
         },
         { type: "h2", text: "7. Practical takeaways" },
         { type: "h3", text: "Marriage is not only between two people" },
         {
           type: "p",
-          text: "Biblically, marriage is a covenant, and every covenant needs a third party. That's why the public vow, the witnesses and — in the believing reading — God's presence matter.",
+          text: "Marriage, in Scripture, is a covenant — and every covenant is made before a third. That's why the public vow, the witnesses and — for those who believe — God's presence are not extras but the heart of the thing.",
         },
         { type: "h3", text: "Love is a decision, not a mood" },
         {
           type: "p",
-          text: 'Biblical love (Hebrew chesed, Greek agape) is not a feeling but a faithful choice. Marriage doesn\'t stand or fall on whether you both "feel it" today. It stands on the decision you renew each morning.',
+          text: 'The love Scripture talks about (Hebrew chesed, Greek agape) isn\'t a mood; it\'s a faithful choice. And that is quietly freeing: marriage doesn\'t have to stand or fall on whether you both "feel it" today. It stands on the choice you renew each morning.',
         },
         { type: "h3", text: "Forgiveness is a daily practice" },
         {
           type: "p",
-          text: "Two lives together means a steady stream of small hurts. The Bible doesn't ask for no conflict — it asks you not to sleep on it. \"Don't let the sun go down on your wrath\" is the most practical marriage advice in Scripture.",
+          text: "Two lives together means a steady drip of small hurts and small mendings. The Bible doesn't ask for no conflict — only that you don't sleep on it. \"Don't let the sun go down on your wrath\" — perhaps the most down-to-earth piece of marriage advice Scripture ever gives.",
         },
         {
           type: "cta",
@@ -416,11 +416,11 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       body: [
         {
           type: "p",
-          text: "Sokan keresnek esküvőre bibliai idézetet, amit beleírnak a meghívóba, az esküvői weboldalra vagy a fogadalom mellé. Ez a poszt egy bővített, kategóriákra bontott Károli-gyűjtemény: igék szeretetről, házasságról, közös útról, tiszteletről és megbocsátásról.",
+          text: "Sokan keresnek esküvőre bibliai idézetet, amit beleírnak a meghívóba, az esküvői weboldalra vagy a fogadalom mellé — egyetlen mondatban szeretnék kimondani azt, ami a legmélyebb az életükben. A Szentírás bőven kínál ilyen mondatokat: igéket szeretetről, házasságról, közös útról, tiszteletről és megbocsátásról.",
         },
         {
           type: "p",
-          text: "A Károli fordítást azért használjuk, mert a magyar esküvői hagyományban ez a klasszikus, ünnepélyes hangulat. Ha modernebb fordítást kerestek, a Magyar Bibliatársulat új fordítása vagy az Egyszerű fordítás is jó alternatíva. A blog végén GYIK-ben kitérünk erre is.",
+          text: "A Károli fordítást azért hoztuk ide, mert a magyar esküvői hagyományban ennek van a legklasszikusabb, legünnepélyesebb hangulata. Ha modernebb fordítást szeretnétek, a Magyar Bibliatársulat új fordítása vagy az Egyszerű fordítás is hasonló mélységgel beszél — csak más nyelven.",
         },
         { type: "h2", text: "Rövid bibliai idézetek esküvői meghívóra" },
         {
@@ -496,7 +496,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "János itt valami megrendítőt mond: Istent senki nem látta, de ha szeretjük egymást, mégis láthatóvá lesz közöttünk. A házasság így titkos szolgálat is — a házastárs felé kinyújtott kéz, a meghallgatott panasz, az újra és újra kimondott „bocsáss meg" mind kis ablakok arra, hogy Isten szeretete bennünk lakást vesz.",
+          text: "János itt valami megrendítőt mond: Istent senki nem látta, de ha szeretjük egymást, mégis láthatóvá lesz közöttünk. A házasság így titkos szolgálat is — a házastárs felé kinyújtott kéz, a meghallgatott panasz, az újra és újra kimondott „bocsáss meg” mind kis ablakok arra, hogy Isten szeretete bennünk lakást vesz.",
         },
         { type: "h3", text: "1János 4,16-18" },
         {
@@ -517,7 +517,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Az egész teremtésben ez az első dolog, amiről Isten azt mondja: „nem jó". Nem jó egyedül. Nem hiány, nem hiba — egyszerűen az ember természete, hogy társra van szabva. A házasság ennek a vágynak ad nevet és helyet: két élet azért fordul egymás felé, mert egyikünk sem teljes magában.",
+          text: "Az egész teremtésben ez az első dolog, amiről Isten azt mondja: „nem jó”. Nem jó egyedül. Nem hiány, nem hiba — egyszerűen az ember természete, hogy társra van szabva. A házasság ennek a vágynak ad nevet és helyet: két élet azért fordul egymás felé, mert egyikünk sem teljes magában.",
         },
         { type: "h3", text: "1Mózes 2,21-24" },
         {
@@ -527,7 +527,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Megrendítő kép: a társ nem kívülről érkezik, hanem az ember legmélyebb belsejéből vétetik. Ezért szól a felismerés is így: „csontomból való csont". A házasság nem két idegen találkozása, hanem két élet egymásra ismerése — és az elhagyás, ragaszkodás, eggyé válás mozdulatában új otthon születik.",
+          text: "Megrendítő kép: a társ nem kívülről érkezik, hanem az ember legmélyebb belsejéből vétetik. Ezért szól a felismerés is így: „csontomból való csont”. A házasság nem két idegen találkozása, hanem két élet egymásra ismerése — és az elhagyás, ragaszkodás, eggyé válás mozdulatában új otthon születik.",
         },
         { type: "h3", text: "Máté 19,4-6" },
         {
@@ -598,7 +598,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: “A hármas kötél képe meghitt és erős egyszerre: két szál önmagában könnyen elszakad, három már kitart. Sokan úgy olvassák, hogy a házasság sem csupán két ember dolga — Isten a harmadik szál, aki a kötést tartja, amikor a mi erőnk fogytán van. A meleg, az oltalom, a kitartás mind innen ered.”,
+          text: "A hármas kötél képe meghitt és erős egyszerre: két szál önmagában könnyen elszakad, három már kitart. Sokan úgy olvassák, hogy a házasság sem csupán két ember dolga — Isten a harmadik szál, aki a kötést tartja, amikor a mi erőnk fogytán van. A meleg, az oltalom, a kitartás mind innen ered.",
         },
         { type: "h3", text: "Ruth 1,16-17" },
         {
@@ -628,7 +628,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "„Kösd a nyakadra, írd a szíved táblájára" — gyengéd, mégis komoly kép. A bölcs nem érzelmet ajánl, hanem mindennap viselt ékszert: az irgalmasságot és az igazságot. A házasság éppen ilyen viselet — nem ünneplő ruha, hanem a szívre írt szövetség, amiben végül mind kedvesebbé válunk Isten és ember előtt.",
+          text: "„Kösd a nyakadra, írd a szíved táblájára” — gyengéd, mégis komoly kép. A bölcs nem érzelmet ajánl, hanem mindennap viselt ékszert: az irgalmasságot és az igazságot. A házasság éppen ilyen viselet — nem ünneplő ruha, hanem a szívre írt szövetség, amiben végül mind kedvesebbé válunk Isten és ember előtt.",
         },
         { type: "h2", text: "Bibliai idézetek tiszteletről és megbocsátásról" },
         { type: "h3", text: "Efézus 4,1-3" },
@@ -669,7 +669,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Pál egy mondatban két olyan dolgot köt össze, amit könnyű szétválasztani: szeretet és tisztelet. „A tiszteletadásban egymást megelőzők legyetek" — vagyis ne azt várjuk, hogy minket vegyenek észre, hanem mi vegyük észre a másikat először. A házasságban ez a gyengédség óvja a szeretetet attól, hogy egy idő után megszokássá fakuljon.",
+          text: "Pál egy mondatban két olyan dolgot köt össze, amit könnyű szétválasztani: szeretet és tisztelet. „A tiszteletadásban egymást megelőzők legyetek” — vagyis ne azt várjuk, hogy minket vegyenek észre, hanem mi vegyük észre a másikat először. A házasságban ez a gyengédség óvja a szeretetet attól, hogy egy idő után megszokássá fakuljon.",
         },
         { type: "h3", text: "Kolossé 3,12-14" },
         {
@@ -690,7 +690,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "„Kelj fel, én mátkám, és jöjj" — a Vőlegény hangja hív, és a tél, az eső, a sötétség elmúlt. Az Énekek éneke itt valami nagyobbat is sejtet: nem csak a szerelmesek tavasza ez, hanem minden új kezdet képe. A házasság is ilyen hívás — a régi magány tele véget ér, és kezdődik az énekek és virágok ideje.",
+          text: "„Kelj fel, én mátkám, és jöjj” — a Vőlegény hangja hív, és a tél, az eső, a sötétség elmúlt. Az Énekek éneke itt valami nagyobbat is sejtet: nem csak a szerelmesek tavasza ez, hanem minden új kezdet képe. A házasság is ilyen hívás — a régi magány tele véget ér, és kezdődik az énekek és virágok ideje.",
         },
         { type: "h3", text: "Énekek éneke 2,16" },
         {
@@ -710,7 +710,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Bensőséges idézet. Inkább meghívóra, fogadalom mellé vagy kreatív esküvői weboldalra illik.",
+          text: "„Mindenestől szép vagy, én mátkám” — a Vőlegény tekintete nem hibakeresőn néz, hanem szerelmesen. A szeretet ilyen: nem becsukja a szemét a valóság előtt, de a másikat egészében, szeplőtlenül látja. A házasságban újra és újra ezt a tekintetet ajándékozzuk egymásnak — ezt a fajta szépséget, amit csak a szerető szem lát meg.",
         },
         { type: "h3", text: "Énekek éneke 8,6-7" },
         {
@@ -720,7 +720,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Az egyik legszebb költői bibliai idézet a szeretetről. Kifejezetten jó elegáns meghívóra vagy szertartásfüzetbe.",
+          text: "„Tégy engem pecsétként a szívedre” — a szerelmes nem szóbeli ígéretet kér, hanem maradandó nyomot. A szeretet ereje pedig olyan, mint a halálé: nem múlik el, nem oltják el a vizek, nem mossák el az árvizek. A házasság ezt a mély, kitartó szeretetet vállalja — olyat, ami nem a könnyebb napoktól lesz erős, hanem attól, hogy a nehezeken is megmarad.",
         },
         { type: "h2", text: "Melyik bibliai idézet illik hozzátok?" },
         {
@@ -802,7 +802,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "The best-known wedding passage. It describes love not as feeling but as patience, kindness, faithfulness and endurance.",
+          text: "Paul almost dismantles love here: not as a feeling, but as a series of small, daily motions — patience, kindness, humility, endurance. These are not words you can perform on a single day; they are learned slowly, in ordinary life. Marriage is exactly that classroom: practising, day by day, the kind of love that never ends.",
         },
         { type: "h3", text: "1 John 4:7-8" },
         {
@@ -812,7 +812,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Roots love not in feeling but in God. A natural fit for a church or faith-led ceremony.",
+          text: "John goes to the root: wherever love is, God is — even when we do not name him. Love is not our invention but an echo of something larger. So when two people turn toward each other, they are doing more than they know: they are passing on a love that was first given to them.",
         },
         { type: "h2", text: "On marriage" },
         { type: "h3", text: "Genesis 2:18, 24" },
@@ -823,7 +823,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "The biblical foundation for marriage: people are created for partnership and shared life.",
+          text: "In the whole story of creation, this is the first thing God calls not good: aloneness. Not a flaw, not a failing — simply the shape of being human. We are made to be received by another, and marriage gives this longing a name and a home: two lives turning toward each other because neither is complete in itself.",
         },
         { type: "h3", text: "Mark 10:6-9" },
         {
@@ -833,7 +833,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "The strongest passage on the covenant nature of marriage. A fitting reading for a formal ceremony.",
+          text: "Jesus reaches back to the beginning: marriage is not a private arrangement but something God himself joins together. That phrase — joined together — is gentle and weighty at once: not two lives glued side by side, but knit into one. And what God knits, he asks us to handle with care.",
         },
         { type: "h3", text: "Ephesians 5:21, 25" },
         {
@@ -843,7 +843,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Read together, the key is mutual love and self-giving service, not hierarchy.",
+          text: "Paul begins with mutual submission and ends with a husband loving as Christ loved — a love that gave itself away. The picture is not hierarchy but kneeling: each partner bending toward the other, willing to be the first to serve. Marriage lives in that shared lowering, where neither tries to win and both are quietly held.",
         },
         { type: "h2", text: "On shared life and endurance" },
         { type: "h3", text: "Ecclesiastes 4:9-12" },
@@ -854,7 +854,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: 'Why partnership matters: someone to lift you up. The "threefold cord" is often read at Christian weddings as the couple plus God.',
+          text: 'The Preacher is sober: in life, we fall. Not if, but when. And in that simple fact lies the gift of a companion — someone to reach down and lift the other up. The threefold cord, often taken as the couple and God, names the deeper hope: that the bond holding two people together is stronger than either of them alone.',
         },
         { type: "h3", text: "Ruth 1:16-17" },
         {
@@ -864,7 +864,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Not originally a marriage vow, but the imagery of faithfulness and shared destiny makes it a wedding favourite.",
+          text: "Ruth speaks these words to an older woman, yet they carry the very heart of a wedding vow. Not just I will come with you, but your people will be my people, your God my God. It is the full self, handed over without conditions — the kind of belonging that marriage learns to live out, day after day, in the ordinary places.",
         },
         { type: "h2", text: "On respect, patience and forgiveness" },
         { type: "h3", text: "Ephesians 4:1-3" },
@@ -875,7 +875,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "The everyday side of marriage: humility, patience, peace.",
+          text: "Paul does not hand out grand words; he hands out the everyday clothing of a shared life: lowliness, meekness, longsuffering, bearing one another in love. None of these glitter, yet these are what keep peace alive when two lives rub against each other. The big yes of a wedding is held in place by countless small yeses afterward.",
         },
         { type: "h3", text: "Colossians 3:12-14" },
         {
@@ -885,7 +885,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A beautiful programme for married life: kindness, humility, patience, forgiveness, love.",
+          text: "Paul speaks of getting dressed: each morning, put on mercy, kindness, humility, gentleness, patience — and over all of these, love, like a coat that holds everything else together. Marriage is not a feeling we wait to feel; it is a garment we put on, day after day, and quietly wear toward the other.",
         },
         { type: "h2", text: "Romantic passages from Song of Solomon" },
         { type: "h3", text: "Song of Solomon 2:10-13" },
@@ -896,7 +896,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Poetic, spring-tinted, romantic — a natural fit for outdoor or quietly elegant ceremonies.",
+          text: "\"Rise up, my love, and come away\" — the Beloved calls, and winter, rain and darkness are already past. The Song hints at something larger than two lovers: every true beginning sounds like this. Marriage, too, is such a call — the long season of being alone draws to an end, and the time of singing comes.",
         },
         { type: "h3", text: "Song of Solomon 8:6-7" },
         {
@@ -906,7 +906,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "One of the most beautiful poetic verses on love. Works particularly well on elegant invitations or printed orders of service.",
+          text: "\"Set me as a seal upon your heart\" — the lover asks not for a passing promise but for a lasting mark. And the strength of love is named in the same breath as death: many waters cannot quench it, no flood can sweep it away. Marriage takes on this kind of love — not strong because the days are easy, but strong because it remains through the hard ones.",
         },
         { type: "h2", text: "How to choose" },
         {
@@ -993,7 +993,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Ezért nem elég annyit írni, hogy „kb. 90 fő“. Érdemes több verzióval számolni:",
+          text: "Ezért nem elég annyit írni, hogy „kb. 90 fő”. Érdemes több verzióval számolni:",
         },
         {
           type: "ul",
@@ -1003,7 +1003,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "3. Ne csak a végösszeget nézzétek" },
         {
           type: "p",
-          text: "Sok pár csak azt figyeli, hogy a teljes költségvetés még belefér-e. Ennél hasznosabb, ha kategóriánként is látjátok, hol van túlköltés.",
+          text: "Könnyű csak azt nézni, hogy a teljes költségvetés még belefér-e. Sokkal többet segít, ha kategóriánként is látjátok, hol csúsztatok el.",
         },
         {
           type: "p",
@@ -1016,7 +1016,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A Wēddly-ben a költségvetés, a vendéglista és az ültetés egy helyen él, így ha változik a vendégszám, a kapcsolódó döntések is könnyebben átláthatók.",
+          text: "Sokat segít, ha a költségvetés, a vendéglista és az ültetés ugyanazon a felületen él — így amikor mozdul a vendégszám, nem kell három helyen utánajavítani. (Ezt egyébként pont ezért építettük így a Wēddly-be.)",
         },
         { type: "h2", text: "Rövid checklist" },
         {
@@ -1089,7 +1089,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "3. Don't only watch the grand total" },
         {
           type: "p",
-          text: "Many couples track only whether the total still fits. It's far more useful to see where, by category, you're already over.",
+          text: "It's tempting to watch only the grand total. What helps more is seeing, category by category, where you've quietly slipped over.",
         },
         {
           type: "p",
@@ -1102,7 +1102,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "In Weddly the budget, guest list and seating live in one workspace, so when guest count moves the connected decisions are easier to keep straight.",
+          text: "It helps a lot when the budget, guest list and seating sit in one workspace — so a change in guest count doesn't mean tracking the knock-on effects in three different files. (That's why we built Weddly the way we did.)",
         },
         { type: "h2", text: "Short checklist" },
         {
@@ -1139,7 +1139,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       body: [
         {
           type: "p",
-          text: "A vendéglista az esküvőszervezés egyik legfontosabb alapja. Mégis sok párnál több táblázatban, jegyzetben és chatüzenetben él egyszerre. Valaki már visszajelzett, valaki még nem. Egy vendég hozna kísérőt, más vegetáriánus menüt kér, a harmadik pedig még nem biztos benne, hogy jön.",
+          text: "A vendéglista az esküvőszervezés egyik legfontosabb alapja, és mégis ez az, ami a leghamarabb darabokra esik: pár táblázat, néhány jegyzet, egy-két chatszál. Valaki már visszajelzett, valaki még nem. Egyikük hozna kísérőt, másikuk vegetáriánus menüt kér, a harmadik még nem biztos benne, hogy jön.",
         },
         { type: "p", text: "Ebből lesz az a káosz, amit jobb már az elején megelőzni." },
         { type: "h2", text: "1. Ne csak neveket írjatok össze" },
@@ -1167,7 +1167,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "2. Legyen egyértelmű RSVP folyamat" },
         {
           type: "p",
-          text: "A „majd szóban jelzik“ ritkán működik jól. Sokkal egyszerűbb, ha minden vendég kap egy saját RSVP linket, ahol gyorsan vissza tud jelezni.",
+          text: "A „majd szóban jelzik” ritkán működik jól. Sokkal egyszerűbb, ha minden vendég kap egy saját RSVP linket, ahol gyorsan vissza tud jelezni.",
         },
         {
           type: "p",
@@ -1187,7 +1187,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "3. A plus one kérdést korán tisztázzátok" },
         {
           type: "p",
-          text: "A kísérők kezelése az egyik leggyakoribb vendéglista-probléma. Érdemes előre eldönteni, kik hozhatnak plus one-t, és ezt következetesen vezetni.",
+          text: "A kísérők kérdése az, ami a legtöbbször elcsúszik. Érdemes előre eldönteni, kik hozhatnak plus one-t, és utána ehhez tartani magatokat — még akkor is, ha kínos egy-két helyzet.",
         },
         {
           type: "p",
@@ -1200,7 +1200,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A Wēddly-ben a vendéglista, RSVP és ültetés egy közös rendszerben van, így nem kell több helyen frissíteni ugyanazt az információt.",
+          text: "Sokat ér, ha a vendéglista, az RSVP és az ültetés ugyanott él — egy lemondást vagy egy új ételérzékenységet elég egyszer beírni. (A Wēddly-t pont emiatt raktuk össze így.)",
         },
         { type: "h2", text: "Rövid checklist" },
         {
@@ -1230,7 +1230,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       body: [
         {
           type: "p",
-          text: "The guest list is one of the foundations of planning. For most couples it ends up spread across spreadsheets, notes and chat threads. Someone has replied, someone hasn't. One wants a plus-one, another needs a vegetarian menu, a third still isn't sure.",
+          text: "The guest list is one of the foundations of planning, and it's also the first thing that tends to scatter — a spreadsheet here, a few notes there, two chat threads. Someone has replied, someone hasn't. One wants a plus-one, another needs a vegetarian menu, a third still isn't sure.",
         },
         { type: "p", text: "That's the chaos worth preventing from the start." },
         { type: "h2", text: "1. Track more than names" },
@@ -1272,7 +1272,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "3. Settle plus-ones early" },
         {
           type: "p",
-          text: "Plus-ones are the most common guest-list problem. Decide upfront who can bring one, and apply the rule consistently.",
+          text: "Plus-ones are where things slip most often. Decide upfront who can bring one, and then hold the line — even if it makes one or two conversations awkward.",
         },
         {
           type: "p",
@@ -1285,7 +1285,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "In Weddly the guest list, RSVP and seating share one workspace, so you don't update the same information in three places.",
+          text: "It helps a lot when the guest list, RSVPs and seating live together — a cancellation or a new dietary need only has to be written down once. (That's exactly why we built Weddly this way.)",
         },
         { type: "h2", text: "Short checklist" },
         {
@@ -1326,7 +1326,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Egy jó ültetési rend nemcsak szép, hanem praktikus is. Segít a vendégeknek, a helyszínnek, a cateringnek és nektek is.",
+          text: "Egy jól átgondolt ültetés nemcsak szépen mutat, hanem mindenkinek könnyebbé teszi a napot — a vendégeknek, a felszolgálóknak és nektek is.",
         },
         { type: "h2", text: "1. Ne kezdjétek túl korán véglegesíteni" },
         {
@@ -1353,7 +1353,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A jó ültetési rend nemcsak embereket párosít, hanem a térrel is számol.",
+          text: "Egy jó ültetés nem csak embereket tesz egymás mellé — figyel arra is, ki hol érzi majd jól magát a teremben.",
         },
         { type: "h2", text: "3. Legyen nyomtatható verzió" },
         { type: "p", text: "Az ültetési rend nem ér véget a képernyőn. Szükség lehet:" },
@@ -1369,7 +1369,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Ezért fontos, hogy az ültetési rend exportálható és nyomdakész legyen.",
+          text: "Ezért éri meg már a tervezésnél arra gondolni, hogy a végén ezek mind kinyomtatva, kézbe fogva is jól nézzenek ki.",
         },
         { type: "h2", text: "4. Készüljetek az utolsó pillanatos változásokra" },
         {
@@ -1378,7 +1378,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A Wēddly vizuális ültetési felületén könnyebb mozgatni a vendégeket, majd A4, A6 vagy A3 formátumban nyomtatható anyagot készíteni.",
+          text: "Mi pont ezért építettük a Wēddly ültetési felületét úgy, hogy a vendégeket egyszerűen lehessen mozgatni, és a végén A4-es, A6-os vagy A3-as méretben nyomtatható legyen mindaz, amire szükség van.",
         },
         { type: "h2", text: "Rövid checklist" },
         {
@@ -1412,7 +1412,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A good seating chart is not only nice, it's practical. It helps your guests, the venue, the caterer and you.",
+          text: "A well-thought-out seating plan isn't just pretty — it quietly makes the day easier for your guests, the people running the venue, and the two of you.",
         },
         { type: "h2", text: "1. Don't lock it in too early" },
         {
@@ -1431,13 +1431,16 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
             "older guests",
           ],
         },
-        { type: "p", text: "Once those are stable, do the exact seat assignments." },
+        { type: "p", text: "Once those feel right, you can move on to who sits exactly where." },
         { type: "h2", text: "2. Respect the venue layout" },
         {
           type: "p",
           text: "Position matters: the dance floor, the bar, the entrance, the band. Older guests prefer quieter corners. Friend groups belong near the dance floor.",
         },
-        { type: "p", text: "Good seating doesn't only pair people; it accounts for the space." },
+        {
+          type: "p",
+          text: "A good seating plan isn't only about who sits next to whom — it also thinks about where people will feel most at home in the room.",
+        },
         { type: "h2", text: "3. Get the printable version right" },
         { type: "p", text: "Seating doesn't end on screen. You'll likely need:" },
         {
@@ -1450,7 +1453,10 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
             "a runner copy for on-the-day staff",
           ],
         },
-        { type: "p", text: "So the chart has to export cleanly and at print sizes." },
+        {
+          type: "p",
+          text: "Which is why it's worth planning early for how it'll look once it's actually printed and pinned up.",
+        },
         { type: "h2", text: "4. Plan for last-minute changes" },
         {
           type: "p",
@@ -1458,7 +1464,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Weddly's visual seating canvas lets you move guests easily, then export to A4, A6 or A3 for print.",
+          text: "That's exactly why we built Weddly's seating canvas the way we did — drag a guest, drop them somewhere new, and when you're ready it prints in A4, A6 or A3.",
         },
         { type: "h2", text: "Short checklist" },
         {
@@ -1506,7 +1512,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
           type: "p",
           text: "Ez legyen az első. Ne rejtőzzön hosszú szöveg vagy sok mező mögé. A vendég azonnal értse, hogy visszajelzést kértek.",
         },
-        { type: "p", text: "Példa: „Részt tudsz venni az esküvőnkön?“" },
+        { type: "p", text: "Példa: „Részt tudsz venni az esküvőnkön?”" },
         {
           type: "ul",
           items: ["Igen, ott leszek.", "Sajnos nem tudok menni."],
@@ -1514,15 +1520,15 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "2. Kísérő kérdése" },
         {
           type: "p",
-          text: "Ha engedtek kísérőt, az RSVP-ben legyen egyértelműen kezelve. Ha nem mindenki hozhat plus one-t, akkor személyre szabott RSVP linkkel elkerülhető a félreértés.",
+          text: "Ha lehet kísérőt hozni, érdemes ezt rögtön tisztázni az űrlapon. Ha viszont nem mindenki kap plus one-t, a személyre szabott RSVP linkek elejét veszik a kínos félreértéseknek.",
         },
-        { type: "p", text: "Példa: „Kísérővel érkezel?“" },
+        { type: "p", text: "Példa: „Kísérővel érkezel?”" },
         { type: "h2", text: "3. Menü és ételérzékenység" },
         {
           type: "p",
-          text: "A catering miatt ezt időben érdemes bekérni. Kérdezzetek rá az ételválasztásra és a speciális igényekre is.",
+          text: "A konyhának időben kell tudnia, mire számítson, úgyhogy ezt érdemes előre megkérdezni — az ételválasztást és a speciális igényeket is.",
         },
-        { type: "p", text: "Példa: „Van ételérzékenységed vagy speciális étrended?“" },
+        { type: "p", text: "Példa: „Van ételérzékenységed vagy speciális étrended?”" },
         {
           type: "p",
           text: "Itt jó, ha van szabad szöveges mező is, mert nem minden igény fér bele előre megadott opciókba.",
@@ -1545,7 +1551,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A Wēddly-ben minden vendég saját RSVP linket kaphat, a válaszok pedig automatikusan bekerülnek a vendéglistába.",
+          text: "Mi a Wēddly-ben pont ezért adunk minden vendégnek saját RSVP linket — a válaszaik pedig maguktól odakerülnek, ahol kellenek: a vendéglistába.",
         },
         {
           type: "cta",
@@ -1580,13 +1586,13 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "2. Plus-one" },
         {
           type: "p",
-          text: "If you allow plus-ones, the RSVP has to handle it cleanly. If not everyone gets one, per-guest links prevent the awkward case.",
+          text: "If plus-ones are welcome, say so plainly on the form. If only some guests get one, per-guest links quietly avoid the awkward moment of someone bringing a friend you weren't expecting.",
         },
         { type: "p", text: 'Example: "Bringing a plus-one?"' },
         { type: "h2", text: "3. Meal and dietary needs" },
         {
           type: "p",
-          text: "Catering needs this early. Ask for meal choice and dietary requirements together.",
+          text: "The kitchen needs to know early what to plan for, so ask about meal choice and any dietary needs in the same breath.",
         },
         { type: "p", text: 'Example: "Any dietary needs or restrictions?"' },
         { type: "p", text: "Leave a free-text field — not every need fits a preset option." },
@@ -1604,11 +1610,11 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "5. Don't ask too much" },
         {
           type: "p",
-          text: "Long RSVPs get postponed. Aim for under a minute to complete.",
+          text: "Long RSVPs get put off. A good one should take under a minute, even on a phone at the bus stop.",
         },
         {
           type: "p",
-          text: "In Weddly every guest gets a personal RSVP link, and the replies flow straight into the guest list.",
+          text: "In Weddly each guest gets their own RSVP link, and whatever they answer lands straight in your guest list — no copy-pasting from a shared form.",
         },
         {
           type: "cta",
@@ -1692,7 +1698,10 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
           text: "Ekkor már jó, ha a költségvetés nem csak becslés, hanem tényleges ajánlatok alapján frissül.",
         },
         { type: "h2", text: "3 hónappal az esküvő előtt" },
-        { type: "p", text: "Most már a válaszok és a pontosítások időszaka jön." },
+        {
+          type: "p",
+          text: "Itt már arról szól minden, hogy ami eddig terv volt, az most kapja meg a végleges formáját — válaszok jönnek vissza, a részletek a helyükre csúsznak.",
+        },
         {
           type: "ul",
           items: [
@@ -1706,7 +1715,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Ha ekkor még minden külön táblázatban van, nagyon könnyű hibázni. Érdemes egy közös rendszerben vezetni az adatokat.",
+          text: "Ha ekkor még minden külön táblázatban szétszórva van, nagyon könnyű kicsúszni egy-egy részletet. Sokkal nyugodtabb, ha mindketten ugyanazt az egy listát nézitek.",
         },
         { type: "h2", text: "1 hónappal az esküvő előtt" },
         { type: "p", text: "Ez már a véglegesítés időszaka." },
@@ -1723,7 +1732,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Ebben a hónapban már nem az új ötletek a legfontosabbak, hanem az, hogy mindenki ugyanazt az aktuális információt lássa.",
+          text: "Ebben a hónapban már nem az új ötletek számítanak, hanem az, hogy mindenki ugyanazt tudja — a szüleitek, a tanúitok és a szolgáltatók is.",
         },
         { type: "h2", text: "1 héttel az esküvő előtt" },
         { type: "p", text: "Itt már csak a finomhangolás maradjon." },
@@ -1744,7 +1753,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Rövid összefoglaló" },
         {
           type: "p",
-          text: "Az esküvőszervezés akkor lesz kezelhető, ha nem egyszerre próbáltok mindent megoldani. Legyen egy közös checklist, egy friss vendéglista, egy élő költségvetés és egy olyan rendszer, ahol mindketten ugyanazt látjátok.",
+          text: "Az esküvőszervezés akkor lesz kezelhető, ha nem akartok mindent egyszerre megoldani. Egy közös checklist, egy friss vendéglista, egy költségvetés, ami együtt mozog veletek — és egy hely, ahol mindketten ugyanazt látjátok. Ennyi elég.",
         },
         {
           type: "cta",
@@ -1783,7 +1792,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "The good news: it doesn't have to be solved in one go. Working in time-ordered phases makes it much calmer.",
+          text: "The good news: it doesn't have to be solved in one go. Take it in waves, and the whole thing gets a lot calmer.",
         },
         { type: "h2", text: "12 months out" },
         { type: "p", text: "This is the period for the big decisions." },
@@ -1848,7 +1857,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "If everything still lives in separate spreadsheets it's easy to drop information. Keep it in one shared system.",
+          text: "If everything still lives in scattered spreadsheets, it's easy to drop a detail. Much calmer if both of you are looking at the same list.",
         },
         { type: "h2", text: "1 month out" },
         { type: "p", text: "Finalisation phase." },
@@ -1865,7 +1874,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Less about new ideas, more about everyone reading the same current information.",
+          text: "Less about new ideas, more about everyone — you two, your parents, your vendors — actually knowing the same thing.",
         },
         { type: "h2", text: "1 week out" },
         { type: "p", text: "Only fine-tuning left." },
@@ -1886,7 +1895,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Summary" },
         {
           type: "p",
-          text: "Planning becomes manageable when you don't try to solve everything at once. Keep a shared checklist, a fresh guest list, a live budget, and one place where both of you see the same picture.",
+          text: "Planning gets manageable the moment you stop trying to solve everything at once. A shared checklist, a guest list that stays current, a budget that moves with you, and one spot you both look at. That's enough.",
         },
         {
           type: "cta",
@@ -1962,7 +1971,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Digitális meghívó: mikor praktikusabb?" },
         {
           type: "p",
-          text: "A digitális meghívó gyors, könnyen frissíthető és jól kapcsolható RSVP rendszerhez. Ha változik az időpont, helyszín, menüinformáció vagy program, nem kell újranyomtatni semmit.",
+          text: "A digitális meghívó gyors, könnyen javítható, és a visszajelzés is mellé fér. Ha változik az időpont, a helyszín vagy a menü, nem kell semmit újranyomtatni — egy kattintással elintézitek.",
         },
         { type: "p", text: "Előnyei:" },
         {
@@ -2015,11 +2024,11 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Hogyan kapcsolódik ide az RSVP?" },
         {
           type: "p",
-          text: "A digitális meghívó legnagyobb előnye, hogy azonnal összekapcsolható a visszajelzéssel. Nem kell külön üzeneteket, hívásokat és táblázatokat kezelni.",
+          text: "A digitális meghívó legnagyobb előnye, hogy a visszajelzés ott van rögtön mellette. Nem kell külön üzeneteket olvasgatni, telefonálgatni, táblázatot frissíteni.",
         },
         {
           type: "p",
-          text: "A vendég megnyitja a linket, válaszol néhány kérdésre, ti pedig látjátok a vendéglistában az aktuális státuszt.",
+          text: "A vendég megnyitja a linket, válaszol pár kérdésre, ti pedig már látjátok is, ki jön és ki nem.",
         },
         { type: "h2", text: "Rövid döntési segédlet" },
         { type: "h3", text: "Válasszatok papír meghívót, ha…" },
@@ -2117,7 +2126,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Digital invitations: when they're more practical" },
         {
           type: "p",
-          text: "Digital is fast, easy to update, and connects directly to an RSVP system. If the date, venue, menu or schedule changes, nothing needs to be reprinted.",
+          text: "Digital is fast, easy to fix, and the reply lands right next to it. If the date, venue or menu changes, nothing has to be reprinted — one edit and everyone sees the new version.",
         },
         { type: "p", text: "Upsides:" },
         {
@@ -2167,11 +2176,11 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "How RSVP fits in" },
         {
           type: "p",
-          text: "Digital's biggest advantage is the direct link to RSVP. No separate messages, calls or spreadsheets.",
+          text: "Digital's real advantage: the reply sits right next to the invitation. No separate messages, no phone calls, no spreadsheet to keep alive.",
         },
         {
           type: "p",
-          text: "The guest opens the link, answers a few questions, and you see live status in the guest list.",
+          text: "The guest opens the link, answers a few questions, and you can already see who's coming and who isn't.",
         },
         { type: "h2", text: "Quick decision aid" },
         { type: "h3", text: "Choose paper if…" },
