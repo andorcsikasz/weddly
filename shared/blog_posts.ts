@@ -101,11 +101,11 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Malakiás itt kimondja, hogy a házasság előtt Isten áll tanúként. A „szövetséges feleség” (béríthekha) ugyanaz a szó, amit a Biblia Isten és népe kapcsolatára használ, ehhez méri a házasságot. Nem csak kettőtök ügye, hanem nyilvánosan, harmadik szem előtt kimondott elköteleződés.",
+          text: "Malakiás itt kimondja, hogy a házasság előtt Isten áll tanúként. A „szövetséges feleség” (béríthekha) ugyanaz a szó, amelyet a Biblia Isten és népe kapcsolatára használ, és ehhez méri a házasságot is. Nem csak kettőtök ügye, hanem nyilvánosan, harmadik szem előtt kimondott elköteleződés.",
         },
         {
           type: "p",
-          text: "Innen érthető meg, miért tartja fontosnak a Szentírás az ünnepélyes esküt és a tanúk jelenlétét. Nem hivatali aktusként, hanem a szövetség természetéből fakadóan.",
+          text: "Ebből érthető meg, miért tartja fontosnak a Szentírás az ünnepélyes esküt és a tanúk jelenlétét. Nem hivatali aktusként, hanem a szövetség természetéből fakadóan.",
         },
         { type: "h2", text: "3. Jézus megerősíti az eredeti rendet" },
         {
@@ -155,7 +155,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "5. A nehéz részek: megbocsátás és kitartás" },
         {
           type: "p",
-          text: "A Biblia nem szépíti meg a házasságot. Számít vele, hogy két ember között lesznek súrlódások, sebek, fáradtság. Nem azt ígéri, hogy ezek elkerülhetők, azt, hogy van rá mód, hogyan menjünk át rajtuk.",
+          text: "A Biblia nem szépíti meg a házasságot. Számol vele, hogy két ember között lesznek súrlódások, sebek, fáradtság. Nem azt ígéri, hogy ezek elkerülhetők, hanem azt, hogy van mód átmenni rajtuk.",
         },
         {
           type: "blockquote",
@@ -164,7 +164,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Pál nem azt mondja, hogy ne haragudjunk, azt mondja, ne hagyjuk elmérgesedni. Ne menjen le a nap a haragunkon: ne vigyük át holnapra azt, ami ma még helyrehozható egy kimondott szóval, egy bocsánatkéréssel.",
+          text: "Pál nem azt mondja, hogy ne haragudjunk, hanem azt, hogy ne hagyjuk elmérgesedni. Ne menjen le a nap a haragunkon: ne vigyük át holnapra azt, ami ma még helyrehozható egy kimondott szóval, egy bocsánatkéréssel.",
         },
         {
           type: "p",
@@ -186,7 +186,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Ez magyarázza meg, miért tartják sokan a templomi esküvőt nem ünnepi formaiságnak, hanem a szövetségbe való beleállásnak: az eskü Isten színe előtt hangzik el, és az ő jelenlétét hívja be a közös életbe.",
+          text: "Ez magyarázza, miért tartják sokan a templomi esküvőt nem ünnepi formaságnak, hanem a szövetségbe való belépésnek: az eskü Isten színe előtt hangzik el, és az ő jelenlétét hívja be a közös életbe.",
         },
         { type: "h2", text: "7. Mit jelent ez a gyakorlatban?" },
         {
@@ -206,7 +206,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h3", text: "A megbocsátás napi gyakorlat" },
         {
           type: "p",
-          text: "Két ember együttélése folyamatos kis sebek és kis bocsánatkérések sora. A Biblia nem azt kéri, hogy ne legyen konfliktus, azt, hogy ne aludjatok rá. „Ne menjen le a nap a ti haragotokon”, talán ennél földhözragadtabb tanácsot nem is ad a Szentírás a házasságról.",
+          text: "Két ember együttélése folyamatos kis sebek és kis bocsánatkérések sora. A Biblia nem azt kéri, hogy ne legyen konfliktus, hanem azt, hogy ne aludjatok rá. „Ne menjen le a nap a ti haragotokon”, talán ennél földhözragadtabb tanácsot nem is ad a Szentírás a házasságról.",
         },
         {
           type: "cta",
@@ -218,7 +218,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h3", text: "Mit jelent, hogy a házasság szövetség?" },
         {
           type: "p",
-          text: "A szövetség nem szerződés. A szerződés a felek érdekét védi és a másik kötelességszegésére bontható. A szövetség nyilvános, harmadik fél előtt tett elköteleződés, amely a hűséget nem a teljesítményhez, hanem a személyhez köti.",
+          text: "A szövetség nem szerződés. A szerződés a felek érdekét védi, és felbontható, ha a másik megszegi. A szövetség nyilvános, harmadik fél előtt tett elköteleződés, amely a hűséget nem a teljesítményhez, hanem a személyhez köti.",
         },
         { type: "h3", text: "Mit jelent az engedelmesség a házasságban?" },
         {
@@ -353,7 +353,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: 'In the Christian reading, that "threefold cord" is the two of you plus God, three strands twisted into one. Marriage here isn\'t a private bond between two; it\'s a shared future woven of three. Which is why so many couples step into a church ceremony not as formality, but as stepping into the covenant itself.',
+          text: "In the Christian reading, that \"threefold cord\" is the two of you plus God, three strands twisted into one. Marriage here isn't a private bond between two; it's a shared future woven of three. Which is why so many couples step into a church ceremony not as formality, but as stepping into the covenant itself.",
         },
         { type: "h2", text: "7. Practical takeaways" },
         { type: "h3", text: "Marriage is not only between two people" },
@@ -364,7 +364,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h3", text: "Love is a decision, not a mood" },
         {
           type: "p",
-          text: 'The love Scripture talks about (Hebrew chesed, Greek agape) isn\'t a mood; it\'s a faithful choice. And that is quietly freeing: marriage doesn\'t have to stand or fall on whether you both "feel it" today. It stands on the choice you renew each morning.',
+          text: "The love Scripture talks about (Hebrew chesed, Greek agape) isn't a mood; it's a faithful choice. And that is quietly freeing: marriage doesn't have to stand or fall on whether you both \"feel it\" today. It stands on the choice you renew each morning.",
         },
         { type: "h3", text: "Forgiveness is a daily practice" },
         {
@@ -416,16 +416,16 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       body: [
         {
           type: "p",
-          text: "Sokan keresnek esküvőre bibliai idézetet, amit beleírnak a meghívóba, az esküvői weboldalra vagy a fogadalom mellé, egyetlen mondatban szeretnék kimondani azt, ami a legmélyebb az életükben. A Szentírás bőven kínál ilyen mondatokat: igéket szeretetről, házasságról, közös útról, tiszteletről és megbocsátásról.",
+          text: "Sokan keresnek esküvőre bibliai idézetet, amelyet beleírnak a meghívóba, kitesznek az esküvői weboldalra vagy beemelnek a fogadalom mellé: egyetlen mondatban szeretnék kimondani azt, ami a legmélyebb az életükben. A Szentírás bőven kínál ilyen mondatokat: igéket szeretetről, házasságról, közös útról, tiszteletről és megbocsátásról.",
         },
         {
           type: "p",
-          text: "A klasszikus Károli fordításból válogattunk, mert a magyar esküvői hagyományban ennek van a legünnepélyesebb hangulata. Ha modernebb fordítást szeretnétek, a Magyar Bibliatársulat új fordítása vagy az Egyszerű fordítás is hasonló mélységgel beszél, csak más nyelven.",
+          text: "A klasszikus Károli fordításból válogattunk, mert a magyar esküvői hagyományban ennek van a legünnepélyesebb hangulata. Ha modernebb fordítást szeretnétek, a Magyar Bibliatársulat új fordítása vagy az Egyszerű fordítás is hasonló mélységgel beszél, csak más nyelvezeten.",
         },
         { type: "h2", text: "Rövid bibliai idézetek esküvői meghívóra" },
         {
           type: "p",
-          text: "Ezeket a rövid igéket jól lehet használni meghívón, ültetőkártyán, esküvői weboldal nyitólapon vagy a vendégkönyv mottójaként.",
+          text: "Ezeket a rövid igéket jól lehet használni meghívón, ültetőkártyán, az esküvői weboldal nyitólapján vagy a vendégkönyv mottójaként.",
         },
         {
           type: "ul",
@@ -476,7 +476,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Pál saját felnőtté válásával vall: van, amit csak idővel értünk meg igazán. A szeretet sem áll meg a kezdeti rajongásnál, érlelődik, mélyül, és lassan megtanul látni a homályon át. A házasság ennek a növekedésnek ad teret: együtt indulni el gyermeki örömmel, és együtt érkezni meg a hűség csendesebb, érettebb szeretetébe.",
+          text: "Pál saját felnőtté válásáról vall: van, amit csak idővel értünk meg igazán. A szeretet sem áll meg a kezdeti rajongásnál, érlelődik, mélyül, és lassan megtanul látni a homályon át. A házasság ennek a növekedésnek ad teret: együtt indulni el gyermeki örömmel, és együtt érkezni meg a hűség csendesebb, érettebb szeretetébe.",
         },
         { type: "h3", text: "1János 4,7-8" },
         {
@@ -486,7 +486,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "János egészen mélyre megy: ahol szeretet van, ott Isten van, még akkor is, ha nem nevezzük néven. A görög szöveg úgy fogalmaz: ho theos agapé estin (ὁ θεὸς ἀγάπη ἐστίν), vagyis nem azt mondja, hogy Isten szeret (igeként), hanem hogy a lényege ez (főnévként). A szeretet nem a mi találmányunk, hanem visszhang valami nagyobbra. Két ember egymáshoz fordulása így mindig több önmagánál: az Istentől kapott szeretetet adjuk tovább, valahányszor szelíden választjuk a másikat.",
+          text: "János egészen mélyre megy: ahol szeretet van, ott Isten van, még akkor is, ha nem nevezzük néven. A görög szöveg úgy fogalmaz: ho theos agapé estin (ὁ θεὸς ἀγάπη ἐστίν), vagyis nem azt mondja, hogy Isten szeret (igeként), hanem hogy a lényege ez (főnévként). A szeretet nem a mi találmányunk, hanem valami nagyobbnak a visszhangja. Két ember egymáshoz fordulása így mindig több önmagánál: az Istentől kapott szeretetet adjuk tovább, valahányszor szelíden választjuk a másikat.",
         },
         { type: "h3", text: "1János 4,11-12" },
         {
@@ -527,7 +527,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Megrendítő kép: a társ nem kívülről érkezik, hanem az ember legmélyebb belsejéből vétetik. Ezért szól a felismerés is így: „csontomból való csont”. A héber szöveg az „egy testté lesznek” helyén a baszar echád (בָּשָׂר אֶחָד) kifejezést használja, ami szó szerint „egy hús”, de nem csak testi egységet jelent, hanem teljes lényi összeforrottságot. A házasság nem két idegen találkozása, hanem két élet egymásra ismerése: az elhagyás, ragaszkodás, eggyé válás mozdulatában új otthon születik.",
+          text: "Megrendítő kép: a társ nem kívülről érkezik, hanem az ember legmélyebb belsejéből vétetik. Ezért szól a felismerés is így: „csontomból való csont”. A héber szöveg az „egy testté lesznek” helyén a baszar echád (בָּשָׂר אֶחָד) kifejezést használja, ami szó szerint „egy hús”, de nem csak testi egységet jelent, hanem az egész lényt érintő összeforrottságot. A házasság nem két idegen találkozása, hanem két élet egymásra ismerése: az elhagyás, ragaszkodás, eggyé válás mozdulatában új otthon születik.",
         },
         { type: "h3", text: "Máté 19,4-6" },
         {
@@ -761,7 +761,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h3", text: "Klasszikus vagy új fordítású idézetet válasszunk?" },
         {
           type: "p",
-          text: "A klasszikus Károli ünnepélyesebb, archaikus hangulatú. Az új fordítás közérthetőbb és modernebb. Esküvőhöz általában a klasszikus fordítás közelebb áll a hagyományhoz, mellé pedig érdemes egy rövid, saját szóval írt magyarázat is.",
+          text: "A klasszikus Károli ünnepélyesebb, archaikus hangulatú. Az új fordítás közérthetőbb és modernebb. Esküvőhöz általában a klasszikus fordítás közelebb áll a hagyományhoz, mellé pedig érdemes egy rövid, saját szóval írt magyarázatot is tenni.",
         },
       ],
     },
@@ -854,7 +854,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: 'The Preacher is sober: in life, we fall. Not if, but when. And in that simple fact lies the gift of a companion, someone to reach down and lift the other up. The threefold cord, often taken as the couple and God, names the deeper hope: that the bond holding two people together is stronger than either of them alone.',
+          text: "The Preacher is sober: in life, we fall. Not if, but when. And in that simple fact lies the gift of a companion, someone to reach down and lift the other up. The threefold cord, often taken as the couple and God, names the deeper hope: that the bond holding two people together is stronger than either of them alone.",
         },
         { type: "h3", text: "Ruth 1:16-17" },
         {
@@ -896,7 +896,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "\"Rise up, my love, and come away\", the Beloved calls, and winter, rain and darkness are already past. The Song hints at something larger than two lovers: every true beginning sounds like this. Marriage, too, is such a call, the long season of being alone draws to an end, and the time of singing comes.",
+          text: '"Rise up, my love, and come away", the Beloved calls, and winter, rain and darkness are already past. The Song hints at something larger than two lovers: every true beginning sounds like this. Marriage, too, is such a call, the long season of being alone draws to an end, and the time of singing comes.',
         },
         { type: "h3", text: "Song of Solomon 8:6-7" },
         {
@@ -906,7 +906,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "\"Set me as a seal upon your heart\", the lover asks not for a passing promise but for a lasting mark. And the strength of love is named in the same breath as death: many waters cannot quench it, no flood can sweep it away. Marriage takes on this kind of love, not strong because the days are easy, but strong because it remains through the hard ones.",
+          text: '"Set me as a seal upon your heart", the lover asks not for a passing promise but for a lasting mark. And the strength of love is named in the same breath as death: many waters cannot quench it, no flood can sweep it away. Marriage takes on this kind of love, not strong because the days are easy, but strong because it remains through the hard ones.',
         },
         { type: "h2", text: "How to choose" },
         {
@@ -1016,7 +1016,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Sokat segít, ha a költségvetés, a vendéglista és az ültetés ugyanazon a felületen él, így amikor mozdul a vendégszám, nem kell három helyen utánajavítani. (Ezt egyébként pont ezért építettük így a Wēddly-be.)",
+          text: "Sokat segít, ha a költségvetés, a vendéglista és az ültetés ugyanazon a felületen él, így amikor mozdul a vendégszám, nem kell három külön helyen átírni. (Ezt egyébként pont ezért építettük így a Wēddly-be.)",
         },
         { type: "h2", text: "Rövid checklist" },
         {
@@ -1139,7 +1139,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       body: [
         {
           type: "p",
-          text: "A vendéglista az esküvőszervezés egyik legfontosabb alapja, és mégis ez az, ami a leghamarabb darabokra esik: pár táblázat, néhány jegyzet, egy-két chatszál. Valaki már visszajelzett, valaki még nem. Egyikük hozna kísérőt, másikuk vegetáriánus menüt kér, a harmadik még nem biztos benne, hogy jön.",
+          text: "A vendéglista az esküvőszervezés egyik legfontosabb alapja, és mégis ez az, ami a leghamarabb széthullik: pár táblázat, néhány jegyzet, egy-két üzenetváltás. Valaki már visszajelzett, valaki még nem. Az egyik hozna kísérőt, a másik vegetáriánus menüt kér, a harmadik még nem biztos benne, hogy jön.",
         },
         { type: "p", text: "Ebből lesz az a káosz, amit jobb már az elején megelőzni." },
         { type: "h2", text: "1. Ne csak neveket írjatok össze" },
@@ -1200,7 +1200,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Sokat ér, ha a vendéglista, az RSVP és az ültetés ugyanott él, egy lemondást vagy egy új ételérzékenységet elég egyszer beírni. (A Wēddly-t pont emiatt raktuk össze így.)",
+          text: "Sokat ér, ha a vendéglista, az RSVP és az ültetés ugyanott él, mert így egy lemondást vagy egy új ételérzékenységet elég egyszer beírni. (A Wēddly-t pont emiatt raktuk össze így.)",
         },
         { type: "h2", text: "Rövid checklist" },
         {
@@ -1345,7 +1345,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
             "idősebb vendégek",
           ],
         },
-        { type: "p", text: "Ezután jöhet a pontos székek kiosztása." },
+        { type: "p", text: "Ezután jöhet a székek pontos kiosztása." },
         { type: "h2", text: "2. Vegyétek figyelembe a helyszín logikáját" },
         {
           type: "p",
@@ -1363,15 +1363,15 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
             "nagy ültetési táblára a bejárathoz",
             "asztalszámokra",
             "ültetőkártyákra",
-            "catering-listára",
-            "helyszíni segítői verzióra",
+            "konyhai listára",
+            "a helyszíni segítőknek szóló példányra",
           ],
         },
         {
           type: "p",
-          text: "Ezért éri meg már a tervezésnél arra gondolni, hogy a végén ezek mind kinyomtatva, kézbe fogva is jól nézzenek ki.",
+          text: "Ezért éri meg már a tervezésnél átgondolni, hogyan néznek majd ki kinyomtatva, kézbe véve.",
         },
-        { type: "h2", text: "4. Készüljetek az utolsó pillanatos változásokra" },
+        { type: "h2", text: "4. Készüljetek az utolsó pillanatban érkező változásokra" },
         {
           type: "p",
           text: "Szinte mindig lesz valaki, aki az utolsó héten mondja le, vagy akkor jelzi, hogy mégis jönne. Ha az ültetés kézzel rajzolt PDF-ekben él, minden változás fájdalmas.",
@@ -1526,12 +1526,12 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "3. Menü és ételérzékenység" },
         {
           type: "p",
-          text: "A konyhának időben kell tudnia, mire számítson, úgyhogy ezt érdemes előre megkérdezni, az ételválasztást és a speciális igényeket is.",
+          text: "A konyhának időben kell tudnia, mire számítson, úgyhogy érdemes előre megkérdezni az ételválasztást és a speciális igényeket is.",
         },
         { type: "p", text: "Példa: „Van ételérzékenységed vagy speciális étrended?”" },
         {
           type: "p",
-          text: "Itt jó, ha van szabad szöveges mező is, mert nem minden igény fér bele előre megadott opciókba.",
+          text: "Itt jó, ha van szabadon kitölthető mező is, mert nem minden igény fér bele az előre megadott válaszok közé.",
         },
         { type: "h2", text: "4. Extra kérdések, amelyek hasznosak lehetnek" },
         { type: "p", text: "Nem kell túlzásba vinni, de néhány extra kérdés sokat segíthet:" },
@@ -1547,7 +1547,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "5. Ne kérjetek túl sokat" },
         {
           type: "p",
-          text: "Ha az RSVP túl hosszú, a vendégek halogatni fogják. A cél az, hogy egy perc alatt kitölthető legyen.",
+          text: "Ha az RSVP túl hosszú, a vendégek elhalasztják a kitöltését. A cél az, hogy egy perc alatt kitölthető legyen.",
         },
         {
           type: "p",
@@ -1715,7 +1715,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Ha ekkor még minden külön táblázatban szétszórva van, nagyon könnyű kicsúszni egy-egy részletet. Sokkal nyugodtabb, ha mindketten ugyanazt az egy listát nézitek.",
+          text: "Ha ekkor még minden külön táblázatban szétszórva van, nagyon könnyű kihagyni egy-egy részletet. Sokkal nyugodtabb, ha mindketten ugyanazt az egy listát nézitek.",
         },
         { type: "h2", text: "1 hónappal az esküvő előtt" },
         { type: "p", text: "Ez már a véglegesítés időszaka." },
@@ -1748,7 +1748,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Igen, a pihenés is teendő. Az esküvő nem projektzáró prezentáció, hanem egy közös nap, amit meg kell élni.",
+          text: "Igen, a pihenés is teendő. Az esküvő nem egy lezáró feladat, hanem egy közös nap, amit meg kell élni.",
         },
         { type: "h2", text: "Rövid összefoglaló" },
         {
@@ -1765,7 +1765,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h3", text: "Mikor érdemes elkezdeni az esküvőszervezést?" },
         {
           type: "p",
-          text: "Ideálisan 9-12 hónappal az esküvő előtt, de kisebb esküvőnél rövidebb idő is elég lehet.",
+          text: "Ideális esetben 9-12 hónappal az esküvő előtt, de kisebb esküvőnél rövidebb idő is elég lehet.",
         },
         { type: "h3", text: "Mikor kell kiküldeni a meghívókat?" },
         {
@@ -1937,7 +1937,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       body: [
         {
           type: "p",
-          text: "Az esküvői meghívó az első dolog, amivel a vendégek találkoznak. Megadja az esküvő hangulatát, stílusát és a legfontosabb információkat. Ma már nem csak az a kérdés, milyen papírra készüljön, hanem az is, hogy kell-e egyáltalán papír.",
+          text: "Az esküvői meghívó az első dolog, amivel a vendégek találkoznak. Megadja az esküvő alaphangulatát és stílusát, és tartalmazza a legfontosabb információkat. Ma már nem csak az a kérdés, milyen papírra készüljön, hanem az is, hogy kell-e egyáltalán papír.",
         },
         {
           type: "p",
@@ -1971,7 +1971,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Digitális meghívó: mikor praktikusabb?" },
         {
           type: "p",
-          text: "A digitális meghívó gyors, könnyen javítható, és a visszajelzés is mellé fér. Ha változik az időpont, a helyszín vagy a menü, nem kell semmit újranyomtatni, egy kattintással elintézitek.",
+          text: "A digitális meghívó gyors, könnyen javítható, és a visszajelzést is ugyanott lehet kezelni. Ha változik az időpont, a helyszín vagy a menü, nem kell semmit újranyomtatni, egy kattintással elintézitek.",
         },
         { type: "p", text: "Előnyei:" },
         {
@@ -1980,7 +1980,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
             "gyorsan elküldhető",
             "mobilon könnyen megnyitható",
             "összeköthető RSVP-vel",
-            "frissíthető információkkal",
+            "tartalma bármikor frissíthető",
             "költséghatékony",
           ],
         },
