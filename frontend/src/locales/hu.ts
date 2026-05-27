@@ -4142,6 +4142,8 @@ const hu: LocaleMessages = {
       draw_card: "Húzzatok egy kártyát",
       reshuffle: "Új keverés",
       back_to_decks: "Vissza a paklikhoz",
+      lock_view: "Fókusz mód bekapcsolása",
+      unlock_view: "Fókusz mód kikapcsolása",
       cta_h2: "Ha készen álltok a többire",
       cta_body:
         "A nehéz beszélgetések után jöhetnek a praktikus döntések. A Wēddly egy közös felületen tartja a költségvetést, vendéglistát, RSVP-t és az ültetést, hogy az igazi munka után se kelljen PDF-eket osztogatni.",

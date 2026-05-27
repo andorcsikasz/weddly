@@ -157,3 +157,67 @@ describe("CoupleCardsPage: localStorage persistence", () => {
     expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
   });
 });
+
+describe("CoupleCardsPage: focus mode", () => {
+  it("hides the lock toggle on the showcase and surfaces it once a deck is open", () => {
+    renderPage();
+    // Showcase: no lock button.
+    expect(
+      screen.queryByRole("button", { name: /Fókusz mód bekapcsolása/i }),
+    ).not.toBeInTheDocument();
+    // Open a deck → the toggle appears (in its "lock" affordance because
+    // the page is still scrollable until the user opts in).
+    fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
+    expect(
+      screen.getByRole("button", { name: /Fókusz mód bekapcsolása/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("manual lock toggle flips body overflow and swaps the aria-label", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
+
+    expect(document.body.style.overflow).not.toBe("hidden");
+    fireEvent.click(screen.getByRole("button", { name: /Fókusz mód bekapcsolása/i }));
+
+    expect(document.body.style.overflow).toBe("hidden");
+    // After locking, the same button advertises the unlock action.
+    expect(
+      screen.getByRole("button", { name: /Fókusz mód kikapcsolása/i }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Fókusz mód kikapcsolása/i }));
+    expect(document.body.style.overflow).not.toBe("hidden");
+  });
+
+  it("auto-locks after the visitor has surfaced four cards", () => {
+    renderPage();
+    // Open the deck (1st card) + three "next" presses (cards 2..4).
+    fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
+    expect(document.body.style.overflow).not.toBe("hidden");
+    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+
+    // Threshold hit: body overflow gets locked and the unlock affordance
+    // is shown.
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(
+      screen.getByRole("button", { name: /Fókusz mód kikapcsolása/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("manual unlock disarms the auto-lock for the rest of the session", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+    // Auto-locked.
+    fireEvent.click(screen.getByRole("button", { name: /Fókusz mód kikapcsolása/i }));
+    // Now click "next" some more — auto-lock should NOT fire again.
+    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
+    expect(document.body.style.overflow).not.toBe("hidden");
+  });
+});

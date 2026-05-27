@@ -4519,6 +4519,8 @@ export interface LocaleMessages {
       draw_card: string;
       reshuffle: string;
       back_to_decks: string;
+      lock_view: string;
+      unlock_view: string;
       cta_h2: string;
       cta_body: string;
       cta_button: string;

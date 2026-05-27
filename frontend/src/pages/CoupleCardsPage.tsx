@@ -5,7 +5,7 @@
 //
 // Pure client state, no backend. Data lives in lib/couple_cards.ts.
 
-import { ArrowLeft, RefreshCcw, Shuffle } from "lucide-react";
+import { ArrowLeft, Lock, RefreshCcw, Shuffle, Unlock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
@@ -80,6 +80,12 @@ function isValidProgress(p: unknown): p is DeckProgress {
  *  visitors who tap another deck just override this in state. */
 const DEFAULT_SELECTED: DeckId = "roots";
 
+/** After this many distinct cards have surfaced in the card view, snap
+ *  the page into focus mode automatically. Counts both the open-deck
+ *  transition (which lands the first card) and every subsequent "next".
+ *  Reshuffle doesn't count; the user is just resetting their own deck. */
+const AUTOLOCK_THRESHOLD = 4;
+
 export default function CoupleCardsPage() {
   const { t, locale } = useT();
   useDocumentMeta("tools.couple_cards.page_h1", "tools.couple_cards.page_intro");
@@ -87,12 +93,37 @@ export default function CoupleCardsPage() {
   const [activeDeck, setActiveDeck] = useState<DeckId | null>(null);
   const [selectedDeck, setSelectedDeck] = useState<DeckId>(DEFAULT_SELECTED);
   const [progress, setProgress] = useState<ProgressMap>(() => loadProgress());
+  const [isLocked, setIsLocked] = useState(false);
+  const [viewedCount, setViewedCount] = useState(0);
+  const [autoLockUsed, setAutoLockUsed] = useState(false);
 
   // Persist progress whenever it changes. Effect rather than inline so a
   // state setter from a callback doesn't race the storage write.
   useEffect(() => {
     saveProgress(progress);
   }, [progress]);
+
+  // Auto-snap into focus mode the first time the visitor has read four
+  // cards in this session. Fires once; if the user manually unlocks
+  // afterwards we respect that and don't snap them back in.
+  useEffect(() => {
+    if (viewedCount >= AUTOLOCK_THRESHOLD && !autoLockUsed && !isLocked) {
+      setIsLocked(true);
+      setAutoLockUsed(true);
+    }
+  }, [viewedCount, autoLockUsed, isLocked]);
+
+  // Body scroll lock while the overlay is mounted. Stashes the previous
+  // `overflow` so a sibling that set it (e.g. a dialog) isn't trampled
+  // on cleanup.
+  useEffect(() => {
+    if (!isLocked) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isLocked]);
 
   const activeDeckDef = useMemo(
     () => (activeDeck ? (COUPLE_CARD_DECKS.find((d) => d.id === activeDeck) ?? null) : null),
@@ -108,8 +139,16 @@ export default function CoupleCardsPage() {
       if (current && isValidProgress(current)) return prev;
       return { ...prev, [id]: { order: shuffledIndices(DECK_SIZE), index: 0 } };
     });
+    // Opening a deck surfaces the first card — count it toward the
+    // autolock threshold so a visitor who taps "draw a card" + three
+    // "next" presses gets snapped into focus mode.
+    setViewedCount((c) => c + 1);
   }, []);
 
+  // Stepping out of the card view doesn't unlock — the user can still
+  // toggle the lock manually. But it does keep the overlay coherent:
+  // when activeDeckDef goes null mid-lock, the showcase resurfaces under
+  // the overlay (handled by the render branch below).
   const closeDeck = useCallback(() => setActiveDeck(null), []);
 
   const nextCard = useCallback(() => {
@@ -125,6 +164,7 @@ export default function CoupleCardsPage() {
       const nextIndex = (current.index + 1) % DECK_SIZE;
       return { ...prev, [activeDeck]: { ...current, index: nextIndex } };
     });
+    setViewedCount((c) => c + 1);
   }, [activeDeck]);
 
   const reshuffle = useCallback(() => {
@@ -151,6 +191,18 @@ export default function CoupleCardsPage() {
     return p.index + 1;
   }, [activeDeck, progress]);
 
+  const cardView = activeDeckDef ? (
+    <CardView
+      deckId={activeDeckDef.id}
+      deckTitle={t(activeDeckDef.titleKey)}
+      question={currentQuestion}
+      cardNumber={currentNumber}
+      onNext={nextCard}
+      onReshuffle={reshuffle}
+      onBack={closeDeck}
+    />
+  ) : null;
+
   return (
     <PublicShell>
       {!activeDeckDef ? (
@@ -160,16 +212,49 @@ export default function CoupleCardsPage() {
           onOpen={() => openDeck(selectedDeck)}
         />
       ) : null}
+      {/* In-flow card view only when focus mode is OFF. When locked, the
+          same component renders inside the fixed overlay below — exclusive
+          branches keep the React tree from mounting it twice. */}
+      {activeDeckDef && !isLocked ? cardView : null}
+
+      {/* Focus mode overlay: fixed-inset, scroll-locked, covers the entire
+          page (header + FAQ) so the card is the only thing the visitor
+          sees. Only mounts in card view; the showcase doesn't get a focus
+          mode (there's nothing to focus on yet). */}
+      {activeDeckDef && isLocked ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-paper-50 px-4 dark:bg-umber-900 sm:px-8">
+          <div className="w-full max-w-3xl">{cardView}</div>
+        </div>
+      ) : null}
+
+      {/* Lock toggle. Lives only while a deck is open: the showcase has no
+          scroll to lock and no card to focus, so the icon would be a
+          dead-end. Sits at top-4 in focus mode (above the overlay's
+          z-stack) and at top-20 otherwise (below the sticky header). */}
       {activeDeckDef ? (
-        <CardView
-          deckId={activeDeckDef.id}
-          deckTitle={t(activeDeckDef.titleKey)}
-          question={currentQuestion}
-          cardNumber={currentNumber}
-          onNext={nextCard}
-          onReshuffle={reshuffle}
-          onBack={closeDeck}
-        />
+        <button
+          type="button"
+          onClick={() => setIsLocked((v) => !v)}
+          aria-label={
+            isLocked
+              ? t("tools.couple_cards.unlock_view")
+              : t("tools.couple_cards.lock_view")
+          }
+          title={
+            isLocked
+              ? t("tools.couple_cards.unlock_view")
+              : t("tools.couple_cards.lock_view")
+          }
+          className={`fixed right-4 z-[60] inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700 sm:right-6 ${
+            isLocked ? "top-4" : "top-20"
+          }`}
+        >
+          {isLocked ? (
+            <Lock size={16} aria-hidden="true" />
+          ) : (
+            <Unlock size={16} aria-hidden="true" />
+          )}
+        </button>
       ) : null}
 
       {/* FAQ trail only on the picker view: when the user has a card open

@@ -4105,6 +4105,8 @@ const en: LocaleMessages = {
       draw_card: "Draw a card",
       reshuffle: "Reshuffle",
       back_to_decks: "Back to decks",
+      lock_view: "Enter focus mode",
+      unlock_view: "Exit focus mode",
       cta_h2: "When you're ready for the rest",
       cta_body:
         "After the hard conversations come the practical decisions. Weddly keeps your budget, guest list, RSVP and seating in one shared workspace, so the real work doesn't fall back into PDFs and text threads.",
