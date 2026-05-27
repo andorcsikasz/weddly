@@ -108,24 +108,16 @@ export default function LandingPage() {
           tilted slightly so it reads as "the product, peeking up". */}
       <section className="relative overflow-hidden">
         {/* Tighter top padding on mobile so the CTA pair stays above the
-            fold on 360x640 Android. The hero now carries an eyebrow + H1
-            + subline + single CTA stack — denser content but no longer
-            spread across two viewports. */}
+            fold on 360x640 Android. The hero is H1 + subline + single
+            primary CTA. */}
         <div className="relative mx-auto max-w-7xl px-4 pt-6 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
           <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
-              {/* Problem-framing eyebrow above the H1 — 3-5 words that name
-                  the page's promise as a tagline before the headline asserts
-                  it. Picked up by the prerender for crawlers (see
-                  scripts/prerender.ts). */}
-              <p className="font-serif text-xs uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300 sm:text-sm">
-                {t("landing.hero_eyebrow")}
-              </p>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
                * 30-40% longer than EN and the old 14ch limit was wrapping
                * the title to 4+ lines on 360px phones. Desktop still gets
                * the tighter 14ch column for visual rhythm. */}
-              <h1 className="mt-4 max-w-[18ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+              <h1 className="max-w-[18ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                 {t("landing.hero_title")}
               </h1>
               {/* Subline: concrete value-prop sentence right after the

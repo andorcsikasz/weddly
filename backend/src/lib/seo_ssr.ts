@@ -145,8 +145,8 @@ const META: Record<SeoLocale, LocaleMeta> = {
     ogLocale: "hu_HU",
     title: "Wēddly · Közös esküvőtervezés egy helyen",
     description:
-      "Tervezzétek együtt az esküvőtöket egy nyugodt, közös felületen: költségvetés, vendégek, RSVP, ültetés, nyomtatható kártyák. Pároknak ingyenes.",
-    twDescription: "Közös felület mindkettőtöknek, ingyenes pároknak.",
+      "Tervezzétek együtt az esküvőtöket egy nyugodt, közös felületen: költségvetés, vendégek, RSVP, ültetés, nyomtatható kártyák. Mindkettőtök ugyanazt látja, valós időben.",
+    twDescription: "Közös felület mindkettőtöknek, egy helyen.",
     ogImageAlt: "Wēddly — közösen tervezzétek az esküvőtöket, nyugodtan.",
     brandName: "Wēddly",
     brandDescription:
@@ -157,8 +157,8 @@ const META: Record<SeoLocale, LocaleMeta> = {
     ogLocale: "en_US",
     title: "Weddly · Your shared wedding-planning workspace",
     description:
-      "Plan your wedding together in one calm, shared workspace: budget, guests, RSVP, seating, printable cards and your own wedding site. Free for couples.",
-    twDescription: "One shared workspace for both of you. Free for couples.",
+      "Plan your wedding together in one calm, shared workspace: budget, guests, RSVP, seating, printable cards and your own wedding site. Both of you see the same picture, in real time.",
+    twDescription: "One shared workspace for both of you, in real time.",
     ogImageAlt: "Weddly — plan your wedding together, calmly.",
     brandName: "Weddly",
     brandDescription:

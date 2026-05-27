@@ -33,7 +33,6 @@ function escape(s: string): string {
 }
 
 interface LandingCopy {
-  hero_eyebrow: string;
   hero_title: string;
   hero_sub: string;
   cta_signup: string;
@@ -99,7 +98,6 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
   // diff between SSR + JS pass stays trivial.
   return [
     `<header>`,
-    `  <p>${escape(l.hero_eyebrow)}</p>`,
     `  <h1>${escape(l.hero_title)}</h1>`,
     `  <p>${escape(l.hero_sub)}</p>`,
     `  <p>`,

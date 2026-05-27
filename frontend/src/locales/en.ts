@@ -698,7 +698,6 @@ const en: LocaleMessages = {
     merge_success: "You're in — welcome to the new workspace.",
   },
   landing: {
-    hero_eyebrow: "Wedding planning, together, calmly.",
     hero_title: "Your whole wedding, in one place.",
     hero_sub:
       "Budget, guest list, RSVP, seating chart and your own wedding site. Both of you see the same picture, in real time.",
@@ -706,7 +705,7 @@ const en: LocaleMessages = {
     cta_login: "Sign in",
     brand_tagline_paper: "Paper letters · Stationery",
     brand_signature: "Weddly",
-    cta_signup_sub: "Free for couples. No credit card.",
+    cta_signup_sub: "Available throughout the open beta.",
     wsite_eyebrow: "Your own wedding site",
     wsite_title: "One page for your guests, with your names on it.",
     wsite_body:
@@ -826,7 +825,7 @@ const en: LocaleMessages = {
     footer_band_cta: "Enter your invite code",
     skip_to_main: "Skip to main content",
     // ── Round 2: stats strip + product features + testimonials ────────
-    stats_eyebrow: "Free",
+    stats_eyebrow: "Open beta",
     // Honest beta label — the previous "200+ couples on the waitlist"
     // number was fabricated. The marquee stat now reads as a status
     // statement rather than a fake metric.
@@ -882,7 +881,7 @@ const en: LocaleMessages = {
     pricing_title: "Free now — pricing arrives with v2.",
     pricing_body:
       "Throughout the open beta everything is free: budget, guest list, RSVP links, seating canvas and printable cards. We'll introduce pricing with v2.",
-    pricing_bullet_1: "Free for couples, every feature",
+    pricing_bullet_1: "Every feature open to couples",
     pricing_bullet_2: "Pause any time · 30-day grace",
     pricing_bullet_3: "CSV / PDF export, included",
     pricing_v2_note: "v2 introduces pricing. Details will be announced ahead of time.",

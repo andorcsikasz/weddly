@@ -703,7 +703,6 @@ const hu: LocaleMessages = {
     merge_success: "Csatlakoztál — üdv az új munkaterületen.",
   },
   landing: {
-    hero_eyebrow: "Esküvőtervezés, közösen, nyugodtan.",
     hero_title: "Az egész esküvőtök, egy helyen.",
     hero_sub:
       "Költségvetés, vendéglista, RSVP, ültetési rend és saját esküvői oldal. Mindkettőtök ugyanazt látja, ugyanakkor.",
@@ -711,7 +710,7 @@ const hu: LocaleMessages = {
     cta_login: "Bejelentkezés",
     brand_tagline_paper: "Budapest · Papírlevelek",
     brand_signature: "Weddly, Budapest",
-    cta_signup_sub: "Ingyenes pároknak. Bankkártya nélkül.",
+    cta_signup_sub: "A nyílt béta alatt szabadon használhatjátok.",
     wsite_eyebrow: "Saját esküvői oldal",
     wsite_title: "Egy oldal a vendégeknek, a ti nevetekkel.",
     wsite_body:
@@ -832,7 +831,7 @@ const hu: LocaleMessages = {
     footer_band_cta: "Meghívókód megadása",
     skip_to_main: "Ugrás a tartalomra",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
-    stats_eyebrow: "Ingyenes",
+    stats_eyebrow: "Nyílt béta",
     // A korábbi "200+ pár a várólistán" szám kitalált adat volt; átírtuk
     // egy őszinte állapotjelzésre, ami a nyílt béta valóságát mutatja.
     stats_a_value: "Nyílt béta",
@@ -891,7 +890,7 @@ const hu: LocaleMessages = {
     pricing_title: "Most ingyen — az árazás a v2-vel jön.",
     pricing_body:
       "A nyílt béta alatt minden funkciót szabadon használhattok: költségvetés, vendéglista, RSVP linkek, ültetési vászon és nyomtatható kártyák. A v2-vel vezetjük be az árazást.",
-    pricing_bullet_1: "Ingyenes minden páros funkció",
+    pricing_bullet_1: "Minden funkció elérhető pároknak",
     pricing_bullet_2: "Bármikor szüneteltethető · 30 nap",
     pricing_bullet_3: "CSV / PDF export, korlátlanul",
     pricing_v2_note: "A v2-vel jön az árazás. A részleteket időben kihirdetjük.",

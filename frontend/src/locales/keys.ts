@@ -781,10 +781,6 @@ export interface LocaleMessages {
     merge_success: string;
   };
   landing: {
-    /** Eyebrow above the H1 — short problem-framing line that names the
-     *  pain the page is about to solve. Kept tight (3-5 words) so it
-     *  reads as a tagline, not a sentence. */
-    hero_eyebrow: string;
     hero_title: string;
     hero_sub: string;
     cta_signup: string;
