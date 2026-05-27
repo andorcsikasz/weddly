@@ -4036,7 +4036,7 @@ const en: LocaleMessages = {
       page_intro:
         "Four decks of 25 conversation-starter cards for engaged couples: roots, the everyday, closeness, deep water. Pick a deck, draw a card, and let the conversation begin. Free, no signup needed.",
       decks_h2: "Pick a deck",
-      deck_number_label: "Deck {n}",
+      deck_number_label: "Level {n}",
       deck_count_label: "{n} cards",
       deck_roots_title: "Roots",
       deck_roots_blurb:
@@ -4053,6 +4053,7 @@ const en: LocaleMessages = {
       card_position: "{n} / {total}",
       card_empty: "Draw a card.",
       next_card: "Next card",
+      draw_card: "Draw a card",
       reshuffle: "Reshuffle",
       back_to_decks: "Back to decks",
       cta_h2: "When you're ready for the rest",

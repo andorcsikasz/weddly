@@ -4075,7 +4075,7 @@ const hu: LocaleMessages = {
       page_intro:
         "Négy pakli, paklinként 25 beszélgetésindító kérdés jegyes pároknak: gyökerek, hétköznapok, közelség, mély víz. Válasszatok paklit, húzzatok egy kártyát, és menjetek bele a beszélgetésbe. Ingyenes, regisztráció nélkül.",
       decks_h2: "Válasszatok paklit",
-      deck_number_label: "{n}. pakli",
+      deck_number_label: "{n}. szint",
       deck_count_label: "{n} kártya",
       deck_roots_title: "Gyökerek",
       deck_roots_blurb:
@@ -4090,6 +4090,7 @@ const hu: LocaleMessages = {
       card_position: "{n} / {total}",
       card_empty: "Húzzatok egy kártyát.",
       next_card: "Következő kártya",
+      draw_card: "Húzzatok egy kártyát",
       reshuffle: "Új keverés",
       back_to_decks: "Vissza a paklikhoz",
       cta_h2: "Ha készen álltok a többire",

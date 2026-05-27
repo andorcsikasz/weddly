@@ -7,7 +7,6 @@
 
 import { ArrowLeft, RefreshCcw, Shuffle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { COUPLE_CARD_DECKS, DECK_SIZE, type DeckId } from "../lib/couple_cards";
@@ -76,11 +75,17 @@ function isValidProgress(p: unknown): p is DeckProgress {
   return true;
 }
 
+/** Default "currently highlighted" deck on the showcase. Roots is the
+ *  on-ramp question set, so first-time visitors land on it; returning
+ *  visitors who tap another deck just override this in state. */
+const DEFAULT_SELECTED: DeckId = "roots";
+
 export default function CoupleCardsPage() {
   const { t, locale } = useT();
   useDocumentMeta("tools.couple_cards.page_h1", "tools.couple_cards.page_intro");
 
   const [activeDeck, setActiveDeck] = useState<DeckId | null>(null);
+  const [selectedDeck, setSelectedDeck] = useState<DeckId>(DEFAULT_SELECTED);
   const [progress, setProgress] = useState<ProgressMap>(() => loadProgress());
 
   // Persist progress whenever it changes. Effect rather than inline so a
@@ -148,7 +153,13 @@ export default function CoupleCardsPage() {
 
   return (
     <PublicShell>
-      {!activeDeckDef ? <DeckPicker onOpen={openDeck} /> : null}
+      {!activeDeckDef ? (
+        <DeckShowcase
+          selectedId={selectedDeck}
+          onSelect={setSelectedDeck}
+          onOpen={() => openDeck(selectedDeck)}
+        />
+      ) : null}
       {activeDeckDef ? (
         <CardView
           deckId={activeDeckDef.id}
@@ -162,103 +173,158 @@ export default function CoupleCardsPage() {
         />
       ) : null}
 
-      {/* CTA + FAQ trail only on the picker view: when the user has a
-          card open we keep the focus on the question itself. */}
+      {/* FAQ trail only on the picker view: when the user has a card open
+          we keep the focus on the question itself. The signup CTA is
+          collapsed away from the tool page entirely — the showcase has
+          its own primary action ("draw a card"), and a second competing
+          CTA on the same screen muddies the funnel. */}
       {!activeDeckDef ? (
-        <>
-          <section className="relative">
-            <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 sm:py-20">
-              <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
-                {t("tools.couple_cards.cta_h2")}
-              </h2>
-              <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
-                {t("tools.couple_cards.cta_body")}
-              </p>
-              <Link to="/signup" className="btn-primary btn-lg mt-8 inline-flex shadow-sm">
-                {t("tools.couple_cards.cta_button")}
-              </Link>
+        <section className="relative bg-paper-50 dark:bg-umber-900">
+          <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
+            <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+              {t("tools.couple_cards.faq_h2")}
+            </h2>
+            <div className="mt-8 space-y-3">
+              {[
+                { q: t("tools.couple_cards.faq_q1"), a: t("tools.couple_cards.faq_a1") },
+                { q: t("tools.couple_cards.faq_q2"), a: t("tools.couple_cards.faq_a2") },
+                { q: t("tools.couple_cards.faq_q3"), a: t("tools.couple_cards.faq_a3") },
+              ].map((entry) => (
+                <details
+                  key={entry.q}
+                  className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"
+                >
+                  <summary className="cursor-pointer list-none font-serif text-xl text-ink-900 dark:text-paper-50">
+                    {entry.q}
+                  </summary>
+                  <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+                    {entry.a}
+                  </p>
+                </details>
+              ))}
             </div>
-          </section>
-
-          <section className="relative bg-paper-50 dark:bg-umber-900">
-            <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
-              <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
-                {t("tools.couple_cards.faq_h2")}
-              </h2>
-              <div className="mt-8 space-y-3">
-                {[
-                  { q: t("tools.couple_cards.faq_q1"), a: t("tools.couple_cards.faq_a1") },
-                  { q: t("tools.couple_cards.faq_q2"), a: t("tools.couple_cards.faq_a2") },
-                  { q: t("tools.couple_cards.faq_q3"), a: t("tools.couple_cards.faq_a3") },
-                ].map((entry) => (
-                  <details
-                    key={entry.q}
-                    className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"
-                  >
-                    <summary className="cursor-pointer list-none font-serif text-xl text-ink-900 dark:text-paper-50">
-                      {entry.q}
-                    </summary>
-                    <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
-                      {entry.a}
-                    </p>
-                  </details>
-                ))}
-              </div>
-            </div>
-          </section>
-        </>
+          </div>
+        </section>
       ) : null}
     </PublicShell>
   );
 }
 
-function DeckPicker({ onOpen }: { onOpen: (id: DeckId) => void }) {
+/** Single-screen showcase: the three non-selected decks sit as a row of
+ *  miniatures up top; the selected deck dominates the centre as a large
+ *  landscape card stacked over two phantom siblings so the whole cluster
+ *  reads as a real deck. Hover fans the phantoms further out. The mini
+ *  tiles swap into the centre on click; the big card (and the CTA below
+ *  it) opens the chosen deck and drops the user into the card view. */
+function DeckShowcase({
+  selectedId,
+  onSelect,
+  onOpen,
+}: {
+  selectedId: DeckId;
+  onSelect: (id: DeckId) => void;
+  onOpen: () => void;
+}) {
   const { t } = useT();
+  const selectedIdx = COUPLE_CARD_DECKS.findIndex((d) => d.id === selectedId);
+  const selected = COUPLE_CARD_DECKS[selectedIdx];
+  if (!selected) return null;
+
   return (
-    <>
-      <section className="relative">
-        <div className="mx-auto max-w-3xl px-4 pt-12 pb-10 sm:px-6 sm:pt-16 sm:pb-12">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-600 dark:text-blush-300">
+    <section className="relative">
+      <div className="mx-auto max-w-5xl px-4 pt-10 pb-12 sm:px-6 sm:pt-14 sm:pb-16">
+        {/* Compact hero: shorter than the original DeckPicker so the full
+            showcase (mini row + big card + CTA) lands in one viewport on
+            laptop. */}
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("tools.couple_cards.page_eyebrow")}
           </p>
-          <h1 className="mt-4 font-serif text-4xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+          <h1 className="mt-3 font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl">
             {t("tools.couple_cards.page_h1")}
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-ink-700 dark:text-paper-200">
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-600 dark:text-paper-200 sm:text-base">
             {t("tools.couple_cards.page_intro")}
           </p>
         </div>
-      </section>
 
-      <section className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-          <h2 className="sr-only">{t("tools.couple_cards.decks_h2")}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:gap-6">
-            {COUPLE_CARD_DECKS.map((deck, idx) => (
-              <button
-                key={deck.id}
-                type="button"
-                onClick={() => onOpen(deck.id)}
-                className="group relative flex flex-col items-start gap-3 overflow-hidden rounded-2xl border border-paper-300 bg-white px-6 py-7 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-paper-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600 sm:px-7 sm:py-8"
-              >
-                <span className="text-xs font-semibold uppercase tracking-[0.24em] text-blush-600 dark:text-blush-300">
-                  {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
-                </span>
-                <span className="font-serif text-2xl italic leading-tight text-ink-900 dark:text-paper-50 sm:text-3xl">
-                  {t(deck.titleKey)}
-                </span>
-                <span className="text-sm leading-relaxed text-ink-600 dark:text-paper-200">
-                  {t(deck.blurbKey)}
-                </span>
-                <span className="mt-2 text-xs text-ink-500 dark:text-umber-300">
-                  {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
-                </span>
-              </button>
-            ))}
+        {/* Mini deck row: the three non-selected decks. Click swaps the
+            centre. Mobile: scrollable single row to avoid wrapping. */}
+        <h2 className="sr-only">{t("tools.couple_cards.decks_h2")}</h2>
+        <ul className="mt-8 flex items-stretch justify-center gap-3 overflow-x-auto pb-1 sm:mt-10 sm:gap-4 sm:overflow-x-visible">
+          {COUPLE_CARD_DECKS.map((deck, idx) => {
+            if (deck.id === selectedId) return null;
+            return (
+              <li key={deck.id} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onSelect(deck.id)}
+                  className="group flex aspect-[3/2] w-36 flex-col justify-between rounded-xl border border-paper-300 bg-white px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-paper-400 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600 sm:w-44 sm:px-4 sm:py-4"
+                >
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-blush-700 dark:text-blush-300">
+                    {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                  </span>
+                  <span className="font-serif text-lg italic leading-tight text-ink-900 dark:text-paper-50 sm:text-xl">
+                    {t(deck.titleKey)}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
+                    {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Centre: the selected deck as a hover-animated stack. Two phantom
+            cards sit behind the front face; group-hover fans them out. */}
+        <div className="relative mx-auto mt-10 max-w-2xl sm:mt-12">
+          <div className="group relative isolate">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0 translate-x-1.5 translate-y-2 rotate-[2deg] rounded-2xl border border-paper-300 bg-paper-100 transition-transform duration-300 ease-out group-hover:translate-x-4 group-hover:translate-y-5 group-hover:rotate-[5deg] dark:border-umber-700 dark:bg-umber-700"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-[1] translate-x-3 translate-y-4 rotate-[4deg] rounded-2xl border border-paper-300 bg-paper-50 transition-transform duration-300 ease-out group-hover:translate-x-8 group-hover:translate-y-10 group-hover:rotate-[8deg] dark:border-umber-700 dark:bg-umber-800"
+            />
+            <button
+              type="button"
+              onClick={onOpen}
+              className="relative z-10 flex aspect-[3/2] w-full flex-col justify-between rounded-2xl border-2 border-blush-300 bg-blush-100 px-7 py-7 text-left shadow-[0_24px_50px_-22px_rgba(199,113,98,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-500 focus-visible:ring-offset-2 dark:border-blush-700 dark:bg-blush-900/30 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
+                {t("tools.couple_cards.deck_number_label", { n: selectedIdx + 1 })}
+              </span>
+              <div className="flex flex-1 flex-col justify-center">
+                <h3 className="font-serif text-4xl italic leading-[0.95] text-ink-900 dark:text-paper-50 sm:text-6xl">
+                  {t(selected.titleKey)}
+                </h3>
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-700 dark:text-paper-200 sm:mt-4 sm:text-base">
+                  {t(selected.blurbKey)}
+                </p>
+              </div>
+              <span className="self-end text-[10px] uppercase tracking-[0.24em] text-blush-800 dark:text-blush-300">
+                {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+              </span>
+            </button>
           </div>
         </div>
-      </section>
-    </>
+
+        {/* Primary action under the deck. Mirrors the big card's click
+            handler so a visitor can hit either surface and end up in the
+            same card view. */}
+        <div className="mt-12 flex justify-center sm:mt-14">
+          <button
+            type="button"
+            onClick={onOpen}
+            className="btn-primary btn-lifted btn-lg inline-flex items-center gap-2 shadow-sm"
+          >
+            {t("tools.couple_cards.draw_card")}
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 
