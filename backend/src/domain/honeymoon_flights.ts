@@ -70,7 +70,7 @@ function readCache(
   returnDate: string,
   adults: number,
 ): EstimateRow | null {
-  return (
+  const row =
     (db
       .prepare(
         `SELECT origin, destination_text, destination_iata, depart_date, return_date,
@@ -80,8 +80,14 @@ function readCache(
             AND return_date = ? AND adults = ?`,
       )
       .get(origin, destinationText, departDate, returnDate, adults) as EstimateRow | undefined) ??
-    null
-  );
+    null;
+  if (!row) return null;
+  // Rows with no offers are treated as cache misses on read so a transient
+  // upstream blip (deploy misconfig, momentary SerpApi 5xx that slipped
+  // past our null check) doesn't keep an empty card pinned for 12 h. The
+  // write path also skips these, so this is belt + suspenders.
+  if (parseOffers(row.offers_json).length === 0) return null;
+  return row;
 }
 
 function writeCache(row: EstimateRow): void {
@@ -195,10 +201,13 @@ export async function getFlightEstimate(couple: CoupleRow): Promise<FlightEstima
     limit: OFFER_LIMIT,
   });
 
-  // Cache both outcomes (offers found OR empty). An empty array still
-  // represents an answer worth caching for 12 h so we don't re-hit Amadeus
-  // on every page view for a route with no inventory.
-  const cheapest = offers[0]?.price ?? null;
+  // null = upstream FAILED (network, auth, quota). Don't cache: the next
+  // page view should retry rather than wait out a 12 h TTL on a misconfig.
+  if (offers === null) {
+    logger.warn("flight_estimate.upstream_failed", { destination, destinationIata });
+    return null;
+  }
+
   const row: EstimateRow = {
     origin,
     destination_text: destination,
@@ -207,11 +216,15 @@ export async function getFlightEstimate(couple: CoupleRow): Promise<FlightEstima
     return_date: returnDate,
     adults,
     currency,
-    price_amount: cheapest,
+    price_amount: offers[0]?.price ?? null,
     offers_json: JSON.stringify(offers),
     fetched_at: now,
   };
-  writeCache(row);
+  // Only persist when we actually have offers to surface. Caching an empty
+  // result for 12 h is more painful than the marginal extra SerpApi calls
+  // on the rare genuinely-no-inventory route, and saves us from a frozen
+  // card if the empty came from a transient upstream issue we missed.
+  if (offers.length > 0) writeCache(row);
   return toEstimate(row);
 }
 

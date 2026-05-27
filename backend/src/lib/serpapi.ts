@@ -81,8 +81,14 @@ function carrierFromFlight(flight: SerpSegment): string {
 
 /** Cheapest N round-trip offers for the IATA pair + dates, deduped by
  *  carrier when possible, top-up with carrier-repeats if the route is
- *  monopoly. Same contract as the legacy Amadeus helper: empty array
- *  on missing creds / no inventory / upstream failure. */
+ *  monopoly. Three-state return:
+ *
+ *  - `null` — upstream FAILURE (missing key, network error, 4xx/5xx,
+ *    `error` field present in the body). The orchestration layer must
+ *    NOT cache this; the next view should retry.
+ *  - `[]`   — upstream SUCCESS but Google Flights returned no offers
+ *    for the route + dates. Safe to cache against the 12 h TTL.
+ *  - `[...]` — at least one offer. The card renders these. */
 export async function getTopOffers(opts: {
   origin: string;
   destination: string;
@@ -91,10 +97,11 @@ export async function getTopOffers(opts: {
   adults: number;
   currency: string;
   limit?: number;
-}): Promise<FlightOfferQuote[]> {
+}): Promise<FlightOfferQuote[] | null> {
   const key = apiKey();
-  if (!key) return [];
+  if (!key) return null;
   const limit = opts.limit ?? 3;
+  const route = `${opts.origin}-${opts.destination}`;
   try {
     const u = new URL(BASE_URL);
     u.searchParams.set("engine", "google_flights");
@@ -109,22 +116,34 @@ export async function getTopOffers(opts: {
     u.searchParams.set("hl", "en");
     const r = await fetch(u);
     if (!r.ok) {
-      logger.warn("serpapi.flights_failed", {
-        status: r.status,
-        route: `${opts.origin}-${opts.destination}`,
-      });
-      return [];
+      // Log the body too — SerpApi typically returns JSON like
+      // `{ "error": "Your account ran out of searches." }` on quota / auth
+      // failures and we want that detail in the log to diagnose live.
+      const body = await safeBody(r);
+      logger.warn("serpapi.flights_failed", { status: r.status, route, body });
+      return null;
     }
     const j = (await r.json()) as {
       best_flights?: SerpFlight[];
       other_flights?: SerpFlight[];
       error?: string;
+      search_metadata?: { status?: string };
     };
     if (j.error) {
-      logger.warn("serpapi.flights_error_field", { error: j.error });
-      return [];
+      logger.warn("serpapi.flights_error_field", { error: j.error, route });
+      return null;
     }
     const all = [...(j.best_flights ?? []), ...(j.other_flights ?? [])];
+    if (all.length === 0) {
+      // SerpApi returned 200 with no flights — real "no inventory" state.
+      // Log it so we can spot misclassified failures (e.g. an upstream that
+      // returns 200 + empty body when it really means "auth fail").
+      logger.info("serpapi.flights_empty", {
+        route,
+        status: j.search_metadata?.status,
+      });
+      return [];
+    }
     const parsed: FlightOfferQuote[] = [];
     for (const f of all) {
       const rawPrice = typeof f.price === "number" ? f.price : 0;
@@ -161,8 +180,20 @@ export async function getTopOffers(opts: {
     }
     return distinct;
   } catch (e) {
-    logger.warn("serpapi.flights_throw", { error: String(e) });
-    return [];
+    logger.warn("serpapi.flights_throw", { route, error: String(e) });
+    return null;
+  }
+}
+
+/** Defensive body reader for the `!r.ok` path. SerpApi sometimes returns
+ *  HTML on infra blips; we cap the slice so a giant body can't blow up
+ *  the log payload. */
+async function safeBody(r: Response): Promise<string> {
+  try {
+    const text = await r.text();
+    return text.slice(0, 500);
+  } catch {
+    return "";
   }
 }
 
