@@ -150,13 +150,13 @@ function PublicHeader() {
         >
           <Link
             to="/vendors"
-            className="px-1 py-1.5 text-sm text-ink-800 transition-colors hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+            className="relative px-1 py-1.5 text-sm text-ink-800 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-ink-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
           >
             {t("landing.nav_vendors")}
           </Link>
           <Link
             to="/rsvp"
-            className="px-1 py-1.5 text-sm text-ink-800 transition-colors hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+            className="relative px-1 py-1.5 text-sm text-ink-800 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-ink-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
           >
             {t("landing.footer_guests")}
           </Link>
