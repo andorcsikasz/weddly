@@ -10,6 +10,79 @@ import type { BlogBlock, BlogPost } from "@shared/blog_posts";
 import NotFoundPage from "./NotFoundPage";
 import { BlogCover } from "./BlogIndexPage";
 
+/** Hungarian + English Bible book name → biblia.hit.hu URL slug. The site
+ *  uses the same slug set as their search engine (e.g. /bible/karoli/1CO/13
+ *  for 1 Corinthians 13). Only the books we actually cite in seed content
+ *  are listed; an unknown book just falls back to a non-linked label. */
+const BIBLE_BOOK_SLUGS: Record<string, string> = {
+  // Old Testament HU
+  "1Mózes": "GEN",
+  "2Mózes": "EXO",
+  Ruth: "RUT",
+  Zsoltárok: "PSA",
+  Példabeszédek: "PRO",
+  Prédikátor: "ECC",
+  "Énekek éneke": "SNG",
+  Malakiás: "MAL",
+  // New Testament HU
+  Máté: "MAT",
+  Márk: "MAK",
+  Lukács: "LUK",
+  János: "JOH",
+  Róma: "ROM",
+  "1Korinthus": "1CO",
+  "2Korinthus": "2CO",
+  Galata: "GAL",
+  Efézus: "EPH",
+  Filippi: "PHP",
+  Kolossé: "COL",
+  "1Tessalonika": "1TH",
+  "1Timótheus": "1TI",
+  "1Péter": "1PE",
+  "1János": "1JN",
+  Jelenések: "REV",
+  // English equivalents
+  Genesis: "GEN",
+  Exodus: "EXO",
+  Psalms: "PSA",
+  Proverbs: "PRO",
+  Ecclesiastes: "ECC",
+  "Song of Solomon": "SNG",
+  Malachi: "MAL",
+  Matthew: "MAT",
+  Mark: "MAK",
+  Luke: "LUK",
+  John: "JOH",
+  Romans: "ROM",
+  "1 Corinthians": "1CO",
+  "2 Corinthians": "2CO",
+  Galatians: "GAL",
+  Ephesians: "EPH",
+  Philippians: "PHP",
+  Colossians: "COL",
+  "1 John": "1JN",
+  Revelation: "REV",
+};
+
+/** Parse a cite string like "1Korinthus 13,4-8" or "Matthew 19:4-6" and
+ *  derive the biblia.hit.hu chapter URL. Returns null for citations whose
+ *  book name isn't in the slug table or whose shape doesn't match. */
+function citeToBibliaUrl(cite: string): string | null {
+  const trimmed = cite.trim();
+  // Match "<book name> <chapter><separator><rest>" where separator can be
+  // space, comma or colon. Book name includes the leading number for
+  // "1Korinthus", "1 John" style. We greedy-match the book up to the last
+  // run of whitespace before the chapter digit.
+  const m = trimmed.match(/^(.+?)\s+(\d+)(?:[,:].+)?$/);
+  if (!m) return null;
+  const book = m[1]?.trim();
+  const chapter = m[2];
+  if (!book || !chapter) return null;
+  const slug = BIBLE_BOOK_SLUGS[book];
+  if (!slug) return null;
+  return `https://biblia.hit.hu/bible/karoli/${slug}/${chapter}`;
+}
+
 /**
  * /blog/:slug: single post layout. Fetches the published post by slug,
  * renders the locale-specific copy with a cover-image hero. Unknown slugs
@@ -138,9 +211,31 @@ export default function BlogPostPage() {
   );
 }
 
+/** Render the citation as a link to biblia.hit.hu if we can resolve the
+ *  book + chapter; otherwise fall back to plain text. External link target
+ *  + rel="noreferrer noopener" so the new tab doesn't share an opener with
+ *  the blog page. */
+function BibleCiteLink({ cite }: { cite: string }) {
+  const url = citeToBibliaUrl(cite);
+  if (!url) return <>{cite}</>;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="hover:text-blush-700 dark:hover:text-blush-300"
+    >
+      {cite}
+    </a>
+  );
+}
+
 function Block({ block }: { block: BlogBlock }) {
   if (block.type === "p") {
-    return <p>{block.text}</p>;
+    // text-justify on plain prose paragraphs gives the article a calm,
+    // editorial block of type. Headings, list items, blockquotes and
+    // CTA leads stay left-aligned (set on their own blocks below).
+    return <p className="text-justify">{block.text}</p>;
   }
   if (block.type === "h2") {
     return (
@@ -184,7 +279,7 @@ function Block({ block }: { block: BlogBlock }) {
         </blockquote>
         {block.cite ? (
           <figcaption className="mt-3 font-serif italic text-ink-500 dark:text-umber-300">
-            {block.cite}
+            <BibleCiteLink cite={block.cite} />
           </figcaption>
         ) : null}
       </figure>
