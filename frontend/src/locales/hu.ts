@@ -2288,6 +2288,17 @@ const hu: LocaleMessages = {
       starsAria: "{rating} csillag az {max}-ből",
       priceBandAria: "Ár sáv: {band} az {max}-ből",
       verifiedAria: "Hitelesített szolgáltató",
+      claim: {
+        sectionTitle: "Ez a saját hirdetésed?",
+        sectionBody:
+          "Igényeld a listingot, és a Weddly admin csapata jóváhagyja. Onnantól szerkesztheted az oldalt, kezelheted a naptárt és válaszolhatsz a kérdésekre.",
+        button: "Igénylem ezt a hirdetést",
+        armed: "Kattints újra a megerősítéshez",
+        sending: "Küldés...",
+        sentToast: "Az igénylés elindult",
+        sentBody:
+          "Megerősítő linket küldtünk a hirdetés címére, és az adminok is megkapták a kérést.",
+      },
       hero: {
         noPhotoYet: "Még nincs feltöltött fotó",
         noPhotoClaim: "Igényeld a hirdetést és tölts fel képeket",
@@ -2308,6 +2319,7 @@ const hu: LocaleMessages = {
         publishedLabel: "Publikus értékelés",
         submit: "Beküldés",
         submitted: "Értékelés mentve",
+        pickStarFirst: "Válassz csillagot",
         empty: "Még nincs értékelés. A schema kész — Phase 3-tól engedünk párokat.",
         alreadyReviewed: "Erre a szolgáltatóra már írtatok értékelést.",
         deleted: "Értékelés törölve",

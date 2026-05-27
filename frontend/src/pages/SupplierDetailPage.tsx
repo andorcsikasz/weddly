@@ -25,6 +25,7 @@ import {
   MapPin,
   Phone,
   Send,
+  ShieldCheck,
   Star,
   Trash2,
 } from "lucide-react";
@@ -47,7 +48,13 @@ import { Pill } from "../components/admin";
 import { ComposeDialog } from "../components/OutreachInbox";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { reviewApi, supplierApi, supplierBookingApi, supplierCommentApi } from "../lib/endpoints";
+import {
+  reviewApi,
+  supplierApi,
+  supplierBookingApi,
+  supplierCommentApi,
+  vendorClaimApi,
+} from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 /** Same localStorage shape the directory uses, so the heart icon stays in
@@ -131,7 +138,9 @@ function StarPicker({
   value,
   onChange,
 }: {
-  value: number;
+  /** 0 = nothing picked yet (all glyphs hollow). Once the user clicks a
+   *  star, `value` becomes that number and the submit button unlocks. */
+  value: 0 | 1 | 2 | 3 | 4 | 5;
   onChange: (n: 1 | 2 | 3 | 4 | 5) => void;
 }) {
   return (
@@ -410,6 +419,16 @@ export default function SupplierDetailPage() {
           {/* Bookings list (the mini-calendar moved to the right rail) */}
           <BookingsSection bookings={bookings} bookable={detail.bookable} t={t} />
 
+          {/* Owner-side claim CTA. Renders only on unclaimed listings; once
+              vendor_account_id is set, the slot disappears. Armed-confirm
+              pattern (first click arms, second click fires) calls the
+              existing /api/vendor/claim/start flow, which emails the
+              listing's contact_email AND records a listing_claims row so
+              admins see the request in the moderation queue. */}
+          {detail.vendor_account_id === null && (
+            <ClaimCtaSection supplierId={detail.id} toast={toast} t={t} />
+          )}
+
           {/* Admin meta */}
           <AdminMetaSection detail={detail} t={t} />
         </main>
@@ -517,7 +536,10 @@ function ReviewsSection({
   ...ctx
 }: SectionCtx & { reviews: SupplierReview[]; avg: number | null; count: number }) {
   const { supplierId, onChange, toast, confirm, locale, t } = ctx;
-  const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
+  // Default 0 = no rating picked yet. Stars render as hollow glyphs and the
+  // Beküldés button stays disabled until the user actually clicks one.
+  // Avoids the "everyone defaults to 5 stars" trap that inflates aggregates.
+  const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [body, setBody] = useState("");
   const [tags, setTags] = useState<SupplierReviewTag[]>([]);
   const [published, setPublished] = useState(false);
@@ -532,6 +554,7 @@ function ReviewsSection({
   };
 
   const submit = async () => {
+    if (rating === 0) return; // guard: button is disabled too but be defensive
     setSubmitting(true);
     try {
       await reviewApi.create(supplierId, {
@@ -542,7 +565,7 @@ function ReviewsSection({
       });
       setBody("");
       setTags([]);
-      setRating(5);
+      setRating(0);
       setPublished(false);
       toast.success(t("suppliers.detail.reviews.submitted"));
       await onChange();
@@ -642,8 +665,9 @@ function ReviewsSection({
           </label>
           <button
             type="button"
-            disabled={submitting}
+            disabled={submitting || rating === 0}
             onClick={submit}
+            title={rating === 0 ? t("suppliers.detail.reviews.pickStarFirst") : undefined}
             className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "…" : t("suppliers.detail.reviews.submit")}
@@ -880,6 +904,93 @@ function BookingsSection({
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+// ─── Owner-side claim CTA ───────────────────────────────────────────────────
+
+/** Renders for unclaimed listings only. First click arms the button (label
+ *  flips to "Click again to confirm"); the next click within ARMED_WINDOW_MS
+ *  fires the existing vendor-claim/start flow. After the window expires the
+ *  button resets to its idle label so a stray tap from an hour ago can't
+ *  trigger a stale request. */
+function ClaimCtaSection({
+  supplierId,
+  toast,
+  t,
+}: {
+  supplierId: string;
+  toast: ReturnType<typeof useToast>;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+}) {
+  const ARMED_WINDOW_MS = 5_000;
+  const [phase, setPhase] = useState<"idle" | "armed" | "sending">("idle");
+
+  // Auto-disarm so a forgotten armed button can't fire on a stale click.
+  useEffect(() => {
+    if (phase !== "armed") return;
+    const tid = window.setTimeout(() => setPhase("idle"), ARMED_WINDOW_MS);
+    return () => window.clearTimeout(tid);
+  }, [phase]);
+
+  const onClick = async () => {
+    if (phase === "sending") return;
+    if (phase === "idle") {
+      setPhase("armed");
+      return;
+    }
+    // armed: second click fires the request
+    setPhase("sending");
+    try {
+      await vendorClaimApi.start({ listing_id: supplierId });
+      toast.success(t("suppliers.detail.claim.sentToast"), 6_000);
+      setPhase("idle");
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : "Claim failed";
+      toast.error(msg);
+      setPhase("idle");
+    }
+  };
+
+  const label =
+    phase === "sending"
+      ? t("suppliers.detail.claim.sending")
+      : phase === "armed"
+        ? t("suppliers.detail.claim.armed")
+        : t("suppliers.detail.claim.button");
+
+  return (
+    <section className="mb-10 rounded-xl border border-ink-200/60 bg-cream-50 p-6 dark:border-umber-700/60 dark:bg-umber-800/40">
+      <div className="mb-4 flex items-start gap-3">
+        <ShieldCheck
+          size={22}
+          aria-hidden
+          className="mt-0.5 shrink-0 text-paper-600 dark:text-paper-400"
+        />
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+            {t("suppliers.detail.claim.sectionTitle")}
+          </h2>
+          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+            {t("suppliers.detail.claim.sectionBody")}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={phase === "sending"}
+        aria-pressed={phase === "armed"}
+        className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+          phase === "armed"
+            ? "bg-paper-700 text-cream-50 hover:bg-paper-800 dark:bg-paper-400 dark:text-ink-900 dark:hover:bg-paper-300"
+            : "bg-blush-600 text-white hover:bg-blush-700"
+        }`}
+      >
+        <ShieldCheck size={16} aria-hidden />
+        {label}
+      </button>
     </section>
   );
 }

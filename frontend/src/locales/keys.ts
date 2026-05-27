@@ -2535,6 +2535,19 @@ export interface LocaleMessages {
       /** Spoken label for the verified-checkmark glyph next to the supplier
        *  name. Shown only on claimed listings (vendor_account_id !== null). */
       verifiedAria: string;
+      /** Bottom-of-page CTA section that lets the listing owner request the
+       *  claim. Renders only on unclaimed listings. The button uses an
+       *  armed-confirmation pattern (first click arms, second click fires)
+       *  so a stray tap can't kick off a claim request. */
+      claim: {
+        sectionTitle: string;
+        sectionBody: string;
+        button: string;
+        armed: string;
+        sending: string;
+        sentToast: string;
+        sentBody: string;
+      };
       /** Hero-image fallback copy when the listing has no photo yet. */
       hero: {
         noPhotoYet: string;
@@ -2557,6 +2570,9 @@ export interface LocaleMessages {
         publishedLabel: string;
         submit: string;
         submitted: string;
+        /** Tooltip shown on the disabled Beküldés button when the rater
+         *  hasn't picked a star yet. */
+        pickStarFirst: string;
         empty: string;
         alreadyReviewed: string;
         deleted: string;

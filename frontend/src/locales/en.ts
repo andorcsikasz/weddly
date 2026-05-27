@@ -2260,6 +2260,17 @@ const en: LocaleMessages = {
       starsAria: "{rating} out of {max} stars",
       priceBandAria: "Price band: {band} of {max}",
       verifiedAria: "Verified supplier",
+      claim: {
+        sectionTitle: "Is this your listing?",
+        sectionBody:
+          "Request to claim it and the Weddly admin team will review. Once approved, you can edit the page, manage availability, and answer questions.",
+        button: "Claim this listing",
+        armed: "Click again to confirm",
+        sending: "Sending...",
+        sentToast: "Claim request sent",
+        sentBody:
+          "We emailed a confirmation link to the listing's contact address, and the admin team was notified.",
+      },
       hero: {
         noPhotoYet: "No photos yet",
         noPhotoClaim: "Claim this listing to add photos",
@@ -2280,6 +2291,7 @@ const en: LocaleMessages = {
         publishedLabel: "Publish this review",
         submit: "Submit",
         submitted: "Review saved",
+        pickStarFirst: "Pick a star first",
         empty: "No reviews yet. Schema is live — couples can write reviews from Phase 3.",
         alreadyReviewed: "Your couple already reviewed this supplier.",
         deleted: "Review deleted",
