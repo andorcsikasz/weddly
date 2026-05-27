@@ -550,7 +550,10 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
           user={authUser}
           t={t}
           locale={locale}
-          onLocaleChange={setLocale}
+          /* `silent: true` — Profile has its own currency picker (couple.currency)
+           *  and persists the locale via userApi.updateProfile, so the public
+           *  first-language-switch prompt would be redundant noise here. */
+          onLocaleChange={(next) => setLocale(next, { silent: true })}
           onSaved={() => {
             refreshAuth();
           }}

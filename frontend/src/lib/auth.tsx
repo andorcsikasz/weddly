@@ -44,7 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // localStorage blocked — fall through and apply the server pref.
     }
     if (!hasLocalChoice) {
-      setI18nLocale(user.locale);
+      // `silent: true` — this is server-driven hydration, not a user click,
+      // so it must not trigger the currency-pref prompt on login.
+      setI18nLocale(user.locale, { silent: true });
     }
   }, [user?.locale, setI18nLocale]);
 

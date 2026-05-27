@@ -78,8 +78,10 @@ function stashDraft(guests: number, budget: number) {
 }
 
 export function InteractiveBudgetDemo() {
-  const { t, locale } = useT();
-  const currency = localeCurrency(locale);
+  const { t, locale, currencyPref } = useT();
+  // Prefer the user's explicit pick (set via the first-language-switch
+  // prompt). Fall back to a locale-derived guess only until they've answered.
+  const currency = currencyPref ?? localeCurrency(locale);
   const range = BUDGET_RANGES[currency];
   const [guests, setGuests] = useState(DEFAULT_GUESTS);
   const [budget, setBudget] = useState(range.default);

@@ -102,6 +102,10 @@ beforeEach(() => {
   // localStorage explicitly.
   try {
     localStorage.setItem("weddly.locale", "hu");
+    // Seed a currency pref so the first-language-switch prompt
+    // (CurrencyPrefDialog) doesn't intercept the toggle in tests that
+    // expect a synchronous locale flip.
+    localStorage.setItem("weddly.currency", "HUF");
     localStorage.removeItem("weddly.token");
     // The kiosk hint persists across tests through localStorage — clear it
     // so the rendered tree never starts in kiosk mode unintentionally
