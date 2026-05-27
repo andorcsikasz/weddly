@@ -3319,8 +3319,9 @@ const hu: LocaleMessages = {
   },
   error_boundary: {
     title: "Ez most nem jött össze",
-    body: "Megpróbáltuk újratölteni az oldalt, de még mindig akadozik. Frissíts még egyszer, vagy ugorj vissza a kezdőlapra — az adataidnak nincs baja.",
+    body: "Megpróbáltuk újratölteni az oldalt, de még mindig akadozik. Egy pillanat és újra próbáljuk — az adataidnak nincs baja.",
     try_again: "Frissítés",
+    try_again_pending: "Frissítjük…",
     go_home: "Vissza a kezdőlapra",
   },
   register: {

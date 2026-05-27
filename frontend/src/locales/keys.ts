@@ -3747,6 +3747,7 @@ export interface LocaleMessages {
     title: string;
     body: string;
     try_again: string;
+    try_again_pending: string;
     go_home: string;
   };
   /** Clickwrap microcopy under the RegisterPage submit button — the

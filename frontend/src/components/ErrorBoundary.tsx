@@ -8,6 +8,7 @@ interface Props {
 
 interface State {
   error: Error | null;
+  reloading: boolean;
 }
 
 declare global {
@@ -20,51 +21,79 @@ declare global {
 }
 
 // Most render crashes are transient (stale chunk after deploy, race on first
-// render, flaky network). We force a single full reload on the first crash of
-// a session — that bypasses HTTP cache and usually recovers without the user
-// ever seeing a fallback. The sessionStorage guard prevents an infinite reload
-// loop when the bug is genuinely deterministic (or the user is offline).
-const AUTO_RELOAD_FLAG = "weddly.errorBoundary.autoReloaded";
+// render, flaky network). We retry up to MAX_AUTO_RELOADS times with a short
+// backoff before giving up and letting the user decide. The counter persists
+// in sessionStorage so a fresh page load can resume the retry chain; if the
+// last crash was more than RESET_AFTER_MS ago we treat it as a new incident.
+const COUNT_KEY = "weddly.errorBoundary.autoReloadCount";
+const LAST_AT_KEY = "weddly.errorBoundary.lastCrashAt";
+const MAX_AUTO_RELOADS = 3;
+const RESET_AFTER_MS = 60_000;
+
+function readAttempt(): number {
+  try {
+    const last = Number.parseInt(sessionStorage.getItem(LAST_AT_KEY) ?? "0", 10) || 0;
+    if (last && Date.now() - last > RESET_AFTER_MS) return 0;
+    return Number.parseInt(sessionStorage.getItem(COUNT_KEY) ?? "0", 10) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeAttempt(n: number): void {
+  try {
+    sessionStorage.setItem(COUNT_KEY, String(n));
+    sessionStorage.setItem(LAST_AT_KEY, String(Date.now()));
+  } catch {
+    // sessionStorage can throw in privacy modes; fall through.
+  }
+}
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, reloading: false };
 
   static getDerivedStateFromError(error: Error): State {
-    return { error };
+    return { error, reloading: false };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    let alreadyTried = false;
-    try {
-      alreadyTried = sessionStorage.getItem(AUTO_RELOAD_FLAG) === "1";
-      sessionStorage.setItem(AUTO_RELOAD_FLAG, "1");
-    } catch {
-      // sessionStorage can throw in privacy modes; fall through to fallback UI.
+    const prior = readAttempt();
+    const attempt = prior + 1;
+    writeAttempt(attempt);
+
+    window.Sentry?.captureException(error, {
+      contexts: { react: { componentStack: info.componentStack } },
+      tags: { autoReloadAttempt: String(attempt) },
+    });
+
+    if (attempt > MAX_AUTO_RELOADS) {
+      console.error("[error-boundary] giving up after retries", error, info.componentStack);
+      return;
     }
-    if (!alreadyTried) {
-      console.warn("[error-boundary] auto-reloading once", error.message);
-      window.Sentry?.captureException(error, {
-        contexts: { react: { componentStack: info.componentStack } },
-        tags: { autoReloaded: "true" },
-      });
+
+    console.warn(`[error-boundary] auto-reload ${attempt}/${MAX_AUTO_RELOADS}`, error.message);
+
+    // First attempt: instant reload so transient crashes (stale chunks, etc.)
+    // never surface a fallback at all. Subsequent attempts wait briefly so the
+    // user sees the fallback explain what's happening rather than the page
+    // appearing to flash repeatedly.
+    if (prior === 0) {
       window.location.reload();
       return;
     }
-    console.error("[error-boundary]", error, info.componentStack);
-    window.Sentry?.captureException(error, {
-      contexts: { react: { componentStack: info.componentStack } },
-    });
+    this.setState({ reloading: true });
+    window.setTimeout(() => window.location.reload(), 1500 * prior);
   }
 
   render() {
     if (this.state.error) {
-      return <ErrorFallback error={this.state.error} />;
+      return <ErrorFallback error={this.state.error} reloading={this.state.reloading} />;
     }
     return this.props.children;
   }
 }
 
-function ErrorFallback({ error }: { error: Error }) {
+function ErrorFallback({ error, reloading }: { error: Error; reloading: boolean }) {
   const { t } = useT();
   // A soft reset re-renders the same crashing tree and would crash again, so
   // both actions force a full reload — to the same URL or to home.
@@ -76,7 +105,12 @@ function ErrorFallback({ error }: { error: Error }) {
         </h1>
         <p className="mt-3 text-ink-600 dark:text-umber-200">{t("error_boundary.body")}</p>
         <div className="mt-6 flex flex-col items-center gap-3">
-          <Button onClick={() => window.location.reload()} variant="primary">
+          <Button
+            onClick={() => window.location.reload()}
+            variant="primary"
+            loading={reloading}
+            loadingLabel={t("error_boundary.try_again_pending")}
+          >
             {t("error_boundary.try_again")}
           </Button>
           <a href="/" className="text-ink-500 text-sm underline dark:text-umber-300">

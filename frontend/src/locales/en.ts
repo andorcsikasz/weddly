@@ -3280,8 +3280,9 @@ const en: LocaleMessages = {
   },
   error_boundary: {
     title: "That didn't work",
-    body: "We tried reloading once but it's still stuck. Refresh again, or head back to the start — your data is safe.",
+    body: "We tried reloading but it's still stuck. Hang on a moment and we'll try again — your data is safe.",
     try_again: "Refresh",
+    try_again_pending: "Refreshing…",
     go_home: "Back to home",
   },
   register: {
