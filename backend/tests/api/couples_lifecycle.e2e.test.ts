@@ -1449,6 +1449,68 @@ describe("couples_lifecycle: honeymoon flight estimate", () => {
     const r = await req("GET", "/api/honeymoon/flight-estimate");
     expect(r.status).toBe(401);
   });
+
+  test("honeymoon_origin_iata: persists uppercase IATA via PATCH", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("hm-origin@weddly.test");
+    // Lowercase input gets normalised to uppercase. Spaces trimmed.
+    const patch = await req<{ couple: { honeymoon_origin_iata: string | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { honeymoon_origin_iata: " vie " },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.honeymoon_origin_iata).toBe("VIE");
+
+    // Empty string clears back to null (frontend's "revert to default" path).
+    const cleared = await req<{ couple: { honeymoon_origin_iata: string | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { honeymoon_origin_iata: "" },
+      { token },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.couple.honeymoon_origin_iata).toBeNull();
+  });
+
+  test("honeymoon_origin_iata: rejects non-IATA input with 400", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("hm-origin-bad@weddly.test");
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { honeymoon_origin_iata: "XX" },
+      {
+        token,
+      },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("flight-estimate: offers array is empty when Amadeus unconfigured", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("hm-shape@weddly.test");
+    await req(
+      "PATCH",
+      "/api/couples/current",
+      {
+        honeymoon_destination: "Bali",
+        honeymoon_start_date: "2027-06-01",
+        honeymoon_end_date: "2027-06-10",
+        honeymoon_origin_iata: "BUD",
+      },
+      { token },
+    );
+    // Without credentials the estimate is still null (the documented "no
+    // creds → hide card" path). The shape itself is exercised by the
+    // domain unit tests; here we just confirm the new field round-trips.
+    const r = await req<{ estimate: unknown }>("GET", "/api/honeymoon/flight-estimate", undefined, {
+      token,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.estimate).toBeNull();
+  });
 });
 
 // ════════════════════════════════════════════════════════════════════════════

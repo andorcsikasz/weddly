@@ -267,6 +267,10 @@ export interface Couple {
   /** ISO YYYY-MM-DD. Pair with `honeymoon_end_date` to compute the night count. */
   honeymoon_start_date: string | null;
   honeymoon_end_date: string | null;
+  /** Departure airport IATA code (e.g. "BUD", "VIE") for the Amadeus flight
+   *  estimate. `null` falls back to a locale-aware default at read-time
+   *  (HU → BUD, EN → VIE) so most couples never need to set it. */
+  honeymoon_origin_iata: string | null;
   /** Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
    *  Default `false` — when off, neither the public household RSVP form nor
    *  the in-app GuestDrawer renders the question. Flipping it on from the
@@ -960,11 +964,32 @@ export interface PlanningItem {
   updated_at: UnixMs;
 }
 
-/** Round-trip flight cost estimate shown on /app/honeymoon. The figure is a
- *  *suggestion* — it comes from Amadeus's cheapest-offer feed for the route,
- *  not a bookable quote. Cached server-side for 12 h. `null` rather than this
- *  shape when destination/dates are incomplete, no offer was found, or the
- *  Amadeus credentials aren't configured. */
+/** A single flight option in the FlightEstimate.offers list. Pricing is for
+ *  the full party (adults * leg fare) round-trip, in `currency` whole units. */
+export interface FlightOffer {
+  /** Whole-unit price in the estimate's currency (HUF: forints, no cents). */
+  price: number;
+  /** ISO 4217 — echoed per-offer so the UI doesn't have to look up the
+   *  parent estimate when rendering a row. */
+  currency: string;
+  /** Operating IATA carrier code on the outbound first segment (e.g. "LH").
+   *  Empty string when Amadeus didn't populate it. */
+  carrier: string;
+  /** ISO timestamps for the outbound leg — the card uses them to render
+   *  "Mon 10:15 → 14:40" without re-parsing on every render. */
+  depart_iso: string;
+  arrival_iso: string;
+  /** Total outbound duration in minutes. */
+  duration_min: number;
+  /** Outbound stops (0 = direct). */
+  stops: number;
+}
+
+/** Round-trip flight cost estimate shown on /app/honeymoon. Figures are
+ *  *suggestions* sourced from Amadeus's flight-offers feed, not bookable
+ *  quotes. Cached server-side for 12 h. `null` rather than this shape when
+ *  destination/dates are incomplete, no offer was found, or the Amadeus
+ *  credentials aren't configured. */
 export interface FlightEstimate {
   /** Origin IATA airport code (e.g. "BUD"). */
   origin: string;
@@ -972,16 +997,17 @@ export interface FlightEstimate {
    *  "Bali → BUD" etc. without re-reading the couple state. */
   destination_text: string;
   /** Resolved destination IATA code, or `null` if Amadeus's location lookup
-   *  didn't find a match (then `price_amount` is also null). */
+   *  didn't find a match (then `offers` is empty). */
   destination_iata: string | null;
   depart_date: string;
   return_date: string;
   adults: number;
-  /** ISO 4217 (e.g. "HUF"). */
+  /** ISO 4217 (e.g. "HUF") — the currency the offers were quoted in. */
   currency: string;
-  /** Whole-unit price in `currency`. `null` if no offer was found for these
-   *  dates / route. */
-  price_amount: number | null;
+  /** Up to 3 cheapest offers (deduped by carrier when possible), sorted
+   *  cheapest-first. Empty array when no offer came back; the card hides
+   *  in that case. */
+  offers: FlightOffer[];
   /** Server-side cache timestamp — let the frontend show "frissítve: …". */
   fetched_at: UnixMs;
 }

@@ -111,21 +111,53 @@ export interface FlightOfferQuote {
   /** Whole-unit price in the requested currency (HUF: forints, no cents). */
   price: number;
   currency: string;
+  /** Operating carrier's IATA code on the outbound (first) segment — e.g.
+   *  "LH". When the offer is multi-carrier we still report the first leg's
+   *  marketing carrier; the card just needs *something* to identify the
+   *  option. Empty string when Amadeus didn't populate the field. */
+  carrier: string;
+  /** ISO timestamp of outbound departure (e.g. "2027-05-25T10:15:00"). */
+  depart_iso: string;
+  /** ISO timestamp of outbound arrival. Together with `depart_iso` the
+   *  frontend can show "10:15 → 14:40 BUD-BCN" without re-parsing. */
+  arrival_iso: string;
+  /** Total outbound duration in minutes. Round-trip durations vary by leg;
+   *  we surface the outbound as the "headline" so the card can sort. */
+  duration_min: number;
+  /** Outbound stops (0 = direct, 1 = one stop, …). The return leg often
+   *  has the same shape and isn't surfaced separately. */
+  stops: number;
 }
 
-/** Look up the cheapest available offer for the given route + dates. Returns
- *  null when no offer is found (some dates / routes have no inventory),
- *  credentials are missing, or the call fails. */
-export async function getCheapestOffer(opts: {
+/** Parse Amadeus's ISO 8601 duration (e.g. "PT13H45M") to minutes. Returns
+ *  0 when the string is malformed — the caller can still rank by price. */
+function parseIsoDuration(d: string | undefined): number {
+  if (!d) return 0;
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?$/.exec(d);
+  if (!m) return 0;
+  const h = m[1] ? Number(m[1]) : 0;
+  const min = m[2] ? Number(m[2]) : 0;
+  return h * 60 + min;
+}
+
+/** Look up the cheapest N offers for the given route + dates, sorted
+ *  cheapest-first. Returns an empty array when no offer is found, the
+ *  credentials are missing, or the call fails — same "degrade silently"
+ *  contract as the legacy single-offer helper. */
+export async function getTopOffers(opts: {
   origin: string;
   destination: string;
   departDate: string;
   returnDate: string;
   adults: number;
   currency: string;
-}): Promise<FlightOfferQuote | null> {
+  /** Hard cap on results returned. The Amadeus `max` query is set higher so
+   *  we can pick the cheapest distinct carriers; the slice happens here. */
+  limit?: number;
+}): Promise<FlightOfferQuote[]> {
+  const limit = opts.limit ?? 3;
   const token = await getAccessToken();
-  if (!token) return null;
+  if (!token) return [];
   try {
     const u = new URL(`${baseUrl()}/v2/shopping/flight-offers`);
     u.searchParams.set("originLocationCode", opts.origin);
@@ -135,37 +167,81 @@ export async function getCheapestOffer(opts: {
     u.searchParams.set("adults", String(opts.adults));
     u.searchParams.set("currencyCode", opts.currency);
     u.searchParams.set("nonStop", "false");
-    u.searchParams.set("max", "5");
+    // 10 candidates so dedup-by-carrier still leaves us 3 distinct options
+    // on most routes; Amadeus's own ranking is cheapest-first.
+    u.searchParams.set("max", "10");
     const r = await fetch(u, { headers: { Authorization: `Bearer ${token}` } });
     if (!r.ok) {
       logger.warn("amadeus.offers_failed", {
         status: r.status,
         route: `${opts.origin}-${opts.destination}`,
       });
-      return null;
+      return [];
     }
     const j = (await r.json()) as {
-      data?: { price?: { total?: string; currency?: string } }[];
+      data?: {
+        price?: { total?: string; currency?: string };
+        itineraries?: {
+          duration?: string;
+          segments?: {
+            departure?: { at?: string };
+            arrival?: { at?: string };
+            carrierCode?: string;
+          }[];
+        }[];
+      }[];
     };
-    const offers = j.data ?? [];
-    let cheapest: FlightOfferQuote | null = null;
-    for (const o of offers) {
+    const raw = j.data ?? [];
+    const parsed: FlightOfferQuote[] = [];
+    for (const o of raw) {
       const total = o.price?.total;
       const currency = o.price?.currency;
       if (!total || !currency) continue;
       const n = Number(total);
       if (!Number.isFinite(n) || n <= 0) continue;
-      // Amadeus returns "1234.56" or "1234" depending on currency; round to
-      // whole units (HUF has no fractional part anyway).
-      const whole = Math.round(n);
-      if (cheapest === null || whole < cheapest.price) {
-        cheapest = { price: whole, currency };
-      }
+      const outbound = o.itineraries?.[0];
+      const segments = outbound?.segments ?? [];
+      const first = segments[0];
+      const last = segments[segments.length - 1];
+      const depart_iso = first?.departure?.at ?? "";
+      const arrival_iso = last?.arrival?.at ?? "";
+      const carrier = first?.carrierCode ?? "";
+      const duration_min = parseIsoDuration(outbound?.duration);
+      const stops = Math.max(segments.length - 1, 0);
+      parsed.push({
+        price: Math.round(n),
+        currency,
+        carrier,
+        depart_iso,
+        arrival_iso,
+        duration_min,
+        stops,
+      });
     }
-    return cheapest;
+    // Sort cheapest-first, then collapse duplicate carriers so the 3 cards
+    // show distinct airlines when possible. If the same carrier holds the
+    // 3 cheapest slots (common on monopoly routes) we just take those.
+    parsed.sort((a, b) => a.price - b.price);
+    const seenCarriers = new Set<string>();
+    const distinct: FlightOfferQuote[] = [];
+    for (const o of parsed) {
+      if (seenCarriers.has(o.carrier)) continue;
+      seenCarriers.add(o.carrier);
+      distinct.push(o);
+      if (distinct.length >= limit) break;
+    }
+    if (distinct.length >= limit) return distinct;
+    // Top-up with the cheapest remaining offers (carrier-deduped already
+    // skipped) so we still hit `limit` when only one airline serves the route.
+    for (const o of parsed) {
+      if (distinct.includes(o)) continue;
+      distinct.push(o);
+      if (distinct.length >= limit) break;
+    }
+    return distinct;
   } catch (e) {
     logger.warn("amadeus.offers_error", { error: String(e) });
-    return null;
+    return [];
   }
 }
 

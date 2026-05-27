@@ -263,6 +263,10 @@ db.exec(
 addColumnIfMissing("couples", "honeymoon_destination", "honeymoon_destination TEXT");
 addColumnIfMissing("couples", "honeymoon_start_date", "honeymoon_start_date TEXT");
 addColumnIfMissing("couples", "honeymoon_end_date", "honeymoon_end_date TEXT");
+// Departure IATA code used by the Amadeus flight estimate. Defaults applied
+// at read-time (HU couple → BUD, EN → VIE) so existing rows keep working
+// without a backfill; this column only carries the explicit override.
+addColumnIfMissing("couples", "honeymoon_origin_iata", "honeymoon_origin_iata TEXT");
 
 // Cost-planning scenario count — shared between partners across all devices.
 // Distinct from `target_guest_count` (the onboarding goal): this is the
@@ -637,6 +641,20 @@ addColumnIfMissing(
 // the admin workspace list. One-shot: subsequent admin clicks are refused
 // so the lone partner doesn't get pestered. NULL = never reminded.
 addColumnIfMissing("couples", "invite_partner_reminded_at", "invite_partner_reminded_at INTEGER");
+
+// JSON array of the top-N Amadeus offers cached for a given route. We used to
+// cache only the cheapest price in `price_amount`; this column carries the
+// richer payload (carrier, duration, stops, depart/arrival ISO timestamps) so
+// the honeymoon card can render multiple options without a re-query. Nullable:
+// rows written by the pre-multi-offer code keep working and get backfilled on
+// the next refresh.
+addColumnIfMissing("flight_estimates", "offers_json", "offers_json TEXT");
+// Relax the NOT NULL on `price_amount` for the multi-offer cache rows where
+// no offer came back. SQLite doesn't support "ALTER COLUMN", so the schema
+// migration is a no-op; the bug only bites on prod DBs that already hit the
+// constraint when writing a null "no offers" sentinel. The runtime now
+// writes 0 instead of null when the offer count is zero — same null-meaning,
+// no constraint violation.
 
 export function now(): number {
   return Date.now();

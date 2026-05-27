@@ -108,6 +108,9 @@ interface OnboardBody {
   /** ISO YYYY-MM-DD. Empty string clears. */
   honeymoon_start_date?: unknown;
   honeymoon_end_date?: unknown;
+  /** Departure airport IATA (3 uppercase letters). Empty string clears,
+   *  null restores the locale-aware default. */
+  honeymoon_origin_iata?: unknown;
   /** Cost-planning scenario count. Integer 1..2000 or null. */
   planning_count?: unknown;
   /** When true, the /app/budget cost-planning page pins the headcount
@@ -181,6 +184,16 @@ function parseHoneymoonDestination(raw: unknown): string | null {
   const trimmed = raw.trim();
   if (trimmed.length === 0) return null;
   if (trimmed.length > 200) throw new HttpError(400, "honeymoon_destination too long");
+  return trimmed;
+}
+
+function parseHoneymoonOriginIata(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "honeymoon_origin_iata must be a string");
+  const trimmed = raw.trim().toUpperCase();
+  if (trimmed.length === 0) return null;
+  if (!/^[A-Z]{3}$/.test(trimmed))
+    throw new HttpError(400, "honeymoon_origin_iata must be a 3-letter IATA code");
   return trimmed;
 }
 
@@ -1418,13 +1431,18 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     const val = parseIsoDateOrNull(body.honeymoon_end_date, "honeymoon_end_date");
     updates.push({ col: "honeymoon_end_date", val });
   }
+  if (body.honeymoon_origin_iata !== undefined) {
+    const val = parseHoneymoonOriginIata(body.honeymoon_origin_iata);
+    updates.push({ col: "honeymoon_origin_iata", val });
+  }
   // Honeymoon edits don't get a per-field audit cluster (yet) — they were
   // never split out before either. Fold any honeymoon change into a single
   // generic-fallback row below if NOTHING else matched.
   const honeymoonTouched =
     body.honeymoon_destination !== undefined ||
     body.honeymoon_start_date !== undefined ||
-    body.honeymoon_end_date !== undefined;
+    body.honeymoon_end_date !== undefined ||
+    body.honeymoon_origin_iata !== undefined;
 
   if (body.budget_goal !== undefined || body.budget_ceiling_huf !== undefined) {
     const goal = parseBudgetGoal(body as OnboardBody);

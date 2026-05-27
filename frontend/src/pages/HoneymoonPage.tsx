@@ -9,6 +9,7 @@ import type {
   Couple,
   Currency,
   FlightEstimate,
+  FlightOffer,
   PlaceSuggestion,
   PlanningItem,
 } from "@shared/types";
@@ -312,7 +313,12 @@ export default function HoneymoonPage() {
     return () => {
       cancelled = true;
     };
-  }, [couple?.honeymoon_destination, couple?.honeymoon_start_date, couple?.honeymoon_end_date]);
+  }, [
+    couple?.honeymoon_destination,
+    couple?.honeymoon_start_date,
+    couple?.honeymoon_end_date,
+    couple?.honeymoon_origin_iata,
+  ]);
 
   const honeymoonLines = useMemo(() => lines.filter((l) => l.category === "honeymoon"), [lines]);
   // Each preset chip is single-use. We resolve every existing line back to
@@ -363,6 +369,7 @@ export default function HoneymoonPage() {
     honeymoon_destination?: string | null;
     honeymoon_start_date?: string | null;
     honeymoon_end_date?: string | null;
+    honeymoon_origin_iata?: string | null;
   }) {
     if (!couple) return;
     const prev = couple;
@@ -500,7 +507,15 @@ export default function HoneymoonPage() {
         />
       </section>
 
-      {flightEstimate && <FlightEstimateCard estimate={flightEstimate} locale={locale} t={t} />}
+      {flightEstimate && (
+        <FlightEstimateCard
+          estimate={flightEstimate}
+          locale={locale}
+          t={t}
+          currentOrigin={couple?.honeymoon_origin_iata ?? null}
+          onOriginSave={(iata) => saveTrip({ honeymoon_origin_iata: iata })}
+        />
+      )}
 
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
@@ -1204,68 +1219,204 @@ function CostRow({
   );
 }
 
-/** Suggestion card showing Amadeus's cheapest round-trip offer for the
- *  couple's destination + dates. Hidden by the caller when the estimate is
- *  null — so this component renders only when we have *something* to say,
- *  even if `price_amount` is null (no offer found for these dates). */
+/** Suggestion card showing Amadeus's three cheapest round-trip offers for
+ *  the couple's destination + dates, with an inline-editable origin IATA.
+ *  Hidden by the caller when the estimate is null. */
 function FlightEstimateCard({
   estimate,
   locale,
   t,
+  currentOrigin,
+  onOriginSave,
 }: {
   estimate: FlightEstimate;
   locale: "hu" | "en";
   t: (key: string, vars?: Record<string, string | number>) => string;
+  /** Couple's explicit override (3-letter IATA) or null when the backend
+   *  is using the locale default. The input pre-fills with this; clearing
+   *  it saves null and reverts to the default. */
+  currentOrigin: string | null;
+  onOriginSave: (iata: string | null) => Promise<void>;
 }) {
   const updated = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(estimate.fetched_at));
+  const toast = useToast();
+  const [editingOrigin, setEditingOrigin] = useState(false);
+  const [draftOrigin, setDraftOrigin] = useState(currentOrigin ?? "");
+
+  useEffect(() => {
+    setDraftOrigin(currentOrigin ?? "");
+  }, [currentOrigin]);
+
+  async function commitOrigin() {
+    const trimmed = draftOrigin.trim().toUpperCase();
+    setEditingOrigin(false);
+    // Empty → null (revert to locale default). Otherwise validate IATA.
+    if (trimmed.length === 0) {
+      if (currentOrigin === null) return;
+      await onOriginSave(null);
+      return;
+    }
+    if (!/^[A-Z]{3}$/.test(trimmed)) {
+      toast.error(t("honeymoon.flight_estimate_origin_invalid"));
+      setDraftOrigin(currentOrigin ?? "");
+      return;
+    }
+    if (trimmed === currentOrigin) return;
+    await onOriginSave(trimmed);
+  }
 
   return (
     <section
-      className="card-hover stationery-light relative !p-5 mt-4 flex items-start gap-3"
+      className="card-hover stationery-light relative !p-5 mt-4"
       aria-label={t("honeymoon.flight_estimate_title")}
     >
-      <span
-        aria-hidden="true"
-        className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
-      >
-        <Plane size={16} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
-          {t("honeymoon.flight_estimate_title")}
-        </p>
-        {estimate.price_amount !== null ? (
-          <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="stat-num text-lg font-semibold text-ink-900 sm:text-xl dark:text-paper-50">
-              ~{" "}
-              {new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
-                style: "currency",
-                currency: estimate.currency,
-                maximumFractionDigits: 0,
-              }).format(estimate.price_amount)}
-            </span>
-            <span className="text-xs text-ink-500 dark:text-umber-300">
-              {t("honeymoon.flight_estimate_basis", {
-                origin: estimate.origin,
-                destination: estimate.destination_iata ?? "",
-                adults: estimate.adults,
-              })}
-            </span>
+      <header className="flex items-start gap-3">
+        <span
+          aria-hidden="true"
+          className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
+        >
+          <Plane size={16} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("honeymoon.flight_estimate_title")}
           </p>
-        ) : (
-          <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">
-            {t("honeymoon.flight_estimate_empty")}
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="uppercase tracking-wide">
+                {t("honeymoon.flight_estimate_origin_label")}:
+              </span>
+              {editingOrigin ? (
+                <input
+                  type="text"
+                  value={draftOrigin}
+                  onChange={(e) =>
+                    setDraftOrigin(
+                      e.target.value
+                        .toUpperCase()
+                        .replace(/[^A-Z]/g, "")
+                        .slice(0, 3),
+                    )
+                  }
+                  onBlur={commitOrigin}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      commitOrigin();
+                    } else if (e.key === "Escape") {
+                      e.preventDefault();
+                      setDraftOrigin(currentOrigin ?? "");
+                      setEditingOrigin(false);
+                    }
+                  }}
+                  maxLength={3}
+                  placeholder={t("honeymoon.flight_estimate_origin_placeholder")}
+                  className="w-14 rounded border border-paper-300 bg-white px-1.5 py-0.5 text-center text-xs font-semibold uppercase tabular-nums tracking-wider text-ink-900 focus:border-blush-500 focus:outline-none dark:border-umber-600 dark:bg-umber-800 dark:text-paper-50"
+                  aria-label={t("honeymoon.flight_estimate_origin_edit_aria")}
+                  autoFocus
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditingOrigin(true)}
+                  className="rounded border border-paper-300 bg-white px-1.5 py-0.5 text-xs font-semibold uppercase tabular-nums tracking-wider text-ink-900 hover:border-blush-400 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-50"
+                  aria-label={t("honeymoon.flight_estimate_origin_edit_aria")}
+                >
+                  {estimate.origin}
+                </button>
+              )}
+            </span>
+            <span aria-hidden="true">→</span>
+            <span>
+              {estimate.destination_text}
+              {estimate.destination_iata ? ` (${estimate.destination_iata})` : ""}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>{t("honeymoon.flight_estimate_party", { adults: estimate.adults })}</span>
           </p>
-        )}
-        <p className="mt-1 text-[11px] text-ink-400 dark:text-umber-300">
-          {t("honeymoon.flight_estimate_attribution", { updated })}
+        </div>
+      </header>
+
+      {estimate.offers.length === 0 ? (
+        <p className="mt-3 text-sm text-ink-600 dark:text-umber-200">
+          {t("honeymoon.flight_estimate_empty")}
         </p>
-      </div>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {estimate.offers.map((offer, idx) => (
+            <li
+              key={`${offer.carrier}-${offer.depart_iso}-${idx}`}
+              className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-xl border border-paper-200 bg-white/60 px-3 py-2 dark:border-umber-700 dark:bg-umber-900/40"
+            >
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+                <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
+                  {offer.carrier || "—"}
+                </span>
+                <span className="text-ink-800 tabular-nums dark:text-paper-100">
+                  {formatOfferTime(offer.depart_iso, locale)} →{" "}
+                  {formatOfferTime(offer.arrival_iso, locale)}
+                </span>
+                <span className="text-xs text-ink-500 dark:text-umber-300">
+                  {formatDurationLabel(offer.duration_min, t)}
+                </span>
+                <span className="text-xs text-ink-500 dark:text-umber-300">
+                  {formatStopsLabel(offer.stops, t)}
+                </span>
+              </div>
+              <span className="stat-num text-base font-semibold text-ink-900 sm:text-lg dark:text-paper-50">
+                ~{" "}
+                {new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+                  style: "currency",
+                  currency: offer.currency,
+                  maximumFractionDigits: 0,
+                }).format(offer.price)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="mt-2 text-[11px] text-ink-400 dark:text-umber-300">
+        {t("honeymoon.flight_estimate_attribution", { updated })}
+      </p>
     </section>
   );
+}
+
+function formatOfferTime(iso: string, locale: "hu" | "en"): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
+function formatDurationLabel(
+  minutes: number,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (!minutes || minutes <= 0) return "";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return t("honeymoon.flight_estimate_duration", {
+    hours,
+    minutes: String(mins).padStart(2, "0"),
+  });
+}
+
+function formatStopsLabel(
+  stops: number,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (stops <= 0) return t("honeymoon.flight_estimate_direct");
+  if (stops === 1) return t("honeymoon.flight_estimate_stops_one");
+  return t("honeymoon.flight_estimate_stops_other", { count: stops });
 }
 
 /** Honeymoon-scoped todo checklist. Mirrors the rows on /app/tervezés
