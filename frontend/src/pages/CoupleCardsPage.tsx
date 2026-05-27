@@ -287,23 +287,29 @@ function DeckShowcase({
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 z-[1] translate-x-3 translate-y-4 rotate-[4deg] rounded-2xl border border-paper-300 bg-paper-50 transition-transform duration-300 ease-out group-hover:translate-x-8 group-hover:translate-y-10 group-hover:rotate-[8deg] dark:border-umber-700 dark:bg-umber-800"
             />
+            {/* Selected card face: deep blush, white type, WNRS silhouette.
+                "{n}. szint" / "Level {n}" reads as the section divider; the
+                deck name takes the centre, the blurb tucks into the lower
+                third with reduced opacity so it reads as caption-weight
+                copy without crowding the headline. Dark mode keeps the
+                same red — the surface owns its colour identity. */}
             <button
               type="button"
               onClick={onOpen}
-              className="relative z-10 flex aspect-[3/2] w-full flex-col justify-between rounded-2xl border-2 border-blush-300 bg-blush-100 px-7 py-7 text-left shadow-[0_24px_50px_-22px_rgba(199,113,98,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-500 focus-visible:ring-offset-2 dark:border-blush-700 dark:bg-blush-900/30 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
+              className="relative z-10 flex aspect-[3/2] w-full flex-col justify-between rounded-2xl bg-blush-700 px-7 py-7 text-left text-white shadow-[0_24px_50px_-22px_rgba(157,59,39,0.6)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
             >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.32em] text-white/80">
                 {t("tools.couple_cards.deck_number_label", { n: selectedIdx + 1 })}
               </span>
               <div className="flex flex-1 flex-col justify-center">
-                <h3 className="font-serif text-4xl italic leading-[0.95] text-ink-900 dark:text-paper-50 sm:text-6xl">
+                <h3 className="font-serif text-4xl italic leading-[0.95] text-white sm:text-6xl">
                   {t(selected.titleKey)}
                 </h3>
-                <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-700 dark:text-paper-200 sm:mt-4 sm:text-base">
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-white/85 sm:mt-4 sm:text-base">
                   {t(selected.blurbKey)}
                 </p>
               </div>
-              <span className="self-end text-[10px] uppercase tracking-[0.24em] text-blush-800 dark:text-blush-300">
+              <span className="self-end text-[10px] uppercase tracking-[0.24em] text-white/75">
                 {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
               </span>
             </button>
