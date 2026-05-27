@@ -3531,6 +3531,7 @@ export interface LocaleMessages {
     menu_label: string;
     menu_profile: string;
     menu_landing: string;
+    menu_couple_cards: string;
     no_name: string;
     /** Three small-caps labels splitting the page into semantic zones —
      *  break up the equal-weight card stack so the user can scan by

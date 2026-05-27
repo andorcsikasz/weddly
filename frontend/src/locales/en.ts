@@ -3099,6 +3099,7 @@ const en: LocaleMessages = {
     menu_label: "Profile menu",
     menu_profile: "Profile",
     menu_landing: "Back to landing page",
+    menu_couple_cards: "100 questions before you marry",
     no_name: "Unnamed",
     zone_workspace: "You & your workspace",
     zone_planning: "Wedding planning",
