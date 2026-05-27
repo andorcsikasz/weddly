@@ -601,15 +601,9 @@ function BlockEditor({
                   onChange={(next) => update(idx, { type: "ul", items: next })}
                 />
               ) : block.type === "blockquote" ? (
-                <BlockquoteEditor
-                  value={block}
-                  onChange={(next) => update(idx, next)}
-                />
+                <BlockquoteEditor value={block} onChange={(next) => update(idx, next)} />
               ) : (
-                <CtaEditor
-                  value={block}
-                  onChange={(next) => update(idx, next)}
-                />
+                <CtaEditor value={block} onChange={(next) => update(idx, next)} />
               )}
             </div>
           </div>

@@ -1007,7 +1007,8 @@ const RAW_DIRECTORY: Omit<
     capacity_max: 60,
     blurb_hu: "Hűvösvölgyi rendezvényház és étterem, 20–60 fős esküvőkre.",
     blurb_en: "Hűvösvölgy event house and restaurant in Buda, 20–60 guests.",
-    website: "https://www.eskuvoihelyszinkereso.hu/helyszin/villa-rosa-etterem-rendezvenyhaz-es-hotel-budapest",
+    website:
+      "https://www.eskuvoihelyszinkereso.hu/helyszin/villa-rosa-etterem-rendezvenyhaz-es-hotel-budapest",
     ...noContact,
     source: "curated",
     price_band: 3,

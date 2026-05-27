@@ -171,7 +171,10 @@ function Block({ block }: { block: BlogBlock }) {
     // Multi-paragraph quotes (e.g. a longer scripture passage) are stored
     // with `\n\n` separators. Split here so each paragraph reads cleanly
     // instead of collapsing into one wall of italics.
-    const paragraphs = block.text.split(/\n\n+/).map((s) => s.trim()).filter(Boolean);
+    const paragraphs = block.text
+      .split(/\n\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     return (
       <figure className="!my-8 border-l-2 border-blush-400 pl-5 dark:border-blush-300 sm:pl-6">
         <blockquote className="space-y-3 font-serif text-lg italic leading-relaxed text-ink-800 dark:text-paper-100 sm:text-xl">
