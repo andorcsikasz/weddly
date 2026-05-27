@@ -16,8 +16,9 @@
 // it's obvious a task extends beyond what you're looking at.
 
 import type { PlanningItem } from "@shared/types";
-import { Heart, Sparkles } from "lucide-react";
+import { Heart, Plus } from "lucide-react";
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useT } from "../../lib/i18n";
 
 interface ResolvedSupplier {
@@ -309,7 +310,7 @@ export default function GanttView({
           slides horizontally underneath. */}
           <div className="sticky top-0 z-30 flex shrink-0 border-b border-paper-300 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95">
             <div
-              className="sticky left-0 z-40 shrink-0 border-r border-paper-200 bg-paper-50/95 px-3 py-2 font-serif text-[12px] uppercase tracking-wider text-ink-500 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95 dark:text-umber-300"
+              className="sticky left-0 z-40 shrink-0 border-r border-paper-200 bg-paper-50/95 px-3 py-2.5 font-serif text-[12px] uppercase tracking-wider text-ink-500 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95 dark:text-umber-300"
               style={{ width: TASK_GUTTER_WIDTH }}
             >
               {t("timeline.task_column")}
@@ -317,12 +318,12 @@ export default function GanttView({
             <div className="relative" style={{ width: chartWidthPx }}>
               {/* Year ribbon — only printed when the year flips so we don't repeat
               "2026" twelve times across the 6M view. */}
-              <div className="relative h-5">
+              <div className="relative h-6">
                 {geometry.months.map((m) =>
                   m.yearLabel ? (
                     <span
                       key={`yr-${m.start.toISOString()}`}
-                      className="absolute top-1 px-2 text-[10px] uppercase tracking-wider text-ink-400 dark:text-umber-400"
+                      className="absolute top-1.5 px-2 font-serif text-[11px] text-ink-400 dark:text-umber-400"
                       style={{ left: `${m.offsetPct}%` }}
                     >
                       {m.yearLabel}
@@ -330,7 +331,7 @@ export default function GanttView({
                   ) : null,
                 )}
               </div>
-              <div className="relative h-7">
+              <div className="relative h-8">
                 {geometry.months.map((m, idx) => {
                   // A year-flip is signalled by `yearLabel` being set — except for
                   // the first band, which always shows the year (so the user has
@@ -363,11 +364,11 @@ export default function GanttView({
               {/* Week tick row — only on 3M. 6M would render 26+ ticks which
               degrades into visual static, so we don't bother there. */}
               {showWeeks && (
-                <div className="relative h-[22px]">
+                <div className="relative h-6">
                   {geometry.weeks.map((w) => (
                     <span
                       key={`wk-${w.start.toISOString()}`}
-                      className="absolute top-1 px-1 font-serif text-[10px] text-ink-400 dark:text-umber-400"
+                      className="absolute top-1.5 px-1 font-serif text-[11px] text-ink-400 dark:text-umber-400"
                       style={{ left: `${w.offsetPct}%` }}
                     >
                       W{w.weekNumber}
@@ -382,12 +383,12 @@ export default function GanttView({
               stay in the body so they run top-to-bottom of the chart. */}
               {weddingLeftPct !== null && (
                 <span
-                  className="pointer-events-none absolute bottom-0 inline-flex h-5 w-5 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-sage-500 text-paper-50 shadow-soft"
+                  className="pointer-events-none absolute bottom-0 inline-flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-sage-500 text-paper-50 shadow-soft ring-2 ring-paper-50 dark:ring-umber-900"
                   style={{ left: `${weddingLeftPct}%` }}
                   aria-label={t("timeline.wedding_marker")}
                   title={t("timeline.wedding_marker")}
                 >
-                  <Heart size={11} aria-hidden="true" fill="currentColor" />
+                  <Heart size={14} aria-hidden="true" fill="currentColor" />
                 </span>
               )}
               {todayLeftPct !== null && (
@@ -408,50 +409,80 @@ export default function GanttView({
           dividers, and the today line read as a real chart canvas instead
           of a thin strip at the top when the task list is short. */}
           <div className="relative flex min-h-0 flex-1">
-            {/* Task-name gutter — pins to the left while the chart scrolls. */}
+            {/* Task-name gutter — pins to the left while the chart scrolls.
+              When the couple has no tasks in the visible window we surface
+              an editorial empty state here (not floating on the chart canvas,
+              which scrolls off-screen at 3M/6M zoom) with a + link straight
+              to /app/planning where the wand generates a full plan. */}
             <div
               className="sticky left-0 z-10 shrink-0 border-r border-paper-200 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95"
               style={{ width: TASK_GUTTER_WIDTH }}
             >
-              {visible.length === 0
-                ? null
-                : visible.map((bar, idx) => {
-                    const item = bar.item;
-                    const supplier = item.supplier_id
-                      ? (supplierById.get(item.supplier_id) ?? null)
-                      : null;
-                    const zebra = idx % 2 === 1 ? "bg-paper-50/60 dark:bg-umber-900/30" : "";
-                    return (
-                      <button
-                        type="button"
-                        key={`gutter-${item.id}`}
-                        onClick={() => onOpenTask(item)}
-                        className={`flex w-full items-center gap-2 border-b border-paper-200 px-3 text-left transition-colors hover:bg-paper-100 dark:border-umber-700/60 dark:hover:bg-umber-700/40 ${zebra}`}
-                        style={{ height: ROW_HEIGHT }}
+              {visible.length === 0 && beforeCount === 0 && afterCount === 0 ? (
+                <div className="flex flex-col items-start gap-3 px-4 py-5">
+                  <p className="font-serif text-[15px] italic text-ink-700 dark:text-paper-100">
+                    {t("timeline.empty_gutter_title")}
+                  </p>
+                  <p className="text-xs leading-relaxed text-ink-500 dark:text-umber-300">
+                    {t("timeline.empty_gutter_sub")}
+                  </p>
+                  <Link
+                    to="/app/planning"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-blush-500 px-3 py-1.5 text-xs font-medium text-paper-50 transition-colors hover:bg-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900"
+                  >
+                    <Plus size={13} aria-hidden="true" />
+                    <span>{t("timeline.empty_gutter_cta")}</span>
+                  </Link>
+                </div>
+              ) : (
+                visible.map((bar, idx) => {
+                  const item = bar.item;
+                  const supplier = item.supplier_id
+                    ? (supplierById.get(item.supplier_id) ?? null)
+                    : null;
+                  const zebra = idx % 2 === 1 ? "bg-paper-50/60 dark:bg-umber-900/30" : "";
+                  return (
+                    <button
+                      type="button"
+                      key={`gutter-${item.id}`}
+                      onClick={() => onOpenTask(item)}
+                      className={`flex w-full items-center gap-2 border-b border-paper-200 px-3 text-left transition-colors hover:bg-paper-100 dark:border-umber-700/60 dark:hover:bg-umber-700/40 ${zebra}`}
+                      style={{ height: ROW_HEIGHT }}
+                    >
+                      <span
+                        className={`min-w-0 flex-1 truncate text-sm ${
+                          item.done
+                            ? "text-ink-400 line-through dark:text-umber-300"
+                            : "text-ink-900 dark:text-paper-50"
+                        }`}
                       >
+                        {item.title}
+                      </span>
+                      {supplier && (
                         <span
-                          className={`min-w-0 flex-1 truncate text-sm ${
-                            item.done
-                              ? "text-ink-400 line-through dark:text-umber-300"
-                              : "text-ink-900 dark:text-paper-50"
-                          }`}
+                          className="inline-flex shrink-0 items-center truncate text-[10px] text-ink-500 dark:text-umber-300"
+                          style={{ maxWidth: 80 }}
+                          title={supplier.name}
                         >
-                          {item.title}
+                          {supplier.name}
                         </span>
-                        {supplier && (
-                          <span
-                            className="inline-flex shrink-0 items-center truncate text-[10px] text-ink-500 dark:text-umber-300"
-                            style={{ maxWidth: 80 }}
-                            title={supplier.name}
-                          >
-                            {supplier.name}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-              {(beforeCount > 0 || afterCount > 0) && (
+                      )}
+                    </button>
+                  );
+                })
+              )}
+              {visible.length > 0 && (beforeCount > 0 || afterCount > 0) && (
                 <div className="space-y-0.5 px-3 py-2 text-[11px] text-ink-500 dark:text-umber-300">
+                  {beforeCount > 0 && (
+                    <div>← {t("timeline.outside_before", { count: beforeCount })}</div>
+                  )}
+                  {afterCount > 0 && (
+                    <div>{t("timeline.outside_after", { count: afterCount })} →</div>
+                  )}
+                </div>
+              )}
+              {visible.length === 0 && (beforeCount > 0 || afterCount > 0) && (
+                <div className="space-y-1 border-t border-paper-200 px-4 py-3 text-[11px] text-ink-500 dark:border-umber-700/60 dark:text-umber-300">
                   {beforeCount > 0 && (
                     <div>← {t("timeline.outside_before", { count: beforeCount })}</div>
                   )}
@@ -534,33 +565,23 @@ export default function GanttView({
                 />
               )}
 
-              {/* Empty state — floats centred over the full chart canvas
-                instead of being a fixed-height row at the top, so the body
-                doesn't look truncated when there are no tasks in the
-                window. */}
-              {visible.length === 0 && (
-                <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center gap-2 text-sm text-ink-500 dark:text-umber-300">
-                  <Sparkles
-                    size={20}
-                    className="text-blush-300 dark:text-blush-400"
-                    aria-hidden="true"
-                  />
-                  <span>{t("timeline.window_empty")}</span>
-                </div>
-              )}
+              {/* No on-canvas empty state — at 3M/6M the chart canvas is
+                wider than the viewport, so an `absolute inset-0` centred
+                message scrolls off-screen on first paint. The gutter (which
+                is sticky-left) now hosts the editorial empty state instead. */}
 
               {/* Rows — borders + bars. Rows are transparent so the month bands
-                show through. */}
+                provide the horizontal rhythm — no per-row zebra on top of the
+                month bands or the chart reads like a spreadsheet. */}
               <div className="relative">
                 {visible.length === 0
                   ? null
-                  : visible.map((bar, idx) => {
+                  : visible.map((bar) => {
                       const item = bar.item;
                       const supplier = item.supplier_id
                         ? (supplierById.get(item.supplier_id) ?? null)
                         : null;
                       const done = item.done;
-                      const zebra = idx % 2 === 1 ? "bg-paper-50/60 dark:bg-umber-900/30" : "";
                       // Mirror MonthView's polished bar treatment: completed
                       // tasks retreat (opacity-70 + line-through + thinner sage
                       // border), active tasks get a blush bottom-border accent.
@@ -573,7 +594,7 @@ export default function GanttView({
                       return (
                         <div
                           key={`row-${item.id}`}
-                          className={`relative border-b border-paper-200 dark:border-umber-700/60 ${zebra}`}
+                          className="relative border-b border-paper-200 dark:border-umber-700/60"
                           style={{ height: ROW_HEIGHT }}
                         >
                           <button

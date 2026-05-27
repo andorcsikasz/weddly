@@ -128,6 +128,11 @@ export interface LocaleMessages {
     wedding_marker: string;
     /** Shown in the task gutter when no tasks fall inside the visible Gantt window. */
     window_empty: string;
+    /** Editorial empty-state in the 3M / 6M Gantt task gutter (replaces the
+     *  off-screen on-canvas message). Title + body + CTA button. */
+    empty_gutter_title: string;
+    empty_gutter_sub: string;
+    empty_gutter_cta: string;
     /** "+N earlier" / "+N later" pluralized hints under the gutter when tasks
      *  sit before or after the visible Gantt window. */
     outside_before_one: string;
@@ -916,7 +921,6 @@ export interface LocaleMessages {
      *  column (the original `footer_vendors_about` also pointed at
      *  /vendors, creating a duplicate). Now links to /about. */
     footer_about_link: string;
-    footer_band_text: string;
     footer_band_cta: string;
     skip_to_main: string;
     // ── Round 2: stats strip + product features + testimonials ────────
@@ -1114,6 +1118,13 @@ export interface LocaleMessages {
     /** Landmark labels for the marketing header navs (screen-reader only). */
     nav_audience_aria: string;
     nav_mobile_aria: string;
+  };
+  /** First-language-switch prompt asking the visitor to lock in a display
+   *  currency, so flipping HU ↔ EN doesn't silently re-denominate prices. */
+  currency_pref: {
+    title: string;
+    body: string;
+    cancel: string;
   };
   nav: {
     dashboard: string;

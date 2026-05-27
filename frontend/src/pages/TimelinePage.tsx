@@ -429,69 +429,75 @@ function PocRow({
     ? "sm:border-l-2 sm:border-transparent"
     : "sm:border-l-2 sm:border-paper-200 dark:sm:border-umber-700";
 
+  const phonePill = supplier?.phone ? (
+    <a
+      href={`tel:${supplier.phone.replace(/\s+/g, "")}`}
+      className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
+    >
+      <Phone size={11} aria-hidden="true" />
+      <span>{supplier.phone}</span>
+    </a>
+  ) : (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-paper-100/60 px-2 py-0.5 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
+      aria-label={t("suppliers.no_phone")}
+      title={t("suppliers.no_phone")}
+    >
+      <Phone size={11} aria-hidden="true" />
+      <span>—</span>
+    </span>
+  );
+  const emailPill = supplier?.email ? (
+    <a
+      href={`mailto:${supplier.email}`}
+      className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
+    >
+      <Mail size={11} aria-hidden="true" />
+      <span className="truncate max-w-[140px]">{supplier.email}</span>
+    </a>
+  ) : (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-paper-100/60 px-2 py-0.5 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
+      aria-label={t("suppliers.no_email")}
+      title={t("suppliers.no_email")}
+    >
+      <Mail size={11} aria-hidden="true" />
+      <span>—</span>
+    </span>
+  );
+  const websitePill = supplier?.website ? (
+    <a
+      href={supplier.website}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
+    >
+      <Globe size={11} aria-hidden="true" />
+      <span>{t("suppliers.visit_website")}</span>
+    </a>
+  ) : null;
+
   return (
     <li
       id={`poc-${pick.supplier_id}`}
-      className={`flex w-64 shrink-0 snap-start items-start gap-3 rounded-2xl border border-paper-300 px-3 py-3 transition-colors sm:w-auto sm:rounded-none sm:border-0 sm:px-5 sm:hover:bg-paper-100/40 dark:border-umber-700 dark:sm:hover:bg-umber-900/40 ${railClass}`}
+      className={`flex w-64 shrink-0 snap-start items-start gap-3 rounded-2xl border border-paper-300 px-3 py-3 transition-colors sm:w-auto sm:items-center sm:rounded-none sm:border-0 sm:px-5 sm:hover:bg-paper-100/40 dark:border-umber-700 dark:sm:hover:bg-umber-900/40 ${railClass}`}
     >
-      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
+      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 sm:mt-0 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
         <Icon size={18} aria-hidden="true" />
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
-          {displayName}
-        </p>
-        <p className="mt-0.5 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
-          {t(`suppliers.cat.${category}`)}
-        </p>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-700 dark:text-paper-100">
-          {supplier?.phone ? (
-            <a
-              href={`tel:${supplier.phone.replace(/\s+/g, "")}`}
-              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
-            >
-              <Phone size={11} aria-hidden="true" />
-              <span>{supplier.phone}</span>
-            </a>
-          ) : (
-            <span
-              className="inline-flex items-center gap-1 rounded-full bg-paper-100/60 px-2 py-0.5 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
-              aria-label={t("suppliers.no_phone")}
-              title={t("suppliers.no_phone")}
-            >
-              <Phone size={11} aria-hidden="true" />
-              <span>—</span>
-            </span>
-          )}
-          {supplier?.email ? (
-            <a
-              href={`mailto:${supplier.email}`}
-              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
-            >
-              <Mail size={11} aria-hidden="true" />
-              <span className="truncate max-w-[140px]">{supplier.email}</span>
-            </a>
-          ) : (
-            <span
-              className="inline-flex items-center gap-1 rounded-full bg-paper-100/60 px-2 py-0.5 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
-              aria-label={t("suppliers.no_email")}
-              title={t("suppliers.no_email")}
-            >
-              <Mail size={11} aria-hidden="true" />
-              <span>—</span>
-            </span>
-          )}
-          {supplier?.website && (
-            <a
-              href={supplier.website}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
-            >
-              <Globe size={11} aria-hidden="true" />
-              <span>{t("suppliers.visit_website")}</span>
-            </a>
-          )}
+      <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-4">
+        <div className="min-w-0 sm:flex sm:min-w-0 sm:flex-1 sm:items-baseline sm:gap-3">
+          <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
+            {displayName}
+          </p>
+          <p className="mt-0.5 shrink-0 text-[11px] uppercase tracking-wider text-ink-500 sm:mt-0 dark:text-umber-300">
+            {t(`suppliers.cat.${category}`)}
+          </p>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-700 sm:mt-0 sm:flex-nowrap sm:justify-end dark:text-paper-100">
+          {emailPill}
+          {websitePill}
+          {phonePill}
         </div>
       </div>
     </li>
@@ -589,13 +595,14 @@ function ChartCard({
   }
 
   const navCluster = (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={navToday}
-        className="min-h-tap rounded-full bg-blush-50 px-3.5 py-1.5 text-xs font-medium text-blush-700 transition-colors hover:bg-blush-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:bg-blush-400/15 dark:text-blush-300 dark:hover:bg-blush-400/25"
+        className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium text-ink-700 transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:text-paper-100 dark:hover:text-blush-300"
       >
-        {t("timeline.today_button")}
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-blush-500" aria-hidden="true" />
+        <span>{t("timeline.today_button")}</span>
       </button>
       <div className="flex items-center gap-0.5">
         <button

@@ -827,8 +827,7 @@ const hu: LocaleMessages = {
     footer_legal_imprint: "Impresszum",
     footer_legal_subscription: "Szolgáltatói ÁSZF (tervezet)",
     footer_about_link: "Rólunk",
-    footer_band_text: "Vendég vagy?",
-    footer_band_cta: "Meghívókód megadása",
+    footer_band_cta: "Vendég vagyok, van meghívókódom",
     skip_to_main: "Ugrás a tartalomra",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
     stats_eyebrow: "Nyílt béta",
@@ -1039,6 +1038,11 @@ const hu: LocaleMessages = {
     nav_audience_aria: "Célközönség navigáció",
     nav_mobile_aria: "Fő navigáció (mobil)",
   },
+  currency_pref: {
+    title: "Válaszd ki a pénznemet",
+    body: "A nyelvváltás ne írja át az árakat. Válaszd ki, milyen pénznemben szeretnéd látni az összegeket, és megjegyezzük a következő alkalomra.",
+    cancel: "Marad a mostani",
+  },
   nav: {
     dashboard: "Áttekintés",
     guests: "Vendégek",
@@ -1209,6 +1213,9 @@ const hu: LocaleMessages = {
     task_column: "Feladat",
     wedding_marker: "Esküvő napja",
     window_empty: "Ebben az időszakban nincs feladat",
+    empty_gutter_title: "Ide jönnek a feladataid",
+    empty_gutter_sub: "Generálj néhányat — pár kattintással kész a teljes esküvői ütemterv.",
+    empty_gutter_cta: "Feladatok generálása",
     outside_before_one: "{count} korábban",
     outside_before_other: "{count} korábban",
     outside_after_one: "még {count} később",

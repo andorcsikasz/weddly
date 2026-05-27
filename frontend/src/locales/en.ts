@@ -821,8 +821,7 @@ const en: LocaleMessages = {
     footer_legal_imprint: "Imprint",
     footer_legal_subscription: "Vendor terms (draft)",
     footer_about_link: "About",
-    footer_band_text: "A guest?",
-    footer_band_cta: "Enter your invite code",
+    footer_band_cta: "I'm a guest with an invite code",
     skip_to_main: "Skip to main content",
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: "Open beta",
@@ -1030,6 +1029,11 @@ const en: LocaleMessages = {
     nav_audience_aria: "Audience navigation",
     nav_mobile_aria: "Primary navigation (mobile)",
   },
+  currency_pref: {
+    title: "Pick your currency",
+    body: "Switching language shouldn't change your prices. Pick the currency you want amounts shown in — we'll remember it for next time.",
+    cancel: "Keep current",
+  },
   nav: {
     dashboard: "Overview",
     guests: "Guests",
@@ -1198,6 +1202,9 @@ const en: LocaleMessages = {
     task_column: "Task",
     wedding_marker: "Wedding day",
     window_empty: "No tasks in this range",
+    empty_gutter_title: "Your tasks will land here",
+    empty_gutter_sub: "Generate a few — your full wedding plan is a click away.",
+    empty_gutter_cta: "Generate tasks",
     outside_before_one: "{count} earlier",
     outside_before_other: "{count} earlier",
     outside_after_one: "{count} later",
