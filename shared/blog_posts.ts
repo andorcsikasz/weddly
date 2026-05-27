@@ -56,7 +56,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       lead: "Teremtési rend, szövetség, Jézus tanítása és a hétköznapok programja: így olvassa a Biblia a házasság értelmét.",
       seo_title: "Miért házasodunk a Biblia szerint? · Wēddly",
       seo_description:
-        "Mit mond a Biblia a házasság értelméről? Teremtési rend, szövetség, Jézus tanítása és Pál apostol gyakorlati programja Károli idézetekkel.",
+        "Mit mond a Biblia a házasság értelméről? Teremtési rend, szövetség, Jézus tanítása és Pál apostol gyakorlati programja bibliai idézetekkel.",
       body: [
         {
           type: "p",
@@ -408,9 +408,9 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     read_minutes: 9,
     category: { hu: "Idézetek", en: "Verses" },
     hu: {
-      title: "Bibliai idézetek esküvőre: Bibliai igék szeretetről, házasságról és közös útról",
+      title: "Bibliai idézetek esküvőre: igék szeretetről, házasságról és közös útról",
       lead: "Összegyűjtöttük a legszebb bibliai igéket: szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
-      seo_title: "Bibliai idézetek esküvőre: 30+ Bibliai ige szeretetről és házasságról",
+      seo_title: "Bibliai idézetek esküvőre: 30+ ige szeretetről és házasságról",
       seo_description:
         "Összegyűjtöttük a legszebb bibliai idézeteket esküvőre: igék szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
       body: [
@@ -420,7 +420,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A klasszikus Károli fordításból válogattunk, mert a magyar esküvői hagyományban ennek van a legünnepélyesebb hangulata. Ha modernebb fordítást szeretnétek, a Magyar Bibliatársulat új fordítása vagy az Egyszerű fordítás is hasonló mélységgel beszél, csak más nyelvezeten.",
+          text: "A klasszikus, ünnepélyes magyar fordításból válogattunk, mert ennek van a leghagyományosabb esküvői hangulata. Ha modernebb nyelvezetet szeretnétek, az új fordítások hasonló mélységgel beszélnek, csak közérthetőbb stílusban.",
         },
         { type: "h2", text: "Rövid bibliai idézetek esküvői meghívóra" },
         {
@@ -758,23 +758,23 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
           type: "p",
           text: "Az 1Korinthus 13, az 1János 4 és az Énekek éneke 8 különösen szép szakaszokat tartalmaz a szeretetről.",
         },
-        { type: "h3", text: "Klasszikus vagy új fordítású idézetet válasszunk?" },
+        { type: "h3", text: "Klasszikus vagy modern fordítású idézetet válasszunk?" },
         {
           type: "p",
-          text: "A klasszikus Károli ünnepélyesebb, archaikus hangulatú. Az új fordítás közérthetőbb és modernebb. Esküvőhöz általában a klasszikus fordítás közelebb áll a hagyományhoz, mellé pedig érdemes egy rövid, saját szóval írt magyarázatot is tenni.",
+          text: "A klasszikus magyar fordítás ünnepélyesebb, archaikus hangulatú. A modernebb fordítások közérthetőbbek és könnyedebbek. Esküvőhöz általában a klasszikus változat közelebb áll a hagyományhoz, mellé pedig érdemes egy rövid, saját szóval írt magyarázatot is tenni.",
         },
       ],
     },
     en: {
       title: "Bible verses for your wedding: love, marriage and shared life",
-      lead: "A curated set of Bible verses (KJV) for invitations, ceremonies and vows: love, marriage, faithfulness and forgiveness.",
-      seo_title: "Bible verses for weddings: KJV passages on love and marriage · Weddly",
+      lead: "A curated set of Bible verses for invitations, ceremonies and vows: love, marriage, faithfulness and forgiveness.",
+      seo_title: "Bible verses for weddings: passages on love and marriage · Weddly",
       seo_description:
-        "A curated set of Bible verses for weddings in the KJV translation: love, marriage, faithfulness, forgiveness and shared life.",
+        "A curated set of Bible verses for weddings: love, marriage, faithfulness, forgiveness and shared life.",
       body: [
         {
           type: "p",
-          text: "Many couples want a Bible verse on the invitation, on the wedding website, or as part of the vows. Below is a curated KJV set, grouped by theme: love, marriage, shared life, respect and forgiveness.",
+          text: "Many couples want a Bible verse on the invitation, on the wedding website, or as part of the vows. Below is a curated set, grouped by theme: love, marriage, shared life, respect and forgiveness.",
         },
         { type: "h2", text: "Short verses for invitations" },
         {
