@@ -344,7 +344,7 @@ function PublicFooter() {
         <FooterColumn title={t("landing.footer_guests")}>
           <button
             type="button"
-            className="text-left text-sm text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+            className={`text-left ${footerLinkClass}`}
             onClick={() => {
               void askGuestCode();
             }}
@@ -367,22 +367,19 @@ function PublicFooter() {
           {/* `flex-wrap` so the five legal links don't overflow 360px on
               mobile (HU "Szolgáltatói ÁSZF (tervezet)" alone is ~210px). */}
           <div className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link to="/terms" className="hover:text-ink-700 dark:hover:text-paper-100">
+            <Link to="/terms" className={legalLinkClass}>
               {t("landing.footer_legal_terms")}
             </Link>
-            <Link to="/privacy" className="hover:text-ink-700 dark:hover:text-paper-100">
+            <Link to="/privacy" className={legalLinkClass}>
               {t("landing.footer_legal_privacy")}
             </Link>
-            <Link to="/impresszum" className="hover:text-ink-700 dark:hover:text-paper-100">
+            <Link to="/impresszum" className={legalLinkClass}>
               {t("landing.footer_legal_imprint")}
             </Link>
-            <Link
-              to="/terms/vendor-subscription"
-              className="hover:text-ink-700 dark:hover:text-paper-100"
-            >
+            <Link to="/terms/vendor-subscription" className={legalLinkClass}>
               {t("landing.footer_legal_subscription")}
             </Link>
-            <Link to="/about" className="hover:text-ink-700 dark:hover:text-paper-100">
+            <Link to="/about" className={legalLinkClass}>
               {t("landing.footer_legal_about")}
             </Link>
           </div>
@@ -398,17 +395,22 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
       <p className="text-xs font-semibold uppercase tracking-wider text-ink-600 dark:text-umber-300">
         {title}
       </p>
-      <div className="mt-3 flex flex-col gap-2">{children}</div>
+      <div className="mt-3 flex flex-col items-start gap-2">{children}</div>
     </div>
   );
 }
 
+/** Center-out underline on hover/focus. `inline-block` + `relative` so the
+ *  ::after baseline anchors to the text width, not the parent flex column. */
+const footerLinkClass =
+  "relative inline-block text-sm text-ink-700 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-ink-900 hover:after:w-full focus-visible:after:w-full dark:text-paper-100 dark:hover:text-paper-50";
+
+const legalLinkClass =
+  "relative inline-block transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-ink-700 hover:after:w-full focus-visible:after:w-full dark:hover:text-paper-100";
+
 function FooterLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link
-      to={to}
-      className="text-sm text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
-    >
+    <Link to={to} className={footerLinkClass}>
       {children}
     </Link>
   );
@@ -416,10 +418,7 @@ function FooterLink({ to, children }: { to: string; children: ReactNode }) {
 
 function FooterAnchor({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a
-      href={href}
-      className="text-sm text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
-    >
+    <a href={href} className={footerLinkClass}>
       {children}
     </a>
   );
