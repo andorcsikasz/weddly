@@ -719,7 +719,7 @@ function DaysTile({
           </span>
           {dateRange && <p className="mt-1 text-xs text-paper-300">{dateRange}</p>}
           {countdown && (
-            <p className="mt-1.5 inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-400/40 bg-blush-400/15 px-2.5 py-0.5 text-[11px] font-medium text-blush-200">
+            <p className="mt-1 text-[11px] text-paper-300">
               {countdown.kind === "future" &&
                 t("honeymoon.countdown_future", { count: countdown.days })}
               {countdown.kind === "today" && t("honeymoon.countdown_today")}
