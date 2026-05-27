@@ -20,6 +20,7 @@ import {
   Globe,
   Lock,
   MessageCircle,
+  Plus,
   RefreshCcw,
   Unlock,
   Upload,
@@ -76,6 +77,29 @@ export default function GuestPageEditorPage() {
   // returned `/uploads/couples/<id>/cover.<ext>?v=…` value.
   const [coverUploading, setCoverUploading] = useState(false);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
+
+  const postRsvpTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // "\n\n" separator between sections is intentional: the public site
+  // renders the field with `whitespace-pre-line`, so the blank line is what
+  // visually separates one topic block from the next.
+  function insertPostRsvpSection(label: string) {
+    setPostRsvpContent((current) => {
+      const trimmed = current.replace(/\s+$/, "");
+      const sep = trimmed.length === 0 ? "" : "\n\n";
+      const next = `${trimmed}${sep}${label}:\n`;
+      if (next.length > 8000) return current;
+      requestAnimationFrame(() => {
+        const el = postRsvpTextareaRef.current;
+        if (el) {
+          el.focus();
+          el.setSelectionRange(next.length, next.length);
+          el.scrollTop = el.scrollHeight;
+        }
+      });
+      return next;
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -688,7 +712,7 @@ export default function GuestPageEditorPage() {
                 </div>
                 <input
                   id="guest-page-cover"
-                  type="url"
+                  type="text"
                   className="input mt-2"
                   value={coverImageUrl}
                   onChange={(e) => setCoverImageUrl(e.target.value)}
@@ -751,10 +775,41 @@ export default function GuestPageEditorPage() {
                   {t("guest_page_editor.post_rsvp_label")}
                   {todoPostRsvp && <TodoPill label={todoPillLabel} />}
                 </label>
+                <div className="mb-2 flex flex-col gap-1.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-200">
+                    {t("guest_page_editor.post_rsvp_suggestions_heading")}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(
+                      [
+                        "parking",
+                        "dress_code",
+                        "gifts",
+                        "accommodation",
+                        "kids",
+                        "getting_there",
+                      ] as const
+                    ).map((slug) => {
+                      const label = t(`guest_page_editor.post_rsvp_suggestion_${slug}`);
+                      return (
+                        <button
+                          key={slug}
+                          type="button"
+                          className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-800"
+                          onClick={() => insertPostRsvpSection(label)}
+                        >
+                          <Plus size={11} aria-hidden />
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <textarea
+                  ref={postRsvpTextareaRef}
                   id="guest-page-post-rsvp"
                   className="input"
-                  rows={5}
+                  rows={6}
                   value={postRsvpContent}
                   onChange={(e) => setPostRsvpContent(e.target.value)}
                   placeholder={t("guest_page_editor.post_rsvp_placeholder")}

@@ -1414,8 +1414,13 @@ export interface LocaleMessages {
     sub: string;
     coming_soon_title: string;
     coming_soon_body: string;
-    share_drive: string;
-    share_icloud: string;
+    feedback_title: string;
+    feedback_intro: string;
+    feedback_placeholder: string;
+    feedback_submit: string;
+    feedback_submitting: string;
+    feedback_success: string;
+    feedback_empty_error: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   moodboard: {
@@ -1500,6 +1505,16 @@ export interface LocaleMessages {
     post_rsvp_label: string;
     post_rsvp_placeholder: string;
     post_rsvp_hint: string;
+    /** Quick-add chips above the post-RSVP textarea: clicking one appends
+     *  a `Label:\n` section template so the couple has a guided starting
+     *  point for the common topics guests ask about. */
+    post_rsvp_suggestions_heading: string;
+    post_rsvp_suggestion_parking: string;
+    post_rsvp_suggestion_dress_code: string;
+    post_rsvp_suggestion_gifts: string;
+    post_rsvp_suggestion_accommodation: string;
+    post_rsvp_suggestion_kids: string;
+    post_rsvp_suggestion_getting_there: string;
     editor_collapse_summary: string;
     /** Inline indicators flagging which guest-page fields the couple still
      *  has to fill in — pill next to each empty label, plus a one-line

@@ -1308,8 +1308,15 @@ const hu: LocaleMessages = {
     coming_soon_title: "Hamarosan",
     coming_soon_body:
       "Az esküvő után feltölthetitek a képeket, és egy kattintással elküldhetitek a letöltési linket minden vendégnek, aki igent mondott, közvetlenül innen, külön galéria-fiók nélkül.",
-    share_drive: "Google Drive importálás",
-    share_icloud: "iCloud importálás",
+    feedback_title: "Mire lenne szükségetek?",
+    feedback_intro:
+      "Még alakítjuk a fotó-megosztás folyamatot. Írjátok meg, mit várnátok tőle, és figyelembe vesszük, amikor megépítjük.",
+    feedback_placeholder:
+      "Pl. Drive linkkel osztanánk meg a vendégekkel, vagy közvetlen letöltés e-mailben…",
+    feedback_submit: "Visszajelzés küldése",
+    feedback_submitting: "Küldés…",
+    feedback_success: "Köszönjük, megérkezett. Minden visszajelzést elolvasunk.",
+    feedback_empty_error: "Írj pár szót a küldés előtt.",
   },
   moodboard: {
     title: "Moodboard",
@@ -1390,10 +1397,16 @@ const hu: LocaleMessages = {
     intro_hint:
       "Bárki látja, aki megnyitja a linket. Hagyd üresen, ha nem akarsz nyilvános köszöntőt.",
     post_rsvp_label: "Részletek a visszajelölteknek",
-    post_rsvp_placeholder:
-      "Olyan részletek, amik csak a vendégeknek mennek: parkolás, dress code, ajándékok, szállás-tippek, gyerekprogram…",
+    post_rsvp_placeholder: "Kattints fent egy javasolt témára, vagy írd be a részleteket szabadon.",
     post_rsvp_hint:
       "Csak az látja, akinek legalább egy fős vendége igennel visszajelölt. A pontos helyszín-pin is itt nyílik meg.",
+    post_rsvp_suggestions_heading: "Javasolt témák",
+    post_rsvp_suggestion_parking: "Parkolás",
+    post_rsvp_suggestion_dress_code: "Dress code",
+    post_rsvp_suggestion_gifts: "Ajándék",
+    post_rsvp_suggestion_accommodation: "Szállás",
+    post_rsvp_suggestion_kids: "Gyerekprogram",
+    post_rsvp_suggestion_getting_there: "Megközelítés",
     editor_collapse_summary: "Szerkesztés",
     todo_pill: "Hiányzik",
     todo_summary_prefix: "Még kitöltendő:",

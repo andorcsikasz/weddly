@@ -1296,8 +1296,15 @@ const en: LocaleMessages = {
     coming_soon_title: "Coming soon",
     coming_soon_body:
       "Upload the photos after the wedding and send a download link to every guest who said yes, straight from this page, no separate gallery account needed.",
-    share_drive: "Google Drive import",
-    share_icloud: "iCloud import",
+    feedback_title: "What would you need?",
+    feedback_intro:
+      "We're still shaping the photo-share flow. Tell us what you'd want from it and we'll factor it in when we build it.",
+    feedback_placeholder:
+      "e.g. share a Drive link with guests, or send a direct download by email…",
+    feedback_submit: "Send feedback",
+    feedback_submitting: "Sending…",
+    feedback_success: "Thanks, got it. We read every message.",
+    feedback_empty_error: "Write a couple of words before sending.",
   },
   moodboard: {
     title: "Moodboard",
@@ -1377,10 +1384,16 @@ const en: LocaleMessages = {
     intro_hint:
       "Visible to anyone with the link. Leave blank if you don't want a public welcome note.",
     post_rsvp_label: "Details for confirmed guests",
-    post_rsvp_placeholder:
-      "Things only guests need to see: parking, dress code, gifts, accommodation tips, kids' programme…",
+    post_rsvp_placeholder: "Click a suggested topic above, or just type the details freely.",
     post_rsvp_hint:
       "Only revealed when at least one of the household members has RSVP'd yes. The exact venue pin unlocks at the same moment.",
+    post_rsvp_suggestions_heading: "Suggested topics",
+    post_rsvp_suggestion_parking: "Parking",
+    post_rsvp_suggestion_dress_code: "Dress code",
+    post_rsvp_suggestion_gifts: "Gifts",
+    post_rsvp_suggestion_accommodation: "Accommodation",
+    post_rsvp_suggestion_kids: "Kids' programme",
+    post_rsvp_suggestion_getting_there: "Getting there",
     editor_collapse_summary: "Edit",
     todo_pill: "Missing",
     todo_summary_prefix: "Still to fill:",
