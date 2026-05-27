@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Suspense, type ReactNode, useEffect, useRef, useState } from "react";
 
 type Props = {
   children: ReactNode;
@@ -45,9 +45,14 @@ export function LazyMount({ children, aspectRatio, rootMargin = "200px", classNa
     return () => obs.disconnect();
   }, [visible, rootMargin]);
 
+  // Suspense boundary so React.lazy children (heavy below-fold SVG mockups
+  // imported via dynamic import in LandingPage) can resolve their chunk
+  // without an external Suspense wrapper at the call site. The aspect-ratio
+  // div above already reserves layout space, so a `null` fallback during
+  // chunk fetch keeps the page from jumping.
   return (
     <div ref={ref} className={className} style={aspectRatio ? { aspectRatio } : undefined}>
-      {visible ? children : null}
+      {visible ? <Suspense fallback={null}>{children}</Suspense> : null}
     </div>
   );
 }

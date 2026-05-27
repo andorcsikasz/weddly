@@ -16,7 +16,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { lazy, type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { EucalyptusStem } from "../components/botanical";
 import { SectionLabel, WatermarkNumeral } from "../components/editorial";
@@ -26,15 +26,28 @@ import {
   PhasePlanArt,
   PhaseSeatingArt,
   PhaseSuppliersArt,
-  SuppliersPreview,
 } from "../components/illustrations";
 import { LazyMount } from "../components/LazyMount";
-import {
-  BudgetMockup,
-  GuestListMockup,
-  SeatingMockup,
-  WorkspaceMockup,
-} from "../components/mockups";
+import { WorkspaceMockup } from "../components/mockups";
+
+// Below-the-fold SVG mockups (Budget, Guests, Seating, Suppliers) are
+// heavy (~1500 lines combined) and never visible before the user scrolls.
+// Dynamic-import them so they ship in their own chunk instead of being
+// part of the eager landing payload. LazyMount's built-in Suspense
+// fallback (null) covers the chunk-fetch window; the aspect-ratio div
+// already reserves layout space so no jump.
+const BudgetMockup = lazy(() =>
+  import("../components/mockups").then((m) => ({ default: m.BudgetMockup })),
+);
+const GuestListMockup = lazy(() =>
+  import("../components/mockups").then((m) => ({ default: m.GuestListMockup })),
+);
+const SeatingMockup = lazy(() =>
+  import("../components/mockups").then((m) => ({ default: m.SeatingMockup })),
+);
+const SuppliersPreview = lazy(() =>
+  import("../components/illustrations").then((m) => ({ default: m.SuppliersPreview })),
+);
 import { DemoLaunchCard } from "../components/DemoLaunchCard";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
@@ -94,39 +107,46 @@ export default function LandingPage() {
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
       <section className="relative overflow-hidden">
-        {/* WatercolorBlob removed — flagged as decoration-on-decoration
-            sitting behind an already-loud italic headline + tilted demo
-            sticker. The hero now leans on the typography alone. */}
-        <div className="relative mx-auto max-w-7xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
+        {/* Tighter top padding on mobile so the CTA pair stays above the
+            fold on 360x640 Android. The hero now carries an eyebrow + H1
+            + subline + single CTA stack — denser content but no longer
+            spread across two viewports. */}
+        <div className="relative mx-auto max-w-7xl px-4 pt-6 pb-8 sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
           <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
+              {/* Problem-framing eyebrow above the H1 — 3-5 words that name
+                  the page's promise as a tagline before the headline asserts
+                  it. Picked up by the prerender for crawlers (see
+                  scripts/prerender.ts). */}
+              <p className="font-serif text-xs uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300 sm:text-sm">
+                {t("landing.hero_eyebrow")}
+              </p>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
-               * 30–40% longer than EN and the old 14ch limit was wrapping
+               * 30-40% longer than EN and the old 14ch limit was wrapping
                * the title to 4+ lines on 360px phones. Desktop still gets
                * the tighter 14ch column for visual rhythm. */}
-              <h1 className="max-w-[18ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+              <h1 className="mt-4 max-w-[18ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                 {t("landing.hero_title")}
               </h1>
+              {/* Subline: concrete value-prop sentence right after the
+                  poetic headline. Without this, the H1's "in one place"
+                  promise lands too abstractly to convert; with it, the
+                  visitor sees the actual scope (budget, guests, RSVP,
+                  seating, wedding site) before the CTA. */}
+              <p className="mt-6 max-w-xl font-serif text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
+                {t("landing.hero_sub")}
+              </p>
               <div className="mt-8 sm:max-w-md">
-                {/* Full-width thumb targets on mobile so the CTA pair anchors the
-                    viewport rather than floating in the upper-left as two thin
-                    inline pills. `sm:w-auto` snaps back to content-width for the
-                    side-by-side desktop layout. */}
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    to="/signup"
-                    className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
-                  >
-                    {t("landing.cta_signup")}
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="btn-outline btn-lifted btn-landing btn-lg w-full sm:w-auto"
-                  >
-                    {t("landing.cta_login")}
-                  </Link>
-                </div>
-                <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+                {/* Single primary CTA only. Login moved to the public header
+                    (PublicShell) since "I already have an account" is a
+                    secondary intent that doesn't deserve hero real-estate. */}
+                <Link
+                  to="/signup"
+                  className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
+                >
+                  {t("landing.cta_signup")}
+                </Link>
+                <p className="mt-3 text-xs text-ink-600 dark:text-umber-300">
                   {t("landing.cta_signup_sub")}
                 </p>
               </div>
@@ -227,7 +247,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
-              <h2 className="font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
               <ul className="mt-7 space-y-3">
@@ -242,7 +262,7 @@ export default function LandingPage() {
                 <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
                   <BudgetMockup className="h-auto w-full" />
                 </LazyMount>
-                <p className="mt-4 text-center font-serif text-sm italic text-ink-500 dark:text-umber-300">
+                <p className="mt-4 text-center font-serif text-sm italic text-ink-600 dark:text-umber-300">
                   {t("landing.block_budget_eyebrow")}
                 </p>
               </div>
@@ -256,7 +276,7 @@ export default function LandingPage() {
           in two columns — the layout of a feature spread. */}
       <section className="relative bg-paper-100/70 dark:bg-umber-900/70">
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20">
-          <h2 className="max-w-3xl font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="max-w-3xl font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.block_guests_title")}
           </h2>
           <div className="mx-auto mt-10 max-w-2xl">
@@ -274,12 +294,15 @@ export default function LandingPage() {
 
       {/* ════════════════════════ 05 · Seating — EDGE BLEED ════════════════════════
           Narrow copy column on the left, mockup blown up to bleed off
-          the right edge of the viewport. */}
-      <section className="relative overflow-hidden bg-white dark:bg-umber-900">
+          the right edge of the viewport. Blush-100 background breaks the
+          paper-50/white monotony with a brand-aligned warm tone so this
+          mid-page beat reads as a distinct chapter, not another beige
+          slab. Text colour stays ink-900 (high contrast on #fbe9e3). */}
+      <section className="relative overflow-hidden bg-blush-100 dark:bg-umber-900">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
-              <h2 className="font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
               <ul className="mt-7 space-y-3">
@@ -303,13 +326,39 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ════════════════════════ 05.5 · Wedding site teaser ════════════════════════
+          Surfaces /w/:slug as a hero feature on the landing. Joy/Zola
+          anchor their landings on a free wedding-website builder, and
+          Weddly has the same product live but it was previously buried in
+          the suppliers section. Single column, eyebrow + italic title +
+          body + three bullets, no mockup yet (the WeddingWebsitePage
+          screenshot is a future asset). */}
+      <section className="relative bg-paper-50 dark:bg-umber-900">
+        <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6 sm:py-20">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
+            {t("landing.wsite_eyebrow")}
+          </p>
+          <h2 className="mt-4 font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+            {t("landing.wsite_title")}
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
+            {t("landing.wsite_body")}
+          </p>
+          <ul className="mx-auto mt-8 max-w-md space-y-3 text-left">
+            <IconRow icon={<Sparkles size={16} />}>{t("landing.wsite_bullet_1")}</IconRow>
+            <IconRow icon={<Mail size={16} />}>{t("landing.wsite_bullet_2")}</IconRow>
+            <IconRow icon={<Smartphone size={16} />}>{t("landing.wsite_bullet_3")}</IconRow>
+          </ul>
+        </div>
+      </section>
+
       {/* ════════════════════════ 06 · Why — 2×2 ════════════════════════
           Plain section heading + 4 concrete points. The earlier italic
           serif pull-quote ("Először a lényeg…") and the botanical corner
           decorations were both flagged as AI-deck affectations; cut. */}
       <section className="stationery-light">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
             {t("landing.why_eyebrow")}
           </p>
           <h2 className="mx-auto mt-4 max-w-3xl text-center font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
@@ -363,7 +412,7 @@ export default function LandingPage() {
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
         <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-3xl leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="font-serif text-3xl italic leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.audience_title")}
           </h2>
           <div className="mt-10 divide-y divide-paper-300 dark:divide-umber-700 border-y border-paper-300 dark:border-umber-700">
@@ -401,7 +450,7 @@ export default function LandingPage() {
           </div>
           <div className="relative mx-auto mt-8 max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-8 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                 {t("landing.stats_eyebrow")}
               </p>
               <div className="mt-3 flex items-end gap-3">
@@ -412,7 +461,7 @@ export default function LandingPage() {
                   {currencySymbol(localeCurrency(locale), locale)}
                 </span>
               </div>
-              <p className="mt-1 font-serif text-sm italic text-ink-500 dark:text-umber-300">
+              <p className="mt-1 font-serif text-sm italic text-ink-600 dark:text-umber-300">
                 / {t("app.name")}
               </p>
               <ul className="mt-8 space-y-3">
@@ -474,7 +523,7 @@ export default function LandingPage() {
               {t("landing.cta_signup")}
             </Link>
           </div>
-          <p className="mt-10 font-serif text-sm italic text-ink-500 dark:text-umber-300">
+          <p className="mt-10 font-serif text-sm italic text-ink-600 dark:text-umber-300">
             — {t("landing.brand_signature")}
           </p>
         </div>
@@ -572,7 +621,7 @@ function LiveStatsBand() {
   return (
     <section className="relative bg-paper-100 dark:bg-umber-900">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
           {t("landing.counter_eyebrow")}
         </p>
         <div className="mx-auto mt-8 grid max-w-3xl grid-cols-2 gap-6 sm:gap-12">
@@ -582,7 +631,7 @@ function LiveStatsBand() {
           />
           <StatCounter value={fmt.format(stats.rsvps)} label={t("landing.counter_rsvps_label")} />
         </div>
-        <p className="mt-8 text-center font-serif text-xs italic text-ink-500 dark:text-umber-300">
+        <p className="mt-8 text-center font-serif text-xs italic text-ink-600 dark:text-umber-300">
           {t("landing.counter_footnote")}
         </p>
       </div>
@@ -638,7 +687,7 @@ function BlogTeaser() {
     <section className="relative bg-paper-50 dark:bg-umber-900">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <header className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
             {t("blog.section_eyebrow")}
           </p>
           <h2 className="mt-3 font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
@@ -667,16 +716,16 @@ function BlogTeaser() {
                 >
                   <BlogCover url={post.cover_image_url ?? null} alt={copy.title} />
                   <div className="flex flex-1 flex-col p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                       {post.category[locale]}
                     </p>
-                    <h3 className="mt-3 font-serif text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
+                    <h3 className="mt-3 font-serif text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
                       {copy.title}
                     </h3>
                     <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
                       {copy.lead}
                     </p>
-                    <div className="mt-auto flex items-center gap-3 pt-5 text-xs text-ink-500 dark:text-umber-300">
+                    <div className="mt-auto flex items-center gap-3 pt-5 text-xs text-ink-600 dark:text-umber-300">
                       <time dateTime={post.published_at}>{dateLabel}</time>
                       <span aria-hidden>·</span>
                       <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
@@ -702,7 +751,7 @@ function BlogTeaser() {
 function IconRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
     <li className="flex items-center gap-3">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-blush-700 dark:text-blush-300">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-blush-800 dark:text-blush-300">
         {icon}
       </span>
       <span className="font-serif text-base text-ink-800 dark:text-paper-100">{children}</span>
@@ -768,24 +817,28 @@ function AudienceRow({
   to?: string;
   onClick?: () => void;
 }) {
-  // The CTA label is hidden behind the arrow on the narrowest viewports so
-  // long HU strings (e.g. "Tovább a regisztrációhoz") don't force the row
-  // to overflow horizontally. The whole row is still tappable through the
-  // wrapping <Link>/<button>, and `aria-label` carries the full intent.
+  // CTA label is shown at every viewport — the previous hidden-below-sm
+  // collapse left mobile users with only a "→" arrow that read as both
+  // too small (sub-44px target) and ambiguous. `whitespace-nowrap` keeps
+  // long HU labels ("Tovább a regisztrációhoz") on one line; `text-sm`
+  // base / `text-base` from sm trims width without dropping legibility.
   const cta = (
-    <span className="inline-flex items-center gap-2 font-serif text-lg leading-relaxed text-ink-900 transition-colors hover:text-blush-700 dark:text-paper-50 sm:text-xl">
-      <span className="hidden sm:inline">{ctaLabel}</span>
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-serif text-sm leading-relaxed text-ink-900 transition-colors hover:text-blush-800 dark:text-paper-50 sm:gap-2 sm:text-xl">
+      <span>{ctaLabel}</span>
       <span aria-hidden>→</span>
     </span>
   );
   return (
-    <div className="flex items-center gap-4 py-6 sm:gap-6 sm:py-8">
+    <div className="flex items-center gap-3 py-6 sm:gap-6 sm:py-8">
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-700 text-white sm:h-11 sm:w-11 dark:bg-blush-400 dark:text-umber-900">
         {icon}
       </span>
-      <p className="min-w-0 flex-1 font-serif text-lg leading-relaxed text-ink-900 dark:text-paper-50 sm:text-xl">
+      {/* Row label is the audience name ("For couples", "For vendors"),
+          which acts as the section title for that row — h3 so screen
+          readers get a heading landmark, not just running prose. */}
+      <h3 className="min-w-0 flex-1 font-serif text-base leading-snug text-ink-900 dark:text-paper-50 sm:text-xl">
         {row}
-      </p>
+      </h3>
       <div className="shrink-0">
         {to ? (
           <Link to={to} aria-label={ctaLabel}>
@@ -808,7 +861,7 @@ function FaqCard({ q, a }: { q: string; a: ReactNode }) {
         <span className="font-serif text-base text-ink-900 dark:text-paper-50 sm:text-lg">{q}</span>
         <ChevronDown
           size={16}
-          className="shrink-0 text-ink-500 dark:text-umber-300 transition-transform group-open:rotate-180"
+          className="shrink-0 text-ink-600 dark:text-umber-300 transition-transform group-open:rotate-180"
         />
       </summary>
       <p className="mt-2.5 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{a}</p>

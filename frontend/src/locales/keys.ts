@@ -779,11 +779,23 @@ export interface LocaleMessages {
     merge_success: string;
   };
   landing: {
+    /** Eyebrow above the H1 — short problem-framing line that names the
+     *  pain the page is about to solve. Kept tight (3-5 words) so it
+     *  reads as a tagline, not a sentence. */
+    hero_eyebrow: string;
     hero_title: string;
     hero_sub: string;
     cta_signup: string;
     cta_login: string;
     cta_signup_sub: string;
+    /** Mini "your own wedding site" teaser. Surfaces the /w/:slug feature
+     *  that competitors (Joy/Zola) anchor their landings on. */
+    wsite_eyebrow: string;
+    wsite_title: string;
+    wsite_body: string;
+    wsite_bullet_1: string;
+    wsite_bullet_2: string;
+    wsite_bullet_3: string;
     /** Top-of-fold brand tagline — was hardcoded "Budapest · Paper letters"
      *  before the EN parity pass. HU keeps the Budapest reference because
      *  it's accurate for HU readers; EN reads as a neutral product line. */
@@ -1313,6 +1325,9 @@ export interface LocaleMessages {
     flight_estimate_stops_one: string;
     flight_estimate_stops_other: string;
     flight_estimate_duration: string;
+    /** Compact party summary shown next to the origin badge — receives
+     *  `{adults}`. Always round-trip in v1, so the string bakes that in. */
+    flight_estimate_party: string;
     /** Honeymoon-scoped todo checklist that mirrors planning_items
      *  filtered by topic='honeymoon'. `todo_sub_count` receives
      *  `{done}` + `{total}` numbers; the empty body + CTA point to

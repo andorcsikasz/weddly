@@ -701,14 +701,22 @@ const hu: LocaleMessages = {
     merge_success: "Csatlakoztál — üdv az új munkaterületen.",
   },
   landing: {
-    hero_title: "Az egész esküvőtök, egyetlen közös felületen.",
+    hero_eyebrow: "Esküvőtervezés, közösen, nyugodtan.",
+    hero_title: "Az egész esküvőtök, egy helyen.",
     hero_sub:
-      "Költségvetés, vendéglista, RSVP linkek és ültetési rend egy közös felületen. Mindkettőtök ugyanazt a képet látja, valós időben.",
+      "Költségvetés, vendéglista, RSVP, ültetési rend és saját esküvői oldal. Mindkettőtök ugyanazt látja, ugyanakkor.",
     cta_signup: "Kezdjétek el",
     cta_login: "Bejelentkezés",
     brand_tagline_paper: "Budapest · Papírlevelek",
     brand_signature: "Weddly, Budapest",
-    cta_signup_sub: "A nyílt béta alatt szabadon használhatjátok.",
+    cta_signup_sub: "Ingyenes pároknak. Bankkártya nélkül.",
+    wsite_eyebrow: "Saját esküvői oldal",
+    wsite_title: "Egy oldal a vendégeknek, a ti nevetekkel.",
+    wsite_body:
+      "Az oldalatok automatikusan elkészül a tervetekből. Megoszthatjátok a vendégekkel, ők innen jelzik a részvételt, böngészik a programot.",
+    wsite_bullet_1: "Saját webcím (weddly.hu/w/nevetek)",
+    wsite_bullet_2: "RSVP, étrend, parkolás, dress code egy helyen",
+    wsite_bullet_3: "Magyar és angol nyelven, mobilon is",
     // ── Interaktív "próbáld ki" költségvetés demo ─────────────────────
     demo_eyebrow: "Próbáld ki regisztráció nélkül",
     demo_title: "Mennyibe kerül a ti esküvőtök?",
@@ -822,7 +830,7 @@ const hu: LocaleMessages = {
     footer_band_cta: "Meghívókód megadása",
     skip_to_main: "Ugrás a tartalomra",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
-    stats_eyebrow: "Nyílt béta",
+    stats_eyebrow: "Ingyenes",
     // A korábbi "200+ pár a várólistán" szám kitalált adat volt; átírtuk
     // egy őszinte állapotjelzésre, ami a nyílt béta valóságát mutatja.
     stats_a_value: "Nyílt béta",
@@ -881,7 +889,7 @@ const hu: LocaleMessages = {
     pricing_title: "Most ingyen — az árazás a v2-vel jön.",
     pricing_body:
       "A nyílt béta alatt minden funkciót szabadon használhattok: költségvetés, vendéglista, RSVP linkek, ültetési vászon és nyomtatható kártyák. A v2-vel vezetjük be az árazást.",
-    pricing_bullet_1: "Ingyenes a nyílt béta alatt",
+    pricing_bullet_1: "Ingyenes minden páros funkció",
     pricing_bullet_2: "Bármikor szüneteltethető · 30 nap",
     pricing_bullet_3: "CSV / PDF export, korlátlanul",
     pricing_v2_note: "A v2-vel jön az árazás. A részleteket időben kihirdetjük.",
@@ -1224,8 +1232,17 @@ const hu: LocaleMessages = {
     countdown_past_other: "{count} napja indult",
     flight_estimate_title: "Repjegy becslés",
     flight_estimate_basis: "{origin} → {destination} · {adults} fő · oda-vissza",
-    flight_estimate_empty: "Erre az időszakra most nincs élő ajánlat — nézz vissza később.",
+    flight_estimate_empty: "Erre az időszakra most nincs élő ajánlat, nézz vissza később.",
     flight_estimate_attribution: "Amadeus · frissítve {updated}",
+    flight_estimate_origin_label: "Indulás",
+    flight_estimate_origin_placeholder: "BUD",
+    flight_estimate_origin_invalid: "Adj meg egy 3 betűs IATA kódot (pl. BUD, VIE)",
+    flight_estimate_origin_edit_aria: "Indulási reptér módosítása",
+    flight_estimate_direct: "Direkt",
+    flight_estimate_stops_one: "1 átszállás",
+    flight_estimate_stops_other: "{count} átszállás",
+    flight_estimate_duration: "{hours}ó {minutes}p",
+    flight_estimate_party: "{adults} fő · oda-vissza",
     todo_title: "Nászúti teendők",
     todo_sub_count: "{done} / {total} kész",
     todo_sub_empty: "Még nincs nászúti teendő",

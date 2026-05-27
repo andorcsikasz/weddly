@@ -142,22 +142,21 @@ function PublicHeader() {
         </Link>
 
         {/* Audience entry points pulled left, immediately after the
-            wordmark, as solid paper-toned chips. Vendor + Guest are
-            the two non-couple paths — couples land via the right-side
-            sign-up. */}
+            wordmark. Vendor + Guest are the two non-couple paths —
+            couples land via the right-side sign-up. */}
         <nav
           aria-label={t("public.nav_audience_aria")}
-          className="ml-2 hidden items-center gap-2 md:flex"
+          className="ml-2 hidden items-center gap-4 md:flex"
         >
           <Link
             to="/vendors"
-            className="btn-lifted rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#0f0a07] dark:[--btn-rim-hover:#050302] dark:[--btn-rim-active:#1a1410]"
+            className="px-1 py-1.5 text-sm text-ink-800 transition-colors hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
           >
             {t("landing.nav_vendors")}
           </Link>
           <Link
             to="/rsvp"
-            className="btn-lifted rounded-md border border-paper-300/70 bg-paper-100 px-3 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#0f0a07] dark:[--btn-rim-hover:#050302] dark:[--btn-rim-active:#1a1410]"
+            className="px-1 py-1.5 text-sm text-ink-800 transition-colors hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
           >
             {t("landing.footer_guests")}
           </Link>
@@ -192,6 +191,7 @@ function PublicHeader() {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:h-8 sm:w-8 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+            aria-pressed={theme === "dark"}
             title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
           >
             {theme === "dark" ? (
@@ -271,7 +271,7 @@ function PublicHeader() {
               className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
               <span>{t("nav.switch_language")}</span>
-              <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              <span className="text-xs font-medium uppercase tracking-wider text-ink-600 dark:text-umber-300">
                 {locale} → {otherLocale}
               </span>
             </button>
@@ -303,9 +303,7 @@ function PublicFooter() {
   const askGuestCode = useGuestCodePrompt();
   return (
     <footer className="mt-24 border-t border-paper-300 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-950/60">
-      {/* Band: guest CTA. Italic serif label + a paper chip that mirrors
-          the header's `Szolgáltatóknak / Vendégeknek` lifted chips so the
-          two surfaces feel unified rather than two different button systems. */}
+      {/* Band: guest CTA. Italic serif label paired with a paper chip. */}
       <div className="border-b border-paper-300 dark:border-umber-700">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:flex-row sm:gap-4 sm:px-6">
           <p className="font-serif text-lg italic text-ink-900 dark:text-paper-50 sm:text-xl">
@@ -362,7 +360,7 @@ function PublicFooter() {
       </div>
 
       <div className="border-t border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-5 text-xs text-ink-500 dark:text-umber-300 sm:flex-row sm:items-center sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-5 text-xs text-ink-600 dark:text-umber-300 sm:flex-row sm:items-center sm:px-6">
           <p>
             © {new Date().getFullYear()} {t("app.name")}
           </p>
@@ -397,7 +395,7 @@ function PublicFooter() {
 function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+      <p className="text-xs font-semibold uppercase tracking-wider text-ink-600 dark:text-umber-300">
         {title}
       </p>
       <div className="mt-3 flex flex-col gap-2">{children}</div>

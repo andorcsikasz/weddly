@@ -696,14 +696,22 @@ const en: LocaleMessages = {
     merge_success: "You're in — welcome to the new workspace.",
   },
   landing: {
-    hero_title: "Your whole wedding, in one shared workspace.",
+    hero_eyebrow: "Wedding planning, together, calmly.",
+    hero_title: "Your whole wedding, in one place.",
     hero_sub:
-      "Budget, guest list, RSVPs, seating and printables live together. Both of you see the same picture, change something once, and spend the time you save on each other.",
+      "Budget, guest list, RSVP, seating chart and your own wedding site. Both of you see the same picture, in real time.",
     cta_signup: "Start planning",
     cta_login: "Sign in",
     brand_tagline_paper: "Paper letters · Stationery",
     brand_signature: "Weddly",
-    cta_signup_sub: "Free to use throughout the open beta.",
+    cta_signup_sub: "Free for couples. No credit card.",
+    wsite_eyebrow: "Your own wedding site",
+    wsite_title: "One page for your guests, with your names on it.",
+    wsite_body:
+      "Your site builds itself from your plan. Share it with guests; they RSVP, browse the schedule, find the venue, right from there.",
+    wsite_bullet_1: "Your own URL (weddly.hu/w/your-names)",
+    wsite_bullet_2: "RSVP, menu, parking, dress code in one place",
+    wsite_bullet_3: "Hungarian and English, mobile-friendly",
     // ── Interactive "try it" budget demo ──────────────────────────────
     demo_eyebrow: "Try it, no signup",
     demo_title: "How much will your wedding cost?",
@@ -714,7 +722,7 @@ const en: LocaleMessages = {
     demo_per_guest_label: "Cost per guest",
     demo_per_guest_sub: "What Wēddly will plan per head for that headcount and ceiling.",
     demo_breakdown_eyebrow: "Live breakdown",
-    demo_breakdown_sub: "based on HU averages",
+    demo_breakdown_sub: "based on European averages",
     demo_total_label: "Total budget",
     demo_cta: "Continue with these numbers",
     demo_cta_secondary: "or see how it works →",
@@ -816,7 +824,7 @@ const en: LocaleMessages = {
     footer_band_cta: "Enter your invite code",
     skip_to_main: "Skip to main content",
     // ── Round 2: stats strip + product features + testimonials ────────
-    stats_eyebrow: "Open beta",
+    stats_eyebrow: "Free",
     // Honest beta label — the previous "200+ couples on the waitlist"
     // number was fabricated. The marquee stat now reads as a status
     // statement rather than a fake metric.
@@ -872,7 +880,7 @@ const en: LocaleMessages = {
     pricing_title: "Free now — pricing arrives with v2.",
     pricing_body:
       "Throughout the open beta everything is free: budget, guest list, RSVP links, seating canvas and printable cards. We'll introduce pricing with v2.",
-    pricing_bullet_1: "Free during the open beta",
+    pricing_bullet_1: "Free for couples, every feature",
     pricing_bullet_2: "Pause any time · 30-day grace",
     pricing_bullet_3: "CSV / PDF export, included",
     pricing_v2_note: "v2 introduces pricing. Details will be announced ahead of time.",
@@ -1213,8 +1221,17 @@ const en: LocaleMessages = {
     countdown_past_other: "Started {count} days ago",
     flight_estimate_title: "Flight estimate",
     flight_estimate_basis: "{origin} → {destination} · {adults} adults · round-trip",
-    flight_estimate_empty: "No live offer right now for these dates — try checking again later.",
+    flight_estimate_empty: "No live offer right now for these dates. Try checking again later.",
     flight_estimate_attribution: "From Amadeus · updated {updated}",
+    flight_estimate_origin_label: "From",
+    flight_estimate_origin_placeholder: "VIE",
+    flight_estimate_origin_invalid: "Enter a 3-letter IATA code (e.g. BUD, VIE)",
+    flight_estimate_origin_edit_aria: "Change departure airport",
+    flight_estimate_direct: "Direct",
+    flight_estimate_stops_one: "1 stop",
+    flight_estimate_stops_other: "{count} stops",
+    flight_estimate_duration: "{hours}h {minutes}m",
+    flight_estimate_party: "{adults} adults · round-trip",
     todo_title: "Honeymoon to-dos",
     todo_sub_count: "{done} of {total} done",
     todo_sub_empty: "No honeymoon tasks yet",

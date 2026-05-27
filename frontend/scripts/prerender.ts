@@ -33,10 +33,13 @@ function escape(s: string): string {
 }
 
 interface LandingCopy {
+  hero_eyebrow: string;
   hero_title: string;
   hero_sub: string;
   cta_signup: string;
   cta_login: string;
+  wsite_title: string;
+  wsite_body: string;
   // Phases
   phases_title: string;
   phase_plan_title: string;
@@ -96,6 +99,7 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
   // diff between SSR + JS pass stays trivial.
   return [
     `<header>`,
+    `  <p>${escape(l.hero_eyebrow)}</p>`,
     `  <h1>${escape(l.hero_title)}</h1>`,
     `  <p>${escape(l.hero_sub)}</p>`,
     `  <p>`,
@@ -116,6 +120,7 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
     `  <article><h3>${escape(l.block_budget_title)}</h3><p>${escape(l.block_budget_body)}</p></article>`,
     `  <article><h3>${escape(l.block_guests_title)}</h3><p>${escape(l.block_guests_body)}</p></article>`,
     `  <article><h3>${escape(l.block_seating_title)}</h3><p>${escape(l.block_seating_body)}</p></article>`,
+    `  <article><h3>${escape(l.wsite_title)}</h3><p>${escape(l.wsite_body)}</p></article>`,
     `</section>`,
     `<section aria-labelledby="why-heading">`,
     `  <h2 id="why-heading">${escape(l.why_title)}</h2>`,
