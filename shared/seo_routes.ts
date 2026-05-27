@@ -256,18 +256,18 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   },
   "/blog": {
     hu: {
-      title: "Esküvős magazin · Wēddly",
+      title: "Blog · Wēddly",
       description:
         "Költségvetés, vendéglista, ültetési rend, RSVP. Gyakorlati cikkek pároknak, akik magyar esküvőt terveznek.",
-      h1: "Esküvős magazin",
+      h1: "Blog",
       intro:
         "Rövid, gyakorlati írások az esküvőtervezés legtöbb idő- és pénzigényes részeiről: költségvetés-felosztás, ültetési rend, RSVP utánajárás. Minden poszt egy konkrét döntésen segít át.",
     },
     en: {
-      title: "Wedding magazine · Weddly",
+      title: "Blog · Weddly",
       description:
         "Budget, guest list, seating, RSVP. Practical articles for couples planning a wedding.",
-      h1: "Wedding magazine",
+      h1: "Blog",
       intro:
         "Short, practical reads on the parts of wedding planning that take the most time and money: budget allocation, seating, RSVP follow-up. Each post helps with one concrete decision.",
     },

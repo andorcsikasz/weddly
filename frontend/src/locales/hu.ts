@@ -3609,21 +3609,21 @@ const hu: LocaleMessages = {
     founder_placeholder: "Csíkász Andor",
   },
   blog: {
-    eyebrow: "Magazin",
-    index_title: "Esküvős magazin",
+    eyebrow: "Blog",
+    index_title: "Blog",
     index_lead:
       "Rövid, gyakorlati írások az esküvőtervezés legtöbb idő- és pénzigényes részeiről: költségvetés, ültetés, RSVP. Minden poszt egy konkrét döntésen segít át.",
-    index_seo_title: "Esküvős magazin · Wēddly",
+    index_seo_title: "Blog · Wēddly",
     index_seo_description:
       "Gyakorlati cikkek pároknak, akik magyar esküvőt terveznek: költségvetés-felosztás, ültetési tippek, RSVP utánajárás, és még sok más.",
     read_minutes: "{n} perces olvasás",
-    related_eyebrow: "Még a magazinból",
-    back_to_index: "Vissza a magazinhoz",
-    section_eyebrow: "Magazin",
-    section_title: "A magazinunkból",
+    related_eyebrow: "Még a blogról",
+    back_to_index: "Vissza a bloghoz",
+    section_eyebrow: "Blog",
+    section_title: "A blogról",
     section_lead:
       "Gyakorlati írások az esküvőtervezés legidőigényesebb részeiről. Három poszttal kezdjük.",
-    section_cta: "Tovább a magazinhoz",
+    section_cta: "Tovább a blogra",
   },
   session: {
     expired_title: "A munkamenet lejárt",
