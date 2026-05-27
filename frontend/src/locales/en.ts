@@ -1253,7 +1253,9 @@ const en: LocaleMessages = {
     sub: "Drop the wedding photos here once they're back from the photographer.",
     coming_soon_title: "Coming soon",
     coming_soon_body:
-      "Upload the photos after the wedding and send a download link to every guest who said yes — straight from this page, no separate gallery account needed.",
+      "Upload the photos after the wedding and send a download link to every guest who said yes, straight from this page, no separate gallery account needed.",
+    share_drive: "Google Drive import",
+    share_icloud: "iCloud import",
   },
   moodboard: {
     title: "Moodboard",
