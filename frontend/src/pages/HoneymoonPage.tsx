@@ -1400,8 +1400,7 @@ function OriginAutocomplete({
     // Prefer the highlighted suggestion. If nothing is highlighted but a
     // dropdown row exists, take the top hit — typing "Buda" + Enter should
     // snap to BUD without forcing the user to press ↓ first.
-    const picked =
-      (highlight >= 0 ? suggestions[highlight] : null) ?? suggestions[0] ?? null;
+    const picked = (highlight >= 0 ? suggestions[highlight] : null) ?? suggestions[0] ?? null;
     if (picked) {
       committed.current = true;
       void onCommit(picked.iata);
@@ -1488,9 +1487,7 @@ function OriginAutocomplete({
                 <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-[11px] font-semibold tracking-wider text-ink-900 tabular-nums dark:bg-paper-50/10 dark:text-paper-50">
                   {s.iata}
                 </span>
-                <span className="min-w-0 truncate text-ink-700 dark:text-paper-100">
-                  {s.city}
-                </span>
+                <span className="min-w-0 truncate text-ink-700 dark:text-paper-100">{s.city}</span>
                 <span className="ml-auto shrink-0 text-[11px] text-ink-400 dark:text-umber-300">
                   {s.country}
                 </span>

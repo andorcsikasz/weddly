@@ -202,7 +202,7 @@ const STATIC_IATA: Record<string, string> = {
   reykjavik: "KEF",
   iceland: "KEF",
   izland: "KEF",
-  "tromso": "TOS",
+  tromso: "TOS",
 
   // Balkans / Turkey / Cyprus
   istanbul: "IST",

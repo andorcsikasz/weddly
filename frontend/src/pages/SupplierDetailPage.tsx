@@ -10,7 +10,14 @@
 // endpoints — a Phase-3 flip is a single auth-rule edit on the backend +
 // removing the RequireAdmin wrap.
 
-import { type ComponentType, type SVGProps, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ComponentType,
+  type SVGProps,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   BadgeCheck,

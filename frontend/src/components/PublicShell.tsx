@@ -303,12 +303,9 @@ function PublicFooter() {
   const askGuestCode = useGuestCodePrompt();
   return (
     <footer className="mt-24 border-t border-paper-300 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-950/60">
-      {/* Band: guest CTA. Italic serif label paired with a paper chip. */}
+      {/* Band: guest CTA. A single paper chip that names the audience and action. */}
       <div className="border-b border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:flex-row sm:gap-4 sm:px-6">
-          <p className="font-serif text-lg italic text-ink-900 dark:text-paper-50 sm:text-xl">
-            {t("landing.footer_band_text")}
-          </p>
+        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-5 sm:px-6">
           <button
             type="button"
             className="btn-lifted inline-flex items-center gap-2 rounded-md border border-paper-300/70 bg-paper-100 px-3.5 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#0f0a07] dark:[--btn-rim-hover:#050302] dark:[--btn-rim-active:#1a1410]"

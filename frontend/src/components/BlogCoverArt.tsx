@@ -69,15 +69,7 @@ export function BlogCoverArt({ slug, category, className }: BlogCoverArtProps) {
 
       {/* Thin inner frame so the cover reads as a "page" rather than a
           floating block. paper-300 line, 32px inset on all sides. */}
-      <rect
-        x="32"
-        y="32"
-        width="736"
-        height="436"
-        fill="none"
-        stroke="#e3d9bf"
-        strokeWidth="1.2"
-      />
+      <rect x="32" y="32" width="736" height="436" fill="none" stroke="#e3d9bf" strokeWidth="1.2" />
 
       {/* Faded wordmark, big italic serif, centred. paper-300 fill so it
           sits behind the eyebrow + icon as a quiet brand anchor. */}

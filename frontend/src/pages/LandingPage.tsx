@@ -77,7 +77,7 @@ const MOCKUP_AR_WORKSPACE = "656 / 456";
 const REFERRER_SESSION_KEY = "weddly.ref";
 
 export default function LandingPage() {
-  const { t, locale } = useT();
+  const { t, locale, currencyPref } = useT();
   useDocumentMeta("seo.home_title", "seo.home_description");
   const askGuestCode = useGuestCodePrompt();
   // Single source of truth (shared/seo_faq.ts) — same array also feeds the
@@ -449,7 +449,7 @@ export default function LandingPage() {
                   0
                 </span>
                 <span className="mb-3 font-serif text-3xl text-ink-700 dark:text-paper-100 sm:text-4xl">
-                  {currencySymbol(localeCurrency(locale), locale)}
+                  {currencySymbol(currencyPref ?? localeCurrency(locale), locale)}
                 </span>
               </div>
               <p className="mt-1 font-serif text-sm italic text-ink-600 dark:text-umber-300">
@@ -631,15 +631,41 @@ function LiveStatsBand() {
 }
 
 function StatCounter({ value, label }: { value: string; label: string }) {
+  const chars = Array.from(value);
   return (
     <div className="text-center">
-      <div className="font-serif text-5xl italic leading-[0.95] text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
-        {value}
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+        {chars.map((ch, i) => (
+          <FlipDigit key={`${i}-${ch}`} char={ch} />
+        ))}
       </div>
-      <div className="mt-3 font-serif text-sm text-ink-600 dark:text-umber-200 sm:text-base">
+      <div className="mt-5 font-serif text-sm text-ink-600 dark:text-umber-200 sm:mt-6 sm:text-base">
         {label}
       </div>
     </div>
+  );
+}
+
+/** Split-flap "flip card" digit — dark panel, cream numeral, and a thin
+ *  hairline seam across the middle that reads as the flap fold. Non-digit
+ *  characters (grouping separators) render bare so commas/dots don't sit
+ *  inside a card. */
+function FlipDigit({ char }: { char: string }) {
+  if (!/\d/.test(char)) {
+    return (
+      <span className="font-serif text-4xl leading-none text-ink-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
+        {char}
+      </span>
+    );
+  }
+  return (
+    <span
+      className="relative inline-flex h-14 w-10 items-center justify-center overflow-hidden rounded-md bg-ink-900 font-serif text-3xl tabular-nums leading-none text-paper-50 shadow-pop ring-1 ring-ink-950/60 sm:h-20 sm:w-14 sm:text-5xl sm:rounded-lg lg:h-24 lg:w-16 lg:text-6xl"
+      aria-hidden={false}
+    >
+      {char}
+      <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-ink-950/80" />
+    </span>
   );
 }
 

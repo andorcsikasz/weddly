@@ -118,12 +118,7 @@ export const AIRPORT_ORIGINS: AirportOrigin[] = [
 ];
 
 function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
 }
 
 /** Score a candidate against the user's query. Higher = better match.
