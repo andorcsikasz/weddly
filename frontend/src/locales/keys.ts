@@ -4009,6 +4009,24 @@ export interface LocaleMessages {
     /** Placeholder founder name — replace before going public. */
     founder_placeholder: string;
   };
+  /** Public-facing magazine index and post pages. Body content lives in
+   *  shared/blog_posts.ts; these are the chrome strings around it. */
+  blog: {
+    eyebrow: string;
+    index_title: string;
+    index_lead: string;
+    index_seo_title: string;
+    index_seo_description: string;
+    /** Read-time pill on cards and post headers. Uses {n} placeholder. */
+    read_minutes: string;
+    related_eyebrow: string;
+    back_to_index: string;
+    /** Eyebrow + heading + lead + CTA for the LandingPage teaser block. */
+    section_eyebrow: string;
+    section_title: string;
+    section_lead: string;
+    section_cta: string;
+  };
   /** Re-login modal that pops on 401 mid-session. Copy stays short — the
    *  user is mid-task and just needs to resume. */
   session: {

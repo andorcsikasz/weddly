@@ -13,6 +13,8 @@ import { useAuth } from "./lib/auth";
 // visitor browsing /. After: only public components ship in the entry
 // chunk, the rest streams in when a session lands on /app.
 import AboutPage from "./pages/AboutPage";
+import BlogIndexPage from "./pages/BlogIndexPage";
+import BlogPostPage from "./pages/BlogPostPage";
 import BudgetCalculatorPage from "./pages/BudgetCalculatorPage";
 import CountdownPage from "./pages/CountdownPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -267,6 +269,22 @@ export default function App() {
         element={
           <Page>
             <AboutPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/blog"
+        element={
+          <Page>
+            <BlogIndexPage />
+          </Page>
+        }
+      />
+      <Route
+        path="/blog/:slug"
+        element={
+          <Page>
+            <BlogPostPage />
           </Page>
         }
       />

@@ -3568,6 +3568,23 @@ const en: LocaleMessages = {
     en_section_label: "English",
     founder_placeholder: "Andor Csíkász",
   },
+  blog: {
+    eyebrow: "Magazine",
+    index_title: "Wedding magazine",
+    index_lead:
+      "Short, practical reads on the parts of wedding planning that take the most time and money: budget, seating, RSVP. Each post helps with one concrete decision.",
+    index_seo_title: "Wedding magazine · Weddly",
+    index_seo_description:
+      "Practical articles for couples planning a wedding: budget allocation, seating tips, RSVP follow-up, and more.",
+    read_minutes: "{n} min read",
+    related_eyebrow: "More from the magazine",
+    back_to_index: "Back to the magazine",
+    section_eyebrow: "Magazine",
+    section_title: "From the magazine",
+    section_lead:
+      "Practical writing about the parts of wedding planning that take the most time. Three posts to start with.",
+    section_cta: "Browse the magazine",
+  },
   session: {
     expired_title: "Session ended",
     expired_body:

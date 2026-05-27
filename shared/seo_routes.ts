@@ -1,3 +1,5 @@
+import { BLOG_POSTS } from "./blog_posts";
+
 // Per-route SEO metadata for the public, indexable surfaces.
 //
 // The landing page (/) is handled by the default META in seo_ssr.ts and the
@@ -252,6 +254,24 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Enter names, date, venue and deadline — we generate ready-to-use RSVP wording in three styles (formal, casual, poetic). Copy with one click.",
     },
   },
+  "/blog": {
+    hu: {
+      title: "Esküvős magazin · Wēddly",
+      description:
+        "Költségvetés, vendéglista, ültetési rend, RSVP. Gyakorlati cikkek pároknak, akik magyar esküvőt terveznek.",
+      h1: "Esküvős magazin",
+      intro:
+        "Rövid, gyakorlati írások az esküvőtervezés legtöbb idő- és pénzigényes részeiről: költségvetés-felosztás, ültetési rend, RSVP utánajárás. Minden poszt egy konkrét döntésen segít át.",
+    },
+    en: {
+      title: "Wedding magazine · Weddly",
+      description:
+        "Budget, guest list, seating, RSVP. Practical articles for couples planning a wedding.",
+      h1: "Wedding magazine",
+      intro:
+        "Short, practical reads on the parts of wedding planning that take the most time and money: budget allocation, seating, RSVP follow-up. Each post helps with one concrete decision.",
+    },
+  },
   "/signup": {
     hu: {
       title: "Regisztráció — Wēddly",
@@ -324,9 +344,33 @@ export function enPathFor(path: string): string {
 /** Hungarian-alias `/impresszum` resolves to the same SEO entry as `/imprint`.
  *  EN tool slugs resolve to their HU pair's bilingual entry — the visitor's
  *  locale picks which copy renders. Done at lookup time rather than
- *  duplicating the entry so the copy stays in one place. */
+ *  duplicating the entry so the copy stays in one place.
+ *
+ *  `/blog/:slug` paths resolve dynamically against `BLOG_POSTS`. Each
+ *  post supplies its own bilingual title + description + h1 + intro so
+ *  Googlebot sees a distinct page per post in the HTML-only crawl. */
 export function lookupRouteSeo(pathname: string): RouteSeo | null {
   const aliased = pathname === "/impresszum" ? "/imprint" : pathname;
+  const blogMatch = /^\/blog\/([^/?#]+)\/?$/.exec(aliased);
+  if (blogMatch) {
+    const slug = decodeURIComponent(blogMatch[1] ?? "");
+    const post = BLOG_POSTS.find((p) => p.slug === slug);
+    if (!post) return null;
+    return {
+      hu: {
+        title: post.hu.seo_title,
+        description: post.hu.seo_description,
+        h1: post.hu.title,
+        intro: post.hu.lead,
+      },
+      en: {
+        title: post.en.seo_title,
+        description: post.en.seo_description,
+        h1: post.en.title,
+        intro: post.en.lead,
+      },
+    };
+  }
   const resolved = EN_TO_HU_SLUG.get(aliased) ?? aliased;
   return ROUTE_SEO[resolved] ?? null;
 }

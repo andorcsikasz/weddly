@@ -16,6 +16,7 @@
 // `Host` is retained in the signal for the future host-based path (e.g.
 // adding a separate weddly.com EN-canonical) but ignored today.
 
+import { BLOG_POSTS } from "../../../shared/blog_posts";
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { enPathFor, huPathFor, lookupRouteSeo } from "../../../shared/seo_routes";
 import { db } from "../db";
@@ -42,6 +43,16 @@ const PUBLIC_PATHS: ReadonlyArray<{ path: string; priority: string; changefreq: 
   { path: "/eszkozok/ultetesi-rend-keszito", priority: "0.8", changefreq: "monthly" },
   { path: "/eszkozok/rsvp-szoveg-generator", priority: "0.8", changefreq: "monthly" },
   { path: "/signup", priority: "0.7", changefreq: "monthly" },
+  // Blog index + each post. The post URLs share the same path on HU + EN
+  // (no slug-pair translation — content is bilingual under one slug, the
+  // visitor's locale picks which copy renders) and the post slugs come from
+  // BLOG_POSTS so adding a new post automatically appears in the sitemap.
+  { path: "/blog", priority: "0.6", changefreq: "weekly" },
+  ...BLOG_POSTS.map((post) => ({
+    path: `/blog/${post.slug}`,
+    priority: "0.5",
+    changefreq: "monthly",
+  })),
   { path: "/vendors", priority: "0.6", changefreq: "monthly" },
   { path: "/about", priority: "0.5", changefreq: "monthly" },
   { path: "/login", priority: "0.5", changefreq: "monthly" },

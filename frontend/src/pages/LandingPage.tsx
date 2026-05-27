@@ -44,6 +44,7 @@ import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
 import { SEO_FAQ } from "@shared/seo_faq";
+import { listBlogPosts } from "@shared/blog_posts";
 
 // Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
 // these to reserve layout space, so the page doesn't jump as below-fold
@@ -441,6 +442,15 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ════════════════════════ 11.5 · Blog teaser ════════════════════════
+          Three latest posts from the static catalogue in
+          shared/blog_posts.ts. Each card is a Link into /blog/:slug; the
+          section also offers a "Browse the magazine" CTA into the /blog
+          index for visitors who want to see the full list. Sits between
+          the FAQ and the closing CTA so the magazine doesn't compete with
+          the primary "Start planning" call to action above the fold. */}
+      <BlogTeaser />
+
       {/* ════════════════════════ Closing ════════════════════════
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
@@ -585,6 +595,77 @@ function StatCounter({ value, label }: { value: string; label: string }) {
         {label}
       </div>
     </div>
+  );
+}
+
+/** Magazine teaser: three most recent posts from shared/blog_posts.ts, each
+ *  linking into /blog/:slug, with a "Browse the magazine" CTA into the
+ *  index. Editorial card layout mirrors BlogIndexPage so the section reads
+ *  like an excerpt of the destination, not a separate widget. Self-hides
+ *  if the catalogue is empty so the landing never shows a stub. */
+function BlogTeaser() {
+  const { t, locale } = useT();
+  const posts = listBlogPosts().slice(0, 3);
+  if (posts.length === 0) return null;
+  const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+  return (
+    <section className="relative bg-paper-50 dark:bg-umber-900">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
+        <header className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+            {t("blog.section_eyebrow")}
+          </p>
+          <h2 className="mt-3 font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
+            {t("blog.section_title")}
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
+            {t("blog.section_lead")}
+          </p>
+        </header>
+        <ul className="mt-10 grid gap-x-8 gap-y-10 sm:mt-14 sm:grid-cols-3 sm:gap-y-0">
+          {posts.map((post) => {
+            const copy = post[locale];
+            const [y, m, d] = post.published_at.split("-").map(Number);
+            const dateLabel = y && m && d
+              ? fmt.format(new Date(Date.UTC(y, m - 1, d)))
+              : post.published_at;
+            return (
+              <li key={post.slug}>
+                <Link
+                  to={`/blog/${post.slug}`}
+                  className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:focus-visible:ring-offset-umber-900"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
+                    {post.category[locale]}
+                  </p>
+                  <h3 className="mt-3 font-serif text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
+                    {copy.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+                    {copy.lead}
+                  </p>
+                  <div className="mt-4 flex items-center gap-3 text-xs text-ink-500 dark:text-umber-300">
+                    <time dateTime={post.published_at}>{dateLabel}</time>
+                    <span aria-hidden>·</span>
+                    <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-12 flex justify-center">
+          <Link to="/blog" className="btn-outline btn-lifted btn-landing btn-lg">
+            {t("blog.section_cta")}
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
 

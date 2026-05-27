@@ -28,3 +28,20 @@ export function useDocumentMeta(titleKey: string, descriptionKey: string) {
     setMeta("twitter:description", description);
   }, [t, locale, titleKey, descriptionKey]);
 }
+
+/**
+ * Literal-string variant for pages whose title/description aren't fixed
+ * i18n keys — e.g. /blog/:slug, where the meta comes from the post record
+ * the page resolved at runtime. Same DOM writes as `useDocumentMeta`; the
+ * caller is responsible for picking the right locale's string.
+ */
+export function useDocumentMetaLiteral(title: string, description: string) {
+  useEffect(() => {
+    document.title = title;
+    setMeta("description", description);
+    setMeta("og:title", title, "property");
+    setMeta("og:description", description, "property");
+    setMeta("twitter:title", title);
+    setMeta("twitter:description", description);
+  }, [title, description]);
+}
