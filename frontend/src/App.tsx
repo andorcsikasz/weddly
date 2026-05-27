@@ -1,5 +1,5 @@
-import { lazy, Suspense, type JSX, type ReactNode } from "react";
-import { Navigate, Route, Routes, useParams } from "react-router-dom";
+import { lazy, Suspense, type JSX, type ReactNode, useEffect } from "react";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
@@ -136,551 +136,568 @@ function Page({ children }: { children: ReactNode }) {
   );
 }
 
+/** Scroll the viewport to the top on every client-side route change.
+ *  Without this, navigating from a long landing page (or the bottom of a
+ *  /blog post) into another route preserves the previous scroll position,
+ *  which the user reads as "the page is broken". Honours anchor links so
+ *  `#section` jumps still land on the intended target. */
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) return;
+    window.scrollTo(0, 0);
+  }, [pathname, hash]);
+  return null;
+}
+
 export default function App() {
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <Page>
-            <LandingPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/vendors"
-        element={
-          <Page>
-            <VendorsPage />
-          </Page>
-        }
-      />
-      {/* SEO tool pages mounted at /eszkozok/* (HU) and /tools/* (EN).
-       *  Each slug pair targets a long-tail search query in its locale and
-       *  shares the bilingual ROUTE_SEO entry — the visitor's locale picks
-       *  the copy that renders. The hreflang link rel in seo_ssr.ts pairs
-       *  the two slugs so Google indexes them as alternates of each other
-       *  on the multi-host weddly.hu ↔ weddly.com setup. */}
-      <Route
-        path="/eszkozok/eskuvo-koltsegvetes-kalkulator"
-        element={
-          <Page>
-            <BudgetCalculatorPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/tools/wedding-budget-calculator"
-        element={
-          <Page>
-            <BudgetCalculatorPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/eszkozok/eskuvo-visszaszamlalo"
-        element={
-          <Page>
-            <CountdownPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/tools/wedding-countdown"
-        element={
-          <Page>
-            <CountdownPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/eszkozok/vendeglista-sablon"
-        element={
-          <Page>
-            <GuestListTemplatePage />
-          </Page>
-        }
-      />
-      <Route
-        path="/tools/guest-list-template"
-        element={
-          <Page>
-            <GuestListTemplatePage />
-          </Page>
-        }
-      />
-      <Route
-        path="/eszkozok/ultetesi-rend-keszito"
-        element={
-          <Page>
-            <SeatingChartPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/tools/seating-chart-builder"
-        element={
-          <Page>
-            <SeatingChartPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/eszkozok/rsvp-szoveg-generator"
-        element={
-          <Page>
-            <RsvpGeneratorPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/tools/rsvp-text-generator"
-        element={
-          <Page>
-            <RsvpGeneratorPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/privacy"
-        element={
-          <Page>
-            <PrivacyPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/terms"
-        element={
-          <Page>
-            <TermsPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/terms/vendor-subscription"
-        element={
-          <Page>
-            <SubscriptionTermsPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/about"
-        element={
-          <Page>
-            <AboutPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/blog"
-        element={
-          <Page>
-            <BlogIndexPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/blog/:slug"
-        element={
-          <Page>
-            <BlogPostPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/impresszum"
-        element={
-          <Page>
-            <ImprintPage />
-          </Page>
-        }
-      />
-      {/* English alias — same component, different URL. Lets EN users
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Page>
+              <LandingPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/vendors"
+          element={
+            <Page>
+              <VendorsPage />
+            </Page>
+          }
+        />
+        {/* SEO tool pages mounted at /eszkozok/* (HU) and /tools/* (EN).
+         *  Each slug pair targets a long-tail search query in its locale and
+         *  shares the bilingual ROUTE_SEO entry — the visitor's locale picks
+         *  the copy that renders. The hreflang link rel in seo_ssr.ts pairs
+         *  the two slugs so Google indexes them as alternates of each other
+         *  on the multi-host weddly.hu ↔ weddly.com setup. */}
+        <Route
+          path="/eszkozok/eskuvo-koltsegvetes-kalkulator"
+          element={
+            <Page>
+              <BudgetCalculatorPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/tools/wedding-budget-calculator"
+          element={
+            <Page>
+              <BudgetCalculatorPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/eszkozok/eskuvo-visszaszamlalo"
+          element={
+            <Page>
+              <CountdownPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/tools/wedding-countdown"
+          element={
+            <Page>
+              <CountdownPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/eszkozok/vendeglista-sablon"
+          element={
+            <Page>
+              <GuestListTemplatePage />
+            </Page>
+          }
+        />
+        <Route
+          path="/tools/guest-list-template"
+          element={
+            <Page>
+              <GuestListTemplatePage />
+            </Page>
+          }
+        />
+        <Route
+          path="/eszkozok/ultetesi-rend-keszito"
+          element={
+            <Page>
+              <SeatingChartPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/tools/seating-chart-builder"
+          element={
+            <Page>
+              <SeatingChartPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/eszkozok/rsvp-szoveg-generator"
+          element={
+            <Page>
+              <RsvpGeneratorPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/tools/rsvp-text-generator"
+          element={
+            <Page>
+              <RsvpGeneratorPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <Page>
+              <PrivacyPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/terms"
+          element={
+            <Page>
+              <TermsPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/terms/vendor-subscription"
+          element={
+            <Page>
+              <SubscriptionTermsPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <Page>
+              <AboutPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/blog"
+          element={
+            <Page>
+              <BlogIndexPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/blog/:slug"
+          element={
+            <Page>
+              <BlogPostPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/impresszum"
+          element={
+            <Page>
+              <ImprintPage />
+            </Page>
+          }
+        />
+        {/* English alias — same component, different URL. Lets EN users
           find the page when they search for "imprint". */}
-      <Route
-        path="/imprint"
-        element={
-          <Page>
-            <ImprintPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          <Page>
-            <RedirectIfAuthed>
-              <LoginPage />
-            </RedirectIfAuthed>
-          </Page>
-        }
-      />
-      <Route
-        path="/signup"
-        element={
-          <Page>
-            <RedirectIfAuthed>
-              <RegisterPage />
-            </RedirectIfAuthed>
-          </Page>
-        }
-      />
-      <Route
-        path="/forgot-password"
-        element={
-          <Page>
-            <ForgotPasswordPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/reset-password/:token"
-        element={
-          <Page>
-            <ResetPasswordPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/verify-email/:token"
-        element={
-          <Page>
-            <VerifyEmailPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/verify-supplier/:token"
-        element={
-          <Page>
-            <VerifySupplierPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/vendor/claim/verify/:token"
-        element={
-          <Page>
-            <VendorClaimVerifyPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/vendor"
-        element={
-          <Page>
-            <VendorHomePage />
-          </Page>
-        }
-      />
-      <Route
-        path="/change-email/:token"
-        element={
-          <Page>
-            <ChangeEmailPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/invite/:token"
-        element={
-          <Page>
-            <InvitePage />
-          </Page>
-        }
-      />
-      <Route
-        path="/rsvp"
-        element={
-          <Page>
-            <RsvpCheckinPage />
-          </Page>
-        }
-      />
-      <Route
-        path="/rsvp/:code"
-        element={
-          <Page>
-            <RsvpPage />
-          </Page>
-        }
-      />
-      {/* Legacy `/g/:slug/:code` redirects into the merged
-       *  `/w/:slug/:code` so personalised links keep working. The
-       *  unified WeddingWebsitePage handles every tier (public,
-       *  invited, confirmed) in-place — see Phase 2 of the
-       *  Vendégoldal merger. */}
-      <Route path="/g/:slug/:code" element={<GuestPageRedirect />} />
-      <Route
-        path="/w/:slug"
-        element={
-          <Page>
-            <WeddingWebsitePage />
-          </Page>
-        }
-      />
-      <Route
-        path="/w/:slug/:code"
-        element={
-          <Page>
-            <WeddingWebsitePage />
-          </Page>
-        }
-      />
-      <Route
-        path="/onboarding"
-        element={
-          <Page>
+        <Route
+          path="/imprint"
+          element={
+            <Page>
+              <ImprintPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <Page>
+              <RedirectIfAuthed>
+                <LoginPage />
+              </RedirectIfAuthed>
+            </Page>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <Page>
+              <RedirectIfAuthed>
+                <RegisterPage />
+              </RedirectIfAuthed>
+            </Page>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <Page>
+              <ForgotPasswordPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            <Page>
+              <ResetPasswordPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/verify-email/:token"
+          element={
+            <Page>
+              <VerifyEmailPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/verify-supplier/:token"
+          element={
+            <Page>
+              <VerifySupplierPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/vendor/claim/verify/:token"
+          element={
+            <Page>
+              <VendorClaimVerifyPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/vendor"
+          element={
+            <Page>
+              <VendorHomePage />
+            </Page>
+          }
+        />
+        <Route
+          path="/change-email/:token"
+          element={
+            <Page>
+              <ChangeEmailPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/invite/:token"
+          element={
+            <Page>
+              <InvitePage />
+            </Page>
+          }
+        />
+        <Route
+          path="/rsvp"
+          element={
+            <Page>
+              <RsvpCheckinPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/rsvp/:code"
+          element={
+            <Page>
+              <RsvpPage />
+            </Page>
+          }
+        />
+        {/* Legacy `/g/:slug/:code` redirects into the merged
+         *  `/w/:slug/:code` so personalised links keep working. The
+         *  unified WeddingWebsitePage handles every tier (public,
+         *  invited, confirmed) in-place — see Phase 2 of the
+         *  Vendégoldal merger. */}
+        <Route path="/g/:slug/:code" element={<GuestPageRedirect />} />
+        <Route
+          path="/w/:slug"
+          element={
+            <Page>
+              <WeddingWebsitePage />
+            </Page>
+          }
+        />
+        <Route
+          path="/w/:slug/:code"
+          element={
+            <Page>
+              <WeddingWebsitePage />
+            </Page>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <Page>
+              <RequireAuth>
+                <OnboardingWizard />
+              </RequireAuth>
+            </Page>
+          }
+        />
+        {/* All /app/* routes share one mounted AppShellLayout — the parent
+         *  Route element renders <AppShell> + <Outlet/>, so the sidebar,
+         *  header, and WorkspaceSwitcher stay alive across navigation. Per-
+         *  child `<Page>` wrapper keeps the ErrorBoundary per-route so a
+         *  render error in one page doesn't unmount the whole shell. */}
+        <Route
+          path="/app"
+          element={
             <RequireAuth>
-              <OnboardingWizard />
+              <Suspense fallback={<FullScreenLoader />}>
+                <AppShellLayout />
+              </Suspense>
             </RequireAuth>
-          </Page>
-        }
-      />
-      {/* All /app/* routes share one mounted AppShellLayout — the parent
-       *  Route element renders <AppShell> + <Outlet/>, so the sidebar,
-       *  header, and WorkspaceSwitcher stay alive across navigation. Per-
-       *  child `<Page>` wrapper keeps the ErrorBoundary per-route so a
-       *  render error in one page doesn't unmount the whole shell. */}
-      <Route
-        path="/app"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<FullScreenLoader />}>
-              <AppShellLayout />
-            </Suspense>
-          </RequireAuth>
-        }
-      >
-        <Route
-          index
-          element={
-            <Page>
-              <DashboardPage />
-            </Page>
           }
-        />
-        <Route
-          path="guests"
-          element={
-            <Page>
-              <GuestsPage />
-            </Page>
-          }
-        />
-        <Route
-          path="budget"
-          element={
-            <Page>
-              <BudgetPage />
-            </Page>
-          }
-        />
-        <Route
-          path="seating"
-          element={
-            <Page>
-              <SeatingPage />
-            </Page>
-          }
-        />
-        <Route
-          path="logistics"
-          element={
-            <Page>
-              <LogisticsPage />
-            </Page>
-          }
-        />
-        <Route
-          path="schedule"
-          element={
-            <Page>
-              <SchedulePage />
-            </Page>
-          }
-        />
-        <Route
-          path="timeline"
-          element={
-            <Page>
-              <TimelinePage />
-            </Page>
-          }
-        />
-        {/* Canonical path is now `/app/vendors` (matches the public
+        >
+          <Route
+            index
+            element={
+              <Page>
+                <DashboardPage />
+              </Page>
+            }
+          />
+          <Route
+            path="guests"
+            element={
+              <Page>
+                <GuestsPage />
+              </Page>
+            }
+          />
+          <Route
+            path="budget"
+            element={
+              <Page>
+                <BudgetPage />
+              </Page>
+            }
+          />
+          <Route
+            path="seating"
+            element={
+              <Page>
+                <SeatingPage />
+              </Page>
+            }
+          />
+          <Route
+            path="logistics"
+            element={
+              <Page>
+                <LogisticsPage />
+              </Page>
+            }
+          />
+          <Route
+            path="schedule"
+            element={
+              <Page>
+                <SchedulePage />
+              </Page>
+            }
+          />
+          <Route
+            path="timeline"
+            element={
+              <Page>
+                <TimelinePage />
+              </Page>
+            }
+          />
+          {/* Canonical path is now `/app/vendors` (matches the public
             `/vendors` route + the new vendor_accounts/listings model
             landed in 3b08afb). The legacy `/app/suppliers` still mounts
             the same page so external links keep working until we replace
             it with a redirect. */}
-        <Route
-          path="vendors"
-          element={
-            <Page>
-              <SuppliersPage />
-            </Page>
-          }
-        />
-        <Route path="suppliers" element={<Navigate to="/app/vendors" replace />} />
-        {/* Outreach Inbox now lives as a section on /app/vendors — the
+          <Route
+            path="vendors"
+            element={
+              <Page>
+                <SuppliersPage />
+              </Page>
+            }
+          />
+          <Route path="suppliers" element={<Navigate to="/app/vendors" replace />} />
+          {/* Outreach Inbox now lives as a section on /app/vendors — the
             legacy URL keeps redirecting so emailed deep-links + bookmarks
             still land on the same workspace. */}
-        <Route path="outreach" element={<Navigate to="/app/vendors" replace />} />
-        <Route
-          path="planning"
-          element={
-            <Page>
-              <PlanningPage />
-            </Page>
-          }
-        />
-        <Route
-          path="honeymoon"
-          element={
-            <Page>
-              <HoneymoonPage />
-            </Page>
-          }
-        />
-        <Route
-          path="guest-page"
-          element={
-            <Page>
-              <GuestPageEditorPage />
-            </Page>
-          }
-        />
-        {/* Legacy URLs from the older split — redirect into the merged
-         *  /app/guest-page so existing bookmarks and external links keep
-         *  resolving for at least one release after the merger. */}
-        <Route path="guest-portal" element={<Navigate to="/app/guest-page" replace />} />
-        <Route path="wedding-site" element={<Navigate to="/app/guest-page" replace />} />
-        <Route
-          path="moodboard"
-          element={
-            <Page>
-              <MoodboardPage />
-            </Page>
-          }
-        />
-        <Route
-          path="media"
-          element={
-            <Page>
-              <MediaPage />
-            </Page>
-          }
-        />
-        {/* Legacy /app/profile route — redirects to the new Settings hub.
+          <Route path="outreach" element={<Navigate to="/app/vendors" replace />} />
+          <Route
+            path="planning"
+            element={
+              <Page>
+                <PlanningPage />
+              </Page>
+            }
+          />
+          <Route
+            path="honeymoon"
+            element={
+              <Page>
+                <HoneymoonPage />
+              </Page>
+            }
+          />
+          <Route
+            path="guest-page"
+            element={
+              <Page>
+                <GuestPageEditorPage />
+              </Page>
+            }
+          />
+          {/* Legacy URLs from the older split — redirect into the merged
+           *  /app/guest-page so existing bookmarks and external links keep
+           *  resolving for at least one release after the merger. */}
+          <Route path="guest-portal" element={<Navigate to="/app/guest-page" replace />} />
+          <Route path="wedding-site" element={<Navigate to="/app/guest-page" replace />} />
+          <Route
+            path="moodboard"
+            element={
+              <Page>
+                <MoodboardPage />
+              </Page>
+            }
+          />
+          <Route
+            path="media"
+            element={
+              <Page>
+                <MediaPage />
+              </Page>
+            }
+          />
+          {/* Legacy /app/profile route — redirects to the new Settings hub.
             Kept so any bookmarks, emailed deep-links, or old in-app
             references (ProfileMenu, WorkspaceSwitcher) keep landing
             users on a working page during the transition window. */}
-        <Route path="profile" element={<Navigate to="/app/settings/account" replace />} />
-        <Route
-          path="settings"
-          element={
-            <Page>
-              <SettingsLayout />
-            </Page>
-          }
-        >
-          <Route index element={<Navigate to="account" replace />} />
-          <Route path="account" element={<ProfilePage tab="account" />} />
-          <Route path="workspace" element={<ProfilePage tab="workspace" />} />
-          <Route path="planning" element={<ProfilePage tab="planning" />} />
-          <Route path="data" element={<ProfilePage tab="data" />} />
+          <Route path="profile" element={<Navigate to="/app/settings/account" replace />} />
+          <Route
+            path="settings"
+            element={
+              <Page>
+                <SettingsLayout />
+              </Page>
+            }
+          >
+            <Route index element={<Navigate to="account" replace />} />
+            <Route path="account" element={<ProfilePage tab="account" />} />
+            <Route path="workspace" element={<ProfilePage tab="workspace" />} />
+            <Route path="planning" element={<ProfilePage tab="planning" />} />
+            <Route path="data" element={<ProfilePage tab="data" />} />
+          </Route>
+          <Route
+            path="admin/suppliers"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminSuppliersPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="suppliers/:supplier_id"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <SupplierDetailPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/users"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminUsersPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/categories"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminCategoriesPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/vendor-waitlist"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminVendorWaitlistPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/feedback"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminFeedbackPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/blog"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminBlogPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/analytics"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminAnalyticsPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
         </Route>
         <Route
-          path="admin/suppliers"
+          path="*"
           element={
             <Page>
-              <RequireAdmin>
-                <AdminSuppliersPage />
-              </RequireAdmin>
+              <NotFoundPage />
             </Page>
           }
         />
-        <Route
-          path="suppliers/:supplier_id"
-          element={
-            <Page>
-              <RequireAdmin>
-                <SupplierDetailPage />
-              </RequireAdmin>
-            </Page>
-          }
-        />
-        <Route
-          path="admin/users"
-          element={
-            <Page>
-              <RequireAdmin>
-                <AdminUsersPage />
-              </RequireAdmin>
-            </Page>
-          }
-        />
-        <Route
-          path="admin/categories"
-          element={
-            <Page>
-              <RequireAdmin>
-                <AdminCategoriesPage />
-              </RequireAdmin>
-            </Page>
-          }
-        />
-        <Route
-          path="admin/vendor-waitlist"
-          element={
-            <Page>
-              <RequireAdmin>
-                <AdminVendorWaitlistPage />
-              </RequireAdmin>
-            </Page>
-          }
-        />
-        <Route
-          path="admin/feedback"
-          element={
-            <Page>
-              <RequireAdmin>
-                <AdminFeedbackPage />
-              </RequireAdmin>
-            </Page>
-          }
-        />
-        <Route
-          path="admin/blog"
-          element={
-            <Page>
-              <RequireAdmin>
-                <AdminBlogPage />
-              </RequireAdmin>
-            </Page>
-          }
-        />
-        <Route
-          path="admin/analytics"
-          element={
-            <Page>
-              <RequireAdmin>
-                <AdminAnalyticsPage />
-              </RequireAdmin>
-            </Page>
-          }
-        />
-      </Route>
-      <Route
-        path="*"
-        element={
-          <Page>
-            <NotFoundPage />
-          </Page>
-        }
-      />
-    </Routes>
+      </Routes>
+    </>
   );
 }
