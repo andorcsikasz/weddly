@@ -688,6 +688,22 @@ export default function DashboardPage() {
     }
   }
 
+  async function toggleCountLock() {
+    if (data === "loading" || data === null) return;
+    const next = !data.couple.planning_count_locked;
+    try {
+      const r = await coupleApi.update(
+        next
+          ? { planning_count_locked: true, planning_count: effectivePlanningCount }
+          : { planning_count_locked: false },
+      );
+      setData({ ...data, couple: r.couple });
+    } catch {
+      const r = await coupleApi.current();
+      if (r.couple) setData({ ...data, couple: r.couple });
+    }
+  }
+
   // Toggle freeze state for a category. Optimistic local update + server
   // PATCH — refetch on failure so the row reverts. The set lives on `couple`
   // so it survives reload and propagates to the budget page automatically.
@@ -1246,6 +1262,8 @@ export default function DashboardPage() {
               onBoundsChange={saveBounds}
               onEditPlanned={setCategoryPlanned}
               onCapChange={saveCap}
+              countLocked={couple.planning_count_locked}
+              onCountLockToggle={toggleCountLock}
               frozenCategories={frozenCategoriesSet}
               onToggleFreeze={toggleFreeze}
               onAddCustomRow={addCustomRow}
