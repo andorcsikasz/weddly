@@ -162,7 +162,7 @@ export default function BlogPostPage() {
 
             <section
               lang={locale}
-              className="mt-12 space-y-7 text-base leading-loose text-ink-800 dark:text-paper-100 sm:text-lg [hyphens:auto] [text-wrap:pretty]"
+              className="mt-12 space-y-5 text-base leading-loose text-ink-800 dark:text-paper-100 sm:text-lg [hyphens:auto] [text-wrap:pretty]"
             >
               {copy.body.map((block, i) => (
                 <Block key={i} block={block} />
@@ -258,7 +258,7 @@ function Block({ block }: { block: BlogBlock }) {
   }
   if (block.type === "ul") {
     return (
-      <ul className="!my-5 space-y-2.5 pl-5">
+      <ul className="!my-4 space-y-2 pl-5">
         {block.items.map((item, i) => (
           <li key={i} className="list-disc leading-relaxed">
             {item}
