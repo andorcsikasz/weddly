@@ -409,10 +409,10 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     category: { hu: "Idézetek", en: "Verses" },
     hu: {
       title: "Bibliai idézetek esküvőre: igék szeretetről, házasságról és közös útról",
-      lead: "Összegyűjtöttük a legszebb bibliai igéket: szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
+      lead: "A legszebb bibliai igék esküvőre: szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
       seo_title: "Bibliai idézetek esküvőre: 30+ ige szeretetről és házasságról",
       seo_description:
-        "Összegyűjtöttük a legszebb bibliai idézeteket esküvőre: igék szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
+        "A legszebb bibliai idézetek esküvőre: igék szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
       body: [
         {
           type: "p",
@@ -420,12 +420,12 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A klasszikus, ünnepélyes magyar fordításból válogattunk, mert ennek van a leghagyományosabb esküvői hangulata. Ha modernebb nyelvezetet szeretnétek, az új fordítások hasonló mélységgel beszélnek, csak közérthetőbb stílusban.",
+          text: "A klasszikus, ünnepélyes magyar fordításnak van a leghagyományosabb esküvői hangulata, ezért az alábbi igék ebből szólalnak meg. Ha modernebb nyelvezet áll közelebb hozzátok, az új fordítások hasonló mélységgel beszélnek, csak közérthetőbb stílusban.",
         },
         { type: "h2", text: "Rövid bibliai idézetek esküvői meghívóra" },
         {
           type: "p",
-          text: "Ezeket a rövid igéket jól lehet használni meghívón, ültetőkártyán, az esküvői weboldal nyitólapján vagy a vendégkönyv mottójaként.",
+          text: "Egy rövid ige önmagában is megáll a meghívón, az ültetőkártyán, az esküvői weboldal nyitólapján vagy a vendégkönyv mottójaként.",
         },
         {
           type: "ul",
@@ -725,7 +725,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Melyik bibliai idézet illik hozzátok?" },
         {
           type: "p",
-          text: "Néhány gondolat a választáshoz: gondoljatok arra, milyen hangulatot szeretnétek megütni. A klasszikus, ünnepélyes szöveg illik a templomi esküvőhöz; az Énekek éneke költőibb, jobban illik szabadtéri, romantikus szertartáshoz. Ha rövid igét akartok a meghívóra, az 1Korinthus 13,13 vagy az Énekek éneke 2,16 mindig jól mutat.",
+          text: "A választáshoz érdemes arra figyelni, milyen hangulatot szeretnétek megütni. A klasszikus, ünnepélyes szöveg illik a templomi esküvőhöz, az Énekek éneke költőibb, közelebb áll egy szabadtéri, romantikus szertartáshoz. Rövid meghívóra az 1Korinthus 13,13 vagy az Énekek éneke 2,16 csendesen, de erősen szólal meg.",
         },
         {
           type: "p",
@@ -761,7 +761,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         { type: "h3", text: "Klasszikus vagy modern fordítású idézetet válasszunk?" },
         {
           type: "p",
-          text: "A klasszikus magyar fordítás ünnepélyesebb, archaikus hangulatú. A modernebb fordítások közérthetőbbek és könnyedebbek. Esküvőhöz általában a klasszikus változat közelebb áll a hagyományhoz, mellé pedig érdemes egy rövid, saját szóval írt magyarázatot is tenni.",
+          text: "A klasszikus magyar fordítás ünnepélyesebb, archaikus hangulatú. A modernebb fordítások közérthetőbbek és könnyedebbek. Esküvőhöz általában a klasszikus változat közelebb áll a hagyományhoz, és a saját szavakkal írt rövid magyarázat segít, hogy a vendégeknek is megnyíljon a jelentése.",
         },
       ],
     },
@@ -953,7 +953,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       lead: "Hogyan osszátok fel a keretet, hogyan számoljatok vendégszámmal, és hogyan kerülhetitek el a túlköltést.",
       seo_title: "Esküvői költségvetés készítése · Wēddly",
       seo_description:
-        "Esküvői költségvetés egyszerűen: mutatjuk, hogyan osszátok fel a keretet, hogyan számoljatok vendégszámmal, és hogyan kerülhetitek el a túlköltést.",
+        "Esküvői költségvetés egyszerűen: hogyan osszátok fel a keretet, hogyan számoljatok vendégszámmal, és hogyan kerülhetitek el a túlköltést.",
       body: [
         {
           type: "p",
@@ -1016,7 +1016,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Sokat segít, ha a költségvetés, a vendéglista és az ültetés ugyanazon a felületen él, így amikor mozdul a vendégszám, nem kell három külön helyen átírni. (Ezt egyébként pont ezért építettük így a Wēddly-be.)",
+          text: "Sokat segít, ha a költségvetés, a vendéglista és az ültetés ugyanazon a felületen él, így amikor mozdul a vendégszám, nem kell három külön helyen átírni.",
         },
         { type: "h2", text: "Rövid checklist" },
         {
@@ -1200,7 +1200,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Sokat ér, ha a vendéglista, az RSVP és az ültetés ugyanott él, mert így egy lemondást vagy egy új ételérzékenységet elég egyszer beírni. (A Wēddly-t pont emiatt raktuk össze így.)",
+          text: "Sokat ér, ha a vendéglista, az RSVP és az ültetés ugyanott él, mert így egy lemondást vagy egy új ételérzékenységet elég egyszer beírni.",
         },
         { type: "h2", text: "Rövid checklist" },
         {
@@ -1378,7 +1378,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Mi pont ezért építettük a Wēddly ültetési felületét úgy, hogy a vendégeket egyszerűen lehessen mozgatni, és a végén A4-es, A6-os vagy A3-as méretben nyomtatható legyen mindaz, amire szükség van.",
+          text: "Ezért érdemes olyan eszközt választani, ahol a vendégeket egyszerűen tudjátok mozgatni, és a végén A4-es, A6-os vagy A3-as méretben is nyomtatható lesz minden, amire szükségetek van.",
         },
         { type: "h2", text: "Rövid checklist" },
         {
@@ -1551,7 +1551,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Mi a Wēddly-ben pont ezért adunk minden vendégnek saját RSVP linket, a válaszaik pedig maguktól odakerülnek, ahol kellenek: a vendéglistába.",
+          text: "Ezért segít, ha minden vendég saját RSVP linket kap, és a válaszaik egyenesen oda kerülnek, ahol használjátok őket: a vendéglistába.",
         },
         {
           type: "cta",
@@ -1633,10 +1633,10 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     category: { hu: "Tervezés", en: "Planning" },
     hu: {
       title: "Esküvőszervezési checklist 12 hónapra: mit mikor intézzetek?",
-      lead: "Lépésről lépésre mutatjuk, mit érdemes intézni egy évvel, fél évvel és egy hónappal az esküvő előtt.",
+      lead: "Lépésről lépésre, mit érdemes intézni egy évvel, fél évvel és egy hónappal az esküvő előtt.",
       seo_title: "Esküvőszervezési checklist 12 hónapra · Wēddly",
       seo_description:
-        "Esküvőszervezési checklist 12 hónapra: lépésről lépésre mutatjuk, mit érdemes intézni egy évvel, fél évvel és egy hónappal az esküvő előtt.",
+        "Esküvőszervezési checklist 12 hónapra: lépésről lépésre, mit érdemes intézni egy évvel, fél évvel és egy hónappal az esküvő előtt.",
       body: [
         {
           type: "p",
@@ -2255,7 +2255,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "A jó hír, hogy az esküvői hagyományok ma már inkább lehetőségek, mint szigorú szabályok. Összegyűjtöttük a legfontosabb tudnivalókat, gyakorlati magyarázatokkal.",
+          text: "A jó hír, hogy az esküvői hagyományok ma már inkább lehetőségek, mint szigorú szabályok. A legtöbb klasszikus szokást nyugodtan a saját elképzelésetekhez igazíthatjátok.",
         },
         { type: "h2", text: "1. Jegygyűrű vagy karikagyűrű? Mi a különbség?" },
         {
@@ -2544,7 +2544,7 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Mégis sok jegyespár csak nagyjából tudja, mire számítson. Mikor vonul be a menyasszony? Mikor jön a gyűrűhúzás? Mikor kell aláírni? És mi történik egy szertartásvezetős esküvőn? Nézzük végig gyakorlati szemmel.",
+          text: "Mégis sok jegyespár csak nagyjából tudja, mire számítson. Mikor vonul be a menyasszony? Mikor jön a gyűrűhúzás? Mikor kell aláírni? És mi történik egy szertartásvezetős esküvőn? Érdemes előre tisztázni a sorrendet, hogy a nap ne legyen meglepetés.",
         },
         { type: "h2", text: "A polgári szertartás menete" },
         {
@@ -3017,12 +3017,12 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Mutatjuk, mit érdemes a hat hónap minden szakaszában elintézni, hogy ne torlódjon össze minden az utolsó hetekre.",
+          text: "A hat hónap minden szakaszában más-más teendők kerülnek előtérbe, így nem torlódik össze minden az utolsó hetekre.",
         },
         { type: "h2", text: "6 hónappal az esküvő előtt" },
         {
           type: "p",
-          text: "Ezek azok a döntések, amelyek nélkül a többi nem indulhat. A 12 hónapos verzióban ezt három hónapra szétosztva intézitek; itt egy hét, maximum két alatt érdemes túl lenni rajtuk.",
+          text: "Ezek azok a döntések, amelyek nélkül a többi nem indulhat. Több időnél ezeket akár három hónapra is el lehet osztani, hat hónapos időkereten belül viszont egy-két hét alatt érdemes túl lenni rajtuk.",
         },
         {
           type: "ul",
