@@ -31,12 +31,15 @@ process.env.ADMIN_EMAILS = "admin@test.test";
 // requests during the suite and tag every event with the test environment.
 process.env.SENTRY_DSN = "";
 process.env.SENTRY_TRACES_SAMPLE_RATE = "0";
-// Amadeus (honeymoon flights API) gets zeroed so the tests can't hit the
-// real sandbox by accident — every Amadeus call short-circuits when the
-// credentials are missing.
+// Amadeus + SerpApi (honeymoon flights) get zeroed so the tests can't hit
+// the real APIs by accident — every call short-circuits when the
+// credentials are missing. Amadeus is the legacy fallback (kept in tree
+// but no longer imported by the honeymoon flow); SerpApi is the live
+// integration in production.
 process.env.AMADEUS_BASE_URL = "";
 process.env.AMADEUS_CLIENT_ID = "";
 process.env.AMADEUS_CLIENT_SECRET = "";
+process.env.SERPAPI_KEY = "";
 // Enables the Google ID-token verifier's HMAC test-bearer path so the E2E
 // suite can exercise /api/auth/google without hitting Google. Tests mint
 // bearers via mintTestBearer(); see backend/src/lib/google_oauth.ts.

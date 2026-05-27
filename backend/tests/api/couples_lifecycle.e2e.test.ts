@@ -3,13 +3,14 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
 import { db } from "../../src/db";
+import { lookupDestinationIata } from "../../src/domain/destination_iata";
 
 // All tests in this file run sequentially (no parallelism), and each test
 // starts with wipeAll() so couple_id and user_id sequences reset cleanly.
 //
-// We deliberately do NOT mock upstream Pinterest / Nominatim / Amadeus —
+// We deliberately do NOT mock upstream Pinterest / Nominatim / SerpApi —
 // the test exercises the failure paths and the "no credentials configured"
-// path for Amadeus instead. Pinterest / Nominatim tests assert the input
+// path for SerpApi instead. Pinterest / Nominatim tests assert the input
 // validation and rate-limit shape; network behaviour is observable but
 // not asserted so the suite stays hermetic.
 
@@ -1409,14 +1410,13 @@ describe("couples_lifecycle: honeymoon flight estimate", () => {
     expect(r.data.estimate).toBeNull();
   });
 
-  test("with destination + dates but Amadeus unconfigured → estimate is null", async () => {
+  test("with destination + dates but SerpApi unconfigured → estimate is null", async () => {
     wipeAll();
-    const { token } = await bootstrapCouple("hm-noamadeus@weddly.test");
+    const { token } = await bootstrapCouple("hm-noserpapi@weddly.test");
 
-    // Set the honeymoon fields. Without AMADEUS_CLIENT_ID/SECRET, the
-    // getFlightEstimate helper bails out before hitting the network and
-    // returns null — this is the documented "no credentials configured"
-    // sensible-static-fallback path.
+    // Set the honeymoon fields. Without SERPAPI_KEY, the getFlightEstimate
+    // helper bails out before hitting the network and returns null — this
+    // is the documented "no credentials configured" silent-hide path.
     await req(
       "PATCH",
       "/api/couples/current",
@@ -1488,7 +1488,27 @@ describe("couples_lifecycle: honeymoon flight estimate", () => {
     expect(r.status).toBe(400);
   });
 
-  test("flight-estimate: offers array is empty when Amadeus unconfigured", async () => {
+  test("destination_iata lookup: hits curated cities (full + breadcrumb)", () => {
+    // Plain single-word city — full-string normalisation path.
+    expect(lookupDestinationIata("Bali")).toBe("DPS");
+    expect(lookupDestinationIata("Maldives")).toBe("MLE");
+    // Diacritics + casing are normalised away.
+    expect(lookupDestinationIata("Málaga")).toBe("AGP");
+    expect(lookupDestinationIata("MÜNCHEN")).toBe("MUC");
+    // Nominatim breadcrumb — the city is a middle segment, not the head.
+    // Ronda has no airport; the table maps it to AGP directly so the user
+    // doesn't need to know the nearest hub.
+    expect(lookupDestinationIata("Ronda, Málaga, Andalúzia, Spanyolország")).toBe("AGP");
+    expect(lookupDestinationIata("Positano, Salerno, Campania, Italia")).toBe("NAP");
+  });
+
+  test("destination_iata lookup: returns null for misses (caller falls back)", () => {
+    expect(lookupDestinationIata("Some Tiny Village 42")).toBeNull();
+    expect(lookupDestinationIata("")).toBeNull();
+    expect(lookupDestinationIata("   ")).toBeNull();
+  });
+
+  test("flight-estimate: offers array is empty when SerpApi unconfigured", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("hm-shape@weddly.test");
     await req(

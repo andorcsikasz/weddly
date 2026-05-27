@@ -1,16 +1,23 @@
 // Honeymoon flight estimate — server-side orchestration on top of the thin
-// Amadeus client. Caches up to 3 offers per route in `flight_estimates` for
-// 12 h so we stay well within the 2 000-calls/month Amadeus Self-Service
-// free quota: the same dates + route shared across all couples hit the cache.
+// SerpApi client (Google Flights). Caches up to 3 offers per route in
+// `flight_estimates` for 12 h so we stay well within SerpApi's 100-search
+// /month free tier: every couple targeting the same route hits the cache.
+//
+// Destination → IATA resolution is hybrid: a curated lookup of ~150 common
+// honeymoon destinations gets first crack (zero API cost, instant), and
+// SerpApi's general google-search engine is the fallback for anything not in
+// the table. Whichever resolver succeeds is cached on the estimate row so
+// the next refresh skips the lookup entirely.
 //
 // Returns `null` whenever the inputs are incomplete (no destination, no
-// dates), Amadeus isn't configured (env vars missing), or no offer comes
+// dates), SerpApi isn't configured (env var missing), or no offer comes
 // back. Callers (HoneymoonPage) just hide the estimate card in that case.
 
 import type { CoupleRow } from "./couples";
 import type { FlightEstimate, FlightOffer } from "@shared/types";
 import { db } from "../db";
-import { amadeusConfigured, getTopOffers, resolveIata } from "../lib/amadeus";
+import { lookupDestinationIata } from "./destination_iata";
+import { getTopOffers, resolveIataViaSearch, serpapiConfigured } from "../lib/serpapi";
 import { log as logger } from "../lib/logger";
 
 /** Round-trip estimate is priced for two adults — the standard "honeymoon"
@@ -152,18 +159,23 @@ export async function getFlightEstimate(couple: CoupleRow): Promise<FlightEstima
     return toEstimate(cached);
   }
 
-  // No (or stale) cache → upstream lookup. If Amadeus isn't configured we
-  // bail before even trying the network so dev environments without keys
+  // No (or stale) cache → upstream lookup. If SerpApi isn't configured we
+  // bail before even trying the network so dev environments without a key
   // don't spam the warning log.
-  if (!amadeusConfigured()) return null;
+  if (!serpapiConfigured()) return null;
 
   let destinationIata: string | null = cached?.destination_iata ?? null;
   if (!destinationIata) {
-    destinationIata = await resolveIata(destination);
+    // Curated lookup first — zero API cost, covers the top ~150 honeymoon
+    // destinations. Only fall back to SerpApi's google search engine when
+    // the lookup misses (niche city / typo / unusual spelling).
+    destinationIata = lookupDestinationIata(destination);
+    if (!destinationIata) destinationIata = await resolveIataViaSearch(destination);
   }
   if (!destinationIata) {
-    // The keyword didn't resolve to anything Amadeus knows. Don't cache —
-    // user might rephrase, or the lookup might succeed on a later attempt.
+    // No segment matched the table and SerpApi search didn't surface a
+    // plausible IATA either. Don't cache — user might rephrase, or the
+    // lookup might succeed on a later attempt.
     logger.info("flight_estimate.iata_unresolved", { destination });
     return null;
   }
