@@ -3042,11 +3042,8 @@ const hu: LocaleMessages = {
     hero_name_bride_placeholder: "Menyasszony",
     hero_name_groom_placeholder: "Vőlegény",
     hero_name_save_error:
-      "A neveket nem sikerült menteni — minden mező 1–100 karakter között legyen.",
+      "A neveket nem sikerült menteni, minden mező 1–100 karakter között legyen.",
     hero_name_save_success: "Nevek frissítve.",
-    hero_name_locked_caption: "Újra szerkeszthető {n} nap múlva",
-    hero_name_locked_error:
-      "Túl rövid idő telt el az utolsó névmódosítás óta — {n} nap múlva próbáld újra.",
     account_title: "A fiókod",
     account_body:
       "Így jelensz meg a Weddly-n. Az e-mailed és jelszavad a Biztonság kártyában kezelhető.",

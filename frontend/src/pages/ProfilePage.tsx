@@ -19,7 +19,6 @@ import {
   ChevronDown,
   Download,
   Heart,
-  Lock,
   LogOut,
   Pencil,
   ShieldCheck,
@@ -1054,24 +1053,6 @@ function ZoneLabel({ children }: { children: ReactNode }) {
   );
 }
 
-/** Mandatory wait between two bride/groom renames. Kept in sync with the
- *  backend `COUPLE_NAMES_COOLDOWN_MS` constant in routes/couples.ts — the
- *  UI shows a lock badge + countdown so the partner who tries to rename
- *  during the window understands why it's blocked. */
-const NAMES_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** `null` when the couple is free to rename; otherwise the days-remaining
- *  count + the unix-ms timestamp at which the next rename unlocks. */
-function nameCooldownState(couple: Couple): { daysLeft: number; editableAt: number } | null {
-  const ts = couple.names_last_changed_at;
-  if (!ts) return null;
-  const editableAt = ts + NAMES_COOLDOWN_MS;
-  const now = Date.now();
-  if (now >= editableAt) return null;
-  const daysLeft = Math.max(1, Math.ceil((editableAt - now) / (24 * 60 * 60 * 1000)));
-  return { daysLeft, editableAt };
-}
-
 /** Top-of-page identity strip. Replaces the bare "Profile" h1 with a
  *  wedding-themed band: couple monogram, names, the wedding date, and a
  *  big tabular-nums days-until counter. Renders a graceful placeholder
@@ -1079,9 +1060,9 @@ function nameCooldownState(couple: Couple): { daysLeft: number; editableAt: numb
  *  empty space. Wedding-day = today fires a celebratory line; past dates
  *  flip to "X days married" so the counter doesn't read negative.
  *
- *  The names line is click-to-edit (pencil → two inline inputs); once a
- *  rename lands the row locks for 7 days and renders a lock badge plus a
- *  small countdown caption so the partner who tries again knows why. */
+ *  The names line is click-to-edit: pencil reveals two inline inputs
+ *  (bride + groom) with Save / Cancel. No rate limit; partners can
+ *  iterate freely. */
 export function ProfileHero({
   couple,
   t,
@@ -1092,10 +1073,8 @@ export function ProfileHero({
   t: T;
   locale: Locale;
   /** Called with the refreshed couple after a successful rename so the
-   *  parent page can update its in-memory state (and rebroadcast the new
-   *  `names_last_changed_at` to other surfaces). Optional — when the
-   *  parent doesn't pass one (legacy callers) the hero still saves, the
-   *  parent just won't see the update until the next /current fetch. */
+   *  parent page can update its in-memory state. Optional: legacy callers
+   *  without it still see the rename on the next /current fetch. */
   onUpdated?: (next: Couple) => void;
 }) {
   const toast = useToast();
@@ -1125,11 +1104,8 @@ export function ProfileHero({
   const sep = t("profile.activity_names_separator");
   const namesLine = bride && groom ? `${bride}${sep}${groom}` : bride || groom || "";
   const days = daysUntilWedding(couple.wedding_date);
-  const cooldown = nameCooldownState(couple);
-  const locked = cooldown !== null;
 
   function beginEdit() {
-    if (locked) return;
     setBrideInput(couple?.bride_name ?? "");
     setGroomInput(couple?.groom_name ?? "");
     setError(null);
@@ -1170,20 +1146,7 @@ export function ProfileHero({
       toast.success(t("profile.hero_name_save_success"));
       setEditing(false);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 429) {
-        const detail = err.detail as { code?: string; editable_at?: number } | null;
-        if (detail?.code === "names_cooldown" && typeof detail.editable_at === "number") {
-          const daysLeft = Math.max(
-            1,
-            Math.ceil((detail.editable_at - Date.now()) / (24 * 60 * 60 * 1000)),
-          );
-          setError(t("profile.hero_name_locked_error", { n: daysLeft }));
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError(err instanceof ApiError ? err.message : t("common.error_generic"));
-      }
+      setError(err instanceof ApiError ? err.message : t("common.error_generic"));
     } finally {
       setSaving(false);
     }
@@ -1253,37 +1216,22 @@ export function ProfileHero({
                 <p className="truncate font-serif text-xl leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
                   {namesLine || t("profile.title")}
                 </p>
-                {locked ? (
-                  <span
-                    className="inline-flex shrink-0 items-center text-ink-400 dark:text-umber-300"
-                    title={t("profile.hero_name_locked_caption", { n: cooldown.daysLeft })}
-                    aria-label={t("profile.hero_name_locked_caption", { n: cooldown.daysLeft })}
-                  >
-                    <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-                  </span>
-                ) : (
-                  <button
-                    ref={editTriggerRef}
-                    type="button"
-                    onClick={beginEdit}
-                    className="inline-flex shrink-0 items-center rounded-full p-1 text-ink-400 hover:bg-paper-100 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                    aria-label={t("profile.hero_name_edit")}
-                    title={t("profile.hero_name_edit")}
-                  >
-                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                  </button>
-                )}
+                <button
+                  ref={editTriggerRef}
+                  type="button"
+                  onClick={beginEdit}
+                  className="inline-flex shrink-0 items-center rounded-full p-1 text-ink-400 hover:bg-paper-100 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                  aria-label={t("profile.hero_name_edit")}
+                  title={t("profile.hero_name_edit")}
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
               </div>
               <p className="mt-0.5 truncate text-xs text-ink-600 sm:mt-1 sm:text-sm dark:text-umber-200">
                 {couple.wedding_date
                   ? formatDate(couple.wedding_date, locale)
                   : t("profile.hero_date_tbd")}
               </p>
-              {locked && (
-                <p className="mt-0.5 truncate text-[11px] text-ink-500 dark:text-umber-300">
-                  {t("profile.hero_name_locked_caption", { n: cooldown.daysLeft })}
-                </p>
-              )}
             </>
           )}
         </div>

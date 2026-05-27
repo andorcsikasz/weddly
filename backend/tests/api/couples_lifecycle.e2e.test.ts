@@ -1752,18 +1752,15 @@ describe("couples_lifecycle: welcome-desk mode toggle", () => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-//   COUPLES — 7-day rename cooldown on bride/groom (workspace hero edit)
+//   COUPLES: bride/groom rename via PATCH (no rate limit)
 // ════════════════════════════════════════════════════════════════════════════
 
-describe("couples_lifecycle: 7-day name-rename cooldown", () => {
-  test("first rename succeeds, second rename inside the window returns 429 with names_cooldown", async () => {
+describe("couples_lifecycle: bride/groom rename", () => {
+  test("partners can rename back-to-back, no cooldown gate", async () => {
     wipeAll();
-    const { token, coupleId } = await bootstrapCouple("rename-cooldown@weddly.test");
+    const { token, coupleId } = await bootstrapCouple("rename-noop@weddly.test");
 
-    // First rename — bride/groom both differ from the bootstrap defaults
-    // (which came from `display_name` only, so bride/groom started empty
-    // strings). Stamps names_last_changed_at.
-    const first = await req<{ couple: { bride_name: string; names_last_changed_at: number } }>(
+    const first = await req<{ couple: { bride_name: string; groom_name: string } }>(
       "PATCH",
       "/api/couples/current",
       { bride_name: "Anna", groom_name: "Bence" },
@@ -1771,76 +1768,8 @@ describe("couples_lifecycle: 7-day name-rename cooldown", () => {
     );
     expect(first.status).toBe(200);
     expect(first.data.couple.bride_name).toBe("Anna");
-    expect(first.data.couple.names_last_changed_at).toBeGreaterThan(0);
 
-    // Second rename within the 7-day window → 429 with names_cooldown.
-    const second = await req<{
-      error?: string;
-      detail?: { code?: string; editable_at?: number };
-    }>("PATCH", "/api/couples/current", { bride_name: "Csilla", groom_name: "Bence" }, { token });
-    expect(second.status).toBe(429);
-    expect(second.data.detail?.code).toBe("names_cooldown");
-    expect(second.data.detail?.editable_at).toBeGreaterThan(Date.now());
-
-    // DB row unchanged — bride_name still Anna.
-    const row = db.prepare("SELECT bride_name FROM couples WHERE id = ?").get(coupleId) as {
-      bride_name: string;
-    };
-    expect(row.bride_name).toBe("Anna");
-  });
-
-  test("no-op PATCH with identical names sails through and does NOT lock", async () => {
-    wipeAll();
-    const { token } = await bootstrapCouple("rename-noop@weddly.test");
-
-    // Initial real rename — sets the stamp.
-    const init = await req<{ couple: { names_last_changed_at: number } }>(
-      "PATCH",
-      "/api/couples/current",
-      { bride_name: "Anna", groom_name: "Bence" },
-      { token },
-    );
-    expect(init.status).toBe(200);
-    const firstStamp = init.data.couple.names_last_changed_at;
-    expect(firstStamp).toBeGreaterThan(0);
-
-    // PATCH with the SAME bride/groom — must succeed (no diff, no cooldown
-    // gate fires) and the stamp must NOT advance.
-    const same = await req<{ couple: { names_last_changed_at: number } }>(
-      "PATCH",
-      "/api/couples/current",
-      // Pair the no-op with a real diff on a different field so the handler
-      // still has fields to update — bride/groom alone with no change would
-      // produce an empty `updates` array and return 400.
-      { bride_name: "Anna", groom_name: "Bence", welcome_desk_active: true },
-      { token },
-    );
-    expect(same.status).toBe(200);
-    expect(same.data.couple.names_last_changed_at).toBe(firstStamp);
-  });
-
-  test("rolling the timestamp back past 7 days unlocks the rename", async () => {
-    wipeAll();
-    const { token, coupleId } = await bootstrapCouple("rename-unlock@weddly.test");
-
-    // Lock the couple in.
-    const first = await req<{ couple: { names_last_changed_at: number } }>(
-      "PATCH",
-      "/api/couples/current",
-      { bride_name: "Anna", groom_name: "Bence" },
-      { token },
-    );
-    expect(first.status).toBe(200);
-
-    // Backdate the stamp by 8 days — simulates "the cooldown has expired".
-    // Mirrors what `setTimeout(8 days)` would do; we don't actually wait.
-    const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
-    db.prepare("UPDATE couples SET names_last_changed_at = ? WHERE id = ?").run(
-      eightDaysAgo,
-      coupleId,
-    );
-
-    const second = await req<{ couple: { bride_name: string; names_last_changed_at: number } }>(
+    const second = await req<{ couple: { bride_name: string } }>(
       "PATCH",
       "/api/couples/current",
       { bride_name: "Csilla", groom_name: "Bence" },
@@ -1848,7 +1777,11 @@ describe("couples_lifecycle: 7-day name-rename cooldown", () => {
     );
     expect(second.status).toBe(200);
     expect(second.data.couple.bride_name).toBe("Csilla");
-    expect(second.data.couple.names_last_changed_at).toBeGreaterThan(eightDaysAgo);
+
+    const row = db.prepare("SELECT bride_name FROM couples WHERE id = ?").get(coupleId) as {
+      bride_name: string;
+    };
+    expect(row.bride_name).toBe("Csilla");
   });
 });
 

@@ -3407,21 +3407,13 @@ export interface LocaleMessages {
      *  where the verbose "Még X nap az esküvőig" wouldn't fit and is
      *  also redundant with the number already shown above. */
     hero_days_caption_short: string;
-    /** Inline rename UX on the hero band. Pencil → 2 inputs → save with a
-     *  7-day server-side cooldown after a successful change, surfaced as
-     *  a lock badge + countdown caption ("Editable again in N days"). */
+    /** Inline rename UX on the hero band. Pencil reveals two inline
+     *  inputs (bride + groom) with Save / Cancel. No rate limit. */
     hero_name_edit: string;
     hero_name_bride_placeholder: string;
     hero_name_groom_placeholder: string;
     hero_name_save_error: string;
     hero_name_save_success: string;
-    /** Locked-state caption rendered under the date when the rename
-     *  cooldown is active. `{n}` is the (1-indexed) days-until-unlock. */
-    hero_name_locked_caption: string;
-    /** Inline error shown if the server rejects the rename with a 429
-     *  (e.g. a second device tried in the same minute). `{n}` is the
-     *  days-until-unlock parsed from the server response. */
-    hero_name_locked_error: string;
     /** Account section — surfaces the signed-in user's own identity so the
      *  page has somewhere to read "Your account" instead of jumping straight
      *  to partner / workspace. */
