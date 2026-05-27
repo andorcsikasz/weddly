@@ -162,7 +162,7 @@ export default function BlogPostPage() {
 
             <section
               lang={locale}
-              className="mt-10 space-y-6 text-base leading-loose text-ink-800 dark:text-paper-100 sm:text-lg [hyphens:auto] [text-wrap:pretty]"
+              className="mt-12 space-y-7 text-base leading-loose text-ink-800 dark:text-paper-100 sm:text-lg [hyphens:auto] [text-wrap:pretty]"
             >
               {copy.body.map((block, i) => (
                 <Block key={i} block={block} />
@@ -240,22 +240,25 @@ function Block({ block }: { block: BlogBlock }) {
     return <p className="text-justify">{block.text}</p>;
   }
   if (block.type === "h2") {
+    // Extra top margin so a section heading visually opens a new
+    // chapter; the slightly larger mt-16 buys breathing room without
+    // pushing the article into "outline" territory.
     return (
-      <h2 className="!mt-12 !mb-2 font-serif text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
+      <h2 className="!mt-16 !mb-3 font-serif text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
         {block.text}
       </h2>
     );
   }
   if (block.type === "h3") {
     return (
-      <h3 className="!mt-8 !mb-1 font-serif text-xl text-ink-900 dark:text-paper-50 sm:text-2xl">
+      <h3 className="!mt-12 !mb-2 font-serif text-xl text-ink-900 dark:text-paper-50 sm:text-2xl">
         {block.text}
       </h3>
     );
   }
   if (block.type === "ul") {
     return (
-      <ul className="!my-4 space-y-2 pl-5">
+      <ul className="!my-5 space-y-2.5 pl-5">
         {block.items.map((item, i) => (
           <li key={i} className="list-disc leading-relaxed">
             {item}
@@ -273,7 +276,7 @@ function Block({ block }: { block: BlogBlock }) {
       .map((s) => s.trim())
       .filter(Boolean);
     return (
-      <figure className="!my-8 border-l-2 border-blush-400 pl-5 dark:border-blush-300 sm:pl-6">
+      <figure className="!my-12 border-l-2 border-blush-400 pl-5 dark:border-blush-300 sm:pl-6">
         <blockquote className="space-y-3 font-serif italic leading-relaxed text-ink-800 dark:text-paper-100">
           {paragraphs.map((p, i) => (
             <p key={i}>{p}</p>
@@ -289,10 +292,12 @@ function Block({ block }: { block: BlogBlock }) {
   }
   // CTA: external links open in a new tab, internal /paths stay in-app.
   // The whole block reads as a quiet call-out card so it doesn't compete
-  // with the rest of the body but is unmissable at end-of-article.
+  // with the rest of the body but is unmissable at end-of-article. The
+  // button uses rounded-full + tighter transition so it feels softer and
+  // more inviting than the boxy default `.btn` shape.
   const isExternal = /^https?:\/\//.test(block.href);
   return (
-    <aside className="!my-10 rounded-2xl border border-paper-300 bg-paper-100/60 p-6 dark:border-umber-700 dark:bg-umber-800/60 sm:p-8">
+    <aside className="!my-14 rounded-2xl border border-paper-300 bg-paper-100/60 p-7 dark:border-umber-700 dark:bg-umber-800/60 sm:p-9">
       <p className="text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
         {block.lead}
       </p>
@@ -300,7 +305,7 @@ function Block({ block }: { block: BlogBlock }) {
         href={block.href}
         target={isExternal ? "_blank" : undefined}
         rel={isExternal ? "noreferrer" : undefined}
-        className="btn-primary btn-lifted mt-5 inline-flex"
+        className="btn-primary btn-lifted mt-6 inline-flex !rounded-full px-6 transition-all duration-200"
       >
         {block.label}
       </a>
