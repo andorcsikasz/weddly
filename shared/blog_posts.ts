@@ -45,6 +45,362 @@ export interface BlogPost {
 }
 
 export const SEED_BLOG_POSTS: BlogPost[] = [
+  // ── 0a. Miért házasodunk a Biblia szerint? ─────────────────────────
+  {
+    slug: "miert-hazasodunk-a-biblia-szerint",
+    published_at: "2026-05-24",
+    read_minutes: 7,
+    category: { hu: "Hit", en: "Faith" },
+    hu: {
+      title: "Miért házasodunk a Biblia szerint?",
+      lead: "Teremtési rend, szövetség, Jézus tanítása és a hétköznapok programja: így olvassa a Biblia a házasság értelmét.",
+      seo_title: "Miért házasodunk a Biblia szerint? · Wēddly",
+      seo_description:
+        "Mit mond a Biblia a házasság értelméről? Teremtési rend, szövetség, Jézus tanítása és Pál apostol gyakorlati programja Károli idézetekkel.",
+      body: [
+        {
+          type: "p",
+          text: "Sokan az esküvőszervezés közben jutnak el a kérdéshez: mi az, ami miatt egyáltalán házasodunk? Hagyomány? Romantika? Adminisztrációs döntés? A Biblia ennél többet ajánl: a házasságot nem társadalmi kelléknek látja, hanem a teremtésbe írt ajándéknak, amelynek belső szerkezete van.",
+        },
+        {
+          type: "p",
+          text: "Ez a poszt nem dogmatikus oktatás. Inkább annak a végiggondolása, mit mond a Szentírás a házasság értelméről, és miért lehet ez ma is segítő olvasat — akár vallásos, akár csak érdeklődő olvasónak.",
+        },
+        { type: "h2", text: "1. A teremtési rend: nem jó egyedül" },
+        {
+          type: "p",
+          text: "A Biblia első könyve nem a házassággal indítja az emberi történetet, de egészen hamar eljut hozzá. A Teremtés könyve 2. fejezete egyetlen sorban kimondja, hogy az egyedüllét nem teljesedés, hanem hiány.",
+        },
+        {
+          type: "blockquote",
+          text: "És monda az Úr Isten: Nem jó az embernek egyedül lenni; szerzek néki segítő társat, hozzá illőt.",
+          cite: "1Mózes 2,18",
+        },
+        {
+          type: "p",
+          text: "A „segítő társ“ kifejezés a héberben (ézer kenegdó) sokkal többet jelent, mint asszisztens vagy kiegészítő. Egyenrangú, szembenálló társat jelent, aki kiegészíti, megtükrözi, korrigálja a másikat. A házasság itt nem hierarchia, hanem találkozás.",
+        },
+        {
+          type: "blockquote",
+          text: "Annakokáért elhagyja a férfiú az ő atyját és az ő anyját, és ragaszkodik feleségéhez: és lesznek egy testté.",
+          cite: "1Mózes 2,24",
+        },
+        {
+          type: "p",
+          text: "Három mozzanat egymás után: elhagyás, ragaszkodás, eggyé válás. A házasság a Biblia szerint új családot hoz létre — nem leváltja a régit, de elsődlegessé teszi az új köteléket. Ez a sorrend az, amit a Szentírás újra és újra visszahoz a házasság gyökereként.",
+        },
+        { type: "h2", text: "2. A házasság szövetség, nem szerződés" },
+        {
+          type: "p",
+          text: "A Bibliában a házasság leggyakoribb kategóriája a szövetség (héberül berít). Ez nem szerződés, ami a felek érdekét védi, hanem feltétel nélküli elköteleződés Isten színe előtt. Egy szerződés akkor szűnik meg, ha a másik fél megszegi. Egy szövetség akkor is érvényben marad, ha az egyik fél hibázik — a hűség nem teljesítményhez, hanem személyhez szól.",
+        },
+        {
+          type: "blockquote",
+          text: "Mert az Úr volt bizonyság közted és a te ifjúságod felesége közt, akit te megcsaltál; pedig ő a társad és szövetséges feleséged.",
+          cite: "Malakiás 2,14",
+        },
+        {
+          type: "p",
+          text: "Malakiás próféta ezzel a mondattal mondja ki, hogy a házasság előtt Isten áll bizonyságként. A „szövetséges feleség“ kifejezés (béríthekha) a Bibliában máshol Isten és népe kapcsolatára van használva. A házasság a Szentírás logikájában ehhez hasonlítható szövetség: nem csak két emberre tartozó megegyezés, hanem nyilvánosan, harmadik fél előtt tett elköteleződés.",
+        },
+        {
+          type: "p",
+          text: "Innen érthető meg, miért tartja fontosnak a Szentírás az ünnepélyes esküt és a tanúk jelenlétét. Nem hivatali aktusként, hanem a szövetség természetéből fakadóan.",
+        },
+        { type: "h2", text: "3. Jézus megerősíti az eredeti rendet" },
+        {
+          type: "p",
+          text: "Az evangéliumokban a házasságról szóló legfontosabb tanítás akkor hangzik el, amikor Jézustól a válásról kérdeznek. A válasza nem a válással foglalkozik elsősorban, hanem visszamutat a teremtésre.",
+        },
+        {
+          type: "blockquote",
+          text: "Ő pedig felelvén, monda: Nem olvastátok-é, hogy a teremtő kezdettől fogva férfiúvá és asszonynyá teremté őket,\n\nÉs ezt mondá: Annak okáért elhagyja a férfiú atyját és anyját; és ragaszkodik feleségéhez, és lesznek ketten egy testté.\n\nÚgy hogy többé nem kettő, hanem egy test. Amit azért az Isten egybeszerkesztett, ember el ne válassza.",
+          cite: "Máté 19,4-6",
+        },
+        {
+          type: "p",
+          text: "Jézus tehát nem új tanítást ad, hanem az eredeti teremtési rendet erősíti meg: a házasság szövetség, amit Isten köt össze. Az „egy test“ kifejezés nem csak testi egységet jelent, hanem a teljes élet összekapcsolódását.",
+        },
+        {
+          type: "p",
+          text: "Ez a szakasz a templomi esküvőkön gyakori felolvasás, és pontosan ezért: kimondja, hogy a házasság nem önállóan létrehozott, hanem belekapcsolódik egy nagyobb rendbe.",
+        },
+        { type: "h2", text: "4. A házasság programja: Pál apostol levelei" },
+        {
+          type: "p",
+          text: "A teremtési és evangéliumi tanítás után az Újszövetség levelei azzal foglalkoznak, hogy ez a hétköznapokban hogyan néz ki. Pál apostol kulcsszakasza az Efézusi levél 5. fejezete, amelyet sokan félreolvasnak, mert csak egy verset emelnek ki belőle.",
+        },
+        {
+          type: "blockquote",
+          text: "Engedelmesek legyetek egymásnak Isten félelmében.\n\nTi férfiak, szeressétek a ti feleségeteket, miképpen a Krisztus is szerette az egyházat, és Önmagát adta azért.",
+          cite: "Efézus 5,21.25",
+        },
+        {
+          type: "p",
+          text: "A 21. vers a teljes szakasz kulcsa: kölcsönös engedelmesség. A 25. vers a férjnek nem uralmat, hanem áldozati szeretetet ad parancsba — Krisztus mintájára, aki „önmagát adta“ az egyházért. Ez a hangsúly, ha kihagyjuk, eltorzul a szakasz.",
+        },
+        {
+          type: "p",
+          text: "A Kolossé 3 a házasság hétköznapjait írja le, dísz nélkül.",
+        },
+        {
+          type: "blockquote",
+          text: "Öltözzétek föl azért mint az Istennek választottai, szentek és szeretettek, könyörületes szívet, jóságosságot, alázatosságot, szelídséget, hosszútűrést;\n\nElszenvedvén egymást és megbocsátván kölcsönösen egymásnak, ha valakinek valaki ellen panasza volna;\n\nMindezeknek fölébe pedig öltözzétek föl a szeretetet, mint amely a tökéletességnek kötele.",
+          cite: "Kolossé 3,12-14",
+        },
+        {
+          type: "p",
+          text: "Ezek nem felemelő pillanatok, hanem mindennapi minőségek: irgalom, jóság, türelem, megbocsátás. A házasság a Szentírás szerint nem a romantikán, hanem ezeken a stabil tulajdonságokon áll meg hosszú távon.",
+        },
+        { type: "h2", text: "5. A nehéz részek: megbocsátás és kitartás" },
+        {
+          type: "p",
+          text: "A Biblia nem idealizálja a házasságot. Tudja, hogy a két ember között lesz konfliktus, sérelem, kifáradás. A megoldás nem a konfliktus elkerülése, hanem annak helyes kezelése.",
+        },
+        {
+          type: "blockquote",
+          text: "Ám haragudjatok, de ne vétkezzetek: a nap le ne menjen a ti haragotokon.",
+          cite: "Efézus 4,26",
+        },
+        {
+          type: "p",
+          text: "Pál nem azt mondja, hogy „ne haragudjatok“ — azt mondja, hogy ne hagyjátok elmérgesedni. A „ne menjen le a nap a haragotokon“ gyakorlati tanács: a konfliktust nem érdemes magunkkal vinni a következő napba. Időben rendezni, kimondani, megbocsátani.",
+        },
+        {
+          type: "p",
+          text: "A megbocsátás a Biblia szerint nem érzés, hanem döntés. Nem azt jelenti, hogy elfelejtjük a sérelmet, hanem azt, hogy nem ezen építjük tovább a kapcsolatot.",
+        },
+        { type: "h2", text: "6. A közös út: Isten harmadik fonalként" },
+        {
+          type: "p",
+          text: "A Prédikátor könyvének egy klasszikus szakasza nem közvetlenül a házasságról szól, de a magyarázók régóta a házassági szövetség képeként olvassák.",
+        },
+        {
+          type: "blockquote",
+          text: "Sokkal jobban van dolga a kettőnek, hogynem az egynek; mert azoknak jó jutalmok van az ő munkájokból.\n\nMert ha elesnek is, az egyik felemeli a társát.\n\nÉs ha az egyiket megtámadja is valaki, ketten ellene állhatnak annak; és a hármas kötél nem hamar szakad el.",
+          cite: "Prédikátor 4,9-12",
+        },
+        {
+          type: "p",
+          text: "A „hármas kötél“ a keresztény értelmezésben a pár és Isten közös fonatát jelenti. A házasság ebben az olvasatban nem csak két ember kapcsolata, hanem három személyre szövődő közös jövő.",
+        },
+        {
+          type: "p",
+          text: "Ez magyarázza meg, miért tartják sokan a templomi esküvőt nem ünnepi formaiságnak, hanem a szövetségbe való beleállásnak: az eskü Isten színe előtt hangzik el, és az ő jelenlétét hívja be a közös életbe.",
+        },
+        { type: "h2", text: "7. Mit jelent ez a gyakorlatban?" },
+        {
+          type: "p",
+          text: "Akár vallásosan élitek meg a házasságot, akár csak gondolkodtok ezekről a kérdéseken, három gyakorlati következtetés vehető ki belőle.",
+        },
+        { type: "h3", text: "A házasság nem csak két emberre tartozik" },
+        {
+          type: "p",
+          text: "A bibliai logika szerint a házasság szövetség, és minden szövetséghez harmadik fél kell, aki előtt megkötitek. Ez magyarázza meg, miért fontos a nyilvános eskü, a tanúk és — hívő olvasatban — Isten jelenléte.",
+        },
+        { type: "h3", text: "A szeretet döntés, nem hangulat" },
+        {
+          type: "p",
+          text: "A Biblia által leírt szeretet (héberül cheszed, görögül agapé) nem érzelmi állapot, hanem hűséges döntés. Ez különösen szabadító üzenet a hétköznapokban: a házasság nem áll meg azon, hogy mindketten mindig „érzitek“. Áll a döntésen, amit reggelente megújítotok.",
+        },
+        { type: "h3", text: "A megbocsátás napi gyakorlat" },
+        {
+          type: "p",
+          text: "Két ember együttélése folyamatos sérelem-kezelés. A Biblia nem azt mondja, hogy ne legyen konfliktus — azt, hogy ne aludjatok rá. A „ne menjen le a nap a ti haragotokon“ a leggyakorlatibb házassági tanács, ami a Bibliában szerepel.",
+        },
+        {
+          type: "cta",
+          lead: "Ha az esküvő gyakorlati részét is szeretnétek nyugodtabban szervezni (vendéglista, költségvetés, RSVP, ültetés egy közös felületen), kezdjétek a Wēddly-ben.",
+          href: "/signup",
+          label: "Indítsátok el ingyen",
+        },
+        { type: "h2", text: "Gyakori kérdések" },
+        { type: "h3", text: "Mit jelent, hogy a házasság szövetség?" },
+        {
+          type: "p",
+          text: "A szövetség nem szerződés. A szerződés a felek érdekét védi és a másik kötelességszegésére bontható. A szövetség nyilvános, harmadik fél előtt tett elköteleződés, amely a hűséget nem a teljesítményhez, hanem a személyhez köti.",
+        },
+        { type: "h3", text: "Mit jelent az engedelmesség a házasságban?" },
+        {
+          type: "p",
+          text: "Az Efézus 5,21 a kulcs: kölcsönös engedelmesség. Nem egyirányú alárendelés, hanem egymás iránti figyelem, alázat és tisztelet. A férjnek szóló parancs (Ef 5,25) sem uralmat ad, hanem áldozati szeretetet ír elő.",
+        },
+        { type: "h3", text: "Mit mond a Biblia a házasságon belüli konfliktusról?" },
+        {
+          type: "p",
+          text: "A Szentírás nem tagadja a konfliktust, hanem keretet ad a kezeléséhez: őszinte beszéd (Ef 4,25), gyors megbékélés (Ef 4,26), kölcsönös megbocsátás (Kol 3,13). A konfliktus nem a házasság hibája, hanem a karbantartás terepe.",
+        },
+        { type: "h3", text: "Kötelező egyházi szertartást tartani?" },
+        {
+          type: "p",
+          text: "Magyarországon a polgári szertartás a jogi szempontból elismert házasságkötés. Az egyházi szertartás vallási döntés és a szövetség nyilvános, Isten előtti kimondása. A kettő nem zárja ki egymást — sokan ugyanazon a napon tartják mindkettőt.",
+        },
+      ],
+    },
+    en: {
+      title: "Why marry, according to the Bible?",
+      lead: "Creation order, covenant, Jesus' teaching and the everyday programme: how Scripture reads the meaning of marriage.",
+      seo_title: "Why marry according to the Bible? · Weddly",
+      seo_description:
+        "What does the Bible say about the meaning of marriage? Creation order, covenant, Jesus' teaching and Paul's practical programme.",
+      body: [
+        {
+          type: "p",
+          text: "Many couples reach the question mid-planning: what is marriage actually for? Tradition? Romance? Paperwork? The Bible offers more: it sees marriage as a gift built into creation, with an inner structure worth understanding.",
+        },
+        {
+          type: "p",
+          text: "This post isn't dogmatic instruction. It's a thoughtful read of what Scripture says about the meaning of marriage and why it can still help today — whether you're religious or simply curious.",
+        },
+        { type: "h2", text: "1. Creation: it is not good to be alone" },
+        {
+          type: "p",
+          text: "Genesis doesn't open with marriage, but it gets there quickly. Chapter 2 states plainly that being alone is not completion but lack.",
+        },
+        {
+          type: "blockquote",
+          text: "And the Lord God said, It is not good that the man should be alone; I will make him an help meet for him.",
+          cite: "Genesis 2:18",
+        },
+        {
+          type: "p",
+          text: "The Hebrew \"help meet\" (ezer kenegdo) is far stronger than \"assistant\". It means an equal counterpart who completes, mirrors and corrects. Marriage here isn't hierarchy; it's encounter.",
+        },
+        {
+          type: "blockquote",
+          text: "Therefore shall a man leave his father and his mother, and shall cleave unto his wife: and they shall be one flesh.",
+          cite: "Genesis 2:24",
+        },
+        {
+          type: "p",
+          text: "Three moves in sequence: leaving, cleaving, becoming one. Marriage forms a new family; it doesn't replace the old, but it takes primary place. Scripture returns to this sequence again and again as the foundation of marriage.",
+        },
+        { type: "h2", text: "2. Marriage is a covenant, not a contract" },
+        {
+          type: "p",
+          text: "The Bible's recurring category for marriage is covenant (Hebrew berit). A contract protects each party's interest and dissolves on breach. A covenant is unconditional commitment in the presence of God — faithfulness tied to a person, not to performance.",
+        },
+        {
+          type: "blockquote",
+          text: "Because the Lord hath been witness between thee and the wife of thy youth, against whom thou hast dealt treacherously: yet is she thy companion, and the wife of thy covenant.",
+          cite: "Malachi 2:14",
+        },
+        {
+          type: "p",
+          text: "Malachi anchors marriage in God's witness. \"Wife of thy covenant\" uses the same vocabulary the Bible uses for God's covenant with his people. Marriage, in this logic, is a public commitment made before a third party.",
+        },
+        { type: "h2", text: "3. Jesus reaffirms the original order" },
+        {
+          type: "p",
+          text: "When Jesus is asked about divorce, his answer doesn't start with divorce. It points back to creation.",
+        },
+        {
+          type: "blockquote",
+          text: "Have ye not read, that he which made them at the beginning made them male and female,\n\nAnd said, For this cause shall a man leave father and mother, and shall cleave to his wife: and they twain shall be one flesh?\n\nWhat therefore God hath joined together, let not man put asunder.",
+          cite: "Matthew 19:4-6",
+        },
+        {
+          type: "p",
+          text: "Jesus offers no new teaching here — he reinforces the creation order. Marriage is a covenant God joins together. \"One flesh\" isn't only physical: it's a fusion of two whole lives.",
+        },
+        { type: "h2", text: "4. The everyday programme: Paul's letters" },
+        {
+          type: "p",
+          text: "Ephesians 5 is the key passage couples often misread by picking out one verse. The opening line frames the whole thing.",
+        },
+        {
+          type: "blockquote",
+          text: "Submitting yourselves one to another in the fear of God.\n\nHusbands, love your wives, even as Christ also loved the church, and gave himself for it.",
+          cite: "Ephesians 5:21, 25",
+        },
+        {
+          type: "p",
+          text: "Verse 21 sets the tone: mutual submission. Verse 25 commands the husband to sacrificial love modelled on Christ, not domination. Without that opening framing, the passage gets distorted.",
+        },
+        { type: "p", text: "Colossians 3 turns to the daily work of marriage." },
+        {
+          type: "blockquote",
+          text: "Put on therefore, as the elect of God, holy and beloved, bowels of mercies, kindness, humbleness of mind, meekness, longsuffering;\n\nForbearing one another, and forgiving one another, if any man have a quarrel against any;\n\nAnd above all these things put on charity, which is the bond of perfectness.",
+          cite: "Colossians 3:12-14",
+        },
+        {
+          type: "p",
+          text: "Not peak moments. Daily virtues: mercy, kindness, patience, forgiveness. Scripture grounds marriage in these durable qualities, not in romance alone.",
+        },
+        { type: "h2", text: "5. Conflict and forgiveness" },
+        {
+          type: "p",
+          text: "The Bible doesn't idealise marriage. It assumes there will be conflict, hurt, fatigue. The answer isn't avoidance but proper handling.",
+        },
+        {
+          type: "blockquote",
+          text: "Be ye angry, and sin not: let not the sun go down upon your wrath.",
+          cite: "Ephesians 4:26",
+        },
+        {
+          type: "p",
+          text: "Paul doesn't say \"don't be angry\". He says don't let it fester. \"Don't carry it into tomorrow\" is one of the most practical pieces of marriage advice in Scripture. Resolve it, speak it, forgive.",
+        },
+        { type: "h2", text: "6. The threefold cord" },
+        {
+          type: "p",
+          text: "A classic passage from Ecclesiastes isn't directly about marriage, but readers have long heard it as a covenant image.",
+        },
+        {
+          type: "blockquote",
+          text: "Two are better than one; because they have a good reward for their labour.\n\nFor if they fall, the one will lift up his fellow.\n\nAnd if one prevail against him, two shall withstand him; and a threefold cord is not quickly broken.",
+          cite: "Ecclesiastes 4:9-12",
+        },
+        {
+          type: "p",
+          text: "In the Christian reading, the \"threefold cord\" is the couple plus God. Marriage here isn't a two-person relationship but a three-thread shared future. This is why many couples treat the church ceremony less as formality and more as stepping into the covenant.",
+        },
+        { type: "h2", text: "7. Practical takeaways" },
+        { type: "h3", text: "Marriage is not only between two people" },
+        {
+          type: "p",
+          text: "Biblically, marriage is a covenant, and every covenant needs a third party. That's why the public vow, the witnesses and — in the believing reading — God's presence matter.",
+        },
+        { type: "h3", text: "Love is a decision, not a mood" },
+        {
+          type: "p",
+          text: "Biblical love (Hebrew chesed, Greek agape) is not a feeling but a faithful choice. Marriage doesn't stand or fall on whether you both \"feel it\" today. It stands on the decision you renew each morning.",
+        },
+        { type: "h3", text: "Forgiveness is a daily practice" },
+        {
+          type: "p",
+          text: "Two lives together means a steady stream of small hurts. The Bible doesn't ask for no conflict — it asks you not to sleep on it. \"Don't let the sun go down on your wrath\" is the most practical marriage advice in Scripture.",
+        },
+        {
+          type: "cta",
+          lead: "If you'd also like to handle the practical side of the wedding (guest list, budget, RSVP, seating) in one place, start with Weddly.",
+          href: "/signup",
+          label: "Start free",
+        },
+        { type: "h2", text: "FAQ" },
+        { type: "h3", text: "What does it mean that marriage is a covenant?" },
+        {
+          type: "p",
+          text: "A covenant is not a contract. Contracts protect each party's interest and dissolve on breach. A covenant is a public, third-party commitment tying faithfulness to a person rather than to performance.",
+        },
+        { type: "h3", text: "What does submission mean in marriage?" },
+        {
+          type: "p",
+          text: "Ephesians 5:21 is the key: mutual submission. Not one-way subordination, but attention, humility and respect for each other. The husband's command (Eph 5:25) is sacrificial love, not domination.",
+        },
+        { type: "h3", text: "What does the Bible say about conflict?" },
+        {
+          type: "p",
+          text: "Scripture doesn't deny conflict. It gives a framework: speak truthfully (Eph 4:25), reconcile quickly (Eph 4:26), forgive each other (Col 3:13). Conflict isn't marriage's flaw — it's its maintenance ground.",
+        },
+        { type: "h3", text: "Do you have to have a church ceremony?" },
+        {
+          type: "p",
+          text: "Civil ceremonies handle the legal side. A church ceremony is a faith decision and a public vow before God. The two aren't exclusive — many couples have both on the same day.",
+        },
+      ],
+    },
+  },
   // ── 0. Bibliai idézetek ────────────────────────────────────────────
   {
     slug: "bibliai-idezetek-eskuvore",
