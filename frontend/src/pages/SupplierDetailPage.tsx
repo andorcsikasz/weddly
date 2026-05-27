@@ -42,12 +42,7 @@ import {
 import { Pill } from "../components/admin";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import {
-  reviewApi,
-  supplierApi,
-  supplierBookingApi,
-  supplierCommentApi,
-} from "../lib/endpoints";
+import { reviewApi, supplierApi, supplierBookingApi, supplierCommentApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
@@ -73,9 +68,7 @@ function StarRow({ value, size = 14 }: { value: number; size?: number }) {
           size={size}
           aria-hidden
           className={
-            n <= value
-              ? "fill-rose-500 stroke-rose-500"
-              : "stroke-ink-300 dark:stroke-umber-500"
+            n <= value ? "fill-rose-500 stroke-rose-500" : "stroke-ink-300 dark:stroke-umber-500"
           }
         />
       ))}
@@ -174,10 +167,7 @@ export default function SupplierDetailPage() {
     // data-admin-shell opts every h1..h6 inside into the sans typography
     // override defined in index.css. Mirrors the /app/admin/* shell so the
     // admin-only detail page reads as an operational tool, not editorial copy.
-    <div
-      data-admin-shell="true"
-      className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10"
-    >
+    <div data-admin-shell="true" className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
       <button
         type="button"
         onClick={() => navigate(-1)}
@@ -283,13 +273,7 @@ export default function SupplierDetailPage() {
 
         {/* ─── SIDEBAR (sticky on lg+) ───────────────────────────────────── */}
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <InfoCard
-            detail={detail}
-            avg={ratingAvg}
-            count={ratingCount}
-            locale={locale}
-            t={t}
-          />
+          <InfoCard detail={detail} avg={ratingAvg} count={ratingCount} locale={locale} t={t} />
           <ContactCard detail={detail} t={t} />
           <BusyCalendarCard availability={availability} locale={locale} t={t} />
         </aside>
@@ -372,8 +356,7 @@ function ReviewsSection({
       toast.success(t("suppliers.detail.reviews.submitted"));
       await onChange();
     } catch (e) {
-      const code =
-        e instanceof ApiError ? (e.detail as { code?: string } | undefined)?.code : null;
+      const code = e instanceof ApiError ? (e.detail as { code?: string } | undefined)?.code : null;
       const msg =
         code === "already_reviewed"
           ? t("suppliers.detail.reviews.alreadyReviewed")
@@ -537,10 +520,7 @@ function ReviewsSection({
   );
 }
 
-function CommentsSection({
-  comments,
-  ...ctx
-}: SectionCtx & { comments: SupplierComment[] }) {
+function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: SupplierComment[] }) {
   const { supplierId, onChange, toast, confirm, locale, t } = ctx;
   const [body, setBody] = useState("");
   const [visibility, setVisibility] = useState<CommentVisibility>("admin_internal");

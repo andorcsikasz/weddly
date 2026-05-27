@@ -410,7 +410,10 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
     },
   },
   {
-    title: { hu: "Élő tüzes előadás az első tánc előtt", en: "Live fire show before the first dance" },
+    title: {
+      hu: "Élő tüzes előadás az első tánc előtt",
+      en: "Live fire show before the first dance",
+    },
     body: {
       hu: "5 perces profi tüzes performansz a kerten vagy teraszon — közvetlenül a nyitótánc előtt.",
       en: "Five-minute professional fire performance in the garden — right before the first dance.",

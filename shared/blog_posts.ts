@@ -118,12 +118,12 @@ export const BLOG_POSTS: BlogPost[] = [
         },
         {
           type: "p",
-          text: "Third, decor. The Pinterest vision can eat 18-22% of a normal budget, and your guests will look at it for about three hours. Write two lists, \"essential\" and \"if budget allows\", and know exactly which is which before you sign anything.",
+          text: 'Third, decor. The Pinterest vision can eat 18-22% of a normal budget, and your guests will look at it for about three hours. Write two lists, "essential" and "if budget allows", and know exactly which is which before you sign anything.',
         },
         { type: "h2", text: "How Weddly handles this" },
         {
           type: "p",
-          text: "The Budget module takes your guest count and total ceiling, and the six categories recalc live against this split. Each category can be locked (\"we're done touching this one\"), and every change goes into an audit log. Both of you see the same number, and there's no \"but we agreed last week\" debate.",
+          text: 'The Budget module takes your guest count and total ceiling, and the six categories recalc live against this split. Each category can be locked ("we\'re done touching this one"), and every change goes into an audit log. Both of you see the same number, and there\'s no "but we agreed last week" debate.',
         },
       ],
     },
@@ -194,13 +194,13 @@ export const BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Name your tables" },
         {
           type: "p",
-          text: "\"Table 1, 8 seats\" tells you nothing. \"Family, parents and grandparents\" tells you both who sits there and what to do if someone moves. Two benefits: the printed entrance display reads more cleanly, and if you need to swap two guests last-minute, the category name finds the right table faster than the number.",
+          text: '"Table 1, 8 seats" tells you nothing. "Family, parents and grandparents" tells you both who sits there and what to do if someone moves. Two benefits: the printed entrance display reads more cleanly, and if you need to swap two guests last-minute, the category name finds the right table faster than the number.',
         },
         { type: "h2", text: "Plus-ones and kids" },
         {
           type: "ul",
           items: [
-            "Plus-ones always sit next to their partner, or with the partner's friend group. Never on a dedicated \"plus-one table\" (awkward).",
+            'Plus-ones always sit next to their partner, or with the partner\'s friend group. Never on a dedicated "plus-one table" (awkward).',
             "Kids: either one dedicated kids' table (worth it from 10 kids up), or next to a parent (for fewer).",
             "Leave 1 empty seat at every table until the final week. Last-minute confirmations will happen.",
           ],
@@ -274,13 +274,13 @@ export const BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Set a four-week deadline" },
         {
           type: "p",
-          text: "The default tends to be two weeks. That's too tight. Asking four weeks out means you've got two weeks to chase the slow responders before finalisation actually bites. Print a concrete date on the invitation, like \"Please reply by July 12, 2026\". A date works better than \"four weeks before\".",
+          text: 'The default tends to be two weeks. That\'s too tight. Asking four weeks out means you\'ve got two weeks to chase the slow responders before finalisation actually bites. Print a concrete date on the invitation, like "Please reply by July 12, 2026". A date works better than "four weeks before".',
         },
         { type: "h2", text: "Chase in three steps" },
         {
           type: "ul",
           items: [
-            "Step 1 (3 days past deadline): short template SMS. \"Hi, just confirming: are you coming to the July wedding? Thanks!\"",
+            'Step 1 (3 days past deadline): short template SMS. "Hi, just confirming: are you coming to the July wedding? Thanks!"',
             "Step 2 (5 days later, still nothing): direct phone call, not a message.",
             "Step 3 (7 days later, silence): treat as a no and move on.",
           ],
@@ -288,7 +288,7 @@ export const BLOG_POSTS: BlogPost[] = [
         { type: "h2", text: "Keep the form short" },
         {
           type: "p",
-          text: "The fewer fields, the higher the response rate. Three is the sweet spot: are you coming (yes / no / maybe), how many of you, any dietary needs. \"Plus-one's name\", \"song request\" and \"arrival time\" all add friction and lower the reply rate. Ask those in a second round, only of the people who already said yes.",
+          text: 'The fewer fields, the higher the response rate. Three is the sweet spot: are you coming (yes / no / maybe), how many of you, any dietary needs. "Plus-one\'s name", "song request" and "arrival time" all add friction and lower the reply rate. Ask those in a second round, only of the people who already said yes.',
         },
         { type: "h2", text: "How Weddly handles this" },
         {

@@ -3561,29 +3561,28 @@ const en: LocaleMessages = {
     paragraph_contact_email: "hello@weddly.xyz",
     paragraph_contact_cta: "Write a message",
     paragraph_principles_title: "What we believe",
-    principle_calm:
-      "Calm beats clever. The wedding is the event; the tool stays out of the way.",
+    principle_calm: "Calm beats clever. The wedding is the event; the tool stays out of the way.",
     principle_no_lock_in:
       "Your data is yours. Export, pause, or delete on your own terms; no support ticket required.",
     en_section_label: "English",
     founder_placeholder: "Andor Csíkász",
   },
   blog: {
-    eyebrow: "Magazine",
-    index_title: "Wedding magazine",
+    eyebrow: "Blog",
+    index_title: "Blog",
     index_lead:
       "Short, practical reads on the parts of wedding planning that take the most time and money: budget, seating, RSVP. Each post helps with one concrete decision.",
-    index_seo_title: "Wedding magazine · Weddly",
+    index_seo_title: "Blog · Weddly",
     index_seo_description:
       "Practical articles for couples planning a wedding: budget allocation, seating tips, RSVP follow-up, and more.",
     read_minutes: "{n} min read",
-    related_eyebrow: "More from the magazine",
-    back_to_index: "Back to the magazine",
-    section_eyebrow: "Magazine",
-    section_title: "From the magazine",
+    related_eyebrow: "More from the blog",
+    back_to_index: "Back to the blog",
+    section_eyebrow: "Blog",
+    section_title: "From the blog",
     section_lead:
       "Practical writing about the parts of wedding planning that take the most time. Three posts to start with.",
-    section_cta: "Browse the magazine",
+    section_cta: "Browse the blog",
   },
   session: {
     expired_title: "Session ended",

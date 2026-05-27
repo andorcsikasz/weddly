@@ -1033,9 +1033,7 @@ function BottomLink({
       ? "text-violet-950 dark:text-violet-200"
       : "text-ink-900 dark:text-paper-50";
   const idle =
-    variant === "admin"
-      ? "text-ink-500 dark:text-umber-200"
-      : "text-ink-500 dark:text-umber-200";
+    variant === "admin" ? "text-ink-500 dark:text-umber-200" : "text-ink-500 dark:text-umber-200";
   return (
     <NavLink
       to={to}

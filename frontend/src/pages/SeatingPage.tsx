@@ -2429,8 +2429,7 @@ function TableCard({
                   // one, lift the highlight ring to the seat <li> so the
                   // whole tile reads as selected — previously the ring sat
                   // on `<DraggableGuest>` and only outlined the text.
-                  const seatIsSelected =
-                    guest !== undefined && selectedGuestId === guest.id;
+                  const seatIsSelected = guest !== undefined && selectedGuestId === guest.id;
                   return (
                     <li
                       key={idx}

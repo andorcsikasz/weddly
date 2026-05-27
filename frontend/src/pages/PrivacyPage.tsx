@@ -118,9 +118,7 @@ export function LegalSection({
     <section
       lang={sectionLocale}
       className={`mt-8 space-y-6 text-base leading-relaxed ${
-        secondary
-          ? "text-ink-700 dark:text-paper-200"
-          : "text-ink-800 dark:text-paper-100"
+        secondary ? "text-ink-700 dark:text-paper-200" : "text-ink-800 dark:text-paper-100"
       }`}
     >
       {children}

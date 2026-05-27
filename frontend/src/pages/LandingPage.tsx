@@ -574,7 +574,10 @@ function LiveStatsBand() {
           {t("landing.counter_eyebrow")}
         </p>
         <div className="mx-auto mt-8 grid max-w-3xl grid-cols-2 gap-6 sm:gap-12">
-          <StatCounter value={fmt.format(stats.couples)} label={t("landing.counter_couples_label")} />
+          <StatCounter
+            value={fmt.format(stats.couples)}
+            label={t("landing.counter_couples_label")}
+          />
           <StatCounter value={fmt.format(stats.rsvps)} label={t("landing.counter_rsvps_label")} />
         </div>
         <p className="mt-8 text-center font-serif text-xs italic text-ink-500 dark:text-umber-300">
@@ -631,9 +634,8 @@ function BlogTeaser() {
           {posts.map((post) => {
             const copy = post[locale];
             const [y, m, d] = post.published_at.split("-").map(Number);
-            const dateLabel = y && m && d
-              ? fmt.format(new Date(Date.UTC(y, m - 1, d)))
-              : post.published_at;
+            const dateLabel =
+              y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
             return (
               <li key={post.slug}>
                 <Link
