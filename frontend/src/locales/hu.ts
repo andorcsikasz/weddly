@@ -826,7 +826,7 @@ const hu: LocaleMessages = {
     footer_legal_privacy: "Adatvédelem",
     footer_legal_about: "Rólunk",
     footer_legal_imprint: "Impresszum",
-    footer_legal_subscription: "Szolgáltatói ÁSZF (tervezet)",
+    footer_legal_subscription: "Szolgáltatói ÁSZF",
     footer_about_link: "Rólunk",
     footer_band_cta: "Vendég vagyok, van meghívókódom",
     skip_to_main: "Ugrás a tartalomra",

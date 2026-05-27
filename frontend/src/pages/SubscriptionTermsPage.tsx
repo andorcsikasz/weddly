@@ -12,10 +12,9 @@ import {
 } from "./PrivacyPage";
 
 /**
- * /terms/vendor-subscription — DRAFT vendor ÁSZF for the future paid
- * tier. Published before the beta ends so applicants can see exactly
- * what the paid model will look like; rendered with the same
- * `draft_banner` as Privacy / Terms until a Hungarian lawyer signs off.
+ * /terms/vendor-subscription: vendor ÁSZF v1.0 (effective 2026-06-15).
+ * Click-acceptance binding terms covering free Beta tier and future paid
+ * plans (P2B Regulation 2019/1150, DSA, Hungarian consumer law).
  */
 export default function SubscriptionTermsPage() {
   const { t } = useT();
