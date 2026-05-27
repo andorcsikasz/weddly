@@ -4047,6 +4047,44 @@ const hu: LocaleMessages = {
       faq_a3:
         "Minimum: párotok neve, az esküvő dátuma, helyszín, RSVP-határidő és egy elérhetőség (e-mail vagy telefon, vagy egy link). Hasznos extra: étrend kérdés, kísérő-mező, allergia. A Wēddly RSVP-oldala ezeket egy linken keresztül oldja meg.",
     },
+    couple_cards: {
+      page_eyebrow: "Eszközök · 100 kérdés a házasság előtt",
+      page_h1: "100 kérdés a házasság előtt",
+      page_intro:
+        "Négy pakli, paklinként 25 beszélgetésindító kérdés jegyes pároknak: gyökerek, hétköznapok, közelség, mély víz. Válasszatok paklit, húzzatok egy kártyát, és menjetek bele a beszélgetésbe. Ingyenes, regisztráció nélkül.",
+      decks_h2: "Válasszatok paklit",
+      deck_number_label: "{n}. pakli",
+      deck_count_label: "{n} kártya",
+      deck_roots_title: "Gyökerek",
+      deck_roots_blurb:
+        "Amit otthonról hoztunk, és amit szabadon választhatunk újra. Család, eredet, minták.",
+      deck_everyday_title: "Hétköznapok",
+      deck_everyday_blurb:
+        "Pénz, munka, otthon, családi háló. A láthatatlan szerződés, amit naponta írunk újra.",
+      deck_closeness_title: "Közelség",
+      deck_closeness_blurb: "Test, vágy, gyengédség, játék. Az, amit a sötétben tudunk egymásról.",
+      deck_deepwater_title: "Mély víz",
+      deck_deepwater_blurb: "Halál, krízis, értelem, hit. Amiről nem szoktunk beszélni, és muszáj.",
+      card_position: "{n} / {total}",
+      card_empty: "Húzzatok egy kártyát.",
+      next_card: "Következő kártya",
+      reshuffle: "Új keverés",
+      back_to_decks: "Vissza a paklikhoz",
+      cta_h2: "Ha készen álltok a többire",
+      cta_body:
+        "A nehéz beszélgetések után jöhetnek a praktikus döntések. A Wēddly egy közös felületen tartja a költségvetést, vendéglistát, RSVP-t és az ültetést, hogy az igazi munka után se kelljen PDF-eket osztogatni.",
+      cta_button: "Workspace indítása",
+      faq_h2: "Gyakori kérdések",
+      faq_q1: "Mire való ez a 100 kérdés?",
+      faq_a1:
+        "Beszélgetésindító. A kutatások szerint a tartós kapcsolatokban az számít, hogy a pár képes-e nyitottan beszélni a pénzről, a családról, a vágyról és a halálról is. A négy paklit ezek köré rendeztük, hogy a nehéz témák ne maradjanak a szőnyeg alatt.",
+      faq_q2: "Kötelező mind a 100-at megválaszolni?",
+      faq_a2:
+        "Nem. Egy kártya egy beszélgetés. Húzzatok egyet, beszéljétek meg, és tegyétek vissza a paklit. A böngészőtök megjegyzi, melyik kártyáknál tartotok, és a következő látogatáskor onnan folytatjátok.",
+      faq_q3: "Miért pont ez a négy pakli?",
+      faq_a3:
+        "Tíz külső szakértő (párterapeuta, pénzügyi tervező, hosszan házas párok, intimitás-coach, filozófus) szemszögéből szűrtük le a témákat. Ami mindenkinél visszatért: a család öröksége, a pénz és a hétköznapok, a test és a vágy, és a halál–krízis–értelem hármasa. Innen jött a négy pakli.",
+    },
   },
 };
 

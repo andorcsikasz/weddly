@@ -51,6 +51,7 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/eszkozok/vendeglista-sablon", priority: "0.8", changefreq: "monthly" },
   { path: "/eszkozok/ultetesi-rend-keszito", priority: "0.8", changefreq: "monthly" },
   { path: "/eszkozok/rsvp-szoveg-generator", priority: "0.8", changefreq: "monthly" },
+  { path: "/eszkozok/100-kerdes-eskuvo-elott", priority: "0.8", changefreq: "monthly" },
   { path: "/signup", priority: "0.7", changefreq: "monthly" },
   { path: "/blog", priority: "0.6", changefreq: "weekly" },
   { path: "/vendors", priority: "0.6", changefreq: "monthly" },

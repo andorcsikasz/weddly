@@ -17,6 +17,7 @@ import BlogIndexPage from "./pages/BlogIndexPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import BudgetCalculatorPage from "./pages/BudgetCalculatorPage";
 import CountdownPage from "./pages/CountdownPage";
+import CoupleCardsPage from "./pages/CoupleCardsPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import GuestListTemplatePage from "./pages/GuestListTemplatePage";
 import RsvpGeneratorPage from "./pages/RsvpGeneratorPage";
@@ -254,6 +255,22 @@ export default function App() {
           element={
             <Page>
               <RsvpGeneratorPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/eszkozok/100-kerdes-eskuvo-elott"
+          element={
+            <Page>
+              <CoupleCardsPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/tools/100-questions-before-marriage"
+          element={
+            <Page>
+              <CoupleCardsPage />
             </Page>
           }
         />

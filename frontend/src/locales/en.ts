@@ -4008,6 +4008,46 @@ const en: LocaleMessages = {
       faq_a3:
         "Minimum: your names, the wedding date, venue, RSVP deadline, and one contact channel (email / phone / link). Helpful extras: a dietary question, a plus-one field, an allergy line. Weddly's RSVP page covers all of these via a single link.",
     },
+    couple_cards: {
+      page_eyebrow: "Tools · 100 Questions Before You Say Yes",
+      page_h1: "100 Questions Before You Say Yes",
+      page_intro:
+        "Four decks of 25 conversation-starter cards for engaged couples: roots, the everyday, closeness, deep water. Pick a deck, draw a card, and let the conversation begin. Free, no signup needed.",
+      decks_h2: "Pick a deck",
+      deck_number_label: "Deck {n}",
+      deck_count_label: "{n} cards",
+      deck_roots_title: "Roots",
+      deck_roots_blurb:
+        "What we brought from home, and what we get to choose again. Family, origin, patterns.",
+      deck_everyday_title: "The Everyday",
+      deck_everyday_blurb:
+        "Money, work, home, the family web. The invisible contract we redraft every day.",
+      deck_closeness_title: "Closeness",
+      deck_closeness_blurb:
+        "Body, desire, tenderness, play. What we know about each other in the dark.",
+      deck_deepwater_title: "Deep Water",
+      deck_deepwater_blurb:
+        "Death, crisis, meaning, faith. What we don't usually talk about, and have to.",
+      card_position: "{n} / {total}",
+      card_empty: "Draw a card.",
+      next_card: "Next card",
+      reshuffle: "Reshuffle",
+      back_to_decks: "Back to decks",
+      cta_h2: "When you're ready for the rest",
+      cta_body:
+        "After the hard conversations come the practical decisions. Weddly keeps your budget, guest list, RSVP and seating in one shared workspace, so the real work doesn't fall back into PDFs and text threads.",
+      cta_button: "Open your workspace",
+      faq_h2: "Common questions",
+      faq_q1: "What's the point of these 100 questions?",
+      faq_a1:
+        "Conversation starters. Long-term relationships research keeps pointing to the same thing: couples who can talk openly about money, family, desire and death tend to last. The four decks are organised around those topics, so the hard ones don't stay under the rug.",
+      faq_q2: "Do we have to answer all 100?",
+      faq_a2:
+        "No. One card is one conversation. Pull one, talk it through, put the deck down. Your browser remembers where you are in each deck, so the next visit picks up from there.",
+      faq_q3: "Why these four decks specifically?",
+      faq_a3:
+        "We took the synthesis of ten different perspectives (a couples therapist, a long-married couple, an intimacy coach, a financial planner, a philosopher) and the themes that surfaced in all of them: family inheritance, money and the everyday, body and desire, and the death–crisis–meaning cluster. That's how we landed on four.",
+    },
   },
 };
 

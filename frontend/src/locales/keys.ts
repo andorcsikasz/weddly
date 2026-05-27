@@ -4435,5 +4435,36 @@ export interface LocaleMessages {
       faq_q3: string;
       faq_a3: string;
     };
+    couple_cards: {
+      page_eyebrow: string;
+      page_h1: string;
+      page_intro: string;
+      decks_h2: string;
+      deck_number_label: string;
+      deck_count_label: string;
+      deck_roots_title: string;
+      deck_roots_blurb: string;
+      deck_everyday_title: string;
+      deck_everyday_blurb: string;
+      deck_closeness_title: string;
+      deck_closeness_blurb: string;
+      deck_deepwater_title: string;
+      deck_deepwater_blurb: string;
+      card_position: string;
+      card_empty: string;
+      next_card: string;
+      reshuffle: string;
+      back_to_decks: string;
+      cta_h2: string;
+      cta_body: string;
+      cta_button: string;
+      faq_h2: string;
+      faq_q1: string;
+      faq_a1: string;
+      faq_q2: string;
+      faq_a2: string;
+      faq_q3: string;
+      faq_a3: string;
+    };
   };
 }

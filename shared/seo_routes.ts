@@ -252,6 +252,24 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Enter names, date, venue and deadline — we generate ready-to-use RSVP wording in three styles (formal, casual, poetic). Copy with one click.",
     },
   },
+  "/eszkozok/100-kerdes-eskuvo-elott": {
+    hu: {
+      title: "100 kérdés a házasság előtt · beszélgető kártyák pároknak | Wēddly",
+      description:
+        "Négy pakli, paklinként 25 mély kérdés jegyeseknek: gyökerek, hétköznapok, közelség, mély víz. Húzzatok egy kártyát, és kezdjétek el a beszélgetést.",
+      h1: "100 kérdés a házasság előtt",
+      intro:
+        "Négy pakli, paklinként 25 beszélgetésindító kérdés jegyes pároknak. Válasszatok paklit, húzzatok egy kártyát, és menjetek bele a beszélgetésbe. Ingyenes, regisztráció nélkül.",
+    },
+    en: {
+      title: "100 Questions Before You Say Yes · couple conversation cards | Weddly",
+      description:
+        "Four decks of 25 deep questions for engaged couples: roots, the everyday, closeness, deep water. Draw a card and start the conversation.",
+      h1: "100 Questions Before You Say Yes",
+      intro:
+        "Four decks of 25 conversation-starter cards for engaged couples. Pick a deck, draw a card, and let the conversation begin. Free, no signup needed.",
+    },
+  },
   "/blog": {
     hu: {
       title: "Blog · Wēddly",
@@ -318,6 +336,10 @@ export const SLUG_PAIRS: ReadonlyArray<{ hu: string; en: string }> = [
   {
     hu: "/eszkozok/rsvp-szoveg-generator",
     en: "/tools/rsvp-text-generator",
+  },
+  {
+    hu: "/eszkozok/100-kerdes-eskuvo-elott",
+    en: "/tools/100-questions-before-marriage",
   },
 ];
 
