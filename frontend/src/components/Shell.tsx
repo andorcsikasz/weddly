@@ -1,3 +1,4 @@
+import { Languages } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -32,7 +33,7 @@ function Header() {
             onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
             aria-label={t("nav.switch_language")}
           >
-            <GlobeIcon />
+            <Languages size={16} aria-hidden="true" />
             <span className="hidden sm:inline">
               {locale === "hu" ? t("nav.switch_to_en") : t("nav.switch_to_hu")}
             </span>
@@ -57,25 +58,3 @@ function Header() {
   );
 }
 
-/** Tiny hand-rolled globe icon (no new deps). aria-hidden — the button's
- *  aria-label carries the meaning. */
-function GlobeIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="8" cy="8" r="6.5" />
-      <path d="M1.5 8h13" />
-      <path d="M8 1.5c2 2 2 11 0 13" />
-      <path d="M8 1.5c-2 2-2 11 0 13" />
-    </svg>
-  );
-}

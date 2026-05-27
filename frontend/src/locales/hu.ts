@@ -483,13 +483,15 @@ const hu: LocaleMessages = {
     ceremony_kind_skip: "Most kihagyom",
     ceremony_kind_help:
       "Ezt később bármikor beállíthatjátok a Profilban — segít a szolgáltatóknál az ajánlatkérésnél.",
-    welcome_existing_title: "{names} — üdv a munkaterületen",
+    welcome_existing_eyebrow: "Üdv újra",
+    welcome_existing_title: "{names}",
     welcome_existing_body:
-      "A párod már beállította az alapokat. Ezeket találod most — bármit megváltoztathatsz később a vezérlőpultról vagy a profilodból.",
+      "A párod már beállította az alapokat. Bármit megváltoztathatsz később a vezérlőpultról vagy a profilodból.",
     welcome_existing_date_label: "Esküvő dátuma",
     welcome_existing_guests_label: "Vendégek",
     welcome_existing_budget_label: "Költségkeret",
     welcome_existing_style_label: "Stílus",
+    welcome_existing_edit_hint: "Bármit szerkeszthetsz a profilban.",
     welcome_existing_continue: "Vezérlőpult megnyitása",
   },
   goal: {

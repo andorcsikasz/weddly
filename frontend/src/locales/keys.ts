@@ -540,12 +540,14 @@ export interface LocaleMessages {
     ceremony_kind_skip: string;
     ceremony_kind_help: string;
     // ── Already-onboarded welcome (partner B lands here after invite) ──
+    welcome_existing_eyebrow: string;
     welcome_existing_title: string;
     welcome_existing_body: string;
     welcome_existing_date_label: string;
     welcome_existing_guests_label: string;
     welcome_existing_budget_label: string;
     welcome_existing_style_label: string;
+    welcome_existing_edit_hint: string;
     welcome_existing_continue: string;
   };
   goal: {

@@ -479,13 +479,15 @@ const en: LocaleMessages = {
     ceremony_kind_skip: "Skip for now",
     ceremony_kind_help:
       "You can set this later in your profile — helps when requesting quotes from suppliers.",
-    welcome_existing_title: "{names} — welcome to your workspace",
+    welcome_existing_eyebrow: "Welcome back",
+    welcome_existing_title: "{names}",
     welcome_existing_body:
-      "Your partner already set up the basics. Here's what's in place — you can change anything later from the dashboard or your profile.",
+      "Your partner already set up the basics. You can change anything later from the dashboard or your profile.",
     welcome_existing_date_label: "Wedding date",
     welcome_existing_guests_label: "Guests",
     welcome_existing_budget_label: "Budget",
     welcome_existing_style_label: "Style",
+    welcome_existing_edit_hint: "You can edit any of this from your profile.",
     welcome_existing_continue: "Go to dashboard",
   },
   goal: {

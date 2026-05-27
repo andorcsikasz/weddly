@@ -887,26 +887,54 @@ function ExistingCoupleWelcome({ couple }: { couple: Couple }) {
       ? couple.style_tags.map((tag) => t(`onboarding.style_${tag}`)).join(", ")
       : null;
 
+  // Guests / budget / optional style live in a flat strip below the hero date.
+  // Date earns the spotlight because partner B is most likely scanning for "when".
+  const supportingFacts: Array<{ label: string; value: string }> = [
+    { label: t("onboarding.welcome_existing_guests_label"), value: guestText },
+    { label: t("onboarding.welcome_existing_budget_label"), value: budgetText },
+  ];
+  if (styleText) {
+    supportingFacts.push({
+      label: t("onboarding.welcome_existing_style_label"),
+      value: styleText,
+    });
+  }
+
   return (
     <Shell>
       <div className="mx-auto max-w-xl">
         <div className="card animate-fade-in-up">
-          <h1 className="font-serif text-3xl sm:text-4xl break-words hyphens-auto">
+          <p className="eyebrow">{t("onboarding.welcome_existing_eyebrow")}</p>
+          <h1 className="mt-2 break-words hyphens-auto font-serif italic text-4xl sm:text-5xl leading-[1.05] text-ink-900 dark:text-paper-50">
             {t("onboarding.welcome_existing_title", { names: couple.display_name })}
           </h1>
-          <p className="mt-3 text-ink-600">{t("onboarding.welcome_existing_body")}</p>
+          <div className="mt-5 h-px w-full bg-paper-300 dark:bg-umber-700" />
+          <p className="mt-5 text-ink-600 dark:text-umber-200">
+            {t("onboarding.welcome_existing_body")}
+          </p>
 
-          <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
-            <Fact label={t("onboarding.welcome_existing_date_label")} value={dateText} />
-            <Fact label={t("onboarding.welcome_existing_guests_label")} value={guestText} />
-            <Fact label={t("onboarding.welcome_existing_budget_label")} value={budgetText} />
-            {styleText && (
-              <Fact label={t("onboarding.welcome_existing_style_label")} value={styleText} />
-            )}
+          <div className="mt-7">
+            <p className="eyebrow">{t("onboarding.welcome_existing_date_label")}</p>
+            <p className="mt-1 font-serif italic text-3xl sm:text-4xl text-ink-900 dark:text-paper-50">
+              {dateText}
+            </p>
+          </div>
+
+          <dl className="mt-6 divide-y divide-paper-300 border-t border-paper-300 dark:divide-umber-700 dark:border-umber-700">
+            {supportingFacts.map((f) => (
+              <Fact key={f.label} label={f.label} value={f.value} />
+            ))}
           </dl>
 
-          <div className="mt-8 flex justify-end">
-            <Link to="/app" replace className="btn-accent btn-lg">
+          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-ink-500 dark:text-umber-300">
+              {t("onboarding.welcome_existing_edit_hint")}
+            </p>
+            <Link
+              to="/app"
+              replace
+              className="btn-accent btn-lg w-full sm:w-auto sm:min-w-[16rem]"
+            >
               {t("onboarding.welcome_existing_continue")}
             </Link>
           </div>
@@ -918,9 +946,9 @@ function ExistingCoupleWelcome({ couple }: { couple: Couple }) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-paper-300 bg-paper-100 px-3 py-2">
-      <dt className="text-xs uppercase tracking-wide text-ink-500">{label}</dt>
-      <dd className="mt-0.5 font-medium text-ink-800">{value}</dd>
+    <div className="flex items-baseline justify-between gap-4 py-3 first:pt-3 last:pb-0">
+      <dt className="field-label !mb-0">{label}</dt>
+      <dd className="text-right font-medium text-ink-800 dark:text-paper-100">{value}</dd>
     </div>
   );
 }
