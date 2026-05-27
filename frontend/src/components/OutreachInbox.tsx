@@ -15,8 +15,16 @@
 // webhook + `reply.weddly.xyz` MX), Add-to-outreach picker from the
 // suppliers page, supplier-name autocomplete in the modal.
 
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Mail, Send, Plus } from "lucide-react";
+import {
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Mail, Send, Plus, Search, Sparkles, X } from "lucide-react";
 import {
   type CreateOutreachCampaignInput,
   OUTREACH_BODY_MAX_LEN,
@@ -25,10 +33,12 @@ import {
   type OutreachCampaign,
   type OutreachCampaignDetail,
 } from "@shared/outreach";
+import type { DirectorySupplier } from "@shared/suppliers";
 import { Dialog } from "./ui/Dialog";
 import { useToast } from "./ui/ToastProvider";
 import { ApiError } from "../lib/api";
-import { outreachApi } from "../lib/endpoints";
+import { coupleApi, outreachApi, supplierApi } from "../lib/endpoints";
+import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 export function OutreachInbox() {
@@ -218,6 +228,26 @@ export function OutreachInbox() {
   );
 }
 
+// Quick-fill templates. Each key resolves to two i18n strings:
+//   outreach.tpl_<key>          → chip label
+//   outreach.tpl_<key>_subject  → subject template with {date}
+//   outreach.tpl_<key>_body     → body template with {date} and {guests}
+// {date} comes from the couple's wedding_date (locale-formatted) and falls
+// back to "[dátum]" / "[date]" so the user sees and edits the placeholder.
+// {guests} comes from target_guest_count, with a matching placeholder.
+const TEMPLATE_KEYS = ["quote", "availability", "details", "intro"] as const;
+type TemplateKey = (typeof TEMPLATE_KEYS)[number];
+
+/** Diacritic-folded lower-case for accent-insensitive supplier search.
+ *  Same shape as the helper on SuppliersPage — duplicated rather than
+ *  shared because the page-level helper isn't exported. */
+function fold(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
 function ComposeDialog({
   onClose,
   onSent,
@@ -225,34 +255,123 @@ function ComposeDialog({
   onClose: () => void;
   onSent: (created: OutreachCampaignDetail) => void | Promise<void>;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [supplierIdsText, setSupplierIdsText] = useState("");
+  // Picked recipients: id + name (name for the chip, id for the API).
+  const [selected, setSelected] = useState<Array<{ id: string; name: string; city: string }>>([]);
+  const [supplierQuery, setSupplierQuery] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [allSuppliers, setAllSuppliers] = useState<DirectorySupplier[]>([]);
+  const [weddingDate, setWeddingDate] = useState<string | null>(null);
+  const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const cap = OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP;
+
+  // Fetch the directory + the couple's date/guest count once when the
+  // dialog mounts. Both calls are best-effort: a missing directory just
+  // means the picker shows "no matches" and a missing couple means the
+  // templates render with the [date]/[guest count] placeholders.
+  useEffect(() => {
+    void supplierApi
+      .list()
+      .then((r) => setAllSuppliers(r.suppliers))
+      .catch(() => undefined);
+    void coupleApi
+      .current()
+      .then((r) => {
+        setWeddingDate(r.couple?.wedding_date ?? null);
+        setTargetGuestCount(r.couple?.target_guest_count ?? null);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  // Substituted into {date} and {guests} when a template is applied.
+  const tplDate = weddingDate
+    ? formatDate(weddingDate, locale === "hu" ? "hu" : "en")
+    : t("outreach.tpl_placeholder_date");
+  const tplGuests =
+    targetGuestCount != null ? String(targetGuestCount) : t("outreach.tpl_placeholder_guests");
+
+  const applyTemplate = (key: TemplateKey) => {
+    setSubject(t(`outreach.tpl_${key}_subject`, { date: tplDate, guests: tplGuests }));
+    setBody(t(`outreach.tpl_${key}_body`, { date: tplDate, guests: tplGuests }));
+  };
+
+  // Picker: filter suppliers by query (name or city, accent-insensitive),
+  // hide already-selected ones, cap to 8 visible. Empty query → no dropdown.
+  const queryNorm = useMemo(() => fold(supplierQuery.trim()), [supplierQuery]);
+  const selectedIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
+  const suggestions = useMemo<DirectorySupplier[]>(() => {
+    if (!queryNorm) return [];
+    return allSuppliers
+      .filter((s) => !selectedIds.has(s.id))
+      .filter((s) => fold(`${s.name} ${s.city}`).includes(queryNorm))
+      .slice(0, 8);
+  }, [queryNorm, allSuppliers, selectedIds]);
+  // Reset the keyboard cursor whenever the matched set changes so Enter
+  // always lands on the first visible row, not a stale index.
+  useEffect(() => setActiveIdx(0), [queryNorm, selectedIds.size]);
+
+  const addSupplier = useCallback(
+    (s: DirectorySupplier) => {
+      setSelected((prev) => {
+        if (prev.length >= cap) return prev;
+        if (prev.some((p) => p.id === s.id)) return prev;
+        return [...prev, { id: s.id, name: s.name, city: s.city }];
+      });
+      setSupplierQuery("");
+      setPickerOpen(false);
+      // Stay focused so couples can keep picking without re-clicking.
+      inputRef.current?.focus();
+    },
+    [cap],
+  );
+
+  const removeSupplier = useCallback((id: string) => {
+    setSelected((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const capped = selected.length >= cap;
+
+  const onPickerKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown" && suggestions.length > 0) {
+      e.preventDefault();
+      setPickerOpen(true);
+      setActiveIdx((i) => Math.min(suggestions.length - 1, i + 1));
+    } else if (e.key === "ArrowUp" && suggestions.length > 0) {
+      e.preventDefault();
+      setActiveIdx((i) => Math.max(0, i - 1));
+    } else if (e.key === "Enter" && suggestions.length > 0) {
+      e.preventDefault();
+      const pick = suggestions[Math.min(activeIdx, suggestions.length - 1)];
+      if (pick) addSupplier(pick);
+    } else if (e.key === "Backspace" && supplierQuery === "" && selected.length > 0) {
+      // Email-style: empty input + backspace → pop the last chip.
+      removeSupplier(selected[selected.length - 1]!.id);
+    } else if (e.key === "Escape") {
+      setPickerOpen(false);
+    }
+  };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (sending) return;
-    const supplier_ids = supplierIdsText
-      .split(/[\s,]+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-    if (supplier_ids.length === 0) {
+    if (selected.length === 0) {
       toast.error(t("outreach.err_no_suppliers"));
       return;
     }
-    if (supplier_ids.length > OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP) {
-      toast.error(
-        t("outreach.err_too_many_suppliers", { max: OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP }),
-      );
+    if (selected.length > cap) {
+      toast.error(t("outreach.err_too_many_suppliers", { max: cap }));
       return;
     }
     const payload: CreateOutreachCampaignInput = {
       subject: subject.trim(),
       body_template: body.trim(),
-      supplier_ids,
+      supplier_ids: selected.map((s) => s.id),
     };
     setSending(true);
     try {
@@ -264,7 +383,7 @@ function ComposeDialog({
         code === "campaign_rate_limited"
           ? t("outreach.err_rate_limited")
           : code === "supplier_cap_exceeded"
-            ? t("outreach.err_too_many_suppliers", { max: OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP })
+            ? t("outreach.err_too_many_suppliers", { max: cap })
             : code === "supplier_not_found"
               ? t("outreach.err_supplier_not_found")
               : code === "supplier_no_email"
@@ -300,6 +419,29 @@ function ComposeDialog({
       }
     >
       <form id="outreach-compose-form" onSubmit={onSubmit} className="space-y-3">
+        {/* Quick-fill templates. One row of chips; click replaces subject +
+            body with a friendly draft that already names the wedding date
+            and guest count (or shows a [placeholder] when those aren't set).
+            Not a wizard step — couples can still write from scratch. */}
+        <div>
+          <span className="field-label inline-flex items-center gap-1.5">
+            <Sparkles size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+            {t("outreach.tpl_section_label")}
+          </span>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {TEMPLATE_KEYS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => applyTemplate(key)}
+                className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+              >
+                {t(`outreach.tpl_${key}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <label className="block" htmlFor="outreach-subject">
           <span className="field-label">{t("outreach.label_subject")}</span>
           <input
@@ -316,28 +458,140 @@ function ComposeDialog({
           <span className="field-label">{t("outreach.label_body")}</span>
           <textarea
             id="outreach-body"
-            className="input min-h-[8rem]"
+            className="input min-h-[10rem]"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             maxLength={OUTREACH_BODY_MAX_LEN}
             required
           />
         </label>
-        <label className="block" htmlFor="outreach-suppliers">
-          <span className="field-label">{t("outreach.label_supplier_ids")}</span>
-          <input
-            id="outreach-suppliers"
-            className="input"
-            type="text"
-            value={supplierIdsText}
-            onChange={(e) => setSupplierIdsText(e.target.value)}
-            placeholder={t("outreach.label_supplier_ids_placeholder")}
-            required
-          />
+
+        {/* Supplier autocomplete. Selected vendors render as chips with an
+            × button; the input below filters the directory by name/city as
+            you type and shows a dropdown of matches. Couples never have to
+            know the internal supplier id — the chip carries the display
+            name and the API request uses the id under the hood. */}
+        <div>
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="field-label" id="outreach-suppliers-label">
+              {t("outreach.label_suppliers")}
+            </span>
+            <span className="text-[11px] tabular-nums text-ink-500 dark:text-umber-300">
+              {t("outreach.suppliers_count", { n: selected.length, max: cap })}
+            </span>
+          </div>
+          <div
+            className="relative mt-1 rounded-xl border border-paper-300 bg-paper-50 px-2 py-1.5 transition focus-within:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-umber-500"
+            onClick={() => inputRef.current?.focus()}
+          >
+            <div className="flex flex-wrap items-center gap-1.5">
+              {selected.map((s) => (
+                <span
+                  key={s.id}
+                  className="inline-flex items-center gap-1 rounded-full bg-ink-700 px-2.5 py-0.5 text-xs text-paper-100 dark:bg-paper-50 dark:text-umber-900"
+                >
+                  <span className="max-w-[14rem] truncate">{s.name}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeSupplier(s.id);
+                    }}
+                    aria-label={t("outreach.suppliers_remove_aria", { name: s.name })}
+                    className="-mr-1 ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-paper-200 transition hover:bg-white/20 hover:text-paper-100 dark:text-umber-700 dark:hover:bg-black/10 dark:hover:text-umber-900"
+                  >
+                    <X size={11} aria-hidden />
+                  </button>
+                </span>
+              ))}
+              <span className="relative inline-flex min-w-[12rem] flex-1 items-center">
+                <Search
+                  size={12}
+                  aria-hidden
+                  className="absolute left-1 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  aria-labelledby="outreach-suppliers-label"
+                  aria-autocomplete="list"
+                  aria-expanded={pickerOpen && suggestions.length > 0}
+                  aria-controls="outreach-suppliers-listbox"
+                  value={supplierQuery}
+                  onChange={(e) => {
+                    setSupplierQuery(e.target.value);
+                    setPickerOpen(true);
+                  }}
+                  onFocus={() => setPickerOpen(true)}
+                  onBlur={() => {
+                    // Delay the close so a mousedown on a suggestion lands
+                    // before the dropdown unmounts.
+                    window.setTimeout(() => setPickerOpen(false), 120);
+                  }}
+                  onKeyDown={onPickerKeyDown}
+                  disabled={capped}
+                  placeholder={
+                    capped
+                      ? t("outreach.suppliers_picker_capped", { max: cap })
+                      : selected.length === 0
+                        ? t("outreach.suppliers_picker_placeholder")
+                        : ""
+                  }
+                  className="w-full bg-transparent pl-5 pr-1 py-1 text-sm text-ink-800 placeholder:text-ink-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:text-paper-100 dark:placeholder:text-umber-300"
+                />
+              </span>
+            </div>
+            {pickerOpen && queryNorm && !capped && (
+              <div
+                id="outreach-suppliers-listbox"
+                role="listbox"
+                className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-auto rounded-xl border border-paper-300 bg-white py-1 shadow-lg dark:border-umber-700 dark:bg-umber-800"
+              >
+                {suggestions.length === 0 ? (
+                  <p className="px-3 py-2 text-xs text-ink-500 dark:text-umber-300">
+                    {t("outreach.suppliers_picker_no_matches", { q: supplierQuery.trim() })}
+                  </p>
+                ) : (
+                  suggestions.map((s, idx) => {
+                    const active = idx === Math.min(activeIdx, suggestions.length - 1);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        role="option"
+                        aria-selected={active}
+                        // mousedown fires before the input's blur → click would
+                        // race the dropdown's unmount. mousedown wins cleanly.
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          addSupplier(s);
+                        }}
+                        onMouseEnter={() => setActiveIdx(idx)}
+                        className={`flex w-full items-baseline justify-between gap-3 px-3 py-1.5 text-left text-sm transition ${
+                          active
+                            ? "bg-paper-100 dark:bg-umber-700"
+                            : "hover:bg-paper-100 dark:hover:bg-umber-700"
+                        }`}
+                      >
+                        <span className="truncate font-medium text-ink-800 dark:text-paper-100">
+                          {s.name}
+                        </span>
+                        <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
+                          {s.city}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
           <p className="field-help">
-            {t("outreach.label_supplier_ids_help", { max: OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP })}
+            {capped
+              ? t("outreach.suppliers_picker_capped", { max: cap })
+              : t("outreach.suppliers_picker_help", { max: cap })}
           </p>
-        </label>
+        </div>
       </form>
     </Dialog>
   );
