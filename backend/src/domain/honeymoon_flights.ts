@@ -201,11 +201,25 @@ export async function getFlightEstimate(couple: CoupleRow): Promise<FlightEstima
     limit: OFFER_LIMIT,
   });
 
-  // null = upstream FAILED (network, auth, quota). Don't cache: the next
-  // page view should retry rather than wait out a 12 h TTL on a misconfig.
+  // null = upstream FAILED (network, auth, quota). Render the card in
+  // its "no offer right now" state (the user gets visible feedback that
+  // the planner tried) but DON'T cache: the next page view should retry
+  // rather than wait 12 h on a misconfig. Logged at warn so prod alerts
+  // catch a sustained outage even though the UX stays graceful.
   if (offers === null) {
     logger.warn("flight_estimate.upstream_failed", { destination, destinationIata });
-    return null;
+    return toEstimate({
+      origin,
+      destination_text: destination,
+      destination_iata: destinationIata,
+      depart_date: departDate,
+      return_date: returnDate,
+      adults,
+      currency,
+      price_amount: null,
+      offers_json: null,
+      fetched_at: now,
+    });
   }
 
   const row: EstimateRow = {
