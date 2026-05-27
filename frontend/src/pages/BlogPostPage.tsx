@@ -156,6 +156,7 @@ export default function BlogPostPage() {
               <BlogCover
                 url={post.cover_image_url ?? null}
                 alt={copy.title}
+                slug={post.slug}
                 category={post.category[locale]}
               />
             </figure>

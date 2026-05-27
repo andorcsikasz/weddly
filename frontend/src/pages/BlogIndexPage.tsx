@@ -104,6 +104,7 @@ function BlogTile({
       <BlogCover
         url={post.cover_image_url ?? null}
         alt={copy.title}
+        slug={post.slug}
         category={post.category[locale]}
         index={index}
       />
@@ -128,11 +129,14 @@ function BlogTile({
 export function BlogCover({
   url,
   alt,
+  slug,
   category,
   index,
 }: {
   url: string | null;
   alt: string;
+  /** Post slug, used to pick the content icon on the SVG fallback cover. */
+  slug?: string;
   /** Category eyebrow shown on the SVG fallback cover. */
   category?: string;
   /** 1-indexed position in the feed, baked into the fallback cover as a
@@ -156,7 +160,7 @@ export function BlogCover({
   // admin uploads images post by post.
   return (
     <div className="aspect-[16/10] w-full overflow-hidden bg-paper-100 dark:bg-umber-800">
-      <BlogCoverArt category={category} index={index} className="h-full w-full" />
+      <BlogCoverArt slug={slug} category={category} index={index} className="h-full w-full" />
     </div>
   );
 }
