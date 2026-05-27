@@ -892,7 +892,7 @@ function SidebarCard({
   children,
 }: {
   icon?: React.ReactNode;
-  /** Optional. Section header dropped entirely when omitted — used by the
+  /** Optional. Section header dropped entirely when omitted, used by the
    *  Address and Contact cards where the rows already say what they are
    *  (pin + street, phone + number, etc.). The Foglaltság card keeps a
    *  title because the month nav needs context. */
