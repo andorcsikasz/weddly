@@ -182,31 +182,13 @@ export default function LandingPage() {
           "0 pár". This replaces the earlier fake "Open beta" stats band. */}
       <LiveStatsBand />
 
-      {/* ════════════════════════ 02 · Phases — CHIP STRIP ════════════════════════
-          A single hairline-ruled line listing the five phase labels. The
-          four feature blocks below elaborate; this strip just orients.
-          The `id="phases"` anchor is preserved so the footer link and the
-          interactive-budget "#phases" jump still land somewhere real. */}
-      <section id="phases" className="relative scroll-mt-20 bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-          <ol className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 border-y border-paper-300 py-5 font-serif text-base text-ink-700 dark:border-umber-700 dark:text-paper-100 sm:gap-x-5 sm:py-6 sm:text-lg">
-            <li>{t("landing.phase_plan_title")}</li>
-            <li aria-hidden className="text-paper-400 dark:text-umber-600">·</li>
-            <li>{t("landing.phase_suppliers_title")}</li>
-            <li aria-hidden className="text-paper-400 dark:text-umber-600">·</li>
-            <li>{t("landing.phase_guests_title")}</li>
-            <li aria-hidden className="text-paper-400 dark:text-umber-600">·</li>
-            <li>{t("landing.phase_seating_title")}</li>
-            <li aria-hidden className="text-paper-400 dark:text-umber-600">·</li>
-            <li>{t("landing.phase_aftermath_title")}</li>
-          </ol>
-        </div>
-      </section>
-
       {/* ════════════════════════ 03 · Budget — POLAROID ════════════════════════
           Mockup framed as a tilted polaroid with a watermark "02.1" sitting
-          behind it. Copy on the left in a narrow column. */}
-      <section className="relative bg-white dark:bg-umber-900">
+          behind it. Copy on the left in a narrow column. The `id="phases"`
+          anchor lives here (rather than on a dedicated strip above) so the
+          footer "Funkciók" link and the interactive-budget demo's "#phases"
+          jump still land on the first feature block. */}
+      <section id="phases" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
