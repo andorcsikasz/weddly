@@ -381,29 +381,19 @@ function DeckShowcase({
           </p>
         </div>
 
-        {/* Fixed 4-slot row: each deck has a permanent home, the selected
-            one's slot is a dashed placeholder so it's visually obvious
-            which level just rose into the centre. No mini gets re-ordered
-            on swap; the empty slot moves, not the others. */}
+        {/* Fixed 4-slot row, scoped to max-w-2xl so the row sits flush
+            with the centre card's width below it. Each level keeps a
+            permanent slot — Level 1 always slot 1, Level 4 always slot 4
+            — and the selected one is rendered as an EMPTY li (no border,
+            no label), letting an open gap tell the "this card just rose
+            into the centre" story without an extra placeholder shape. */}
         <h2 className="sr-only">{t("tools.couple_cards.decks_h2")}</h2>
-        <ul className="mt-8 grid grid-cols-4 gap-2 sm:mt-10 sm:gap-3">
+        <ul className="mx-auto mt-8 grid max-w-2xl grid-cols-4 gap-2 sm:mt-10 sm:gap-3">
           {COUPLE_CARD_DECKS.map((deck, idx) => {
             const isSelected = deck.id === selectedId;
             return (
-              <li key={deck.id} className="aspect-[3/2]">
-                {isSelected ? (
-                  // Dashed ghost: shows where the lifted deck came from.
-                  // Keeps the slot footprint identical to the WNRS-red
-                  // siblings so the layout doesn't shift when a swap fires.
-                  <div
-                    aria-hidden="true"
-                    className="flex h-full w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-wnrs-red/35 transition-all duration-300"
-                  >
-                    <span className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-wnrs-red/50 sm:text-xs">
-                      {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
-                    </span>
-                  </div>
-                ) : (
+              <li key={deck.id} className="aspect-[3/2]" aria-hidden={isSelected}>
+                {isSelected ? null : (
                   <button
                     type="button"
                     onClick={() => onSelect(deck.id)}
