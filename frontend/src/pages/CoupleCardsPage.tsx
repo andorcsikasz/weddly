@@ -356,46 +356,60 @@ function DeckShowcase({
           </p>
         </div>
 
-        {/* Mini deck row: the three non-selected decks. Click swaps the
-            centre. Mobile: scrollable single row to avoid wrapping. */}
+        {/* Fixed 4-slot row: each deck has a permanent home, the selected
+            one's slot is a dashed placeholder so it's visually obvious
+            which level just rose into the centre. No mini gets re-ordered
+            on swap; the empty slot moves, not the others. */}
         <h2 className="sr-only">{t("tools.couple_cards.decks_h2")}</h2>
-        <ul className="mt-8 flex items-stretch justify-center gap-3 overflow-x-auto pb-1 sm:mt-10 sm:gap-4 sm:overflow-x-visible">
+        <ul className="mt-8 grid grid-cols-4 gap-2 sm:mt-10 sm:gap-3">
           {COUPLE_CARD_DECKS.map((deck, idx) => {
-            if (deck.id === selectedId) return null;
+            const isSelected = deck.id === selectedId;
             return (
-              <li key={deck.id} className="shrink-0">
-                {/* Mini deck tiles match the selected cover's WNRS-red
-                    aesthetic — the whole showcase reads as one stacked
-                    deck, just the centre one larger and surrounded by
-                    phantom siblings. Distinct from the selected card by
-                    size + position + the hover-fan stack, not by colour. */}
-                <button
-                  type="button"
-                  onClick={() => onSelect(deck.id)}
-                  className="group flex aspect-[3/2] w-36 flex-col items-center justify-between rounded-xl bg-wnrs-red px-3 py-3 text-center text-white shadow-[0_18px_36px_-18px_rgba(200,16,46,0.5)] transition-all hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:w-44 sm:px-4 sm:py-4"
-                >
-                  <span aria-hidden="true" className="block h-0.5" />
-                  <div className="flex flex-1 flex-col items-center justify-center">
-                    <span className="font-display text-base font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-xl">
+              <li key={deck.id} className="aspect-[3/2]">
+                {isSelected ? (
+                  // Dashed ghost: shows where the lifted deck came from.
+                  // Keeps the slot footprint identical to the WNRS-red
+                  // siblings so the layout doesn't shift when a swap fires.
+                  <div
+                    aria-hidden="true"
+                    className="flex h-full w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-wnrs-red/35 transition-all duration-300"
+                  >
+                    <span className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-wnrs-red/50 sm:text-xs">
                       {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
                     </span>
-                    <span className="mt-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-white sm:text-xs">
-                      ({t(deck.titleKey)})
-                    </span>
                   </div>
-                  <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] text-white sm:text-[9px]">
-                    {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
-                  </span>
-                </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onSelect(deck.id)}
+                    className="group flex h-full w-full flex-col items-center justify-between rounded-xl bg-wnrs-red px-2 py-2 text-center text-white shadow-[0_18px_36px_-18px_rgba(200,16,46,0.5)] transition-all hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-3 sm:py-3"
+                  >
+                    <span aria-hidden="true" className="block h-0.5" />
+                    <div className="flex flex-1 flex-col items-center justify-center">
+                      <span className="font-display text-xs font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-base lg:text-lg">
+                        {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                      </span>
+                      <span className="mt-1 hidden font-display text-[10px] font-bold uppercase tracking-[0.04em] text-white sm:block sm:text-[11px]">
+                        ({t(deck.titleKey)})
+                      </span>
+                    </div>
+                    <span className="font-display text-[8px] font-bold uppercase tracking-[0.22em] text-white sm:text-[9px]">
+                      {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                    </span>
+                  </button>
+                )}
               </li>
             );
           })}
         </ul>
 
-        {/* Centre: the selected deck as a hover-animated stack. Two phantom
-            cards sit behind the front face; group-hover fans them out. */}
+        {/* Centre: the lifted deck. `key={selectedId}` replays the lift
+            animation on every swap, so the user reads each tap as "this
+            level rose from its slot". Phantom stack behind the card stays
+            paper-cream so it reads as the underside of the deck (the
+            edges you see when you fan a stack of cards on a table). */}
         <div className="relative mx-auto mt-10 max-w-2xl sm:mt-12">
-          <div className="group relative isolate">
+          <div key={selectedId} className="group relative isolate animate-card-lift">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 z-0 translate-x-1.5 translate-y-2 rotate-[2deg] rounded-2xl border border-paper-300 bg-paper-100 transition-transform duration-300 ease-out group-hover:translate-x-4 group-hover:translate-y-5 group-hover:rotate-[5deg] dark:border-umber-700 dark:bg-umber-700"
@@ -404,22 +418,15 @@ function DeckShowcase({
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 z-[1] translate-x-3 translate-y-4 rotate-[4deg] rounded-2xl border border-paper-300 bg-paper-50 transition-transform duration-300 ease-out group-hover:translate-x-8 group-hover:translate-y-10 group-hover:rotate-[8deg] dark:border-umber-700 dark:bg-umber-800"
             />
-            {/* Selected card face: deep blush, white type, WNRS silhouette.
-                "{n}. szint" / "Level {n}" reads as the section divider; the
-                deck name takes the centre, the blurb tucks into the lower
-                third with reduced opacity so it reads as caption-weight
-                copy without crowding the headline. Dark mode keeps the
-                same red — the surface owns its colour identity. */}
             {/* Selected card face: WNRS-red, white display-sans, all caps.
-                The cover of the deck reads as a direct visual quote of the
-                "LEVEL 1 / (PERCEPTION)" card the user referenced — same
-                hierarchy: level label up top, parenthesised deck name in
-                the centre, brand line at the bottom edge. Cormorant italic
-                is reserved for the Weddly page chrome (eyebrow + h1); the
-                card itself adopts the condensed display sans wholesale. */}
+                Click anywhere on this card opens the deck — there's no
+                secondary CTA underneath. The accessible name carries the
+                deck title so screen readers say "Draw a card · Roots"
+                instead of an opaque "Draw a card". */}
             <button
               type="button"
               onClick={onOpen}
+              aria-label={`${t("tools.couple_cards.draw_card")} · ${t(selected.titleKey)}`}
               className="relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-7 py-8 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
             >
               <span aria-hidden="true" className="block h-1" />
@@ -436,19 +443,6 @@ function DeckShowcase({
               </span>
             </button>
           </div>
-        </div>
-
-        {/* Primary action under the deck. Mirrors the big card's click
-            handler so a visitor can hit either surface and end up in the
-            same card view. */}
-        <div className="mt-12 flex justify-center sm:mt-14">
-          <button
-            type="button"
-            onClick={onOpen}
-            className="btn-primary btn-lifted btn-lg inline-flex items-center gap-2 shadow-sm"
-          >
-            {t("tools.couple_cards.draw_card")}
-          </button>
         </div>
       </div>
     </section>

@@ -154,6 +154,12 @@ export default {
         // card animates from scratch. 260ms matches the existing fade-up
         // cadence — fast enough to feel like a deal, slow enough to read.
         "card-deal": "cardDeal 260ms ease-out",
+        // Showcase centre lift: when a visitor taps one of the four mini
+        // slots, the selected deck rises into the centre frame. Uses a
+        // spring-out easing so the card hops up rather than gliding in
+        // flat. Paired with React `key={selectedId}` so the animation
+        // replays on every swap.
+        "card-lift": "cardLift 360ms cubic-bezier(0.2, 0.8, 0.2, 1)",
         // Skeleton/loading shimmer — a translucent highlight that sweeps
         // left-to-right across a placeholder block to signal "loading".
         // 1.6s feels lively without being hectic; longer reads as stalled.
@@ -168,6 +174,11 @@ export default {
         cardDeal: {
           "0%": { opacity: "0", transform: "translateX(16px) scale(0.985)" },
           "100%": { opacity: "1", transform: "translateX(0) scale(1)" },
+        },
+        cardLift: {
+          "0%": { opacity: "0", transform: "translateY(28px) scale(0.92)" },
+          "60%": { opacity: "1", transform: "translateY(-4px) scale(1.02)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
