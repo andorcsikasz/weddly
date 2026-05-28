@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
 import { ApiError } from "../lib/api";
@@ -161,14 +161,7 @@ export default function BlogPostPage() {
               />
             </figure>
 
-            <section
-              lang={locale}
-              className="mt-12 space-y-5 text-base leading-loose text-ink-800 dark:text-paper-100 sm:text-lg [hyphens:auto] [text-wrap:pretty]"
-            >
-              {copy.body.map((block, i) => (
-                <Block key={i} block={block} />
-              ))}
-            </section>
+            <BlogBody body={copy.body} locale={locale} />
 
             {related.length > 0 ? (
               <aside className="mt-16 border-t border-paper-300 dark:border-umber-700 pt-10">
@@ -252,6 +245,104 @@ function UlItem({ text }: { text: string }) {
   );
 }
 
+/** Slugify an h3 heading into an anchor id. Lowercase + strip Hungarian
+ *  diacritics + collapse anything non-alphanumeric to a hyphen, so e.g.
+ *  "Énekek éneke 8,6-7" -> "enekek-eneke-8-6-7". Stable enough that the
+ *  same h3 always produces the same id, which is what the prose links
+ *  below depend on. */
+function anchorId(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Book + chapter pattern shared by the section map and the prose linker.
+ *  Matches "1Korinthus", "Énekek éneke", "Prédikátor" etc. The optional
+ *  leading "12" handles "1Korinthus" / "2Korinthus" style prefixes. */
+const BOOK_NAME = "[12]?[A-ZÉÁÍÓÖŐÚÜŰ][a-zéáíóöőúüű]+(?:\\s+[a-zéáíóöőúüű]+)*";
+
+/** Full reference pattern: book + chapter, with optional verse spec like
+ *  ",4-8" or ",16". Captures the book name (group 1) and chapter (group 2). */
+const PROSE_REF_RE = new RegExp(`(${BOOK_NAME})\\s+(\\d+)(?:,\\d+(?:-\\d+)?)?`, "g");
+
+interface SectionMap {
+  /** Exact h3 text -> anchor id. Lets "Énekek éneke 2,16" in prose land
+   *  precisely on the h3 with the same wording. */
+  byExact: Map<string, string>;
+  /** Book + chapter ("1Korinthus 13") -> anchor of the FIRST h3 starting
+   *  with that prefix. Used as fallback when an exact match isn't found. */
+  byBookChapter: Map<string, string>;
+}
+
+/** Walk the post body and collect h3 anchor ids keyed by both exact text
+ *  and book+chapter prefix. Built once per post + locale; passed down to
+ *  every Block so the paragraph renderer can resolve prose references. */
+function buildSectionMap(blocks: BlogBlock[]): SectionMap {
+  const byExact = new Map<string, string>();
+  const byBookChapter = new Map<string, string>();
+  const headRe = new RegExp(`^(${BOOK_NAME})\\s+(\\d+)`);
+  for (const block of blocks) {
+    if (block.type !== "h3") continue;
+    const id = anchorId(block.text);
+    byExact.set(block.text, id);
+    const m = block.text.match(headRe);
+    const book = m?.[1];
+    const chapter = m?.[2];
+    if (book && chapter) {
+      const key = `${book.trim()} ${chapter}`;
+      if (!byBookChapter.has(key)) byBookChapter.set(key, id);
+    }
+  }
+  return { byExact, byBookChapter };
+}
+
+function resolveAnchor(ref: string, map: SectionMap): string | null {
+  const exact = map.byExact.get(ref);
+  if (exact) return exact;
+  const m = ref.match(new RegExp(`^(${BOOK_NAME})\\s+(\\d+)`));
+  const book = m?.[1];
+  const chapter = m?.[2];
+  if (!book || !chapter) return null;
+  return map.byBookChapter.get(`${book.trim()} ${chapter}`) ?? null;
+}
+
+/** Render a paragraph, turning any in-text Bible reference (e.g.
+ *  "1Korinthus 13,13", "Prédikátor 4") into an in-page anchor link to
+ *  the matching h3 section. References without a matching section pass
+ *  through as plain text. Visually distinct from the external biblia.hit.hu
+ *  links: subtle underline + blush hover, no new-tab arrow. */
+function ProseWithRefs({ text, sectionMap }: { text: string; sectionMap: SectionMap }) {
+  if (sectionMap.byExact.size === 0 && sectionMap.byBookChapter.size === 0) {
+    return <>{text}</>;
+  }
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  for (const match of text.matchAll(PROSE_REF_RE)) {
+    if (match.index === undefined) continue;
+    const matchedText = match[0];
+    const anchor = resolveAnchor(matchedText, sectionMap);
+    if (!anchor) continue;
+    if (match.index > lastIndex) nodes.push(text.slice(lastIndex, match.index));
+    nodes.push(
+      <a
+        key={key++}
+        href={`#${anchor}`}
+        className="underline decoration-paper-400 decoration-1 underline-offset-2 transition-colors hover:text-blush-700 hover:decoration-blush-700 dark:decoration-umber-600 dark:hover:text-blush-300"
+      >
+        {matchedText}
+      </a>,
+    );
+    lastIndex = match.index + matchedText.length;
+  }
+  if (nodes.length === 0) return <>{text}</>;
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+  return <>{nodes}</>;
+}
+
 /** Render the citation as a link to biblia.hit.hu if we can resolve the
  *  book + chapter; otherwise fall back to plain text. External link target
  *  + rel="noreferrer noopener" so the new tab doesn't share an opener with
@@ -271,12 +362,33 @@ function BibleCiteLink({ cite }: { cite: string }) {
   );
 }
 
-function Block({ block }: { block: BlogBlock }) {
+/** Wraps the body section + Block iteration. Builds the SectionMap once
+ *  per post + locale so prose-to-anchor resolution doesn't recompute on
+ *  every Block render. */
+function BlogBody({ body, locale }: { body: BlogBlock[]; locale: "hu" | "en" }) {
+  const sectionMap = useMemo(() => buildSectionMap(body), [body]);
+  return (
+    <section
+      lang={locale}
+      className="mt-12 space-y-5 text-base leading-loose text-ink-800 dark:text-paper-100 sm:text-lg [hyphens:auto] [text-wrap:pretty]"
+    >
+      {body.map((block, i) => (
+        <Block key={i} block={block} sectionMap={sectionMap} />
+      ))}
+    </section>
+  );
+}
+
+function Block({ block, sectionMap }: { block: BlogBlock; sectionMap: SectionMap }) {
   if (block.type === "p") {
     // text-justify on plain prose paragraphs gives the article a calm,
     // editorial block of type. Headings, list items, blockquotes and
     // CTA leads stay left-aligned (set on their own blocks below).
-    return <p className="text-justify">{block.text}</p>;
+    return (
+      <p className="text-justify">
+        <ProseWithRefs text={block.text} sectionMap={sectionMap} />
+      </p>
+    );
   }
   if (block.type === "h2") {
     // Extra top margin so a section heading visually opens a new
@@ -289,8 +401,14 @@ function Block({ block }: { block: BlogBlock }) {
     );
   }
   if (block.type === "h3") {
+    // `id` powers in-page anchor links from prose paragraphs. scroll-mt
+    // gives the heading enough breathing room from the sticky public
+    // header when jumped to via #anchor.
     return (
-      <h3 className="!mt-12 !mb-2 font-serif text-xl text-ink-900 dark:text-paper-50 sm:text-2xl">
+      <h3
+        id={anchorId(block.text)}
+        className="!mt-12 !mb-2 scroll-mt-24 font-serif text-xl text-ink-900 dark:text-paper-50 sm:text-2xl"
+      >
         {block.text}
       </h3>
     );
