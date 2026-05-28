@@ -585,6 +585,10 @@ export default function DashboardPage() {
 
   async function onNotifyDateChange() {
     if (data === "loading" || data === null) return;
+    if (notifyableGuests === 0) {
+      toast.error(t("dashboard.date_changed_no_emails"));
+      return;
+    }
     const ok = await confirm({
       title: t("dashboard.date_changed_confirm_title"),
       body: t("dashboard.date_changed_confirm_body", { n: notifyableGuests }),
@@ -929,7 +933,7 @@ export default function DashboardPage() {
                 type="button"
                 className="btn-success btn-lg shadow-soft"
                 onClick={onNotifyDateChange}
-                disabled={notifyingDateChange || dismissingDateChange || notifyableGuests === 0}
+                disabled={notifyingDateChange || dismissingDateChange}
               >
                 <Mail size={16} aria-hidden="true" />
                 {notifyingDateChange
@@ -1171,10 +1175,10 @@ export default function DashboardPage() {
                   ) : null
                 }
               >
-                <h3 className="hidden text-sm font-semibold text-ink-700 md:block dark:text-paper-100">
+                <h2 className="mb-4 hidden md:block">
                   {t("dashboard.rsvp_breakdown_title")}
-                </h3>
-                <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                </h2>
+                <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   <Segment
                     count={rsvp.yes}
                     total={Math.max(totalGuests, 1)}

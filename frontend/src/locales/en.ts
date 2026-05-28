@@ -616,6 +616,7 @@ const en: LocaleMessages = {
       "This emails every guest with an address on file ({n} guests). Continue?",
     date_changed_confirm_yes: "Send",
     date_changed_done: "Notified {count} guests",
+    date_changed_no_emails: "No guest has an email address on file, so nothing to send.",
     archive_workspace_button: "Archive workspace",
     archive_workspace_confirm_title: "Archive this workspace?",
     archive_workspace_confirm_body:

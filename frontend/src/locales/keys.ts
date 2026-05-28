@@ -699,6 +699,7 @@ export interface LocaleMessages {
     date_changed_confirm_body: string;
     date_changed_confirm_yes: string;
     date_changed_done: string;
+    date_changed_no_emails: string;
     /** Archive workspace CTA — appears next to the post-wedding download links. */
     archive_workspace_button: string;
     archive_workspace_confirm_title: string;

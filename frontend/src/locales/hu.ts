@@ -620,6 +620,8 @@ const hu: LocaleMessages = {
       "Ez e-mailt küld a vendéglistán szereplő minden olyan személynek, akinek van e-mail címe ({n} fő). Folytatod?",
     date_changed_confirm_yes: "Küldés",
     date_changed_done: "Értesítve: {count} vendég",
+    date_changed_no_emails:
+      "Egyetlen vendégnek sincs megadva e-mail cím, így nem tudunk értesítést küldeni.",
     archive_workspace_button: "Munkaterület archiválása",
     archive_workspace_confirm_title: "Archiváljuk a munkaterületet?",
     archive_workspace_confirm_body:
