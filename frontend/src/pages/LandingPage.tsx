@@ -216,25 +216,39 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ════════════════════════ 04 · Guests — MAGAZINE SPREAD ════════════════════════
-          Full-bleed paper-100 surface, mockup centred above, copy below
-          in two columns — the layout of a feature spread. */}
+      {/* ════════════════════════ 04 · Guests — TWO-COLUMN ════════════════════════
+          Title + bullets on the left, GuestListMockup on the right so the
+          whole block fits inside one viewport. Mobile stacks (title,
+          bullets, mockup) — the mockup is wide and reads better below the
+          copy at narrow widths. */}
       <section className="relative bg-paper-100/70 dark:bg-umber-900/70">
-        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20">
-          <h2 className="max-w-3xl font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-            {t("landing.block_guests_title")}
-          </h2>
-          <div className="mx-auto mt-10 max-w-2xl">
-            <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
-              <GuestListMockup className="h-auto w-full" />
-            </LazyMount>
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+          <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12">
+            <div>
+              <h2 className="font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+                {t("landing.block_guests_title")}
+              </h2>
+              <ul className="mt-7 space-y-3">
+                <IconRow icon={<Smartphone size={16} />}>
+                  {t("landing.block_guests_bullet_1")}
+                </IconRow>
+                <IconRow icon={<Filter size={16} />}>
+                  {t("landing.block_guests_bullet_2")}
+                </IconRow>
+                <IconRow icon={<Download size={16} />}>
+                  {t("landing.block_guests_bullet_3")}
+                </IconRow>
+                <IconRow icon={<Globe size={16} />}>
+                  {t("landing.block_guests_bullet_4")}
+                </IconRow>
+              </ul>
+            </div>
+            <div>
+              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
+                <GuestListMockup className="h-auto w-full" />
+              </LazyMount>
+            </div>
           </div>
-          <ul className="mx-auto mt-12 max-w-md space-y-3">
-            <IconRow icon={<Smartphone size={16} />}>{t("landing.block_guests_bullet_1")}</IconRow>
-            <IconRow icon={<Filter size={16} />}>{t("landing.block_guests_bullet_2")}</IconRow>
-            <IconRow icon={<Download size={16} />}>{t("landing.block_guests_bullet_3")}</IconRow>
-            <IconRow icon={<Globe size={16} />}>{t("landing.block_guests_bullet_4")}</IconRow>
-          </ul>
         </div>
       </section>
 
