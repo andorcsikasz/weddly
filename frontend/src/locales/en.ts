@@ -842,7 +842,6 @@ const en: LocaleMessages = {
     counter_eyebrow: "Live numbers",
     counter_couples_label: "Couples planning",
     counter_rsvps_label: "RSVPs received",
-    counter_footnote: "Live data. Refreshes every 60 seconds.",
     product_eyebrow: "What's inside",
     product_title: "The pieces you'll actually use",
     block_budget_eyebrow: "Live budget",

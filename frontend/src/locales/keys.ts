@@ -937,7 +937,6 @@ export interface LocaleMessages {
     counter_eyebrow: string;
     counter_couples_label: string;
     counter_rsvps_label: string;
-    counter_footnote: string;
     product_eyebrow: string;
     product_title: string;
     block_budget_eyebrow: string;

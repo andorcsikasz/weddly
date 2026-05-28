@@ -851,7 +851,6 @@ const hu: LocaleMessages = {
     counter_eyebrow: "Élő számok",
     counter_couples_label: "Tervezgető pár",
     counter_rsvps_label: "Beérkezett RSVP",
-    counter_footnote: "Valós idejű adat. Frissül 60 másodpercenként.",
     product_eyebrow: "Mit tartalmaz",
     product_title: "Azok az elemek, amiket valóban használni fogtok",
     block_budget_eyebrow: "Élő költségvetés",

@@ -571,9 +571,6 @@ function LiveStatsBand() {
             label={t("landing.counter_rsvps_label")}
           />
         </div>
-        <p className="mt-8 text-center font-serif text-xs italic text-ink-600 dark:text-umber-300">
-          {t("landing.counter_footnote")}
-        </p>
       </div>
     </section>
   );
