@@ -832,8 +832,7 @@ const hu: LocaleMessages = {
     skip_to_main: "Ugrás a tartalomra",
     couple_cards_eyebrow: "Mielőtt igent mondtok",
     couple_cards_title: "100 kérdés a házasság előtt",
-    couple_cards_lead:
-      "Négy pakli, paklinként 25 kártya. Válasszatok paklit, húzzatok egyet, és menjetek bele a beszélgetésbe.",
+    couple_cards_lead: "Száz beszélgetésindító kérdés négy szintben, kettőtöknek.",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
     stats_eyebrow: "Nyílt béta",
     // A korábbi "200+ pár a várólistán" szám kitalált adat volt; átírtuk
@@ -4121,7 +4120,7 @@ const hu: LocaleMessages = {
       page_eyebrow: "Eszközök · 100 kérdés a házasság előtt",
       page_h1: "100 kérdés a házasság előtt",
       page_intro:
-        "Négy pakli, paklinként 25 beszélgetésindító kérdés jegyes pároknak: gyökerek, hétköznapok, közelség, mély víz. Válasszatok paklit, húzzatok egy kártyát, és menjetek bele a beszélgetésbe. Ingyenes, regisztráció nélkül.",
+        "Négy szint, a felszíntől a mély vizekig. Ingyen, regisztráció nélkül.",
       decks_h2: "Válasszatok paklit",
       deck_number_label: "{n}. szint",
       deck_count_label: "{n} kártya",

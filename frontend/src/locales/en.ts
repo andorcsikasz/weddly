@@ -826,8 +826,7 @@ const en: LocaleMessages = {
     skip_to_main: "Skip to main content",
     couple_cards_eyebrow: "Before you say yes",
     couple_cards_title: "100 questions before you marry",
-    couple_cards_lead:
-      "Four decks, 25 cards each. Pick a deck, draw a card, and let the conversation begin.",
+    couple_cards_lead: "A hundred conversation starters across four levels, for the two of you.",
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: "Open beta",
     // Honest beta label — the previous "200+ couples on the waitlist"
@@ -4081,8 +4080,7 @@ const en: LocaleMessages = {
     couple_cards: {
       page_eyebrow: "Tools · 100 Questions Before You Say Yes",
       page_h1: "100 Questions Before You Say Yes",
-      page_intro:
-        "Four decks of 25 conversation-starter cards for engaged couples: roots, the everyday, closeness, deep water. Pick a deck, draw a card, and let the conversation begin. Free, no signup needed.",
+      page_intro: "Four levels, from the surface to deep water. Free, no signup.",
       decks_h2: "Pick a deck",
       deck_number_label: "Level {n}",
       deck_count_label: "{n} cards",

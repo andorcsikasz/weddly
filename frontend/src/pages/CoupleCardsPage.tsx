@@ -364,11 +364,16 @@ function DeckShowcase({
             dropped — the tool page now reads as one consistent type
             system end-to-end (eyebrow / h1 / intro / card / FAQ all in
             the WNRS sans). */}
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-3xl text-center">
           <p className="font-display text-[11px] font-bold uppercase tracking-[0.32em] text-wnrs-red sm:text-xs">
             {t("tools.couple_cards.page_eyebrow")}
           </p>
-          <h1 className="mt-3 font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
+          {/* Title widened to max-w-3xl + lg:whitespace-nowrap so the
+              uppercase HU/EN headline ("100 KÉRDÉS A HÁZASSÁG ELŐTT" /
+              "100 QUESTIONS BEFORE YOU SAY YES") stays on a single line at
+              desktop sizes. sm/md keep the wrap option for narrower
+              viewports where forcing one line would overflow horizontally. */}
+          <h1 className="mt-3 font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:whitespace-nowrap lg:text-5xl">
             {t("tools.couple_cards.page_h1")}
           </h1>
           <p className="mx-auto mt-4 max-w-xl font-display text-sm leading-relaxed text-ink-700 dark:text-paper-200 sm:text-base">
