@@ -20,7 +20,7 @@ import {
 import { lazy, type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { EucalyptusStem } from "../components/botanical";
-import { SectionLabel, WatermarkNumeral } from "../components/editorial";
+import { SectionLabel } from "../components/editorial";
 import { LazyMount } from "../components/LazyMount";
 import { WorkspaceMockup } from "../components/mockups";
 
@@ -202,7 +202,6 @@ export default function LandingPage() {
               </ul>
             </div>
             <div className="relative">
-              <WatermarkNumeral value="02.1" position="br" className="hidden lg:block" />
               <div className="relative rotate-[-2deg] bg-white dark:bg-umber-800 p-5 ring-1 ring-paper-300 dark:ring-umber-700 shadow-pop sm:p-6">
                 <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
                   <BudgetMockup className="h-auto w-full" />
