@@ -2809,6 +2809,7 @@ const hu: LocaleMessages = {
     directory_source_community: "Közösségi",
     directory_last_event_never: "Soha",
     nav_feedback: "Visszajelzések",
+    nav_couple_cards: "100 kérdés",
     feedback_title: "Beérkezett visszajelzések",
     feedback_sub: "A landingről és az appból érkező Visszajelzés űrlap beadásai.",
     feedback_empty: "Még nincs visszajelzés.",
@@ -4142,6 +4143,9 @@ const hu: LocaleMessages = {
       lock_view: "Fókusz mód bekapcsolása",
       unlock_view: "Fókusz mód kikapcsolása",
       shuffle_random: "Új random kártya",
+      feedback_bad: "Ez nem jó kérdés",
+      feedback_ok: "Oké kérdés",
+      feedback_great: "Ez kifejezetten jó",
       cta_h2: "Ha készen álltok a többire",
       cta_body:
         "A nehéz beszélgetések után jöhetnek a praktikus döntések. A Wēddly egy közös felületen tartja a költségvetést, vendéglistát, RSVP-t és az ültetést, hogy az igazi munka után se kelljen PDF-eket osztogatni.",

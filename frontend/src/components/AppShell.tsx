@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   LayoutList,
   LineChart,
+  Layers,
   MessageCircle,
   Moon,
   MoreHorizontal,
@@ -234,6 +235,13 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     tabKey: "admin.nav_feedback",
     icon: <MessageCircle size={18} />,
     badgeKey: "feedback",
+    group: "inbox",
+  },
+  {
+    to: "/app/admin/couple-cards",
+    labelKey: "admin.nav_couple_cards",
+    tabKey: "admin.nav_couple_cards",
+    icon: <Layers size={18} />,
     group: "inbox",
   },
   // ── Manage ────────────────────────────────────────────────────────

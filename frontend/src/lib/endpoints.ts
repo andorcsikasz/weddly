@@ -1154,6 +1154,41 @@ export const feedbackApi = {
   submit: (body: FeedbackInput) => apiFetch<{ ok: true }>("POST", "/api/feedback", body),
 };
 
+export type CoupleCardRating = "bad" | "ok" | "great";
+
+export interface CoupleCardFeedbackInput {
+  deck_id: string;
+  card_index: number;
+  rating: CoupleCardRating;
+  locale: "hu" | "en";
+  question_snapshot: string;
+}
+
+export interface CoupleCardFeedbackAggregate {
+  deck_id: string;
+  card_index: number;
+  locale: "hu" | "en";
+  question_snapshot: string;
+  bad_count: number;
+  ok_count: number;
+  great_count: number;
+  total: number;
+  last_at: number;
+}
+
+export const coupleCardsApi = {
+  submitFeedback: (body: CoupleCardFeedbackInput) =>
+    apiFetch<{ ok: true }>("POST", "/api/couple-cards/feedback", body),
+};
+
+export const adminCoupleCardsApi = {
+  list: () =>
+    apiFetch<{ items: CoupleCardFeedbackAggregate[] }>(
+      "GET",
+      "/api/admin/couple-cards/feedback",
+    ),
+};
+
 /** Read-only analytics surfaces for the admin dashboard. Four orthogonal
  *  GET endpoints — money, activity, picks, engagement — each returns the
  *  aggregated view in one round-trip. See `shared/admin_analytics.ts` for

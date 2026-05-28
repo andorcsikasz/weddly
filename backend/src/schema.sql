@@ -1045,3 +1045,22 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 );
 CREATE INDEX IF NOT EXISTS idx_blog_posts_published
   ON blog_posts(is_published, published_at DESC);
+
+-- Couple-cards (100 kérdés a házasság előtt) feedback. Each row is one
+-- anonymous "X" / "✓" / "✓✓" tap on a question. Aggregated in the admin
+-- view to surface questions that visitors consistently flag as bad or
+-- love. No PII beyond the optional IP/user-agent the rate limiter needs
+-- to keep abuse in check.
+CREATE TABLE IF NOT EXISTS couple_card_feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  deck_id TEXT NOT NULL,
+  card_index INTEGER NOT NULL,
+  rating TEXT NOT NULL,                         -- 'bad' | 'ok' | 'great'
+  locale TEXT NOT NULL,                         -- 'hu' | 'en'
+  question_snapshot TEXT NOT NULL DEFAULT '',   -- the exact string shown
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_couple_card_feedback_deck_card
+  ON couple_card_feedback(deck_id, card_index, locale);
+CREATE INDEX IF NOT EXISTS idx_couple_card_feedback_created
+  ON couple_card_feedback(created_at DESC);

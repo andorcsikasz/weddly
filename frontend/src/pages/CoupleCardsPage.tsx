@@ -5,12 +5,13 @@
 //
 // Pure client state, no backend. Data lives in lib/couple_cards.ts.
 
-import { ArrowLeft, Lock, Shuffle, Unlock } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, Lock, Shuffle, Unlock, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { COUPLE_CARD_DECKS, DECK_SIZE, type DeckId } from "../lib/couple_cards";
+import { coupleCardsApi, type CoupleCardRating } from "../lib/endpoints";
 import { useDocumentMeta } from "../lib/seo";
 
 // Bumped v1 → v2 when the deck behaviour switched from "deterministic
@@ -261,6 +262,45 @@ export default function CoupleCardsPage() {
     return p.index + 1;
   }, [activeDeck, progress]);
 
+  // Per-card rating cache: deck-id + card-index → submitted rating.
+  // Lets the UI show "you already flagged this one as X" without an
+  // extra round-trip, and stops accidental double-submits.
+  const [ratings, setRatings] = useState<Map<string, CoupleCardRating>>(() => new Map());
+  const ratingKey = (deck: DeckId, cardIdx: number) => `${deck}:${cardIdx}`;
+
+  const submitFeedback = useCallback(
+    (rating: CoupleCardRating) => {
+      if (!activeDeck || !activeDeckDef || currentQuestion == null) return;
+      const p = progress[activeDeck];
+      if (!p) return;
+      const cardIdx = p.order[p.index] ?? 0;
+      const key = ratingKey(activeDeck, cardIdx);
+      // Optimistic local cache so the UI flips immediately — POST is fire
+      // and forget (rate-limit + validation lives server-side).
+      setRatings((prev) => {
+        const next = new Map(prev);
+        next.set(key, rating);
+        return next;
+      });
+      void coupleCardsApi.submitFeedback({
+        deck_id: activeDeck,
+        card_index: cardIdx,
+        rating,
+        locale,
+        question_snapshot: currentQuestion,
+      });
+    },
+    [activeDeck, activeDeckDef, currentQuestion, progress, locale],
+  );
+
+  const currentRating: CoupleCardRating | null = useMemo(() => {
+    if (!activeDeck) return null;
+    const p = progress[activeDeck];
+    if (!p) return null;
+    const cardIdx = p.order[p.index] ?? 0;
+    return ratings.get(ratingKey(activeDeck, cardIdx)) ?? null;
+  }, [activeDeck, progress, ratings]);
+
   const cardView = activeDeckDef ? (
     <CardView
       deckId={activeDeckDef.id}
@@ -268,9 +308,11 @@ export default function CoupleCardsPage() {
       question={currentQuestion}
       cardNumber={currentNumber}
       isLocked={isLocked}
+      currentRating={currentRating}
       onNext={nextCard}
       onShuffle={shuffleRandom}
       onToggleLock={() => setIsLocked((v) => !v)}
+      onFeedback={submitFeedback}
       onBack={closeDeck}
     />
   ) : null;
@@ -486,9 +528,11 @@ function CardView({
   question,
   cardNumber,
   isLocked,
+  currentRating,
   onNext,
   onShuffle,
   onToggleLock,
+  onFeedback,
   onBack,
 }: {
   deckId: DeckId;
@@ -496,9 +540,11 @@ function CardView({
   question: string | null;
   cardNumber: number | null;
   isLocked: boolean;
+  currentRating: CoupleCardRating | null;
   onNext: () => void;
   onShuffle: () => void;
   onToggleLock: () => void;
+  onFeedback: (rating: CoupleCardRating) => void;
   onBack: () => void;
 }) {
   const { t } = useT();
@@ -648,12 +694,44 @@ function CardView({
           </button>
         </div>
 
+        {/* Rating row: three small pills under the card. Anonymous, fire
+            and forget — feeds the admin curator view where bad-rated
+            questions surface first. Once the visitor taps, the chosen
+            pill highlights and the others fade so they read as "you've
+            already voted on this one". */}
+        <div className="mt-6 flex justify-center gap-2">
+          <FeedbackPill
+            rating="bad"
+            current={currentRating}
+            label={t("tools.couple_cards.feedback_bad")}
+            onClick={() => onFeedback("bad")}
+          >
+            <X size={16} aria-hidden="true" />
+          </FeedbackPill>
+          <FeedbackPill
+            rating="ok"
+            current={currentRating}
+            label={t("tools.couple_cards.feedback_ok")}
+            onClick={() => onFeedback("ok")}
+          >
+            <Check size={16} aria-hidden="true" />
+          </FeedbackPill>
+          <FeedbackPill
+            rating="great"
+            current={currentRating}
+            label={t("tools.couple_cards.feedback_great")}
+            onClick={() => onFeedback("great")}
+          >
+            <CheckCheck size={16} aria-hidden="true" />
+          </FeedbackPill>
+        </div>
+
         {/* Secondary "next" affordance for visitors who don't realise the
             card itself is clickable. Tertiary visual weight so the card
             stays the headline action. Reshuffle is gone — bag-shuffle
             auto-reshuffles every 25 cards, so manual reshuffle has no
             meaning. */}
-        <div className="mt-8 flex justify-center">
+        <div className="mt-6 flex justify-center">
           <button
             type="button"
             onClick={onNext}
@@ -664,5 +742,44 @@ function CardView({
         </div>
       </div>
     </section>
+  );
+}
+
+/** One pill in the rating row under the card. `current` is the rating
+ *  the visitor has already given to this card (if any); when it matches
+ *  this pill's `rating`, the pill highlights in WNRS red. The other
+ *  pills fade to ink-300 so the chosen one stays the only loud signal. */
+function FeedbackPill({
+  rating,
+  current,
+  label,
+  onClick,
+  children,
+}: {
+  rating: CoupleCardRating;
+  current: CoupleCardRating | null;
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const isSelected = current === rating;
+  const isDimmed = current !== null && !isSelected;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      aria-pressed={isSelected}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 ${
+        isSelected
+          ? "border-wnrs-red bg-wnrs-red text-white shadow-md"
+          : isDimmed
+            ? "border-paper-300 bg-white text-ink-300 hover:border-paper-400 hover:text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-400"
+            : "border-paper-300 bg-white text-ink-600 hover:border-wnrs-red hover:text-wnrs-red dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:text-wnrs-red"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

@@ -3145,6 +3145,8 @@ export interface LocaleMessages {
     directory_last_event_never: string;
     /** /app/admin/feedback page — triage of Visszajelzés submissions. */
     nav_feedback: string;
+    /** /app/admin/couple-cards page — triage of 100-questions card ratings. */
+    nav_couple_cards: string;
     feedback_title: string;
     feedback_sub: string;
     feedback_empty: string;
@@ -4521,6 +4523,9 @@ export interface LocaleMessages {
       lock_view: string;
       unlock_view: string;
       shuffle_random: string;
+      feedback_bad: string;
+      feedback_ok: string;
+      feedback_great: string;
       cta_h2: string;
       cta_body: string;
       cta_button: string;

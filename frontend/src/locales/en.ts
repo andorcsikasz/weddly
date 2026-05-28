@@ -2779,6 +2779,7 @@ const en: LocaleMessages = {
     directory_source_community: "Community",
     directory_last_event_never: "Never",
     nav_feedback: "Feedback",
+    nav_couple_cards: "100 questions",
     feedback_title: "Inbound feedback",
     feedback_sub: "Submissions from the Feedback dialog on the landing and in-app surfaces.",
     feedback_empty: "No feedback yet.",
@@ -4105,6 +4106,9 @@ const en: LocaleMessages = {
       lock_view: "Enter focus mode",
       unlock_view: "Exit focus mode",
       shuffle_random: "Draw a random card",
+      feedback_bad: "Not a good question",
+      feedback_ok: "Decent question",
+      feedback_great: "A really good one",
       cta_h2: "When you're ready for the rest",
       cta_body:
         "After the hard conversations come the practical decisions. Weddly keeps your budget, guest list, RSVP and seating in one shared workspace, so the real work doesn't fall back into PDFs and text threads.",
