@@ -742,30 +742,39 @@
 
 /* Couple-cards showcase: View Transitions API morph.
  *
- * The selected centre card and the three mini tiles each carry a
- * `view-transition-name: couple-deck-{id}`. When the user taps a mini,
- * `document.startViewTransition()` (in CoupleCardsPage.tsx) wraps the
- * setSelectedDeck call, so the browser captures the BEFORE layout
- * (mini at slot N + centre with the previous deck) and the AFTER layout
- * (mini gone + centre carrying the new deck), then morphs each pair
- * with matching names from old → new position. That gives the "the
- * mini flew into the centre" effect for free.
+ * Each deck button — mini or centre — carries
+ * `view-transition-name: couple-deck-{id}`. On swap,
+ * `document.startViewTransition()` (in CoupleCardsPage.tsx) captures
+ * BEFORE + AFTER layouts and morphs each name-matched pair from old
+ * to new position. Result: the tapped mini physically flies into the
+ * centre frame.
  *
- * The default `::view-transition-group()` duration is 250ms with the
- * browser's default easing, which felt slightly snappy here — bumping
- * to 360ms + ease-out-quint matches the rest of the tool's motion
- * vocabulary. The selector targets every group; the only view
- * transitions on the page are the couple-deck swaps, so a generic
- * override is safe.
+ * Timing tuned for "smooth" rather than "snappy":
+ *
+ * - 520ms duration on every layer (the morph itself + the old/new
+ *   image crossfade) so all three animations finish at the same beat
+ *   instead of one finishing under the other. Earlier 360ms
+ *   ease-out-quint read as noisy because the crossfade ended ~110ms
+ *   before the morph did, briefly leaving the new card visible at the
+ *   midway position with no destination still in flight.
+ * - cubic-bezier(0.16, 1, 0.3, 1) — ease-out-expo. Fast start, very
+ *   long deceleration, so the card "lands" rather than skids. Matches
+ *   the visual character of a card placed by hand.
+ *
+ * The selector targets every group / old / new; only the couple-deck
+ * swaps run view transitions on this page, so a generic override is
+ * safe today. If another surface adds view transitions later, scope
+ * by name (e.g. `::view-transition-group(couple-deck-roots)`).
  */
-::view-transition-group(*) {
-  animation-duration: 360ms;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 520ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (prefers-reduced-motion: reduce) {
-  /* Reduce-motion users skip the morph: the swap still happens but
-   * snaps instantly, so vestibular-sensitive visitors don't get a
-   * cross-screen slide. */
+  /* Reduce-motion users skip the morph entirely: the swap still
+   * happens but snaps instantly. */
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
