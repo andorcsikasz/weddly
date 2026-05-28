@@ -196,11 +196,21 @@ export default function CoupleCardsPage() {
     setViewedCount((c) => c + 1);
   }, []);
 
-  // Stepping out of the card view doesn't unlock — the user can still
-  // toggle the lock manually. But it does keep the overlay coherent:
-  // when activeDeckDef goes null mid-lock, the showcase resurfaces under
-  // the overlay (handled by the render branch below).
-  const closeDeck = useCallback(() => setActiveDeck(null), []);
+  // Stepping out of the card view via the "Back to decks" link also
+  // exits focus mode and resets the auto-lock arm. Earlier this only
+  // cleared `activeDeck`, which left `isLocked = true` lingering — and
+  // because the focus-overlay only mounts when `activeDeck && isLocked`,
+  // the overlay disappeared while the body's scroll lock did not, so the
+  // showcase was frozen until a page refresh. Clearing both bits here
+  // keeps the page scrollable the moment the visitor steps out, and
+  // disarms autolock so a return visit doesn't snap them back into
+  // focus mode against their will.
+  const closeDeck = useCallback(() => {
+    setActiveDeck(null);
+    setIsLocked(false);
+    setAutoLockUsed(false);
+    setViewedCount(0);
+  }, []);
 
   // "Bag shuffle": step through a Fisher-Yates permutation until it's
   // exhausted, then automatically reshuffle for the next round. The first
@@ -448,7 +458,7 @@ function DeckShowcase({
                         viewTransitionName: `couple-deck-${deck.id}`,
                       } as React.CSSProperties
                     }
-                    className="group flex h-full w-full flex-col items-center justify-between rounded-xl bg-wnrs-red px-2 py-2 text-center text-white shadow-[0_18px_36px_-18px_rgba(200,16,46,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-3 sm:py-3"
+                    className="group flex h-full w-full flex-col items-center justify-between rounded-xl bg-wnrs-red px-2 py-2 text-center text-white shadow-[0_18px_36px_-18px_rgba(177,35,42,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-3 sm:py-3"
                   >
                     <span aria-hidden="true" className="block h-0.5" />
                     <div className="flex flex-1 flex-col items-center justify-center">
@@ -500,7 +510,7 @@ function DeckShowcase({
                   viewTransitionName: `couple-deck-${selectedId}`,
                 } as React.CSSProperties
               }
-              className="relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-7 py-8 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
+              className="relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-7 py-8 text-center text-white shadow-[0_24px_50px_-22px_rgba(177,35,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
             >
               <span aria-hidden="true" className="block h-1" />
               <div className="flex flex-1 flex-col items-center justify-center">
