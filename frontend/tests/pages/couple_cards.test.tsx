@@ -181,7 +181,7 @@ describe("CoupleCardsPage: focus mode", () => {
     // the page is still scrollable until the user opts in).
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
     expect(
-      screen.getByRole("button", { name: /Fókusz mód bekapcsolása/i }),
+      screen.getAllByRole("button", { name: /Fókusz mód bekapcsolása/i })[0]!,
     ).toBeInTheDocument();
   });
 
@@ -190,15 +190,15 @@ describe("CoupleCardsPage: focus mode", () => {
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
 
     expect(document.body.style.overflow).not.toBe("hidden");
-    fireEvent.click(screen.getByRole("button", { name: /Fókusz mód bekapcsolása/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Fókusz mód bekapcsolása/i })[0]!);
 
     expect(document.body.style.overflow).toBe("hidden");
     // After locking, the same button advertises the unlock action.
     expect(
-      screen.getByRole("button", { name: /Fókusz mód kikapcsolása/i }),
+      screen.getAllByRole("button", { name: /Fókusz mód kikapcsolása/i })[0]!,
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Fókusz mód kikapcsolása/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Fókusz mód kikapcsolása/i })[0]!);
     expect(document.body.style.overflow).not.toBe("hidden");
   });
 
@@ -215,7 +215,7 @@ describe("CoupleCardsPage: focus mode", () => {
     // is shown.
     expect(document.body.style.overflow).toBe("hidden");
     expect(
-      screen.getByRole("button", { name: /Fókusz mód kikapcsolása/i }),
+      screen.getAllByRole("button", { name: /Fókusz mód kikapcsolása/i })[0]!,
     ).toBeInTheDocument();
   });
 
@@ -227,7 +227,7 @@ describe("CoupleCardsPage: focus mode", () => {
     // Shuffle pill in the top-right cluster shares the nextCard handler,
     // so it advances the bag-shuffle by one card just like clicking the
     // card face does.
-    fireEvent.click(screen.getByRole("button", { name: /Új random kártya/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Új random kártya/i })[0]!);
     expect(screen.getByText(`2 / ${DECK_SIZE}`)).toBeInTheDocument();
   });
 
@@ -238,7 +238,7 @@ describe("CoupleCardsPage: focus mode", () => {
     fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
     fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
     // Auto-locked.
-    fireEvent.click(screen.getByRole("button", { name: /Fókusz mód kikapcsolása/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Fókusz mód kikapcsolása/i })[0]!);
     // Now click "next" some more — auto-lock should NOT fire again.
     fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));
     fireEvent.click(screen.getByRole("button", { name: /Következő kártya/i }));

@@ -248,7 +248,9 @@ export default function CoupleCardsPage() {
       deckTitle={t(activeDeckDef.titleKey)}
       question={currentQuestion}
       cardNumber={currentNumber}
+      isLocked={isLocked}
       onNext={nextCard}
+      onToggleLock={() => setIsLocked((v) => !v)}
       onBack={closeDeck}
     />
   ) : null;
@@ -274,50 +276,6 @@ export default function CoupleCardsPage() {
       {activeDeckDef && isLocked ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-paper-50 px-4 dark:bg-umber-900 sm:px-8">
           <div className="w-full max-w-3xl">{cardView}</div>
-        </div>
-      ) : null}
-
-      {/* Floating chrome — sits only while a deck is open. Shuffle on the
-          left, focus-mode toggle on the right; both share the same pill
-          dimensions so they read as one navigation cluster. Position swaps
-          between top-4 (above the focus overlay) and top-20 (below the
-          sticky public header) based on lock state. */}
-      {activeDeckDef ? (
-        <div
-          className={`fixed right-4 z-[60] flex items-center gap-2 sm:right-6 ${
-            isLocked ? "top-4" : "top-20"
-          }`}
-        >
-          <button
-            type="button"
-            onClick={nextCard}
-            aria-label={t("tools.couple_cards.shuffle_random")}
-            title={t("tools.couple_cards.shuffle_random")}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
-          >
-            <Shuffle size={16} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsLocked((v) => !v)}
-            aria-label={
-              isLocked
-                ? t("tools.couple_cards.unlock_view")
-                : t("tools.couple_cards.lock_view")
-            }
-            title={
-              isLocked
-                ? t("tools.couple_cards.unlock_view")
-                : t("tools.couple_cards.lock_view")
-            }
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
-          >
-            {isLocked ? (
-              <Lock size={16} aria-hidden="true" />
-            ) : (
-              <Unlock size={16} aria-hidden="true" />
-            )}
-          </button>
         </div>
       ) : null}
 
@@ -507,14 +465,18 @@ function CardView({
   deckTitle,
   question,
   cardNumber,
+  isLocked,
   onNext,
+  onToggleLock,
   onBack,
 }: {
   deckId: DeckId;
   deckTitle: string;
   question: string | null;
   cardNumber: number | null;
+  isLocked: boolean;
   onNext: () => void;
+  onToggleLock: () => void;
   onBack: () => void;
 }) {
   const { t } = useT();
@@ -540,19 +502,19 @@ function CardView({
           </p>
         ) : null}
 
-        {/* The whole card face is the primary action: click anywhere on
-            it to draw the next card. Wrapping the article in a <button>
-            gives keyboard activation, focus rings and screen-reader role
-            for free — no need for a custom role="button" + tabIndex
-            hand-rolled handler. Bag-shuffle (see nextCard in the parent
-            page) guarantees the next card isn't a repeat of the last
-            inside the same 25-card round. */}
-        <button
-          type="button"
-          onClick={onNext}
-          aria-label={t("tools.couple_cards.flip_card")}
-          className="couple-card group relative mx-auto mt-8 flex aspect-[3/2] w-full max-w-2xl cursor-pointer flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 text-left shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-12 sm:py-12"
-        >
+        {/* Card + right-side chrome stack. The stack hangs off the right
+            edge of the card wrapper on tablet+ so the shuffle / lock
+            controls read as "tools that belong to this card" rather than
+            free-floating page chrome. On mobile (under sm) the stack
+            falls back to fixed top-right so it doesn't overflow the
+            viewport. */}
+        <div className="relative mx-auto mt-8 max-w-2xl">
+          <button
+            type="button"
+            onClick={onNext}
+            aria-label={t("tools.couple_cards.flip_card")}
+            className="couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 text-left shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-12 sm:py-12"
+          >
           {/* Re-mount the inner article on every card flip so the keyed
               `animate-card-deal` enter animation fires for each new
               question. Article tags also keep the page semantically
@@ -581,6 +543,78 @@ function CardView({
             </div>
           </article>
         </button>
+
+          {/* Side chrome — sm+ only. Sits on the right edge of the card
+              wrapper, vertically centred, two pill buttons stacked. The
+              -mr lifts the stack OUT of the card so it doesn't cover any
+              card content. */}
+          <div className="absolute left-full top-1/2 ml-3 hidden -translate-y-1/2 flex-col gap-2 sm:flex sm:ml-4">
+            <button
+              type="button"
+              onClick={onNext}
+              aria-label={t("tools.couple_cards.shuffle_random")}
+              title={t("tools.couple_cards.shuffle_random")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            >
+              <Shuffle size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={onToggleLock}
+              aria-label={
+                isLocked
+                  ? t("tools.couple_cards.unlock_view")
+                  : t("tools.couple_cards.lock_view")
+              }
+              title={
+                isLocked
+                  ? t("tools.couple_cards.unlock_view")
+                  : t("tools.couple_cards.lock_view")
+              }
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            >
+              {isLocked ? (
+                <Lock size={16} aria-hidden="true" />
+              ) : (
+                <Unlock size={16} aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile fallback: under-sm the side stack would overflow the
+            viewport, so the same two controls live in a fixed cluster at
+            the top-right instead. Hidden from sm and up. */}
+        <div
+          className={`fixed right-4 z-[60] flex flex-col gap-2 sm:hidden ${
+            isLocked ? "top-4" : "top-20"
+          }`}
+        >
+          <button
+            type="button"
+            onClick={onNext}
+            aria-label={t("tools.couple_cards.shuffle_random")}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+          >
+            <Shuffle size={16} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={onToggleLock}
+            aria-label={
+              isLocked
+                ? t("tools.couple_cards.unlock_view")
+                : t("tools.couple_cards.lock_view")
+            }
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+          >
+            {isLocked ? (
+              <Lock size={16} aria-hidden="true" />
+            ) : (
+              <Unlock size={16} aria-hidden="true" />
+            )}
+          </button>
+        </div>
 
         {/* Secondary "next" affordance for visitors who don't realise the
             card itself is clickable. Tertiary visual weight so the card
