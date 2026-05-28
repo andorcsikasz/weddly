@@ -289,7 +289,7 @@ export default function CoupleCardsPage() {
       {!activeDeckDef ? (
         <section className="relative bg-paper-50 dark:bg-umber-900">
           <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
-            <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+            <h2 className="font-display text-2xl font-bold uppercase leading-[0.95] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
               {t("tools.couple_cards.faq_h2")}
             </h2>
             <div className="mt-8 space-y-3">
@@ -302,10 +302,10 @@ export default function CoupleCardsPage() {
                   key={entry.q}
                   className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"
                 >
-                  <summary className="cursor-pointer list-none font-serif text-xl text-ink-900 dark:text-paper-50">
+                  <summary className="cursor-pointer list-none font-display text-sm font-bold uppercase tracking-[0.04em] text-ink-900 dark:text-paper-50 sm:text-base">
                     {entry.q}
                   </summary>
-                  <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+                  <p className="mt-3 font-display text-sm leading-relaxed text-ink-700 dark:text-umber-200">
                     {entry.a}
                   </p>
                 </details>
@@ -344,14 +344,20 @@ function DeckShowcase({
         {/* Compact hero: shorter than the original DeckPicker so the full
             showcase (mini row + big card + CTA) lands in one viewport on
             laptop. */}
+        {/* Hero typography is unified with the card face: font-display
+            display-sans, bold uppercase for the title, regular weight for
+            the body. The Cormorant italic that lived here briefly is
+            dropped — the tool page now reads as one consistent type
+            system end-to-end (eyebrow / h1 / intro / card / FAQ all in
+            the WNRS sans). */}
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+          <p className="font-display text-[11px] font-bold uppercase tracking-[0.32em] text-wnrs-red sm:text-xs">
             {t("tools.couple_cards.page_eyebrow")}
           </p>
-          <h1 className="mt-3 font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl">
+          <h1 className="mt-3 font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
             {t("tools.couple_cards.page_h1")}
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-600 dark:text-paper-200 sm:text-base">
+          <p className="mx-auto mt-4 max-w-xl font-display text-sm leading-relaxed text-ink-700 dark:text-paper-200 sm:text-base">
             {t("tools.couple_cards.page_intro")}
           </p>
         </div>
