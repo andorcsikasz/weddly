@@ -5,7 +5,16 @@
 //
 // Pure client state, no backend. Data lives in lib/couple_cards.ts.
 
-import { ArrowLeft, Check, CheckCheck, Lock, Shuffle, Unlock, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  CheckCheck,
+  ChevronDown,
+  Lock,
+  Shuffle,
+  Unlock,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
@@ -372,8 +381,18 @@ export default function CoupleCardsPage() {
                   key={entry.q}
                   className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"
                 >
-                  <summary className="cursor-pointer list-none font-display text-sm font-bold uppercase tracking-[0.04em] text-ink-900 dark:text-paper-50 sm:text-base">
-                    {entry.q}
+                  {/* `list-none` hides the default UA disclosure triangle so
+                      we can render our own chevron (rotates 180° when the
+                      details is open). flex + gap-3 + justify-between keeps
+                      the question text and the chevron on opposite ends of
+                      the row regardless of question length. */}
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-display text-sm font-bold uppercase tracking-[0.04em] text-ink-900 dark:text-paper-50 sm:text-base">
+                    <span>{entry.q}</span>
+                    <ChevronDown
+                      size={18}
+                      aria-hidden="true"
+                      className="shrink-0 text-ink-500 transition-transform duration-200 group-open:rotate-180 dark:text-umber-300"
+                    />
                   </summary>
                   <p className="mt-3 font-display text-sm leading-relaxed text-ink-700 dark:text-umber-200">
                     {entry.a}
