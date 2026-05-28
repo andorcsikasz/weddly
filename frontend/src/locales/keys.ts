@@ -4522,6 +4522,7 @@ export interface LocaleMessages {
       back_to_decks: string;
       lock_view: string;
       unlock_view: string;
+      shuffle_random: string;
       cta_h2: string;
       cta_body: string;
       cta_button: string;

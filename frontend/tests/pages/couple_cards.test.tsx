@@ -219,6 +219,18 @@ describe("CoupleCardsPage: focus mode", () => {
     ).toBeInTheDocument();
   });
 
+  it("shuffle button in the floating chrome advances to a new card", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
+    expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
+
+    // Shuffle pill in the top-right cluster shares the nextCard handler,
+    // so it advances the bag-shuffle by one card just like clicking the
+    // card face does.
+    fireEvent.click(screen.getByRole("button", { name: /Új random kártya/i }));
+    expect(screen.getByText(`2 / ${DECK_SIZE}`)).toBeInTheDocument();
+  });
+
   it("manual unlock disarms the auto-lock for the rest of the session", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));

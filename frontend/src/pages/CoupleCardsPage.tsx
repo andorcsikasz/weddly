@@ -5,7 +5,7 @@
 //
 // Pure client state, no backend. Data lives in lib/couple_cards.ts.
 
-import { ArrowLeft, Lock, Unlock } from "lucide-react";
+import { ArrowLeft, Lock, Shuffle, Unlock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
@@ -251,34 +251,48 @@ export default function CoupleCardsPage() {
         </div>
       ) : null}
 
-      {/* Lock toggle. Lives only while a deck is open: the showcase has no
-          scroll to lock and no card to focus, so the icon would be a
-          dead-end. Sits at top-4 in focus mode (above the overlay's
-          z-stack) and at top-20 otherwise (below the sticky header). */}
+      {/* Floating chrome — sits only while a deck is open. Shuffle on the
+          left, focus-mode toggle on the right; both share the same pill
+          dimensions so they read as one navigation cluster. Position swaps
+          between top-4 (above the focus overlay) and top-20 (below the
+          sticky public header) based on lock state. */}
       {activeDeckDef ? (
-        <button
-          type="button"
-          onClick={() => setIsLocked((v) => !v)}
-          aria-label={
-            isLocked
-              ? t("tools.couple_cards.unlock_view")
-              : t("tools.couple_cards.lock_view")
-          }
-          title={
-            isLocked
-              ? t("tools.couple_cards.unlock_view")
-              : t("tools.couple_cards.lock_view")
-          }
-          className={`fixed right-4 z-[60] inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700 sm:right-6 ${
+        <div
+          className={`fixed right-4 z-[60] flex items-center gap-2 sm:right-6 ${
             isLocked ? "top-4" : "top-20"
           }`}
         >
-          {isLocked ? (
-            <Lock size={16} aria-hidden="true" />
-          ) : (
-            <Unlock size={16} aria-hidden="true" />
-          )}
-        </button>
+          <button
+            type="button"
+            onClick={nextCard}
+            aria-label={t("tools.couple_cards.shuffle_random")}
+            title={t("tools.couple_cards.shuffle_random")}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+          >
+            <Shuffle size={16} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsLocked((v) => !v)}
+            aria-label={
+              isLocked
+                ? t("tools.couple_cards.unlock_view")
+                : t("tools.couple_cards.lock_view")
+            }
+            title={
+              isLocked
+                ? t("tools.couple_cards.unlock_view")
+                : t("tools.couple_cards.lock_view")
+            }
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+          >
+            {isLocked ? (
+              <Lock size={16} aria-hidden="true" />
+            ) : (
+              <Unlock size={16} aria-hidden="true" />
+            )}
+          </button>
+        </div>
       ) : null}
 
       {/* FAQ trail only on the picker view: when the user has a card open
