@@ -709,7 +709,6 @@ const hu: LocaleMessages = {
     cta_signup: "Kezdjétek el",
     cta_login: "Bejelentkezés",
     brand_tagline_paper: "Budapest · Papírlevelek",
-    brand_signature: "Weddly, Budapest",
     cta_signup_sub: "A nyílt béta alatt szabadon használhatjátok.",
     // wsite_title + wsite_body are surfaced by the SEO prerender SSR body
     // (frontend/scripts/prerender.ts). They no longer have a dedicated
@@ -721,8 +720,6 @@ const hu: LocaleMessages = {
     // ── Interaktív "próbáld ki" költségvetés demo ─────────────────────
     demo_eyebrow: "Próbáld ki regisztráció nélkül",
     demo_title: "Mennyibe kerül a ti esküvőtök?",
-    demo_body:
-      "Húzd a vendégszámot és a keretet. A kategóriák ugyanazzal a logikával számolódnak, mint a regisztráció után. Ha tetszik, a megadott számokkal indul a saját költségvetésetek.",
     demo_guests_label: "Vendégszám",
     demo_budget_label: "Tervezett keret",
     demo_per_guest_label: "Vendégenkénti költség",
@@ -731,9 +728,6 @@ const hu: LocaleMessages = {
     demo_breakdown_sub: "magyar átlag arányok",
     demo_total_label: "Teljes keret",
     demo_cta: "Folytasd a regisztrációval",
-    demo_cta_secondary: "vagy nézd meg, hogyan működik →",
-    demo_disclaimer:
-      "A demo csak becslés. A valódi költségvetés szerkeszthető, kategóriánként rögzíthető, és élő auditnaplót vezet.",
     demo_cat_food_drinks: "Vendéglátás & ital",
     demo_cat_venue: "Helyszín",
     demo_cat_photo_video: "Fotó & videó",
@@ -832,7 +826,6 @@ const hu: LocaleMessages = {
     skip_to_main: "Ugrás a tartalomra",
     couple_cards_eyebrow: "Mielőtt igent mondtok",
     couple_cards_title: "100 kérdés a házasság előtt",
-    couple_cards_lead: "Száz beszélgetésindító kérdés négy szintben, kettőtöknek.",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
     stats_eyebrow: "Nyílt béta",
     // A korábbi "200+ pár a várólistán" szám kitalált adat volt; átírtuk
@@ -3769,8 +3762,6 @@ const hu: LocaleMessages = {
     back_to_index: "Vissza a bloghoz",
     section_eyebrow: "Blog",
     section_title: "A blogról",
-    section_lead:
-      "Gyakorlati írások az esküvőtervezés legidőigényesebb részeiről. Három poszttal kezdjük.",
     section_cta: "Tovább a blogra",
     loading: "Betöltés…",
     load_failed: "Nem sikerült betölteni a posztokat. Próbáld újra egy perc múlva.",

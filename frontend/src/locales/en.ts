@@ -704,7 +704,6 @@ const en: LocaleMessages = {
     cta_signup: "Start planning",
     cta_login: "Sign in",
     brand_tagline_paper: "Paper letters · Stationery",
-    brand_signature: "Weddly",
     cta_signup_sub: "Available throughout the open beta.",
     // wsite_title + wsite_body are surfaced by the SEO prerender SSR body
     // (frontend/scripts/prerender.ts). They no longer have a dedicated
@@ -716,8 +715,6 @@ const en: LocaleMessages = {
     // ── Interactive "try it" budget demo ──────────────────────────────
     demo_eyebrow: "Try it, no signup",
     demo_title: "How much will your wedding cost?",
-    demo_body:
-      "Drag the guest count and the budget. The categories recalc with the same logic the real Budget page uses. If it feels right, your workspace starts with these numbers.",
     demo_guests_label: "Guest count",
     demo_budget_label: "Planned budget",
     demo_per_guest_label: "Cost per guest",
@@ -726,9 +723,6 @@ const en: LocaleMessages = {
     demo_breakdown_sub: "based on European averages",
     demo_total_label: "Total budget",
     demo_cta: "Continue with these numbers",
-    demo_cta_secondary: "or see how it works →",
-    demo_disclaimer:
-      "The demo is an estimate. The real budget is editable, lockable per category, and audit-logged.",
     demo_cat_food_drinks: "Food & drinks",
     demo_cat_venue: "Venue",
     demo_cat_photo_video: "Photo & video",
@@ -826,7 +820,6 @@ const en: LocaleMessages = {
     skip_to_main: "Skip to main content",
     couple_cards_eyebrow: "Before you say yes",
     couple_cards_title: "100 questions before you marry",
-    couple_cards_lead: "A hundred conversation starters across four levels, for the two of you.",
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: "Open beta",
     // Honest beta label — the previous "200+ couples on the waitlist"
@@ -3729,8 +3722,6 @@ const en: LocaleMessages = {
     back_to_index: "Back to the blog",
     section_eyebrow: "Blog",
     section_title: "From the blog",
-    section_lead:
-      "Practical writing about the parts of wedding planning that take the most time. Three posts to start with.",
     section_cta: "Browse the blog",
     loading: "Loading…",
     load_failed: "Couldn't load posts. Try again in a moment.",

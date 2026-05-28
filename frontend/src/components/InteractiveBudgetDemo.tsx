@@ -121,9 +121,6 @@ export function InteractiveBudgetDemo() {
           <h2 className="font-serif text-xl leading-[1.15] text-ink-900 sm:mt-2.5 sm:text-3xl lg:text-4xl dark:text-paper-50">
             {t("landing.demo_title")}
           </h2>
-          <p className="mx-auto mt-2 hidden max-w-xl text-sm text-ink-600 sm:block dark:text-umber-200">
-            {t("landing.demo_body")}
-          </p>
         </div>
 
         <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 md:grid-cols-[1fr_1.2fr] md:items-start md:gap-8 lg:gap-10">
@@ -211,20 +208,6 @@ export function InteractiveBudgetDemo() {
               >
                 {t("landing.demo_cta")}
               </Link>
-              {/* Secondary "see how it works" link + estimate caveat stay
-               *  on tablet+ where vertical is cheap; on mobile they were
-               *  pure noise under the CTA, per the "too noisy and crowded"
-               *  flag. The keys stay so desktop renders unchanged. */}
-              <p className="mt-2 hidden text-center text-[11px] text-ink-500 sm:block dark:text-umber-300">
-                <a
-                  href="#phases"
-                  className="font-serif italic underline-offset-4 hover:text-ink-700 hover:underline dark:hover:text-paper-100"
-                >
-                  {t("landing.demo_cta_secondary")}
-                </a>
-                <span className="mx-2 text-paper-400">·</span>
-                {t("landing.demo_disclaimer")}
-              </p>
             </div>
           </div>
 

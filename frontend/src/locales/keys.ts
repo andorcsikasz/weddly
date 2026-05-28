@@ -801,12 +801,8 @@ export interface LocaleMessages {
      *  before the EN parity pass. HU keeps the Budapest reference because
      *  it's accurate for HU readers; EN reads as a neutral product line. */
     brand_tagline_paper: string;
-    /** Section signature at the bottom of the testimonials block — same
-     *  rationale as `brand_tagline_paper`. */
-    brand_signature: string;
     demo_eyebrow: string;
     demo_title: string;
-    demo_body: string;
     demo_guests_label: string;
     demo_budget_label: string;
     demo_per_guest_label: string;
@@ -815,8 +811,6 @@ export interface LocaleMessages {
     demo_breakdown_sub: string;
     demo_total_label: string;
     demo_cta: string;
-    demo_cta_secondary: string;
-    demo_disclaimer: string;
     demo_cat_food_drinks: string;
     demo_cat_venue: string;
     demo_cat_photo_video: string;
@@ -924,7 +918,6 @@ export interface LocaleMessages {
     skip_to_main: string;
     couple_cards_eyebrow: string;
     couple_cards_title: string;
-    couple_cards_lead: string;
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: string;
     stats_a_value: string;
@@ -4193,7 +4186,6 @@ export interface LocaleMessages {
     /** Eyebrow + heading + lead + CTA for the LandingPage teaser block. */
     section_eyebrow: string;
     section_title: string;
-    section_lead: string;
     section_cta: string;
     /** Tri-state loading / error / empty messages for the public blog
      *  surfaces (index, post, landing teaser) — the API is fetched at

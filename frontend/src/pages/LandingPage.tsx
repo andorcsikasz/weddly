@@ -440,9 +440,6 @@ export default function LandingPage() {
               {t("landing.cta_signup")}
             </Link>
           </div>
-          <p className="mt-10 font-serif text-sm italic text-ink-600 dark:text-umber-300">
-            {t("landing.brand_signature")}
-          </p>
         </div>
       </section>
 
@@ -725,9 +722,6 @@ function BlogTeaser() {
           <h2 className="mt-2 font-serif text-2xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:mt-3 sm:text-5xl">
             {t("blog.section_title")}
           </h2>
-          <p className="mx-auto mt-2 max-w-2xl text-sm leading-snug text-ink-600 sm:mt-4 sm:text-base sm:leading-relaxed dark:text-umber-200">
-            {t("blog.section_lead")}
-          </p>
         </header>
       </div>
       {/* Mobile: horizontal snap carousel so all three posts are visible
@@ -862,9 +856,6 @@ function CoupleCardsTeaser() {
           <h2 className="font-serif text-2xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.couple_cards_title")}
           </h2>
-          <p className="mx-auto mt-2 max-w-2xl text-sm leading-snug text-ink-600 sm:mt-3 sm:text-base sm:leading-relaxed dark:text-umber-200">
-            {t("landing.couple_cards_lead")}
-          </p>
         </header>
         {/* All four decks visible at once on mobile via a 2x2 grid in the
          *  requested 2:3 portrait aspect. Tablet stays 2-up; desktop lays
