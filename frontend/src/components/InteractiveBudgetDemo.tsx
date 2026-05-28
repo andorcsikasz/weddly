@@ -109,24 +109,28 @@ export function InteractiveBudgetDemo() {
       id="try-it"
       className="relative overflow-hidden bg-paper-50 dark:bg-umber-900 border-y border-paper-300 dark:border-umber-700"
     >
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10 lg:py-12">
         <div className="text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+          {/* Eyebrow + descriptive body stay on tablet+, hidden on phones
+           *  where they were three uppercase lines plus a 3-line paragraph
+           *  before the first slider, pushing the whole demo below the
+           *  fold. The title alone carries the hook on mobile. */}
+          <p className="hidden text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 sm:block dark:text-blush-300">
             {t("landing.demo_eyebrow")}
           </p>
-          <h2 className="mt-2.5 font-serif text-2xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-3xl lg:text-4xl">
+          <h2 className="font-serif text-xl leading-[1.15] text-ink-900 sm:mt-2.5 sm:text-3xl lg:text-4xl dark:text-paper-50">
             {t("landing.demo_title")}
           </h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-ink-600 dark:text-umber-200">
+          <p className="mx-auto mt-2 hidden max-w-xl text-sm text-ink-600 sm:block dark:text-umber-200">
             {t("landing.demo_body")}
           </p>
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-[1fr_1.2fr] md:items-start md:gap-8 lg:gap-10">
+        <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 md:grid-cols-[1fr_1.2fr] md:items-start md:gap-8 lg:gap-10">
           {/* Controls */}
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             <div>
-              <div className="flex items-baseline justify-between gap-3">
+              <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="demo-guests"
                   className="font-serif text-base text-ink-900 dark:text-paper-50"
@@ -145,18 +149,18 @@ export function InteractiveBudgetDemo() {
                 step={1}
                 value={guests}
                 onChange={(e) => setGuests(clamp(Number(e.target.value), MIN_GUESTS, MAX_GUESTS))}
-                className="mt-2 w-full rounded accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600"
+                className="mt-1.5 w-full rounded accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600 sm:mt-2"
                 aria-label={t("landing.demo_guests_label")}
                 aria-valuetext={`${guests}`}
               />
-              <div className="mt-0.5 flex justify-between text-[11px] text-ink-500 dark:text-umber-300">
+              <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-ink-500 sm:text-[11px] dark:text-umber-300">
                 <span>{MIN_GUESTS}</span>
                 <span>{MAX_GUESTS}</span>
               </div>
             </div>
 
             <div>
-              <div className="flex items-baseline justify-between gap-3">
+              <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="demo-budget"
                   className="font-serif text-base text-ink-900 dark:text-paper-50"
@@ -175,21 +179,26 @@ export function InteractiveBudgetDemo() {
                 step={range.step}
                 value={budget}
                 onChange={(e) => setBudget(clamp(Number(e.target.value), range.min, range.max))}
-                className="mt-2 w-full rounded accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600"
+                className="mt-1.5 w-full rounded accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600 sm:mt-2"
                 aria-label={t("landing.demo_budget_label")}
                 aria-valuetext={formatMoney(budget, currency, locale)}
               />
-              <div className="mt-0.5 flex justify-between text-[11px] text-ink-500 dark:text-umber-300">
+              <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-ink-500 sm:text-[11px] dark:text-umber-300">
                 <span>{formatMoney(range.min, currency, locale)}</span>
                 <span>{formatMoney(range.max, currency, locale)}</span>
               </div>
             </div>
 
-            <div className="flex items-baseline gap-3 rounded-xl bg-white dark:bg-umber-800 px-4 py-3 ring-1 ring-paper-300 dark:ring-umber-700">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-500 dark:text-umber-300 shrink-0">
+            {/* Per-guest tile: vertically centred row (the prior
+             *  `items-baseline` left the eyebrow falling off the numeral
+             *  baseline; per the user's "boxes always vertically center"
+             *  rule, switch to `items-center` and pin a fixed h-12 so the
+             *  tile stops growing when HUF formatting wraps long). */}
+            <div className="flex h-12 items-center gap-3 rounded-xl bg-white px-4 ring-1 ring-paper-300 dark:bg-umber-800 dark:ring-umber-700">
+              <p className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-500 dark:text-umber-300">
                 {t("landing.demo_per_guest_label")}
               </p>
-              <p className="ml-auto font-serif text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
+              <p className="ml-auto font-serif text-xl text-ink-900 sm:text-2xl lg:text-3xl dark:text-paper-50">
                 {formatMoney(perGuest, currency, locale)}
               </p>
             </div>
@@ -202,7 +211,11 @@ export function InteractiveBudgetDemo() {
               >
                 {t("landing.demo_cta")}
               </Link>
-              <p className="mt-2 text-center text-[11px] text-ink-500 dark:text-umber-300">
+              {/* Secondary "see how it works" link + estimate caveat stay
+               *  on tablet+ where vertical is cheap; on mobile they were
+               *  pure noise under the CTA, per the "too noisy and crowded"
+               *  flag. The keys stay so desktop renders unchanged. */}
+              <p className="mt-2 hidden text-center text-[11px] text-ink-500 sm:block dark:text-umber-300">
                 <a
                   href="#phases"
                   className="font-serif italic underline-offset-4 hover:text-ink-700 hover:underline dark:hover:text-paper-100"
@@ -215,24 +228,27 @@ export function InteractiveBudgetDemo() {
             </div>
           </div>
 
-          {/* Live bars */}
-          <div className="rounded-2xl bg-white dark:bg-umber-800 p-5 ring-1 ring-paper-300 dark:ring-umber-700 shadow-pop sm:p-6">
-            <div className="flex items-baseline justify-between">
+          {/* Live bars. All label/amount rows use `items-center` (not
+           *  `items-baseline`) per the user's universal "boxes always
+           *  vertically center text" rule. Padding tightens to `p-4` on
+           *  phones to match the new section pace. */}
+          <div className="rounded-2xl bg-white p-4 shadow-pop ring-1 ring-paper-300 sm:p-6 dark:bg-umber-800 dark:ring-umber-700">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
                 {t("landing.demo_breakdown_eyebrow")}
               </p>
-              <p className="font-serif text-xs italic text-ink-500 dark:text-umber-300 sm:text-sm">
+              <p className="text-right font-serif text-xs italic leading-tight text-ink-500 sm:text-sm dark:text-umber-300">
                 {t("landing.demo_breakdown_sub")}
               </p>
             </div>
             <ul className="mt-4 space-y-2.5">
               {rows.map((row) => (
                 <li key={row.i18nKey}>
-                  <div className="flex items-baseline justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="font-serif text-sm text-ink-800 dark:text-paper-100">
                       {t(row.i18nKey)}
                     </span>
-                    <span className="font-serif text-sm text-ink-700 dark:text-paper-100 tabular-nums">
+                    <span className="font-serif text-sm tabular-nums text-ink-700 dark:text-paper-100">
                       {formatMoney(row.amount, currency, locale)}
                     </span>
                   </div>
@@ -245,12 +261,12 @@ export function InteractiveBudgetDemo() {
                 </li>
               ))}
             </ul>
-            <div className="mt-4 border-t border-paper-300 dark:border-umber-700 pt-3">
-              <div className="flex items-baseline justify-between">
+            <div className="mt-4 border-t border-paper-300 pt-3 dark:border-umber-700">
+              <div className="flex items-center justify-between">
                 <span className="font-serif text-base text-ink-900 dark:text-paper-50">
                   {t("landing.demo_total_label")}
                 </span>
-                <span className="font-serif text-lg text-ink-900 dark:text-paper-50 tabular-nums">
+                <span className="font-serif text-lg tabular-nums text-ink-900 dark:text-paper-50">
                   {formatMoney(budget, currency, locale)}
                 </span>
               </div>

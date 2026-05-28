@@ -698,24 +698,73 @@ function BlogTeaser() {
   });
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      {/* Outer wrapper keeps the centered header inside `max-w-6xl`, while
+       *  the carousel breaks out edge-to-edge below `sm:` so the cards can
+       *  visibly peek past the viewport (a strong swipe affordance on
+       *  phones). Tablet+ falls back to the 3-up grid. */}
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-20">
         <header className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
             {t("blog.section_eyebrow")}
           </p>
-          <h2 className="mt-3 font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
+          <h2 className="mt-2 font-serif text-2xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:mt-3 sm:text-5xl">
             {t("blog.section_title")}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
+          <p className="mx-auto mt-2 max-w-2xl text-sm leading-snug text-ink-600 sm:mt-4 sm:text-base sm:leading-relaxed dark:text-umber-200">
             {t("blog.section_lead")}
           </p>
         </header>
+      </div>
+      {/* Mobile: horizontal snap carousel so all three posts are visible
+       *  through swiping in one viewport. The first card peeks at ~80vw so
+       *  the user immediately sees there's more to scroll. Tablet+ keeps
+       *  the existing 3-up grid (re-rendered below). */}
+      <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-6 sm:hidden [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {posts.map((post) => {
+          const copy = post[locale];
+          const [y, m, d] = post.published_at.split("-").map(Number);
+          const dateLabel =
+            y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
+          return (
+            <li
+              key={post.slug}
+              className="w-[80vw] max-w-[20rem] shrink-0 snap-start first:ml-0 last:mr-4"
+            >
+              <Link
+                to={`/blog/${post.slug}`}
+                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:border-umber-700 dark:bg-umber-800"
+              >
+                <BlogCover
+                  url={post.cover_image_url ?? null}
+                  alt={copy.title}
+                  slug={post.slug}
+                  category={post.category[locale]}
+                />
+                <div className="flex flex-1 flex-col p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
+                    {post.category[locale]}
+                  </p>
+                  <h3 className="mt-2 font-serif text-lg leading-[1.15] text-ink-900 dark:text-paper-50">
+                    {copy.title}
+                  </h3>
+                  <div className="mt-auto flex items-center gap-2 pt-3 text-[11px] text-ink-600 dark:text-umber-300">
+                    <time dateTime={post.published_at}>{dateLabel}</time>
+                    <span aria-hidden>·</span>
+                    <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
+                  </div>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mx-auto hidden max-w-6xl px-4 sm:block sm:px-6">
         {/* `items-stretch` on the grid + `h-full` on each Link makes every
             cell take the row-max height; the inner column uses `flex-1` so
             the date/read-time row anchors to the bottom regardless of how
             many lines the title or lead wraps to. Result: three perfectly
             even tiles instead of jagged ones. */}
-        <ul className="mt-10 grid gap-x-8 gap-y-10 sm:mt-14 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
+        <ul className="mt-4 grid gap-x-8 gap-y-10 sm:mt-10 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
           {posts.map((post) => {
             const copy = post[locale];
             const [y, m, d] = post.published_at.split("-").map(Number);
@@ -760,6 +809,11 @@ function BlogTeaser() {
           </Link>
         </div>
       </div>
+      <div className="flex justify-center pb-10 sm:hidden">
+        <Link to="/blog" className="btn-outline btn-landing">
+          {t("blog.section_cta")}
+        </Link>
+      </div>
     </section>
   );
 }
@@ -788,36 +842,35 @@ function CoupleCardsTeaser() {
       : "/tools/100-questions-before-marriage";
   return (
     <section className="relative bg-white dark:bg-umber-900">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14">
         <header className="text-center">
-          <h2 className="font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="font-serif text-2xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.couple_cards_title")}
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
+          <p className="mx-auto mt-2 max-w-2xl text-sm leading-snug text-ink-600 sm:mt-3 sm:text-base sm:leading-relaxed dark:text-umber-200">
             {t("landing.couple_cards_lead")}
           </p>
         </header>
-        {/* Four WNRS-red cover cards. Desktop lays them out 4-up in a single
-            row so the whole teaser fits inside one viewport; tablet falls back
-            to 2x2 and mobile stacks. Whole cards are clickable, so a separate
-            "draw a card" CTA below the grid would just be redundant chrome. */}
-        <ul className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+        {/* All four decks visible at once on mobile via a 2x2 grid in the
+         *  requested 2:3 portrait aspect. Tablet stays 2-up; desktop lays
+         *  out 4-up. Whole cards are clickable. */}
+        <ul className="mt-5 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-4 lg:gap-5">
           {COUPLE_CARD_DECKS.map((deck, idx) => (
             <li key={deck.id} className="h-full">
               <Link
                 to={toolPath}
-                className="group flex aspect-[3/4] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-5 py-6 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-6 sm:py-7"
+                className="group flex aspect-[2/3] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-3 py-4 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7"
               >
                 <span aria-hidden="true" className="block h-1" />
                 <div className="flex flex-1 flex-col items-center justify-center">
-                  <span className="font-display text-2xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-3xl">
+                  <span className="font-display text-lg font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-2xl lg:text-3xl">
                     {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
                   </span>
-                  <span className="mt-2 font-display text-sm font-bold uppercase tracking-[0.04em] text-white sm:text-base">
+                  <span className="mt-1.5 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-white sm:mt-2 sm:text-sm lg:text-base">
                     ({t(deck.titleKey)})
                   </span>
                 </div>
-                <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-white">
+                <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] text-white sm:text-[10px] sm:tracking-[0.28em]">
                   {t("app.name")} ·{" "}
                   {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
                 </span>

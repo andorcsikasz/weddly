@@ -14,6 +14,12 @@ expect.extend(jestDomMatchers as Parameters<typeof expect.extend>[0]);
 // We deliberately don't use RTL's `cleanup()` here — its unmount path triggers
 // removeChild on portal nodes that happy-dom's tree no longer owns, throwing
 // DOMException. Wiping innerHTML keeps happy-dom and React in sync.
+//
+// `body.style.overflow` is also reset because Dialog + focus-mode primitives
+// set it to "hidden" when open and rely on their own teardown effects to
+// clear it. If a test unmounts mid-effect (which happy-dom often does), the
+// "hidden" lingers and poisons whichever test runs next.
 afterEach(() => {
   document.body.innerHTML = "";
+  document.body.style.overflow = "";
 });

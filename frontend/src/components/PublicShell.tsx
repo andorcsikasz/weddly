@@ -1,4 +1,14 @@
-import { Languages, LogIn, Menu, MessageSquare, Moon, Sun, UserCheck, X } from "lucide-react";
+import {
+  Languages,
+  LogIn,
+  Menu,
+  MessageSquare,
+  Moon,
+  Store,
+  Sun,
+  UserCheck,
+  X,
+} from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
@@ -233,34 +243,53 @@ function PublicHeader() {
           aria-label={t("public.nav_mobile_aria")}
           className="border-t border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900 md:hidden"
         >
-          <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 text-sm text-ink-700 dark:text-paper-100 sm:px-6">
+          {/* Mobile menu rows: lucide glyph on the left, lowercase label on
+           *  the right. `lowercase` is enforced via `normal-case` reset
+           *  plus the literal `lowercase` utility so HU title-case labels
+           *  read as a soft index (the user explicitly asked for "csupa
+           *  kisbetű"). The hu locale's title-case "Bejelentkezés" /
+           *  "Visszajelzés" lower-cases visually without a string rewrite,
+           *  which keeps SEO + locale keys intact. */}
+          <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 text-sm text-ink-700 sm:px-6 dark:text-paper-100">
             <Link
               to="/vendors"
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
-              {t("landing.nav_vendors")}
+              <Store size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+              <span>{t("landing.nav_vendors")}</span>
             </Link>
             <Link
               to="/rsvp"
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
-              {t("landing.footer_guests")}
+              <UserCheck
+                size={16}
+                aria-hidden="true"
+                className="text-ink-500 dark:text-umber-300"
+              />
+              <span>{t("landing.footer_guests")}</span>
             </Link>
             <Link
               to="/login"
-              className="rounded-md px-2 py-2 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
-              {t("landing.cta_login")}
+              <LogIn size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+              <span>{t("landing.cta_login")}</span>
             </Link>
             <button
               type="button"
               onClick={openFeedback}
-              className="rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
-              {t("landing.nav_feedback")}
+              <MessageSquare
+                size={16}
+                aria-hidden="true"
+                className="text-ink-500 dark:text-umber-300"
+              />
+              <span>{t("landing.nav_feedback")}</span>
             </button>
             <button
               type="button"
@@ -268,9 +297,16 @@ function PublicHeader() {
                 setLocale(otherLocale);
                 setMenuOpen(false);
               }}
-              className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
-              <span>{t("nav.switch_language")}</span>
+              <span className="inline-flex items-center gap-3">
+                <Languages
+                  size={16}
+                  aria-hidden="true"
+                  className="text-ink-500 dark:text-umber-300"
+                />
+                <span>{t("nav.switch_language")}</span>
+              </span>
               <span className="text-xs font-medium uppercase tracking-wider text-ink-600 dark:text-umber-300">
                 {locale} → {otherLocale}
               </span>
@@ -281,14 +317,24 @@ function PublicHeader() {
                 setTheme(theme === "dark" ? "light" : "dark");
                 setMenuOpen(false);
               }}
-              className="mt-1 flex items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
-              <span>{theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}</span>
-              {theme === "dark" ? (
-                <Sun size={14} aria-hidden="true" />
-              ) : (
-                <Moon size={14} aria-hidden="true" />
-              )}
+              <span className="inline-flex items-center gap-3">
+                {theme === "dark" ? (
+                  <Sun
+                    size={16}
+                    aria-hidden="true"
+                    className="text-ink-500 dark:text-umber-300"
+                  />
+                ) : (
+                  <Moon
+                    size={16}
+                    aria-hidden="true"
+                    className="text-ink-500 dark:text-umber-300"
+                  />
+                )}
+                <span>{theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}</span>
+              </span>
             </button>
           </div>
         </nav>
@@ -306,10 +352,10 @@ function PublicFooter() {
       ? "/eszkozok/100-kerdes-eskuvo-elott"
       : "/tools/100-questions-before-marriage";
   return (
-    <footer className="mt-24 border-t border-paper-300 bg-paper-100/60 dark:border-umber-700 dark:bg-umber-950/60">
+    <footer className="mt-16 border-t border-paper-300 bg-paper-100/60 sm:mt-24 dark:border-umber-700 dark:bg-umber-950/60">
       {/* Band: guest CTA. A single paper chip that names the audience and action. */}
       <div className="border-b border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-5 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-4 sm:px-6 sm:py-5">
           <button
             type="button"
             className="btn-lifted inline-flex items-center gap-2 rounded-md border border-paper-300/70 bg-paper-100 px-3.5 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#0f0a07] dark:[--btn-rim-hover:#050302] dark:[--btn-rim-active:#1a1410]"
@@ -323,12 +369,14 @@ function PublicFooter() {
         </div>
       </div>
 
-      {/* Brand column is intentionally wider so the tagline has room to
-          breathe and the three link columns line up evenly to the right. */}
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
-        <div>
+      {/* Mobile = 2-col grid: brand+tagline span the row at top, then the
+       *  three link columns sit two-up below (Vendors + Guests share a
+       *  row, Couples gets its own width). Tablet keeps the previous
+       *  2-col grid; desktop expands to the brand+3-col layout. */}
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
+        <div className="col-span-2 lg:col-span-1">
           <Wordmark size="md" className="text-ink-900 dark:text-paper-50" />
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+          <p className="mt-2 max-w-xs text-sm leading-snug text-ink-600 sm:mt-3 sm:leading-relaxed dark:text-umber-200">
             {t("landing.footer_tagline")}
           </p>
         </div>
@@ -356,19 +404,20 @@ function PublicFooter() {
           {/* The original "What is RSVP?" link pointed at the landing's
               #suppliers anchor, which 404'd visually on every public
               surface other than /. Send guests to the real check-in
-              page instead — that's the destination they actually want. */}
+              page instead, since that's the destination they actually want. */}
           <FooterLink to="/rsvp">{t("landing.footer_guests_about")}</FooterLink>
         </FooterColumn>
       </div>
 
       <div className="border-t border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-5 text-xs text-ink-600 dark:text-umber-300 sm:flex-row sm:items-center sm:px-6">
+        {/* Bottom row tightened: copyright sits left, legal links wrap into
+         *  a tidy 2-col grid on mobile so the five labels can never trail
+         *  into a ragged 3rd row. Tablet+ keeps them on a single line. */}
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-4 text-xs text-ink-600 sm:flex-row sm:items-center sm:px-6 sm:py-5 dark:text-umber-300">
           <p>
             © {new Date().getFullYear()} {t("app.name")}
           </p>
-          {/* `flex-wrap` so the five legal links don't overflow 360px on
-              mobile (HU "Szolgáltatói ÁSZF (tervezet)" alone is ~210px). */}
-          <div className="flex flex-wrap gap-x-5 gap-y-2">
+          <div className="grid w-full grid-cols-2 gap-x-4 gap-y-1.5 sm:flex sm:w-auto sm:flex-wrap sm:gap-x-5 sm:gap-y-2">
             <Link to="/terms" className={legalLinkClass}>
               {t("landing.footer_legal_terms")}
             </Link>
