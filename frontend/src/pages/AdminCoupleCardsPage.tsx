@@ -1,4 +1,4 @@
-// Admin triage for the couple-cards (100 kérdés a házasság előtt)
+// Admin triage for the couple-cards (100 kérdés az esküvő előtt)
 // feedback. Each row is a (deck × card × locale) aggregate with three
 // rating tallies: bad ("X"), ok ("✓"), great ("✓✓"). Default sort
 // surfaces the cards visitors flag as bad most often — those are the

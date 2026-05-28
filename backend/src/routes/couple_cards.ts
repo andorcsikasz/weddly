@@ -1,4 +1,4 @@
-// Couple-cards (100 kérdés a házasság előtt) feedback endpoints.
+// Couple-cards (100 kérdés az esküvő előtt) feedback endpoints.
 //
 //   • POST /api/couple-cards/feedback                — anon, rate-limited
 //   • GET  /api/admin/couple-cards/feedback          — admin aggregate

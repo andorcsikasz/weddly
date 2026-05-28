@@ -440,15 +440,14 @@ function DeckShowcase({
             system end-to-end (eyebrow / h1 / intro / card / FAQ all in
             the WNRS sans). */}
         <div className="mx-auto max-w-3xl text-center">
-          <p className="font-display text-[11px] font-bold uppercase tracking-[0.32em] text-wnrs-red sm:text-xs">
-            {t("tools.couple_cards.page_eyebrow")}
-          </p>
           {/* Title widened to max-w-3xl + lg:whitespace-nowrap so the
-              uppercase HU/EN headline ("100 KÉRDÉS A HÁZASSÁG ELŐTT" /
-              "100 QUESTIONS BEFORE YOU SAY YES") stays on a single line at
-              desktop sizes. sm/md keep the wrap option for narrower
-              viewports where forcing one line would overflow horizontally. */}
-          <h1 className="mt-3 font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:whitespace-nowrap lg:text-5xl">
+              uppercase HU/EN headline stays on a single line at desktop
+              sizes. sm/md keep the wrap option for narrower viewports
+              where forcing one line would overflow horizontally. The
+              "Eszközök · …" eyebrow that used to sit above the H1 was
+              redundant (the URL + nav already place the tool); removed
+              per review. */}
+          <h1 className="font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:whitespace-nowrap lg:text-5xl">
             {t("tools.couple_cards.page_h1")}
           </h1>
           <p className="mx-auto mt-4 max-w-xl font-display text-sm leading-relaxed text-ink-700 dark:text-paper-200 sm:text-base">
@@ -630,7 +629,7 @@ function CardView({
               {question ?? t("tools.couple_cards.card_empty")}
             </p>
 
-            {/* Brand line is full on tablet+ ("Wēddly · 100 kérdés a házasság
+            {/* Brand line is full on tablet+ ("Wēddly · 100 kérdés az esküvő
                 előtt") but compressed on mobile to just the app name, so
                 the 3:2 card stays the same shape on a 375px viewport
                 instead of bloating into a near-square. The deck title

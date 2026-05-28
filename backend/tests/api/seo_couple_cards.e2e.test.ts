@@ -24,8 +24,8 @@ describe("seo: couple-cards tool route map", () => {
   test("lookupRouteSeo resolves the HU slug with both locale variants", () => {
     const seo = lookupRouteSeo(HU_PATH);
     expect(seo).not.toBeNull();
-    expect(seo?.hu.h1).toBe("100 kérdés a házasság előtt");
-    expect(seo?.hu.title).toContain("100 kérdés a házasság előtt");
+    expect(seo?.hu.h1).toBe("100 kérdés az esküvő előtt");
+    expect(seo?.hu.title).toContain("100 kérdés az esküvő előtt");
     expect(seo?.en.h1).toBe("100 Questions Before You Say Yes");
     expect(seo?.en.title).toContain("100 Questions Before You Say Yes");
   });
@@ -54,7 +54,7 @@ describe("seo: couple-cards SSR meta injection", () => {
       isRsvp: false,
       acceptLanguage: "hu-HU,hu;q=0.9",
     });
-    expect(html).toContain("100 kérdés a házasság előtt");
+    expect(html).toContain("100 kérdés az esküvő előtt");
     expect(html).toContain("Négy pakli");
     // Canonical points to itself on the HU canonical host.
     expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}${HU_PATH}" />`);

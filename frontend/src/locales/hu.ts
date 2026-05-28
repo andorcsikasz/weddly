@@ -827,7 +827,7 @@ const hu: LocaleMessages = {
     footer_band_cta: "Vendég vagyok, van meghívókódom",
     skip_to_main: "Ugrás a tartalomra",
     couple_cards_eyebrow: "Mielőtt igent mondtok",
-    couple_cards_title: "100 kérdés a házasság előtt",
+    couple_cards_title: "100 kérdés az esküvő előtt",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
     stats_eyebrow: "Nyílt béta",
     // A korábbi "200+ pár a várólistán" szám kitalált adat volt; átírtuk
@@ -2072,6 +2072,19 @@ const hu: LocaleMessages = {
     city_label: "Város",
     city_all: "Összes város",
     empty_filtered: "Erre a szűrésre nincs találat. Próbálj más szót vagy várost.",
+    bookedCard: {
+      title: "Már foglaltam",
+      subtitle: "Add hozzá a saját {category} szolgáltatódat egy gépeléssel.",
+      input_label: "Szolgáltató neve",
+      input_help:
+        "Ha már szerepel nálunk, válaszd ki a listából. Ha új, küldd be és átnézzük.",
+      placeholder: "Pl. Etyeki Kúria",
+      no_match: "Nincs egyező név a katalógusban.",
+      no_match_help: "Nincs találat. Küldd be újként és átnézzük.",
+      match_already_picked: "Már a választásod",
+      toast_added: "{name} hozzáadva a választott szolgáltatóidhoz.",
+      submit_as_new: "Beküldés tippként",
+    },
     nearby_banner: "{query} közelében — {anchor} környékét mutatjuk.",
     accommodation_external_title: "Szállás partnerek vendégeknek",
     accommodation_external_subtitle:
@@ -3124,7 +3137,7 @@ const hu: LocaleMessages = {
     menu_label: "Profil menü",
     menu_profile: "Profil",
     menu_landing: "Vissza a főoldalra",
-    menu_couple_cards: "100 kérdés a házasság előtt",
+    menu_couple_cards: "100 kérdés az esküvő előtt",
     no_name: "Névtelen",
     zone_workspace: "Te és a munkaterületed",
     zone_planning: "Esküvő tervezése",
@@ -4110,8 +4123,8 @@ const hu: LocaleMessages = {
         "Minimum: párotok neve, az esküvő dátuma, helyszín, RSVP-határidő és egy elérhetőség (e-mail vagy telefon, vagy egy link). Hasznos extra: étrend kérdés, kísérő-mező, allergia. A Wēddly RSVP-oldala ezeket egy linken keresztül oldja meg.",
     },
     couple_cards: {
-      page_eyebrow: "Eszközök · 100 kérdés a házasság előtt",
-      page_h1: "100 kérdés a házasság előtt",
+      page_eyebrow: "Eszközök · 100 kérdés az esküvő előtt",
+      page_h1: "100 kérdés az esküvő előtt",
       page_intro: "Négy szint, a felszíntől a mély vizekig.",
       decks_h2: "Válasszatok paklit",
       deck_number_label: "{n}. szint",

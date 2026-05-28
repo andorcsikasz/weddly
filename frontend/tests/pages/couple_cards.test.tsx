@@ -41,7 +41,7 @@ describe("CoupleCardsPage: deck showcase", () => {
   it("renders the page hero with the HU h1", () => {
     renderPage();
     expect(
-      screen.getByRole("heading", { level: 1, name: /100 kérdés a házasság előtt/i }),
+      screen.getByRole("heading", { level: 1, name: /100 kérdés az esküvő előtt/i }),
     ).toBeInTheDocument();
   });
 

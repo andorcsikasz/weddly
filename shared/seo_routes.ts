@@ -254,10 +254,10 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   },
   "/eszkozok/100-kerdes-eskuvo-elott": {
     hu: {
-      title: "100 kérdés a házasság előtt · beszélgető kártyák pároknak | Wēddly",
+      title: "100 kérdés az esküvő előtt · beszélgető kártyák pároknak | Wēddly",
       description:
         "Négy pakli, paklinként 25 mély kérdés jegyeseknek: gyökerek, hétköznapok, közelség, mély víz. Húzzatok egy kártyát, és kezdjétek el a beszélgetést.",
-      h1: "100 kérdés a házasság előtt",
+      h1: "100 kérdés az esküvő előtt",
       intro:
         "Négy pakli, paklinként 25 beszélgetésindító kérdés jegyes pároknak. Válasszatok paklit, húzzatok egy kártyát, és menjetek bele a beszélgetésbe. Ingyenes, regisztráció nélkül.",
     },
