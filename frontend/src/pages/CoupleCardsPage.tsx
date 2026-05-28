@@ -7,6 +7,7 @@
 
 import { ArrowLeft, Lock, Shuffle, Unlock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { COUPLE_CARD_DECKS, DECK_SIZE, type DeckId } from "../lib/couple_cards";
@@ -116,6 +117,31 @@ export default function CoupleCardsPage() {
 
   const [activeDeck, setActiveDeck] = useState<DeckId | null>(null);
   const [selectedDeck, setSelectedDeck] = useState<DeckId>(DEFAULT_SELECTED);
+
+  // Swap the centred deck inside a View Transition so the browser
+  // computes a layout morph between the just-tapped mini and the centre
+  // card (which share the same `viewTransitionName`). flushSync forces
+  // React to commit the new DOM synchronously inside the transition
+  // callback, otherwise the API would capture a half-applied frame.
+  // Browsers without the API (Firefox today) fall through to a plain
+  // setState — no morph, but the swap still works.
+  const selectDeck = useCallback(
+    (id: DeckId) => {
+      if (id === selectedDeck) return;
+      const runUpdate = () => {
+        flushSync(() => setSelectedDeck(id));
+      };
+      const doc = document as Document & {
+        startViewTransition?: (callback: () => void) => unknown;
+      };
+      if (typeof doc.startViewTransition === "function") {
+        doc.startViewTransition(runUpdate);
+      } else {
+        runUpdate();
+      }
+    },
+    [selectedDeck],
+  );
   const [progress, setProgress] = useState<ProgressMap>(() => loadProgress());
   const [isLocked, setIsLocked] = useState(false);
   const [viewedCount, setViewedCount] = useState(0);
@@ -232,7 +258,7 @@ export default function CoupleCardsPage() {
       {!activeDeckDef ? (
         <DeckShowcase
           selectedId={selectedDeck}
-          onSelect={setSelectedDeck}
+          onSelect={selectDeck}
           onOpen={() => openDeck(selectedDeck)}
         />
       ) : null}
@@ -397,7 +423,12 @@ function DeckShowcase({
                   <button
                     type="button"
                     onClick={() => onSelect(deck.id)}
-                    className="group flex h-full w-full flex-col items-center justify-between rounded-xl bg-wnrs-red px-2 py-2 text-center text-white shadow-[0_18px_36px_-18px_rgba(200,16,46,0.5)] transition-all hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-3 sm:py-3"
+                    style={
+                      {
+                        viewTransitionName: `couple-deck-${deck.id}`,
+                      } as React.CSSProperties
+                    }
+                    className="group flex h-full w-full flex-col items-center justify-between rounded-xl bg-wnrs-red px-2 py-2 text-center text-white shadow-[0_18px_36px_-18px_rgba(200,16,46,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-3 sm:py-3"
                   >
                     <span aria-hidden="true" className="block h-0.5" />
                     <div className="flex flex-1 flex-col items-center justify-center">
@@ -418,13 +449,15 @@ function DeckShowcase({
           })}
         </ul>
 
-        {/* Centre: the lifted deck. `key={selectedId}` replays the lift
-            animation on every swap, so the user reads each tap as "this
-            level rose from its slot". Phantom stack behind the card stays
-            paper-cream so it reads as the underside of the deck (the
-            edges you see when you fan a stack of cards on a table). */}
+        {/* Centre: the lifted deck. The card's `viewTransitionName` matches
+            the just-tapped mini's, so the browser morphs one into the
+            other on swap (Chrome / Safari). The CSS `animate-card-lift`
+            keyframe enter has been dropped in favour of that morph —
+            running both at once flashes; the morph alone gives the
+            cleaner "the tile flew here" effect. Firefox falls through
+            to a plain swap (still functional, just no morph). */}
         <div className="relative mx-auto mt-10 max-w-2xl sm:mt-12">
-          <div key={selectedId} className="group relative isolate animate-card-lift">
+          <div className="group relative isolate">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 z-0 translate-x-1.5 translate-y-2 rotate-[2deg] rounded-2xl border border-paper-300 bg-paper-100 transition-transform duration-300 ease-out group-hover:translate-x-4 group-hover:translate-y-5 group-hover:rotate-[5deg] dark:border-umber-700 dark:bg-umber-700"
@@ -442,6 +475,11 @@ function DeckShowcase({
               type="button"
               onClick={onOpen}
               aria-label={`${t("tools.couple_cards.draw_card")} · ${t(selected.titleKey)}`}
+              style={
+                {
+                  viewTransitionName: `couple-deck-${selectedId}`,
+                } as React.CSSProperties
+              }
               className="relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-7 py-8 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
             >
               <span aria-hidden="true" className="block h-1" />

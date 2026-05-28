@@ -739,3 +739,36 @@
     line-height: 1.125rem;
   }
 }
+
+/* Couple-cards showcase: View Transitions API morph.
+ *
+ * The selected centre card and the three mini tiles each carry a
+ * `view-transition-name: couple-deck-{id}`. When the user taps a mini,
+ * `document.startViewTransition()` (in CoupleCardsPage.tsx) wraps the
+ * setSelectedDeck call, so the browser captures the BEFORE layout
+ * (mini at slot N + centre with the previous deck) and the AFTER layout
+ * (mini gone + centre carrying the new deck), then morphs each pair
+ * with matching names from old → new position. That gives the "the
+ * mini flew into the centre" effect for free.
+ *
+ * The default `::view-transition-group()` duration is 250ms with the
+ * browser's default easing, which felt slightly snappy here — bumping
+ * to 360ms + ease-out-quint matches the rest of the tool's motion
+ * vocabulary. The selector targets every group; the only view
+ * transitions on the page are the couple-deck swaps, so a generic
+ * override is safe.
+ */
+::view-transition-group(*) {
+  animation-duration: 360ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Reduce-motion users skip the morph: the swap still happens but
+   * snaps instantly, so vestibular-sensitive visitors don't get a
+   * cross-screen slide. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
