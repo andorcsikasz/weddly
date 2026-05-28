@@ -1261,16 +1261,15 @@ function FlightEstimateCard({
 
   return (
     <section
-      className="card-hover stationery-light relative !p-5 mt-4"
+      className="card-hover stationery-light relative !p-5 mt-4 mx-4 sm:mx-8"
       aria-label={t("honeymoon.flight_estimate_title")}
     >
       <header className="flex items-start gap-3">
-        <span
+        <Plane
+          size={18}
           aria-hidden="true"
-          className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
-        >
-          <Plane size={16} />
-        </span>
+          className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-50"
+        />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("honeymoon.flight_estimate_title")}
@@ -1392,7 +1391,7 @@ function FlightOfferRow({
           </span>
         </div>
         <span className="flex items-center gap-2">
-          <span className="stat-num text-base font-semibold text-ink-900 sm:text-lg dark:text-paper-50">
+          <span className="stat-num text-sm font-medium text-ink-900 dark:text-paper-50">
             ~ {priceLabel}
           </span>
           {hasSegments && (
