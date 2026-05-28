@@ -364,18 +364,26 @@ function DeckShowcase({
             if (deck.id === selectedId) return null;
             return (
               <li key={deck.id} className="shrink-0">
+                {/* Mini deck tiles match the selected cover's WNRS-red
+                    aesthetic — the whole showcase reads as one stacked
+                    deck, just the centre one larger and surrounded by
+                    phantom siblings. Distinct from the selected card by
+                    size + position + the hover-fan stack, not by colour. */}
                 <button
                   type="button"
                   onClick={() => onSelect(deck.id)}
-                  className="group flex aspect-[3/2] w-36 flex-col justify-between rounded-xl border border-paper-300 bg-white px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-paper-400 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600 sm:w-44 sm:px-4 sm:py-4"
+                  className="group flex aspect-[3/2] w-36 flex-col items-center justify-between rounded-xl bg-wnrs-red px-3 py-3 text-center text-white shadow-[0_18px_36px_-18px_rgba(200,16,46,0.5)] transition-all hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:w-44 sm:px-4 sm:py-4"
                 >
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-blush-700 dark:text-blush-300">
-                    {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
-                  </span>
-                  <span className="font-serif text-lg italic leading-tight text-ink-900 dark:text-paper-50 sm:text-xl">
-                    {t(deck.titleKey)}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
+                  <span aria-hidden="true" className="block h-0.5" />
+                  <div className="flex flex-1 flex-col items-center justify-center">
+                    <span className="font-display text-base font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-xl">
+                      {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                    </span>
+                    <span className="mt-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-white sm:text-xs">
+                      ({t(deck.titleKey)})
+                    </span>
+                  </div>
+                  <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] text-white sm:text-[9px]">
                     {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
                   </span>
                 </button>

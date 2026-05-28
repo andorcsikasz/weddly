@@ -818,23 +818,29 @@ function CoupleCardsTeaser() {
             {t("landing.couple_cards_lead")}
           </p>
         </header>
+        {/* Four WNRS-red cover cards, 3:2 landscape. Same visual language
+            as the tool page's selected deck so the landing teaser reads as
+            a preview of the actual cards a visitor will draw. The blurb
+            is dropped — WNRS cover cards don't carry one, and the lead
+            paragraph above the grid already sets context. */}
         <ul className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 lg:gap-6">
           {COUPLE_CARD_DECKS.map((deck, idx) => (
             <li key={deck.id} className="h-full">
               <Link
                 to={toolPath}
-                className="group flex h-full flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 px-6 py-7 transition-all hover:-translate-y-0.5 hover:border-paper-400 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-white dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600 dark:focus-visible:ring-offset-umber-900 sm:px-7 sm:py-8"
+                className="group flex aspect-[3/2] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-6 py-7 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-8 sm:py-9"
               >
-                <span className="text-xs font-semibold uppercase tracking-[0.24em] text-blush-800 dark:text-blush-300">
-                  {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
-                </span>
-                <span className="font-serif text-2xl italic leading-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-3xl">
-                  {t(deck.titleKey)}
-                </span>
-                <span className="text-sm leading-relaxed text-ink-600 dark:text-paper-200">
-                  {t(deck.blurbKey)}
-                </span>
-                <span className="mt-auto text-xs text-ink-500 dark:text-umber-300">
+                <span aria-hidden="true" className="block h-1" />
+                <div className="flex flex-1 flex-col items-center justify-center">
+                  <span className="font-display text-2xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-4xl">
+                    {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                  </span>
+                  <span className="mt-2 font-display text-sm font-bold uppercase tracking-[0.04em] text-white sm:mt-3 sm:text-lg">
+                    ({t(deck.titleKey)})
+                  </span>
+                </div>
+                <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-white">
+                  {t("app.name")} ·{" "}
                   {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
                 </span>
               </Link>
