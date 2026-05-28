@@ -925,7 +925,6 @@ export interface LocaleMessages {
     couple_cards_eyebrow: string;
     couple_cards_title: string;
     couple_cards_lead: string;
-    couple_cards_cta: string;
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: string;
     stats_a_value: string;

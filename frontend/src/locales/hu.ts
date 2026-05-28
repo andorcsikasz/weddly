@@ -834,7 +834,6 @@ const hu: LocaleMessages = {
     couple_cards_title: "100 kérdés a házasság előtt",
     couple_cards_lead:
       "Négy pakli, paklinként 25 kártya. Válasszatok paklit, húzzatok egyet, és menjetek bele a beszélgetésbe.",
-    couple_cards_cta: "Húzzatok egy kártyát",
     // ── Round 2: statisztika sáv + termékfunkciók + visszajelzések ────
     stats_eyebrow: "Nyílt béta",
     // A korábbi "200+ pár a várólistán" szám kitalált adat volt; átírtuk

@@ -809,33 +809,32 @@ function CoupleCardsTeaser() {
       : "/tools/100-questions-before-marriage";
   return (
     <section className="relative bg-white dark:bg-umber-900">
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
         <header className="text-center">
-          <h2 className="font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
+          <h2 className="font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.couple_cards_title")}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
             {t("landing.couple_cards_lead")}
           </p>
         </header>
-        {/* Four WNRS-red cover cards, 3:2 landscape. Same visual language
-            as the tool page's selected deck so the landing teaser reads as
-            a preview of the actual cards a visitor will draw. The blurb
-            is dropped — WNRS cover cards don't carry one, and the lead
-            paragraph above the grid already sets context. */}
-        <ul className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 lg:gap-6">
+        {/* Four WNRS-red cover cards. Desktop lays them out 4-up in a single
+            row so the whole teaser fits inside one viewport; tablet falls back
+            to 2x2 and mobile stacks. Whole cards are clickable, so a separate
+            "draw a card" CTA below the grid would just be redundant chrome. */}
+        <ul className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
           {COUPLE_CARD_DECKS.map((deck, idx) => (
             <li key={deck.id} className="h-full">
               <Link
                 to={toolPath}
-                className="group flex aspect-[3/2] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-6 py-7 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-8 sm:py-9"
+                className="group flex aspect-[3/4] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-5 py-6 text-center text-white shadow-[0_24px_50px_-22px_rgba(200,16,46,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-6 sm:py-7"
               >
                 <span aria-hidden="true" className="block h-1" />
                 <div className="flex flex-1 flex-col items-center justify-center">
-                  <span className="font-display text-2xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-4xl">
+                  <span className="font-display text-2xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-3xl">
                     {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
                   </span>
-                  <span className="mt-2 font-display text-sm font-bold uppercase tracking-[0.04em] text-white sm:mt-3 sm:text-lg">
+                  <span className="mt-2 font-display text-sm font-bold uppercase tracking-[0.04em] text-white sm:text-base">
                     ({t(deck.titleKey)})
                   </span>
                 </div>
@@ -847,11 +846,6 @@ function CoupleCardsTeaser() {
             </li>
           ))}
         </ul>
-        <div className="mt-12 flex justify-center">
-          <Link to={toolPath} className="btn-primary btn-lifted btn-landing btn-lg">
-            {t("landing.couple_cards_cta")}
-          </Link>
-        </div>
       </div>
     </section>
   );

@@ -828,7 +828,6 @@ const en: LocaleMessages = {
     couple_cards_title: "100 questions before you marry",
     couple_cards_lead:
       "Four decks, 25 cards each. Pick a deck, draw a card, and let the conversation begin.",
-    couple_cards_cta: "Draw a card",
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: "Open beta",
     // Honest beta label — the previous "200+ couples on the waitlist"
