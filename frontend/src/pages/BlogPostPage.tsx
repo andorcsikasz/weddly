@@ -214,6 +214,26 @@ export default function BlogPostPage() {
   );
 }
 
+/** Recognises a list item that wraps a short Bible quote followed by its
+ *  citation, e.g. `„Az Isten szeretet.", 1János 4,8`. The seed stores these
+ *  as plain strings (legacy format from before the linked-cite feature);
+ *  here we parse them at render time so the citation portion becomes a
+ *  link to biblia.hit.hu. Non-verse list items fall through to plain text. */
+const SHORT_VERSE_RE = /^„(.+?)["”],\s*(.+)$/;
+
+function UlItem({ text }: { text: string }) {
+  const m = SHORT_VERSE_RE.exec(text);
+  if (!m || !m[1] || !m[2]) return <>{text}</>;
+  return (
+    <>
+      „{m[1]}”{" "}
+      <span className="font-serif italic text-ink-500 dark:text-umber-300">
+        <BibleCiteLink cite={m[2]} />
+      </span>
+    </>
+  );
+}
+
 /** Render the citation as a link to biblia.hit.hu if we can resolve the
  *  book + chapter; otherwise fall back to plain text. External link target
  *  + rel="noreferrer noopener" so the new tab doesn't share an opener with
@@ -262,7 +282,7 @@ function Block({ block }: { block: BlogBlock }) {
       <ul className="!my-4 space-y-2 pl-5">
         {block.items.map((item, i) => (
           <li key={i} className="list-disc leading-relaxed">
-            {item}
+            <UlItem text={item} />
           </li>
         ))}
       </ul>
