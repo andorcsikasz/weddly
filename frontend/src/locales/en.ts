@@ -839,7 +839,7 @@ const en: LocaleMessages = {
     stats_b_value: "≈5 min",
     stats_b_label: "to set the workspace up",
     stats_c_value: "HU + EN",
-    stats_c_label: "Hungarian-first, English supported",
+    stats_c_label: "Available in two languages",
     stats_footnote: "Numbers reflect the open beta and update as it grows.",
     counter_eyebrow: "Live numbers",
     counter_couples_label: "Couples planning",

@@ -35,7 +35,7 @@ const hu: LocaleMessages = {
     login_description: "Lépj be a páros felületetekre, ott folytatjátok, ahol abbahagytátok.",
     register_title: "Indítsátok el a páros felületeteket — Wēddly",
     register_description:
-      "Pár perc alatt fent vagytok. Egy közös felület kettőtöknek, magyar esküvőkre szabva.",
+      "Pár perc alatt fent vagytok. Egy közös felület kettőtöknek az esküvőtervezéshez.",
     invite_title: "Csatlakozz a páros felületetekre — Wēddly",
     invite_description: "A párod hívott, hogy közösen tervezzétek végig az esküvőtöket.",
     dashboard_title: "Vezérlőpult — Wēddly",
@@ -810,7 +810,7 @@ const hu: LocaleMessages = {
     guest_sheet_cta: "Tovább az RSVP-re",
     guest_sheet_cancel: "Mégse",
     guest_sheet_invalid: "Adj meg egy érvényes kódot.",
-    footer_tagline: "Esküvőtervezés kettőtöknek, egy nyugodt helyen. Magyar esküvőkre szabva.",
+    footer_tagline: "Esküvőtervezés kettőtöknek, egy nyugodt helyen.",
     footer_couples: "Pároknak",
     footer_vendors: "Szolgáltatóknak",
     footer_guests: "Vendégeknek",
@@ -844,7 +844,7 @@ const hu: LocaleMessages = {
     stats_b_value: "kb. 5 perc",
     stats_b_label: "a munkaterület beállítása",
     stats_c_value: "HU + EN",
-    stats_c_label: "magyar elsőként, angollal kiegészítve",
+    stats_c_label: "két nyelven elérhető",
     stats_footnote:
       "A számok a nyílt béta aktuális állapotát mutatják, és a fejlődéssel frissülnek.",
     // Live counter band (couples on the platform + RSVPs collected). Fed by
@@ -3951,7 +3951,7 @@ const hu: LocaleMessages = {
         "Egy vendégre átlagosan 50 000–80 000 Ft jut a teljes keretből, ami magába foglalja a cateringet, italokat, dekort és a vendégekre eső helyszín-arányt. A Wēddly kalkulátora pontosan kiszámolja a vendégszám és a keret alapján a per-fő költést.",
       faq_q3: "Hogyan oszlik meg az esküvői keret kategóriák között?",
       faq_a3:
-        "Magyar esküvőkre szabva: ~35% catering és italok, ~18% helyszín, ~13% fotó-videó, ~9% dekor és virág, ~8% öltözet és szépség, ~7% zene/DJ, ~5% ceremónia, ~2% papírárú, és ~3% biztonsági tartalék. A kalkulátorban élőben látjátok az aktuális számokra vetítve.",
+        "Ajánlott bontás: ~35% catering és italok, ~18% helyszín, ~13% fotó-videó, ~9% dekor és virág, ~8% öltözet és szépség, ~7% zene/DJ, ~5% ceremónia, ~2% papírárú, és ~3% biztonsági tartalék. A kalkulátorban élőben látjátok az aktuális számokra vetítve.",
       faq_q4: "Megőrizhetők a számok regisztráció után?",
       faq_a4:
         "Igen. A „Folytasd a Wēddly-ben” gombbal a vendégszám és a teljes keret bekerül a saját workspace-etek vázlatába; a regisztráció utáni onboardingnál ezekkel a számokkal indul a tervezés. Onnantól kategóriánként szerkeszthetitek és bármikor szüneteltethetitek a workspace-et.",
@@ -4000,11 +4000,11 @@ const hu: LocaleMessages = {
     },
     guest_list_template: {
       page_eyebrow: "Eszközök · Vendéglista sablon",
-      page_h1: "Vendéglista sablon — magyar esküvőre szabva",
+      page_h1: "Vendéglista sablon esküvőre",
       page_intro:
-        "Egy letölthető vendéglista CSV-sablon, magyar oszlopnevekkel: vezetéknév, keresztnév, e-mail, telefon, háztartás, étrend, kísérő, RSVP-státusz. Töltsd le, töltsd ki Excel-ben vagy Google Sheets-ben — vagy importáld közvetlenül a Wēddly-be és onnantól mindkettőtök ugyanazt a listát látja, valós időben.",
+        "Egy letölthető vendéglista CSV-sablon a leggyakoribb oszlopokkal: vezetéknév, keresztnév, e-mail, telefon, háztartás, étrend, kísérő, RSVP-státusz. Töltsd le, töltsd ki Excel-ben vagy Google Sheets-ben, vagy importáld közvetlenül a Wēddly-be, és onnantól mindkettőtök ugyanazt a listát látja, valós időben.",
       preview_h2: "Mit tartalmaz a sablon",
-      preview_caption: "Magyar esküvőkre szabott oszlopok, importálható Wēddly-be.",
+      preview_caption: "Strukturált oszlopok, importálható Wēddly-be.",
       col_first_name: "Keresztnév",
       col_last_name: "Vezetéknév",
       col_email: "E-mail",
@@ -4043,9 +4043,9 @@ const hu: LocaleMessages = {
     },
     seating_chart: {
       page_eyebrow: "Eszközök · Ültetési rend készítő",
-      page_h1: "Ültetési rend készítő — ingyen, magyar esküvőkre",
+      page_h1: "Ültetési rend készítő, ingyen",
       page_intro:
-        "Egy vászon, asztalok, vendégek — húzd a vendégeket az asztalokra, és a Wēddly egy kattintással nyomtatható ültetési rendet készít A4, A6 (ültetőkártya) és A3 (a nagy tábla a bejárathoz) méretben. Egyenesen a nyomdába vihető, pontos mm méretben. A nyílt béta alatt ingyenes.",
+        "Egy vászon, asztalok, vendégek; húzd a vendégeket az asztalokra, és a Wēddly egy kattintással nyomtatható ültetési rendet készít A4, A6 (ültetőkártya) és A3 (a nagy tábla a bejárathoz) méretben. Egyenesen a nyomdába vihető, pontos mm méretben. A nyílt béta alatt ingyenes.",
       what_h2: "Mit kapsz",
       what_body:
         "Egy interaktív vásznat, ahol asztalokat (kerek, szögletes, főasztal) helyezel el, és a vendéglistádról húzod őket a helyükre. A vászon konfliktusokat is jelez — ha két vendég ki nem állhatja egymást, vagy ha egy asztal kerek méretarány-szabálysértést szenved.",

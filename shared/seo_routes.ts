@@ -200,12 +200,12 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   },
   "/eszkozok/vendeglista-sablon": {
     hu: {
-      title: "Vendéglista sablon — esküvői CSV (ingyen) | Wēddly",
+      title: "Vendéglista sablon: esküvői CSV (ingyen) | Wēddly",
       description:
-        "Letölthető CSV vendéglista-sablon magyar esküvőre szabva: vezetéknév, e-mail, telefon, háztartás, étrend, kísérő, RSVP. Importálható közvetlenül a Wēddly-be.",
-      h1: "Vendéglista sablon — magyar esküvőre szabva",
+        "Letölthető CSV vendéglista-sablon: vezetéknév, e-mail, telefon, háztartás, étrend, kísérő, RSVP. Importálható közvetlenül a Wēddly-be.",
+      h1: "Vendéglista sablon esküvőre",
       intro:
-        "Töltsd le a CSV-sablont, töltsd ki Excel-ben vagy Sheets-ben, vagy importáld közvetlenül a Wēddly-be. Magyar oszlopnevekkel, 8 példasorral.",
+        "Töltsd le a CSV-sablont, töltsd ki Excel-ben vagy Sheets-ben, vagy importáld közvetlenül a Wēddly-be. 8 példasorral.",
     },
     en: {
       title: "Wedding guest list template — CSV (free) | Weddly",
@@ -218,10 +218,10 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   },
   "/eszkozok/ultetesi-rend-keszito": {
     hu: {
-      title: "Ültetési rend készítő — ingyenes esküvői | Wēddly",
+      title: "Ültetési rend készítő, ingyenes esküvői | Wēddly",
       description:
-        "Vászon, asztalok, vendégek — húzd a helyükre, és A4 / A6 / A3 PDF-be exportálódik, pontos mm méretben. Magyar esküvőkre szabva, ingyenes a nyílt béta alatt.",
-      h1: "Ültetési rend készítő — ingyen, magyar esküvőkre",
+        "Vászon, asztalok, vendégek; húzd a helyükre, és A4 / A6 / A3 PDF-be exportálódik, pontos mm méretben. Ingyenes a nyílt béta alatt.",
+      h1: "Ültetési rend készítő, ingyen",
       intro:
         "Interaktív ültetési vászon: asztalok, vendégek drag-and-drop, automatikus konfliktus-jelzés, és nyomtatható PDF A4 / A6 (ültetőkártya) / A3 (bejárati tábla) méretben.",
     },
@@ -290,12 +290,12 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   },
   "/signup": {
     hu: {
-      title: "Regisztráció — Wēddly",
+      title: "Regisztráció: Wēddly",
       description:
-        "Indítsátok el a közös esküvőtervező workspace-eteket. Pár perc beállítás, magyar esküvőkre szabva, a nyílt béta alatt ingyenes.",
+        "Indítsátok el a közös esküvőtervező workspace-eteket. Pár perc beállítás, a nyílt béta alatt ingyenes.",
       h1: "Indítsátok el a páros workspace-eteket",
       intro:
-        "Pár perc, és kettőtöknek lesz egy közös felülete az esküvőtervezéshez — élő költségvetés, vendéglista, RSVP linkek, ültetési vászon és nyomtatható kártyák. Magyar esküvőkre szabva, a nyílt béta alatt ingyenes.",
+        "Pár perc, és kettőtöknek lesz egy közös felülete az esküvőtervezéshez: élő költségvetés, vendéglista, RSVP linkek, ültetési vászon és nyomtatható kártyák. A nyílt béta alatt ingyenes.",
     },
     en: {
       title: "Create your couple workspace — Weddly",
