@@ -28,7 +28,7 @@ export function CurrencyPrefDialog() {
       role="dialog"
       closeOnBackdrop
       footer={
-        <Button variant="outline" onClick={cancelPendingLocale}>
+        <Button variant="outline" onClick={cancelPendingLocale} className="w-full">
           {t("currency_pref.cancel")}
         </Button>
       }
@@ -41,12 +41,10 @@ export function CurrencyPrefDialog() {
               key={c}
               type="button"
               onClick={() => confirmCurrencyPref(c)}
-              className="flex flex-col items-center gap-1 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 text-ink-900 transition-colors hover:border-ink-700 hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-50 dark:hover:border-paper-100 dark:hover:bg-umber-800"
+              aria-label={c}
+              className="flex items-center justify-center rounded-xl border border-paper-300 bg-paper-50 px-4 py-5 text-ink-900 transition-colors hover:border-ink-700 hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-50 dark:hover:border-paper-100 dark:hover:bg-umber-800"
             >
               <span className="font-serif text-2xl">{currencySymbol(c, labelLocale)}</span>
-              <span className="text-xs uppercase tracking-wider text-ink-600 dark:text-umber-300">
-                {c}
-              </span>
             </button>
           ))}
         </div>
