@@ -528,14 +528,24 @@ function CardView({
 
             <p
               data-testid="couple-card-question"
-              className="text-balance text-center font-display text-lg font-bold uppercase leading-[1.15] tracking-[0.02em] text-wnrs-red sm:text-2xl lg:text-3xl"
+              className="text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] text-wnrs-red sm:text-2xl lg:text-3xl"
             >
               {question ?? t("tools.couple_cards.card_empty")}
             </p>
 
+            {/* Brand line is full on tablet+ ("Wēddly · 100 kérdés a házasság
+                előtt") but compressed on mobile to just the app name, so
+                the 3:2 card stays the same shape on a 375px viewport
+                instead of bloating into a near-square. The deck title
+                line below stays at both sizes — it tells the visitor
+                which level this card belongs to. */}
             <div className="text-center">
               <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-wnrs-red sm:text-xs">
-                {t("app.name")} · {t("tools.couple_cards.page_h1")}
+                {t("app.name")}
+                <span className="hidden sm:inline">
+                  {" · "}
+                  {t("tools.couple_cards.page_h1")}
+                </span>
               </p>
               <p className="mt-1 font-display text-[9px] uppercase tracking-[0.24em] text-wnrs-redInk sm:text-[10px]">
                 {deckTitle}
