@@ -58,6 +58,7 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { BookedSupplierCard } from "../components/BookedSupplierCard";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { OutreachInbox } from "../components/OutreachInbox";
@@ -197,6 +198,15 @@ export default function SuppliersPage() {
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
+  // Seed values for the SubmitSupplierModal when launched from the
+  // "Már foglaltam" card — the card pre-pins the active category and pipes
+  // through whatever the user typed on the card so the modal opens with
+  // both already filled in. Null when launched from the regular "Tipp
+  // leadása" button.
+  const [submitSeed, setSubmitSeed] = useState<{
+    category: SupplierCategory;
+    name: string;
+  } | null>(null);
   const [diyOpen, setDiyOpen] = useState(false);
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
   // Report dialog state. `reporting` holds the numeric id + name; null when closed.
@@ -1186,6 +1196,31 @@ export default function SuppliersPage() {
             viewMode === "line" ? "flex flex-col gap-2" : "grid auto-rows-fr gap-3 md:grid-cols-2"
           }
         >
+          {/* "Már foglaltam" card. Only appears once the couple has narrowed
+              down to a specific sub-category (activeGroup AND activeCat both
+              set) — without that context the autocomplete + admin-queue
+              category pinning have nothing to anchor to. Sits at the very
+              start of the cards grid so it never gets buried by a long
+              filtered list. */}
+          {activeGroup && activeCat && (
+            <BookedSupplierCard
+              coupleId={coupleId}
+              category={activeCat}
+              categoryLabel={t(`suppliers.cat.${activeCat}`)}
+              items={items}
+              pickedId={selection[activeCat] ?? null}
+              onPickExisting={(supplier) => {
+                // Mirror the new pick into local state so the matching
+                // directory card flips to its "isPicked" treatment without
+                // waiting for the cross-tab subscriber to re-emit.
+                setSelectionState((cur) => ({ ...cur, [supplier.category]: supplier.id }));
+              }}
+              onAddNew={(typedName) => {
+                setSubmitSeed({ category: activeCat, name: typedName });
+                setSubmitOpen(true);
+              }}
+            />
+          )}
           {filtered.map((s) => {
             const Icon = CATEGORY_ICON[s.category];
             const isHighlighted = s.id === highlightId;
@@ -1667,7 +1702,12 @@ export default function SuppliersPage() {
 
       <SubmitSupplierModal
         open={submitOpen}
-        onClose={() => setSubmitOpen(false)}
+        initialCategory={submitSeed?.category ?? null}
+        initialName={submitSeed?.name}
+        onClose={() => {
+          setSubmitOpen(false);
+          setSubmitSeed(null);
+        }}
         onSubmitted={() => {
           // New submissions land as 'pending' and aren't returned by the
           // public list until the contact_email is verified. Skip the

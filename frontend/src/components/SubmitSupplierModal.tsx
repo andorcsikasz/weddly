@@ -49,6 +49,15 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onSubmitted: (supplier: DirectorySupplier) => void;
+  /** When set, the category is pinned to this value and the
+   *  CategoryChipGrid is hidden. Used by the "Már foglaltam" card on the
+   *  directory page, which already knows which sub-category the user is
+   *  filling in for. */
+  initialCategory?: SupplierCategory | null;
+  /** When set, pre-fills the name field on open. Used by the "Már
+   *  foglaltam" card so the user doesn't have to retype what they already
+   *  typed on the card. */
+  initialName?: string;
 };
 
 type FieldKey =
@@ -144,7 +153,13 @@ function looksLikeMapsUrl(s: string): boolean {
   );
 }
 
-export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
+export function SubmitSupplierModal({
+  open,
+  onClose,
+  onSubmitted,
+  initialCategory,
+  initialName,
+}: Props) {
   const { t } = useT();
   const toast = useToast();
   const [form, setForm] = useState(emptyForm);
@@ -169,7 +184,14 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
 
   useEffect(() => {
     if (open) {
-      setForm(emptyForm());
+      // Seed with whatever the launcher pre-set (used by the "Már foglaltam"
+      // card on /app/suppliers, which carries the active sub-category and
+      // the name the user already typed on the card so they don't have to
+      // re-enter either).
+      const seeded = emptyForm();
+      if (initialCategory) seeded.category = initialCategory;
+      if (initialName) seeded.name = initialName;
+      setForm(seeded);
       setErrors({});
       setSubmitting(false);
       setMapsLink("");
@@ -177,7 +199,7 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
       setResolveState({ kind: "idle" });
       lastResolvedRef.current = "";
     }
-  }, [open]);
+  }, [open, initialCategory, initialName]);
 
   async function resolveMapsLink(raw: string) {
     const trimmed = raw.trim();
@@ -393,14 +415,30 @@ export function SubmitSupplierModal({ open, onClose, onSubmitted }: Props) {
               compact
               t={t}
             />
-            <CategoryChipGrid
-              value={form.category}
-              onPick={(c) => setField("category", c)}
-              invalid={Boolean(errors.category)}
-              t={t}
-            />
-            {errors.category && (
-              <FieldError id="submit-supplier-category-error">{errors.category}</FieldError>
+            {/* When the launcher pre-pinned a category (the "Már foglaltam"
+                card on /app/suppliers), we skip the full chip grid — the
+                user already chose the sub-category to land on that card.
+                A small read-only pill still names the active category so
+                the form context stays obvious. */}
+            {initialCategory ? (
+              <div className="rounded-xl border border-paper-200 bg-paper-50 px-3 py-2 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/40 dark:text-paper-100">
+                <span className="font-semibold uppercase tracking-wide text-[10px] text-ink-500 dark:text-umber-300">
+                  {t("suppliers.submit.category_label")}
+                </span>
+                <span className="ml-2">{t(`suppliers.cat.${initialCategory}`)}</span>
+              </div>
+            ) : (
+              <>
+                <CategoryChipGrid
+                  value={form.category}
+                  onPick={(c) => setField("category", c)}
+                  invalid={Boolean(errors.category)}
+                  t={t}
+                />
+                {errors.category && (
+                  <FieldError id="submit-supplier-category-error">{errors.category}</FieldError>
+                )}
+              </>
             )}
             {/* Self-vs-recommendation switch. The boolean drives the trust
                 pill on the public card — "Szolgáltató" badge when the vendor

@@ -2305,6 +2305,26 @@ export interface LocaleMessages {
     city_all: string;
     /** Empty result state when search/city filters out everything. */
     empty_filtered: string;
+    /** "Már foglaltam" / "Already booked" card on the directory grid.
+     *  Only rendered when the active group AND sub-category are both
+     *  set. Couples either pick an existing match via the autocomplete
+     *  (adopts it as their selection) or submit a new vendor that lands
+     *  in the same admin moderation queue as Tipp leadása. */
+    bookedCard: {
+      title: string;
+      /** Sub-title under the card heading — receives `{category}` (HU
+       *  category label like "Esküvői helyszín"). */
+      subtitle: string;
+      input_label: string;
+      input_help: string;
+      placeholder: string;
+      no_match: string;
+      no_match_help: string;
+      match_already_picked: string;
+      /** Toast on successful adoption — receives `{name}` (supplier name). */
+      toast_added: string;
+      submit_as_new: string;
+    };
     /** Shown above the result list when the typed city wasn't in the
      *  directory but resolved to a known metro area (e.g. "Zsámbék" →
      *  Budapest). Has `{query}` and `{anchor}` placeholders. */

@@ -2044,6 +2044,19 @@ const en: LocaleMessages = {
     city_label: "City",
     city_all: "All cities",
     empty_filtered: "No suppliers match this search. Try a different word or city.",
+    bookedCard: {
+      title: "Already booked",
+      subtitle: "Drop in the {category} you've already booked, in one keystroke.",
+      input_label: "Vendor name",
+      input_help:
+        "Already on Weddly? Pick it from the list. New? Submit it and we'll review.",
+      placeholder: "e.g. Etyeki Kúria",
+      no_match: "No matches in the directory.",
+      no_match_help: "No match. Submit it as new and we'll review.",
+      match_already_picked: "Already your pick",
+      toast_added: "{name} added to your shortlist.",
+      submit_as_new: "Submit as tip",
+    },
     nearby_banner: "Near {query} — showing the {anchor} area.",
     accommodation_external_title: "Lodging partners for your guests",
     accommodation_external_subtitle:
