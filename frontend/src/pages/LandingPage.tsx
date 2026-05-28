@@ -393,29 +393,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ════════════════════════ 11 · FAQ ════════════════════════
-          Tight max-w-2xl, italic question-mark headline scaled down so
-          the section doesn't dominate vertically on small viewports. */}
-      <section className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
-          <h2 className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-            {t("landing.faq_title")}
-          </h2>
-          <div className="mt-6 space-y-2 sm:mt-8">
-            {faqEntries.map((entry) => (
-              <FaqCard key={entry.q} q={entry.q} a={entry.a} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ════════════════════════ 11.5 · Blog teaser ════════════════════════
           Three latest posts from the static catalogue in
           shared/blog_posts.ts. Each card is a Link into /blog/:slug; the
           section also offers a "Browse the magazine" CTA into the /blog
-          index for visitors who want to see the full list. Sits between
-          the FAQ and the closing CTA so the magazine doesn't compete with
-          the primary "Start planning" call to action above the fold. */}
+          index for visitors who want to see the full list. */}
       <BlogTeaser />
 
       {/* ════════════════════════ 11.6 · Couple-cards teaser ═══════════════
@@ -446,8 +428,28 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-10 font-serif text-sm italic text-ink-600 dark:text-umber-300">
-            — {t("landing.brand_signature")}
+            {t("landing.brand_signature")}
           </p>
+        </div>
+      </section>
+
+      {/* ════════════════════════ 12 · FAQ ════════════════════════
+          Anchored as the last section per product call: questions answer
+          doubts left over after the emotional closing CTA, and the
+          FAQPage JSON-LD near the bottom of the document still indexes
+          fine. Tight max-w-2xl, italic question-mark headline scaled
+          down so the section doesn't dominate vertically on small
+          viewports. */}
+      <section className="relative bg-paper-50 dark:bg-umber-900">
+        <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
+          <h2 className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+            {t("landing.faq_title")}
+          </h2>
+          <div className="mt-6 space-y-2 sm:mt-8">
+            {faqEntries.map((entry) => (
+              <FaqCard key={entry.q} q={entry.q} a={entry.a} />
+            ))}
+          </div>
         </div>
       </section>
       <MobileStickySignup />
