@@ -218,9 +218,14 @@ function PublicHeader() {
           >
             <LogIn size={18} aria-hidden="true" />
           </Link>
+          {/* Header signup CTA hidden on phones: it competed with the
+           *  hamburger for the right edge and pushed the wordmark closer
+           *  to the moon toggle than to the brand origin. The mobile
+           *  menu and the landing's own hero+sticky CTA carry signup
+           *  intent below sm. Tablet+ still gets the inline button. */}
           <Link
             to="/signup"
-            className="btn-primary shrink-0 whitespace-nowrap min-h-tap !py-2.5 px-4 text-sm sm:min-h-0 sm:!py-1.5"
+            className="btn-primary hidden shrink-0 whitespace-nowrap px-4 text-sm min-h-tap !py-2.5 sm:inline-flex sm:min-h-0 sm:!py-1.5"
           >
             {t("landing.cta_signup")}
           </Link>
