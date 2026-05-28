@@ -219,16 +219,21 @@ describe("CoupleCardsPage: focus mode", () => {
     ).toBeInTheDocument();
   });
 
-  it("shuffle button in the floating chrome advances to a new card", () => {
+  it("shuffle button jumps to a random card (not the bag-shuffle next)", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Húzzatok egy kártyát/i }));
     expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
+    const firstCard = screen.getByTestId("couple-card-question").textContent;
 
-    // Shuffle pill in the top-right cluster shares the nextCard handler,
-    // so it advances the bag-shuffle by one card just like clicking the
-    // card face does.
+    // The shuffle pill uses `shuffleRandom`, which picks a random index
+    // ignoring the bag-shuffle order. The only guarantee is "no immediate
+    // repeat" — so we check the card changed AND we're no longer at slot
+    // 1 / 25 (which would suggest the shuffler bumped to slot 2 like the
+    // bag-shuffle would).
     fireEvent.click(screen.getAllByRole("button", { name: /Új random kártya/i })[0]!);
-    expect(screen.getByText(`2 / ${DECK_SIZE}`)).toBeInTheDocument();
+    expect(screen.queryByText(`1 / ${DECK_SIZE}`)).not.toBeInTheDocument();
+    const afterShuffle = screen.getByTestId("couple-card-question").textContent;
+    expect(afterShuffle).not.toBe(firstCard);
   });
 
   it("manual unlock disarms the auto-lock for the rest of the session", () => {

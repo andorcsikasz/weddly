@@ -4118,8 +4118,7 @@ const hu: LocaleMessages = {
     couple_cards: {
       page_eyebrow: "Eszközök · 100 kérdés a házasság előtt",
       page_h1: "100 kérdés a házasság előtt",
-      page_intro:
-        "Négy szint, a felszíntől a mély vizekig. Ingyen, regisztráció nélkül.",
+      page_intro: "Négy szint, a felszíntől a mély vizekig.",
       decks_h2: "Válasszatok paklit",
       deck_number_label: "{n}. szint",
       deck_count_label: "{n} kártya",

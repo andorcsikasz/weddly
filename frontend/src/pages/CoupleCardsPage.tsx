@@ -206,7 +206,7 @@ export default function CoupleCardsPage() {
   // card of the new bag is guaranteed not to be a repeat of the last
   // card of the old bag (avoidFirst). Counter still reads "N / 25 in this
   // round" — when it ticks back to 1, the round flips and the deck looks
-  // fresh.
+  // fresh. Card-face click + the secondary "Next card" link both use this.
   const nextCard = useCallback(() => {
     if (!activeDeck) return;
     setProgress((prev) => {
@@ -222,6 +222,25 @@ export default function CoupleCardsPage() {
         ...prev,
         [activeDeck]: { order: shuffledIndices(DECK_SIZE, lastSeen), index: 0 },
       };
+    });
+    setViewedCount((c) => c + 1);
+  }, [activeDeck]);
+
+  // Shuffle-icon callback: jump to a fresh random card from the SAME
+  // deck, ignoring the bag-shuffle order. The only invariant kept is
+  // "no immediate repeat" — if RNG lands on the current index, bump by
+  // one. Distinct from `nextCard` so a visitor who wants a true random
+  // shake (instead of the "25-card round" rhythm) gets one.
+  const shuffleRandom = useCallback(() => {
+    if (!activeDeck) return;
+    setProgress((prev) => {
+      const current = prev[activeDeck];
+      if (!current || DECK_SIZE < 2) return prev;
+      let nextIdx = Math.floor(Math.random() * DECK_SIZE);
+      if (nextIdx === current.index) {
+        nextIdx = (nextIdx + 1) % DECK_SIZE;
+      }
+      return { ...prev, [activeDeck]: { ...current, index: nextIdx } };
     });
     setViewedCount((c) => c + 1);
   }, [activeDeck]);
@@ -250,6 +269,7 @@ export default function CoupleCardsPage() {
       cardNumber={currentNumber}
       isLocked={isLocked}
       onNext={nextCard}
+      onShuffle={shuffleRandom}
       onToggleLock={() => setIsLocked((v) => !v)}
       onBack={closeDeck}
     />
@@ -467,6 +487,7 @@ function CardView({
   cardNumber,
   isLocked,
   onNext,
+  onShuffle,
   onToggleLock,
   onBack,
 }: {
@@ -476,6 +497,7 @@ function CardView({
   cardNumber: number | null;
   isLocked: boolean;
   onNext: () => void;
+  onShuffle: () => void;
   onToggleLock: () => void;
   onBack: () => void;
 }) {
@@ -561,7 +583,7 @@ function CardView({
           <div className="absolute left-full top-1/2 ml-3 hidden -translate-y-1/2 flex-col gap-2 sm:flex sm:ml-4">
             <button
               type="button"
-              onClick={onNext}
+              onClick={onShuffle}
               aria-label={t("tools.couple_cards.shuffle_random")}
               title={t("tools.couple_cards.shuffle_random")}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
@@ -602,7 +624,7 @@ function CardView({
         >
           <button
             type="button"
-            onClick={onNext}
+            onClick={onShuffle}
             aria-label={t("tools.couple_cards.shuffle_random")}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
           >

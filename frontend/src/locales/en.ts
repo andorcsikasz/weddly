@@ -4079,7 +4079,7 @@ const en: LocaleMessages = {
     couple_cards: {
       page_eyebrow: "Tools · 100 Questions Before You Say Yes",
       page_h1: "100 Questions Before You Say Yes",
-      page_intro: "Four levels, from the surface to deep water. Free, no signup.",
+      page_intro: "Four levels, from the surface to deep water.",
       decks_h2: "Pick a deck",
       deck_number_label: "Level {n}",
       deck_count_label: "{n} cards",
