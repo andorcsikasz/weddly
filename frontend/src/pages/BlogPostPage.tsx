@@ -224,13 +224,31 @@ const SHORT_VERSE_RE = /^„(.+?)["”],\s*(.+)$/;
 function UlItem({ text }: { text: string }) {
   const m = SHORT_VERSE_RE.exec(text);
   if (!m || !m[1] || !m[2]) return <>{text}</>;
-  return (
+  const quote = m[1];
+  const cite = m[2];
+  const url = citeToBibliaUrl(cite);
+  const content = (
     <>
-      „{m[1]}”{" "}
-      <span className="font-serif italic text-ink-500 dark:text-umber-300">
-        <BibleCiteLink cite={m[2]} />
-      </span>
+      „{quote}”{" "}
+      <span className="font-serif italic text-ink-500 dark:text-umber-300">{cite}</span>
     </>
+  );
+  if (!url) return content;
+  // Whole item clickable: clicking the quote OR the citation opens the
+  // biblia.hit.hu chapter in a new tab. Hover tints both halves blush so
+  // the affordance is unambiguous.
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="group/verse transition-colors hover:text-blush-700 dark:hover:text-blush-300"
+    >
+      „{quote}”{" "}
+      <span className="font-serif italic text-ink-500 transition-colors group-hover/verse:text-blush-700 dark:text-umber-300 dark:group-hover/verse:text-blush-300">
+        {cite}
+      </span>
+    </a>
   );
 }
 
