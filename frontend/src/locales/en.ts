@@ -747,7 +747,7 @@ const en: LocaleMessages = {
     // ── Soft-Modern redesign additions ───────────────────────────────
     nav_how: "How it works",
     nav_suppliers: "Suppliers",
-    nav_vendors: "For vendors",
+    nav_vendors: "for vendors",
     nav_feedback: "Feedback",
     nav_feedback_subject: "Weddly · feedback",
     feedback_title: "Tell us what you think",
@@ -807,7 +807,7 @@ const en: LocaleMessages = {
     footer_tagline: "Wedding planning for two, in one quiet place.",
     footer_couples: "For couples",
     footer_vendors: "For vendors",
-    footer_guests: "For guests",
+    footer_guests: "for guests",
     footer_couples_signup: "Sign up",
     footer_couples_signin: "Sign in",
     footer_couples_features: "Features",

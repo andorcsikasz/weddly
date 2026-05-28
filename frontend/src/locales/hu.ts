@@ -752,7 +752,7 @@ const hu: LocaleMessages = {
     // ── Soft-Modern redesign additions ───────────────────────────────
     nav_how: "Hogyan működik",
     nav_suppliers: "Szolgáltatók",
-    nav_vendors: "Szolgáltatóknak",
+    nav_vendors: "szolgáltatóknak",
     nav_feedback: "Visszajelzés",
     nav_feedback_subject: "Wēddly · visszajelzés",
     feedback_title: "Mondd el, mit gondolsz",
@@ -813,7 +813,7 @@ const hu: LocaleMessages = {
     footer_tagline: "Esküvőtervezés kettőtöknek, egy nyugodt helyen.",
     footer_couples: "Pároknak",
     footer_vendors: "Szolgáltatóknak",
-    footer_guests: "Vendégeknek",
+    footer_guests: "vendégeknek",
     footer_couples_signup: "Regisztráció",
     footer_couples_signin: "Bejelentkezés",
     footer_couples_features: "Funkciók",
