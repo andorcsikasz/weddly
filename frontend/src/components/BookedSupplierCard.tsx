@@ -6,12 +6,12 @@
 //   - Type a name that matches an existing directory entry → dropdown
 //     suggests the match; clicking adopts it as the couple's pick (via
 //     supplier_selection.setSelection) and the card collapses. No new
-//     community submission is created — the couple just confirmed they
+//     community submission is created. The couple just confirmed they
 //     booked an entry that already exists.
 //   - Type a name that doesn't match → "Beküldés tippként" submits via the
 //     existing SubmitSupplierModal flow, pre-pinned to the active category
 //     and pre-filled with the typed name. From the admin queue's
-//     perspective these land exactly like a "Tipp leadása" submission —
+//     perspective these land exactly like a "Tipp leadása" submission:
 //     same review process, same gating.
 //
 // The card is invisible until activeGroup && activeCat both flip on; the
@@ -25,7 +25,7 @@ import { setSelection } from "../lib/supplier_selection";
 import { useT } from "../lib/i18n";
 import { useToast } from "./ui";
 
-/** Diacritic-folded lower-case match — copied from SuppliersPage's local
+/** Diacritic-folded lower-case match. Copied from SuppliersPage's local
  *  helper since the page-level version isn't exported. Tiny enough that the
  *  duplication is cheaper than refactoring it into shared/. */
 function fold(s: string): string {
@@ -45,7 +45,7 @@ export function BookedSupplierCard({
   onAddNew,
 }: {
   /** Couple workspace this card writes picks against. Null when the couple
-   *  hasn't loaded yet — the card renders disabled in that case. */
+   *  hasn't loaded yet; the card renders disabled in that case. */
   coupleId: number | null;
   /** The active sub-category. Picks land in this slot, and submissions are
    *  pre-pinned to it on the modal. */

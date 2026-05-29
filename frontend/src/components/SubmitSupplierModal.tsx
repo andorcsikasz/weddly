@@ -416,7 +416,7 @@ export function SubmitSupplierModal({
               t={t}
             />
             {/* When the launcher pre-pinned a category (the "Már foglaltam"
-                card on /app/suppliers), we skip the full chip grid — the
+                card on /app/suppliers), we skip the full chip grid; the
                 user already chose the sub-category to land on that card.
                 A small read-only pill still names the active category so
                 the form context stays obvious. */}
