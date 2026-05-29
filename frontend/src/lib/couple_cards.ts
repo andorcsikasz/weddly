@@ -24,11 +24,11 @@ export interface Deck {
 
 const ROOTS_HU: readonly string[] = [
   "Milyen mondat ismétlődött a családodban a pénzről, amit ma is hallasz a fejedben?",
-  "Mit csinált apád, amikor anyád sírt? És anyád, amikor apád?",
+  "Mit csinált édesapád, amikor édesanyád sírt? És édesanyád, amikor édesapád?",
   "Kit szerettek nálatok feltétel nélkül, és kinek kellett kiérdemelnie?",
   "Milyen érzelmet nem volt szabad kimutatni nálatok?",
-  "Mit örököltél anyádtól, amit nem akarsz továbbadni?",
-  "Mit örököltél apádtól, amit nem akarsz továbbadni?",
+  "Mit örököltél édesanyádtól, amit nem akarsz továbbadni?",
+  "Mit örököltél édesapádtól, amit nem akarsz továbbadni?",
   "Hogyan kértek nálatok bocsánatot, ha egyáltalán?",
   "Milyen veszekedési mintát hoztál magaddal, amin dolgoznod kell?",
   "Volt-e válás a családodban, és hogyan formált?",
@@ -89,7 +89,7 @@ const EVERYDAY_HU: readonly string[] = [
   "Mit szólnál, ha az egyik szülő anyagilag besegítene a lakásba?",
   "Ki dönt arról, hol töltjük a karácsonyt?",
   "Mennyi időt töltsünk a saját szüleinkkel? És mennyi az, ami már sok?",
-  "Mit szabad az anyádnak, és mit nem?",
+  "Mit szabad az édesanyádnak, és mit nem?",
   "Hány gyereket szeretnél, és mi lesz, ha nem sikerül?",
   "Gyerek után ki marad otthon, és meddig?",
   "Hol fogunk lakni öt év múlva, ha őszinte vagy?",
