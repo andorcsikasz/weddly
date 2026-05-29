@@ -1415,8 +1415,8 @@ function FlightOfferRow({
                   </span>
                   <span className="text-ink-800 tabular-nums dark:text-paper-100">
                     {formatOfferTime(seg.depart_iso, locale)} {seg.depart_iata}{" "}
-                    <span aria-hidden="true">→</span>{" "}
-                    {formatOfferTime(seg.arrival_iso, locale)} {seg.arrival_iata}
+                    <span aria-hidden="true">→</span> {formatOfferTime(seg.arrival_iso, locale)}{" "}
+                    {seg.arrival_iata}
                   </span>
                   <span className="inline-flex items-center gap-1 text-ink-500 dark:text-umber-300">
                     <Clock size={11} aria-hidden="true" />

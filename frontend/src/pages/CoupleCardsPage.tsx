@@ -5,16 +5,7 @@
 //
 // Pure client state, no backend. Data lives in lib/couple_cards.ts.
 
-import {
-  ArrowLeft,
-  Check,
-  CheckCheck,
-  ChevronDown,
-  Lock,
-  Shuffle,
-  Unlock,
-  X,
-} from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, ChevronDown, Lock, Shuffle, Unlock, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
@@ -611,44 +602,44 @@ function CardView({
             aria-label={t("tools.couple_cards.flip_card")}
             className="couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 text-left shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-12 sm:py-12"
           >
-          {/* Re-mount the inner article on every card flip so the keyed
+            {/* Re-mount the inner article on every card flip so the keyed
               `animate-card-deal` enter animation fires for each new
               question. Article tags also keep the page semantically
               clean — the question is the article, the button is the
               affordance around it. */}
-          <article
-            key={`${deckId}-${cardNumber ?? 0}`}
-            className="flex h-full w-full animate-card-deal flex-col items-center justify-between"
-          >
-            <span aria-hidden="true" className="block h-1" />
-
-            <p
-              data-testid="couple-card-question"
-              className="text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] text-wnrs-red sm:text-2xl lg:text-3xl"
+            <article
+              key={`${deckId}-${cardNumber ?? 0}`}
+              className="flex h-full w-full animate-card-deal flex-col items-center justify-between"
             >
-              {question ?? t("tools.couple_cards.card_empty")}
-            </p>
+              <span aria-hidden="true" className="block h-1" />
 
-            {/* Brand line is full on tablet+ ("Wēddly · 100 kérdés az esküvő
+              <p
+                data-testid="couple-card-question"
+                className="text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] text-wnrs-red sm:text-2xl lg:text-3xl"
+              >
+                {question ?? t("tools.couple_cards.card_empty")}
+              </p>
+
+              {/* Brand line is full on tablet+ ("Wēddly · 100 kérdés az esküvő
                 előtt") but compressed on mobile to just the app name, so
                 the 3:2 card stays the same shape on a 375px viewport
                 instead of bloating into a near-square. The deck title
                 line below stays at both sizes — it tells the visitor
                 which level this card belongs to. */}
-            <div className="text-center">
-              <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-wnrs-red sm:text-xs">
-                {t("app.name")}
-                <span className="hidden sm:inline">
-                  {" · "}
-                  {t("tools.couple_cards.page_h1")}
-                </span>
-              </p>
-              <p className="mt-1 font-display text-[9px] uppercase tracking-[0.24em] text-wnrs-redInk sm:text-[10px]">
-                {deckTitle}
-              </p>
-            </div>
-          </article>
-        </button>
+              <div className="text-center">
+                <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-wnrs-red sm:text-xs">
+                  {t("app.name")}
+                  <span className="hidden sm:inline">
+                    {" · "}
+                    {t("tools.couple_cards.page_h1")}
+                  </span>
+                </p>
+                <p className="mt-1 font-display text-[9px] uppercase tracking-[0.24em] text-wnrs-redInk sm:text-[10px]">
+                  {deckTitle}
+                </p>
+              </div>
+            </article>
+          </button>
 
           {/* Side chrome — sm+ only. Sits on the right edge of the card
               wrapper, vertically centred, two pill buttons stacked. The
@@ -668,14 +659,10 @@ function CardView({
               type="button"
               onClick={onToggleLock}
               aria-label={
-                isLocked
-                  ? t("tools.couple_cards.unlock_view")
-                  : t("tools.couple_cards.lock_view")
+                isLocked ? t("tools.couple_cards.unlock_view") : t("tools.couple_cards.lock_view")
               }
               title={
-                isLocked
-                  ? t("tools.couple_cards.unlock_view")
-                  : t("tools.couple_cards.lock_view")
+                isLocked ? t("tools.couple_cards.unlock_view") : t("tools.couple_cards.lock_view")
               }
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
             >
@@ -708,9 +695,7 @@ function CardView({
             type="button"
             onClick={onToggleLock}
             aria-label={
-              isLocked
-                ? t("tools.couple_cards.unlock_view")
-                : t("tools.couple_cards.lock_view")
+              isLocked ? t("tools.couple_cards.unlock_view") : t("tools.couple_cards.lock_view")
             }
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
           >

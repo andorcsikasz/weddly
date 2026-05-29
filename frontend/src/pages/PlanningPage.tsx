@@ -499,48 +499,48 @@ export default function PlanningPage() {
 
         {activeKind === "task" &&
           (taskPriorityCounts.p1 > 0 || taskPriorityCounts.p2 > 0 || priorityFilter !== 0) && (
-          <div
-            role="radiogroup"
-            aria-label={t("planning.priority_filter_aria")}
-            className="mt-4 flex flex-wrap items-center gap-2 text-xs"
-          >
-            <PriorityFilterPill
-              active={priorityFilter === 0}
-              onClick={() => setPriorityFilter(0)}
-              label={t("planning.priority_filter_all")}
-            />
-            <PriorityFilterPill
-              active={priorityFilter === 1}
-              onClick={() => setPriorityFilter(1)}
-              label={
-                <>
-                  <span className="font-bold text-blush-700 dark:text-blush-300">!</span>
-                  <span>{t("planning.priority_filter_important")}</span>
-                  {taskPriorityCounts.p1 > 0 && (
-                    <span className="text-ink-400 dark:text-umber-300">
-                      ({taskPriorityCounts.p1})
-                    </span>
-                  )}
-                </>
-              }
-            />
-            <PriorityFilterPill
-              active={priorityFilter === 2}
-              onClick={() => setPriorityFilter(2)}
-              label={
-                <>
-                  <span className="font-bold text-blush-700 dark:text-blush-300">!!</span>
-                  <span>{t("planning.priority_filter_sos")}</span>
-                  {taskPriorityCounts.p2 > 0 && (
-                    <span className="text-ink-400 dark:text-umber-300">
-                      ({taskPriorityCounts.p2})
-                    </span>
-                  )}
-                </>
-              }
-            />
-          </div>
-        )}
+            <div
+              role="radiogroup"
+              aria-label={t("planning.priority_filter_aria")}
+              className="mt-4 flex flex-wrap items-center gap-2 text-xs"
+            >
+              <PriorityFilterPill
+                active={priorityFilter === 0}
+                onClick={() => setPriorityFilter(0)}
+                label={t("planning.priority_filter_all")}
+              />
+              <PriorityFilterPill
+                active={priorityFilter === 1}
+                onClick={() => setPriorityFilter(1)}
+                label={
+                  <>
+                    <span className="font-bold text-blush-700 dark:text-blush-300">!</span>
+                    <span>{t("planning.priority_filter_important")}</span>
+                    {taskPriorityCounts.p1 > 0 && (
+                      <span className="text-ink-400 dark:text-umber-300">
+                        ({taskPriorityCounts.p1})
+                      </span>
+                    )}
+                  </>
+                }
+              />
+              <PriorityFilterPill
+                active={priorityFilter === 2}
+                onClick={() => setPriorityFilter(2)}
+                label={
+                  <>
+                    <span className="font-bold text-blush-700 dark:text-blush-300">!!</span>
+                    <span>{t("planning.priority_filter_sos")}</span>
+                    {taskPriorityCounts.p2 > 0 && (
+                      <span className="text-ink-400 dark:text-umber-300">
+                        ({taskPriorityCounts.p2})
+                      </span>
+                    )}
+                  </>
+                }
+              />
+            </div>
+          )}
 
         {loading ? (
           <PlanningListSkeleton kind={activeKind} />

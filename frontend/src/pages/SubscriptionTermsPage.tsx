@@ -3,13 +3,7 @@ import { useT } from "../lib/i18n";
 import en from "../locales/en";
 import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
-import {
-  BackLink,
-  H2,
-  LegalHeader,
-  LegalSection,
-  SecondaryLanguageDivider,
-} from "./PrivacyPage";
+import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } from "./PrivacyPage";
 
 /**
  * /terms/vendor-subscription: vendor ÁSZF v1.0 (effective 2026-06-15).

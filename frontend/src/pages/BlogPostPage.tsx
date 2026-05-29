@@ -222,8 +222,7 @@ function UlItem({ text }: { text: string }) {
   const url = citeToBibliaUrl(cite);
   const content = (
     <>
-      „{quote}”{" "}
-      <span className="font-serif italic text-ink-500 dark:text-umber-300">{cite}</span>
+      „{quote}” <span className="font-serif italic text-ink-500 dark:text-umber-300">{cite}</span>
     </>
   );
   if (!url) return content;

@@ -1175,9 +1175,7 @@ export default function DashboardPage() {
                   ) : null
                 }
               >
-                <h2 className="mb-4 hidden md:block">
-                  {t("dashboard.rsvp_breakdown_title")}
-                </h2>
+                <h2 className="mb-4 hidden md:block">{t("dashboard.rsvp_breakdown_title")}</h2>
                 <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   <Segment
                     count={rsvp.yes}

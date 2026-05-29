@@ -9,10 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader } from "../components/admin";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
-import {
-  adminCoupleCardsApi,
-  type CoupleCardFeedbackAggregate,
-} from "../lib/endpoints";
+import { adminCoupleCardsApi, type CoupleCardFeedbackAggregate } from "../lib/endpoints";
 import { useDocumentMetaLiteral } from "../lib/seo";
 
 type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status: "error" };
@@ -145,7 +142,9 @@ export default function AdminCoupleCardsPage() {
               {filtered.map((row) => {
                 const key = `${row.deck_id}-${row.card_index}-${row.locale}`;
                 const dominant: "bad" | "ok" | "great" | null =
-                  row.bad_count >= row.ok_count && row.bad_count >= row.great_count && row.bad_count > 0
+                  row.bad_count >= row.ok_count &&
+                  row.bad_count >= row.great_count &&
+                  row.bad_count > 0
                     ? "bad"
                     : row.great_count >= row.ok_count && row.great_count > 0
                       ? "great"
@@ -156,18 +155,14 @@ export default function AdminCoupleCardsPage() {
                   <tr
                     key={key}
                     className={
-                      dominant === "bad"
-                        ? "bg-wnrs-red/[0.05] dark:bg-wnrs-red/[0.08]"
-                        : ""
+                      dominant === "bad" ? "bg-wnrs-red/[0.05] dark:bg-wnrs-red/[0.08]" : ""
                     }
                   >
                     <Td className="font-medium">{DECK_LABELS[row.deck_id] ?? row.deck_id}</Td>
                     <Td className="text-ink-500 dark:text-umber-300">{row.card_index + 1}</Td>
                     <Td className="uppercase text-ink-500 dark:text-umber-300">{row.locale}</Td>
                     <Td className="max-w-xl text-sm leading-snug">
-                      {row.question_snapshot || (
-                        <span className="text-ink-400">(üres)</span>
-                      )}
+                      {row.question_snapshot || <span className="text-ink-400">(üres)</span>}
                     </Td>
                     <Td className="text-right text-wnrs-red tabular-nums font-medium">
                       {row.bad_count}
@@ -202,9 +197,7 @@ function Th({ children, className = "" }: { children: React.ReactNode; className
 
 function Td({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <td
-      className={`px-3 py-2 text-sm text-ink-800 dark:text-paper-200 ${className}`}
-    >
+    <td className={`px-3 py-2 text-sm text-ink-800 dark:text-paper-200 ${className}`}>
       {children}
     </td>
   );

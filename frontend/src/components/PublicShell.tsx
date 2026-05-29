@@ -326,17 +326,9 @@ function PublicHeader() {
             >
               <span className="inline-flex items-center gap-3">
                 {theme === "dark" ? (
-                  <Sun
-                    size={16}
-                    aria-hidden="true"
-                    className="text-ink-500 dark:text-umber-300"
-                  />
+                  <Sun size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
                 ) : (
-                  <Moon
-                    size={16}
-                    aria-hidden="true"
-                    className="text-ink-500 dark:text-umber-300"
-                  />
+                  <Moon size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
                 )}
                 <span>{theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}</span>
               </span>
@@ -353,9 +345,7 @@ function PublicFooter() {
   const { t, locale } = useT();
   const askGuestCode = useGuestCodePrompt();
   const couplesCardsPath =
-    locale === "hu"
-      ? "/eszkozok/100-kerdes-eskuvo-elott"
-      : "/tools/100-questions-before-marriage";
+    locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
     <footer className="mt-16 border-t border-paper-300 bg-paper-100/60 sm:mt-24 dark:border-umber-700 dark:bg-umber-950/60">
       {/* Band: guest CTA. A single paper chip that names the audience and action. */}
