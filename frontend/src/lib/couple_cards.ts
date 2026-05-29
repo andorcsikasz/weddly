@@ -143,7 +143,7 @@ const CLOSENESS_HU: readonly string[] = [
   "Mit jelent neked, ha leülök melléd a konyhában, és csak hallgatok?",
   "Van olyan csendünk, amiben otthon érzed magad, és van, ami feszít? Hol a kettő közti határ?",
   "Miről veszed észre, hogy baj van velem, amikor még én sem mondtam ki magamnak?",
-  "Mit jelent neked az otthon szó: egy hely, egy ember, vagy a vasárnapi ebéd szaga?",
+  "Mit jelent neked az otthon szó: egy hely, egy ember, vagy a vasárnapi ebéd illata?",
   "Mikor érezted utoljára, hogy egy mozdulatommal hazaértél?",
   "Mit jelent neked, hogy én vagyok az az ember, akinek nem kell teljesítened?",
   "Mikor érzed magad mellettem a legbiztonságosabban?",
