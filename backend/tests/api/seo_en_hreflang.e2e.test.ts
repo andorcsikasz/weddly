@@ -29,9 +29,15 @@ function render(pathname: string, acceptLanguage: string): string {
 describe("seo: same-host EN hreflang for paired tool routes", () => {
   test("HU tool page emits an EN alternate pointing at the EN slug on weddly.hu", () => {
     const html = render(HU_TOOL, "hu");
-    expect(html).toContain(`<link rel="alternate" hreflang="hu" href="https://weddly.hu${HU_TOOL}" />`);
-    expect(html).toContain(`<link rel="alternate" hreflang="en" href="https://weddly.hu${EN_TOOL}" />`);
-    expect(html).toContain(`<link rel="alternate" hreflang="x-default" href="https://weddly.hu${HU_TOOL}" />`);
+    expect(html).toContain(
+      `<link rel="alternate" hreflang="hu" href="https://weddly.hu${HU_TOOL}" />`,
+    );
+    expect(html).toContain(
+      `<link rel="alternate" hreflang="en" href="https://weddly.hu${EN_TOOL}" />`,
+    );
+    expect(html).toContain(
+      `<link rel="alternate" hreflang="x-default" href="https://weddly.hu${HU_TOOL}" />`,
+    );
   });
 
   test("EN-rendered tool page canonicalises to the EN slug", () => {

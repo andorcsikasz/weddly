@@ -45,7 +45,10 @@ function render(pathname: string, acceptLanguage: string): Record<string, unknow
   return jsonLdBlocks(html);
 }
 
-function byType(blocks: Record<string, unknown>[], type: string): Record<string, unknown> | undefined {
+function byType(
+  blocks: Record<string, unknown>[],
+  type: string,
+): Record<string, unknown> | undefined {
   return blocks.find((b) => b["@type"] === type);
 }
 
@@ -78,7 +81,7 @@ describe("seo json-ld: blog post", () => {
     const items = crumb?.itemListElement as Record<string, unknown>[] | undefined;
     expect(items?.length).toBe(3);
     expect(items?.[0]?.name).toBe("Főoldal");
-    expect((items?.[2]?.item as string)).toContain(BLOG_PATH);
+    expect(items?.[2]?.item as string).toContain(BLOG_PATH);
   });
 
   test("EN render localises the breadcrumb labels", () => {

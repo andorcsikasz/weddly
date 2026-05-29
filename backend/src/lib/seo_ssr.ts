@@ -317,6 +317,22 @@ function enCanonicalHostEnv(): string {
   return (process.env.EN_CANONICAL_HOST ?? "").trim().toLowerCase();
 }
 
+/** Plausible analytics domain (e.g. "weddly.hu"). Activated by the
+ *  `PLAUSIBLE_DOMAIN` env var; empty/unset = no analytics script injected.
+ *  Read fresh on every call so tests can flip it around assertions without a
+ *  server restart. plausible.io is already whitelisted in the CSP
+ *  (script-src + connect-src) in server.ts. */
+function plausibleDomainEnv(): string {
+  return (process.env.PLAUSIBLE_DOMAIN ?? "").trim();
+}
+
+/** The Plausible <script> tag (head, deferred, cookieless) or "" when unset. */
+function plausibleScriptTag(): string {
+  const domain = plausibleDomainEnv();
+  if (!domain) return "";
+  return `<script defer data-domain="${escapeAttr(domain)}" src="https://plausible.io/js/script.js"></script>`;
+}
+
 /** True when the request landed on the configured EN canonical host. Used
  *  by `localeForHost` to force EN regardless of `Accept-Language`. */
 function hostIsEnCanonical(host: string | null | undefined): boolean {
@@ -673,6 +689,7 @@ function buildHeadBlock(opts: {
     ...(enUrl ? [`<link rel="alternate" hreflang="en" href="${enUrl}" />`] : []),
     `<link rel="alternate" hreflang="x-default" href="${huUrl}" />`,
     buildJsonLd({ locale, canonicalHost, pathname: path }),
+    ...(plausibleScriptTag() ? [plausibleScriptTag()] : []),
   ].join("\n    ");
 }
 

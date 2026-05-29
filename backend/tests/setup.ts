@@ -45,6 +45,11 @@ process.env.SERPAPI_KEY = "";
 // bearers via mintTestBearer(); see backend/src/lib/google_oauth.ts.
 process.env.GOOGLE_TEST_BYPASS = "1";
 process.env.GOOGLE_CLIENT_ID = "test-google-client.apps.googleusercontent.com";
+// Plausible analytics is injected into the SSR <head> only when this is set
+// (see seo_ssr.ts plausibleScriptTag). Pinned empty so a stray .env value
+// can't leak a real analytics tag into rendered test HTML; the SEO test that
+// asserts the tag sets it explicitly around its own block.
+process.env.PLAUSIBLE_DOMAIN = "";
 
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {

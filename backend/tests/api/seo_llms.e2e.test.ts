@@ -15,7 +15,7 @@ describe("seo: /llms.txt", () => {
     expect(res.headers.get("content-type")).toContain("text/plain");
     const body = await res.text();
     expect(body).not.toContain("<!doctype html");
-    expect(body).not.toContain("<div id=\"root\"");
+    expect(body).not.toContain('<div id="root"');
   });
 
   test("opens with the Weddly entity statement", async () => {
