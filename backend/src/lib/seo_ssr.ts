@@ -127,6 +127,64 @@ function resolveRouteSeo(pathname: string): RouteSeo | null {
   return lookupBlogPostSeo(pathname) ?? lookupRouteSeo(pathname);
 }
 
+interface BlogArticleMeta {
+  huTitle: string;
+  enTitle: string;
+  /** 'YYYY-MM-DD'. */
+  publishedAt: string;
+  /** Epoch ms (db.now()). */
+  updatedAt: number;
+  coverImageUrl: string | null;
+}
+
+/** Article-level fields for the `/blog/:slug` JSON-LD (dates, cover image,
+ *  per-locale headline). Separate from `lookupBlogPostSeo` because the SSR
+ *  <head> meta only needs SEO title/description, whereas the Article schema
+ *  also needs datePublished / dateModified / image. Returns null for
+ *  non-blog paths and drafts (same `is_published = 1` predicate). */
+function lookupBlogArticleMeta(pathname: string): BlogArticleMeta | null {
+  const match = /^\/blog\/([^/?#]+)\/?$/.exec(pathname);
+  if (!match) return null;
+  const slug = match[1] ?? "";
+  if (!slug) return null;
+  const row = db
+    .prepare(
+      "SELECT hu_title, en_title, published_at, updated_at, cover_image_url FROM blog_posts WHERE slug = ? AND is_published = 1",
+    )
+    .get(slug) as
+    | {
+        hu_title: string;
+        en_title: string;
+        published_at: string;
+        updated_at: number;
+        cover_image_url: string | null;
+      }
+    | undefined;
+  if (!row) return null;
+  return {
+    huTitle: row.hu_title,
+    enTitle: row.en_title,
+    publishedAt: row.published_at,
+    updatedAt: row.updated_at,
+    coverImageUrl: row.cover_image_url,
+  };
+}
+
+/** True for the public free-tool landing pages (`/eszkozok/*` HU and
+ *  `/tools/*` EN). Each gets its own WebApplication + BreadcrumbList JSON-LD
+ *  so AI engines and Google rich results treat them as discrete free tools
+ *  rather than slices of the brand landing. */
+function isToolPath(pathname: string): boolean {
+  return /^\/(?:eszkozok|tools)\//.test(pathname);
+}
+
+/** Absolute URL for a cover image that may be stored relative
+ *  (`/uploads/blog/…`) or already absolute (admin-pasted http(s)). */
+function absoluteImageUrl(origin: string, url: string | null): string | null {
+  if (!url) return null;
+  return /^https?:\/\//i.test(url) ? url : `${origin}${url}`;
+}
+
 interface LocaleMeta {
   lang: string;
   ogLocale: string;
@@ -239,9 +297,16 @@ function escapeAttr(s: string): string {
 }
 
 /** Build a <script type="application/ld+json"> block for the host + path.
- *  Organization + WebSite go on every page; SoftwareApplication + FAQPage
- *  only on the root path (Google's docs: FAQPage must reflect visible FAQ
- *  on the same page, which is the landing). */
+ *
+ *  Organization + WebSite go on every page. Then, by page type:
+ *   - root: SoftwareApplication + FAQPage (Google's docs: FAQPage must
+ *     reflect visible FAQ on the same page, which is the landing).
+ *   - /blog/:slug: Article (dated, authored) + BreadcrumbList.
+ *   - /eszkozok/* and /tools/*: WebApplication (free tool) + BreadcrumbList.
+ *
+ *  The blog/tool blocks turn the strongest long-tail + AI-citation assets
+ *  into dated, attributable, machine-readable entities. They're SSR-injected
+ *  into <head> before hydration, so they survive a JS-light crawl. */
 function buildJsonLd(opts: {
   locale: SeoLocale;
   canonicalHost: string;
@@ -249,13 +314,19 @@ function buildJsonLd(opts: {
 }): string {
   const meta = META[opts.locale];
   const origin = `https://${opts.canonicalHost}`;
+  const path = opts.pathname || "/";
+  const inLanguage = opts.locale === "hu" ? "hu-HU" : "en-US";
+  const priceCurrency = opts.locale === "hu" ? "HUF" : "EUR";
+  const organization = {
+    "@type": "Organization",
+    name: meta.brandName,
+    url: origin,
+    logo: `${origin}/logo.png`,
+  };
   const blocks: object[] = [
     {
       "@context": "https://schema.org",
-      "@type": "Organization",
-      name: meta.brandName,
-      url: origin,
-      logo: `${origin}/logo.png`,
+      ...organization,
       description: meta.brandDescription,
       sameAs: [`https://${CANONICAL_HOST}`],
     },
@@ -264,10 +335,17 @@ function buildJsonLd(opts: {
       "@type": "WebSite",
       name: meta.brandName,
       url: origin,
-      inLanguage: opts.locale === "hu" ? "hu-HU" : "en-US",
+      inLanguage,
     },
   ];
-  if (opts.pathname === "/" || opts.pathname === "") {
+
+  // Localised breadcrumb labels (Home / Blog).
+  const crumbLabels =
+    opts.locale === "hu"
+      ? { home: "Főoldal", blog: "Esküvői magazin" }
+      : { home: "Home", blog: "Wedding blog" };
+
+  if (path === "/" || path === "") {
     blocks.push({
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
@@ -280,7 +358,7 @@ function buildJsonLd(opts: {
       // data quotes EUR instead of HUF — a London or Berlin visitor reading
       // the rich-result snippet shouldn't see a Hungarian-forint price tag,
       // even though every Weddly plan is currently free during open beta.
-      offers: { "@type": "Offer", price: "0", priceCurrency: opts.locale === "hu" ? "HUF" : "EUR" },
+      offers: { "@type": "Offer", price: "0", priceCurrency },
     });
     blocks.push({
       "@context": "https://schema.org",
@@ -291,6 +369,62 @@ function buildJsonLd(opts: {
         acceptedAnswer: { "@type": "Answer", text: entry.a },
       })),
     });
+  } else {
+    const article = lookupBlogArticleMeta(path);
+    if (article) {
+      const headline = opts.locale === "hu" ? article.huTitle : article.enTitle;
+      const image = absoluteImageUrl(origin, article.coverImageUrl);
+      blocks.push({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline,
+        datePublished: article.publishedAt,
+        dateModified: new Date(article.updatedAt).toISOString(),
+        ...(image ? { image } : {}),
+        author: organization,
+        publisher: {
+          "@type": "Organization",
+          name: meta.brandName,
+          logo: { "@type": "ImageObject", url: `${origin}/logo.png` },
+        },
+        mainEntityOfPage: { "@type": "WebPage", "@id": `${origin}${path}` },
+        inLanguage,
+      });
+      blocks.push({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: crumbLabels.home, item: `${origin}/` },
+          { "@type": "ListItem", position: 2, name: crumbLabels.blog, item: `${origin}/blog` },
+          { "@type": "ListItem", position: 3, name: headline, item: `${origin}${path}` },
+        ],
+      });
+    } else if (isToolPath(path)) {
+      const routeSeo = lookupRouteSeo(path);
+      const entry = routeSeo?.[opts.locale];
+      if (entry) {
+        blocks.push({
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: entry.h1,
+          description: entry.description,
+          url: `${origin}${path}`,
+          applicationCategory: "LifestyleApplication",
+          operatingSystem: "Web",
+          isPartOf: { "@type": "WebSite", name: meta.brandName, url: origin },
+          offers: { "@type": "Offer", price: "0", priceCurrency },
+          inLanguage,
+        });
+        blocks.push({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: crumbLabels.home, item: `${origin}/` },
+            { "@type": "ListItem", position: 2, name: entry.h1, item: `${origin}${path}` },
+          ],
+        });
+      }
+    }
   }
   // Each block in its own <script> tag (Google's recommended pattern; easier
   // for testing-tool diffs than one combined array).
