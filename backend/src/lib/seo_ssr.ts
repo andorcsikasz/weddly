@@ -730,6 +730,76 @@ export function renderRobotsTxt(_host: string | null): string {
   ].join("\n");
 }
 
+/** /llms.txt — the proposed standard that points LLMs/AI search engines at a
+ *  site's most useful, citable content. Generated (not hand-maintained) from
+ *  the same tool route table + blog_posts query that feed the sitemap, so it
+ *  never drifts out of sync. English-primary because the international
+ *  audience is the strategic focus and most AI crawlers advertise en-US; the
+ *  canonical URLs serve the matching locale via Accept-Language. */
+export function renderLlmsTxt(_host: string | null): string {
+  const origin = `https://${CANONICAL_HOST}`;
+  const lines: string[] = [
+    "# Weddly",
+    "",
+    "> Weddly is a shared wedding-planning workspace for couples: budget, guest list, RSVP links, a visual drag-and-drop seating chart and printable place/seating cards, all in one place that both partners edit in real time. Free during the open beta.",
+    "",
+  ];
+
+  // Free tools — the strongest citable assets (each answers a high-intent
+  // wedding query). List the EN canonical slug with the EN title/description.
+  const toolPaths = STATIC_PUBLIC_PATHS.filter((p) => isToolPath(p.path));
+  if (toolPaths.length > 0) {
+    lines.push("## Free wedding tools", "");
+    for (const { path } of toolPaths) {
+      const seo = lookupRouteSeo(path);
+      if (!seo) continue;
+      lines.push(`- [${seo.en.h1}](${origin}${enPathFor(path)}): ${seo.en.description}`);
+    }
+    lines.push("");
+  }
+
+  // Published blog posts grouped by category. EN fields; HU-slug URLs (single
+  // host) that serve EN copy to en-US crawlers.
+  const posts = db
+    .prepare(
+      "SELECT slug, en_title, en_seo_description, en_category FROM blog_posts WHERE is_published = 1 ORDER BY published_at DESC",
+    )
+    .all() as {
+    slug: string;
+    en_title: string;
+    en_seo_description: string;
+    en_category: string;
+  }[];
+  if (posts.length > 0) {
+    lines.push("## Wedding blog", "");
+    const byCategory = new Map<string, typeof posts>();
+    for (const post of posts) {
+      const cat = post.en_category || "Articles";
+      const bucket = byCategory.get(cat) ?? [];
+      bucket.push(post);
+      byCategory.set(cat, bucket);
+    }
+    for (const [category, bucket] of byCategory) {
+      lines.push(`### ${category}`);
+      for (const post of bucket) {
+        lines.push(`- [${post.en_title}](${origin}/blog/${post.slug}): ${post.en_seo_description}`);
+      }
+      lines.push("");
+    }
+  }
+
+  lines.push(
+    "## Key pages",
+    "",
+    `- [About Weddly](${origin}/about): What Weddly is and who it's for.`,
+    `- [For vendors](${origin}/vendors): How wedding vendors can join the directory.`,
+    `- [Blog index](${origin}/blog): All wedding-planning articles.`,
+    "",
+  );
+
+  return lines.join("\n");
+}
+
 // Captured at module-load (== deploy) time so every URL in the sitemap
 // shares the same lastmod for this revision. Google ignores <priority> and
 // <changefreq> per their docs; <lastmod> is the only signal in this trio
