@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b --noEmit && vite build && bun scripts/prerender.ts",
+    "build": "tsc -b --noEmit && vite build && bun scripts/prerender.ts && bun scripts/precompress.ts",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "test": "bun test",

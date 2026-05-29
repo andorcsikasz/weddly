@@ -19,6 +19,7 @@ import {
   HttpError,
   Router,
 } from "./lib/http";
+import { maybeCompress, negotiateEncoding } from "./lib/compression";
 import { log, makeLogger } from "./lib/logger";
 import { localeForHost, renderIndexHtml } from "./lib/seo_ssr";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
@@ -279,6 +280,29 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
       const cacheHeader = isHashedAsset
         ? "public, max-age=31536000, immutable"
         : "public, max-age=300";
+      // Prefer a precompressed sibling (frontend/scripts/precompress.ts emits
+      // `<name>.br` / `<name>.gz` for text assets at build time) so we never
+      // brotli a megabyte bundle per request. Serving the sibling means we
+      // must set the ORIGINAL file's Content-Type by hand (Bun would infer
+      // `application/octet-stream` from the `.br`/`.gz` extension) plus the
+      // Content-Encoding so the browser decodes it.
+      const enc = negotiateEncoding(req.headers.get("accept-encoding"));
+      if (enc) {
+        const sibling = `${filePath}.${enc === "br" ? "br" : "gz"}`;
+        if (existsSync(sibling)) {
+          const sf = Bun.file(sibling);
+          if (await sf.exists()) {
+            return new Response(sf, {
+              headers: {
+                "Cache-Control": cacheHeader,
+                "Content-Type": f.type || "application/octet-stream",
+                "Content-Encoding": enc,
+                Vary: "Accept-Encoding",
+              },
+            });
+          }
+        }
+      }
       return new Response(f, { headers: { "Cache-Control": cacheHeader } });
     }
   }
@@ -327,112 +351,120 @@ const CANONICAL_HOST = "weddly.hu";
 // the redirect aggressively (308's cache semantics are weaker in practice).
 const PRESERVE_METHOD = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-const server = Bun.serve({
-  port: CONFIG.port,
-  async fetch(req) {
-    const url = new URL(req.url);
-    const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
-    const start = performance.now();
+async function handleRequest(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const start = performance.now();
 
-    // Legacy-host redirect — runs before CORS preflight handling so even an
-    // OPTIONS probe gets bounced. Preserves the path + query so a guest
-    // arriving at https://weddly.xyz/rsvp/ABC1234 ends up at the .hu mirror.
-    // Use `url.hostname` rather than the raw `Host` header so a `:port`
-    // suffix (e.g. on a non-standard reverse-proxy setup) doesn't sneak
-    // past the allowlist. URL.hostname is always lowercased + port-free.
-    if (LEGACY_HOSTS.has(url.hostname.toLowerCase())) {
-      const target = `https://${CANONICAL_HOST}${url.pathname}${url.search}`;
-      const status = PRESERVE_METHOD.has(req.method) ? 308 : 301;
-      return new Response(null, {
-        status,
-        headers: { Location: target, "Cache-Control": "public, max-age=3600" },
-      });
-    }
-
-    if (req.method === "OPTIONS") return corsPreflight(req);
-
-    const cors = corsHeaders(req.headers.get("origin"));
-
-    const matched = router.match(req.method, url.pathname);
-    if (!matched) {
-      const fallback = await tryServeStatic(req, url.pathname);
-      if (fallback) {
-        const headers = new Headers(fallback.headers);
-        for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
-        for (const [k, v] of Object.entries(cors)) headers.set(k, v);
-        headers.set("x-request-id", requestId);
-        return new Response(fallback.body, { status: fallback.status, headers });
-      }
-      const r = httpErr(404, "Not found");
-      const headers = new Headers(r.headers);
-      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
-      headers.set("x-request-id", requestId);
-      return new Response(r.body, { status: r.status, headers });
-    }
-
-    // Auth middleware: verify the bearer token if present, leave userId null otherwise.
-    let userId: number | null = null;
-    const token = extractToken(req);
-    if (token) userId = verifySessionToken(token);
-
-    if (matched.route.requireAuth && userId === null) {
-      const r = httpErr(401, "Not authenticated");
-      const headers = new Headers(r.headers);
-      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
-      headers.set("x-request-id", requestId);
-      return new Response(r.body, { status: r.status, headers });
-    }
-
-    const reqLog = makeLogger({
-      requestId,
-      method: req.method,
-      route: url.pathname,
-      ...(userId != null ? { userId } : {}),
+  // Legacy-host redirect — runs before CORS preflight handling so even an
+  // OPTIONS probe gets bounced. Preserves the path + query so a guest
+  // arriving at https://weddly.xyz/rsvp/ABC1234 ends up at the .hu mirror.
+  // Use `url.hostname` rather than the raw `Host` header so a `:port`
+  // suffix (e.g. on a non-standard reverse-proxy setup) doesn't sneak
+  // past the allowlist. URL.hostname is always lowercased + port-free.
+  if (LEGACY_HOSTS.has(url.hostname.toLowerCase())) {
+    const target = `https://${CANONICAL_HOST}${url.pathname}${url.search}`;
+    const status = PRESERVE_METHOD.has(req.method) ? 308 : 301;
+    return new Response(null, {
+      status,
+      headers: { Location: target, "Cache-Control": "public, max-age=3600" },
     });
+  }
 
-    const ctx: Ctx = {
-      req,
-      url,
-      params: matched.params,
-      userId,
-      clientIp: clientIpFrom(req),
-      requestId,
-      log: reqLog,
-    };
+  if (req.method === "OPTIONS") return corsPreflight(req);
 
-    try {
-      const res = await matched.route.handler(ctx);
-      const headers = new Headers(res.headers);
+  const cors = corsHeaders(req.headers.get("origin"));
+
+  const matched = router.match(req.method, url.pathname);
+  if (!matched) {
+    const fallback = await tryServeStatic(req, url.pathname);
+    if (fallback) {
+      const headers = new Headers(fallback.headers);
       for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
       for (const [k, v] of Object.entries(cors)) headers.set(k, v);
       headers.set("x-request-id", requestId);
-      reqLog.info("http.request", {
-        status: res.status,
-        latency_ms: Math.round(performance.now() - start),
-      });
-      return new Response(res.body, { status: res.status, headers });
-    } catch (e) {
-      const isHttpErr = e instanceof HttpError;
-      const r = isHttpErr
-        ? httpErr(e.status, e.message, e.extra)
-        : httpErr(500, "Internal server error");
-      const headers = new Headers(r.headers);
-      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
-      headers.set("x-request-id", requestId);
-      const latency_ms = Math.round(performance.now() - start);
-      if (isHttpErr) {
-        reqLog.warn("http.handled_error", { status: e.status, message: e.message, latency_ms });
-      } else {
-        reqLog.error("http.unhandled", e, { latency_ms });
-        captureException(e, {
-          requestId,
-          userId,
-          route: url.pathname,
-          method: req.method,
-        });
-      }
-      return new Response(r.body, { status: r.status, headers });
+      return new Response(fallback.body, { status: fallback.status, headers });
     }
+    const r = httpErr(404, "Not found");
+    const headers = new Headers(r.headers);
+    for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+    headers.set("x-request-id", requestId);
+    return new Response(r.body, { status: r.status, headers });
+  }
+
+  // Auth middleware: verify the bearer token if present, leave userId null otherwise.
+  let userId: number | null = null;
+  const token = extractToken(req);
+  if (token) userId = verifySessionToken(token);
+
+  if (matched.route.requireAuth && userId === null) {
+    const r = httpErr(401, "Not authenticated");
+    const headers = new Headers(r.headers);
+    for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+    headers.set("x-request-id", requestId);
+    return new Response(r.body, { status: r.status, headers });
+  }
+
+  const reqLog = makeLogger({
+    requestId,
+    method: req.method,
+    route: url.pathname,
+    ...(userId != null ? { userId } : {}),
+  });
+
+  const ctx: Ctx = {
+    req,
+    url,
+    params: matched.params,
+    userId,
+    clientIp: clientIpFrom(req),
+    requestId,
+    log: reqLog,
+  };
+
+  try {
+    const res = await matched.route.handler(ctx);
+    const headers = new Headers(res.headers);
+    for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
+    for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+    headers.set("x-request-id", requestId);
+    reqLog.info("http.request", {
+      status: res.status,
+      latency_ms: Math.round(performance.now() - start),
+    });
+    return new Response(res.body, { status: res.status, headers });
+  } catch (e) {
+    const isHttpErr = e instanceof HttpError;
+    const r = isHttpErr
+      ? httpErr(e.status, e.message, e.extra)
+      : httpErr(500, "Internal server error");
+    const headers = new Headers(r.headers);
+    for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+    headers.set("x-request-id", requestId);
+    const latency_ms = Math.round(performance.now() - start);
+    if (isHttpErr) {
+      reqLog.warn("http.handled_error", { status: e.status, message: e.message, latency_ms });
+    } else {
+      reqLog.error("http.unhandled", e, { latency_ms });
+      captureException(e, {
+        requestId,
+        userId,
+        route: url.pathname,
+        method: req.method,
+      });
+    }
+    return new Response(r.body, { status: r.status, headers });
+  }
+}
+
+const server = Bun.serve({
+  port: CONFIG.port,
+  async fetch(req) {
+    // Compress dynamic text responses (SSR HTML, JSON, sitemap/robots/llms).
+    // Static assets are served from precompressed siblings inside
+    // handleRequest and already carry Content-Encoding, so this is a no-op
+    // for them. See lib/compression.ts.
+    return maybeCompress(req, await handleRequest(req));
   },
 });
 
