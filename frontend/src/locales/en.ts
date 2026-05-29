@@ -1187,7 +1187,7 @@ const en: LocaleMessages = {
     view_week: "Weekly",
     view_month: "Monthly",
     view_quarter: "Quarterly",
-    view_half: "Half-year",
+    view_all: "Entire timeline",
     expand_label: "Expand chart",
     today_button: "Today",
     prev_label: "Previous",

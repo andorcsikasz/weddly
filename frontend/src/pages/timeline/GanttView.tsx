@@ -1,16 +1,18 @@
-// Range Gantt for /app/timeline at 3M (quarter) and 6M (half) zoom.
+// Range Gantt for /app/timeline at 3M (quarter) and ALL zoom.
 //
-// Anchors on `currentDate` snapped to its month boundary, expands forward by
-// the mode's month count, then renders:
+// 3M anchors on `currentDate` snapped to its month boundary and expands
+// forward 3 months. ALL spans the whole plan — earliest of (first task,
+// today, wedding) to latest of (last task, today, wedding), so the couple
+// sees the entire timeline in one scroll. Both render:
 //   - a left task gutter (name + supplier chip) aligned to the chart rows
 //   - a stacked header: year ribbon → month labels → (3M only) week ticks
 //   - alternating month background bands + 1px month dividers
-//   - (3M only) lighter week dividers on every Monday inside the window
+//   - lighter week dividers on every Monday inside the window
 //   - "today" vertical line with a floating label
 //   - "wedding day" vertical line with a heart marker (when set)
 //   - per-row dividers + soft alternating row tint so a long list scans easy
 //   - bars are one per task with a generous 24px min width so a 1-day task
-//     stays readable even at the 6-month zoom
+//     stays readable even at the widest zoom
 //
 // Bars get clipped corners on the side that runs past the visible window so
 // it's obvious a task extends beyond what you're looking at.
@@ -37,7 +39,7 @@ interface GanttViewProps {
   weddingDate: Date | null;
   tasks: PlanningItem[];
   supplierById: Map<string, ResolvedSupplier>;
-  mode: "quarter" | "half";
+  mode: "quarter" | "all";
   onOpenTask: (item: PlanningItem) => void;
   onSupplierChipClick: (supplierId: string) => void;
 }
@@ -128,9 +130,48 @@ interface Geometry {
   weeks: WeekTick[];
 }
 
-function buildGeometry(currentDate: Date, mode: "quarter" | "half", locale: "hu" | "en"): Geometry {
-  const monthCount = mode === "quarter" ? 3 : 6;
-  const windowStart = startOfMonth(currentDate);
+/** Whole-plan window for the ALL zoom: from the earliest of (first task,
+ *  today, wedding) to the latest of the same, snapped out to month
+ *  boundaries. Returns the start month + how many months the window spans
+ *  so `buildGeometry` can lay it out exactly like the fixed-count zooms. */
+export function computeAllRange(
+  tasks: PlanningItem[],
+  today: Date,
+  weddingDate: Date | null,
+): { windowStart: Date; monthCount: number } {
+  let min = startOfDay(today);
+  let max = startOfDay(today);
+  for (const item of tasks) {
+    const s = parseISODate(item.start_date);
+    const e = parseISODate(item.due_date);
+    if (s) {
+      if (s < min) min = s;
+      if (s > max) max = s;
+    }
+    if (e) {
+      if (e < min) min = e;
+      if (e > max) max = e;
+    }
+  }
+  if (weddingDate) {
+    if (weddingDate < min) min = weddingDate;
+    if (weddingDate > max) max = weddingDate;
+  }
+  const windowStart = startOfMonth(min);
+  const endMonthStart = startOfMonth(max);
+  const monthCount =
+    (endMonthStart.getFullYear() - windowStart.getFullYear()) * 12 +
+    (endMonthStart.getMonth() - windowStart.getMonth()) +
+    1;
+  return { windowStart, monthCount: Math.max(1, monthCount) };
+}
+
+function buildGeometry(
+  windowStart: Date,
+  monthCount: number,
+  includeWeeks: boolean,
+  locale: "hu" | "en",
+): Geometry {
   const windowEnd = addDays(addMonths(windowStart, monthCount), -1);
   const totalDays = diffDays(windowStart, windowEnd) + 1;
 
@@ -156,10 +197,10 @@ function buildGeometry(currentDate: Date, mode: "quarter" | "half", locale: "hu"
     lastYear = start.getFullYear();
   }
 
-  // Week ticks — only meaningful for the 3M view. The 6M view has 26+
-  // weeks which devolves into visual static, so we skip them entirely there.
+  // Week dividers — every Monday inside the window. Built whenever the
+  // caller asks for weekly subdivisions (3M and ALL both do).
   const weeks: WeekTick[] = [];
-  if (mode === "quarter") {
+  if (includeWeeks) {
     let cursor = startOfWeekMon(windowStart);
     // Skip the first tick if it falls before the window — its label would
     // sit at a negative offset and the divider would clip outside the chart.
@@ -220,13 +261,14 @@ const ROW_HEIGHT = 44;
 /** Fixed pixel width per day per zoom level. The chart canvas overflows
  *  the card horizontally on purpose: at 3M a comfortable week is ~125px
  *  (so the whole quarter is ~1650px and overflows a typical 1100px card
- *  by ~50%), at 6M each month gets ~270px. Users scroll right inside the
- *  card to reach later weeks/months. Picking widths here drives every
- *  band, divider, bar, and marker position because they're all CSS-%
+ *  by ~50%), at ALL each month gets ~270px so a year-long plan scrolls
+ *  comfortably with the weekly lines still legible. Users scroll right
+ *  inside the card to reach later weeks/months. Picking widths here drives
+ *  every band, divider, bar, and marker position because they're all CSS-%
  *  values relative to the fixed-width chart container. */
-const DAY_WIDTH_PX: Record<"quarter" | "half", number> = {
+const DAY_WIDTH_PX: Record<"quarter" | "all", number> = {
   quarter: 18,
-  half: 9,
+  all: 9,
 };
 
 export default function GanttView({
@@ -241,9 +283,19 @@ export default function GanttView({
 }: GanttViewProps) {
   const { t, locale } = useT();
 
+  // ALL spans the whole plan; 3M is a fixed 3-month window off `currentDate`.
+  const { windowStart, monthCount } = useMemo(() => {
+    if (mode === "all") return computeAllRange(tasks, today, weddingDate);
+    return { windowStart: startOfMonth(currentDate), monthCount: 3 };
+  }, [mode, currentDate, tasks, today, weddingDate]);
+
+  // Body week dividers on both zooms; the header W-number ticks stay 3M-only
+  // (ALL keeps the clean monthly header: the lines alone give the rhythm).
+  const showWeekTicks = mode === "quarter";
+
   const geometry = useMemo(
-    () => buildGeometry(currentDate, mode, locale),
-    [currentDate, mode, locale],
+    () => buildGeometry(windowStart, monthCount, true, locale),
+    [windowStart, monthCount, locale],
   );
   const chartWidthPx = geometry.totalDays * DAY_WIDTH_PX[mode];
 
@@ -289,8 +341,6 @@ export default function GanttView({
     ? (diffDays(geometry.windowStart, weddingDate as Date) / geometry.totalDays) * 100
     : null;
 
-  const showWeeks = mode === "quarter";
-
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Single scroll container handles BOTH axes. The chart canvas has a
@@ -317,7 +367,7 @@ export default function GanttView({
             </div>
             <div className="relative" style={{ width: chartWidthPx }}>
               {/* Year ribbon — only printed when the year flips so we don't repeat
-              "2026" twelve times across the 6M view. */}
+              "2026" twelve times across a long window. */}
               <div className="relative h-6">
                 {geometry.months.map((m) =>
                   m.yearLabel ? (
@@ -361,9 +411,10 @@ export default function GanttView({
                 })}
               </div>
 
-              {/* Week tick row — only on 3M. 6M would render 26+ ticks which
-              degrades into visual static, so we don't bother there. */}
-              {showWeeks && (
+              {/* Week-number tick row — only on 3M. ALL keeps the clean
+              monthly header (its weekly rhythm comes from the dividers in the
+              body); printing W-numbers across a year-long span is static. */}
+              {showWeekTicks && (
                 <div className="relative h-6">
                   {geometry.weeks.map((w) => (
                     <span
@@ -412,7 +463,7 @@ export default function GanttView({
             {/* Task-name gutter — pins to the left while the chart scrolls.
               When the couple has no tasks in the visible window we surface
               an editorial empty state here (not floating on the chart canvas,
-              which scrolls off-screen at 3M/6M zoom) with a + link straight
+              which scrolls off-screen at 3M/ALL zoom) with a + link straight
               to /app/planning where the wand generates a full plan. */}
             <div
               className="sticky left-0 z-10 shrink-0 border-r border-paper-200 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95"
@@ -508,21 +559,20 @@ export default function GanttView({
                 />
               ))}
 
-              {/* Week dividers (3M only). Lighter than the month rules so they
-                read as a subdivision, not a section break. Skip the Mondays
-                that coincide with a month-1st — the month divider owns
-                that vertical. */}
-              {showWeeks &&
-                geometry.weeks.map((w) =>
-                  w.coincidesWithMonth ? null : (
-                    <div
-                      key={`wkdiv-${w.start.toISOString()}`}
-                      className="pointer-events-none absolute inset-y-0 w-px bg-paper-200/60 dark:bg-umber-700/40"
-                      style={{ left: `${w.offsetPct}%` }}
-                      aria-hidden="true"
-                    />
-                  ),
-                )}
+              {/* Week dividers (3M + ALL). Lighter than the month rules so
+                they read as a subdivision, not a section break. Skip the
+                Mondays that coincide with a month-1st — the month divider
+                owns that vertical. */}
+              {geometry.weeks.map((w) =>
+                w.coincidesWithMonth ? null : (
+                  <div
+                    key={`wkdiv-${w.start.toISOString()}`}
+                    className="pointer-events-none absolute inset-y-0 w-px bg-paper-200/60 dark:bg-umber-700/40"
+                    style={{ left: `${w.offsetPct}%` }}
+                    aria-hidden="true"
+                  />
+                ),
+              )}
 
               {/* Month dividers (skip first — the gutter border handles that
                 edge). Year-change ticks get a slightly stronger value so the
@@ -565,7 +615,7 @@ export default function GanttView({
                 />
               )}
 
-              {/* No on-canvas empty state — at 3M/6M the chart canvas is
+              {/* No on-canvas empty state — at 3M/ALL the chart canvas is
                 wider than the viewport, so an `absolute inset-0` centred
                 message scrolls off-screen on first paint. The gutter (which
                 is sticky-left) now hosts the editorial empty state instead. */}

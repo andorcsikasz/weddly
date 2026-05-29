@@ -1199,7 +1199,7 @@ const hu: LocaleMessages = {
     view_week: "Heti",
     view_month: "Havi",
     view_quarter: "Negyedéves",
-    view_half: "Féléves",
+    view_all: "Teljes idővonal",
     expand_label: "Nagyobb nézet",
     today_button: "Ma",
     prev_label: "Vissza",

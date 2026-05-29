@@ -46,7 +46,7 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Skeleton, useToast } from "../components/ui";
 import DayView from "./timeline/DayView";
-import GanttView from "./timeline/GanttView";
+import GanttView, { computeAllRange } from "./timeline/GanttView";
 import MonthView from "./timeline/MonthView";
 import WeekView from "./timeline/WeekView";
 import { ApiError } from "../lib/api";
@@ -143,14 +143,14 @@ function diffDays(a: Date, b: Date): number {
   return Math.round(ms / 86_400_000);
 }
 
-type ChartMode = "day" | "week" | "month" | "quarter" | "half";
+type ChartMode = "day" | "week" | "month" | "quarter" | "all";
 
 const CHART_MODE_STORAGE_KEY = "weddly.timeline.mode";
 
 function readStoredMode(): ChartMode | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(CHART_MODE_STORAGE_KEY);
-  return raw === "day" || raw === "week" || raw === "month" || raw === "quarter" || raw === "half"
+  return raw === "day" || raw === "week" || raw === "month" || raw === "quarter" || raw === "all"
     ? raw
     : null;
 }
@@ -532,7 +532,8 @@ function ChartCard({
 
   const today = useMemo(() => startOfDay(new Date()), []);
 
-  // Step the focal date by one unit of the current mode.
+  // Step the focal date by one unit of the current mode. ALL shows the whole
+  // plan at once, so it has no focal window to step (its nav is hidden).
   function navStep(direction: -1 | 1) {
     if (mode === "day") onCurrentDateChange(addDays(currentDate, direction));
     else if (mode === "week") onCurrentDateChange(addDays(currentDate, direction * 7));
@@ -543,10 +544,6 @@ function ChartCard({
     else if (mode === "quarter")
       onCurrentDateChange(
         new Date(currentDate.getFullYear(), currentDate.getMonth() + direction * 3, 1),
-      );
-    else if (mode === "half")
-      onCurrentDateChange(
-        new Date(currentDate.getFullYear(), currentDate.getMonth() + direction * 6, 1),
       );
   }
   function navToday() {
@@ -566,14 +563,21 @@ function ChartCard({
     if (mode === "week" || mode === "month") {
       return new Intl.DateTimeFormat(intl, { year: "numeric", month: "long" }).format(currentDate);
     }
-    // quarter / half — show the inclusive range "ápr.–jún. 2026" / etc.
-    const monthCount = mode === "quarter" ? 3 : 6;
+    if (mode === "all") {
+      // Whole-plan span "máj. 2026 – okt. 2027" — both ends carry the year
+      // since the window can cross calendar years.
+      const { windowStart, monthCount } = computeAllRange(tasks, today, weddingDate);
+      const end = new Date(windowStart.getFullYear(), windowStart.getMonth() + monthCount - 1, 1);
+      const fmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" });
+      return `${fmt.format(windowStart)} – ${fmt.format(end)}`;
+    }
+    // quarter — inclusive 3-month range "ápr. – jún. 2026".
     const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + monthCount - 1, 1);
+    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 1);
     const startFmt = new Intl.DateTimeFormat(intl, { month: "short" }).format(start);
     const endFmt = new Intl.DateTimeFormat(intl, { month: "short", year: "numeric" }).format(end);
     return `${startFmt} – ${endFmt}`;
-  }, [mode, currentDate, locale]);
+  }, [mode, currentDate, locale, tasks, today, weddingDate]);
 
   function renderToolbar(opts: { showExpand: boolean }) {
     return (
@@ -671,9 +675,9 @@ function ChartCard({
         />
       );
     }
-    // quarter / half — horizontal Gantt with week ticks at 3M, month bands
-    // at 6M. The chart fills the card; tasks lay as bars spanning the time
-    // they cover.
+    // quarter / all — horizontal Gantt with month bands + weekly dividers.
+    // 3M is a fixed window with week-number ticks; ALL spans the whole plan.
+    // The chart fills the card; tasks lay as bars spanning the time they cover.
     return (
       <GanttView
         currentDate={currentDate}
@@ -694,7 +698,7 @@ function ChartCard({
   const inlineHeightClass = "h-[70vh] min-h-[520px]";
 
   // Calendar modes (day/week/month) get a soft serif title that reads as the
-  // date headline; the Gantt-style 3M/6M views keep the compact uppercase
+  // date headline; the Gantt-style 3M/ALL views keep the compact uppercase
   // chrome they had so the long range string doesn't dwarf the canvas.
   // Every mode now renders as a calendar-grid (Day/Week/Month) or month-/
   // week-grid (Quarter/Half-year) — the title chrome can stay uniformly serif.
@@ -710,7 +714,7 @@ function ChartCard({
       >
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
           <div className="flex flex-wrap items-center gap-3">
-            {navCluster}
+            {mode !== "all" && navCluster}
             <h2 className={titleClass}>{title}</h2>
           </div>
           {renderToolbar({ showExpand: true })}
@@ -724,7 +728,7 @@ function ChartCard({
           onClose={() => setExpanded(false)}
           toolbar={
             <div className="flex items-center gap-3">
-              {navCluster}
+              {mode !== "all" && navCluster}
               {renderToolbar({ showExpand: false })}
             </div>
           }
@@ -750,7 +754,7 @@ interface ViewSupplier {
 
 /** Inline mode selector — minimal text buttons, no pill background, so the
  *  chart header reads as part of the card chrome instead of a control bar.
- *  Labels use the standard chart-app shorthand (1W / 1M / 3M / 6M) so the
+ *  Labels use the standard chart-app shorthand (1W / 1M / 3M / ALL) so the
  *  control stays compact in both locales; the full label is on the title. */
 function ChartModeSwitch({
   mode,
@@ -765,7 +769,7 @@ function ChartModeSwitch({
     { value: "week", short: "1W", full: t("timeline.view_week") },
     { value: "month", short: "1M", full: t("timeline.view_month") },
     { value: "quarter", short: "3M", full: t("timeline.view_quarter") },
-    { value: "half", short: "6M", full: t("timeline.view_half") },
+    { value: "all", short: "ALL", full: t("timeline.view_all") },
   ];
   return (
     <div

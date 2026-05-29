@@ -115,20 +115,21 @@ export interface LocaleMessages {
     view_week: string;
     view_month: string;
     view_quarter: string;
-    view_half: string;
+    view_all: string;
     /** Tooltip + aria for the Maximize2 button that opens the chart full-screen. */
     expand_label: string;
-    /** Calendar + Gantt nav cluster (every mode supports today/prev/next nav). */
+    /** Calendar + Gantt nav cluster (today/prev/next; hidden in the ALL zoom,
+     *  which shows the whole plan at once). */
     today_button: string;
     prev_label: string;
     next_label: string;
-    /** Sticky task-name column header in the 3M / 6M Gantt. */
+    /** Sticky task-name column header in the 3M / ALL Gantt. */
     task_column: string;
-    /** Tooltip on the wedding-day vertical marker in the 3M / 6M Gantt. */
+    /** Tooltip on the wedding-day vertical marker in the 3M / ALL Gantt. */
     wedding_marker: string;
     /** Shown in the task gutter when no tasks fall inside the visible Gantt window. */
     window_empty: string;
-    /** Editorial empty-state in the 3M / 6M Gantt task gutter (replaces the
+    /** Editorial empty-state in the 3M / ALL Gantt task gutter (replaces the
      *  off-screen on-canvas message). Title + body + CTA button. */
     empty_gutter_title: string;
     empty_gutter_sub: string;
