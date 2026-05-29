@@ -32,7 +32,7 @@ const ROOTS_HU: readonly string[] = [
   "Hogyan kértek nálatok bocsánatot, ha egyáltalán?",
   "Milyen veszekedési mintát hoztál magaddal, amin dolgoznod kell?",
   "Volt-e válás a családodban, és hogyan formált?",
-  "Volt-e olyan pillanat a családodban, amikor valaki érzelmileg eltűnt mellőled, és te egyedül maradtál a szobában?",
+  "Volt-e a családodban valaki, akinek a társasága miatt szerettél hazamenni gyerekként? Mi tetszett benne?",
   "Volt a családodban olyan rokon, akinek a házassága titokban szétment, de kifelé úgy tett, mintha rendben lenne?",
   "Mit hallottál otthon a férfiakról és a nőkről?",
   "Ki halt meg először a családodban úgy, hogy emlékszel rá, és kitől tanultad meg, hogyan kell gyászolni?",
@@ -43,11 +43,11 @@ const ROOTS_HU: readonly string[] = [
   "Hogyan szólítod a szüleidet, és miért pont úgy?",
   "Milyen ünnepi asztalnál nőttél fel: csendben, kiabálva, imával, tévé előtt?",
   "Kire haragszol még mindig a családodból, anélkül, hogy bevallanád?",
-  "Mi az a gyerekkori szégyened, amit a testedben még ma is érzel valahol?",
-  "Hogyan szeretnél emlékezni anyádra, amikor már nem lesz?",
+  "Mit nem volt szabad otthon kérdezni? Mit kérdeznél most, ha senki nem haragudna meg érte?",
+  "Melyik családi vacsorára emlékszel ma is mosolyogva, és miért pont arra?",
   "Karácsonykor melyik családnál ülünk majd? És a másik családnak mit mondunk?",
   "Mit kérnél a szüleidtől, amit eddig nem mertél?",
-  "Ha húsz év múlva megkérdezné a gyerekünk, miért választottátok egymást ennyire különböző létetekre, mit válaszolnál?",
+  "Melyik gyerekkori hagyományotokat vinnéd át a közös életünkbe? És van olyan, amit szándékosan nem?",
 ];
 
 const ROOTS_EN: readonly string[] = [
@@ -60,7 +60,7 @@ const ROOTS_EN: readonly string[] = [
   "How did people apologise in your family, if at all?",
   "What argument pattern did you carry into adulthood that you need to work on?",
   "Was there a divorce in your family, and how did it shape you?",
-  "Was there a moment in your family when someone emotionally checked out on you, and you were left alone in the room?",
+  "Was there someone in your family whose company made you want to come home as a child? What was it about them?",
   "Was there a relative whose marriage quietly fell apart while they kept up appearances?",
   "What did you grow up hearing about my gender in general?",
   "Who was the first person in your family to die that you remember, and who taught you how you're supposed to grieve?",
@@ -71,11 +71,11 @@ const ROOTS_EN: readonly string[] = [
   "How do you address my parents, and why exactly that way?",
   "What kind of holiday table did you grow up at: silent, shouting, prayerful, TV on?",
   "Who in your family are you still angry with, without admitting it?",
-  "What's a childhood shame you still feel somewhere in your body today?",
-  "How do you want to remember your mother once she's gone?",
+  "What couldn't you ask about at home? What would you ask now, if no one would get upset over it?",
+  "Which family dinner do you still smile about today, and why that one?",
   "Whose family do we sit with on Christmas? And what do we say to the one who gets left out?",
   "What would you ask of our parents that you've never dared to?",
-  "If our child asked us twenty years from now why we chose each other, as different as we are, what would you answer?",
+  "Which tradition from your childhood would you carry over into our life together? Is there one you'd deliberately leave behind?",
 ];
 
 const EVERYDAY_HU: readonly string[] = [
@@ -102,7 +102,7 @@ const EVERYDAY_HU: readonly string[] = [
   "Melyik álmodat tetted már félre szó nélkül a közös életünk kedvéért?",
   "Melyik barátomat nem bírod, és miért nem mondtad eddig?",
   "Mit tennénk, ha váratlanul örökölnénk egy nagyobb összeget?",
-  "Ha jövőre nagy szakmai lehetőség jönne egy másik városban, ki az, aki halkan félreáll, és miért épp ő?",
+  "Hova költöznénk együtt szívesen egy évre, ha csak rajtunk múlna?",
   "Mit szólnál, ha egy évre fizetés nélküli szabadságra menne valamelyikünk?",
 ];
 
@@ -130,7 +130,7 @@ const EVERYDAY_EN: readonly string[] = [
   "Which dream of yours have you already set aside for our shared life, without ever mentioning it?",
   "Which of my friends do you not like, and why haven't you said until now?",
   "What would we do if we suddenly inherited a sizable sum?",
-  "If a big career opportunity came up in another city next year, who would quietly step aside, and why that one?",
+  "Where would we happily move together for a year, if it were entirely up to us?",
   "How would you feel if one of us took a year of unpaid leave?",
 ];
 
@@ -144,7 +144,7 @@ const CLOSENESS_HU: readonly string[] = [
   "Van olyan csendünk, amiben otthon érzed magad, és van, ami feszít? Hol a kettő közti határ?",
   "Miről veszed észre, hogy baj van velem, amikor még én sem mondtam ki magamnak?",
   "Mit jelent neked az otthon szó: egy hely, egy ember, vagy a vasárnapi ebéd illata?",
-  "Mikor érezted utoljára, hogy egy mozdulatommal hazaértél?",
+  "Mi az a kis rituálénk, amitől egy hétköznap is mini ünnep?",
   "Mit jelent neked pontosan a hűség, és hol van nálad a határ? A gondolat, a beszélgetés, az érintés, vagy a tett?",
   "Mit kezdünk azzal, ha hosszabb időre eltér a vágyunk: egyikünk többet szeretne, a másik kevesebbet?",
   "Mit szeretnél, ha kérdeznék tőled, de sosem teszem?",
@@ -158,8 +158,8 @@ const CLOSENESS_HU: readonly string[] = [
   "Mi az a kérdés, amit félek tőled kérdezni, mert nem tudom, mit kezdenék a válasszal?",
   "Melyik részedet érzed úgy, hogy még tíz év múlva sem fogom igazán ismerni?",
   "Mit kezdtél el másképp csinálni miattam, anélkül, hogy valaha kértem volna?",
-  "Honnan fogjuk tudni, hogy baj van köztünk az ágyban, mielőtt valamelyikünk máshol keresné a megoldást?",
-  "Mi az kettőnk között, amit szeretnél, hogy akkor is megmaradjon, ha minden más kifordul a helyéből körülöttünk?",
+  "Hogyan szólunk egymásnak, ha valamiből többre vagy másra vágynánk az ágyban? Szavakkal, érintéssel, vagy másképp?",
+  "Mire emlékeznénk vissza húsz év múlva is mosolyogva, ami most velünk történik?",
 ];
 
 const CLOSENESS_EN: readonly string[] = [
@@ -172,7 +172,7 @@ const CLOSENESS_EN: readonly string[] = [
   "Is there a silence between us that feels like home, and one that tightens? Where's the line?",
   "How do you sense something's wrong with me before I've even named it to myself?",
   "What does the word 'home' mean to you: a place, a person, or the smell of Sunday lunch?",
-  "When was the last time a single gesture of mine made you feel you'd come home?",
+  "What's a small ritual of ours that turns an ordinary weekday into a tiny celebration?",
   "What does faithfulness mean to you exactly, and where do you draw the line? The thought, the conversation, the touch, or the act itself?",
   "What do we do if our levels of desire diverge for a while: one of us wants more, the other less?",
   "What's a question you wish I'd ask you, but I never do?",
@@ -186,14 +186,14 @@ const CLOSENESS_EN: readonly string[] = [
   "What's a question I'm afraid to ask you, because I don't know what I'd do with the answer?",
   "Which part of you do you feel I still won't really know, even ten years from now?",
   "What did you start doing differently because of me, without me ever asking?",
-  "How will we know there's something wrong between us in bed, before one of us starts looking for an answer elsewhere?",
-  "What's the thing between us you'd want to last, even if everything else around us turned upside down?",
+  "How do we let each other know when we want more, or something different, in bed? With words, with touch, or some other way?",
+  "What about us right now will we still look back on with a smile in twenty years?",
 ];
 
 const DEEPWATER_HU: readonly string[] = [
   "Mi az a sebed, amiről úgy érzed, soha nem fogom igazán érteni?",
   "Mit tegyek, ha depresszióba esel? Konkrétan, az első héten.",
-  "Mit szeretnél, hogy mondjanak rólad, amikor te már nem hallod?",
+  "Mit szeretnél, hogy a gyerekeink majd először tőled halljanak rólad, ne másoktól?",
   "Mit jelent neked a szent ma?",
   "Hiszel-e valamiben, amit nem tudsz bizonyítani?",
   "Mi az, amit megbocsátanál, és mi az, amit biztosan nem?",
@@ -203,11 +203,11 @@ const DEEPWATER_HU: readonly string[] = [
   "Mit teszel, ha az egyikünk megcsalja a másikat? Megbocsátható, és milyen feltételekkel?",
   "Mit szólnál ahhoz, hogy terápiára járjunk, ha megakadunk?",
   "Mi az a pont, ahol elhagynál?",
-  "Van benned akár egy szemernyi kétség most, az esküvő előtt? Mondjuk ki hangosan anélkül, hogy bármit jelentene.",
+  "Mi az, amit egészen biztosan tudsz rólam, és mi az, ami most még csak remény?",
   "Mitől félsz jobban: hogy rossz döntés ez, vagy hogy jó döntés, és akkor felelős vagy érte?",
   "Mi a legmélyebb kudarcod eddig, és elmondtad-e már nekem egyben, vagy mindig csak részletekben?",
-  "Mit tennél az első évben, ha én megyek el előbb?",
-  "Hol szeretnéd, hogy eltemessenek?",
+  "Hogyan ünnepelnénk a tizedik évfordulónkat, ha most kéne kitalálnunk?",
+  "Min nevetünk majd három év múlva visszanézve az esküvőnkre?",
   "Mit teszel, ha a hited megváltozik a házasság alatt, és az enyém nem?",
   "Hogyan döntsünk, ha az egyik szülőnket otthonba kell helyezni?",
   "Mit teszel, ha a gyerekünk olyan döntést hoz, amivel mélyen nem értesz egyet?",
@@ -215,13 +215,13 @@ const DEEPWATER_HU: readonly string[] = [
   "Mikor érzed magad a legkevésbé egyedül velem?",
   "Mit nem mertél megkérdezni a szüleidtől, amíg éltek, és most már nem tudod megkérdezni senkitől?",
   "Mit ígérnél most, amit harminc év múlva is be akarsz tartani?",
-  "Miért én? Most, harminc év múlva, és minden nehéz évben kettő között: miért én?",
+  "Mit szeretnél, hogy mindig elmondjak neked, akkor is, ha azt hiszem, már tudod?",
 ];
 
 const DEEPWATER_EN: readonly string[] = [
   "What's the wound of yours you feel I'll never truly understand?",
   "What should I do if you fall into depression? Specifically, in the first week.",
-  "What would you want me to say about you at your funeral?",
+  "What do you want our children to hear about you from you first, before anyone else tells them?",
   "What does sacred mean to you today?",
   "Do you believe in something you cannot prove?",
   "What could you forgive, and what could you never?",
@@ -231,11 +231,11 @@ const DEEPWATER_EN: readonly string[] = [
   "What do you do if one of us cheats? Is it forgivable, and on what terms?",
   "How would you feel about going to therapy if we got stuck?",
   "What is the line past which you would leave me?",
-  "Is there even a sliver of doubt in you right now, this close to the wedding? Let's say it out loud, without it having to mean anything.",
+  "What's something you know for sure about me, and what's still only a hope?",
   "Which scares you more: that this is the wrong choice, or that it's the right one and now you're responsible for it?",
   "What's your deepest failure so far, and have you ever told me the whole of it, or only in pieces?",
-  "What would you do in the first year if I went first?",
-  "Where would you like us to bury you?",
+  "How would we celebrate our tenth anniversary if we had to plan it right now?",
+  "What will we laugh about three years from now when we look back at our wedding?",
   "What do you do if your faith changes during the marriage and mine does not?",
   "How do we decide if one of our parents needs to go into care?",
   "What do you do if our child makes a choice you deeply disagree with?",
@@ -243,7 +243,7 @@ const DEEPWATER_EN: readonly string[] = [
   "When do you feel the least alone while being with me?",
   "What didn't you dare ask your parents while they were alive, and now there's no one left to ask?",
   "What would you promise now that you still want to keep thirty years from now?",
-  "Why me? Now, thirty years from now, and in every hard year in between: why me?",
+  "What do you want me to keep telling you, even when I assume you already know?",
 ];
 
 export const COUPLE_CARD_DECKS: readonly Deck[] = [
