@@ -16,6 +16,11 @@ import type { EmailKind } from "./kinds";
 import { markDispatched, sendKind } from "./send";
 
 const ONBOARDING_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24; // 24h
+const INVITE_PARTNER_AUTO_AFTER_MS = 1000 * 60 * 60 * 48; // 48h
+// Solo workspaces are auto-nudged at the first 10:00 UTC at or after the 48h
+// mark ("48h utáni legközelebbi 10:00"). The worker runs hourly, so the real
+// send lands on the first sweep at/after that boundary, within the hour.
+const INVITE_PARTNER_SEND_HOUR_UTC = 10;
 
 interface UserRow {
   id: number;
@@ -39,6 +44,7 @@ interface CouplePartnerRow {
 /** Run all lifecycle sweeps. Returns counts so tests can assert behavior. */
 export function runEmailSweep(): {
   nudges: number;
+  invitePartnerAuto: number;
   milestones: number;
   weddings: number;
   rsvpDeadlines: number;
@@ -49,6 +55,7 @@ export function runEmailSweep(): {
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
+  const invitePartnerAuto = sweepInvitePartnerAuto(ts);
   const milestones = sweepMilestones(ts);
   const weddings = sweepWeddingDay(ts);
   const rsvpDeadlines = sweepRsvpDeadline(ts);
@@ -58,6 +65,7 @@ export function runEmailSweep(): {
   const rsvpDigests = sweepRsvpWeeklyDigest(ts);
   return {
     nudges,
+    invitePartnerAuto,
     milestones,
     weddings,
     rsvpDeadlines,
@@ -92,6 +100,79 @@ function sweepOnboardingNudges(ts: number): number {
       "onboarding_nudge",
       { onboardingUrl: `${CONFIG.frontendBaseUrl}/onboarding` },
       { user: { id: u.id, email: u.email, full_name: u.full_name } },
+    );
+    count++;
+  }
+  return count;
+}
+
+interface SoloCoupleRow {
+  couple_id: number;
+  display_name: string | null;
+  created_at: number;
+  user_id: number;
+  email: string;
+  full_name: string;
+}
+
+/** First 10:00 UTC at or after `createdAt + 48h`. Exported for tests. */
+export function autoInviteDueAt(createdAt: number): number {
+  const mark = createdAt + INVITE_PARTNER_AUTO_AFTER_MS;
+  const d = new Date(mark);
+  const tenAm = Date.UTC(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate(),
+    INVITE_PARTNER_SEND_HOUR_UTC,
+  );
+  return tenAm >= mark ? tenAm : tenAm + 86_400_000;
+}
+
+function sweepInvitePartnerAuto(ts: number): number {
+  // Auto-nudge solo workspaces (one active member, partner_b_id IS NULL) to
+  // invite their partner. Holds until the first 10:00 UTC at or after the 48h
+  // mark since creation. One-shot per workspace via
+  // couples.invite_partner_reminded_at, the SAME stamp the manual admin
+  // button writes, so the two never double-fire and the admin "sent" icon
+  // flips automatically. Already-nudged workspaces (stamp non-null) and ones
+  // that gained a partner (partner_b_id non-null) are skipped by the WHERE
+  // clause. Demo workspaces and purged users are excluded.
+  const rows = db
+    .prepare(
+      `SELECT c.id AS couple_id, c.display_name, c.created_at,
+              u.id AS user_id, u.email, u.full_name
+         FROM couples c
+         JOIN users u ON u.couple_id = c.id
+        WHERE c.status = 'active'
+          AND c.is_demo = 0
+          AND c.partner_b_id IS NULL
+          AND c.invite_partner_reminded_at IS NULL
+          AND u.status = 'active'
+          AND u.email NOT LIKE '%@purged.local'
+          AND (SELECT COUNT(*) FROM users m
+                WHERE m.couple_id = c.id AND m.status = 'active') = 1`,
+    )
+    .all() as SoloCoupleRow[];
+
+  let count = 0;
+  const stamp = db.prepare("UPDATE couples SET invite_partner_reminded_at = ? WHERE id = ?");
+  for (const r of rows) {
+    if (ts < autoInviteDueAt(r.created_at)) continue;
+    // Stamp BEFORE the fire-and-forget send so a silent mailer hiccup skips
+    // rather than re-sends on the next sweep, a true one-shot.
+    stamp.run(ts, r.couple_id);
+    const coupleDisplayName =
+      r.display_name && r.display_name !== "Purged workspace" ? r.display_name : undefined;
+    void sendKind(
+      "partner_invite_reminder",
+      {
+        invitePartnerUrl: `${CONFIG.frontendBaseUrl}/app/dashboard#invite-partner`,
+        coupleDisplayName,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
     );
     count++;
   }
@@ -503,6 +584,7 @@ export function startEmailWorker(): void {
     const r = runEmailSweep();
     if (
       r.nudges +
+        r.invitePartnerAuto +
         r.milestones +
         r.weddings +
         r.rsvpDeadlines +
@@ -523,11 +605,14 @@ export function startEmailWorker(): void {
         const r = runEmailSweep();
         if (
           r.nudges +
+            r.invitePartnerAuto +
             r.milestones +
             r.weddings +
             r.rsvpDeadlines +
             r.weddingFollowups +
-            r.mealFollowups >
+            r.mealFollowups +
+            r.adminDigests +
+            r.rsvpDigests >
           0
         ) {
           log.info("emails.hourly_sweep", r);

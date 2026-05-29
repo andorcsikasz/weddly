@@ -2,8 +2,11 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
-import { db } from "../../src/db";
+import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
+import { autoInviteDueAt, runEmailSweep } from "../../src/domain/emails/worker";
+
+const HOUR = 1000 * 60 * 60;
 
 // ────────────────────────────────────────────────────────────────────────────
 // Helpers — admin bootstrap + a few light shapes used across tests.
@@ -755,6 +758,108 @@ describe("admin couples — remind-invite-partner nudge", () => {
       { token: adminToken },
     );
     expect(r.status).toBe(400);
+  });
+});
+
+/** A verified solo couple (one member, partner_b_id NULL). Returns the
+ *  workspace + owner ids the auto-nudge sweep keys on. */
+async function bootstrapSoloCouple(
+  email: string,
+): Promise<{ coupleId: number; userId: number; token: string }> {
+  const { token, coupleId } = await bootstrapCouple(email);
+  const owner = db.prepare("SELECT id FROM users WHERE email = ?").get(email) as { id: number };
+  return { coupleId, userId: owner.id, token };
+}
+
+describe("auto invite-partner nudge (worker sweep)", () => {
+  test("next-10:00-UTC rule: rounds the 48h mark up to 10:00 UTC", () => {
+    // Mark falls before 10:00 → due same day at 10:00.
+    const beforeTen = Date.UTC(2026, 0, 3, 9, 0) - 48 * HOUR;
+    expect(autoInviteDueAt(beforeTen)).toBe(Date.UTC(2026, 0, 3, 10, 0));
+    // Mark falls exactly at 10:00 → due that instant.
+    const atTen = Date.UTC(2026, 0, 3, 10, 0) - 48 * HOUR;
+    expect(autoInviteDueAt(atTen)).toBe(Date.UTC(2026, 0, 3, 10, 0));
+    // Mark falls after 10:00 → due next day at 10:00.
+    const afterTen = Date.UTC(2026, 0, 3, 11, 0) - 48 * HOUR;
+    expect(autoInviteDueAt(afterTen)).toBe(Date.UTC(2026, 0, 4, 10, 0));
+  });
+
+  test("solo workspace past the 48h + 10:00 boundary → auto-sent + stamp set", async () => {
+    wipeAll();
+    const reg = await bootstrapSoloCouple("auto-solo@weddly.test");
+    // Created 96h ago: the next-10:00 boundary is comfortably in the past.
+    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(now() - 96 * HOUR, reg.coupleId);
+
+    const sweep = runEmailSweep();
+    expect(sweep.invitePartnerAuto).toBe(1);
+
+    const log = db
+      .prepare("SELECT kind FROM email_log WHERE user_id = ? ORDER BY id DESC LIMIT 1")
+      .get(reg.userId) as { kind: string } | undefined;
+    expect(log?.kind).toBe("partner_invite_reminder");
+
+    const stamp = db
+      .prepare("SELECT invite_partner_reminded_at AS t FROM couples WHERE id = ?")
+      .get(reg.coupleId) as { t: number | null };
+    expect(typeof stamp.t).toBe("number");
+  });
+
+  test("fires once per workspace (idempotent across sweeps)", async () => {
+    wipeAll();
+    const reg = await bootstrapSoloCouple("auto-once@weddly.test");
+    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(now() - 96 * HOUR, reg.coupleId);
+
+    expect(runEmailSweep().invitePartnerAuto).toBe(1);
+    expect(runEmailSweep().invitePartnerAuto).toBe(0);
+
+    const logs = db
+      .prepare("SELECT id FROM email_log WHERE user_id = ? AND kind = 'partner_invite_reminder'")
+      .all(reg.userId) as { id: number }[];
+    expect(logs.length).toBe(1);
+  });
+
+  test("younger than 48h → not sent, stamp stays null", async () => {
+    wipeAll();
+    const reg = await bootstrapSoloCouple("auto-young@weddly.test");
+    // 47h old: the 48h mark is still 1h in the future, so it is never due.
+    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(now() - 47 * HOUR, reg.coupleId);
+
+    expect(runEmailSweep().invitePartnerAuto).toBe(0);
+    const stamp = db
+      .prepare("SELECT invite_partner_reminded_at AS t FROM couples WHERE id = ?")
+      .get(reg.coupleId) as { t: number | null };
+    expect(stamp.t).toBeNull();
+  });
+
+  test("workspace with two partners → skipped", async () => {
+    wipeAll();
+    const reg = await bootstrapSoloCouple("auto-pair@weddly.test");
+    const partnerB = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "auto-pair-b@weddly.test",
+      password: "supersafe123",
+      full_name: "Partner B",
+    });
+    db.prepare("UPDATE couples SET partner_b_id = ?, created_at = ? WHERE id = ?").run(
+      partnerB.data.user.id,
+      now() - 96 * HOUR,
+      reg.coupleId,
+    );
+    db.prepare("UPDATE users SET couple_id = ? WHERE id = ?").run(
+      reg.coupleId,
+      partnerB.data.user.id,
+    );
+
+    expect(runEmailSweep().invitePartnerAuto).toBe(0);
+  });
+
+  test("already nudged by admin → auto-sweep skips it", async () => {
+    wipeAll();
+    const reg = await bootstrapSoloCouple("auto-already@weddly.test");
+    db.prepare(
+      "UPDATE couples SET created_at = ?, invite_partner_reminded_at = ? WHERE id = ?",
+    ).run(now() - 96 * HOUR, now() - 10 * HOUR, reg.coupleId);
+
+    expect(runEmailSweep().invitePartnerAuto).toBe(0);
   });
 });
 
