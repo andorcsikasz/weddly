@@ -16,6 +16,7 @@
 // `Host` is retained in the signal for the future host-based path (e.g.
 // adding a separate weddly.com EN-canonical) but ignored today.
 
+import type { BlogBlock } from "../../../shared/blog_posts";
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
 import { db } from "../db";
@@ -176,6 +177,69 @@ function lookupBlogArticleMeta(pathname: string): BlogArticleMeta | null {
  *  rather than slices of the brand landing. */
 function isToolPath(pathname: string): boolean {
   return /^\/(?:eszkozok|tools)\//.test(pathname);
+}
+
+/** Full article body blocks for `/blog/:slug`, parsed from the locale's
+ *  `*_body_json` column. Returns null for non-blog paths, drafts, or
+ *  unparseable JSON. Used to bake the whole post (not just h1 + lead) into
+ *  the SSR HTML so AI/HTML-first crawlers read the real content instead of
+ *  the JS-only render that drove the audit's 621% rendered-content flag. */
+function lookupBlogPostBody(pathname: string, locale: SeoLocale): BlogBlock[] | null {
+  const match = /^\/blog\/([^/?#]+)\/?$/.exec(pathname);
+  if (!match) return null;
+  const slug = match[1] ?? "";
+  if (!slug) return null;
+  const column = locale === "hu" ? "hu_body_json" : "en_body_json";
+  const row = db
+    .prepare(`SELECT ${column} AS body FROM blog_posts WHERE slug = ? AND is_published = 1`)
+    .get(slug) as { body: string } | undefined;
+  if (!row) return null;
+  try {
+    const parsed = JSON.parse(row.body) as BlogBlock[];
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Escape text node content (not attributes). Quotes are safe in text. */
+function escapeText(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Render BlogBlock[] to semantic HTML for the SSR body. Mirrors the block
+ *  types the React BlogPostPage renders so a crawler's SSR-vs-JS text diff
+ *  stays trivial (Google flags large divergence as cloaking). */
+function renderBlogBlocks(blocks: BlogBlock[]): string {
+  const parts: string[] = [];
+  for (const block of blocks) {
+    switch (block.type) {
+      case "p":
+        parts.push(`<p>${escapeText(block.text)}</p>`);
+        break;
+      case "h2":
+        parts.push(`<h2>${escapeText(block.text)}</h2>`);
+        break;
+      case "h3":
+        parts.push(`<h3>${escapeText(block.text)}</h3>`);
+        break;
+      case "ul":
+        parts.push(`<ul>${block.items.map((i) => `<li>${escapeText(i)}</li>`).join("")}</ul>`);
+        break;
+      case "blockquote": {
+        const body = block.text
+          .split("\n\n")
+          .map((p) => `<p>${escapeText(p)}</p>`)
+          .join("");
+        parts.push(`<blockquote>${body}<cite>${escapeText(block.cite)}</cite></blockquote>`);
+        break;
+      }
+      case "cta":
+        parts.push(`<p><a href="${escapeAttr(block.href)}">${escapeText(block.label)}</a></p>`);
+        break;
+    }
+  }
+  return parts.join("\n        ");
 }
 
 /** Absolute URL for a cover image that may be stored relative
@@ -634,11 +698,21 @@ function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
           vendors: "For vendors",
           home: "Home",
         };
+  // Blog posts bake their full body (every paragraph, heading, list and
+  // quote) so the SSR HTML carries the whole 7-9 minute read, not just the
+  // lead. Tool/static routes keep the lean h1 + intro (their unique copy
+  // lives in React components, not in shared data).
+  const blogBlocks = lookupBlogPostBody(pathname, locale);
+  const articleHtml = blogBlocks
+    ? `<article>\n        ${renderBlogBlocks(blogBlocks)}\n      </article>`
+    : null;
+
   return [
     `<header>`,
     `  <h1>${escapeAttr(entry.h1)}</h1>`,
     `  <p>${escapeAttr(entry.intro)}</p>`,
     `</header>`,
+    ...(articleHtml ? [articleHtml] : []),
     `<footer>`,
     `  <nav>`,
     `    <a href="/">${escapeAttr(labels.home)}</a> · `,
