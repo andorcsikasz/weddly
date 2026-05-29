@@ -2302,22 +2302,38 @@ export interface LocaleMessages {
     /** "Már foglaltam" / "Already booked" card on the directory grid.
      *  Only rendered when the active group AND sub-category are both
      *  set. Couples either pick an existing match via the autocomplete
-     *  (adopts it as their selection) or submit a new vendor that lands
-     *  in the same admin moderation queue as Tipp leadása. */
+     *  (adopts it as their selection) or fill the inline form to add
+     *  a new vendor; the new entry lands in the same admin moderation
+     *  queue as the regular Tipp leadása flow, but the couple never
+     *  sees the word "tipp" anywhere on the card. */
     bookedCard: {
       title: string;
-      /** Sub-title under the card heading — receives `{category}` (HU
+      /** Sub-title under the card heading; receives `{category}` (HU
        *  category label like "Esküvői helyszín"). */
       subtitle: string;
       input_label: string;
-      input_help: string;
       placeholder: string;
-      no_match: string;
-      no_match_help: string;
+      address_label: string;
+      address_placeholder: string;
+      phone_label: string;
+      phone_placeholder: string;
+      email_label: string;
+      email_placeholder: string;
+      website_label: string;
+      website_placeholder: string;
       match_already_picked: string;
-      /** Toast on successful adoption — receives `{name}` (supplier name). */
+      /** Toast when the couple adopts an existing directory entry from
+       *  the autocomplete; receives `{name}` (supplier name). */
       toast_added: string;
-      submit_as_new: string;
+      /** Toast after a brand-new entry POSTs successfully; receives
+       *  `{name}` (the typed name the couple just submitted). */
+      toast_submitted: string;
+      /** Generic submission failure copy. */
+      err_generic: string;
+      /** Primary action button label ("Hozzáadás" / "Add"). */
+      add: string;
+      /** Loading-state label on the same button. */
+      submitting: string;
     };
     /** Shown above the result list when the typed city wasn't in the
      *  directory but resolved to a known metro area (e.g. "Zsámbék" →

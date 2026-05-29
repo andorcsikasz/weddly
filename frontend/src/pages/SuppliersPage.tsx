@@ -198,15 +198,6 @@ export default function SuppliersPage() {
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
-  // Seed values for the SubmitSupplierModal when launched from the
-  // "Már foglaltam" card — the card pre-pins the active category and pipes
-  // through whatever the user typed on the card so the modal opens with
-  // both already filled in. Null when launched from the regular "Tipp
-  // leadása" button.
-  const [submitSeed, setSubmitSeed] = useState<{
-    category: SupplierCategory;
-    name: string;
-  } | null>(null);
   const [diyOpen, setDiyOpen] = useState(false);
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
   // Report dialog state. `reporting` holds the numeric id + name; null when closed.
@@ -1215,10 +1206,6 @@ export default function SuppliersPage() {
                 // waiting for the cross-tab subscriber to re-emit.
                 setSelectionState((cur) => ({ ...cur, [supplier.category]: supplier.id }));
               }}
-              onAddNew={(typedName) => {
-                setSubmitSeed({ category: activeCat, name: typedName });
-                setSubmitOpen(true);
-              }}
             />
           )}
           {filtered.map((s) => {
@@ -1702,12 +1689,7 @@ export default function SuppliersPage() {
 
       <SubmitSupplierModal
         open={submitOpen}
-        initialCategory={submitSeed?.category ?? null}
-        initialName={submitSeed?.name}
-        onClose={() => {
-          setSubmitOpen(false);
-          setSubmitSeed(null);
-        }}
+        onClose={() => setSubmitOpen(false)}
         onSubmitted={() => {
           // New submissions land as 'pending' and aren't returned by the
           // public list until the contact_email is verified. Skip the
