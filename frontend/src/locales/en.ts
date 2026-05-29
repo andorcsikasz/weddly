@@ -4125,6 +4125,7 @@ const en: LocaleMessages = {
       lock_view: "Enter focus mode",
       unlock_view: "Exit focus mode",
       shuffle_random: "Draw a random card",
+      previous_card: "Previous card",
       feedback_bad: "Not a good question",
       feedback_ok: "Decent question",
       feedback_great: "A really good one",

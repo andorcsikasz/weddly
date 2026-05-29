@@ -4561,6 +4561,7 @@ export interface LocaleMessages {
       lock_view: string;
       unlock_view: string;
       shuffle_random: string;
+      previous_card: string;
       feedback_bad: string;
       feedback_ok: string;
       feedback_great: string;

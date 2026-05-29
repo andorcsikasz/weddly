@@ -4163,6 +4163,7 @@ const hu: LocaleMessages = {
       lock_view: "Fókusz mód bekapcsolása",
       unlock_view: "Fókusz mód kikapcsolása",
       shuffle_random: "Új random kártya",
+      previous_card: "Előző kérdés",
       feedback_bad: "Ez nem jó kérdés",
       feedback_ok: "Oké kérdés",
       feedback_great: "Ez kifejezetten jó",

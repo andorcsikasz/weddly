@@ -5,7 +5,17 @@
 //
 // Pure client state, no backend. Data lives in lib/couple_cards.ts.
 
-import { ArrowLeft, Check, CheckCheck, ChevronDown, Lock, Shuffle, Unlock, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  CheckCheck,
+  ChevronDown,
+  ChevronLeft,
+  Lock,
+  Shuffle,
+  Unlock,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
@@ -237,6 +247,19 @@ export default function CoupleCardsPage() {
     setViewedCount((c) => c + 1);
   }, [activeDeck]);
 
+  // Step back one card inside the current bag. Bounded at the top of the
+  // round — no wrap into the previous shuffle, since the bag's order is
+  // ephemeral and the visitor's mental model of "the card I just saw" is
+  // only valid within this 25-card pass.
+  const prevCard = useCallback(() => {
+    if (!activeDeck) return;
+    setProgress((prev) => {
+      const current = prev[activeDeck];
+      if (!current || current.index <= 0) return prev;
+      return { ...prev, [activeDeck]: { ...current, index: current.index - 1 } };
+    });
+  }, [activeDeck]);
+
   // Shuffle-icon callback: jump to a fresh random card from the SAME
   // deck, ignoring the bag-shuffle order. The only invariant kept is
   // "no immediate repeat" — if RNG lands on the current index, bump by
@@ -311,6 +334,7 @@ export default function CoupleCardsPage() {
     return ratings.get(ratingKey(activeDeck, cardIdx)) ?? null;
   }, [activeDeck, progress, ratings]);
 
+  const canGoBack = activeDeck ? (progress[activeDeck]?.index ?? 0) > 0 : false;
   const cardView = activeDeckDef ? (
     <CardView
       deckId={activeDeckDef.id}
@@ -319,7 +343,9 @@ export default function CoupleCardsPage() {
       cardNumber={currentNumber}
       isLocked={isLocked}
       currentRating={currentRating}
+      canGoBack={canGoBack}
       onNext={nextCard}
+      onPrev={prevCard}
       onShuffle={shuffleRandom}
       onToggleLock={() => setIsLocked((v) => !v)}
       onFeedback={submitFeedback}
@@ -548,7 +574,9 @@ function CardView({
   cardNumber,
   isLocked,
   currentRating,
+  canGoBack,
   onNext,
+  onPrev,
   onShuffle,
   onToggleLock,
   onFeedback,
@@ -560,7 +588,9 @@ function CardView({
   cardNumber: number | null;
   isLocked: boolean;
   currentRating: CoupleCardRating | null;
+  canGoBack: boolean;
   onNext: () => void;
+  onPrev: () => void;
   onShuffle: () => void;
   onToggleLock: () => void;
   onFeedback: (rating: CoupleCardRating) => void;
@@ -641,6 +671,23 @@ function CardView({
             </article>
           </button>
 
+          {/* Left-side "previous card" chrome — sm+ only. Symmetric to the
+              right stack so the back-arrow reads as a peer of shuffle / lock.
+              Disabled at the start of a bag round, since the bag's order is
+              ephemeral and "back" into the previous shuffle has no meaning. */}
+          <div className="absolute right-full top-1/2 mr-3 hidden -translate-y-1/2 flex-col gap-2 sm:flex sm:mr-4">
+            <button
+              type="button"
+              onClick={onPrev}
+              disabled={!canGoBack}
+              aria-label={t("tools.couple_cards.previous_card")}
+              title={t("tools.couple_cards.previous_card")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700 dark:disabled:hover:bg-umber-800 dark:disabled:hover:text-paper-200"
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+            </button>
+          </div>
+
           {/* Side chrome — sm+ only. Sits on the right edge of the card
               wrapper, vertically centred, two pill buttons stacked. The
               -mr lifts the stack OUT of the card so it doesn't cover any
@@ -673,6 +720,24 @@ function CardView({
               )}
             </button>
           </div>
+        </div>
+
+        {/* Mobile fallback for the back-arrow: symmetric to the right
+            cluster below, fixed at the same vertical position. */}
+        <div
+          className={`fixed left-4 z-[60] flex flex-col gap-2 sm:hidden ${
+            isLocked ? "top-4" : "top-20"
+          }`}
+        >
+          <button
+            type="button"
+            onClick={onPrev}
+            disabled={!canGoBack}
+            aria-label={t("tools.couple_cards.previous_card")}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
         </div>
 
         {/* Mobile fallback: under-sm the side stack would overflow the
