@@ -1143,6 +1143,9 @@ export interface FeedbackInput {
   /** Where the dialog was opened from. Defaults server-side to "landing"
    *  when omitted (back-compat). */
   source?: "landing" | "app";
+  /** In-app route the dialog was opened from (e.g. "/app/media"), so admins
+   *  can see which surface in-product feedback is about. App-source only. */
+  context?: string;
   message?: string;
   rating?: number;
   monthly_value_ft?: number;
@@ -1183,10 +1186,7 @@ export const coupleCardsApi = {
 
 export const adminCoupleCardsApi = {
   list: () =>
-    apiFetch<{ items: CoupleCardFeedbackAggregate[] }>(
-      "GET",
-      "/api/admin/couple-cards/feedback",
-    ),
+    apiFetch<{ items: CoupleCardFeedbackAggregate[] }>("GET", "/api/admin/couple-cards/feedback"),
 };
 
 /** Read-only analytics surfaces for the admin dashboard. Four orthogonal

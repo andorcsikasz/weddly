@@ -1492,6 +1492,8 @@ interface FeedbackRow {
   id: number;
   message: string | null;
   status: string;
+  source: string;
+  context: string | null;
   user_id: number | null;
   user_email: string | null;
 }
@@ -1534,6 +1536,40 @@ describe("feedback — public submit", () => {
       from_email: "garbage",
     });
     expect(r.status).toBe(400);
+  });
+
+  test("app-source POST persists the in-app context path", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req("POST", "/api/feedback", {
+      source: "app",
+      context: "/app/media",
+      message: "Photo gallery feels slow.",
+    });
+    expect(r.status).toBe(200);
+    const list = await req<{ entries: FeedbackRow[] }>("GET", "/api/admin/feedback", undefined, {
+      token: adminToken,
+    });
+    const entry = list.data.entries.find((e) => e.message === "Photo gallery feels slow.");
+    expect(entry?.source).toBe("app");
+    expect(entry?.context).toBe("/app/media");
+  });
+
+  test("landing-source POST drops any context the client tries to attach", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req("POST", "/api/feedback", {
+      source: "landing",
+      context: "/app/media",
+      message: "Landing should not carry a context.",
+    });
+    expect(r.status).toBe(200);
+    const list = await req<{ entries: FeedbackRow[] }>("GET", "/api/admin/feedback", undefined, {
+      token: adminToken,
+    });
+    const entry = list.data.entries.find(
+      (e) => e.message === "Landing should not carry a context.",
+    );
+    expect(entry?.source).toBe("landing");
+    expect(entry?.context).toBeNull();
   });
 });
 

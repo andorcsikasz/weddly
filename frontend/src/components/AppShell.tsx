@@ -732,7 +732,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="app" />
+      <FeedbackDialog
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        source="app"
+        context={location.pathname}
+      />
       <KeyboardShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       {/* First-run coach-marks. Mounts only on mobile and only when the
        *  user hasn't seen them — the component self-gates on localStorage

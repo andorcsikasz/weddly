@@ -649,6 +649,13 @@ addColumnIfMissing("couples", "invite_partner_reminded_at", "invite_partner_remi
 // rows written by the pre-multi-offer code keep working and get backfilled on
 // the next refresh.
 addColumnIfMissing("flight_estimates", "offers_json", "offers_json TEXT");
+
+// In-app route the feedback dialog was opened from (e.g. "/app/media"). The
+// binary `source` ('landing' | 'app') couldn't tell admins which surface an
+// in-product report was actually about; this carries the pathname so the
+// triage list can label it "Photos", "Budget", etc. Null for landing rows
+// and for any pre-existing in-app rows written before this column existed.
+addColumnIfMissing("feedback_submissions", "context", "context TEXT");
 // Relax the NOT NULL on `price_amount` for the multi-offer cache rows where
 // no offer came back. SQLite doesn't support "ALTER COLUMN", so the schema
 // migration is a no-op; the bug only bites on prod DBs that already hit the

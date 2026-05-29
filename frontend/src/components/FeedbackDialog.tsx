@@ -19,9 +19,18 @@ type FeedbackDialogProps = {
   /** Surface the dialog was opened from. The backend persists this so admins
    *  can triage landing-page vs in-product feedback separately. */
   source?: "landing" | "app";
+  /** In-app route the dialog was opened from (e.g. "/app/media"). Passed
+   *  through to the backend so the admin triage list can label which surface
+   *  the feedback is about, not just "App". App-source only. */
+  context?: string;
 };
 
-export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDialogProps) {
+export function FeedbackDialog({
+  open,
+  onClose,
+  source = "landing",
+  context,
+}: FeedbackDialogProps) {
   const { t, locale } = useT();
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState<number | null>(null);
@@ -53,6 +62,7 @@ export function FeedbackDialog({ open, onClose, source = "landing" }: FeedbackDi
     try {
       await feedbackApi.submit({
         source,
+        context: source === "app" ? context : undefined,
         message: msg || undefined,
         rating: rating ?? undefined,
         from_email: wantReply ? email.trim() || undefined : undefined,

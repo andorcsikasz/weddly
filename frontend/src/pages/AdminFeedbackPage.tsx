@@ -53,6 +53,53 @@ const FILTER_KEY: Record<FeedbackStatus, string> = {
   dismissed: "admin.feedback_filter_dismissed",
 };
 
+/** Maps the in-app pathname captured at submission (FeedbackEntry.context)
+ *  to a human page label, reusing the same nav.* / admin.nav_* keys the
+ *  sidebar already translates — so "Photos"/"Képek" stays in lockstep with
+ *  the nav rename instead of drifting in a parallel string table. Longest,
+ *  most specific prefix first; "/app" is the catch-all (dashboard + any
+ *  unmapped surface). Matching is path-boundary aware so "/app/guests"
+ *  doesn't swallow "/app/guest-page". */
+const APP_PAGE_LABELS: ReadonlyArray<{ prefix: string; key: string }> = [
+  { prefix: "/app/admin/suppliers", key: "admin.nav_suppliers" },
+  { prefix: "/app/admin/vendor-waitlist", key: "admin.nav_waitlist" },
+  { prefix: "/app/admin/feedback", key: "admin.nav_feedback" },
+  { prefix: "/app/admin/couple-cards", key: "admin.nav_couple_cards" },
+  { prefix: "/app/admin/users", key: "admin.nav_users" },
+  { prefix: "/app/admin/categories", key: "admin.nav_taxonomy" },
+  { prefix: "/app/admin/blog", key: "admin.nav_blog" },
+  { prefix: "/app/admin/analytics", key: "admin.nav_analytics" },
+  { prefix: "/app/guests", key: "nav.guests" },
+  { prefix: "/app/budget", key: "nav.budget" },
+  { prefix: "/app/vendors", key: "nav.suppliers" },
+  { prefix: "/app/planning", key: "nav.planning" },
+  { prefix: "/app/timeline", key: "nav.timeline" },
+  { prefix: "/app/schedule", key: "nav.schedule" },
+  { prefix: "/app/seating", key: "nav.seating" },
+  { prefix: "/app/logistics", key: "nav.logistics" },
+  { prefix: "/app/moodboard", key: "nav.moodboard" },
+  { prefix: "/app/honeymoon", key: "nav.honeymoon" },
+  { prefix: "/app/media", key: "nav.media" },
+  { prefix: "/app/guest-page", key: "nav.guest_page" },
+  { prefix: "/app", key: "nav.dashboard" },
+];
+
+/** Friendly "where from" label for an entry. In-app rows resolve to the
+ *  page they were submitted from (e.g. "Képek"); landing rows and in-app
+ *  rows with no/unrecognised context fall back to the coarse source label. */
+function sourceLabel(
+  entry: Pick<FeedbackEntry, "source" | "context">,
+  t: (k: string) => string,
+): string {
+  if (entry.source === "app" && entry.context) {
+    const match = APP_PAGE_LABELS.find(
+      (p) => entry.context === p.prefix || entry.context?.startsWith(`${p.prefix}/`),
+    );
+    if (match) return t(match.key);
+  }
+  return t(`admin.feedback_source_${entry.source}`);
+}
+
 export default function AdminFeedbackPage() {
   const { t, locale } = useT();
   useDocumentMeta(t("seo.admin_feedback_title"), t("seo.admin_feedback_description"));
@@ -358,7 +405,7 @@ export default function AdminFeedbackPage() {
                       )}
                     </td>
                     <td className="hidden py-3 pr-4 text-xs text-ink-500 dark:text-umber-300 md:table-cell">
-                      {t(`admin.feedback_source_${e.source}`)}
+                      {sourceLabel(e, t)}
                     </td>
                     <td className="hidden py-3 pr-4 text-xs text-ink-500 dark:text-umber-300 sm:table-cell">
                       {fmtDate(e.created_at)}

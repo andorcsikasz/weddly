@@ -23,6 +23,9 @@ import { rateLimit } from "../lib/rate_limit";
 
 interface SubmitBody {
   source?: unknown;
+  /** In-app pathname the dialog was opened from, e.g. "/app/media". Only
+   *  meaningful for `source: "app"`; ignored for landing submissions. */
+  context?: unknown;
   message?: unknown;
   rating?: unknown;
   monthly_value_ft?: unknown;
@@ -74,6 +77,9 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   const body = await readJson<SubmitBody>(ctx.req);
 
   const source = parseSource(body.source);
+  // Context is an in-app route; only retain it for in-product submissions so
+  // a crafted landing-page POST can't smuggle a bogus surface label in.
+  const context = source === "app" ? trimStr(body.context, 200) : null;
   const message = trimStr(body.message, 2000);
   const rating = intInRange(body.rating, 1, 10, "rating");
   const monthlyValue = intInRange(body.monthly_value_ft, 0, 15000, "monthly_value_ft");
@@ -90,6 +96,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
 
   insertFeedback({
     source,
+    context,
     user_id: ctx.userId,
     message,
     rating,

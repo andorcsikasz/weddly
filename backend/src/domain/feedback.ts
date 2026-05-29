@@ -7,6 +7,7 @@ import { db, now } from "../db";
 export interface FeedbackRow {
   id: number;
   source: string;
+  context: string | null;
   user_id: number | null;
   message: string | null;
   rating: number | null;
@@ -37,6 +38,7 @@ export function toFeedbackEntry(row: JoinedRow): FeedbackEntry {
   return {
     id: row.id,
     source: toSource(row.source),
+    context: row.context,
     user_id: row.user_id,
     user_email: row.user_email,
     user_full_name: row.user_full_name,
@@ -77,6 +79,7 @@ export function getFeedbackById(id: number): JoinedRow | null {
 
 export function insertFeedback(input: {
   source: FeedbackSource;
+  context: string | null;
   user_id: number | null;
   message: string | null;
   rating: number | null;
@@ -88,11 +91,12 @@ export function insertFeedback(input: {
   const result = db
     .prepare(
       `INSERT INTO feedback_submissions
-         (source, user_id, message, rating, monthly_value_ft, from_email, locale, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
+         (source, context, user_id, message, rating, monthly_value_ft, from_email, locale, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
     )
     .run(
       input.source,
+      input.context,
       input.user_id,
       input.message,
       input.rating,
