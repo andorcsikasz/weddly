@@ -268,7 +268,7 @@ const META: Record<SeoLocale, LocaleMeta> = {
     ogLocale: "hu_HU",
     title: "Wēddly · Közös esküvőtervezés egy helyen",
     // Kept inside the 120-160 char SERP window (see meta-length guard in
-    // tests/api/seo.e2e.test.ts). The May 2026 audit flagged the old 166-char
+    // tests/api/seo_meta_length.e2e.test.ts). The May 2026 audit flagged the old 166-char
     // description as over the cap.
     description:
       "Tervezzétek együtt az esküvőtöket egy közös felületen: költségvetés, vendéglista, RSVP, ültetési rend és nyomtatható kártyák. Mindketten ugyanazt látjátok.",
@@ -283,7 +283,7 @@ const META: Record<SeoLocale, LocaleMeta> = {
     ogLocale: "en_US",
     title: "Weddly · Your shared wedding-planning workspace",
     // Kept inside the 120-160 char SERP window (see meta-length guard in
-    // tests/api/seo.e2e.test.ts).
+    // tests/api/seo_meta_length.e2e.test.ts).
     description:
       "Plan your wedding together in one shared workspace: budget, guest list, RSVP, seating and printable cards. Both of you see the same live picture.",
     twDescription: "One shared workspace for both of you, in real time.",
