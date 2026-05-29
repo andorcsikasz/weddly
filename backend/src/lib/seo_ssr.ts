@@ -582,12 +582,24 @@ function buildHeadBlock(opts: {
   const huPath = huPathFor(path);
   const enPath = enPathFor(path);
   const huUrl = `https://${CANONICAL_HOST}${huPath}`;
-  // EN canonical URL only differs from the HU one when `EN_CANONICAL_HOST`
-  // env is set. Otherwise we stay single-host and skip the EN hreflang
-  // link rel — emitting one that points back to the HU canonical would
-  // trigger Google's duplicate-canonical warning and erode the HU rank.
+  // EN alternate URL resolution:
+  //   1. `EN_CANONICAL_HOST` set  -> EN lives on its own host (e.g. weddly.com).
+  //   2. single-host + paired slug -> the route has a DISTINCT EN slug on the
+  //      same canonical host (the tools: /eszkozok/X vs /tools/X). That's a
+  //      real, non-duplicate URL, so an hreflang="en" alternate is correct
+  //      and surfaces the EN tool page for indexing.
+  //   3. single-host + non-paired  -> HU and EN share ONE URL (landing, blog,
+  //      about) via Accept-Language. Emitting an EN alternate that points back
+  //      at the HU canonical is the duplicate-canonical trap, so we skip it.
   const enHostConfigured = enCanonicalHostEnv();
-  const enUrl = enHostConfigured ? `https://${enHostConfigured}${enPath}` : null;
+  let enUrl: string | null;
+  if (enHostConfigured) {
+    enUrl = `https://${enHostConfigured}${enPath}`;
+  } else if (enPath !== huPath) {
+    enUrl = `https://${CANONICAL_HOST}${enPath}`;
+  } else {
+    enUrl = null;
+  }
   // Canonical follows the locale of the current render: HU render → HU URL
   // with HU slug; EN render (only meaningful when multi-host is active) →
   // EN URL with EN slug. Falls back to the path-on-canonical-host shape
@@ -881,9 +893,9 @@ export function renderLlmsTxt(_host: string | null): string {
 const SITEMAP_LASTMOD = new Date().toISOString().slice(0, 10);
 
 export function renderSitemapXml(_host: string | null): string {
-  // Mirror the head-block hreflang policy: emit the EN alternate only when
-  // `EN_CANONICAL_HOST` is configured. Otherwise we stay single-host and
-  // each <url> just lists hu + x-default pointing at weddly.hu.
+  // Mirror the head-block hreflang policy: emit the EN alternate when
+  // `EN_CANONICAL_HOST` is configured OR (single-host) when the route has a
+  // distinct EN slug. Non-paired routes stay hu + x-default only.
   const enHostConfigured = enCanonicalHostEnv();
 
   function buildUrlBlock(
@@ -918,7 +930,11 @@ export function renderSitemapXml(_host: string | null): string {
     const huPath = huPathFor(path);
     const enPath = enPathFor(path);
     const huHere = `https://${CANONICAL_HOST}${huPath}`;
-    const enHere = enHostConfigured ? `https://${enHostConfigured}${enPath}` : null;
+    const enHere = enHostConfigured
+      ? `https://${enHostConfigured}${enPath}`
+      : enPath !== huPath
+        ? `https://${CANONICAL_HOST}${enPath}`
+        : null;
     // 1. HU canonical <url>: <loc> on weddly.hu/{huPath}, alternates point at
     //    self (hu) + paired EN URL when multi-host is on.
     blocks.push(buildUrlBlock(huHere, huHere, enHere, priority, changefreq));

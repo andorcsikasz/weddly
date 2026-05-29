@@ -10875,13 +10875,19 @@ describe("seo: /sitemap.xml", () => {
     // Every <url> entry must carry a <lastmod>; Google ignores priority/changefreq
     // but uses lastmod to schedule recrawl.
     expect(body).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
-    // hreflang alternates per URL — single-host now, so hu + x-default both
-    // point at weddly.hu and there's no EN alternate.
+    // hreflang alternates per URL. Single-host: non-paired routes (like "/")
+    // list hu + x-default on weddly.hu with no EN alternate, but slug-paired
+    // tool routes DO get an EN alternate on the same host (the EN slug is a
+    // distinct, real URL) so the EN tool pages surface for indexing.
     expect(body).toContain(`<xhtml:link rel="alternate" hreflang="hu" href="https://${HU_HOST}/"`);
     expect(body).toContain(
       `<xhtml:link rel="alternate" hreflang="x-default" href="https://${HU_HOST}/"`,
     );
-    expect(body).not.toContain(`hreflang="en"`);
+    // Tool pages get an EN alternate + their own EN <loc> even single-host.
+    expect(body).toContain(
+      `<xhtml:link rel="alternate" hreflang="en" href="https://${HU_HOST}/tools/wedding-budget-calculator"`,
+    );
+    expect(body).toContain(`<loc>https://${HU_HOST}/tools/wedding-budget-calculator</loc>`);
     // No private paths leak into the sitemap.
     for (const blocked of ["/app/", "/onboarding", "/rsvp"]) {
       expect(body).not.toContain(`<loc>https://${HU_HOST}${blocked}`);
