@@ -1031,6 +1031,13 @@ export const adminUserApi = {
       `/api/admin/users/${id}/unflag`,
       { note: note ?? "" },
     ),
+  /** Mark / unmark a user as a beta tester. Non-destructive grouping label
+   *  (no email, no countdown) that buckets the account + its workspace into
+   *  the admin "Beta testers" section. Returns the updated admin view so the
+   *  row re-renders without a refetch; callers also refetch couples since
+   *  the workspace may move between groups. */
+  setBetaTester: (id: number, beta: boolean) =>
+    apiFetch<{ user: AdminUserView | null }>("POST", `/api/admin/users/${id}/beta`, { beta }),
   /** One-shot bulk re-purge of every couple flagged `status="deleting"`. */
   purgeDeleting: () =>
     apiFetch<{ purged: number }>("POST", "/api/admin/couples/purge-deleting", {}),

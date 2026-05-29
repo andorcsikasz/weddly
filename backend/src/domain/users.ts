@@ -30,6 +30,10 @@ export interface UserRow {
    *  navigator.language. Null for pre-feature rows; falls back to the
    *  client's own detection in that case. */
   locale?: string | null;
+  /** 1 = admin-marked beta tester (one of the team's own test accounts).
+   *  Buckets the account + its workspace into the admin "Beta testers"
+   *  group. Non-destructive label. Defaults to 0. */
+  is_beta_tester?: number;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var

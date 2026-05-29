@@ -113,6 +113,7 @@ function toAdminUser(
     created_at: row.created_at,
     last_seen_at: row.last_seen_at,
     active_flag: flag ? toUserFlag(flag) : null,
+    is_beta_tester: Boolean(row.is_beta_tester),
     activity,
   };
 }
@@ -181,6 +182,11 @@ function toAdminCouple(
   const featureCounts = c.is_demo ? (demoFeatureCounts.get(c.id) ?? {}) : null;
   const totalEvents =
     featureCounts === null ? null : Object.values(featureCounts).reduce((sum, n) => sum + n, 0);
+  // Workspace inherits beta-tester status from its members — one tagged
+  // member is enough to bucket the whole workspace out of the real-signup list.
+  const betaRow = db
+    .prepare("SELECT 1 AS hit FROM users WHERE couple_id = ? AND is_beta_tester = 1 LIMIT 1")
+    .get(c.id) as { hit: number } | undefined;
   return {
     id: c.id,
     slug: row.slug ?? null,
@@ -192,6 +198,7 @@ function toAdminCouple(
     created_at: c.created_at,
     last_seen_at: seen.max,
     is_demo: c.is_demo,
+    is_beta_tester: Boolean(betaRow),
     demo_feature_counts: featureCounts,
     demo_total_events: totalEvents,
     invite_partner_reminded_at: row.invite_partner_reminded_at ?? null,
@@ -518,6 +525,49 @@ async function handleUnflagUser(ctx: Ctx): Promise<Response> {
   return json({ user: view, cleared: resolved !== null });
 }
 
+/**
+ * Mark or unmark a user as a beta tester. Purely a grouping label — no email,
+ * no countdown, no purge (the moderation flag does all that; this is its benign
+ * cousin). Setting it pulls the user and their whole workspace into the admin
+ * "Beta testers" section so the team's own test accounts stay out of the
+ * real-signup metrics. Idempotent: re-setting the same value is a no-op write.
+ */
+async function handleSetBetaTester(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const userId = parseId(ctx);
+
+  const body = await readJson<{ beta?: unknown }>(ctx.req);
+  if (typeof body.beta !== "boolean") {
+    throw new HttpError(400, "`beta` must be a boolean");
+  }
+
+  const target = db.prepare("SELECT id, email FROM users WHERE id = ?").get(userId) as
+    | { id: number; email: string }
+    | undefined;
+  if (!target) throw new HttpError(404, "User not found");
+  if (target.email.endsWith("@purged.local")) {
+    throw new HttpError(400, "Cannot mark a purged user");
+  }
+
+  db.prepare("UPDATE users SET is_beta_tester = ?, updated_at = ? WHERE id = ?").run(
+    body.beta ? 1 : 0,
+    Date.now(),
+    userId,
+  );
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.user_beta_set",
+    target_kind: "user",
+    target_id: userId,
+    after: { is_beta_tester: body.beta },
+  });
+
+  const view = listOneUserAdminView(userId);
+  return json({ user: view });
+}
+
 type AdminSection = "suppliers" | "users" | "vendor_waitlist" | "feedback";
 const VALID_SECTIONS: ReadonlySet<AdminSection> = new Set([
   "suppliers",
@@ -629,6 +679,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.delete("/api/admin/users/:id", handleDeleteUser, true);
   router.post("/api/admin/users/:id/flag", handleFlagUser, true);
   router.post("/api/admin/users/:id/unflag", handleUnflagUser, true);
+  router.post("/api/admin/users/:id/beta", handleSetBetaTester, true);
   router.post("/api/admin/couples/purge-deleting", handlePurgeDeletingCouples, true);
   router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
 }

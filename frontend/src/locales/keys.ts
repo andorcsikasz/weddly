@@ -2874,6 +2874,21 @@ export interface LocaleMessages {
     demo_workspaces_summary_one: string;
     demo_workspaces_summary_other: string;
     demo_workspaces_recent_24h: string;
+    /** Beta-tester bucket — admin-marked accounts (the team's own test
+     *  accounts) pulled into their own collapsible group so the real-signup
+     *  metrics stay clean. Non-destructive label, separate from the
+     *  moderation flag. The toggle mirrors the demo summary's show/hide. */
+    badge_beta: string;
+    beta_set_button: string;
+    beta_unset_button: string;
+    beta_set_success: string;
+    beta_unset_success: string;
+    beta_workspaces_section: string;
+    beta_workspaces_help: string;
+    beta_workspaces_summary_one: string;
+    beta_workspaces_summary_other: string;
+    beta_workspaces_show: string;
+    beta_workspaces_hide: string;
     users_section_users: string;
     users_section_couples: string;
     users_count_one: string;

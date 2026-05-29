@@ -379,6 +379,12 @@ addColumnIfMissing("users", "locale", "locale TEXT");
 // `new_device_signin` mail.
 addColumnIfMissing("users", "known_devices_json", "known_devices_json TEXT NOT NULL DEFAULT '[]'");
 
+// Beta-tester marker — admin-set label that buckets an account (and its whole
+// workspace) into the "Beta testers" group in the admin directory so the team's
+// own test accounts don't pollute the real-signup metrics. Non-destructive,
+// unlike user_flags: purely a grouping signal, no email and no auto-purge.
+addColumnIfMissing("users", "is_beta_tester", "is_beta_tester INTEGER NOT NULL DEFAULT 0");
+
 // One-shot stamp so the cron sweep doesn't re-send the "you forgot to pick
 // a meal" nudge every hour. NULL until we send, then frozen — the guest is
 // expected to revisit the RSVP link if they actually want to update their

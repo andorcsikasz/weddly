@@ -3,6 +3,7 @@ import {
   Check,
   Flag,
   FlagOff,
+  FlaskConical,
   Lightbulb,
   Mail,
   MessageCircle,
@@ -102,6 +103,9 @@ export default function AdminUsersPage() {
   // re-fetches because the state is component-local — that's intentional,
   // an admin who opened it expects it to stay open while triaging.
   const [demoOpen, setDemoOpen] = useState(false);
+  // Same collapsed-by-default treatment for the beta-tester bucket — the
+  // team's own test workspaces live below the real-couple list.
+  const [betaOpen, setBetaOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,7 +142,17 @@ export default function AdminUsersPage() {
   // Demo workspaces ("try Shrek & Fiona") are seeded by the landing-page
   // flow; keep them out of the real-couple list so the admin overview
   // reflects actual signups, but surface them in their own section below.
-  const realCouples = useMemo(() => visibleCouples.filter((c) => !c.is_demo), [visibleCouples]);
+  // Beta-tester workspaces ("just my testers") are pulled into their own
+  // collapsible section so the real-couple count reflects actual signups, not
+  // the team's own test accounts. Demo wins over beta when a row is both.
+  const realCouples = useMemo(
+    () => visibleCouples.filter((c) => !c.is_demo && !c.is_beta_tester),
+    [visibleCouples],
+  );
+  const betaCouples = useMemo(
+    () => visibleCouples.filter((c) => !c.is_demo && c.is_beta_tester),
+    [visibleCouples],
+  );
   const demoCouples = useMemo(() => visibleCouples.filter((c) => c.is_demo), [visibleCouples]);
   // Demo activity in the last 24h — drives the collapsed summary headline so
   // a glance tells the admin whether the bucket is hot.
@@ -188,13 +202,22 @@ export default function AdminUsersPage() {
     // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [realCouples, searchQuery, userById],
   );
+  const filteredBetaCouples = useMemo(
+    () => (searchQuery === "" ? betaCouples : betaCouples.filter(coupleMatches)),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
+    [betaCouples, searchQuery, userById],
+  );
   const filteredOrphans = useMemo(
     () => (searchQuery === "" ? orphans : orphans.filter(orphanMatches)),
     // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [orphans, searchQuery],
   );
   const isSearching = searchQuery !== "";
-  const totalFilteredHits = filteredRealCouples.length + filteredOrphans.length;
+  // Auto-expand the beta bucket while searching so matching beta workspaces
+  // surface inline instead of hiding behind the collapsed summary.
+  const betaListOpen = betaOpen || isSearching;
+  const totalFilteredHits =
+    filteredRealCouples.length + filteredBetaCouples.length + filteredOrphans.length;
 
   async function onResendVerify(u: AdminUserView) {
     setPendingId(u.id);
@@ -319,6 +342,25 @@ export default function AdminUsersPage() {
     }
   }
 
+  // Mark / unmark a beta tester. Non-destructive — just a label — so there's
+  // no confirm dialog. Because the workspace may hop between the real-couple
+  // and beta sections, we refetch couples after the toggle rather than trying
+  // to recompute `is_beta_tester` on the couple locally.
+  async function onSetBeta(u: AdminUserView, beta: boolean) {
+    setPendingId(u.id);
+    try {
+      const r = await adminUserApi.setBetaTester(u.id, beta);
+      if (r.user) setUsers((cur) => cur.map((x) => (x.id === u.id ? r.user! : x)));
+      const c2 = await adminUserApi.listCouples();
+      setCouples(c2.couples);
+      toast.success(beta ? t("admin.beta_set_success") : t("admin.beta_unset_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   async function onPurgeDeleting() {
     if (deletingCount === 0) return;
     const ok = await confirm({
@@ -383,6 +425,11 @@ export default function AdminUsersPage() {
         {u.is_admin && (
           <Pill tone="violet" srLabel={t("admin.badge_admin")}>
             {t("admin.badge_admin")}
+          </Pill>
+        )}
+        {u.is_beta_tester && (
+          <Pill tone="sage" icon={<FlaskConical size={11} aria-hidden />}>
+            {t("admin.badge_beta")}
           </Pill>
         )}
         {u.status === "suspended" && (
@@ -499,6 +546,22 @@ export default function AdminUsersPage() {
               <Mail size={14} aria-hidden />
             </button>
           ))}
+        {!isSelf && (
+          <button
+            type="button"
+            className={`btn-ghost btn-sm inline-flex items-center${
+              u.is_beta_tester ? " text-sage-700 dark:text-sage-300" : ""
+            }`}
+            onClick={() => onSetBeta(u, !u.is_beta_tester)}
+            disabled={isPending}
+            title={u.is_beta_tester ? t("admin.beta_unset_button") : t("admin.beta_set_button")}
+            aria-label={
+              u.is_beta_tester ? t("admin.beta_unset_button") : t("admin.beta_set_button")
+            }
+          >
+            <FlaskConical size={14} aria-hidden />
+          </button>
+        )}
         {!isSelf && !flag && (
           <button
             type="button"
@@ -536,6 +599,73 @@ export default function AdminUsersPage() {
           </button>
         )}
       </div>
+    );
+  }
+
+  /** One workspace card — id, name, members (info + actions), created/active
+   *  dates. Shared by the real-couple list and the beta-tester bucket so both
+   *  render identically. */
+  function renderCoupleCard(c: AdminCoupleView) {
+    // Server returns partners scrubbed of users we already know are missing
+    // (rare race); fall back to userById for the freshest local state.
+    const members = c.partners
+      .map((p) => userById.get(p.id))
+      .filter((u): u is AdminUserView => u != null);
+    const statusLabel = c.status === "paused" ? t("admin.workspace_status_paused") : null;
+    return (
+      <li
+        key={c.id}
+        className="admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+      >
+        <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
+          <div className="whitespace-nowrap">
+            <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
+              {workspaceId(c)}
+            </code>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="font-medium text-ink-900 dark:text-paper-50">{workspaceLabel(c)}</span>
+            {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
+            {members.length === 1 && (
+              <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                {t("admin.workspace_solo_member")}
+              </span>
+            )}
+          </div>
+          <div>
+            {members.length === 0 ? (
+              <span className="text-xs text-ink-500 dark:text-umber-300">—</span>
+            ) : (
+              <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
+                {members.map((u) => (
+                  <li key={u.id} className="py-1 first:pt-0 last:pb-0">
+                    {renderUserInfo(u)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+            <div>{formatDate(c.created_at, locale)}</div>
+            <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+              {formatRelative(c.last_seen_at, locale, t)}
+            </div>
+          </div>
+          <div>
+            {members.length === 0 ? null : (
+              <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
+                {members.map((u) => (
+                  <li key={u.id} className="py-1 first:pt-0 last:pb-0">
+                    {renderUserActions(u, {
+                      remindCouple: members.length === 1 ? c : undefined,
+                    })}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </li>
     );
   }
 
@@ -720,80 +850,62 @@ export default function AdminUsersPage() {
                       </div>
                       <div className="text-right">{t("admin.table_admin_actions")}</div>
                     </div>
-                    <ul className="space-y-1.5">
-                      {filteredRealCouples.map((c) => {
-                        // Server returns partners scrubbed of users we already
-                        // know are missing (rare race); fall back to userById
-                        // for the freshest local state.
-                        const members = c.partners
-                          .map((p) => userById.get(p.id))
-                          .filter((u): u is AdminUserView => u != null);
-                        const statusLabel =
-                          c.status === "paused" ? t("admin.workspace_status_paused") : null;
-                        return (
-                          <li
-                            key={c.id}
-                            className="admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
-                          >
-                            <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
-                              <div className="whitespace-nowrap">
-                                <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
-                                  {workspaceId(c)}
-                                </code>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                <span className="font-medium text-ink-900 dark:text-paper-50">
-                                  {workspaceLabel(c)}
-                                </span>
-                                {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
-                                {members.length === 1 && (
-                                  <span className="text-[11px] text-ink-500 dark:text-umber-300">
-                                    {t("admin.workspace_solo_member")}
-                                  </span>
-                                )}
-                              </div>
-                              <div>
-                                {members.length === 0 ? (
-                                  <span className="text-xs text-ink-500 dark:text-umber-300">
-                                    —
-                                  </span>
-                                ) : (
-                                  <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
-                                    {members.map((u) => (
-                                      <li key={u.id} className="py-1 first:pt-0 last:pb-0">
-                                        {renderUserInfo(u)}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                              <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
-                                <div>{formatDate(c.created_at, locale)}</div>
-                                <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
-                                  {formatRelative(c.last_seen_at, locale, t)}
-                                </div>
-                              </div>
-                              <div>
-                                {members.length === 0 ? null : (
-                                  <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
-                                    {members.map((u) => (
-                                      <li key={u.id} className="py-1 first:pt-0 last:pb-0">
-                                        {renderUserActions(u, {
-                                          remindCouple: members.length === 1 ? c : undefined,
-                                        })}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <ul className="space-y-1.5">{filteredRealCouples.map(renderCoupleCard)}</ul>
                   </>
                 )}
               </section>
+
+              {/* ── Beta testers — admin-marked test accounts, bucketed out of
+               *  the real-couple list so signup metrics stay honest. Collapsed
+               *  by default like the demo bucket, but unlike demos it stays
+               *  searchable: an active search auto-expands the list to reveal
+               *  matching beta workspaces. ──────────────────────────────────── */}
+              {betaCouples.length > 0 && (filteredBetaCouples.length > 0 || !isSearching) && (
+                <section className="mb-6">
+                  <div className="admin-card flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                      <Pill tone="sage" icon={<FlaskConical size={11} aria-hidden />}>
+                        {t("admin.badge_beta")}
+                      </Pill>
+                      <span>
+                        {t(
+                          betaCouples.length === 1
+                            ? "admin.beta_workspaces_summary_one"
+                            : "admin.beta_workspaces_summary_other",
+                          { n: betaCouples.length },
+                        )}
+                      </span>
+                    </div>
+                    {!isSearching && (
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm"
+                        onClick={() => setBetaOpen((v) => !v)}
+                        aria-expanded={betaOpen}
+                      >
+                        {betaOpen
+                          ? t("admin.beta_workspaces_hide")
+                          : t("admin.beta_workspaces_show")}
+                      </button>
+                    )}
+                  </div>
+                  {betaListOpen && (
+                    <>
+                      <div className="mt-3">
+                        <AdminSectionHeader
+                          title={t("admin.beta_workspaces_section")}
+                          description={t("admin.beta_workspaces_help")}
+                        />
+                      </div>
+                      {filteredBetaCouples.length === 0 ? (
+                        <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
+                      ) : (
+                        <ul className="space-y-1.5">{filteredBetaCouples.map(renderCoupleCard)}</ul>
+                      )}
+                    </>
+                  )}
+                </section>
+              )}
 
               {/* ── Demo workspaces — landing-page "try Shrek & Fiona" seedlings.
                *  Collapsed by default to a one-line summary so the real-couple

@@ -62,6 +62,11 @@ export interface AdminUserView {
    *  the latest flag has been resolved. Drives the flag badge + countdown
    *  on AdminUsersPage. */
   active_flag: UserFlag | null;
+  /** Admin-marked beta tester (one of the team's own test accounts). Drives
+   *  the sage "Beta" badge + the FlaskConical toggle, and buckets the
+   *  account's workspace into the admin "Beta testers" group. Non-destructive
+   *  label, separate from `active_flag` moderation. */
+  is_beta_tester: boolean;
   /** Compact activity counters surfaced on the admin row so the moderator
    *  can see at a glance which users are actually contributing vs. dormant.
    *  Counters include resolved/hidden rows — the admin cares about total
@@ -129,6 +134,10 @@ export interface AdminCoupleView {
    *  page's "try Shrek & Fiona" flow and are grouped into their own admin
    *  section so the real-user list stays scannable. */
   is_demo: boolean;
+  /** True when at least one member is an admin-marked beta tester. Pulls the
+   *  whole workspace into the admin "Beta testers" group so the team's own
+   *  test workspaces don't pollute the real-signup list. */
+  is_beta_tester: boolean;
   /** Per-feature event counts on the demo workspace's audit_log, keyed by
    *  the feature prefix (`"guest"`, `"budget"`, …). Populated only when
    *  `is_demo` is true — real couples have a richer engagement surface

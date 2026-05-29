@@ -102,6 +102,7 @@ describe("admin gate — 403 for verified non-admin token on every /api/admin/* 
       body: { reason: "spam tipper" },
     },
     { method: "POST", path: "/api/admin/users/1/unflag", body: {} },
+    { method: "POST", path: "/api/admin/users/1/beta", body: { beta: true } },
     { method: "POST", path: "/api/admin/couples/purge-deleting", body: {} },
     { method: "POST", path: "/api/admin/couples/1/remind-invite-partner", body: {} },
     // admin_suppliers.ts
@@ -658,6 +659,100 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
   });
 });
 
+describe("admin users — beta-tester marker", () => {
+  interface BetaResp {
+    user: (AdminUserRow & { is_beta_tester: boolean }) | null;
+  }
+  interface CouplesListResp {
+    couples: { id: number; is_demo: boolean; is_beta_tester: boolean }[];
+  }
+
+  test("mark + unmark flips the user flag and is audit-logged", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token } = await bootstrapCouple("tester@weddly.test");
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, { token });
+    const userId = me.data.user.id;
+
+    const set = await req<BetaResp>(
+      "POST",
+      `/api/admin/users/${userId}/beta`,
+      { beta: true },
+      { token: adminToken },
+    );
+    expect(set.status).toBe(200);
+    expect(set.data.user?.is_beta_tester).toBe(true);
+    expect(
+      (
+        db.prepare("SELECT is_beta_tester FROM users WHERE id = ?").get(userId) as {
+          is_beta_tester: number;
+        }
+      ).is_beta_tester,
+    ).toBe(1);
+    const audit = db
+      .prepare(
+        "SELECT action FROM audit_log WHERE action = 'admin.user_beta_set' AND target_id = ?",
+      )
+      .get(userId) as { action: string } | undefined;
+    expect(audit?.action).toBe("admin.user_beta_set");
+
+    const unset = await req<BetaResp>(
+      "POST",
+      `/api/admin/users/${userId}/beta`,
+      { beta: false },
+      { token: adminToken },
+    );
+    expect(unset.status).toBe(200);
+    expect(unset.data.user?.is_beta_tester).toBe(false);
+  });
+
+  test("workspace inherits beta status from a tagged member", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token, coupleId } = await bootstrapCouple("betacouple@weddly.test");
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, { token });
+
+    await req(
+      "POST",
+      `/api/admin/users/${me.data.user.id}/beta`,
+      { beta: true },
+      {
+        token: adminToken,
+      },
+    );
+
+    const couples = await req<CouplesListResp>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
+    const row = couples.data.couples.find((c) => c.id === coupleId);
+    expect(row?.is_beta_tester).toBe(true);
+  });
+
+  test("non-boolean `beta` body → 400", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token } = await bootstrapCouple("t2@weddly.test");
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, { token });
+    const r = await req(
+      "POST",
+      `/api/admin/users/${me.data.user.id}/beta`,
+      { beta: "yes" },
+      { token: adminToken },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("unknown user id → 404", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req(
+      "POST",
+      "/api/admin/users/99999/beta",
+      { beta: true },
+      {
+        token: adminToken,
+      },
+    );
+    expect(r.status).toBe(404);
+  });
+});
+
 describe("admin couples — remind-invite-partner nudge", () => {
   test("solo couple → email_log row + audit log + 200", async () => {
     const adminToken = await bootstrapAdmin();
@@ -788,7 +883,10 @@ describe("auto invite-partner nudge (worker sweep)", () => {
     wipeAll();
     const reg = await bootstrapSoloCouple("auto-solo@weddly.test");
     // Created 96h ago: the next-10:00 boundary is comfortably in the past.
-    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(now() - 96 * HOUR, reg.coupleId);
+    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(
+      now() - 96 * HOUR,
+      reg.coupleId,
+    );
 
     const sweep = runEmailSweep();
     expect(sweep.invitePartnerAuto).toBe(1);
@@ -807,7 +905,10 @@ describe("auto invite-partner nudge (worker sweep)", () => {
   test("fires once per workspace (idempotent across sweeps)", async () => {
     wipeAll();
     const reg = await bootstrapSoloCouple("auto-once@weddly.test");
-    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(now() - 96 * HOUR, reg.coupleId);
+    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(
+      now() - 96 * HOUR,
+      reg.coupleId,
+    );
 
     expect(runEmailSweep().invitePartnerAuto).toBe(1);
     expect(runEmailSweep().invitePartnerAuto).toBe(0);
@@ -822,7 +923,10 @@ describe("auto invite-partner nudge (worker sweep)", () => {
     wipeAll();
     const reg = await bootstrapSoloCouple("auto-young@weddly.test");
     // 47h old: the 48h mark is still 1h in the future, so it is never due.
-    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(now() - 47 * HOUR, reg.coupleId);
+    db.prepare("UPDATE couples SET created_at = ? WHERE id = ?").run(
+      now() - 47 * HOUR,
+      reg.coupleId,
+    );
 
     expect(runEmailSweep().invitePartnerAuto).toBe(0);
     const stamp = db
