@@ -1027,11 +1027,6 @@ const en: LocaleMessages = {
     nav_audience_aria: "Audience navigation",
     nav_mobile_aria: "Primary navigation (mobile)",
   },
-  currency_pref: {
-    title: "Pick your currency",
-    body: "Switching language shouldn't change your prices. Pick the currency you want amounts shown in — we'll remember it for next time.",
-    cancel: "Keep current",
-  },
   nav: {
     dashboard: "Overview",
     guests: "Guests",
@@ -2048,8 +2043,7 @@ const en: LocaleMessages = {
       title: "Already booked",
       subtitle: "Drop in the {category} you've already booked, in one keystroke.",
       input_label: "Vendor name",
-      input_help:
-        "Already on Weddly? Pick it from the list. New? Submit it and we'll review.",
+      input_help: "Already on Weddly? Pick it from the list. New? Submit it and we'll review.",
       placeholder: "e.g. Etyeki Kúria",
       no_match: "No matches in the directory.",
       no_match_help: "No match. Submit it as new and we'll review.",

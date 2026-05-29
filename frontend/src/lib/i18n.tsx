@@ -1,15 +1,10 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
-import type { Currency } from "@shared/types";
 import en from "../locales/en";
 import type { LocaleMessages } from "../locales/keys";
 
 export type Locale = "hu" | "en";
 
 const STORAGE_KEY = "weddly.locale";
-// Preferred display currency, set explicitly by the user via the prompt
-// that opens on the first language switch. Once stored, language flips no
-// longer change the currency on public surfaces (landing demo, pricing).
-const CURRENCY_KEY = "weddly.currency";
 
 // Locale-tree cache. EN is bundled eagerly (Next-9: was 162KB; previously
 // hu+en together inflated the initial chunk by 347KB / 63% of `index.js`).
@@ -39,38 +34,15 @@ export async function _preloadHuForTests(): Promise<void> {
 
 interface I18nState {
   locale: Locale;
-  /** Switch UI locale. By default, the FIRST call without a stored
-   *  `currencyPref` defers the switch and surfaces a currency-pref prompt
-   *  (so flipping HU → EN doesn't silently re-denominate the budget demo
-   *  from Ft to €). Pass `silent: true` for non-user-initiated syncs (e.g.
-   *  hydrating from `user.locale` on login). */
+  /** Switch UI locale. The display currency on public surfaces is derived
+   *  from the locale (HU → HUF, everything else → EUR), so flipping the
+   *  language re-denominates prices to match. The `opts` arg is accepted
+   *  for call-site compatibility but no longer changes behaviour. */
   setLocale: (l: Locale, opts?: { silent?: boolean }) => void;
   t: (path: string, vars?: Record<string, string | number>) => string;
-  /** Last currency the user picked in the language-switch prompt. `null`
-   *  until they pick — public surfaces fall back to a locale-derived
-   *  default in that case. */
-  currencyPref: Currency | null;
-  /** Locale the user requested but hasn't confirmed yet (prompt in flight).
-   *  `<CurrencyPrefDialog>` reads this to decide when to render. */
-  pendingLocale: Locale | null;
-  /** Save the picked currency and, if a locale switch is pending, apply it. */
-  confirmCurrencyPref: (c: Currency) => void;
-  /** Drop the pending locale switch without changing currency or locale. */
-  cancelPendingLocale: () => void;
 }
 
 const I18nContext = createContext<I18nState | null>(null);
-
-function detectInitialCurrency(): Currency | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const saved = window.localStorage.getItem(CURRENCY_KEY);
-    if (saved === "HUF" || saved === "EUR" || saved === "USD") return saved;
-  } catch {
-    // localStorage may be blocked
-  }
-  return null;
-}
 
 function detectInitial(): Locale {
   // Host-driven signal wins: visiting the EN canonical (e.g. weddly.com)
@@ -151,8 +123,6 @@ async function warnDriftDev() {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(detectInitial);
-  const [currencyPref, setCurrencyPrefState] = useState<Currency | null>(detectInitialCurrency);
-  const [pendingLocale, setPendingLocale] = useState<Locale | null>(null);
   // Bumps when the dynamic HU import resolves, so components re-render with
   // the freshly-loaded tree once it's available. Without this, the initial
   // HU detection would render with EN strings (the fallback) until the user
@@ -174,63 +144,28 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (import.meta.env.DEV) void warnDriftDev();
   }, [locale]);
 
-  /** Apply the locale unconditionally — bypasses the currency prompt.
-   *  Used both for explicit silent switches (auth sync) and as the inner
-   *  commit step after the user confirms a currency pick. */
-  const applyLocale = useCallback((l: Locale) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, l);
-    } catch {
-      // ignore
-    }
-    if (l === "hu" && !TREES.hu) {
-      // Flip the state first so the rest of the UI snaps to its new locale
-      // immediately; the HU chunk arrives a tick later and triggers a
-      // re-render via `huLoadedAt`. The EN fallback in `t()` means the
-      // interim isn't blank, just temporarily in EN.
-      setLocaleState(l);
-      void loadHu().then(() => setHuLoadedAt(Date.now()));
-    } else {
-      setLocaleState(l);
-    }
-  }, []);
-
   const setLocale = useCallback(
-    (l: Locale, opts?: { silent?: boolean }) => {
-      // No-op when already on the requested locale — avoids opening the
-      // currency prompt for an idempotent click.
+    (l: Locale) => {
+      // No-op when already on the requested locale.
       if (l === locale) return;
-      // `silent: true` skips the prompt entirely (auth hydration, programmatic
-      // sync). Same for already-picked currency — once the user has answered
-      // once, future flips don't re-ask.
-      if (opts?.silent || currencyPref !== null) {
-        applyLocale(l);
-        return;
-      }
-      setPendingLocale(l);
-    },
-    [locale, currencyPref, applyLocale],
-  );
-
-  const confirmCurrencyPref = useCallback(
-    (c: Currency) => {
       try {
-        localStorage.setItem(CURRENCY_KEY, c);
+        localStorage.setItem(STORAGE_KEY, l);
       } catch {
         // ignore
       }
-      setCurrencyPrefState(c);
-      if (pendingLocale) {
-        applyLocale(pendingLocale);
-        setPendingLocale(null);
+      if (l === "hu" && !TREES.hu) {
+        // Flip the state first so the rest of the UI snaps to its new locale
+        // immediately; the HU chunk arrives a tick later and triggers a
+        // re-render via `huLoadedAt`. The EN fallback in `t()` means the
+        // interim isn't blank, just temporarily in EN.
+        setLocaleState(l);
+        void loadHu().then(() => setHuLoadedAt(Date.now()));
+      } else {
+        setLocaleState(l);
       }
     },
-    [pendingLocale, applyLocale],
+    [locale],
   );
-
-  const cancelPendingLocale = useCallback(() => {
-    setPendingLocale(null);
-  }, []);
 
   const t = useCallback(
     (path: string, vars?: Record<string, string | number>) => {
@@ -260,10 +195,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         locale,
         setLocale,
         t,
-        currencyPref,
-        pendingLocale,
-        confirmCurrencyPref,
-        cancelPendingLocale,
       }}
     >
       {children}
@@ -278,10 +209,6 @@ export function useT() {
       locale: "hu" as const,
       setLocale: () => {},
       t: (path: string, vars?: Record<string, string | number>) => interpolate(path, vars),
-      currencyPref: null as Currency | null,
-      pendingLocale: null as Locale | null,
-      confirmCurrencyPref: (_c: Currency) => {},
-      cancelPendingLocale: () => {},
     };
   }
   return ctx;

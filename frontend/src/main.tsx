@@ -2,7 +2,6 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import { CurrencyPrefDialog } from "./components/CurrencyPrefDialog";
 import { AppProviders } from "./components/ui";
 import "./index.css";
 import { AuthProvider } from "./lib/auth";
@@ -26,7 +25,6 @@ createRoot(root).render(
             <App />
           </AuthProvider>
         </BrowserRouter>
-        <CurrencyPrefDialog />
       </AppProviders>
     </I18nProvider>
   </StrictMode>,

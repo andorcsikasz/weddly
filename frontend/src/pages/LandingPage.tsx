@@ -72,7 +72,7 @@ const MOCKUP_AR_WORKSPACE = "656 / 456";
 const REFERRER_SESSION_KEY = "weddly.ref";
 
 export default function LandingPage() {
-  const { t, locale, currencyPref } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("seo.home_title", "seo.home_description");
   const askGuestCode = useGuestCodePrompt();
   // Single source of truth (shared/seo_faq.ts) — same array also feeds the
@@ -231,15 +231,11 @@ export default function LandingPage() {
                 <IconRow icon={<Smartphone size={16} />}>
                   {t("landing.block_guests_bullet_1")}
                 </IconRow>
-                <IconRow icon={<Filter size={16} />}>
-                  {t("landing.block_guests_bullet_2")}
-                </IconRow>
+                <IconRow icon={<Filter size={16} />}>{t("landing.block_guests_bullet_2")}</IconRow>
                 <IconRow icon={<Download size={16} />}>
                   {t("landing.block_guests_bullet_3")}
                 </IconRow>
-                <IconRow icon={<Globe size={16} />}>
-                  {t("landing.block_guests_bullet_4")}
-                </IconRow>
+                <IconRow icon={<Globe size={16} />}>{t("landing.block_guests_bullet_4")}</IconRow>
               </ul>
             </div>
             <div>
@@ -387,7 +383,7 @@ export default function LandingPage() {
                   0
                 </span>
                 <span className="mb-3 font-serif text-3xl text-ink-700 dark:text-paper-100 sm:text-4xl">
-                  {currencySymbol(currencyPref ?? localeCurrency(locale), locale)}
+                  {currencySymbol(localeCurrency(locale), locale)}
                 </span>
               </div>
               <p className="mt-1 font-serif text-sm italic text-ink-600 dark:text-umber-300">
@@ -587,10 +583,7 @@ function StatCounter({
   label: string;
 }) {
   const display = useFlipTo(value);
-  const fmt = useMemo(
-    () => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US"),
-    [locale],
-  );
+  const fmt = useMemo(() => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US"), [locale]);
   return (
     <div className="text-center">
       <div className="relative mx-auto flex aspect-[4/5] w-32 items-center justify-center overflow-hidden rounded-md border border-ink-200 bg-paper-50 shadow-soft sm:w-40 lg:w-48 dark:border-umber-700 dark:bg-umber-800">
@@ -846,9 +839,7 @@ function IconRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 function CoupleCardsTeaser() {
   const { t, locale } = useT();
   const toolPath =
-    locale === "hu"
-      ? "/eszkozok/100-kerdes-eskuvo-elott"
-      : "/tools/100-questions-before-marriage";
+    locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
     <section className="relative bg-white dark:bg-umber-900">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14">
@@ -877,8 +868,7 @@ function CoupleCardsTeaser() {
                   </span>
                 </div>
                 <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] text-white sm:text-[10px] sm:tracking-[0.28em]">
-                  {t("app.name")} ·{" "}
-                  {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                  {t("app.name")} · {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
                 </span>
               </Link>
             </li>

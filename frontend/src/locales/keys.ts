@@ -1115,13 +1115,6 @@ export interface LocaleMessages {
     nav_audience_aria: string;
     nav_mobile_aria: string;
   };
-  /** First-language-switch prompt asking the visitor to lock in a display
-   *  currency, so flipping HU ↔ EN doesn't silently re-denominate prices. */
-  currency_pref: {
-    title: string;
-    body: string;
-    cancel: string;
-  };
   nav: {
     dashboard: string;
     guests: string;

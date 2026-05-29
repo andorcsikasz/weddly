@@ -1037,11 +1037,6 @@ const hu: LocaleMessages = {
     nav_audience_aria: "Célközönség navigáció",
     nav_mobile_aria: "Fő navigáció (mobil)",
   },
-  currency_pref: {
-    title: "Válaszd ki a pénznemet",
-    body: "A nyelvváltás ne írja át az árakat. Válaszd ki, milyen pénznemben szeretnéd látni az összegeket, és megjegyezzük a következő alkalomra.",
-    cancel: "Marad a mostani",
-  },
   nav: {
     dashboard: "Áttekintés",
     guests: "Vendégek",
@@ -2076,8 +2071,7 @@ const hu: LocaleMessages = {
       title: "Már foglaltam",
       subtitle: "Add hozzá a saját {category} szolgáltatódat egy gépeléssel.",
       input_label: "Szolgáltató neve",
-      input_help:
-        "Ha már szerepel nálunk, válaszd ki a listából. Ha új, küldd be és átnézzük.",
+      input_help: "Ha már szerepel nálunk, válaszd ki a listából. Ha új, küldd be és átnézzük.",
       placeholder: "Pl. Etyeki Kúria",
       no_match: "Nincs egyező név a katalógusban.",
       no_match_help: "Nincs találat. Küldd be újként és átnézzük.",
