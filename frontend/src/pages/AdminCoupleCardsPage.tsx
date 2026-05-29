@@ -58,12 +58,24 @@ export default function AdminCoupleCardsPage() {
     };
   }, []);
 
+  // Weighted score per row: X = -2, ✓ = +1, ✓✓ = +2. Sort ascending so the
+  // worst-rated questions surface first (the copy-iteration candidates).
+  // Stable secondary sort by deck + card index so ties (lots of empty rows
+  // at score 0) read consistently across refreshes.
   const filtered = useMemo(() => {
     if (state.status !== "ok") return [];
-    return state.data.filter((row) => {
+    const rows = state.data.filter((row) => {
       if (localeFilter !== "all" && row.locale !== localeFilter) return false;
       if (deckFilter !== "all" && row.deck_id !== deckFilter) return false;
       return true;
+    });
+    const scoreOf = (r: CoupleCardFeedbackAggregate) =>
+      -2 * r.bad_count + r.ok_count + 2 * r.great_count;
+    return rows.slice().sort((a, b) => {
+      const diff = scoreOf(a) - scoreOf(b);
+      if (diff !== 0) return diff;
+      if (a.deck_id !== b.deck_id) return a.deck_id.localeCompare(b.deck_id);
+      return a.card_index - b.card_index;
     });
   }, [state, localeFilter, deckFilter]);
 
@@ -71,7 +83,7 @@ export default function AdminCoupleCardsPage() {
     <div className="space-y-6 px-4 sm:px-6 lg:px-8 xl:px-10">
       <AdminPageHeader
         title="100 kérdés — visszajelzések"
-        subtitle="Visitor-kattintások a kártya alatti X / ✓ / ✓✓ ikonokra. A legtöbb 'X'-szel jelölt kérdés kerül felülre — ezek a következő copy-iteráció kandidánsai."
+        subtitle="Visitor-kattintások a kártya alatti X / ✓ / ✓✓ ikonokra. Súlyozott rangsor (X: -2, ✓: +1, ✓✓: +2) — a legrosszabb értékelésű kérdések kerülnek felülre, ezek a következő copy-iteráció kandidánsai."
       />
 
       <div className="flex flex-wrap items-center gap-2">
