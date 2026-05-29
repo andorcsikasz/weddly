@@ -110,9 +110,10 @@ export default function PlanningPage() {
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
   const [bulkApplying, setBulkApplying] = useState(false);
-  // Priority filter for the tasks tab: 0 = show everything, 1 = important +
-  // SOS only (priority >= 1), 2 = SOS only (priority === 2). Reset on tab
-  // switch via the effect below so it doesn't quietly hide ideas.
+  // Priority filter for the tasks tab: 0 = show everything, 1 = important
+  // only (priority === 1), 2 = SOS only (priority === 2). The two levels are
+  // mutually exclusive — a task is either important or SOS, never both. Reset
+  // on tab switch via the effect below so it doesn't quietly hide ideas.
   const [priorityFilter, setPriorityFilter] = useState<0 | 1 | 2>(0);
   useEffect(() => {
     if (activeKind !== "task") setPriorityFilter(0);
@@ -141,7 +142,7 @@ export default function PlanningPage() {
       items
         .filter((i) => i.kind === activeKind)
         .filter(
-          (i) => i.kind !== "task" || priorityFilter === 0 || (i.priority ?? 0) >= priorityFilter,
+          (i) => i.kind !== "task" || priorityFilter === 0 || (i.priority ?? 0) === priorityFilter,
         )
         .sort((a, b) => {
           if (a.position !== b.position) return a.position - b.position;
@@ -173,15 +174,15 @@ export default function PlanningPage() {
    *  per items/tab change so the pill labels stay in sync as the user
    *  cycles priority levels on individual rows. */
   const taskPriorityCounts = useMemo(() => {
-    let p1plus = 0;
+    let p1 = 0;
     let p2 = 0;
     for (const i of items) {
       if (i.kind !== "task") continue;
       const p = i.priority ?? 0;
-      if (p >= 1) p1plus++;
+      if (p === 1) p1++;
       if (p === 2) p2++;
     }
-    return { p1plus, p2 };
+    return { p1, p2 };
   }, [items]);
 
   async function onCreate(input: {
@@ -496,7 +497,8 @@ export default function PlanningPage() {
           onCreate={onCreate}
         />
 
-        {activeKind === "task" && (taskPriorityCounts.p1plus > 0 || priorityFilter !== 0) && (
+        {activeKind === "task" &&
+          (taskPriorityCounts.p1 > 0 || taskPriorityCounts.p2 > 0 || priorityFilter !== 0) && (
           <div
             role="radiogroup"
             aria-label={t("planning.priority_filter_aria")}
@@ -514,9 +516,9 @@ export default function PlanningPage() {
                 <>
                   <span className="font-bold text-blush-700 dark:text-blush-300">!</span>
                   <span>{t("planning.priority_filter_important")}</span>
-                  {taskPriorityCounts.p1plus > 0 && (
+                  {taskPriorityCounts.p1 > 0 && (
                     <span className="text-ink-400 dark:text-umber-300">
-                      ({taskPriorityCounts.p1plus})
+                      ({taskPriorityCounts.p1})
                     </span>
                   )}
                 </>
