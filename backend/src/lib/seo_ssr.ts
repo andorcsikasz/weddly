@@ -402,13 +402,17 @@ function buildJsonLd(opts: {
     name: meta.brandName,
     url: origin,
     logo: `${origin}/logo.png`,
+    sameAs: [
+      `https://${CANONICAL_HOST}`,
+      "https://www.instagram.com/weddly.hu",
+      "https://www.facebook.com/weddly.hu",
+    ],
   };
   const blocks: object[] = [
     {
       "@context": "https://schema.org",
       ...organization,
       description: meta.brandDescription,
-      sameAs: [`https://${CANONICAL_HOST}`],
     },
     {
       "@context": "https://schema.org",
@@ -416,6 +420,14 @@ function buildJsonLd(opts: {
       name: meta.brandName,
       url: origin,
       inLanguage,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: "https://weddly.hu/blog?q={search_term_string}",
+        },
+        "query-input": "required name=search_term_string",
+      },
     },
   ];
 
