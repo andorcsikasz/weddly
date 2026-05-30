@@ -635,16 +635,40 @@ function buildHeadBlock(opts: {
   // for anything outside `SLUG_PAIRS`, so /about, /signup, /vendors etc.
   // keep their historical canonical exactly.
   const canonicalUrl = locale === "en" && enUrl ? enUrl : huUrl;
-  // Couple-specific OG image when the couple set a cover URL; falls back
-  // to /og-rsvp.png on RSVP routes and the brand /og.png everywhere else.
-  // External URLs are passed through as-is (couple-pasted Imgur / Cloudinary).
+  // Per-post Open Graph image. Priority: couple cover (/w/:slug) → published
+  // blog post cover → /og-rsvp.png on RSVP routes → brand /og.png. Giving each
+  // blog post its own share card (instead of nine copies of og.png) is the
+  // single biggest lever on social CTR for the magazine content. The cover is
+  // passed through as-is when absolute (admin-pasted) and made absolute against
+  // the canonical host when stored relative (/uploads/blog/…).
+  // `ogImageAlt` tracks the chosen image so og:image:alt / twitter:image:alt
+  // describe the actual picture, not always the brand strapline.
+  const blogArticle = lookupBlogArticleMeta(path);
+  const blogCover = blogArticle
+    ? absoluteImageUrl(`https://${canonicalHost}`, blogArticle.coverImageUrl)
+    : null;
   let ogImage: string;
+  let ogImageAlt: string;
+  // Brand images are the known 1200×630 PNGs we ship — only those get the
+  // exact dimension/type hints below. Custom covers (couple- or admin-pasted)
+  // have unknown size/format, so we skip the hints and let scrapers measure.
+  let isBrandOgImage: boolean;
   if (opts.weddingMeta?.cover_image_url) {
     ogImage = opts.weddingMeta.cover_image_url;
+    ogImageAlt = opts.weddingMeta.display_name;
+    isBrandOgImage = false;
+  } else if (blogArticle && blogCover) {
+    ogImage = blogCover;
+    ogImageAlt = locale === "hu" ? blogArticle.huTitle : blogArticle.enTitle;
+    isBrandOgImage = false;
   } else if (opts.isRsvp) {
     ogImage = `https://${canonicalHost}/og-rsvp.png`;
+    ogImageAlt = defaultMeta.ogImageAlt;
+    isBrandOgImage = true;
   } else {
     ogImage = `https://${canonicalHost}/og.png`;
+    ogImageAlt = defaultMeta.ogImageAlt;
+    isBrandOgImage = true;
   }
 
   // Route-specific title + description take precedence over the landing
@@ -689,14 +713,19 @@ function buildHeadBlock(opts: {
     `<meta property="og:title" content="${escapeAttr(title)}" />`,
     `<meta property="og:description" content="${escapeAttr(description)}" />`,
     `<meta property="og:image" content="${ogImage}" />`,
-    `<meta property="og:image:type" content="image/png" />`,
-    `<meta property="og:image:width" content="1200" />`,
-    `<meta property="og:image:height" content="630" />`,
-    `<meta property="og:image:alt" content="${escapeAttr(defaultMeta.ogImageAlt)}" />`,
+    ...(isBrandOgImage
+      ? [
+          `<meta property="og:image:type" content="image/png" />`,
+          `<meta property="og:image:width" content="1200" />`,
+          `<meta property="og:image:height" content="630" />`,
+        ]
+      : []),
+    `<meta property="og:image:alt" content="${escapeAttr(ogImageAlt)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${escapeAttr(title)}" />`,
     `<meta name="twitter:description" content="${escapeAttr(twDescription)}" />`,
     `<meta name="twitter:image" content="${ogImage}" />`,
+    `<meta name="twitter:image:alt" content="${escapeAttr(ogImageAlt)}" />`,
     `<link rel="alternate" hreflang="hu" href="${huUrl}" />`,
     ...(enUrl ? [`<link rel="alternate" hreflang="en" href="${enUrl}" />`] : []),
     `<link rel="alternate" hreflang="x-default" href="${huUrl}" />`,
