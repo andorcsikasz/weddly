@@ -1186,14 +1186,32 @@ export interface CoupleCardFeedbackAggregate {
   last_at: number;
 }
 
+export interface CoupleCardSuggestionInput {
+  deck_id: string;
+  locale: "hu" | "en";
+  suggestion: string;
+}
+
+export interface CoupleCardSuggestion {
+  id: number;
+  deck_id: string;
+  locale: "hu" | "en";
+  suggestion: string;
+  created_at: number;
+}
+
 export const coupleCardsApi = {
   submitFeedback: (body: CoupleCardFeedbackInput) =>
     apiFetch<{ ok: true }>("POST", "/api/couple-cards/feedback", body),
+  submitSuggestion: (body: CoupleCardSuggestionInput) =>
+    apiFetch<{ ok: true }>("POST", "/api/couple-cards/suggestions", body),
 };
 
 export const adminCoupleCardsApi = {
   list: () =>
     apiFetch<{ items: CoupleCardFeedbackAggregate[] }>("GET", "/api/admin/couple-cards/feedback"),
+  listSuggestions: () =>
+    apiFetch<{ items: CoupleCardSuggestion[] }>("GET", "/api/admin/couple-cards/suggestions"),
 };
 
 /** Read-only analytics surfaces for the admin dashboard. Four orthogonal

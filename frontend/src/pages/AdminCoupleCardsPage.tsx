@@ -9,7 +9,11 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader } from "../components/admin";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { adminCoupleCardsApi, type CoupleCardFeedbackAggregate } from "../lib/endpoints";
+import {
+  adminCoupleCardsApi,
+  type CoupleCardFeedbackAggregate,
+  type CoupleCardSuggestion,
+} from "../lib/endpoints";
 import { useDocumentMetaLiteral } from "../lib/seo";
 
 type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status: "error" };
@@ -33,12 +37,16 @@ export default function AdminCoupleCardsPage() {
   const [state, setState] = useState<Loadable<CoupleCardFeedbackAggregate[]>>({
     status: "loading",
   });
+  const [suggestions, setSuggestions] = useState<Loadable<CoupleCardSuggestion[]>>({
+    status: "loading",
+  });
   const [localeFilter, setLocaleFilter] = useState<LocaleFilter>("all");
   const [deckFilter, setDeckFilter] = useState<string>("all");
 
   useEffect(() => {
     let cancelled = false;
     setState({ status: "loading" });
+    setSuggestions({ status: "loading" });
     adminCoupleCardsApi
       .list()
       .then((res) => {
@@ -53,6 +61,18 @@ export default function AdminCoupleCardsPage() {
           else setState({ status: "error" });
         }
       });
+    adminCoupleCardsApi
+      .listSuggestions()
+      .then((res) => {
+        if (!cancelled) setSuggestions({ status: "ok", data: res.items });
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          const code = err instanceof ApiError ? err.status : 0;
+          if (code === 404) setSuggestions({ status: "ok", data: [] });
+          else setSuggestions({ status: "error" });
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -62,6 +82,15 @@ export default function AdminCoupleCardsPage() {
   // worst-rated questions surface first (the copy-iteration candidates).
   // Stable secondary sort by deck + card index so ties (lots of empty rows
   // at score 0) read consistently across refreshes.
+  const filteredSuggestions = useMemo(() => {
+    if (suggestions.status !== "ok") return [];
+    return suggestions.data.filter((row) => {
+      if (localeFilter !== "all" && row.locale !== localeFilter) return false;
+      if (deckFilter !== "all" && row.deck_id !== deckFilter) return false;
+      return true;
+    });
+  }, [suggestions, localeFilter, deckFilter]);
+
   const filtered = useMemo(() => {
     if (state.status !== "ok") return [];
     const rows = state.data.filter((row) => {
@@ -193,8 +222,85 @@ export default function AdminCoupleCardsPage() {
           </table>
         </div>
       )}
+
+      {/* Visitor-submitted suggestions from the 26th blank card. Same
+          deck + locale filter chips above apply to this list too. */}
+      <div className="mt-12">
+        <h2 className="font-display text-lg font-bold uppercase tracking-tight text-ink-900 dark:text-paper-50">
+          Beérkezett javaslatok
+        </h2>
+        <p className="mt-1 text-sm text-ink-600 dark:text-umber-300">
+          A 26. üres kártyán keresztül beküldött javaslatok. A legfrissebbek kerülnek felülre.
+        </p>
+
+        {suggestions.status === "loading" ? (
+          <div className="mt-4 space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <Skeleton key={i} className="h-14 w-full" />
+            ))}
+          </div>
+        ) : suggestions.status === "error" ? (
+          <div className="mt-4">
+            <AdminEmptyState
+              icon={<Inbox size={28} aria-hidden="true" />}
+              title="Nem sikerült betölteni"
+              description="Az API hibát adott. Próbáld újra később."
+            />
+          </div>
+        ) : filteredSuggestions.length === 0 ? (
+          <div className="mt-4">
+            <AdminEmptyState
+              icon={<Inbox size={28} aria-hidden="true" />}
+              title="Még nincs javaslat"
+              description="Amikor a látogatók beküldenek egy saját kérdést, itt jelennek meg."
+            />
+          </div>
+        ) : (
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-paper-300 dark:border-umber-700">
+            <table className="min-w-full divide-y divide-paper-300 dark:divide-umber-700">
+              <thead className="bg-paper-100 dark:bg-umber-800">
+                <tr>
+                  <Th>Mikor</Th>
+                  <Th>Pakli</Th>
+                  <Th>Nyelv</Th>
+                  <Th>Javaslat</Th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-paper-200 bg-white dark:divide-umber-700 dark:bg-umber-900">
+                {filteredSuggestions.map((row) => (
+                  <tr key={row.id}>
+                    <Td className="whitespace-nowrap text-ink-500 dark:text-umber-300">
+                      {formatSuggestionDate(row.created_at)}
+                    </Td>
+                    <Td className="font-medium">
+                      {DECK_LABELS[row.deck_id] ?? row.deck_id}
+                    </Td>
+                    <Td className="uppercase text-ink-500 dark:text-umber-300">{row.locale}</Td>
+                    <Td className="max-w-xl text-sm leading-snug">{row.suggestion}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
+}
+
+function formatSuggestionDate(epoch: number): string {
+  // Stored as seconds-since-epoch in the backend (via `now()`); JS wants ms.
+  const ms = epoch < 1e12 ? epoch * 1000 : epoch;
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("hu-HU", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function Th({ children, className = "" }: { children: React.ReactNode; className?: string }) {

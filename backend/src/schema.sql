@@ -1064,3 +1064,18 @@ CREATE INDEX IF NOT EXISTS idx_couple_card_feedback_deck_card
   ON couple_card_feedback(deck_id, card_index, locale);
 CREATE INDEX IF NOT EXISTS idx_couple_card_feedback_created
   ON couple_card_feedback(created_at DESC);
+
+-- Visitor-submitted suggestions from the 26th "blank" card on every
+-- deck. Anonymous, optional, free-text. Admin curates these into the
+-- next copy iteration; nothing is auto-promoted.
+CREATE TABLE IF NOT EXISTS couple_card_suggestions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  deck_id TEXT NOT NULL,                        -- 'roots' | 'everyday' | 'closeness' | 'deepwater'
+  locale TEXT NOT NULL,                         -- 'hu' | 'en'
+  suggestion TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_couple_card_suggestions_created
+  ON couple_card_suggestions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_couple_card_suggestions_deck
+  ON couple_card_suggestions(deck_id, locale);

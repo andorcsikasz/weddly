@@ -4565,6 +4565,15 @@ export interface LocaleMessages {
       feedback_bad: string;
       feedback_ok: string;
       feedback_great: string;
+      suggest_open: string;
+      suggest_close: string;
+      suggest_title: string;
+      suggest_blurb: string;
+      suggest_placeholder: string;
+      suggest_submit: string;
+      suggest_submitting: string;
+      suggest_thanks: string;
+      suggest_error: string;
       cta_h2: string;
       cta_body: string;
       cta_button: string;

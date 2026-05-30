@@ -1,12 +1,15 @@
-// Couple-cards (100 kérdés az esküvő előtt) feedback endpoints.
+// Couple-cards (100 kérdés az esküvő előtt) feedback + suggestion endpoints.
 //
-//   • POST /api/couple-cards/feedback                — anon, rate-limited
-//   • GET  /api/admin/couple-cards/feedback          — admin aggregate
+//   • POST /api/couple-cards/feedback                — anon rating, rate-limited
+//   • GET  /api/admin/couple-cards/feedback          — admin rating aggregate
+//   • POST /api/couple-cards/suggestions             — anon suggestion, rate-limited
+//   • GET  /api/admin/couple-cards/suggestions       — admin suggestion list
 //
 // Each row in `couple_card_feedback` is one anonymous rating (bad / ok /
-// great) on one question. The admin aggregate groups by deck + card +
-// locale so a curator can see at a glance which questions visitors flag
-// as bad — those are the candidates for the next copy iteration.
+// great) on one question. Each row in `couple_card_suggestions` is one
+// free-text question submitted via the 26th "blank" card on a deck.
+// Both feed into the curator workflow for the next copy iteration; we
+// never auto-promote a suggestion into the pack.
 
 import { db } from "../db";
 import { requireAdmin } from "../domain/users";
@@ -101,7 +104,59 @@ async function handleAdminAggregate(ctx: Ctx): Promise<Response> {
   return json({ items: rows });
 }
 
+interface SuggestionBody {
+  deck_id?: unknown;
+  locale?: unknown;
+  suggestion?: unknown;
+}
+
+async function handleSuggestionSubmit(ctx: Ctx): Promise<Response> {
+  // Lower ceiling than ratings: a normal visitor types one suggestion at
+  // most. Anything past 5/hour from a single IP is almost certainly noise
+  // or a bot scraping the form.
+  rateLimit(ctx.clientIp, "couple_cards_suggest", { capacity: 5, refillRate: 1 / 720 });
+
+  const body = await readJson<SuggestionBody>(ctx.req);
+  const deckId = trimStr(body.deck_id, 32);
+  const locale = trimStr(body.locale, 8);
+  const suggestion = trimStr(body.suggestion, 600);
+
+  if (!VALID_DECKS.has(deckId)) throw new HttpError(400, "Unknown deck_id");
+  if (!VALID_LOCALES.has(locale)) throw new HttpError(400, "locale must be hu|en");
+  if (suggestion.length < 8) throw new HttpError(400, "suggestion too short (min 8 chars)");
+
+  db.prepare(
+    `INSERT INTO couple_card_suggestions (deck_id, locale, suggestion, created_at)
+     VALUES (?, ?, ?, ?)`,
+  ).run(deckId, locale, suggestion, now());
+
+  return json({ ok: true });
+}
+
+interface SuggestionRow {
+  id: number;
+  deck_id: string;
+  locale: string;
+  suggestion: string;
+  created_at: number;
+}
+
+async function handleAdminSuggestionList(ctx: Ctx): Promise<Response> {
+  requireAdmin(ctx);
+  const rows = db
+    .prepare(
+      `SELECT id, deck_id, locale, suggestion, created_at
+         FROM couple_card_suggestions
+         ORDER BY created_at DESC
+         LIMIT 1000`,
+    )
+    .all() as SuggestionRow[];
+  return json({ items: rows });
+}
+
 export function registerCoupleCardsRoutes(router: Router) {
   router.post("/api/couple-cards/feedback", handleSubmit);
   router.get("/api/admin/couple-cards/feedback", handleAdminAggregate, true);
+  router.post("/api/couple-cards/suggestions", handleSuggestionSubmit);
+  router.get("/api/admin/couple-cards/suggestions", handleAdminSuggestionList, true);
 }

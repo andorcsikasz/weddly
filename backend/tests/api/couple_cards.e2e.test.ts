@@ -91,3 +91,56 @@ describe("couple-cards feedback", () => {
     expect(anon.status).toBe(401);
   });
 });
+
+interface SuggestionRow {
+  id: number;
+  deck_id: string;
+  locale: string;
+  suggestion: string;
+  created_at: number;
+}
+
+describe("couple-cards suggestions (26th blank card)", () => {
+  test("anon visitors can POST a suggestion, admin list returns it", async () => {
+    const adminToken = await bootstrapAdmin();
+
+    const submit = await req("POST", "/api/couple-cards/suggestions", {
+      deck_id: "roots",
+      locale: "hu",
+      suggestion: "Mi az a családi mondat, amitől ma is megfagy a lábad?",
+    });
+    expect(submit.status).toBe(200);
+
+    const list = await req<{ items: SuggestionRow[] }>(
+      "GET",
+      "/api/admin/couple-cards/suggestions",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.items.length).toBe(1);
+    const row = list.data.items[0]!;
+    expect(row.deck_id).toBe("roots");
+    expect(row.locale).toBe("hu");
+    expect(row.suggestion.startsWith("Mi az a családi mondat")).toBe(true);
+  });
+
+  test("rejects too-short suggestions, unknown deck_id, bad locale", async () => {
+    wipeAll();
+    const bad = [
+      { deck_id: "roots", locale: "hu", suggestion: "Rövid." }, // < 8 chars
+      { deck_id: "unknown", locale: "hu", suggestion: "Elég hosszú javaslat ide." },
+      { deck_id: "roots", locale: "fr", suggestion: "Elég hosszú javaslat ide." },
+    ];
+    for (const body of bad) {
+      const r = await req("POST", "/api/couple-cards/suggestions", body);
+      expect(r.status).toBe(400);
+    }
+  });
+
+  test("admin suggestion endpoint requires authentication", async () => {
+    wipeAll();
+    const anon = await req("GET", "/api/admin/couple-cards/suggestions");
+    expect(anon.status).toBe(401);
+  });
+});

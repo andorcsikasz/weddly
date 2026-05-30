@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Lock,
+  PenLine,
   Shuffle,
   Unlock,
   X,
@@ -157,6 +158,14 @@ export default function CoupleCardsPage() {
   const [isLocked, setIsLocked] = useState(false);
   const [viewedCount, setViewedCount] = useState(0);
   const [autoLockUsed, setAutoLockUsed] = useState(false);
+  // 26th-card "blank" suggestion form state. Scoped to whichever deck is
+  // currently active; leaving the deck (or switching decks) resets it,
+  // because the suggestion is always submitted with that deck's id.
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestionText, setSuggestionText] = useState("");
+  const [suggestionStatus, setSuggestionStatus] = useState<
+    "idle" | "submitting" | "success" | "error"
+  >("idle");
 
   // Persist progress whenever it changes. Effect rather than inline so a
   // state setter from a callback doesn't race the storage write.
@@ -220,7 +229,39 @@ export default function CoupleCardsPage() {
     setIsLocked(false);
     setAutoLockUsed(false);
     setViewedCount(0);
+    setIsSuggesting(false);
+    setSuggestionText("");
+    setSuggestionStatus("idle");
   }, []);
+
+  const openSuggestion = useCallback(() => {
+    setIsSuggesting(true);
+    setSuggestionStatus("idle");
+  }, []);
+
+  const closeSuggestion = useCallback(() => {
+    setIsSuggesting(false);
+  }, []);
+
+  const submitSuggestion = useCallback(async () => {
+    if (!activeDeck) return;
+    const text = suggestionText.trim();
+    // Backend enforces min 8; keep the UI guard in sync so a too-short
+    // tap doesn't even fire a network round-trip.
+    if (text.length < 8) return;
+    setSuggestionStatus("submitting");
+    try {
+      await coupleCardsApi.submitSuggestion({
+        deck_id: activeDeck,
+        locale: locale === "en" ? "en" : "hu",
+        suggestion: text,
+      });
+      setSuggestionStatus("success");
+      setSuggestionText("");
+    } catch {
+      setSuggestionStatus("error");
+    }
+  }, [activeDeck, suggestionText, locale]);
 
   // "Bag shuffle": step through a Fisher-Yates permutation until it's
   // exhausted, then automatically reshuffle for the next round. The first
@@ -344,12 +385,19 @@ export default function CoupleCardsPage() {
       isLocked={isLocked}
       currentRating={currentRating}
       canGoBack={canGoBack}
+      isSuggesting={isSuggesting}
+      suggestionText={suggestionText}
+      suggestionStatus={suggestionStatus}
       onNext={nextCard}
       onPrev={prevCard}
       onShuffle={shuffleRandom}
       onToggleLock={() => setIsLocked((v) => !v)}
       onFeedback={submitFeedback}
       onBack={closeDeck}
+      onOpenSuggestion={openSuggestion}
+      onCloseSuggestion={closeSuggestion}
+      onSuggestionChange={setSuggestionText}
+      onSuggestionSubmit={submitSuggestion}
     />
   ) : null;
 
@@ -575,12 +623,19 @@ function CardView({
   isLocked,
   currentRating,
   canGoBack,
+  isSuggesting,
+  suggestionText,
+  suggestionStatus,
   onNext,
   onPrev,
   onShuffle,
   onToggleLock,
   onFeedback,
   onBack,
+  onOpenSuggestion,
+  onCloseSuggestion,
+  onSuggestionChange,
+  onSuggestionSubmit,
 }: {
   deckId: DeckId;
   deckTitle: string;
@@ -589,12 +644,19 @@ function CardView({
   isLocked: boolean;
   currentRating: CoupleCardRating | null;
   canGoBack: boolean;
+  isSuggesting: boolean;
+  suggestionText: string;
+  suggestionStatus: "idle" | "submitting" | "success" | "error";
   onNext: () => void;
   onPrev: () => void;
   onShuffle: () => void;
   onToggleLock: () => void;
   onFeedback: (rating: CoupleCardRating) => void;
   onBack: () => void;
+  onOpenSuggestion: () => void;
+  onCloseSuggestion: () => void;
+  onSuggestionChange: (value: string) => void;
+  onSuggestionSubmit: () => void;
 }) {
   const { t } = useT();
   return (
@@ -612,8 +674,17 @@ function CardView({
         {/* Card-position label: the counter still means something with
             the new bag-shuffle (it counts the position inside the current
             25-card round), and clicking back to 1 / 25 is the visible
-            "round complete, deck reshuffled" feedback. */}
-        {cardNumber !== null ? (
+            "round complete, deck reshuffled" feedback. Suggestion mode
+            shows "26 / 26" so the visitor sees the blank card is the
+            26th of a 25 + 1 pack. */}
+        {isSuggesting ? (
+          <p className="mt-6 text-center font-display text-[11px] font-bold uppercase tracking-[0.32em] text-wnrs-red">
+            {t("tools.couple_cards.card_position", {
+              n: DECK_SIZE + 1,
+              total: DECK_SIZE + 1,
+            })}
+          </p>
+        ) : cardNumber !== null ? (
           <p className="mt-6 text-center font-display text-[11px] font-bold uppercase tracking-[0.32em] text-wnrs-red">
             {t("tools.couple_cards.card_position", { n: cardNumber, total: DECK_SIZE })}
           </p>
@@ -626,73 +697,112 @@ function CardView({
             falls back to fixed top-right so it doesn't overflow the
             viewport. */}
         <div className="relative mx-auto mt-8 max-w-2xl">
-          <button
-            type="button"
-            onClick={onNext}
-            aria-label={t("tools.couple_cards.flip_card")}
-            className="couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 text-left shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-12 sm:py-12"
-          >
-            {/* Re-mount the inner article on every card flip so the keyed
-              `animate-card-deal` enter animation fires for each new
-              question. Article tags also keep the page semantically
-              clean — the question is the article, the button is the
-              affordance around it. */}
-            <article
-              key={`${deckId}-${cardNumber ?? 0}`}
-              className="flex h-full w-full animate-card-deal flex-col items-center justify-between"
-            >
-              <span aria-hidden="true" className="block h-1" />
-
-              <p
-                data-testid="couple-card-question"
-                className="text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] text-wnrs-red sm:text-2xl lg:text-3xl"
-              >
-                {question ?? t("tools.couple_cards.card_empty")}
-              </p>
-
-              {/* Brand line is full on tablet+ ("Wēddly · 100 kérdés az esküvő
-                előtt") but compressed on mobile to just the app name, so
-                the 3:2 card stays the same shape on a 375px viewport
-                instead of bloating into a near-square. The deck title
-                line below stays at both sizes — it tells the visitor
-                which level this card belongs to. */}
-              <div className="text-center">
-                <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-wnrs-red sm:text-xs">
-                  {t("app.name")}
-                  <span className="hidden sm:inline">
-                    {" · "}
-                    {t("tools.couple_cards.page_h1")}
-                  </span>
-                </p>
-                <p className="mt-1 font-display text-[9px] uppercase tracking-[0.24em] text-wnrs-redInk sm:text-[10px]">
-                  {deckTitle}
-                </p>
-              </div>
-            </article>
-          </button>
-
-          {/* Left-side "previous card" chrome — sm+ only. Symmetric to the
-              right stack so the back-arrow reads as a peer of shuffle / lock.
-              Disabled at the start of a bag round, since the bag's order is
-              ephemeral and "back" into the previous shuffle has no meaning. */}
-          <div className="absolute right-full top-1/2 mr-3 hidden -translate-y-1/2 flex-col gap-2 sm:flex sm:mr-4">
+          {isSuggesting ? (
+            <SuggestionCard
+              deckTitle={deckTitle}
+              text={suggestionText}
+              status={suggestionStatus}
+              onChange={onSuggestionChange}
+              onSubmit={onSuggestionSubmit}
+            />
+          ) : (
             <button
               type="button"
-              onClick={onPrev}
-              disabled={!canGoBack}
-              aria-label={t("tools.couple_cards.previous_card")}
-              title={t("tools.couple_cards.previous_card")}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700 dark:disabled:hover:bg-umber-800 dark:disabled:hover:text-paper-200"
+              onClick={onNext}
+              aria-label={t("tools.couple_cards.flip_card")}
+              className="couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 text-left shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-12 sm:py-12"
             >
-              <ChevronLeft size={16} aria-hidden="true" />
+              {/* Re-mount the inner article on every card flip so the keyed
+                `animate-card-deal` enter animation fires for each new
+                question. Article tags also keep the page semantically
+                clean — the question is the article, the button is the
+                affordance around it. */}
+              <article
+                key={`${deckId}-${cardNumber ?? 0}`}
+                className="flex h-full w-full animate-card-deal flex-col items-center justify-between"
+              >
+                <span aria-hidden="true" className="block h-1" />
+
+                <p
+                  data-testid="couple-card-question"
+                  className="text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] text-wnrs-red sm:text-2xl lg:text-3xl"
+                >
+                  {question ?? t("tools.couple_cards.card_empty")}
+                </p>
+
+                {/* Brand line is full on tablet+ ("Wēddly · 100 kérdés az esküvő
+                  előtt") but compressed on mobile to just the app name, so
+                  the 3:2 card stays the same shape on a 375px viewport
+                  instead of bloating into a near-square. The deck title
+                  line below stays at both sizes — it tells the visitor
+                  which level this card belongs to. */}
+                <div className="text-center">
+                  <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-wnrs-red sm:text-xs">
+                    {t("app.name")}
+                    <span className="hidden sm:inline">
+                      {" · "}
+                      {t("tools.couple_cards.page_h1")}
+                    </span>
+                  </p>
+                  <p className="mt-1 font-display text-[9px] uppercase tracking-[0.24em] text-wnrs-redInk sm:text-[10px]">
+                    {deckTitle}
+                  </p>
+                </div>
+              </article>
+            </button>
+          )}
+
+          {/* Left-side chrome — sm+ only. Two stacked icons:
+              - ChevronLeft (previous card), disabled at the start of a
+                bag round, hidden in suggestion mode.
+              - PenLine (open the 26th blank suggestion card), toggles to
+                X when already in suggestion mode. */}
+          <div className="absolute right-full top-1/2 mr-3 hidden -translate-y-1/2 flex-col gap-2 sm:flex sm:mr-4">
+            {!isSuggesting ? (
+              <button
+                type="button"
+                onClick={onPrev}
+                disabled={!canGoBack}
+                aria-label={t("tools.couple_cards.previous_card")}
+                title={t("tools.couple_cards.previous_card")}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700 dark:disabled:hover:bg-umber-800 dark:disabled:hover:text-paper-200"
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={isSuggesting ? onCloseSuggestion : onOpenSuggestion}
+              aria-label={
+                isSuggesting
+                  ? t("tools.couple_cards.suggest_close")
+                  : t("tools.couple_cards.suggest_open")
+              }
+              title={
+                isSuggesting
+                  ? t("tools.couple_cards.suggest_close")
+                  : t("tools.couple_cards.suggest_open")
+              }
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            >
+              {isSuggesting ? (
+                <X size={16} aria-hidden="true" />
+              ) : (
+                <PenLine size={16} aria-hidden="true" />
+              )}
             </button>
           </div>
 
           {/* Side chrome — sm+ only. Sits on the right edge of the card
               wrapper, vertically centred, two pill buttons stacked. The
               -mr lifts the stack OUT of the card so it doesn't cover any
-              card content. */}
-          <div className="absolute left-full top-1/2 ml-3 hidden -translate-y-1/2 flex-col gap-2 sm:flex sm:ml-4">
+              card content. Hidden in suggestion mode — shuffle and lock
+              don't apply to the blank card. */}
+          <div
+            className={`absolute left-full top-1/2 ml-3 ${
+              isSuggesting ? "hidden" : "hidden sm:flex"
+            } -translate-y-1/2 flex-col gap-2 sm:ml-4`}
+          >
             <button
               type="button"
               onClick={onShuffle}
@@ -722,31 +832,52 @@ function CardView({
           </div>
         </div>
 
-        {/* Mobile fallback for the back-arrow: symmetric to the right
-            cluster below, fixed at the same vertical position. */}
+        {/* Mobile fallback for the left-side cluster: back-arrow + suggest
+            toggle, fixed at the same vertical position as the right
+            cluster below. Back-arrow hides in suggestion mode. */}
         <div
           className={`fixed left-4 z-[60] flex flex-col gap-2 sm:hidden ${
             isLocked ? "top-4" : "top-20"
           }`}
         >
+          {!isSuggesting ? (
+            <button
+              type="button"
+              onClick={onPrev}
+              disabled={!canGoBack}
+              aria-label={t("tools.couple_cards.previous_card")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+            </button>
+          ) : null}
           <button
             type="button"
-            onClick={onPrev}
-            disabled={!canGoBack}
-            aria-label={t("tools.couple_cards.previous_card")}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            onClick={isSuggesting ? onCloseSuggestion : onOpenSuggestion}
+            aria-label={
+              isSuggesting
+                ? t("tools.couple_cards.suggest_close")
+                : t("tools.couple_cards.suggest_open")
+            }
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
           >
-            <ChevronLeft size={16} aria-hidden="true" />
+            {isSuggesting ? (
+              <X size={16} aria-hidden="true" />
+            ) : (
+              <PenLine size={16} aria-hidden="true" />
+            )}
           </button>
         </div>
 
         {/* Mobile fallback: under-sm the side stack would overflow the
             viewport, so the same two controls live in a fixed cluster at
-            the top-right instead. Hidden from sm and up. */}
+            the top-right instead. Hidden from sm and up. Also hidden in
+            suggestion mode — shuffle / lock don't apply to the blank
+            card. */}
         <div
-          className={`fixed right-4 z-[60] flex flex-col gap-2 sm:hidden ${
-            isLocked ? "top-4" : "top-20"
-          }`}
+          className={`fixed right-4 z-[60] ${
+            isSuggesting ? "hidden" : "flex flex-col gap-2 sm:hidden"
+          } ${isLocked ? "top-4" : "top-20"}`}
         >
           <button
             type="button"
@@ -776,8 +907,9 @@ function CardView({
             and forget — feeds the admin curator view where bad-rated
             questions surface first. Once the visitor taps, the chosen
             pill highlights and the others fade so they read as "you've
-            already voted on this one". */}
-        <div className="mt-6 flex justify-center gap-2">
+            already voted on this one". Hidden in suggestion mode (no
+            question to rate). */}
+        <div className={`mt-6 ${isSuggesting ? "hidden" : "flex"} justify-center gap-2`}>
           <FeedbackPill
             rating="bad"
             current={currentRating}
@@ -808,18 +940,89 @@ function CardView({
             card itself is clickable. Tertiary visual weight so the card
             stays the headline action. Reshuffle is gone — bag-shuffle
             auto-reshuffles every 25 cards, so manual reshuffle has no
-            meaning. */}
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={onNext}
-            className="inline-flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.24em] text-ink-600 transition-colors hover:text-ink-900 dark:text-paper-200 dark:hover:text-paper-50"
-          >
-            {t("tools.couple_cards.next_card")}
-          </button>
-        </div>
+            meaning. Hidden in suggestion mode (the Submit button takes
+            its place inside the blank card). */}
+        {!isSuggesting ? (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={onNext}
+              className="inline-flex items-center gap-2 font-display text-xs font-bold uppercase tracking-[0.24em] text-ink-600 transition-colors hover:text-ink-900 dark:text-paper-200 dark:hover:text-paper-50"
+            >
+              {t("tools.couple_cards.next_card")}
+            </button>
+          </div>
+        ) : null}
       </div>
     </section>
+  );
+}
+
+/** 26th-card blank suggestion form. Same 3:2 aspect + WNRS-red type as
+ *  the question cards, but the border is dashed instead of a soft ring,
+ *  signalling "this one's empty, you fill it in". Inline textarea +
+ *  Submit button; status feedback (submitting / thanks / error) lives
+ *  under the textarea. Hidden in normal card-flip mode. */
+function SuggestionCard({
+  deckTitle,
+  text,
+  status,
+  onChange,
+  onSubmit,
+}: {
+  deckTitle: string;
+  text: string;
+  status: "idle" | "submitting" | "success" | "error";
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  const { t } = useT();
+  const canSubmit = text.trim().length >= 8 && status !== "submitting";
+  return (
+    <div className="couple-card relative flex aspect-[3/2] w-full flex-col items-center justify-between rounded-[2.25rem] border-2 border-dashed border-wnrs-red/40 bg-white px-7 py-8 shadow-[0_30px_60px_-25px_rgba(28,32,56,0.2)] sm:px-12 sm:py-12">
+      <div className="text-center">
+        <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-wnrs-red sm:text-xs">
+          {t("tools.couple_cards.suggest_title")}
+        </p>
+        <p className="mt-1 font-display text-[9px] uppercase tracking-[0.24em] text-wnrs-redInk sm:text-[10px]">
+          {deckTitle}
+        </p>
+      </div>
+
+      <div className="flex w-full flex-1 flex-col justify-center px-1 sm:px-4">
+        <p className="text-balance text-center font-display text-[11px] leading-snug text-ink-600 dark:text-umber-300 sm:text-sm">
+          {t("tools.couple_cards.suggest_blurb")}
+        </p>
+        <textarea
+          value={text}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={t("tools.couple_cards.suggest_placeholder")}
+          maxLength={600}
+          rows={3}
+          className="mt-3 w-full resize-none rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 font-display text-sm leading-snug text-wnrs-red placeholder:text-ink-400 focus:border-wnrs-red focus:outline-none focus:ring-1 focus:ring-wnrs-red dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:placeholder:text-umber-400 sm:text-base"
+        />
+        {status === "success" ? (
+          <p className="mt-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.18em] text-sage-700 sm:text-xs">
+            {t("tools.couple_cards.suggest_thanks")}
+          </p>
+        ) : status === "error" ? (
+          <p className="mt-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.18em] text-wnrs-red sm:text-xs">
+            {t("tools.couple_cards.suggest_error")}
+          </p>
+        ) : null}
+      </div>
+
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={!canSubmit}
+        className="inline-flex items-center justify-center rounded-full bg-wnrs-red px-5 py-2 font-display text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:text-xs"
+      >
+        {status === "submitting"
+          ? t("tools.couple_cards.suggest_submitting")
+          : t("tools.couple_cards.suggest_submit")}
+      </button>
+    </div>
   );
 }
 
