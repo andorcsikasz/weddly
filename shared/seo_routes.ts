@@ -256,7 +256,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
     hu: {
       title: "100 kérdés az esküvő előtt · beszélgető kártyák pároknak | Wēddly",
       description:
-        "Négy pakli, paklinként 25 mély kérdés jegyeseknek: gyökerek, hétköznapok, közelség, mély víz. Húzzatok egy kártyát, és kezdjétek el a beszélgetést.",
+        "100 kérdés az esküvő előtt — négy szint, a felszíntől a mély vizekig. Ismerjétek meg egymást igazán a nagy nap előtt. Ingyenes, regisztráció nélkül.",
       h1: "100 kérdés az esküvő előtt",
       intro:
         "Négy pakli, paklinként 25 beszélgetésindító kérdés jegyes pároknak. Válasszatok paklit, húzzatok egy kártyát, és menjetek bele a beszélgetésbe. Ingyenes, regisztráció nélkül.",
