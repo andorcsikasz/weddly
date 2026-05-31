@@ -5,7 +5,7 @@
 // because one account can own multiple listings (photo+video studios,
 // multi-city venues, agencies).
 
-import type { SupplierCategory } from "./suppliers";
+import type { SupplierCategory, VenueStyle } from "./suppliers";
 
 /**
  * Where the listing came from. Drives the moderation/trust UX and gates which
@@ -58,6 +58,9 @@ export interface Listing {
    *  on curated entries we haven't placed. */
   capacity_min: number | null;
   capacity_max: number | null;
+  /** What kind of venue this is (castle, boat, restaurant…). Null on non-venue
+   *  and unclassified listings. See {@link VenueStyle}. */
+  venue_style: VenueStyle | null;
   lat: number | null;
   lng: number | null;
   submitter_type: ListingSubmitterType;

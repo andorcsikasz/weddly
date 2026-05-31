@@ -784,6 +784,7 @@ CREATE TABLE IF NOT EXISTS listings (
   price_band INTEGER,                                          -- 1..5; null when unpriced
   capacity_min INTEGER,
   capacity_max INTEGER,
+  venue_style TEXT,                                            -- castle | hotel | boat | … | NULL (non-venue / unclassified)
   lat REAL,
   lng REAL,
   submitter_type TEXT,                                         -- 'user' | 'self' | NULL (curated)

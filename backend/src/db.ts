@@ -613,6 +613,11 @@ addColumnIfMissing(
 // — couples / curated entries see read-only.
 addColumnIfMissing("listings", "hero_image_url", "hero_image_url TEXT");
 
+// `venue_style` characterises a venue (castle, boat, restaurant…) beyond its
+// always-"venue" category. Sourced from the curated directory's "jelleg" tag.
+// Null on non-venue + unclassified listings. See @shared/suppliers VenueStyle.
+addColumnIfMissing("listings", "venue_style", "venue_style TEXT");
+
 // Soft-hide for the admin-editable supplier taxonomy. Couples no longer
 // see hidden groups / categories on the public dropdowns + directory
 // surfaces, but the rows stay in the DB so existing community-supplier

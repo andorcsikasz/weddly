@@ -1385,6 +1385,16 @@ export default function SuppliersPage() {
                         <Icon size={11} aria-hidden />
                         {t(`suppliers.cat.${s.category}`)}
                       </span>
+                      {s.venue_style && (
+                        <>
+                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                            ·
+                          </span>
+                          <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
+                            {t(`suppliers.venue_style.${s.venue_style}`)}
+                          </span>
+                        </>
+                      )}
                       <span aria-hidden className="text-paper-400 dark:text-umber-300">
                         ·
                       </span>
@@ -1541,6 +1551,16 @@ export default function SuppliersPage() {
                         <Icon size={12} aria-hidden />
                         {t(`suppliers.cat.${s.category}`)}
                       </span>
+                      {s.venue_style && (
+                        <>
+                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                            ·
+                          </span>
+                          <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
+                            {t(`suppliers.venue_style.${s.venue_style}`)}
+                          </span>
+                        </>
+                      )}
                       <span aria-hidden className="text-paper-400 dark:text-umber-300">
                         ·
                       </span>

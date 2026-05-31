@@ -83,6 +83,9 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
     address: row.address,
     capacity_min: null,
     capacity_max: null,
+    // Community submissions don't collect a venue style yet — the form is a
+    // generic supplier form across all categories.
+    venue_style: null,
     lat: null,
     lng: null,
     blurb_hu: row.blurb,

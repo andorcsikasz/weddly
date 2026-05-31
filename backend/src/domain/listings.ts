@@ -29,7 +29,7 @@ import type {
   ListingSubmitterType,
   VendorAccount,
 } from "@shared/listings";
-import type { SupplierCategory } from "@shared/suppliers";
+import { type SupplierCategory, type VenueStyle, VENUE_STYLES } from "@shared/suppliers";
 
 export interface ListingRow {
   id: string;
@@ -47,6 +47,7 @@ export interface ListingRow {
   price_band: number | null;
   capacity_min: number | null;
   capacity_max: number | null;
+  venue_style: string | null;
   lat: number | null;
   lng: number | null;
   submitter_type: string | null;
@@ -85,6 +86,9 @@ function clampPriceBand(v: number | null): 1 | 2 | 3 | 4 | 5 | null {
   if (v === 1 || v === 2 || v === 3 || v === 4 || v === 5) return v;
   return null;
 }
+function toVenueStyle(raw: string | null): VenueStyle | null {
+  return raw !== null && (VENUE_STYLES as string[]).includes(raw) ? (raw as VenueStyle) : null;
+}
 
 export function toListing(row: ListingRow): Listing {
   return {
@@ -103,6 +107,7 @@ export function toListing(row: ListingRow): Listing {
     price_band: clampPriceBand(row.price_band),
     capacity_min: row.capacity_min,
     capacity_max: row.capacity_max,
+    venue_style: toVenueStyle(row.venue_style),
     lat: row.lat,
     lng: row.lng,
     submitter_type: toListingSubmitterType(row.submitter_type),
@@ -137,12 +142,12 @@ const upsertListingStmt = db.prepare(`
   INSERT INTO listings (
     id, source, vendor_account_id, category, name, city, address, website,
     contact_email, contact_phone, blurb_hu, blurb_en, price_band,
-    capacity_min, capacity_max, lat, lng, submitter_type, status, content_hash,
+    capacity_min, capacity_max, venue_style, lat, lng, submitter_type, status, content_hash,
     created_at, updated_at
   ) VALUES (
     $id, $source, $vendor_account_id, $category, $name, $city, $address, $website,
     $contact_email, $contact_phone, $blurb_hu, $blurb_en, $price_band,
-    $capacity_min, $capacity_max, $lat, $lng, $submitter_type, $status, $content_hash,
+    $capacity_min, $capacity_max, $venue_style, $lat, $lng, $submitter_type, $status, $content_hash,
     $created_at, $updated_at
   )
   ON CONFLICT(id) DO UPDATE SET
@@ -160,6 +165,7 @@ const upsertListingStmt = db.prepare(`
     price_band        = excluded.price_band,
     capacity_min      = excluded.capacity_min,
     capacity_max      = excluded.capacity_max,
+    venue_style       = excluded.venue_style,
     lat               = excluded.lat,
     lng               = excluded.lng,
     submitter_type    = excluded.submitter_type,
@@ -190,6 +196,7 @@ function hashCuratedEntry(e: (typeof DIRECTORY)[number]): string {
     e.price_band,
     e.capacity_min,
     e.capacity_max,
+    e.venue_style,
     e.lat,
     e.lng,
   ]);
@@ -239,6 +246,7 @@ export function syncListingFromCommunityRow(row: CommunitySupplierRow): void {
     $price_band: row.price_band,
     $capacity_min: null,
     $capacity_max: null,
+    $venue_style: null,
     $lat: null,
     $lng: null,
     $submitter_type: row.submitter_type === "self" ? "self" : "user",
@@ -301,6 +309,7 @@ export function backfillListings(): { curated: number; community: number } {
         $price_band: entry.price_band,
         $capacity_min: entry.capacity_min,
         $capacity_max: entry.capacity_max,
+        $venue_style: entry.venue_style,
         $lat: entry.lat,
         $lng: entry.lng,
         $submitter_type: null,

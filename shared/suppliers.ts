@@ -30,6 +30,42 @@ export type SupplierGroup =
   | "style"
   | "details";
 
+/** The character of a venue — what kind of place it is (a castle, a boat, a
+ *  restaurant…), independent of its `category` (which is always "venue" for
+ *  these). Sourced from the curated directory's "jelleg" tag and normalised to
+ *  this controlled list so it stays filterable + translatable rather than a
+ *  free-text Hungarian string. Null on non-venue listings and on venues we
+ *  haven't classified. Each value has a label under `suppliers.venue_style.*`
+ *  in both locale files — keep those in sync when adding a value. */
+export type VenueStyle =
+  | "castle" // kastély
+  | "manor" // kúria
+  | "estate" // birtok, major, szabadidőfarm
+  | "hotel" // hotel, kastélyszálló, szálloda, wellness
+  | "resort" // resort
+  | "guesthouse" // panzió, fogadó
+  | "restaurant" // étterem, vendéglő, csárda, bisztró
+  | "event_hall" // rendezvényterem, rendezvényház, rendezvényközpont
+  | "boat" // hajó
+  | "waterfront" // vízparti helyszín
+  | "nature_park" // tájpark, szabadidőpark, puszta
+  | "venue_with_stay"; // esküvőhelyszín szállással (form not otherwise specified)
+
+export const VENUE_STYLES: VenueStyle[] = [
+  "castle",
+  "manor",
+  "estate",
+  "hotel",
+  "resort",
+  "guesthouse",
+  "restaurant",
+  "event_hall",
+  "boat",
+  "waterfront",
+  "nature_park",
+  "venue_with_stay",
+];
+
 export interface SupplierGroupDef {
   id: SupplierGroup;
   categories: SupplierCategory[];
@@ -92,6 +128,10 @@ export interface DirectorySupplierBase {
   /** Approximate seated-dinner capacity range. Null = not published. */
   capacity_min: number | null;
   capacity_max: number | null;
+  /** What kind of venue this is (castle, boat, restaurant…). Refines the
+   *  always-"venue" category. Null on non-venue listings and on venues we
+   *  haven't classified yet. See {@link VenueStyle}. */
+  venue_style: VenueStyle | null;
   /** WGS-84 coordinates for the map view. Null on community submissions
    *  (no geocode pipeline yet) and on curated entries we haven't placed. */
   lat: number | null;

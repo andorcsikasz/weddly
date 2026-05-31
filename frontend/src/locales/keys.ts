@@ -2524,6 +2524,23 @@ export interface LocaleMessages {
       wedding_website: string;
       transport: string;
     };
+    /** Venue character labels (the "jelleg" tag, normalised) — one per
+     *  VenueStyle in @shared/suppliers. Rendered as a chip beside the
+     *  category on venue cards. */
+    venue_style: {
+      castle: string;
+      manor: string;
+      estate: string;
+      hotel: string;
+      resort: string;
+      guesthouse: string;
+      restaurant: string;
+      event_hall: string;
+      boat: string;
+      waterfront: string;
+      nature_park: string;
+      venue_with_stay: string;
+    };
     /** Side-by-side comparison: couples tick a few suppliers and the
      *  dialog shows price/services next to each other, with verdicts
      *  tailored to the couple's known params (guest count, budget). */
