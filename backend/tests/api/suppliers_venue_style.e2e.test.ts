@@ -12,6 +12,8 @@ interface DirectoryItem {
   id: string;
   category: string;
   venue_style: string | null;
+  lat: number | null;
+  lng: number | null;
 }
 
 describe("GET /api/suppliers — venue_style", () => {
@@ -41,5 +43,26 @@ describe("GET /api/suppliers — venue_style", () => {
     const listing = getListingById("wedding-beach-tat");
     expect(listing).not.toBeNull();
     expect(listing?.venue_style).toBe("waterfront");
+  });
+
+  test("expansion venues carry town-centroid coords so they hit the map", async () => {
+    const r = await req<{ suppliers: DirectoryItem[] }>("GET", "/api/suppliers?category=venue");
+    expect(r.status).toBe(200);
+    const tat = r.data.suppliers.find((s) => s.id === "wedding-beach-tat");
+    expect(tat?.lat).toBeCloseTo(47.7372, 2);
+    expect(tat?.lng).toBeCloseTo(18.7183, 2);
+    // None of the 38 new entries should be left without coords.
+    const NEW_IDS = [
+      "achilles-park-gyor",
+      "europa-hajo-budapest",
+      "le-til-kuria-biri",
+      "csodaszarvas-tajpark-rabahidveg",
+      "movenpick-balaland-szantod",
+    ];
+    for (const id of NEW_IDS) {
+      const row = r.data.suppliers.find((s) => s.id === id);
+      expect(row?.lat).not.toBeNull();
+      expect(row?.lng).not.toBeNull();
+    }
   });
 });

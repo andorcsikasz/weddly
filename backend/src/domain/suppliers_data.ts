@@ -95,6 +95,47 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "tarsa-pagony": { lat: 47.812, lng: 19.298 },
   "pikant-pajta": { lat: 47.651, lng: 18.328 },
   "pajta-oriszentpeter": { lat: 46.842, lng: 16.428 },
+  // Regional venue expansion (June 2026) — town-centroid coords (river-dock
+  // approximations for the Budapest boats, area centroid for the Szigetköz
+  // csárda). Precise enough for the map pin; couples click through for routing.
+  "achilles-park-gyor": { lat: 47.6875, lng: 17.6504 },
+  "eden-lounge-veresegyhaz": { lat: 47.6489, lng: 19.2839 },
+  "style-event-lounge-kophaza": { lat: 47.6336, lng: 16.6178 },
+  "batthyany-kastelyszallo-zalacsany": { lat: 46.8186, lng: 17.1703 },
+  "zsindelyes-vendeglo-dobogoko": { lat: 47.7197, lng: 18.9072 },
+  "orchidea-etterem-szigetbecse": { lat: 47.045, lng: 18.935 },
+  "vadvirag-rendezvenyterem-cegled": { lat: 47.1736, lng: 19.7997 },
+  "vankos-es-eszcajg-ujhartyan": { lat: 47.2147, lng: 19.4039 },
+  "nyerges-hotel-monor": { lat: 47.3508, lng: 19.4486 },
+  "matra-kemping-sasto": { lat: 47.852, lng: 19.965 },
+  "airport-hotel-stacio-vecses": { lat: 47.4078, lng: 19.2783 },
+  "teleki-tisza-kastely-nagykovacsi": { lat: 47.584, lng: 18.894 },
+  "forster-vadaszkastely-bugyi": { lat: 47.2261, lng: 19.1506 },
+  "fatornyos-kuria-szokolya": { lat: 47.88, lng: 19.01 },
+  "bodor-major-tahitotfalu": { lat: 47.7606, lng: 19.0975 },
+  "tahy-kastely-galgagyork": { lat: 47.7339, lng: 19.4486 },
+  "camelot-club-hotel-vac": { lat: 47.7757, lng: 19.1378 },
+  "verdi-budapest-aquincum": { lat: 47.5378, lng: 19.0456 },
+  "hajos-eskuvo-kozpont-budapest": { lat: 47.5, lng: 19.047 },
+  "europa-hajo-budapest": { lat: 47.506, lng: 19.049 },
+  "sari-csarda-szigetkoz": { lat: 47.85, lng: 17.42 },
+  "hetkuti-wellness-hotel-mor": { lat: 47.3772, lng: 18.2061 },
+  "fur-elise-bisztro-martonvasar": { lat: 47.3139, lng: 18.7889 },
+  "movenpick-balaland-szantod": { lat: 46.8783, lng: 17.89 },
+  "zselicvolgy-szabadidofarm-hajmas": { lat: 46.3, lng: 17.858 },
+  "bano-birtok-felsomocsolad": { lat: 46.548, lng: 17.928 },
+  "villabogart-alsobogat": { lat: 46.503, lng: 17.625 },
+  "dalma-panzio-balatonvilagos": { lat: 46.9886, lng: 18.1561 },
+  "echo-etterem-tihany": { lat: 46.9139, lng: 17.8897 },
+  "idranyi-puszta-nemesvita": { lat: 46.847, lng: 17.336 },
+  "hubertus-fogado-csesznek": { lat: 47.302, lng: 17.873 },
+  "hotel-kristaly-ajka": { lat: 47.1014, lng: 17.5567 },
+  "wedding-beach-tat": { lat: 47.7372, lng: 18.7183 },
+  "madi-kuria-hotel": { lat: 48.268, lng: 21.284 },
+  "cuvee-rendezvenyhaz-sarospatak": { lat: 48.3231, lng: 21.5664 },
+  "rozsa-etterem-mezokovesd": { lat: 47.8136, lng: 20.5697 },
+  "le-til-kuria-biri": { lat: 47.928, lng: 21.857 },
+  "csodaszarvas-tajpark-rabahidveg": { lat: 47.083, lng: 16.7 },
 };
 
 // `submitter_type` is layered on by the DIRECTORY map below — curated entries
@@ -3358,11 +3399,11 @@ const RAW_DIRECTORY: (Omit<
   // ── Regional venue expansion (topeskuvohelyszinek.hu, June 2026) ──────────
   // Real venues across the vármegyék, classified by `venue_style` from each
   // listing's "jelleg" tag. `website` points at the source directory card (the
-  // venues' own domains weren't published in the source); `price_band` and
-  // coords stay null until verified, so these don't yet surface on the map.
-  // Duplicates already in the directory (Nádas Pihenőpark, Gödöllői Királyi
-  // Kastély, Fenyőharaszt, La Contessa, Session Hotel, Bohém Birtok, the
-  // Öttevény castle) were skipped.
+  // venues' own domains weren't published in the source); `price_band` stays
+  // null until verified. Map coords come from VENUE_COORDS above (town
+  // centroids). Duplicates already in the directory (Nádas Pihenőpark,
+  // Gödöllői Királyi Kastély, Fenyőharaszt, La Contessa, Session Hotel, Bohém
+  // Birtok, the Öttevény castle) were skipped.
   {
     id: "achilles-park-gyor",
     name: "Achilles Park Győr",
