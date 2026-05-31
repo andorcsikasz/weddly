@@ -333,6 +333,29 @@ function plausibleScriptTag(): string {
   return `<script defer data-domain="${escapeAttr(domain)}" src="https://plausible.io/js/script.js"></script>`;
 }
 
+/** Google Tag Manager container id (e.g. "GTM-K9NCXCL9"). Activated by the
+ *  `GTM_CONTAINER_ID` env var; empty/unset = no GTM injected (so dev + tests
+ *  stay analytics-free, same gate as Plausible above). Read fresh on every
+ *  call. www.googletagmanager.com + the GA4 collect origins are whitelisted in
+ *  the CSP (script-src / img-src / connect-src) in server.ts. */
+function gtmContainerIdEnv(): string {
+  return (process.env.GTM_CONTAINER_ID ?? "").trim();
+}
+
+/** The GTM loader <script> or "" when unset. We load gtm.js directly with a
+ *  plain async <script src> instead of Google's inline bootstrap snippet: the
+ *  inline variant would be blocked by our CSP (script-src has no
+ *  'unsafe-inline'), and gtm.js creates window.dataLayer itself, so the only
+ *  thing the inline snippet adds is the non-essential `gtm.start` timing push.
+ *  The GA4 config tag (G-…) is wired up inside the GTM web UI, not in code, so
+ *  it does not appear here. Container ids are public by design; we still guard
+ *  the format to keep anything odd in the env out of the page source. */
+function gtmScriptTag(): string {
+  const id = gtmContainerIdEnv();
+  if (!id || !/^GTM-[A-Z0-9]+$/.test(id)) return "";
+  return `<script async src="https://www.googletagmanager.com/gtm.js?id=${id}"></script>`;
+}
+
 /** True when the request landed on the configured EN canonical host. Used
  *  by `localeForHost` to force EN regardless of `Accept-Language`. */
 function hostIsEnCanonical(host: string | null | undefined): boolean {
@@ -731,6 +754,7 @@ function buildHeadBlock(opts: {
     `<link rel="alternate" hreflang="x-default" href="${huUrl}" />`,
     buildJsonLd({ locale, canonicalHost, pathname: path }),
     ...(plausibleScriptTag() ? [plausibleScriptTag()] : []),
+    ...(gtmScriptTag() ? [gtmScriptTag()] : []),
   ].join("\n    ");
 }
 

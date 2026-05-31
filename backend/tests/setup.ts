@@ -51,6 +51,11 @@ process.env.GOOGLE_CLIENT_ID = "test-google-client.apps.googleusercontent.com";
 // asserts the tag sets it explicitly around its own block.
 process.env.PLAUSIBLE_DOMAIN = "";
 
+// Google Tag Manager is injected into the SSR <head> only when this is set
+// (see seo_ssr.ts gtmScriptTag). Same reasoning as PLAUSIBLE_DOMAIN above:
+// pinned empty so no real container id leaks into rendered test HTML.
+process.env.GTM_CONTAINER_ID = "";
+
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {
   const f = `./data/test-weddly.db${ext}`;

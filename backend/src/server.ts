@@ -154,16 +154,25 @@ const CSP = [
   // is loaded from the login/register pages to render the "Continue with
   // Google" button. The GSI client also pulls a second script from
   // gstatic.com, so both origins need to be whitelisted.
-  "script-src 'self' https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com",
+  // www.googletagmanager.com serves gtm.js and (when GA4 is wired up inside
+  // the GTM container) the gtag/js library it injects. Activated only when
+  // GTM_CONTAINER_ID is set; the origins stay whitelisted regardless so the
+  // header is identical across deploys.
+  "script-src 'self' https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com",
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
   // *.pinimg.com hosts the Pinterest pin thumbnails rendered by /app/moodboard —
   // the URLs come from the backend's RSS proxy, so only image origins need
   // whitelisting (no Pinterest script/iframe).
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com",
+  // GA4 (via GTM) falls back to image-pixel beacons in some browsers and the
+  // googletagmanager origin serves a 1x1 too, so both need img-src.
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
-  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com",
+  // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
+  // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may
+  // also XHR the container config from googletagmanager.com.
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
   // `blob:` is for the /app/seating PDF preview modal — the generated chart
   // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
