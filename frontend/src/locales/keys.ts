@@ -3236,9 +3236,34 @@ export interface LocaleMessages {
     analytics_nav_picks: string;
     analytics_nav_engagement: string;
     analytics_nav_demo: string;
+    analytics_nav_traffic: string;
     /** aria-label for the mobile section dropdown that replaces the
      *  anchor pills below the `sm:` breakpoint. */
     analytics_jump_to_section: string;
+    // Traffic section (Google Analytics 4, pulled live via the Data API).
+    analytics_section_traffic: string;
+    analytics_traffic_source: string;
+    analytics_traffic_load_error: string;
+    analytics_traffic_empty: string;
+    analytics_traffic_setup_title: string;
+    analytics_traffic_setup_body: string;
+    analytics_traffic_active_users: string;
+    analytics_traffic_sessions: string;
+    analytics_traffic_page_views: string;
+    analytics_traffic_engagement_rate: string;
+    analytics_traffic_avg_session: string;
+    analytics_traffic_28d_sub: string;
+    analytics_traffic_daily_title: string;
+    analytics_traffic_daily_sub: string;
+    analytics_traffic_channels_title: string;
+    analytics_traffic_channels_empty: string;
+    analytics_traffic_countries_title: string;
+    analytics_traffic_countries_empty: string;
+    analytics_traffic_top_pages_title: string;
+    analytics_traffic_top_pages_empty: string;
+    analytics_traffic_col_page: string;
+    analytics_traffic_col_views: string;
+    analytics_traffic_col_visitors: string;
     /** Compact KPI tile labels added in the 2026 redesign. */
     analytics_money_couples_with_budget_short: string;
     analytics_money_couples_with_actuals_short: string;

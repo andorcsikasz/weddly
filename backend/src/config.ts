@@ -69,4 +69,12 @@ export const CONFIG = {
    *  with `jwtSecret`, so only callers who already own the secret (i.e. the
    *  E2E test process) can mint one. Never set this in production. */
   googleTestBypass: process.env.NODE_ENV !== "production" && process.env.GOOGLE_TEST_BYPASS === "1",
+  /** Numeric GA4 property id (e.g. "493210114") the admin Traffic section
+   *  reports against. NOT the "G-…" measurement id — that one lives in the
+   *  GTM container. Empty = GA4 traffic endpoint returns `configured:false`. */
+  ga4PropertyId: (process.env.GA4_PROPERTY_ID ?? "").trim(),
+  /** Full service-account key JSON (the file you download from Google Cloud,
+   *  pasted verbatim). The account needs Viewer access on the GA4 property.
+   *  Only `client_email` + `private_key` are read. Empty = GA4 disabled. */
+  ga4ServiceAccountJson: process.env.GA4_SERVICE_ACCOUNT_JSON ?? "",
 };

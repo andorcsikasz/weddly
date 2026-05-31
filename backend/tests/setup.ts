@@ -56,6 +56,11 @@ process.env.PLAUSIBLE_DOMAIN = "";
 // pinned empty so no real container id leaks into rendered test HTML.
 process.env.GTM_CONTAINER_ID = "";
 
+// GA4 Data API (admin Traffic section). Pinned empty so the suite never tries
+// to reach Google — the traffic endpoint returns `configured:false` instead.
+process.env.GA4_PROPERTY_ID = "";
+process.env.GA4_SERVICE_ACCOUNT_JSON = "";
+
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {
   const f = `./data/test-weddly.db${ext}`;

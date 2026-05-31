@@ -259,3 +259,51 @@ export interface AdminGrowthFunnelAnalytics {
     last_event_at: number | null;
   }>;
 }
+
+// ─── Traffic (Google Analytics 4) ──────────────────────────────────────────
+//
+// Unlike the other six rollups, these numbers don't come from our SQLite —
+// they're pulled live from the GA4 Data API (backed by the GTM container on
+// the landing). The endpoint degrades gracefully: when GA4 isn't wired up
+// (no service account / property id) it returns `configured: false` and the
+// dashboard renders a one-card setup hint instead of a wall of zeros.
+
+/** Headline totals for one date window. Counts are whole numbers; the two
+ *  rate/seconds fields are derived GA4 metrics. */
+export interface AdminTrafficTotals {
+  /** GA4 `activeUsers` — distinct people, the closest analogue to "visitors". */
+  active_users: number;
+  /** GA4 `sessions`. */
+  sessions: number;
+  /** GA4 `screenPageViews`. */
+  page_views: number;
+  /** GA4 `engagementRate`, 0..1. */
+  engagement_rate: number;
+  /** GA4 `averageSessionDuration`, in seconds (rounded). */
+  avg_session_seconds: number;
+}
+
+export interface AdminTrafficAnalytics {
+  /** False when the GA4 Data API isn't configured (missing property id or
+   *  service-account credentials). All the arrays below are empty and the
+   *  totals are zero in that case — the UI shows a setup card. */
+  configured: boolean;
+  /** The numeric GA4 property id the report was run against ("" when
+   *  unconfigured). Surfaced in the section's "source" line. */
+  property_id: string;
+  /** Trailing 7- and 28-day headline totals. */
+  totals_7d: AdminTrafficTotals;
+  totals_28d: AdminTrafficTotals;
+  /** Daily active users for the last 14 days (UTC `YYYY-MM-DD`), zero-filled
+   *  so the area chart shares the exact shape of `signups_daily`. */
+  active_users_daily: Array<{ date: string; count: number }>;
+  /** Most-viewed page paths over the last 7 days. */
+  top_pages: Array<{ path: string; views: number; users: number }>;
+  /** GA4 default channel grouping (Organic Search, Direct, Referral, …) by
+   *  sessions over the last 7 days. */
+  channels: Array<{ channel: string; sessions: number }>;
+  /** Top countries by active users over the last 7 days. */
+  countries: Array<{ country: string; users: number }>;
+  /** When the report was generated (unix ms) — drives the "as of" line. */
+  generated_at: number;
+}

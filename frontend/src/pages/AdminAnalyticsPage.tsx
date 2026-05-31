@@ -18,6 +18,7 @@ import type {
   AdminEngagementAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
+  AdminTrafficAnalytics,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
@@ -43,7 +44,7 @@ const CARD_TITLE = "text-sm font-semibold text-ink-900 dark:text-paper-50";
 
 // ─── Section anchor list (used by the sticky pills + scroll spy) ──────────
 
-type SectionId = "money" | "activity" | "picks" | "engagement" | "demo";
+type SectionId = "money" | "activity" | "traffic" | "picks" | "engagement" | "demo";
 
 interface SectionDef {
   id: SectionId;
@@ -53,6 +54,7 @@ interface SectionDef {
 const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "money", labelKey: "admin.analytics_nav_money" },
   { id: "activity", labelKey: "admin.analytics_nav_activity" },
+  { id: "traffic", labelKey: "admin.analytics_nav_traffic" },
   { id: "picks", labelKey: "admin.analytics_nav_picks" },
   { id: "engagement", labelKey: "admin.analytics_nav_engagement" },
   { id: "demo", labelKey: "admin.analytics_nav_demo" },
@@ -70,6 +72,7 @@ export default function AdminAnalyticsPage() {
     status: "loading",
   });
   const [demo, setDemo] = useState<Loadable<AdminDemoAnalytics>>({ status: "loading" });
+  const [traffic, setTraffic] = useState<Loadable<AdminTrafficAnalytics>>({ status: "loading" });
 
   // `nonce` lets the refresh button re-run the effect without remounting the
   // whole tree — bumping it triggers a re-fetch and resets the five slots
@@ -84,7 +87,8 @@ export default function AdminAnalyticsPage() {
     activity.status === "loading" ||
     picks.status === "loading" ||
     engagement.status === "loading" ||
-    demo.status === "loading";
+    demo.status === "loading" ||
+    traffic.status === "loading";
 
   const loadAll = useCallback(() => {
     setMoney({ status: "loading" });
@@ -92,6 +96,7 @@ export default function AdminAnalyticsPage() {
     setPicks({ status: "loading" });
     setEngagement({ status: "loading" });
     setDemo({ status: "loading" });
+    setTraffic({ status: "loading" });
     setNonce((n) => n + 1);
   }, []);
 
@@ -152,6 +157,18 @@ export default function AdminAnalyticsPage() {
         if (!cancelled) setDemo({ status: "error" });
       });
 
+    adminAnalyticsApi
+      .traffic()
+      .then((d) => {
+        if (!cancelled) {
+          setTraffic({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setTraffic({ status: "error" });
+      });
+
     return () => {
       cancelled = true;
     };
@@ -176,6 +193,9 @@ export default function AdminAnalyticsPage() {
         </SectionAnchor>
         <SectionAnchor id="activity">
           <ActivitySection state={activity} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="traffic">
+          <TrafficSection state={traffic} locale={locale} />
         </SectionAnchor>
         <SectionAnchor id="picks">
           <PicksSection state={picks} locale={locale} />
@@ -789,6 +809,227 @@ function FunnelStep({
         {formatNumber(count, locale)} · {clamped}%
       </span>
     </div>
+  );
+}
+
+// ─── Traffic section (Google Analytics 4) ──────────────────────────────────
+
+function TrafficSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminTrafficAnalytics>;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_traffic");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus
+        title={title}
+        variant="error"
+        message={t("admin.analytics_traffic_load_error")}
+      />
+    );
+
+  const d = state.data;
+
+  // GA4 not wired up yet — show the one-card setup hint instead of zeros.
+  if (!d.configured) {
+    return (
+      <SectionCard title={title}>
+        <div className="rounded-xl bg-violet-50 p-4 ring-1 ring-violet-200 dark:bg-violet-500/10 dark:ring-violet-500/30">
+          <h3 className={`m-0 mb-1 ${CARD_TITLE}`}>{t("admin.analytics_traffic_setup_title")}</h3>
+          <p className="m-0 text-sm text-ink-600 dark:text-paper-200">
+            {t("admin.analytics_traffic_setup_body")}
+          </p>
+          <ul className="mt-2 flex flex-col gap-1 text-xs text-ink-700 dark:text-paper-100">
+            <li className="stat-num">GA4_PROPERTY_ID</li>
+            <li className="stat-num">GA4_SERVICE_ACCOUNT_JSON</li>
+          </ul>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  const t7 = d.totals_7d;
+  const t28 = d.totals_28d;
+  const dailyMax = Math.max(0, ...d.active_users_daily.map((p) => p.count));
+  const hasTraffic = t28.active_users > 0 || t7.active_users > 0;
+  const generatedLabel = new Date(d.generated_at).toLocaleTimeString(
+    locale === "hu" ? "hu-HU" : "en-GB",
+    { hour: "2-digit", minute: "2-digit" },
+  );
+  const subtitle = t("admin.analytics_traffic_source", {
+    property: d.property_id,
+    time: generatedLabel,
+  });
+
+  if (!hasTraffic) {
+    return (
+      <SectionCard title={title} subtitle={subtitle}>
+        <p className="text-sm text-ink-500 dark:text-umber-300">
+          {t("admin.analytics_traffic_empty")}
+        </p>
+      </SectionCard>
+    );
+  }
+
+  const channelMax = Math.max(0, ...d.channels.map((c) => c.sessions));
+  const countryMax = Math.max(0, ...d.countries.map((c) => c.users));
+
+  return (
+    <SectionCard title={title} subtitle={subtitle}>
+      <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <KpiTile
+          label={t("admin.analytics_traffic_active_users")}
+          value={formatNumber(t7.active_users, locale)}
+          sub={t("admin.analytics_traffic_28d_sub", {
+            n: formatNumber(t28.active_users, locale),
+          })}
+          emphasis
+        />
+        <KpiTile
+          label={t("admin.analytics_traffic_sessions")}
+          value={formatNumber(t7.sessions, locale)}
+          sub={t("admin.analytics_traffic_28d_sub", { n: formatNumber(t28.sessions, locale) })}
+        />
+        <KpiTile
+          label={t("admin.analytics_traffic_page_views")}
+          value={formatNumber(t7.page_views, locale)}
+          sub={t("admin.analytics_traffic_28d_sub", { n: formatNumber(t28.page_views, locale) })}
+        />
+        <KpiTile
+          label={t("admin.analytics_traffic_engagement_rate")}
+          value={`${Math.round(t7.engagement_rate * 100)}%`}
+        />
+        <KpiTile
+          label={t("admin.analytics_traffic_avg_session")}
+          value={formatLifetime(t7.avg_session_seconds, locale)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
+        <InnerCard
+          title={t("admin.analytics_traffic_daily_title")}
+          subtitle={t("admin.analytics_traffic_daily_sub")}
+        >
+          {d.active_users_daily.length === 0 || dailyMax === 0 ? (
+            <p className="text-sm text-ink-500 dark:text-umber-300">
+              {t("admin.analytics_traffic_empty")}
+            </p>
+          ) : (
+            <>
+              <SignupsAreaChart points={d.active_users_daily} max={dailyMax} />
+              <div className="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-umber-300">
+                <span>{d.active_users_daily[0]?.date ?? ""}</span>
+                <span>{d.active_users_daily[d.active_users_daily.length - 1]?.date ?? ""}</span>
+              </div>
+            </>
+          )}
+        </InnerCard>
+
+        <div className="flex flex-col gap-3">
+          <InnerCard title={t("admin.analytics_traffic_channels_title")}>
+            {d.channels.length === 0 ? (
+              <p className="text-sm text-ink-500 dark:text-umber-300">
+                {t("admin.analytics_traffic_channels_empty")}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {d.channels.slice(0, 6).map((c) => (
+                  <li
+                    key={c.channel}
+                    className="grid grid-cols-[7rem_1fr_3rem] items-center gap-2 text-xs"
+                  >
+                    <span className="truncate text-left text-ink-700 dark:text-paper-100">
+                      {c.channel}
+                    </span>
+                    <HBar
+                      pct={channelMax > 0 ? (c.sessions / channelMax) * 100 : 0}
+                      ariaLabel={`${c.sessions}`}
+                    />
+                    <span className="stat-num text-right font-medium text-ink-700 dark:text-paper-100">
+                      {formatNumber(c.sessions, locale)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </InnerCard>
+
+          <InnerCard title={t("admin.analytics_traffic_countries_title")}>
+            {d.countries.length === 0 ? (
+              <p className="text-sm text-ink-500 dark:text-umber-300">
+                {t("admin.analytics_traffic_countries_empty")}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {d.countries.slice(0, 6).map((c) => (
+                  <li
+                    key={c.country}
+                    className="grid grid-cols-[7rem_1fr_3rem] items-center gap-2 text-xs"
+                  >
+                    <span className="truncate text-left text-ink-700 dark:text-paper-100">
+                      {c.country}
+                    </span>
+                    <HBar
+                      pct={countryMax > 0 ? (c.users / countryMax) * 100 : 0}
+                      ariaLabel={`${c.users}`}
+                    />
+                    <span className="stat-num text-right font-medium text-ink-700 dark:text-paper-100">
+                      {formatNumber(c.users, locale)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </InnerCard>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <InnerCard title={t("admin.analytics_traffic_top_pages_title")}>
+          {d.top_pages.length === 0 ? (
+            <p className="text-sm text-ink-500 dark:text-umber-300">
+              {t("admin.analytics_traffic_top_pages_empty")}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="eyebrow text-left">
+                    <th className="py-1 pr-2">{t("admin.analytics_traffic_col_page")}</th>
+                    <th className="py-1 pl-2 text-right">
+                      {t("admin.analytics_traffic_col_views")}
+                    </th>
+                    <th className="py-1 pl-2 text-right">
+                      {t("admin.analytics_traffic_col_visitors")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.top_pages.slice(0, 10).map((row) => (
+                    <tr key={row.path} className="border-t border-paper-200 dark:border-umber-700">
+                      <td className="py-1 pr-2 text-left text-ink-800 dark:text-paper-100">
+                        <span className="block truncate">{row.path}</span>
+                      </td>
+                      <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+                        {formatNumber(row.views, locale)}
+                      </td>
+                      <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+                        {formatNumber(row.users, locale)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </InnerCard>
+      </div>
+    </SectionCard>
   );
 }
 

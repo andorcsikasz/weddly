@@ -1,7 +1,9 @@
-// Read-only analytics rollups for /app/admin/analytics. Four orthogonal
-// endpoints — money / activity / picks / engagement — each returning one
-// fully-aggregated payload so the dashboard can render in a single round-trip.
-// Gated by the same ADMIN_EMAILS allowlist as the rest of /api/admin/*.
+// Read-only analytics rollups for /app/admin/analytics. Orthogonal endpoints —
+// money / activity / picks / engagement / demo / growth-funnel / traffic — each
+// returning one fully-aggregated payload so the dashboard can render in a single
+// round-trip. All but `traffic` aggregate our own SQLite; `traffic` pulls live
+// numbers from the Google Analytics 4 Data API (see lib/ga4.ts). Gated by the
+// same ADMIN_EMAILS allowlist as the rest of /api/admin/*.
 
 import type {
   AdminActivityAnalytics,
@@ -12,14 +14,19 @@ import type {
   AdminGrowthFunnelStep,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
+  AdminTrafficAnalytics,
+  AdminTrafficTotals,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
+import { CONFIG } from "../config";
 import { db } from "../db";
 import { listActiveCommunitySuppliers } from "../domain/community_suppliers";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { requireAdmin } from "../domain/users";
-import { type Ctx, json, type Router } from "../lib/http";
+import { type Ga4ReportResponse, isGa4Configured, runGa4Report } from "../lib/ga4";
+import { type Ctx, HttpError, json, type Router } from "../lib/http";
+import { log } from "../lib/logger";
 
 // All known BudgetCategory values. Keep in sync with shared/types.ts —
 // inlining as a const tuple keeps the per-category iteration order stable
@@ -1010,6 +1017,179 @@ function handleGrowthFunnel(ctx: Ctx): Response {
   return json(growthFunnelAnalytics());
 }
 
+// ─── /api/admin/analytics/traffic (Google Analytics 4) ──────────────────────
+//
+// The one rollup not backed by our own SQLite — it pulls live numbers from the
+// GA4 Data API (the data GTM feeds Google from the landing). Because every
+// admin page load would otherwise hit Google's quota, the assembled payload is
+// memoised for a few minutes; the dashboard's manual refresh tolerates that
+// staleness (GA4 itself lags 24-48h on first activation anyway).
+
+const TRAFFIC_CACHE_TTL_MS = 5 * 60 * 1000;
+let trafficCache: { payload: AdminTrafficAnalytics; expiresAt: number } | null = null;
+
+const EMPTY_TRAFFIC_TOTALS: AdminTrafficTotals = {
+  active_users: 0,
+  sessions: 0,
+  page_views: 0,
+  engagement_rate: 0,
+  avg_session_seconds: 0,
+};
+
+/** Headline metrics, in the fixed order we request them. */
+const TRAFFIC_METRICS = [
+  { name: "activeUsers" },
+  { name: "sessions" },
+  { name: "screenPageViews" },
+  { name: "engagementRate" },
+  { name: "averageSessionDuration" },
+];
+
+/** GA4 returns every metric as a string; coerce defensively. */
+function ga4Num(value: string | undefined): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function round3(n: number): number {
+  return Math.round(n * 1000) / 1000;
+}
+
+/** UTC `YYYY-MM-DD` for a Date — matches the activity/demo daily series so the
+ *  frontend area chart is shared. */
+function isoDayUtc(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate(),
+  ).padStart(2, "0")}`;
+}
+
+/** Read a single-row totals report (TRAFFIC_METRICS order) into a DTO. */
+function totalsFromReport(report: Ga4ReportResponse): AdminTrafficTotals {
+  const m = report.rows?.[0]?.metricValues ?? [];
+  return {
+    active_users: Math.round(ga4Num(m[0]?.value)),
+    sessions: Math.round(ga4Num(m[1]?.value)),
+    page_views: Math.round(ga4Num(m[2]?.value)),
+    engagement_rate: round3(ga4Num(m[3]?.value)),
+    avg_session_seconds: Math.round(ga4Num(m[4]?.value)),
+  };
+}
+
+function emptyTraffic(configured: boolean, now: number): AdminTrafficAnalytics {
+  return {
+    configured,
+    property_id: configured ? CONFIG.ga4PropertyId : "",
+    totals_7d: { ...EMPTY_TRAFFIC_TOTALS },
+    totals_28d: { ...EMPTY_TRAFFIC_TOTALS },
+    active_users_daily: [],
+    top_pages: [],
+    channels: [],
+    countries: [],
+    generated_at: now,
+  };
+}
+
+async function trafficAnalytics(): Promise<AdminTrafficAnalytics> {
+  const now = Date.now();
+  if (!isGa4Configured()) return emptyTraffic(false, now);
+  if (trafficCache && trafficCache.expiresAt > now) return trafficCache.payload;
+
+  const range7 = [{ startDate: "7daysAgo", endDate: "today" }];
+  const range28 = [{ startDate: "28daysAgo", endDate: "today" }];
+
+  // Six independent reports, one shared access token, all in flight at once.
+  const [t7, t28, daily, pages, channels, countries] = await Promise.all([
+    runGa4Report({ dateRanges: range7, metrics: TRAFFIC_METRICS }),
+    runGa4Report({ dateRanges: range28, metrics: TRAFFIC_METRICS }),
+    runGa4Report({
+      dateRanges: [{ startDate: "13daysAgo", endDate: "today" }],
+      dimensions: [{ name: "date" }],
+      metrics: [{ name: "activeUsers" }],
+      orderBys: [{ dimension: { dimensionName: "date" } }],
+    }),
+    runGa4Report({
+      dateRanges: range7,
+      dimensions: [{ name: "pagePath" }],
+      metrics: [{ name: "screenPageViews" }, { name: "activeUsers" }],
+      orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+      limit: 10,
+    }),
+    runGa4Report({
+      dateRanges: range7,
+      dimensions: [{ name: "sessionDefaultChannelGroup" }],
+      metrics: [{ name: "sessions" }],
+      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+      limit: 10,
+    }),
+    runGa4Report({
+      dateRanges: range7,
+      dimensions: [{ name: "country" }],
+      metrics: [{ name: "activeUsers" }],
+      orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+      limit: 8,
+    }),
+  ]);
+
+  // Zero-fill the 14-day daily window so the chart x-axis stays uniform even
+  // on days GA4 reports no traffic.
+  const today = new Date(now);
+  today.setUTCHours(0, 0, 0, 0);
+  const daysScaffold: Array<{ date: string; count: number }> = [];
+  for (let i = 13; i >= 0; i -= 1) {
+    daysScaffold.push({ date: isoDayUtc(new Date(today.getTime() - i * DAY_MS)), count: 0 });
+  }
+  const dayIndex = new Map(daysScaffold.map((d, i) => [d.date, i]));
+  for (const row of daily.rows ?? []) {
+    // GA4's `date` dimension comes back as "YYYYMMDD".
+    const raw = row.dimensionValues[0]?.value ?? "";
+    const iso = raw.length === 8 ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}` : raw;
+    const idx = dayIndex.get(iso);
+    if (idx !== undefined) {
+      const bucket = daysScaffold[idx];
+      if (bucket) bucket.count = Math.round(ga4Num(row.metricValues[0]?.value));
+    }
+  }
+
+  const payload: AdminTrafficAnalytics = {
+    configured: true,
+    property_id: CONFIG.ga4PropertyId,
+    totals_7d: totalsFromReport(t7),
+    totals_28d: totalsFromReport(t28),
+    active_users_daily: daysScaffold,
+    top_pages: (pages.rows ?? []).map((r) => ({
+      path: r.dimensionValues[0]?.value ?? "",
+      views: Math.round(ga4Num(r.metricValues[0]?.value)),
+      users: Math.round(ga4Num(r.metricValues[1]?.value)),
+    })),
+    channels: (channels.rows ?? []).map((r) => ({
+      channel: r.dimensionValues[0]?.value ?? "",
+      sessions: Math.round(ga4Num(r.metricValues[0]?.value)),
+    })),
+    countries: (countries.rows ?? []).map((r) => ({
+      country: r.dimensionValues[0]?.value ?? "",
+      users: Math.round(ga4Num(r.metricValues[0]?.value)),
+    })),
+    generated_at: now,
+  };
+  trafficCache = { payload, expiresAt: now + TRAFFIC_CACHE_TTL_MS };
+  return payload;
+}
+
+async function handleTraffic(ctx: Ctx): Promise<Response> {
+  requireAdmin(ctx);
+  try {
+    return json(await trafficAnalytics());
+  } catch (err) {
+    // GA4 is configured but the call failed (auth, quota, network). Don't 500
+    // the section into a blank state — surface a 502 the dashboard renders as
+    // a retryable error card, and log the real cause for the operator.
+    log.warn("ga4.report_failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw new HttpError(502, "Could not reach Google Analytics", { code: "ga4_unavailable" });
+  }
+}
+
 export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/money", handleMoney, true);
   router.get("/api/admin/analytics/activity", handleActivity, true);
@@ -1017,4 +1197,5 @@ export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/engagement", handleEngagement, true);
   router.get("/api/admin/analytics/demo", handleDemo, true);
   router.get("/api/admin/analytics/growth-funnel", handleGrowthFunnel, true);
+  router.get("/api/admin/analytics/traffic", handleTraffic, true);
 }

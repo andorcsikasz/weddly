@@ -70,6 +70,7 @@ import type {
   AdminEngagementAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
+  AdminTrafficAnalytics,
 } from "@shared/admin_analytics";
 import type {
   AdminDirectoryFilters,
@@ -1224,6 +1225,7 @@ export const adminAnalyticsApi = {
   picks: () => apiFetch<AdminPicksAnalytics>("GET", "/api/admin/analytics/picks"),
   engagement: () => apiFetch<AdminEngagementAnalytics>("GET", "/api/admin/analytics/engagement"),
   demo: () => apiFetch<AdminDemoAnalytics>("GET", "/api/admin/analytics/demo"),
+  traffic: () => apiFetch<AdminTrafficAnalytics>("GET", "/api/admin/analytics/traffic"),
 };
 
 export const adminFeedbackApi = {
