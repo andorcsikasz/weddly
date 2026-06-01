@@ -352,7 +352,7 @@ function PublicFooter() {
        *  footer — a quiet grotesk prompt names the two non-couple audiences,
        *  each option a hairline cream pill that fills to espresso on hover
        *  (the single bright object inverts, candlelit). */}
-      <div className="border-b border-paper-300 dark:border-umber-700">
+      <div className="border-b border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-950">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-4 px-4 py-7 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
           <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink-500 dark:text-umber-300">
             {t("landing.footer_band_prompt")}
