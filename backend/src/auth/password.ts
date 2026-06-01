@@ -19,3 +19,26 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     return false;
   }
 }
+
+// Fixed Argon2id hash of a throwaway password, computed once on first use.
+// Used to equalize work on the login "user not found" branch so an attacker
+// can't tell a registered email from an unregistered one by response latency
+// (the real branch spends ~60ms in verify; without this the missing-user
+// branch returns instantly).
+let dummyHashPromise: Promise<string> | null = null;
+function dummyHash(): Promise<string> {
+  if (!dummyHashPromise) {
+    dummyHashPromise = hashPassword("login-timing-equalizer-do-not-use");
+  }
+  return dummyHashPromise;
+}
+
+/** Spend the same CPU as a real verify, discarding the result. Call on the
+ *  user-not-found branch so both code paths take roughly the same time. */
+export async function burnPasswordVerify(password: string): Promise<void> {
+  try {
+    await Bun.password.verify(password, await dummyHash());
+  } catch {
+    // ignore — result is intentionally discarded
+  }
+}

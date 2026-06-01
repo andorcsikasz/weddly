@@ -1137,7 +1137,7 @@ function AccommodationCard({
             <span className="truncate">{accommodation.contact}</span>
           </div>
         )}
-        {accommodation.link && (
+        {accommodation.link && /^https?:\/\//i.test(accommodation.link) && (
           <a
             href={accommodation.link}
             target="_blank"

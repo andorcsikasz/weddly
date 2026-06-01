@@ -2,7 +2,7 @@
 
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
-import { hashPassword, verifyPassword } from "../auth/password";
+import { burnPasswordVerify, hashPassword, verifyPassword } from "../auth/password";
 import { extractToken, issueSession, revokeSession } from "../auth/session";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
@@ -205,7 +205,12 @@ async function handleLogin(ctx: Ctx): Promise<Response> {
   const password = parsePassword(body.password);
 
   const row = getUserByEmail(email) as UserRow | null;
-  if (!row) throw new HttpError(401, "Invalid credentials");
+  if (!row) {
+    // Burn an equivalent verify so the missing-user path costs the same as a
+    // real one — closes the username-enumeration timing oracle.
+    await burnPasswordVerify(password);
+    throw new HttpError(401, "Invalid credentials");
+  }
   if (row.status === "suspended") throw new HttpError(403, "Account suspended");
 
   const ok = await verifyPassword(password, row.password_hash);

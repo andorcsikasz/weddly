@@ -414,7 +414,12 @@ export function canonicalHostFor(locale: SeoLocale): string {
 }
 
 function escapeAttr(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 /** Build a <script type="application/ld+json"> block for the host + path.
@@ -753,7 +758,7 @@ function buildHeadBlock(opts: {
     `<meta property="og:url" content="${canonicalUrl}" />`,
     `<meta property="og:title" content="${escapeAttr(title)}" />`,
     `<meta property="og:description" content="${escapeAttr(description)}" />`,
-    `<meta property="og:image" content="${ogImage}" />`,
+    `<meta property="og:image" content="${escapeAttr(ogImage)}" />`,
     ...(isBrandOgImage
       ? [
           `<meta property="og:image:type" content="image/png" />`,
@@ -765,7 +770,7 @@ function buildHeadBlock(opts: {
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${escapeAttr(title)}" />`,
     `<meta name="twitter:description" content="${escapeAttr(twDescription)}" />`,
-    `<meta name="twitter:image" content="${ogImage}" />`,
+    `<meta name="twitter:image" content="${escapeAttr(ogImage)}" />`,
     `<meta name="twitter:image:alt" content="${escapeAttr(ogImageAlt)}" />`,
     `<link rel="alternate" hreflang="hu" href="${huUrl}" />`,
     ...(enUrl ? [`<link rel="alternate" hreflang="en" href="${enUrl}" />`] : []),

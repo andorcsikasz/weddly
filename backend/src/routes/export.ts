@@ -10,7 +10,29 @@ import { recordExport } from "../domain/exports";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 import { toUser, type UserRow } from "../domain/users";
 
-function rowsByCouple<T>(table: string, coupleId: number): T[] {
+// The table name is interpolated into the SQL string (SQLite can't bind an
+// identifier), so it MUST come from this fixed allowlist and never from request
+// input. All current callers pass literals; the union type + runtime guard make
+// it impossible for a future caller to slip user input through.
+const EXPORTABLE_TABLES = [
+  "guests",
+  "households",
+  "budget_lines",
+  "budget_snapshots",
+  "seating_tables",
+  "seating_conflicts",
+  "couple_invites",
+  "email_log",
+  "email_dispatches",
+  "couple_pause_requests",
+  "couple_supplier_costs",
+] as const;
+type ExportableTable = (typeof EXPORTABLE_TABLES)[number];
+
+function rowsByCouple<T>(table: ExportableTable, coupleId: number): T[] {
+  if (!EXPORTABLE_TABLES.includes(table)) {
+    throw new HttpError(500, "Invalid export table");
+  }
   return db
     .prepare(`SELECT * FROM ${table} WHERE couple_id = ? ORDER BY id ASC`)
     .all(coupleId) as T[];

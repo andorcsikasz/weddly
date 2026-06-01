@@ -63,6 +63,25 @@ function parseOptionalString(raw: unknown, max: number, field: string): string |
   return trimmed;
 }
 
+/** Optional URL field: same length/empty rules as parseOptionalString, but
+ *  also enforces an http(s) scheme and stores the normalized href. Without
+ *  the scheme guard a `javascript:` value would render as a live href in the
+ *  workspace (LogisticsPage anchors it directly). */
+function parseOptionalUrl(raw: unknown, max: number, field: string): string | null {
+  const trimmed = parseOptionalString(raw, max, field);
+  if (trimmed === null) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new HttpError(400, `${field} must be a valid http(s) URL`);
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new HttpError(400, `${field} must be http(s)`);
+  }
+  return parsed.href;
+}
+
 function parseCapacity(raw: unknown, fallback: number): number {
   if (raw === undefined) return fallback;
   const n = Number(raw);
@@ -99,7 +118,7 @@ export function parseAccommodationCreate(
     address: parseOptionalString(body.address, MAX_ADDRESS_LEN, "address"),
     capacity: parseCapacity(body.capacity, 2),
     price_huf: parsePriceHuf(body.price_huf),
-    link: parseOptionalString(body.link, MAX_LINK_LEN, "link"),
+    link: parseOptionalUrl(body.link, MAX_LINK_LEN, "link"),
     contact: parseOptionalString(body.contact, MAX_CONTACT_LEN, "contact"),
     notes: parseOptionalString(body.notes, MAX_NOTES_LEN, "notes"),
   };
@@ -118,9 +137,7 @@ export function parseAccommodationPatch(
     capacity: parseCapacity(body.capacity, existing.capacity),
     price_huf: body.price_huf === undefined ? existing.price_huf : parsePriceHuf(body.price_huf),
     link:
-      body.link === undefined
-        ? existing.link
-        : parseOptionalString(body.link, MAX_LINK_LEN, "link"),
+      body.link === undefined ? existing.link : parseOptionalUrl(body.link, MAX_LINK_LEN, "link"),
     contact:
       body.contact === undefined
         ? existing.contact

@@ -2,7 +2,7 @@
 // SPA static files are served from frontend/dist when SERVE_FRONTEND=1.
 
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { extractToken, verifySessionToken } from "./auth/session";
 import { CONFIG } from "./config";
 import "./db"; // open DB + apply schema
@@ -214,9 +214,22 @@ function clientIpFrom(req: Request): string | null {
     const testIp = req.headers.get("x-test-client-ip");
     if (testIp) return testIp;
   }
+  // Trust only the hop appended by our own edge proxy, never the leftmost
+  // X-Forwarded-For entry. XFF is client-appendable: a request arriving with
+  // `X-Forwarded-For: <spoofed>` is rewritten by Railway's edge to
+  // `<spoofed>, <real-client>`, so the LAST entry is the address the trusted
+  // proxy actually saw. Taking `split(",")[0]` would let a client rotate the
+  // header per request and mint a fresh rate-limit bucket every time,
+  // defeating per-IP brute-force throttling. Prefer X-Real-IP (proxy-set,
+  // not appendable) and fall back to the rightmost XFF hop.
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]?.trim() ?? null;
-  return req.headers.get("x-real-ip");
+  if (xff) {
+    const hops = xff.split(",");
+    return hops[hops.length - 1]?.trim() ?? null;
+  }
+  return null;
 }
 
 // Memoised index.html sources, one per SEO locale. The Vite build emits
@@ -242,6 +255,26 @@ function isRsvpRoute(pathname: string): boolean {
   return pathname === "/rsvp" || pathname.startsWith("/rsvp/");
 }
 
+/** decodeURIComponent that returns null on malformed percent-encoding (e.g.
+ *  `%ZZ`) instead of throwing a URIError. This path runs OUTSIDE the request
+ *  try/catch, so an uncaught throw here would emit a 500 with none of the
+ *  security headers / request id every other response carries. */
+function safeDecodeURIComponent(s: string): string | null {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return null;
+  }
+}
+
+/** Boundary check that resolved `child` stays within `base`, treated as a
+ *  directory. The trailing separator stops sibling-directory confusion:
+ *  `/data/uploads-secret` must NOT pass a `/data/uploads` prefix test. */
+function isInsideDir(child: string, base: string): boolean {
+  const withSep = base.endsWith(sep) ? base : base + sep;
+  return child === base || child.startsWith(withSep);
+}
+
 async function tryServeStatic(req: Request, pathname: string): Promise<Response | null> {
   if (pathname.startsWith("/api/")) return null;
 
@@ -254,9 +287,12 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   if (pathname.startsWith("/uploads/")) {
     const cleanPath = pathname.split("?")[0] ?? pathname;
     const rel = cleanPath.slice("/uploads/".length);
-    if (!rel || rel.includes("..")) return null;
-    const uploadPath = join(CONFIG.uploadsDir, decodeURIComponent(rel));
-    if (!uploadPath.startsWith(CONFIG.uploadsDir)) return null;
+    // Decode BEFORE the `..` check so percent-encoded traversal (`%2e%2e`)
+    // can't slip past it, and null-out malformed escapes rather than throwing.
+    const decodedRel = rel ? safeDecodeURIComponent(rel) : null;
+    if (!decodedRel || decodedRel.includes("..")) return null;
+    const uploadPath = join(CONFIG.uploadsDir, decodedRel);
+    if (!isInsideDir(uploadPath, CONFIG.uploadsDir)) return null;
     if (existsSync(uploadPath)) {
       const f = Bun.file(uploadPath);
       if (await f.exists()) {
@@ -285,8 +321,10 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   // immutable for the lifetime of the build — cache them aggressively. Other
   // top-level statics (favicon, og.png, logo.png) can change without a URL
   // change, so they get a short cache instead.
-  const filePath = join(FRONTEND_DIST, decodeURIComponent(pathname));
-  if (filePath.startsWith(FRONTEND_DIST) && existsSync(filePath)) {
+  const decodedPathname = safeDecodeURIComponent(pathname);
+  if (decodedPathname === null) return null;
+  const filePath = join(FRONTEND_DIST, decodedPathname);
+  if (isInsideDir(filePath, FRONTEND_DIST) && existsSync(filePath)) {
     const f = Bun.file(filePath);
     if (await f.exists()) {
       const isHashedAsset = pathname.startsWith("/assets/");
@@ -478,6 +516,13 @@ async function handleRequest(req: Request): Promise<Response> {
 
 const server = Bun.serve({
   port: CONFIG.port,
+  // Hard ceiling on the request body the runtime will buffer. Per-handler
+  // length caps (4 MB cover images, 1 MB CSV import, small JSON bodies) only
+  // fire AFTER formData()/json()/text() has materialized the whole body, so
+  // without this a client could push ~128 MB (Bun's default) per request and
+  // exhaust memory on the single instance. 8 MB clears the largest legitimate
+  // upload (a 4 MB image plus multipart overhead) with headroom.
+  maxRequestBodySize: 8 * 1024 * 1024,
   async fetch(req) {
     // Compress dynamic text responses (SSR HTML, JSON, sitemap/robots/llms).
     // Static assets are served from precompressed siblings inside

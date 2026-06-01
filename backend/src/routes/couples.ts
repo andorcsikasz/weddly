@@ -24,6 +24,7 @@ import {
   type WeddingSeason,
   type WeddingStyleTag,
 } from "@shared/types";
+import { COUNTRY_CODES } from "@shared/country_list";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -149,6 +150,10 @@ interface OnboardBody {
    *  couple row so the Settings card's status pill stays accurate across
    *  reloads and devices. */
   welcome_desk_active?: unknown;
+  /** ISO 3166-1 alpha-2 country code where the wedding will be held.
+   *  Drives country-aware supplier filtering (a Belgian couple shouldn't
+   *  see HU-only venues recommended). Validated against COUNTRY_CODES. */
+  country?: unknown;
 }
 
 const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
@@ -158,6 +163,23 @@ function parseCurrency(raw: unknown): Currency | null {
     throw new HttpError(400, "currency must be HUF, EUR, or USD");
   }
   return raw as Currency;
+}
+
+/** Parse an ISO 3166-1 alpha-2 country code. Returns null when the caller
+ *  didn't include the field (so the call-site can fall back to either a
+ *  locale-aware default for onboarding or "no change" for PATCH). Throws
+ *  400 on anything that isn't a known code, so a typo doesn't silently
+ *  poison the column. */
+function parseCountry(raw: unknown): string | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string") {
+    throw new HttpError(400, "country must be an ISO 3166-1 alpha-2 string");
+  }
+  const code = raw.trim().toUpperCase();
+  if (!COUNTRY_CODES.has(code)) {
+    throw new HttpError(400, "country must be a known ISO 3166-1 alpha-2 code");
+  }
+  return code;
 }
 
 /** Pick a sensible default currency for a new couple based on the owner's
@@ -485,6 +507,11 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const ownerRow = getUserById(userId);
   const ownerLocale = normaliseLocale(ownerRow?.locale);
   const currency: Currency = parseCurrency(body.currency) ?? defaultCurrencyForLocale(ownerLocale);
+  // Country drives supplier-region filtering (a Belgian couple shouldn't
+  // see HU-only venues). Falls back to 'HU' when omitted to match the
+  // existing DB default. The frontend wizard requires a pick before
+  // submit so production payloads always carry an explicit value.
+  const country: string = parseCountry(body.country) ?? "HU";
 
   const existing = getCoupleForUser(userId);
   if (existing) throw new HttpError(409, "Couple already onboarded for this user");
@@ -503,13 +530,13 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
          wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season,
          target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
          budget_ceiling_huf, budget_kind, budget_ceiling_min_huf, budget_ceiling_max_huf,
-         location_lat, location_lng, location_radius_km,
+         location_lat, location_lng, location_radius_km, country,
          style_tags_json, currency, status, created_at, updated_at, onboarded_at)
        VALUES (?, NULL, ?, ?, ?,
                ?, ?, ?, ?, ?,
                ?, ?, ?, ?,
                ?, ?, ?, ?,
-               ?, ?, ?,
+               ?, ?, ?, ?,
                ?, ?, 'active', ?, ?, ?)`,
       )
       .run(
@@ -533,6 +560,7 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
         locLat,
         locLng,
         locRadius,
+        country,
         JSON.stringify(styleTags),
         currency,
         ts,
@@ -1543,6 +1571,21 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     }
   }
 
+  if (body.country !== undefined) {
+    const parsed = parseCountry(body.country);
+    if (parsed !== null) {
+      const prev = couple.country;
+      if (parsed !== prev) {
+        updates.push({ col: "country", val: parsed });
+        auditEntries.push({
+          action: "couple.country_update",
+          before: { country: prev },
+          after: { country: parsed },
+        });
+      }
+    }
+  }
+
   if (body.rsvp_offers_accommodation !== undefined) {
     const next = parseRsvpOffersAccommodation(body.rsvp_offers_accommodation);
     const prev = Boolean(couple.rsvp_offers_accommodation);
@@ -2400,6 +2443,10 @@ async function handleSwitchActiveCouple(ctx: Ctx): Promise<Response> {
 interface CreateAdditionalCoupleBody {
   event_name?: unknown;
   wedding_date_goal?: unknown;
+  /** ISO 3166-1 alpha-2 country code for the new event. Falls back to
+   *  the current couple's country when omitted, since multi-event
+   *  weddings usually share the same country. */
+  country?: unknown;
   /** Source workspace to seed guests + households from. Optional. The
    *  caller must already be a member of this couple — verified server-
    *  side so a malicious client can't bulk-clone someone else's list. */
@@ -2452,6 +2499,17 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
   const groomName = currentCouple.groom_name;
   const displayName = eventName;
   const dateGoal = parseWeddingDateGoal(body as OnboardBody);
+  // Country falls back to the current workspace's country — most second
+  // events (civil ceremony + religious + dinner) stay in the same
+  // country. The dialog ships an explicit value when the user picks a
+  // different one. The current-couple read is `CoupleRow` (raw row with
+  // a nullable column), so we re-normalise here exactly the way
+  // `toCouple` does at the DTO boundary.
+  const inheritedCountry =
+    currentCouple.country && currentCouple.country.trim().length === 2
+      ? currentCouple.country.trim().toUpperCase()
+      : "HU";
+  const country: string = parseCountry(body.country) ?? inheritedCountry;
   const guestGoal: GuestCountGoal = { kind: "tbd", exact: null, min: null, max: null };
   const budgetGoal: BudgetGoal = {
     kind: "tbd",
@@ -2492,13 +2550,13 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
          wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season,
          target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
          budget_ceiling_huf, budget_kind, budget_ceiling_min_huf, budget_ceiling_max_huf,
-         location_lat, location_lng, location_radius_km,
+         location_lat, location_lng, location_radius_km, country,
          style_tags_json, currency, status, created_at, updated_at, onboarded_at)
        VALUES (?, NULL, ?, ?, ?,
                ?, ?, ?, ?, ?,
                ?, ?, ?, ?,
                ?, ?, ?, ?,
-               NULL, NULL, NULL,
+               NULL, NULL, NULL, ?,
                ?, ?, 'active', ?, ?, ?)`,
     )
     .run(
@@ -2519,6 +2577,7 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
       budgetGoal.kind,
       budgetGoal.min_huf,
       budgetGoal.max_huf,
+      country,
       JSON.stringify(styleTags),
       currency,
       ts,

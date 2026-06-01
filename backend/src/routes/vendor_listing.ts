@@ -18,6 +18,7 @@ import type { VendorListingEditInput, VendorListingView } from "@shared/listings
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { sniffUploadedImage } from "../lib/image_sniff";
 import {
   getListingById,
   getListingByVendorAccountId,
@@ -217,9 +218,17 @@ async function handleUploadHero(ctx: Ctx): Promise<Response> {
       code: "file_too_large",
     });
   }
-  const ext = SUPPORTED_HERO_MIMES[raw.type];
-  if (!ext) {
+  if (SUPPORTED_HERO_MIMES[raw.type] === undefined) {
     throw new HttpError(415, `Unsupported image type: ${raw.type || "unknown"}`, {
+      code: "unsupported_type",
+    });
+  }
+  // Don't trust the client Content-Type — confirm the real magic bytes are a
+  // supported image and derive the stored extension from them.
+  const sniffed = await sniffUploadedImage(raw);
+  const ext = sniffed ? SUPPORTED_HERO_MIMES[sniffed] : undefined;
+  if (!ext) {
+    throw new HttpError(415, "File contents are not a valid image", {
       code: "unsupported_type",
     });
   }

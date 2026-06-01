@@ -126,35 +126,41 @@ export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
   const ts = now();
   const id = randomBytes(8).toString("hex");
 
-  let budgetLineId: number | null = null;
-  if (input.price_huf !== null && input.price_huf > 0) {
-    budgetLineId = insertBudgetLine(
-      coupleId,
-      id,
-      input.category,
-      input.name,
-      input.price_huf,
-      input.paid,
-      ts,
-    );
-  }
+  // The budget_lines mirror and the couple_suppliers source-of-truth must
+  // commit together — a partial failure would orphan a money-bearing budget
+  // line whose supplier card never existed (and which the budget UI locks
+  // against deletion). Wrap both writes in one transaction.
+  db.transaction(() => {
+    let budgetLineId: number | null = null;
+    if (input.price_huf !== null && input.price_huf > 0) {
+      budgetLineId = insertBudgetLine(
+        coupleId,
+        id,
+        input.category,
+        input.name,
+        input.price_huf,
+        input.paid,
+        ts,
+      );
+    }
 
-  db.prepare(
-    `INSERT INTO couple_suppliers
+    db.prepare(
+      `INSERT INTO couple_suppliers
        (id, couple_id, name, category, notes, price_huf, paid, budget_line_id, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    id,
-    coupleId,
-    input.name,
-    input.category,
-    input.notes,
-    input.price_huf,
-    input.paid ? 1 : 0,
-    budgetLineId,
-    ts,
-    ts,
-  );
+    ).run(
+      id,
+      coupleId,
+      input.name,
+      input.category,
+      input.notes,
+      input.price_huf,
+      input.paid ? 1 : 0,
+      budgetLineId,
+      ts,
+      ts,
+    );
+  })();
 
   const created = getById(id, coupleId);
   if (!created) throw new Error("Failed to read inserted couple_supplier");
@@ -182,34 +188,45 @@ export function update(id: string, coupleId: number, input: UpdateInput): Couple
   const newPrice = input.price_huf !== undefined ? input.price_huf : existing.price_huf;
   const newPaid = input.paid !== undefined ? input.paid : existing.paid === 1;
 
-  let newBudgetLineId: number | null = existing.budget_line_id;
-  if (newPrice !== null && newPrice > 0) {
-    if (newBudgetLineId !== null) {
-      updateBudgetLine(newBudgetLineId, coupleId, newCategory, newName, newPrice, newPaid, ts);
-    } else {
-      newBudgetLineId = insertBudgetLine(coupleId, id, newCategory, newName, newPrice, newPaid, ts);
+  // Mirror + source-of-truth commit together (see insert()).
+  db.transaction(() => {
+    let newBudgetLineId: number | null = existing.budget_line_id;
+    if (newPrice !== null && newPrice > 0) {
+      if (newBudgetLineId !== null) {
+        updateBudgetLine(newBudgetLineId, coupleId, newCategory, newName, newPrice, newPaid, ts);
+      } else {
+        newBudgetLineId = insertBudgetLine(
+          coupleId,
+          id,
+          newCategory,
+          newName,
+          newPrice,
+          newPaid,
+          ts,
+        );
+      }
+    } else if (newBudgetLineId !== null) {
+      // Price cleared — drop the paired line.
+      deleteBudgetLine(newBudgetLineId, coupleId);
+      newBudgetLineId = null;
     }
-  } else if (newBudgetLineId !== null) {
-    // Price cleared — drop the paired line.
-    deleteBudgetLine(newBudgetLineId, coupleId);
-    newBudgetLineId = null;
-  }
 
-  db.prepare(
-    `UPDATE couple_suppliers
+    db.prepare(
+      `UPDATE couple_suppliers
         SET name = ?, category = ?, notes = ?, price_huf = ?, paid = ?, budget_line_id = ?, updated_at = ?
       WHERE id = ? AND couple_id = ?`,
-  ).run(
-    newName,
-    newCategory,
-    newNotes,
-    newPrice,
-    newPaid ? 1 : 0,
-    newBudgetLineId,
-    ts,
-    id,
-    coupleId,
-  );
+    ).run(
+      newName,
+      newCategory,
+      newNotes,
+      newPrice,
+      newPaid ? 1 : 0,
+      newBudgetLineId,
+      ts,
+      id,
+      coupleId,
+    );
+  })();
 
   return getById(id, coupleId);
 }
@@ -220,12 +237,15 @@ export function deleteById(id: string, coupleId: number): boolean {
     .get(id, coupleId) as { budget_line_id: number | null } | undefined;
   if (!existing) return false;
 
-  if (existing.budget_line_id !== null) {
-    deleteBudgetLine(existing.budget_line_id, coupleId);
-  }
-  const result = db
-    .prepare("DELETE FROM couple_suppliers WHERE id = ? AND couple_id = ?")
-    .run(id, coupleId);
+  // Drop the paired budget line and the supplier row together.
+  const result = db.transaction(() => {
+    if (existing.budget_line_id !== null) {
+      deleteBudgetLine(existing.budget_line_id, coupleId);
+    }
+    return db
+      .prepare("DELETE FROM couple_suppliers WHERE id = ? AND couple_id = ?")
+      .run(id, coupleId);
+  })();
   return result.changes > 0;
 }
 

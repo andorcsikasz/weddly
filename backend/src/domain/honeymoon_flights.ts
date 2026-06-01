@@ -77,6 +77,7 @@ function readCache(
   departDate: string,
   returnDate: string,
   adults: number,
+  currency: string,
 ): EstimateRow | null {
   const row =
     (db
@@ -90,6 +91,13 @@ function readCache(
       .get(origin, destinationText, departDate, returnDate, adults) as EstimateRow | undefined) ??
     null;
   if (!row) return null;
+  // The cache row stores prices in whatever currency the FIRST requester asked
+  // for, but the single UNIQUE(route, dates, adults) constraint means we keep
+  // only one row per route. If a couple requests a different display currency
+  // than the cached row holds, treat it as a miss so we refetch in the right
+  // currency (writeCache's ON CONFLICT overwrites the row) rather than show a
+  // HUF figure to a EUR couple, or vice-versa.
+  if (row.currency !== currency) return null;
   // Two TTLs: full-offer rows stay fresh for 12 h, empty rows for 24 h so
   // we don't hammer SerpApi for couples sitting on far-future dates that
   // Google Flights won't have inventory for yet.
@@ -211,7 +219,7 @@ export async function getFlightEstimate(couple: CoupleRow): Promise<FlightEstima
   // Fresh cache hit → return immediately. readCache enforces the TTL
   // (12 h for rows with offers, 24 h for empty rows) so a hit here is
   // always still fresh.
-  const cached = readCache(origin, destination, departDate, returnDate, adults);
+  const cached = readCache(origin, destination, departDate, returnDate, adults, currency);
   const now = Date.now();
   if (cached) return toEstimate(cached);
   // Stale row still gives us the resolved IATA for free — avoid burning a

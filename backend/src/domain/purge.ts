@@ -61,84 +61,90 @@ export function purgeOneCouple(
   // here. The full sweep is the right-to-erasure contract — anything we
   // leave behind has to either be content-free or referenced by retention
   // (audit_log only). Schema is additive, so we DELETE rather than DROP.
-  db.prepare(
-    "DELETE FROM seat_assignments WHERE table_id IN (SELECT id FROM seating_tables WHERE couple_id = ?)",
-  ).run(coupleId);
-  db.prepare("DELETE FROM seating_conflicts WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM seating_tables WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM guests WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM households WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM couple_suppliers WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM couple_picks WHERE couple_id = ?").run(coupleId);
-  // Q3 Outreach Inbox cascade — children-first so SQLite's FK enforcement
-  // doesn't complain. Tables are empty until the Q3 build wires sends, but
-  // the cascade is part of the GDPR contract and lands with the schema.
-  db.prepare(
-    `DELETE FROM outreach_replies WHERE message_id IN (
+  //
+  // All ~25 destructive statements run inside a single transaction: erasure
+  // must be atomic. A mid-sweep crash that left guests/seating deleted but
+  // the couples row still 'active' (or PII half-scrubbed) is both a data-
+  // integrity and a GDPR-compliance hazard, so we commit-or-rollback as one.
+  const applyPurge = db.transaction(() => {
+    db.prepare(
+      "DELETE FROM seat_assignments WHERE table_id IN (SELECT id FROM seating_tables WHERE couple_id = ?)",
+    ).run(coupleId);
+    db.prepare("DELETE FROM seating_conflicts WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM seating_tables WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM guests WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM households WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM couple_suppliers WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM couple_picks WHERE couple_id = ?").run(coupleId);
+    // Q3 Outreach Inbox cascade — children-first so SQLite's FK enforcement
+    // doesn't complain. Tables are empty until the Q3 build wires sends, but
+    // the cascade is part of the GDPR contract and lands with the schema.
+    db.prepare(
+      `DELETE FROM outreach_replies WHERE message_id IN (
        SELECT om.id FROM outreach_messages om
        JOIN outreach_campaigns oc ON oc.id = om.campaign_id
        WHERE oc.couple_id = ?
      )`,
-  ).run(coupleId);
-  db.prepare(
-    "DELETE FROM outreach_messages WHERE campaign_id IN (SELECT id FROM outreach_campaigns WHERE couple_id = ?)",
-  ).run(coupleId);
-  db.prepare("DELETE FROM outreach_campaigns WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM supplier_votes WHERE couple_id = ?").run(coupleId);
-  // Supplier detail page — couple-authored reviews, Q&A comments by the
-  // couple's users, and booking inquiries. Editorial reviews (couple_id NULL)
-  // belong to admins, not to this workspace, so they stay untouched.
-  // supplier_review_tags cascades via FK ON DELETE CASCADE.
-  db.prepare("DELETE FROM supplier_reviews WHERE couple_id = ?").run(coupleId);
-  db.prepare(
-    "DELETE FROM supplier_comments WHERE author_user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-  ).run(coupleId);
-  db.prepare("DELETE FROM supplier_bookings WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM planning_items WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM schedule_events WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM budget_lines WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM budget_snapshots WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM data_exports WHERE couple_id = ?").run(coupleId);
-  db.prepare("DELETE FROM couple_invites WHERE couple_id = ?").run(coupleId);
-  // Feedback rows authored by users on this workspace — message body and
-  // from_email are both personally identifying content.
-  db.prepare(
-    "DELETE FROM feedback_submissions WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-  ).run(coupleId);
-  // Email log + dispatch ledger: drop direct mentions of this couple. The
-  // `to_email` column may also contain PII; scrub via the user-id link below.
-  db.prepare("DELETE FROM email_log WHERE couple_id = ?").run(coupleId);
-  db.prepare(
-    "DELETE FROM email_log WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-  ).run(coupleId);
-  db.prepare("DELETE FROM email_dispatches WHERE couple_id = ?").run(coupleId);
-  db.prepare(
-    "DELETE FROM email_dispatches WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-  ).run(coupleId);
-  db.prepare(
-    "DELETE FROM email_preferences WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-  ).run(coupleId);
+    ).run(coupleId);
+    db.prepare(
+      "DELETE FROM outreach_messages WHERE campaign_id IN (SELECT id FROM outreach_campaigns WHERE couple_id = ?)",
+    ).run(coupleId);
+    db.prepare("DELETE FROM outreach_campaigns WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM supplier_votes WHERE couple_id = ?").run(coupleId);
+    // Supplier detail page — couple-authored reviews, Q&A comments by the
+    // couple's users, and booking inquiries. Editorial reviews (couple_id NULL)
+    // belong to admins, not to this workspace, so they stay untouched.
+    // supplier_review_tags cascades via FK ON DELETE CASCADE.
+    db.prepare("DELETE FROM supplier_reviews WHERE couple_id = ?").run(coupleId);
+    db.prepare(
+      "DELETE FROM supplier_comments WHERE author_user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+    ).run(coupleId);
+    db.prepare("DELETE FROM supplier_bookings WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM planning_items WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM schedule_events WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM budget_lines WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM budget_snapshots WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM data_exports WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM couple_invites WHERE couple_id = ?").run(coupleId);
+    // Feedback rows authored by users on this workspace — message body and
+    // from_email are both personally identifying content.
+    db.prepare(
+      "DELETE FROM feedback_submissions WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+    ).run(coupleId);
+    // Email log + dispatch ledger: drop direct mentions of this couple. The
+    // `to_email` column may also contain PII; scrub via the user-id link below.
+    db.prepare("DELETE FROM email_log WHERE couple_id = ?").run(coupleId);
+    db.prepare(
+      "DELETE FROM email_log WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+    ).run(coupleId);
+    db.prepare("DELETE FROM email_dispatches WHERE couple_id = ?").run(coupleId);
+    db.prepare(
+      "DELETE FROM email_dispatches WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+    ).run(coupleId);
+    db.prepare(
+      "DELETE FROM email_preferences WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+    ).run(coupleId);
 
-  // Sessions for users belonging to this couple — kill them so a returning
-  // user can't keep using a stale token.
-  db.prepare(
-    "DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-  ).run(coupleId);
+    // Sessions for users belonging to this couple — kill them so a returning
+    // user can't keep using a stale token.
+    db.prepare(
+      "DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
+    ).run(coupleId);
 
-  // Users: scrub PII but keep the row (FK target for audit_log + couples).
-  db.prepare(
-    `UPDATE users SET email = 'deleted-' || id || '@purged.local',
+    // Users: scrub PII but keep the row (FK target for audit_log + couples).
+    db.prepare(
+      `UPDATE users SET email = 'deleted-' || id || '@purged.local',
                       password_hash = '!purged!',
                       full_name = 'Purged user',
                       status = 'suspended',
                       updated_at = ?
        WHERE couple_id = ?`,
-  ).run(ts, coupleId);
+    ).run(ts, coupleId);
 
-  // Couple row: keep id + timestamps for retention; null out everything else.
-  db.prepare(
-    `UPDATE couples SET display_name = 'Purged workspace',
+    // Couple row: keep id + timestamps for retention; null out everything else.
+    db.prepare(
+      `UPDATE couples SET display_name = 'Purged workspace',
                         bride_name = '',
                         groom_name = '',
                         wedding_date = NULL,
@@ -151,28 +157,30 @@ export function purgeOneCouple(
                         status = 'deleting',
                         updated_at = ?
        WHERE id = ?`,
-  ).run(ts, coupleId);
+    ).run(ts, coupleId);
 
-  db.prepare(
-    "UPDATE couple_pause_requests SET status = 'completed', completed_at = ? WHERE couple_id = ? AND status = 'pending'",
-  ).run(ts, coupleId);
+    db.prepare(
+      "UPDATE couple_pause_requests SET status = 'completed', completed_at = ? WHERE couple_id = ? AND status = 'pending'",
+    ).run(ts, coupleId);
 
-  // Next-11 (GDPR purge gap): growth_events.couple_id has ON DELETE CASCADE,
-  // but `purgeOneCouple` scrubs the couples row in-place (line 117 UPDATE,
-  // not DELETE), so the cascade never fires. Explicit DELETE here so the
-  // behavioural trail — `referrer` (may carry microsite slugs that
-  // re-identify the wedding) + `payload_json` — is wiped alongside the
-  // rest of the workspace's data.
-  db.prepare("DELETE FROM growth_events WHERE couple_id = ?").run(coupleId);
+    // Next-11 (GDPR purge gap): growth_events.couple_id has ON DELETE CASCADE,
+    // but `purgeOneCouple` scrubs the couples row in-place (line 117 UPDATE,
+    // not DELETE), so the cascade never fires. Explicit DELETE here so the
+    // behavioural trail — `referrer` (may carry microsite slugs that
+    // re-identify the wedding) + `payload_json` — is wiped alongside the
+    // rest of the workspace's data.
+    db.prepare("DELETE FROM growth_events WHERE couple_id = ?").run(coupleId);
 
-  addAuditLog({
-    actor_user_id: null,
-    couple_id: coupleId,
-    action: "couple.purge",
-    target_kind: "couple",
-    target_id: coupleId,
-    note: "scheduled deletion completed",
+    addAuditLog({
+      actor_user_id: null,
+      couple_id: coupleId,
+      action: "couple.purge",
+      target_kind: "couple",
+      target_id: coupleId,
+      note: "scheduled deletion completed",
+    });
   });
+  applyPurge();
 }
 
 /**

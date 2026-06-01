@@ -17,6 +17,7 @@ import { join } from "node:path";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { json, type Router } from "../lib/http";
+import { log } from "../lib/logger";
 import { checkResendLiveness } from "../lib/mailer";
 
 interface ComponentResult {
@@ -38,10 +39,13 @@ function checkDb(): ComponentResult {
     db.query("SELECT 1").get();
     return { ok: true, ms: Math.round(performance.now() - start) };
   } catch (e) {
+    // Log the raw error server-side; never echo e.message to anonymous
+    // callers — it can disclose table names or the DB file path.
+    log.error("health.db_check_failed", e);
     return {
       ok: false,
       ms: Math.round(performance.now() - start),
-      reason: e instanceof Error ? e.message : "unknown",
+      reason: "db check failed",
     };
   }
 }
@@ -63,10 +67,13 @@ function checkDisk(): ComponentResult {
         // best-effort cleanup
       }
     }
+    // Raw filesystem errors can echo the absolute uploads path; keep them
+    // server-side only.
+    log.error("health.disk_check_failed", e);
     return {
       ok: false,
       ms: Math.round(performance.now() - start),
-      reason: e instanceof Error ? e.message : "unknown",
+      reason: "disk check failed",
     };
   }
 }
@@ -94,10 +101,11 @@ async function diskSpaceStats(): Promise<ComponentResult & { near_full?: boolean
       near_full: percentUsed >= DISK_USED_ALERT_PCT,
     };
   } catch (e) {
+    log.error("health.disk_space_failed", e);
     return {
       ok: true,
       ms: Math.round(performance.now() - start),
-      reason: e instanceof Error ? e.message : "unknown",
+      reason: "disk space unavailable",
     };
   }
 }
@@ -116,38 +124,13 @@ function memoryStats(): ComponentResult {
   };
 }
 
-/** Cheap, sync mailer config state — surfaces when the dispatcher will silently
- *  no-op (RESEND_API_KEY missing) or fall back to Resend's testing sender
- *  (which only delivers to the Resend account owner, not arbitrary recipients).
- *  Real liveness lives in `/api/health/deep` via `checkResendLiveness`. */
-function mailerConfigState(): {
-  configured: boolean;
-  from_default: boolean;
-  reason?: string;
-} {
-  const configured = !!CONFIG.resendApiKey;
-  const from_default = CONFIG.emailFrom === "Weddly <onboarding@resend.dev>";
-  if (!configured) {
-    return { configured, from_default, reason: "RESEND_API_KEY unset — emails are stdout-only" };
-  }
-  if (from_default) {
-    return {
-      configured,
-      from_default,
-      reason: "EMAIL_FROM uses resend.dev — only delivers to the Resend account owner",
-    };
-  }
-  return { configured, from_default };
-}
-
 export function registerHealthRoutes(router: Router) {
   router.get("/api/health", () => {
+    // DB-only liveness, no auth (Railway healthcheck + UptimeRobot keyword on
+    // `"ok":true`). Deliberately does NOT surface mailer/email config posture
+    // to anonymous callers — that's recon material with no monitoring value.
     const dbCheck = checkDb();
-    const mailer = mailerConfigState();
-    return json(
-      { ok: dbCheck.ok, db: dbCheck.ok, mailer, ts: now() },
-      { status: dbCheck.ok ? 200 : 503 },
-    );
+    return json({ ok: dbCheck.ok, db: dbCheck.ok, ts: now() }, { status: dbCheck.ok ? 200 : 503 });
   });
 
   router.get("/api/health/deep", async () => {

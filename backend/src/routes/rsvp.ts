@@ -425,7 +425,11 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   // Idempotency. Header is preferred (frontend sends a fresh UUID per submit
   // attempt); a content-hash key is the fallback so a retransmit without a
   // header still doesn't duplicate `added_members` rows.
-  const idemHeader = ctx.req.headers.get("idempotency-key")?.trim();
+  // Cap the attacker-controlled header before using it as a live cache key —
+  // every other untrusted field in this public handler is length-checked, and
+  // an uncapped value would pin an arbitrarily large string in the in-memory
+  // idempotency map for the full TTL.
+  const idemHeader = ctx.req.headers.get("idempotency-key")?.trim().slice(0, 200);
   const idemKey = idemHeader || (await hashBodyKey(rawBody));
   const cacheKey = `${hh.id}:${idemKey}`;
   gcIdempotency();

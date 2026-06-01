@@ -75,6 +75,43 @@ export async function sendKind<K extends EmailKind>(
   payload: KindPayload[K],
   target: SendTarget,
 ): Promise<SendResult> {
+  // Honour the module's never-throw contract for the WHOLE body, not just the
+  // network send. Pre-send work — lookupUserLocale, ensurePreferences (DB
+  // reads), buildEmail (template render) — runs before the inner try block and
+  // can throw (SQLITE_BUSY, a template bug). Without this guard a throw there
+  // rejects the fire-and-forget `void sendKind(...)` and surfaces only as a
+  // context-less process-level unhandledRejection.
+  try {
+    return await sendKindInner(kind, payload, target);
+  } catch (e) {
+    const errMsg = e instanceof Error ? e.message : String(e);
+    try {
+      recordEmailAttempt({
+        user_id: target.user?.id ?? null,
+        couple_id: target.couple_id ?? null,
+        kind,
+        category: KIND_CATEGORY[kind],
+        to_email: "",
+        subject: "",
+        status: "failed",
+        error: errMsg.slice(0, 500),
+      });
+      reportError("mailer.send_failed_pre_dispatch", e, {
+        kind,
+        couple_id: target.couple_id ?? null,
+      });
+    } catch {
+      // Best-effort bookkeeping — never let the failure path throw either.
+    }
+    return { status: "failed", error: errMsg };
+  }
+}
+
+async function sendKindInner<K extends EmailKind>(
+  kind: K,
+  payload: KindPayload[K],
+  target: SendTarget,
+): Promise<SendResult> {
   const category = KIND_CATEGORY[kind];
 
   // Resolve recipient + display name + unsubscribe token.
