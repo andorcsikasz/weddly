@@ -25,6 +25,7 @@ import {
   Clock,
   Compass,
   ExternalLink,
+  Loader2,
   Map as MapIcon,
   ArrowRightLeft,
   AlertTriangle,
@@ -237,11 +238,19 @@ export default function HoneymoonPage() {
   // of jumping only on release. Keyed by line id; cleared when the row
   // settles (save lands or drag returns to the saved value).
   const [drafts, setDrafts] = useState<Record<number, number>>({});
-  // Amadeus flight estimate for the current destination + dates. Loaded
-  // lazily on mount and whenever the couple's destination/dates change;
-  // server-side cache (12 h) keeps the upstream API call rare. `null` while
-  // loading, on miss, or when Amadeus isn't configured — the card just hides.
+  // Amadeus flight estimate for the current destination + dates. NOT loaded
+  // automatically. The upstream search is kicked off only when the couple
+  // presses the "Get flight prices" button (see loadFlightEstimate). Changing
+  // the destination or dates clears it so the button reappears for a fresh
+  // search. `null` before the first search, on miss, or when the upstream
+  // isn't configured. Server-side cache (12 h) keeps repeat calls cheap.
   const [flightEstimate, setFlightEstimate] = useState<FlightEstimate | null>(null);
+  // Whether a flight search is in flight (button → spinner).
+  const [flightLoading, setFlightLoading] = useState(false);
+  // Whether the user has run a search for the current destination/dates. Lets
+  // us tell "not searched yet" (show the button) apart from "searched, no live
+  // offer came back" (show the empty hint + a retry).
+  const [flightSearched, setFlightSearched] = useState(false);
   // Honeymoon-topic todos pulled from /api/planning. The planning page is
   // the source of truth; we mirror the rows here so couples can tick items
   // off without leaving /app/honeymoon. Tasks with topic === null are
@@ -296,36 +305,36 @@ export default function HoneymoonPage() {
     });
   }, []);
 
-  // (Re)fetch the flight estimate whenever the destination or dates change.
-  // Bail when any of the three is missing so we don't hammer the server with
-  // empty-input requests during onboarding.
+  // Clear any prior estimate whenever the destination or dates change so a
+  // stale result for the old trip never lingers and the "Get flight prices"
+  // button comes back for a fresh search. We deliberately do NOT auto-fetch
+  // here. The upstream search runs only on an explicit button press.
   useEffect(() => {
+    setFlightEstimate(null);
+    setFlightSearched(false);
+  }, [couple?.honeymoon_destination, couple?.honeymoon_start_date, couple?.honeymoon_end_date]);
+
+  // Kick off the flight-price search for the current destination + dates.
+  // Wired to the button (and re-run after an origin change inside the card).
+  async function loadFlightEstimate() {
     if (
       !couple?.honeymoon_destination ||
       !couple?.honeymoon_start_date ||
       !couple?.honeymoon_end_date
     ) {
-      setFlightEstimate(null);
       return;
     }
-    let cancelled = false;
-    honeymoonApi
-      .flightEstimate()
-      .then((r) => {
-        if (!cancelled) setFlightEstimate(r.estimate);
-      })
-      .catch(() => {
-        if (!cancelled) setFlightEstimate(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    couple?.honeymoon_destination,
-    couple?.honeymoon_start_date,
-    couple?.honeymoon_end_date,
-    couple?.honeymoon_origin_iata,
-  ]);
+    setFlightLoading(true);
+    try {
+      const r = await honeymoonApi.flightEstimate();
+      setFlightEstimate(r.estimate);
+    } catch {
+      setFlightEstimate(null);
+    } finally {
+      setFlightSearched(true);
+      setFlightLoading(false);
+    }
+  }
 
   const honeymoonLines = useMemo(() => lines.filter((l) => l.category === "honeymoon"), [lines]);
   // Each preset chip is single-use. We resolve every existing line back to
@@ -368,6 +377,10 @@ export default function HoneymoonPage() {
     couple?.wedding_date &&
       couple?.honeymoon_start_date &&
       couple.honeymoon_start_date < couple.wedding_date,
+  );
+  // Destination + both dates are needed before a flight search makes sense.
+  const tripReady = Boolean(
+    couple?.honeymoon_destination && couple?.honeymoon_start_date && couple?.honeymoon_end_date,
   );
 
   /* ─── Trip-detail saves (destination + dates) ─────────────────────── */
@@ -514,21 +527,60 @@ export default function HoneymoonPage() {
         />
       </section>
 
-      {/* Card only renders when at least one live offer came back. Google
-       *  Flights returns nothing for dates much beyond ~12 months out, so
-       *  for an early-bird honeymoon there's nothing to surface yet — and
-       *  the user shouldn't see a "No live offer" stub that suggests we
-       *  broke something. The card reappears automatically once airlines
-       *  open inventory for the dates. */}
-      {flightEstimate && flightEstimate.offers.length > 0 && (
-        <FlightEstimateCard
-          estimate={flightEstimate}
-          locale={locale}
-          t={t}
-          currentOrigin={couple?.honeymoon_origin_iata ?? null}
-          onOriginSave={(iata) => saveTrip({ honeymoon_origin_iata: iata })}
-        />
-      )}
+      {/* Flight prices are never fetched automatically. The upstream search
+       *  costs money, so we wait for an explicit button press. Once offers
+       *  come back the card replaces the button; changing the destination or
+       *  dates clears it and the button returns for a fresh search. */}
+      {tripReady &&
+        (flightEstimate && flightEstimate.offers.length > 0 ? (
+          <FlightEstimateCard
+            estimate={flightEstimate}
+            locale={locale}
+            t={t}
+            currentOrigin={couple?.honeymoon_origin_iata ?? null}
+            onOriginSave={async (iata) => {
+              await saveTrip({ honeymoon_origin_iata: iata });
+              await loadFlightEstimate();
+            }}
+          />
+        ) : (
+          <section className="card stationery-light mt-4 mx-4 !p-5 sm:mx-8">
+            <div className="flex flex-wrap items-center gap-3">
+              <Plane
+                size={18}
+                aria-hidden="true"
+                className="shrink-0 text-ink-900 dark:text-paper-50"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  {t("honeymoon.flight_estimate_title")}
+                </p>
+                <p className="mt-0.5 text-sm text-ink-700 dark:text-paper-100">
+                  {flightSearched
+                    ? t("honeymoon.flight_estimate_empty")
+                    : t("honeymoon.flight_estimate_prompt")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={loadFlightEstimate}
+                disabled={flightLoading}
+                className="btn-primary btn-sm inline-flex items-center gap-1.5"
+              >
+                {flightLoading ? (
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Plane size={15} aria-hidden="true" />
+                )}
+                {flightLoading
+                  ? t("honeymoon.flight_estimate_searching")
+                  : flightSearched
+                    ? t("honeymoon.flight_estimate_retry")
+                    : t("honeymoon.flight_estimate_search")}
+              </button>
+            </div>
+          </section>
+        ))}
 
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">

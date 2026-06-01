@@ -146,6 +146,12 @@ export interface LocaleMessages {
     all_day_label: string;
     now_label: string;
     day_empty: string;
+    /** Header countdown chip: days remaining until the wedding date. */
+    countdown_days_one: string;
+    countdown_days_other: string;
+    countdown_today: string;
+    countdown_past_one: string;
+    countdown_past_other: string;
   };
   a11y: {
     /** Generic close button label (dialogs, sheets). */
@@ -1186,6 +1192,7 @@ export interface LocaleMessages {
     idea_placeholder: string;
     schedule_placeholder: string;
     /** Inputs surfaced inline next to the quick-add title. */
+    start_date_label: string;
     due_date_label: string;
     time_label: string;
     /** Expanded-row notes textarea placeholder. */
@@ -1310,6 +1317,10 @@ export interface LocaleMessages {
     flight_estimate_title: string;
     flight_estimate_basis: string;
     flight_estimate_empty: string;
+    flight_estimate_prompt: string;
+    flight_estimate_search: string;
+    flight_estimate_searching: string;
+    flight_estimate_retry: string;
     flight_estimate_attribution: string;
     /** Origin IATA badge inside the flight estimate card. The badge value
      *  itself is the 3-letter code; the label sits above it. The edit
