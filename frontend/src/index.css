@@ -323,6 +323,18 @@
     --btn-rim-hover: #010207;
     --btn-rim-active: theme("colors.ink.900");
   }
+  /* Landing primary CTAs ride the warm "specialty coffee" umber rather
+     than the workspace's ink navy — keeps the public page on the coffee
+     palette (and matches the demo card's umber-900 button) without
+     touching the app's btn-primary. Compound selector so it only hits
+     buttons that are BOTH btn-primary and btn-landing. */
+  .btn-landing.btn-primary {
+    @apply bg-umber-900 hover:bg-umber-950
+      dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-50;
+    --btn-rim: #060402;
+    --btn-rim-hover: #030201;
+    --btn-rim-active: theme("colors.umber.950");
+  }
   .btn-accent {
     /* Bumped from blush-500 → blush-600 for AA contrast on the warm paper
        background. Hover steps one shade deeper to keep the press feedback.
