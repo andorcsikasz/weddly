@@ -398,9 +398,10 @@
      Dropped the `uppercase` modifier — it was competing with the page's
      uppercase-tracked eyebrows for the same visual register. The lifted
      shadow already differentiates buttons; weight + slight tracking is
-     enough on top. */
+     enough on top. Font is self-hosted General Sans (`font-grotesk`) so
+     every landing CTA matches the neo-grotesque demo button. */
   .btn-landing {
-    @apply font-semibold tracking-wide;
+    @apply font-grotesk font-semibold tracking-wide;
   }
 
   .input {
