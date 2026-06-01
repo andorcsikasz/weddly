@@ -203,7 +203,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
-              <h2 className="font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
               <ul className="mt-7 space-y-3">
@@ -887,7 +887,10 @@ function BlogTeaser() {
           );
         })}
       </ul>
-      <div className="mx-auto hidden max-w-6xl px-4 sm:block sm:px-6">
+      <div className="mx-auto hidden max-w-6xl px-4 pb-16 sm:block sm:px-6 sm:pb-20">
+        {/* Bottom padding gives the lifted CTA's drop shadow room to render
+            inside this section — without it the shadow overflows the section
+            edge and the next (opaque) section paints over it, clipping it. */}
         {/* `items-stretch` on the grid + `h-full` on each Link makes every
             cell take the row-max height; the inner column uses `flex-1` so
             the date/read-time row anchors to the bottom regardless of how
