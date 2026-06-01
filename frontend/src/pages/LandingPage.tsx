@@ -646,12 +646,12 @@ function FoundingCouplesBand() {
         </div>
 
         {/* Right: the live remaining-seats hero + the action row */}
-        <div className="flex shrink-0 flex-col items-center gap-6 sm:items-end">
+        <div className="flex shrink-0 flex-col items-center gap-4 sm:items-end">
           <div className="flex flex-col items-center sm:items-end">
-            <span className="font-grotesk text-7xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-8xl">
+            <span className="font-grotesk text-6xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-7xl">
               <FoundingCount value={heroSeats} />
             </span>
-            <span className="mt-2 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400">
+            <span className="mt-1 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400">
               {t("landing.founders_seats_label")}
             </span>
           </div>
