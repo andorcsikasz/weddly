@@ -857,10 +857,11 @@ const hu: LocaleMessages = {
       "Az első 200 regisztráló pár az esküvője utolsó pillanatáig ingyen tervez a Wēddlyvel. Nincs apró betű, nincs bankkártya.",
     founders_seats_label: "ingyenes hely",
     founders_joined_caption: "pár már foglalt",
+    founders_left_caption: "még szabad",
     founders_body:
       "Az első 200 regisztráló pár az esküvője utolsó pillanatáig ingyen használja a Wēddlyt: költségvetés, vendéglista, RSVP, ültetés, minden egy helyen. Ti vagytok a vendégeink.",
     founders_note: "Kétszáz párnak terítünk. Csatlakozzatok, amíg van szabad hely az asztalnál.",
-    founders_cta: "Foglaljatok helyet",
+    founders_cta: "Regisztráljatok",
     founders_share_prompt: "Ismertek egy párt, akinek jól jönne? Hívjátok meg őket.",
     founders_share_cta: "Link megosztása",
     founders_share_copied: "Link a vágólapon. Adjátok tovább.",

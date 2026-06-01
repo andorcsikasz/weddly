@@ -136,6 +136,11 @@ export default {
           "system-ui",
           "sans-serif",
         ],
+        // High-contrast "didone" display serif for the founding-band numeral.
+        // Pure system stack — Didot / Bodoni 72 ship on macOS & iOS; everyone
+        // else lands on Georgia (itself a contrast serif), so the figure keeps
+        // its couture feel with zero third-party requests. No CDN, no woff2.
+        didone: ['"Didot"', '"Bodoni 72"', "Georgia", '"Times New Roman"', "serif"],
       },
       boxShadow: {
         soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",

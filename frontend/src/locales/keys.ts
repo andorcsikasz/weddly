@@ -952,6 +952,8 @@ export interface LocaleMessages {
     founders_seats_label: string;
     /** Caption after the live booked count in the progress sliver. */
     founders_joined_caption: string;
+    /** Caption after the live remaining-seats count (e.g. "left"). */
+    founders_left_caption: string;
     founders_body: string;
     founders_note: string;
     founders_cta: string;

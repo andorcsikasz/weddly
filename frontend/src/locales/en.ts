@@ -847,11 +847,12 @@ const en: LocaleMessages = {
       "The first 200 couples to sign up plan their whole wedding on Weddly, free right up to their big day. No fine print, no card.",
     founders_seats_label: "free spots",
     founders_joined_caption: "couples already in",
+    founders_left_caption: "left",
     founders_body:
       "The first 200 couples to register use Weddly free until the very last moment of their wedding: budget, guest list, RSVP, seating, all in one place. You're our guests.",
     founders_note:
       "We're setting the table for two hundred couples. Take a seat while there's room.",
-    founders_cta: "Take your seat",
+    founders_cta: "Register",
     founders_share_prompt: "Know a couple who'd love this? Pass them an invite.",
     founders_share_cta: "Share the link",
     founders_share_copied: "Link copied. Pass it on.",

@@ -597,6 +597,8 @@ function FoundingCouplesBand() {
   const showProgress = claimed !== null && claimed > 0 && claimed < 200;
   // Floor the fill at 2% so even a handful of couples paints a visible sliver.
   const pctClaimed = claimed === null ? 0 : Math.max(2, Math.round((claimed / 200) * 100));
+  // Scarcity-forward: surface how many of the 200 founding seats remain.
+  const remaining = claimed === null ? null : 200 - claimed;
 
   async function shareFoundingLink() {
     const url = `${window.location.origin}/?ref=share`;
@@ -633,7 +635,7 @@ function FoundingCouplesBand() {
     // (pitch + promise | the 200 hero, progress and CTA). The 200 leads — it's
     // the offer; the live booked count is a demoted progress sliver underneath.
     <section className="bg-umber-900">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:items-start sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
         {/* Pitch + promise */}
         <div className="sm:max-w-md">
           <h2 className="font-serif text-3xl italic leading-[1.05] text-paper-50 sm:text-4xl">
@@ -647,7 +649,7 @@ function FoundingCouplesBand() {
         {/* The 200 hero + progress + action */}
         <div className="flex shrink-0 flex-col items-center gap-6 sm:items-end">
           <div className="flex flex-col items-center sm:items-end">
-            <span className="font-sans text-7xl font-light tabular-nums leading-none tracking-tight text-paper-50 sm:text-8xl">
+            <span className="font-didone text-7xl font-normal tabular-nums leading-none tracking-tight text-paper-50 sm:text-8xl">
               200
             </span>
             <span className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] text-paper-400">
@@ -662,7 +664,7 @@ function FoundingCouplesBand() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-paper-400 sm:text-right">
-                  <FoundingCount value={claimed ?? 0} /> {t("landing.founders_joined_caption")}
+                  <FoundingCount value={remaining ?? 0} /> {t("landing.founders_left_caption")}
                 </p>
               </div>
             )}
