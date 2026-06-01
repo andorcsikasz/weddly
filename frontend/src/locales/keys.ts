@@ -3303,6 +3303,8 @@ export interface LocaleMessages {
     analytics_traffic_empty: string;
     analytics_traffic_setup_title: string;
     analytics_traffic_setup_body: string;
+    analytics_traffic_api_error_title: string;
+    analytics_traffic_api_error_hint: string;
     analytics_traffic_active_users: string;
     analytics_traffic_sessions: string;
     analytics_traffic_page_views: string;

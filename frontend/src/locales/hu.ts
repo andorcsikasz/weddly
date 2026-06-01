@@ -2942,6 +2942,9 @@ const hu: LocaleMessages = {
     analytics_traffic_setup_title: "GA4 forgalom – beállítás szükséges",
     analytics_traffic_setup_body:
       "A GA4 Data API nincs bekötve. Add meg a következő env változókat a Railway-en: a numerikus property azonosítót és egy service account kulcs JSON-ját (Viewer joggal a GA4 propertyn).",
+    analytics_traffic_api_error_title: "A GA4 lekérdezés hibára futott",
+    analytics_traffic_api_error_hint:
+      "Gyakori okok: a Google Analytics Data API nincs engedélyezve a Google Cloud projektben; a service account e-mail nem kapott Megtekintő (Viewer) jogot a GA4 propertyn; vagy nem a numerikus Property ID-t adtad meg (a „G-…” mérési azonosító nem jó ide).",
     analytics_traffic_active_users: "Látogatók (7 nap)",
     analytics_traffic_sessions: "Munkamenetek (7 nap)",
     analytics_traffic_page_views: "Oldalmegtekintés (7 nap)",

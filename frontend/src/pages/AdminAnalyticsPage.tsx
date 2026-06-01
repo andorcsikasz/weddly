@@ -853,6 +853,26 @@ function TrafficSection({
     );
   }
 
+  // Configured, but the GA4 Data API rejected the call — show the actual cause
+  // (admin-only surface) plus the usual culprits so the operator can self-fix.
+  if (d.error) {
+    return (
+      <SectionCard title={title}>
+        <div className="rounded-xl bg-blush-50 p-4 ring-1 ring-blush-200 dark:bg-blush-500/10 dark:ring-blush-500/30">
+          <h3 className={`m-0 mb-1 ${CARD_TITLE}`}>
+            {t("admin.analytics_traffic_api_error_title")}
+          </h3>
+          <p className="m-0 break-words font-mono text-xs text-ink-700 dark:text-paper-100">
+            {d.error}
+          </p>
+          <p className="mt-2 mb-0 text-sm text-ink-600 dark:text-paper-200">
+            {t("admin.analytics_traffic_api_error_hint")}
+          </p>
+        </div>
+      </SectionCard>
+    );
+  }
+
   const t7 = d.totals_7d;
   const t28 = d.totals_28d;
   const dailyMax = Math.max(0, ...d.active_users_daily.map((p) => p.count));

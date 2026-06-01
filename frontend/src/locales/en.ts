@@ -2910,6 +2910,9 @@ const en: LocaleMessages = {
     analytics_traffic_setup_title: "GA4 traffic – setup required",
     analytics_traffic_setup_body:
       "The GA4 Data API isn't wired up. Set these env vars on Railway: the numeric property id and a service-account key JSON (granted Viewer access on the GA4 property).",
+    analytics_traffic_api_error_title: "GA4 request failed",
+    analytics_traffic_api_error_hint:
+      "Common causes: the Google Analytics Data API isn't enabled in the Google Cloud project; the service-account email wasn't granted Viewer access on the GA4 property; or the value isn't the numeric Property ID (the \"G-…\" measurement id won't work here).",
     analytics_traffic_active_users: "Visitors (7d)",
     analytics_traffic_sessions: "Sessions (7d)",
     analytics_traffic_page_views: "Page views (7d)",
