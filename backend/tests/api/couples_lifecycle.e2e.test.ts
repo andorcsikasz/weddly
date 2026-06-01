@@ -186,7 +186,7 @@ describe("couples_lifecycle: onboarding goal validation", () => {
       "POST",
       "/api/couples/onboard",
       {
-        display_name: "Anna & Bence",
+        display_name: "Mia & Lucas",
         wedding_date: "2026/09/12",
         target_guest_count: 80,
       },
@@ -577,7 +577,7 @@ describe("couples_lifecycle: invite lifecycle edge cases", () => {
       `/api/invites/${inv.data.invite.token}`,
     );
     expect(r.status).toBe(200);
-    expect(r.data.couple_display_name).toBe("Anna & Bence");
+    expect(r.data.couple_display_name).toBe("Mia & Lucas");
   });
 });
 

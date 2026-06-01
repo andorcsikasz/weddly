@@ -327,7 +327,7 @@ describe("supplier_outreach email builder sets Reply-To to the couple owner", ()
     const built = buildEmail(
       "supplier_outreach",
       {
-        coupleDisplayName: "Anna & Bence",
+        coupleDisplayName: "Mia & Lucas",
         coupleReplyEmail: "anna.bence@example.test",
         coupleReplyName: "Anna",
         supplierName: "Etyeki Kúria",

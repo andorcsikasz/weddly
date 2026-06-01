@@ -565,7 +565,7 @@ describe("pause_delete_gdpr: cross-couple isolation", () => {
       .prepare("SELECT status, display_name FROM couples WHERE id = ?")
       .get(cidB) as { status: string; display_name: string };
     expect(bCouple.status).toBe("active");
-    expect(bCouple.display_name).toBe("Anna & Bence");
+    expect(bCouple.display_name).toBe("Mia & Lucas");
 
     const bGuests = (
       db.prepare("SELECT COUNT(*) AS n FROM guests WHERE couple_id = ?").get(cidB) as { n: number }

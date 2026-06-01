@@ -117,7 +117,7 @@ export interface UserFlag {
 
 export interface AdminCoupleView {
   id: number;
-  /** Human-readable workspace identifier (e.g. "ANNABENCE"). Falls back to
+  /** Human-readable workspace identifier (e.g. "MIALUCAS"). Falls back to
    *  null on legacy rows that pre-date the slug column; the admin UI shows
    *  `#${id}` in that case. */
   slug: string | null;

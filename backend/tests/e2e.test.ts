@@ -623,7 +623,7 @@ describe("onboarding + invites", () => {
       "POST",
       "/api/couples/onboard",
       {
-        display_name: "Anna & Bence",
+        display_name: "Mia & Lucas",
         wedding_date: "2026-09-12",
         target_guest_count: 80,
         budget_ceiling_huf: 5_000_000,
@@ -632,7 +632,7 @@ describe("onboarding + invites", () => {
       { token: a.data.token },
     );
     expect(onboard.status).toBe(201);
-    expect(onboard.data.couple.display_name).toBe("Anna & Bence");
+    expect(onboard.data.couple.display_name).toBe("Mia & Lucas");
 
     // Budget lines are seeded from DEFAULT_BUDGET_SPLIT.
     const lines = db
@@ -673,7 +673,7 @@ describe("onboarding + invites", () => {
       `/api/invites/${inv.data.invite.token}`,
     );
     expect(lookup.status).toBe(200);
-    expect(lookup.data.couple_display_name).toBe("Anna & Bence");
+    expect(lookup.data.couple_display_name).toBe("Mia & Lucas");
 
     // Partner B registers + accepts. Accepting an invite is NOT gated on
     // verify (the invite link itself is the email-confirmation signal),
@@ -1102,7 +1102,7 @@ describe("onboarding + invites", () => {
       { token: u.data.token },
     );
     expect(ob.status).toBe(201);
-    expect(ob.data.couple.display_name).toBe("Anna & Bence");
+    expect(ob.data.couple.display_name).toBe("Mia & Lucas");
     expect(ob.data.couple.bride_name).toBe("Anna");
     expect(ob.data.couple.groom_name).toBe("Bence");
     expect(ob.data.couple.wedding_date_goal.kind).toBe("season");
@@ -1477,7 +1477,7 @@ async function bootstrapCouple(
     "POST",
     "/api/couples/onboard",
     {
-      display_name: "Anna & Bence",
+      display_name: "Mia & Lucas",
       wedding_date: "2026-09-12",
       target_guest_count: 80,
       budget_ceiling_huf: 5_000_000,
@@ -1687,7 +1687,7 @@ describe("rsvp", () => {
       };
     }>("GET", `/api/rsvp/${code}`);
     expect(get.status).toBe(200);
-    expect(get.data.rsvp.couple_display_name).toBe("Anna & Bence");
+    expect(get.data.rsvp.couple_display_name).toBe("Mia & Lucas");
     expect(get.data.rsvp.members[0]!.full_name).toBe("Public Guest");
 
     // Legacy POST still accepts the old single-guest shape; the +1 gets
@@ -1989,7 +1989,7 @@ describe("households + airport check-in", () => {
     }>("GET", "/api/households", undefined, { token: reg.data.token });
     expect(list.data.households.length).toBe(1);
     const host = list.data.households[0]!;
-    expect(host.label).toBe("Anna & Bence");
+    expect(host.label).toBe("Mia & Lucas");
     expect(host.member_ids.length).toBe(2);
     expect(host.is_couple_household).toBe(true);
 
@@ -3155,7 +3155,7 @@ describe("email verification", () => {
     const blocked = await req<{ error: string; detail?: { code?: string } }>(
       "POST",
       "/api/couples/onboard",
-      { display_name: "Anna & Bence", style_tags: [] },
+      { display_name: "Mia & Lucas", style_tags: [] },
       { token: reg.data.token },
     );
     expect(blocked.status).toBe(403);
@@ -3176,7 +3176,7 @@ describe("email verification", () => {
     const ok = await req<{ couple: { id: number } }>(
       "POST",
       "/api/couples/onboard",
-      { display_name: "Anna & Bence", style_tags: [] },
+      { display_name: "Mia & Lucas", style_tags: [] },
       { token: reg.data.token },
     );
     expect(ok.status).toBe(201);
@@ -4750,8 +4750,8 @@ describe("admin users + couples directory", () => {
     expect(c.id).toBe(coupleId);
     expect(c.partners.map((p) => p.email)).toContain("partner@weddly.test");
     // Slug is derived from the bride/groom names by the onboarding flow —
-    // bootstrapCouple uses "Anna & Bence", which slugifies to ANNABENCE.
-    expect(c.slug).toBe("ANNABENCE");
+    // bootstrapCouple uses "Mia & Lucas", which slugifies to MIALUCAS.
+    expect(c.slug).toBe("MIALUCAS");
   });
 
   test("admin resend-verify: 200 when unverified, ok+already_verified when already done", async () => {

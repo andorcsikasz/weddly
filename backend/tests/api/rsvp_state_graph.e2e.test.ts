@@ -597,7 +597,7 @@ describe("rsvp state graph: guest portal gate", () => {
     expect(r.status).toBe(200);
     expect(r.data.portal.schedule.length).toBe(1);
     expect(r.data.portal.schedule[0]!.label).toBe("Ceremony");
-    expect(r.data.portal.couple_display_name).toBe("Anna & Bence");
+    expect(r.data.portal.couple_display_name).toBe("Mia & Lucas");
   });
 });
 

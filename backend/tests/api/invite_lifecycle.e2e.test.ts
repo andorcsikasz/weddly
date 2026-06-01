@@ -302,7 +302,7 @@ describe("invite_lifecycle: public lookup", () => {
       couple_display_name: string;
     }>("GET", `/api/invites/${inviteToken}`);
     expect(r.status).toBe(200);
-    expect(r.data.couple_display_name).toBe("Anna & Bence");
+    expect(r.data.couple_display_name).toBe("Mia & Lucas");
     expect(r.data.invite.invited_email).toBe("look-pub-b@weddly.test");
   });
 

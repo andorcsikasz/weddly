@@ -100,7 +100,7 @@ function parseHuf(raw: string): number | null {
   return Math.round(n);
 }
 
-/** Filename-friendly slug. "Anna & Bence" → "Anna-Bence". Strips diacritics so
+/** Filename-friendly slug. "Mia & Lucas" → "Mia-Lucas". Strips diacritics so
  *  HU names like "Réka & Márton" become "Reka-Marton". */
 function slugifyName(raw: string): string {
   const cleaned = raw

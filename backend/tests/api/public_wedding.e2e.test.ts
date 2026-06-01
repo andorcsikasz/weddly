@@ -191,8 +191,8 @@ describe("/w/:slug SSR meta — couple-personalised <title> + OG tags", () => {
     expect(html).toContain("Weddly · Your shared wedding-planning workspace");
     // Spot-check that the bride/groom test names (set by bootstrapCouple)
     // do NOT leak into the head when is_public = 0.
-    expect(html).not.toContain("Anna");
-    expect(html).not.toContain("Bence");
+    expect(html).not.toContain("Mia");
+    expect(html).not.toContain("Lucas");
   });
 });
 

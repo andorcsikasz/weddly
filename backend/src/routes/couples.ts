@@ -1311,7 +1311,7 @@ function parsePlanningCount(raw: unknown): number | null {
  *  fields, and the cost-planning `planning_count` slider.
  *
  *  Audit-log strategy: each field cluster fires its OWN per-field action so
- *  partner B can see "Anna changed the wedding date" vs "Bence updated the
+ *  partner B can see "Mia changed the wedding date" vs "Lucas updated the
  *  budget cap" in the activity feed. A multi-field PATCH writes multiple
  *  rows. We keep generic `couple.update` only as a fallback when none of the
  *  recognised clusters match — historical entries still render. */

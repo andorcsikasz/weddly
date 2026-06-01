@@ -640,7 +640,7 @@ function buildHeadBlock(opts: {
    *  `<title>` + meta description + OG/Twitter title+description switch
    *  to a personalised string and `cover_image_url` (if set) replaces
    *  the brand og.png. The whole viral loop hinges on this — the share
-   *  card on FB / WhatsApp / iMessage must say "Anna & Bence · 12 Sept 2026"
+   *  card on FB / WhatsApp / iMessage must say "Mia & Lucas · 12 Sept 2026"
    *  and show their cover image, not "Plan your wedding together". */
   weddingMeta?: WeddingSiteMeta | null;
 }): string {

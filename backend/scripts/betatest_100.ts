@@ -112,7 +112,7 @@ function buildPersonas(): PersonaSpec[] {
     personas.push({
       tag: "minimalist",
       index: i,
-      display: "Anna & Bence (intimate)",
+      display: "Mia & Lucas (intimate)",
       guests: 20 + (i % 21),
       budgetHuf: 1_000_000 + (i % 3) * 500_000,
       scheduleEvents: 4,

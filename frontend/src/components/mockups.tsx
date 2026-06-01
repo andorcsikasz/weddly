@@ -12,7 +12,7 @@
  * surrounding page.
  *
  * Visible text is localised via `useT()` so HU users see HU labels.
- * Sample names ("Anna & Bence", supplier name) are intentionally kept
+ * Sample names ("Mia & Lucas", supplier name) are intentionally kept
  * static — they read naturally in both locales.
  */
 
@@ -130,7 +130,7 @@ export function WorkspaceMockup({ className }: Common) {
       {/* Main header */}
       <g className="font-serif text-ink-900">
         <text x="168" y="48" fontSize="26" fill="currentColor">
-          Anna &amp; Bence
+          Mia &amp; Lucas
         </text>
       </g>
       <g className="text-blush-300">

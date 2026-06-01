@@ -1296,7 +1296,7 @@ describe("rsvp lookup: validation + rate limit", () => {
     expect(r.data.rsvp.household_label).toBe("Smith party");
     expect(r.data.rsvp.household_code).toBe(hh.data.household.code);
     expect(r.data.rsvp.couple_slug).toBeTruthy();
-    expect(r.data.rsvp.couple_display_name).toBe("Anna & Bence");
+    expect(r.data.rsvp.couple_display_name).toBe("Mia & Lucas");
     expect(r.data.rsvp.members.length).toBe(1);
     expect(typeof r.data.rsvp.rsvp_offers_accommodation).toBe("boolean");
     expect(typeof r.data.rsvp.rsvp_collects_meal).toBe("boolean");
@@ -1984,7 +1984,7 @@ describe("guest portal: gate + isolation", () => {
     expect(r.status).toBe(200);
     expect(r.data.portal.schedule.length).toBe(1);
     expect(r.data.portal.schedule[0]!.label).toBe("Ceremony");
-    expect(r.data.portal.couple_display_name).toBe("Anna & Bence");
+    expect(r.data.portal.couple_display_name).toBe("Mia & Lucas");
   });
 
   test("GET /api/guest/portal is case-insensitive on slug", async () => {

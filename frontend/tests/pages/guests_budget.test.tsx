@@ -159,10 +159,10 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     id: 1,
     partner_a_id: 11,
     partner_b_id: null,
-    display_name: "Anna & Bence",
+    display_name: "Mia & Lucas",
     bride_name: "Anna",
     groom_name: "Bence",
-    slug: "ANNABENCE",
+    slug: "MIALUCAS",
     wedding_date_goal: {
       kind: "exact",
       exact_date: "2027-06-12",

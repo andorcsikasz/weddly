@@ -79,14 +79,14 @@ export interface PartnerInvitePayload {
   inviterName: string;
   inviteUrl: string;
   /** Optional couple display name — when present, used to personalize the
-   *  body ("Your shared workspace: Anna & Bence"). Falls back gracefully
+   *  body ("Your shared workspace: Mia & Lucas"). Falls back gracefully
    *  when empty (e.g. a freshly-onboarded couple with no display name set). */
   coupleDisplayName?: string;
 }
 export interface PartnerInviteAcceptedPayload {
   /** Display name of the partner who just clicked accept. */
   partnerName: string;
-  /** Optional couple display name for the body ("Anna & Bence"). */
+  /** Optional couple display name for the body ("Mia & Lucas"). */
   coupleDisplayName?: string;
   /** Where to land in /app — usually the dashboard. */
   dashboardUrl: string;
@@ -101,7 +101,7 @@ export interface PartnerInviteDeclinedPayload {
 export interface PartnerLeftWorkspacePayload {
   /** Display name of the partner who left. */
   partnerName: string;
-  /** Optional couple display name for the body ("Anna & Bence"). */
+  /** Optional couple display name for the body ("Mia & Lucas"). */
   coupleDisplayName?: string;
   /** Where to (re-)issue an invite — typically /app/profile. */
   reinviteUrl: string;
@@ -121,7 +121,7 @@ export interface CouplePauseCancelledPayload {
   dashboardUrl: string;
 }
 export interface AccountPurgedPayload {
-  /** Display name the workspace had at purge time ("Anna & Bence"). */
+  /** Display name the workspace had at purge time ("Mia & Lucas"). */
   coupleDisplayName: string;
 }
 export interface AccountAdminPurgedPayload {
@@ -165,7 +165,7 @@ export interface RsvpThanksForGuestPayload {
   rsvpPageUrl: string;
 }
 export interface GuestInvitePayload {
-  /** "Anna & Bence" — used in the subject + body so the recipient knows
+  /** "Mia & Lucas" — used in the subject + body so the recipient knows
    *  whose wedding they're being invited to. */
   coupleDisplayName: string;
   /** Recipient's display name as it sits in the guest row. May be null when
@@ -185,11 +185,11 @@ export interface PartnerInviteReminderPayload {
   /** Deep link straight to the dashboard's invite-partner anchor, so the
    *  recipient lands on the form they need to fill out. */
   invitePartnerUrl: string;
-  /** Optional couple display name for a warmer body ("Anna & Bence"). */
+  /** Optional couple display name for a warmer body ("Mia & Lucas"). */
   coupleDisplayName?: string;
 }
 export interface RsvpWeeklyDigestForCouplePayload {
-  /** Couple's friendly display name — "Anna & Bence". */
+  /** Couple's friendly display name — "Mia & Lucas". */
   coupleDisplayName: string;
   /** Counts since the last digest (or, on first send, since couple flipped
    *  the toggle). Builder humanises them into a sentence; zero-row digests
@@ -219,7 +219,7 @@ export interface RsvpFollowupMissingMealPayload {
   rsvpPageUrl: string;
 }
 export interface MilestonePayload {
-  /** Couple's friendly display name — "Anna & Bence". */
+  /** Couple's friendly display name — "Mia & Lucas". */
   coupleDisplayName: string;
   /** ISO date the wedding is happening. */
   weddingDate: string;
@@ -230,13 +230,13 @@ export interface WeddingTodayPayload {
   coupleDisplayName: string;
 }
 export interface WeddingTodayFollowupPayload {
-  /** "Anna & Bence" — couple's display name. */
+  /** "Mia & Lucas" — couple's display name. */
   coupleDisplayName: string;
   /** Where to leave feedback / NPS. Typically a Weddly form route. */
   feedbackUrl: string;
 }
 export interface WeddingDateChangedPayload {
-  /** "Anna & Bence" — couple's display name. */
+  /** "Mia & Lucas" — couple's display name. */
   coupleDisplayName: string;
   /** Pre-formatted prior date ("2026-09-12") or null if guests had never been
    *  told a date in the first place. */
@@ -248,7 +248,7 @@ export interface WeddingDateChangedPayload {
 }
 
 export interface RsvpDeadlineApproachingPayload {
-  /** Couple's display name — "Anna & Bence". */
+  /** Couple's display name — "Mia & Lucas". */
   coupleDisplayName: string;
   /** Pre-formatted wedding date the body references. */
   weddingDate: string;
@@ -329,7 +329,7 @@ export interface VendorClaimApprovedPayload {
 }
 
 export interface SupplierOutreachPayload {
-  /** "Anna & Bence" — couple's display name. Used in the From label and the
+  /** "Mia & Lucas" — couple's display name. Used in the From label and the
    *  opening line so the vendor knows who's writing. */
   coupleDisplayName: string;
   /** Couple owner's email. Lands in the Reply-To header so the vendor's

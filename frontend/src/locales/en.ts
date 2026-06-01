@@ -432,8 +432,7 @@ const en: LocaleMessages = {
     budget_help: "We'll seed category splits — you can fine-tune each line later.",
     step5_title: "Which country will the wedding be in?",
     country_label: "Country",
-    country_helper:
-      "We'll use this so we don't suggest suppliers who can't work in your country.",
+    country_helper: "We'll use this so we don't suggest suppliers who can't work in your country.",
     country_placeholder: "Start typing…",
     country_required: "Pick a country.",
     style_help: "Pick as many as you like. Style is just a tag on the profile — nothing locks in.",
@@ -888,7 +887,7 @@ const en: LocaleMessages = {
     testimonials_title: "Couples who've used Weddly to plan",
     t1_quote:
       "Everything lives in one place — budget, guests, seating. We both see the same view, and we always know what's next.",
-    t1_name: "Anna & Bence",
+    t1_name: "Mia & Lucas",
     t1_meta: "Budapest · composite from beta interviews",
     t2_quote:
       "We didn't have to figure out the order of things — Weddly walked us through the process.",
@@ -3113,7 +3112,7 @@ const en: LocaleMessages = {
     checkin_title: "RSVP check-in",
     checkin_intro: "Type the couple's name and the 4-digit code from your invite.",
     checkin_couple_label: "Couple",
-    checkin_couple_help: "e.g. ANNABENCE",
+    checkin_couple_help: "e.g. MIALUCAS",
     checkin_code_label: "Code",
     checkin_code_help: "4 digits from your invite",
     checkin_submit: "Check in",

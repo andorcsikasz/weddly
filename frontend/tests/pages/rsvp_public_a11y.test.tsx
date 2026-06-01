@@ -44,8 +44,8 @@ function jsonResponse(status: number, body: unknown): Response {
  *  status pill before submit will fire). */
 function makeView(overrides: Partial<PublicCheckinView> = {}): PublicCheckinView {
   return {
-    couple_slug: "ANNABENCE",
-    couple_display_name: "Anna & Bence",
+    couple_slug: "MIALUCAS",
+    couple_display_name: "Mia & Lucas",
     wedding_date: "2026-09-12",
     household_code: "1234",
     household_label: "Kovács család",
@@ -137,14 +137,14 @@ describe("RsvpCheckinPage — lookup form", () => {
     const fetchMock = mock(async (url: string | URL) => {
       const u = typeof url === "string" ? url : url.toString();
       expect(u).toContain("/api/rsvp/lookup");
-      expect(u).toContain("couple=ANNABENCE");
+      expect(u).toContain("couple=MIALUCAS");
       expect(u).toContain("code=1234");
       return jsonResponse(200, { rsvp: makeView() });
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     renderCheckin();
-    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "ANNABENCE" } });
+    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
 
@@ -178,7 +178,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     ) as unknown as typeof fetch;
 
     renderCheckin();
-    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "ANNABENCE" } });
+    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
 
@@ -196,7 +196,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     ) as unknown as typeof fetch;
 
     renderCheckin();
-    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "ANNABENCE" } });
+    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
 
@@ -218,7 +218,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     ) as unknown as typeof fetch;
 
     renderCheckin();
-    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "ANNABENCE" } });
+    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
 
@@ -244,7 +244,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     const captured: unknown[] = [];
     globalThis.fetch = mock(async (url: string | URL, init?: RequestInit) => {
       const u = typeof url === "string" ? url : url.toString();
-      if (u.endsWith("/api/rsvp/lookup?couple=ANNABENCE&code=1234") || u.includes("rsvp/lookup")) {
+      if (u.endsWith("/api/rsvp/lookup?couple=MIALUCAS&code=1234") || u.includes("rsvp/lookup")) {
         return jsonResponse(200, { rsvp: makeView({ rsvp_offers_accommodation: false }) });
       }
       if (u.includes("/api/rsvp/checkin")) {
@@ -254,7 +254,7 @@ describe("RsvpCheckinPage — lookup form", () => {
       return jsonResponse(404, { error: "unmocked" });
     }) as unknown as typeof fetch;
 
-    renderCheckin(["/rsvp?couple=ANNABENCE&code=1234"]);
+    renderCheckin(["/rsvp?couple=MIALUCAS&code=1234"]);
     // Auto-lookup fires from URL params; wait for the form.
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
 
@@ -287,7 +287,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     ) as unknown as typeof fetch;
 
     renderCheckin();
-    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "ANNABENCE" } });
+    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
 
@@ -324,7 +324,7 @@ describe("RsvpCheckinPage — lookup form", () => {
       return jsonResponse(404, { error: "unmocked" });
     }) as unknown as typeof fetch;
 
-    renderCheckin(["/rsvp?couple=ANNABENCE&code=1234"]);
+    renderCheckin(["/rsvp?couple=MIALUCAS&code=1234"]);
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
 
     const groups = screen.getAllByRole("radiogroup", { name: /Anna Kovács|Bence Kovács/ });
@@ -344,7 +344,7 @@ describe("RsvpCheckinPage — lookup form", () => {
       household_code: string;
       members: unknown[];
     };
-    expect(body.couple_slug).toBe("ANNABENCE");
+    expect(body.couple_slug).toBe("MIALUCAS");
     expect(body.household_code).toBe("1234");
     expect(body.members.length).toBe(2);
   });
@@ -359,7 +359,7 @@ describe("RsvpCheckinPage — lookup form", () => {
       return jsonResponse(500, { error: "server boom" });
     }) as unknown as typeof fetch;
 
-    renderCheckin(["/rsvp?couple=ANNABENCE&code=1234"]);
+    renderCheckin(["/rsvp?couple=MIALUCAS&code=1234"]);
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
 
     const groups = screen.getAllByRole("radiogroup", { name: /Anna Kovács|Bence Kovács/ });
@@ -397,7 +397,7 @@ describe("RsvpCheckinPage — lookup form", () => {
       return jsonResponse(404, { error: "unmocked" });
     }) as unknown as typeof fetch;
 
-    renderCheckin(["/rsvp?couple=ANNABENCE&code=1234"]);
+    renderCheckin(["/rsvp?couple=MIALUCAS&code=1234"]);
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
 
     const groups = screen.getAllByRole("radiogroup", { name: /Anna Kovács|Bence Kovács/ });
@@ -428,7 +428,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     ) as unknown as typeof fetch;
 
     renderCheckin();
-    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "ANNABENCE" } });
+    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
 
@@ -459,12 +459,12 @@ describe("RsvpCheckinPage — lookup form", () => {
     ) as unknown as typeof fetch;
 
     renderCheckin();
-    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "ANNABENCE" } });
+    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("ANNABENCE")).toBeInTheDocument();
+      expect(screen.getByText("MIALUCAS")).toBeInTheDocument();
       expect(screen.getByText("1234")).toBeInTheDocument();
     });
   });
@@ -530,7 +530,7 @@ describe("RsvpCheckinPage — a11y", () => {
     ) as unknown as typeof fetch;
 
     renderCheckin();
-    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "ANNABENCE" } });
+    fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
 

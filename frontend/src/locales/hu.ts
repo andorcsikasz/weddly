@@ -417,7 +417,7 @@ const hu: LocaleMessages = {
     intro:
       "Pár kérdés, és kezetekben az egész. Ezek csak kiindulópontok — bármit átírhattok útközben, a Wēddly meg követi.",
     step1_title: "Kik házasodnak?",
-    step1_help: "A neveitek a kezelőfelületen jelennek meg, pl. „Anna & Bence”.",
+    step1_help: "A neveitek a kezelőfelületen jelennek meg, pl. „Mia & Lucas”.",
     step1_short: "Páros",
     step2_short: "Dátum",
     step3_short: "Vendégek",
@@ -854,8 +854,7 @@ const hu: LocaleMessages = {
     counter_couples_label: "Tervezgető pár",
     counter_rsvps_label: "Beérkezett RSVP",
     founders_title: "Most ti vagytok a vendégek",
-    founders_promise:
-      "Ajándék a Wēddlytől: az első 200 pár az esküvője napjáig ingyen tervez.",
+    founders_promise: "Ajándék a Wēddlytől: az első 200 pár az esküvője napjáig ingyen tervez.",
     founders_seats_label: "ingyenes hely",
     founders_joined_caption: "pár már foglalt",
     founders_left_caption: "még szabad",
@@ -897,7 +896,7 @@ const hu: LocaleMessages = {
     testimonials_title: "Párok, akik már a Wēddlyvel tervezték az esküvőjüket",
     t1_quote:
       "Egy helyen van minden — költségvetés, vendégek, ültetés. Mindketten ugyanazt látjuk, és tudjuk, mi a következő lépés.",
-    t1_name: "Anna & Bence",
+    t1_name: "Mia & Lucas",
     t1_meta: "Budapest · béta-interjúkból összeállítva",
     t2_quote:
       "Nem kellett kitalálnunk, mit hol és mikor csináljunk — a Wēddly végigvezetett a folyamaton.",
@@ -3145,7 +3144,7 @@ const hu: LocaleMessages = {
     checkin_title: "RSVP check-in",
     checkin_intro: "Írd be a jegyes pár nevét és a 4 jegyű kódot a meghívóról.",
     checkin_couple_label: "Jegyes pár",
-    checkin_couple_help: "pl. ANNABENCE",
+    checkin_couple_help: "pl. MIALUCAS",
     checkin_code_label: "Kód",
     checkin_code_help: "4 számjegy a meghívódról",
     checkin_submit: "Check-in",

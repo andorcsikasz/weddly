@@ -34,7 +34,7 @@ async function onboard(
     "POST",
     "/api/couples/onboard",
     {
-      display_name: "Anna & Bence",
+      display_name: "Mia & Lucas",
       wedding_date_goal: { kind: "tbd", exact_date: null },
       guest_count_goal: { kind: "tbd" },
       budget_goal: { kind: "tbd" },
@@ -75,7 +75,7 @@ describe("couples.country: onboarding", () => {
       "POST",
       "/api/couples/onboard",
       {
-        display_name: "Anna & Bence",
+        display_name: "Mia & Lucas",
         wedding_date_goal: { kind: "tbd", exact_date: null },
         guest_count_goal: { kind: "tbd" },
         budget_goal: { kind: "tbd" },

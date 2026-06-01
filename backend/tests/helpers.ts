@@ -216,7 +216,7 @@ export async function bootstrapCouple(
     "POST",
     "/api/couples/onboard",
     {
-      display_name: "Anna & Bence",
+      display_name: "Mia & Lucas",
       wedding_date: "2026-09-12",
       target_guest_count: 80,
       budget_ceiling_huf: 5_000_000,
