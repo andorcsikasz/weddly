@@ -869,7 +869,6 @@ const en: LocaleMessages = {
     block_budget_bullet_3: "Audit log of every change",
     block_guests_eyebrow: "Guest list & RSVP",
     block_guests_title: "One link per guest.",
-    block_guests_subtitle: "Replies, meals, plus-ones, dietary, all in one place.",
     block_guests_body:
       "Each guest gets a personal RSVP page with their name pre-filled. They reply on their phone in under a minute; you see status, meal choice and song requests in the same list.",
     block_guests_bullet_1: "One link, one minute, by phone",

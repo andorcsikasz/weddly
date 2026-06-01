@@ -878,7 +878,6 @@ const hu: LocaleMessages = {
     block_budget_bullet_3: "Auditnapló minden lépésről",
     block_guests_eyebrow: "Vendéglista és RSVP",
     block_guests_title: "Vendégenként egy link.",
-    block_guests_subtitle: "Válaszok, étrend, kísérők, allergiák egy helyen.",
     block_guests_body:
       "Minden vendég saját RSVP oldalt kap, a nevével előre kitöltve. Telefonon, egy perc alatt válaszolnak; ti pedig egy listában látjátok az állapotot, étrendet és dalkéréseket.",
     block_guests_bullet_1: "Egy link, egy perc, telefonról",

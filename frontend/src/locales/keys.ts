@@ -972,7 +972,6 @@ export interface LocaleMessages {
     block_budget_bullet_3: string;
     block_guests_eyebrow: string;
     block_guests_title: string;
-    block_guests_subtitle: string;
     block_guests_body: string;
     block_guests_bullet_1: string;
     block_guests_bullet_2: string;

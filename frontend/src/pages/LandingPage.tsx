@@ -235,9 +235,6 @@ export default function LandingPage() {
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
-              <p className="mt-3 font-grotesk text-base text-ink-600 dark:text-umber-300">
-                {t("landing.block_guests_subtitle")}
-              </p>
               <ul className="mt-7 space-y-3">
                 <IconRow icon={<Smartphone size={16} />}>
                   {t("landing.block_guests_bullet_1")}
