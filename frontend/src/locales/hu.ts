@@ -892,18 +892,6 @@ const hu: LocaleMessages = {
     pricing_bullet_2: "Bármikor szüneteltethető · 30 nap",
     pricing_bullet_3: "CSV / PDF export, korlátlanul",
     pricing_v2_note: "A v2-vel jön az árazás. A részleteket időben kihirdetjük.",
-    why_eyebrow: "Miért Wēddly",
-    why_title: "Amit a Weddly tényleg jól csinál",
-    why_a_title: "Egy fül a böngészőben, nem nyolc",
-    why_a_body:
-      "Költségvetés, vendégek, RSVP, ültetés, szolgáltatók egy közös felületen. Mindketten ugyanazt látjátok.",
-    why_b_title: "Pár perc esténként, nem egy egész este",
-    why_b_body:
-      "A vendégszám átírása nem indít újra három táblázatot. Egy helyen állítod, mindenhol stimmel.",
-    why_c_title: "Megmondjuk, mi a következő",
-    why_c_body: "Ha elakadtok, a kezdőlap megmutatja az egy dolgot, amit ma érdemes elintézni.",
-    why_d_title: "A papírmunkát mi visszük",
-    why_d_body: "Mi figyelünk a határidőkre, a meghívókra, a nyomtatási méretekre. Ti az esküvőre.",
     mockup_aria_dashboard: "Wēddly vezérlőpult-előnézet",
     mockup_aria_budget: "Élő költségvetés-előnézet",
     mockup_aria_guests: "Vendéglista és RSVP előnézet",

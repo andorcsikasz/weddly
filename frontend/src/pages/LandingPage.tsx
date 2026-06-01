@@ -280,24 +280,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ════════════════════════ 06 · Why — 2×2 ════════════════════════
-          Plain section heading + 4 concrete points. The earlier italic
-          serif pull-quote ("Először a lényeg…") and the botanical corner
-          decorations were both flagged as AI-deck affectations; cut. */}
-      <section className="stationery-light">
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-          <h2 className="mx-auto max-w-3xl text-center font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-            {t("landing.why_title")}
-          </h2>
-          <ul className="mx-auto mt-10 grid max-w-4xl gap-x-10 gap-y-8 sm:mt-14 sm:grid-cols-2 sm:gap-y-10">
-            <WhyPoint title={t("landing.why_a_title")} body={t("landing.why_a_body")} />
-            <WhyPoint title={t("landing.why_b_title")} body={t("landing.why_b_body")} />
-            <WhyPoint title={t("landing.why_c_title")} body={t("landing.why_c_body")} />
-            <WhyPoint title={t("landing.why_d_title")} body={t("landing.why_d_body")} />
-          </ul>
-        </div>
-      </section>
-
       {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
       <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
@@ -876,17 +858,6 @@ function CoupleCardsTeaser() {
         </ul>
       </div>
     </section>
-  );
-}
-
-function WhyPoint({ title, body }: { title: string; body: string }) {
-  return (
-    <li>
-      <h3 className="font-serif text-xl text-ink-900 dark:text-paper-50 sm:text-2xl">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200 sm:text-base">
-        {body}
-      </p>
-    </li>
   );
 }
 

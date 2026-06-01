@@ -882,18 +882,6 @@ const en: LocaleMessages = {
     pricing_bullet_2: "Pause any time · 30-day grace",
     pricing_bullet_3: "CSV / PDF export, included",
     pricing_v2_note: "v2 introduces pricing. Details will be announced ahead of time.",
-    why_eyebrow: "Why Weddly",
-    why_title: "What Weddly is good at",
-    why_a_title: "One tab, not eight",
-    why_a_body:
-      "Budget, guests, RSVPs, seating, suppliers on a single page. You both see the same thing.",
-    why_b_title: "Minutes in the evening, not whole evenings",
-    why_b_body:
-      "Changing the headcount doesn't mean opening three spreadsheets. Set it once, it lines up everywhere.",
-    why_c_title: "We tell you what's next",
-    why_c_body: "If you get stuck, the home page shows the one thing worth doing today.",
-    why_d_title: "We handle the paperwork",
-    why_d_body: "We watch deadlines, invitations and print sizes. You focus on the wedding.",
     mockup_aria_dashboard: "Weddly dashboard preview",
     mockup_aria_budget: "Live budget mockup",
     mockup_aria_guests: "Guest list and RSVP mockup",

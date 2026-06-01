@@ -978,16 +978,6 @@ export interface LocaleMessages {
     pricing_bullet_2: string;
     pricing_bullet_3: string;
     pricing_v2_note: string;
-    why_eyebrow: string;
-    why_title: string;
-    why_a_title: string;
-    why_a_body: string;
-    why_b_title: string;
-    why_b_body: string;
-    why_c_title: string;
-    why_c_body: string;
-    why_d_title: string;
-    why_d_body: string;
     /** aria-labels for the four decorative landing-page SVG mockups. */
     mockup_aria_dashboard: string;
     mockup_aria_budget: string;
