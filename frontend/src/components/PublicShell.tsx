@@ -348,12 +348,18 @@ function PublicFooter() {
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
     <footer className="mt-16 border-t border-paper-300 bg-paper-100/60 sm:mt-24 dark:border-umber-700 dark:bg-umber-950/60">
-      {/* Band: guest CTA. A single paper chip that names the audience and action. */}
+      {/* Band: who-are-you CTAs. Two outline-only chips (no fill) that name
+       *  the two non-couple audiences and their action. Extra bottom padding
+       *  so the row breathes away from the footer columns below. */}
       <div className="border-b border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-4 sm:px-6 sm:py-5">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-3 px-4 pt-5 pb-7 sm:gap-4 sm:px-6 sm:pt-6 sm:pb-9">
+          <Link to="/vendors" className={footerBandBtnClass}>
+            <Store size={14} aria-hidden />
+            {t("landing.footer_band_cta_vendor")}
+          </Link>
           <button
             type="button"
-            className="btn-lifted inline-flex items-center gap-2 rounded-md border border-paper-300/70 bg-paper-100 px-3.5 py-1.5 text-sm text-ink-800 transition-colors hover:border-paper-400 hover:bg-paper-200 dark:border-umber-700/70 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700 [--btn-rim:#e3d9bf] [--btn-rim-hover:#d3c69f] [--btn-rim-active:#efe9d9] dark:[--btn-rim:#0f0a07] dark:[--btn-rim-hover:#050302] dark:[--btn-rim-active:#1a1410]"
+            className={footerBandBtnClass}
             onClick={() => {
               void askGuestCode();
             }}
@@ -445,6 +451,11 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
     </div>
   );
 }
+
+/** Outline-only audience chip for the footer band: hairline border, no fill,
+ *  so it reads as a quiet "which are you?" prompt rather than a filled CTA. */
+const footerBandBtnClass =
+  "inline-flex items-center gap-2 rounded-md border border-paper-300 px-3.5 py-1.5 text-sm text-ink-700 transition-colors hover:border-paper-400 hover:text-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:text-paper-50";
 
 /** Center-out underline on hover/focus. `inline-block` + `relative` so the
  *  ::after baseline anchors to the text width, not the parent flex column. */

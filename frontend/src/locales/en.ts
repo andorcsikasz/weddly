@@ -818,6 +818,7 @@ const en: LocaleMessages = {
     footer_legal_subscription: "Vendor terms",
     footer_about_link: "About",
     footer_band_cta: "I'm a guest with an invite code",
+    footer_band_cta_vendor: "I'm a wedding vendor",
     skip_to_main: "Skip to main content",
     couple_cards_eyebrow: "Before you say yes",
     couple_cards_title: "100 questions before you marry",

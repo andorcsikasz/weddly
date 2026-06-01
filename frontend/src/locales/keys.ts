@@ -923,6 +923,7 @@ export interface LocaleMessages {
      *  /vendors, creating a duplicate). Now links to /about. */
     footer_about_link: string;
     footer_band_cta: string;
+    footer_band_cta_vendor: string;
     skip_to_main: string;
     couple_cards_eyebrow: string;
     couple_cards_title: string;
