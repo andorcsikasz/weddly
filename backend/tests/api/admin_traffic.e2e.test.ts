@@ -32,6 +32,7 @@ describe("admin analytics — traffic (GA4)", () => {
     expect(res.status).toBe(200);
     const d = res.data;
     expect(d.configured).toBe(false);
+    expect(d.error).toBeNull();
     expect(d.property_id).toBe("");
     expect(d.totals_7d.active_users).toBe(0);
     expect(d.totals_28d.sessions).toBe(0);

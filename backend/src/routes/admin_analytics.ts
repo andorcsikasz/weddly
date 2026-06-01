@@ -25,7 +25,7 @@ import { listActiveCommunitySuppliers } from "../domain/community_suppliers";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { requireAdmin } from "../domain/users";
 import { type Ga4ReportResponse, isGa4Configured, runGa4Report } from "../lib/ga4";
-import { type Ctx, HttpError, json, type Router } from "../lib/http";
+import { type Ctx, json, type Router } from "../lib/http";
 import { log } from "../lib/logger";
 
 // All known BudgetCategory values. Keep in sync with shared/types.ts —
@@ -1075,9 +1075,14 @@ function totalsFromReport(report: Ga4ReportResponse): AdminTrafficTotals {
   };
 }
 
-function emptyTraffic(configured: boolean, now: number): AdminTrafficAnalytics {
+function emptyTraffic(
+  configured: boolean,
+  now: number,
+  error: string | null,
+): AdminTrafficAnalytics {
   return {
     configured,
+    error,
     property_id: configured ? CONFIG.ga4PropertyId : "",
     totals_7d: { ...EMPTY_TRAFFIC_TOTALS },
     totals_28d: { ...EMPTY_TRAFFIC_TOTALS },
@@ -1091,9 +1096,23 @@ function emptyTraffic(configured: boolean, now: number): AdminTrafficAnalytics {
 
 async function trafficAnalytics(): Promise<AdminTrafficAnalytics> {
   const now = Date.now();
-  if (!isGa4Configured()) return emptyTraffic(false, now);
+  if (!isGa4Configured()) return emptyTraffic(false, now, null);
   if (trafficCache && trafficCache.expiresAt > now) return trafficCache.payload;
 
+  try {
+    return await fetchTrafficFromGa4(now);
+  } catch (err) {
+    // Configured but the Data API call failed (API not enabled, missing
+    // Viewer grant, wrong property id, quota, network). Surface the real
+    // Google message to the admin UI instead of a blank section, and don't
+    // cache the failure so the next refresh retries. Logged for the operator.
+    const message = err instanceof Error ? err.message : String(err);
+    log.warn("ga4.report_failed", { error: message });
+    return emptyTraffic(true, now, message);
+  }
+}
+
+async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> {
   const range7 = [{ startDate: "7daysAgo", endDate: "today" }];
   const range28 = [{ startDate: "28daysAgo", endDate: "today" }];
 
@@ -1152,6 +1171,7 @@ async function trafficAnalytics(): Promise<AdminTrafficAnalytics> {
 
   const payload: AdminTrafficAnalytics = {
     configured: true,
+    error: null,
     property_id: CONFIG.ga4PropertyId,
     totals_7d: totalsFromReport(t7),
     totals_28d: totalsFromReport(t28),
@@ -1177,17 +1197,10 @@ async function trafficAnalytics(): Promise<AdminTrafficAnalytics> {
 
 async function handleTraffic(ctx: Ctx): Promise<Response> {
   requireAdmin(ctx);
-  try {
-    return json(await trafficAnalytics());
-  } catch (err) {
-    // GA4 is configured but the call failed (auth, quota, network). Don't 500
-    // the section into a blank state — surface a 502 the dashboard renders as
-    // a retryable error card, and log the real cause for the operator.
-    log.warn("ga4.report_failed", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    throw new HttpError(502, "Could not reach Google Analytics", { code: "ga4_unavailable" });
-  }
+  // trafficAnalytics() never throws on a GA4 failure — it folds the cause into
+  // the payload's `error` field so the admin UI can show exactly what Google
+  // rejected (API disabled, no Viewer grant, wrong property id, …).
+  return json(await trafficAnalytics());
 }
 
 export function registerAdminAnalyticsRoutes(router: Router) {

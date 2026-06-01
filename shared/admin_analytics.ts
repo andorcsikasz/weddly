@@ -288,6 +288,12 @@ export interface AdminTrafficAnalytics {
    *  service-account credentials). All the arrays below are empty and the
    *  totals are zero in that case — the UI shows a setup card. */
   configured: boolean;
+  /** Non-null when GA4 IS configured but the Data API call failed (API not
+   *  enabled, service account lacks Viewer, wrong property id, network). Carries
+   *  the raw Google error so the admin surface can show the actual cause — this
+   *  endpoint is admin-only, so leaking the message is fine and useful. Null on
+   *  success and when unconfigured (that's the `configured:false` setup state). */
+  error: string | null;
   /** The numeric GA4 property id the report was run against ("" when
    *  unconfigured). Surfaced in the section's "source" line. */
   property_id: string;
