@@ -347,7 +347,7 @@ function PublicFooter() {
   const couplesCardsPath =
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
-    <footer className="mt-16 border-t border-paper-300 bg-paper-100/60 sm:mt-24 dark:border-umber-700 dark:bg-umber-950/60">
+    <footer className="mt-16 border-t border-paper-300 bg-paper-100/60 font-grotesk sm:mt-24 dark:border-umber-700 dark:bg-umber-950/60">
       {/* Band: who-are-you. The specialty-coffee voice carried into the
        *  footer — a quiet grotesk prompt names the two non-couple audiences,
        *  each option a hairline cream pill that fills to espresso on hover

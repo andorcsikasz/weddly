@@ -436,7 +436,7 @@ export default function LandingPage() {
           viewports. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
-          <h2 className="font-serif text-3xl leading-[1.05] tracking-[-0.01em] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.faq_title")}
           </h2>
           <div className="mt-6 space-y-2 sm:mt-8">
@@ -834,7 +834,7 @@ function BlogTeaser() {
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
             {t("blog.section_eyebrow")}
           </p>
-          <h2 className="mt-2 font-serif text-2xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:mt-3 sm:text-5xl">
+          <h2 className="mt-2 font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:mt-3 sm:text-5xl">
             {t("blog.section_title")}
           </h2>
         </header>
@@ -868,7 +868,7 @@ function BlogTeaser() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                     {post.category[locale]}
                   </p>
-                  <h3 className="mt-2 font-serif text-lg leading-[1.15] text-ink-900 dark:text-paper-50">
+                  <h3 className="mt-2 font-grotesk text-lg font-semibold leading-[1.15] tracking-tight text-ink-900 dark:text-paper-50">
                     {copy.title}
                   </h3>
                   <div className="mt-auto flex items-center gap-2 pt-3 text-[11px] text-ink-600 dark:text-umber-300">
@@ -913,7 +913,7 @@ function BlogTeaser() {
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                       {post.category[locale]}
                     </p>
-                    <h3 className="mt-3 font-serif text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
+                    <h3 className="mt-3 font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
                       {copy.title}
                     </h3>
                     <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
@@ -1059,13 +1059,15 @@ function FaqCard({ q, a }: { q: string; a: ReactNode }) {
   return (
     <details className="group rounded-xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-4 py-3 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-5 sm:py-3.5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
-        <span className="font-serif text-base text-ink-900 dark:text-paper-50 sm:text-lg">{q}</span>
+        <span className="font-grotesk text-base font-medium text-ink-900 dark:text-paper-50 sm:text-lg">
+          {q}
+        </span>
         <ChevronDown
           size={16}
           className="shrink-0 text-ink-600 dark:text-umber-300 transition-transform group-open:rotate-180"
         />
       </summary>
-      <p className="mt-2.5 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{a}</p>
+      <p className="mt-2.5 font-grotesk text-sm leading-relaxed text-ink-600 dark:text-umber-200">{a}</p>
     </details>
   );
 }
