@@ -1056,7 +1056,7 @@ export default function SuppliersPage() {
               setDiyEditing(null);
               setDiyOpen(true);
             }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition hover:border-sage-600 hover:bg-sage-100 sm:ml-auto dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 sm:ml-auto dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
           >
             <Pencil size={13} aria-hidden />
             {t("suppliers.diy_button_short")}
@@ -1184,11 +1184,7 @@ export default function SuppliersPage() {
           />
         </Suspense>
       ) : (
-        <div
-          className={
-            viewMode === "line" ? "flex flex-col gap-2" : "grid gap-3 md:grid-cols-2"
-          }
-        >
+        <div className={viewMode === "line" ? "flex flex-col gap-2" : "grid gap-3 md:grid-cols-2"}>
           {/* "Már foglaltam" card. Only appears once the couple has narrowed
               down to a specific sub-category (activeGroup AND activeCat both
               set) — without that context the autocomplete + admin-queue
