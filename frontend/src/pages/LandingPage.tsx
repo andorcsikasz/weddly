@@ -4,6 +4,7 @@ import {
   Download,
   FileText,
   Filter,
+  Gift,
   Globe,
   Heart,
   History,
@@ -47,7 +48,6 @@ import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useToast } from "../components/ui";
 import { publicStatsApi } from "../lib/endpoints";
-import { currencySymbol, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
@@ -359,7 +359,8 @@ export default function LandingPage() {
 
       {/* ════════════════════════ 10 · Pricing — STATIONERY ANCHOR ════════════════════════
           Stationery-textured background; price card floats with deep
-          shadow. 0 Ft does the talking. */}
+          shadow. Leads with the founding offer (free for the first 200
+          couples), with the standard 5 €/mo as the muted after-price. */}
       <section className="relative stationery">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
@@ -368,23 +369,22 @@ export default function LandingPage() {
           <div className="relative mx-auto mt-8 max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-8 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-10">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
-                {t("landing.stats_eyebrow")}
+                {t("landing.pricing_offer_label")}
               </p>
-              <div className="mt-3 flex items-end gap-3">
-                <span className="font-serif text-7xl leading-[0.9] text-ink-900 dark:text-paper-50 sm:text-8xl">
-                  0
-                </span>
-                <span className="mb-3 font-serif text-3xl text-ink-700 dark:text-paper-100 sm:text-4xl">
-                  {currencySymbol(localeCurrency(locale), locale)}
-                </span>
+              <div className="mt-3 font-serif text-7xl leading-[0.9] text-ink-900 dark:text-paper-50 sm:text-8xl">
+                {t("landing.pricing_amount")}
               </div>
-              <p className="mt-1 font-serif text-sm italic text-ink-600 dark:text-umber-300">
-                / {t("app.name")}
+              <p className="mt-2 font-serif text-base italic text-ink-600 dark:text-umber-300">
+                {t("landing.pricing_amount_sub")}
+              </p>
+              <p className="mt-4 text-sm text-ink-500 dark:text-umber-400">
+                {t("landing.pricing_after")}
               </p>
               <ul className="mt-8 space-y-3">
-                <IconRow icon={<Sparkles size={16} />}>{t("landing.pricing_bullet_1")}</IconRow>
-                <IconRow icon={<Pause size={16} />}>{t("landing.pricing_bullet_2")}</IconRow>
+                <IconRow icon={<Gift size={16} />}>{t("landing.pricing_bullet_1")}</IconRow>
+                <IconRow icon={<Sparkles size={16} />}>{t("landing.pricing_bullet_2")}</IconRow>
                 <IconRow icon={<FileText size={16} />}>{t("landing.pricing_bullet_3")}</IconRow>
+                <IconRow icon={<Pause size={16} />}>{t("landing.pricing_bullet_4")}</IconRow>
               </ul>
               <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg mt-8 w-full">
                 {t("landing.cta_signup")}
@@ -829,7 +829,7 @@ function BlogTeaser() {
        *  the carousel breaks out edge-to-edge below `sm:` so the cards can
        *  visibly peek past the viewport (a strong swipe affordance on
        *  phones). Tablet+ falls back to the 3-up grid. */}
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:pb-8 sm:pt-20">
         <header className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
             {t("blog.section_eyebrow")}
@@ -891,7 +891,7 @@ function BlogTeaser() {
             the date/read-time row anchors to the bottom regardless of how
             many lines the title or lead wraps to. Result: three perfectly
             even tiles instead of jagged ones. */}
-        <ul className="mt-4 grid gap-x-8 gap-y-10 sm:mt-10 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
+        <ul className="mt-4 grid gap-x-8 gap-y-10 sm:mt-2 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
           {posts.map((post) => {
             const copy = post[locale];
             const [y, m, d] = post.published_at.split("-").map(Number);

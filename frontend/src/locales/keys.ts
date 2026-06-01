@@ -999,9 +999,18 @@ export interface LocaleMessages {
     pricing_eyebrow: string;
     pricing_title: string;
     pricing_body: string;
+    /** Card eyebrow above the founding-couples price. */
+    pricing_offer_label: string;
+    /** Big serif headline word on the price card ("Free" / "Ingyenes"). */
+    pricing_amount: string;
+    /** Italic subline under the headline ("for the first 200 couples"). */
+    pricing_amount_sub: string;
+    /** Muted after-price line: the standard monthly price + trial. */
+    pricing_after: string;
     pricing_bullet_1: string;
     pricing_bullet_2: string;
     pricing_bullet_3: string;
+    pricing_bullet_4: string;
     pricing_v2_note: string;
     /** aria-labels for the four decorative landing-page SVG mockups. */
     mockup_aria_dashboard: string;
