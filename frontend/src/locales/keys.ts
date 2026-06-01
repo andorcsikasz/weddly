@@ -995,7 +995,6 @@ export interface LocaleMessages {
     t3_name: string;
     t3_meta: string;
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
-    pricing_eyebrow: string;
     pricing_title: string;
     pricing_body: string;
     /** Big serif number on the price card ("5" / "1 990"). */
@@ -4333,8 +4332,7 @@ export interface LocaleMessages {
     read_minutes: string;
     related_eyebrow: string;
     back_to_index: string;
-    /** Eyebrow + heading + lead + CTA for the LandingPage teaser block. */
-    section_eyebrow: string;
+    /** Heading + lead + CTA for the LandingPage teaser block. */
     section_title: string;
     section_cta: string;
     /** Tri-state loading / error / empty messages for the public blog

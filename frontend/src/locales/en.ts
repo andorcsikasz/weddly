@@ -896,7 +896,6 @@ const en: LocaleMessages = {
     t3_name: "Kata & Marci",
     t3_meta: "Szeged · composite from beta interviews",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
-    pricing_eyebrow: "Pricing",
     pricing_title: "Free for the first 200 couples.",
     pricing_body:
       "Sign up among the first 200 couples and Weddly stays free through your whole planning, up to 18 months. After that it's 5 € a month with a two-week free trial, every feature included.",
@@ -3840,7 +3839,6 @@ const en: LocaleMessages = {
     read_minutes: "{n} min read",
     related_eyebrow: "More from the blog",
     back_to_index: "Back to the blog",
-    section_eyebrow: "Blog",
     section_title: "From the blog",
     section_cta: "Browse the blog",
     loading: "Loading…",

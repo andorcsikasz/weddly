@@ -361,10 +361,7 @@ export default function LandingPage() {
           couples), with the standard 5 €/mo as the muted after-price. */}
       <section className="relative stationery">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="mx-auto max-w-3xl text-center">
-            <SectionLabel num="—" label={t("landing.pricing_eyebrow")} className="justify-center" />
-          </div>
-          <div className="relative mx-auto mt-6 max-w-lg">
+          <div className="relative mx-auto max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8">
               <div className="flex items-end gap-3">
                 <span className="font-serif text-6xl leading-[0.9] text-ink-900 dark:text-paper-50 sm:text-7xl">
@@ -854,10 +851,7 @@ function BlogTeaser() {
        *  phones). Tablet+ falls back to the 3-up grid. */}
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:pb-8 sm:pt-20">
         <header className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-800 dark:text-blush-300">
-            {t("blog.section_eyebrow")}
-          </p>
-          <h2 className="mt-2 font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:mt-3 sm:text-5xl">
+          <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
             {t("blog.section_title")}
           </h2>
         </header>

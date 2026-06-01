@@ -905,7 +905,6 @@ const hu: LocaleMessages = {
     t3_name: "Kata & Marci",
     t3_meta: "Szeged · béta-interjúkból összeállítva",
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
-    pricing_eyebrow: "Árak",
     pricing_title: "Az első 200 párnak ingyenes.",
     pricing_body:
       "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 1 990 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
@@ -3881,7 +3880,6 @@ const hu: LocaleMessages = {
     read_minutes: "{n} perces olvasás",
     related_eyebrow: "Még a blogról",
     back_to_index: "Vissza a bloghoz",
-    section_eyebrow: "Blog",
     section_title: "A blogról",
     section_cta: "Tovább a blogra",
     loading: "Betöltés…",
