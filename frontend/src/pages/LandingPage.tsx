@@ -114,7 +114,7 @@ export default function LandingPage() {
                * 30-40% longer than EN and the old 14ch limit was wrapping
                * the title to 4+ lines on 360px phones. Desktop still gets
                * the tighter 14ch column for visual rhythm. */}
-              <h1 className="max-w-[18ch] font-serif text-4xl italic leading-[1] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+              <h1 className="max-w-[18ch] font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-ink-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                 {t("landing.hero_title")}
               </h1>
               {/* Subline: concrete value-prop sentence right after the
