@@ -1,0 +1,13 @@
+General Sans
+Designed by Indian Type Foundry (ITF), distributed via Fontshare.
+
+Source:  https://www.fontshare.com/fonts/general-sans
+License: ITF Free Font License (FFL) — free for personal AND commercial use.
+         https://www.fontshare.com/licenses/itf-ffl
+
+These woff2 files (weights 300/400/500/600, Latin subset) are vendored and
+served from this app's own origin. We deliberately do NOT hot-link the
+Fontshare CDN: self-hosting keeps every visitor request first-party so no
+IP addresses leak to a third party (same privacy stance as the project's
+system-font stacks). This is the only webfont in the project; it is the
+"speciality coffee" voice for the landing founders band.

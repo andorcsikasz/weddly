@@ -1,3 +1,37 @@
+/* General Sans (Fontshare, OFL-style ITF Free Font License) — self-hosted
+   woff2, served from our own origin. The ONLY webfont in the project: it is
+   the "speciality coffee" voice for the founding band only. No CDN, no
+   third-party request, so visitor IPs never leak (same privacy stance as the
+   system-stack families). Latin subset, four weights. */
+@font-face {
+  font-family: "General Sans";
+  src: url("/fonts/general-sans-300.woff2") format("woff2");
+  font-weight: 300;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: "General Sans";
+  src: url("/fonts/general-sans-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: "General Sans";
+  src: url("/fonts/general-sans-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: "General Sans";
+  src: url("/fonts/general-sans-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+  font-style: normal;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -136,10 +136,10 @@ export default {
           "system-ui",
           "sans-serif",
         ],
-        // Neo-grotesque "speciality coffee" voice for the founding band:
-        // clean, neutral, tightly set. Helvetica Neue ships on macOS/iOS;
-        // Inter and Arial cover everyone else. System-only, no CDN.
-        grotesk: ['"Helvetica Neue"', "Helvetica", '"Inter Variable"', "Inter", "Arial", "system-ui", "sans-serif"],
+        // Neo-grotesque "speciality coffee" voice for the founding band.
+        // Self-hosted General Sans (see @font-face in index.css) leads; the
+        // system grotesques are fallbacks for the swap window only.
+        grotesk: ['"General Sans"', '"Helvetica Neue"', "Helvetica", "Inter", "Arial", "system-ui", "sans-serif"],
       },
       boxShadow: {
         soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",

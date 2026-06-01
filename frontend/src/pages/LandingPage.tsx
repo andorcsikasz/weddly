@@ -11,6 +11,7 @@ import {
   Mail,
   Pause,
   Printer,
+  Share2,
   Smartphone,
   Sparkles,
   Store,
@@ -636,40 +637,17 @@ function FoundingCouplesBand() {
     // the offer; the live booked count is a demoted progress sliver underneath.
     <section className="bg-umber-900">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:items-start sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
-        {/* Pitch + promise */}
+        {/* Left: pitch + action grouped together */}
         <div className="sm:max-w-md">
           <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl">
             {t("landing.founders_title")}
           </h2>
-          <p className="mt-4 text-sm leading-relaxed text-paper-300 sm:text-base">
+          {/* Capped + balanced so the promise sits under the title in two even
+              rows and never overruns the column. */}
+          <p className="mx-auto mt-4 max-w-[19rem] text-balance font-grotesk text-sm leading-relaxed text-paper-300 sm:mx-0 sm:text-base">
             {t("landing.founders_promise")}
           </p>
-        </div>
-
-        {/* The 200 hero + progress + action */}
-        <div className="flex shrink-0 flex-col items-center gap-6 sm:items-end">
-          <div className="flex flex-col items-center sm:items-end">
-            <span className="font-grotesk text-7xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-8xl">
-              200
-            </span>
-            <span className="mt-2 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400">
-              {t("landing.founders_seats_label")}
-            </span>
-            {showProgress && (
-              <div className="mt-4 w-44 sm:w-56">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-paper-50/15">
-                  <div
-                    className="h-full rounded-full bg-blush-400 transition-[width] duration-1000 ease-out"
-                    style={{ width: `${pctClaimed}%` }}
-                  />
-                </div>
-                <p className="mt-2 text-xs text-paper-400 sm:text-right">
-                  <FoundingCount value={remaining ?? 0} /> {t("landing.founders_left_caption")}
-                </p>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-5">
+          <div className="mt-8 flex items-center justify-center gap-3 sm:justify-start">
             <Link
               to="/signup"
               className="btn btn-landing btn-lg bg-paper-50 px-8 font-grotesk text-xs uppercase tracking-[0.2em] text-umber-950 hover:bg-paper-200"
@@ -679,13 +657,38 @@ function FoundingCouplesBand() {
             <button
               type="button"
               onClick={shareFoundingLink}
-              className="font-grotesk text-xs font-medium uppercase tracking-[0.15em] text-paper-300 underline-offset-4 transition-colors hover:text-paper-50 hover:underline"
+              aria-label={t("landing.founders_share_cta")}
+              title={t("landing.founders_share_cta")}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-paper-300 transition-colors hover:bg-paper-50/10 hover:text-paper-50"
             >
-              {t("landing.founders_share_cta")}
+              <Share2 size={18} aria-hidden />
             </button>
           </div>
           {copyFallback && (
-            <p className="max-w-xs break-all text-xs text-paper-400">{copyFallback}</p>
+            <p className="mt-3 max-w-xs break-all text-xs text-paper-400">{copyFallback}</p>
+          )}
+        </div>
+
+        {/* Right: the 200 hero, alone — the single focal object */}
+        <div className="flex shrink-0 flex-col items-center sm:items-end">
+          <span className="font-grotesk text-7xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-8xl">
+            200
+          </span>
+          <span className="mt-2 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400">
+            {t("landing.founders_seats_label")}
+          </span>
+          {showProgress && (
+            <div className="mt-4 w-44 sm:w-56">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-paper-50/15">
+                <div
+                  className="h-full rounded-full bg-blush-400 transition-[width] duration-1000 ease-out"
+                  style={{ width: `${pctClaimed}%` }}
+                />
+              </div>
+              <p className="mt-2 font-grotesk text-xs tabular-nums text-paper-400 sm:text-right">
+                <FoundingCount value={remaining ?? 0} /> {t("landing.founders_left_caption")}
+              </p>
+            </div>
           )}
         </div>
       </div>

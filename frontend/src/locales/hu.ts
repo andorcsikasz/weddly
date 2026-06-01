@@ -862,7 +862,7 @@ const hu: LocaleMessages = {
     founders_body:
       "Az első 200 regisztráló pár az esküvője utolsó pillanatáig ingyen használja a Wēddlyt: költségvetés, vendéglista, RSVP, ültetés, minden egy helyen. Ti vagytok a vendégeink.",
     founders_note: "Kétszáz párnak terítünk. Csatlakozzatok, amíg van szabad hely az asztalnál.",
-    founders_cta: "Regisztráljatok",
+    founders_cta: "Regisztrálok",
     founders_share_prompt: "Ismertek egy párt, akinek jól jönne? Hívjátok meg őket.",
     founders_share_cta: "Link megosztása",
     founders_share_copied: "Link a vágólapon. Adjátok tovább.",
