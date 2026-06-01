@@ -67,12 +67,12 @@ export function DemoLaunchCard() {
       aria-labelledby="demo-card-title"
       className="relative w-full max-w-[280px] rounded-2xl border border-ink-900/15 p-5 text-left dark:border-paper-50/15 sm:p-6"
     >
-      <p className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink-500 dark:text-umber-200">
+      <p className="font-grotesk text-[10px] font-medium uppercase tracking-[0.24em] text-ink-500 dark:text-umber-200">
         {t("landing.demo_card_eyebrow")}
       </p>
       <h2
         id="demo-card-title"
-        className="mt-2 font-grotesk text-2xl font-medium leading-snug tracking-tight text-ink-900 dark:text-paper-50 sm:text-3xl"
+        className="mt-2 font-grotesk text-3xl font-normal leading-tight tracking-tight text-ink-900 dark:text-paper-50"
       >
         {t("landing.demo_card_title")}
       </h2>
@@ -81,10 +81,10 @@ export function DemoLaunchCard() {
         onClick={launch}
         disabled={busy}
         aria-busy={busy}
-        // Outline / ghost button (no fill) to match the founders-band design
-        // language: General Sans, uppercase tracked, hairline border, warm
-        // ink family rather than the old sage filled+lifted CTA.
-        className="btn btn-landing mt-6 inline-flex w-full items-center justify-center gap-2 border border-ink-900/30 bg-transparent py-3 font-grotesk text-xs uppercase tracking-[0.2em] text-ink-900 transition-colors hover:bg-ink-900/5 disabled:cursor-wait disabled:opacity-80 dark:border-paper-50/30 dark:text-paper-50 dark:hover:bg-paper-50/10"
+        // Filled espresso CTA in the founders-band palette: General Sans,
+        // sentence-case (more elegant than uppercase tracked), warm umber
+        // fill + cream text. Distinct from the ink-800 signup primary.
+        className="btn mt-6 inline-flex w-full items-center justify-center gap-2 bg-umber-900 py-3 font-grotesk text-sm font-medium text-paper-50 transition-colors hover:bg-umber-800 disabled:cursor-wait disabled:opacity-80 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-200"
       >
         {busy ? (
           <>
