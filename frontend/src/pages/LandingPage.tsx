@@ -590,16 +590,12 @@ function FoundingCouplesBand() {
     };
   }, []);
 
-  // 200 is the hero — the size of the free founding cohort, a fixed promise
-  // that stands even when the live stats call fails. The real booked count is
-  // demoted to a quiet progress sliver + caption, shown only when we have a
-  // genuine, non-empty, non-full number (no "0 of 200" and no full bar).
+  // The hero counts the seats still up for grabs: how many of the 200 free
+  // founding places remain. Falls back to the full 200 when the live stats
+  // call hasn't resolved (or failed), so the promise still stands.
   const claimed = couples === null ? null : Math.min(couples, 200);
-  const showProgress = claimed !== null && claimed > 0 && claimed < 200;
-  // Floor the fill at 2% so even a handful of couples paints a visible sliver.
-  const pctClaimed = claimed === null ? 0 : Math.max(2, Math.round((claimed / 200) * 100));
-  // Scarcity-forward: surface how many of the 200 founding seats remain.
-  const remaining = claimed === null ? null : 200 - claimed;
+  const remaining = claimed === null ? null : Math.max(0, 200 - claimed);
+  const heroSeats = remaining ?? 200;
 
   async function shareFoundingLink() {
     const url = `${window.location.origin}/?ref=share`;
@@ -636,8 +632,8 @@ function FoundingCouplesBand() {
     // (pitch + promise | the 200 hero, progress and CTA). The 200 leads — it's
     // the offer; the live booked count is a demoted progress sliver underneath.
     <section className="bg-umber-900">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:items-start sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
-        {/* Left: pitch + action grouped together */}
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
+        {/* Left: the pitch */}
         <div className="sm:max-w-md">
           <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl">
             {t("landing.founders_title")}
@@ -647,7 +643,19 @@ function FoundingCouplesBand() {
           <p className="mx-auto mt-4 max-w-[19rem] text-balance font-grotesk text-sm leading-relaxed text-paper-300 sm:mx-0 sm:text-base">
             {t("landing.founders_promise")}
           </p>
-          <div className="mt-8 flex items-center justify-center gap-3 sm:justify-start">
+        </div>
+
+        {/* Right: the live remaining-seats hero + the action row */}
+        <div className="flex shrink-0 flex-col items-center gap-6 sm:items-end">
+          <div className="flex flex-col items-center sm:items-end">
+            <span className="font-grotesk text-7xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-8xl">
+              <FoundingCount value={heroSeats} />
+            </span>
+            <span className="mt-2 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400">
+              {t("landing.founders_seats_label")}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
             <Link
               to="/signup"
               className="btn btn-landing btn-lg bg-paper-50 px-8 font-grotesk text-xs uppercase tracking-[0.2em] text-umber-950 hover:bg-paper-200"
@@ -665,30 +673,7 @@ function FoundingCouplesBand() {
             </button>
           </div>
           {copyFallback && (
-            <p className="mt-3 max-w-xs break-all text-xs text-paper-400">{copyFallback}</p>
-          )}
-        </div>
-
-        {/* Right: the 200 hero, alone — the single focal object */}
-        <div className="flex shrink-0 flex-col items-center sm:items-end">
-          <span className="font-grotesk text-7xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-8xl">
-            200
-          </span>
-          <span className="mt-2 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400">
-            {t("landing.founders_seats_label")}
-          </span>
-          {showProgress && (
-            <div className="mt-4 w-44 sm:w-56">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-paper-50/15">
-                <div
-                  className="h-full rounded-full bg-blush-400 transition-[width] duration-1000 ease-out"
-                  style={{ width: `${pctClaimed}%` }}
-                />
-              </div>
-              <p className="mt-2 font-grotesk text-xs tabular-nums text-paper-400 sm:text-right">
-                <FoundingCount value={remaining ?? 0} /> {t("landing.founders_left_caption")}
-              </p>
-            </div>
+            <p className="mt-1 max-w-xs break-all text-xs text-paper-400">{copyFallback}</p>
           )}
         </div>
       </div>
