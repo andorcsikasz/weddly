@@ -885,7 +885,7 @@ const hu: LocaleMessages = {
     block_guests_bullet_3: "CSV export, bármikor",
     block_guests_bullet_4: "Saját esküvői oldalon megosztva (weddly.hu/w/nevetek)",
     block_seating_eyebrow: "Ültetés",
-    block_seating_title: "Húzd.\nVáltoztasd.\nNyomtasd.",
+    block_seating_title: "Húzd át.\nVáltoztasd meg.\nNyomtasd ki.",
     block_seating_body:
       "Helyezd el az asztalokat a vásznon, húzd a vendégeket a helyükre, az elrendezés pedig A4, A6 (ültetőkártya) és A3 (a nagy tábla a bejárathoz) méretben exportálódik. A PDF pontos mm méretben készül, egyenesen a nyomdába vihető.",
     block_seating_bullet_1: "Kerek, szögletes és főasztal",
