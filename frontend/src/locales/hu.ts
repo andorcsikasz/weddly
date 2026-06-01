@@ -854,7 +854,7 @@ const hu: LocaleMessages = {
     counter_rsvps_label: "Beérkezett RSVP",
     founders_title: "Most ti vagytok a vendégek",
     founders_promise:
-      "Az első 200 regisztráló pár az esküvője utolsó pillanatáig ingyen tervez a Wēddlyvel. Nincs apró betű, nincs bankkártya.",
+      "Ajándék a Wēddlytől: az első 200 pár az esküvője napjáig ingyen tervez.",
     founders_seats_label: "ingyenes hely",
     founders_joined_caption: "pár már foglalt",
     founders_left_caption: "még szabad",

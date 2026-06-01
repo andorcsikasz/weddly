@@ -844,7 +844,7 @@ const en: LocaleMessages = {
     counter_rsvps_label: "RSVPs received",
     founders_title: "This time, you're the guests",
     founders_promise:
-      "The first 200 couples to sign up plan their whole wedding on Weddly, free right up to their big day. No fine print, no card.",
+      "A gift from Weddly: the first 200 couples plan free, right up to their wedding day.",
     founders_seats_label: "free spots",
     founders_joined_caption: "couples already in",
     founders_left_caption: "left",

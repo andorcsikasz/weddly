@@ -638,7 +638,7 @@ function FoundingCouplesBand() {
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:items-start sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
         {/* Pitch + promise */}
         <div className="sm:max-w-md">
-          <h2 className="font-serif text-3xl italic leading-[1.05] text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl">
             {t("landing.founders_title")}
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-paper-300 sm:text-base">
@@ -649,10 +649,10 @@ function FoundingCouplesBand() {
         {/* The 200 hero + progress + action */}
         <div className="flex shrink-0 flex-col items-center gap-6 sm:items-end">
           <div className="flex flex-col items-center sm:items-end">
-            <span className="font-didone text-7xl font-normal tabular-nums leading-none tracking-tight text-paper-50 sm:text-8xl">
+            <span className="font-grotesk text-7xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-8xl">
               200
             </span>
-            <span className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] text-paper-400">
+            <span className="mt-2 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400">
               {t("landing.founders_seats_label")}
             </span>
             {showProgress && (
@@ -672,14 +672,14 @@ function FoundingCouplesBand() {
           <div className="flex items-center gap-5">
             <Link
               to="/signup"
-              className="btn btn-landing btn-lg bg-paper-50 text-umber-950 hover:bg-paper-200"
+              className="btn btn-landing btn-lg bg-paper-50 px-8 font-grotesk text-xs uppercase tracking-[0.2em] text-umber-950 hover:bg-paper-200"
             >
               {t("landing.founders_cta")}
             </Link>
             <button
               type="button"
               onClick={shareFoundingLink}
-              className="text-sm font-medium text-paper-300 underline decoration-paper-500/40 underline-offset-4 transition-colors hover:text-paper-50 hover:decoration-paper-300"
+              className="font-grotesk text-xs font-medium uppercase tracking-[0.15em] text-paper-300 underline-offset-4 transition-colors hover:text-paper-50 hover:underline"
             >
               {t("landing.founders_share_cta")}
             </button>
