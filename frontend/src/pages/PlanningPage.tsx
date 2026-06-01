@@ -1341,95 +1341,103 @@ function PlanningRow({
           </div>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="block w-full text-left"
-            >
-              <p
-                className={`text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="min-w-0 flex-1 text-left"
               >
-                {item.title}
-              </p>
-              {item.body && (
-                <p className="mt-1 whitespace-pre-wrap text-xs text-ink-600 dark:text-umber-200">
+                <p
+                  className={`truncate text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
+                >
+                  {item.title}
+                </p>
+              </button>
+              <div className="flex shrink-0 items-center gap-2 text-[11px] text-ink-500 dark:text-umber-300">
+                {item.kind === "task" && (item.start_date || item.due_date) && (
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar size={12} aria-hidden="true" />
+                    {item.start_date && item.due_date
+                      ? `${item.start_date} → ${item.due_date}`
+                      : (item.start_date ?? item.due_date)}
+                  </span>
+                )}
+                {item.kind === "task" &&
+                  (editingAssignee ? (
+                    <>
+                      <input
+                        type="text"
+                        value={draftAssignee}
+                        onChange={(e) => setDraftAssignee(e.target.value)}
+                        onBlur={commitAssignee}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            commitAssignee();
+                          } else if (e.key === "Escape") {
+                            setDraftAssignee(item.assignee ?? "");
+                            setEditingAssignee(false);
+                          }
+                        }}
+                        list={assigneeSuggestions.length > 0 ? assigneeListId : undefined}
+                        placeholder={t("planning.assignee_placeholder")}
+                        aria-label={t("planning.assignee_label")}
+                        autoFocus
+                        maxLength={80}
+                        className="h-6 w-28 rounded-full border border-ink-300 bg-paper-50 px-2 text-[11px] text-ink-700 outline-none focus:border-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                      />
+                      {assigneeSuggestions.length > 0 && (
+                        <datalist id={assigneeListId}>
+                          {assigneeSuggestions.map((name) => (
+                            <option key={name} value={name} />
+                          ))}
+                        </datalist>
+                      )}
+                    </>
+                  ) : item.assignee ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraftAssignee(item.assignee ?? "");
+                        setEditingAssignee(true);
+                      }}
+                      title={t("planning.assignee_edit_hint")}
+                      className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-ink-700 transition-colors hover:bg-ink-200 dark:bg-umber-700/60 dark:text-paper-100 dark:hover:bg-umber-700"
+                    >
+                      <User size={11} aria-hidden="true" />
+                      {item.assignee}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraftAssignee("");
+                        setEditingAssignee(true);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full border border-dashed border-paper-400 px-2 py-0.5 text-ink-500 transition-colors hover:border-ink-300 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-700 dark:hover:text-paper-100"
+                    >
+                      <User size={11} aria-hidden="true" />
+                      {t("planning.assignee_add")}
+                    </button>
+                  ))}
+                {item.kind === "idea" && item.suggested_by_name && (
+                  <span className="italic text-ink-500 dark:text-umber-300">
+                    {t("planning.idea_suggested_by", { name: item.suggested_by_name })}
+                  </span>
+                )}
+              </div>
+            </div>
+            {item.body && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="mt-1 block w-full text-left"
+              >
+                <p className="whitespace-pre-wrap text-xs text-ink-600 dark:text-umber-200">
                   {item.body}
                 </p>
-              )}
-            </button>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-ink-500 dark:text-umber-300">
-              {item.kind === "task" && (item.start_date || item.due_date) && (
-                <span className="inline-flex items-center gap-1">
-                  <Calendar size={12} aria-hidden="true" />
-                  {item.start_date && item.due_date
-                    ? `${item.start_date} → ${item.due_date}`
-                    : (item.start_date ?? item.due_date)}
-                </span>
-              )}
-              {item.kind === "task" &&
-                (editingAssignee ? (
-                  <>
-                    <input
-                      type="text"
-                      value={draftAssignee}
-                      onChange={(e) => setDraftAssignee(e.target.value)}
-                      onBlur={commitAssignee}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          commitAssignee();
-                        } else if (e.key === "Escape") {
-                          setDraftAssignee(item.assignee ?? "");
-                          setEditingAssignee(false);
-                        }
-                      }}
-                      list={assigneeSuggestions.length > 0 ? assigneeListId : undefined}
-                      placeholder={t("planning.assignee_placeholder")}
-                      aria-label={t("planning.assignee_label")}
-                      autoFocus
-                      maxLength={80}
-                      className="h-6 w-28 rounded-full border border-ink-300 bg-paper-50 px-2 text-[11px] text-ink-700 outline-none focus:border-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                    />
-                    {assigneeSuggestions.length > 0 && (
-                      <datalist id={assigneeListId}>
-                        {assigneeSuggestions.map((name) => (
-                          <option key={name} value={name} />
-                        ))}
-                      </datalist>
-                    )}
-                  </>
-                ) : item.assignee ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraftAssignee(item.assignee ?? "");
-                      setEditingAssignee(true);
-                    }}
-                    title={t("planning.assignee_edit_hint")}
-                    className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-ink-700 transition-colors hover:bg-ink-200 dark:bg-umber-700/60 dark:text-paper-100 dark:hover:bg-umber-700"
-                  >
-                    <User size={11} aria-hidden="true" />
-                    {item.assignee}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraftAssignee("");
-                      setEditingAssignee(true);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-paper-400 px-2 py-0.5 text-ink-500 transition-colors hover:border-ink-300 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-700 dark:hover:text-paper-100"
-                  >
-                    <User size={11} aria-hidden="true" />
-                    {t("planning.assignee_add")}
-                  </button>
-                ))}
-              {item.kind === "idea" && item.suggested_by_name && (
-                <span className="italic text-ink-500 dark:text-umber-300">
-                  {t("planning.idea_suggested_by", { name: item.suggested_by_name })}
-                </span>
-              )}
-            </div>
+              </button>
+            )}
           </>
         )}
       </div>
