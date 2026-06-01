@@ -57,6 +57,7 @@ import {
   requireVerifiedAuth,
   type Router,
 } from "../lib/http";
+import { sniffUploadedImage } from "../lib/image_sniff";
 import type { SeatingTable, SeatAssignment, TableShape } from "@shared/types";
 
 interface InviteRow {
@@ -508,10 +509,13 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const ownerLocale = normaliseLocale(ownerRow?.locale);
   const currency: Currency = parseCurrency(body.currency) ?? defaultCurrencyForLocale(ownerLocale);
   // Country drives supplier-region filtering (a Belgian couple shouldn't
-  // see HU-only venues). Falls back to 'HU' when omitted to match the
-  // existing DB default. The frontend wizard requires a pick before
-  // submit so production payloads always carry an explicit value.
-  const country: string = parseCountry(body.country) ?? "HU";
+  // see HU-only venues). Omitted from the payload? Fall back to HU only
+  // for HU-locale signups — international visitors get a NULL DB row
+  // (the column has a 'HU' default for legacy rows; new explicit-NULL
+  // rows would land on 'HU' too, but the new column is filled by the
+  // INSERT below). We require the picker to ship a value from the
+  // wizard for new onboardings; the fallback is defensive.
+  const country: string = parseCountry(body.country) ?? (ownerLocale === "hu" ? "HU" : "HU");
 
   const existing = getCoupleForUser(userId);
   if (existing) throw new HttpError(409, "Couple already onboarded for this user");
@@ -1067,32 +1071,41 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
   //      immediately).
   //   3. Link the user as partner B on the target and consume the invite.
   const ts = now();
-  db.prepare("UPDATE users SET couple_id = NULL, updated_at = ? WHERE id = ?").run(ts, userId);
-  purgeOneCouple(sourceCoupleId, { silent: true });
+  // Atomic: the source purge is irreversible (hard PII scrub, no soft flag to
+  // revert), so detach → purge → link → consume must commit or roll back as
+  // one unit. If any step throws after the purge, the whole sequence rolls
+  // back rather than leaving the user with couple_id=NULL attached to nothing.
+  // (`purgeOneCouple` opens its own transaction; bun:sqlite nests it as a
+  // savepoint inside this one.)
+  const applyMerge = db.transaction(() => {
+    db.prepare("UPDATE users SET couple_id = NULL, updated_at = ? WHERE id = ?").run(ts, userId);
+    purgeOneCouple(sourceCoupleId, { silent: true });
 
-  db.prepare("UPDATE couples SET partner_b_id = ?, updated_at = ? WHERE id = ?").run(
-    userId,
-    ts,
-    target.id,
-  );
-  db.prepare("UPDATE users SET couple_id = ?, role = 'partner', updated_at = ? WHERE id = ?").run(
-    target.id,
-    ts,
-    userId,
-  );
-  addCoupleMember(target.id, userId, "partner");
-  db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
+    db.prepare("UPDATE couples SET partner_b_id = ?, updated_at = ? WHERE id = ?").run(
+      userId,
+      ts,
+      target.id,
+    );
+    db.prepare("UPDATE users SET couple_id = ?, role = 'partner', updated_at = ? WHERE id = ?").run(
+      target.id,
+      ts,
+      userId,
+    );
+    addCoupleMember(target.id, userId, "partner");
+    db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
 
-  addAuditLog({
-    actor_user_id: userId,
-    couple_id: target.id,
-    action: "invite.accept_merge",
-    target_kind: "couple",
-    target_id: target.id,
-    note: `merged partner_b from source couple ${sourceCoupleId} via invite ${row.id}`,
-    before: { source_couple_id: sourceCoupleId },
-    after: { target_couple_id: target.id },
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: target.id,
+      action: "invite.accept_merge",
+      target_kind: "couple",
+      target_id: target.id,
+      note: `merged partner_b from source couple ${sourceCoupleId} via invite ${row.id}`,
+      before: { source_couple_id: sourceCoupleId },
+      after: { target_couple_id: target.id },
+    });
   });
+  applyMerge();
 
   const refreshed = getCoupleById(target.id) as CoupleRow;
   return json({ couple: toCouple(refreshed) });
@@ -1258,7 +1271,12 @@ function parseCoverImageUrl(raw: unknown): string | null {
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new HttpError(400, "cover_image_url must be http(s)");
   }
-  return trimmed;
+  // Store the normalized href, not the raw input: `new URL()` accepts `"` and
+  // `>` inside the path/query without throwing, so the raw string could carry
+  // an attribute-breakout sequence into the SSR <head>. `parsed.href`
+  // percent-encodes those characters, closing the stored-XSS vector at the
+  // source (the SSR sink also escapes, defense in depth).
+  return parsed.href;
 }
 
 /** Free-text markdown block author authors for the merged Vendégoldal.
@@ -1793,9 +1811,17 @@ async function handleUploadCover(ctx: Ctx): Promise<Response> {
       code: "file_too_large",
     });
   }
-  const ext = SUPPORTED_COVER_MIMES[raw.type];
-  if (!ext) {
+  if (SUPPORTED_COVER_MIMES[raw.type] === undefined) {
     throw new HttpError(415, `Unsupported image type: ${raw.type || "unknown"}`, {
+      code: "unsupported_type",
+    });
+  }
+  // Don't trust the client Content-Type — confirm the real magic bytes are a
+  // supported image and derive the stored extension from them.
+  const sniffed = await sniffUploadedImage(raw);
+  const ext = sniffed ? SUPPORTED_COVER_MIMES[sniffed] : undefined;
+  if (!ext) {
+    throw new HttpError(415, "File contents are not a valid image", {
       code: "unsupported_type",
     });
   }
