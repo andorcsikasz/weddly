@@ -626,12 +626,13 @@ function FoundingCouplesBand() {
   }
 
   return (
-    // Compact dark feature-band: a deliberate inversion of the cream page so
-    // the founding offer reads as one premium "moment", not another stacked
-    // section. Two-column on desktop (pitch + promise | the 200 hero, progress
-    // and CTA). The 200 leads — it's the offer; the live booked count is a
-    // demoted progress sliver underneath.
-    <section className="bg-ink-950">
+    // Compact warm-espresso feature-band: a deliberate inversion of the cream
+    // page so the founding offer reads as one premium "moment", not another
+    // stacked section. Warm umber ground (candlelit, not corporate navy) with a
+    // cream-inverse CTA as the single bright object. Two-column on desktop
+    // (pitch + promise | the 200 hero, progress and CTA). The 200 leads — it's
+    // the offer; the live booked count is a demoted progress sliver underneath.
+    <section className="bg-umber-900">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
         {/* Pitch + promise */}
         <div className="sm:max-w-md">
@@ -667,7 +668,10 @@ function FoundingCouplesBand() {
             )}
           </div>
           <div className="flex items-center gap-5">
-            <Link to="/signup" className="btn-accent btn-landing btn-lg">
+            <Link
+              to="/signup"
+              className="btn btn-landing btn-lg bg-paper-50 text-umber-950 hover:bg-paper-200"
+            >
               {t("landing.founders_cta")}
             </Link>
             <button

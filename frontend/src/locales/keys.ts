@@ -944,10 +944,15 @@ export interface LocaleMessages {
     counter_eyebrow: string;
     counter_couples_label: string;
     counter_rsvps_label: string;
-    founders_eyebrow: string;
     founders_title: string;
+    /** One-line promise under the title: first 200 sign-ups are free until
+     *  their wedding day. Carries the offer now that the eyebrow is gone. */
+    founders_promise: string;
+    /** Uppercase tag under the big "200" (e.g. "free spots"). */
+    founders_seats_label: string;
+    /** Caption after the live booked count in the progress sliver. */
+    founders_joined_caption: string;
     founders_body: string;
-    founders_count_suffix: string;
     founders_note: string;
     founders_cta: string;
     founders_share_prompt: string;

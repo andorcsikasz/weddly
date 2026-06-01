@@ -852,11 +852,13 @@ const hu: LocaleMessages = {
     counter_eyebrow: "Élő számok",
     counter_couples_label: "Tervezgető pár",
     counter_rsvps_label: "Beérkezett RSVP",
-    founders_eyebrow: "Vendégségben",
     founders_title: "Most ti vagytok a vendégek",
+    founders_promise:
+      "Az első 200 regisztráló pár az esküvője utolsó pillanatáig ingyen tervez a Wēddlyvel. Nincs apró betű, nincs bankkártya.",
+    founders_seats_label: "ingyenes hely",
+    founders_joined_caption: "pár már foglalt",
     founders_body:
-      "Egy esküvőben a vendéglátás a legszebb. Az első 200 pár nálunk vendég: használjátok szabadon, szeressétek a Wēddlyt, és a ti igenetekre figyeljetek. A többit bízzátok ránk.",
-    founders_count_suffix: "pár foglalt helyet a 200-ból",
+      "Az első 200 regisztráló pár az esküvője utolsó pillanatáig ingyen használja a Wēddlyt: költségvetés, vendéglista, RSVP, ültetés, minden egy helyen. Ti vagytok a vendégeink.",
     founders_note: "Kétszáz párnak terítünk. Csatlakozzatok, amíg van szabad hely az asztalnál.",
     founders_cta: "Foglaljatok helyet",
     founders_share_prompt: "Ismertek egy párt, akinek jól jönne? Hívjátok meg őket.",

@@ -842,11 +842,13 @@ const en: LocaleMessages = {
     counter_eyebrow: "Live numbers",
     counter_couples_label: "Couples planning",
     counter_rsvps_label: "RSVPs received",
-    founders_eyebrow: "Be our first guests",
     founders_title: "This time, you're the guests",
+    founders_promise:
+      "The first 200 couples to sign up plan their whole wedding on Weddly, free right up to their big day. No fine print, no card.",
+    founders_seats_label: "free spots",
+    founders_joined_caption: "couples already in",
     founders_body:
-      "At a wedding, the loveliest part is welcoming people in. The first 200 couples are our guests: use it freely, fall for Weddly, and keep your eyes on your yes. We'll hold the rest.",
-    founders_count_suffix: "of 200 founding seats taken",
+      "The first 200 couples to register use Weddly free until the very last moment of their wedding: budget, guest list, RSVP, seating, all in one place. You're our guests.",
     founders_note:
       "We're setting the table for two hundred couples. Take a seat while there's room.",
     founders_cta: "Take your seat",
