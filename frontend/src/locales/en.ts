@@ -739,7 +739,7 @@ const en: LocaleMessages = {
     faq_title: "Questions you'll probably ask",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
     // FAQPage JSON-LD).
-    closing_title: "Two minutes to set up.",
+    closing_title: "Two minutes\nto set up.",
     closing_body:
       "Free throughout the open beta, with the freedom to pause the workspace whenever life gets busy.",
     // ── Soft-Modern redesign additions ───────────────────────────────

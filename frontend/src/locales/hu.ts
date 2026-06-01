@@ -746,7 +746,7 @@ const hu: LocaleMessages = {
     faq_title: "Gyakori kérdések",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
     // FAQPage JSON-LD).
-    closing_title: "Két perc, és minden a helyén.",
+    closing_title: "Két perc, és\nminden a helyén.",
     closing_body:
       "A nyílt béta alatt szabadon használhatjátok, és bármikor szüneteltethetitek a felületeteket. Ahol abbahagytátok, ott folytatjátok.",
     // ── Soft-Modern redesign additions ───────────────────────────────
