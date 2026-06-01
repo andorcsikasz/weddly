@@ -1186,7 +1186,7 @@ export default function SuppliersPage() {
       ) : (
         <div
           className={
-            viewMode === "line" ? "flex flex-col gap-2" : "grid auto-rows-fr gap-3 md:grid-cols-2"
+            viewMode === "line" ? "flex flex-col gap-2" : "grid gap-3 md:grid-cols-2"
           }
         >
           {/* "Már foglaltam" card. Only appears once the couple has narrowed
@@ -1194,21 +1194,25 @@ export default function SuppliersPage() {
               set) — without that context the autocomplete + admin-queue
               category pinning have nothing to anchor to. Sits at the very
               start of the cards grid so it never gets buried by a long
-              filtered list. */}
+              filtered list. Spans the full row (md:col-span-2) so this taller
+              form never shares a row with a directory card — without that, the
+              card beside it would stretch to the form's height. */}
           {activeGroup && activeCat && (
-            <BookedSupplierCard
-              coupleId={coupleId}
-              category={activeCat}
-              categoryLabel={t(`suppliers.cat.${activeCat}`)}
-              items={items}
-              pickedId={selection[activeCat] ?? null}
-              onPickExisting={(supplier) => {
-                // Mirror the new pick into local state so the matching
-                // directory card flips to its "isPicked" treatment without
-                // waiting for the cross-tab subscriber to re-emit.
-                setSelectionState((cur) => ({ ...cur, [supplier.category]: supplier.id }));
-              }}
-            />
+            <div className="md:col-span-2">
+              <BookedSupplierCard
+                coupleId={coupleId}
+                category={activeCat}
+                categoryLabel={t(`suppliers.cat.${activeCat}`)}
+                items={items}
+                pickedId={selection[activeCat] ?? null}
+                onPickExisting={(supplier) => {
+                  // Mirror the new pick into local state so the matching
+                  // directory card flips to its "isPicked" treatment without
+                  // waiting for the cross-tab subscriber to re-emit.
+                  setSelectionState((cur) => ({ ...cur, [supplier.category]: supplier.id }));
+                }}
+              />
+            </div>
           )}
           {filtered.map((s) => {
             const Icon = CATEGORY_ICON[s.category];

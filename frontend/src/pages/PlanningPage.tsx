@@ -36,7 +36,7 @@ import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { planningApi } from "../lib/endpoints";
-import { todayIso } from "../lib/format";
+import { maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import {
   DICE_CREATIVE_IDEAS,
@@ -188,6 +188,7 @@ export default function PlanningPage() {
   async function onCreate(input: {
     title: string;
     body?: string | null;
+    start_date?: string | null;
     due_date?: string | null;
     assignee?: string | null;
   }) {
@@ -1022,12 +1023,14 @@ function QuickAddForm({
   onCreate: (input: {
     title: string;
     body?: string | null;
+    start_date?: string | null;
     due_date?: string | null;
     assignee?: string | null;
   }) => Promise<void>;
 }) {
   const { t } = useT();
   const [title, setTitle] = useState("");
+  const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [assignee, setAssignee] = useState("");
   const [titleFocused, setTitleFocused] = useState(false);
@@ -1041,10 +1044,12 @@ function QuickAddForm({
     if (!trimmed) return;
     await onCreate({
       title: trimmed,
+      start_date: kind === "task" && startDate ? startDate : null,
       due_date: kind === "task" && dueDate ? dueDate : null,
       assignee: kind === "task" && assignee.trim() ? assignee.trim() : null,
     });
     setTitle("");
+    setStartDate("");
     setDueDate("");
     setAssignee("");
     // Keep the form expanded after a successful submit — the realistic
@@ -1064,7 +1069,8 @@ function QuickAddForm({
   const placeholder =
     kind === "task" ? t("planning.task_placeholder") : t("planning.idea_placeholder");
   const hasValue =
-    title.trim().length > 0 || (kind === "task" && (assignee.length > 0 || dueDate.length > 0));
+    title.trim().length > 0 ||
+    (kind === "task" && (assignee.length > 0 || startDate.length > 0 || dueDate.length > 0));
   const showDetails = kind === "task" && (titleFocused || hasValue);
 
   function onFormBlur(e: ReactFocusEvent<HTMLFormElement>) {
@@ -1124,10 +1130,26 @@ function QuickAddForm({
           )}
           <input
             type="date"
+            value={startDate}
+            onChange={(e) => {
+              const next = e.target.value;
+              setStartDate(next);
+              // Keep the range coherent: bump the due date forward if the
+              // new start lands after it.
+              if (dueDate && next && dueDate < next) setDueDate(next);
+            }}
+            min={todayIso()}
+            aria-label={t("planning.start_date_label")}
+            title={t("planning.start_date_label")}
+            className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+          />
+          <input
+            type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            min={todayIso()}
+            min={maxIsoDate(startDate || todayIso(), todayIso())}
             aria-label={t("planning.due_date_label")}
+            title={t("planning.due_date_label")}
             className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
           />
         </div>
@@ -1166,6 +1188,8 @@ function PlanningRow({
   const [editingAssignee, setEditingAssignee] = useState(false);
   const [draftTitle, setDraftTitle] = useState(item.title);
   const [draftBody, setDraftBody] = useState(item.body ?? "");
+  const [draftStartDate, setDraftStartDate] = useState(item.start_date ?? "");
+  const [draftDueDate, setDraftDueDate] = useState(item.due_date ?? "");
   const [draftAssignee, setDraftAssignee] = useState(item.assignee ?? "");
   // Unique id so each row's datalist doesn't collide with siblings.
   const assigneeListId = useId();
@@ -1181,6 +1205,13 @@ function PlanningRow({
     if (trimmed !== item.title) patch.title = trimmed;
     const nextBody = draftBody.trim() || null;
     if (nextBody !== item.body) patch.body = nextBody;
+    // Dates are tasks-only; ideas never surface the inputs below.
+    if (item.kind === "task") {
+      const nextStart = draftStartDate || null;
+      const nextDue = draftDueDate || null;
+      if (nextStart !== (item.start_date ?? null)) patch.start_date = nextStart;
+      if (nextDue !== (item.due_date ?? null)) patch.due_date = nextDue;
+    }
     if (Object.keys(patch).length > 0) onPatch(patch);
     setEditing(false);
   }
@@ -1242,6 +1273,8 @@ function PlanningRow({
                 } else if (e.key === "Escape") {
                   setDraftTitle(item.title);
                   setDraftBody(item.body ?? "");
+                  setDraftStartDate(item.start_date ?? "");
+                  setDraftDueDate(item.due_date ?? "");
                   setEditing(false);
                 }
               }}
@@ -1256,6 +1289,37 @@ function PlanningRow({
               className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-xs text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
               maxLength={5000}
             />
+            {item.kind === "task" && (
+              <div className="flex flex-wrap gap-3">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                    {t("planning.start_date_label")}
+                  </span>
+                  <input
+                    type="date"
+                    value={draftStartDate}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setDraftStartDate(next);
+                      if (draftDueDate && next && draftDueDate < next) setDraftDueDate(next);
+                    }}
+                    className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                    {t("planning.due_date_label")}
+                  </span>
+                  <input
+                    type="date"
+                    value={draftDueDate}
+                    min={draftStartDate || undefined}
+                    onChange={(e) => setDraftDueDate(e.target.value)}
+                    className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                  />
+                </label>
+              </div>
+            )}
             <div className="flex gap-2">
               <button type="button" onClick={commit} className="btn-primary btn-sm">
                 {t("common.save")}
@@ -1265,6 +1329,8 @@ function PlanningRow({
                 onClick={() => {
                   setDraftTitle(item.title);
                   setDraftBody(item.body ?? "");
+                  setDraftStartDate(item.start_date ?? "");
+                  setDraftDueDate(item.due_date ?? "");
                   setEditing(false);
                 }}
                 className="btn-ghost btn-sm"
@@ -1292,10 +1358,12 @@ function PlanningRow({
               )}
             </button>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-ink-500 dark:text-umber-300">
-              {item.kind === "task" && item.due_date && (
+              {item.kind === "task" && (item.start_date || item.due_date) && (
                 <span className="inline-flex items-center gap-1">
                   <Calendar size={12} aria-hidden="true" />
-                  {item.due_date}
+                  {item.start_date && item.due_date
+                    ? `${item.start_date} → ${item.due_date}`
+                    : (item.start_date ?? item.due_date)}
                 </span>
               )}
               {item.kind === "task" &&
