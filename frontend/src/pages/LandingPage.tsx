@@ -11,6 +11,7 @@ import {
   Mail,
   Pause,
   Printer,
+  Send,
   Smartphone,
   Sparkles,
   Store,
@@ -45,6 +46,7 @@ const SuppliersPreview = lazy(() =>
 import { DemoLaunchCard } from "../components/DemoLaunchCard";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
+import { useToast } from "../components/ui";
 import { publicStatsApi } from "../lib/endpoints";
 import { currencySymbol, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -181,6 +183,15 @@ export default function LandingPage() {
           both are 0 so a freshly-seeded environment doesn't broadcast
           "0 pár". This replaces the earlier fake "Open beta" stats band. */}
       <LiveStatsBand />
+
+      {/* ════════════════════════ Founding 200 — HOSPITALITY/SCARCITY ════════════
+          The emotional FOMO beat: reframes signing up as "being our guest"
+          rather than buying. Real (honest) couples count drives the
+          "{n} of 200 founding seats taken" line; the count line self-hides
+          once we pass 200 so the offer degrades gracefully. Carries a quick
+          share affordance (native share sheet → clipboard fallback) so an
+          engaged visitor can pass Weddly to another engaged couple. */}
+      <FoundingCouplesBand />
 
       {/* ════════════════════════ 03 · Budget — POLAROID ════════════════════════
           Mockup framed as a tilted polaroid with a watermark "02.1" sitting
@@ -546,6 +557,129 @@ function LiveStatsBand() {
       </div>
     </section>
   );
+}
+
+/** Founding-200 hospitality beat. Evergreen marketing copy (renders even if
+ *  the stats fetch fails), with an honest "{n} of 200 founding seats taken"
+ *  line driven off the real `publicStatsApi` couples count — capped at 200 and
+ *  self-hidden once the table is full so we never broadcast "0 left". The
+ *  share control prefers the native share sheet (best for "send it to a
+ *  friend" on mobile), falling back to clipboard-copy + toast, then a visible
+ *  manual-copy URL when the clipboard is refused (insecure context / iframe).
+ *  The shared link carries `?ref=share`, the already-sanctioned referrer
+ *  source the signup flow records on `signup_events.referrer_source`. */
+function FoundingCouplesBand() {
+  const { t } = useT();
+  const toast = useToast();
+  const [couples, setCouples] = useState<number | null>(null);
+  const [copyFallback, setCopyFallback] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    publicStatsApi
+      .get()
+      .then((r) => {
+        if (!cancelled) setCouples(r.couples);
+      })
+      .catch(() => {
+        // Evergreen section — never block on a stats failure; we just skip
+        // the live count line and keep the offer copy.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Honest framing: drive off the real count, cap at 200, and drop the line
+  // entirely once the table is full rather than showing "0 of 200 left".
+  const claimed = couples === null ? null : Math.min(couples, 200);
+  const showCount = claimed !== null && claimed < 200;
+
+  async function shareFoundingLink() {
+    const url = `${window.location.origin}/?ref=share`;
+    // Native share sheet first — the highest-leverage "send to a friend"
+    // affordance on mobile. A cancelled sheet rejects with AbortError, which
+    // we swallow silently (NOT a reason to fall through to clipboard).
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: t("landing.founders_share_title"),
+          text: t("landing.founders_share_text"),
+          url,
+        });
+      } catch {
+        // User dismissed the sheet, or the payload was rejected — stay quiet.
+      }
+      return;
+    }
+    // Desktop / unsupported: clipboard copy + toast, then a visible URL.
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("no_clipboard");
+      await navigator.clipboard.writeText(url);
+      toast.success(t("landing.founders_share_copied"));
+    } catch {
+      setCopyFallback(url);
+    }
+  }
+
+  return (
+    <section className="stationery-light relative overflow-hidden">
+      <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6 sm:py-16">
+        <SectionLabel num="—" label={t("landing.founders_eyebrow")} className="justify-center" />
+        <h2 className="mt-5 font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          {t("landing.founders_title")}
+        </h2>
+        <p className="mx-auto mt-5 max-w-prose font-serif text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
+          {t("landing.founders_body")}
+        </p>
+        {showCount && (
+          <p className="mt-7 flex items-baseline justify-center gap-2">
+            <span className="font-serif text-4xl font-medium tabular-nums leading-none text-ink-900 dark:text-paper-50 sm:text-5xl">
+              <FoundingCount value={claimed} />
+            </span>
+            <span className="font-serif text-sm text-ink-600 dark:text-umber-200 sm:text-base">
+              {t("landing.founders_count_suffix")}
+            </span>
+          </p>
+        )}
+        <p className="mx-auto mt-4 max-w-prose text-sm text-ink-600 dark:text-umber-300">
+          {t("landing.founders_note")}
+        </p>
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+          <Link
+            to="/signup"
+            className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
+          >
+            {t("landing.founders_cta")}
+          </Link>
+          <button
+            type="button"
+            onClick={shareFoundingLink}
+            className="btn-outline btn-landing btn-lg inline-flex w-full items-center justify-center gap-2 sm:w-auto"
+          >
+            <Send size={16} aria-hidden />
+            {t("landing.founders_share_cta")}
+          </button>
+        </div>
+        <p className="mt-3 text-xs text-ink-600 dark:text-umber-300">
+          {t("landing.founders_share_prompt")}
+        </p>
+        {copyFallback && (
+          <p className="mx-auto mt-3 max-w-prose break-all text-xs text-ink-500 dark:text-umber-400">
+            {copyFallback}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** Inline count-up number for the founding-seats line — reuses the same
+ *  `useFlipTo` flip animation as the live stat plinths so the number lands
+ *  with matching gravitas (and respects prefers-reduced-motion). */
+function FoundingCount({ value }: { value: number }) {
+  const display = useFlipTo(value);
+  return <>{display}</>;
 }
 
 /** One ivory plinth per stat (not per digit) — a hairline-bordered card on

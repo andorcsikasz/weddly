@@ -938,6 +938,17 @@ export interface LocaleMessages {
     counter_eyebrow: string;
     counter_couples_label: string;
     counter_rsvps_label: string;
+    founders_eyebrow: string;
+    founders_title: string;
+    founders_body: string;
+    founders_count_suffix: string;
+    founders_note: string;
+    founders_cta: string;
+    founders_share_prompt: string;
+    founders_share_cta: string;
+    founders_share_copied: string;
+    founders_share_title: string;
+    founders_share_text: string;
     product_eyebrow: string;
     product_title: string;
     block_budget_eyebrow: string;
