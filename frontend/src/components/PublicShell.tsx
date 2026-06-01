@@ -156,7 +156,7 @@ function PublicHeader() {
             couples land via the right-side sign-up. */}
         <nav
           aria-label={t("public.nav_audience_aria")}
-          className="ml-2 hidden items-center gap-4 md:flex"
+          className="ml-2 hidden items-center gap-4 font-grotesk md:flex"
         >
           <Link
             to="/vendors"
@@ -255,7 +255,7 @@ function PublicHeader() {
            *  kisbetű"). The hu locale's title-case "Bejelentkezés" /
            *  "Visszajelzés" lower-cases visually without a string rewrite,
            *  which keeps SEO + locale keys intact. */}
-          <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 text-sm text-ink-700 sm:px-6 dark:text-paper-100">
+          <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 font-grotesk text-sm text-ink-700 sm:px-6 dark:text-paper-100">
             <Link
               to="/vendors"
               className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"

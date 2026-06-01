@@ -117,7 +117,7 @@ export function InteractiveBudgetDemo() {
           <p className="hidden text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 sm:block dark:text-blush-300">
             {t("landing.demo_eyebrow")}
           </p>
-          <h2 className="font-serif text-xl leading-[1.15] text-ink-900 sm:mt-2.5 sm:text-3xl lg:text-4xl dark:text-paper-50">
+          <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-ink-900 sm:mt-2.5 sm:text-3xl lg:text-4xl dark:text-paper-50">
             {t("landing.demo_title")}
           </h2>
         </div>

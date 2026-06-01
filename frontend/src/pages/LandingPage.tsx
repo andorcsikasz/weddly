@@ -122,7 +122,7 @@ export default function LandingPage() {
                   promise lands too abstractly to convert; with it, the
                   visitor sees the actual scope (budget, guests, RSVP,
                   seating, wedding site) before the CTA. */}
-              <p className="mt-6 max-w-xl font-serif text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
+              <p className="mt-6 max-w-xl font-grotesk text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
                 {t("landing.hero_sub")}
               </p>
               <div className="mt-8 sm:max-w-md">
@@ -444,7 +444,7 @@ export default function LandingPage() {
           viewports. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
-          <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:whitespace-nowrap sm:text-4xl">
             {t("landing.faq_title")}
           </h2>
           <div className="mt-6 space-y-2 sm:mt-8">
@@ -1004,7 +1004,7 @@ function CoupleCardsTeaser() {
     <section className="relative bg-white dark:bg-umber-900">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14">
         <header className="text-center">
-          <h2 className="font-serif text-2xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.couple_cards_title")}
           </h2>
         </header>
