@@ -701,16 +701,16 @@ function StatCounter({
   const fmt = useMemo(() => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US"), [locale]);
   return (
     <div className="text-center">
-      <div className="relative mx-auto flex aspect-[4/5] w-32 items-center justify-center overflow-hidden rounded-md border border-umber-200 bg-paper-50 shadow-soft sm:w-40 lg:w-48 dark:border-umber-700 dark:bg-umber-800">
+      <div className="relative mx-auto flex aspect-[4/5] w-24 items-center justify-center overflow-hidden rounded-md border border-umber-200 bg-paper-50 shadow-soft sm:w-28 lg:w-32 dark:border-umber-700 dark:bg-umber-800">
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-8 top-1/2 h-px -translate-y-1/2 bg-paper-300/60 dark:bg-umber-700"
+          className="pointer-events-none absolute inset-x-6 top-1/2 h-px -translate-y-1/2 bg-paper-300/60 dark:bg-umber-700"
         />
-        <span className="relative font-serif text-6xl font-medium tabular-nums leading-none text-umber-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
+        <span className="relative font-serif text-4xl font-medium tabular-nums leading-none text-umber-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
           {fmt.format(display)}
         </span>
       </div>
-      <div className="mt-5 font-serif text-sm text-umber-700 dark:text-umber-200 sm:mt-6 sm:text-base">
+      <div className="mt-3 font-serif text-sm text-umber-700 dark:text-umber-200 sm:mt-4 sm:text-base">
         {label}
       </div>
     </div>
