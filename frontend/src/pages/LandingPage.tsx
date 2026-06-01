@@ -589,10 +589,14 @@ function FoundingCouplesBand() {
     };
   }, []);
 
-  // Honest framing: drive off the real count, cap at 200, and drop the line
-  // entirely once the table is full rather than showing "0 of 200 left".
+  // 200 is the hero — the size of the free founding cohort, a fixed promise
+  // that stands even when the live stats call fails. The real booked count is
+  // demoted to a quiet progress sliver + caption, shown only when we have a
+  // genuine, non-empty, non-full number (no "0 of 200" and no full bar).
   const claimed = couples === null ? null : Math.min(couples, 200);
-  const showCount = claimed !== null && claimed < 200;
+  const showProgress = claimed !== null && claimed > 0 && claimed < 200;
+  // Floor the fill at 2% so even a handful of couples paints a visible sliver.
+  const pctClaimed = claimed === null ? 0 : Math.max(2, Math.round((claimed / 200) * 100));
 
   async function shareFoundingLink() {
     const url = `${window.location.origin}/?ref=share`;
@@ -624,33 +628,44 @@ function FoundingCouplesBand() {
   return (
     // Compact dark feature-band: a deliberate inversion of the cream page so
     // the founding offer reads as one premium "moment", not another stacked
-    // section. Two-column on desktop (pitch | proof + action), tight padding
-    // so it occupies roughly a third of the old height. Body/note/share-prompt
-    // copy is dropped — the title, the live count, and the CTA carry it.
+    // section. Two-column on desktop (pitch + promise | the 200 hero, progress
+    // and CTA). The 200 leads — it's the offer; the live booked count is a
+    // demoted progress sliver underneath.
     <section className="bg-ink-950">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
-        {/* Pitch */}
-        <div className="sm:max-w-sm">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-blush-400">
-            {t("landing.founders_eyebrow")}
-          </p>
-          <h2 className="mt-3 font-serif text-3xl italic leading-[1.05] text-paper-50 sm:text-4xl">
+        {/* Pitch + promise */}
+        <div className="sm:max-w-md">
+          <h2 className="font-serif text-3xl italic leading-[1.05] text-paper-50 sm:text-4xl">
             {t("landing.founders_title")}
           </h2>
+          <p className="mt-4 text-sm leading-relaxed text-paper-300 sm:text-base">
+            {t("landing.founders_promise")}
+          </p>
         </div>
 
-        {/* Proof + action */}
-        <div className="flex shrink-0 flex-col items-center gap-5 sm:items-end">
-          {showCount && (
-            <div className="flex flex-col items-center sm:items-end">
-              <span className="font-sans text-6xl font-light tabular-nums leading-none tracking-tight text-paper-50 sm:text-7xl">
-                <FoundingCount value={claimed} />
-              </span>
-              <span className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-paper-400">
-                {t("landing.founders_count_suffix")}
-              </span>
-            </div>
-          )}
+        {/* The 200 hero + progress + action */}
+        <div className="flex shrink-0 flex-col items-center gap-6 sm:items-end">
+          <div className="flex flex-col items-center sm:items-end">
+            <span className="font-sans text-7xl font-light tabular-nums leading-none tracking-tight text-paper-50 sm:text-8xl">
+              200
+            </span>
+            <span className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] text-paper-400">
+              {t("landing.founders_seats_label")}
+            </span>
+            {showProgress && (
+              <div className="mt-4 w-44 sm:w-56">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-paper-50/15">
+                  <div
+                    className="h-full rounded-full bg-blush-400 transition-[width] duration-1000 ease-out"
+                    style={{ width: `${pctClaimed}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-paper-400 sm:text-right">
+                  <FoundingCount value={claimed ?? 0} /> {t("landing.founders_joined_caption")}
+                </p>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-5">
             <Link to="/signup" className="btn-accent btn-landing btn-lg">
               {t("landing.founders_cta")}
@@ -717,16 +732,18 @@ function StatCounter({
 }
 
 /** Count-up "flip" animation. First 85% of the duration shuffles random
- *  N-digit numbers at a steady ~55ms cadence (illegible blur, as requested);
- *  the last 15% drops to a slowing cadence that ramps from ~70ms toward
- *  ~290ms, with the random offset around `target` shrinking each tick so
- *  the final 2-3 values are readable before the card settles. Respects
- *  prefers-reduced-motion (renders the target immediately). */
+ *  numbers within [0, target] at a steady ~55ms cadence (illegible blur, as
+ *  requested) — never above the real value; the last 15% drops to a slowing
+ *  cadence that ramps from ~70ms toward ~290ms, dipping below `target` by a
+ *  shrinking amount each tick so the final 2-3 values are readable and land
+ *  from below. Respects prefers-reduced-motion (renders the target
+ *  immediately). */
 function useFlipTo(target: number, duration = 1800): number {
   const [display, setDisplay] = useState(() => {
     const safe = Math.max(0, target);
-    const len = Math.max(1, String(safe).length);
-    return Math.floor(Math.random() * 10 ** len);
+    // Seed within [0, target] so even the first painted frame never exceeds
+    // the real value.
+    return Math.floor(Math.random() * (safe + 1));
   });
 
   useEffect(() => {
@@ -743,8 +760,6 @@ function useFlipTo(target: number, duration = 1800): number {
       return;
     }
 
-    const len = String(target).length;
-    const max = 10 ** len;
     const fastPhaseEnd = duration * 0.85;
     let startTime = 0;
     let lastTick = 0;
@@ -766,11 +781,15 @@ function useFlipTo(target: number, duration = 1800): number {
       if (now - lastTick >= cadence) {
         lastTick = now;
         if (inFast) {
-          setDisplay(Math.floor(Math.random() * max));
+          // Shuffle only within [0, target] so the count never flashes a
+          // number above the real value (e.g. 40 must never read as 99).
+          setDisplay(Math.floor(Math.random() * (target + 1)));
         } else {
+          // Settle from below: dip down from target by a shrinking amount so
+          // the last few ticks approach the final value without overshooting.
           const variance = Math.max(1, Math.round((1 - slowProgress) * 6));
-          const offset = Math.floor((Math.random() - 0.5) * (variance * 2 + 1));
-          setDisplay(Math.max(0, target + offset));
+          const dip = Math.floor(Math.random() * (variance + 1));
+          setDisplay(Math.max(0, target - dip));
         }
       }
 
