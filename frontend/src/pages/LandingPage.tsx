@@ -266,7 +266,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
-              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="whitespace-pre-line font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
               <ul className="mt-7 space-y-3">

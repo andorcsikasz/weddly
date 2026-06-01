@@ -877,7 +877,7 @@ const en: LocaleMessages = {
     block_guests_bullet_3: "CSV export, any time",
     block_guests_bullet_4: "Shared on your own wedding site (weddly.hu/w/your-names)",
     block_seating_eyebrow: "Seating",
-    block_seating_title: "Drag it. Print it at A3.",
+    block_seating_title: "Drag it.\nChange it.\nPrint it.",
     block_seating_body:
       "Drop tables on the canvas, drag guests onto seats, and the layout exports at A4, A6 (place cards) and A3 (the big chart for the entrance). The PDF renders at exact mm, ready for the printer.",
     block_seating_bullet_1: "Round, rectangle and head tables",
