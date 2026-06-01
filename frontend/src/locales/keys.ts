@@ -803,7 +803,6 @@ export interface LocaleMessages {
     hero_sub: string;
     cta_signup: string;
     cta_login: string;
-    cta_signup_sub: string;
     /** Wedding-site copy surfaced by the SEO prerender SSR body
      *  (frontend/scripts/prerender.ts). The dedicated landing section was
      *  cut; the React landing now mentions the wedding-site feature as one
@@ -973,6 +972,7 @@ export interface LocaleMessages {
     block_budget_bullet_3: string;
     block_guests_eyebrow: string;
     block_guests_title: string;
+    block_guests_subtitle: string;
     block_guests_body: string;
     block_guests_bullet_1: string;
     block_guests_bullet_2: string;

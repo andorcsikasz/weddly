@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { lazy, type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { EucalyptusStem } from "../components/botanical";
 import { SectionLabel } from "../components/editorial";
 import { LazyMount } from "../components/LazyMount";
 import { WorkspaceMockup } from "../components/mockups";
@@ -135,9 +134,6 @@ export default function LandingPage() {
                 >
                   {t("landing.cta_signup")}
                 </Link>
-                <p className="mt-3 text-xs text-ink-600 dark:text-umber-300">
-                  {t("landing.cta_signup_sub")}
-                </p>
               </div>
             </div>
             {/* Tilted "try the demo" sticker — small, prominent enough to
@@ -238,6 +234,9 @@ export default function LandingPage() {
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
+              <p className="mt-3 font-grotesk text-base text-ink-600 dark:text-umber-300">
+                {t("landing.block_guests_subtitle")}
+              </p>
               <ul className="mt-7 space-y-3">
                 <IconRow icon={<Smartphone size={16} />}>
                   {t("landing.block_guests_bullet_1")}
@@ -412,10 +411,6 @@ export default function LandingPage() {
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
       <section className="stationery relative flex min-h-[40vh] items-center sm:min-h-[50vh]">
-        {/* One eucalyptus stem only (was two). Botanical decoration kept
-            here as the single quiet ornament on the page after the
-            BotanicalCorners on the Why section were removed. */}
-        <EucalyptusStem className="pointer-events-none absolute bottom-12 right-4 h-20 w-auto text-paper-400 dark:text-umber-600 opacity-70 sm:bottom-20 sm:right-12 sm:h-28" />
         <div className="mx-auto w-full max-w-3xl px-4 py-16 text-center sm:px-6 sm:py-20">
           <Wordmark size="md" className="text-paper-400 dark:text-umber-600" />
           <h2 className="mt-8 font-serif text-5xl italic leading-[0.96] tracking-tight text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">

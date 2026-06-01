@@ -709,7 +709,6 @@ const en: LocaleMessages = {
     cta_signup: "Start planning",
     cta_login: "Sign in",
     brand_tagline_paper: "Paper letters · Stationery",
-    cta_signup_sub: "Available throughout the open beta.",
     // wsite_title + wsite_body are surfaced by the SEO prerender SSR body
     // (frontend/scripts/prerender.ts). They no longer have a dedicated
     // landing section; the wedding-site value-prop is one bullet in the
@@ -869,7 +868,8 @@ const en: LocaleMessages = {
     block_budget_bullet_2: "Both of you, in real time",
     block_budget_bullet_3: "Audit log of every change",
     block_guests_eyebrow: "Guest list & RSVP",
-    block_guests_title: "One link per guest. Replies, meals, plus-ones, dietary, all in one place.",
+    block_guests_title: "One link per guest.",
+    block_guests_subtitle: "Replies, meals, plus-ones, dietary, all in one place.",
     block_guests_body:
       "Each guest gets a personal RSVP page with their name pre-filled. They reply on their phone in under a minute; you see status, meal choice and song requests in the same list.",
     block_guests_bullet_1: "One link, one minute, by phone",
