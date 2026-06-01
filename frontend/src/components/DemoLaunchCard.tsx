@@ -65,14 +65,14 @@ export function DemoLaunchCard() {
   return (
     <aside
       aria-labelledby="demo-card-title"
-      className="relative w-full max-w-[280px] rounded-2xl border border-paper-300 bg-paper-50 p-5 text-left shadow-soft dark:border-umber-700 dark:bg-umber-800 sm:p-6"
+      className="relative w-full max-w-[280px] rounded-2xl border border-ink-900/15 p-5 text-left dark:border-paper-50/15 sm:p-6"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
+      <p className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink-500 dark:text-umber-200">
         {t("landing.demo_card_eyebrow")}
       </p>
       <h2
         id="demo-card-title"
-        className="mt-2 font-serif text-2xl italic leading-[1.05] text-ink-900 dark:text-paper-50"
+        className="mt-2 font-grotesk text-2xl font-medium leading-snug tracking-tight text-ink-900 dark:text-paper-50 sm:text-3xl"
       >
         {t("landing.demo_card_title")}
       </h2>
@@ -81,12 +81,10 @@ export function DemoLaunchCard() {
         onClick={launch}
         disabled={busy}
         aria-busy={busy}
-        // Sage instead of ink-900 so the demo CTA stays visually distinct
-        // Centralised `.btn-success` carries the sage face + sage rim so the
-        // lifted shadow stays in the same colour family. Was previously a
-        // 320-char inline mix of `bg-sage-700` + arbitrary `[--btn-rim:#…]`
-        // hex props — flagged by the design-system-critic agent.
-        className="btn-success btn-lifted btn-landing mt-5 inline-flex w-full items-center justify-center gap-1.5 text-sm disabled:cursor-wait disabled:opacity-80"
+        // Outline / ghost button (no fill) to match the founders-band design
+        // language: General Sans, uppercase tracked, hairline border, warm
+        // ink family rather than the old sage filled+lifted CTA.
+        className="btn btn-landing mt-6 inline-flex w-full items-center justify-center gap-2 border border-ink-900/30 bg-transparent py-3 font-grotesk text-xs uppercase tracking-[0.2em] text-ink-900 transition-colors hover:bg-ink-900/5 disabled:cursor-wait disabled:opacity-80 dark:border-paper-50/30 dark:text-paper-50 dark:hover:bg-paper-50/10"
       >
         {busy ? (
           <>
