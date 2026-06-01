@@ -235,7 +235,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12">
             <div>
-              <h2 className="font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
               <ul className="mt-7 space-y-3">
@@ -267,7 +267,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
-              <h2 className="font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
               <ul className="mt-7 space-y-3">
@@ -958,7 +958,7 @@ function IconRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-blush-800 dark:text-blush-300">
         {icon}
       </span>
-      <span className="font-serif text-base text-ink-800 dark:text-paper-100">{children}</span>
+      <span className="font-grotesk text-base text-ink-800 dark:text-paper-100">{children}</span>
     </li>
   );
 }
