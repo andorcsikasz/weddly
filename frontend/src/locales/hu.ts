@@ -794,7 +794,7 @@ const hu: LocaleMessages = {
     card_guests_title: "Vendégként érkeztél?",
     card_guests_body: "Írd be a meghívódon szereplő kódot, és válaszolj pár perc alatt.",
     card_guests_cta: "Kód megadása",
-    suppliers_section_title: "Válogatott magyar szolgáltatók",
+    suppliers_section_title: "Válogatott szolgáltatók",
     suppliers_section_body: "Helyszín, catering, fotó, zene, dekor. Foglalás a v2-ben.",
     suppliers_couple_cta: "Szolgáltatók böngészése",
     suppliers_vendor_cta: "Kerüljetek a listára",
@@ -958,9 +958,9 @@ const hu: LocaleMessages = {
     benefit_1_title: "Válogatott válogatás",
     benefit_1_body:
       "Kategóriánként korlátozott a hely, így a párok pont azt böngészik, ami passzol hozzájuk — és ti pont azokat éritek el, akik most döntenek.",
-    benefit_2_title: "Magyar piac, magyar adatok",
+    benefit_2_title: "Helyi piac, helyi adatok",
     benefit_2_body:
-      "Magyar nyelv, magyar régiók, magyar pároknak — Budapesttől a Balatonon át az alföldi régiókig.",
+      "A párok ott keresnek, ahol a helyi szolgáltatók is dolgoznak; mi a kategóriát, a régiót és az árszintet hozzuk össze.",
     benefit_3_title: "Most közvetlen kapcsolat",
     benefit_3_body:
       "A párok telefonon, e-mailen, Instagramon érnek el titeket — semmi platformközi kommunikáció. A foglalás, üzenetek és értékelések később jönnek, és időben szólunk.",

@@ -297,17 +297,6 @@ const META: Record<SeoLocale, LocaleMeta> = {
 const HEAD_START = "<!-- SEO_HEAD_START -->";
 const HEAD_END = "<!-- SEO_HEAD_END -->";
 
-/** Parse an `Accept-Language` header value and return whether the client's
- *  top-preference language is Hungarian. Strict first-tag check: the user's
- *  PRIMARY preference wins; secondary q-weighted fallbacks are ignored on
- *  purpose so e.g. `en-US,en;q=0.9,hu;q=0.5` (most US browsers, with HU as
- *  a courtesy fallback) renders EN — not HU. */
-function prefersHungarian(acceptLanguage: string | null | undefined): boolean {
-  if (!acceptLanguage) return false;
-  const first = acceptLanguage.split(",")[0]?.split(";")[0]?.trim().toLowerCase() ?? "";
-  return first === "hu" || first.startsWith("hu-");
-}
-
 /** Optional EN-canonical host (e.g. "weddly.com"). Activated by the
  *  `EN_CANONICAL_HOST` env var; empty/unset = single-host mode (the
  *  historical behaviour, just Accept-Language branching on weddly.hu).
@@ -364,21 +353,30 @@ function hostIsEnCanonical(host: string | null | undefined): boolean {
   return host.toLowerCase() === en;
 }
 
-/** SEO locale for a request. Two-tier signal:
- *   1. Host-driven: visits to the EN canonical (e.g. `weddly.com`) always
- *      render EN — that's the multi-host pair Google expects for an
- *      `hreflang="en"` alternate to be meaningful.
- *   2. Accept-Language: HU-preferring clients get HU; everyone else gets EN.
- *      Strict first-tag check — see `prefersHungarian`.
- *  `acceptLanguage=null/undefined` defaults to HU for back-compat with old
- *  callers and the SEO test suite. Production callers always pass the
- *  real header. */
+/** Parse an `Accept-Language` header value and return whether the client's
+ *  top-preference language is Hungarian. Strict first-tag check: the user's
+ *  PRIMARY preference wins; secondary q-weighted fallbacks are ignored so a
+ *  US browser with HU as a courtesy fallback still renders EN. */
+function prefersHungarian(acceptLanguage: string | null | undefined): boolean {
+  if (!acceptLanguage) return false;
+  const first = acceptLanguage.split(",")[0]?.split(";")[0]?.trim().toLowerCase() ?? "";
+  return first === "hu" || first.startsWith("hu-");
+}
+
+/** SEO locale for a request. EN is the default everywhere — the product
+ *  is positioned as international-first, so when production server.ts
+ *  passes `null` for acceptLanguage (its new behaviour) the render is
+ *  always EN. The Accept-Language branch is kept so callers (mostly
+ *  tests + internal renders) can still exercise HU output by passing an
+ *  explicit `hu-*` value; nothing in production code paths sends that.
+ *  A user who wants HU in the live product picks it via the locale
+ *  switcher (saved to localStorage on the client). */
 export function localeForHost(
   host: string | null | undefined,
   acceptLanguage: string | null | undefined = null,
 ): SeoLocale {
   if (hostIsEnCanonical(host)) return "en";
-  if (acceptLanguage == null) return "hu";
+  if (acceptLanguage == null) return "en";
   return prefersHungarian(acceptLanguage) ? "hu" : "en";
 }
 

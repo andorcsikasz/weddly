@@ -47,7 +47,7 @@ describe("seo: couple-cards tool route map", () => {
 });
 
 describe("seo: couple-cards SSR meta injection", () => {
-  test("HU host + HU Accept-Language renders HU title + h1 + intro", () => {
+  test("HU host + HU Accept-Language renders HU title + meta", () => {
     const html = renderIndexHtml(TEMPLATE, {
       host: "weddly.hu",
       pathname: HU_PATH,
@@ -55,7 +55,9 @@ describe("seo: couple-cards SSR meta injection", () => {
       acceptLanguage: "hu-HU,hu;q=0.9",
     });
     expect(html).toContain("100 kérdés az esküvő előtt");
-    expect(html).toContain("Négy pakli");
+    // Locale-distinctive sentence from the HU description meta — keeps the
+    // assertion stable as the description copy is tweaked.
+    expect(html).toContain("Ingyenes, regisztráció nélkül");
     // Canonical points to itself on the HU canonical host.
     expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}${HU_PATH}" />`);
     // HU lang attr survives the rewrite — Googlebot reads this as the

@@ -58,7 +58,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
     hu: {
       title: "Szolgáltatóknak — Wēddly",
       description:
-        "Iratkozzatok fel a Wēddly válogatott magyar esküvői szolgáltatói listájára: helyszínek, fotósok, cateringek, zenészek. Érjétek el a most tervező párokat.",
+        "Iratkozzatok fel a Wēddly válogatott esküvői szolgáltatói listájára: helyszínek, fotósok, cateringek, zenészek. Érjétek el a most tervező párokat.",
       h1: "Érjétek el a most tervező párokat.",
       intro:
         "A Wēddly válogatott címjegyzéke az első hely, ahol a párok keresnek esküvői szolgáltatókat — helyszínt, fotót, catering-et, zenét, dekort. Iratkozzatok fel a várólistára, és értesítünk, amint nyitunk a szolgáltatóknak.",

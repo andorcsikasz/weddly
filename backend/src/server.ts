@@ -322,14 +322,20 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   // changes), and stale HTML means users see old chunks 404 and old SSR
   // flashes long after the fix has shipped.
   if (existsSync(FRONTEND_INDEX)) {
-    const acceptLanguage = req.headers.get("accept-language");
-    const locale = localeForHost(host, acceptLanguage);
+    // EN is the default for every production request — the visitor's
+    // Accept-Language header is intentionally NOT forwarded to the SSR
+    // renderer, so an HU navigator still gets the EN SSR. The client
+    // re-renders HU on hydration only when the user has explicitly
+    // picked HU via the locale switcher (saved to localStorage). The
+    // renderer's HU branch is still exercised by tests + internal
+    // callers that pass `acceptLanguage` explicitly.
+    const locale = localeForHost(host, null);
     const template = await loadIndexHtmlSource(locale);
     const html = renderIndexHtml(template, {
       host,
       pathname,
       isRsvp: isRsvpRoute(pathname),
-      acceptLanguage,
+      acceptLanguage: null,
     });
     return new Response(html, {
       headers: {

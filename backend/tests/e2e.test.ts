@@ -10806,24 +10806,26 @@ async function fetchWithHost(path: string, host: string | null): Promise<Respons
 }
 
 describe("seo: locale detection", () => {
-  test("localeForHost defaults to hu when no Accept-Language is provided", () => {
-    // Back-compat baseline: legacy callers (and internal SEO renderers that
-    // don't have a header to forward) keep getting HU. The dynamic branch
-    // fires only when production server.ts forwards the real header.
-    expect(localeForHost("weddly.hu")).toBe("hu");
-    expect(localeForHost("weddly.xyz")).toBe("hu");
-    expect(localeForHost("localhost:5173")).toBe("hu");
-    expect(localeForHost(null)).toBe("hu");
-    expect(localeForHost("")).toBe("hu");
+  test("localeForHost is EN by default regardless of host", () => {
+    // EN is now the absolute default: the product is positioned as
+    // international-first, so even HU navigators get the EN SSR. Users
+    // who want HU pick it via the locale switcher (saved to localStorage
+    // on the client).
+    expect(localeForHost("weddly.hu")).toBe("en");
+    expect(localeForHost("weddly.xyz")).toBe("en");
+    expect(localeForHost("localhost:5173")).toBe("en");
+    expect(localeForHost(null)).toBe("en");
+    expect(localeForHost("")).toBe("en");
   });
 
-  test("localeForHost branches on Accept-Language first preference", () => {
-    // HU-preferring browsers (HU users) keep landing on the HU SSR variant.
+  test("localeForHost still honours an explicit HU Accept-Language", () => {
+    // Production server.ts doesn't forward the header (every request
+    // renders EN), but the function itself is kept locale-aware so tests
+    // and internal renderers can exercise the HU branch by passing a
+    // `hu-*` Accept-Language explicitly.
     expect(localeForHost("weddly.hu", "hu")).toBe("hu");
     expect(localeForHost("weddly.hu", "hu-HU,hu;q=0.9")).toBe("hu");
     expect(localeForHost("weddly.hu", "hu-HU,en;q=0.9")).toBe("hu");
-    // Non-HU primary → EN. This is the change that lets Googlebot (which
-    // sends `en-US,en;q=0.9` by default) index the EN landing.
     expect(localeForHost("weddly.hu", "en-US,en;q=0.9")).toBe("en");
     expect(localeForHost("weddly.hu", "en")).toBe("en");
     expect(localeForHost("weddly.hu", "de-DE,de;q=0.9,en;q=0.5")).toBe("en");
@@ -10924,12 +10926,15 @@ describe("seo: renderIndexHtml meta injection", () => {
     return renderIndexHtml(TEMPLATE, { host, pathname, isRsvp, acceptLanguage });
   }
 
-  test("root: HU lang, HU canonical, no EN hreflang (single-host)", () => {
+  test("root: EN lang, HU canonical, no EN hreflang (single-host)", () => {
+    // EN is the default everywhere — single-host renders ship EN content,
+    // but the canonical + hreflang link rels still anchor on the HU host
+    // since there's no separate EN host configured.
     const html = render("weddly.hu", "/");
-    expect(html).toContain(`<html lang="hu"`);
+    expect(html).toContain(`<html lang="en"`);
     expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/" />`);
     expect(html).toContain(`<meta property="og:url" content="https://${HU_HOST}/" />`);
-    expect(html).toContain(`<meta property="og:locale" content="hu_HU" />`);
+    expect(html).toContain(`<meta property="og:locale" content="en_US" />`);
     expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/"`);
     expect(html).toContain(`hreflang="x-default" href="https://${HU_HOST}/"`);
     expect(html).not.toContain(`hreflang="en"`);
@@ -10940,7 +10945,7 @@ describe("seo: renderIndexHtml meta injection", () => {
     // upstream, but if this renderer is ever invoked with a stale host
     // it must still emit the canonical URLs — never echo .xyz.
     const html = render("weddly.xyz", "/");
-    expect(html).toContain(`<html lang="hu"`);
+    expect(html).toContain(`<html lang="en"`);
     expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/" />`);
     expect(html).not.toContain("weddly.xyz");
   });
@@ -10979,23 +10984,23 @@ describe("seo: renderIndexHtml meta injection", () => {
     expect(subTypes).not.toContain("FAQPage");
   });
 
-  test("FAQPage JSON-LD enumerates the HU SEO_FAQ entries", () => {
-    const huRoot = render("weddly.hu", "/");
-    for (const entry of SEO_FAQ.hu) {
-      // The Q text appears as a Question name in the JSON-LD block.
-      expect(huRoot).toContain(JSON.stringify(entry.q).slice(1, -1));
+  test("FAQPage JSON-LD enumerates the EN SEO_FAQ entries", () => {
+    const enRoot = render("weddly.hu", "/");
+    for (const entry of SEO_FAQ.en) {
+      expect(enRoot).toContain(JSON.stringify(entry.q).slice(1, -1));
     }
   });
 
-  test("template without SEO sentinels keeps the lang attribute as-is", () => {
+  test("template without SEO sentinels still flips the lang attribute", () => {
     const out = renderIndexHtml(`<html lang="hu"><head></head><body></body></html>`, {
       host: "weddly.hu",
       pathname: "/",
       isRsvp: false,
     });
-    // No sentinels → no canonical/hreflang injected; lang stays HU since
-    // every render now resolves to the HU locale.
-    expect(out).toContain(`<html lang="hu"`);
+    // No sentinels → no canonical/hreflang injected, but the lang
+    // attribute is rewritten unconditionally to the resolved locale
+    // (EN by default).
+    expect(out).toContain(`<html lang="en"`);
     expect(out).not.toContain("canonical");
   });
 
@@ -11017,7 +11022,11 @@ describe("seo: renderIndexHtml meta injection", () => {
     expect(html).toMatch(/"WebSite"[^}]*"inLanguage":"en-US"/);
   });
 
-  test("HU-preferring Accept-Language keeps HU SSR (regression guard)", () => {
+  test("explicit HU Accept-Language still renders HU (capability preserved)", () => {
+    // Production server.ts doesn't forward the request header, so this
+    // branch is unreachable from the real product — but the renderer
+    // still exposes HU output for callers that pass AL explicitly
+    // (mostly tests + internal renderers).
     const html = render("weddly.hu", "/", false, "hu-HU,hu;q=0.9");
     expect(html).toContain(`<html lang="hu"`);
     expect(html).toContain(`<meta property="og:locale" content="hu_HU" />`);
@@ -11070,8 +11079,10 @@ describe("seo: multi-host (EN canonical configured)", () => {
 
   test("HU host still serves HU when the visitor's primary Accept-Language is HU", () => {
     // Regression guard: enabling the EN host must NOT pull HU visitors away
-    // from the HU canonical. A `Accept-Language: hu` browser on weddly.hu
-    // keeps the HU SSR + HU canonical link rel.
+    // from the HU canonical. The function-level HU branch is still
+    // exercised when callers pass AL=hu explicitly (tests + internal
+    // renderers). Production server.ts passes null, so a real visitor
+    // never reaches this branch.
     const html = renderIndexHtml(TEMPLATE, {
       host: "weddly.hu",
       pathname: "/",
@@ -11122,7 +11133,12 @@ describe("seo: multi-host (EN canonical configured)", () => {
     );
   });
 
-  test("OG image still uses the canonical host of the current locale (no cross-host leak)", () => {
+  test("OG image points at the EN canonical host once EN_CANONICAL_HOST is configured", () => {
+    // Both renders resolve to EN (the international default), and the EN
+    // canonical host is configured, so og:image always references the
+    // EN host regardless of which host the request landed on. No
+    // cross-host leak: the URL never echoes the request host when it
+    // differs from the canonical.
     const huHtml = renderIndexHtml(TEMPLATE, {
       host: "weddly.hu",
       pathname: "/",
@@ -11133,17 +11149,18 @@ describe("seo: multi-host (EN canonical configured)", () => {
       pathname: "/",
       isRsvp: false,
     });
-    expect(huHtml).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
+    expect(huHtml).toContain(`<meta property="og:image" content="https://${EN_HOST}/og.png" />`);
     expect(enHtml).toContain(`<meta property="og:image" content="https://${EN_HOST}/og.png" />`);
   });
 
   test("HU tool slug pairs to its EN slug across hosts via hreflang link rels", () => {
     const huPath = "/eszkozok/eskuvo-koltsegvetes-kalkulator";
     const enPath = "/tools/wedding-budget-calculator";
-    // Visitor lands on the HU slug on the HU host — the canonical points to
-    // the same URL, the EN alternate points to the paired EN slug on the EN
-    // host. This is the bidirectional pair Google needs to index the two
-    // pages as locale variants of each other.
+    // Visitor lands on the HU slug on the HU host with an explicit HU
+    // Accept-Language — canonical points to the HU slug, the EN alternate
+    // points to the paired EN slug on the EN host. This is the
+    // bidirectional pair Google needs to index the two pages as locale
+    // variants of each other.
     const huHtml = renderIndexHtml(TEMPLATE, {
       host: "weddly.hu",
       pathname: huPath,
@@ -11386,14 +11403,18 @@ describe("seo: per-route uniqueness", () => {
     return renderIndexHtml(TEMPLATE, { host, pathname, isRsvp: false });
   }
 
-  const HU_ROUTES = [
-    { path: "/about", titleSnippet: "Rólunk" },
-    { path: "/vendors", titleSnippet: "Szolgáltatóknak" },
-    { path: "/privacy", titleSnippet: "Adatvédelmi" },
-    { path: "/terms", titleSnippet: "Felhasználási feltételek" },
-    { path: "/imprint", titleSnippet: "Impresszum" },
-    { path: "/login", titleSnippet: "Bejelentkezés" },
-    { path: "/signup", titleSnippet: "Regisztráció" },
+  // SSR now resolves every request to the EN locale by default, so the
+  // per-route uniqueness check pins the EN title snippets even on the HU
+  // host. HU titles are still in the locale tree for client-side rendering
+  // after the user picks HU via the locale switcher.
+  const PUBLIC_ROUTES = [
+    { path: "/about", titleSnippet: "About" },
+    { path: "/vendors", titleSnippet: "For vendors" },
+    { path: "/privacy", titleSnippet: "Privacy" },
+    { path: "/terms", titleSnippet: "Terms" },
+    { path: "/imprint", titleSnippet: "Imprint" },
+    { path: "/login", titleSnippet: "Sign in" },
+    { path: "/signup", titleSnippet: "Create your couple workspace" },
   ];
 
   test("HU alias /impresszum resolves to the same SEO entry as /imprint", () => {
@@ -11405,10 +11426,10 @@ describe("seo: per-route uniqueness", () => {
     expect(b).toContain('href="https://weddly.hu/impresszum"');
   });
 
-  test("every HU public route ships a unique <title> + <h1>", () => {
+  test("every public route ships a unique <title> + <h1>", () => {
     const seenTitles = new Set<string>();
     const seenH1s = new Set<string>();
-    for (const { path, titleSnippet } of HU_ROUTES) {
+    for (const { path, titleSnippet } of PUBLIC_ROUTES) {
       const html = render("weddly.hu", path);
       const title = html.match(/<title>([^<]+)<\/title>/)?.[1] ?? "";
       const h1 = html.match(/<h1>([^<]+)<\/h1>/)?.[1] ?? "";
@@ -11429,8 +11450,8 @@ describe("seo: per-route uniqueness", () => {
 
   test("og:title + twitter:title also flip per route", () => {
     const html = render("weddly.hu", "/about");
-    expect(html).toMatch(/<meta property="og:title" content="[^"]*Rólunk[^"]*"/);
-    expect(html).toMatch(/<meta name="twitter:title" content="[^"]*Rólunk[^"]*"/);
+    expect(html).toMatch(/<meta property="og:title" content="[^"]*About[^"]*"/);
+    expect(html).toMatch(/<meta name="twitter:title" content="[^"]*About[^"]*"/);
   });
 
   test("landing keeps its rich SSR body (sentinels untouched)", () => {

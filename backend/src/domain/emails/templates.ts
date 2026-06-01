@@ -624,7 +624,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         paragraphs: [
           `${p.inviterName} elkezdte tervezni az esküvőt a Weddly-n, és meghívott, hogy csatlakozz hozzá.${coupleSuffixHu}`,
           "Egy közös munkamenetben dolgoztok: vendéglista, ülésrend, költségvetés, RSVP linkek, nyomtatható helykártyák és asztalterv. Minden valós időben szinkronban — semmi táblázat-pingpong, semmi „melyik a legfrissebb verzió”.",
-          "Magyar nyelvű, ingyenes a nyilvános béta alatt, és semmilyen szállítóhoz nem köt — az adatok a tiétek maradnak.",
+          "A nyilvános béta alatt ingyenes, és semmilyen szállítóhoz nem köt; az adatok a tiétek maradnak.",
         ],
         cta: "Csatlakozom a tervezéshez",
         ctaSubtext: "A link 7 napig érvényes.",

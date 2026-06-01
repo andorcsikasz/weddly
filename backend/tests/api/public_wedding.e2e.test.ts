@@ -184,9 +184,11 @@ describe("/w/:slug SSR meta — couple-personalised <title> + OG tags", () => {
     // No couple data in the head — brand default title + og:image. The
     // slug itself is allowed in `canonical` / `og:url` because that's
     // just the URL the page was served on; the leak we guard against is
-    // names / dates / venue showing up in title or description.
+    // names / dates / venue showing up in title or description. EN is
+    // the default render locale now (no Accept-Language forwarded by
+    // production server.ts), so the brand line we assert is the EN one.
     expect(html).toContain('content="https://weddly.hu/og.png"');
-    expect(html).toContain("Wēddly · Közös esküvőtervezés egy helyen");
+    expect(html).toContain("Weddly · Your shared wedding-planning workspace");
     // Spot-check that the bride/groom test names (set by bootstrapCouple)
     // do NOT leak into the head when is_public = 0.
     expect(html).not.toContain("Anna");
