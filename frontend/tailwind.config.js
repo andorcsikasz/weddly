@@ -92,13 +92,13 @@ export default {
         // Kept out of the `blush` palette on purpose: blush is the warm
         // earthy CTA accent (still used in chips, hero, supplier branding),
         // while wnrs.red is a single product-surface token specific to the
-        // conversation-cards face. The hex was tuned to the warmer, slightly
-        // muted firebrick tone the user matched against; the previous
-        // PMS-186-C (#c8102e) read too cool on the cards next to the warm
-        // paper palette.
+        // conversation-cards face. Tuned to a strong, saturated warm red:
+        // brighter than the earlier muted firebrick (#b1232a) the user found
+        // too soft, but kept warm so it doesn't read cool like PMS-186-C
+        // (#c8102e) did against the warm paper palette.
         wnrs: {
-          red: "#b1232a",
-          redInk: "#8c1a20",
+          red: "#cc1f28",
+          redInk: "#9e1820",
         },
       },
       fontFamily: {
@@ -139,7 +139,15 @@ export default {
         // Neo-grotesque "speciality coffee" voice for the founding band.
         // Self-hosted General Sans (see @font-face in index.css) leads; the
         // system grotesques are fallbacks for the swap window only.
-        grotesk: ['"General Sans"', '"Helvetica Neue"', "Helvetica", "Inter", "Arial", "system-ui", "sans-serif"],
+        grotesk: [
+          '"General Sans"',
+          '"Helvetica Neue"',
+          "Helvetica",
+          "Inter",
+          "Arial",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       boxShadow: {
         soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",

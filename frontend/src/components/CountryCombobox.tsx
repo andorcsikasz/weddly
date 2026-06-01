@@ -32,7 +32,10 @@ type Props = {
 
 /** Strip diacritics + lowercase so "Mexikó" and "mexiko" both match. */
 function fold(s: string): string {
-  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 }
 
 const MAX_RESULTS = 12;
@@ -170,7 +173,9 @@ export function CountryCombobox({
           aria-autocomplete="list"
           aria-expanded={open}
           aria-controls={listboxId}
-          aria-activedescendant={open && matches[highlight] ? `${inputId}-opt-${matches[highlight].code}` : undefined}
+          aria-activedescendant={
+            open && matches[highlight] ? `${inputId}-opt-${matches[highlight].code}` : undefined
+          }
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
           aria-required={required || undefined}

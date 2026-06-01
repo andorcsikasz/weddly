@@ -48,6 +48,7 @@ import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useToast } from "../components/ui";
 import { publicStatsApi } from "../lib/endpoints";
+import { currencySymbol, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
@@ -371,16 +372,21 @@ export default function LandingPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                 {t("landing.pricing_offer_label")}
               </p>
-              <div className="mt-3 font-serif text-7xl leading-[0.9] text-ink-900 dark:text-paper-50 sm:text-8xl">
-                {t("landing.pricing_amount")}
+              <div className="mt-3 flex items-end gap-3">
+                <span className="font-serif text-7xl leading-[0.9] text-ink-900 dark:text-paper-50 sm:text-8xl">
+                  {t("landing.pricing_amount")}
+                </span>
+                <span className="mb-3 font-serif text-3xl text-ink-700 dark:text-paper-100 sm:text-4xl">
+                  {currencySymbol(localeCurrency(locale), locale)}
+                </span>
               </div>
-              <p className="mt-2 font-serif text-base italic text-ink-600 dark:text-umber-300">
+              <p className="mt-1 font-serif text-sm italic text-ink-600 dark:text-umber-300">
                 {t("landing.pricing_amount_sub")}
               </p>
-              <p className="mt-4 text-sm text-ink-500 dark:text-umber-400">
+              <p className="mt-4 rounded-lg bg-blush-100/70 dark:bg-blush-300/10 px-3 py-2 text-sm font-medium text-blush-900 dark:text-blush-200">
                 {t("landing.pricing_after")}
               </p>
-              <ul className="mt-8 space-y-3">
+              <ul className="mt-6 space-y-3">
                 <IconRow icon={<Gift size={16} />}>{t("landing.pricing_bullet_1")}</IconRow>
                 <IconRow icon={<Sparkles size={16} />}>{t("landing.pricing_bullet_2")}</IconRow>
                 <IconRow icon={<FileText size={16} />}>{t("landing.pricing_bullet_3")}</IconRow>
@@ -981,7 +987,7 @@ function CoupleCardsTeaser() {
             <li key={deck.id} className="h-full">
               <Link
                 to={toolPath}
-                className="group flex aspect-[2/3] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-3 py-4 text-center text-white shadow-[0_24px_50px_-22px_rgba(177,35,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7"
+                className="group flex aspect-[2/3] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-3 py-4 text-center text-white shadow-[0_24px_50px_-22px_rgba(204,31,40,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7"
               >
                 <span aria-hidden="true" className="block h-1" />
                 <div className="flex flex-1 flex-col items-center justify-center">
@@ -1067,7 +1073,9 @@ function FaqCard({ q, a }: { q: string; a: ReactNode }) {
           className="shrink-0 text-ink-600 dark:text-umber-300 transition-transform group-open:rotate-180"
         />
       </summary>
-      <p className="mt-2.5 font-grotesk text-sm leading-relaxed text-ink-600 dark:text-umber-200">{a}</p>
+      <p className="mt-2.5 font-grotesk text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+        {a}
+      </p>
     </details>
   );
 }
