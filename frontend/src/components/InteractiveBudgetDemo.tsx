@@ -133,7 +133,7 @@ export function InteractiveBudgetDemo() {
                 >
                   {t("landing.demo_guests_label")}
                 </label>
-                <span className="font-grotesk text-xl italic text-blush-700 dark:text-blush-300">
+                <span className="font-grotesk text-lg font-semibold tabular-nums text-blush-700 dark:text-blush-300">
                   {guests}
                 </span>
               </div>
@@ -163,7 +163,7 @@ export function InteractiveBudgetDemo() {
                 >
                   {t("landing.demo_budget_label")}
                 </label>
-                <span className="font-grotesk text-xl italic text-blush-700 dark:text-blush-300">
+                <span className="font-grotesk text-lg font-semibold tabular-nums text-blush-700 dark:text-blush-300">
                   {formatMoney(budget, currency, locale)}
                 </span>
               </div>
