@@ -11,7 +11,6 @@ import {
   Mail,
   Pause,
   Printer,
-  Send,
   Smartphone,
   Sparkles,
   Store,
@@ -624,42 +623,51 @@ function FoundingCouplesBand() {
 
   return (
     <section className="stationery-light relative overflow-hidden">
-      <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-xl px-6 py-24 text-center sm:py-28">
         <SectionLabel num="—" label={t("landing.founders_eyebrow")} className="justify-center" />
-        <h2 className="mt-5 font-serif text-3xl italic leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+        <h2 className="mt-7 font-serif text-3xl italic leading-[1.08] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
           {t("landing.founders_title")}
         </h2>
-        <p className="mx-auto mt-5 max-w-prose font-serif text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
+        <p className="mx-auto mt-6 max-w-prose font-serif text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
           {t("landing.founders_body")}
         </p>
+        {/* The section's single rationed accent: terracotta lives only on the
+            live count, kept large so blush-500 clears AA-large contrast on the
+            cream ground. The suffix stacks beneath as a tracked micro-label. */}
         {showCount && (
-          <p className="mt-7 flex items-baseline justify-center gap-2">
-            <span className="font-serif text-4xl font-medium tabular-nums leading-none text-ink-900 dark:text-paper-50 sm:text-5xl">
+          <div className="mt-12">
+            <span className="block font-serif text-5xl font-medium tabular-nums leading-none text-blush-500 sm:text-6xl">
               <FoundingCount value={claimed} />
             </span>
-            <span className="font-serif text-sm text-ink-600 dark:text-umber-200 sm:text-base">
+            <span className="mt-3 block text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-ink-600 dark:text-umber-200">
               {t("landing.founders_count_suffix")}
             </span>
-          </p>
+          </div>
         )}
-        <p className="mx-auto mt-4 max-w-prose text-sm text-ink-600 dark:text-umber-300">
+        <p className="mx-auto mt-6 max-w-prose text-sm leading-relaxed text-ink-600 dark:text-umber-300">
           {t("landing.founders_note")}
         </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-          <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto">
+        {/* One structural hairline — the lone non-type mark in the block. */}
+        <div className="mx-auto mt-10 h-px w-12 bg-ink-900/15 dark:bg-paper-50/15" aria-hidden />
+        <div className="mt-10">
+          <Link
+            to="/signup"
+            className="btn-primary btn-landing btn-lg inline-flex w-full justify-center sm:w-auto"
+          >
             {t("landing.founders_cta")}
           </Link>
+        </div>
+        {/* Share is a post-decision loop, not a co-equal action — demoted to a
+            quiet underline link merged into the prompt line. */}
+        <p className="mx-auto mt-6 max-w-prose text-sm leading-relaxed text-ink-600 dark:text-umber-300">
+          {t("landing.founders_share_prompt")}{" "}
           <button
             type="button"
             onClick={shareFoundingLink}
-            className="btn-outline btn-landing btn-lg inline-flex w-full items-center justify-center gap-2 sm:w-auto"
+            className="font-medium text-ink-800 underline decoration-ink-900/25 underline-offset-4 transition-colors hover:text-blush-500 hover:decoration-blush-500 dark:text-paper-100 dark:decoration-paper-50/30"
           >
-            <Send size={16} aria-hidden />
             {t("landing.founders_share_cta")}
           </button>
-        </div>
-        <p className="mt-3 text-xs text-ink-600 dark:text-umber-300">
-          {t("landing.founders_share_prompt")}
         </p>
         {copyFallback && (
           <p className="mx-auto mt-3 max-w-prose break-all text-xs text-ink-500 dark:text-umber-400">
