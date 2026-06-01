@@ -268,6 +268,12 @@ export interface Couple {
   location_lat: number | null;
   location_lng: number | null;
   location_radius_km: number | null;
+  /** ISO 3166-1 alpha-2 country the wedding is in — a collective, country-LEVEL
+   *  scope, NOT the precise `location_lat`/`location_lng` venue. Drives
+   *  country-scoped assists (e.g. the venue-name autocomplete) so a couple isn't
+   *  offered cross-border places. Defaults to 'HU' for every historical couple
+   *  (the product launched Hungary-only); always uppercase. */
+  country: string;
   style_tags: WeddingStyleTag[];
   status: CoupleStatus;
   /** Free-text honeymoon destination — "Bali" / "Toscana, Italy". `null` until

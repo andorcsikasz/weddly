@@ -76,6 +76,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     location_lat: null,
     location_lng: null,
     location_radius_km: null,
+    country: "HU",
     style_tags: [],
     status: "active",
     honeymoon_destination: null,

@@ -523,10 +523,17 @@ export const moodboardApi = {
     ),
 };
 
-/** Honeymoon destination autocomplete — proxies OpenStreetMap Nominatim. */
+/** Place-name autocomplete — proxies OpenStreetMap Nominatim. Pass `country`
+ *  (ISO 3166-1 alpha-2) to restrict results to one country, e.g. the venue-name
+ *  field scoping to the couple's country. Honeymoon search omits it on purpose. */
 export const placesApi = {
-  search: (q: string) =>
-    apiFetch<{ places: PlaceSuggestion[] }>("GET", `/api/places/search?q=${encodeURIComponent(q)}`),
+  search: (q: string, country?: string) => {
+    const cc = country && /^[a-z]{2}$/i.test(country) ? `&country=${country.toLowerCase()}` : "";
+    return apiFetch<{ places: PlaceSuggestion[] }>(
+      "GET",
+      `/api/places/search?q=${encodeURIComponent(q)}${cc}`,
+    );
+  },
 };
 
 /** Honeymoon-specific server state. Right now only the Amadeus flight

@@ -41,6 +41,7 @@ export interface CoupleRow {
   location_lat: number | null;
   location_lng: number | null;
   location_radius_km: number | null;
+  country: string | null;
   style_tags_json: string;
   status: string;
   created_at: number;
@@ -216,6 +217,10 @@ export function toCouple(row: CoupleRow): Couple {
     location_lat: row.location_lat,
     location_lng: row.location_lng,
     location_radius_km: row.location_radius_km,
+    // Country-level scope; 'HU' for every historical couple. Normalised to a
+    // 2-letter uppercase code, falling back to 'HU' for null/legacy rows.
+    country:
+      row.country && row.country.trim().length === 2 ? row.country.trim().toUpperCase() : "HU",
     style_tags: styleTags,
     status: VALID_COUPLE_STATUSES.has(row.status as CoupleStatus)
       ? (row.status as CoupleStatus)

@@ -299,6 +299,46 @@ addColumnIfMissing("couples", "currency", "currency TEXT NOT NULL DEFAULT 'HUF'"
 // instead of a schema change + backfill.
 addColumnIfMissing("couples", "country", "country TEXT NOT NULL DEFAULT 'HU'");
 
+// Anchor every historical couple to a country-LEVEL scope of Hungary — the
+// product launched Hungary-only, so "the country we're getting married in" is
+// HU for everyone who signed up before the international expansion. This keeps
+// the newly-introduced country-scoped assists (venue-name autocomplete, supplier
+// suggestions) inside the user's own country instead of offering cross-border
+// places. The column DEFAULT already backfilled existing rows on the ALTER;
+// this UPDATE is the explicit, idempotent guard that also catches any null/empty
+// row from a manual import. Country is deliberately a collective concept, kept
+// separate from the precise `location_lat`/`location_lng` venue — so setting it
+// never disturbs a couple who already pinned a concrete location.
+backfillCoupleCountry();
+function backfillCoupleCountry(): void {
+  const filled = db
+    .prepare("UPDATE couples SET country = 'HU' WHERE country IS NULL OR TRIM(country) = ''")
+    .run();
+  if (filled.changes > 0) {
+    console.log(`[db.backfill] set country='HU' on ${filled.changes} couple(s) with no country`);
+  }
+  // Flag the exception the user asked us to watch for: a couple whose CONCRETE
+  // venue sits OUTSIDE Hungary's bounding box (lat 45.74..48.58, lng 16.11..22.90)
+  // shouldn't silently read as HU. We don't guess the foreign country at boot
+  // (no reverse-geocode), so we surface the rows for a human to correct the
+  // country on. Given the Hungary-only history this list is expected to be empty.
+  const outside = db
+    .prepare(
+      `SELECT id, location_lat AS lat, location_lng AS lng FROM couples
+        WHERE location_lat IS NOT NULL AND location_lng IS NOT NULL
+          AND country = 'HU'
+          AND (location_lat < 45.74 OR location_lat > 48.58
+               OR location_lng < 16.11 OR location_lng > 22.90)`,
+    )
+    .all() as { id: number; lat: number; lng: number }[];
+  if (outside.length > 0) {
+    console.warn(
+      `[db.backfill] ${outside.length} couple(s) read country='HU' but have a venue OUTSIDE Hungary — review and correct: ` +
+        outside.map((c) => `#${c.id}(${c.lat.toFixed(3)},${c.lng.toFixed(3)})`).join(", "),
+    );
+  }
+}
+
 // "Have we actually paid this yet?" flag on DIY supplier entries. Default 0
 // (planned-only) — the mirrored budget line writes the price to
 // `planned_huf` but leaves `actual_huf` at 0 until the couple flips the

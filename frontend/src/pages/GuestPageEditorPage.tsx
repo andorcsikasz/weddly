@@ -80,10 +80,14 @@ function VenueNameField({
   value,
   onChange,
   savedVenues,
+  country,
 }: {
   value: string;
   onChange: (v: string) => void;
   savedVenues: { id: string; name: string }[];
+  /** ISO 3166-1 alpha-2 — scopes the autocomplete to the couple's country so
+   *  a HU couple isn't offered cross-border (e.g. Austrian) venues. */
+  country: string;
 }) {
   const { t } = useT();
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -112,7 +116,7 @@ function VenueNameField({
     const myId = ++requestId.current;
     const handle = setTimeout(async () => {
       try {
-        const r = await placesApi.search(q);
+        const r = await placesApi.search(q, country);
         // Discard stale responses — only the latest typed query wins.
         if (myId !== requestId.current) return;
         setSuggestions(r.places);
@@ -124,7 +128,7 @@ function VenueNameField({
       }
     }, 300);
     return () => clearTimeout(handle);
-  }, [value]);
+  }, [value, country]);
 
   // Click-outside just closes the dropdown — the field is already controlled,
   // so there's nothing to commit (unlike the honeymoon tile).
@@ -906,6 +910,7 @@ export default function GuestPageEditorPage() {
                   value={venueName}
                   onChange={setVenueName}
                   savedVenues={savedVenues}
+                  country={couple?.country ?? "HU"}
                 />
                 <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                   {t("wedding_site_editor.venue_hint")}

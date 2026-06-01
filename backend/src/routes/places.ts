@@ -71,7 +71,8 @@ async function handleSearch(ctx: Ctx): Promise<Response> {
   // state well below 1 query/sec.
   rateLimit(`user:${userId}`, "places_search", { capacity: 6, refillRate: 1 });
 
-  const q = new URL(ctx.req.url).searchParams.get("q")?.trim() ?? "";
+  const params = new URL(ctx.req.url).searchParams;
+  const q = params.get("q")?.trim() ?? "";
   if (q.length < 2) return json({ places: [] });
   if (q.length > 100) throw new HttpError(400, "query too long");
 
@@ -81,6 +82,12 @@ async function handleSearch(ctx: Ctx): Promise<Response> {
   url.searchParams.set("addressdetails", "1");
   url.searchParams.set("limit", "5");
   url.searchParams.set("accept-language", "hu,en");
+  // Optional country bias — when the caller scopes the search to a country
+  // (e.g. the venue-name field passing the couple's country) we restrict
+  // Nominatim to that country so a HU couple isn't offered cross-border places.
+  // Honeymoon destination search omits this on purpose (it's meant to roam).
+  const country = params.get("country")?.trim().toLowerCase() ?? "";
+  if (/^[a-z]{2}$/.test(country)) url.searchParams.set("countrycodes", country);
 
   let raw: unknown;
   try {
