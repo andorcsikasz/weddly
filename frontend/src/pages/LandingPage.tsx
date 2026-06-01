@@ -329,11 +329,11 @@ export default function LandingPage() {
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-3xl italic leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+          <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("landing.audience_title")}
           </h2>
-          <div className="mt-10 divide-y divide-paper-300 dark:divide-umber-700 border-y border-paper-300 dark:border-umber-700">
+          <div className="mt-8 divide-y divide-paper-300 dark:divide-umber-700 border-y border-paper-300 dark:border-umber-700">
             <AudienceRow
               icon={<Heart size={20} strokeWidth={1.5} />}
               row={t("landing.card_couples_title")}
@@ -1019,40 +1019,41 @@ function AudienceRow({
   to?: string;
   onClick?: () => void;
 }) {
-  // CTA label is shown at every viewport — the previous hidden-below-sm
-  // collapse left mobile users with only a "→" arrow that read as both
-  // too small (sub-44px target) and ambiguous. `whitespace-nowrap` keeps
-  // long HU labels ("Tovább a regisztrációhoz") on one line; `text-sm`
-  // base / `text-base` from sm trims width without dropping legibility.
-  const cta = (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-serif text-sm leading-relaxed text-ink-900 transition-colors hover:text-blush-800 dark:text-paper-50 sm:gap-2 sm:text-xl">
-      <span>{ctaLabel}</span>
-      <span aria-hidden>→</span>
-    </span>
-  );
-  return (
-    <div className="flex items-center gap-3 py-6 sm:gap-6 sm:py-8">
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-700 text-white sm:h-11 sm:w-11 dark:bg-blush-400 dark:text-umber-900">
+  // The whole row is the target — a full-width hover wash plus an arrow
+  // that nudges right reads as more polished (and gives a 44px+ tap area)
+  // than the old CTA-only link. `whitespace-nowrap` keeps long HU labels
+  // ("Tovább a regisztrációhoz") on one line; the CTA stays visible at
+  // every viewport so mobile never sees an ambiguous lone arrow.
+  const className =
+    "group flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50 sm:gap-5 sm:py-5";
+  const inner = (
+    <>
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-700 text-white dark:bg-blush-400 dark:text-umber-900 sm:h-10 sm:w-10">
         {icon}
       </span>
       {/* Row label is the audience name ("For couples", "For vendors"),
           which acts as the section title for that row — h3 so screen
           readers get a heading landmark, not just running prose. */}
-      <h3 className="min-w-0 flex-1 font-serif text-base leading-snug text-ink-900 dark:text-paper-50 sm:text-xl">
+      <h3 className="min-w-0 flex-1 font-grotesk text-base font-medium leading-snug text-ink-900 dark:text-paper-50 sm:text-lg">
         {row}
       </h3>
-      <div className="shrink-0">
-        {to ? (
-          <Link to={to} aria-label={ctaLabel}>
-            {cta}
-          </Link>
-        ) : (
-          <button type="button" onClick={onClick} aria-label={ctaLabel} className="text-left">
-            {cta}
-          </button>
-        )}
-      </div>
-    </div>
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-grotesk text-sm font-medium text-ink-700 transition-colors group-hover:text-blush-800 dark:text-paper-200 dark:group-hover:text-blush-300 sm:text-base">
+        <span>{ctaLabel}</span>
+        <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">
+          →
+        </span>
+      </span>
+    </>
+  );
+  const label = `${row}: ${ctaLabel}`;
+  return to ? (
+    <Link to={to} aria-label={label} className={className}>
+      {inner}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} aria-label={label} className={className}>
+      {inner}
+    </button>
   );
 }
 
