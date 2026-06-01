@@ -116,14 +116,8 @@ export default function LandingPage() {
               <h1 className="max-w-[18ch] font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                 {t("landing.hero_title")}
               </h1>
-              {/* Subline: concrete value-prop sentence right after the
-                  poetic headline. Without this, the H1's "in one place"
-                  promise lands too abstractly to convert; with it, the
-                  visitor sees the actual scope (budget, guests, RSVP,
-                  seating, wedding site) before the CTA. */}
-              <p className="mt-6 max-w-xl font-grotesk text-base leading-relaxed text-umber-800 dark:text-paper-100 sm:text-lg">
-                {t("landing.hero_sub")}
-              </p>
+              {/* Subline removed from the visible hero per request; the
+                  hero_sub string still feeds the SEO prerender body. */}
               <div className="mt-8 sm:max-w-md">
                 {/* Single primary CTA only. Login moved to the public header
                     (PublicShell) since "I already have an account" is a
