@@ -4337,10 +4337,6 @@ export interface LocaleMessages {
     section_eyebrow: string;
     section_title: string;
     section_cta: string;
-    /** Badge rendered over the featured (pinned) post in the landing
-     *  teaser so the hero slot reads as an editorial pick rather than
-     *  the most recent post. */
-    section_featured_badge: string;
     /** Tri-state loading / error / empty messages for the public blog
      *  surfaces (index, post, landing teaser) — the API is fetched at
      *  runtime so we need real strings for each branch. */

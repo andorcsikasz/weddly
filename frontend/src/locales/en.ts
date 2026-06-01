@@ -3843,7 +3843,6 @@ const en: LocaleMessages = {
     section_eyebrow: "Blog",
     section_title: "From the blog",
     section_cta: "Browse the blog",
-    section_featured_badge: "Editor's pick",
     loading: "Loading…",
     load_failed: "Couldn't load posts. Try again in a moment.",
     empty: "No posts here yet. Check back soon.",

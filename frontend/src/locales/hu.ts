@@ -3884,7 +3884,6 @@ const hu: LocaleMessages = {
     section_eyebrow: "Blog",
     section_title: "A blogról",
     section_cta: "Tovább a blogra",
-    section_featured_badge: "Szerkesztői ajánlat",
     loading: "Betöltés…",
     load_failed: "Nem sikerült betölteni a posztokat. Próbáld újra egy perc múlva.",
     empty: "Még nincs poszt. Hamarosan érkeznek az elsők.",

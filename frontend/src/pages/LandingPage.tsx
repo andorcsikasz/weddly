@@ -867,12 +867,11 @@ function BlogTeaser() {
        *  the user immediately sees there's more to scroll. Tablet+ keeps
        *  the existing 3-up grid (re-rendered below). */}
       <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-6 sm:hidden [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {posts.map((post, idx) => {
+        {posts.map((post) => {
           const copy = post[locale];
           const [y, m, d] = post.published_at.split("-").map(Number);
           const dateLabel =
             y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
-          const isFeatured = idx === 0;
           return (
             <li
               key={post.slug}
@@ -880,7 +879,7 @@ function BlogTeaser() {
             >
               <Link
                 to={`/blog/${post.slug}`}
-                className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:border-umber-700 dark:bg-umber-800"
+                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:border-umber-700 dark:bg-umber-800"
               >
                 <BlogCover
                   url={post.cover_image_url ?? null}
@@ -888,12 +887,6 @@ function BlogTeaser() {
                   slug={post.slug}
                   category={post.category[locale]}
                 />
-                {isFeatured ? (
-                  <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-ink-900/80 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.22em] text-paper-50 backdrop-blur-sm dark:bg-paper-50/85 dark:text-ink-900">
-                    <span aria-hidden>✦</span>
-                    {t("blog.section_featured_badge")}
-                  </span>
-                ) : null}
                 <div className="flex flex-1 flex-col p-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                     {post.category[locale]}
@@ -916,94 +909,50 @@ function BlogTeaser() {
         {/* Bottom padding gives the lifted CTA's drop shadow room to render
             inside this section — without it the shadow overflows the section
             edge and the next (opaque) section paints over it, clipping it. */}
-        {/* Asymmetric layout: featured Bible-verses post takes the wider
-            left column (1.6fr) with a tall cover + full lead; the two
-            random sidebar posts stack in the right column (1fr) as
-            horizontal cards (cover left, copy right) so the rhythm reads
-            as "magazine front page" not "3-up tile grid". */}
-        {(() => {
-          const [featured, ...rest] = posts;
-          if (!featured) return null;
-          const fCopy = featured[locale];
-          const fParts = featured.published_at.split("-").map(Number);
-          const fDate =
-            fParts[0] && fParts[1] && fParts[2]
-              ? fmt.format(new Date(Date.UTC(fParts[0], fParts[1] - 1, fParts[2])))
-              : featured.published_at;
-          return (
-            <div className="mt-4 grid items-stretch gap-6 sm:mt-2 sm:grid-cols-[1.55fr_1fr] sm:gap-8 lg:gap-10">
-              <Link
-                to={`/blog/${featured.slug}`}
-                className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
-              >
-                <BlogCover
-                  url={featured.cover_image_url ?? null}
-                  alt={fCopy.title}
-                  slug={featured.slug}
-                  category={featured.category[locale]}
-                />
-                {/* Editorial "kiemelt" ribbon. Sits over the cover, top
-                    left, so the featured slot is unmistakable at a glance. */}
-                <span className="pointer-events-none absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full bg-ink-900/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-paper-50 backdrop-blur-sm dark:bg-paper-50/85 dark:text-ink-900">
-                  <span aria-hidden>✦</span>
-                  {t("blog.section_featured_badge")}
-                </span>
-                <div className="flex flex-1 flex-col p-6 sm:p-7">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
-                    {featured.category[locale]}
-                  </p>
-                  <h3 className="mt-3 font-grotesk text-2xl font-semibold leading-[1.1] tracking-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-[1.7rem]">
-                    {fCopy.title}
-                  </h3>
-                  <p className="mt-4 line-clamp-4 text-[15px] leading-relaxed text-ink-600 dark:text-umber-200">
-                    {fCopy.lead}
-                  </p>
-                  <div className="mt-auto flex items-center gap-3 pt-6 text-xs text-ink-600 dark:text-umber-300">
-                    <time dateTime={featured.published_at}>{fDate}</time>
-                    <span aria-hidden>·</span>
-                    <span>{t("blog.read_minutes", { n: featured.read_minutes })}</span>
+        {/* `items-stretch` on the grid + `h-full` on each Link makes every
+            cell take the row-max height; the inner column uses `flex-1` so
+            the date/read-time row anchors to the bottom regardless of how
+            many lines the title or lead wraps to. Result: three perfectly
+            even tiles instead of jagged ones. */}
+        <ul className="mt-4 grid gap-x-8 gap-y-10 sm:mt-2 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
+          {posts.map((post) => {
+            const copy = post[locale];
+            const [y, m, d] = post.published_at.split("-").map(Number);
+            const dateLabel =
+              y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
+            return (
+              <li key={post.slug} className="h-full">
+                <Link
+                  to={`/blog/${post.slug}`}
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
+                >
+                  <BlogCover
+                    url={post.cover_image_url ?? null}
+                    alt={copy.title}
+                    slug={post.slug}
+                    category={post.category[locale]}
+                  />
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
+                      {post.category[locale]}
+                    </p>
+                    <h3 className="mt-3 font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
+                      {copy.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+                      {copy.lead}
+                    </p>
+                    <div className="mt-auto flex items-center gap-3 pt-5 text-xs text-ink-600 dark:text-umber-300">
+                      <time dateTime={post.published_at}>{dateLabel}</time>
+                      <span aria-hidden>·</span>
+                      <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-              <ul className="flex flex-col gap-6 sm:gap-7">
-                {rest.map((post) => {
-                  const copy = post[locale];
-                  const [y, m, d] = post.published_at.split("-").map(Number);
-                  const dateLabel =
-                    y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
-                  return (
-                    <li key={post.slug} className="flex-1">
-                      <Link
-                        to={`/blog/${post.slug}`}
-                        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
-                      >
-                        <BlogCover
-                          url={post.cover_image_url ?? null}
-                          alt={copy.title}
-                          slug={post.slug}
-                          category={post.category[locale]}
-                        />
-                        <div className="flex flex-1 flex-col p-5">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
-                            {post.category[locale]}
-                          </p>
-                          <h3 className="mt-2 font-grotesk text-base font-semibold leading-[1.2] tracking-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 lg:text-lg">
-                            {copy.title}
-                          </h3>
-                          <div className="mt-auto flex items-center gap-2 pt-4 text-[11px] text-ink-600 dark:text-umber-300">
-                            <time dateTime={post.published_at}>{dateLabel}</time>
-                            <span aria-hidden>·</span>
-                            <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          );
-        })()}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
         <div className="mt-12 flex justify-center">
           <Link to="/blog" className="btn-outline btn-lifted btn-landing btn-lg">
             {t("blog.section_cta")}
