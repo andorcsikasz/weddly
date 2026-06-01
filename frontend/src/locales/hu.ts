@@ -829,6 +829,7 @@ const hu: LocaleMessages = {
     footer_legal_imprint: "Impresszum",
     footer_legal_subscription: "Szolgáltatói ÁSZF",
     footer_about_link: "Rólunk",
+    footer_band_prompt: "Nem esküvőt szervezel?",
     footer_band_cta: "Vendég vagyok, van meghívókódom",
     footer_band_cta_vendor: "Szolgáltató vagyok",
     skip_to_main: "Ugrás a tartalomra",

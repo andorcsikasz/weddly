@@ -348,25 +348,31 @@ function PublicFooter() {
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
     <footer className="mt-16 border-t border-paper-300 bg-paper-100/60 sm:mt-24 dark:border-umber-700 dark:bg-umber-950/60">
-      {/* Band: who-are-you CTAs. Two outline-only chips (no fill) that name
-       *  the two non-couple audiences and their action. Extra bottom padding
-       *  so the row breathes away from the footer columns below. */}
+      {/* Band: who-are-you. The specialty-coffee voice carried into the
+       *  footer — a quiet grotesk prompt names the two non-couple audiences,
+       *  each option a hairline cream pill that fills to espresso on hover
+       *  (the single bright object inverts, candlelit). */}
       <div className="border-b border-paper-300 dark:border-umber-700">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-3 px-4 pt-5 pb-7 sm:gap-4 sm:px-6 sm:pt-6 sm:pb-9">
-          <Link to="/vendors" className={footerBandBtnClass}>
-            <Store size={14} aria-hidden />
-            {t("landing.footer_band_cta_vendor")}
-          </Link>
-          <button
-            type="button"
-            className={footerBandBtnClass}
-            onClick={() => {
-              void askGuestCode();
-            }}
-          >
-            <UserCheck size={14} aria-hidden />
-            {t("landing.footer_band_cta")}
-          </button>
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-4 px-4 py-7 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
+          <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink-500 dark:text-umber-300">
+            {t("landing.footer_band_prompt")}
+          </span>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link to="/vendors" className={footerBandBtnClass}>
+              <Store size={15} aria-hidden />
+              {t("landing.footer_band_cta_vendor")}
+            </Link>
+            <button
+              type="button"
+              className={footerBandBtnClass}
+              onClick={() => {
+                void askGuestCode();
+              }}
+            >
+              <UserCheck size={15} aria-hidden />
+              {t("landing.footer_band_cta")}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -452,10 +458,12 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-/** Outline-only audience chip for the footer band: hairline border, no fill,
- *  so it reads as a quiet "which are you?" prompt rather than a filled CTA. */
+/** Specialty-coffee audience pill for the footer band: a hairline cream
+ *  capsule in the grotesk voice that fills to warm espresso on hover (cream
+ *  text inverts), so the row reads as a calm "which are you?" menu rather
+ *  than two flat outline buttons. */
 const footerBandBtnClass =
-  "inline-flex items-center gap-2 rounded-md border border-paper-300 px-3.5 py-1.5 text-sm text-ink-700 transition-colors hover:border-paper-400 hover:text-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:text-paper-50";
+  "inline-flex items-center gap-2 rounded-full border border-paper-400/70 bg-paper-50/60 px-4 py-2 font-grotesk text-sm font-medium tracking-tight text-ink-800 shadow-soft transition-colors duration-200 hover:border-umber-800 hover:bg-umber-900 hover:text-paper-50 dark:border-umber-700 dark:bg-umber-800/50 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:bg-paper-50 dark:hover:text-umber-950";
 
 /** Center-out underline on hover/focus. `inline-block` + `relative` so the
  *  ::after baseline anchors to the text width, not the parent flex column. */

@@ -822,6 +822,7 @@ const en: LocaleMessages = {
     footer_legal_imprint: "Imprint",
     footer_legal_subscription: "Vendor terms",
     footer_about_link: "About",
+    footer_band_prompt: "Not planning a wedding?",
     footer_band_cta: "I'm a guest with an invite code",
     footer_band_cta_vendor: "I'm a wedding vendor",
     skip_to_main: "Skip to main content",

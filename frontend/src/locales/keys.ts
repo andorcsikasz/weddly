@@ -927,6 +927,7 @@ export interface LocaleMessages {
      *  column (the original `footer_vendors_about` also pointed at
      *  /vendors, creating a duplicate). Now links to /about. */
     footer_about_link: string;
+    footer_band_prompt: string;
     footer_band_cta: string;
     footer_band_cta_vendor: string;
     skip_to_main: string;
