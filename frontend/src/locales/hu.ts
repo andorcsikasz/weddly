@@ -883,7 +883,7 @@ const hu: LocaleMessages = {
     block_guests_bullet_1: "Egy link, egy perc, telefonról",
     block_guests_bullet_2: "Szűrés állapot, étrend, kísérő szerint",
     block_guests_bullet_3: "CSV export, bármikor",
-    block_guests_bullet_4: "Saját esküvői oldalon megosztva (weddly.hu/w/nevetek)",
+    block_guests_bullet_4: "Saját esküvői oldalon megosztva",
     block_seating_eyebrow: "Ültetés",
     block_seating_title: "Húzd át.\nVáltoztasd meg.\nNyomtasd ki.",
     block_seating_body:

@@ -874,7 +874,7 @@ const en: LocaleMessages = {
     block_guests_bullet_1: "One link, one minute, by phone",
     block_guests_bullet_2: "Filter by status, meal, plus-one",
     block_guests_bullet_3: "CSV export, any time",
-    block_guests_bullet_4: "Shared on your own wedding site (weddly.hu/w/your-names)",
+    block_guests_bullet_4: "Shared on your own wedding site",
     block_seating_eyebrow: "Seating",
     block_seating_title: "Drag it.\nChange it.\nPrint it.",
     block_seating_body:
