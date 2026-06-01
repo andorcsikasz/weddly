@@ -113,7 +113,7 @@ export default function LandingPage() {
                * 30-40% longer than EN and the old 14ch limit was wrapping
                * the title to 4+ lines on 360px phones. Desktop still gets
                * the tighter 14ch column for visual rhythm. */}
-              <h1 className="max-w-[18ch] font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-ink-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+              <h1 className="max-w-[18ch] font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                 {t("landing.hero_title")}
               </h1>
               {/* Subline: concrete value-prop sentence right after the
@@ -121,7 +121,7 @@ export default function LandingPage() {
                   promise lands too abstractly to convert; with it, the
                   visitor sees the actual scope (budget, guests, RSVP,
                   seating, wedding site) before the CTA. */}
-              <p className="mt-6 max-w-xl font-grotesk text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
+              <p className="mt-6 max-w-xl font-grotesk text-base leading-relaxed text-umber-800 dark:text-paper-100 sm:text-lg">
                 {t("landing.hero_sub")}
               </p>
               <div className="mt-8 sm:max-w-md">
@@ -199,7 +199,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
-              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
               <ul className="mt-7 space-y-3">
@@ -213,7 +213,7 @@ export default function LandingPage() {
                 <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
                   <BudgetMockup className="h-auto w-full" />
                 </LazyMount>
-                <p className="mt-4 text-center font-serif text-sm italic text-ink-600 dark:text-umber-300">
+                <p className="mt-4 text-center font-serif text-sm italic text-umber-700 dark:text-umber-300">
                   {t("landing.block_budget_eyebrow")}
                 </p>
               </div>
@@ -231,7 +231,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12">
             <div>
-              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
               <ul className="mt-7 space-y-3">
@@ -263,7 +263,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-20">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
-              <h2 className="whitespace-pre-line font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h2 className="whitespace-pre-line font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
               <ul className="mt-7 space-y-3">
@@ -291,10 +291,10 @@ export default function LandingPage() {
       <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
-            <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+            <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
               {t("landing.suppliers_section_title")}
             </h2>
-            <p className="mt-5 max-w-xl font-grotesk text-base text-ink-600 dark:text-umber-200 sm:text-lg">
+            <p className="mt-5 max-w-xl font-grotesk text-base text-umber-700 dark:text-umber-200 sm:text-lg">
               {t("landing.suppliers_section_body")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -325,7 +325,7 @@ export default function LandingPage() {
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-          <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
             {t("landing.audience_title")}
           </h2>
           <div className="mt-8 divide-y divide-paper-300 dark:divide-umber-700 border-y border-paper-300 dark:border-umber-700">
@@ -362,13 +362,13 @@ export default function LandingPage() {
           <div className="relative mx-auto max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8">
               <div className="flex items-end gap-3">
-                <span className="font-serif text-6xl leading-[0.9] text-ink-900 dark:text-paper-50 sm:text-7xl">
+                <span className="font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
                   {t("landing.pricing_amount")}
                 </span>
                 <span className="mb-2 font-serif text-3xl text-umber-600 dark:text-umber-200">
                   {currencySymbol(localeCurrency(locale), locale)}
                 </span>
-                <span className="mb-2.5 font-grotesk text-sm text-ink-500 dark:text-umber-300">
+                <span className="mb-2.5 font-grotesk text-sm text-umber-600 dark:text-umber-300">
                   {t("landing.pricing_amount_sub")}
                 </span>
               </div>
@@ -416,7 +416,7 @@ export default function LandingPage() {
       <section className="stationery relative flex min-h-[40vh] items-center sm:min-h-[50vh]">
         <div className="mx-auto w-full max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20">
           <Wordmark size="md" className="text-paper-400 dark:text-umber-600" />
-          <h2 className="mt-8 whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-ink-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
+          <h2 className="mt-8 whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
             {t("landing.closing_title")}
           </h2>
           <div className="mt-10 flex justify-center">
@@ -439,7 +439,7 @@ export default function LandingPage() {
           viewports. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
-          <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:whitespace-nowrap sm:text-4xl">
+          <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:whitespace-nowrap sm:text-4xl">
             {t("landing.faq_title")}
           </h2>
           <div className="mt-6 space-y-2 sm:mt-8">
@@ -707,16 +707,16 @@ function StatCounter({
   const fmt = useMemo(() => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US"), [locale]);
   return (
     <div className="text-center">
-      <div className="relative mx-auto flex aspect-[4/5] w-32 items-center justify-center overflow-hidden rounded-md border border-ink-200 bg-paper-50 shadow-soft sm:w-40 lg:w-48 dark:border-umber-700 dark:bg-umber-800">
+      <div className="relative mx-auto flex aspect-[4/5] w-32 items-center justify-center overflow-hidden rounded-md border border-umber-200 bg-paper-50 shadow-soft sm:w-40 lg:w-48 dark:border-umber-700 dark:bg-umber-800">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-x-8 top-1/2 h-px -translate-y-1/2 bg-paper-300/60 dark:bg-umber-700"
         />
-        <span className="relative font-serif text-6xl font-medium tabular-nums leading-none text-ink-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
+        <span className="relative font-serif text-6xl font-medium tabular-nums leading-none text-umber-900 dark:text-paper-50 sm:text-7xl lg:text-8xl">
           {fmt.format(display)}
         </span>
       </div>
-      <div className="mt-5 font-serif text-sm text-ink-600 dark:text-umber-200 sm:mt-6 sm:text-base">
+      <div className="mt-5 font-serif text-sm text-umber-700 dark:text-umber-200 sm:mt-6 sm:text-base">
         {label}
       </div>
     </div>
@@ -849,7 +849,7 @@ function BlogTeaser() {
        *  phones). Tablet+ falls back to the 3-up grid. */}
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:pb-8 sm:pt-20">
         <header className="text-center">
-          <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
+          <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl">
             {t("blog.section_title")}
           </h2>
         </header>
@@ -883,10 +883,10 @@ function BlogTeaser() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                     {post.category[locale]}
                   </p>
-                  <h3 className="mt-2 font-grotesk text-lg font-semibold leading-[1.15] tracking-tight text-ink-900 dark:text-paper-50">
+                  <h3 className="mt-2 font-grotesk text-lg font-semibold leading-[1.15] tracking-tight text-umber-900 dark:text-paper-50">
                     {copy.title}
                   </h3>
-                  <div className="mt-auto flex items-center gap-2 pt-3 text-[11px] text-ink-600 dark:text-umber-300">
+                  <div className="mt-auto flex items-center gap-2 pt-3 text-[11px] text-umber-700 dark:text-umber-300">
                     <time dateTime={post.published_at}>{dateLabel}</time>
                     <span aria-hidden>·</span>
                     <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
@@ -928,13 +928,13 @@ function BlogTeaser() {
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                       {post.category[locale]}
                     </p>
-                    <h3 className="mt-3 font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
+                    <h3 className="mt-3 font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
                       {copy.title}
                     </h3>
-                    <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+                    <p className="mt-3 text-sm leading-relaxed text-umber-700 dark:text-umber-200">
                       {copy.lead}
                     </p>
-                    <div className="mt-auto flex items-center gap-3 pt-5 text-xs text-ink-600 dark:text-umber-300">
+                    <div className="mt-auto flex items-center gap-3 pt-5 text-xs text-umber-700 dark:text-umber-300">
                       <time dateTime={post.published_at}>{dateLabel}</time>
                       <span aria-hidden>·</span>
                       <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
@@ -980,7 +980,7 @@ function IconRow({
       <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center ${iconColor}`}>
         {icon}
       </span>
-      <span className="font-grotesk text-base text-ink-800 dark:text-paper-100">{children}</span>
+      <span className="font-grotesk text-base text-umber-900 dark:text-paper-100">{children}</span>
     </li>
   );
 }
@@ -996,7 +996,7 @@ function CoupleCardsTeaser() {
     <section className="relative bg-white dark:bg-umber-900">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14">
         <header className="text-center">
-          <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+          <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.couple_cards_title")}
           </h2>
         </header>
@@ -1059,10 +1059,10 @@ function AudienceRow({
       {/* Row label is the audience name ("For couples", "For vendors"),
           which acts as the section title for that row — h3 so screen
           readers get a heading landmark, not just running prose. */}
-      <h3 className="min-w-0 flex-1 font-grotesk text-base font-medium leading-snug text-ink-900 dark:text-paper-50 sm:text-lg">
+      <h3 className="min-w-0 flex-1 font-grotesk text-base font-medium leading-snug text-umber-900 dark:text-paper-50 sm:text-lg">
         {row}
       </h3>
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-grotesk text-sm font-medium text-ink-700 transition-colors group-hover:text-blush-800 dark:text-paper-200 dark:group-hover:text-blush-300 sm:text-base">
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-grotesk text-sm font-medium text-umber-800 transition-colors group-hover:text-blush-800 dark:text-paper-200 dark:group-hover:text-blush-300 sm:text-base">
         <span>{ctaLabel}</span>
         <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">
           →
@@ -1086,15 +1086,15 @@ function FaqCard({ q, a }: { q: string; a: ReactNode }) {
   return (
     <details className="group rounded-xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-4 py-3 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-5 sm:py-3.5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
-        <span className="font-grotesk text-base font-medium text-ink-900 dark:text-paper-50 sm:text-lg">
+        <span className="font-grotesk text-base font-medium text-umber-900 dark:text-paper-50 sm:text-lg">
           {q}
         </span>
         <ChevronDown
           size={16}
-          className="shrink-0 text-ink-600 dark:text-umber-300 transition-transform group-open:rotate-180"
+          className="shrink-0 text-umber-700 dark:text-umber-300 transition-transform group-open:rotate-180"
         />
       </summary>
-      <p className="mt-2.5 font-grotesk text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+      <p className="mt-2.5 font-grotesk text-sm leading-relaxed text-umber-700 dark:text-umber-200">
         {a}
       </p>
     </details>

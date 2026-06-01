@@ -81,16 +81,16 @@ function useHeaderHidden(): boolean {
 /**
  * Wrapper for the public-facing surface (landing + vendors). Mirrors
  * the warm paper / ink / blush aesthetic used by the login page —
- * Cormorant serif headings, soft paper-300 borders, dark ink-800
+ * Cormorant serif headings, soft paper-300 borders, dark umber-900
  * primary CTAs.
  */
 export function PublicShell({ children }: { children: ReactNode }) {
   const { t } = useT();
   return (
-    <div className="flex min-h-full flex-col bg-paper-50 text-ink-800 dark:bg-umber-900 dark:text-paper-100">
+    <div className="flex min-h-full flex-col bg-paper-50 text-umber-900 dark:bg-umber-900 dark:text-paper-100">
       <a
         href="#main-content"
-        className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-blush-400"
+        className="sr-only rounded-md bg-umber-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-umber-600 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-blush-400"
       >
         {t("landing.skip_to_main")}
       </a>
@@ -142,7 +142,7 @@ function PublicHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           to="/"
-          className="shrink-0 text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+          className="shrink-0 text-umber-900 transition-colors hover:text-umber-800 dark:text-paper-50 dark:hover:text-blush-300"
         >
           {/* Header wordmark sits between Wordmark's md and lg presets:
               bigger than the body brand mark, but tracked tightly so the
@@ -160,13 +160,13 @@ function PublicHeader() {
         >
           <Link
             to="/vendors"
-            className="relative px-1 py-1.5 text-sm text-ink-800 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-ink-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
+            className="relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
           >
             {t("landing.nav_vendors")}
           </Link>
           <Link
             to="/rsvp"
-            className="relative px-1 py-1.5 text-sm text-ink-800 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-ink-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
+            className="relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
           >
             {t("landing.footer_guests")}
           </Link>
@@ -181,7 +181,7 @@ function PublicHeader() {
           <button
             type="button"
             onClick={openFeedback}
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
             aria-label={t("landing.nav_feedback")}
             title={t("landing.nav_feedback")}
           >
@@ -190,7 +190,7 @@ function PublicHeader() {
           <button
             type="button"
             onClick={() => setLocale(otherLocale)}
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:inline-flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:inline-flex"
             aria-label={t("nav.switch_language")}
             title={otherLocale.toUpperCase()}
           >
@@ -199,7 +199,7 @@ function PublicHeader() {
           <button
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:h-8 sm:w-8 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 sm:h-8 sm:w-8 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
             aria-pressed={theme === "dark"}
             title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
@@ -212,7 +212,7 @@ function PublicHeader() {
           </button>
           <Link
             to="/login"
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
             aria-label={t("landing.cta_login")}
             title={t("landing.cta_login")}
           >
@@ -235,7 +235,7 @@ function PublicHeader() {
             aria-expanded={menuOpen}
             aria-controls="public-mobile-nav"
             aria-label={menuOpen ? t("public.menu_close") : t("public.menu_open")}
-            className="-mr-1 inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 hover:text-ink-900 sm:h-8 sm:w-8 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:hidden"
+            className="-mr-1 inline-flex h-11 w-11 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 sm:h-8 sm:w-8 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:hidden"
           >
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -255,44 +255,44 @@ function PublicHeader() {
            *  kisbetű"). The hu locale's title-case "Bejelentkezés" /
            *  "Visszajelzés" lower-cases visually without a string rewrite,
            *  which keeps SEO + locale keys intact. */}
-          <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 font-grotesk text-sm text-ink-700 sm:px-6 dark:text-paper-100">
+          <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 font-grotesk text-sm text-umber-800 sm:px-6 dark:text-paper-100">
             <Link
               to="/vendors"
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
-              <Store size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+              <Store size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
               <span>{t("landing.nav_vendors")}</span>
             </Link>
             <Link
               to="/rsvp"
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
               <UserCheck
                 size={16}
                 aria-hidden="true"
-                className="text-ink-500 dark:text-umber-300"
+                className="text-umber-600 dark:text-umber-300"
               />
               <span>{t("landing.footer_guests")}</span>
             </Link>
             <Link
               to="/login"
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
-              <LogIn size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+              <LogIn size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
               <span>{t("landing.cta_login")}</span>
             </Link>
             <button
               type="button"
               onClick={openFeedback}
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
               <MessageSquare
                 size={16}
                 aria-hidden="true"
-                className="text-ink-500 dark:text-umber-300"
+                className="text-umber-600 dark:text-umber-300"
               />
               <span>{t("landing.nav_feedback")}</span>
             </button>
@@ -302,17 +302,17 @@ function PublicHeader() {
                 setLocale(otherLocale);
                 setMenuOpen(false);
               }}
-              className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
               <span className="inline-flex items-center gap-3">
                 <Languages
                   size={16}
                   aria-hidden="true"
-                  className="text-ink-500 dark:text-umber-300"
+                  className="text-umber-600 dark:text-umber-300"
                 />
                 <span>{t("nav.switch_language")}</span>
               </span>
-              <span className="text-xs font-medium uppercase tracking-wider text-ink-600 dark:text-umber-300">
+              <span className="text-xs font-medium uppercase tracking-wider text-umber-700 dark:text-umber-300">
                 {locale} → {otherLocale}
               </span>
             </button>
@@ -322,13 +322,13 @@ function PublicHeader() {
                 setTheme(theme === "dark" ? "light" : "dark");
                 setMenuOpen(false);
               }}
-              className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-ink-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
               <span className="inline-flex items-center gap-3">
                 {theme === "dark" ? (
-                  <Sun size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+                  <Sun size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
                 ) : (
-                  <Moon size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+                  <Moon size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
                 )}
                 <span>{theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}</span>
               </span>
@@ -354,7 +354,7 @@ function PublicFooter() {
        *  (the single bright object inverts, candlelit). */}
       <div className="border-b border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-950">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-4 px-4 py-7 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
-          <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink-500 dark:text-umber-300">
+          <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-umber-600 dark:text-umber-300">
             {t("landing.footer_band_prompt")}
           </span>
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -382,8 +382,8 @@ function PublicFooter() {
        *  2-col grid; desktop expands to the brand+3-col layout. */}
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
         <div className="col-span-2 lg:col-span-1">
-          <Wordmark size="md" className="text-ink-900 dark:text-paper-50" />
-          <p className="mt-2 max-w-xs text-sm leading-snug text-ink-600 sm:mt-3 sm:leading-relaxed dark:text-umber-200">
+          <Wordmark size="md" className="text-umber-900 dark:text-paper-50" />
+          <p className="mt-2 max-w-xs text-sm leading-snug text-umber-700 sm:mt-3 sm:leading-relaxed dark:text-umber-200">
             {t("landing.footer_tagline")}
           </p>
         </div>
@@ -420,7 +420,7 @@ function PublicFooter() {
         {/* Bottom row tightened: copyright sits left, legal links wrap into
          *  a tidy 2-col grid on mobile so the five labels can never trail
          *  into a ragged 3rd row. Tablet+ keeps them on a single line. */}
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-4 text-xs text-ink-600 sm:flex-row sm:items-center sm:px-6 sm:py-5 dark:text-umber-300">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-4 text-xs text-umber-700 sm:flex-row sm:items-center sm:px-6 sm:py-5 dark:text-umber-300">
           <p>
             © {new Date().getFullYear()} {t("app.name")}
           </p>
@@ -450,7 +450,7 @@ function PublicFooter() {
 function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-ink-600 dark:text-umber-300">
+      <p className="text-xs font-semibold uppercase tracking-wider text-umber-700 dark:text-umber-300">
         {title}
       </p>
       <div className="mt-3 flex flex-col items-start gap-2">{children}</div>
@@ -463,15 +463,15 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
  *  text inverts), so the row reads as a calm "which are you?" menu rather
  *  than two flat outline buttons. */
 const footerBandBtnClass =
-  "inline-flex items-center gap-2 rounded-full border border-paper-400/70 bg-paper-50/60 px-4 py-2 font-grotesk text-sm font-medium tracking-tight text-ink-800 shadow-soft transition-colors duration-200 hover:border-umber-800 hover:bg-umber-900 hover:text-paper-50 dark:border-umber-700 dark:bg-umber-800/50 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:bg-paper-50 dark:hover:text-umber-950";
+  "inline-flex items-center gap-2 rounded-full border border-paper-400/70 bg-paper-50/60 px-4 py-2 font-grotesk text-sm font-medium tracking-tight text-umber-900 shadow-soft transition-colors duration-200 hover:border-umber-800 hover:bg-umber-900 hover:text-paper-50 dark:border-umber-700 dark:bg-umber-800/50 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:bg-paper-50 dark:hover:text-umber-950";
 
 /** Center-out underline on hover/focus. `inline-block` + `relative` so the
  *  ::after baseline anchors to the text width, not the parent flex column. */
 const footerLinkClass =
-  "relative inline-block text-sm text-ink-700 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-ink-900 hover:after:w-full focus-visible:after:w-full dark:text-paper-100 dark:hover:text-paper-50";
+  "relative inline-block text-sm text-umber-800 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-full focus-visible:after:w-full dark:text-paper-100 dark:hover:text-paper-50";
 
 const legalLinkClass =
-  "relative inline-block transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-ink-700 hover:after:w-full focus-visible:after:w-full dark:hover:text-paper-100";
+  "relative inline-block transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-800 hover:after:w-full focus-visible:after:w-full dark:hover:text-paper-100";
 
 function FooterLink({ to, children }: { to: string; children: ReactNode }) {
   return (

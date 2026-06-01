@@ -117,7 +117,7 @@ export function InteractiveBudgetDemo() {
           <p className="hidden text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 sm:block dark:text-blush-300">
             {t("landing.demo_eyebrow")}
           </p>
-          <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-ink-900 sm:mt-2.5 sm:text-3xl lg:text-4xl dark:text-paper-50">
+          <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 sm:mt-2.5 sm:text-3xl lg:text-4xl dark:text-paper-50">
             {t("landing.demo_title")}
           </h2>
         </div>
@@ -129,7 +129,7 @@ export function InteractiveBudgetDemo() {
               <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="demo-guests"
-                  className="font-grotesk text-base text-ink-900 dark:text-paper-50"
+                  className="font-grotesk text-base text-umber-900 dark:text-paper-50"
                 >
                   {t("landing.demo_guests_label")}
                 </label>
@@ -149,7 +149,7 @@ export function InteractiveBudgetDemo() {
                 aria-label={t("landing.demo_guests_label")}
                 aria-valuetext={`${guests}`}
               />
-              <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-ink-500 sm:text-[11px] dark:text-umber-300">
+              <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-umber-600 sm:text-[11px] dark:text-umber-300">
                 <span>{MIN_GUESTS}</span>
                 <span>{MAX_GUESTS}</span>
               </div>
@@ -159,7 +159,7 @@ export function InteractiveBudgetDemo() {
               <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="demo-budget"
-                  className="font-grotesk text-base text-ink-900 dark:text-paper-50"
+                  className="font-grotesk text-base text-umber-900 dark:text-paper-50"
                 >
                   {t("landing.demo_budget_label")}
                 </label>
@@ -179,7 +179,7 @@ export function InteractiveBudgetDemo() {
                 aria-label={t("landing.demo_budget_label")}
                 aria-valuetext={formatMoney(budget, currency, locale)}
               />
-              <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-ink-500 sm:text-[11px] dark:text-umber-300">
+              <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-umber-600 sm:text-[11px] dark:text-umber-300">
                 <span>{formatMoney(range.min, currency, locale)}</span>
                 <span>{formatMoney(range.max, currency, locale)}</span>
               </div>
@@ -191,10 +191,10 @@ export function InteractiveBudgetDemo() {
              *  rule, switch to `items-center` and pin a fixed h-12 so the
              *  tile stops growing when HUF formatting wraps long). */}
             <div className="flex h-12 items-center gap-3 rounded-xl bg-white px-4 ring-1 ring-paper-300 dark:bg-umber-800 dark:ring-umber-700">
-              <p className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-500 dark:text-umber-300">
+              <p className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.24em] text-umber-600 dark:text-umber-300">
                 {t("landing.demo_per_guest_label")}
               </p>
-              <p className="ml-auto font-grotesk text-xl text-ink-900 sm:text-2xl lg:text-3xl dark:text-paper-50">
+              <p className="ml-auto font-grotesk text-xl text-umber-900 sm:text-2xl lg:text-3xl dark:text-paper-50">
                 {formatMoney(perGuest, currency, locale)}
               </p>
             </div>
@@ -219,7 +219,7 @@ export function InteractiveBudgetDemo() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
                 {t("landing.demo_breakdown_eyebrow")}
               </p>
-              <p className="text-right font-grotesk text-xs italic leading-tight text-ink-500 sm:text-sm dark:text-umber-300">
+              <p className="text-right font-grotesk text-xs italic leading-tight text-umber-600 sm:text-sm dark:text-umber-300">
                 {t("landing.demo_breakdown_sub")}
               </p>
             </div>
@@ -227,10 +227,10 @@ export function InteractiveBudgetDemo() {
               {rows.map((row) => (
                 <li key={row.i18nKey}>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-grotesk text-sm text-ink-800 dark:text-paper-100">
+                    <span className="font-grotesk text-sm text-umber-900 dark:text-paper-100">
                       {t(row.i18nKey)}
                     </span>
-                    <span className="font-grotesk text-sm tabular-nums text-ink-700 dark:text-paper-100">
+                    <span className="font-grotesk text-sm tabular-nums text-umber-800 dark:text-paper-100">
                       {formatMoney(row.amount, currency, locale)}
                     </span>
                   </div>
@@ -245,10 +245,10 @@ export function InteractiveBudgetDemo() {
             </ul>
             <div className="mt-4 border-t border-paper-300 pt-3 dark:border-umber-700">
               <div className="flex items-center justify-between">
-                <span className="font-grotesk text-base text-ink-900 dark:text-paper-50">
+                <span className="font-grotesk text-base text-umber-900 dark:text-paper-50">
                   {t("landing.demo_total_label")}
                 </span>
-                <span className="font-grotesk text-lg tabular-nums text-ink-900 dark:text-paper-50">
+                <span className="font-grotesk text-lg tabular-nums text-umber-900 dark:text-paper-50">
                   {formatMoney(budget, currency, locale)}
                 </span>
               </div>
