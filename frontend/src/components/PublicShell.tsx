@@ -24,8 +24,12 @@ import { Wordmark } from "./Wordmark";
  *  we never hide the header (no slide-in/out animation either). The
  *  matchMedia listener also keeps things correct if the OS preference
  *  flips while the page is open. */
-function useHeaderHidden(): boolean {
+function useHeaderState(): { hidden: boolean; atTop: boolean } {
   const [hidden, setHidden] = useState(false);
+  // `atTop` drives the borderless look at the very top of the page; once the
+  // user scrolls, a hairline border + soft shadow fade in (via CSS transition)
+  // so the translucent header stays legible over scrolled content.
+  const [atTop, setAtTop] = useState(true);
   const lastY = useRef(0);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -34,23 +38,20 @@ function useHeaderHidden(): boolean {
     let cleanupScroll: (() => void) | null = null;
 
     const attach = () => {
-      if (reduce.matches) {
-        // Reduced motion: scroll-hide is purely cosmetic, so opt out.
-        setHidden(false);
-        return;
-      }
+      const reduced = reduce.matches;
       lastY.current = window.scrollY;
+      setAtTop(window.scrollY < 8);
+      if (reduced) setHidden(false);
       const onScroll = () => {
         const y = window.scrollY;
-        const dy = y - lastY.current;
-        if (y < 80) {
-          setHidden(false);
-        } else if (dy > 4) {
-          // Scrolling down past the threshold — slide the header out.
-          setHidden(true);
-        } else if (dy < -4) {
-          // Scrolling up — bring it back regardless of position.
-          setHidden(false);
+        setAtTop(y < 8);
+        if (!reduced) {
+          // Reduced motion: keep the header pinned; only the at-top border
+          // state tracks scroll. Otherwise hide on scroll-down, reveal up.
+          const dy = y - lastY.current;
+          if (y < 80) setHidden(false);
+          else if (dy > 4) setHidden(true);
+          else if (dy < -4) setHidden(false);
         }
         lastY.current = y;
       };
@@ -75,7 +76,7 @@ function useHeaderHidden(): boolean {
       reduce.removeEventListener("change", onPrefChange);
     };
   }, []);
-  return hidden;
+  return { hidden, atTop };
 }
 
 /**
@@ -108,7 +109,7 @@ function PublicHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const otherLocale = locale === "hu" ? "en" : "hu";
-  const hidden = useHeaderHidden();
+  const { hidden, atTop } = useHeaderState();
 
   // Theme toggle shared with AppShell via `localStorage["weddly.theme"]`.
   // Public default is `light` (the warm paper marketing aesthetic); /app
@@ -135,9 +136,11 @@ function PublicHeader() {
   return (
     <header
       data-scroll-hide="true"
-      className={`sticky top-0 z-40 border-b border-paper-300 bg-paper-50/85 backdrop-blur transition-transform duration-200 dark:border-umber-700 dark:bg-umber-900/85 ${
-        hidden ? "-translate-y-full" : "translate-y-0"
-      }`}
+      className={`sticky top-0 z-40 border-b bg-paper-50/85 backdrop-blur transition-[transform,border-color,box-shadow] duration-200 dark:bg-umber-900/85 ${
+        atTop
+          ? "border-transparent"
+          : "border-paper-300 shadow-[0_4px_16px_-8px_rgba(58,46,34,0.25)] dark:border-umber-700"
+      } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
     >
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
