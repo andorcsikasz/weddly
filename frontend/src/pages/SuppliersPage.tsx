@@ -770,7 +770,7 @@ export default function SuppliersPage() {
       {/* Search + city filter + saved chip. Inputs share the soft pill
           look of the "Mentett" toggle so the row reads as one quiet
           control surface rather than competing heavyweight fields. */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <label className="relative flex-1 min-w-[14rem]">
           <span className="sr-only">{t("suppliers.search_label")}</span>
           <Search
@@ -872,7 +872,7 @@ export default function SuppliersPage() {
           clicking the $$$$ chip filters to band-4 suppliers only, not
           "up to 4". Click the same chip to clear. Suppliers with no
           declared value pass through so non-venue cards are not dropped. */}
-      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-2 sm:gap-x-6 sm:gap-y-3 sm:px-4 sm:py-3 dark:border-umber-700 dark:bg-umber-700/40">
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1.5 sm:gap-x-6 sm:gap-y-2 sm:px-4 sm:py-2 dark:border-umber-700 dark:bg-umber-700/40">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
@@ -937,7 +937,7 @@ export default function SuppliersPage() {
           sub-category) that turn sage as the couple locks each pick in.
           The right-edge fade only shows when the row actually overflows —
           otherwise it leaves a phantom white slab next to the last step. */}
-      <div className="relative mb-3">
+      <div className="relative mb-2">
         {/* snap-x mandatory keeps each step centred under a flicked thumb on
             touch widths — without it the row drifts mid-icon and the user
             has to nudge it back. snap-start on each child anchors the
@@ -981,7 +981,7 @@ export default function SuppliersPage() {
           />
         )}
       </div>
-      <p className="mb-5 hidden text-xs text-ink-500 sm:block dark:text-umber-300">
+      <p className="mb-3 hidden text-xs text-ink-500 sm:block dark:text-umber-300">
         {t("suppliers.chain_help")}
       </p>
 
@@ -993,7 +993,7 @@ export default function SuppliersPage() {
           from the May 2026 mobile audit (compact, predictable horizontal
           motion beats a chaotic two-line wrap at thumb width). */}
       {activeGroup && subCategories.length > 0 && (
-        <div className="mb-3 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-5 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+        <div className="mb-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-3 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           <button
             type="button"
             onClick={() => setActiveCat(null)}
@@ -1846,7 +1846,7 @@ function ChainStep({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex flex-col items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+      className={`group flex flex-col items-center gap-0.5 rounded-full border px-3 py-1 text-xs transition-colors ${
         active
           ? "border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
           : allDone
