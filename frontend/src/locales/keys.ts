@@ -998,13 +998,11 @@ export interface LocaleMessages {
     pricing_eyebrow: string;
     pricing_title: string;
     pricing_body: string;
-    /** Card eyebrow above the founding-couples price. */
-    pricing_offer_label: string;
-    /** Big serif headline word on the price card ("Free" / "Ingyenes"). */
+    /** Big serif number on the price card ("5" / "1 990"). */
     pricing_amount: string;
-    /** Italic subline under the headline ("for the first 200 couples"). */
+    /** Per-period suffix beside the price ("/ month" / "/ hó"). */
     pricing_amount_sub: string;
-    /** Muted after-price line: the standard monthly price + trial. */
+    /** Highlighted founding-offer callout: free for the first 200 couples. */
     pricing_after: string;
     pricing_bullet_1: string;
     pricing_bullet_2: string;
@@ -4339,6 +4337,10 @@ export interface LocaleMessages {
     section_eyebrow: string;
     section_title: string;
     section_cta: string;
+    /** Badge rendered over the featured (pinned) post in the landing
+     *  teaser so the hero slot reads as an editorial pick rather than
+     *  the most recent post. */
+    section_featured_badge: string;
     /** Tri-state loading / error / empty messages for the public blog
      *  surfaces (index, post, landing teaser) — the API is fetched at
      *  runtime so we need real strings for each branch. */

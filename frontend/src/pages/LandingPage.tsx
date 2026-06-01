@@ -360,36 +360,41 @@ export default function LandingPage() {
           shadow. Leads with the founding offer (free for the first 200
           couples), with the standard 5 €/mo as the muted after-price. */}
       <section className="relative stationery">
-        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="mx-auto max-w-3xl text-center">
             <SectionLabel num="—" label={t("landing.pricing_eyebrow")} className="justify-center" />
           </div>
-          <div className="relative mx-auto mt-8 max-w-lg">
-            <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-8 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
-                {t("landing.pricing_offer_label")}
-              </p>
-              <div className="mt-3 flex items-end gap-3">
-                <span className="font-serif text-7xl leading-[0.9] text-ink-900 dark:text-paper-50 sm:text-8xl">
+          <div className="relative mx-auto mt-6 max-w-lg">
+            <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8">
+              <div className="flex items-end gap-3">
+                <span className="font-serif text-6xl leading-[0.9] text-ink-900 dark:text-paper-50 sm:text-7xl">
                   {t("landing.pricing_amount")}
                 </span>
-                <span className="mb-3 font-serif text-3xl text-ink-700 dark:text-paper-100 sm:text-4xl">
+                <span className="mb-2 font-serif text-3xl text-umber-600 dark:text-umber-200">
                   {currencySymbol(localeCurrency(locale), locale)}
                 </span>
+                <span className="mb-2.5 font-grotesk text-sm text-ink-500 dark:text-umber-300">
+                  {t("landing.pricing_amount_sub")}
+                </span>
               </div>
-              <p className="mt-1 font-serif text-sm italic text-ink-600 dark:text-umber-300">
-                {t("landing.pricing_amount_sub")}
-              </p>
-              <p className="mt-4 rounded-lg bg-blush-100/70 dark:bg-blush-300/10 px-3 py-2 text-sm font-medium text-blush-900 dark:text-blush-200">
+              <p className="mt-3 rounded-lg bg-umber-100 dark:bg-umber-700/50 px-3 py-2 text-sm font-medium text-umber-800 dark:text-umber-100 ring-1 ring-umber-200/80 dark:ring-umber-600/50">
                 {t("landing.pricing_after")}
               </p>
-              <ul className="mt-6 space-y-3">
-                <IconRow icon={<Gift size={16} />}>{t("landing.pricing_bullet_1")}</IconRow>
-                <IconRow icon={<Sparkles size={16} />}>{t("landing.pricing_bullet_2")}</IconRow>
-                <IconRow icon={<FileText size={16} />}>{t("landing.pricing_bullet_3")}</IconRow>
-                <IconRow icon={<Pause size={16} />}>{t("landing.pricing_bullet_4")}</IconRow>
+              <ul className="mt-5 space-y-2">
+                <IconRow tone="coffee" icon={<Gift size={16} />}>
+                  {t("landing.pricing_bullet_1")}
+                </IconRow>
+                <IconRow tone="coffee" icon={<Sparkles size={16} />}>
+                  {t("landing.pricing_bullet_2")}
+                </IconRow>
+                <IconRow tone="coffee" icon={<FileText size={16} />}>
+                  {t("landing.pricing_bullet_3")}
+                </IconRow>
+                <IconRow tone="coffee" icon={<Pause size={16} />}>
+                  {t("landing.pricing_bullet_4")}
+                </IconRow>
               </ul>
-              <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg mt-8 w-full">
+              <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg mt-6 w-full">
                 {t("landing.cta_signup")}
               </Link>
             </div>
@@ -795,10 +800,17 @@ function useFlipTo(target: number, duration = 1800): number {
   return display;
 }
 
-/** Blog teaser: three most recent published posts pulled live from
- *  GET /api/blog/posts. Tile-style layout mirrors `/blog` so the section
- *  reads like an excerpt of the index. Self-hides if the fetch fails or
- *  the catalogue is empty so the landing never shows a stub. */
+/** Slug pinned to the featured slot on the landing teaser. The Bible-
+ *  verses post is the one we want every first-time visitor to see; the
+ *  other two slots cycle through the rest of the catalogue at random so
+ *  the section feels alive instead of static. */
+const FEATURED_SLUG = "bibliai-idezetek-eskuvore";
+
+/** Blog teaser: one pinned featured post (Bible verses) plus two random
+ *  others from the live catalogue. The asymmetric desktop layout (big
+ *  card left, two small cards stacked right) gives the section visual
+ *  rhythm instead of the boxy 3-up grid. Self-hides if the fetch fails
+ *  or the catalogue is empty. */
 function BlogTeaser() {
   const { t, locale } = useT();
   const [posts, setPosts] = useState<BlogPost[] | null>(null);
@@ -808,7 +820,15 @@ function BlogTeaser() {
     blogApi
       .list()
       .then((r) => {
-        if (!cancelled) setPosts(r.posts.slice(0, 3));
+        if (cancelled) return;
+        const featured = r.posts.find((p) => p.slug === FEATURED_SLUG);
+        const others = r.posts.filter((p) => p.slug !== FEATURED_SLUG);
+        // Math.random sort is biased but the bias is invisible for a
+        // 2-pick from a small array; lets the mix change on every visit
+        // without ceremony.
+        const shuffled = [...others].sort(() => Math.random() - 0.5);
+        const picked = shuffled.slice(0, 2);
+        setPosts(featured ? [featured, ...picked] : r.posts.slice(0, 3));
       })
       .catch(() => {
         if (!cancelled) setPosts([]);
@@ -847,11 +867,12 @@ function BlogTeaser() {
        *  the user immediately sees there's more to scroll. Tablet+ keeps
        *  the existing 3-up grid (re-rendered below). */}
       <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-6 sm:hidden [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {posts.map((post) => {
+        {posts.map((post, idx) => {
           const copy = post[locale];
           const [y, m, d] = post.published_at.split("-").map(Number);
           const dateLabel =
             y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
+          const isFeatured = idx === 0;
           return (
             <li
               key={post.slug}
@@ -859,7 +880,7 @@ function BlogTeaser() {
             >
               <Link
                 to={`/blog/${post.slug}`}
-                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:border-umber-700 dark:bg-umber-800"
+                className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:border-umber-700 dark:bg-umber-800"
               >
                 <BlogCover
                   url={post.cover_image_url ?? null}
@@ -867,6 +888,12 @@ function BlogTeaser() {
                   slug={post.slug}
                   category={post.category[locale]}
                 />
+                {isFeatured ? (
+                  <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-ink-900/80 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.22em] text-paper-50 backdrop-blur-sm dark:bg-paper-50/85 dark:text-ink-900">
+                    <span aria-hidden>✦</span>
+                    {t("blog.section_featured_badge")}
+                  </span>
+                ) : null}
                 <div className="flex flex-1 flex-col p-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
                     {post.category[locale]}
@@ -889,50 +916,94 @@ function BlogTeaser() {
         {/* Bottom padding gives the lifted CTA's drop shadow room to render
             inside this section — without it the shadow overflows the section
             edge and the next (opaque) section paints over it, clipping it. */}
-        {/* `items-stretch` on the grid + `h-full` on each Link makes every
-            cell take the row-max height; the inner column uses `flex-1` so
-            the date/read-time row anchors to the bottom regardless of how
-            many lines the title or lead wraps to. Result: three perfectly
-            even tiles instead of jagged ones. */}
-        <ul className="mt-4 grid gap-x-8 gap-y-10 sm:mt-2 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
-          {posts.map((post) => {
-            const copy = post[locale];
-            const [y, m, d] = post.published_at.split("-").map(Number);
-            const dateLabel =
-              y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
-            return (
-              <li key={post.slug} className="h-full">
-                <Link
-                  to={`/blog/${post.slug}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
-                >
-                  <BlogCover
-                    url={post.cover_image_url ?? null}
-                    alt={copy.title}
-                    slug={post.slug}
-                    category={post.category[locale]}
-                  />
-                  <div className="flex flex-1 flex-col p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
-                      {post.category[locale]}
-                    </p>
-                    <h3 className="mt-3 font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
-                      {copy.title}
-                    </h3>
-                    <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">
-                      {copy.lead}
-                    </p>
-                    <div className="mt-auto flex items-center gap-3 pt-5 text-xs text-ink-600 dark:text-umber-300">
-                      <time dateTime={post.published_at}>{dateLabel}</time>
-                      <span aria-hidden>·</span>
-                      <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
-                    </div>
+        {/* Asymmetric layout: featured Bible-verses post takes the wider
+            left column (1.6fr) with a tall cover + full lead; the two
+            random sidebar posts stack in the right column (1fr) as
+            horizontal cards (cover left, copy right) so the rhythm reads
+            as "magazine front page" not "3-up tile grid". */}
+        {(() => {
+          const [featured, ...rest] = posts;
+          if (!featured) return null;
+          const fCopy = featured[locale];
+          const fParts = featured.published_at.split("-").map(Number);
+          const fDate =
+            fParts[0] && fParts[1] && fParts[2]
+              ? fmt.format(new Date(Date.UTC(fParts[0], fParts[1] - 1, fParts[2])))
+              : featured.published_at;
+          return (
+            <div className="mt-4 grid items-stretch gap-6 sm:mt-2 sm:grid-cols-[1.55fr_1fr] sm:gap-8 lg:gap-10">
+              <Link
+                to={`/blog/${featured.slug}`}
+                className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
+              >
+                <BlogCover
+                  url={featured.cover_image_url ?? null}
+                  alt={fCopy.title}
+                  slug={featured.slug}
+                  category={featured.category[locale]}
+                />
+                {/* Editorial "kiemelt" ribbon. Sits over the cover, top
+                    left, so the featured slot is unmistakable at a glance. */}
+                <span className="pointer-events-none absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full bg-ink-900/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-paper-50 backdrop-blur-sm dark:bg-paper-50/85 dark:text-ink-900">
+                  <span aria-hidden>✦</span>
+                  {t("blog.section_featured_badge")}
+                </span>
+                <div className="flex flex-1 flex-col p-6 sm:p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
+                    {featured.category[locale]}
+                  </p>
+                  <h3 className="mt-3 font-grotesk text-2xl font-semibold leading-[1.1] tracking-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-[1.7rem]">
+                    {fCopy.title}
+                  </h3>
+                  <p className="mt-4 line-clamp-4 text-[15px] leading-relaxed text-ink-600 dark:text-umber-200">
+                    {fCopy.lead}
+                  </p>
+                  <div className="mt-auto flex items-center gap-3 pt-6 text-xs text-ink-600 dark:text-umber-300">
+                    <time dateTime={featured.published_at}>{fDate}</time>
+                    <span aria-hidden>·</span>
+                    <span>{t("blog.read_minutes", { n: featured.read_minutes })}</span>
                   </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                </div>
+              </Link>
+              <ul className="flex flex-col gap-6 sm:gap-7">
+                {rest.map((post) => {
+                  const copy = post[locale];
+                  const [y, m, d] = post.published_at.split("-").map(Number);
+                  const dateLabel =
+                    y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
+                  return (
+                    <li key={post.slug} className="flex-1">
+                      <Link
+                        to={`/blog/${post.slug}`}
+                        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
+                      >
+                        <BlogCover
+                          url={post.cover_image_url ?? null}
+                          alt={copy.title}
+                          slug={post.slug}
+                          category={post.category[locale]}
+                        />
+                        <div className="flex flex-1 flex-col p-5">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
+                            {post.category[locale]}
+                          </p>
+                          <h3 className="mt-2 font-grotesk text-base font-semibold leading-[1.2] tracking-tight text-ink-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 lg:text-lg">
+                            {copy.title}
+                          </h3>
+                          <div className="mt-auto flex items-center gap-2 pt-4 text-[11px] text-ink-600 dark:text-umber-300">
+                            <time dateTime={post.published_at}>{dateLabel}</time>
+                            <span aria-hidden>·</span>
+                            <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
+                          </div>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
         <div className="mt-12 flex justify-center">
           <Link to="/blog" className="btn-outline btn-lifted btn-landing btn-lg">
             {t("blog.section_cta")}
@@ -950,10 +1021,22 @@ function BlogTeaser() {
 
 // ─────────────────────────── Building blocks ───────────────────────────
 
-function IconRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+function IconRow({
+  icon,
+  children,
+  tone = "blush",
+}: {
+  icon: ReactNode;
+  children: ReactNode;
+  // "coffee" swaps the accent to the warm umber/oat palette (used on the
+  // pricing card) instead of the default blush so no pink/red leaks in.
+  tone?: "blush" | "coffee";
+}) {
+  const iconColor =
+    tone === "coffee" ? "text-umber-600 dark:text-umber-300" : "text-blush-800 dark:text-blush-300";
   return (
     <li className="flex items-center gap-3">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-blush-800 dark:text-blush-300">
+      <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center ${iconColor}`}>
         {icon}
       </span>
       <span className="font-grotesk text-base text-ink-800 dark:text-paper-100">{children}</span>

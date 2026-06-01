@@ -909,7 +909,6 @@ const hu: LocaleMessages = {
     pricing_title: "Az első 200 párnak ingyenes.",
     pricing_body:
       "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 1 990 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
-    pricing_offer_label: "Alapító ajánlat",
     pricing_amount: "1 990",
     pricing_amount_sub: "/ hó",
     pricing_after: "Az első 200 párnak ingyenes, az esküvőtökig (akár 18 hónapig)",
@@ -3885,6 +3884,7 @@ const hu: LocaleMessages = {
     section_eyebrow: "Blog",
     section_title: "A blogról",
     section_cta: "Tovább a blogra",
+    section_featured_badge: "Szerkesztői ajánlat",
     loading: "Betöltés…",
     load_failed: "Nem sikerült betölteni a posztokat. Próbáld újra egy perc múlva.",
     empty: "Még nincs poszt. Hamarosan érkeznek az elsők.",
