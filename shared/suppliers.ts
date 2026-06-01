@@ -8,6 +8,7 @@ export type SupplierCategory =
   | "catering"
   | "cake_dessert"
   | "bar_drinks"
+  | "pizza"
   | "decor_floral"
   | "lighting"
   | "music_dj"
@@ -84,6 +85,7 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   catering: "catering",
   cake_dessert: "cake_dessert",
   bar_drinks: "drinks",
+  pizza: "catering",
   decor_floral: "decor_floral",
   lighting: "decor_floral",
   music_dj: "music_dj",
@@ -104,7 +106,7 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
 // then the remaining details.
 export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
   { id: "venue_stay", categories: ["venue", "accommodation", "tent_pavilion"] },
-  { id: "food_drink", categories: ["catering", "cake_dessert", "bar_drinks"] },
+  { id: "food_drink", categories: ["catering", "cake_dessert", "bar_drinks", "pizza"] },
   { id: "atmosphere", categories: ["decor_floral", "lighting"] },
   { id: "experience", categories: ["music_dj", "sound_tech", "photo_video", "entertainment"] },
   { id: "style", categories: ["attire", "hair_makeup", "nails", "rings"] },

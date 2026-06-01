@@ -33,6 +33,7 @@ const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   catering: "Catering",
   cake_dessert: "Torta & desszert",
   bar_drinks: "Bár & italok",
+  pizza: "Pizza",
   decor_floral: "Dekoráció & virág",
   lighting: "Világítás",
   music_dj: "Zene & DJ",

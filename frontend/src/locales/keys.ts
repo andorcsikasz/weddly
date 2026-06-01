@@ -2510,6 +2510,7 @@ export interface LocaleMessages {
       catering: string;
       cake_dessert: string;
       bar_drinks: string;
+      pizza: string;
       decor_floral: string;
       lighting: string;
       music_dj: string;

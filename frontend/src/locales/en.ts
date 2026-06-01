@@ -2230,6 +2230,7 @@ const en: LocaleMessages = {
       catering: "Catering",
       cake_dessert: "Cake & dessert",
       bar_drinks: "Bar & drinks",
+      pizza: "Pizza",
       decor_floral: "Decor & floral",
       lighting: "Lighting",
       music_dj: "Music & DJ",
