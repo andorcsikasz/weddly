@@ -431,7 +431,7 @@ export function BudgetMockup({ className }: Common) {
           strokeLinecap="round"
         />
       </g>
-      <g className="text-blush-500">
+      <g className="text-umber-600">
         <line
           x1="24"
           y1="92"
@@ -467,7 +467,7 @@ export function BudgetMockup({ className }: Common) {
             <g className="text-paper-200">
               <rect x="120" y={y - 5} width="280" height="9" rx="4.5" fill="currentColor" />
             </g>
-            <g className={cat.tone === "primary" ? "text-blush-500" : "text-blush-300"}>
+            <g className={cat.tone === "primary" ? "text-umber-600" : "text-umber-300"}>
               <rect
                 x="120"
                 y={y - 5}
@@ -588,10 +588,10 @@ export function GuestListMockup({ className }: Common) {
         </text>
       </g>
       {/* Filter chips */}
-      <g className="text-blush-100">
+      <g className="text-umber-100">
         <rect x="296" y="58" width="74" height="28" rx="14" fill="currentColor" />
       </g>
-      <g className="text-blush-700 font-sans">
+      <g className="text-umber-700 font-sans">
         <text x="304" y="76" fontSize="10" fontWeight="600" fill="currentColor">
           {t("landing.mockup_filter_all")} · 120
         </text>
@@ -734,7 +734,7 @@ export function SeatingMockup({ className }: Common) {
         </text>
       </g>
       {/* Add table chip */}
-      <g className="text-blush-500">
+      <g className="text-umber-600">
         <rect x="332" y="20" width="124" height="22" rx="11" fill="currentColor" />
       </g>
       <g className="text-white font-sans">
@@ -791,12 +791,12 @@ export function SeatingMockup({ className }: Common) {
             strokeWidth="1"
           />
         </g>
-        <g className="text-blush-500 font-sans">
+        <g className="text-umber-600 font-sans">
           <text x="0" y="6" fontSize="9" fontWeight="600" fill="currentColor" textAnchor="middle">
             {t("landing.mockup_table_head")}
           </text>
         </g>
-        <g className="text-blush-300">
+        <g className="text-umber-300">
           {[-32, -16, 0, 16, 32].map((x) => (
             <rect
               key={`htop-${x}`}
@@ -820,12 +820,12 @@ export function SeatingMockup({ className }: Common) {
           <g className="text-ink-700">
             <circle cx="0" cy="0" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
           </g>
-          <g className="text-blush-500 font-sans">
+          <g className="text-umber-600 font-sans">
             <text x="0" y="3" fontSize="8" fontWeight="600" fill="currentColor" textAnchor="middle">
               {tbl.label}
             </text>
           </g>
-          <g className="text-blush-300">
+          <g className="text-umber-300">
             {TABLE_DEGS.map((deg) => {
               const rad = (deg * Math.PI) / 180;
               const cx = Math.cos(rad) * 30;
@@ -864,7 +864,7 @@ export function SeatingMockup({ className }: Common) {
             strokeWidth="1"
           />
         </g>
-        <g className="text-blush-300">
+        <g className="text-umber-300">
           <circle cx="14" cy="16" r="6" fill="currentColor" />
         </g>
         <g className="text-ink-800 font-sans">
@@ -918,10 +918,10 @@ export function VendorListingMockup({ className }: Common) {
        *  drops into exactly this rect — and is category-neutral, so it
        *  doesn't whisper "this product is for florists only" to caterers
        *  and photographers browsing /vendors. */}
-      <g className="text-blush-100">
+      <g className="text-umber-100">
         <path d="M 0 0 L 360 0 L 360 92 L 0 92 Z" fill="currentColor" />
       </g>
-      <g className="text-blush-400" opacity="0.55">
+      <g className="text-umber-500" opacity="0.55">
         <rect
           x="167"
           y="30"
@@ -943,7 +943,7 @@ export function VendorListingMockup({ className }: Common) {
       <g className="text-paper-300">
         <circle cx="40" cy="92" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
       </g>
-      <g className="font-serif text-blush-700">
+      <g className="font-serif text-umber-700">
         <text x="40" y="98" fontSize="18" fill="currentColor" textAnchor="middle">
           F
         </text>
@@ -953,7 +953,7 @@ export function VendorListingMockup({ className }: Common) {
       <g className="text-white">
         <circle cx="328" cy="20" r="14" fill="currentColor" />
       </g>
-      <g className="text-blush-500">
+      <g className="text-umber-600">
         <path
           d="M 322 14 L 334 14 L 334 28 L 328 24 L 322 28 Z"
           fill="none"
@@ -976,7 +976,7 @@ export function VendorListingMockup({ className }: Common) {
       </g>
 
       {/* Stars */}
-      <g className="text-blush-500">
+      <g className="text-umber-600">
         {[0, 1, 2, 3, 4].map((i) => (
           <path
             key={i}
@@ -993,7 +993,7 @@ export function VendorListingMockup({ className }: Common) {
       </g>
 
       {/* CTA */}
-      <g className="text-blush-500">
+      <g className="text-umber-600">
         <rect x="220" y="170" width="120" height="28" rx="14" fill="currentColor" />
       </g>
       <g className="text-white font-sans">
@@ -1019,13 +1019,13 @@ export function CouplePortrait({ variant, className }: Common & { variant: 1 | 2
   const palette =
     variant === 1
       ? {
-          bg: "text-blush-100",
-          ring: "text-blush-200",
-          skinL: "text-blush-200",
+          bg: "text-umber-100",
+          ring: "text-umber-200",
+          skinL: "text-umber-200",
           skinR: "text-paper-300",
           hairL: "text-ink-800",
-          hairR: "text-blush-700",
-          shoulderL: "text-blush-400",
+          hairR: "text-umber-700",
+          shoulderL: "text-umber-500",
           shoulderR: "text-paper-500",
         }
       : variant === 2
@@ -1033,21 +1033,21 @@ export function CouplePortrait({ variant, className }: Common & { variant: 1 | 2
             bg: "text-paper-200",
             ring: "text-paper-300",
             skinL: "text-paper-300",
-            skinR: "text-blush-200",
-            hairL: "text-blush-700",
+            skinR: "text-umber-200",
+            hairL: "text-umber-700",
             hairR: "text-ink-700",
             shoulderL: "text-ink-600",
-            shoulderR: "text-blush-300",
+            shoulderR: "text-umber-300",
           }
         : {
-            bg: "text-blush-50",
-            ring: "text-blush-200",
+            bg: "text-umber-50",
+            ring: "text-umber-200",
             skinL: "text-paper-300",
-            skinR: "text-blush-200",
+            skinR: "text-umber-200",
             hairL: "text-ink-800",
-            hairR: "text-blush-700",
+            hairR: "text-umber-700",
             shoulderL: "text-paper-500",
-            shoulderR: "text-blush-400",
+            shoulderR: "text-umber-500",
           };
   // Variant-specific hair shapes — same anchor heads but distinct silhouettes.
   const hairLeft =
@@ -1128,7 +1128,7 @@ export function CouplePortrait({ variant, className }: Common & { variant: 1 | 2
       </g>
 
       {/* Tiny ring/heart between them — wedding cue */}
-      <g className="text-blush-500">
+      <g className="text-umber-600">
         <circle cx="48" cy="58" r="2.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
       </g>
     </svg>
