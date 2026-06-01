@@ -329,9 +329,17 @@ function PublicHeader() {
             >
               <span className="inline-flex items-center gap-3">
                 {theme === "dark" ? (
-                  <Sun size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
+                  <Sun
+                    size={16}
+                    aria-hidden="true"
+                    className="text-umber-600 dark:text-umber-300"
+                  />
                 ) : (
-                  <Moon size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
+                  <Moon
+                    size={16}
+                    aria-hidden="true"
+                    className="text-umber-600 dark:text-umber-300"
+                  />
                 )}
                 <span>{theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}</span>
               </span>

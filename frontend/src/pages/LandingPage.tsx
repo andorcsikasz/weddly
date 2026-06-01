@@ -366,9 +366,12 @@ export default function LandingPage() {
                   {t("landing.pricing_amount_sub")}
                 </span>
               </div>
-              <p className="mt-3 rounded-lg bg-umber-100 dark:bg-umber-700/50 px-3 py-2 text-sm font-medium text-umber-800 dark:text-umber-100 ring-1 ring-umber-200/80 dark:ring-umber-600/50">
-                {t("landing.pricing_after")}
-              </p>
+              <div className="mt-3 flex gap-2.5 rounded-lg bg-umber-100 dark:bg-umber-700/50 px-3 py-2.5 ring-1 ring-umber-200/80 dark:ring-umber-600/50">
+                <Heart size={16} className="mt-0.5 shrink-0 text-umber-600 dark:text-umber-300" />
+                <p className="font-grotesk text-sm leading-snug text-umber-800 dark:text-umber-100">
+                  {t("landing.pricing_after")}
+                </p>
+              </div>
               <ul className="mt-5 space-y-2">
                 <IconRow tone="coffee" icon={<Gift size={16} />}>
                   {t("landing.pricing_bullet_1")}

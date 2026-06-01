@@ -799,7 +799,8 @@ const hu: LocaleMessages = {
     card_guests_body: "Írd be a meghívódon szereplő kódot, és válaszolj pár perc alatt.",
     card_guests_cta: "Meghívókód megadása",
     suppliers_section_title: "Válogatott szolgáltatói lista",
-    suppliers_section_body: "Helyszín, catering, fotó, zene, dekor. Foglalás a következő verzióban.",
+    suppliers_section_body:
+      "Helyszín, catering, fotó, zene, dekor. Foglalás a következő verzióban.",
     suppliers_couple_cta: "Szolgáltatók böngészése",
     suppliers_vendor_cta: "Kerülj fel a listára",
     guest_sheet_title: "Add meg a meghívó kódod",
@@ -910,7 +911,8 @@ const hu: LocaleMessages = {
       "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 1 990 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
     pricing_amount: "1 990",
     pricing_amount_sub: "/ hó",
-    pricing_after: "Az első 200 párnak ingyenes az esküvőjükig",
+    pricing_after:
+      "Szeretnénk segíteni, hogy könnyebb legyen az esküvőtök szervezése. Ha a pároddal mindketten regisztráltok az első 200 pár között, 18 hónapig semmilyen költséget nem számolunk fel nektek.",
     pricing_bullet_1: "2 hét ingyenes próbaidő, kártya nélkül",
     pricing_bullet_2: "Minden funkció elérhető a pároknak",
     pricing_bullet_3: "Korlátlan CSV- és PDF-export",
